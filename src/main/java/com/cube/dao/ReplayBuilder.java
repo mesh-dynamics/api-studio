@@ -59,6 +59,7 @@ public class ReplayBuilder {
   public Optional<String> testConfigName;
   public Optional<String> goldenName;
   public Optional<String> recordingId;
+  public boolean archived;
 
 
     public ReplayBuilder (String endpoint, CubeMetaInfo metaInfo,
@@ -89,6 +90,7 @@ public class ReplayBuilder {
 		this.testConfigName = Optional.empty();
 		this.goldenName = Optional.empty();
 		this.recordingId = Optional.empty();
+		this.archived = false;
 	}
 
 	private void populateClassLoader() throws Exception {
@@ -106,7 +108,7 @@ public class ReplayBuilder {
 			reqIdsToReplay, replayId, async, templateSetVersion, replayStatus, pathsToReplay,
             excludePaths, reqCnt , reqSent , reqFailed, updateTimestamp, sampleRate, intermediateServices,
 			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, xfmer, mockServices
-	            , testConfigName, goldenName, recordingId);
+	            , testConfigName, goldenName, recordingId, archived);
 	}
 
 	public ReplayBuilder withPaths(List<String> paths) {
@@ -219,6 +221,11 @@ public class ReplayBuilder {
 
 		public ReplayBuilder withRecordingId(String recordingId) {
     	this.recordingId = Optional.of(recordingId);
+    	return this;
+		}
+
+		public ReplayBuilder withArchived(boolean archived) {
+    	this.archived = archived;
     	return this;
 		}
 

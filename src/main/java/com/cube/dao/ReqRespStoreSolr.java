@@ -828,6 +828,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }));
     }
 
+    private static void addFilter(SolrQuery query, String fieldname, boolean fval) {
+        addFilter(query, fieldname, String.valueOf(fval));
+    }
+
     private static void addFilter(SolrQuery query, String fieldname, Integer fval) {
         addFilter(query, fieldname, String.valueOf(fval));
     }
@@ -1347,6 +1351,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         replay.xfms.ifPresent(xfms -> doc.setField(XFMSF, xfms));
         replay.goldenName.ifPresent(goldenName -> doc.setField(GOLDEN_NAMEF, goldenName));
         replay.recordingId.ifPresent(recordingId -> doc.setField(RECORDING_IDF, recordingId));
+        doc.setField(ARCHIVEDF,replay.archived);
 
         return doc;
     }
@@ -1409,6 +1414,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         ReplayTypeEnum replayType = getStrField(doc, REPLAY_TYPE_F).flatMap(repType ->
             Utils.valueOf(ReplayTypeEnum.class, repType)).orElse(ReplayTypeEnum.HTTP);
         Optional<String> xfms = getStrField(doc, XFMSF);
+        Optional<Boolean> archived = getBoolField(doc, ARCHIVEDF);
 
         Optional<Replay> replay = Optional.empty();
         if (endpoint.isPresent() && customerId.isPresent() && app.isPresent() &&
@@ -1436,6 +1442,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 testConfigName.ifPresent(builder::withTestConfigName);
                 goldenName.ifPresent(builder::withGoldenName);
                 recordingId.ifPresent(builder::withRecordingId);
+                archived.ifPresent(builder::withArchived);
                 replay = Optional.of(builder.build());
             } catch (Exception e) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
@@ -1569,10 +1576,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Result<Replay> getReplay(Optional<String> customerId, Optional<String> app, List<String> instanceId,
             List<ReplayStatus> status, Optional<String> collection,  Optional<Integer> numOfResults,  Optional<Integer> start,
             Optional<String> userId, Optional<Instant> endDate, Optional<Instant> startDate, Optional<String> testConfigName,
-            Optional<String> goldenName) {
+            Optional<String> goldenName, boolean archived) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.ReplayMeta.toString());
+        addFilter(query, ARCHIVEDF, archived);
         addFilter(query, CUSTOMERIDF, customerId);
         addFilter(query, APPF, app);
         addFilter(query, INSTANCEIDF, instanceId);
@@ -1597,7 +1605,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         //Reference - https://stackoverflow.com/a/31688505/3918349
         List<String> instanceidList = instanceId.stream().collect(Collectors.toList());
         return getReplay(customerId, app, instanceidList, status, collection, numofResults, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-                    Optional.empty(), Optional.empty()).objects;
+                    Optional.empty(), Optional.empty(), false).objects;
     }
 
     private static final String OBJJSONF = CPREFIX + "json" + NOTINDEXED_SUFFIX;

@@ -192,11 +192,12 @@ public interface ReqRespStore {
 		 * @param startDate
 		 * @Param testConfigName
 		 * @Param goldenName
+		 * @Param archived
      * @return
      */
     Result<Replay> getReplay(Optional<String> customerId, Optional<String> app, List<String> instanceId,
                              List<ReplayStatus> status, Optional<String> collection, Optional<Integer> numOfResults, Optional<Integer> start,
-                             Optional<String> userId, Optional<Instant> endDate, Optional<Instant> startDate, Optional<String> testConfigName, Optional<String> goldenName);
+                             Optional<String> userId, Optional<Instant> endDate, Optional<Instant> startDate, Optional<String> testConfigName, Optional<String> goldenName, boolean archived);
 
     /**
      *

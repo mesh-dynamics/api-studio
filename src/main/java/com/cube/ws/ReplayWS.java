@@ -3,6 +3,7 @@
  */
 package com.cube.ws;
 
+import com.cube.dao.Replay.ReplaySaveFailureException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -338,6 +339,46 @@ public class ReplayWS {
                 }).orElse(Response.serverError().build());
         }).orElse(Response.status(Status.BAD_REQUEST).entity("Endpoint not specified").build());
 
+    }
+
+    /**
+     *
+     * @param replayId
+     * @return
+     */
+    @POST
+    @Path("softDelete/{replayId}")
+    public Response softDelete(@PathParam("replayId") String replayId) {
+        Optional<Replay> replay = rrstore.getReplay(replayId);
+        Response response = replay.map(rep -> {
+            try {
+                Replay deletedReplay = rep.softDeleteReplay(rrstore);
+                String json;
+                LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Soft deleting replay", "replayId", replayId)));
+                json = jsonMapper.writeValueAsString(deletedReplay);
+                return Response.ok(json, MediaType.APPLICATION_JSON).build();
+
+            } catch (ReplaySaveFailureException ex) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR,
+                    "Replay Save failure Exception for replayId", "ReplayId",
+                    replayId,
+                    Constants.REASON, ex)));
+                return Response.serverError().entity(new JSONObject(Map.of(
+                    Constants.ERROR, "Replay Save failure Exception for replayId",
+                    "ReplayId", replayId))).build();
+            } catch (JsonProcessingException ex) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR,
+                    "Error in converting Replay object to Json for replayId", "ReplayId",
+                    replayId,
+                    Constants.REASON, ex)));
+                return Response.serverError().entity(new JSONObject(Map.of(
+                    Constants.ERROR, "Error in converting Replay object to Json for replayId",
+                    "ReplayId", replayId))).build();
+            }
+        }).orElse(Response.status(Response.Status.NOT_FOUND).entity(new JSONObject(Map.of(
+            Constants.MESSAGE, "Replay Not Found",
+            "ReplayId", replayId))).build());
+        return response;
     }
 
 	/**
