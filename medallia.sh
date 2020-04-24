@@ -25,13 +25,19 @@ set_variables() {
 replay() {
 	BODY="$REPLAY_PATHS&endPoint=$REPLAY_ENDPOINT&instanceId=$INSTANCE_ID&userId=$USER_ID&excludePaths=$EXCLUDEPATH"
 	echo $BODY
-	REPLAY_ID=$(curl -X POST \
+	resp=$(curl -sw "%{http_code}" -X POST \
 		$CUBE_ENDPOINT/api/rs/start/$RECORDING_ID \
 		-H 'Content-Type: application/x-www-form-urlencoded' \
 		-H "Authorization: Bearer $AUTH_TOKEN" \
 		-H 'cache-control: no-cache' \
-		-d $BODY \
-	| jq -r ".replayId" | sed -e 's/ /%20/g')
+		-d $BODY)
+	http_code="${resp:${#res}-3}"
+	if [ $http_code -ne 200 ]; then
+		echo "Error"
+		exit 1
+	fi
+	body="${resp:0:${#resp}-3}"
+	REPLAY_ID=$(echo $body | jq -r ".replayId" | sed -e 's/ /%20/g')
 
 	echo "REPLAYID:" $REPLAY_ID
 	#Status Check
