@@ -9,6 +9,7 @@ const config = {
     diffCollapseLength: process.env.REACT_APP_DIFF_COLLAPSE_LENGTH || 2,
     diffCollapseLengthIncrement: process.env.REACT_APP_DIFF_COLLAPSE_LENGTH_INCREMENT || 10,
     diffCollapseStartIndex: process.env.REACT_APP_DIFF_COLLAPSE_START_INDEX || 3,
+    timelineresRefreshIntervel: process.env.REACT_APP_TIMELINERES_REFRESH_INTERVAL || 15000,
 };
 
 export default config;

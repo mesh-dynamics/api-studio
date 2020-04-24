@@ -3,7 +3,8 @@ import Tippy from '@tippy.js/react'
 import 'tippy.js/themes/light-border.css'
 import { Glyphicon } from 'react-bootstrap'
 import { connect } from "react-redux"
-import {cubeActions} from "../../actions";
+import { cubeActions } from "../../actions";
+import Modal from "react-bootstrap/lib/Modal";
 
 class OperationSetLabel extends React.Component {
     constructor(props, context) {
@@ -137,27 +138,6 @@ class OperationSetLabel extends React.Component {
             </div>
         );
 
-        const bugContent = (
-            <div style={{ background: "#ECE7E6", cursor: "default"}}>
-                <span
-                    onClick={this.setHideBugTippy}
-                    style={{ display: "flex", justifyContent: "flex-end", padding: "3px", cursor: "pointer", width: "100%", fontSize: "12px"}}
-                >
-                    <i className="fas fa-times" style={{ color: "#616060"}}></i>
-                </span>
-                <div style={{ fontSize: "14px", display: "flex", flexDirection: "column", alignItems: "flex-start", padding: "10px" }}>
-                    <div>
-                        <span>JSON Path: </span>
-                        <span>{this.props.jsonPath ? this.props.jsonPath.replace("<BEGIN>", "") : ""}</span>
-                    </div>
-                    <div>
-                        <span>Jira Issue: </span>
-                        <span style={{ cursor: "pointer", color: "#0052CC"}} onClick={this.handleIssueUrlClick}>{this.getIssueId()}</span>
-                    </div>
-                </div>
-            </div>
-        );
-
         return this.props.jsonPath && this.props.jsonPath.indexOf("<END>") < 0 ? (
             <span>
                 <Tippy flip={false} content={tippyContent} arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light-border"} trigger={"click"} appendTo={"parent"}>
@@ -166,21 +146,36 @@ class OperationSetLabel extends React.Component {
                 <Tippy flip={false} content={tippyContent} arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light-border"} trigger={"click"} appendTo={"parent"}>
                     <span onDoubleClick={this.removeFromOperations} className={this.findInOperations() ? '' : 'hidden'}><Glyphicon glyph="retweet" /></span>
                 </Tippy>
-                <Tippy flip={false} visible={this.state.showBugTippy} content={bugContent} arrow={true} interactive={true} animateFill={false} distance={7} animation={"fade"} size={"large"} theme={"light-border"} trigger={"click"} appendTo={"parent"}>
-                    <span onClick={this.setShowBugTippy} onDoubleClick={this.removeFromJiraBugs} className={this.findInJiraBugs() ? '' : "hidden"}><i className="fas fa-bug"></i></span>
-                </Tippy>
+                
+                <span onClick={this.setShowBugTippy} onDoubleClick={this.removeFromJiraBugs} className={this.findInJiraBugs() ? '' : "hidden"}><i className="fas fa-bug"></i></span>
+                
+                <Modal show={this.state.showBugTippy} dialogClassName="os-popover-modal">
+                    <div style={{ background: "#ECE7E6", cursor: "default", borderRadius: "3px", padding: "3px" }}>
+                        <span
+                            onClick={this.setHideBugTippy}
+                            style={{ display: "flex", justifyContent: "flex-end", padding: "3px", cursor: "pointer", width: "100%", fontSize: "12px"}}
+                        >
+                            <i className="fas fa-times" style={{ color: "#616060"}}></i>
+                        </span>
+                        <div style={{ fontSize: "14px", display: "flex", flexDirection: "column", alignItems: "flex-start", padding: "10px" }}>
+                            <div>
+                                <span>JSON Path: </span>
+                                <span>{this.props.jsonPath ? this.props.jsonPath.replace("<BEGIN>", "") : ""}</span>
+                            </div>
+                            <div>
+                                <span>Jira Issue: </span>
+                                <span style={{ cursor: "pointer", color: "#0052CC"}} onClick={this.handleIssueUrlClick}>{this.getIssueId()}</span>
+                            </div>
+                        </div>
+                    </div>
+                </Modal>
             </span>
         ) : "";
     }
 }
 
-function mapStateToProps(state) {
-    const cube = state.cube;
-    return {
-        cube
-    }
-}
+const mapStateToProps = (state) => ({
+    cube: state.cube
+});
 
-const connectedOperationSetLabel = connect(mapStateToProps)(OperationSetLabel);
-
-export default connectedOperationSetLabel;
+export default connect(mapStateToProps)(OperationSetLabel);

@@ -11,20 +11,48 @@ import 'react-table-hoc-fixed-columns/lib/styles.css';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import _ from 'lodash';
+import config from '../../config';
 
 const ReactTableFixedColumns = withFixedColumns(ReactTable);
 
 class TestResults extends Component {
+    intervalID;
 
     constructor(props) {
         super(props);
         this.state = {
             endDate: new Date(),
+            startDate : null,
             userFilter: "ALL",
             noFilter: true,
-            showHeaderDetails: false,
+            showHeaderDetails: true,
+            clearTimeline: true,
         };
         this.setPathResultsParams = this.setPathResultsParams.bind(this);
+    }
+
+    /**
+     * Used to bind the autorefresh call for timeineres to update the table
+     * componentDidMount will call the timeliners api with start Date as null and end Date as current Date and updates the timelineData
+     * After some interval autoRefresh gets called and calls timeliners api with start Date and end Date
+     * The new data gets appended in the table if already present.
+     */
+    componentDidMount() {
+        const { dispatch } = this.props;
+
+        dispatch(cubeActions.hideTestConfig(true));
+        dispatch(cubeActions.hideServiceGraph(true));
+
+        this.autoRefreshData();
+    }
+
+    componentWillUnmount() {
+        const { dispatch } = this.props;
+
+        dispatch(cubeActions.hideTestConfig(false));
+        dispatch(cubeActions.hideServiceGraph(false));
+
+        clearInterval(this.intervalID);
     }
 
     shouldComponentUpdate = (nextProps, nextState) => {
@@ -43,36 +71,75 @@ class TestResults extends Component {
             return false;
         }
 
+        if (_.isEqual(cube.analysisStatusObj, nextCube.analysisStatusObj)) {
+            return false;
+        }
+        
         return true;
     }
 
     clearFilter = () => {
-        const {dispatch, cube} = this.props;
-        dispatch(cubeActions.getTimelineData(cube.selectedApp));
+        const {dispatch} = this.props;
         this.setState({
             endDate: new Date(),
             userFilter: "ALL",
-            noFilter: true
+            startDate: null,
+            noFilter: true,
+            clearTimeline: true
         });
     };
 
     changeUserFilter = event => {
-        const {dispatch, cube} = this.props;
-        dispatch(cubeActions.getTimelineData(cube.selectedApp, event.target.value, this.state.endDate));
+        const {dispatch} = this.props;
         this.setState({
             userFilter: event.target.value,
-            noFilter: false
+            startDate: null,
+            noFilter: false,
+            clearTimeline: true
         });
     };
 
     handleDateFilter = date => {
-        const {dispatch, cube} = this.props;
-        dispatch(cubeActions.getTimelineData(cube.selectedApp, this.state.userFilter, date));
+        const {dispatch} = this.props;
         this.setState({
             endDate: date,
-            noFilter: false
+            startDate: null,
+            noFilter: false,
+            clearTimeline: true
         });
     };
+
+    updateTimelineResults = () => {
+        const {dispatch, cube} = this.props;
+        if (!cube.selectedApp) {
+            return;
+        }
+        let currentDate = new Date().toISOString().split('T')[0];
+        let endDate = this.state.endDate.toISOString().split('T')[0];
+        let endDateValue = currentDate === endDate ? new Date() : new Date(this.state.endDate);
+        /**
+         * If we select any old date the timeliners is called only once 
+         * The below check is to don't call the timeliners api after some interval if the date isn't current date
+         * startDate not equal to null is checked to allow the call once when we change date. After that the startDate gets updated with the changed date(old date) 
+         */
+        if (currentDate != endDate && this.state.startDate != null)
+        {
+            return;
+        }
+        else {
+            dispatch(cubeActions.getTimelineData(cube.selectedApp, this.state.userFilter, this.state.endDate, this.state.startDate, this.state.clearTimeline));
+            this.setState({
+                startDate: this.state.endDate,
+                endDate: endDateValue,
+                clearTimeline: false
+            });
+        }
+    }
+
+    autoRefreshData = () => {
+        this.updateTimelineResults();
+        this.intervalID = setInterval(this.updateTimelineResults, config.timelineresRefreshIntervel);
+    }
 
     setPathResultsParams(path, service, replayId, recordingId, currentTemplateVer, dateTime, cellData) {
         if (!cellData) return;
@@ -91,14 +158,12 @@ class TestResults extends Component {
         });
     }
 
-    toggleHeaderDetails = () => this.setState({ showHeaderDetails: !this.state.showHeaderDetails });
 
     renderTimeLineHeader = (header) => {
         const { date, replayId, recordingId, goldenName, userName } = header;
         const { showHeaderDetails } = this.state;
 
         return (
-            showHeaderDetails ? 
             <div>
                 <Tippy 
                     arrow={true} 
@@ -124,9 +189,6 @@ class TestResults extends Component {
                             <span className="timeline-replay-id">
                                     {`Test ID : ${replayId}`}
                             </span>
-                            <span className="timeline-replay-id">
-                                    {`Recording ID : ${recordingId}`}
-                            </span>
                         </div>
                     }
                 >
@@ -134,43 +196,75 @@ class TestResults extends Component {
                         <div className="timeline-header-text underline">
                                 {moment(date).format('lll')}
                         </div>
-                        <div className="timeline-replay-id">
-                                {`Run By : ${userName}`}
-                        </div>
-                        <div className="timeline-replay-id">
-                                {`Golden : ${goldenName}`}
-                        </div>
-                        <div className="timeline-replay-id">
-                                {`Test ID : ${replayId}`}
-                        </div>
-                        <div className="timeline-replay-id">
-                                {`Recording ID : ${recordingId}`}
+                        <div className="timeline-replay-content">
+                            <div className="timeline-replay-id">
+                                    {`Run By : ${userName}`}
+                            </div>
+                            <div className="timeline-replay-id">
+                                    {`Golden : ${goldenName}`}
+                            </div>
+                            <div className="timeline-replay-id">
+                                    {`Test ID : ${replayId}`}
+                            </div>
                         </div>
                     </div>
                 </Tippy>
-            </div>
-            : 
-            <div className="timeline-replay-header">
-                <div className="timeline-header-text">
-                        {moment(date).format('lll')}
-                </div>
             </div>
         );
     };
 
     renderServiceLabel = () => {
-        const { showHeaderDetails } = this.state;
         return (
             <div style={{ "fontSize": "14px", fontWeight: "bold" }}>
                 <span>Service</span>
-                <i className={showHeaderDetails ? "fas fa-chevron-up": "fas fa-chevron-down"} style={{marginLeft: "5px", cursor: "pointer"}} onClick={this.toggleHeaderDetails}></i>
             </div>
         );
     };
+
+    getExpandedRows = () => {
+        const expanderIndexString = localStorage.getItem("expander");
+        const expandedServiceKey = {};
+        // if key exists
+        if (expanderIndexString) {
+            // convert the indices to keys with empty object
+            const expanderIndices = JSON.parse(expanderIndexString);
+
+            expanderIndices.forEach(indexKey => expandedServiceKey[indexKey] = {});
+
+            return expandedServiceKey;
+        }
+
+        // If expanderIndexString is not present return all rows collapsed
+        return {};
+    };
+
+    handleExpanderChange = ([index]) => {
+        const expanderIndexString = localStorage.getItem("expander");
+
+        // if key exists
+        if (expanderIndexString) {
+            // Process and add or remove
+            const expanderIndices = JSON.parse(expanderIndexString);
+            
+            if (!expanderIndices.includes(index)) {
+                // If expander index is not present add
+                expanderIndices.push(index);
+                localStorage.setItem("expander", JSON.stringify(expanderIndices));
+            } else {
+                // else remove
+                localStorage.setItem("expander", JSON.stringify(expanderIndices.filter(item => item !== index)));
+            }
+        } else {
+            // if key does not exist, add new key
+            localStorage.setItem("expander", JSON.stringify([index]));
+        }
+
+        this.forceUpdate();
+    }; 
     
     render() {
         const { cube } = this.props;
-        if (cube.timelineData == null) {
+        if (cube.timelineData.length === 0) {
             return (
                 <div style={{ margin: "27px" }}>
                     <h5>Test Results</h5>
@@ -178,7 +272,7 @@ class TestResults extends Component {
             );
         }
 
-        let timelineData = cube.timelineData.timelineResults,
+        let timelineData = cube.timelineData,
             columns = [], uniquePaths = [], tableData = [], tableDataPathMap = {},
             allRunsTimestamps = [];
         let tempTableData = {};
@@ -307,7 +401,6 @@ class TestResults extends Component {
             fixed: "left",
             columns: [{
                 expander: true,
-                Header: () => <strong></strong>,
                 width: 65,
                 sortable: false,
                 Expander: ({ isExpanded, ...rest }) => {
@@ -331,7 +424,6 @@ class TestResults extends Component {
                     userSelect: "none"
                 }
             }, {
-                Header: () => <strong>Test Summary</strong>,
                 id: "serviceRowKey",
                 headerClassName: "freeze-column",
                 className: "freeze-column",
@@ -341,7 +433,9 @@ class TestResults extends Component {
                 width: 300,
                 Cell: row => {
                     if (row.value && row.value.indexOf("--") == 0) {
-                        return (<strong></strong>);
+                        return null;
+                        // Returning the code below pads the cell 
+                        // return (<strong></strong>);
                     }
                     if (row.value && row.value.indexOf("--") > 0) {
                         return (
@@ -362,31 +456,35 @@ class TestResults extends Component {
                 sortable: false,
                 minWidth: count == 0 ? 240 : 150,
                 columns: [{
-                    Header: (args) => {
-                        if (!args.column && !args.column.id) return "";
-                        if (!args.data && !args.data.length == 0) return "";
-                        let cellId = args.column.id;
-                        let data = args.data;
-                        if (!data) return "";
-                        for (let eachRow of data) {
-                            let cellData = eachRow[cellId];
-                            if (!cellData) return (<strong>NA</strong>);
-                            return (<strong
-                                style={{
-                                    color: cellData.respnotmatched && cellData.respnotmatched > 0 ? '#ff2e00' : '#85cc00',
-                                }}
-                            >
-                                {cellData.respnotmatched && cellData.respnotmatched > 0 ? 'Fail' : 'Pass'}
-                            </strong>)
-                        }
-                        return (<strong></strong>);
-                    },
+                    // NOTE: To be kept to understand underlying logic
+                    // Header: (args) => {
+                    //     if (!args.column && !args.column.id) return "";
+                    //     if (!args.data && !args.data.length == 0) return "";
+                    //     let cellId = args.column.id;
+                    //     let data = args.data;
+                    //     if (!data) return "";
+                    //     for (let eachRow of data) {
+                    //         let cellData = eachRow[cellId];
+                    //         if (!cellData) return (<strong>NA</strong>);
+                    //         return (<strong
+                    //             style={{
+                    //                 color: cellData.respnotmatched && cellData.respnotmatched > 0 ? '#ff2e00' : '#85cc00',
+                    //             }}
+                    //         >
+                    //             {cellData.respnotmatched && cellData.respnotmatched > 0 ? 'Fail' : 'Pass'}
+                    //         </strong>)
+                    //     }
+                    //     return (<strong></strong>);
+                    // },
+                    // headerStyle: { display: "none", border: "1px solid green" },
                     accessor: "" + eachTimeStamp.date,
                     minWidth: count == 0 ? 240 : 150,
                     sortable: false,
                     Cell: row => {
                         if (row.row.serviceRowKey && row.row.serviceRowKey.indexOf("--") == 0) {
-                            return (<div><br/><br/></div>);
+                            return null;
+                            // Returning the code below pads the cell
+                            // return (<div><br/><br/></div>);
                         }
                         if (!row.value) {
                             return (<div
@@ -444,7 +542,7 @@ class TestResults extends Component {
                                             }}
                                         />
                                     </Tippy>
-                                </div >
+                                </div>
                             )
                         }
                         return (
@@ -541,10 +639,12 @@ class TestResults extends Component {
                     columns={columns}
                     subRowsKey="subRows"
                     style={{
-                        height: "600px" // This will force the table body to overflow and scroll, since there is not enough room
+                       height: "600px" // This will force the table body to overflow and scroll, since there is not enough room
                     }}
                     showPagination={true}
                     defaultPageSize={10}
+                    expanded={this.getExpandedRows()}
+                    onExpandedChange={(newExpanded, index) => this.handleExpanderChange(index)}
                 />
             </div >
         );

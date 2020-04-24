@@ -1,10 +1,10 @@
 import React, { Component, Fragment } from "react";
-import {resolutionsIconMap} from "../../components/Resolutions.js";
+import {resolutionsIconMap} from "../Resolutions.js";
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio, InputGroup} from "react-bootstrap";
 import ReactDiffViewer from "../../utils/diff/diff-main";
 import statusCodeList from "../../StatusCodeList"
 import _ from "lodash";
-import "../../components/Diff.css"
+import "../Diff.css";
 import config from "../../config.js";
 import {addCompressToggleData} from "../../utils/diff/diff-process"
 

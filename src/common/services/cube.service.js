@@ -19,6 +19,7 @@ export const cubeService = {
     updateGoldenSet,
     getNewTemplateVerInfo,
     fetchJiraBugData,
+    fetchAnalysisStatus,
 };
 
 async function fetchAppsList() {
@@ -309,7 +310,7 @@ async function fetchCollectionList(app) {
 async function forceCompleteReplay(fcId) {
     let user = JSON.parse(localStorage.getItem('user'));
     let url = `${config.replayBaseUrl}/forcecomplete/${fcId}`;
-    await axios.post(url, {
+    await axios.post(url, null, {
         headers: {
             "Authorization": "Bearer " + user['access_token']
         }
@@ -345,6 +346,34 @@ async function checkStatusForReplay(collectionId, replayId, app) {
         throw e;
     }
     console.log('checkStatusForReplay success: ', JSON.stringify(status, null, 4));
+    return status;
+}
+
+async function fetchAnalysisStatus(replayId) {
+    let user = JSON.parse(localStorage.getItem('user'));
+    let response, json;
+    let url = `${config.analyzeBaseUrl}/status/${replayId}`;
+    let status = {};
+    try {
+        response = await fetch(url, {
+            method: "get",
+            headers: new Headers({
+                "cache-control": "no-cache",
+                "Authorization": "Bearer " + user['access_token']
+            })
+        });
+        if (response.ok) {
+            json = await response.json();
+            status = json.data;
+        } else {
+            console.log("Response not ok in fetchAnalysisStatus", response);
+            throw new Error("Response not ok fetchAnalysisStatus");
+        }
+    } catch (e) {
+        console.log("fetchAnalysisStatus has errors!", e);
+        throw e;
+    }
+    console.log('fetchAnalysisStatus success: ', JSON.stringify(status, null, 4));
     return status;
 }
 
@@ -405,15 +434,19 @@ async function fetchReport(collectionId, replayId) {
     return report;
 }
 
-async function fetchTimelineData(app, userId, endDate) {
+async function fetchTimelineData(app, userId, endDate, startDate) {
     let user = JSON.parse(localStorage.getItem('user'));
     let response, json;
-    let edTemp = new Date(endDate.toISOString().split('T')[0] + " 00:00");
-    edTemp.setDate(endDate.getDate() + 1);
-    let ed = edTemp.toISOString();
+    let ed = endDate.toISOString();
+
     let url = `${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?byPath=y&endDate=${ed}`;
     if (userId !== 'ALL') {
         url = `${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?byPath=y&userId=${user.username}&endDate=${ed}`;
+    }
+
+    if (startDate != null) {
+        let sd = startDate.toISOString();
+        url = url+ `&startDate=${sd}`
     }
     let timelineData = {};
     try {

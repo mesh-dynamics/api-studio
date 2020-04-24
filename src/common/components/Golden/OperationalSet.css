@@ -20,3 +20,14 @@
     font-size: 14px;
     border-radius: 3px;
 }
+
+.os-popover-modal {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+}
+
+.popover-golden {
+    margin-top: -15vh;
+}

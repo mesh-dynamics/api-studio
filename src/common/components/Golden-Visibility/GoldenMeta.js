@@ -3,7 +3,8 @@ import { connect } from "react-redux";
 import moment from "moment";
 import { 
     generateServiceOptionsFromFacets,
-    generateApiOptionsFromFacets 
+    generateApiOptionsFromFacets,
+    validateGoldenName,
 } from '../../utils/lib/golden-utils';
 import { goldenActions } from '../../actions/golden.actions'
 
@@ -24,11 +25,13 @@ const GoldenMeta = (props) => {
         getGoldenMeta,
     } = props;
 
-    const { id, name, gitCommitId, timestmp, userId, branch, codeVersion, rootRcrdngId, serviceFacets } = selectedGolden;
+    const { id, name, label, gitCommitId, timestmp, userId, branch, codeVersion, rootRcrdngId, serviceFacets } = selectedGolden;
 
     const [editable, setEditable] = useState(false);
 
     const [goldenName, setGoldenName] = useState(name);
+
+    const [labelName, setLabelName] = useState(label);
 
     const [branchName, setBranchName] = useState(branch);
 
@@ -41,11 +44,17 @@ const GoldenMeta = (props) => {
     const serviceOptions = generateServiceOptionsFromFacets(serviceFacets);
 
     const handleUpdateClick = () => {
-        if(goldenName === name) {
-            alert("Golden name cannot be the same.");   
+        const { goldenNameIsValid, goldenNameErrorMessage } = validateGoldenName(goldenName);
+
+        if(goldenNameIsValid) {
+            if((goldenName === name) && (labelName === label)) {
+                alert("Golden name and label combination cannot be the same.");
+            } else {
+                setEditable(false);
+                updateGoldenMeta({ id, goldenName, labelName, branchName, codeVersionNumber, commitId });
+            }
         } else {
-            setEditable(false);
-            updateGoldenMeta({ id, goldenName, branchName, codeVersionNumber, commitId });
+            alert(goldenNameErrorMessage);
         }
     };
 
@@ -64,6 +73,7 @@ const GoldenMeta = (props) => {
 
     useEffect(() => {
         setGoldenName(name);
+        setLabelName(label);
         setBranchName(branch);
         setCodeVersionNumber(codeVersion);
         setCommitId(gitCommitId);
@@ -90,8 +100,20 @@ const GoldenMeta = (props) => {
                         style={{ width: "100%"}} 
                         name="name"
                         value={goldenName} 
-                        onChange={(e) => setGoldenName(e.target.value)}
+                        onChange={(e) => setGoldenName(e.target.value.replace(/  /g, " "))}
                     />
+                }
+            </div>
+            <div className="margin-top-10">
+                <span className="margin-right-10"><strong>Label:</strong></span>
+                {!editable && <span>{labelName}</span>}
+                {editable &&
+                <input
+                    style={{ width: "100%"}}
+                    name="label"
+                    value={labelName}
+                    onChange={(e) => setLabelName(e.target.value)}
+                />
                 }
             </div>
             <div className="margin-top-10">

@@ -36,7 +36,7 @@ const validateAndCleanHTTPMessageParts = (messagePart) => {
     return cleanedMessagepart;
 }
 
-const getDiffForMessagePart = (replayedPart, recordedPart, serverSideDiff, prefix, service, path, app, replayId, recordingId, templateVersion) => {
+const getDiffForMessagePart = (replayedPart, recordedPart, serverSideDiff, prefix, service, path, app, replayId, recordingId, templateVersion, eventType) => {
     if (!serverSideDiff || serverSideDiff.length === 0) return null; 
     let actpart = JSON.stringify(replayedPart, undefined, 4);
     let expPart = JSON.stringify(recordedPart, undefined, 4);
@@ -50,7 +50,8 @@ const getDiffForMessagePart = (replayedPart, recordedPart, serverSideDiff, prefi
             templateVersion: templateVersion,
             apiPath: path,
             replayId: replayId,
-            recordingId: recordingId
+            recordingId: recordingId,
+            eventType: eventType,
         }
     });
     return updatedReductedDiffArrayMsgPart;
@@ -61,18 +62,6 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
         let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body",
             recordedRequestHeaders, replayedRequestHeaders, recordedRequestQParams, replayedRequestQParams, recordedRequestFParams, replayedRequestFParams,recordedRequestBody, replayedRequestBody, reductedDiffArrayReqHeaders, reductedDiffArrayReqBody, reductedDiffArrayReqQParams, reductedDiffArrayReqFParams;
         let isJson = true;
-        
-        // add eventype to each diff object
-        if (item.respCompDiff) {
-            item.respCompDiff.forEach(diff => {
-                diff.eventType = "Response";
-            })
-        }
-        if (item.reqCompDiff) {
-            item.reqCompDiff.forEach(diff => {
-                diff.eventType = "Request";
-            })
-        }
 
         // processing Response    
         // recorded response body and headers
@@ -165,12 +154,14 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
                 templateVersion: templateVersion,
                 apiPath: item.path,
                 replayId: replayId,
-                recordingId: recordingId
+                recordingId: recordingId,
+                eventType: "Response",
             }
         });
 
-        let updatedReductedDiffArrayWithCollapsible = addCompressToggleData(updatedReductedDiffArray, collapseLength);
 
+        let updatedReductedDiffArrayWithCollapsible = addCompressToggleData(updatedReductedDiffArray, collapseLength);
+        
         let updatedReducedDiffArrayRespHdr = reducedDiffArrayRespHdr && reducedDiffArrayRespHdr.map((eachItem) => {
             return {
                 ...eachItem,
@@ -179,7 +170,8 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
                 templateVersion: templateVersion,
                 apiPath: item.path,
                 replayId: replayId,
-                recordingId: recordingId
+                recordingId: recordingId,
+                eventType: "Response",
             }
         });
 
@@ -212,10 +204,11 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
             replayedRequestFParams = "";
         }
 
-        reductedDiffArrayReqHeaders = getDiffForMessagePart(replayedRequestHeaders, recordedRequestHeaders, item.reqCompDiff, "/hdrs", item.service, item.path, app, replayId, recordingId, templateVersion);
-        reductedDiffArrayReqQParams = getDiffForMessagePart(replayedRequestQParams, recordedRequestQParams, item.reqCompDiff, "/queryParams", item.service, item.path, app, replayId, recordingId, templateVersion);
-        reductedDiffArrayReqFParams = getDiffForMessagePart(replayedRequestFParams, recordedRequestFParams, item.reqCompDiff, "/queryParams", item.service, item.path, app, replayId, recordingId, templateVersion);
-        reductedDiffArrayReqBody = getDiffForMessagePart(replayedRequestBody, recordedRequestBody, item.reqCompDiff, "/body", item.service, item.path, app, replayId, recordingId, templateVersion);
+        const reqEventType = "Request";
+        reductedDiffArrayReqHeaders = getDiffForMessagePart(replayedRequestHeaders, recordedRequestHeaders, item.reqCompDiff, "/hdrs", item.service, item.path, app, replayId, recordingId, templateVersion, reqEventType);
+        reductedDiffArrayReqQParams = getDiffForMessagePart(replayedRequestQParams, recordedRequestQParams, item.reqCompDiff, "/queryParams", item.service, item.path, app, replayId, recordingId, templateVersion, reqEventType);
+        reductedDiffArrayReqFParams = getDiffForMessagePart(replayedRequestFParams, recordedRequestFParams, item.reqCompDiff, "/queryParams", item.service, item.path, app, replayId, recordingId, templateVersion, reqEventType);
+        reductedDiffArrayReqBody = getDiffForMessagePart(replayedRequestBody, recordedRequestBody, item.reqCompDiff, "/body", item.service, item.path, app, replayId, recordingId, templateVersion, reqEventType);
 
         return {
             ...item,
@@ -293,4 +286,67 @@ const addCompressToggleData = (diffData, collapseLength, diffCollapseStartIndex)
     return diffData;
 }
 
-export {validateAndCreateDiffLayoutData, addCompressToggleData}
+const roughSizeOfObject = (object) => {
+
+    var objectList = [];
+    var stack = [ object ];
+    var bytes = 0;
+
+    while ( stack.length ) {
+        var value = stack.pop();
+
+        if ( typeof value === 'boolean' ) {
+            bytes += 4;
+        }
+        else if ( typeof value === 'string' ) {
+            bytes += value.length * 2;
+        }
+        else if ( typeof value === 'number' ) {
+            bytes += 8;
+        }
+        else if
+        (
+            typeof value === 'object'
+            && objectList.indexOf( value ) === -1
+        )
+        {
+            objectList.push( value );
+
+            for( var i in value ) {
+                stack.push( value[ i ] );
+            }
+        }
+    }
+    return bytes;
+}
+
+const pruneResults = (diffLayoutData, fromBeginning) => {
+    let accumulatedObjectSize = 0;
+    const diffObjectSizeThreshold = config.diffObjectSizeThreshold;
+    const maxDiffResultsPerPage = config.maxDiffResultsPerPage;
+    let len = diffLayoutData.length;
+    let i;
+    if (fromBeginning) { // prune from top of the list
+        i = 0;
+        while (accumulatedObjectSize <= diffObjectSizeThreshold && i < len && i < maxDiffResultsPerPage) {
+            accumulatedObjectSize += roughSizeOfObject(diffLayoutData[i]);
+            i++;
+        }
+        let diffLayoutDataPruned = diffLayoutData.slice(0, i)
+        return {diffLayoutDataPruned, i};
+    } else { // prune from bottom of the list
+        i = 0;
+        while (accumulatedObjectSize <= diffObjectSizeThreshold && i < len && i < maxDiffResultsPerPage) {
+            accumulatedObjectSize += roughSizeOfObject(diffLayoutData[len-i-1]);
+            i++;
+        }
+        let diffLayoutDataPruned = diffLayoutData.slice(len - i, len);
+        return {diffLayoutDataPruned, i} 
+    }
+}
+
+export {
+    validateAndCreateDiffLayoutData, 
+    addCompressToggleData,
+    pruneResults
+}
