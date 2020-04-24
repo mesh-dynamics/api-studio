@@ -31,7 +31,7 @@ replay() {
 		-H "Authorization: Bearer $AUTH_TOKEN" \
 		-H 'cache-control: no-cache' \
 		-d $BODY \
-	| jq -r ".replayId")
+	| jq -r ".replayId" | sed -e 's/ /%20/g')
 
 	echo "REPLAYID:" $REPLAY_ID
 	#Status Check
@@ -87,7 +87,7 @@ main() {
 	INSTANCE_ID=test
 	USER_ID=demo@cubecorp.io
 	TEMPLATE=RespPartialMatch
-	AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkZW1vQGN1YmVjb3JwLmlvIiwicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTU4NTgyMzg4MywiZXhwIjoxNTg2NDI4NjgzfQ.Eqv0JW62MgN4rWc4Dc-4vbbJEOaPmEXCzeNbsjRQU3o"
+	AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkZW1vQGN1YmVjb3JwLmlvIiwicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTU4NzcyNTA4NywiZXhwIjoxNTg4MzI5ODg3fQ.y-IxiKlmUxGJNF8UdNQmZFYvmDUxyArt1faJ85fVuhQ"
 	export SENDGRID_API_KEY='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'
 	set_variables
 	mail
