@@ -30,6 +30,11 @@ public class Replay {
 	public  Instant creationTimeStamp;
 	public Optional<String> generatedClassJarPath;
 	public  ReplayTypeEnum replayType;
+	public List<String> mockServices;
+	public Optional<String> testConfigName;
+	public Optional<String> goldenName;
+	public Optional<String> recordingId;
+	public boolean archived;
 	
 	public Replay(String endpoint, String customerId, String app, String instanceId,
 					String collection, String userId, List<String> reqIds,
@@ -37,7 +42,8 @@ public class Replay {
 					List<String> paths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
 					Optional<Double> sampleRate, List<String> intermediateServices,
 					Optional<String> generatedClassJarPath, Optional<String> service,
-					ReplayTypeEnum replayType) {
+					ReplayTypeEnum replayType, List<String> mockServices, Optional<String> testConfigName,
+					Optional<String> goldenName, Optional<String> recordingId, boolean archived) {
 	    this.endpoint = endpoint;
 	    this.customerId = customerId;
 	    this.app = app;
@@ -59,6 +65,11 @@ public class Replay {
 	    this.generatedClassJarPath = generatedClassJarPath;
 	    this.service = service;
 	    this.replayType = replayType;
+	    this.mockServices = mockServices;
+	    this.testConfigName = testConfigName;
+	    this.goldenName = goldenName;
+	    this.recordingId = recordingId;
+	    this.archived = archived;
 	}
 
 	//for deserialization
@@ -80,6 +91,11 @@ public class Replay {
 	    templateVersion = "";
 	    generatedClassJarPath = Optional.empty();
 	    replayType = ReplayTypeEnum.HTTP;
+	    mockServices = Collections.emptyList();
+	    testConfigName = Optional.empty();
+	    goldenName = Optional.empty();
+	    recordingId = Optional.empty();
+	    archived = false;
 	}
 
 }
