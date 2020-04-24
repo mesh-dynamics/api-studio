@@ -1,12 +1,14 @@
 package com.cubeui.backend.web.rest;
 
 import com.cubeui.backend.domain.App;
+import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.TestConfigDTO;
 import com.cubeui.backend.domain.Service;
 import com.cubeui.backend.domain.TestConfig;
 import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.ServiceRepository;
 import com.cubeui.backend.repository.TestConfigRepository;
+import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
 import org.apache.commons.lang3.StringUtils;
@@ -17,6 +19,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.ResponseEntity.*;
 
@@ -28,11 +31,14 @@ public class TestConfigController {
     private TestConfigRepository testConfigRepository;
     private ServiceRepository serviceRepository;
     private AppRepository appRepository;
+    private CustomerService customerService;
 
-    public TestConfigController(TestConfigRepository testConfigRepository, ServiceRepository serviceRepository, AppRepository appRepository) {
+    public TestConfigController(TestConfigRepository testConfigRepository, ServiceRepository serviceRepository, AppRepository appRepository,
+                CustomerService customerService) {
         this.testConfigRepository = testConfigRepository;
         this.serviceRepository = serviceRepository;
         this.appRepository = appRepository;
+        this.customerService = customerService;
     }
 
     @PostMapping("")
@@ -124,5 +130,17 @@ public class TestConfigController {
         Optional<TestConfig> existed = this.testConfigRepository.findById(id);
         this.testConfigRepository.delete(existed.get());
         return noContent().build();
+    }
+
+    @GetMapping("/{customerName}/{appName}/{testConfigName}")
+    public ResponseEntity getTestConfigByCustAppTestConfigName(@PathVariable String customerName,
+                    @PathVariable String appName, @PathVariable String testConfigName) {
+        Optional<Customer> customer = this.customerService.getByName(customerName);
+        if (customer.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("Customer with Name '" + customerName + "' not found."));
+        Optional<App> app = this.appRepository.findByNameAndCustomerId(appName, customer.get().getId());
+        if (app.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("App with Name '" + appName + "' not found."));
+        Optional<TestConfig> testConfig = this.testConfigRepository.findByTestConfigNameAndAppId(testConfigName,app.get().getId());
+        if (testConfig.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("TestCOnfig with Name '" + testConfigName + "' not found."));
+        return ok(testConfig);
     }
 }

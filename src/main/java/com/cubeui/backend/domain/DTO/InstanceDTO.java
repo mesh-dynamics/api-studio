@@ -19,4 +19,6 @@ public class InstanceDTO {
 
     private LocalDateTime createdAt;
 
+    private String loggingURL;
+
 }

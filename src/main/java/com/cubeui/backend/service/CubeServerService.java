@@ -65,7 +65,7 @@ public class CubeServerService {
 
     public ResponseEntity fetchGetResponse(String path){
         try {
-            URI uri = new URI(path);
+            URI uri = new URI(null, null, null, 0, path, null, null);
             String result = restTemplate.getForObject(uri, String.class);
             return ok().body(result);
         } catch (URISyntaxException e){
@@ -110,11 +110,8 @@ public class CubeServerService {
     private <T> ResponseEntity fetchResponse(HttpServletRequest request, Optional<T> requestBody, HttpMethod method, String... pathValue){
         updateCubeBaseUrl(request);
         String path = cubeServerBaseUrl + (pathValue.length> 0 ? pathValue[0] : request.getRequestURI().replace("/api", ""));
-        if (request.getQueryString() != null) {
-            path += "?" + request.getQueryString();
-        }
         try {
-            URI uri = new URI(path);
+            URI uri = new URI(null, null, null, 0, path, request.getQueryString(), null);
             HttpHeaders headers = new HttpHeaders();
             request.getHeaderNames().asIterator().forEachRemaining(key -> headers.set(key, request.getHeader(key)));
             if (pathValue.length >1)

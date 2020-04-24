@@ -22,16 +22,16 @@ public class CubeStoreController {
     @Autowired
     private Validation validation;
 
-    @GetMapping("/status/{customerId}/{app}/{collection}/{templateSetVersion}")
+    @GetMapping("/status/{customerId}/{app}/{name}/{label}")
     public ResponseEntity status(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String customerId,
-                                 @PathVariable String app, @PathVariable String collection, @PathVariable String templateSetVersion){
+                                 @PathVariable String app, @PathVariable String name, @PathVariable String label){
         validation.validateCustomerName(request,customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @PostMapping("/start/{customerId}/{app}/{instanceId}/{collection}/{templateSetVersion}")
+    @PostMapping("/start/{customerId}/{app}/{instanceId}/{templateSetVersion}")
     public ResponseEntity start(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String customerId,
-                                  @PathVariable String app, @PathVariable String instanceId, @PathVariable String collection,
+                                  @PathVariable String app, @PathVariable String instanceId,
                                   @PathVariable String templateSetVersion) {
         validation.validateCustomerName(request,customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
