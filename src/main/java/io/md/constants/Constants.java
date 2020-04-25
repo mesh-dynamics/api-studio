@@ -136,6 +136,10 @@ public class Constants {
 	public static final String NOT_APPLICABLE = "NA";
 
 
+	public static final String DEFAULT_TRACE_ID = "traceId";
+	public static final String DEFAULT_SPAN_ID = "spanId";
+	public static final String DEFAULT_PARENT_SPAN_ID = "pSpanId";
+
 	//Properties
 	public static final String MD_RECORD_SERVICE_PROP = "io.md.service.record";
 	public static final String MD_MOCK_SERVICE_PROP = "io.md.service.mock";

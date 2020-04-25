@@ -3,6 +3,7 @@ package io.md.utils;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpRequest;
 import org.slf4j.Logger;
@@ -60,6 +62,23 @@ public class CommonUtils {
 	public static <T extends Enum<T>> Optional<T> valueOf(Class<T> clazz, String name) {
 		return EnumSet.allOf(clazz).stream().filter(v -> v.name().equals(name))
 			.findAny();
+	}
+
+	private static final JaegerSpanContext defSpanContext;
+	private static final MDTraceInfo defTraceInfo;
+
+	private static final String defTraceIdAsHexStr = strToHexStr(Constants.DEFAULT_TRACE_ID)
+		.orElse("");
+	private static final String defSpanIdAsHexStr = strToHexStr(Constants.DEFAULT_SPAN_ID)
+		.orElse("");
+	private static final String defparentSpanIdAsHexStr = strToHexStr(
+		Constants.DEFAULT_PARENT_SPAN_ID).orElse("");
+
+	static {
+		defSpanContext = new JaegerSpanContext(0L, getDefaultTraceId(),
+			getDefaultSpanId(), getDefaultParentSpanId(), (byte) 0);
+		defTraceInfo = new MDTraceInfo(defTraceIdAsHexStr, defSpanIdAsHexStr,
+			defparentSpanIdAsHexStr);
 	}
 
 	static String getFunctionSignature(Method function) {
@@ -300,6 +319,36 @@ public class CommonUtils {
 			.flatMap(jaegerSpanContext -> longToStr(jaegerSpanContext.getParentId()));
 	}
 
+	public static Optional<String> strToHexStr(String str) {
+		try {
+			return Optional.of(String
+				.valueOf(Hex.encodeHex(str.getBytes(StandardCharsets.UTF_8))));
+		} catch (Exception ex) {
+			return Optional.empty();
+		}
+	}
+
+	public static Optional<Long> hexStrtoLong(String hexStr) {
+		try {
+			return Optional.of(Long.parseLong(hexStr, 16));
+		} catch (NumberFormatException ex) {
+			LOGGER.error("Number format exception", ex);
+			return Optional.empty();
+		}
+	}
+
+	public static long getDefaultTraceId() {
+		return hexStrtoLong(defTraceIdAsHexStr).orElse(-1L);
+	}
+
+	public static long getDefaultSpanId() {
+		return hexStrtoLong(defSpanIdAsHexStr).orElse(-1L);
+	}
+
+	public static long getDefaultParentSpanId() {
+		return hexStrtoLong(defparentSpanIdAsHexStr).orElse(-1L);
+	}
+
 	public static <T> CompletableFuture<List<T>> sequence(List<CompletableFuture<T>> futures) {
 		CompletableFuture<Void> allDoneFuture =
 			CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
@@ -339,15 +388,21 @@ public class CommonUtils {
 
 	public static Optional<Event> createEvent(FnKey fnKey, MDTraceInfo mdTraceInfo,
 		Event.RunType rrType, Optional<Instant> timestamp, FnReqRespPayload payload) {
-		String reqId = fnKey.service.concat("-")
-			.concat(mdTraceInfo.traceId == null ? "" : mdTraceInfo.traceId).concat("-").concat(
-				UUID.randomUUID().toString());
+		String reqId = fnKey.service == null ? "" : fnKey.service
+			.concat("-")
+			.concat(mdTraceInfo.traceId == null ? "" : mdTraceInfo.traceId)
+			.concat("-")
+			.concat(UUID.randomUUID().toString());
 		Event.EventBuilder eventBuilder = new Event.EventBuilder(fnKey.customerId, fnKey.app,
 			fnKey.service, fnKey.instanceId, Constants.NOT_APPLICABLE,
 			mdTraceInfo, rrType, timestamp, reqId,
 			fnKey.signature, Event.EventType.JavaRequest);
 		eventBuilder.setPayload(payload);
 		return eventBuilder.createEventOpt();
+	}
+
+	public static JaegerSpanContext createDefSpanContext() {
+		return defSpanContext;
 	}
 
 	public static JsonArray createArgsJsonArray(Gson gson, Object... argVals) {
@@ -376,6 +431,10 @@ public class CommonUtils {
 	public static MDTraceInfo mdTraceInfoFromContext() {
 		return new MDTraceInfo(getCurrentTraceId().orElse(null)
 			, getCurrentSpanId().orElse(null), getParentSpanId().orElse(null));
+	}
+
+	public static MDTraceInfo getDefaultTraceInfo() {
+		return defTraceInfo;
 	}
 
 	public static MultivaluedMap<String, String> buildTraceInfoMap(String serviceName,
