@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -172,7 +171,7 @@ public class CommonConfig {
 
 	private CommonConfig() throws Exception {
 		this(new Properties());
-		System.setProperty("JAEGER_AGENT_HOST", "jaeger-agent");
+		//System.setProperty("JAEGER_AGENT_HOST", "jaeger-agent");
 		Tracer tracer = CommonUtils.init("tracer");
 		try {
 			MDGlobalTracer.register(tracer);
@@ -322,7 +321,7 @@ public class CommonConfig {
 
 	public Optional<URI> getMockingURI(URI originalURI, String serviceName)
 		throws URISyntaxException {
-		if (!shouldMockService(serviceName)) {
+		if (!isIntentToMock() || !shouldMockService(serviceName)) {
 			return Optional.empty();
 		} else {
 			URIBuilder uriBuilder = new URIBuilder(originalURI);

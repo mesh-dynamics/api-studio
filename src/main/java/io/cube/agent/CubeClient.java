@@ -41,7 +41,7 @@ public class CubeClient {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CubeClient.class);
 
 
-	public CubeClient(ObjectMapper jsonMapper) throws Exception {
+	public CubeClient(ObjectMapper jsonMapper) {
 		this.jsonMapper = jsonMapper;
 	}
 
@@ -85,7 +85,8 @@ public class CubeClient {
 		try {
 			String requestBody = jsonMapper.writeValueAsString(reqBody);
 			CommonUtils.addTraceHeaders(requestBuilder, "POST");
-			StringEntity requestEntity = new StringEntity(requestBody, contentType);
+			StringEntity requestEntity = new StringEntity(requestBody, Consts.UTF_8);
+			requestEntity.setContentType(contentType);
 			requestBuilder.setEntity(requestEntity);
 			requestBuilder.setHeader("Content-Type", contentType);
 			return getResponse(requestBuilder);
@@ -117,7 +118,7 @@ public class CubeClient {
 
 	//TODO: Cleanup - phase this out
 	public Optional<FnResponse> getMockResponse(FnReqResponse fnReqResponse) {
-		URI mockURI = URI.create(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+		URI mockURI = URI.create(CommonConfig.getInstance().CUBE_MOCK_SERVICE_URI)
 			.resolve("ms/").resolve("fr");
 		HttpPost mockReqbuilder = new HttpPost(mockURI);
 		return getResponse(mockReqbuilder, fnReqResponse, TEXT_PLAIN).flatMap(response -> {
@@ -132,7 +133,7 @@ public class CubeClient {
 	}
 
 	public Optional<FnResponse> getMockResponse(Event event) {
-		URI mockURI = URI.create(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+		URI mockURI = URI.create(CommonConfig.getInstance().CUBE_MOCK_SERVICE_URI)
 			.resolve("ms/").resolve("mockFunction");
 		HttpPost mockReqbuilder = new HttpPost(mockURI);
 		return getResponse(mockReqbuilder, event, APPLICATION_JSON).flatMap(response -> {
@@ -147,7 +148,7 @@ public class CubeClient {
 	}
 
 	public Optional<Event> getMockThriftResponse(Event event) {
-		URI mockURI = URI.create(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+		URI mockURI = URI.create(CommonConfig.getInstance().CUBE_MOCK_SERVICE_URI)
 			.resolve("ms/").resolve("thrift");
 		HttpPost mockReqbuilder = new HttpPost(mockURI);
 		return getResponse(mockReqbuilder, event, APPLICATION_JSON).flatMap(response -> {
@@ -222,7 +223,8 @@ public class CubeClient {
 			String requestBody = jsonMapper.writeValueAsString(event);
 			LOGGER.debug("event : ".concat(requestBody));
 			CommonUtils.addTraceHeaders(recordReqbuilder, "POST");
-			StringEntity requestEntity = new StringEntity(requestBody, APPLICATION_JSON);
+			StringEntity requestEntity = new StringEntity(requestBody, Consts.UTF_8);
+			requestEntity.setContentType(APPLICATION_JSON);
 			recordReqbuilder.setEntity(requestEntity);
 			return getResponse(recordReqbuilder);
 		} catch (JsonProcessingException e) {

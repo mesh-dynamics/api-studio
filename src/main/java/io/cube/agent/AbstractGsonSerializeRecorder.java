@@ -3,7 +3,6 @@ package io.cube.agent;
 
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -93,17 +92,25 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
 	}
 
 	@Override
-	public boolean record(FnKey fnKey,
-		Object responseOrException,
-		RetStatus retStatus,
-		Optional<String> exceptionType,
-		Object... args) {
-		MDTraceInfo mdTraceInfo = CommonUtils.mdTraceInfoFromContext();
+	public boolean record(FnKey fnKey, Object responseOrException, RetStatus retStatus,
+		Optional<String> exceptionType, Object... args) {
+
+		MDTraceInfo mdTraceInfo;
+		if (CommonUtils.getCurrentTraceId().isEmpty()) {
+			//No span context. Initialization scenario.
+			mdTraceInfo = CommonUtils.getDefaultTraceInfo();
+
+		} else {
+			//load the created context
+			mdTraceInfo = CommonUtils.mdTraceInfoFromContext();
+		}
+
 		try {
 			FnReqRespPayload fnReqRespPayload = new FnReqRespPayload(Optional.of(Instant.now()),
-				args, responseOrException,retStatus , exceptionType);
-			Optional<Event> event = CommonUtils.createEvent(fnKey, mdTraceInfo, Event.RunType.Record,
-				Optional.of(Instant.now()), fnReqRespPayload);
+				args, responseOrException, retStatus, exceptionType);
+			Optional<Event> event = CommonUtils
+				.createEvent(fnKey, mdTraceInfo, Event.RunType.Record,
+					Optional.of(Instant.now()), fnReqRespPayload);
 			return event.map(ev -> record(ev)).orElseGet(() -> {
 				LOGGER.error("func_name : ".concat(fnKey.fnName)
 					.concat(" , trace_id : ").concat(mdTraceInfo.traceId)

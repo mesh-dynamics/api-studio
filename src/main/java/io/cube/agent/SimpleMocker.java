@@ -37,7 +37,7 @@ public class SimpleMocker implements Mocker {
 	private Gson gson;
 	CubeClient cubeClient;
 
-	public SimpleMocker(Gson gson) throws Exception {
+	public SimpleMocker(Gson gson)  {
 		jsonMapper = CubeObjectMapperProvider.getInstance();
 		cubeClient = new CubeClient(jsonMapper);
 		this.gson = gson;
@@ -46,7 +46,16 @@ public class SimpleMocker implements Mocker {
 	@Override
 	public FnResponseObj mock(FnKey fnKey,
 		Optional<Instant> prevRespTS, Optional<Type> retType, Object... args) {
-		MDTraceInfo mdTraceInfo = CommonUtils.mdTraceInfoFromContext();
+		MDTraceInfo mdTraceInfo;
+		if (CommonUtils.getCurrentTraceId().isEmpty()) {
+			//No span context. Initialization scenario.
+			mdTraceInfo = CommonUtils.getDefaultTraceInfo();
+
+		} else {
+			//load the created context
+			mdTraceInfo = CommonUtils.mdTraceInfoFromContext();
+		}
+
 		Optional<String> traceId = Optional.ofNullable(mdTraceInfo.traceId);
 		Optional<String> spanId = Optional.ofNullable(mdTraceInfo.spanId);
 		Optional<String> parentSpanId = Optional.ofNullable(mdTraceInfo.parentSpanId);
@@ -58,45 +67,54 @@ public class SimpleMocker implements Mocker {
 		FnReqRespPayload fnReqRespPayload = new FnReqRespPayload(Optional.of(Instant.now()),
 			args, null, null , null);
 		Optional<Event> event = CommonUtils.createEvent(fnKey, mdTraceInfo, RunType.Replay,
-			Optional.of(prevRespTS.orElse(fnMap.get(key))), fnReqRespPayload);
+			Optional.ofNullable(prevRespTS.orElse(fnMap.get(key))), fnReqRespPayload);
 
-		return event.map(eve -> {
-			Optional<FnResponse> fnResponse = cubeClient.getMockResponse(eve);
+		try {
+			return event.map(eve -> {
+				Optional<FnResponse> fnResponse = cubeClient.getMockResponse(eve);
 
-			return fnResponse.map(resp -> {
-				//If multiple Solr docs were returned, we need to maintain the last timestamp
-				//to be used in the next mock call.
-				if (resp.retStatus == RetStatus.Success && resp.multipleResults) {
-					fnMap.put(key, resp.timeStamp.get());
-				} else {
-					fnMap.remove(key);
-				}
+				return fnResponse.map(resp -> {
+					//If multiple Solr docs were returned, we need to maintain the last timestamp
+					//to be used in the next mock call.
+					if (resp.retStatus == RetStatus.Success && resp.multipleResults) {
+						fnMap.put(key, resp.timeStamp.get());
+					} else {
+						fnMap.remove(key);
+					}
 
-				Object retOrExceptionVal = null;
-				try {
-					retOrExceptionVal = gson.fromJson(resp.retVal,
-						retType.isPresent() ? retType.get() : getRetOrExceptionClass(resp,
-							fnKey.function.getGenericReturnType()));
-				} catch (Exception e) {
-					LOGGER.error("func_signature :".concat(eve.apiPath)
+					Object retOrExceptionVal = null;
+					try {
+						retOrExceptionVal = gson.fromJson(resp.retVal,
+							retType.isPresent() ? retType.get() : getRetOrExceptionClass(resp,
+								fnKey.function.getGenericReturnType()));
+					} catch (Exception e) {
+						LOGGER.error("func_signature :".concat(eve.apiPath)
 							.concat(" , trace_id : ").concat(eve.getTraceId()), e);
+						return new FnResponseObj(null, Optional.empty(), RetStatus.Success,
+							Optional.empty());
+					}
+
+					return new FnResponseObj(retOrExceptionVal, resp.timeStamp, resp.retStatus,
+						resp.exceptionType);
+				}).orElseGet(() -> {
+					LOGGER.error(
+						"No Matching Response Received : trace_id : ".concat(eve.getTraceId())
+							.concat(" , func_signature : ".concat(eve.apiPath)));
 					return new FnResponseObj(null, Optional.empty(), RetStatus.Success,
 						Optional.empty());
-				}
-
-				return new FnResponseObj(retOrExceptionVal, resp.timeStamp, resp.retStatus,
-					resp.exceptionType);
+				});
 			}).orElseGet(() -> {
-				LOGGER.error("No Matching Response Received : trace_id : ".concat(eve.getTraceId())
-					.concat(" , func_signature : ".concat(eve.apiPath)));
+				LOGGER.error("Not able to form an event : trace_id :".concat(traceId.orElse(" NA "))
+					.concat(" , func_signature : ".concat(fnKey.signature)));
 				return new FnResponseObj(null, Optional.empty(), RetStatus.Success,
 					Optional.empty());
 			});
-		}).orElseGet(() -> {
-			LOGGER.error("Not able to form an event : trace_id :".concat(traceId.orElse(" NA "))
-				.concat(" , func_signature : ".concat(fnKey.signature)));
-			return new FnResponseObj(null, Optional.empty(), RetStatus.Success, Optional.empty());
-		});
+		} catch (Exception ex) {
+			LOGGER.error("Exception occurred while mocking function! Function Key : " + fnKey);
+		}
+
+		return new FnResponseObj(null, Optional.empty(), RetStatus.Success,
+			Optional.empty());
 	}
 
 	private Type getRetOrExceptionClass(FnResponse response, Type returnType) throws Exception {

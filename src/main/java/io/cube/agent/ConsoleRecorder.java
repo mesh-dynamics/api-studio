@@ -1,8 +1,6 @@
 package io.cube.agent;
 
-import java.io.FileNotFoundException;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.gson.Gson;
