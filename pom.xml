@@ -12,6 +12,13 @@
         <version.log4j>2.11.1</version.log4j>
         <version.java>11</version.java>
     </properties>
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub CubeIO Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/cube-io-corp/jdbc-wrapper</url>
+        </repository>
+    </distributionManagement>
 
     <repositories>
         <repository>
