@@ -343,7 +343,7 @@ public class CommonUtils {
 			.concat(mdTraceInfo.traceId == null ? "" : mdTraceInfo.traceId).concat("-").concat(
 				UUID.randomUUID().toString());
 		Event.EventBuilder eventBuilder = new Event.EventBuilder(fnKey.customerId, fnKey.app,
-			fnKey.service, fnKey.instanceId, "NA",
+			fnKey.service, fnKey.instanceId, Constants.NOT_APPLICABLE,
 			mdTraceInfo, rrType, timestamp, reqId,
 			fnKey.signature, Event.EventType.JavaRequest);
 		eventBuilder.setPayload(payload);

@@ -201,9 +201,9 @@ public class Utils {
 			}*/
 
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
-				service.get(), instance.orElse("NA"), isRecordedAtSource ? "NA" : collection.get(),
+				service.get(), instance.orElse(Constants.NOT_APPLICABLE), isRecordedAtSource ? Constants.NOT_APPLICABLE : collection.get(),
 				mdTraceInfo, runType.get(), timestamp,
-				reqId.orElse("NA"),
+				reqId.orElse(Constants.NOT_APPLICABLE),
 				apiPath, Event.EventType.HTTPRequest);
 			eventBuilder.setPayload(httpRequestPayload);
 			Event event = eventBuilder.createEvent();
@@ -279,9 +279,9 @@ public class Utils {
 				span.finish();
 			}*/
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
-				service.get(), instance.orElse("NA"), isRecordedAtSource ? "NA" : collection.get(),
+				service.get(), instance.orElse(Constants.NOT_APPLICABLE), isRecordedAtSource ? Constants.NOT_APPLICABLE : collection.get(),
 				mdTraceInfo, runType.get(), timestamp,
-				reqId.orElse("NA"),
+				reqId.orElse(Constants.NOT_APPLICABLE),
 				apiPath, Event.EventType.HTTPResponse);
 			eventBuilder.setPayload(httpResponsePayload);
 			Event event = eventBuilder.createEvent();

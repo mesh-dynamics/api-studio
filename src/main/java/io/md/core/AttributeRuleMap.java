@@ -1,7 +1,6 @@
 package io.md.core;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Map;
@@ -22,5 +21,8 @@ public class AttributeRuleMap {
 		return Optional.ofNullable(attributeNameVsRule.get(attributeName));
 	}
 
+	public Map<String, TemplateEntry> getAttributeNameVsRule() {
+		return attributeNameVsRule;
+	}
 
 }

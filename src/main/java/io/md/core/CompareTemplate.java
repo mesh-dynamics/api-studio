@@ -110,6 +110,13 @@ public class CompareTemplate {
 		this.prefixpath = prefixpath;
 	}
 
+	public CompareTemplate(String prefixpath, AttributeRuleMap attributeRuleMap) {
+		super();
+		rules = new HashMap<>();
+		this.prefixpath = prefixpath;
+		this.appLevelAttributeRuleMap = Optional.ofNullable(attributeRuleMap);
+	}
+
 	/**
 	 * @param path
 	 * @return The rule corresponding to the path. Search from the path upwards, till a matching rule
@@ -159,6 +166,11 @@ public class CompareTemplate {
 	@JsonIgnore
 	public void setAppLevelAttributeRuleMap(AttributeRuleMap ruleMap) {
 		this.appLevelAttributeRuleMap = Optional.of(ruleMap);
+	}
+
+	@JsonIgnore
+	public Optional<AttributeRuleMap> getAppLevelAttributeRuleMap() {
+		return this.appLevelAttributeRuleMap;
 	}
 
 	public CompareTemplate subsetWithPrefix(String prefix) {
@@ -285,7 +297,7 @@ public class CompareTemplate {
 	public Optional<TemplateEntry> get(JsonPointer path) {
 		return Optional.ofNullable(rules.get(path.toString())).or(() ->
 			appLevelAttributeRuleMap.flatMap(map ->
-				map.getRule(path.last().toString())));
+				map.getRule(path.last().getMatchingProperty())));
 	}
 
 
