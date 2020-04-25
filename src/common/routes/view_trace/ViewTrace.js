@@ -368,19 +368,25 @@ class ViewTrace extends Component {
                 })
             });
             if (response.ok) {
+                json = await response.json();
+                dataList = json;
                 const { cube } = this.props;
                 const { instances, selectedApp } = cube;
+                let instanceId = "";
+                for(let eachRequestItem of dataList.data.res) {
+                    if(eachRequestItem.instanceId) {
+                        instanceId = eachRequestItem.instanceId;
+                        break;
+                    }
+                }
                 for(let eachInstance of instances) {
-                    if(eachInstance.app.name === selectedApp) {
+                    if(eachInstance.app.name === selectedApp && eachInstance.name.toLowerCase() === instanceId.toLowerCase()) {
                         this.loggingURL = eachInstance.loggingURL;
                         break;
                     }
                 }
-                json = await response.json();
-                dataList = json;
                 let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.data.res);
                 this.layoutDataWithDiff.push(...diffLayoutData);
-
                 fetchedResults = dataList.data.res.length;
                 totalNumberOfRequest = dataList.data.numFound;
                 let allFetched = false;
@@ -887,7 +893,7 @@ class ViewTrace extends Component {
                                         </td>
                                     </tr>
                                     {recProcessedTraceDataFlattenTreeResCount.map((item, index) => {
-                                        return (<tr key={item.recordReqId + item.replayReqId} onClick={(event) =>  item.isParentmocked ? event.stopPropagation() : this.showDiff(item)} style={{display: item.show ? "" : "none", cursor: "pointer", backgroundColor: item.isParentmocked ? "#A9A9A9": (selectedDiffItem && item.recordReqId === selectedDiffItem.recordReqId && item.replayReqId === selectedDiffItem.replayReqId) ? "#eee" : "#fff"}}>
+                                        return (<tr key={item.recordReqId + item.replayReqId + index} onClick={(event) =>  item.isParentmocked ? event.stopPropagation() : this.showDiff(item)} style={{display: item.show ? "" : "none", cursor: "pointer", backgroundColor: item.isParentmocked ? "#A9A9A9": (selectedDiffItem && item.recordReqId === selectedDiffItem.recordReqId && item.replayReqId === selectedDiffItem.replayReqId) ? "#eee" : "#fff"}}>
                                             <td style={{verticalAlign: "middle", padding: "12px"}}>
                                                 {this.getIndents(item.depth)}
                                                 {item.depth === 0 ? (<span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>) : (<span><i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i></span>)}
@@ -952,7 +958,7 @@ class ViewTrace extends Component {
                                         </td>
                                     </tr>
                                     {repProcessedTraceDataFlattenTreeResCount.map((item, index) => {
-                                        return (<tr key={item.recordReqId + item.replayReqId} onClick={() => this.showDiff(item)} style={{display: item.show ? "" : "none", cursor: "pointer", backgroundColor: (selectedDiffItem && item.recordReqId === selectedDiffItem.recordReqId && item.replayReqId === selectedDiffItem.replayReqId) ? "#eee" : "#fff"}}>
+                                        return (<tr key={item.recordReqId + item.replayReqId + index} onClick={() => this.showDiff(item)} style={{display: item.show ? "" : "none", cursor: "pointer", backgroundColor: (selectedDiffItem && item.recordReqId === selectedDiffItem.recordReqId && item.replayReqId === selectedDiffItem.replayReqId) ? "#eee" : "#fff"}}>
                                             <td style={{verticalAlign: "middle", padding: "12px"}}>
                                                 {this.getIndents(item.depth)}
                                                 {item.depth === 0 ? (<span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>) : (<span><i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i></span>)}
