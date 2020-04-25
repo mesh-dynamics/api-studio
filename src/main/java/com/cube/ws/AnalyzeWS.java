@@ -476,7 +476,7 @@ public class AnalyzeWS {
 			    , replayedResponse, matchRes.recordTraceId, matchRes.replayTraceId,
                 matchRes.recordedSpanId, matchRes.recordedParentSpanId,
                 matchRes.replayedSpanId, matchRes.replayedParentSpanId,
-                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
 
 		    String resultJson = null;
 		    try {
@@ -708,7 +708,7 @@ public class AnalyzeWS {
                     matchRes.recordedSpanId, matchRes.recordedParentSpanId,
                     matchRes.replayedSpanId, matchRes.replayedParentSpanId,
 	                recordReqTime, recordRespTime,
-	                replayReqTime, replayRespTime);
+	                replayReqTime, replayRespTime, Optional.of(replay.instanceId));
             }).collect(Collectors.toList());
         }).orElse(Collections.emptyList());
 
@@ -1444,7 +1444,8 @@ public class AnalyzeWS {
 	                    Optional<Long> recordReqTime,
 					    Optional<Long> recordRespTime,
 		                Optional<Long> replayReqTime,
-		                Optional<Long> replayRespTime
+		                Optional<Long> replayRespTime,
+                    Optional<String> instanceId
 	        ) {
             this.recordReqId = recordReqId;
             this.replayReqId = replayReqId;
@@ -1470,6 +1471,7 @@ public class AnalyzeWS {
 		    this.recordRespTime = recordReqTime;
 		    this.replayReqTime = recordReqTime;
 		    this.replayRespTime = recordReqTime;
+		    this.instanceId = instanceId;
 	    }
 
         public final Optional<String> recordReqId;
@@ -1490,6 +1492,7 @@ public class AnalyzeWS {
 	    public final Optional<Long> recordRespTime;
 	    public final Optional<Long> replayReqTime;
 	    public final Optional<Long> replayRespTime;
+	    public final Optional<String> instanceId;
 
 	    //Using JsonRawValue on <Optional> field results in Jackson serialization failure.
 	    //Hence getMethods() are used to fetch the value.
