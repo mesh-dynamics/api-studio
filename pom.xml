@@ -5,15 +5,28 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.cube</groupId>
-    <artifactId>jdbcwrapper</artifactId>
+    <artifactId>md-jdbcwrapper</artifactId>
     <packaging>jar</packaging>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.2.0</version>
     <properties>
         <version.log4j>2.11.1</version.log4j>
         <version.java>11</version.java>
-<!--        <version.jersey>2.27</version.jersey>-->
-<!--        <version.jaeger>0.32.0</version.jaeger>-->
     </properties>
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub CubeIO Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/cube-io-corp/jdbc-wrapper</url>
+        </repository>
+    </distributionManagement>
+
+    <repositories>
+        <repository>
+            <id>github</id>
+            <name>GitHub OWNER Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/cube-io-corp/agent</url>
+        </repository>
+    </repositories>
 
     <dependencyManagement>
         <dependencies>
@@ -48,25 +61,43 @@
                 <version>2.22.0</version>
             </plugin>
             <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.2</version>
                 <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>io.cube.CubeDriver</mainClass>
-                        </manifest>
-                    </archive>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <appendAssemblyId>false</appendAssemblyId>
+                    <relocations>
+                        <relocation>
+                            <pattern>io.jaegertracing</pattern>
+                            <shadedPattern>io.md.jaegertracing</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.thrift</pattern>
+                            <shadedPattern>io.md.apache.thrift</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>io.opentracing</pattern>
+                            <shadedPattern>io.md.opentracing</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.squareup.okhttp3</pattern>
+                            <shadedPattern>io.md.squareup.okhttp3</shadedPattern>
+                        </relocation>
+                    </relocations>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>make-assembly</id> <!-- this is used for inheritance merges -->
-                        <phase>package</phase> <!-- bind to the packaging phase -->
+                        <phase>package</phase>
                         <goals>
-                            <goal>single</goal>
+                            <goal>shade</goal>
                         </goals>
+                        <configuration>
+                            <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>io.cube.MDDriver</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -76,7 +107,7 @@
         <dependency>
             <groupId>io.cube</groupId>
             <artifactId>agent</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>1.0.23</version>
         </dependency>
     </dependencies>
 

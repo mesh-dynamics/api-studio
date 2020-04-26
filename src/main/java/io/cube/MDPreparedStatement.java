@@ -26,9 +26,9 @@ import java.util.Optional;
 
 import com.google.gson.reflect.TypeToken;
 
-import io.cube.agent.FnKey;
+import io.md.utils.FnKey;
 
-public class CubePreparedStatement extends CubeStatement implements PreparedStatement {
+public class MDPreparedStatement extends MDStatement implements PreparedStatement {
 
     private static Type integerType = new TypeToken<Integer>() {}.getType();
     private final PreparedStatement preparedStatement;
@@ -39,15 +39,15 @@ public class CubePreparedStatement extends CubeStatement implements PreparedStat
     private FnKey gmdFnkey;
     private FnKey gpmdFnkey;
 
-    public CubePreparedStatement (CubeConnection cubeConnection, Config config, int statementInstanceId) {
-        super(cubeConnection, config, statementInstanceId);
+    public MDPreparedStatement(MDConnection mdConnection, Config config, int statementInstanceId) {
+        super(mdConnection, config, statementInstanceId);
         this.preparedStatement = null;
         this.lastExecutedQuery = null;
         this.config = config;
     }
 
-    public CubePreparedStatement (PreparedStatement preparedStatement, String query, CubeConnection cubeConnection, Config config) {
-        super(preparedStatement, cubeConnection, config);
+    public MDPreparedStatement(PreparedStatement preparedStatement, String query, MDConnection mdConnection, Config config) {
+        super(preparedStatement, mdConnection, config);
         this.preparedStatement = preparedStatement;
         this.lastExecutedQuery = query;
         this.config = config;
@@ -57,30 +57,30 @@ public class CubePreparedStatement extends CubeStatement implements PreparedStat
     public ResultSet executeQuery() throws SQLException {
         if (null == exqFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            exqFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            exqFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, exqFnKey, Optional.of(integerType), this.statementInstanceId);
-            CubeResultSet mockResultSet = new CubeResultSet.Builder(config).cubeStatement(this).resultSetInstanceId((int)retVal).build();
+            MDResultSet mockResultSet = new MDResultSet.Builder(config).mdStatement(this).resultSetInstanceId((int)retVal).build();
             return mockResultSet;
         }
 
-        CubeResultSet cubeResultSet = new CubeResultSet.Builder(config).resultSet(preparedStatement.executeQuery()).cubeStatement(this).build();
+        MDResultSet mdResultSet = new MDResultSet.Builder(config).resultSet(preparedStatement.executeQuery()).mdStatement(this).build();
         if (config.intentResolver.isIntentToRecord()) {
-            Utils.record(cubeResultSet.getResultSetInstanceId(), config, exqFnKey, this.statementInstanceId);
+            Utils.record(mdResultSet.getResultSetInstanceId(), config, exqFnKey, this.statementInstanceId);
         }
 
-        return cubeResultSet;
+        return mdResultSet;
     }
 
     @Override
     public int executeUpdate() throws SQLException {
         if (null == euFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            euFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            euFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (int) Utils.recordOrMock(config, euFnKey, (fnArgs) -> preparedStatement.executeUpdate(),
@@ -231,8 +231,8 @@ public class CubePreparedStatement extends CubeStatement implements PreparedStat
     public boolean execute() throws SQLException {
         if (null == exFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            exFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            exFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (boolean) Utils.recordOrMock(config, exFnKey, (fnArgs) -> preparedStatement.execute(),
@@ -285,17 +285,17 @@ public class CubePreparedStatement extends CubeStatement implements PreparedStat
     public ResultSetMetaData getMetaData() throws SQLException {
         if (null == gmdFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gmdFnkey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                config.commonConfig.serviceName, method);
+            gmdFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                Config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, gmdFnkey, Optional.of(integerType), this.statementInstanceId);
-            CubeResultSetMetaData mockMetadata = new CubeResultSetMetaData(this, config, (int) retVal);
+            MDResultSetMetaData mockMetadata = new MDResultSetMetaData(this, config, (int) retVal);
             return mockMetadata;
         }
 
-        CubeResultSetMetaData metaData = new CubeResultSetMetaData(preparedStatement.getMetaData(), this, config);
+        MDResultSetMetaData metaData = new MDResultSetMetaData(preparedStatement.getMetaData(), this, config);
         if (config.intentResolver.isIntentToRecord()) {
             Utils.record(metaData.getResultSetMetaDataInstanceId(), config, gmdFnkey, this.statementInstanceId);
         }
@@ -342,17 +342,17 @@ public class CubePreparedStatement extends CubeStatement implements PreparedStat
     public ParameterMetaData getParameterMetaData() throws SQLException {
         if (null == gpmdFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gpmdFnkey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                config.commonConfig.serviceName, method);
+            gpmdFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                Config.commonConfig.serviceName, method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, gpmdFnkey, Optional.of(integerType), this.statementInstanceId);
-            CubeParameterMetaData mockMetadata = new CubeParameterMetaData(this, config, (int) retVal);
+            MDParameterMetaData mockMetadata = new MDParameterMetaData(this, config, (int) retVal);
             return mockMetadata;
         }
 
-        CubeParameterMetaData metaData = new CubeParameterMetaData(preparedStatement.getParameterMetaData(), this, config);
+        MDParameterMetaData metaData = new MDParameterMetaData(preparedStatement.getParameterMetaData(), this, config);
         if (config.intentResolver.isIntentToRecord()) {
             Utils.record(metaData.getParameterMetaDataInstanceId(), config, gpmdFnkey, this.statementInstanceId);
         }

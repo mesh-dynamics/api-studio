@@ -20,9 +20,10 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Map;
 
-import io.cube.agent.FnKey;
+import io.md.utils.FnKey;
 
-public class CubeCallableStatement extends CubePreparedStatement implements CallableStatement {
+
+public class MDCallableStatement extends MDPreparedStatement implements CallableStatement {
 
     private final CallableStatement callableStatement;
     private final Config config;
@@ -72,15 +73,15 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
 
 
 
-    public CubeCallableStatement (CubeConnection cubeConnection, Config config, int statementInstanceId) {
-        super(cubeConnection, config, statementInstanceId);
+    public MDCallableStatement(MDConnection mdConnection, Config config, int statementInstanceId) {
+        super(mdConnection, config, statementInstanceId);
         this.callableStatement = null;
         this.lastExecutedQuery = null;
         this.config = config;
     }
 
-    public CubeCallableStatement (CallableStatement callableStatement, String query, CubeConnection cubeConnection, Config config) {
-        super(callableStatement, query, cubeConnection, config);
+    public MDCallableStatement(CallableStatement callableStatement, String query, MDConnection mdConnection, Config config) {
+        super(callableStatement, query, mdConnection, config);
         this.callableStatement = callableStatement;
         this.lastExecutedQuery = query;
         this.config = config;
@@ -104,8 +105,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public boolean wasNull() throws SQLException {
         if (null == wnFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            wnFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            wnFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (boolean) Utils.recordOrMock(config, wnFnKey, (fnArgs) -> callableStatement.wasNull(),
@@ -116,8 +117,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public String getString(int parameterIndex) throws SQLException {
         if (null == gsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gsFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -128,8 +129,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public boolean getBoolean(int parameterIndex) throws SQLException {
         if (null == gbFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gbFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -141,8 +142,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public byte getByte(int parameterIndex) throws SQLException {
         if (null == gbyFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbyFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gbyFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -154,8 +155,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public short getShort(int parameterIndex) throws SQLException {
         if (null == gshcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gshcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gshcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -167,8 +168,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public int getInt(int parameterIndex) throws SQLException {
         if (null == gicFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gicFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gicFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -180,8 +181,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public long getLong(int parameterIndex) throws SQLException {
         if (null == glcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            glcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            glcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -193,8 +194,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public float getFloat(int parameterIndex) throws SQLException {
         if (null == gfFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gfFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gfFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -206,8 +207,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public double getDouble(int parameterIndex) throws SQLException {
         if (null == gdFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gdFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gdFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -219,8 +220,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public BigDecimal getBigDecimal(int parameterIndex, int scale) throws SQLException {
         if (null == gbdcsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbdcsFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gbdcsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -232,8 +233,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public byte[] getBytes(int parameterIndex) throws SQLException {
         if (null == gbysFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbysFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gbysFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -245,8 +246,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public Date getDate(int parameterIndex) throws SQLException {
         if (null == gdciFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gdciFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gdciFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -258,8 +259,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public Time getTime(int parameterIndex) throws SQLException {
         if (null == gtiFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gtiFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gtiFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -271,8 +272,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public Timestamp getTimestamp(int parameterIndex) throws SQLException {
         if (null == gtFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gtFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gtFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -284,8 +285,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public Object getObject(int parameterIndex) throws SQLException {
         if (null == goFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            goFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            goFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -297,8 +298,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public BigDecimal getBigDecimal(int parameterIndex) throws SQLException {
         if (null == gbdFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbdFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gbdFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -350,8 +351,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public Date getDate(int parameterIndex, Calendar cal) throws SQLException {
         if (null == gdcicFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gdcicFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gdcicFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -363,8 +364,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public Time getTime(int parameterIndex, Calendar cal) throws SQLException {
         if (null == gticFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gticFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gticFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -376,8 +377,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public Timestamp getTimestamp(int parameterIndex, Calendar cal) throws SQLException {
         if (null == gtcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gtcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gtcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -417,8 +418,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public URL getURL(int parameterIndex) throws SQLException {
         if (null == guFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            guFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            guFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -605,8 +606,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public String getString(String parameterName) throws SQLException {
         if (null == gscFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gscFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gscFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;
@@ -618,8 +619,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public boolean getBoolean(String parameterName) throws SQLException {
         if (null == gbcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gbcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;
@@ -631,8 +632,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public byte getByte(String parameterName) throws SQLException {
         if (null == gbyFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbyFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gbyFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;
@@ -644,8 +645,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public short getShort(String parameterName) throws SQLException {
         if (null == gshFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gshFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gshFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;
@@ -657,8 +658,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public int getInt(String parameterName) throws SQLException {
         if (null == giFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            giFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            giFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;
@@ -670,8 +671,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public long getLong(String parameterName) throws SQLException {
         if (null == glclFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            glclFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            glclFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;
@@ -683,8 +684,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public float getFloat(String parameterName) throws SQLException {
         if (null == gfcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gfcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gfcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;
@@ -696,8 +697,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public double getDouble(String parameterName) throws SQLException {
         if (null == gdcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gdcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gdcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;
@@ -709,8 +710,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public byte[] getBytes(String parameterName) throws SQLException {
         if (null == gbyscFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbyscFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gbyscFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;
@@ -722,8 +723,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public Date getDate(String parameterName) throws SQLException {
         if (null == gdclFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gdclFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gdclFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;
@@ -735,8 +736,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public Time getTime(String parameterName) throws SQLException {
         if (null == gticlFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gticlFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gticlFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;
@@ -748,8 +749,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public Timestamp getTimestamp(String parameterName) throws SQLException {
         if (null == gtclFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gtclFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gtclFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;
@@ -761,8 +762,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public Object getObject(String parameterName) throws SQLException {
         if (null == gocFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gocFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gocFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;
@@ -774,8 +775,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public BigDecimal getBigDecimal(String parameterName) throws SQLException {
         if (null == gbdcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbdcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gbdcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;
@@ -827,8 +828,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public Date getDate(String parameterName, Calendar cal) throws SQLException {
         if (null == gdclcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gdclcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gdclcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;
@@ -840,8 +841,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public Time getTime(String parameterName, Calendar cal) throws SQLException {
         if (null == gticlcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gticlcFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gticlcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;
@@ -853,8 +854,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public Timestamp getTimestamp(String parameterName, Calendar cal) throws SQLException {
         if (null == gtccFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gtccFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gtccFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;
@@ -866,8 +867,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public URL getURL(String parameterName) throws SQLException {
         if (null == gurFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gurFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gurFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;
@@ -983,8 +984,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public String getNString(int parameterIndex) throws SQLException {
         if (null == gnsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gnsFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gnsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -996,8 +997,8 @@ public class CubeCallableStatement extends CubePreparedStatement implements Call
     public String getNString(String parameterName) throws SQLException {
         if (null == gnscFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gnscFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gnscFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         this.parameterName = parameterName;

@@ -15,11 +15,12 @@ import java.util.logging.Logger;
 
 import com.google.gson.reflect.TypeToken;
 
-import io.cube.agent.FnKey;
+import io.md.utils.FnKey;
 
-public class CubeDriver implements Driver {
 
-    private static final Driver INSTANCE = new CubeDriver();
+public class MDDriver implements Driver {
+
+    private static final Driver INSTANCE = new MDDriver();
     private static Type integerType = new TypeToken<Integer>() {}.getType();
     private static final Config config;
     private int driverInstanceId;
@@ -28,10 +29,10 @@ public class CubeDriver implements Driver {
     private FnKey driverFnKey;
     private FnKey propertyFnKey;
 
-    public CubeDriver() {
+    public MDDriver() {
     }
 
-    public CubeDriver(Driver driver, int instanceId) {
+    public MDDriver(Driver driver, int instanceId) {
         this.driver = driver;
         this.driverInstanceId = instanceId;
     }
@@ -41,13 +42,13 @@ public class CubeDriver implements Driver {
             DriverManager.registerDriver(INSTANCE);
             config = new Config();
         } catch (SQLException e) {
-            throw new IllegalStateException("Could not register Cube Driver with DriverManager", e);
+            throw new IllegalStateException("Could not register MD Driver with DriverManager", e);
         }
     }
 
     /**
      * Get a Connection to the database from the real driver that this
-     * wrapper is tracing on. In record phase, a CubeConnection object which
+     * wrapper is tracing on. In record phase, a MDConnection object which
      * wraps the real Connection is returned. In mock phase, the recorded
      * Connection object is returned.
      *
@@ -64,11 +65,11 @@ public class CubeDriver implements Driver {
 
         if (null == connectFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            connectFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            connectFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
-        Optional<CubeDriver> realDriver = getRealDriver(url);
+        Optional<MDDriver> realDriver = getRealDriver(url);
 
         String realUrl = extractRealURL(url);
 
@@ -78,7 +79,7 @@ public class CubeDriver implements Driver {
 
         if (config.intentResolver.isIntentToMock()) {
             Object retVal = Utils.mock(config, connectFnKey, Optional.of(integerType), url, info, realDriver.get().driverInstanceId);
-            CubeConnection mockConnection = new CubeConnection(config, (int) retVal);
+            MDConnection mockConnection = new MDConnection(config, (int) retVal);
             return mockConnection;
         }
 
@@ -88,12 +89,12 @@ public class CubeDriver implements Driver {
             throw new SQLException("Invalid or unknown driver url : " + realUrl);
         }
 
-        CubeConnection cubeConnection = new CubeConnection(conn, realDriver.get().driver, realUrl, config);
+        MDConnection mdConnection = new MDConnection(conn, realDriver.get().driver, realUrl, config);
         if (config.intentResolver.isIntentToRecord()) {
-            Utils.record(cubeConnection.getConnectionInstanceId(), config, connectFnKey, url, info, realDriver.get().driverInstanceId);
+            Utils.record(mdConnection.getConnectionInstanceId(), config, connectFnKey, url, info, realDriver.get().driverInstanceId);
         }
 
-        return cubeConnection;
+        return mdConnection;
     }
 
     /**
@@ -106,15 +107,15 @@ public class CubeDriver implements Driver {
      * no underlying driver that accepts the URL.
      * @throws SQLException if a database access error occurs.
      */
-    private Optional<CubeDriver> getRealDriver(String url) throws SQLException {
+    private Optional<MDDriver> getRealDriver(String url) throws SQLException {
         if (null == url || url.trim().isEmpty()) {
             throw new IllegalArgumentException("url is required");
         }
 
         if (null == driverFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            driverFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            driverFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         Optional<Driver> realDriver;
@@ -126,7 +127,7 @@ public class CubeDriver implements Driver {
 
             if (config.intentResolver.isIntentToMock()) {
                 Object retVal = Utils.mock(config, driverFnKey, Optional.of(integerType), url);
-                return Optional.of(new CubeDriver(null, (int) retVal));
+                return Optional.of(new MDDriver(null, (int) retVal));
             }
 
             try {
@@ -145,7 +146,7 @@ public class CubeDriver implements Driver {
                     Utils.record(instanceId, config, driverFnKey, url);
                 }
 
-                return Optional.of(new CubeDriver(realDriver.orElse(null), instanceId));
+                return Optional.of(new MDDriver(realDriver.orElse(null), instanceId));
 
             } catch (Exception e) {
                 throw new SQLException(e);
@@ -200,14 +201,14 @@ public class CubeDriver implements Driver {
     public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
         if (null == propertyFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            propertyFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            propertyFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (DriverPropertyInfo[]) Utils.recordOrMock(config, propertyFnKey, (fnArgs) -> {
                 String fnArg1 = (String)fnArgs[0];
                 Properties fnArg2 = (Properties)fnArgs[1];
-                Optional<CubeDriver> realDriver = getRealDriver(fnArg1);
+                Optional<MDDriver> realDriver = getRealDriver(fnArg1);
                 DriverPropertyInfo[] propertyInfo;
                 if (realDriver.isEmpty()) {
                     propertyInfo = new DriverPropertyInfo[0];

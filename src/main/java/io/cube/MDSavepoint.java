@@ -4,12 +4,12 @@ import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 
-import io.cube.agent.FnKey;
+import io.md.utils.FnKey;
 
-public class CubeSavepoint implements Savepoint {
+public class MDSavepoint implements Savepoint {
 
     private final Savepoint savepoint;
-    private final CubeConnection cubeConnection;
+    private final MDConnection mdConnection;
     private final int savepointInstanceId;
     private final Config config;
     private FnKey gsFnKey;
@@ -19,16 +19,16 @@ public class CubeSavepoint implements Savepoint {
         return savepointInstanceId;
     }
 
-    public CubeSavepoint(CubeConnection cubeConnection, Config config, int savepointInstanceId) {
+    public MDSavepoint(MDConnection mdConnection, Config config, int savepointInstanceId) {
         this.savepoint = null;
-        this.cubeConnection = cubeConnection;
+        this.mdConnection = mdConnection;
         this.config = config;
         this.savepointInstanceId = savepointInstanceId;
     }
 
-    public CubeSavepoint(Savepoint savepoint, CubeConnection cubeConnection, Config config) {
+    public MDSavepoint(Savepoint savepoint, MDConnection mdConnection, Config config) {
         this.savepoint = savepoint;
-        this.cubeConnection = cubeConnection;
+        this.mdConnection = mdConnection;
         this.config = config;
         this.savepointInstanceId = System.identityHashCode(this);
     }
@@ -37,8 +37,8 @@ public class CubeSavepoint implements Savepoint {
     public int getSavepointId() throws SQLException {
         if (null == gsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gsFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (int) Utils.recordOrMock(config, gsFnKey, (fnArgs) -> savepoint.getSavepointId(),
@@ -49,8 +49,8 @@ public class CubeSavepoint implements Savepoint {
     public String getSavepointName() throws SQLException {
         if (null == gsnFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gsnFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
-                    config.commonConfig.serviceName, method);
+            gsnFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                    Config.commonConfig.serviceName, method);
         }
 
         return (String) Utils.recordOrMock(config, gsnFnKey, (fnArgs) -> savepoint.getSavepointName(),
