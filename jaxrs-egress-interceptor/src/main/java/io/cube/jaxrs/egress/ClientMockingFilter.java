@@ -1,4 +1,4 @@
-package com.cube.interceptor.jaxrs.egress;
+package io.cube.jaxrs.egress;
 
 import java.io.IOException;
 import java.net.URI;
@@ -43,11 +43,11 @@ public class ClientMockingFilter implements ClientRequestFilter {
 		} catch (URISyntaxException e) {
 			LOGGER.error(String.valueOf(
 				Map.of(Constants.MESSAGE, "Mocking filter issue, exception during setting URI!",
-					Constants.EXCEPTION_STACK, e.getMessage())));
+					Constants.EXCEPTION_STACK, e)));
 		} catch (Exception ex) {
 			LOGGER.error(String.valueOf(
 				Map.of(Constants.MESSAGE, "Mocking filter issue, exception occured!",
-					Constants.EXCEPTION_STACK, ex.getMessage())));
+					Constants.EXCEPTION_STACK, ex)));
 		}
 	}
 }

@@ -1,4 +1,4 @@
-package com.cube.interceptor.jaxrs.ingress;
+package io.cube.jaxrs.ingress;
 
 import java.time.Instant;
 import java.util.Map;

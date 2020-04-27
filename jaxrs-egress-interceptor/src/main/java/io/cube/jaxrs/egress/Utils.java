@@ -1,7 +1,6 @@
-package com.cube.interceptor.jaxrs.egress;
+package io.cube.jaxrs.egress;
 
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;

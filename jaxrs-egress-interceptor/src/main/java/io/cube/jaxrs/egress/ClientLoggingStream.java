@@ -1,4 +1,4 @@
-package com.cube.interceptor.jaxrs.egress;
+package io.cube.jaxrs.egress;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FilterOutputStream;

@@ -1,4 +1,4 @@
-package com.cube.interceptor.jaxrs.egress;
+package io.cube.jaxrs.egress;
 
 import java.io.IOException;
 import java.util.List;
@@ -32,10 +32,10 @@ public class ClientTracingFilter implements ClientRequestFilter {
 					clientHeaders.add(entry.getKey(), entValue);
 				}
 			}
-		} catch (Exception e) {
+		} catch (Exception ex) {
 			LOGGER.error(String.valueOf(Map.of(Constants.MESSAGE,
-				"Exception occured during logging, proceeding to the application!")),
-				e.getMessage());
+				"Exception occured during logging, proceeding to the application!",
+				Constants.EXCEPTION_STACK, ex)));
 		}
 	}
 }

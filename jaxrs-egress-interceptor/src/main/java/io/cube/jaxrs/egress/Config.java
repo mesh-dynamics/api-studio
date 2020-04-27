@@ -1,4 +1,4 @@
-package com.cube.interceptor.jaxrs.ingress;
+package io.cube.jaxrs.egress;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;

@@ -1,4 +1,4 @@
-package com.cube.interceptor.jaxrs.egress;
+package io.cube.jaxrs.egress;
 
 import static io.md.utils.Utils.getTraceInfo;
 
@@ -26,11 +26,13 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.CommonConfig;
+import io.jaegertracing.internal.JaegerSpanContext;
 import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
 import io.opentracing.Scope;
 import io.opentracing.Span;
+import io.opentracing.SpanContext;
 
 @Priority(4000)
 public class ClientLoggingFilter implements ClientRequestFilter, ClientResponseFilter {
@@ -43,20 +45,21 @@ public class ClientLoggingFilter implements ClientRequestFilter, ClientResponseF
 		config = new Config();
 	}
 
-	private Span newClientSpan;
-	private Scope clientScope;
-
 	@Override
 	public void filter(ClientRequestContext requestContext) throws IOException {
 		try {
-			Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
+			Optional<Span> ingressSpan = CommonUtils.getCurrentSpan();
 
-			newClientSpan = CommonUtils.startClientSpan(Constants.MD_CHILD_SPAN,
-				currentSpan.map(Span::context).orElse(null), false);
+			//Empty ingress span pertains to DB initialization scenarios.
+			SpanContext spanContext = ingressSpan.map(Span::context)
+				.orElse(CommonUtils.createDefSpanContext());
 
-			clientScope = CommonUtils.activateSpan(newClientSpan);
+			Span clientSpan = CommonUtils
+				.startClientSpan(Constants.MD_CHILD_SPAN, spanContext, false);
 
-			// Do not log request in case the egress serivce is to be mocked
+			Scope clientScope = CommonUtils.activateSpan(clientSpan);
+
+			// Do not log request in case the egress service is to be mocked
 			String service = CommonUtils.getEgressServiceName(requestContext.getUri());
 			CommonConfig commonConfig = CommonConfig.getInstance();
 			if (commonConfig.shouldMockService(service)) {
@@ -66,13 +69,15 @@ public class ClientLoggingFilter implements ClientRequestFilter, ClientResponseF
 
 			//Either baggage has sampling set to true or this service uses its veto power to sample.
 			boolean isSampled = BooleanUtils
-				.toBoolean(newClientSpan.getBaggageItem(Constants.MD_IS_SAMPLED));
+				.toBoolean(clientSpan.getBaggageItem(Constants.MD_IS_SAMPLED));
 			boolean isVetoed = BooleanUtils
-				.toBoolean(newClientSpan.getBaggageItem(Constants.MD_IS_VETOED));
+				.toBoolean(clientSpan.getBaggageItem(Constants.MD_IS_VETOED));
 
-			if (isSampled || isVetoed) {
+			//Empty ingress span pertains to DB initialization scenarios.
+			//So need to record all calls as these will not be driven by replay driver.
+			if (isSampled || isVetoed || ingressSpan.isEmpty()) {
 				//this is local baggage item
-				newClientSpan.setBaggageItem(Constants.MD_IS_VETOED, null);
+				clientSpan.setBaggageItem(Constants.MD_IS_VETOED, null);
 
 				//hdrs
 				MultivaluedMap<String, String> requestHeaders = requestContext
@@ -89,7 +94,7 @@ public class ClientLoggingFilter implements ClientRequestFilter, ClientResponseF
 				//serviceName to be host+port for outgoing calls
 				String serviceName = CommonUtils.getEgressServiceName(uri);
 
-				MDTraceInfo mdTraceInfo = getTraceInfo(newClientSpan);
+				MDTraceInfo mdTraceInfo = getTraceInfo(clientSpan);
 
 				MultivaluedMap<String, String> traceMetaMap = CommonUtils
 					.buildTraceInfoMap(serviceName, mdTraceInfo,
@@ -100,6 +105,8 @@ public class ClientLoggingFilter implements ClientRequestFilter, ClientResponseF
 				requestContext.setProperty(Constants.MD_API_PATH_PROP, apiPath);
 				requestContext.setProperty(Constants.MD_SAMPLE_REQUEST, true);
 				requestContext.setProperty(Constants.MD_TRACE_INFO, mdTraceInfo);
+				requestContext.setProperty(Constants.MD_CHILD_SPAN, clientSpan);
+				requestContext.setProperty(Constants.MD_SCOPE, clientScope);
 
 				final OutputStream stream = new ClientLoggingStream(
 					requestContext.getEntityStream());
@@ -112,21 +119,22 @@ public class ClientLoggingFilter implements ClientRequestFilter, ClientResponseF
 
 				//Setting the current span id as parent span id value
 				//This is intentionally set after the capture as it should be parent for subsequent capture
-				newClientSpan.setBaggageItem(Constants.MD_PARENT_SPAN,
-					newClientSpan.context().toSpanId());
+				//condiitional to avoid setting span for DB initialization scenarios
+				clientSpan
+					.setBaggageItem(Constants.MD_PARENT_SPAN, clientSpan.context().toSpanId());
 			}
 
-
-		} catch (Exception e) {
+		} catch (Exception ex) {
 			LOGGER.error(String.valueOf(Map.of(Constants.MESSAGE,
-				"Exception occured during logging, proceeding to the application!")),
-				e.getMessage());
+				"Exception occured during logging request!")), ex);
 		}
 	}
 
 	@Override
 	public void filter(ClientRequestContext requestContext,
 		ClientResponseContext respContext) throws IOException {
+		Span span = null;
+		Scope scope = null;
 		try {
 			if (requestContext.getProperty(Constants.MD_SAMPLE_REQUEST) != null) {
 				Object apiPathObj = requestContext.getProperty(Constants.MD_API_PATH_PROP);
@@ -134,6 +142,8 @@ public class ClientLoggingFilter implements ClientRequestFilter, ClientResponseF
 					.getProperty(Constants.MD_TRACE_META_MAP_PROP);
 				Object serviceNameObj = requestContext.getProperty(Constants.MD_SERVICE_PROP);
 				Object traceInfo = requestContext.getProperty(Constants.MD_TRACE_INFO);
+				span = (Span) requestContext.getProperty(Constants.MD_CHILD_SPAN);
+				scope = (Scope) requestContext.getProperty(Constants.MD_SCOPE);
 
 				String apiPath = apiPathObj != null ? apiPathObj.toString() : "";
 				String serviceName = serviceNameObj != null ? serviceNameObj.toString() : "";
@@ -160,11 +170,14 @@ public class ClientLoggingFilter implements ClientRequestFilter, ClientResponseF
 			}
 		} catch (Exception e) {
 			LOGGER.error(String.valueOf(Map.of(Constants.MESSAGE,
-				"Exception occured during logging the response, silently passing!")),
-				e.getMessage());
+				"Exception occured during logging the response!")), e);
 		} finally {
-			newClientSpan.finish();
-			clientScope.close();
+			if (span != null) {
+				span.finish();
+			}
+			if (scope != null) {
+				scope.close();
+			}
 		}
 	}
 

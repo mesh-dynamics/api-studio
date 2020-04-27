@@ -15,15 +15,15 @@
 
     	<dependencies>
         	<dependency>
-          		<groupId>com.cube.interceptor</groupId>
-        		<artifactId>md-jersey_1_19-egress-interceptor</artifactId>
-        		<version>0.0.1</version>
+							<groupId>com.cube.interceptor</groupId>
+							<artifactId>md-jersey-1x-ingress-interceptor</artifactId>
+							<version>0.0.1</version>
         	</dependency>
-                <dependency>
-                        <groupId>com.cube.interceptor</groupId>
-                        <artifactId>md-jaxrs_1_1-ingress-interceptor</artifactId>
-                        <version>0.0.1</version>
-                </dependency>
+					<dependency>
+							<groupId>com.cube.interceptor</groupId>
+							<artifactId>md-jersey-1x-egress-interceptor</artifactId>
+							<version>0.0.1</version>
+					</dependency>
       </dependencies>
     	<build>
   		<plugins>
@@ -52,8 +52,8 @@
   								<includes>
 									<include>io.md:*</include>
 									<include>io.cube:*</include>
-									<include>com.cube.interceptor:md-jersey_1_19-egress-interceptor</include>
- 									<include>com.cube.interceptor:md-jaxrs_1_1-ingress-interceptor</include>
+									<include>com.cube.interceptor:md-jersey-1x-egress-interceptor</include>
+ 									<include>com.cube.interceptor:md-jersey-1x-ingress-interceptor</include>
   								</includes>
   							</artifactSet>
   						</configuration>

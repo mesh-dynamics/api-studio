@@ -1,4 +1,4 @@
-package com.cube.interceptor.jaxrs.ingress;
+package io.cube.jaxrs.ingress;
 
 import java.io.IOException;
 import java.util.Map;
@@ -20,10 +20,8 @@ import io.md.utils.CommonUtils;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
-//import javax.ws.rs.Priorities;
 
 @Provider
-//@Priority(Priorities.HEADER_DECORATOR + 9)
 @Priority(1000)
 public class TracingFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
@@ -63,8 +61,7 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 			CommonUtils.injectContext(requestHeaders);
 		} catch (Exception ex) {
 			LOGGER.error(String.valueOf(Map.of(Constants.MESSAGE,
-				"Exception occured during setting up span!")),
-				ex.getMessage());
+				"Exception occured during setting up span!")), ex);
 		}
 	}
 
@@ -86,8 +83,7 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 			}
 		} catch (Exception ex) {
 			LOGGER.error(String.valueOf(Map.of(Constants.MESSAGE,
-				"Exception occured during closing span!")),
-				ex.getMessage());
+				"Exception occured during closing span!")), ex);
 		}
 	}
 }

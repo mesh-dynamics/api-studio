@@ -4,11 +4,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.cube.interceptor</groupId>
-	<artifactId>md-jersey_1_19-egress-interceptor</artifactId>
+	<artifactId>md-jersey-1x-egress-interceptor</artifactId>
 	<version>1.0.0</version>
 	<packaging>jar</packaging>
 
-	<name>jersey-1.x-egress-interceptor</name>
+	<name>jersey-1x-egress-interceptor</name>
 	<description>Jersey 1.x Egress Interceptors for HTTP Requests</description>
 
 	<properties>

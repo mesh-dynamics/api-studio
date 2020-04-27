@@ -1,4 +1,4 @@
-package com.cube.interceptor.jaxrs.ingress;
+package io.cube.jaxrs.ingress;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -35,7 +35,6 @@ import io.opentracing.Scope;
 import io.opentracing.Span;
 
 @Provider
-//@Priority(Priorities.HEADER_DECORATOR + 10)
 @Priority(3000)
 public class LoggingFilter implements ContainerRequestFilter, ContainerResponseFilter,
 	WriterInterceptor {
@@ -91,10 +90,9 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 						requestHeaders, queryParams, mdTraceInfo);
 				}
 			}));
-		} catch (Exception e) {
+		} catch (Exception ex) {
 			LOGGER.error(String.valueOf(Map.of(Constants.MESSAGE,
-				"Exception occured during logging, proceeding to the application!")),
-				e.getMessage());
+				"Exception occured during logging, proceeding to the application!")), ex);
 		}
 	}
 
@@ -125,7 +123,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 		MultivaluedMap<String, String> queryParams, MDTraceInfo mdTraceInfo)
 		throws IOException {
 		final Span span = io.cube.agent.Utils.createPerformanceSpan("reqProcess");
-		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)){
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
 			//meta
 			MultivaluedMap<String, String> meta = Utils
 				.getRequestMeta(reqContext.getMethod(), cRequestId, Optional.empty());
@@ -146,7 +144,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 		Span span = null;
 		if (parentSpanObj != null) {
 			span = io.cube.agent.Utils.createPerformanceSpan("respProcess",
-				((Span)parentSpanObj).context());
+				((Span) parentSpanObj).context());
 		} else {
 			span = io.cube.agent.Utils.createPerformanceSpan("respProcess");
 		}
@@ -185,7 +183,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 			} catch (Exception ex) {
 				LOGGER.error(String.valueOf(Map.of(Constants.MESSAGE,
 					"Exception occured during logging response, proceeding to the application!")),
-					ex.getMessage());
+					ex);
 				context.proceed();
 				return;
 			}
@@ -212,7 +210,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 
 	private byte[] getRequestBody(ContainerRequestContext reqContext) throws IOException {
 		final Span span = io.cube.agent.Utils.createPerformanceSpan("reqBody");
-		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)){
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
 			byte[] reqBytes = reqContext.getEntityStream().readAllBytes();
 			new ByteArrayInputStream(reqBytes);
 			InputStream in = new ByteArrayInputStream(reqBytes);
@@ -226,7 +224,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 
 	private byte[] getResponseBody(WriterInterceptorContext context) throws IOException {
 		final Span span = io.cube.agent.Utils.createPerformanceSpan("respBody");
-		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)){
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
 			OutputStream originalStream = context.getOutputStream();
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			context.setOutputStream(baos);
