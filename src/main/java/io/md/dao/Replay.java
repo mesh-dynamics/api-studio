@@ -35,6 +35,9 @@ public class Replay {
 	public Optional<String> goldenName;
 	public Optional<String> recordingId;
 	public boolean archived;
+	public boolean excludePaths;
+	public Optional<String> xfms;
+	public Optional<RRTransformer> xfmer;
 	
 	public Replay(String endpoint, String customerId, String app, String instanceId,
 					String collection, String userId, List<String> reqIds,
@@ -43,7 +46,8 @@ public class Replay {
 					Optional<Double> sampleRate, List<String> intermediateServices,
 					Optional<String> generatedClassJarPath, Optional<String> service,
 					ReplayTypeEnum replayType, List<String> mockServices, Optional<String> testConfigName,
-					Optional<String> goldenName, Optional<String> recordingId, boolean archived) {
+					Optional<String> goldenName, Optional<String> recordingId, boolean archived, boolean excludePaths,
+					Optional<String> xfms, Optional<RRTransformer> xfmer) {
 	    this.endpoint = endpoint;
 	    this.customerId = customerId;
 	    this.app = app;
@@ -70,6 +74,9 @@ public class Replay {
 	    this.goldenName = goldenName;
 	    this.recordingId = recordingId;
 	    this.archived = archived;
+	    this.excludePaths = excludePaths;
+	    this.xfms = xfms;
+	    this.xfmer = xfmer;
 	}
 
 	//for deserialization
@@ -96,6 +103,9 @@ public class Replay {
 	    goldenName = Optional.empty();
 	    recordingId = Optional.empty();
 	    archived = false;
+	    excludePaths = false;
+	    xfms = Optional.empty();
+	    xfmer = Optional.empty();
 	}
 
 }
