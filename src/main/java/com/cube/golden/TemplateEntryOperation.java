@@ -10,23 +10,26 @@ import io.md.dao.ReqRespUpdateOperation.OperationType;
 public class TemplateEntryOperation {
 
     @JsonProperty("type")
-    OperationType type;
+    OperationType operationType;
     @JsonProperty("path")
     String path;
     @JsonProperty("newRule")
     Optional<TemplateEntry> newRule;
+    @JsonProperty("ruleType")
+    RuleType ruleType;
 
     /**
      * Default or serialization
      */
     public TemplateEntryOperation() {
-
+        this.ruleType = RuleType.TEMPLATERULE;
     }
 
-    public TemplateEntryOperation(OperationType type, String path, Optional<TemplateEntry> newRule) {
-        this.type = type;
+    public TemplateEntryOperation(OperationType operationType, String path, Optional<TemplateEntry> newRule, RuleType ruleType) {
+        this.operationType = operationType;
         this.path = path;
         this.newRule = newRule;
+        this.ruleType = ruleType;
     }
 
     public Optional<TemplateEntry> getNewRule() {
@@ -37,8 +40,20 @@ public class TemplateEntryOperation {
         return path;
     }
 
-    public OperationType getType() {
-        return type;
+    public OperationType getOperationType() {
+        return operationType;
     }
 
+    public RuleType getRuleType() {
+        return ruleType;
+    }
+
+
+    public static enum RuleType {
+        TEMPLATERULE,
+        ATTRIBUTERULE;
+
+        private RuleType() {
+        }
+    }
 }

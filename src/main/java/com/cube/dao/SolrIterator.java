@@ -141,6 +141,10 @@ public class SolrIterator implements Iterator<SolrDocument> {
 	long numFound; // total number of results matching the query, i.e. the max number of results available if no
 	// maxresults is set
 
+	static Optional<SolrDocument> getSingleResult(SolrClient solr, SolrQuery query) {
+		return getStream(solr, query, Optional.of(1), Optional.empty()).findFirst();
+	}
+
 	static public Stream<SolrDocument> getStream(SolrClient solr, SolrQuery query, Optional<Integer> maxresults) {
 	    return getStream(solr, query, maxresults, Optional.empty());
 	}

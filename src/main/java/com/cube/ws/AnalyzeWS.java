@@ -992,7 +992,7 @@ public class AnalyzeWS {
             TemplateSet templateSet = rrstore.getTemplateSet(originalRec.customerId, originalRec.app, originalRec
                 .templateVersion)
                 .orElse(new TemplateSet(originalRec.templateVersion, originalRec.customerId,
-	                originalRec.app, Instant.now(), Collections.emptyList()));
+	                originalRec.app, Instant.now(), Collections.emptyList(), Optional.empty()));
             TemplateUpdateOperationSet templateUpdateOperationSet = rrstore
                 .getTemplateUpdateOperationSet(templateUpdOpSetId).orElseThrow(() ->
                     new Exception("Unable to find Template Update Operation Set of specified id"));
