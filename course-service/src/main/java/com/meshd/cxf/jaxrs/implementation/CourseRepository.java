@@ -23,8 +23,8 @@ import org.apache.http.client.utils.URIBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.cube.interceptor.apachecxf.egress.ClientFilter;
-import com.cube.interceptor.apachecxf.egress.TracingFilter;
+import io.cube.interceptor.apachecxf.egress.ClientFilter;
+import io.cube.interceptor.apachecxf.egress.TracingFilter;
 
 @Path("meshd")
 @Produces("application/json")
@@ -137,10 +137,10 @@ public class CourseRepository {
     @Path("/dummyCourseList")
     public List<Course> dummyCourseList(@QueryParam("count") int courseCount) {
         List<Course> courseList = new ArrayList<>();
+        Course course = new Course();
         for (int i=0; i<courseCount; i++) {
-            Course course = new Course();
-            course.setId(i+1);
-            course.setName("Course " + (i+1));
+            course.setId(0);
+            course.setName("Dummy Course");
 //            List<Integer> studentIds = new ArrayList<>();
 //            studentIds.add(i);
 //            course.setStudents(studentIds);

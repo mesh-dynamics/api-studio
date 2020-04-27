@@ -8,8 +8,8 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 
-import com.cube.interceptor.apachecxf.ingress.LoggingFilter;
-import com.cube.interceptor.apachecxf.ingress.TracingFilter;
+import io.cube.interceptor.apachecxf.ingress.LoggingFilter;
+import io.cube.interceptor.apachecxf.ingress.TracingFilter;
 
 
 public class  CourseServer {

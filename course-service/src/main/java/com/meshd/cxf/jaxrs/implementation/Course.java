@@ -19,9 +19,9 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.http.client.utils.URIBuilder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.cube.interceptor.apachecxf.egress.ClientFilter;
-import com.cube.interceptor.apachecxf.egress.MockingClientFilter;
-import com.cube.interceptor.apachecxf.egress.TracingFilter;
+import io.cube.interceptor.apachecxf.egress.ClientFilter;
+import io.cube.interceptor.apachecxf.egress.MockingClientFilter;
+import io.cube.interceptor.apachecxf.egress.TracingFilter;
 
 
 @XmlRootElement(name = "Course")
