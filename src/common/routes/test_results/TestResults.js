@@ -108,30 +108,36 @@ class TestResults extends Component {
         });
     };
 
+    updateTimelineResults = () => {
+        const {dispatch, cube} = this.props;
+        if (!cube.selectedApp) {
+            return;
+        }
+        let currentDate = new Date().toISOString().split('T')[0];
+        let endDate = this.state.endDate.toISOString().split('T')[0];
+        let endDateValue = currentDate === endDate ? new Date() : new Date(this.state.endDate);
+        /**
+         * If we select any old date the timeliners is called only once 
+         * The below check is to don't call the timeliners api after some interval if the date isn't current date
+         * startDate not equal to null is checked to allow the call once when we change date. After that the startDate gets updated with the changed date(old date) 
+         */
+        if (currentDate != endDate && this.state.startDate != null)
+        {
+            return;
+        }
+        else {
+            dispatch(cubeActions.getTimelineData(cube.selectedApp, this.state.userFilter, this.state.endDate, this.state.startDate, this.state.clearTimeline));
+            this.setState({
+                startDate: this.state.endDate,
+                endDate: endDateValue,
+                clearTimeline: false
+            });
+        }
+    }
+
     autoRefreshData = () => {
-        this.intervalID = setInterval(() => {
-            let currentDate = new Date().toISOString().split('T')[0];
-            let endDate = this.state.endDate.toISOString().split('T')[0];
-            let endDateValue = currentDate === endDate ? new Date() : new Date(this.state.endDate);
-            /**
-             * If we select any old date the timeliners is called only once 
-             * The below check is to don't call the timeliners api after some interval if the date isn't current date
-             * startDate not equal to null is checked to allow the call once when we change date. After that the startDate gets updated with the changed date(old date) 
-             */
-            if (currentDate != endDate && this.state.startDate != null)
-            {
-                return;
-            }
-            else {
-                const {dispatch, cube} = this.props;
-                dispatch(cubeActions.getTimelineData(cube.selectedApp, this.state.userFilter, this.state.endDate, this.state.startDate, this.state.clearTimeline));
-                this.setState({
-                    startDate: this.state.endDate,
-                    endDate: endDateValue,
-                    clearTimeline: false
-                });
-            }
-        }, config.timelineresRefreshIntervel);
+        this.updateTimelineResults();
+        this.intervalID = setInterval(this.updateTimelineResults, config.timelineresRefreshIntervel);
     }
 
     setPathResultsParams(path, service, replayId, recordingId, currentTemplateVer, dateTime, cellData) {
