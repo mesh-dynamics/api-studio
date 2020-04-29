@@ -1,36 +1,30 @@
 package com.cube.dao;
 
 import io.md.dao.Event;
+import io.md.dao.Payload;
 
 public class DefaultEvent {
 
     private final Event event;
     // Event will have the request payload. The following
     // fields will hold the response payload.
-    private final byte[] rawRespPayloadBinary;
-    private final String rawRespPayloadString;
+    private final Payload respPayload;
 
-    public DefaultEvent(Event event, byte[] rawRespPayloadBinary, String rawRespPayloadString) {
+    public DefaultEvent(Event event, Payload respPayload) {
         this.event = event;
-        this.rawRespPayloadBinary = rawRespPayloadBinary;
-        this.rawRespPayloadString = rawRespPayloadString;
+        this.respPayload = respPayload;
     }
 
     private DefaultEvent() {
         this.event = null;
-        this.rawRespPayloadString = null;
-        this.rawRespPayloadBinary = null;
+        respPayload = null;
     }
 
     public Event getEvent() {
         return event;
     }
 
-    public byte[] getRawRespPayloadBinary() {
-        return rawRespPayloadBinary;
-    }
-
-    public String getRawRespPayloadString() {
-        return rawRespPayloadString;
+    public Payload getRespPayload() {
+        return this.respPayload;
     }
 }
