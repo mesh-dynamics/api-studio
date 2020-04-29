@@ -25,7 +25,6 @@ class TestResults extends Component {
             startDate : null,
             userFilter: "ALL",
             noFilter: true,
-            showHeaderDetails: true,
             clearTimeline: true,
         };
         this.setPathResultsParams = this.setPathResultsParams.bind(this);
@@ -160,8 +159,7 @@ class TestResults extends Component {
 
 
     renderTimeLineHeader = (header) => {
-        const { date, replayId, recordingId, goldenName, userName } = header;
-        const { showHeaderDetails } = this.state;
+        const { date, replayId, recordingId, goldenName, userName, goldenLabel, testConfigName } = header;
 
         return (
             <div>
@@ -187,7 +185,13 @@ class TestResults extends Component {
                                     {`Golden : ${goldenName}`}
                             </span>
                             <span className="timeline-replay-id">
+                                    {`Label : ${goldenLabel}`}
+                            </span>
+                            <span className="timeline-replay-id">
                                     {`Test ID : ${replayId}`}
+                            </span>
+                            <span className="timeline-replay-id">
+                                    {`Config Name: ${testConfigName}`}
                             </span>
                         </div>
                     }
@@ -203,9 +207,15 @@ class TestResults extends Component {
                             <div className="timeline-replay-id">
                                     {`Golden : ${goldenName}`}
                             </div>
+                            <span className="timeline-replay-id">
+                                    {`Label : ${goldenLabel}`}
+                            </span>
                             <div className="timeline-replay-id">
                                     {`Test ID : ${replayId}`}
                             </div>
+                            <span className="timeline-replay-id">
+                                    {`Config Name: ${testConfigName}`}
+                            </span>
                         </div>
                     </div>
                 </Tippy>
@@ -292,7 +302,9 @@ class TestResults extends Component {
                     replayId: testResult.replayId,
                     recordingId: testResult.recordingid,
                     goldenName: testResult.goldenName,
-                    userName: testResult.userName
+                    userName: testResult.userName,
+                    goldenLabel: testResult.goldenLabel,
+                    testConfigName: testResult.testConfigName || "NA"
                 })
             for (let eachReplayResult of testResultsPerReplay) {
                 if (eachReplayResult.service != null && eachReplayResult.path != null) {

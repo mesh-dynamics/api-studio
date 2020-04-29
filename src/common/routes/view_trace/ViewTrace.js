@@ -4,6 +4,7 @@ import _ from 'lodash';
 import arrayToTree  from 'array-to-tree';
 import axios from "axios";
 import Iframe from 'react-iframe'
+import * as moment from 'moment';
 // import sortJson from "sort-json";
 import sortJson from "../../utils/sort-json";
 import ReactDiffViewer from '../../utils/diff/diff-main';
@@ -129,6 +130,7 @@ class ViewTrace extends Component {
         this.inputElementRef = React.createRef();
         this.layoutDataWithDiff = [];
         this.uniqueRecordReplayData = [];
+        this.loggingURL = "";
 
         this.handleSearchFilterChange = this.handleSearchFilterChange.bind(this);
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
@@ -278,11 +280,11 @@ class ViewTrace extends Component {
             result.push({
                 ...current
             })
-            let isParentmocked = testMockServices.some(function(element, i) {
+            let isParentmocked = testMockServices ? testMockServices.some(function(element, i) {
                 if (current.service.toLowerCase() === element.toLowerCase()) {
                     return true;
                 }
-            });
+            }) : false;
             if(current.children && current.children.length > 0) {
                 depth++;
                 for(let eachTempNode of current.children) {
@@ -368,9 +370,23 @@ class ViewTrace extends Component {
             if (response.ok) {
                 json = await response.json();
                 dataList = json;
+                const { cube } = this.props;
+                const { instances, selectedApp } = cube;
+                let instanceId = "";
+                for(let eachRequestItem of dataList.data.res) {
+                    if(eachRequestItem.instanceId) {
+                        instanceId = eachRequestItem.instanceId;
+                        break;
+                    }
+                }
+                for(let eachInstance of instances) {
+                    if(eachInstance.app.name === selectedApp && eachInstance.name.toLowerCase() === instanceId.toLowerCase()) {
+                        this.loggingURL = eachInstance.loggingURL;
+                        break;
+                    }
+                }
                 let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.data.res);
                 this.layoutDataWithDiff.push(...diffLayoutData);
-
                 fetchedResults = dataList.data.res.length;
                 totalNumberOfRequest = dataList.data.numFound;
                 let allFetched = false;
@@ -543,6 +559,7 @@ class ViewTrace extends Component {
     }
 
     validateAndCreateDiffLayoutData(replayList) {
+        let loggingURL = this.loggingURL;
         let diffLayoutData = replayList.map((item, index) => {
             let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body",
                 recordedRequestHeaders, replayedRequestHeaders, recordedRequestQParams, replayedRequestQParams, recordedRequestFParams, replayedRequestFParams,recordedRequestBody, replayedRequestBody, reductedDiffArrayReqHeaders, reductedDiffArrayReqBody, reductedDiffArrayReqQParams, reductedDiffArrayReqFParams;
@@ -714,7 +731,8 @@ class ViewTrace extends Component {
                 reductedDiffArrayReqHeaders,
                 reductedDiffArrayReqQParams,
                 reductedDiffArrayReqFParams,
-                reductedDiffArrayReqBody
+                reductedDiffArrayReqBody,
+                loggingURL: loggingURL.replace("$STARTTIME", "'" + moment(item.replayReqTime).toISOString() + "'").replace("$ENDTIME", "'" + moment(Math.ceil(item.replayRespTime / (1.5 * 60 * 1000)) * (1.5 * 60 * 1000)).toISOString() + "'")
             }
         });
         return diffLayoutData;
@@ -875,7 +893,7 @@ class ViewTrace extends Component {
                                         </td>
                                     </tr>
                                     {recProcessedTraceDataFlattenTreeResCount.map((item, index) => {
-                                        return (<tr key={item.recordReqId + item.replayReqId} onClick={(event) =>  item.isParentmocked ? event.stopPropagation() : this.showDiff(item)} style={{display: item.show ? "" : "none", cursor: "pointer", backgroundColor: item.isParentmocked ? "#A9A9A9": (selectedDiffItem && item.recordReqId === selectedDiffItem.recordReqId && item.replayReqId === selectedDiffItem.replayReqId) ? "#eee" : "#fff"}}>
+                                        return (<tr key={item.recordReqId + item.replayReqId + index} onClick={(event) =>  item.isParentmocked ? event.stopPropagation() : this.showDiff(item)} style={{display: item.show ? "" : "none", cursor: "pointer", backgroundColor: item.isParentmocked ? "#A9A9A9": (selectedDiffItem && item.recordReqId === selectedDiffItem.recordReqId && item.replayReqId === selectedDiffItem.replayReqId) ? "#eee" : "#fff"}}>
                                             <td style={{verticalAlign: "middle", padding: "12px"}}>
                                                 {this.getIndents(item.depth)}
                                                 {item.depth === 0 ? (<span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>) : (<span><i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i></span>)}
@@ -940,7 +958,7 @@ class ViewTrace extends Component {
                                         </td>
                                     </tr>
                                     {repProcessedTraceDataFlattenTreeResCount.map((item, index) => {
-                                        return (<tr key={item.recordReqId + item.replayReqId} onClick={() => this.showDiff(item)} style={{display: item.show ? "" : "none", cursor: "pointer", backgroundColor: (selectedDiffItem && item.recordReqId === selectedDiffItem.recordReqId && item.replayReqId === selectedDiffItem.replayReqId) ? "#eee" : "#fff"}}>
+                                        return (<tr key={item.recordReqId + item.replayReqId + index} onClick={() => this.showDiff(item)} style={{display: item.show ? "" : "none", cursor: "pointer", backgroundColor: (selectedDiffItem && item.recordReqId === selectedDiffItem.recordReqId && item.replayReqId === selectedDiffItem.replayReqId) ? "#eee" : "#fff"}}>
                                             <td style={{verticalAlign: "middle", padding: "12px"}}>
                                                 {this.getIndents(item.depth)}
                                                 {item.depth === 0 ? (<span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>) : (<span><i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i></span>)}
@@ -1016,7 +1034,7 @@ class ViewTrace extends Component {
                             </div>
                             <div style={{display: "inline-block"}} className="pull-right">
                                 <Button bsSize="small" bsStyle={"primary"} style={{}} onClick={this.toggleBetweenTraceAndLogs}>
-                                    {showTrace ? "VIEW TRACE" : "VIEW LOGS"}
+                                    {showTrace ? "VIEW LOGS" : "VIEW TRACE"}
                                 </Button>
                             </div>
                             <FormControl style={{marginBottom: "12px", marginTop: "10px"}}
@@ -1030,7 +1048,7 @@ class ViewTrace extends Component {
                             />
                         </FormGroup>
                         <div style={{marginTop: "9px", display: showTrace ? "none": ""}}>
-                            <Iframe url="http://logging.dev.cubecorp.io/app/kibana#/discover/fcc46df0-17e6-11ea-a0f3-ffb2c1110291?_g=(filters:!(),refreshInterval:(pause:!t,value:0),time:(from:now-15m,to:now))&_a=(columns:!(log),filters:!(),index:ae33d640-1740-11ea-8ec6-cb0631ba08d0,interval:auto,query:(language:kuery,query:''),sort:!('@timestamp',desc))"
+                            <Iframe url={selectedDiffItem.loggingURL}
                                 width="100%"
                                 height="720px"
                                 id="myId"
