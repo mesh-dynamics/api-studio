@@ -139,7 +139,7 @@ public class CourseRepository {
         List<Course> courseList = new ArrayList<>();
         Course course = new Course();
         for (int i=0; i<courseCount; i++) {
-            course.setId(0);
+            course.setId(courseCount);
             course.setName("Dummy Course");
 //            List<Integer> studentIds = new ArrayList<>();
 //            studentIds.add(i);
