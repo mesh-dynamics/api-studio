@@ -18,9 +18,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
+import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.flipkart.zjsonpatch.DiffFlags;
@@ -177,7 +179,7 @@ public class JsonComparator implements Comparator {
 			int index = rule.path.lastIndexOf('/');
 			if (index != -1 && rule.path.substring( index + 1 ).equalsIgnoreCase("*")){
 				String parentPath = rule.path.substring( 0, index );
-				Optional<TemplateEntry> parentRule = template.get(parentPath);
+				Optional<TemplateEntry> parentRule = template.get(JsonPointer.valueOf(parentPath));
 				if (parentRule.isEmpty()) {
 					JsonNode node = root.at(rule.pathptr.head());
 					checkRptArrayTypes(node, resdiffs, rule.dt, parentPath);
@@ -218,7 +220,7 @@ public class JsonComparator implements Comparator {
 					break;
 				case RptArray:
 					if (!node.isArray()) valTypeMismatch = true;
-					Optional<TemplateEntry> starRule = template.get(rule.path + "/*");
+					Optional<TemplateEntry> starRule = template.get(JsonPointer.valueOf(rule.path + "/*"));
 					Optional<CompareTemplate.DataType> itemDataType = starRule.map(r -> r.dt)
 							.or(() -> Optional.ofNullable(node.get(0)).map(this::getDataType));
 					itemDataType.ifPresent(idt -> {
@@ -334,7 +336,7 @@ public class JsonComparator implements Comparator {
 	 */
 	public boolean shouldConsiderAsObj() {
 	    // first check if root is an object
-        boolean dtObj = template.get("").map(rule -> rule.dt.isObj()).orElse(false);
+        boolean dtObj = template.get(JsonPointer.valueOf("")).map(rule -> rule.dt.isObj()).orElse(false);
         return dtObj || template.getRules().stream().filter(r -> !(r.path.isBlank() || r.path.equals("/"))).findAny().isPresent();
 
 		//return !template.getRules().isEmpty();

@@ -47,6 +47,7 @@ import io.cube.agent.FnReqResponse;
 import io.cube.agent.FnResponse;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
+import io.md.core.AttributeRuleMap;
 import io.md.core.Comparator;
 import io.md.core.Comparator.Diff;
 import io.md.core.Comparator.Match;
@@ -68,6 +69,7 @@ import redis.clients.jedis.Jedis;
 
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
+import com.cube.cache.TemplateKey.Type;
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.Utils;
 import com.cube.dao.Recording.RecordingStatus;
@@ -550,13 +552,28 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 template.service , template.requestPath, template.type);
                 templateIds.add(saveCompareTemplate(templateKey, config.jsonMapper.writeValueAsString(template)));
         }));
-        return storeTemplateSetMetadata(templateSet, templateIds);
+        Optional<String> ruleMapId = templateSet.appAttributeRuleMap.map(ruleMap ->
+            {
+                try {
+                    String ruleMapJson = this.config.jsonMapper.writeValueAsString(ruleMap);
+                    return saveAttributeRuleMap(new
+                        TemplateKey(templateSet.version, templateSet.customer, templateSet.app,
+                        io.md.constants.Constants.NOT_APPLICABLE, io.md.constants.Constants.NOT_APPLICABLE, Type.DontCare), ruleMapJson);
+                } catch (Exception e) {
+                    LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                        "Unable to convert rule map to string")), e);
+                    return null;
+                }
+            });
+        return storeTemplateSetMetadata(templateSet, templateIds, ruleMapId);
     }
 
     private static final String TEMPLATE_ID = "template_id" + STRINGSET_SUFFIX;
     private static final String TEMPLATE_VERSIONF = Constants.TEMPLATE_VERSION_FIELD + STRING_SUFFIX;
+    private static final String ATTRIBUTE_RULE_MAP_ID = "attribute_rule_map_id" + STRING_SUFFIX;
 
-    private String storeTemplateSetMetadata(TemplateSet templateSet, List<String> templateIds) throws TemplateSet.TemplateSetMetaStoreException {
+    private String storeTemplateSetMetadata(TemplateSet templateSet, List<String> templateIds
+        , Optional<String> appAttributeRuleMapId) throws TemplateSet.TemplateSetMetaStoreException {
         SolrInputDocument solrDoc = new SolrInputDocument();
         String id = Types.TemplateSet.toString().concat("-").concat(String.valueOf(Objects.hash(
             templateSet.customer, templateSet.app, templateSet.version)));
@@ -568,6 +585,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         solrDoc.setField(APPF, templateSet.app);
         solrDoc.setField(TIMESTAMPF , templateSet.timestamp.toString());
         templateIds.forEach(templateId -> solrDoc.addField(TEMPLATE_ID, templateId));
+        appAttributeRuleMapId.ifPresent(ruleMapId -> solrDoc.setField(ATTRIBUTE_RULE_MAP_ID, ruleMapId));
         boolean success = saveDoc(solrDoc) && softcommit();
         if(!success) {
             throw new TemplateSet.TemplateSetMetaStoreException("Error saving Template Set Meta Data in Solr");
@@ -650,9 +668,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             LOGGER.error("Improper template set stored in solr for template set id :: " + getStrField(doc, IDF).get());
             return Optional.empty();
         }
-
+        Optional<String> appAttributeRuleMapId = getStrField(doc, ATTRIBUTE_RULE_MAP_ID);
         TemplateSet templateSet = new TemplateSet(version.get(), customerId.get(), app.get(),
-            creationTimestamp.get(), getVersionedTemplatesFromSolr(templateIds));
+            creationTimestamp.get(), getVersionedTemplatesFromSolr(templateIds) ,
+            getVersionedAttributeRuleMapFromSolr(appAttributeRuleMapId));
         return Optional.of(templateSet);
     }
 
@@ -690,6 +709,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<Integer> maxResults = Optional.of(templateIds.size());
         return SolrIterator.getStream(solr, query, maxResults).flatMap(this::solrDocToCompareTemplate)
             .collect(Collectors.toList());
+    }
+
+    private Optional<AttributeRuleMap> getVersionedAttributeRuleMapFromSolr(Optional<String> ruleMapId) {
+        if (ruleMapId.isEmpty()) return Optional.empty();
+        SolrQuery query = new SolrQuery("*:*");
+        addFilter(query, IDF, ruleMapId);
+        Optional<Integer> maxResults = Optional.of(1);
+        return SolrIterator.getStream(solr, query, maxResults).
+            findFirst().flatMap(this::docToAttributeRuleMap);
     }
 
     /* (non-Javadoc)
@@ -755,7 +783,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String PAYLOADKEYF = CPREFIX + "payloadKey" + INT_SUFFIX;
     private static final String EVENTTYPEF = CPREFIX + Constants.EVENT_TYPE_FIELD + STRING_SUFFIX;
     private static final String SPAN_ID_F = CPREFIX  + Constants.SPAN_ID_FIELD + STRING_SUFFIX ;
-    private static final String PARENT_SPAN_ID_F = CPREFIX  + Constants.PARENT_SPAN_ID_FIELD + STRING_SUFFIX ;
+    private static final String PARENT_SPAN_ID_F = CPREFIX  + Constants.PARENT_SPAN_ID_FIELD + STRING_SUFFIX;
 
 
     private static String getFieldName(String fname, String fkey) {
@@ -826,6 +854,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional.ofNullable(fvalmap.get(keytoadd)).ifPresent(vals -> vals.forEach(v -> {
             addFilter(query, f, v);
         }));
+    }
+
+    private static void addFilter(SolrQuery query, String fieldname, boolean fval) {
+        addFilter(query, fieldname, String.valueOf(fval));
     }
 
     private static void addFilter(SolrQuery query, String fieldname, Integer fval) {
@@ -1306,6 +1338,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     // field names in Solr for compare template (stored as json)
     private static final String COMPARETEMPLATEJSON = CPREFIX + "comparetemplate" + STRING_SUFFIX;
+    private static final String ATTRIBUTE_RULE_TEMPLATE_JSON = CPREFIX + "attribute_rule_template" + STRING_SUFFIX;
     private static final String PARTIALMATCH = CPREFIX + "partialmatch" + STRING_SUFFIX;
 
     // DONT use SimpleDateFormat in multi-threaded environment. Each thread should have its own
@@ -1347,6 +1380,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         replay.xfms.ifPresent(xfms -> doc.setField(XFMSF, xfms));
         replay.goldenName.ifPresent(goldenName -> doc.setField(GOLDEN_NAMEF, goldenName));
         replay.recordingId.ifPresent(recordingId -> doc.setField(RECORDING_IDF, recordingId));
+        doc.setField(ARCHIVEDF,replay.archived);
 
         return doc;
     }
@@ -1409,6 +1443,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         ReplayTypeEnum replayType = getStrField(doc, REPLAY_TYPE_F).flatMap(repType ->
             Utils.valueOf(ReplayTypeEnum.class, repType)).orElse(ReplayTypeEnum.HTTP);
         Optional<String> xfms = getStrField(doc, XFMSF);
+        Optional<Boolean> archived = getBoolField(doc, ARCHIVEDF);
 
         Optional<Replay> replay = Optional.empty();
         if (endpoint.isPresent() && customerId.isPresent() && app.isPresent() &&
@@ -1436,6 +1471,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 testConfigName.ifPresent(builder::withTestConfigName);
                 goldenName.ifPresent(builder::withGoldenName);
                 recordingId.ifPresent(builder::withRecordingId);
+                archived.ifPresent(builder::withArchived);
                 replay = Optional.of(builder.build());
             } catch (Exception e) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
@@ -1522,6 +1558,31 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return solrDoc.getFieldValue(IDF).toString();
     }
 
+    @Override
+    public String saveAttributeRuleMap(TemplateKey key, String ruleMapJson)
+        throws CompareTemplate.CompareTemplateStoreException {
+        SolrInputDocument solrDoc = attributeRuleMapToSolrDoc(key , ruleMapJson);
+        boolean success = saveDoc(solrDoc) && softcommit();
+        if(!success) {
+            throw new CompareTemplate.CompareTemplateStoreException("Error saving Compare Template in Solr");
+        }
+        return solrDoc.getFieldValue(IDF).toString();
+    }
+
+    public SolrInputDocument attributeRuleMapToSolrDoc(TemplateKey key, String ruleMapJson) {
+        final SolrInputDocument doc = new SolrInputDocument();
+        String type = Types.AttributeTemplate.name();
+        // Sample key in solr ResponseCompareTemplate-1234-bookinfo-getAllBooks--2013106077
+        String id = type.concat("-").concat(String.valueOf(Objects.hash(
+            key.getCustomerId() , key.getAppId() , key.getVersion())));
+        doc.setField(IDF , id);
+        doc.setField(ATTRIBUTE_RULE_TEMPLATE_JSON , ruleMapJson);
+        doc.setField(APPF , key.getAppId());
+        doc.setField(CUSTOMERIDF , key.getCustomerId());
+        doc.setField(TYPEF , type);
+        doc.setField(TEMPLATE_VERSIONF, key.getVersion());
+        return doc;
+    }
 
 /*    public static String getTemplateType(TemplateKey key) {
          if (key.getReqOrResp() == Type.RequestMatch) {
@@ -1553,7 +1614,39 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, TEMPLATE_VERSIONF, key.getVersion(), true);
         //addFilter(query, PATHF , key.getPath());
         Optional<Integer> maxResults = Optional.of(1);
-        return SolrIterator.getStream(solr , query , maxResults).findFirst().flatMap(this::docToCompareTemplate);
+        Optional<CompareTemplate> fromSolr =  SolrIterator.getStream(solr , query , maxResults)
+            .findFirst().flatMap(this::docToCompareTemplate);
+        // logic to append app level attribute filter
+        fromSolr.ifPresent(compareTemplate -> {
+            if (key.getReqOrResp().equals(Type.ResponseCompare) || key.getReqOrResp().equals(Type.RequestCompare) || key.getReqOrResp().equals(Type.DontCare)) {
+                getAttributeRuleMap(key).ifPresent(compareTemplate::setAppLevelAttributeRuleMap);
+            }
+        });
+
+        return fromSolr;
+    }
+
+    @Override
+    public Optional<AttributeRuleMap> getAttributeRuleMap(TemplateKey key) {
+        final SolrQuery appAttributeTemplateQuery = new SolrQuery("*:*");
+        appAttributeTemplateQuery.addField("*");
+        addFilter(appAttributeTemplateQuery, TYPEF, Types.AttributeTemplate.name());
+        addFilter(appAttributeTemplateQuery, CUSTOMERIDF, key.getCustomerId());
+        addFilter(appAttributeTemplateQuery, APPF, key.getAppId());
+        addFilter(appAttributeTemplateQuery, TEMPLATE_VERSIONF, key.getVersion(), true);
+        return SolrIterator.getSingleResult(solr, appAttributeTemplateQuery)
+            .flatMap(this::docToAttributeRuleMap);
+    }
+
+    private Optional<AttributeRuleMap> docToAttributeRuleMap(SolrDocument doc) {
+        return getStrField(doc, ATTRIBUTE_RULE_TEMPLATE_JSON).flatMap(templateJson -> {
+            try {
+                return Optional.of(config.jsonMapper.readValue(templateJson, AttributeRuleMap.class));
+            } catch (IOException e) {
+                LOGGER.error("Error while reading template object from json :: " + getIntField(doc , IDF).orElse(-1));
+                return Optional.empty();
+            }
+        });
     }
 
     /* (non-Javadoc)
@@ -1569,10 +1662,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Result<Replay> getReplay(Optional<String> customerId, Optional<String> app, List<String> instanceId,
             List<ReplayStatus> status, Optional<String> collection,  Optional<Integer> numOfResults,  Optional<Integer> start,
             Optional<String> userId, Optional<Instant> endDate, Optional<Instant> startDate, Optional<String> testConfigName,
-            Optional<String> goldenName) {
+            Optional<String> goldenName, boolean archived) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.ReplayMeta.toString());
+        addFilter(query, ARCHIVEDF, archived);
         addFilter(query, CUSTOMERIDF, customerId);
         addFilter(query, APPF, app);
         addFilter(query, INSTANCEIDF, instanceId);
@@ -1597,7 +1691,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         //Reference - https://stackoverflow.com/a/31688505/3918349
         List<String> instanceidList = instanceId.stream().collect(Collectors.toList());
         return getReplay(customerId, app, instanceidList, status, collection, numofResults, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-                    Optional.empty(), Optional.empty()).objects;
+                    Optional.empty(), Optional.empty(), false).objects;
     }
 
     private static final String OBJJSONF = CPREFIX + "json" + NOTINDEXED_SUFFIX;
@@ -1851,8 +1945,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             addFilter(query, RECORDREQIDF, recordReqId);
             addFilter(query, REPLAYIDF, replayId);
             query.addField(getDiffParentChildFilter());
-            Optional<Integer> maxresults = Optional.of(1);
-            return SolrIterator.getStream(solr, query, maxresults).findFirst()
+            return SolrIterator.getSingleResult(solr, query)
                     .flatMap(doc -> docToAnalysisMatchResult(doc));
     }
 
@@ -1866,8 +1959,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, REPLAYREQIDF, replayReqId, true);
         addFilter(query, REPLAYIDF, replayId);
         query.addField(getDiffParentChildFilter());
-        Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, maxresults).findFirst()
+        return SolrIterator.getSingleResult(solr, query)
             .flatMap(doc -> docToAnalysisMatchResult(doc));
     }
 
@@ -2082,9 +2174,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, SERVICEF, service);
         addFilter(query, REPLAYIDF, replayId);
         addFilter(query, TYPEF, Types.ReplayStats.toString());
-        Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr , query , maxresults)
-                .findFirst().map(doc -> getReplayStats(doc)).orElse(Collections.EMPTY_LIST);
+        return SolrIterator.getSingleResult(solr, query)
+                .map(doc -> getReplayStats(doc)).orElse(Collections.EMPTY_LIST);
     }
 
     private List<String> getReplayStats(SolrDocument document) {
@@ -2161,8 +2252,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, TYPEF, Types.Analysis.toString());
         addFilter(query, REPLAYIDF, replayId);
 
-        Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToAnalysis(doc, this));
+        return SolrIterator.getSingleResult(solr, query).flatMap(doc -> docToAnalysis(doc, this));
 
     }
 
@@ -2356,7 +2446,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         query.addField("*");
         addFilter(query, TYPEF, Types.Recording.toString());
         addFilter(query, IDF, recordingId);
-        return SolrIterator.getStream(solr, query, Optional.of(1)).findFirst().flatMap(doc -> docToRecording(doc));
+        return SolrIterator.getSingleResult(solr, query).flatMap(doc -> docToRecording(doc));
     }
 
 
@@ -2374,8 +2464,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, APPF, app);
         addFilter(query, COLLECTIONF, collection);
         addFilter(query, TEMPLATE_VERSIONF, templateSetVersion);
-        Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToRecording(doc));
+        return SolrIterator.getSingleResult(solr, query).flatMap(doc -> docToRecording(doc));
     }
 
     @Override
@@ -2387,8 +2476,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, APPF, app);
         addFilter(query, GOLDEN_NAMEF, name);
         label.ifPresentOrElse( l -> addFilter(query, GOLDEN_LABELF, l), () -> addSort(query, TIMESTAMPF, false));
-        Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, maxresults).findFirst().flatMap(doc -> docToRecording(doc));
+        return SolrIterator.getSingleResult(solr, query).flatMap(doc -> docToRecording(doc));
     }
 
     private final static int FACETLIMIT = 500;

@@ -24,6 +24,7 @@ public class TemplateKey {
         RequestMatch,
         RequestCompare,
         ResponseCompare,
+        DontCare
     }
 
     /**
