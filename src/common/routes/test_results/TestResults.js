@@ -12,6 +12,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import _ from 'lodash';
 import config from '../../config';
+import Modal from "react-bootstrap/es/Modal";
 
 const ReactTableFixedColumns = withFixedColumns(ReactTable);
 
@@ -26,6 +27,8 @@ class TestResults extends Component {
             userFilter: "ALL",
             noFilter: true,
             clearTimeline: true,
+            showPopUp: false,
+            deleteReplayId:""
         };
         this.setPathResultsParams = this.setPathResultsParams.bind(this);
     }
@@ -157,6 +160,28 @@ class TestResults extends Component {
         });
     }
 
+    showDeleteReplayConfirmPopup(deleteReplayId) {
+        this.setState({
+            showPopUp: true,
+            deleteReplayId: deleteReplayId
+        });
+    }
+    closeDeleteReplayConfirmPopup() {
+        this.setState({
+            showPopUp: false,
+            deleteReplayId: ""
+        });
+    }
+
+    removeReplay() {
+        const { dispatch} = this.props;
+        dispatch(cubeActions.removeReplay(this.state.deleteReplayId));
+        this.setState({
+            showPopUp: false,
+            deleteReplayId: ""
+        });
+    }
+
 
     renderTimeLineHeader = (header) => {
         const { date, replayId, recordingId, goldenName, userName, goldenLabel, testConfigName } = header;
@@ -197,6 +222,9 @@ class TestResults extends Component {
                     }
                 >
                     <div className="timeline-replay-header">
+                        <div>
+                            <i className="timeline-replay-icon fas fa-times" onClick={() => this.showDeleteReplayConfirmPopup(replayId)}></i>
+                        </div>
                         <div className="timeline-header-text underline">
                                 {moment(date).format('lll')}
                         </div>
@@ -273,6 +301,7 @@ class TestResults extends Component {
     }; 
     
     render() {
+        const {showPopUp} = this.state;
         const { cube } = this.props;
         if (cube.timelineData.length === 0) {
             return (
@@ -614,51 +643,66 @@ class TestResults extends Component {
             count++;
         }
         return (
-            <div className="content-wrapper">
-                <div className="heading">
-                    <h5 className="pull-left">Test Results</h5>
-                    <div className="fiters pull-right" style={{width: "300px"}}>
-                        <div className="inline-block margin-bottom-10" style={{paddingRight: "10px", borderRight: "1px solid #ddd", marginRight:"10px"}}>
-                            <div className="margin-bottom-10">
-                                <span>USER: </span>
-                                <select onChange={(event) => this.changeUserFilter(event)} value={this.state.userFilter} style={{width: "140px"}}>
-                                    <option value="ALL">ALL</option>
-                                    <option value="ME">ME</option>
-                                </select>
+            <div>
+                <div className="content-wrapper">
+                    <div className="heading">
+                        <h5 className="pull-left">Test Results</h5>
+                        <div className="fiters pull-right" style={{width: "300px"}}>
+                            <div className="inline-block margin-bottom-10" style={{paddingRight: "10px", borderRight: "1px solid #ddd", marginRight:"10px"}}>
+                                <div className="margin-bottom-10">
+                                    <span>USER: </span>
+                                    <select onChange={(event) => this.changeUserFilter(event)} value={this.state.userFilter} style={{width: "140px"}}>
+                                        <option value="ALL">ALL</option>
+                                        <option value="ME">ME</option>
+                                    </select>
+                                </div>
+
+                                <div className="">
+                                    <span>DATE: </span>
+                                    <DatePicker
+                                        style={{width: "140px"}}
+                                        selected={this.state.endDate}
+                                        maxDate={new Date()}
+                                        onChange={this.handleDateFilter} />
+                                </div>
                             </div>
 
-                            <div className="">
-                                <span>DATE: </span>
-                                <DatePicker
-                                    style={{width: "140px"}}
-                                    selected={this.state.endDate}
-                                    maxDate={new Date()}
-                                    onChange={this.handleDateFilter} />
+                            <div className={this.state.noFilter ? "inline-block" : "inline-block active-filter"} style={{verticalAlign: "top"}}>
+                                <i className="fas fa-filter"></i>&nbsp;
+                                <span className="link" onClick={this.clearFilter}>Clear</span>
                             </div>
-                        </div>
 
-                        <div className={this.state.noFilter ? "inline-block" : "inline-block active-filter"} style={{verticalAlign: "top"}}>
-                            <i className="fas fa-filter"></i>&nbsp;
-                            <span className="link" onClick={this.clearFilter}>Clear</span>
                         </div>
-
+                        <div className="clear"></div>
                     </div>
-                    <div className="clear"></div>
-                </div>
 
-                <ReactTableFixedColumns
-                    data={tableData}
-                    columns={columns}
-                    subRowsKey="subRows"
-                    style={{
-                       height: "600px" // This will force the table body to overflow and scroll, since there is not enough room
-                    }}
-                    showPagination={true}
-                    defaultPageSize={10}
-                    expanded={this.getExpandedRows()}
-                    onExpandedChange={(newExpanded, index) => this.handleExpanderChange(index)}
-                />
-            </div >
+                    <ReactTableFixedColumns
+                        data={tableData}
+                        columns={columns}
+                        subRowsKey="subRows"
+                        style={{
+                        height: "600px" // This will force the table body to overflow and scroll, since there is not enough room
+                        }}
+                        showPagination={true}
+                        defaultPageSize={10}
+                        expanded={this.getExpandedRows()}
+                        onExpandedChange={(newExpanded, index) => this.handleExpanderChange(index)}
+                    />
+                </div >
+                <Modal show={showPopUp}>
+                    <Modal.Body>
+                        <div style={{ display: "flex", flex: 1, justifyContent: "center"}}>
+                            <div className="margin-right-10" style={{ display: "flex", flexDirection: "column", fontSize:20 }}>
+                                This will delete the test data. Please confirm.
+                            </div>
+                            <div style={{ display: "flex", alignItems: "flex-start" }}>
+                                    <span className="cube-btn margin-right-10" onClick={() => this.removeReplay()}>Confirm</span>
+                                    <span className="cube-btn" onClick={() => this.closeDeleteReplayConfirmPopup()}>No</span>
+                            </div>
+                        </div>
+                    </Modal.Body>
+                </Modal>
+            </div>
         );
     }
 }
