@@ -47,13 +47,13 @@ public class SimpleMocker implements Mocker {
 	public FnResponseObj mock(FnKey fnKey,
 		Optional<Instant> prevRespTS, Optional<Type> retType, Object... args) {
 		MDTraceInfo mdTraceInfo;
-		if (CommonUtils.getCurrentTraceId().isEmpty()) {
-			//No span context. Initialization scenario.
-			mdTraceInfo = CommonUtils.getDefaultTraceInfo();
-
-		} else {
+		if (CommonUtils.getCurrentTraceId().isPresent()) {
 			//load the created context
 			mdTraceInfo = CommonUtils.mdTraceInfoFromContext();
+
+		} else {
+			//No span context. Initialization scenario.
+			mdTraceInfo = CommonUtils.getDefaultTraceInfo();
 		}
 
 		Optional<String> traceId = Optional.ofNullable(mdTraceInfo.traceId);

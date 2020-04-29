@@ -284,13 +284,16 @@ public class CommonConfig {
 
 	private Optional<String> fromDynamicOREnvORStaticProperties(String propertyName,
 		Properties dynamicProperty) {
-		return Optional.ofNullable(dynamicProperty.getProperty(propertyName))
-			.or(() -> fromEnvOrProperties(propertyName));
+		Optional<String> property = Optional.ofNullable(dynamicProperty.getProperty(propertyName));
+		if (!property.isPresent()) {
+			property = fromEnvOrProperties(propertyName);
+		}
+		return property;
 	}
 
 	private static Optional<String> fromEnvOrProperties(String propertyName) {
-		return CommonUtils.fromEnvOrSystemProperties(propertyName)
-			.or(() -> Optional.ofNullable(staticProperties.getProperty(propertyName)));
+		return Optional.ofNullable(CommonUtils.fromEnvOrSystemProperties(propertyName)
+			.orElse(staticProperties.getProperty(propertyName)));
 	}
 
 	private static String getConfigIntent() {
@@ -302,9 +305,9 @@ public class CommonConfig {
 	}
 
 	public static Optional<String> getCurrentIntentFromScope() {
-		return CommonUtils.getCurrentSpan().flatMap(span -> Optional.
-			ofNullable(span.getBaggageItem(Constants.ZIPKIN_HEADER_BAGGAGE_INTENT_KEY))).or(() ->
-			Optional.ofNullable(CommonConfig.intent));
+		return Optional.ofNullable(CommonUtils.getCurrentSpan().flatMap(span -> Optional.
+			ofNullable(span.getBaggageItem(Constants.ZIPKIN_HEADER_BAGGAGE_INTENT_KEY))).orElse(
+			CommonConfig.intent));
 	}
 
 	public static boolean isIntentToRecord() {
@@ -342,7 +345,7 @@ public class CommonConfig {
 	}
 
 	Sampler initSampler() {
-		if (samplerConfig.isEmpty()) {
+		if (!samplerConfig.isPresent()) {
 			LOGGER.debug("Invalid config file, not sampling!");
 			return Sampler.NEVER_SAMPLE;
 		}
@@ -368,21 +371,21 @@ public class CommonConfig {
 
 		if ((type.equalsIgnoreCase(SimpleSampler.TYPE)
 			|| type.equalsIgnoreCase(CountingSampler.TYPE))
-			&& (rate.isEmpty() || accuracy.isEmpty())) {
+			&& (!rate.isPresent() || !accuracy.isPresent())) {
 			LOGGER.debug("Need sampling rate/accuracy for Simple/Counting Samplers!");
 			return false;
 		}
 
 		if (type.equalsIgnoreCase(BoundarySampler.TYPE)
-			&& (rate.isEmpty() || accuracy.isEmpty()
-			|| fieldCategory.isEmpty() || attributes.isEmpty())) {
+			&& (!rate.isPresent() || !accuracy.isPresent()
+			|| !fieldCategory.isPresent() || !attributes.isPresent())) {
 			LOGGER.debug("Need sampling rate/accuracy/ "
 				+ "fieldCategory/attributes for Boundary Sampler!");
 			return false;
 		}
 
 		if (type.equalsIgnoreCase(AdaptiveSampler.TYPE)
-			&& (fieldCategory.isEmpty() || attributes.isEmpty())) {
+			&& (!fieldCategory.isPresent() || !attributes.isPresent())) {
 			LOGGER.debug("Need field category/attributes "
 						+ "for Adaptive Sampler!");
 			return false;
@@ -411,7 +414,7 @@ public class CommonConfig {
 		if (BoundarySampler.TYPE.equalsIgnoreCase(type)) {
 			List<String> samplingParams = new ArrayList<>();
 			for (Attributes attr : attributes.get()) {
-				if (attr.getField() == null || attr.getField().isBlank()) {
+				if (attr.getField() == null || attr.getField().trim().isEmpty()) {
 					LOGGER.debug("Invalid input, using default sampler ");
 					samplingParams.clear();
 					return Sampler.NEVER_SAMPLE;
@@ -431,8 +434,8 @@ public class CommonConfig {
 			//ordered map to allow special value `other` at the end.
 			Map<Pair<String, String>, Float> samplingParams = new LinkedHashMap<>();
 			for (Attributes attr : attributes.get()) {
-				if (attr.getField() == null || attr.getField().isBlank()
-					|| attr.getValue().isEmpty() || attr.getRate().isEmpty()) {
+				if (attr.getField() == null || attr.getField().trim().isEmpty()
+					|| !attr.getValue().isPresent() || !attr.getRate().isPresent()) {
 					LOGGER.debug("Invalid input, using default sampler ");
 					samplingParams.clear();
 					return Sampler.NEVER_SAMPLE;
