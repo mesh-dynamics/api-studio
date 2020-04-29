@@ -830,6 +830,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         query.addFilterQuery(String.format("%s:%s", fieldname, newfval));
     }
 
+    private static void addNegativeFilter(SolrQuery query, String fieldname, String fval, boolean quote) {
+        String newfval = quote ? SolrIterator.escapeQueryChars(fval) : fval;
+        query.addFilterQuery(String.format("(*:* NOT %s:%s)", fieldname, newfval));
+    }
+
 
     private static void addFilter(SolrQuery query, String fieldname, String fval) {
         // add quotes by default in case the strings have spaces in them
@@ -857,7 +862,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private static void addFilter(SolrQuery query, String fieldname, boolean fval) {
-        addFilter(query, fieldname, String.valueOf(fval));
+        /**
+         * TODO
+         * addNegativeFilter is used to get those replays also which don't have the archive field in it
+         * Once all the replays have the archive field, we can remove this condition
+         */
+        if(fval) {
+            addFilter(query, fieldname, String.valueOf(fval));
+        }
+        else {
+            addNegativeFilter(query, fieldname, String.valueOf(!fval), true);
+        }
     }
 
     private static void addFilter(SolrQuery query, String fieldname, Integer fval) {
