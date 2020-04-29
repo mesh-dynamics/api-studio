@@ -288,7 +288,7 @@ public class TemplateEntry {
 		if (dt != expectedType && dt != Default) {
 			return ERR_ValTypeMismatch;
 		}
-		if (pt == CompareTemplate.PresenceType.Required && val.isEmpty()) {
+		if (pt == CompareTemplate.PresenceType.Required && !val.isPresent()) {
 			return ERR_Required;
 		}
 		return OK;
@@ -317,10 +317,10 @@ public class TemplateEntry {
 				break;
 		}
 
-		if (lhs.isEmpty()) {
+		if (!lhs.isPresent()) {
 			return lhsmissing();
 		}
-		if (rhs.isEmpty()) {
+		if (!rhs.isPresent()) {
 			return rhsmissing();
 		}
 

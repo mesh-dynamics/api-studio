@@ -2,6 +2,7 @@ package io.md.utils;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +58,7 @@ public class JsonTransformer {
 		ArrayNode patch = new ArrayNode(new JsonNodeFactory(false));
 		updates.stream()
 			.map(operation -> processOperation(lhsRoot, rhsRoot, operation))
-			.flatMap(Optional::stream)
+			.flatMap(node -> node.map(Stream::of).orElseGet(Stream::empty))
 			.forEach(patch::add);
 		return patch;
 	}

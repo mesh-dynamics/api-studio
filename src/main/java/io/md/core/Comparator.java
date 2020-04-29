@@ -193,11 +193,11 @@ public interface Comparator {
 			Optional<JsonNode> val, Optional<JsonNode> fromVal) {
 			if (needDiff && resolution != Resolution.OK) {
 				String op = Diff.NOOP;
-				if (val.isEmpty()) {
-					if (!fromVal.isEmpty()) {
+				if (!val.isPresent()) {
+					if (fromVal.isPresent()) {
 						op = Diff.REMOVE;
 					}
-				} else if (fromVal.isEmpty()) {
+				} else if (!fromVal.isPresent()) {
 					op = Diff.ADD;
 				} else {
 					op = Diff.REPLACE;

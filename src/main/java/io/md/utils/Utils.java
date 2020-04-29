@@ -3,9 +3,11 @@ package io.md.utils;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -60,10 +62,10 @@ public class Utils {
 	static {
 		// A case insensitive TreeSet of strings.
 		TreeSet<String> treeSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-		treeSet.addAll(Set.of("connection", "content-length",
+		treeSet.addAll(new HashSet<>(Arrays.asList("connection", "content-length",
 			"date", "expect", "from", "host", "origin",
 			"referer", "upgrade",
-			"via", "warning", "transfer-encoding"));
+			"via", "warning", "transfer-encoding")));
 		DISALLOWED_HEADERS_SET = Collections.unmodifiableSet(treeSet);
 	}
 
@@ -308,13 +310,13 @@ public class Utils {
 		return mdTraceInfo;
 	}
 
-	private static final List<String> HTTP_CONTENT_TYPE_HEADERS = List.of("content-type"
+	private static final List<String> HTTP_CONTENT_TYPE_HEADERS = Arrays.asList("content-type"
 		/*, "Content-type", "Content-Type", "content-Type"*/);
 
 	public static boolean isJsonMimeType(MultivaluedMap<String, String> headers) {
 		return HTTP_CONTENT_TYPE_HEADERS.stream()
 			.map(headers::getFirst).findFirst().filter(x ->
-				x.toLowerCase().stripLeading().startsWith(MediaType.APPLICATION_JSON)).isPresent();
+				x.toLowerCase().trim().startsWith(MediaType.APPLICATION_JSON)).isPresent();
 	}
 
 	public  static  Optional<String> getMimeType(MultivaluedMap<String, String> headers) {
@@ -322,7 +324,7 @@ public class Utils {
 			return Optional.empty();
 		return HTTP_CONTENT_TYPE_HEADERS.stream()
 			.map(headers::getFirst).filter(Objects::nonNull)
-			.findFirst().map(x -> x.toLowerCase().stripLeading());
+			.findFirst().map(x -> x.toLowerCase().trim());
 	}
 
 }

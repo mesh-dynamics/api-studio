@@ -5,10 +5,10 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.cube</groupId>
   <artifactId>commons</artifactId>
-  <version>1.0.53</version>
+  <version>1.0.54</version>
   <packaging>jar</packaging>
   <properties>
-    <version.java>11</version.java>
+    <version.java>8</version.java>
     <version.log4j>2.13.0</version.log4j>
     <version.jax>2.0</version.jax>
     <version.jaeger>1.1.0</version.jaeger>

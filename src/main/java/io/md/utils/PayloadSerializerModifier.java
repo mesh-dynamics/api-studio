@@ -1,5 +1,7 @@
 package io.md.utils;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,8 +27,9 @@ public class PayloadSerializerModifier extends BeanSerializerModifier {
 
 	//NOTE as we implement more classes which implement payload, we'll need to add
 	//them here
-	Set<Class> payloadClasses = Set.of(HTTPResponsePayload.class, HTTPRequestPayload.class,
-		JsonByteArrayPayload.class , JsonPayload.class);
+	Set<Class> payloadClasses = new HashSet<>(
+	Arrays.asList(HTTPResponsePayload.class, HTTPRequestPayload.class,
+		JsonByteArrayPayload.class , JsonPayload.class));
 
 	@Override
 	public JsonSerializer<?> modifySerializer(
