@@ -65,7 +65,7 @@ public class CubeServerService {
 
     public ResponseEntity fetchGetResponse(String path){
         try {
-            URI uri = new URI(path);
+            URI uri = new URI(null, null, null, 0, path, null, null);
             String result = restTemplate.getForObject(uri, String.class);
             return ok().body(result);
         } catch (URISyntaxException e){
@@ -114,6 +114,7 @@ public class CubeServerService {
             path += "?" + request.getQueryString();
         }
         try {
+            // here escaping is not needed, since the getRequestURI returns escaped. So using regular URI constructor
             URI uri = new URI(path);
             HttpHeaders headers = new HttpHeaders();
             request.getHeaderNames().asIterator().forEachRemaining(key -> headers.set(key, request.getHeader(key)));
