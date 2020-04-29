@@ -451,6 +451,12 @@ export function cube (state = initialState, action) {
                 ...state,
                 timelineData: []
             }
+        case cubeConstants.REMOVE_REPLAY_FROM_TIMELINE:
+            {
+                let index = state.timelineData.findIndex(item => item.replayId === action.data);
+                state.timelineData.splice(index, 1);
+                return state;
+            }
         default:
             return state
     }

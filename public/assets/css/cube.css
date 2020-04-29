@@ -4709,3 +4709,10 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 .ReactTable .rt-thead {
     flex: 1 1 0;
 }
+
+.timeline-replay-icon {
+    float: right;
+}
+.timeline-replay-icon:hover {
+    color: #00B2FF;
+}
