@@ -443,7 +443,7 @@ class ViewSelectedTestConfig extends React.Component {
     };
 
     stopRecord = () => {
-        const { cube, authentication } = this.props;
+        const { cube, authentication, dispatch } = this.props;
         const user = authentication.user;
         const url = `${config.recordBaseUrl}/stop/${this.state.recId}`;
         const configForHTTP = {
@@ -459,6 +459,8 @@ class ViewSelectedTestConfig extends React.Component {
                 this.setState({recStatus: response.data});
             });
         });
+
+        dispatch(cubeActions.getTestIds(cube.selectedApp));
     };
 
     replay = async () => {
