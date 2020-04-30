@@ -10,6 +10,7 @@ import axios from "axios";
 import {GoldenMeta} from "./Golden-Visibility";
 import {goldenActions} from '../actions/golden.actions'
 import {validateGoldenName} from "../utils/lib/golden-utils";
+import classNames from "classnames"
 // import { history } from "../helpers";
 // import { Glyphicon } from 'react-bootstrap';
 
@@ -20,6 +21,7 @@ class ViewSelectedTestConfig extends React.Component {
             panelVisible: true,
             testIdPrefix: '',
             fcId: null,
+            fcEnabled: false,
             replayId: null,
             show: false,
             showCT: false,
@@ -511,7 +513,11 @@ class ViewSelectedTestConfig extends React.Component {
             }).catch((error) => {
                 if(error.response.data) {
                     if (error.response.data['replayId'] !== "None") {
-                        this.setState({fcId: error.response.data['replayId'], show: false});
+                        this.setState({
+                            fcId: error.response.data['replayId'], 
+                            fcEnabled: (error.response.data['userId']===user.username), 
+                            show: false
+                        });
                     } else {
                         this.setState({show: false});
                         alert(error.response.data['message']);
@@ -530,7 +536,7 @@ class ViewSelectedTestConfig extends React.Component {
             showGoldenMeta, customHeaders, recordModalVisible, 
             show, fcId, showGoldenFilter, selectedGoldenFromFilter,
             recName, stopDisabled, recStatus, showAddCustomHeader,
-            goldenNameErrorMessage
+            goldenNameErrorMessage, fcEnabled
         } = this.state;
 
         const replayDone = (cube.replayStatus === "Completed" || cube.replayStatus === "Error");
@@ -605,16 +611,16 @@ class ViewSelectedTestConfig extends React.Component {
                 
                 <Modal show={fcId}>
                     <Modal.Header>
-                        <Modal.Title>Force Complete</Modal.Title>
+                        <Modal.Title>Cluster currently in use</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         <p>
-                            A replay with id {fcId} is in progress.
+                            A replay with id {fcId} is in progress on this cluster. Please use another cluster or try again later.
                         </p>
                     </Modal.Body>
                     <Modal.Footer>
-                        <span onClick={this.handleFC} className="cube-btn">Force Complete</span>&nbsp;&nbsp;
-                        <span onClick={this.handleFCDone} className="cube-btn">Done</span>
+                        <span onClick={this.handleFC} className={classNames("cube-btn","pull-left", {"disabled" : !fcEnabled})}>Force Complete</span>&nbsp;&nbsp;
+                        <span onClick={this.handleFCDone} className="cube-btn pull-right">Done</span>
                     </Modal.Footer>
                 </Modal>
 
