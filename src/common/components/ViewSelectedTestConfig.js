@@ -513,7 +513,7 @@ class ViewSelectedTestConfig extends React.Component {
                     if (error.response.data['replayId'] !== "None") {
                         this.setState({
                             fcId: error.response.data['replayId'], 
-                            fcEnabled: (error.response.data['userId']===user.username) , 
+                            fcEnabled: (error.response.data['userId']===user.username), 
                             show: false
                         });
                     } else {
@@ -609,11 +609,11 @@ class ViewSelectedTestConfig extends React.Component {
                 
                 <Modal show={fcId}>
                     <Modal.Header>
-                        <Modal.Title>Force Complete</Modal.Title>
+                        <Modal.Title>Cluster currently in use</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         <p>
-                            A replay with id {fcId} is in progress. Please use another cluster or try again later.
+                            A replay with id {fcId} is in progress on this cluster. Please use another cluster or try again later.
                         </p>
                     </Modal.Body>
                     <Modal.Footer>
