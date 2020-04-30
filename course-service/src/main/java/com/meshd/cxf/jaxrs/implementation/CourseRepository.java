@@ -29,6 +29,7 @@ import io.cube.interceptor.apachecxf.egress.TracingFilter;
 @Path("meshd")
 @Produces("application/json")
 public class CourseRepository {
+    ObjectMapper objectMapper = new ObjectMapper();
     private Map<Integer, Course> courses = new HashMap<>();
     private String BASE_URL = System.getenv("student.service.url");
     private String URL = BASE_URL!=null ? BASE_URL + "/meshd/students?source=aaa&trial=bbb" :
@@ -117,7 +118,6 @@ public class CourseRepository {
         Response response = studentWebClient.get();
         int code = response.getStatus();
         if (code >= 200 && code <= 299) {
-            ObjectMapper objectMapper = new ObjectMapper();
             String studentString = response.readEntity(String.class);
             Student student = null;
             try {
@@ -147,5 +147,20 @@ public class CourseRepository {
             courseList.add(course);
         }
         return courseList;
+    }
+
+    @GET
+    @Path("/dummyStudentList")
+    public Response dummyStudentList(@QueryParam("count") int studentCount)
+        throws URISyntaxException {
+        URIBuilder uriBuilder = new URIBuilder(URL);
+        uriBuilder.setPath(uriBuilder.getPath()+"/dummyStudentList");
+        uriBuilder.addParameter("count", String.valueOf(studentCount));
+        WebClient studentWebClient = WebClient.create(uriBuilder.build().toString(), List.of(new ClientFilter(), new TracingFilter())).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
+            javax.ws.rs.core.MediaType.APPLICATION_JSON);
+//        WebClient studentWebClient = webClient;
+
+        Response response = studentWebClient.get();
+        return response;
     }
 }

@@ -1,6 +1,8 @@
 package com.baeldung.cxf.jaxrs.implementation;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.DELETE;
@@ -10,6 +12,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 
 @Path("meshd")
@@ -65,5 +68,18 @@ public class StudentRepository {
       }
     }
     return null;
+  }
+
+  @GET
+  @Path("students/dummyStudentList")
+  public List<Student> dummyStudentList(@QueryParam("count") int studentCount) {
+    List<Student> studentList = new ArrayList<>();
+    Student student = new Student();
+    for (int i=0; i<studentCount; i++) {
+      student.setId(studentCount);
+      student.setName("Dummy Student");
+      studentList.add(student);
+    }
+    return studentList;
   }
 }
