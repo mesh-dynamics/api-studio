@@ -117,4 +117,9 @@ public class CubeStoreController {
     public ResponseEntity updateGoldenFields(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId) {
         return cubeServerService.fetchPostResponse(request, postBody);
     }
+
+    @PostMapping("/resumeRecording/{recordingId}")
+    public  ResponseEntity resumeRecordingByNameLabel(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId) {
+        return  cubeServerService.fetchPostResponse(request, postBody);
+    }
 }
