@@ -129,10 +129,16 @@
                         <relocation>
                             <pattern>com.twitter</pattern>
                             <shadedPattern>io.md.twitter</shadedPattern>
+                            <pattern>org.apache.thrift</pattern>
+                            <shadedPattern>io.md.apache.thrift</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>io.opentracing</pattern>
                             <shadedPattern>io.md.opentracing</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.squareup.okhttp3</pattern>
+                            <shadedPattern>io.md.squareup.okhttp3</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>
