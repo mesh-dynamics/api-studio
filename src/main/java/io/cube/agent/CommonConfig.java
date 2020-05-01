@@ -324,7 +324,7 @@ public class CommonConfig {
 
 	public Optional<URI> getMockingURI(URI originalURI, String serviceName)
 		throws URISyntaxException {
-		if (!isIntentToMock() || !shouldMockService(serviceName)) {
+		if (!shouldMockService(serviceName)) {
 			return Optional.empty();
 		} else {
 			URIBuilder uriBuilder = new URIBuilder(originalURI);

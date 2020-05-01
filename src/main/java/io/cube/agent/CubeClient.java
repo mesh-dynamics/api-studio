@@ -138,7 +138,6 @@ public class CubeClient {
 		HttpPost mockReqbuilder = new HttpPost(mockURI);
 		CommonConfig.getInstance().authToken.ifPresent(
 			val -> mockReqbuilder.setHeader(io.cube.agent.Constants.AUTHORIZATION_HEADER, val));
-		mockReqbuilder.setHeader("Authorization", CommonConfig.getInstance().authToken.orElse(null));
 		return getResponse(mockReqbuilder, event, APPLICATION_JSON).flatMap(response -> {
 			try {
 				LOGGER.debug("Response : ".concat(response));

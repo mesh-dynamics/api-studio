@@ -29,15 +29,6 @@ public interface Recorder {
         Optional<String> exceptionType,
         Object... args);
 
-    boolean recordOld(FnKey fnKey,
-        Optional<String> traceId,
-        Optional<String> spanId,
-        Optional<String> parentSpanId,
-        Object responseOrException,
-        RetStatus retStatus,
-        Optional<String> exceptionType,
-        Object... args);
-
     boolean record(ReqResp httpReqResp);
 
     boolean record(Event event);
