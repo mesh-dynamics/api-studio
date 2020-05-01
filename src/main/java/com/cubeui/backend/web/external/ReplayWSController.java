@@ -73,4 +73,13 @@ public class ReplayWSController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
+    @PostMapping("/softDelete/{replayId}")
+    public ResponseEntity softDelete(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String replayId) {
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+        if(replay.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error while retrieving Replay Object for replayId=" + replayId);
+        validation.validateCustomerName(request,replay.get().customerId);
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
 }
