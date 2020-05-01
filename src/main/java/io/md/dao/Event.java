@@ -8,11 +8,13 @@ package io.md.dao;
 
 import java.net.URLClassLoader;
 import java.time.Instant;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Collections;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -194,6 +196,7 @@ public class Event {
 		List<String> keyVals = new ArrayList<>();
 		payload.collectKeyVals(path -> template.getRule(path).getCompareType()
 			== CompareTemplate.ComparisonType.Equal, keyVals);
+		Collections.sort(keyVals);
 		LOGGER.info("Generating event key from vals : ".concat(keyVals.toString()));
 		payloadKey = Objects.hash(keyVals);
 		// TODO deal with this later
