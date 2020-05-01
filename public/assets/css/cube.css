@@ -4716,3 +4716,11 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 .timeline-replay-icon:hover {
     color: #00B2FF;
 }
+
+.view-test-report-img {
+    height: 20px;
+}
+
+.view-test-report-img:hover {
+    background-color: rgba(0, 179, 255, 0.507);
+}

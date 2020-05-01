@@ -19,6 +19,7 @@ import {
     validateAndCreateDiffLayoutData  
 } from "../../utils/diff/diff-process.js";
 import config from "../../config";
+import { cubeService } from "../../services";
 
 const DiffResultsContext = createContext();
 
@@ -270,7 +271,7 @@ class DiffResults extends Component {
 
     // fetch and set the service facets
     setServiceFacetData = async (replayId) => {
-        this.fetchFacetData(replayId)
+        cubeService.fetchFacetData(replayId)
         .then(
             (resultsData) => {
                 const facets = resultsData.data && resultsData.data.facets || {};
@@ -346,42 +347,6 @@ class DiffResults extends Component {
             console.error("Error fetching analysis results list");
             throw e;
         }
-    }
-
-    async fetchFacetData(replayId) {
-        let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
-        let searchParams = new URLSearchParams();
-        searchParams.set("numResults", 0);
-        
-        let url = analysisResUrl + "?" + searchParams.toString();
-
-        let user = JSON.parse(localStorage.getItem('user'));
-        try {
-        
-            let response = await fetch(url, { 
-                headers: { 
-                    "Authorization": "Bearer " + user['access_token']
-                }, 
-                "method": "GET", 
-            });
-            
-            if (response.ok) {
-                let dataList = {}
-                let json = await response.json();
-                dataList = json;
-                if (_.isEmpty(dataList.data) || _.isEmpty(dataList.data.facets)) {
-                    console.log("facets data is empty")
-                }
-                return dataList;
-            } else {
-                console.error("unable to fetch facet data");
-                throw new Error("unable to fetch facet data");
-            }
-        } catch (e) {
-            console.error("Error fetching facet data");
-            throw e;
-        }
-        //return respData.facets;
     }
 
     preProcessResults = (results) => {

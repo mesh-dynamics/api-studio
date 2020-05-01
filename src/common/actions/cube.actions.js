@@ -344,7 +344,7 @@ function clearReplayStatus() {
 function getReplayStatus(collectionId, replayId, app) {
     return async dispatch => {
         try {
-            let replayStatus = await cubeService.checkStatusForReplay(collectionId, replayId, app);
+            let replayStatus = await cubeService.checkStatusForReplay(replayId);
             dispatch(success(replayStatus, Date.now()));
         } catch (error) {
             console.error("Error getting replay status: " + error);
