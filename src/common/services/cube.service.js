@@ -20,6 +20,7 @@ export const cubeService = {
     getNewTemplateVerInfo,
     fetchJiraBugData,
     fetchAnalysisStatus,
+    removeReplay,
 };
 
 async function fetchAppsList() {
@@ -494,4 +495,29 @@ async function fetchJiraBugData(replayId, apiPath) {
     }
 
     return data;   
+}
+
+async function removeReplay(replayId) {
+    let user = JSON.parse(localStorage.getItem('user'));
+    let response,data;
+    let url = `${config.replayBaseUrl}/softDelete/${replayId}`;
+    try {
+        response = await fetch(url, {
+            method: "post",
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + user['access_token']
+            }),
+        });
+        if (response.ok) {
+            data = await response.json();
+        } else {
+            throw new Error("Could not delete the Replay");
+        }
+
+    } catch (error) {
+        console.log("Error deleting Replay", error);
+        throw error;
+    }
+    return data;
 }

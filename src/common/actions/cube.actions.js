@@ -44,6 +44,8 @@ export const cubeActions = {
     clearPathResultsParams,
     clearTimeline,
     getAnalysisStatus,
+    removeReplay,
+    removeReplayFromTimeline,
 };
 
 function clear() {
@@ -396,4 +398,8 @@ function getJiraBugs(replayId, apiPath) {
             console.log("Error caught in fetch", error);
         }
     }
+}
+
+function removeReplayFromTimeline(replayId) {
+    return {type: cubeConstants.REMOVE_REPLAY_FROM_TIMELINE, data: replayId};
 }
