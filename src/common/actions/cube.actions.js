@@ -400,17 +400,6 @@ function getJiraBugs(replayId, apiPath) {
     }
 }
 
-function removeReplay(replayId) {
-    return async dispatch => {
-        try {
-            await cubeService.removeReplay(replayId);
-            dispatch(cubeActions.removeReplayFromTimeline(replayId));
-        } catch (error) {
-            console.error("Error caught in softDelete: " + error);
-        }
-    }
-}
-
 function removeReplayFromTimeline(replayId) {
     return {type: cubeConstants.REMOVE_REPLAY_FROM_TIMELINE, data: replayId};
 }
