@@ -416,8 +416,8 @@ public class CommonUtils {
 	}
 
 	public static Optional<String> fromEnvOrSystemProperties(String propertyName) {
-		return Optional.ofNullable(Optional.ofNullable(System.getenv(propertyName)).orElse(
-			System.getProperty(propertyName)));
+		Optional<String> ret = Optional.ofNullable(System.getenv(propertyName));
+		return ret.isPresent() ? ret : Optional.ofNullable(System.getProperty(propertyName));
 	}
 
 	public static CubeMetaInfo cubeMetaInfoFromEnv() throws Exception {
