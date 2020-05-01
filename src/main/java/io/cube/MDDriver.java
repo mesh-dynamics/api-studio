@@ -210,7 +210,7 @@ public class MDDriver implements Driver {
                 Properties fnArg2 = (Properties)fnArgs[1];
                 Optional<MDDriver> realDriver = getRealDriver(fnArg1);
                 DriverPropertyInfo[] propertyInfo;
-                if (realDriver.isEmpty()) {
+                if (!realDriver.isPresent()) {
                     propertyInfo = new DriverPropertyInfo[0];
                 } else {
                     propertyInfo = realDriver.get().driver.getPropertyInfo(fnArg1, fnArg2);
