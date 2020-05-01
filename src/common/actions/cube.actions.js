@@ -44,7 +44,6 @@ export const cubeActions = {
     clearPathResultsParams,
     clearTimeline,
     getAnalysisStatus,
-    removeReplay,
     removeReplayFromTimeline,
 };
 
