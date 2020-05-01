@@ -3,6 +3,7 @@ package com.meshd.cxf.jaxrs.implementation;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,7 +112,7 @@ public class CourseRepository {
 //        WebClient studentWebClient = webClient.path(URL + id);
         URIBuilder uriBuilder = new URIBuilder(URL);
         uriBuilder.setPath(uriBuilder.getPath()+"/"+id);
-        WebClient studentWebClient = WebClient.create(uriBuilder.build().toString(), List.of(new ClientFilter(), new TracingFilter())).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
+        WebClient studentWebClient = WebClient.create(uriBuilder.build().toString(), Arrays.asList(new ClientFilter(), new TracingFilter())).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
             javax.ws.rs.core.MediaType.APPLICATION_JSON);
 //        WebClient studentWebClient = webClient;
 
@@ -156,7 +157,8 @@ public class CourseRepository {
         URIBuilder uriBuilder = new URIBuilder(URL);
         uriBuilder.setPath(uriBuilder.getPath()+"/dummyStudentList");
         uriBuilder.addParameter("count", String.valueOf(studentCount));
-        WebClient studentWebClient = WebClient.create(uriBuilder.build().toString(), List.of(new ClientFilter(), new TracingFilter())).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
+        WebClient studentWebClient = WebClient.create(uriBuilder.build().toString(), Arrays
+            .asList(new ClientFilter(), new TracingFilter())).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
             javax.ws.rs.core.MediaType.APPLICATION_JSON);
 //        WebClient studentWebClient = webClient;
 

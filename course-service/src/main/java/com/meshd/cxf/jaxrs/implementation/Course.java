@@ -2,6 +2,7 @@ package com.meshd.cxf.jaxrs.implementation;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.ws.rs.DELETE;
@@ -33,7 +34,8 @@ public class Course {
     private String URL = BASE_URL!=null ? BASE_URL + "/meshd/students?source=aaa&trial=bbb" :
         "http://34.220.106.159:8080/meshd/students?source=aaa&trial=bbb";
     //    private String URL = "http://34.220.106.159:8080/meshd/students?source=aaa&trial=bbb";
-    private WebClient webClient = WebClient.create(URL, List.of(new ClientFilter(), new TracingFilter(), new MockingClientFilter()), true).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
+    private WebClient webClient = WebClient.create(URL, Arrays
+        .asList(new ClientFilter(), new TracingFilter(), new MockingClientFilter()), true).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
         javax.ws.rs.core.MediaType.APPLICATION_JSON);
 
     public int getId() {

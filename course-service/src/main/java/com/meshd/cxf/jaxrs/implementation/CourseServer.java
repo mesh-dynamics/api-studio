@@ -1,5 +1,6 @@
 package com.meshd.cxf.jaxrs.implementation;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.cxf.endpoint.Server;
@@ -17,7 +18,8 @@ public class  CourseServer {
         JAXRSServerFactoryBean factoryBean = new JAXRSServerFactoryBean();
         factoryBean.setResourceClasses(CourseRepository.class);
         factoryBean.setResourceProvider(new SingletonResourceProvider(new CourseRepository()));
-        factoryBean.setProviders(List.of(new JacksonJaxbJsonProvider(), new TracingFilter(), new LoggingFilter()));
+        factoryBean.setProviders(
+            Arrays.asList(new JacksonJaxbJsonProvider(), new TracingFilter(), new LoggingFilter()));
         factoryBean.setAddress("http://0.0.0.0:8084/");
         Server server = factoryBean.create();
 
