@@ -7,7 +7,7 @@
     <groupId>io.cube</groupId>
     <artifactId>md-jdbcwrapper</artifactId>
     <packaging>jar</packaging>
-    <version>1.2.0</version>
+    <version>1.2.1</version>
     <properties>
         <version.log4j>2.11.1</version.log4j>
         <version.java>8</version.java>
