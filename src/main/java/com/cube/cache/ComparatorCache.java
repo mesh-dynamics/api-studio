@@ -131,52 +131,68 @@ public class ComparatorCache {
     private Comparator getComparator(TemplateKey key, EventType eventType, boolean sendDefault) throws TemplateNotFoundException {
         try {
             return comparatorCache.get(key, () -> {
-                Comparator toReturn = createComparator(key, eventType);
-                LOGGER.info(new ObjectMessage(Map.of(
-                    Constants.MESSAGE, "Successfully loaded into cache request comparator",
-                    "key", key
-                )));
-                return toReturn;
-            });
-
-        } catch (ExecutionException e) {
-            if (!sendDefault) {
-                throw new TemplateNotFoundException();
-            }
-            LOGGER.info(new ObjectMessage(Map.of(
-                Constants.MESSAGE, "Unable to find template in cache, using default",
-                "key", key,
-                Constants.REASON, e.getMessage())));
-            switch (eventType) {
-                case HTTPRequest:
-                    if(key.getReqOrResp() == Type.RequestMatch) {
-                        return defaultHTTPRequestMatchComparator;
-                    } else {
-                        return JsonComparator.EMPTY_COMPARATOR;
-                    }
-                case HTTPResponse:
-                    return defaultHTTPResponseComparator;
-                case JavaRequest:
-                    return defaultJavaRequestComparator;
-                case JavaResponse:
-                    return defaultJavaResponseComparator;
-                case ThriftRequest:
-                    return defaultThriftRequestComparator;
-                case ThriftResponse:
-                    return defaultThriftResponseComparator;
-                default:
-                    LOGGER.error(new ObjectMessage(Map.of(
-                        "message", "No default template found",
+                try {
+                    Comparator toReturn = createComparator(key, eventType);
+                    LOGGER.info(new ObjectMessage(Map.of(
+                        Constants.MESSAGE, "Successfully loaded into cache request comparator",
                         "key", key
                     )));
-                    throw new TemplateNotFoundException();
-            }
+                    return toReturn;
+                } catch (Exception e) {
+                    if (!sendDefault) {
+                        throw new TemplateNotFoundException();
+                    }
+                    LOGGER.info(new ObjectMessage(Map.of(
+                        Constants.MESSAGE, "Unable to find template in cache, using default",
+                        "key", key,
+                        Constants.REASON, e.getMessage())));
+                    Comparator defaultComparator = getDefaultComparator(eventType, key);
+                    return createCopyWithAttributeRules(defaultComparator, key);
+                }
+            });
         } catch (Throwable e) {
             LOGGER.error(new ObjectMessage(Map.of(
-                Constants.MESSAGE, "Unhandled exception occured (re-throwing)"
+                Constants.MESSAGE, "Unhandled exception occurred (re-throwing)"
             )),e);
-            throw e;
+            throw new TemplateNotFoundException();
         }
+    }
+
+    public Comparator getDefaultComparator(EventType eventType, TemplateKey key)  throws
+        TemplateNotFoundException {
+        switch (eventType) {
+            case HTTPRequest:
+                if(key.getReqOrResp() == Type.RequestMatch) {
+                    return defaultHTTPRequestMatchComparator;
+                } else {
+                    return JsonComparator.EMPTY_COMPARATOR;
+                }
+            case HTTPResponse:
+                return defaultHTTPResponseComparator;
+            case JavaRequest:
+                return defaultJavaRequestComparator;
+            case JavaResponse:
+                return defaultJavaResponseComparator;
+            case ThriftRequest:
+                return defaultThriftRequestComparator;
+            case ThriftResponse:
+                return defaultThriftResponseComparator;
+            default:
+                LOGGER.error(new ObjectMessage(Map.of(
+                    "message", "No default template found",
+                    "key", key
+                )));
+                throw new TemplateNotFoundException();
+        }
+    }
+
+
+    public Comparator createCopyWithAttributeRules(Comparator defaultExisting, TemplateKey key) {
+        CompareTemplate fromDefault = new CompareTemplate();
+        fromDefault.setRules(defaultExisting.getCompareTemplate().getRules());
+        rrStore.getAttributeRuleMap(key)
+            .ifPresent(fromDefault::setAppLevelAttributeRuleMap);
+        return new JsonComparator(fromDefault , jsonMapper);
     }
 
 

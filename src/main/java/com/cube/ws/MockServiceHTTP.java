@@ -126,7 +126,7 @@ public class MockServiceHTTP {
             Optional<ReqRespStore.RecordOrReplay> recordOrReplay = getCurrentRecordOrReplay(
                 event.customerId, event.app, event.instanceId);
             Optional<String> collection = recordOrReplay
-                .flatMap(ReqRespStore.RecordOrReplay::getCollection);
+                .flatMap(ReqRespStore.RecordOrReplay::getRecordingCollection);
             // check collection, validate, fetch template for request, set key and store. If error at any point stop
             if (collection.isPresent()) {
                 event.setCollection(collection.get());

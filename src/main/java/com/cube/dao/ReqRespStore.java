@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.FnResponse;
+import io.md.core.AttributeRuleMap;
 import io.md.core.CompareTemplate;
 import io.md.dao.Event;
 import io.md.dao.Event.RunType;
@@ -105,7 +106,8 @@ public interface ReqRespStore {
         RecordingOperationSetMeta,
         RecordingOperationSet,
         MatchResultAggregate,
-		Diff
+		Diff,
+		AttributeTemplate
     }
 
     boolean save(Event event);
@@ -167,7 +169,20 @@ public interface ReqRespStore {
 	 * @param templateAsJson
 	 * @return
 	 */
-	String saveCompareTemplate(TemplateKey key, String templateAsJson) throws CompareTemplate.CompareTemplateStoreException;
+	String saveCompareTemplate(TemplateKey key, String templateAsJson)
+		throws CompareTemplate.CompareTemplateStoreException;
+
+
+	/**
+	 * Save an app level attribute rule map (rules defined for attribute names in any api
+	 * at any level for the app)
+	 * @param key
+	 * @param ruleMapJson
+	 * @return
+	 * @throws CompareTemplate.CompareTemplateStoreException
+	 */
+	public String saveAttributeRuleMap(TemplateKey key, String ruleMapJson)
+		throws CompareTemplate.CompareTemplateStoreException;
 
 	/**
 	 * Retrieve an analysis template from the database for
@@ -176,6 +191,9 @@ public interface ReqRespStore {
 	 * @return
 	 */
 	Optional<CompareTemplate> getCompareTemplate(TemplateKey key);
+
+
+	Optional<AttributeRuleMap> getAttributeRuleMap(TemplateKey key);
 
 
     /**
@@ -192,11 +210,12 @@ public interface ReqRespStore {
 		 * @param startDate
 		 * @Param testConfigName
 		 * @Param goldenName
+		 * @Param archived
      * @return
      */
     Result<Replay> getReplay(Optional<String> customerId, Optional<String> app, List<String> instanceId,
                              List<ReplayStatus> status, Optional<String> collection, Optional<Integer> numOfResults, Optional<Integer> start,
-                             Optional<String> userId, Optional<Instant> endDate, Optional<Instant> startDate, Optional<String> testConfigName, Optional<String> goldenName);
+                             Optional<String> userId, Optional<Instant> endDate, Optional<Instant> startDate, Optional<String> testConfigName, Optional<String> goldenName, boolean archived);
 
     /**
      *

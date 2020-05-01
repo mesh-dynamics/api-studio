@@ -217,7 +217,7 @@ public class Utils {
 
         // pass null for version if version is empty and timestamp so that new version number is created automatically
         TemplateSet templateSet = new TemplateSet(templateVersion.orElse(null), customerId, appId, null,
-            compareTemplateVersionedList);
+            compareTemplateVersionedList , Optional.empty());
 
         return templateSet;
 

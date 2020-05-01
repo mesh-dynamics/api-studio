@@ -75,7 +75,7 @@ public class Replay {
 		Optional<Double> sampleRate, List<String> intermediateServices,
 		Optional<String> generatedClassJarPath, Optional<URLClassLoader> classLoader,
 		Optional<String> service, ReplayTypeEnum replayType, Optional<String> xfms, Optional<RRTransformer> xfmer, List<String> mockServices,
-		Optional<String> testConfigName, Optional<String> goldenName, Optional<String> recordingId) {
+		Optional<String> testConfigName, Optional<String> goldenName, Optional<String> recordingId, boolean archived) {
 		super();
 		this.endpoint = endpoint;
 		this.customerId = customerId;
@@ -106,6 +106,7 @@ public class Replay {
 		this.testConfigName = testConfigName;
 		this.goldenName = goldenName;
 		this.recordingId = recordingId;
+		this.archived = archived;
 	}
 
 	//for deserialization
@@ -135,6 +136,7 @@ public class Replay {
 	    testConfigName = Optional.empty();
 	    goldenName = Optional.empty();
 	    recordingId = Optional.empty();
+	    this.archived = false;
     }
 
 	/*
@@ -206,6 +208,8 @@ public class Replay {
 	public final Optional<String> goldenName;
 	@JsonProperty("recordingId")
 	public final Optional<String> recordingId;
+	@JsonProperty("archived")
+	public boolean archived;
 	public transient Optional<URLClassLoader> generatedClassLoader;
 
 	@JsonSetter
@@ -250,5 +254,17 @@ public class Replay {
 		return rrstore.getEvents(eventQuery);
 	}
 
-
+    public Replay softDeleteReplay(ReqRespStore rrstore) throws ReplaySaveFailureException {
+			this.archived = true;
+			boolean success = rrstore.saveReplay(this);
+			if (!success) {
+				throw new ReplaySaveFailureException("Cannot archive Replay for replayId=" + this.replayId);
+			}
+			return this;
+		}
+		public static class ReplaySaveFailureException extends Exception {
+			public ReplaySaveFailureException(String message) {
+				super(message);
+			}
+		}
 }

@@ -1,15 +1,18 @@
 package com.cube.core;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import io.md.core.AttributeRuleMap;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
 import io.md.core.ValidateCompareTemplate;
 
 import com.cube.cache.TemplateKey;
+import com.cube.cache.TemplateKey.Type;
 
 public class CompareTemplateVersioned extends CompareTemplate {
 
@@ -59,4 +62,8 @@ public class CompareTemplateVersioned extends CompareTemplate {
         }
         return validateCompareTemplate;
     }
+
+    public static CompareTemplateVersioned EMPTY_COMPARE_TEMPLATE_VERSION = new CompareTemplateVersioned(Optional.of(io.md.constants.Constants.NOT_APPLICABLE),
+        Optional.of(io.md.constants.Constants.NOT_APPLICABLE),
+        Type.DontCare, new CompareTemplate(""));
 }
