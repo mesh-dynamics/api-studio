@@ -27,7 +27,6 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
 	protected final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 
 	protected ObjectMapper jsonMapper;
-	private Gson gson;
 
 	public AbstractGsonSerializeRecorder(Gson gson) {
 		// TODO pass this from above too
@@ -35,7 +34,6 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
 		jsonMapper.registerModule(new Jdk8Module());
 		jsonMapper.registerModule(new JavaTimeModule());
 		jsonMapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
-		this.gson = gson;
 	}
 
 	public abstract boolean record(FnReqResponse fnReqResponse);
@@ -43,66 +41,17 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
 	public abstract boolean record(Event event);
 
 	@Override
-	public boolean recordOld(FnKey fnKey, Optional<String> traceId,
-		Optional<String> spanId,
-		Optional<String> parentSpanId,
-		Object responseOrException,
-		RetStatus retStatus,
-		Optional<String> exceptionType,
-		Object... args) {
-		try {
-			String[] argVals =
-				Arrays.stream(args).map(UtilException.rethrowFunction(gson::toJson))
-					.toArray(String[]::new);
-			Integer[] argsHash = Arrays.stream(argVals).map(String::hashCode)
-				.toArray(Integer[]::new);
-			//String respVal = jsonMapper.writeValueAsString(responseOrException);
-			String respVal = gson.toJson(responseOrException);
-
-			String traceIdString = traceId.orElse("N/A");
-			var counter = new Object() {
-				int x = 0;
-			};
-			Arrays.stream(argVals)
-				.forEach(arg -> LOGGER.debug("func_name : ".concat(fnKey.fnName)
-					.concat(" , trace_id : ").concat(traceIdString)
-					.concat(" , arg_hash : ").concat(String.valueOf(argsHash[counter.x]))
-					.concat(" , arg_val_".concat(String.valueOf(counter.x++))
-						.concat(" : ").concat(arg))));
-
-			LOGGER.info("return_value : ".concat(respVal));
-
-			FnReqResponse fnrr = new FnReqResponse(fnKey.customerId, fnKey.app, fnKey.instanceId,
-				fnKey.service,
-				fnKey.fnSigatureHash, fnKey.fnName, traceId, spanId, parentSpanId,
-				Optional.ofNullable(Instant.now()), argsHash,
-				argVals, respVal, retStatus, exceptionType);
-			return record(fnrr);
-			//Optional<String> cubeResponse = cubeClient.storeFunctionReqResp(fnrr);
-			//cubeResponse.ifPresent(responseStr -> System.out.println(responseStr));
-			//return true;
-		} catch (Exception e) {
-			// encode can throw UnsupportedEncodingException
-			String stackTraceError = UtilException
-				.extractFirstStackTraceLocation(e.getStackTrace());
-			LOGGER.error("func_name : ".concat(fnKey.fnName)
-				.concat(" , trace_id : ").concat(traceId.orElse("NA")), e);
-			return false;
-		}
-	}
-
-	@Override
 	public boolean record(FnKey fnKey, Object responseOrException, RetStatus retStatus,
 		Optional<String> exceptionType, Object... args) {
 
 		MDTraceInfo mdTraceInfo;
-		if (CommonUtils.getCurrentTraceId().isEmpty()) {
-			//No span context. Initialization scenario.
-			mdTraceInfo = CommonUtils.getDefaultTraceInfo();
-
-		} else {
+		if (CommonUtils.getCurrentTraceId().isPresent()) {
 			//load the created context
 			mdTraceInfo = CommonUtils.mdTraceInfoFromContext();
+
+		} else {
+			//No span context. Initialization scenario.
+			mdTraceInfo = CommonUtils.getDefaultTraceInfo();
 		}
 
 		try {

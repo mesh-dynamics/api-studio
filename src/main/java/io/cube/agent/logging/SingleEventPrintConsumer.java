@@ -2,11 +2,9 @@ package io.cube.agent.logging;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
 
-import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,9 +34,7 @@ public class SingleEventPrintConsumer {
 					FileOutputStream(CommonConfig.getInstance().disruptorFileOutName);
 			} catch (FileNotFoundException e) {
 				eventOutputStream = Utils.nullOutputStream(LOGGER);
-				LOGGER.debug(String.valueOf(
-						Map.of(Constants.MESSAGE, "Unable to find outstream file. Setting outstream as nullOutputStream ",
-							Constants.EXCEPTION_STACK, e.getStackTrace())));
+				LOGGER.debug("Unable to find outstream file. Setting outstream as nullOutputStream ", e);
 			}
 		}
 	}

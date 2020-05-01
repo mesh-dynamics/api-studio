@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
 import io.md.dao.Event;
@@ -47,13 +48,13 @@ public class SimpleMocker implements Mocker {
 	public FnResponseObj mock(FnKey fnKey,
 		Optional<Instant> prevRespTS, Optional<Type> retType, Object... args) {
 		MDTraceInfo mdTraceInfo;
-		if (CommonUtils.getCurrentTraceId().isEmpty()) {
-			//No span context. Initialization scenario.
-			mdTraceInfo = CommonUtils.getDefaultTraceInfo();
-
-		} else {
+		if (CommonUtils.getCurrentTraceId().isPresent()) {
 			//load the created context
 			mdTraceInfo = CommonUtils.mdTraceInfoFromContext();
+
+		} else {
+			//No span context. Initialization scenario.
+			mdTraceInfo = CommonUtils.getDefaultTraceInfo();
 		}
 
 		Optional<String> traceId = Optional.ofNullable(mdTraceInfo.traceId);
@@ -87,7 +88,14 @@ public class SimpleMocker implements Mocker {
 						retOrExceptionVal = gson.fromJson(resp.retVal,
 							retType.isPresent() ? retType.get() : getRetOrExceptionClass(resp,
 								fnKey.function.getGenericReturnType()));
-					} catch (Exception e) {
+					} catch (JsonSyntaxException ex) {
+						//If the returned value is a String with spaces, this exception
+						//is thrown, In that case we will return the same value
+						LOGGER.error("Json Syntax exception, could be a simple string " + resp.retVal);
+						return new FnResponseObj(resp.retVal, resp.timeStamp, resp.retStatus,
+							resp.exceptionType);
+					}
+					catch (Exception e) {
 						LOGGER.error("func_signature :".concat(eve.apiPath)
 							.concat(" , trace_id : ").concat(eve.getTraceId()), e);
 						return new FnResponseObj(null, Optional.empty(), RetStatus.Success,
@@ -112,7 +120,6 @@ public class SimpleMocker implements Mocker {
 		} catch (Exception ex) {
 			LOGGER.error("Exception occurred while mocking function! Function Key : " + fnKey);
 		}
-
 		return new FnResponseObj(null, Optional.empty(), RetStatus.Success,
 			Optional.empty());
 	}

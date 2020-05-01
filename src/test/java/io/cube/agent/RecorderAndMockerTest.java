@@ -26,7 +26,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import io.md.dao.FnReqRespPayload.RetStatus;
-import io.md.constants.Constants;
 import io.md.utils.FnKey;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 
@@ -316,27 +315,30 @@ class RecorderAndMockerTest {
             }
         });
 
-        replayid.ifPresentOrElse(replayidv -> {
+        if (!replayid.isPresent()) {
+            fail("Replay cannot be inited or started");
+        }
 
-                    // force start replay (for testing - this only sets replay state to Running)
-                    cubeClient.forceStartReplay(replayidv);
+        replayid.ifPresent(replayidv -> {
 
-                    // set mode to mock
-                    mode = Mode.Mock;
+            // force start replay (for testing - this only sets replay state to Running)
+            cubeClient.forceStartReplay(replayidv);
 
-                    // call fn
-                    String[] replayRet = IntStream.range(0, prodDiscounts.length).mapToObj(i -> {
-                        traceid = Optional.of(trace + "." + i);
-                        return prodDiscounts[i].getPromoName();
-                    }).toArray(String[]::new);
+            // set mode to mock
+            mode = Mode.Mock;
 
-                    // stop replay
-                    cubeClient.forceCompleteReplay(replayidv);
+            // call fn
+            String[] replayRet = IntStream.range(0, prodDiscounts.length).mapToObj(i -> {
+                traceid = Optional.of(trace + "." + i);
+                return prodDiscounts[i].getPromoName();
+            }).toArray(String[]::new);
 
-                    // compare values
-                    assertArrayEquals(ret, replayRet);
-                },
-                () -> fail("Replay cannot be inited or started"));
+            // stop replay
+            cubeClient.forceCompleteReplay(replayidv);
+
+            // compare values
+            assertArrayEquals(ret, replayRet);
+        });
 
     }
 
@@ -434,34 +436,40 @@ class RecorderAndMockerTest {
             }
         });
 
-        replayid.ifPresentOrElse(replayidv -> {
+        if(!replayid.isPresent()) {
+            fail("Replay cannot be inited or started");
+        }
 
-                    // force start replay (for testing - this only sets replay state to Running)
-                    cubeClient.forceStartReplay(replayidv);
+        replayid.ifPresent(replayidv -> {
 
-                    // set mode to mock
-                    mode = Mode.Mock;
+            // force start replay (for testing - this only sets replay state to Running)
+            cubeClient.forceStartReplay(replayidv);
 
-                    // call fn
-                    traceid = Optional.of(trace + ".1");
-                    Double[] rr1 = callProdDisc(prodDiscount1, ppArr, asObj, nullObj, seqSize, testException);
-                    traceid = Optional.of(trace + ".2");
-                    Double[] rr2 = callProdDisc(prodDiscount2, ppArr, asObj, nullObj, seqSize, testException);
-                    traceid = Optional.of(trace + ".3");
-                    Double[] rr3 = callProdDisc(prodDiscount3, ppArr, asObj, nullObj, seqSize, testException);
+            // set mode to mock
+            mode = Mode.Mock;
 
-                    // stop replay
-                    cubeClient.forceCompleteReplay(replayidv);
+            // call fn
+            traceid = Optional.of(trace + ".1");
+            Double[] rr1 = callProdDisc(prodDiscount1, ppArr, asObj, nullObj, seqSize,
+                testException);
+            traceid = Optional.of(trace + ".2");
+            Double[] rr2 = callProdDisc(prodDiscount2, ppArr, asObj, nullObj, seqSize,
+                testException);
+            traceid = Optional.of(trace + ".3");
+            Double[] rr3 = callProdDisc(prodDiscount3, ppArr, asObj, nullObj, seqSize,
+                testException);
 
-                    // compare values
-                    LOGGER.debug("Comparing " + ret1.toString() + " to " + rr1.toString());
-                    assertArrayEquals(ret1, rr1);
-                    LOGGER.debug("Comparing " + ret2.toString() + " to " + rr3.toString());
-                    assertArrayEquals(ret2, rr2);
-                    LOGGER.debug("Comparing " + ret3.toString() + " to " + rr3.toString());
-                    assertArrayEquals(ret3, rr3);
-                },
-                () -> fail("Replay cannot be inited or started"));
+            // stop replay
+            cubeClient.forceCompleteReplay(replayidv);
+
+            // compare values
+            LOGGER.debug("Comparing " + ret1.toString() + " to " + rr1.toString());
+            assertArrayEquals(ret1, rr1);
+            LOGGER.debug("Comparing " + ret2.toString() + " to " + rr3.toString());
+            assertArrayEquals(ret2, rr2);
+            LOGGER.debug("Comparing " + ret3.toString() + " to " + rr3.toString());
+            assertArrayEquals(ret3, rr3);
+        });
 
     }
 

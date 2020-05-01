@@ -3,10 +3,6 @@ package io.cube.agent;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URLEncoder;
-import java.net.http.HttpRequest.BodyPublisher;
-import java.net.http.HttpRequest.BodyPublishers;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -107,7 +103,12 @@ public class Utils {
 
 			@Override
 			public void write(byte b[], int off, int len) throws IOException {
-				Objects.checkFromIndexSize(off, len, b.length);
+				if (off < 0 || len < 0 || (off + len) > b.length) {
+					throw new IndexOutOfBoundsException(" buffer with length [" + b.length + "], "
+						+ "with range from ["
+						+ off + "], length [" + len + "]");
+				}
+
 				ensureOpen();
 				discardLog();
 			}
