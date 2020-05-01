@@ -198,16 +198,14 @@ public class CompareTemplate {
 		while (!pointer.toString().isEmpty()) {
 			String currentProperty = pointer.getMatchingProperty();
 
-			get(returnPointer[0]).ifPresentOrElse(rule -> {
+			returnPointer[0] = get(returnPointer[0]).map(rule -> {
 					if (rule.dt == DataType.RptArray) {
-						returnPointer[0] = returnPointer[0].append(JsonPointer.valueOf("/*"));
+						return returnPointer[0].append(JsonPointer.valueOf("/*"));
 					} else {
-						returnPointer[0] = returnPointer[0].append(JsonPointer.valueOf("/" + currentProperty));
+						return returnPointer[0].append(JsonPointer.valueOf("/" + currentProperty));
 					}
-				},
-				() -> {
-					returnPointer[0] = returnPointer[0].append(JsonPointer.valueOf("/" + currentProperty));
-				});
+				}).orElse(
+					returnPointer[0].append(JsonPointer.valueOf("/" + currentProperty)));
 			pointer = pointer.tail();
 		}
 		return returnPointer[0];
@@ -295,9 +293,12 @@ public class CompareTemplate {
 	}
 
 	public Optional<TemplateEntry> get(JsonPointer path) {
-		return Optional.ofNullable(rules.get(path.toString())).or(() ->
-			appLevelAttributeRuleMap.flatMap(map ->
-				map.getRule(path.last().getMatchingProperty())));
+		Optional<TemplateEntry> templateEntry = Optional.ofNullable(rules.get(path.toString()));
+		if (!templateEntry.isPresent()) {
+			templateEntry = appLevelAttributeRuleMap.flatMap(map ->
+				map.getRule(path.last().getMatchingProperty()));
+		}
+		return templateEntry;
 	}
 
 

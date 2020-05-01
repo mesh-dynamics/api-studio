@@ -163,8 +163,12 @@ public class CommonUtils {
 
 	public static Optional<String> getCurrentIntentFromScope() {
 		Optional<String> currentIntent = getCurrentSpan().flatMap(span -> Optional.
-			ofNullable(span.getBaggageItem(Constants.ZIPKIN_HEADER_BAGGAGE_INTENT_KEY))).or(() ->
-			fromEnvOrSystemProperties(Constants.MD_INTENT_PROP));
+			ofNullable(span.getBaggageItem(Constants.ZIPKIN_HEADER_BAGGAGE_INTENT_KEY)));
+
+		if (!currentIntent.isPresent()) {
+			currentIntent = fromEnvOrSystemProperties(Constants.MD_INTENT_PROP);
+		}
+
 		currentIntent.ifPresent(
 			intent -> LOGGER.debug("Intent from trace : ".concat(intent)));
 		return currentIntent;
@@ -412,8 +416,8 @@ public class CommonUtils {
 	}
 
 	public static Optional<String> fromEnvOrSystemProperties(String propertyName) {
-		return Optional.ofNullable(System.getenv(propertyName)).or(() ->
-			Optional.ofNullable(System.getProperty(propertyName)));
+		Optional<String> ret = Optional.ofNullable(System.getenv(propertyName));
+		return ret.isPresent() ? ret : Optional.ofNullable(System.getProperty(propertyName));
 	}
 
 	public static CubeMetaInfo cubeMetaInfoFromEnv() throws Exception {

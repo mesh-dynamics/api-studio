@@ -9,6 +9,7 @@ package io.md.dao;
 import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -230,13 +231,13 @@ public class Event {
 	}
 
 
-	public static final List<EventType> REQUEST_EVENT_TYPES = List
-		.of(EventType.HTTPRequest, EventType.JavaRequest,
+	public static final List<EventType> REQUEST_EVENT_TYPES = Arrays.asList(
+			EventType.HTTPRequest, EventType.JavaRequest,
 			EventType.ThriftRequest, EventType.ProtoBufRequest);
 	// currently JavaRequest stores the response as well
 	// TODO: change JavaRequest to JavaResponse in list below once we separate the two
-	public static final List<EventType> RESPONSE_EVENT_TYPES = List
-		.of(EventType.HTTPResponse, EventType.JavaRequest,
+	public static final List<EventType> RESPONSE_EVENT_TYPES = Arrays.asList(
+			EventType.HTTPResponse, EventType.JavaRequest,
 			EventType.ThriftResponse, EventType.ProtoBufResponse);
 
 
@@ -352,7 +353,7 @@ public class Event {
 		}
 
 		public Event createEvent() throws io.md.dao.Event.EventBuilder.InvalidEventException {
-			if (timestamp.isEmpty()) {
+			if (!timestamp.isPresent()) {
 				LOGGER.info("Timestamp empty, using current instant");
 			}
 			Event event = new Event(customerId, app, service, instanceId, collection, traceId

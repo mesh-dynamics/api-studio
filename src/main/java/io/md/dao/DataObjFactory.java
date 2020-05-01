@@ -1,5 +1,6 @@
 package io.md.dao;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,7 +21,7 @@ public class DataObjFactory {
 	private static final Logger LOGGER = LoggerFactory.getLogger(DataObjFactory.class);
 
 	// Http headers are case insensitive
-	private static final List<String> HTTP_CONTENT_TYPE_PATHS = List.of("/hdrs/content-type/0"
+	private static final List<String> HTTP_CONTENT_TYPE_PATHS = Arrays.asList("/hdrs/content-type/0"
 		, "/hdrs/Content-type/0", "/hdrs/Content-Type/0", "/hdrs/content-Type/0");
 
 	private static  Optional<String> getMimeType(DataObj obj) {
@@ -34,7 +35,7 @@ public class DataObjFactory {
 					"Content-type not found for field " + HTTP_CONTENT_TYPE_PATH);
 			}
 		}
-		if (mimeType.isEmpty()) {
+		if (!mimeType.isPresent()) {
 			LOGGER.info("Content-type not found, using default of TEXT_PLAIN");
 
 		}
