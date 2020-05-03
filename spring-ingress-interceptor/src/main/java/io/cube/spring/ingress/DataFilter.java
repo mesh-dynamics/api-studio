@@ -100,12 +100,12 @@ public class DataFilter extends OncePerRequestFilter {
 			}));
 		} catch (Exception ex) {
 			LOGGER.error("Exception occured while capturing "
-					+ "request/response in logging filter!", ex);
-
-			//Need to copy back the response body as it is consumed by responseWrapper.
-			responseWrapper.copyBodyToResponse();
-
+				+ "request/response in logging filter!", ex);
 		}
+
+		//Need to copy back the response body as it is consumed by responseWrapper.
+		responseWrapper.copyBodyToResponse();
+
 	}
 
 
