@@ -1,4 +1,4 @@
-package com.cube.interceptor.spring.ingress;
+package io.cube.spring.ingress;
 
 import java.util.Collections;
 import java.util.Enumeration;

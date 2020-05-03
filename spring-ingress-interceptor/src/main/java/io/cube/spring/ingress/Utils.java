@@ -1,4 +1,4 @@
-package com.cube.interceptor.spring.ingress;
+package io.cube.spring.ingress;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -6,7 +6,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
@@ -17,7 +16,6 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -39,8 +37,9 @@ public class Utils {
 	}
 
 	public static boolean isSampled(MultivaluedMap<String, String> requestHeaders) {
-		return ((config.intentResolver.isIntentToRecord() && config.commonConfig.sampler
-			.isSampled(requestHeaders)) || config.intentResolver.isIntentToMock());
+		return ((config.intentResolver.isIntentToRecord()
+			&& Config.commonConfig.sampler.isSampled(requestHeaders))
+			|| config.intentResolver.isIntentToMock());
 	}
 
 	public static MultivaluedMap<String, String> getRequestMeta(String method, String cRequestId,
@@ -72,10 +71,10 @@ public class Utils {
 		} else if (config.intentResolver.isIntentToMock()) {
 			metaMap.add(Constants.RUN_TYPE_FIELD, Constants.REPLAY);
 		}
-		metaMap.add(Constants.CUSTOMER_ID_FIELD, config.commonConfig.customerId);
-		metaMap.add(Constants.APP_FIELD, config.commonConfig.app);
-		metaMap.add(Constants.INSTANCE_ID_FIELD, config.commonConfig.instance);
-		metaMap.add(Constants.SERVICE_FIELD, serviceName.orElse(config.commonConfig.serviceName));
+		metaMap.add(Constants.CUSTOMER_ID_FIELD, Config.commonConfig.customerId);
+		metaMap.add(Constants.APP_FIELD, Config.commonConfig.app);
+		metaMap.add(Constants.INSTANCE_ID_FIELD, Config.commonConfig.instance);
+		metaMap.add(Constants.SERVICE_FIELD, serviceName.orElse(Config.commonConfig.serviceName));
 	}
 
 	public static void createAndLogReqEvent(String apiPath,
@@ -88,15 +87,10 @@ public class Utils {
 					requestBody, Optional.empty(), config.jsonMapper, true);
 			config.recorder.record(requestEvent);
 		} catch (InvalidEventException e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Invalid Event",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Invalid Event for apiPath : " + apiPath, e);
 		} catch (JsonProcessingException e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Json Processing Exception. "
+				+ "Unable to create event for apiPath : " + apiPath, e);
 		}
 	}
 
@@ -110,15 +104,11 @@ public class Utils {
 					true);
 			config.recorder.record(responseEvent);
 		} catch (InvalidEventException e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Invalid Event",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Invalid Event for apiPath " + apiPath, e);
 		} catch (JsonProcessingException e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER
+				.error("Json Processing Exception. Unable to create event for apiPath : " + apiPath,
+					e);
 		}
 	}
 
