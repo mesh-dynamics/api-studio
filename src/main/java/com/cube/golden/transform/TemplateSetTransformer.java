@@ -43,7 +43,8 @@ public class TemplateSetTransformer {
      * @return Updated Template Set (needs to be stored in backend explicitly later)
      */
     public TemplateSet updateTemplateSet(TemplateSet sourceTemplateSet
-        , TemplateUpdateOperationSet templateSetUpdateSpec, ComparatorCache comparatorCache) {
+        , TemplateUpdateOperationSet templateSetUpdateSpec, ComparatorCache comparatorCache)
+        throws Exception {
         List<CompareTemplateVersioned> sourceTemplates = sourceTemplateSet.templates;
         Map<TemplateKey, SingleTemplateUpdateOperation> updates =   templateSetUpdateSpec.getTemplateUpdates();
         String newVersion = UUID.randomUUID().toString();
