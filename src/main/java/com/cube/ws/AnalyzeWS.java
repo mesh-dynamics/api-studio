@@ -919,9 +919,13 @@ public class AnalyzeWS {
             Optional<TemplateUpdateOperationSet> updateOperationSetOpt = rrstore.getTemplateUpdateOperationSet(templateUpdateOperationSetId);
             TemplateSetTransformer transformer = new TemplateSetTransformer();
             // transform the template set based on the operations specified
-            TemplateSet updated = templateSetOpt.flatMap(templateSet -> updateOperationSetOpt.map(updateOperationSet ->
-                transformer.updateTemplateSet(templateSet, updateOperationSet, config.comparatorCache)))
-                .orElseThrow(() -> new Exception("Missing template set or template update operation set"));
+	        TemplateSet updated = templateSetOpt.flatMap(UtilException.rethrowFunction(
+		        templateSet -> updateOperationSetOpt.map(UtilException.rethrowFunction(
+			        updateOperationSet ->
+				        transformer.updateTemplateSet(templateSet, updateOperationSet,
+					        config.comparatorCache)))))
+		        .orElseThrow(
+			        () -> new Exception("Missing template set or template update operation set"));
 
             // Validate updated template set
             ValidateCompareTemplate validTemplate = Utils.validateTemplateSet(updated);

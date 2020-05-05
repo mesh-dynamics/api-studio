@@ -321,7 +321,7 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>commons</artifactId>
-			<version>1.0.53</version>
+			<version>1.0.58</version>
 		</dependency>
 
 	</dependencies>
