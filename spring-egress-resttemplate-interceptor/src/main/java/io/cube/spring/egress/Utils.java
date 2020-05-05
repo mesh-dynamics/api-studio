@@ -1,10 +1,9 @@
-package com.cube.interceptor.spring.egress;
+package io.cube.spring.egress;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
@@ -14,9 +13,8 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -27,15 +25,12 @@ import io.md.dao.MDTraceInfo;
 
 public class Utils {
 
-	private static final Logger LOGGER = LogManager.getLogger(Utils.class);
+	private static final Logger LOGGER = LoggerFactory
+		.getLogger(Utils.class);
 
 	public static final long PAYLOAD_MAX_LIMIT = 25000000; //25 MB
 
-	private static final RestTemplateConfig config;
-
-	static {
-		config = new RestTemplateConfig();
-	}
+	private static final RestTemplateConfig config = new RestTemplateConfig();
 
 	public static MultivaluedMap<String, String> getRequestMeta(String method, String cRequestId,
 		Optional<String> serviceName) {
@@ -66,10 +61,11 @@ public class Utils {
 		} else if (config.intentResolver.isIntentToMock()) {
 			metaMap.add(Constants.RUN_TYPE_FIELD, Constants.REPLAY);
 		}
-		metaMap.add(Constants.CUSTOMER_ID_FIELD, config.commonConfig.customerId);
-		metaMap.add(Constants.APP_FIELD, config.commonConfig.app);
-		metaMap.add(Constants.INSTANCE_ID_FIELD, config.commonConfig.instance);
-		metaMap.add(Constants.SERVICE_FIELD, serviceName.orElse(config.commonConfig.serviceName));
+		metaMap.add(Constants.CUSTOMER_ID_FIELD, RestTemplateConfig.commonConfig.customerId);
+		metaMap.add(Constants.APP_FIELD, RestTemplateConfig.commonConfig.app);
+		metaMap.add(Constants.INSTANCE_ID_FIELD, RestTemplateConfig.commonConfig.instance);
+		metaMap.add(Constants.SERVICE_FIELD,
+			serviceName.orElse(RestTemplateConfig.commonConfig.serviceName));
 	}
 
 	public static MultivaluedMap<String, String> getMultiMap(
@@ -92,15 +88,10 @@ public class Utils {
 					mdTraceInfo, requestBody, Optional.empty(), config.jsonMapper, true);
 			config.recorder.record(requestEvent);
 		} catch (InvalidEventException e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Invalid Event",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Invalid Event for apiPath : ", apiPath);
 		} catch (JsonProcessingException e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error(
+				"Json Processing Exception. Unable to create event for apiPath : ", apiPath);
 		}
 	}
 
@@ -114,15 +105,9 @@ public class Utils {
 					true);
 			config.recorder.record(responseEvent);
 		} catch (InvalidEventException e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Invalid Event",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Invalid Event for apiPath : " + apiPath);
 		} catch (JsonProcessingException e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Json Processing Exception. Unable to create event for apiPath!", apiPath);
 		}
 	}
 

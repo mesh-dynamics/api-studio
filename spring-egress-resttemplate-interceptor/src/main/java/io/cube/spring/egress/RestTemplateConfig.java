@@ -1,4 +1,4 @@
-package com.cube.interceptor.spring.egress;
+package io.cube.spring.egress;
 
 import org.springframework.stereotype.Component;
 

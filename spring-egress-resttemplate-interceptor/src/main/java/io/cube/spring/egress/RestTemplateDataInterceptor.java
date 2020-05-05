@@ -1,20 +1,19 @@
-package com.cube.interceptor.spring.egress;
+package io.cube.spring.egress;
+
+import static io.md.utils.Utils.getTraceInfo;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.Map;
 import java.util.Optional;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
-import org.apache.logging.log4j.util.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
@@ -25,10 +24,13 @@ import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 
+import io.cube.agent.CommonConfig;
 import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
+import io.opentracing.Scope;
 import io.opentracing.Span;
+import io.opentracing.SpanContext;
 
 /**
  * Reference : https://stackoverflow.com/a/52698745/2761431
@@ -42,7 +44,8 @@ import io.opentracing.Span;
 @Order(3000)
 public class RestTemplateDataInterceptor implements ClientHttpRequestInterceptor {
 
-	private static final Logger LOGGER = LogManager.getLogger(RestTemplateDataInterceptor.class);
+	private static final Logger LOGGER = LoggerFactory
+		.getLogger(RestTemplateDataInterceptor.class);
 
 	private static final RestTemplateConfig config;
 
@@ -53,22 +56,45 @@ public class RestTemplateDataInterceptor implements ClientHttpRequestInterceptor
 	@Override
 	public ClientHttpResponse intercept(HttpRequest request, byte[] body,
 		ClientHttpRequestExecution execution) throws IOException {
-		String apiPath = Strings.EMPTY, serviceName = Strings.EMPTY;
+		String apiPath = "", serviceName = "";
 		MultivaluedMap<String, String> traceMetaMap = new MultivaluedHashMap<>();
 		boolean isSampled = false, isVetoed = false;
 		MDTraceInfo mdTraceInfo = null;
-		Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
-		if (currentSpan.isPresent()) {
-			Span span = currentSpan.get();
+		Optional<Span> ingressSpan = Optional.empty();
+		Span clientSpan = null;
+		Scope clientScope = null;
+
+		try {
+			ingressSpan = CommonUtils.getCurrentSpan();
+
+			//Empty ingress span pertains to DB initialization scenarios.
+			SpanContext spanContext = ingressSpan.map(Span::context)
+				.orElse(CommonUtils.createDefSpanContext());
+
+			clientSpan = CommonUtils
+				.startClientSpan(Constants.MD_CHILD_SPAN, spanContext, false);
+
+			clientScope = CommonUtils.activateSpan(clientSpan);
+
+			// Do not log request in case the egress service is to be mocked
+			String service = CommonUtils.getEgressServiceName(request.getURI());
+			CommonConfig commonConfig = CommonConfig.getInstance();
+			if (commonConfig.shouldMockService(service)) {
+				LOGGER.info("Mocking in progress, not logging the request!");
+				return execution.execute(request, body);
+			}
+
 			//Either baggage has sampling set to true or this service uses its veto power to sample.
 			isSampled = BooleanUtils
-				.toBoolean(span.getBaggageItem(Constants.MD_IS_SAMPLED));
+				.toBoolean(clientSpan.getBaggageItem(Constants.MD_IS_SAMPLED));
 			isVetoed = BooleanUtils
-				.toBoolean(span.getBaggageItem(Constants.MD_IS_VETOED));
+				.toBoolean(clientSpan.getBaggageItem(Constants.MD_IS_VETOED));
 
-			if (isSampled || isVetoed) {
+			//Empty ingress span pertains to DB initialization scenarios.
+			//So need to record all calls as these will not be driven by replay driver.
+			if (isSampled || isVetoed || !ingressSpan.isPresent()) {
 				//this is local baggage item
-				span.setBaggageItem(Constants.MD_IS_VETOED, null);
+				clientSpan.setBaggageItem(Constants.MD_IS_VETOED, null);
 				//hdrs
 				MultivaluedMap<String, String> requestHeaders = Utils
 					.getMultiMap(request.getHeaders().entrySet());
@@ -82,12 +108,9 @@ public class RestTemplateDataInterceptor implements ClientHttpRequestInterceptor
 				apiPath = uri.getPath();
 
 				//serviceName to be host+port for outgoing calls
-				serviceName =
-					uri.getPort() != -1
-						? String.join(":", uri.getHost(), String.valueOf(uri.getPort()))
-						: uri.getHost();
+				serviceName = CommonUtils.getEgressServiceName(uri);
 
-				mdTraceInfo = CommonUtils.mdTraceInfoFromContext();
+				mdTraceInfo = getTraceInfo(clientSpan);
 
 				traceMetaMap = CommonUtils
 					.buildTraceInfoMap(serviceName, mdTraceInfo,
@@ -96,19 +119,36 @@ public class RestTemplateDataInterceptor implements ClientHttpRequestInterceptor
 				logRequest(request, requestHeaders, body, apiPath,
 					traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID),
 					serviceName, queryParams, mdTraceInfo);
+
+				//Setting the current span id as parent span id value
+				//This is intentionally set after the capture as it should be parent for subsequent capture
+				clientSpan
+					.setBaggageItem(Constants.MD_PARENT_SPAN, clientSpan.context().toSpanId());
 			} else {
-				LOGGER
-					.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Sampling is false!")));
+				LOGGER.debug("Sampling is false!");
 			}
-		} else {
-			LOGGER
-				.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Current Span is empty!")));
+		} catch (Exception ex) {
+			LOGGER.error("Exception occured during logging request!", ex);
 		}
+
 		ClientHttpResponse response = execution.execute(request, body);
-		if (isSampled || isVetoed) {
-			response = new BufferedClientHttpResponse(response);
-			logResponse(response, apiPath, traceMetaMap, serviceName, mdTraceInfo);
+		try {
+			if (isSampled || isVetoed || !ingressSpan.isPresent()) {
+				response = new BufferedClientHttpResponse(response);
+				logResponse(response, apiPath, traceMetaMap, serviceName, mdTraceInfo);
+			}
+		} catch (Exception ex) {
+			LOGGER.error("Exception occured during logging response!", ex);
 		}
+
+		if (clientSpan != null) {
+			clientSpan.finish();
+		}
+
+		if (clientScope != null) {
+			clientScope.close();
+		}
+
 		return response;
 	}
 
@@ -127,7 +167,8 @@ public class RestTemplateDataInterceptor implements ClientHttpRequestInterceptor
 	}
 
 	private void logResponse(ClientHttpResponse response, String apiPath,
-		MultivaluedMap<String, String> traceMeta, String serviceName, MDTraceInfo mdTraceInfo) throws IOException {
+		MultivaluedMap<String, String> traceMeta, String serviceName, MDTraceInfo mdTraceInfo)
+		throws IOException {
 		//hdrs
 		MultivaluedMap<String, String> responseHeaders = Utils
 			.getMultiMap(response.getHeaders().entrySet());
