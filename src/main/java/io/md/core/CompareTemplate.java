@@ -189,7 +189,7 @@ public class CompareTemplate {
 	}
 
 	public JsonPointer getNormalisedPath(String rootPath) {
-		if(!rootPath.startsWith("/")) rootPath = "/".concat(rootPath);
+		if(!rootPath.equals("") && !rootPath.startsWith("/")) rootPath = "/".concat(rootPath);
 		JsonPointer rootPointer = JsonPointer.valueOf(rootPath);
 		JsonPointer pointer = rootPointer;
 
