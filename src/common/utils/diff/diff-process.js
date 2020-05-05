@@ -131,9 +131,27 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
                 reductedDiffArray = reduceDiff.computeDiffArray();
             }
             let expJSONPaths = generator(recordedData, "", "", prefix);
-            missedRequiredFields = diff.filter((eachItem) => {
-                return eachItem.op === "noop" && eachItem.resolution.indexOf("ERR_REQUIRED") > -1 && !expJSONPaths.has(eachItem.path);
-            })
+            missedRequiredFields = diff
+            .filter(
+                (eachItem) => (
+                    eachItem.op === "noop" 
+                    && eachItem.resolution.includes("ERR_Required") 
+                    && !expJSONPaths.has(eachItem.path)
+                    )
+                )
+            .map(filteredFields => {
+                if(item.respCompDiff.find(eachDiffItem => eachDiffItem.path === filteredFields.path)) {
+                    return {
+                        ...filteredFields,
+                        eventType: "Response"
+                    }
+                }
+
+                return {
+                    ...filteredFields,
+                    eventType: "Request"
+                }
+            });
 
             let reduceDiffHdr = new ReduceDiff("/hdrs", actRespHdrJSON, expRespHdrJSON, diff);
             reducedDiffArrayRespHdr = reduceDiffHdr.computeDiffArray();
