@@ -53,7 +53,7 @@ class TestReport extends Component {
         const numResults = 30; // todo configurable?
         const [testConfig, timelineResults] = await Promise.all([
             replayStatus.testConfigName ? cubeService.getTestConfig(replayStatus.app, replayStatus.testConfigName) : Promise.resolve({}), 
-            cubeService.fetchTimelineData(replayStatus.app, null, new Date(replayStatus.creationTimeStamp), null, numResults, replayStatus.testConfigName, replayStatus.goldenName) // todo user
+            cubeService.fetchTimelineData(replayStatus.app, null, new Date(replayStatus.creationTimeStamp * 1000), null, numResults, replayStatus.testConfigName, replayStatus.goldenName) // todo user
         ]).catch(
             (e) => {
                 errorText = "error fetching test config or timeline results: " + e;
