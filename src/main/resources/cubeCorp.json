@@ -571,6 +571,150 @@
               "to": "Student"
             }
           ]
+        },
+        {
+          "name": "Jersy2xApp",
+          "instances": [
+            {
+              "name": "prod",
+              "gatewayEndpoint": "http://jersy2x.dev.cubecorp.io",
+              "loggingURL": "http://logging.dev.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:jersy2x),type:phrase,value:jersy2x),query:(match:(kubernetes.namespace_name:(query:jersy2x,type:phrase))))),query:(language:kuery,query:''))"
+            }
+          ],
+          "serviceGroups": [
+            {
+              "name": "GLOBAL",
+              "services": [
+                {
+                  "name": "Reviews",
+                  "paths": [
+                    "/health",
+                    "/reviews/*"
+                  ]
+                },
+                {
+                  "name": "Ratings",
+                  "paths": [
+                    "/health",
+                    "/ratings/*"
+                  ]
+                },
+                {
+                  "name": "Details",
+                  "paths": [
+                    "/health",
+                    "/details/*"
+                  ]
+                },
+                {
+                  "name": "RestWrapJDBC",
+                  "paths": [
+                    "/health",
+                    "/initialize",
+                    "/query",
+                    "/update"
+                  ]
+                },
+                {
+                  "name": "Postgres",
+                  "paths": null
+                },
+                {
+                  "name": "Mysql",
+                  "paths": null
+                },
+                {
+                  "name": "MongoDB",
+                  "paths": null
+                },
+                {
+                  "name": "Google API",
+                  "paths": null
+                }
+              ]
+            },
+            {
+              "name": "MovieInfo",
+              "services": [
+                {
+                  "name": "Auth",
+                  "paths": [
+                    "/authenticate",
+                    "/health"
+                  ]
+                },
+                {
+                  "name": "Actions",
+                  "paths": [
+                    "/rentmovie",
+                    "/returnmovie",
+                    "/overduerental"
+                  ]
+                },
+                {
+                  "name": "List",
+                  "paths": [
+                    "/listmovies",
+                    "/liststores"
+                  ]
+                }
+              ]
+            }
+          ],
+          "testConfigs": [
+            {
+              "testConfigName": "MovieInfo-List",
+              "serviceName": "List",
+              "paths": [
+                "/listmovies",
+                "/liststores"
+              ],
+              "test_virtualized_services": ["RestWrapJDBC"],
+              "test_intermediate_services": []
+            }
+          ],
+          "serviceGraphs": [
+            {
+              "from": "Auth",
+              "to": "RestWrapJDBC"
+            },
+            {
+              "from": "Actions",
+              "to": "RestWrapJDBC"
+            },
+            {
+              "from": "List",
+              "to": "RestWrapJDBC"
+            },
+            {
+              "from": "RestWrapJDBC",
+              "to": "Postgres"
+            },
+            {
+              "from": "List",
+              "to": "Reviews"
+            },
+            {
+              "from": "List",
+              "to": "Details"
+            },
+            {
+              "from": "Reviews",
+              "to": "Ratings"
+            },
+            {
+              "from": "Details",
+              "to": "Google API"
+            },
+            {
+              "from": "Ratings",
+              "to": "Mysql"
+            },
+            {
+              "from": "Ratings",
+              "to": "MongoDB"
+            }
+          ]
         }
       ],
       "users": [
