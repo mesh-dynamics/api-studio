@@ -296,8 +296,11 @@ public class CompareTemplate {
 	public Optional<TemplateEntry> get(JsonPointer path) {
 		Optional<TemplateEntry> templateEntry = Optional.ofNullable(rules.get(path.toString()));
 		if (!templateEntry.isPresent()) {
-			templateEntry = appLevelAttributeRuleMap.flatMap(map ->
-				map.getRule(path.last().getMatchingProperty()));
+			// path.last() returns null for empty path
+			templateEntry = Optional.ofNullable(path.last()).flatMap(pathv -> {
+				return appLevelAttributeRuleMap.flatMap(map ->
+					map.getRule(pathv.toString()));
+			});
 		}
 		return templateEntry;
 	}
