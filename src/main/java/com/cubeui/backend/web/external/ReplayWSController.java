@@ -82,4 +82,11 @@ public class ReplayWSController {
         validation.validateCustomerName(request,replay.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
+
+    @PostMapping("/start/byGoldenName/{customerId}/{app}/{goldenName}")
+    public ResponseEntity startByGoldenName(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String customerId,
+                        @PathVariable String app, @PathVariable String goldenName) {
+        validation.validateCustomerName(request, customerId);
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
 }
