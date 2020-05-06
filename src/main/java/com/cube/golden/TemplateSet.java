@@ -32,7 +32,7 @@ public class TemplateSet {
     public TemplateSet(@JsonProperty("version") String version, @JsonProperty("customer") String customer,
                        @JsonProperty("app") String app, @JsonProperty("timestamp") Instant timestamp,
                        @JsonProperty("templates") List<CompareTemplateVersioned> compareTemplateVersionedList,
-                       @JsonProperty("appAttributeMap") Optional<AttributeRuleMap> appAttributeRuleMap) {
+                       @JsonProperty("attributeRuleMap") Optional<AttributeRuleMap> appAttributeRuleMap) {
         this.version = version != null ? version : UUID.randomUUID().toString(); ;
         this.customer = customer;
         this.app = app;
