@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -31,6 +32,10 @@ import org.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.UtilException;
@@ -202,6 +207,28 @@ public class Utils {
             LOGGER.error("Error while preprocessing fn req resp object :: " + e.getMessage());
         }
     }
+
+    public static JsonNode convertArrayToObject(JsonNode node){
+        if (node.isArray()) {
+            ArrayNode nodeAsArray = (ArrayNode) node;
+            ObjectNode equivalentObjNode = JsonNodeFactory.instance.objectNode();
+            for (int i = 0 ; i < nodeAsArray.size() ; i++){
+                equivalentObjNode.set(String.valueOf(i), convertArrayToObject(nodeAsArray.get(i)));
+            }
+            return equivalentObjNode;
+        } else if (node.isObject()) {
+            ObjectNode nodeAsObject = (ObjectNode) node;
+            ObjectNode equivalentObjNode = JsonNodeFactory.instance.objectNode();
+            Iterator<String> fieldNames = nodeAsObject.fieldNames();
+            while(fieldNames.hasNext()) {
+                String fieldName = fieldNames.next();
+                equivalentObjNode.set(fieldName, convertArrayToObject(nodeAsObject.get(fieldName)));
+            }
+            return equivalentObjNode;
+        }
+        return node;
+    }
+
 
     static public TemplateSet templateRegistriesToTemplateSet(TemplateRegistries registries,
                                                               String customerId, String appId,
