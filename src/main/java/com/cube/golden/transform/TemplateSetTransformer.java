@@ -43,7 +43,8 @@ public class TemplateSetTransformer {
      * @return Updated Template Set (needs to be stored in backend explicitly later)
      */
     public TemplateSet updateTemplateSet(TemplateSet sourceTemplateSet
-        , TemplateUpdateOperationSet templateSetUpdateSpec, ComparatorCache comparatorCache) {
+        , TemplateUpdateOperationSet templateSetUpdateSpec, ComparatorCache comparatorCache)
+        throws Exception {
         List<CompareTemplateVersioned> sourceTemplates = sourceTemplateSet.templates;
         Map<TemplateKey, SingleTemplateUpdateOperation> updates =   templateSetUpdateSpec.getTemplateUpdates();
         String newVersion = UUID.randomUUID().toString();
@@ -99,7 +100,7 @@ public class TemplateSetTransformer {
                     sourceTemplate = new CompareTemplateVersioned(Optional.of(key.getServiceId())
                         , Optional.of(key.getPath()), key.getReqOrResp(), template);
                 }
-                CompareTemplateVersioned updated = updateTemplate(sourceTemplateMap.get(key) , update);
+                CompareTemplateVersioned updated = updateTemplate(sourceTemplate , update);
                 sourceTemplateMap.put(key, updated);
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Updated Compare Template"
                     , Constants.TEMPLATE_UPD_OP_SET_ID_FIELD, templateSetUpdateSpec.getTemplateUpdateOperationSetId()
