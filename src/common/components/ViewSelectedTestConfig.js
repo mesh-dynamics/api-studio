@@ -408,7 +408,7 @@ class ViewSelectedTestConfig extends React.Component {
         const { recName } = this.state;
         const recLabel = Date.now().toString();
 
-        const recordUrl = `${config.recordBaseUrl}/start/${customer_name}/${selectedApp}/${selectedInstance}/RespPartialMatch`;
+        const recordUrl = `${config.recordBaseUrl}/start/${customer_name}/${selectedApp}/${selectedInstance}/Default${selectedApp}`;
         const statusUrl = `${config.recordBaseUrl}/status/${customer_name}/${selectedApp}/${recName}/${recLabel}`;
 
         const configForHTTP = {
