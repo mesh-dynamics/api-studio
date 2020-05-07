@@ -626,6 +626,34 @@ class ViewSelectedTestConfig extends React.Component {
         return jsxContent;
     };
 
+    renderRecordingInfo = () => {
+        const { cube: { selectedGolden, testIds }} = this.props;
+
+        if (selectedGolden && testIds.length !== 0) {
+            const { id, label, name } = testIds.find(test => test.id === selectedGolden);
+
+            return(
+                <div className="resume-modal-info-container">
+                    <div className="resume-modal-info-line">
+                        <div className="resume-modal-identifier"><b>Id:</b></div>
+                        <div className="resume-modal-content">{id}</div>
+                    </div>
+                    <div className="resume-modal-info-line">
+                        <div className="resume-modal-identifier"><b>Name:</b></div>
+                        <div className="resume-modal-content">{name}</div>
+                    </div>
+                    <div className="resume-modal-info-line"s>
+                        <div className="resume-modal-identifier"><b>Label:</b></div>
+                        <div className="resume-modal-content">{label}</div>
+                    </div>
+                </div>
+            );
+
+        }
+
+        return null;        
+    }
+
     renderAlertModals = (isVisible, dismissHandler) => {
         const { userAlertMessage: { header, message } } = this.state;
         return (
@@ -798,14 +826,14 @@ class ViewSelectedTestConfig extends React.Component {
                         <Modal.Title>Resume Recording</Modal.Title>
                     </Modal.Header>
                     <Modal.Body className={"text-center padding-15"}>
-                        <div style={{ display: "flex", flex: 1, justifyContent: "center"}}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                             <div 
                                 className="margin-right-10" 
-                                style={{ display: "flex", flexDirection: "column", justifyContent: "center", fontWeight: "500" }}
+                                style={{ display: "flex", flexDirection: "column", justifyContent: "center", fontWeight: "500", width: "50%" }}
                             >
-                                Recording ID: {cube.selectedGolden}
+                                {this.renderRecordingInfo()}
                             </div>
-                            <div style={{ display: "flex", alignItems: "flex-start" }}>
+                            <div className="margin-top-10" style={{ display: "flex", alignItems: "flex-start" }}>
                                     <span onClick={this.showDBWarningModal} className={stopDisabled ? "cube-btn margin-right-10" : "cube-btn disabled margin-right-10"}>RESUME</span>
                                     <span onClick={this.stopRecord} className={stopDisabled ? "cube-btn disabled" : "cube-btn"}>STOP</span>
                             </div>
