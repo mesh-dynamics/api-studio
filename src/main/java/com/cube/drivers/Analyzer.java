@@ -242,7 +242,8 @@ public class Analyzer {
                 recordreq.app, recordreq.service, recordreq.apiPath, Type.RequestCompare);
             Comparator reqComparator = comparatorCache
                 .getComparator(reqCompareKey, recordreq.eventType);
-            if (reqComparator != JsonComparator.EMPTY_COMPARATOR) {
+            if (reqComparator.getCompareTemplate().getRules() != null &&
+                ! reqComparator.getCompareTemplate().getRules().isEmpty()) {
                 reqCompareRes = reqComparator
                     .compare(recordreq.payload, replayreq.payload);
             } else {

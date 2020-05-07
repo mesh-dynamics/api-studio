@@ -22,7 +22,6 @@ import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.flipkart.zjsonpatch.DiffFlags;
@@ -96,11 +95,15 @@ public class JsonComparator implements Comparator {
         // first validate the rhs (new json)
         validate(rhsRoot, result);
 
+        //convert arrays to objects
+        JsonNode lhsConverted = Utils.convertArrayToObject(lhsRoot);
+        JsonNode rhsConverted = Utils.convertArrayToObject(rhsRoot);
+
         // Now diff new (rhs) with the old (lhs)
         EnumSet<DiffFlags> flags = EnumSet.of(DiffFlags.OMIT_COPY_OPERATION,
             DiffFlags.OMIT_MOVE_OPERATION,
             DiffFlags.ADD_ORIGINAL_VALUE_ON_REPLACE);
-        JsonNode patch = JsonDiff.asJson(lhsRoot, rhsRoot, flags);
+        JsonNode patch = JsonDiff.asJson(lhsConverted, rhsConverted, flags);
         Diff[] diffs;
 
         try {
