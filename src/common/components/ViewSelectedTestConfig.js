@@ -33,6 +33,10 @@ class ViewSelectedTestConfig extends React.Component {
             goldenBranchFilter: "",
             goldenVersionFilter: "",
             selectedGoldenFromFilter: "",
+            dbWarningModalVisible: false,
+            instanceWarningModalVisible: false,
+            goldenSelectWarningModalVisible: false,
+            resumeModalVisible: false,
             recordModalVisible: false,
             recStatus: null,
             recName: "",
@@ -40,6 +44,11 @@ class ViewSelectedTestConfig extends React.Component {
             recId: null,
             stopDisabled: true,
             goldenNameErrorMessage: "",
+            recordingMode: "new", //allowed values ["new", "resume"]
+            userAlertMessage: {
+                header: "",
+                message: ""
+            },
             customHeaders: {
                 default: {
                     key: "",
@@ -54,6 +63,8 @@ class ViewSelectedTestConfig extends React.Component {
         const { dispatch } = this.props;
         dispatch(cubeActions.clear());
     }
+
+    handleRecordingModeChange = (value) => this.setState({ recordingMode: value, goldenNameErrorMessage: "" });
   
     handleChangeForInstance = (e) => {
         const { dispatch } = this.props;
@@ -79,9 +90,7 @@ class ViewSelectedTestConfig extends React.Component {
         dispatch(cubeActions.getReplayStatus(cube.selectedTestId, cube.replayId.replayId, cube.selectedApp));
     };
 
-    changeRecName = (e) => {
-        this.setState({recName: e.target.value.replace(/  /g, " ")});
-    };
+    changeRecName = (e) => this.setState({recName: e.target.value.replace(/  /g, " ")});
 
     showAddCustomHeaderModal = () => this.setState({ showAddCustomHeader: true });
 
@@ -146,41 +155,13 @@ class ViewSelectedTestConfig extends React.Component {
         }
     };
     
-    showCT = () => {
-        this.setState({showCT: true});
-    };
+    showCT = () => this.setState({showCT: true});
 
     handleClose = () => {
         const {cube} = this.props;
         this.handleChangeForTestIds({target: {value: cube.selectedTestId}});
         this.setState({ show: false, showCT: false });
     };
-
-    renderInstances(cube) {
-        if (!cube.instances) {
-            return ''
-        }
-        let options = [];
-        options = cube.instances.map(item => {
-            if(item.app.name == cube.selectedApp)
-                return (<option key={item.id} value={item.name}>{item.name}</option>);
-        });
-        let jsxContent = '';
-        if (options.length) {
-            jsxContent = <div>
-                <select className="r-att" onChange={this.handleChangeForInstance} value={cube.selectedInstance} placeholder={'Select...'}>
-                    <option value="">Select Instance</option>
-                    {options}
-                </select>
-            </div>
-        } else {
-            jsxContent = <select className="r-att" value={cube.selectedInstance} placeholder={'Select...'}>
-                <option value="">Select Instance</option>
-            </select>
-        }
-
-        return jsxContent;
-    }
 
     getFormattedDate(date) {
         var year = date.getFullYear();
@@ -194,35 +175,6 @@ class ViewSelectedTestConfig extends React.Component {
         return month + '/' + day + '/' + year;
     }
 
-    renderCollectionTable() {
-        const {cube} = this.props;
-        let collectionList = cube.testIds;
-
-        if (this.state.goldenNameFilter) {
-            collectionList = collectionList.filter(item => item.name.toLowerCase().includes(this.state.goldenNameFilter.toLowerCase()));
-        }
-
-        if (this.state.goldenBranchFilter) {
-            collectionList = collectionList.filter(item => item.branch && item.branch.toLowerCase().includes(this.state.goldenBranchFilter.toLowerCase()));
-        }
-
-        if (this.state.goldenVersionFilter) {
-            collectionList = collectionList.filter(item => item.codeVersion && item.codeVersion.toLowerCase().includes(this.state.goldenVersionFilter.toLowerCase()));
-        }
-
-        if (this.state.goldenIdFilter) {
-            collectionList = collectionList.filter(item => item.id.toLowerCase().includes(this.state.goldenIdFilter.toLowerCase()));
-        }
-
-        if (!collectionList || collectionList.length == 0) {
-            return <tr><td colSpan="5">NO DATA FOUND</td></tr>
-            return;
-        }
-
-        let trList = collectionList.map(item => (<tr key={item.collec} value={item.collec} className={this.state.selectedGoldenFromFilter == item.collec ? "selected-g-row" : ""} onClick={() => this.selectGoldenFromFilter(item.collec)}><td>{item.name}</td><td>{item.label}</td><td>{item.id}</td><td>{this.getFormattedDate(new Date(item.timestmp*1000))}</td><td>{item.userId}</td><td>{item.prntRcrdngId}</td></tr>));
-        return trList;
-    }
-
     selectGoldenFromFilter = (g) => {
         this.setState({selectedGoldenFromFilter: g});
     };
@@ -231,53 +183,75 @@ class ViewSelectedTestConfig extends React.Component {
         this.setState({[filter] : event.target.value});
     };
 
-    renderCollectionDD ( cube ) {
-        if (cube.testIdsReqStatus != cubeConstants.REQ_SUCCESS || cube.testIdsReqStatus == cubeConstants.REQ_NOT_DONE)
-            return <select className="r-att" disabled value={cube.selectedTestId} placeholder={'Select...'}>
-                <option value="">No App Selected</option>
-            </select>;
-        let options = [];
-        if (cube.testIdsReqStatus == cubeConstants.REQ_SUCCESS) {
-            options = cube.testIds.map((item, index) => {
-                if (index < 8)
-                    return (<option key={item.collec + index} value={item.collec}>{item.name}</option>);
+    handleRecordButtonClick = () => {
+        const { recordingMode } = this.state;
 
-                else
-                    return (<option className="hidden" key={item.collec + index} value={item.collec}>{item.name}</option>);
-            });
-        }
-        let jsxContent = '';
-        if (options.length) {
-            let selectedTestIdObj = '';
-            if (cube.selectedTestId)
-                selectedTestIdObj = { label: cube.selectedTestId, value: cube.selectedTestId};
-            jsxContent = <div>
-                <select className="r-att" onChange={this.handleChangeForTestIds} value={cube.selectedTestId} placeholder={'Select...'}>
-                    <option value="">Select Golden</option>
-                    {options}
-                </select>
-            </div>
-        }
-        if (cube.testIdsReqStatus == cubeConstants.REQ_LOADING)
-            jsxContent = <div><br/>Loading...</div>
-        if (cube.testIdsReqStatus == cubeConstants.REQ_FAILURE)
-            jsxContent = <div><br/>Request failed!</div>
+        const mode = {
+            new: () => this.showRecordModal(),
+            resume: () => this.showResumeModal()
+        };
 
-        return jsxContent;
-    }
+        mode[recordingMode]();
+    };
+
+    showDBWarningModal = () => this.setState({
+        dbWarningModalVisible: true,
+        userAlertMessage: {
+            header: "Reminder",
+            message: "You are about to start/resume a recording. Please reset the db state before proceeding."
+        }
+    })
+
+    showInstanceWarningModal = () => this.setState({ 
+        instanceWarningModalVisible: true,
+        userAlertMessage: {
+            header: "Alert",
+            message: "Select an Instance to proceed."
+        }
+    });
+
+    showGoldenWarningModal = () => this.setState({ 
+        goldenSelectWarningModalVisible: true,
+        userAlertMessage: {
+            header: "Alert",
+            message: "Select a Golden to resume recording."
+        }
+    });
 
     showRecordModal = () => {
         const { cube } = this.props;
-        
-        if(!cube.selectedInstance){
-            alert('Select an Instance to Record')
-        } else {
-            this.setState({recordModalVisible: true});
-        }
+        if(!cube.selectedInstance) {
+            this.showInstanceWarningModal();
+            return;
+        } 
+
+        this.setState({ recordModalVisible: true });
+
     };
 
+    showResumeModal = () => {
+        const { cube } = this.props;
+
+        if(!cube.selectedInstance) {
+            this.showInstanceWarningModal();
+            return;
+        } 
+        
+        if(!cube.selectedGolden){
+            this.showGoldenWarningModal();
+            return;
+        } 
+        
+        this.setState({ resumeModalVisible: true});
+
+    }
+
     handleCloseRecModal = () => {
-        this.setState({recordModalVisible: false, recStatus: null});
+        this.setState({
+            recordModalVisible: false, 
+            resumeModalVisible: false,
+            recStatus: null
+        });
     };
 
     handleViewGoldenClick = () => {
@@ -295,82 +269,6 @@ class ViewSelectedTestConfig extends React.Component {
 
         dispatch(cubeActions.hideGoldenVisibility(true));
         dispatch(goldenActions.resetGoldenVisibilityDetails());
-    };
-
-    renderTestInfo = () => {
-        const { cube, authentication: { user: { username } } } = this.props;
-
-        return(
-            <Fragment>
-                <div className="div-label">
-                    Test Configuration
-                    <Link to="/test_config">
-                        <i className="fas fa-link pull-right link"></i>
-                    </Link>
-                </div>
-                <div className="margin-top-10">
-                    <div className="label-n">TEST NAME</div>
-                    <div className="value-n">{cube.testConfig ? cube.testConfig.testConfigName : ''}</div>
-                </div>
-                <div className={cube.golden ? "margin-top-10" : "hidden"}>
-                    <div className="label-n">GOLDEN</div>
-                    <div className="value-n">{cube.golden ? cube.golden : ''}</div>
-                </div>
-                <div className={cube.testConfig && cube.testConfig.gatewayService ? "margin-top-10" : "hidden"}>
-                    <div className="label-n">GATEWAY</div>
-                    <div className="value-n">{cube.testConfig && cube.testConfig.gatewayService ? cube.testConfig.gatewayService.name : ''}</div>
-                </div>
-                <div className={cube.testConfig && cube.testConfig.criteria ? "margin-top-10" : "hidden"}>
-                    <div className="label-n">CRITERIA</div>
-                    <div className="value-n">{cube.testConfig && cube.testConfig.criteria ? cube.testConfig.criteria : ''}</div>
-                </div>
-                <div className={cube.testConfig && cube.testConfig.mocks ? "margin-top-10" : "hidden"}>
-                    <div className="label-n">MOCK(S)</div>
-                    <div className="value-n">{cube.testConfig && cube.testConfig.mocks ? cube.testConfig.mocks.join(",") : ''}</div>
-                </div>
-
-                <div className="margin-top-10">
-                    <div className="cube-btn width-100 text-center">SAVE TEST CONFIG</div>
-                </div>
-
-                <div className="margin-top-10">
-                    <div className="label-n">SELECT TEST INSTANCE</div>
-                    <div className="value-n">
-                        {this.renderInstances(cube)}
-                    </div>
-                </div>
-
-                <div className="margin-top-10">
-                    <div className="label-n">SELECT GOLDEN&nbsp;
-                        <i onClick={this.showGoldenFilter} title="Browse Golden" className="link fas fa-folder-open pull-right font-15"></i>
-                        {
-                            cube.selectedTestId &&
-                                    <span className="pull-right" onClick={this.handleViewGoldenClick} style={{ marginLeft: "5px", cursor: "pointer" }}>
-                                        <i className="fas fa-eye margin-right-10" style={{ fontSize: "12px", color: "#757575"}} aria-hidden="true"></i>
-                                    </span>
-                        }
-                    </div>
-                    <div className="value-n">
-                        {this.renderCollectionDD(cube)}
-                    </div>
-                </div>
-
-                <div style={{ fontSize: "12px" }} className="margin-top-10 row">
-                    <span  className="label-link col-sm-12 pointer" onClick={this.showAddCustomHeaderModal}>
-                        <i className="fas fa-plus" style={{ color: "#333333", marginRight: "5px" }} aria-hidden="true"></i>
-                        Custom Headers
-                    </span>
-                </div>
-
-                <div className="margin-top-10 row">
-                    <div className="col-sm-6">
-                        <div onClick={() => this.replay()} className="cube-btn width-100 text-center">RUN TEST</div>
-                    </div>
-                    <div className="col-sm-6"><div onClick={this.showRecordModal} className="cube-btn width-100 text-center">RECORD</div></div>
-                </div>
-            </Fragment>
-        );
-
     };
 
     showGoldenFilter = () => {
@@ -394,75 +292,181 @@ class ViewSelectedTestConfig extends React.Component {
         this.hideGoldenFilter();
     };
 
-    startRecord = () => {
-        const { cube, authentication } = this.props;
-        let user = authentication.user;
-        let url = `${config.recordBaseUrl}/start/${user.customer_name}/${cube.selectedApp}/${cube.selectedInstance}/RespPartialMatch`;
-        const configForHTTP = {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                "Authorization": "Bearer " + user['access_token']
-            }
+    handleDismissCallBack = () => {
+        const { recordingMode } = this.state;
+
+        const mode = {
+            new: () => this.handleStartRecordClick(),
+            resume: () => this.resumeRecording()
         };
 
-        const recLabel = Date.now().toString();
-        const searchParams = new URLSearchParams();
-        searchParams.set('name', this.state.recName);
-        searchParams.set('userId', user.username);
-        searchParams.set('label', recLabel);
-
-        axios.post(url, searchParams, configForHTTP).then((response) => {
-            this.setState({stopDisabled: false, recId: response.data.id, recLabel });
-            this.recStatusInterval = setInterval(() => {
-                if (!this.state.recId) {
-                    clearInterval(this.recStatusInterval);
-                } else {
-                    checkStatus();
-                }
-            }, 1000);
-        });
-
-        const checkStatus = () => {
-            const csUrl = `${config.recordBaseUrl}/status/${user.customer_name}/${cube.selectedApp}/${this.state.recName}/${recLabel}`;
-            axios.get(csUrl, configForHTTP).then(response => {
-                this.setState({recStatus: response.data});
-            });
-        };
+        mode[recordingMode]();
     };
 
+    handleDBWarningModalDismissClick = () => {
+        this.setState({ 
+            dbWarningModalVisible: false,
+            userAlertMessage: {
+                header: "",
+                message: ""
+            }
+        }, this.handleDismissCallBack);
+    }
+        
+
+    handleInstanceSelectDismissClick = () => 
+        this.setState({ 
+            instanceWarningModalVisible: false,
+            userAlertMessage: {
+                header: "",
+                message: ""
+            }
+        });
+    
+    handleGoldenSelectDismissClick = () => 
+        this.setState({ 
+            goldenSelectWarningModalVisible: false,
+            userAlertMessage: {
+                header: "",
+                message: ""
+            }
+        });
+
+    
     handleStartRecordClick = () => {
         
         const { recName } = this.state;
 
         const { goldenNameIsValid, goldenNameErrorMessage } = validateGoldenName(recName);
 
+        this.setState({ goldenNameErrorMessage });
+
         if(goldenNameIsValid) {
-            this.setState({ goldenNameErrorMessage });
             this.startRecord();
-        } else {
-            this.setState({ goldenNameErrorMessage });
         }
     };
 
-    stopRecord = () => {
-        const { cube, authentication, dispatch } = this.props;
-        const user = authentication.user;
-        const url = `${config.recordBaseUrl}/stop/${this.state.recId}`;
+    checkStatus = (statusUrl, configForHTTP) => {
+        axios.get(statusUrl, configForHTTP)
+            .then(response => this.setState({ recStatus: response.data }));
+    };
+
+    resumeRecording = () => {
+        const { 
+            cube: { 
+                testIds,
+                selectedApp, 
+                selectedGolden,
+            }, 
+            authentication: { 
+                user: {
+                    customer_name,
+                    access_token
+                } 
+            } 
+        } = this.props;
+
+        const { name: recName, label: recLabel } = testIds.find(recording => recording.id === selectedGolden);
+
+        const resumeUrl = `${config.recordBaseUrl}/resumeRecording/${selectedGolden}`;
+        const statusUrl = `${config.recordBaseUrl}/status/${customer_name}/${selectedApp}/${recName}/${recLabel}`;
+
         const configForHTTP = {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                "Authorization": "Bearer " + user['access_token']
+                "Authorization": `Bearer ${access_token}`
             }
         };
-        axios.post(url, {}, configForHTTP).then((response) => {
-            this.setState({stopDisabled: true, recId: null});
-            const csUrl = `${config.recordBaseUrl}/status/${user.customer_name}/${cube.selectedApp}/${this.state.recName}/${this.state.recLabel}`;
-            axios.get(csUrl, configForHTTP).then(response => {
-                this.setState({recStatus: response.data});
-            });
+        
+        axios.post(resumeUrl, {}, configForHTTP).then((response) => {
+            this.setState({ stopDisabled: false, recId: response.data.id, recName, recLabel });
+            this.recStatusInterval = setInterval(
+                () => (
+                    !this.state.recId
+                    ? clearInterval(this.recStatusInterval) 
+                    : this.checkStatus(statusUrl, configForHTTP)
+                ), 
+                1000);
         });
 
-        dispatch(cubeActions.getTestIds(cube.selectedApp));
+    };
+
+    startRecord = () => {
+        const { 
+            cube: { 
+                selectedApp, 
+                selectedInstance 
+            }, 
+            authentication: { 
+                user: {
+                    username,
+                    customer_name,
+                    access_token
+                } 
+            } 
+        } = this.props;
+        const { recName } = this.state;
+        const recLabel = Date.now().toString();
+
+        const recordUrl = `${config.recordBaseUrl}/start/${customer_name}/${selectedApp}/${selectedInstance}/RespPartialMatch`;
+        const statusUrl = `${config.recordBaseUrl}/status/${customer_name}/${selectedApp}/${recName}/${recLabel}`;
+
+        const configForHTTP = {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                "Authorization": `Bearer ${access_token}` //"Bearer " + user['access_token']
+            }
+        };
+        
+        const searchParams = new URLSearchParams();
+
+        searchParams.set('name', recName);
+        searchParams.set('userId', username);
+        searchParams.set('label', recLabel);
+
+        axios.post(recordUrl, searchParams, configForHTTP).then((response) => {
+            this.setState({ stopDisabled: false, recId: response.data.id, recLabel });
+            this.recStatusInterval = setInterval(
+                () => (
+                    !this.state.recId
+                    ? clearInterval(this.recStatusInterval) 
+                    : this.checkStatus(statusUrl, configForHTTP)
+                ), 
+                1000);
+        });
+    };
+
+    stopRecord = () => {
+        const { 
+            dispatch,
+            cube: { 
+                selectedApp, 
+            }, 
+            authentication: { 
+                user: {
+                    customer_name,
+                    access_token
+                } 
+            } 
+        } = this.props;
+
+        const { recName, recLabel } = this.state;
+
+        const stopUrl = `${config.recordBaseUrl}/stop/${this.state.recId}`;
+        const statusUrl = `${config.recordBaseUrl}/status/${customer_name}/${selectedApp}/${recName}/${recLabel}`;
+
+        const configForHTTP = {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                "Authorization": `Bearer ${access_token}`
+            }
+        };
+        axios.post(stopUrl, {}, configForHTTP).then((response) => {
+            this.setState({ stopDisabled: true, recId: null });
+            this.checkStatus(statusUrl, configForHTTP);
+        });
+
+        dispatch(cubeActions.getTestIds(selectedApp));
     };
 
     replay = async () => {
@@ -471,7 +475,7 @@ class ViewSelectedTestConfig extends React.Component {
         const selectedInstances = cube.instances
             .filter((item) => item.name == cube.selectedInstance && item.app.name == cube.selectedApp);
         cubeActions.clearReplayStatus();
-         if(!cube.selectedInstance){
+        if(!cube.selectedInstance){
             alert('select an instance to replay')
         } else if (!cube.selectedTestId) {
             alert('select golden to replay');
@@ -530,13 +534,216 @@ class ViewSelectedTestConfig extends React.Component {
         }
     };
 
+    
+    renderInstances(cube) {
+        if (!cube.instances) {
+            return ''
+        }
+        let options = [];
+        options = cube.instances.map(item => {
+            if(item.app.name == cube.selectedApp)
+                return (<option key={item.id} value={item.name}>{item.name}</option>);
+        });
+        let jsxContent = '';
+        if (options.length) {
+            jsxContent = <div>
+                <select className="r-att" onChange={this.handleChangeForInstance} value={cube.selectedInstance} placeholder={'Select...'}>
+                    <option value="">Select Instance</option>
+                    {options}
+                </select>
+            </div>
+        } else {
+            jsxContent = <select className="r-att" value={cube.selectedInstance} placeholder={'Select...'}>
+                <option value="">Select Instance</option>
+            </select>
+        }
+
+        return jsxContent;
+    }
+
+    renderCollectionTable() {
+        const {cube} = this.props;
+        let collectionList = cube.testIds;
+
+        if (this.state.goldenNameFilter) {
+            collectionList = collectionList.filter(item => item.name.toLowerCase().includes(this.state.goldenNameFilter.toLowerCase()));
+        }
+
+        if (this.state.goldenBranchFilter) {
+            collectionList = collectionList.filter(item => item.branch && item.branch.toLowerCase().includes(this.state.goldenBranchFilter.toLowerCase()));
+        }
+
+        if (this.state.goldenVersionFilter) {
+            collectionList = collectionList.filter(item => item.codeVersion && item.codeVersion.toLowerCase().includes(this.state.goldenVersionFilter.toLowerCase()));
+        }
+
+        if (this.state.goldenIdFilter) {
+            collectionList = collectionList.filter(item => item.id.toLowerCase().includes(this.state.goldenIdFilter.toLowerCase()));
+        }
+
+        if (!collectionList || collectionList.length == 0) {
+            return <tr><td colSpan="5">NO DATA FOUND</td></tr>
+            return;
+        }
+
+        let trList = collectionList.map(item => (<tr key={item.collec} value={item.collec} className={this.state.selectedGoldenFromFilter == item.collec ? "selected-g-row" : ""} onClick={() => this.selectGoldenFromFilter(item.collec)}><td>{item.name}</td><td>{item.label}</td><td>{item.id}</td><td>{this.getFormattedDate(new Date(item.timestmp*1000))}</td><td>{item.userId}</td><td>{item.prntRcrdngId}</td></tr>));
+        return trList;
+    }
+
+    renderCollectionDD ( cube ) {
+        if (cube.testIdsReqStatus != cubeConstants.REQ_SUCCESS || cube.testIdsReqStatus == cubeConstants.REQ_NOT_DONE)
+            return <select className="r-att" disabled value={cube.selectedTestId} placeholder={'Select...'}>
+                <option value="">No App Selected</option>
+            </select>;
+        let options = [];
+        if (cube.testIdsReqStatus == cubeConstants.REQ_SUCCESS) {
+            options = cube.testIds.map((item, index) => {
+                if (index < 8)
+                    return (<option key={item.collec + index} value={item.collec}>{item.name}</option>);
+
+                else
+                    return (<option className="hidden" key={item.collec + index} value={item.collec}>{item.name}</option>);
+            });
+        }
+        let jsxContent = '';
+        if (options.length) {
+            let selectedTestIdObj = '';
+            if (cube.selectedTestId)
+                selectedTestIdObj = { label: cube.selectedTestId, value: cube.selectedTestId};
+            jsxContent = <div>
+                <select className="r-att" onChange={this.handleChangeForTestIds} value={cube.selectedTestId} placeholder={'Select...'}>
+                    <option value="">Select Golden</option>
+                    {options}
+                </select>
+            </div>
+        }
+        if (cube.testIdsReqStatus == cubeConstants.REQ_LOADING)
+            jsxContent = <div><br/>Loading...</div>
+        if (cube.testIdsReqStatus == cubeConstants.REQ_FAILURE)
+            jsxContent = <div><br/>Request failed!</div>
+
+        return jsxContent;
+    };
+
+    renderAlertModals = (isVisible, dismissHandler) => {
+        const { userAlertMessage: { header, message } } = this.state;
+        return (
+            <Modal show={isVisible}>
+                <Modal.Header>
+                    <Modal.Title>{header}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <div>
+                        {message}
+                    </div>
+                </Modal.Body>
+                <Modal.Footer>
+                    <span onClick={dismissHandler} className="cube-btn">Dismiss</span>
+                </Modal.Footer>
+            </Modal>
+        );
+    };
+
+
+    renderTestInfo = () => {
+        const { cube, authentication: { user: { username } } } = this.props;
+        
+        return(
+            <Fragment>
+                <div className="div-label">
+                    Test Configuration
+                    <Link to="/test_config">
+                        <i className="fas fa-link pull-right link"></i>
+                    </Link>
+                </div>
+                <div className="margin-top-10">
+                    <div className="label-n">TEST NAME</div>
+                    <div className="value-n">{cube.testConfig ? cube.testConfig.testConfigName : ''}</div>
+                </div>
+                <div className={cube.golden ? "margin-top-10" : "hidden"}>
+                    <div className="label-n">GOLDEN</div>
+                    <div className="value-n">{cube.golden ? cube.golden : ''}</div>
+                </div>
+                <div className={cube.testConfig && cube.testConfig.gatewayService ? "margin-top-10" : "hidden"}>
+                    <div className="label-n">GATEWAY</div>
+                    <div className="value-n">{cube.testConfig && cube.testConfig.gatewayService ? cube.testConfig.gatewayService.name : ''}</div>
+                </div>
+                <div className={cube.testConfig && cube.testConfig.criteria ? "margin-top-10" : "hidden"}>
+                    <div className="label-n">CRITERIA</div>
+                    <div className="value-n">{cube.testConfig && cube.testConfig.criteria ? cube.testConfig.criteria : ''}</div>
+                </div>
+                <div className={cube.testConfig && cube.testConfig.mocks ? "margin-top-10" : "hidden"}>
+                    <div className="label-n">MOCK(S)</div>
+                    <div className="value-n">{cube.testConfig && cube.testConfig.mocks ? cube.testConfig.mocks.join(",") : ''}</div>
+                </div>
+
+                <div className="margin-top-10">
+                    <div className="cube-btn width-100 text-center">SAVE TEST CONFIG</div>
+                </div>
+
+                <div className="margin-top-10">
+                    <div className="label-n">SELECT TEST INSTANCE</div>
+                    <div className="value-n">
+                        {this.renderInstances(cube)}
+                    </div>
+                </div>
+
+                <div className="margin-top-10">
+                    <div className="label-n">SELECT MODE&nbsp;
+                        <select 
+                            className="r-att" 
+                            style={{ fontSize: "12px", fontWeight: "500", color: "#5f5f5f" }} 
+                            onChange={(event) => this.handleRecordingModeChange(event.target.value)}
+                            value={this.state.recordingMode}
+                        >
+                            <option value="new">New</option>
+                            <option value="resume">Resume</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div className="margin-top-10">
+                    <div className="label-n">SELECT GOLDEN&nbsp;
+                        <i onClick={this.showGoldenFilter} title="Browse Golden" className="link fas fa-folder-open pull-right font-15"></i>
+                        {
+                            cube.selectedTestId &&
+                                    <span className="pull-right" onClick={this.handleViewGoldenClick} style={{ marginLeft: "5px", cursor: "pointer" }}>
+                                        <i className="fas fa-eye margin-right-10" style={{ fontSize: "12px", color: "#757575"}} aria-hidden="true"></i>
+                                    </span>
+                        }
+                    </div>
+                    <div className="value-n">
+                        {this.renderCollectionDD(cube)}
+                    </div>
+                </div>
+
+                <div style={{ fontSize: "12px" }} className="margin-top-10 row">
+                    <span  className="label-link col-sm-12 pointer" onClick={this.showAddCustomHeaderModal}>
+                        <i className="fas fa-plus" style={{ color: "#333333", marginRight: "5px" }} aria-hidden="true"></i>
+                        Custom Headers
+                    </span>
+                </div>
+
+                <div className="margin-top-10 row">
+                    <div className="col-sm-6">
+                        <div onClick={() => this.replay()} className="cube-btn width-100 text-center">RUN TEST</div>
+                    </div>
+                    <div className="col-sm-6"><div onClick={this.handleRecordButtonClick} className="cube-btn width-100 text-center">RECORD</div></div>
+                </div>
+            </Fragment>
+        );
+
+    };
+
     render() {
         const { cube } = this.props;
         const { 
             showGoldenMeta, customHeaders, recordModalVisible, 
             show, fcId, showGoldenFilter, selectedGoldenFromFilter,
             recName, stopDisabled, recStatus, showAddCustomHeader,
-            goldenNameErrorMessage, fcEnabled
+            goldenNameErrorMessage, fcEnabled, resumeModalVisible,
+            dbWarningModalVisible, instanceWarningModalVisible, 
+            goldenSelectWarningModalVisible
         } = this.state;
 
         const replayDone = (cube.replayStatus === "Completed" || cube.replayStatus === "Error");
@@ -547,6 +754,13 @@ class ViewSelectedTestConfig extends React.Component {
                 {!showGoldenMeta && this.renderTestInfo()}
 
                 {showGoldenMeta && <GoldenMeta {...cube} handleBackToTestInfoClick={this.handleBackToTestInfoClick} />}
+                
+                
+                {dbWarningModalVisible && this.renderAlertModals(dbWarningModalVisible, this.handleDBWarningModalDismissClick)}
+                
+                {instanceWarningModalVisible && this.renderAlertModals(instanceWarningModalVisible, this.handleInstanceSelectDismissClick)}
+
+                {goldenSelectWarningModalVisible && this.renderAlertModals(goldenSelectWarningModalVisible, this.handleGoldenSelectDismissClick)}
 
                 <Modal show={recordModalVisible}>
                     <Modal.Header>
@@ -557,10 +771,9 @@ class ViewSelectedTestConfig extends React.Component {
                         <div style={{ display: "flex", flex: 1, justifyContent: "center"}}>
                             <div className="margin-right-10" style={{ display: "flex", flexDirection: "column" }}>
                                 <input placeholder={"Enter Name"} onChange={this.changeRecName} type="text" value={recName}/>
-                                
                             </div>
                             <div style={{ display: "flex", alignItems: "flex-start" }}>
-                                <span onClick={this.handleStartRecordClick} className={stopDisabled ? "cube-btn margin-right-10" : "cube-btn disabled margin-right-10"}>START</span>
+                                <span onClick={this.showDBWarningModal} className={stopDisabled ? "cube-btn margin-right-10" : "cube-btn disabled margin-right-10"}>START</span>
                                 <span onClick={this.stopRecord} className={stopDisabled ? "cube-btn disabled" : "cube-btn"}>STOP</span>
                             </div>
                             
@@ -574,6 +787,36 @@ class ViewSelectedTestConfig extends React.Component {
                         </div>
                     </Modal.Body>
 
+                    <Modal.Footer>
+                        <span onClick={this.handleCloseRecModal} className={stopDisabled ? "cube-btn" : "cube-btn disabled"}>CLOSE</span>
+                    </Modal.Footer>
+                </Modal>
+
+                <Modal show={resumeModalVisible}>
+                    <Modal.Header>
+                        <Modal.Title>Resume Recording</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body className={"text-center padding-15"}>
+                        <div style={{ display: "flex", flex: 1, justifyContent: "center"}}>
+                            <div 
+                                className="margin-right-10" 
+                                style={{ display: "flex", flexDirection: "column", justifyContent: "center", fontWeight: "500" }}
+                            >
+                                Recording ID: {cube.selectedGolden}
+                            </div>
+                            <div style={{ display: "flex", alignItems: "flex-start" }}>
+                                    <span onClick={this.showDBWarningModal} className={stopDisabled ? "cube-btn margin-right-10" : "cube-btn disabled margin-right-10"}>RESUME</span>
+                                    <span onClick={this.stopRecord} className={stopDisabled ? "cube-btn disabled" : "cube-btn"}>STOP</span>
+                            </div>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "center", marginTop: "10px" }}>
+                            <span style={{ color: "#c24b4b"}}>{goldenNameErrorMessage}</span>
+                        </div>
+                        <div className={"padding-15 bold"}>
+                            <span className={!recStatus ? "hidden" : ""}>Recording Id: {recStatus ? recStatus.id : ""}</span>&nbsp;&nbsp;&nbsp;&nbsp;
+                            Status: {recStatus ? recStatus.status : "Initialize"}
+                        </div>
+                    </Modal.Body>
                     <Modal.Footer>
                         <span onClick={this.handleCloseRecModal} className={stopDisabled ? "cube-btn" : "cube-btn disabled"}>CLOSE</span>
                     </Modal.Footer>
@@ -692,6 +935,7 @@ class ViewSelectedTestConfig extends React.Component {
                         <span onClick={this.hideGoldenFilter} className="cube-btn">Cancel</span>
                     </Modal.Footer>
                 </Modal>
+                
                 <Modal show={showAddCustomHeader} bsSize="large">
                     <Modal.Header>
                         <Modal.Title>Add Custom Headers</Modal.Title>
