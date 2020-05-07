@@ -675,13 +675,8 @@ public class CubeStore {
         try {
             Event eventData = defaultEvent.getEvent();
             Optional<Event> defaultReqEvent = getOrStoreDefaultReqEvent(eventData);
-            if (eventData.eventType.equals(EventType.JavaRequest)) {
-                //For Java Functions, request and response are stored in the same event.
-                return Response.ok().type(MediaType.APPLICATION_JSON)
-                    .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject())).build();
-            }
             if (defaultReqEvent.isPresent() && storeDefaultRespEvent(defaultReqEvent.get(),
-                    defaultEvent.getEvent().payload)) {
+                    defaultEvent.getRespPayload())) {
                 return Response.ok().type(MediaType.APPLICATION_JSON)
                     .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject())).build();
             } else {

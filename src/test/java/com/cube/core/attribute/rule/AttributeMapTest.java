@@ -34,11 +34,11 @@ public class AttributeMapTest {
 
 	static String ruleMapId;
 
-	static String baseTemplateVersion;
+    static String baseTemplateVersion;
 
-	static String app;
+    static String app;
 
-	static String customer;
+    static String customer;
 
 	static Config config;
 
@@ -91,41 +91,40 @@ public class AttributeMapTest {
 
 	@Test public void testUpdate() throws Exception {
 
-		TemplateKey key = new TemplateKey(
-			baseTemplateVersion, customer
-			, app , "NA", "NA"
-			, Type.DontCare);
+        TemplateKey key = new TemplateKey(
+            baseTemplateVersion, customer
+            , app, "NA", "NA"
+            , Type.DontCare);
 
-		TemplateSetTransformer templateSetTransformer = new TemplateSetTransformer();
+        TemplateSetTransformer templateSetTransformer = new TemplateSetTransformer();
 //		CompareTemplate compareTemplate = config.comparatorCache.getDefaultComparator(EventType.HTTPResponse, key).getCompareTemplate();
 
 
-		TemplateSet templateSet = new TemplateSet(baseTemplateVersion, customer, app, Instant.now(),
-			Collections.EMPTY_LIST, Optional.empty());
+        TemplateSet templateSet = new TemplateSet(baseTemplateVersion, customer, app, Instant.now(),
+            Collections.EMPTY_LIST, Optional.empty());
 
-		String templateUpdateOperationSetId = UUID.randomUUID().toString();
-		TemplateEntryOperation templateEntryOperation = new TemplateEntryOperation(
-			OperationType.REPLACE, "/timestamp",
-			Optional.of(new TemplateEntry("/timestamp", CompareTemplate.DataType.Default,
-				CompareTemplate.PresenceType.Default, ComparisonType.Equal
-				, CompareTemplate.ExtractionMethod.Default, Optional.empty())), RuleType.ATTRIBUTERULE
-		);
+        String templateUpdateOperationSetId = UUID.randomUUID().toString();
+        TemplateEntryOperation templateEntryOperation = new TemplateEntryOperation(
+            OperationType.REPLACE, "/timestamp",
+            Optional.of(new TemplateEntry("/timestamp", CompareTemplate.DataType.Default,
+                CompareTemplate.PresenceType.Default, ComparisonType.Equal
+                , CompareTemplate.ExtractionMethod.Default, Optional.empty())), RuleType.ATTRIBUTERULE
+        );
 
-		SingleTemplateUpdateOperation singleTemplateUpdateOperation = new SingleTemplateUpdateOperation(
-			List.of(templateEntryOperation));
+        SingleTemplateUpdateOperation singleTemplateUpdateOperation = new SingleTemplateUpdateOperation(
+            List.of(templateEntryOperation));
 
-		HashMap templateUpdateMap = new HashMap();
-		templateUpdateMap.put(key, singleTemplateUpdateOperation);
+        HashMap templateUpdateMap = new HashMap();
+        templateUpdateMap.put(key, singleTemplateUpdateOperation);
 
-		TemplateUpdateOperationSet templateUpdateOperationSet = new TemplateUpdateOperationSet(templateUpdateOperationSetId,
-			templateUpdateMap);
+        TemplateUpdateOperationSet templateUpdateOperationSet = new TemplateUpdateOperationSet(templateUpdateOperationSetId,
+            templateUpdateMap);
 
-		TemplateSet updatedTemplateSet = templateSetTransformer.updateTemplateSet(
-			templateSet, templateUpdateOperationSet, config.comparatorCache);
+        TemplateSet updatedTemplateSet = templateSetTransformer.updateTemplateSet(
+            templateSet, templateUpdateOperationSet, config.comparatorCache);
 
-		Assertions.assertEquals(updatedTemplateSet.appAttributeRuleMap.get().getRule("/timestamp").get().ct
-			, ComparisonType.Equal);
-	}
-
+        Assertions.assertEquals(updatedTemplateSet.appAttributeRuleMap.get().getRule("/timestamp").get().ct
+            , ComparisonType.Equal);
+    }
 
 }

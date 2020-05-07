@@ -761,7 +761,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     // field names in Solr
     private static final String PATHF = CPREFIX + Constants.PATH_FIELD + STRING_SUFFIX;
-    private static final String MOCKSERVICESF = CPREFIX + Constants.MOCK_SERVICES_FIELD + STRING_SUFFIX;
+    private static final String MOCKSERVICESF = CPREFIX + Constants.MOCK_SERVICES_FIELD + STRINGSET_SUFFIX;
     private static final String REQIDF = CPREFIX + Constants.REQ_ID_FIELD + STRING_SUFFIX;
     private static final String METHODF = CPREFIX + Constants.METHOD_FIELD + STRING_SUFFIX;
     private static final String BODYF = CPREFIX + Constants.BODY + NOTINDEXED_SUFFIX;
