@@ -126,17 +126,15 @@
                     "op": "add",
                     "path": "/hdrs/server",
                     "resolution": "ERR_NewField",
-                    "value": [
-                        "WEBrick/1.3.1 (Ruby/2.3.7/2018-03-28)"
-                    ]
+                    "value": {
+                        "0": "WEBrick/1.3.1 (Ruby/2.3.7/2018-03-28)"
+                    }
                 },
                 {
                     "op": "add",
                     "path": "/hdrs/connection",
                     "resolution": "ERR_NewField",
-                    "value": [
-                        "Keep-Alive"
-                    ]
+                    "value": { "0" :  "Keep-Alive" }
                 },
                 {
                     "op": "remove",
