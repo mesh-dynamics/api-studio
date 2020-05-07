@@ -4,195 +4,203 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import io.md.dao.Event;
 import io.md.dao.Event.EventType;
-import io.md.dao.Event.RunType;
 
 /**
  * EventQuery is POJO to query generic events with matching criteria
  */
+@JsonDeserialize(builder = EventQuery.Builder.class)
 public class EventQuery {
 
-    public  String customerId;
-    public  String app;
-    public  List<EventType> eventTypes;
+    private final String customerId;
+    private final String app;
+    private final List<EventType> eventTypes;
 
-    public  List<String> services;
-    public  Optional<String> instanceId;
-    public  Optional<String> collection;
+    private final List<String> services;
+    private final Optional<String> instanceId;
+    private final Optional<String> collection;
 
-    public  List<String> traceIds;
-    public  Optional<RunType> runType;
-    public  Optional<String> spanId;
-    public  Optional<String> parentSpanId;
-    public  Optional<Instant> timestamp;
+    private final List<String> traceIds;
+    private final Optional<Event.RunType> runType;
+    private final Optional<String> spanId;
+    private final Optional<String> parentSpanId;
+    private final Optional<Instant> timestamp;
 
-    public  List<String> reqIds;
-    public  List<String> paths;
-    private boolean excludePaths;
-    public  Optional<Integer> payloadKey;
-    public  Optional<Integer> offset;
-    public  Optional<Integer> limit;
-    public  Optional<Boolean> sortOrderAsc;
+    private final List<String> reqIds;
+    private final List<String> paths;
+    private final boolean excludePaths;
+    private final Optional<Integer> payloadKey;
+    private final Optional<Integer> offset;
+    private final Optional<Integer> limit;
+    private final Optional<Boolean> sortOrderAsc;
 
-    public EventQuery(String customerId, String app, EventType eventType) {
-        this.customerId = customerId;
-        this.app = app;
-        this.eventTypes = List.of(eventType);
-        this.services = Collections.emptyList();
-        this.instanceId = Optional.empty();
-        this.collection = Optional.empty();
-        this.traceIds = Collections.emptyList();
-        this.runType = Optional.empty();
-        this.spanId = Optional.empty();
-        this.parentSpanId = Optional.empty();
-        this.timestamp = Optional.empty();
-        this.reqIds = Collections.emptyList();
-        this.paths = Collections.emptyList();
-        this.excludePaths = false;
-        this.payloadKey = Optional.empty();
-        this.offset = Optional.empty();
-        this.limit = Optional.empty();
-        this.sortOrderAsc = Optional.empty();
+    public static class Builder {
+        private final String customerId;
+        private final String app;
+        private final List<EventType> eventTypes;
+
+        private List<String> services = Collections.emptyList();
+        private String instanceId = null;
+        private String collection = null;
+        private List<String> traceIds = Collections.emptyList();
+        private Event.RunType runType = null;
+        private String spanId = null;
+        private String parentSpanId = null;
+        private Instant timestamp = null;
+        private List<String> reqIds = Collections.emptyList();
+        private List<String> paths = Collections.emptyList();
+        private boolean excludePaths = false;
+        private Integer payloadKey = null;
+        private Integer offset = null;
+        private Integer limit = null;
+        private Boolean sortOrderAsc = null;
+
+        //@JsonCreator
+        public Builder(String customerId,
+            String app,
+            EventType eventType) {
+            this.customerId = customerId;
+            this.app = app;
+            this.eventTypes = List.of(eventType);
+        }
+
+        @JsonCreator
+        public Builder(@JsonProperty("customerId") String customerId,
+            @JsonProperty("app") String app,
+            @JsonProperty("eventTypes") List<EventType> eventTypes) {
+            this.customerId = customerId;
+            this.app = app;
+            this.eventTypes = eventTypes;
+        }
+
+        public Builder withService(String val) {
+            services = List.of(val);
+            return this;
+        }
+
+
+        public Builder withServices(List<String> vals) {
+            services = vals;
+            return this;
+        }
+
+        public Builder withInstanceId(String val) {
+            instanceId = val;
+            return this;
+        }
+
+        public Builder withCollection(String val) {
+            collection = val;
+            return this;
+        }
+
+        public Builder withTraceId(String val) {
+            traceIds = List.of(val);
+            return this;
+        }
+
+        public Builder withTraceIds(List<String> vals) {
+            traceIds = vals;
+            return this;
+        }
+
+
+        public Builder withRunType(Event.RunType val) {
+            runType = val;
+            return this;
+        }
+
+        public Builder withSpanId(String val) {
+            spanId = val;
+            return this;
+        }
+
+        public Builder withParentSpanId(String val) {
+            parentSpanId = val;
+            return this;
+        }
+
+        public Builder withTimestamp(Instant val) {
+            timestamp = val;
+            return this;
+        }
+
+        public Builder withReqId(String val) {
+            reqIds = List.of(val);
+            return this;
+        }
+
+        public Builder withReqIds(List<String> val) {
+            reqIds = val;
+            return this;
+        }
+
+        public Builder withPath(String val) {
+            paths = List.of(val);
+            return this;
+        }
+
+        public Builder withPaths(List<String> val) {
+            paths = val;
+            return this;
+        }
+
+        public Builder withExcludePaths(boolean val) {
+            excludePaths = val;
+            return this;
+        }
+
+        public Builder withPayloadKey(int val) {
+            payloadKey = val;
+            return this;
+        }
+
+        public Builder withOffset(int val) {
+            offset = val;
+            return this;
+        }
+
+        public Builder withLimit(int val) {
+            limit = val;
+            return this;
+        }
+
+        public Builder withSortOrderAsc(boolean val) {
+            sortOrderAsc = val;
+            return this;
+        }
+
+        public EventQuery build() {
+            return new EventQuery(this);
+        }
+
     }
 
-    public EventQuery(String customerId, String app, List<EventType> eventType) {
-        this.customerId = customerId;
-        this.app = app;
-        this.eventTypes = eventType;
-        this.services = Collections.emptyList();
-        this.instanceId = Optional.empty();
-        this.collection = Optional.empty();
-        this.traceIds = Collections.emptyList();
-        this.runType = Optional.empty();
-        this.spanId = Optional.empty();
-        this.parentSpanId = Optional.empty();
-        this.timestamp = Optional.empty();
-        this.reqIds = Collections.emptyList();
-        this.paths = Collections.emptyList();
-        this.excludePaths = false;
-        this.payloadKey = Optional.empty();
-        this.offset = Optional.empty();
-        this.limit = Optional.empty();
-        this.sortOrderAsc = Optional.empty();
-    }
-    public EventQuery() {
-        this.customerId = "";
-        this.app = "";
-        this.eventTypes = Collections.emptyList();
-        this.services = Collections.emptyList();
-        this.instanceId = Optional.empty();
-        this.collection = Optional.empty();
-        this.traceIds = Collections.emptyList();
-        this.runType = Optional.empty();
-        this.spanId = Optional.empty();
-        this.parentSpanId = Optional.empty();
-        this.timestamp = Optional.empty();
-        this.reqIds = Collections.emptyList();
-        this.paths = Collections.emptyList();
-        this.excludePaths = false;
-        this.payloadKey = Optional.empty();
-        this.offset = Optional.empty();
-        this.limit = Optional.empty();
-    }
-    public EventQuery withService(String val) {
-        services = List.of(val);
-        return this;
-    }
-
-
-    public EventQuery withServices(List<String> vals) {
-        services = vals;
-        return this;
-    }
-
-    public EventQuery withInstanceId(String val) {
-        instanceId = Optional.of(val);
-        return this;
-    }
-
-    public EventQuery withCollection(String val) {
-        collection = Optional.of(val);
-        return this;
-    }
-
-    public EventQuery withTraceId(String val) {
-        traceIds = List.of(val);
-        return this;
-    }
-
-    public EventQuery withTraceIds(List<String> vals) {
-        traceIds = vals;
-        return this;
-    }
-
-
-    public EventQuery withRunType(RunType val) {
-        runType = Optional.of(val);
-        return this;
-    }
-
-    public EventQuery withSpanId(String val) {
-        spanId = Optional.of(val);
-        return this;
-    }
-
-    public EventQuery withParentSpanId(String val) {
-        parentSpanId = Optional.of(val);
-        return this;
-    }
-
-    public EventQuery withTimestamp(Instant val) {
-        timestamp = Optional.of(val);
-        return this;
-    }
-
-    public EventQuery withReqId(String val) {
-        reqIds = List.of(val);
-        return this;
-    }
-
-    public EventQuery withReqIds(List<String> val) {
-        reqIds = val;
-        return this;
-    }
-
-    public EventQuery withPath(String val) {
-        paths = List.of(val);
-        return this;
-    }
-
-    public EventQuery withPaths(List<String> val) {
-        paths = val;
-        return this;
-    }
-
-    public EventQuery withExcludePaths(boolean val) {
-        excludePaths = val;
-        return this;
-    }
-
-    public EventQuery withPayloadKey(int val) {
-        payloadKey = Optional.of(val);
-        return this;
-    }
-
-    public EventQuery withOffset(int val) {
-        offset = Optional.of(val);
-        return this;
-    }
-
-    public EventQuery withLimit(int val) {
-        limit = Optional.of(val);
-        return this;
-    }
-
-    public EventQuery withSortOrderAsc(boolean val) {
-        sortOrderAsc = Optional.of(val);
-        return this;
-    }
-
-    public EventQuery build() {
-        return this;
+    private EventQuery(Builder builder) {
+        customerId = builder.customerId;
+        app = builder.app;
+        eventTypes = builder.eventTypes;
+        services = builder.services;
+        instanceId = Optional.ofNullable(builder.instanceId);
+        collection = Optional.ofNullable(builder.collection);
+        traceIds = builder.traceIds;
+        runType = Optional.ofNullable(builder.runType);
+        spanId = Optional.ofNullable(builder.spanId);
+        parentSpanId = Optional.ofNullable(builder.parentSpanId);
+        timestamp = Optional.ofNullable(builder.timestamp);
+        reqIds = builder.reqIds;
+        paths = builder.paths;
+        excludePaths = builder.excludePaths;
+        payloadKey = Optional.ofNullable(builder.payloadKey);
+        offset = Optional.ofNullable(builder.offset);
+        limit = Optional.ofNullable(builder.limit);
+        sortOrderAsc = Optional.ofNullable(builder.sortOrderAsc);
     }
 
     public String getCustomerId() {
@@ -223,7 +231,7 @@ public class EventQuery {
         return traceIds;
     }
 
-    public Optional<RunType> getRunType() { return runType; }
+    public Optional<Event.RunType> getRunType() { return runType; }
 
     public List<String> getReqIds() {
         return reqIds;
@@ -252,4 +260,6 @@ public class EventQuery {
     public Optional<Boolean> isSortOrderAsc() {
         return sortOrderAsc;
     }
+
+
 }
