@@ -100,7 +100,7 @@ public class TemplateSetTransformer {
                     sourceTemplate = new CompareTemplateVersioned(Optional.of(key.getServiceId())
                         , Optional.of(key.getPath()), key.getReqOrResp(), template);
                 }
-                CompareTemplateVersioned updated = updateTemplate(sourceTemplateMap.get(key) , update);
+                CompareTemplateVersioned updated = updateTemplate(sourceTemplate , update);
                 sourceTemplateMap.put(key, updated);
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Updated Compare Template"
                     , Constants.TEMPLATE_UPD_OP_SET_ID_FIELD, templateSetUpdateSpec.getTemplateUpdateOperationSetId()
