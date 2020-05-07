@@ -1,8 +1,8 @@
 package io.md.dao;
 
 import io.md.constants.ReplayStatus;
-import io.md.constants.ReplayTypeEnum;
-
+import io.md.core.ReplayTypeEnum;
+import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -29,7 +29,7 @@ public class Replay {
 	public  Optional<Double> sampleRate;
 	public  Instant creationTimeStamp;
 	public Optional<String> generatedClassJarPath;
-	public  ReplayTypeEnum replayType;
+	public ReplayTypeEnum replayType;
 	public List<String> mockServices;
 	public Optional<String> testConfigName;
 	public Optional<String> goldenName;
@@ -38,47 +38,47 @@ public class Replay {
 	public boolean excludePaths;
 	public Optional<String> xfms;
 	public Optional<RRTransformer> xfmer;
-	
-	public Replay(String endpoint, String customerId, String app, String instanceId,
-					String collection, String userId, List<String> reqIds,
-					String replayId, boolean async, String templateVersion, ReplayStatus status,
-					List<String> paths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
-					Optional<Double> sampleRate, List<String> intermediateServices,
-					Optional<String> generatedClassJarPath, Optional<String> service,
-					ReplayTypeEnum replayType, List<String> mockServices, Optional<String> testConfigName,
-					Optional<String> goldenName, Optional<String> recordingId, boolean archived, boolean excludePaths,
-					Optional<String> xfms, Optional<RRTransformer> xfmer) {
-	    this.endpoint = endpoint;
-	    this.customerId = customerId;
-	    this.app = app;
-	    this.instanceId = instanceId;
-	    this.collection = collection;
-	    this.userId = userId;
-	    this.reqIds = reqIds;
-	    this.replayId = replayId;
-	    this.async = async;
-	    this.templateVersion = templateVersion;
-	    this.status = status;
-	    this.paths = paths;
-	    this.reqcnt = reqcnt;
-	    this.reqsent = reqsent;
-	    this.reqfailed = reqfailed;
-	    this.creationTimeStamp = creationTimestamp;
-	    this.sampleRate = sampleRate;
-	    this.intermediateServices = intermediateServices;
-	    this.generatedClassJarPath = generatedClassJarPath;
-	    this.service = service;
-	    this.replayType = replayType;
-	    this.mockServices = mockServices;
-	    this.testConfigName = testConfigName;
-	    this.goldenName = goldenName;
-	    this.recordingId = recordingId;
-	    this.archived = archived;
-	    this.excludePaths = excludePaths;
-	    this.xfms = xfms;
-	    this.xfmer = xfmer;
-	}
+	public transient Optional<URLClassLoader> generatedClassLoader;
 
+	public Replay(String endpoint, String customerId, String app, String instanceId,
+			String collection, String userId, List<String> reqIds,
+			String replayId, boolean async, String templateVersion, ReplayStatus status,
+			List<String> paths, boolean excludePaths, int reqcnt, int reqsent, int reqfailed, Instant creationTimestamp,
+			Optional<Double> sampleRate, List<String> intermediateServices,
+			Optional<String> generatedClassJarPath, Optional<URLClassLoader> classLoader,
+			Optional<String> service, ReplayTypeEnum replayType, Optional<String> xfms, Optional<RRTransformer> xfmer, List<String> mockServices,
+			Optional<String> testConfigName, Optional<String> goldenName, Optional<String> recordingId, boolean archived) {
+		this.endpoint = endpoint;
+		this.customerId = customerId;
+		this.app = app;
+		this.instanceId = instanceId;
+		this.collection = collection;
+		this.userId = userId;
+		this.reqIds = reqIds;
+		this.replayId = replayId;
+		this.async = async;
+		this.templateVersion = templateVersion;
+		this.status = status;
+		this.paths = paths;
+		this.excludePaths = excludePaths;
+		this.reqcnt = reqcnt;
+		this.reqsent = reqsent;
+		this.reqfailed = reqfailed;
+		this.creationTimeStamp = creationTimestamp;
+		this.xfms = xfms;
+		this.xfmer = xfmer;
+		this.sampleRate = sampleRate;
+		this.intermediateServices = intermediateServices;
+		this.generatedClassJarPath = generatedClassJarPath;
+		this.service = service;
+		this.replayType = replayType;
+		this.generatedClassLoader = classLoader;
+		this.mockServices = mockServices;
+		this.testConfigName = testConfigName;
+		this.goldenName = goldenName;
+		this.recordingId = recordingId;
+		this.archived = archived;
+	}
 	//for deserialization
 	public Replay() {
 	    endpoint = "";
