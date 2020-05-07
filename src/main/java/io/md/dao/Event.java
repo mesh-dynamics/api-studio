@@ -197,12 +197,14 @@ public class Event {
 		payload.collectKeyVals(path -> template.getRule(path).getCompareType()
 			== CompareTemplate.ComparisonType.Equal, keyVals);
 		LOGGER.info("Generating event key from vals : ".concat(keyVals.toString()));
-		if (!keyVals.isEmpty()) {
+		payloadKey = Objects.hash(keyVals);
+		// TODO revert it later
+		/*if (!keyVals.isEmpty()) {
 			payloadKey = Objects.hash(keyVals.get(0));
 		}
 		for (int i = 1 ; i < keyVals.size(); i++) {
 			payloadKey ^= Objects.hash(keyVals.get(i));
-		}
+		}*/
 		// TODO deal with this later
 		/*if (eventType == EventType.ThriftRequest) {
 			this.traceId = ((ThriftDataObject) payload).traceId;
