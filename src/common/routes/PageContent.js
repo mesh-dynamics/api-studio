@@ -10,6 +10,7 @@ import ReviewGolden from "./review_golden";
 import ShareableLink from "./shareable_link";
 import ShareableDiff from "./shareable_diff";
 import ViewTrace from "./view_trace";
+import TestReport from "./test_report";
 
 
 class PageContent extends Component {
@@ -46,6 +47,7 @@ class PageContent extends Component {
         {ShareableLink}
         {ShareableDiff}
         {ViewTrace}
+        {TestReport}
       </div>
     )
   }

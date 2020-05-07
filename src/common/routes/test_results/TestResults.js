@@ -12,6 +12,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import _ from 'lodash';
 import config from '../../config';
+import view_test_report_img from "./view_test_report_img.png"
 import Modal from "react-bootstrap/es/Modal";
 import {cubeService} from "../../services"
 
@@ -222,7 +223,7 @@ class TestResults extends Component {
                                     {`Test ID : ${replayId}`}
                             </span>
                             <span className="timeline-replay-id">
-                                    {`Config Name: ${testConfigName}`}
+                                    {`Test Config: ${testConfigName || "NA"}`}
                             </span>
                         </div>
                     }
@@ -248,8 +249,13 @@ class TestResults extends Component {
                                     {`Test ID : ${replayId}`}
                             </div>
                             <span className="timeline-replay-id">
-                                    {`Config Name: ${testConfigName}`}
+                                    {`Test Config: ${testConfigName || "NA"}`}
                             </span>
+                            <div className="timeline-replay-id">
+                                    <a href={`/test_report?replayId=${replayId}`}>
+                                        <img className="view-test-report-img" src={view_test_report_img} alt="View test report" title="View test report"></img>
+                                        </a>
+                            </div>
                         </div>
                     </div>
                 </Tippy>
@@ -339,7 +345,7 @@ class TestResults extends Component {
                     goldenName: testResult.goldenName,
                     userName: testResult.userName,
                     goldenLabel: testResult.goldenLabel,
-                    testConfigName: testResult.testConfigName || "NA"
+                    testConfigName: testResult.testConfigName,
                 })
             for (let eachReplayResult of testResultsPerReplay) {
                 if (eachReplayResult.service != null && eachReplayResult.path != null) {

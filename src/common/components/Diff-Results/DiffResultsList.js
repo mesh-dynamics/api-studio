@@ -1,7 +1,14 @@
 import React, { Component, Fragment } from "react";
-import {resolutionsIconMap} from "../Resolutions.js";
-import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio, InputGroup} from "react-bootstrap";
+import { 
+    Checkbox, 
+    FormGroup, 
+    FormControl, 
+    Glyphicon, 
+    Label, 
+    ButtonGroup, Button
+} from "react-bootstrap";
 import ReactDiffViewer from "../../utils/diff/diff-main";
+import DiffResultsMissingItems from "./DiffResultsMissingItems";
 import statusCodeList from "../../StatusCodeList"
 import _ from "lodash";
 import "../Diff.css";
@@ -395,14 +402,13 @@ export default class DiffResultsList extends Component {
                                 </h4>
                             </div>
                         </div>
-                        <div>
-                            {item.missedRequiredFields.map((eachMissedField) => {
-                                return(<div><span style={{paddingRight: "5px"}}>{eachMissedField.path}:</span><span>{eachMissedField.fromValue}</span></div>)
-                            })}
-                        </div>
+                        {
+                            item.missedRequiredFields.length > 0 &&
+                            <DiffResultsMissingItems missedRequiredFields={item.missedRequiredFields} />
+                        }
                         {(item.recordedData || item.replayedData) && (
                             <div className="diff-wrapper">
-                                < ReactDiffViewer
+                                <ReactDiffViewer
                                     styles={newStyles}
                                     oldValue={item.expJSON}
                                     newValue={item.actJSON}
@@ -420,7 +426,7 @@ export default class DiffResultsList extends Component {
                         )}
                     </div>
                 )}
-            </div >);
+            </div>);
         });
     }
 
