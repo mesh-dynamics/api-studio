@@ -1,25 +1,21 @@
-package com.cube.interceptor.apachecxf.egress;
+package io.cube.interceptor.apachecxf.egress;
 
 
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import javax.annotation.Priority;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.ClientResponseContext;
 import javax.ws.rs.client.ClientResponseFilter;
-import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptor;
@@ -39,14 +35,14 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.CommonConfig;
-import io.jaegertracing.internal.JaegerSpanContext;
 import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
-import com.cube.interceptor.apachecxf.egress.utils.Utils;
+import io.cube.interceptor.apachecxf.egress.utils.Utils;
+import io.opentracing.SpanContext;
 
 
 /**
@@ -75,21 +71,17 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 			if (reqContext != null) {
 				recordRequest(context, reqContext, didContextProceed);
 			} else {
-				LOGGER.debug(String.valueOf(
-						Map.of(Constants.MESSAGE, "Unable to fetch request context!")));
+				LOGGER.debug(Constants.MESSAGE, "Unable to fetch request context!");
 			}
 		} catch (Exception e) {
-			LOGGER.error(String.valueOf(
-				Map.of(
-					Constants.MESSAGE, "Exception occurred in interceptor",
-					Constants.REASON, e.getMessage()
-				)));
+			LOGGER.error(
+					Constants.MESSAGE + ":Exception occurred in interceptor\n" +
+					Constants.EXCEPTION_STACK, e);
 		} finally {
 			if(didContextProceed.isFalse()) {
-				LOGGER.info(String.valueOf(
-					Map.of(
-						io.md.constants.Constants.MESSAGE, "Proceeding context in aroundWriteTo finally"
-					)));
+				LOGGER.info(
+						io.md.constants.Constants.MESSAGE + ":Proceeding context in aroundWriteTo finally"
+					);
 				context.proceed();
 			}
 		}
@@ -138,11 +130,10 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 				didContextProceed.setTrue();
 				interceptorContext.proceed();
 			} catch (Exception e) {
-				LOGGER.error(String.valueOf(
-					Map.of(
-						io.md.constants.Constants.MESSAGE, "Error occurred in context proceed",
-						io.md.constants.Constants.REASON, e.getMessage()
-					)));
+				LOGGER.error(
+						io.md.constants.Constants.MESSAGE + ":Error occurred in context proceed\n" +
+						Constants.EXCEPTION_STACK, e
+					);
 			} finally {
 				reqBody = baos.toByteArray();
 				baos.writeTo(originalStream);
@@ -158,7 +149,12 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 	@Override
 	public void filter(ClientRequestContext clientRequestContext,
 		ClientResponseContext clientResponseContext) {
+		Span span = null;
+		Scope scope = null;
+
 		try {
+			span = (Span) clientRequestContext.getProperty(Constants.MD_CHILD_SPAN);
+			scope = (Scope) clientRequestContext.getProperty(Constants.MD_SCOPE);
 			if (clientRequestContext.getProperty(Constants.MD_SAMPLE_REQUEST) != null) {
 				// Do not log request in case the egress serivce is to be mocked
 				String service = CommonUtils.getEgressServiceName(clientRequestContext.getUri());
@@ -189,11 +185,17 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 				removeSetContextProperty(clientRequestContext);
 			}
 		} catch (Exception e) {
-			LOGGER.error(String.valueOf(
-				Map.of(
-					Constants.MESSAGE, "Error occured in intercepting the response",
-					Constants.REASON, e.getMessage()
-				)));
+			LOGGER.error(
+					Constants.MESSAGE + ":Error occured in intercepting the response\n" +
+					Constants.EXCEPTION_STACK, e
+				);
+		} finally {
+			if (span != null) {
+				span.finish();
+			}
+			if (scope != null) {
+				scope.close();
+			}
 		}
 	}
 
@@ -230,12 +232,11 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 					respContext.setEntityStream(in);
 					return respBody;
 				}
-			} catch (IOException ex) {
-				LOGGER.error(String.valueOf(
-					Map.of(
-						Constants.MESSAGE, "Failure during reading the response body",
-						Constants.REASON, ex.getMessage()
-					)));
+			} catch (IOException e) {
+				LOGGER.error(
+						Constants.MESSAGE + ":Failure during reading the response body\n" +
+						Constants.REASON, e
+					);
 				respContext.setEntityStream(new ByteArrayInputStream(new byte[0]));
 			}
 		} finally {
@@ -256,49 +257,53 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 	@Override
 	public void filter(ClientRequestContext clientRequestContext) throws IOException {
 		try {
-			if (clientRequestContext.getMethod().equalsIgnoreCase("GET")) {
+			if(clientRequestContext.getEntity()==null) {
 					//aroundWriteTo will not be called, as there will be no body to write.
 					//hence have to log the request here. WebClient does not have a provision
 					//to create a get request with body, so double logging is not an issue.
 					recordRequest(null, clientRequestContext, new MutableBoolean(false));
 			}
 		} catch (Exception e) {
-			LOGGER.error(String.valueOf(
-				Map.of(
-					Constants.MESSAGE, "Error occurred in intercepting the request",
-					Constants.REASON, e.getMessage()
-				)));
+			LOGGER.error(
+					Constants.MESSAGE + " Error occurred in intercepting the request\n" +
+					Constants.EXCEPTION_STACK, e);
 		}
 	}
 
 	private void recordRequest(WriterInterceptorContext writerInterceptorContext,
 		ClientRequestContext clientRequestContext, MutableBoolean didContextProceed) throws IOException {
-		Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
-		Optional<Span> newClientSpan = currentSpan.map( span -> {
-			return CommonUtils.startClientSpan(Constants.MD_CHILD_SPAN, span.context(), false);
-		});
 
-		newClientSpan.map(CommonUtils::activateSpan);
+		Span newClientSpan = null;
+		Scope newClientSpanScope = null;
+		try {
+			Optional<Span> ingressSpan = CommonUtils.getCurrentSpan();
+			if(!ingressSpan.isPresent()) {
+				LOGGER.info(
+						Constants.MESSAGE + ":Ingress span not set. Creating default Span context"
+					);
+			}
 
-		String service = CommonUtils.getEgressServiceName(clientRequestContext.getUri());
-		CommonConfig commonConfig = CommonConfig.getInstance();
-		if (commonConfig.shouldMockService(service)) {
-			currentSpan.ifPresent(span -> {
-				span.setBaggageItem(Constants.MD_PARENT_SPAN, span.context().toSpanId());
-			});
-			didContextProceed.setFalse();
-		}
+			SpanContext spanContext = ingressSpan.map(Span::context).orElse(null);
 
-		if (newClientSpan.isPresent()) {
-			Span span = newClientSpan.get();
+			newClientSpan = CommonUtils.startClientSpan(Constants.MD_CHILD_SPAN, spanContext, false);
+
+			newClientSpanScope = CommonUtils.activateSpan(newClientSpan);
+
+			String service = CommonUtils.getEgressServiceName(clientRequestContext.getUri());
+			CommonConfig commonConfig = CommonConfig.getInstance();
+			if (commonConfig.shouldMockService(service)) {
+				didContextProceed.setFalse();
+				return;
+			}
+
 			//Either baggage has sampling set to true or this service uses its veto power to sample.
 			boolean isSampled = BooleanUtils
-				.toBoolean(span.getBaggageItem(Constants.MD_IS_SAMPLED));
+				.toBoolean(newClientSpan.getBaggageItem(Constants.MD_IS_SAMPLED));
 			boolean isVetoed = BooleanUtils
-				.toBoolean(span.getBaggageItem(Constants.MD_IS_VETOED));
+				.toBoolean(newClientSpan.getBaggageItem(Constants.MD_IS_VETOED));
 
 			if (isSampled || isVetoed) {
-				span.setBaggageItem(Constants.MD_IS_VETOED, null);
+				newClientSpan.setBaggageItem(Constants.MD_IS_VETOED, null);
 
 				URI uri = clientRequestContext.getUri();
 
@@ -311,7 +316,7 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 				//serviceName to be host+port for outgoing calls
 				String serviceName = CommonUtils.getEgressServiceName(uri);
 
-				MDTraceInfo mdTraceInfo = io.md.utils.Utils.getTraceInfo(span);
+				MDTraceInfo mdTraceInfo = io.md.utils.Utils.getTraceInfo(newClientSpan);
 
 				String xRequestId = clientRequestContext.getStringHeaders()
 					.getFirst(Constants.X_REQUEST_ID);
@@ -324,20 +329,22 @@ public class ClientFilter implements WriterInterceptor, ClientRequestFilter, Cli
 				clientRequestContext.setProperty(Constants.MD_API_PATH_PROP, apiPath);
 				clientRequestContext.setProperty(Constants.MD_SAMPLE_REQUEST, true);
 				clientRequestContext.setProperty(Constants.MD_TRACE_INFO, mdTraceInfo);
+				clientRequestContext.setProperty(Constants.MD_CHILD_SPAN, newClientSpan);
+				clientRequestContext.setProperty(Constants.MD_SCOPE, newClientSpanScope);
 
 				logRequest(writerInterceptorContext, clientRequestContext, apiPath,
 					traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID), queryParams,
 					mdTraceInfo, serviceName, didContextProceed);
 
-				span.setBaggageItem(Constants.MD_PARENT_SPAN, span.context().toSpanId());
-				span.finish();
+				newClientSpan.setBaggageItem(Constants.MD_PARENT_SPAN, newClientSpan.context().toSpanId());
 			} else {
-				LOGGER.debug(String.valueOf(
-					Map.of(Constants.MESSAGE, "Sampling is false!")));
+				LOGGER.debug(
+					Constants.MESSAGE + ": Sampling is false!"
+				);
 			}
-		} else {
-			LOGGER
-				.debug(String.valueOf(Map.of(Constants.MESSAGE, "Current Span is empty!")));
+		} finally {
+			newClientSpanScope.close();
+			newClientSpan.finish();
 		}
 	}
 }

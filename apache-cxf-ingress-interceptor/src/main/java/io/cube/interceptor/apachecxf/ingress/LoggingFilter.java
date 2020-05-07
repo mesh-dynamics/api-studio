@@ -1,20 +1,14 @@
-package com.cube.interceptor.apachecxf.ingress;
+package io.cube.interceptor.apachecxf.ingress;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 
 import javax.annotation.Priority;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
@@ -37,7 +31,6 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.jaegertracing.internal.JaegerSpanContext;
 import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
@@ -45,8 +38,7 @@ import io.md.utils.UtilException;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
-import com.cube.interceptor.apachecxf.ingress.config.Config;
-import com.cube.interceptor.apachecxf.ingress.utils.Utils;
+import io.cube.interceptor.apachecxf.ingress.utils.Utils;
 
 /**
  * Priority is to specify in which order the filters are to be executed.
@@ -101,11 +93,10 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 				}
 			}));
 		} catch (Exception e) {
-			LOGGER.error(String.valueOf(
-				Map.of(
-					io.md.constants.Constants.MESSAGE, "Error occurred in intercepting request",
-					io.md.constants.Constants.REASON, e.getMessage()
-				)));
+			LOGGER.error(
+					Constants.MESSAGE + ":Error occurred in intercepting request\n" +
+					Constants.EXCEPTION_STACK, e
+				);
 		}
 
 	}
@@ -126,11 +117,10 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 				}
 			}
 		} catch (Exception e) {
-			LOGGER.error(String.valueOf(
-				Map.of(
-					io.md.constants.Constants.MESSAGE, "Error occurred in intercepting response",
-					io.md.constants.Constants.REASON, e.getMessage()
-				)));
+			LOGGER.error(
+					Constants.MESSAGE + ":Error occurred in intercepting response" +
+					Constants.EXCEPTION_STACK, e
+				);
 		}
 	}
 
@@ -153,17 +143,15 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 				logResponse(context, reqContext, didContextProceed);
 			}
 		} catch (Exception e) {
-			LOGGER.error(String.valueOf(
-				Map.of(
-					io.md.constants.Constants.MESSAGE, "Error occurred in Mocking filter",
-					io.md.constants.Constants.REASON, e.getMessage()
-				)));
+			LOGGER.error(
+					io.md.constants.Constants.MESSAGE + ":Error occurred in Mocking filter\n" +
+					Constants.EXCEPTION_STACK, e
+				);
 		} finally {
 			if(didContextProceed.isFalse()) {
-				LOGGER.info(String.valueOf(
-					Map.of(
-						io.md.constants.Constants.MESSAGE, "Proceeding context in aroundWriteTo finally"
-					)));
+				LOGGER.info(
+						io.md.constants.Constants.MESSAGE + ":Proceeding context in aroundWriteTo finally"
+					);
 				context.proceed();
 			}
 		}
@@ -277,11 +265,10 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 				didContextProceed.setTrue();
 				context.proceed();
 			} catch (Exception e) {
-				LOGGER.error(String.valueOf(
-					Map.of(
-						io.md.constants.Constants.MESSAGE, "Error occurred in context proceed",
-						io.md.constants.Constants.REASON, e.getMessage()
-					)));
+				LOGGER.error(
+						io.md.constants.Constants.MESSAGE + ":Error occurred in context proceed\n" +
+						Constants.EXCEPTION_STACK, e
+					);
 			} finally {
 				responseBody = baos.toByteArray();
 				baos.writeTo(originalStream);

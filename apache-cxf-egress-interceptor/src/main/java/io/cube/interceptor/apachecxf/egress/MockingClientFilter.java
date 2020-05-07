@@ -1,8 +1,8 @@
-package com.cube.interceptor.apachecxf.egress;
+package io.cube.interceptor.apachecxf.egress;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import javax.annotation.Priority;
 import javax.ws.rs.client.ClientRequestContext;
@@ -31,21 +31,24 @@ public class MockingClientFilter implements ClientRequestFilter {
 			CommonConfig commonConfig = CommonConfig.getInstance();
 			String serviceName = CommonUtils.getEgressServiceName(originalUri);
 			commonConfig.getMockingURI(originalUri, serviceName).ifPresent(mockURI -> {
-				commonConfig.authToken.ifPresentOrElse(auth -> {
+				if (commonConfig.authToken.isPresent()) {
+					String auth = commonConfig.authToken.get();
 					MultivaluedMap<String, Object> clientHeaders = clientRequestContext
 						.getHeaders();
-					clientHeaders.put(Constants.AUTHORIZATION_HEADER, List.of(auth));
-				}, () -> {
+
+					ArrayList<Object> authList = new ArrayList();
+					authList.add(auth);
+					clientHeaders.put(Constants.AUTHORIZATION_HEADER, authList);
+				} else {
 					LOGGER.info("Auth token not present for Mocking service");
-				});
+				}
 				clientRequestContext.setUri(mockURI);
 			});
 		} catch (Exception e) {
-			LOGGER.error(String.valueOf(
-				Map.of(
-					io.md.constants.Constants.MESSAGE, "Error occurred in Mocking filter",
-					io.md.constants.Constants.REASON, e.getMessage()
-				)));
+			LOGGER.error(
+				io.md.constants.Constants.MESSAGE + ":Error occurred in Mocking filter\n" +
+				io.md.constants.Constants.EXCEPTION_STACK, e
+			);
 		}
 	}
 }

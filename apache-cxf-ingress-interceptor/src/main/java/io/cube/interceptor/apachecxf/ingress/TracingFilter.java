@@ -1,8 +1,5 @@
-package com.cube.interceptor.apachecxf.ingress;
+package io.cube.interceptor.apachecxf.ingress;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Map;
 import java.util.Optional;
 
 import javax.annotation.Priority;
@@ -23,8 +20,8 @@ import io.md.utils.CommonUtils;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
-import com.cube.interceptor.apachecxf.ingress.config.Config;
-import com.cube.interceptor.apachecxf.ingress.utils.Utils;
+import io.cube.interceptor.apachecxf.ingress.config.Config;
+import io.cube.interceptor.apachecxf.ingress.utils.Utils;
 
 /**
  * Priority is to specify in which order the filters are to be executed. Lower the order, early the
@@ -63,17 +60,16 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 			reqContext.setProperty(spanKey, span);
 			CommonUtils.injectContext(requestHeaders);
 		} catch (Exception e) {
-			LOGGER.error(String.valueOf(
-				Map.of(
-					Constants.MESSAGE, "Exception occurred in interceptor",
-					Constants.REASON, e.getMessage()
-				)));
+			LOGGER.error(
+					Constants.MESSAGE + ":Exception occurred in interceptor\n" +
+					Constants.EXCEPTION_STACK, e
+				);
 		}
 	}
 
 	private boolean runSampling(ContainerRequestContext reqContext, Optional<String> fieldCategory) {
 		boolean isSampled;
-		if (fieldCategory.isEmpty()) {
+		if (!fieldCategory.isPresent()) {
 			isSampled = Utils.isSampled(new MultivaluedHashMap<>());
 		} else {
 			switch (fieldCategory.get()) {
@@ -115,11 +111,10 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 				reqContext.removeProperty(spanKey);
 			}
 		} catch (Exception e) {
-			LOGGER.error(String.valueOf(
-				Map.of(
-					Constants.MESSAGE, "Exception occurred in interceptor",
-					Constants.REASON, e.getMessage()
-				)));
+			LOGGER.error(
+					Constants.MESSAGE + "Exception occurred in interceptor\n" +
+					Constants.EXCEPTION_STACK, e
+				);
 		}
 	}
 }

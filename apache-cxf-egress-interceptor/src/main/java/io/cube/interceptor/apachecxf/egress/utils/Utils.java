@@ -1,6 +1,5 @@
-package com.cube.interceptor.apachecxf.ingress.utils;
+package io.cube.interceptor.apachecxf.egress.utils;
 
-import java.io.FileNotFoundException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -25,7 +24,7 @@ import io.md.dao.MDTraceInfo;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
-import com.cube.interceptor.apachecxf.ingress.config.Config;
+import io.cube.interceptor.apachecxf.egress.config.Config;
 
 public class Utils {
 
@@ -33,16 +32,10 @@ public class Utils {
 
 	public static final long PAYLOAD_MAX_LIMIT = 25000000; //25 MB
 
-	public static final Config config;
+	private static final Config config;
 
 	static {
 		config = new Config();
-	}
-
-	public static boolean isSampled(MultivaluedMap<String, String> requestHeaders) {
-		return ((config.intentResolver.isIntentToRecord()
-			&& config.commonConfig.sampler.isSampled(requestHeaders))
-			|| config.intentResolver.isIntentToMock());
 	}
 
 	public static MultivaluedMap<String, String> getRequestMeta(String method, String cRequestId,
@@ -108,30 +101,29 @@ public class Utils {
 		MultivaluedMap<String, String> meta, MDTraceInfo mdTraceInfo, byte[] requestBody) {
 		Event requestEvent = null;
 		final Span span = io.cube.agent.Utils.createPerformanceSpan(
-			Constants.CREATE_REQUEST_EVENT_INGRESS);
+			Constants.CREATE_REQUEST_EVENT_EGRESS);
 		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)){
 			requestEvent = io.md.utils.Utils
 				.createHTTPRequestEvent(apiPath, queryParams,
 					Utils.createEmptyMultivaluedMap(), meta, requestHeaders, mdTraceInfo,
 					requestBody, Optional.empty(), config.jsonMapper, true);
-
 		} catch (InvalidEventException e) {
 			LOGGER.error(String.valueOf(
 				Map.of(Constants.MESSAGE, "Invalid Event",
 					Constants.ERROR, e.getMessage(),
 					Constants.API_PATH_FIELD, apiPath)));
 		} catch (JsonProcessingException e) {
-			LOGGER.error(String.valueOf(
+			LOGGER.error(String.valueOf((
 				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
 					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+					Constants.API_PATH_FIELD, apiPath))));
 		} finally {
 			span.finish();
 		}
 
 		if (requestEvent != null) {
 			final Span reqLog = io.cube.agent.Utils.createPerformanceSpan(
-				Constants.LOG_REQUEST_EVENT_INGRESS);
+				Constants.LOG_REQUEST_EVENT_EGRESS);
 			try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(reqLog)){
 				config.recorder.record(requestEvent);
 			} finally {
@@ -145,29 +137,29 @@ public class Utils {
 		MDTraceInfo mdTraceInfo, byte[] responseBody) {
 		Event responseEvent = null;
 		final Span span = io.cube.agent.Utils.createPerformanceSpan(Constants
-			.CREATE_RESPONSE_EVENT_INGRESS);
+			.CREATE_RESPONSE_EVENT_EGRESS);
 		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)){
 			responseEvent = io.md.utils.Utils
 				.createHTTPResponseEvent(apiPath, meta,
 					responseHeaders, mdTraceInfo, responseBody, Optional.empty(), config.jsonMapper,
 					true);
 		} catch (InvalidEventException e) {
-			LOGGER.error(String.valueOf(
+			LOGGER.error(String.valueOf((
 				Map.of(Constants.MESSAGE, "Invalid Event",
 					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+					Constants.API_PATH_FIELD, apiPath))));
 		} catch (JsonProcessingException e) {
 			LOGGER.error(String.valueOf(
 				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
 					Constants.ERROR, e.getMessage(),
-			 		Constants.API_PATH_FIELD, apiPath)));
+					Constants.API_PATH_FIELD, apiPath)));
 		} finally {
 			span.finish();
 		}
 
 		if (responseEvent != null) {
 			final Span respLog = io.cube.agent.Utils.createPerformanceSpan(Constants
-				.LOG_RESPONSE_EVENT_INGRESS);
+				.LOG_RESPONSE_EVENT_EGRESS);
 			try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(respLog)){
 				config.recorder.record(responseEvent);
 			} finally {
@@ -190,5 +182,4 @@ public class Utils {
 	public static MultivaluedMap<String, String> createEmptyMultivaluedMap() {
 		return new MultivaluedHashMap<>();
 	}
-
 }

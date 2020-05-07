@@ -1,4 +1,4 @@
-package com.cube.interceptor.apachecxf.egress.config;
+package io.cube.interceptor.apachecxf.ingress.config;
 
 import java.io.FileNotFoundException;
 
@@ -25,16 +25,12 @@ public class Config {
 	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 
 	static {
-		try {
-			commonConfig = CommonConfig.getInstance();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		commonConfig = CommonConfig.getInstance();
 	}
 
-	public Config()  {
+	public Config() {
 		Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
 			.create();
-			recorder = new ConsoleRecorder(gson);
+		recorder = new ConsoleRecorder(gson);
 	}
 }

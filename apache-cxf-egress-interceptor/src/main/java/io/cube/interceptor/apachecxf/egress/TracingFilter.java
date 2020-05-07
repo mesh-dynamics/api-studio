@@ -1,6 +1,5 @@
-package com.cube.interceptor.apachecxf.egress;
+package io.cube.interceptor.apachecxf.egress;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -14,6 +13,7 @@ import javax.ws.rs.ext.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.md.constants.Constants;
 import io.md.utils.CommonUtils;
 
 /**
@@ -39,11 +39,10 @@ public class TracingFilter implements ClientRequestFilter {
 				}
 			}
 		} catch (Exception e) {
-			LOGGER.error(String.valueOf(
-				Map.of(
-					io.md.constants.Constants.MESSAGE, "Error occurred in Mocking filter",
-					io.md.constants.Constants.REASON, e.getMessage()
-				)));
+			LOGGER.error(
+					io.md.constants.Constants.MESSAGE + ":Error occurred in Mocking filter\n" +
+					Constants.EXCEPTION_STACK, e
+				);
 		}
 	}
 }
