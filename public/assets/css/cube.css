@@ -4724,3 +4724,23 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 .view-test-report-img:hover {
     background-color: rgba(0, 179, 255, 0.507);
 }
+
+.resume-modal-info-container {
+    display: flex;
+    flex-direction: column;
+}
+.resume-modal-info-line {
+    display: flex;
+}
+
+.resume-modal-identifier {
+    display: flex; 
+    flex: 2;
+    justify-content: flex-end;
+    margin-right: 10px;
+}
+
+.resume-modal-content {
+    display: flex;
+    flex: 3;
+}
