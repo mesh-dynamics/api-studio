@@ -1,5 +1,8 @@
 package com.cube.dao;
 
+import io.md.constants.ReplayStatus;
+import io.md.dao.RRTransformer;
+import io.md.dao.Replay;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
@@ -18,8 +21,6 @@ import org.json.JSONObject;
 import io.cube.agent.UtilException;
 import io.md.core.ReplayTypeEnum;
 
-import com.cube.core.RRTransformer;
-import com.cube.dao.Replay.ReplayStatus;
 import com.cube.utils.Constants;
 
 public class ReplayBuilder {
@@ -74,7 +75,7 @@ public class ReplayBuilder {
 		this.pathsToReplay = Collections.EMPTY_LIST;
 		this.excludePaths = false;
 		this.reqIdsToReplay = Collections.EMPTY_LIST;
-		this.replayId = Replay.getReplayIdFromCollection(collection);
+		this.replayId = ReplayUpdate.getReplayIdFromCollection(collection);
 		this.replayStatus = ReplayStatus.Init;
 		async = false;
 		sampleRate = Optional.empty();

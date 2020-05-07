@@ -3,7 +3,9 @@
  */
 package com.cube.ws;
 
-import com.cube.dao.Replay.ReplaySaveFailureException;
+import com.cube.dao.ReplayUpdate;
+import com.cube.dao.ReplayUpdate.ReplaySaveFailureException;
+import io.md.constants.ReplayStatus;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,8 +41,7 @@ import com.cube.cache.ReplayResultCache;
 import com.cube.core.Utils;
 import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.Recording;
-import com.cube.dao.Replay;
-import com.cube.dao.Replay.ReplayStatus;
+import io.md.dao.Replay;
 import com.cube.dao.ReplayBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.drivers.AbstractReplayDriver;
@@ -352,7 +353,7 @@ public class ReplayWS {
         Optional<Replay> replay = rrstore.getReplay(replayId);
         Response response = replay.map(rep -> {
             try {
-                Replay deletedReplay = rep.softDeleteReplay(rrstore);
+                Replay deletedReplay = ReplayUpdate.softDeleteReplay(rrstore, rep);
                 String json;
                 LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Soft deleting replay", "replayId", replayId)));
                 json = jsonMapper.writeValueAsString(deletedReplay);

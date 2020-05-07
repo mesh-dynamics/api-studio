@@ -6,6 +6,8 @@ package com.cube.ws;
 import static com.cube.core.Utils.buildErrorResponse;
 import static com.cube.core.Utils.buildSuccessResponse;
 
+import io.md.constants.ReplayStatus;
+import io.md.dao.RecordingOperationSetSP;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -70,8 +72,7 @@ import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.Recording;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.RecordingBuilder;
-import com.cube.dao.RecordingOperationSetSP;
-import com.cube.dao.Replay;
+import io.md.dao.Replay;
 import com.cube.dao.ReqRespMatchResult;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
@@ -560,7 +561,7 @@ public class AnalyzeWS {
         Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).map(Integer::valueOf).or(() -> Optional.of(20));
 
         Result<Replay> replaysResult = rrstore.getReplay(Optional.of(customer), Optional.of(app), instanceId,
-            List.of(Replay.ReplayStatus.Completed, Replay.ReplayStatus.Error), collection, numResults, start, userId, endDateTS, startDateTS, testConfigName, goldenName, false);
+            List.of(ReplayStatus.Completed, ReplayStatus.Error), collection, numResults, start, userId, endDateTS, startDateTS, testConfigName, goldenName, false);
         long numFound = replaysResult.numFound;
         Stream<Replay> replays = replaysResult.getObjects();
         String finalJson = replays.map(replay -> {

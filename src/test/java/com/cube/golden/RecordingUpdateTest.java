@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import io.md.dao.ReqRespUpdateOperation;
 import io.md.dao.ReqRespUpdateOperation.OperationType;
 
-import com.cube.dao.RecordingOperationSetSP;
+import io.md.dao.RecordingOperationSetSP;
 import com.cube.ws.Config;
 
 class RecordingUpdateTest {

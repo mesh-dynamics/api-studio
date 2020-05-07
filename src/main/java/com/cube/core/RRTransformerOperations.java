@@ -1,5 +1,6 @@
 package com.cube.core;
 
+import io.md.dao.RRTransformer;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -15,30 +16,16 @@ import org.json.JSONObject;
 import io.md.dao.HTTPRequestPayload;
 
 
-public class RRTransformer {
+public class RRTransformerOperations {
 	
-	private static final Logger LOGGER = LogManager.getLogger(RRTransformer.class);
-
-	// TODO: explore and use wiremock's mustache handler capabilities to match and replace values
-	// FIX: is there a way to avoid MultivaluedMaps? Just following Request object here.
-	
-	// TODO: use ObjectMapper as in Config.java. 
-	//       however, we then need to structure this class properly
-	
-	// types of fields to transform
-	// TODO: queryParams, formParams, meta, body
-	JSONObject transforms; 
-	
-	public RRTransformer(JSONObject hdrs_xfmer) {
-		this.transforms = hdrs_xfmer;
-	}
+	private static final Logger LOGGER = LogManager.getLogger(RRTransformerOperations.class);
 	
 	// match request/response for transformation
 	// Hypothesis is that most requests don't need to be transformed. Hence, separating the check from actual transformation. 
-	public void transformRequest(HTTPRequestPayload req) {
+	public static void transformRequest(HTTPRequestPayload req, RRTransformer rrTransformer) {
 		// headers
 		try {
-			JSONObject hdrs_xfms = transforms.getJSONObject("requestTransforms");
+			JSONObject hdrs_xfms = rrTransformer.transforms.getJSONObject("requestTransforms");
 			if (hdrs_xfms == null) {
 				return;
 			}
@@ -58,7 +45,7 @@ public class RRTransformer {
 		}
 	}
 	
-    private List<String> transform(Optional<List<String>> input, JSONArray xfms) {
+    private static List<String> transform(Optional<List<String>> input, JSONArray xfms) {
 
         Set<String> out = new HashSet<>(input.orElse(Collections.emptyList()));
 

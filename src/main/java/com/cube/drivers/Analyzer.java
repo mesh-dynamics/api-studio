@@ -10,6 +10,8 @@ package com.cube.drivers;
 import static io.md.core.Comparator.MatchType.DontCare;
 import static io.md.core.Comparator.MatchType.ExactMatch;
 
+import com.cube.dao.ReplayUpdate;
+import io.md.dao.Replay;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -41,9 +43,8 @@ import com.cube.cache.TemplateKey.Type;
 import com.cube.core.JsonComparator;
 import com.cube.dao.Analysis;
 import com.cube.dao.Analysis.ReqRespMatchWithEvent;
-import com.cube.dao.EventQuery;
+import io.md.dao.EventQuery;
 import com.cube.dao.MatchResultAggregate;
-import com.cube.dao.Replay;
 import com.cube.dao.ReqRespMatchResult;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Result;
@@ -387,7 +388,8 @@ public class Analyzer {
         return replay.flatMap(UtilException.rethrowFunction(r -> {
             // get request in batches ... for batching of corresponding trace id queries
             // TODO need to get the batch size from some config
-            Pair<Stream<List<Event>> , Long> result = r.getRequestBatchesUsingEvents(TRACEBATCHSIZE , rrstore);
+            Pair<Stream<List<Event>> , Long> result = ReplayUpdate
+                .getRequestBatchesUsingEvents(TRACEBATCHSIZE , rrstore, r);
 
             String templateVersionToUse = r.templateVersion;
 

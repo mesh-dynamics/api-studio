@@ -29,6 +29,11 @@
 				<name>GitHub OWNER Apache Maven Packages</name>
 				<url>https://maven.pkg.github.com/cube-io-corp/md-commons</url>
 			</repository>
+		<repository>
+			<id>github-md-commons-server</id>
+			<name>GitHub OWNER Apache Maven Packages</name>
+			<url>https://maven.pkg.github.com/cube-io-corp/md-commons-server</url>
+		</repository>
 	</repositories>
   <!--  this is for having consistent jackson versions -->
   <dependencyManagement>
@@ -322,6 +327,11 @@
 			<groupId>io.cube</groupId>
 			<artifactId>commons</artifactId>
 			<version>1.0.62</version>
+		</dependency>
+		<dependency>
+			<groupId>io.cube</groupId>
+			<artifactId>commons-server</artifactId>
+			<version>1.0.6</version>
 		</dependency>
 
 	</dependencies>
