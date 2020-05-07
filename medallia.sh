@@ -1,32 +1,48 @@
 #!/usr/bin/env bash
 
+
+
 set_variables() {
 	#Calculate the length of array
-	length=$(cat /home/ec2-user/meshdynamics/medallia.conf | jq '. | length')
-	for ((i=0;i<$length;i++)); do
-		RECORDING_ID=$(cat /home/ec2-user/meshdynamics/medallia.conf | jq ".[$i].recordingid")
-		EXCLUDEPATH=$(cat /home/ec2-user/meshdynamics/medallia.conf | jq ".[$i].excludePath")
-		RECORDING_ID=$(echo $RECORDING_ID | tr -d '"')
-		PATHS=$(cat /home/ec2-user/meshdynamics/medallia.conf | jq ".[$i].paths")
-		PATHS=$(echo $PATHS | tr -d '[]"' | tr "," "\n")
-		for path in $PATHS
-		do
-		  TEMP_PATH="$TEMP_PATH""paths=$path&"
+	goldensets=$(cat /home/ec2-user/meshdynamics/medallia.conf | jq '. | length')
+	for ((i=0;i<$goldensets;i++)); do
+		goldencount=$(cat /home/ec2-user/meshdynamics/medallia.conf | jq ".[$i] | length")
+		PREHOOK=$(cat /home/ec2-user/meshdynamics/medallia.conf | jq ".[$i][0].prehook" |  tr -d '[]"')
+		POSTHOOK=$(cat /home/ec2-user/meshdynamics/medallia.conf | jq ".[$i][$((goldencount-1))].posthook" |  tr -d '[]"')
+		prehook
+		for ((j=1;j<$((goldencount-1));j++)); do
+			GOLDEN_NAME=$(cat /home/ec2-user/meshdynamics/medallia.conf | jq ".[$i][$j].goldenname" | tr -d '"')
+			EXCLUDEPATH=$(cat /home/ec2-user/meshdynamics/medallia.conf | jq ".[$i][$j].excludePath" | tr -d '"')
+			PATHS=$(cat /home/ec2-user/meshdynamics/medallia.conf | jq ".[$i][$j].paths" | tr -d '[]"' | tr "," "\n")
+			for path in $PATHS
+			do
+				TEMP_PATH="$TEMP_PATH""paths=$path&"
+			done
+			REPLAY_PATHS=${TEMP_PATH::${#TEMP_PATH}-1}
+			echo $GOLDEN_NAME
+			echo $EXCLUDEPATH
+			echo $REPLAY_PATHS
+			replay
+			sleep 20
+			unset TEMP_PATH
 		done
-		REPLAY_PATHS=${TEMP_PATH::${#TEMP_PATH}-1}
-		echo $RECORDING_ID
-		echo $EXCLUDEPATH
-		echo $REPLAY_PATHS
-		replay
-		unset TEMP_PATH
+		posthook
 	done
 }
 
+prehook() {
+	$PREHOOK
+}
+
+posthook() {
+	$POSTHOOK
+}
+
 replay() {
-	BODY="$REPLAY_PATHS&endPoint=$REPLAY_ENDPOINT&instanceId=$INSTANCE_ID&userId=$USER_ID&excludePaths=$EXCLUDEPATH"
+	BODY="$REPLAY_PATHS&endPoint=$REPLAY_ENDPOINT&analyze=true&instanceId=$INSTANCE_ID&templateSetVer=$TEMPLATE&userId=$USER_ID&excludePaths=$EXCLUDEPATH"
 	echo $BODY
 	resp=$(curl -sw "%{http_code}" -X POST \
-		$CUBE_ENDPOINT/api/rs/start/$RECORDING_ID \
+		$CUBE_ENDPOINT/api/rs/start/byGoldenName/$CUSTOMERID/$APP/$GOLDEN_NAME \
 		-H 'Content-Type: application/x-www-form-urlencoded' \
 		-H "Authorization: Bearer $AUTH_TOKEN" \
 		-H 'cache-control: no-cache' \
@@ -42,20 +58,27 @@ replay() {
 	echo "REPLAYID:" $REPLAY_ID
 	#Status Check
 	COUNT=0
-	STATUS="Running"
 	while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ]; do
 		STATUS=$(curl -f -X GET $CUBE_ENDPOINT/api/rs/status/$REPLAY_ID -H "Authorization: Bearer $AUTH_TOKEN" | jq -r '.status')
-		sleep 20
+		sleep 10
 		COUNT=$((COUNT+1))
 	done
+	unset STATUS
 	analyze
 }
 
+
+
 analyze() {
-	#curl -X POST $CUBE_ENDPOINT/api/as/analyze/$REPLAY_ID -H 'Content-Type: application/x-www-form-urlencoded' -H "Authorization: Bearer $AUTH_TOKEN" -H 'cache-control: no-cache'
-	#echo "$CUBE_ENDPOINT/shareable_link?replayId=$REPLAY_ID" >> body.txt
-	ANALYZE=$(curl -X POST $CUBE_ENDPOINT/api/as/analyze/$REPLAY_ID -H 'Content-Type: application/x-www-form-urlencoded' -H "Authorization: Bearer $AUTH_TOKEN" -H 'cache-control: no-cache')
-	echo "<br> Recording ID: $RECORDING_ID" >> /home/ec2-user/meshdynamics/body.txt
+	COUNT=0
+	while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ]; do
+		STATUS=$(curl -X GET $CUBE_ENDPOINT/api/as/status/$REPLAY_ID -H 'Content-Type: application/x-www-form-urlencoded' -H "Authorization: Bearer $AUTH_TOKEN" -H 'cache-control: no-cache' | jq '.data.status' | tr -d '"')
+		sleep 10
+		COUNT=$((COUNT+1))
+	done
+	unset STATUS
+	ANALYZE=$(curl -X GET $CUBE_ENDPOINT/api/as/status/$REPLAY_ID -H 'Content-Type: application/x-www-form-urlencoded' -H "Authorization: Bearer $AUTH_TOKEN" -H 'cache-control: no-cache' | jq '.data')
+	echo "<br> Recording ID: $GOLDEN_NAME" >> /home/ec2-user/meshdynamics/body.txt
 	echo "Link to test result: $CUBE_ENDPOINT/diff_results?replayId=$REPLAY_ID" >> /home/ec2-user/meshdynamics/body.txt
 	echo "Test summary:" >> /home/ec2-user/meshdynamics/body.txt
 	echo $ANALYZE | jq >> /home/ec2-user/meshdynamics/body.txt
@@ -94,6 +117,8 @@ main() {
 	set -x
 	REPLAY_ENDPOINT=https://sdlitedev2-api.strikedeck.com
 	CUBE_ENDPOINT=https://medallia.meshdynamics.io
+	CUSTOMER_ID=Medallia
+	APP=MedalliaApp
 	INSTANCE_ID=record
 	USER_ID=gmurthy@medallia.com
 	TEMPLATE=RespPartialMatch
