@@ -494,7 +494,8 @@ class ViewSelectedTestConfig extends React.Component {
             searchParams.set('templateSetVer', cube.collectionTemplateVersion);
             searchParams.set('userId', user.username);
             searchParams.set('transforms', transforms);
-            searchParams.set('mockServices',testMockServices);
+            testMockServices && testMockServices.length != 0 &&
+                 testMockServices.map(testMockService => searchParams.append('mockServices',testMockService))
             searchParams.set('testConfigName', testConfigName);
             searchParams.set('analyze', true);
             // Append Test Paths
