@@ -148,6 +148,36 @@ class ReduceDiff {
                     If its an object which is added or removed then add the object path to a temporary stack to match the brackets.
                     If its a simple key/value pair, then add to the pre-final result.
                 */
+                if(tempExpJsonPath.replace(BEGIN_BRACKET, "").replace(END_BRACKET, "") === tempActJsonPath.replace(BEGIN_BRACKET, "").replace(END_BRACKET, "")) {
+                    if(tempExpJsonPath.indexOf(BEGIN_BRACKET) > -1 || tempExpJsonPath.indexOf(END_BRACKET) > -1) {
+                        if(tempExpJsonPath.indexOf(BEGIN_BRACKET) > -1) {
+                            [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, ADDED, this.prettyPrintedActJSONLines[actIter], tempReducedDiffArray, reducedDiffArray, null, tempActJsonPath);
+                            [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, REMOVED, this.prettyPrintedExpJSONLines[expIter], tempReducedDiffArray, reducedDiffArray, null, tempExpJsonPath);
+                            expIter++;
+                            tempExpJsonPath = expectedJSONPathArray[expIter] ? expectedJSONPathArray[expIter][0] : "";
+                        }
+                        if(tempExpJsonPath.indexOf(END_BRACKET) > -1) {
+                            [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, REMOVED, this.prettyPrintedExpJSONLines[expIter], tempReducedDiffArray, reducedDiffArray, null, tempExpJsonPath);
+                            expIter++;
+                            actIter++;
+                            continue;
+                        }
+                    }
+                    if(tempActJsonPath.indexOf(BEGIN_BRACKET) > -1 || tempActJsonPath.indexOf(END_BRACKET) > -1) {
+                        if(tempActJsonPath.indexOf(BEGIN_BRACKET) > -1) {
+                            [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, REMOVED, this.prettyPrintedExpJSONLines[expIter], tempReducedDiffArray, reducedDiffArray, null, tempExpJsonPath);
+                            [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, ADDED, this.prettyPrintedActJSONLines[actIter], tempReducedDiffArray, reducedDiffArray, null, tempActJsonPath);
+                            actIter++;
+                            tempActJsonPath = actualJSONPathArray[actIter] ? actualJSONPathArray[actIter][0] : "";
+                        }
+                        if(tempActJsonPath.indexOf(END_BRACKET) > -1) {
+                            [tempDiffReason, tempReducedDiffArray] = this._updateReducedDiffArray(tempDiffReason, ADDED, this.prettyPrintedActJSONLines[actIter], tempReducedDiffArray, reducedDiffArray, null, tempActJsonPath);
+                            actIter++;
+                            expIter++;
+                            continue;
+                        }
+                    }
+                }
                 if(tempExpJsonPath) removedPathObject = this._findPathInComputedDiff(tempExpJsonPath, this.computedDiff);
                 if(!removedPathObject && tempActJsonPath) addedPathObject = this._findPathInComputedDiff(tempActJsonPath, this.computedDiff);
                 if(removedPathObject) {

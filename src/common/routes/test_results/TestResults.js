@@ -14,6 +14,7 @@ import _ from 'lodash';
 import config from '../../config';
 import view_test_report_img from "./view_test_report_img.png"
 import Modal from "react-bootstrap/es/Modal";
+import {cubeService} from "../../services"
 
 const ReactTableFixedColumns = withFixedColumns(ReactTable);
 
@@ -174,9 +175,14 @@ class TestResults extends Component {
         });
     }
 
-    removeReplay() {
+    async removeReplay() {
         const { dispatch} = this.props;
-        dispatch(cubeActions.removeReplay(this.state.deleteReplayId));
+        try {
+            await cubeService.removeReplay(this.state.deleteReplayId);
+            dispatch(cubeActions.removeReplayFromTimeline(this.state.deleteReplayId));
+        } catch (error) {
+            console.error("Error caught in softDelete: " + error);
+        }
         this.setState({
             showPopUp: false,
             deleteReplayId: ""

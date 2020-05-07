@@ -44,7 +44,6 @@ export const cubeActions = {
     clearPathResultsParams,
     clearTimeline,
     getAnalysisStatus,
-    removeReplay,
     removeReplayFromTimeline,
 };
 
@@ -396,17 +395,6 @@ function getJiraBugs(replayId, apiPath) {
             dispatch(setJiraBugs(jiraBugs));
         } catch (error) {
             console.log("Error caught in fetch", error);
-        }
-    }
-}
-
-function removeReplay(replayId) {
-    return async dispatch => {
-        try {
-            await cubeService.removeReplay(replayId);
-            dispatch(cubeActions.removeReplayFromTimeline(replayId));
-        } catch (error) {
-            console.error("Error caught in softDelete: " + error);
         }
     }
 }
