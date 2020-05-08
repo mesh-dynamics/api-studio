@@ -353,8 +353,12 @@ class GoldenPopover extends React.Component {
                             <span className="back-grey inactive-link"><i className="fas fa-share-alt"></i></span>
                         </div>
                         <div className="margin-top-15">
-                            <span onClick={this.showGoldenModal}
-                                className="cube-btn font-12">UPDATE GOLDEN</span>&nbsp;&nbsp;
+                            {
+                                !this.props.hideMarkForUpdate &&
+                                <span onClick={this.showGoldenModal}
+                                    className="cube-btn font-12 margin-right-10">UPDATE GOLDEN
+                                </span>
+                            }
                             <span onClick={this.showRuleModal} className="cube-btn font-12">UPDATE RULE</span>
                         </div>
                     </div>

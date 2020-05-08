@@ -18,6 +18,7 @@ import {Link} from "react-router-dom";
 import {getSearchHistoryParams, updateSearchHistoryParams} from "../../utils/lib/url-utils";
 import statusCodeList from "../../StatusCodeList";
 import {resolutionsIconMap} from '../../components/Resolutions.js';
+import { cubeService } from '../../services';
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -124,7 +125,8 @@ class ViewTrace extends Component {
             collapseLengthIncrement: 10,
             incrementCollapseLengthForRecReqId: null,
             incrementCollapseLengthForRepReqId: null,
-            incrementStartJsonPath: null
+            incrementStartJsonPath: null,
+            testMockServices: []
         }
 
         this.inputElementRef = React.createRef();
@@ -166,6 +168,7 @@ class ViewTrace extends Component {
         const traceId = urlParameters["traceId"];
 
         dispatch(cubeActions.setSelectedApp(app));
+        this.checkStatusForReplay(replayId);
         this.setState({
             apiPath: apiPath,
             replayId: replayId,
@@ -213,6 +216,18 @@ class ViewTrace extends Component {
             dispatch(cubeActions.getJiraBugs(replayId, apiPath));
             this.fetchReplayList();
         });
+    }
+
+    async checkStatusForReplay(replayId) {
+        try {
+            let status = await cubeService.checkStatusForReplay(replayId);
+            this.setState({
+                testMockServices: status.mockServices
+            })
+        } catch(error) {
+            console.error("Error While fething status of Replay:" + error)
+        }
+
     }
 
     handleSearchFilterChange(e) {
@@ -263,9 +278,7 @@ class ViewTrace extends Component {
 
     flattenTree(traceDataTree) {
         let depth = 0, result = [], queue = [];
-        const { cube} = this.props;
-        const { testConfig} = cube;
-        const {testMockServices} = testConfig || [];
+        const {testMockServices} = this.state;
 
         for(let eachRootNode of traceDataTree) {
             queue.push({

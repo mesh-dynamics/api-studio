@@ -1,6 +1,6 @@
 import config from '../config';
 import axios from 'axios';
-import {cubeActions} from "../actions";
+import _ from 'lodash';
 
 
 export const cubeService = {
@@ -20,6 +20,8 @@ export const cubeService = {
     getNewTemplateVerInfo,
     fetchJiraBugData,
     fetchAnalysisStatus,
+    getTestConfig,
+    fetchFacetData,
     removeReplay,
 };
 
@@ -229,6 +231,34 @@ async function getTestConfigByAppId(appId) {
     return tcList;
 }
 
+async function getTestConfig(app, testConfigName) {
+    let response, json;
+    let user = JSON.parse(localStorage.getItem('user'));
+    let url = `${config.apiBaseUrl}/test_config/${user.customer_name}/${app}/${testConfigName}`;
+    let tc;
+    try {
+        response = await fetch(url, {
+            method: "get",
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + user['access_token']
+            })
+        });
+        if (response.ok) {
+            json = await response.json();
+            tc = json;
+        } else {
+            console.error("Response not ok in getTestConfig", response);
+            throw new Error("Response not ok getTestConfig");
+        }
+    } catch (e) {
+        console.error("getTestConfig has errors!", e);
+        throw e;
+    }
+    return tc;
+}
+
+
 async function getGraphDataByAppId(appId) {
     let response, json;
     let user = JSON.parse(localStorage.getItem('user'));
@@ -322,7 +352,7 @@ async function forceCompleteReplay(fcId) {
     });
 }
 
-async function checkStatusForReplay(collectionId, replayId, app) {
+async function checkStatusForReplay(replayId) {
     let user = JSON.parse(localStorage.getItem('user'));
     let response, json;
     let url = `${config.replayBaseUrl}/status/${replayId}`;
@@ -435,20 +465,38 @@ async function fetchReport(collectionId, replayId) {
     return report;
 }
 
-async function fetchTimelineData(app, userId, endDate, startDate) {
+async function fetchTimelineData(app, userId, endDate, startDate, numResults, testConfigName, goldenName) {
     let user = JSON.parse(localStorage.getItem('user'));
     let response, json;
     let ed = endDate.toISOString();
 
-    let url = `${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?byPath=y&endDate=${ed}`;
-    if (userId !== 'ALL') {
-        url = `${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?byPath=y&userId=${user.username}&endDate=${ed}`;
+    let params = new URLSearchParams();
+    params.set("byPath", "y")
+    params.set("endDate", ed)
+
+    if(startDate) {
+        let sd = startDate.toISOString();
+        params.set("startDate", sd);
     }
 
-    if (startDate != null) {
-        let sd = startDate.toISOString();
-        url = url+ `&startDate=${sd}`
+    if (userId !== 'ALL') {
+        params.set("userId", user.username);
     }
+    
+    if (numResults || numResults == 0){
+        params.set("numResults", numResults);
+    }
+
+    if(testConfigName) {
+        params.set("testConfigName", testConfigName);
+    }
+    
+    if(goldenName) {
+        params.set("golden_name", goldenName);
+    }
+
+    let url = `${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?` + params.toString();
+
     let timelineData = {};
     try {
         response = await fetch(url, {
@@ -495,6 +543,41 @@ async function fetchJiraBugData(replayId, apiPath) {
     }
 
     return data;   
+}
+
+async function fetchFacetData(replayId) {
+    let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
+    let searchParams = new URLSearchParams();
+    searchParams.set("numResults", 0);
+
+    let url = analysisResUrl + "?" + searchParams.toString();
+
+    let user = JSON.parse(localStorage.getItem('user'));
+    try {
+    
+        let response = await fetch(url, { 
+            headers: { 
+                "Authorization": "Bearer " + user['access_token']
+            }, 
+            "method": "GET", 
+        });
+        
+        if (response.ok) {
+            let dataList = {}
+            let json = await response.json();
+            dataList = json;
+            if (_.isEmpty(dataList.data) || _.isEmpty(dataList.data.facets)) {
+                console.log("facets data is empty")
+            }
+            return dataList;
+        } else {
+            console.error("unable to fetch facet data");
+            throw new Error("unable to fetch facet data");
+        }
+    } catch (e) {
+        console.error("Error fetching facet data");
+        throw e;
+    }
 }
 
 async function removeReplay(replayId) {

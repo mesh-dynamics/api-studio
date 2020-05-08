@@ -5,6 +5,7 @@ import {
     transformRequestContract
 } from "../utils/generator/insights-table-generator";
 import { fetchGoldenInsights, postGoldenMeta, fetchGoldenMeta } from "../services/golden.service";
+import { cubeActions } from "../actions";
 
 const setMessage = (data) => ({ type: goldenConstants.SET_MESSAGE, data });
 
@@ -105,6 +106,7 @@ const getGoldenData = (goldenId, service, apiPath) => async (dispatch, getState)
 
 const updateGoldenMeta = (data) => async (dispatch, getState) => {
     const { user: { access_token }} = getState().authentication;
+    const { selectedApp } = getState().cube
 
     try {
         // Clear any previous messages
@@ -121,6 +123,9 @@ const updateGoldenMeta = (data) => async (dispatch, getState) => {
 
         // Clear the message after 3 seconds
         setTimeout(() => dispatch(clearMessage()), 3000);
+
+        // Refresh golden list
+        dispatch(cubeActions.getTestIds(selectedApp));
     } catch (e) {
         // In case of error
         dispatch(setMessage("Failed to update golden info. Please try again later"));
