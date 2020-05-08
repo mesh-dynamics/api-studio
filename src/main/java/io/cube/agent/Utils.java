@@ -3,8 +3,8 @@ package io.cube.agent;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -80,8 +80,9 @@ public class Utils {
 			! CommonConfig.getInstance().performanceTest);
 	}
 
-	public static OutputStream nullOutputStream(Logger logger) {
-		return new OutputStream() {
+	public static PrintWriter nullPrintWriter(Logger logger) {
+		return new PrintWriter(
+		new OutputStream() {
 			private volatile boolean closed;
 			private Logger LOGGER = logger;
 
@@ -117,7 +118,7 @@ public class Utils {
 			public void close() {
 				closed = true;
 			}
-		};
+		});
 	}
 
 }

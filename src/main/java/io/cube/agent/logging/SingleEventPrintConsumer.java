@@ -1,10 +1,12 @@
 package io.cube.agent.logging;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.util.Map;
 
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
+
+import org.clapper.util.io.RollingFileWriter;
+import org.clapper.util.io.RollingFileWriter.Compression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +15,6 @@ import com.lmax.disruptor.EventHandler;
 
 import io.cube.agent.CommonConfig;
 import io.cube.agent.Utils;
-import io.md.constants.Constants;
 import io.md.utils.CubeObjectMapperProvider;
 
 public class SingleEventPrintConsumer {
@@ -22,18 +23,21 @@ public class SingleEventPrintConsumer {
 
 	private ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 
-	private OutputStream eventOutputStream;
+	private PrintWriter eventWriter;
 
 	public SingleEventPrintConsumer() {
 		System.out.println("SingleEventPrintConsumer Constructor Called");
 		if (CommonConfig.getInstance().disruptorOutputLocation.equals("stdout")) {
-			eventOutputStream = System.out;
+			eventWriter = new PrintWriter(System.out);
 		} else {
 			try {
-				eventOutputStream = new
-					FileOutputStream(CommonConfig.getInstance().disruptorFileOutName);
-			} catch (FileNotFoundException e) {
-				eventOutputStream = Utils.nullOutputStream(LOGGER);
+				eventWriter = new RollingFileWriter(
+					CommonConfig.getInstance().disruptorFileOutName
+						+ "-" + UUID.randomUUID().toString() + ".log${n}"
+					, CommonConfig.getInstance().disruptorLogFileMaxSize
+					, CommonConfig.getInstance().disruptorLogMaxBackup, Compression.DONT_COMPRESS_BACKUPS);
+			} catch (Exception e) {
+				eventWriter = Utils.nullPrintWriter(LOGGER);
 				LOGGER.debug("Unable to find outstream file. Setting outstream as nullOutputStream ", e);
 			}
 		}
@@ -42,8 +46,8 @@ public class SingleEventPrintConsumer {
 	public EventHandler<ValueEvent> getEventHandler() {
 		return (event, sequence, endOfBatch)
 			-> {
-			jsonMapper.writeValue(eventOutputStream, event);
-			eventOutputStream.write('\n');
+			jsonMapper.writeValue(eventWriter, event);
+			eventWriter.println();
 		};
 	}
 

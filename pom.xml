@@ -10,7 +10,7 @@
         <version.java>8</version.java>
         <version.httpcomponents>4.5.8</version.httpcomponents>
         <version.gson>2.8.5</version.gson>
-        <version.mdcommons>1.0.55</version.mdcommons>
+        <version.mdcommons>1.0.60</version.mdcommons>
     </properties>
     <distributionManagement>
       <repository>
@@ -114,6 +114,14 @@
       <artifactId>disruptor</artifactId>
       <version>3.4.2</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/org.clapper/javautil -->
+    <dependency>
+      <groupId>org.clapper</groupId>
+      <artifactId>javautil</artifactId>
+      <version>3.2.0</version>
+    </dependency>
+
+
   </dependencies>
 
 </project>

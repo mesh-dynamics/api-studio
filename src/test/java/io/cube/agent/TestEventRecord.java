@@ -38,10 +38,12 @@ public class TestEventRecord {
 			eventBuilder.setPayload(new HTTPRequestPayload(headers, queryParams,
 				null, "GET", null));
 			Event httpRequestEvent = eventBuilder.createEvent();
-			consoleRecorder.record(httpRequestEvent);
-			Thread.sleep(5*1000);
-			consoleRecorder.record(httpRequestEvent);
-			Thread.sleep(5*1000);
+			for (int i = 0 ; i < 1000 ; i++) {
+				consoleRecorder.record(httpRequestEvent);
+			}
+			Thread.sleep(10*1000);
+			//consoleRecorder.record(httpRequestEvent);
+			//Thread.sleep(5*1000);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

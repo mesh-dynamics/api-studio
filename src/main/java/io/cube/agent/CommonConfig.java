@@ -60,6 +60,8 @@ public class CommonConfig {
 	public final int READ_TIMEOUT;
 	public final int CONNECT_TIMEOUT;
 	public final int RETRIES;
+	public final long disruptorLogFileMaxSize;
+	public final int disruptorLogMaxBackup;
 
 	private CloseableHttpClient httpClient;
 
@@ -266,6 +268,14 @@ public class CommonConfig {
 		disruptorFileOutName = fromDynamicOREnvORStaticProperties(
 			io.cube.agent.Constants.RING_BUFFER_OUTPUT_FILE_NAME,
 			dynamicProperties).orElse("/var/log/event.log");
+
+		disruptorLogFileMaxSize = Long.parseLong(fromDynamicOREnvORStaticProperties(
+			io.cube.agent.Constants.DISRUPTOR_LOG_FILE_MAX_SIZE_PROP,
+			dynamicProperties).orElse("10000000"));
+
+		disruptorLogMaxBackup = Integer.parseInt(fromDynamicOREnvORStaticProperties(
+			io.cube.agent.Constants.DISRUPTOR_LOG_FILE_MAX_BACKUPS_PROP,
+			dynamicProperties).orElse("10000"));
 
 		RequestConfig requestConfig = RequestConfig.custom()
 			.setConnectionRequestTimeout(READ_TIMEOUT)

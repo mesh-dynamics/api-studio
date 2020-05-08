@@ -14,4 +14,6 @@ public class Constants {
 	public static final String RING_BUFFER_SIZE_PROP = "io.md.disruptor.size";
 	public static final String RING_BUFFER_OUTPUT_PROP = "io.md.disruptor.output";
 	public static final String RING_BUFFER_OUTPUT_FILE_NAME = "io.md.disruptor.output.file";
+	public static final String DISRUPTOR_LOG_FILE_MAX_SIZE_PROP = "io.md.disruptor.output.file.maxsize.bytes";
+	public static final String DISRUPTOR_LOG_FILE_MAX_BACKUPS_PROP = "io.md.disruptor.output.file.number.backup";
 }
