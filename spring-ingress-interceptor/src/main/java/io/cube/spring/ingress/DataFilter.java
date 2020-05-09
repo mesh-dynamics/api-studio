@@ -21,6 +21,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
+import io.cube.agent.CommonConfig;
 import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
@@ -82,7 +83,7 @@ public class DataFilter extends OncePerRequestFilter {
 
 					String xRequestId = requestWrapper.getHeader(Constants.X_REQUEST_ID);
 					MultivaluedMap<String, String> traceMetaMap = CommonUtils
-						.buildTraceInfoMap(Config.commonConfig.serviceName, mdTraceInfo,
+						.buildTraceInfoMap(CommonConfig.getInstance().serviceName, mdTraceInfo,
 							xRequestId);
 
 					logRequest(requestWrapper, apiPath,
@@ -104,6 +105,8 @@ public class DataFilter extends OncePerRequestFilter {
 		}
 
 		//Need to copy back the response body as it is consumed by responseWrapper.
+		//first call to copyBodyToResponse() makes the content empty once it copies it
+		// to the original response, so multiple calls do not have an impact.
 		responseWrapper.copyBodyToResponse();
 
 	}
@@ -136,11 +139,16 @@ public class DataFilter extends OncePerRequestFilter {
 				Optional.empty());
 		meta.putAll(traceMeta);
 
+		//body
+		byte[] responseBody = responseWrapper.getContentAsByteArray();
+
+		//Need to do this before reading the headers. This call cannot be done
+		//before reading the response body.
+		responseWrapper.copyBodyToResponse();
+
 		//hdrs
 		MultivaluedMap<String, String> responseHeaders = getHeaders(responseWrapper);
 
-		//body
-		byte[] responseBody = responseWrapper.getContentAsByteArray();
 
 		Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, mdTraceInfo, responseBody);
 	}

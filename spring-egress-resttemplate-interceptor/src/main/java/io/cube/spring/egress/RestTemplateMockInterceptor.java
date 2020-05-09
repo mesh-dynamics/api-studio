@@ -45,7 +45,7 @@ public class RestTemplateMockInterceptor implements ClientHttpRequestInterceptor
 				}
 
 				return request;
-			}).orElse(null);
+			}).orElse(new MyHttpRequestWrapper(httpRequest, originalUri));
 
 		} catch (URISyntaxException e) {
 			LOGGER.error("Mocking filter issue, exception during setting URI!", e);

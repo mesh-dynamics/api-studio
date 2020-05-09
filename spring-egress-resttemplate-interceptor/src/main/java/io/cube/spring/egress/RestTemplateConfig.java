@@ -21,17 +21,7 @@ public class RestTemplateConfig {
 
 	public final Recorder recorder;
 
-	public static CommonConfig commonConfig = null;
-
 	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
-
-	static {
-		try {
-			commonConfig = CommonConfig.getInstance();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
 
 	public RestTemplateConfig() {
 		Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())

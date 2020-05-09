@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import io.cube.agent.CommonConfig;
 import io.md.constants.Constants;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
@@ -39,7 +40,7 @@ public class Utils {
 
 	public static boolean isSampled(MultivaluedMap<String, String> requestHeaders) {
 		return ((config.intentResolver.isIntentToRecord()
-			&& Config.commonConfig.sampler.isSampled(requestHeaders))
+			&& CommonConfig.getInstance().sampler.isSampled(requestHeaders))
 			|| config.intentResolver.isIntentToMock());
 	}
 
@@ -72,10 +73,10 @@ public class Utils {
 		} else if (config.intentResolver.isIntentToMock()) {
 			metaMap.add(Constants.RUN_TYPE_FIELD, Constants.REPLAY);
 		}
-		metaMap.add(Constants.CUSTOMER_ID_FIELD, Config.commonConfig.customerId);
-		metaMap.add(Constants.APP_FIELD, Config.commonConfig.app);
-		metaMap.add(Constants.INSTANCE_ID_FIELD, Config.commonConfig.instance);
-		metaMap.add(Constants.SERVICE_FIELD, serviceName.orElse(Config.commonConfig.serviceName));
+		metaMap.add(Constants.CUSTOMER_ID_FIELD, CommonConfig.getInstance().customerId);
+		metaMap.add(Constants.APP_FIELD, CommonConfig.getInstance().app);
+		metaMap.add(Constants.INSTANCE_ID_FIELD, CommonConfig.getInstance().instance);
+		metaMap.add(Constants.SERVICE_FIELD, serviceName.orElse(CommonConfig.getInstance().serviceName));
 	}
 
 	public static void createAndLogReqEvent(String apiPath,

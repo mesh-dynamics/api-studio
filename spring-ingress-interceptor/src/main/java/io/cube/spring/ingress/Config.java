@@ -21,17 +21,7 @@ public class Config {
 
 	public final Recorder recorder;
 
-	public static CommonConfig commonConfig = null;
-
 	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
-
-	static {
-		try {
-			commonConfig = CommonConfig.getInstance();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
 
 	public Config() {
 		Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())

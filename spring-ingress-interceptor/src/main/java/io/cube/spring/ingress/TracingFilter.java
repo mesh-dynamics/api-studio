@@ -16,6 +16,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import io.cube.agent.CommonConfig;
 import io.md.constants.Constants;
 import io.md.utils.CommonUtils;
 import io.opentracing.Scope;
@@ -54,7 +55,7 @@ public class TracingFilter extends OncePerRequestFilter {
 				boolean isSampled = Utils.isSampled(requestHeaders);
 				span.setBaggageItem(Constants.MD_IS_SAMPLED, String.valueOf(isSampled));
 			} else if (!BooleanUtils.toBoolean(sampleBaggageItem)
-				&& Config.commonConfig.samplerVeto) {
+				&& CommonConfig.getInstance().samplerVeto) {
 				span.setBaggageItem(Constants.MD_IS_VETOED,
 					String.valueOf(Utils.isSampled(requestHeaders)));
 			}
