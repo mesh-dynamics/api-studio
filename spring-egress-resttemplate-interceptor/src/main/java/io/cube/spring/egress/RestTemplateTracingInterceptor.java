@@ -1,6 +1,7 @@
 package io.cube.spring.egress;
 
 import java.io.IOException;
+import java.util.Map.Entry;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -14,6 +15,7 @@ import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.stereotype.Component;
 
+import io.cube.spring.egress.RestTemplateMockInterceptor.MyHttpRequestWrapper;
 import io.md.utils.CommonUtils;
 
 /**
@@ -36,7 +38,11 @@ public class RestTemplateTracingInterceptor implements ClientHttpRequestIntercep
 
 			//Need to add the md-context headers to the original request
 			//if underlying framework doesn't have MultivaluedMap o/p for headers
-			httpRequest.getHeaders().putAll(mdTraceHeaders);
+			//httpRequest.getHeaders().putAll(mdTraceHeaders);
+
+			for (String key : mdTraceHeaders.keySet()) {
+				((MyHttpRequestWrapper) httpRequest).putHeader(key, mdTraceHeaders.get(key));
+			}
 		} catch (Exception ex) {
 			LOGGER.error("Exception occured during logging, proceeding to the application!", ex);
 		}

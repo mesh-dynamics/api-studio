@@ -65,16 +65,6 @@ public class RestTemplateDataInterceptor implements ClientHttpRequestInterceptor
 		Scope clientScope = null;
 
 		try {
-			ingressSpan = CommonUtils.getCurrentSpan();
-
-			//Empty ingress span pertains to DB initialization scenarios.
-			SpanContext spanContext = ingressSpan.map(Span::context)
-				.orElse(CommonUtils.createDefSpanContext());
-
-			clientSpan = CommonUtils
-				.startClientSpan(Constants.MD_CHILD_SPAN, spanContext, false);
-
-			clientScope = CommonUtils.activateSpan(clientSpan);
 
 			// Do not log request in case the egress service is to be mocked
 			String service = CommonUtils.getEgressServiceName(request.getURI());
@@ -83,6 +73,17 @@ public class RestTemplateDataInterceptor implements ClientHttpRequestInterceptor
 				LOGGER.info("Mocking in progress, not logging the request!");
 				return execution.execute(request, body);
 			}
+
+			ingressSpan = CommonUtils.getCurrentSpan();
+
+			//Empty ingress span pertains to DB initialization scenarios.
+			SpanContext spanContext = ingressSpan.map(Span::context)
+					.orElse(CommonUtils.createDefSpanContext());
+
+			clientSpan = CommonUtils
+					.startClientSpan(Constants.MD_CHILD_SPAN, spanContext, false);
+
+			clientScope = CommonUtils.activateSpan(clientSpan);
 
 			//Either baggage has sampling set to true or this service uses its veto power to sample.
 			isSampled = BooleanUtils

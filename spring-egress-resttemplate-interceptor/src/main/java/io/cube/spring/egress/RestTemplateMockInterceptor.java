@@ -5,12 +5,15 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
@@ -19,8 +22,17 @@ import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.http.client.support.HttpRequestWrapper;
 
 import io.cube.agent.CommonConfig;
+import io.md.constants.Constants;
 import io.md.utils.CommonUtils;
+import io.opentracing.Scope;
+import io.opentracing.Span;
+import io.opentracing.SpanContext;
 
+/**
+ * Order is to specify in which order the filters are to be executed. Lower the order, early the
+ * filter is executed. We want Tracing filter to execute after Mock Filter.
+ **/
+@Order(2999)
 public class RestTemplateMockInterceptor implements ClientHttpRequestInterceptor {
 
 	private static final Logger LOGGER = LoggerFactory
@@ -33,8 +45,26 @@ public class RestTemplateMockInterceptor implements ClientHttpRequestInterceptor
 		CommonConfig commonConfig = CommonConfig.getInstance();
 		String serviceName = CommonUtils.getEgressServiceName(originalUri);
 		HttpRequestWrapper newRequest = null;
+		AtomicReference<Optional<Span>> ingressSpan = new AtomicReference<>(Optional.empty());
+		AtomicReference<Span> clientSpan = new AtomicReference<>();
+		AtomicReference<Scope> clientScope = new AtomicReference<>();
+
 		try {
 			newRequest = commonConfig.getMockingURI(originalUri, serviceName).map(mockURI -> {
+
+				ingressSpan.set(CommonUtils.getCurrentSpan());
+
+				//Empty ingress span pertains to DB initialization scenarios.
+				SpanContext spanContext = ingressSpan.get().map(Span::context)
+						.orElse(CommonUtils.createDefSpanContext());
+
+				clientSpan.set(CommonUtils
+						.startClientSpan(Constants.MD_CHILD_SPAN, spanContext, false));
+
+				ingressSpan.get().map(span -> clientSpan.get().setBaggageItem("md-parent-span",  span.context().toSpanId()));
+
+				clientScope.set(CommonUtils.activateSpan(clientSpan.get()));
+
 				MyHttpRequestWrapper request = new MyHttpRequestWrapper(httpRequest, mockURI);
 				commonConfig.authToken.ifPresent(auth -> {
 					request.putHeader(io.cube.agent.Constants.AUTHORIZATION_HEADER, Arrays.asList(auth));
@@ -51,10 +81,20 @@ public class RestTemplateMockInterceptor implements ClientHttpRequestInterceptor
 			LOGGER.error("Mocking filter issue, exception during setting URI!", e);
 			return execution.execute(httpRequest, bytes);
 		}
-		return execution.execute(newRequest, bytes);
+		ClientHttpResponse response = execution.execute(newRequest, bytes);
+
+		if (clientSpan.get() != null) {
+			clientSpan.get().finish();
+		}
+
+		if (clientScope.get() != null) {
+			clientScope.get().close();
+		}
+
+		return response;
 	}
 
-	private class MyHttpRequestWrapper extends HttpRequestWrapper {
+	public class MyHttpRequestWrapper extends HttpRequestWrapper {
 
 		private URI mockURI;
 		private final MultivaluedMap<String, String> customHeaders;
