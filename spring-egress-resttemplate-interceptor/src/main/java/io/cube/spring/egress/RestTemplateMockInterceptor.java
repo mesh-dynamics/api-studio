@@ -3,6 +3,7 @@ package io.cube.spring.egress;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -45,25 +46,25 @@ public class RestTemplateMockInterceptor implements ClientHttpRequestInterceptor
 		CommonConfig commonConfig = CommonConfig.getInstance();
 		String serviceName = CommonUtils.getEgressServiceName(originalUri);
 		HttpRequestWrapper newRequest = null;
-		AtomicReference<Optional<Span>> ingressSpan = new AtomicReference<>(Optional.empty());
-		AtomicReference<Span> clientSpan = new AtomicReference<>();
-		AtomicReference<Scope> clientScope = new AtomicReference<>();
+		ArrayList<Optional<Span>> ingressSpan = new ArrayList<>();
+		ArrayList<Span> clientSpan = new ArrayList<>();
+		ArrayList<Scope> clientScope = new ArrayList<>();
 
 		try {
 			newRequest = commonConfig.getMockingURI(originalUri, serviceName).map(mockURI -> {
 
-				ingressSpan.set(CommonUtils.getCurrentSpan());
+				ingressSpan.add(CommonUtils.getCurrentSpan());
 
 				//Empty ingress span pertains to DB initialization scenarios.
-				SpanContext spanContext = ingressSpan.get().map(Span::context)
+				SpanContext spanContext = ingressSpan.get(0).map(Span::context)
 						.orElse(CommonUtils.createDefSpanContext());
 
-				clientSpan.set(CommonUtils
+				clientSpan.add(CommonUtils
 						.startClientSpan(Constants.MD_CHILD_SPAN, spanContext, false));
 
-				ingressSpan.get().map(span -> clientSpan.get().setBaggageItem("md-parent-span",  span.context().toSpanId()));
+				ingressSpan.get(0).map(span -> clientSpan.get(0).setBaggageItem("md-parent-span",  span.context().toSpanId()));
 
-				clientScope.set(CommonUtils.activateSpan(clientSpan.get()));
+				clientScope.add(CommonUtils.activateSpan(clientSpan.get(0)));
 
 				MyHttpRequestWrapper request = new MyHttpRequestWrapper(httpRequest, mockURI);
 				commonConfig.authToken.ifPresent(auth -> {
@@ -79,16 +80,23 @@ public class RestTemplateMockInterceptor implements ClientHttpRequestInterceptor
 
 		} catch (URISyntaxException e) {
 			LOGGER.error("Mocking filter issue, exception during setting URI!", e);
+			if (clientSpan.get(0) != null) {
+				clientSpan.get(0).finish();
+			}
+
+			if (clientScope.get(0) != null) {
+				clientScope.get(0).close();
+			}
 			return execution.execute(httpRequest, bytes);
 		}
 		ClientHttpResponse response = execution.execute(newRequest, bytes);
 
-		if (clientSpan.get() != null) {
-			clientSpan.get().finish();
+		if (clientSpan.get(0) != null) {
+			clientSpan.get(0).finish();
 		}
 
-		if (clientScope.get() != null) {
-			clientScope.get().close();
+		if (clientScope.get(0) != null) {
+			clientScope.get(0).close();
 		}
 
 		return response;
