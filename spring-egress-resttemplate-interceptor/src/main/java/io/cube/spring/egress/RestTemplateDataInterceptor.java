@@ -132,7 +132,20 @@ public class RestTemplateDataInterceptor implements ClientHttpRequestInterceptor
 			LOGGER.error("Exception occured during logging request!", ex);
 		}
 
-		ClientHttpResponse response = execution.execute(request, body);
+		ClientHttpResponse response = null;
+		try {
+			 response = execution.execute(request, body);
+		} catch (Exception ex) {
+			if (clientSpan != null) {
+				clientSpan.finish();
+			}
+
+			if (clientScope != null) {
+				clientScope.close();
+			}
+			throw ex;
+		}
+
 		try {
 			if (isSampled || isVetoed || !ingressSpan.isPresent()) {
 				response = new BufferedClientHttpResponse(response);
