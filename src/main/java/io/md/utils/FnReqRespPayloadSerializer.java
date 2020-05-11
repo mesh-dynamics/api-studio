@@ -3,6 +3,13 @@ package io.md.utils;
 import java.io.IOException;
 import java.util.Arrays;
 
+import javax.sql.rowset.serial.SerialBlob;
+import javax.sql.rowset.serial.SerialClob;
+import javax.sql.rowset.serial.SerialException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.type.WritableTypeId;
@@ -15,6 +22,7 @@ import io.md.dao.FnReqRespPayload;
 
 public class FnReqRespPayloadSerializer extends JsonSerializer<FnReqRespPayload> {
 
+	static Logger LOGGER = LoggerFactory.getLogger(FnReqRespPayloadSerializer.class);
 	private Gson gson = MeshDGsonProvider.getInstance();
 
 	@Override
@@ -31,7 +39,14 @@ public class FnReqRespPayloadSerializer extends JsonSerializer<FnReqRespPayload>
 			jsonGenerator.writeObjectField("exceptionType", fnReqRespPayload.exceptionType);
 			jsonGenerator.writeObjectField("retStatus", fnReqRespPayload.retStatus);
 			jsonGenerator.writeFieldName("retOrExceptionVal");
-			jsonGenerator.writeRawValue(gson.toJson(fnReqRespPayload.retOrExceptionVal));
+			//TODO: Add it as a gson serializer
+			if (fnReqRespPayload.retOrExceptionVal instanceof SerialClob) {
+				serializeClob(fnReqRespPayload, jsonGenerator);
+			} else if (fnReqRespPayload.retOrExceptionVal instanceof SerialBlob) {
+				serializeBlob(fnReqRespPayload, jsonGenerator);
+			} else {
+				jsonGenerator.writeRawValue(gson.toJson(fnReqRespPayload.retOrExceptionVal));
+			}
 			jsonGenerator.writeArrayFieldStart("argVals");
 			if (fnReqRespPayload.argVals != null) {
 				Arrays.stream(fnReqRespPayload.argVals).forEach(
@@ -40,6 +55,26 @@ public class FnReqRespPayloadSerializer extends JsonSerializer<FnReqRespPayload>
 			}
 			jsonGenerator.writeEndArray();
 			jsonGenerator.writeEndObject();
+		}
+	}
+
+	private void serializeBlob(FnReqRespPayload fnReqRespPayload, JsonGenerator jsonGenerator)
+		throws IOException {
+		try {
+			SerialBlob blob = (SerialBlob) fnReqRespPayload.retOrExceptionVal;
+			jsonGenerator.writeBinary(blob.getBinaryStream(), (int)blob.length());
+		} catch (SerialException e) {
+			LOGGER.error("serialize java.sql.Blob error : {}", e.getMessage(), e);
+		}
+	}
+
+	private void serializeClob(FnReqRespPayload fnReqRespPayload, JsonGenerator jsonGenerator)
+		throws IOException {
+		try {
+			SerialClob clob = (SerialClob) fnReqRespPayload.retOrExceptionVal;
+			jsonGenerator.writeString(clob.getCharacterStream(), (int)clob.length());
+		} catch (SerialException e) {
+			LOGGER.error("serialize java.sql.Clob error : {}", e.getMessage(), e);
 		}
 	}
 
