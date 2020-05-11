@@ -1406,6 +1406,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         replay.goldenName.ifPresent(goldenName -> doc.setField(GOLDEN_NAMEF, goldenName));
         replay.recordingId.ifPresent(recordingId -> doc.setField(RECORDING_IDF, recordingId));
         doc.setField(ARCHIVEDF,replay.archived);
+        replay.dynamicInjectionConfigVersion.ifPresent(DIConfVersion -> doc.setField(DYNACMIC_INJECTION_CONFIG_VERSIONF, DIConfVersion));
 
         return doc;
     }
@@ -1469,6 +1470,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             Utils.valueOf(ReplayTypeEnum.class, repType)).orElse(ReplayTypeEnum.HTTP);
         Optional<String> xfms = getStrField(doc, XFMSF);
         Optional<Boolean> archived = getBoolField(doc, ARCHIVEDF);
+        Optional<String> dynamicInjectionConfigVersion = getStrField(doc, DYNACMIC_INJECTION_CONFIG_VERSIONF);
 
         Optional<Replay> replay = Optional.empty();
         if (endpoint.isPresent() && customerId.isPresent() && app.isPresent() &&
@@ -1497,6 +1499,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 goldenName.ifPresent(builder::withGoldenName);
                 recordingId.ifPresent(builder::withRecordingId);
                 archived.ifPresent(builder::withArchived);
+                dynamicInjectionConfigVersion.ifPresent(builder::withDynamicInjectionConfigVersion);
+
                 replay = Optional.of(builder.build());
             } catch (Exception e) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE

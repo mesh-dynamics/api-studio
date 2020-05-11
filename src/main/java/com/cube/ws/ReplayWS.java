@@ -258,7 +258,7 @@ public class ReplayWS {
         boolean analyze = Utils.strToBool(formParams.getFirst("analyze")).orElse(true);
         Optional<String> testConfigName = Optional.ofNullable(formParams.getFirst("testConfigName"));
 
-        Optional<String> injectionVersion = Optional.ofNullable(formParams.getFirst("injectionVersion"));
+        Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst("dynamicInjectionConfigVersion"));
 
         // Request transformations - for injecting tokens and such
         Optional<String> xfms = Optional.ofNullable(formParams.getFirst("transforms"));
@@ -303,6 +303,7 @@ public class ReplayWS {
             service.ifPresent(replayBuilder::withServiceToReplay);
             testConfigName.ifPresent(replayBuilder::withTestConfigName);
             xfms.ifPresent(replayBuilder::withXfms);
+            dynamicInjectionConfigVersion.ifPresent(replayBuilder::withDynamicInjectionConfigVersion);
             try {
                 recording.generatedClassJarPath
                     .ifPresent(UtilException.rethrowConsumer(replayBuilder::withGeneratedClassJar));
