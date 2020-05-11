@@ -44,7 +44,9 @@ public class BackendApplication {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**").allowedOrigins("http://localhost:3006", "http://demo.dev.cubecorp.io", "http://demo.prod.cubecorp.io", "http://demo.prod.v2.cubecorp.io", "https://demo.dev.cubecorp.io", "https://demo.prod.cubecorp.io", "https://demo.prod.v2.cubecorp.io", "https://app.meshdynamics.io", "https://medallia.meshdynamics.io");
+                registry.addMapping("/**").allowedOrigins("http://localhost:3006", "http://demo.dev.cubecorp.io", "http://demo.prod.cubecorp.io", "http://demo.prod.v2.cubecorp.io",
+                    "https://demo.dev.cubecorp.io", "https://demo.prod.cubecorp.io", "https://demo.prod.v2.cubecorp.io", "https://app.meshdynamics.io", "https://medallia.meshdynamics.io",
+                    "https://safensound.meshdynamics.io", "https://staging-mn.dev.cubecorp.io");
             }
         };
     }
