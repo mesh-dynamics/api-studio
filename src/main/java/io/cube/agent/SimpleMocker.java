@@ -3,11 +3,17 @@ package io.cube.agent;
 import static io.md.utils.UtilException.rethrowFunction;
 
 import java.lang.reflect.Type;
+import java.sql.Blob;
+import java.sql.Clob;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.sql.rowset.serial.SerialBlob;
+import javax.sql.rowset.serial.SerialClob;
+
+import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,7 +81,7 @@ public class SimpleMocker implements Mocker {
 				Optional<FnResponse> fnResponse = cubeClient.getMockResponse(eve);
 
 				return fnResponse.map(resp -> {
-					//If multiple Solr docs were returned, we need to maintain the last timestamp
+					//If multiple Solr docs are returned, we need to maintain the last timestamp
 					//to be used in the next mock call.
 					if (resp.retStatus == RetStatus.Success && resp.multipleResults) {
 						fnMap.put(key, resp.timeStamp.get());
@@ -85,13 +91,21 @@ public class SimpleMocker implements Mocker {
 
 					Object retOrExceptionVal = null;
 					try {
-						retOrExceptionVal = gson.fromJson(resp.retVal,
-							retType.isPresent() ? retType.get() : getRetOrExceptionClass(resp,
-								fnKey.function.getGenericReturnType()));
+						Type returnType = retType.orElse(fnKey.function.getGenericReturnType());
+						if (returnType.getTypeName().equals(Clob.class.getTypeName())) {
+							retOrExceptionVal = new SerialClob(resp.retVal.toCharArray());
+						} else if (returnType.getTypeName().equals(Blob.class.getTypeName())) {
+							retOrExceptionVal = new SerialBlob(Base64.decodeBase64(resp.retVal));
+						} else {
+							retOrExceptionVal = gson.fromJson(resp.retVal,
+								retType.isPresent() ? retType.get() : getRetOrExceptionClass(resp,
+									returnType));
+						}
 					} catch (JsonSyntaxException ex) {
 						//If the returned value is a String with spaces, this exception
 						//is thrown, In that case we will return the same value
-						LOGGER.error("Json Syntax exception, could be a simple string " + resp.retVal);
+						LOGGER.error(
+							"Json Syntax exception, could be a simple string, returning the original value");
 						return new FnResponseObj(resp.retVal, resp.timeStamp, resp.retStatus,
 							resp.exceptionType);
 					}
@@ -133,4 +147,5 @@ public class SimpleMocker implements Mocker {
 					"Exception class not specified"));
 		}
 	}
+
 }

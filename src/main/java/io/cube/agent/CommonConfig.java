@@ -2,6 +2,7 @@ package io.cube.agent;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -215,7 +216,11 @@ public class CommonConfig {
 			dynamicProperties).flatMap(scf -> {
 			try {
 				return Optional.of(jsonMapper.readValue(new File(scf), SamplerConfig.class));
-			} catch (Exception e) {
+			} catch (FileNotFoundException ex) {
+				LOGGER.error("Sampler config file not found. Records will not be sampled/recorded.");
+				return Optional.empty();
+			}
+			catch (Exception e) {
 				LOGGER.error("Error in reading sampler config file", e);
 			}
 			return Optional.empty();
