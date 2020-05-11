@@ -214,7 +214,7 @@ public class ReplayWS {
                 .entity(String.format("cannot find recording for golden  name %s", goldenName)).build();
         }
 
-        return  startReplay(formParams, recordingOpt);
+        return  startReplay(formParams, recordingOpt.get());
     }
 
     @POST
@@ -232,10 +232,10 @@ public class ReplayWS {
                 .entity(String.format("cannot find recording for id %s", recordingId)).build();
         }
 
-        return  startReplay(formParams, recordingOpt);
+        return  startReplay(formParams, recordingOpt.get());
     }
 
-    private Response startReplay( MultivaluedMap<String, String> formParams, Optional<Recording> recordingOpt) {
+    private Response startReplay( MultivaluedMap<String, String> formParams, Recording recording) {
         // TODO: move all these constant strings to a file so we can easily change them.
         boolean async = Utils.strToBool(formParams.getFirst("async")).orElse(false);
         boolean excludePaths = Utils.strToBool(formParams.getFirst("excludePaths")).orElse(false);
@@ -258,6 +258,7 @@ public class ReplayWS {
         boolean analyze = Utils.strToBool(formParams.getFirst("analyze")).orElse(true);
         Optional<String> testConfigName = Optional.ofNullable(formParams.getFirst("testConfigName"));
 
+        Optional<String> injectionVersion = Optional.ofNullable(formParams.getFirst("injectionVersion"));
 
         // Request transformations - for injecting tokens and such
         Optional<String> xfms = Optional.ofNullable(formParams.getFirst("transforms"));
@@ -274,7 +275,6 @@ public class ReplayWS {
                 .build();
         }
 
-        Recording recording = recordingOpt.get();
         // check if recording or replay is ongoing for (customer, app, instanceid)
         Optional<Response> errResp = WSUtils
             .checkActiveCollection(rrstore, Optional.ofNullable(recording.customerId),
