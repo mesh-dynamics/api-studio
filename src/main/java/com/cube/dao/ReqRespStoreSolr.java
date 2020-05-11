@@ -577,6 +577,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String TEMPLATE_ID = "template_id" + STRINGSET_SUFFIX;
     private static final String TEMPLATE_VERSIONF = Constants.TEMPLATE_VERSION_FIELD + STRING_SUFFIX;
     private static final String ATTRIBUTE_RULE_MAP_ID = "attribute_rule_map_id" + STRING_SUFFIX;
+    private static final String DYNACMIC_INJECTION_CONFIG_VERSIONF = Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD + STRING_SUFFIX;
+
 
     private String storeTemplateSetMetadata(TemplateSet templateSet, List<String> templateIds
         , Optional<String> appAttributeRuleMapId) throws TemplateSet.TemplateSetMetaStoreException {
@@ -2538,7 +2540,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(INJECTION_METAS_JSON , injectionMetas);
         doc.setField(APPF , dynamicInjectionConfig.app);
         doc.setField(CUSTOMERIDF , dynamicInjectionConfig.customer);
-        doc.setField(TEMPLATE_VERSIONF, dynamicInjectionConfig.version);
+        doc.setField(DYNACMIC_INJECTION_CONFIG_VERSIONF, dynamicInjectionConfig.version);
         doc.setField(TIMESTAMPF , dynamicInjectionConfig.timestamp.toString());
         doc.setField(TYPEF , type);
         return doc;
@@ -2552,7 +2554,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, TYPEF, Types.DynamicInjectionConfig.name());
         addFilter(query, CUSTOMERIDF, cubeMetaInfo.customerId);
         addFilter(query, APPF, cubeMetaInfo.app);
-        addFilter(query, TEMPLATE_VERSIONF, version, true);
+        addFilter(query, DYNACMIC_INJECTION_CONFIG_VERSIONF, version, true);
         return SolrIterator.getSingleResult(solr, query)
             .flatMap(this::docToDynamicInjectionConfig);
     }
@@ -2578,7 +2580,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<DynamicInjectionConfig> dynamicInjectionConfig = Optional.empty();
         Optional<String> app = getStrField(doc, APPF);
         Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
-        Optional<String> version = getStrField(doc, TEMPLATE_VERSIONF);
+        Optional<String> version = getStrField(doc, DYNACMIC_INJECTION_CONFIG_VERSIONF);
         Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
 
         if(app.isPresent() && customerId.isPresent() && version.isPresent()) {
@@ -2592,7 +2594,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 Constants.ERROR, "One of required fields missing",
                 Constants.CUSTOMER_ID_FIELD, customerId.orElse(""),
                 Constants.APP_FIELD, app.orElse(""),
-                Constants.TEMPLATE_VERSION_FIELD, version.orElse("")
+                Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD, version.orElse("")
             )));
         }
 
