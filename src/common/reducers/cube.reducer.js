@@ -457,6 +457,12 @@ export function cube (state = initialState, action) {
                 state.timelineData.splice(index, 1);
                 return state;
             }
+        case cubeConstants.CLEAR_SELECTED_GOLDEN:
+            return {
+                ...state,
+                selectedTestId:null,
+                selectedGolden: null
+            }
         default:
             return state
     }
