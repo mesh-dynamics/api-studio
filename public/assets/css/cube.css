@@ -4710,11 +4710,18 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
     flex: 1 1 0;
 }
 
-.timeline-replay-icon {
-    float: right;
+.timeline-delete-icon-container {
+    height: 15px;
 }
-.timeline-replay-icon:hover {
-    color: #00B2FF;
+
+.timeline-delete-icon {
+    float: right;
+    color: #d4d4d4;
+}
+.timeline-delete-icon:hover {
+    color: #a2a2a2;
+    cursor: pointer;
+    /* color: #00B2FF; */
 }
 
 .view-test-report-img {
