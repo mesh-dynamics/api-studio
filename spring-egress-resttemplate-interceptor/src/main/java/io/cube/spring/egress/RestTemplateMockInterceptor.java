@@ -1,6 +1,7 @@
 package io.cube.spring.egress;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -46,25 +47,25 @@ public class RestTemplateMockInterceptor implements ClientHttpRequestInterceptor
 		CommonConfig commonConfig = CommonConfig.getInstance();
 		String serviceName = CommonUtils.getEgressServiceName(originalUri);
 		HttpRequestWrapper newRequest = null;
-		ArrayList<Optional<Span>> ingressSpan = new ArrayList<>();
-		ArrayList<Span> clientSpan = new ArrayList<>();
-		ArrayList<Scope> clientScope = new ArrayList<>();
+		Optional<Span>[] ingressSpan = (Optional<Span>[])new Optional[1];
+		Span[] clientSpan = {null};
+		Scope[] clientScope ={null};
 
 		try {
 			newRequest = commonConfig.getMockingURI(originalUri, serviceName).map(mockURI -> {
 
-				ingressSpan.add(CommonUtils.getCurrentSpan());
+				ingressSpan[0] = CommonUtils.getCurrentSpan();
 
 				//Empty ingress span pertains to DB initialization scenarios.
-				SpanContext spanContext = ingressSpan.get(0).map(Span::context)
+				SpanContext spanContext = ingressSpan[0].map(Span::context)
 						.orElse(CommonUtils.createDefSpanContext());
 
-				clientSpan.add(CommonUtils
-						.startClientSpan(Constants.MD_CHILD_SPAN, spanContext, false));
+				clientSpan[0] = CommonUtils
+						.startClientSpan(Constants.MD_CHILD_SPAN, spanContext, false);
 
-				ingressSpan.get(0).map(span -> clientSpan.get(0).setBaggageItem("md-parent-span",  span.context().toSpanId()));
+				ingressSpan[0].map(span -> clientSpan[0].setBaggageItem("md-parent-span",  span.context().toSpanId()));
 
-				clientScope.add(CommonUtils.activateSpan(clientSpan.get(0)));
+				clientScope[0] = CommonUtils.activateSpan(clientSpan[0]);
 
 				MyHttpRequestWrapper request = new MyHttpRequestWrapper(httpRequest, mockURI);
 				commonConfig.authToken.ifPresent(auth -> {
@@ -80,23 +81,23 @@ public class RestTemplateMockInterceptor implements ClientHttpRequestInterceptor
 
 		} catch (URISyntaxException e) {
 			LOGGER.error("Mocking filter issue, exception during setting URI!", e);
-			if (clientSpan.get(0) != null) {
-				clientSpan.get(0).finish();
+			if (clientSpan[0] != null) {
+				clientSpan[0].finish();
 			}
 
-			if (clientScope.get(0) != null) {
-				clientScope.get(0).close();
+			if (clientScope[0] != null) {
+				clientScope[0].close();
 			}
 			return execution.execute(httpRequest, bytes);
 		}
 		ClientHttpResponse response = execution.execute(newRequest, bytes);
 
-		if (clientSpan.get(0) != null) {
-			clientSpan.get(0).finish();
+		if (clientSpan[0] != null) {
+			clientSpan[0].finish();
 		}
 
-		if (clientScope.get(0) != null) {
-			clientScope.get(0).close();
+		if (clientScope[0] != null) {
+			clientScope[0].close();
 		}
 
 		return response;
