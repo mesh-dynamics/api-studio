@@ -9,7 +9,6 @@ import java.util.List;
 @Setter
 public class Apps {
     String name;
-    List<Instances> instances;
     List<ServiceGroups> serviceGroups;
     List<TestConfigs> testConfigs;
     List<ServiceGraphs> serviceGraphs;
