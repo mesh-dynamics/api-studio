@@ -1,5 +1,6 @@
 package com.cube.drivers;
 
+import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.ReplayUpdate;
 import io.md.constants.ReplayStatus;
 import io.md.dao.Replay;
@@ -28,6 +29,7 @@ import io.md.dao.Event;
 
 import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
+import com.cube.injection.DynamicInjectionConfig;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
@@ -38,6 +40,7 @@ public abstract class AbstractReplayDriver {
 	public final ReqRespStore rrstore;
 	protected final Config config;
 	protected ObjectMapper jsonMapper;
+	Optional<DynamicInjectionConfig> dynamicInjectionConfig;
 
 
 	static int UPDBATCHSIZE = 10; // replay metadata will be updated after each such batch
@@ -50,6 +53,11 @@ public abstract class AbstractReplayDriver {
 		this.rrstore = config.rrstore;
 		this.jsonMapper = config.jsonMapper;
 		this.config = config;
+		replay.dynamicInjectionConfigVersion.map(DIConfVersion -> {
+			return rrstore.getDynamicInjectionConfig(
+				new CubeMetaInfo(replay.customerId, replay.app, replay.instanceId), DIConfVersion);
+		}).orElse(Optional.empty());
+
 	}
 
 	public abstract IReplayClient initClient(Replay replay) throws Exception;
