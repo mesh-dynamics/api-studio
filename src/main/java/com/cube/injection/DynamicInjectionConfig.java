@@ -72,24 +72,25 @@ public class DynamicInjectionConfig {
 			reset = true;
 		}
 
-		public class SourceMeta {
+	}
 
-			@JsonProperty("source")
-			final VariableSources source;
+	public class SourceMeta {
 
-			@JsonProperty("jsonPath")
-			final String jsonPath;
+		@JsonProperty("source")
+		final VariableSources source;
 
-			@JsonProperty("suffix")
-			final String suffix;
+		@JsonProperty("jsonPath")
+		final String jsonPath;
 
-			private SourceMeta() {
-				source = VariableSources.GoldenResponse;
-				jsonPath = "";
-				suffix = "";
-			}
+		@JsonProperty("suffix")
+		final String suffix;
 
+		private SourceMeta() {
+			source = VariableSources.GoldenResponse;
+			jsonPath = "";
+			suffix = "";
 		}
+
 	}
 
 	//TODO Define injection class
