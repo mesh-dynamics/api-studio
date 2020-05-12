@@ -1,25 +1,25 @@
-package com.cube.interceptor.spring.egress;
+package io.cube.spring.ingress;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import io.cube.agent.CommonConfig;
 import io.md.constants.Constants;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
@@ -27,14 +27,21 @@ import io.md.dao.MDTraceInfo;
 
 public class Utils {
 
-	private static final Logger LOGGER = LogManager.getLogger(Utils.class);
+	private static final Logger LOGGER = LoggerFactory
+		.getLogger(Utils.class);
 
 	public static final long PAYLOAD_MAX_LIMIT = 25000000; //25 MB
 
-	private static final RestTemplateConfig config;
+	private static final Config config;
 
 	static {
-		config = new RestTemplateConfig();
+		config = new Config();
+	}
+
+	public static boolean isSampled(MultivaluedMap<String, String> requestHeaders) {
+		return ((config.intentResolver.isIntentToRecord()
+			&& CommonConfig.getInstance().sampler.isSampled(requestHeaders))
+			|| config.intentResolver.isIntentToMock());
 	}
 
 	public static MultivaluedMap<String, String> getRequestMeta(String method, String cRequestId,
@@ -66,20 +73,10 @@ public class Utils {
 		} else if (config.intentResolver.isIntentToMock()) {
 			metaMap.add(Constants.RUN_TYPE_FIELD, Constants.REPLAY);
 		}
-		metaMap.add(Constants.CUSTOMER_ID_FIELD, config.commonConfig.customerId);
-		metaMap.add(Constants.APP_FIELD, config.commonConfig.app);
-		metaMap.add(Constants.INSTANCE_ID_FIELD, config.commonConfig.instance);
-		metaMap.add(Constants.SERVICE_FIELD, serviceName.orElse(config.commonConfig.serviceName));
-	}
-
-	public static MultivaluedMap<String, String> getMultiMap(
-		Set<Entry<String, List<String>>> inputSet) {
-		MultivaluedMap<String, String> multivaluedMap = new MultivaluedHashMap<>();
-		for (Entry<String, List<String>> entry : inputSet) {
-			String key = entry.getKey();
-			multivaluedMap.addAll(key, entry.getValue());
-		}
-		return multivaluedMap;
+		metaMap.add(Constants.CUSTOMER_ID_FIELD, CommonConfig.getInstance().customerId);
+		metaMap.add(Constants.APP_FIELD, CommonConfig.getInstance().app);
+		metaMap.add(Constants.INSTANCE_ID_FIELD, CommonConfig.getInstance().instance);
+		metaMap.add(Constants.SERVICE_FIELD, serviceName.orElse(CommonConfig.getInstance().serviceName));
 	}
 
 	public static void createAndLogReqEvent(String apiPath,
@@ -88,19 +85,14 @@ public class Utils {
 		try {
 			Event requestEvent = io.md.utils.Utils
 				.createHTTPRequestEvent(apiPath, queryParams,
-					new MultivaluedHashMap<>(), meta, requestHeaders,
-					mdTraceInfo, requestBody, Optional.empty(), config.jsonMapper, true);
+					new MultivaluedHashMap<>(), meta, requestHeaders, mdTraceInfo,
+					requestBody, Optional.empty(), config.jsonMapper, true);
 			config.recorder.record(requestEvent);
 		} catch (InvalidEventException e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Invalid Event",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Invalid Event for apiPath : " + apiPath, e);
 		} catch (JsonProcessingException e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Json Processing Exception. "
+				+ "Unable to create event for apiPath : " + apiPath, e);
 		}
 	}
 
@@ -114,15 +106,11 @@ public class Utils {
 					true);
 			config.recorder.record(responseEvent);
 		} catch (InvalidEventException e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Invalid Event",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Invalid Event for apiPath " + apiPath, e);
 		} catch (JsonProcessingException e) {
-			LOGGER.error(new ObjectMessage(
-				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER
+				.error("Json Processing Exception. Unable to create event for apiPath : " + apiPath,
+					e);
 		}
 	}
 
@@ -134,6 +122,19 @@ public class Utils {
 		}
 
 		return queryParams;
+	}
+
+	public static MultivaluedMap<String, String> getHeaders(HttpServletRequest httpServletRequest) {
+		MultivaluedMap<String, String> headerMap = new MultivaluedHashMap<>();
+		Collections.list(httpServletRequest.getHeaderNames()).stream()
+			.forEach(headerName -> {
+				Enumeration<String> headerValues = httpServletRequest.getHeaders(headerName);
+				while (headerValues.hasMoreElements()) {
+					headerMap.add(headerName, headerValues.nextElement());
+				}
+			});
+
+		return headerMap;
 	}
 
 }
