@@ -1362,8 +1362,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     // field names in Solr for compare template (stored as json)
     private static final String COMPARETEMPLATEJSON = CPREFIX + "comparetemplate" + STRING_SUFFIX;
     private static final String ATTRIBUTE_RULE_TEMPLATE_JSON = CPREFIX + "attribute_rule_template" + STRING_SUFFIX;
-    private static final String EXTRACTION_METAS_JSON = CPREFIX + "attribute_rule_template" + STRING_SUFFIX;
-    private static final String INJECTION_METAS_JSON = CPREFIX + "attribute_rule_template" + STRING_SUFFIX;
+    private static final String EXTRACTION_METAS_JSON = CPREFIX + Constants.EXTRACTION_METAS_JSON_FIELD + STRING_SUFFIX;
+    private static final String INJECTION_METAS_JSON = CPREFIX + Constants.INJECTION_METAS_JSON_FIELD + STRING_SUFFIX;
     private static final String PARTIALMATCH = CPREFIX + "partialmatch" + STRING_SUFFIX;
 
     // DONT use SimpleDateFormat in multi-threaded environment. Each thread should have its own
@@ -2512,18 +2512,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     @Override
     public String saveDynamicInjectionConfig(DynamicInjectionConfig dynamicInjectionConfig)
         throws SolrStoreException {
-        String extractionMetas;
-        String injectionMetas;
-        try {
-            extractionMetas = this.config.jsonMapper.writeValueAsString(dynamicInjectionConfig.extractionMetas);
-            injectionMetas = this.config.jsonMapper.writeValueAsString(dynamicInjectionConfig.injectionMetas);
-        } catch (Exception e) {
-            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                "Unable to extraction/injection metas to string")), e);
-            return null;
-        }
-
-        SolrInputDocument solrDoc = dynamicInjectionConfigToSolrDoc(dynamicInjectionConfig, extractionMetas, injectionMetas);
+        SolrInputDocument solrDoc = dynamicInjectionConfigToSolrDoc(dynamicInjectionConfig);
         boolean success = saveDoc(solrDoc) && softcommit();
         if(!success) {
             throw new SolrStoreException("Error saving Injection config in Solr");
@@ -2533,9 +2522,20 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     public SolrInputDocument dynamicInjectionConfigToSolrDoc(
-        DynamicInjectionConfig dynamicInjectionConfig, String extractionMetas,
-        String injectionMetas) {
+        DynamicInjectionConfig dynamicInjectionConfig) {
+        String extractionMetas;
+        String injectionMetas;
+
         final SolrInputDocument doc = new SolrInputDocument();
+        try {
+            extractionMetas = this.config.jsonMapper.writeValueAsString(dynamicInjectionConfig.extractionMetas);
+            injectionMetas = this.config.jsonMapper.writeValueAsString(dynamicInjectionConfig.injectionMetas);
+        } catch (Exception e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                "Unable to convert extraction/injection metas to string")), e);
+            return doc;
+        }
+
         String type = Types.DynamicInjectionConfig.name();
         String id = type.concat("-").concat(String.valueOf(Objects.hash(
             dynamicInjectionConfig.customer , dynamicInjectionConfig.app , dynamicInjectionConfig.version)));
@@ -2568,7 +2568,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             try {
                 return config.jsonMapper.readValue(em, new TypeReference<List<ExtractionMeta>>(){});
             } catch (IOException e) {
-                LOGGER.error("Error while reading ExtractionMeta object from json :: " + getIntField(doc , IDF).orElse(-1));
+                LOGGER.error("Error while reading ExtractionMeta object from json :: " + getIntField(doc , IDF).orElse(-1),e);
                 return Optional.of(new ArrayList<ExtractionMeta>());
             }
         });
@@ -2576,7 +2576,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             try {
                 return config.jsonMapper.readValue(im, new TypeReference<List<InjectionMeta>>(){});
             } catch (IOException e) {
-                LOGGER.error("Error while reading InjectionMeta object from json :: " + getIntField(doc , IDF).orElse(-1));
+                LOGGER.error("Error while reading InjectionMeta object from json :: " + getIntField(doc , IDF).orElse(-1),e);
                 return Optional.of(new ArrayList<InjectionMeta>());
             }
         });

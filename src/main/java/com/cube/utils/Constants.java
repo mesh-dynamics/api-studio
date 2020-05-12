@@ -164,7 +164,9 @@ public class Constants {
     public static final String SRC_REQUEST_ID = "src-request-id";
     public static final String REQUEST_ID = "request-id";
     public static final String CUBE_HEADER_PREFIX = "c-";
-    public static final String DYNACMIC_INJECTION_CONFIG_VERSION_FIELD = "InjectionConfigversion";
+    public static final String DYNACMIC_INJECTION_CONFIG_VERSION_FIELD = "dynamicInjectionConfigVersion";
+    public static final String EXTRACTION_METAS_JSON_FIELD = "extractionMetasJson";
+    public static final String INJECTION_METAS_JSON_FIELD = "injectionMetasJson";
 
 
 
