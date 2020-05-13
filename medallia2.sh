@@ -9,7 +9,7 @@ set_variables() {
 		POSTHOOK=$(cat medallia.conf | jq ".[$i][$((goldencount-1))].posthook" |  tr -d '[]"')
 		prehook
 		for ((j=1;j<$((goldencount-1));j++)); do
-			GOLDEN_NAME=$(cat medallia.conf | jq ".[$i][$j].goldenname" | tr -d '"')
+			GOLDEN_NAME=$(cat medallia.conf | jq ".[$i][$j].goldenname" | sed -e 's/ /%20/g' | tr -d '"')
 			EXCLUDEPATH=$(cat medallia.conf | jq ".[$i][$j].excludePath" | tr -d '"')
 			PATHS=$(cat medallia.conf | jq ".[$i][$j].paths" | tr -d '[]"' | tr "," "\n")
 			for path in $PATHS

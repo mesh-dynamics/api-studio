@@ -11,7 +11,7 @@ set_variables() {
 		POSTHOOK=$(cat /home/ec2-user/meshdynamics/medallia.conf | jq ".[$i][$((goldencount-1))].posthook" |  tr -d '[]"')
 		prehook
 		for ((j=1;j<$((goldencount-1));j++)); do
-			GOLDEN_NAME=$(cat /home/ec2-user/meshdynamics/medallia.conf | jq ".[$i][$j].goldenname" | tr -d '"')
+			GOLDEN_NAME=$(cat /home/ec2-user/meshdynamics/medallia.conf | jq ".[$i][$j].goldenname" | sed -e 's/ /%20/g' | tr -d '"')
 			EXCLUDEPATH=$(cat /home/ec2-user/meshdynamics/medallia.conf | jq ".[$i][$j].excludePath" | tr -d '"')
 			PATHS=$(cat /home/ec2-user/meshdynamics/medallia.conf | jq ".[$i][$j].paths" | tr -d '[]"' | tr "," "\n")
 			for path in $PATHS
@@ -42,7 +42,7 @@ replay() {
 	BODY="$REPLAY_PATHS&endPoint=$REPLAY_ENDPOINT&analyze=true&instanceId=$INSTANCE_ID&templateSetVer=$TEMPLATE&userId=$USER_ID&excludePaths=$EXCLUDEPATH"
 	echo $BODY
 	resp=$(curl -sw "%{http_code}" -X POST \
-		$CUBE_ENDPOINT/api/rs/start/byGoldenName/$CUSTOMERID/$APP/$GOLDEN_NAME \
+		$CUBE_ENDPOINT/api/rs/start/byGoldenName/$CUSTOMER_ID/$APP/$GOLDEN_NAME \
 		-H 'Content-Type: application/x-www-form-urlencoded' \
 		-H "Authorization: Bearer $AUTH_TOKEN" \
 		-H 'cache-control: no-cache' \
