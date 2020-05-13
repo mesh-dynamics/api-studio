@@ -13,13 +13,15 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+import org.slf4j.LoggerFactory;
+
 import com.google.gson.reflect.TypeToken;
 
 import io.md.utils.FnKey;
 
 
 public class MDDriver implements Driver {
-
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(MDDriver.class);
     private static final Driver INSTANCE = new MDDriver();
     private static Type integerType = new TypeToken<Integer>() {}.getType();
     private static final Config config;
@@ -133,6 +135,7 @@ public class MDDriver implements Driver {
             try {
                 realDriver = Collections.list(DriverManager.getDrivers()).stream().
                         filter(driver -> {
+                            LOGGER.debug("Found this driver : " + driver.getClass());
                             try {
                                 return driver.acceptsURL(realUrl);
                             } catch (SQLException e) {
@@ -146,7 +149,12 @@ public class MDDriver implements Driver {
                     Utils.record(instanceId, config, driverFnKey, url);
                 }
 
-                return Optional.of(new MDDriver(realDriver.orElse(null), instanceId));
+                if (!realDriver.isPresent()) {
+                    throw new SQLException(
+                        "Unable to find the underlying real driver, Please check if the driver is part of the class path!");
+                }
+
+                return Optional.of(new MDDriver(realDriver.get(), instanceId));
 
             } catch (Exception e) {
                 throw new SQLException(e);

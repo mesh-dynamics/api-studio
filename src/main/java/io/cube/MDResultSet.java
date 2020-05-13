@@ -25,6 +25,9 @@ import java.util.Calendar;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.sql.rowset.serial.SerialBlob;
+import javax.sql.rowset.serial.SerialClob;
+
 import com.google.gson.reflect.TypeToken;
 
 import io.md.utils.FnKey;
@@ -104,6 +107,10 @@ public class MDResultSet implements ResultSet {
     private FnKey abFnKey;
     private FnKey reFnKey;
     private FnKey gmdFnkey;
+    private FnKey gcFnkey;
+    private FnKey gcclFnkey;
+    private FnKey gbclFnKey;
+    private FnKey gbciFnkey;
 
     public static class Builder {
         private final Config config;
@@ -1322,18 +1329,28 @@ public class MDResultSet implements ResultSet {
 
     @Override
     public Blob getBlob(int columnIndex) throws SQLException {
-        if (config.intentResolver.isIntentToMock()) {
-            throw new SQLException("This method is not supported yet!");
+        if (null == gbciFnkey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gbciFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                Config.commonConfig.serviceName, method);
         }
-        return resultSet.getBlob(columnIndex);
+
+        this.columnIndex = columnIndex;
+        return (Blob) Utils.recordOrMock(config, gbciFnkey,
+            (fnArgs) -> new SerialBlob(resultSet.getBlob(columnIndex)), columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
     public Clob getClob(int columnIndex) throws SQLException {
-        if (config.intentResolver.isIntentToMock()) {
-            throw new SQLException("This method is not supported yet!");
+        if (null == gcFnkey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gcFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                Config.commonConfig.serviceName, method);
         }
-        return resultSet.getClob(columnIndex);
+
+        this.columnIndex = columnIndex;
+        return (Clob) Utils.recordOrMock(config, gcFnkey,
+            (fnArgs) -> new SerialClob(resultSet.getClob(columnIndex)), columnIndex, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -1362,18 +1379,28 @@ public class MDResultSet implements ResultSet {
 
     @Override
     public Blob getBlob(String columnLabel) throws SQLException {
-        if (config.intentResolver.isIntentToMock()) {
-            throw new SQLException("This method is not supported yet!");
+        if (null == gbclFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gbclFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                Config.commonConfig.serviceName, method);
         }
-        return resultSet.getBlob(columnLabel);
+
+        this.columnLabel = columnLabel;
+        return (Blob) Utils.recordOrMock(config, gbclFnKey,
+            (fnArgs) -> new SerialBlob(resultSet.getBlob(columnLabel)), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
     public Clob getClob(String columnLabel) throws SQLException {
-        if (config.intentResolver.isIntentToMock()) {
-            throw new SQLException("This method is not supported yet!");
+        if (null == gcclFnkey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gcclFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                Config.commonConfig.serviceName, method);
         }
-        return resultSet.getClob(columnLabel);
+
+        this.columnLabel = columnLabel;
+        return (Clob) Utils.recordOrMock(config, gcclFnkey,
+            (fnArgs) -> new SerialClob(resultSet.getClob(columnLabel)), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override

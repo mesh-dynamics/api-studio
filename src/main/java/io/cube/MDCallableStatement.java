@@ -3,6 +3,7 @@ package io.cube;
 import java.io.InputStream;
 import java.io.Reader;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.Array;
@@ -19,12 +20,18 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Map;
+import java.util.Optional;
+
+import javax.sql.rowset.serial.SerialBlob;
+import javax.sql.rowset.serial.SerialClob;
+
+import com.google.gson.reflect.TypeToken;
 
 import io.md.utils.FnKey;
 
 
 public class MDCallableStatement extends MDPreparedStatement implements CallableStatement {
-
+    private static Type integerType = new TypeToken<Integer>() {}.getType();
     private final CallableStatement callableStatement;
     private final Config config;
     private int parameterIndex;
@@ -64,13 +71,14 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     private FnKey gbyscFnKey;
     private FnKey goFnKey;
     private FnKey gocFnKey;
-    private FnKey gobFnKey;
-    private FnKey gobjFnKey;
     private FnKey guFnKey;
     private FnKey gurFnKey;
     private FnKey gnsFnKey;
     private FnKey gnscFnKey;
-
+    private FnKey gcFnkey;
+    private FnKey gcpnFnkey;
+    private FnKey gbpiFnKey;
+    private FnKey gbpnFnkey;
 
 
     public MDCallableStatement(MDConnection mdConnection, Config config, int statementInstanceId) {
@@ -325,18 +333,28 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
 
     @Override
     public Blob getBlob(int parameterIndex) throws SQLException {
-        if (config.intentResolver.isIntentToMock()) {
-            throw new SQLException("This method is not supported yet!");
+        if (null == gbpiFnKey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gbpiFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                Config.commonConfig.serviceName, method);
         }
-        return callableStatement.getBlob(parameterIndex);
+
+        this.parameterIndex = parameterIndex;
+        return (Blob) Utils.recordOrMock(config, gbpiFnKey,
+            (fnArgs) -> new SerialBlob(callableStatement.getBlob(parameterIndex)), parameterIndex, this.statementInstanceId);
     }
 
     @Override
     public Clob getClob(int parameterIndex) throws SQLException {
-        if (config.intentResolver.isIntentToMock()) {
-            throw new SQLException("This method is not supported yet!");
+        if (null == gcFnkey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gcFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                Config.commonConfig.serviceName, method);
         }
-        return callableStatement.getClob(parameterIndex);
+
+        this.parameterIndex = parameterIndex;
+        return (Clob) Utils.recordOrMock(config, gcFnkey,
+            (fnArgs) -> new SerialClob(callableStatement.getClob(parameterIndex)), parameterIndex, this.statementInstanceId);
     }
 
     @Override
@@ -802,18 +820,28 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
 
     @Override
     public Blob getBlob(String parameterName) throws SQLException {
-        if (config.intentResolver.isIntentToMock()) {
-            throw new SQLException("This method is not supported yet!");
+        if (null == gbpnFnkey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gbpnFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                Config.commonConfig.serviceName, method);
         }
-        return callableStatement.getBlob(parameterName);
+
+        this.parameterName = parameterName;
+        return (Blob) Utils.recordOrMock(config, gbpnFnkey,
+            (fnArgs) -> new SerialBlob(callableStatement.getBlob(parameterName)), parameterName, this.statementInstanceId);
     }
 
     @Override
     public Clob getClob(String parameterName) throws SQLException {
-        if (config.intentResolver.isIntentToMock()) {
-            throw new SQLException("This method is not supported yet!");
+        if (null == gcpnFnkey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            gcpnFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                Config.commonConfig.serviceName, method);
         }
-        return callableStatement.getClob(parameterName);
+
+        this.parameterName = parameterName;
+        return (Clob) Utils.recordOrMock(config, gcpnFnkey,
+            (fnArgs) -> new SerialClob(callableStatement.getClob(parameterName)), parameterName, this.statementInstanceId);
     }
 
     @Override

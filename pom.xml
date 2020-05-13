@@ -7,7 +7,7 @@
     <groupId>io.cube</groupId>
     <artifactId>md-jdbcwrapper</artifactId>
     <packaging>jar</packaging>
-    <version>1.2.1</version>
+    <version>1.2.3</version>
     <properties>
         <version.log4j>2.11.1</version.log4j>
         <version.java>8</version.java>
@@ -79,18 +79,6 @@
                             <shadedPattern>io.md.dongliu</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>org.slf4j</pattern>
-                            <shadedPattern>io.md.slf4j</shadedPattern>
-                        </relocation>
-                        <!--            <relocation>-->
-                        <!--              <pattern>javax.ws.rs</pattern>-->
-                        <!--              <shadedPattern>io.md.javax.ws.rx</shadedPattern>-->
-                        <!--            </relocation>-->
-                        <!--            <relocation>-->
-                        <!--              <pattern>javax.annotation</pattern>-->
-                        <!--              <shadedPattern>io.md.javax.annotation</shadedPattern>-->
-                        <!--            </relocation>-->
-                        <relocation>
                             <pattern>io.jaegertracing</pattern>
                             <shadedPattern>io.md.jaegertracing</shadedPattern>
                         </relocation>
@@ -129,6 +117,8 @@
                         <relocation>
                             <pattern>com.twitter</pattern>
                             <shadedPattern>io.md.twitter</shadedPattern>
+                        </relocation>
+                        <relocation>
                             <pattern>org.apache.thrift</pattern>
                             <shadedPattern>io.md.apache.thrift</shadedPattern>
                         </relocation>
@@ -165,7 +155,7 @@
         <dependency>
             <groupId>io.cube</groupId>
             <artifactId>agent</artifactId>
-            <version>1.0.25</version>
+            <version>1.0.26</version>
         </dependency>
     </dependencies>
 

@@ -23,6 +23,9 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
+import javax.sql.rowset.serial.SerialBlob;
+import javax.sql.rowset.serial.SerialClob;
+
 import com.google.gson.reflect.TypeToken;
 
 import io.md.utils.FnKey;
@@ -63,6 +66,8 @@ public class MDConnection implements Connection {
     private FnKey gsFnKey;
     private FnKey gciFnKey;
     private FnKey gcipFnkey;
+    private FnKey ccFnkey;
+    private FnKey cbFnkey;
 
     public MDConnection(Config config, int connectionInstanceId) {
         this.driver = null;
@@ -606,18 +611,26 @@ public class MDConnection implements Connection {
 
     @Override
     public Clob createClob() throws SQLException {
-        if (config.intentResolver.isIntentToMock()) {
-            throw new SQLException("This method is not supported yet!");
+        if (null == ccFnkey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            ccFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                Config.commonConfig.serviceName, method);
         }
-        return connection.createClob();
+
+        return (Clob) Utils.recordOrMock(config, ccFnkey,
+            (fnArgs) -> new SerialClob(connection.createClob()), this.connectionInstanceId);
     }
 
     @Override
     public Blob createBlob() throws SQLException {
-        if (config.intentResolver.isIntentToMock()) {
-            throw new SQLException("This method is not supported yet!");
+        if (null == cbFnkey) {
+            Method method = new Object() {}.getClass().getEnclosingMethod();
+            cbFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
+                Config.commonConfig.serviceName, method);
         }
-        return connection.createBlob();
+
+        return (Blob) Utils.recordOrMock(config, cbFnkey,
+            (fnArgs) -> new SerialBlob(connection.createBlob()), this.connectionInstanceId);
     }
 
     @Override
