@@ -42,7 +42,7 @@ public class Replay {
 	public Optional<RRTransformer> xfmer;
 	public transient Optional<URLClassLoader> generatedClassLoader;
 	public Optional<String> dynamicInjectionConfigVersion;
-	public Instant timestamp;
+	public Instant updationTimestamp;
 
 	public Replay(String endpoint, String customerId, String app, String instanceId,
 		String collection, String userId, List<String> reqIds,
@@ -54,7 +54,7 @@ public class Replay {
 		Optional<String> service, ReplayTypeEnum replayType, Optional<String> xfms,
 		Optional<RRTransformer> xfmer, List<String> mockServices,
 		Optional<String> testConfigName, Optional<String> goldenName, Optional<String> recordingId,
-		boolean archived, Optional<String> dynamicInjectionConfigVersion, Instant timestamp) {
+		boolean archived, Optional<String> dynamicInjectionConfigVersion, Instant updationTimestamp) {
 		this.endpoint = endpoint;
 		this.customerId = customerId;
 		this.app = app;
@@ -86,7 +86,7 @@ public class Replay {
 		this.recordingId = recordingId;
 		this.archived = archived;
 		this.dynamicInjectionConfigVersion = dynamicInjectionConfigVersion;
-		this.timestamp = timestamp;
+		this.updationTimestamp = updationTimestamp;
 	}
 
 	//for deserialization
@@ -117,7 +117,7 @@ public class Replay {
 		xfms = Optional.empty();
 		xfmer = Optional.empty();
 		dynamicInjectionConfigVersion = Optional.empty();
-		timestamp = null;
+		updationTimestamp = null;
 	}
 
 }
