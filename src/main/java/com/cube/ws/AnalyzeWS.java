@@ -926,7 +926,6 @@ public class AnalyzeWS {
 					        config.comparatorCache)))))
 		        .orElseThrow(
 			        () -> new Exception("Missing template set or template update operation set"));
-
             // Validate updated template set
             ValidateCompareTemplate validTemplate = Utils.validateTemplateSet(updated);
             if(!validTemplate.isValid()) {

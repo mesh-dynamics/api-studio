@@ -21,7 +21,7 @@ public class RecordingBuilder {
 	private String app;
 	private String instanceId;
 	private String collection;
-	private String id;
+	private Optional<String> id;
 	private RecordingStatus status;
 	private Optional<Instant> timestamp;
 	private String templateVersion;
@@ -49,7 +49,8 @@ public class RecordingBuilder {
 		this.status = RecordingStatus.Running;
 		this.timestamp = Optional.of(Instant.now());
 		this.templateVersion = Constants.DEFAULT_TEMPLATE_VER;
-		recalculateId();
+		this.id = Optional.empty();
+		//recalculateId();
 		this.parentRecordingId = Optional.empty();
 		this.rootRecordingId = "";
 		this.name = "";
@@ -71,17 +72,18 @@ public class RecordingBuilder {
 	 * @return
 	 */
 	public Recording build() {
+	    String idv = id.orElse(this.recalculateId());
 		if (this.rootRecordingId.isEmpty()) {
-			rootRecordingId = id;
+			rootRecordingId = idv;
 		}
-		return new Recording(id, customerId, app, instanceId, collection, status, timestamp
+		return new Recording(idv, customerId, app, instanceId, collection, status, timestamp
 			, templateVersion, parentRecordingId, rootRecordingId, name, codeVersion, branch
 		, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment
 			, userId, generatedClassJarPath, generatedClassLoader, label);
 	}
 
-	private void recalculateId() {
-		this.id = ReqRespStoreSolr.Types.Recording.toString().concat("-")
+	private String recalculateId() {
+		return ReqRespStoreSolr.Types.Recording.toString().concat("-")
 			.concat(String.valueOf(Objects.hash(customerId, app,
 				collection, templateVersion)));
 	}
@@ -96,6 +98,11 @@ public class RecordingBuilder {
 		}));
 	}
 
+	public RecordingBuilder withId(String id) {
+	    this.id = Optional.of(id);
+	    return this;
+    }
+
 	public RecordingBuilder withStatus(RecordingStatus status) {
 		this.status = status;
 		return this;
@@ -108,7 +115,7 @@ public class RecordingBuilder {
 
 	public RecordingBuilder withTemplateSetVersion(String version) {
 		this.templateVersion = version;
-		recalculateId();
+		//recalculateId();
 		return this;
 	}
 

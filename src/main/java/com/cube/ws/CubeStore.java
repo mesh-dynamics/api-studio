@@ -1150,7 +1150,8 @@ public class CubeStore {
                     .withStatus(rec.status)
                     .withTemplateSetVersion(rec.templateVersion)
                     .withRootRecordingId(rec.rootRecordingId)
-                    .withArchived(rec.archived);
+                    .withArchived(rec.archived)
+                    .withId(rec.id); // same recording is updated, so carry over id
                 rec.parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
                 recordingBuilder.withName(name.orElse(rec.name));
                 recordingBuilder.withLabel(label.orElse(rec.label));
