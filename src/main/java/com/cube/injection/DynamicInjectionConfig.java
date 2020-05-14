@@ -56,10 +56,10 @@ public class DynamicInjectionConfig {
 		final HTTPMethodType method;
 
 		@JsonProperty("name")
-		final SourceMeta nameMeta;
+		final String name;
 
 		@JsonProperty("value")
-		final SourceMeta valueMeta;
+		final String value;
 
 		@JsonProperty("reset")
 		final boolean reset;
@@ -67,28 +67,9 @@ public class DynamicInjectionConfig {
 		private ExtractionMeta() {
 			apiPath = "";
 			method = HTTPMethodType.POST;
-			nameMeta = new SourceMeta();
-			valueMeta = new SourceMeta();
+			name = "";
+			value = "";
 			reset = true;
-		}
-
-	}
-
-	public class SourceMeta {
-
-		@JsonProperty("source")
-		final VariableSources source;
-
-		@JsonProperty("jsonPath")
-		final String jsonPath;
-
-		@JsonProperty("suffix")
-		final String suffix;
-
-		private SourceMeta() {
-			source = VariableSources.GoldenResponse;
-			jsonPath = "";
-			suffix = "";
 		}
 
 	}
