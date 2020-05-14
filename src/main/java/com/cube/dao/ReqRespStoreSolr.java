@@ -2323,6 +2323,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private static Optional<Recording> docToRecording(SolrDocument doc) {
 
+        Optional<String> id = getStrField(doc, IDF);
         Optional<String> app = getStrField(doc, APPF);
         Optional<String> instanceId = getStrField(doc, INSTANCEIDF);
         Optional<String> collection = getStrField(doc, COLLECTIONF);
@@ -2346,7 +2347,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> userId = getStrField(doc, USERIDF);
         Optional<String> generatedClassJarPath = getStrField(doc, GENERATED_CLASS_JAR_PATH);
 
-        if (customerId.isPresent() && app.isPresent() && instanceId.isPresent() && collection
+        if (id.isPresent() && customerId.isPresent() && app.isPresent() && instanceId.isPresent() && collection
             .isPresent() &&
             status.isPresent() && templateVersion.isPresent() && archived.isPresent() && name
             .isPresent() && userId.isPresent()) {
@@ -2354,7 +2355,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 customerId.get(), app.get(), instanceId.get()), collection.get())
                 .withStatus(status.get()).withTemplateSetVersion(templateVersion.get())
                 .withName(name.get()).withArchived(archived.get()).withUserId(userId.get())
-                .withTags(tags);
+                .withTags(tags)
+                .withId(id.get()); // existing recording, so carry over id
             getTSField(doc, TIMESTAMPF).ifPresent(recordingBuilder::withUpdateTimestamp);
             parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
             rootRecordingId.ifPresent(recordingBuilder::withRootRecordingId);
