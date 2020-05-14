@@ -80,6 +80,9 @@ import com.cube.dao.Recording.RecordingStatus;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
+import com.cube.injection.DynamicInjectionConfig;
+import com.cube.injection.DynamicInjectionConfig.ExtractionMeta;
+import com.cube.injection.DynamicInjectionConfig.InjectionMeta;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
@@ -574,6 +577,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String TEMPLATE_ID = "template_id" + STRINGSET_SUFFIX;
     private static final String TEMPLATE_VERSIONF = Constants.TEMPLATE_VERSION_FIELD + STRING_SUFFIX;
     private static final String ATTRIBUTE_RULE_MAP_ID = "attribute_rule_map_id" + STRING_SUFFIX;
+    private static final String DYNACMIC_INJECTION_CONFIG_VERSIONF = Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD + STRING_SUFFIX;
+
 
     private String storeTemplateSetMetadata(TemplateSet templateSet, List<String> templateIds
         , Optional<String> appAttributeRuleMapId) throws TemplateSet.TemplateSetMetaStoreException {
@@ -1357,6 +1362,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     // field names in Solr for compare template (stored as json)
     private static final String COMPARETEMPLATEJSON = CPREFIX + "comparetemplate" + STRING_SUFFIX;
     private static final String ATTRIBUTE_RULE_TEMPLATE_JSON = CPREFIX + "attribute_rule_template" + STRING_SUFFIX;
+    private static final String EXTRACTION_METAS_JSON = CPREFIX + Constants.EXTRACTION_METAS_JSON_FIELD + STRING_SUFFIX;
+    private static final String INJECTION_METAS_JSON = CPREFIX + Constants.INJECTION_METAS_JSON_FIELD + STRING_SUFFIX;
     private static final String PARTIALMATCH = CPREFIX + "partialmatch" + STRING_SUFFIX;
 
     // DONT use SimpleDateFormat in multi-threaded environment. Each thread should have its own
@@ -1399,6 +1406,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         replay.goldenName.ifPresent(goldenName -> doc.setField(GOLDEN_NAMEF, goldenName));
         replay.recordingId.ifPresent(recordingId -> doc.setField(RECORDING_IDF, recordingId));
         doc.setField(ARCHIVEDF,replay.archived);
+        replay.dynamicInjectionConfigVersion.ifPresent(DIConfVersion -> doc.setField(DYNACMIC_INJECTION_CONFIG_VERSIONF, DIConfVersion));
 
         return doc;
     }
@@ -1462,6 +1470,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             Utils.valueOf(ReplayTypeEnum.class, repType)).orElse(ReplayTypeEnum.HTTP);
         Optional<String> xfms = getStrField(doc, XFMSF);
         Optional<Boolean> archived = getBoolField(doc, ARCHIVEDF);
+        Optional<String> dynamicInjectionConfigVersion = getStrField(doc, DYNACMIC_INJECTION_CONFIG_VERSIONF);
 
         Optional<Replay> replay = Optional.empty();
         if (endpoint.isPresent() && customerId.isPresent() && app.isPresent() &&
@@ -1490,6 +1499,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 goldenName.ifPresent(builder::withGoldenName);
                 recordingId.ifPresent(builder::withRecordingId);
                 archived.ifPresent(builder::withArchived);
+                dynamicInjectionConfigVersion.ifPresent(builder::withDynamicInjectionConfigVersion);
+
                 replay = Optional.of(builder.build());
             } catch (Exception e) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
@@ -2495,6 +2506,109 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, GOLDEN_NAMEF, name);
         label.ifPresentOrElse( l -> addFilter(query, GOLDEN_LABELF, l), () -> addSort(query, TIMESTAMPF, false));
         return SolrIterator.getSingleResult(solr, query).flatMap(doc -> docToRecording(doc));
+    }
+
+
+    @Override
+    public String saveDynamicInjectionConfig(DynamicInjectionConfig dynamicInjectionConfig)
+        throws SolrStoreException {
+        SolrInputDocument solrDoc = dynamicInjectionConfigToSolrDoc(dynamicInjectionConfig);
+        boolean success = saveDoc(solrDoc) && softcommit();
+        if(!success) {
+            throw new SolrStoreException("Error saving Injection config in Solr");
+        }
+        return solrDoc.getFieldValue(IDF).toString();
+
+    }
+
+    public SolrInputDocument dynamicInjectionConfigToSolrDoc(
+        DynamicInjectionConfig dynamicInjectionConfig) {
+        String extractionMetas;
+        String injectionMetas;
+
+        final SolrInputDocument doc = new SolrInputDocument();
+        try {
+            extractionMetas = this.config.jsonMapper.writeValueAsString(dynamicInjectionConfig.extractionMetas);
+            injectionMetas = this.config.jsonMapper.writeValueAsString(dynamicInjectionConfig.injectionMetas);
+        } catch (Exception e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                "Unable to convert extraction/injection metas to string")), e);
+            return doc;
+        }
+
+        String type = Types.DynamicInjectionConfig.name();
+        String id = type.concat("-").concat(String.valueOf(Objects.hash(
+            dynamicInjectionConfig.customer , dynamicInjectionConfig.app , dynamicInjectionConfig.version)));
+        doc.setField(IDF , id);
+        doc.setField(EXTRACTION_METAS_JSON , extractionMetas);
+        doc.setField(INJECTION_METAS_JSON , injectionMetas);
+        doc.setField(APPF , dynamicInjectionConfig.app);
+        doc.setField(CUSTOMERIDF , dynamicInjectionConfig.customer);
+        doc.setField(DYNACMIC_INJECTION_CONFIG_VERSIONF, dynamicInjectionConfig.version);
+        doc.setField(TIMESTAMPF , dynamicInjectionConfig.timestamp.toString());
+        doc.setField(TYPEF , type);
+        return doc;
+    }
+
+
+    @Override
+    public Optional<DynamicInjectionConfig> getDynamicInjectionConfig(CubeMetaInfo cubeMetaInfo, String version) {
+        final SolrQuery query = new SolrQuery("*:*");
+        query.addField("*");
+        addFilter(query, TYPEF, Types.DynamicInjectionConfig.name());
+        addFilter(query, CUSTOMERIDF, cubeMetaInfo.customerId);
+        addFilter(query, APPF, cubeMetaInfo.app);
+        addFilter(query, DYNACMIC_INJECTION_CONFIG_VERSIONF, version, true);
+        return SolrIterator.getSingleResult(solr, query)
+            .flatMap(this::docToDynamicInjectionConfig);
+    }
+
+    private Optional<DynamicInjectionConfig> docToDynamicInjectionConfig(SolrDocument doc) {
+        Optional<List<ExtractionMeta>> extractionMetas = getStrField(doc, EXTRACTION_METAS_JSON).flatMap(em -> {
+            try {
+                return config.jsonMapper.readValue(em, new TypeReference<List<ExtractionMeta>>(){});
+            } catch (IOException e) {
+                LOGGER.error("Error while reading ExtractionMeta object from json :: " + getIntField(doc , IDF).orElse(-1),e);
+                return Optional.of(new ArrayList<ExtractionMeta>());
+            }
+        });
+        Optional<List<InjectionMeta>> injectionMetas = getStrField(doc, INJECTION_METAS_JSON).flatMap(im -> {
+            try {
+                return config.jsonMapper.readValue(im, new TypeReference<List<InjectionMeta>>(){});
+            } catch (IOException e) {
+                LOGGER.error("Error while reading InjectionMeta object from json :: " + getIntField(doc , IDF).orElse(-1),e);
+                return Optional.of(new ArrayList<InjectionMeta>());
+            }
+        });
+
+        Optional<DynamicInjectionConfig> dynamicInjectionConfig = Optional.empty();
+        Optional<String> app = getStrField(doc, APPF);
+        Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
+        Optional<String> version = getStrField(doc, DYNACMIC_INJECTION_CONFIG_VERSIONF);
+        Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
+
+        if(app.isPresent() && customerId.isPresent() && version.isPresent()) {
+            dynamicInjectionConfig = Optional
+                .of(new DynamicInjectionConfig(version.get(), customerId.get(), app.get(), timestamp, extractionMetas.get(),
+                    injectionMetas.get()));
+        }
+        else {
+            LOGGER.error(new ObjectMessage(Map.of(
+                Constants.MESSAGE, "Not able to convert Solr result to DynamicInjectionConfig object",
+                Constants.ERROR, "One of required fields missing",
+                Constants.CUSTOMER_ID_FIELD, customerId.orElse(""),
+                Constants.APP_FIELD, app.orElse(""),
+                Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD, version.orElse("")
+            )));
+        }
+
+        return dynamicInjectionConfig;
+    }
+
+    public static class SolrStoreException extends Exception {
+        public SolrStoreException(String message) {
+            super(message);
+        }
     }
 
     private final static int FACETLIMIT = 500;
