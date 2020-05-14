@@ -1,4 +1,4 @@
-package com.cube.interceptor.jersey_1x.egress;
+package io.cube.interceptor.jersey_1x.ingress;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

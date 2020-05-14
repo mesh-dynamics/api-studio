@@ -1,4 +1,4 @@
-package com.cube.interceptor.jersey_1x.ingress;
+package io.cube.interceptor.jersey_1x.ingress;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -17,6 +17,7 @@ import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.RuntimeDelegate;
 import javax.ws.rs.ext.RuntimeDelegate.HeaderDelegate;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -180,7 +181,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 	}
 
 	private byte[] getRequestBody(ContainerRequest request) throws IOException {
-		byte[] reqBytes = request.getEntityInputStream().readAllBytes();
+		byte[] reqBytes = IOUtils.toByteArray(request.getEntityInputStream());
 		InputStream in = new ByteArrayInputStream(reqBytes);
 		request.setEntityInputStream(in);
 		return reqBytes;

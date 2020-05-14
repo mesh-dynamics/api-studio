@@ -1,7 +1,8 @@
-package com.cube.interceptor.jersey_1x.egress;
+package io.cube.interceptor.jersey_1x.egress;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -14,7 +15,7 @@ import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.filter.ClientFilter;
 
 import io.cube.agent.CommonConfig;
-import io.cube.agent.Constants;
+import io.md.constants.Constants;
 import io.md.utils.CommonUtils;
 
 public class ClientMockingFilter extends ClientFilter {
@@ -38,25 +39,28 @@ public class ClientMockingFilter extends ClientFilter {
   }
 
   private ClientRequest filter(ClientRequest clientRequest) {
-    URI originalUri = clientRequest.getURI();
-    CommonConfig commonConfig = CommonConfig.getInstance();
-    String serviceName = CommonUtils.getEgressServiceName(originalUri);
     try {
+      URI originalUri = clientRequest.getURI();
+      CommonConfig commonConfig = CommonConfig.getInstance();
+      String serviceName = CommonUtils.getEgressServiceName(originalUri);
+
       commonConfig.getMockingURI(originalUri, serviceName).ifPresent(mockURI -> {
         LOGGER.debug("Mocking URI Present :" + mockURI);
-        commonConfig.authToken.ifPresentOrElse(auth -> {
-           MultivaluedMap<String, Object> clientHeaders = clientRequest
+        if (commonConfig.authToken.isPresent()) {
+          String auth = commonConfig.authToken.get();
+          MultivaluedMap<String, Object> clientHeaders = clientRequest
                 .getHeaders();
-           clientHeaders.add(Constants.AUTHORIZATION_HEADER, "Bearer "+auth);
-           LOGGER.debug("Setting auth token in the header");
-
-         }, ()-> {
+          clientHeaders.add(io.cube.agent.Constants.AUTHORIZATION_HEADER, "Bearer "+auth);
+          LOGGER.debug("Setting auth token in the header");
+         } else {
           LOGGER.info("Auth token not present for Mocking service");
-        });
+        }
         clientRequest.setURI(mockURI);
       });
     } catch (URISyntaxException e) {
-      LOGGER.error("Exception setting the URI ", e);
+      LOGGER.error("Mocking filter issue, exception during setting URI!", e);
+    } catch (Exception ex) {
+      LOGGER.error("Mocking filter issue, exception occured!", ex);
     }
     return clientRequest;
   }

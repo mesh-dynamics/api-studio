@@ -1,4 +1,4 @@
-package com.cube.interceptor.jersey_1x.egress;
+package io.cube.interceptor.jersey_1x.egress;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;

@@ -1,4 +1,4 @@
-package com.cube.interceptor.jersey_1x.egress;
+package io.cube.interceptor.jersey_1x.egress;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -7,7 +7,10 @@ import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -16,6 +19,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +34,7 @@ import io.cube.agent.CommonConfig;
 import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
-import io.md.utils.UtilException;
+import io.opentracing.Scope;
 import io.opentracing.Span;
 
 public class ClientLoggingFilter extends ClientFilter {
@@ -40,8 +44,9 @@ public class ClientLoggingFilter extends ClientFilter {
 	private final Annotation[] EMPTY_ANNOTATIONS = new Annotation[0];
 	private static final Logger LOGGER = LoggerFactory.getLogger(ClientLoggingFilter.class);
 	private static final String EMPTY = "";
-	private static final List<String> HTTP_CONTENT_TYPE_HEADERS = List.of("content-type",
-			"Content-type", "Content-Type", "content-Type");
+	private static final List<String> HTTP_CONTENT_TYPE_HEADERS = Arrays
+			.asList(new String[]{"content-type",
+					"Content-type", "Content-Type", "content-Type"});
 
 	static {
 			config = new Config();
@@ -57,64 +62,80 @@ public class ClientLoggingFilter extends ClientFilter {
 			LOGGER.error("Skipping the filter as the config is null");
 			return getNext().handle(clientRequest);
 		}
+		Span clientSpan = null;
+		Scope clientScope = null;
+		String serviceName = null;
 
-		String serviceName = CommonUtils.getEgressServiceName(clientRequest.getURI());
-		CommonConfig commonConfig = config.commonConfig;
-
-		// Modify the request
 		try {
-			//If egress to be mocked then skip data capture
-			clientRequest = filter(clientRequest);
+			serviceName = CommonUtils.getEgressServiceName(clientRequest.getURI());
+			//hdrs
+			Optional<Span> ingressSpan = CommonUtils.getCurrentSpan();
+
+			clientSpan = CommonUtils.startClientSpan(Constants.MD_CHILD_SPAN,
+					ingressSpan.map(Span::context).orElse(null), false);
+
+			clientScope = CommonUtils.activateSpan(clientSpan);
+
+			clientRequest = filter(clientRequest, clientSpan, !ingressSpan.isPresent(), serviceName);
 		} catch (Exception e) {
-			LOGGER.error("Exception in client request filter ", e);
+			LOGGER.error("Exception occured during logging request, proceeding to the application!", e);
 		}
 
-		// Call the next client handler in the filter chain
-		ClientResponse resp = getNext().handle(clientRequest);
+		ClientResponse resp = null;
+		try {
+			// Call the next client handler in the filter chain
+			resp = getNext().handle(clientRequest);
+		} catch (Exception e) {
+			if (clientSpan != null)
+				clientSpan.finish();
+			if (clientScope != null)
+				clientScope.close();
+			throw e;
+		}
+
 
 		// Modify the response
 		try {
+			CommonConfig commonConfig = config.commonConfig;
 			//If egress to be mocked then skip data capture
-			if (!commonConfig.shouldMockService(serviceName)) {
+			if (serviceName != null && !commonConfig.shouldMockService(serviceName)) {
 				return filter(clientRequest, resp);
 			}
 		} catch (Exception e) {
-			LOGGER.error("Exception in client response filter ", e);
+			LOGGER.error(
+					"Exception occured during logging response, proceeding to the application!", e);
+		} finally {
+			if (clientSpan != null)
+				clientSpan.finish();
+			if (clientScope != null)
+				clientScope.close();
 		}
+
 		return resp;
 	}
 
-	public ClientRequest filter(ClientRequest clientRequest) throws IOException {
-		//hdrs
-		Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
+	public ClientRequest filter(ClientRequest clientRequest, Span clientSpan, boolean ingressEmpty,
+			String service) {
+		try {
+			// Do not log request in case the egress serivce is to be mocked
+			CommonConfig commonConfig = CommonConfig.getInstance();
 
-		Optional<Span> newClientSpan = currentSpan.map( span -> {
-			return CommonUtils.startClientSpan(Constants.MD_CHILD_SPAN, span.context(), false);
-		});
+			if (service != null && commonConfig.shouldMockService(service)) {
+				return clientRequest;
+			}
 
-		newClientSpan.map(CommonUtils::activateSpan);
-
-		// Do not log request in case the egress serivce is to be mocked
-		String service = CommonUtils.getEgressServiceName(clientRequest.getURI());
-		CommonConfig commonConfig = CommonConfig.getInstance();
-		if (commonConfig.shouldMockService(service)) {
-			return clientRequest;
-		}
-
-		newClientSpan.ifPresent(UtilException.rethrowConsumer(span ->
-		{
 			//Either baggage has sampling set to true or this service uses its veto power to sample.
 			boolean isSampled = BooleanUtils
-				.toBoolean(span.getBaggageItem(Constants.MD_IS_SAMPLED));
+					.toBoolean(clientSpan.getBaggageItem(Constants.MD_IS_SAMPLED));
 
 			boolean isVetoed = BooleanUtils
-					.toBoolean(span.getBaggageItem(Constants.MD_IS_VETOED));
+					.toBoolean(clientSpan.getBaggageItem(Constants.MD_IS_VETOED));
 
-			MultivaluedMap<String, String> headersMap = Utils.transformHeaders(clientRequest.getHeaders());
-
-			if (isSampled || isVetoed) {
+			//Empty ingress span pertains to application initiated calls without ingress
+			//So need to record all calls as these will not be driven by replay driver.
+			if (isSampled || isVetoed || ingressEmpty) {
 				//this is local baggage item
-				span.setBaggageItem(Constants.MD_IS_VETOED, null);
+				clientSpan.setBaggageItem(Constants.MD_IS_VETOED, null);
 
 				URI uri = clientRequest.getURI();
 
@@ -126,11 +147,13 @@ public class ClientLoggingFilter extends ClientFilter {
 
 				//serviceName to be host+port for outgoing calls
 				String serviceName =
-					uri.getPort() != -1
-						? String.join(":", uri.getHost(), String.valueOf(uri.getPort()))
-						: uri.getHost();
+						uri.getPort() != -1
+								? String.join(":", uri.getHost(), String.valueOf(uri.getPort()))
+								: uri.getHost();
 
-				MDTraceInfo mdTraceInfo = io.md.utils.Utils.getTraceInfo(span);
+				MDTraceInfo mdTraceInfo = io.md.utils.Utils.getTraceInfo(clientSpan);
+
+				MultivaluedMap<String, String>  headersMap = Utils.transformHeaders(clientRequest.getHeaders());
 
 				MultivaluedMap<String, String> traceMetaMap = getTraceInfoMetaMap(headersMap, mdTraceInfo);
 
@@ -141,15 +164,17 @@ public class ClientLoggingFilter extends ClientFilter {
 				clientRequest.getProperties().put(Constants.MD_TRACE_INFO, mdTraceInfo);
 
 				logRequest(clientRequest, apiPath,
-					traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID),
-					queryParams, mdTraceInfo, serviceName);
+						traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID),
+						queryParams, mdTraceInfo, serviceName);
 
 				//Setting the current span id as parent span id value
 				//This is intentionally set after the capture as it should be parent for subsequent capture
-				span.setBaggageItem(Constants.MD_PARENT_SPAN, span.context().toSpanId());
+				clientSpan.setBaggageItem(Constants.MD_PARENT_SPAN, clientSpan.context().toSpanId());
+			}
+		} catch (Exception e ) {
+			LOGGER.error(
+					"Exception occured during logging, proceeding to the application!", e);
 		}
-
-		}));
 
 		return clientRequest;
 	}
@@ -303,7 +328,7 @@ public class ClientLoggingFilter extends ClientFilter {
 	}
 
 	private byte[] getResponseBody(ClientResponse clientResponse) throws IOException {
-		byte[] respBytes = clientResponse.getEntityInputStream().readAllBytes();
+		byte[] respBytes = IOUtils.toByteArray(clientResponse.getEntityInputStream());
 		InputStream in = new ByteArrayInputStream(respBytes);
 		clientResponse.setEntityInputStream(in);
 		return respBytes;

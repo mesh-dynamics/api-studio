@@ -1,5 +1,7 @@
-package com.cube.interceptor.jersey_1x.ingress;
+package io.cube.interceptor.jersey_1x.ingress;
 
+
+import java.util.Map;
 
 import javax.annotation.Priority;
 import javax.ws.rs.core.MultivaluedMap;
@@ -27,6 +29,10 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 	private static Config config;
 	private static final Logger LOGGER = LoggerFactory.getLogger(TracingFilter.class);
 
+	public static final String scopeKey
+			= Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
+	public static final String spanKey
+			= Constants.SERVICE_FIELD.concat(Constants.MD_CHILD_SPAN);
 
 	static {
 			config = new Config();
@@ -54,10 +60,9 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 
 			CommonUtils.injectContext(requestHeaders);
 
-			String scopeKey = Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
 			containerRequest.getProperties().put(scopeKey, scope);
 		} catch (Exception e) {
-			LOGGER.error("Error while running TracingFilter ", e);
+			LOGGER.error("Exception occured during setting up span!", e);
 		}
 		return containerRequest;
 	}
@@ -65,13 +70,22 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 	@Override
 	public ContainerResponse filter(ContainerRequest containerRequest,
 		ContainerResponse containerResponse) {
-		String scopeKey = Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
+		try {
+			Object obj = containerRequest.getProperties().get(scopeKey);
+			if (obj != null) {
+				((Scope) obj).close();
+				containerRequest.getProperties().remove(scopeKey);
+			}
 
-		Object obj = containerRequest.getProperties().get(scopeKey);
-		if (obj != null) {
-			((Scope) obj).close();
-			containerRequest.getProperties().remove(scopeKey);
+			Object spanObj = containerRequest.getProperties().get(spanKey);
+			if (spanObj != null) {
+				((Span) spanObj).finish();
+			}
+
+		} catch (Exception e) {
+			LOGGER.error("Exception occured during closing span!", e);
 		}
+
 		return containerResponse;
 	}
 }
