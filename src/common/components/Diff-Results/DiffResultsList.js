@@ -37,6 +37,10 @@ export default class DiffResultsList extends Component {
 
             collapseLength: parseInt(config.diffCollapseLength),
             collapseLengthIncrement: parseInt(config.diffCollapseLengthIncrement),
+
+            maxLinesLength: parseInt(config.diffMaxLinesLength),
+            maxLinesLengthIncrement: parseInt(config.diffMaxLinesLengthIncrement),
+            enableClientSideDiff: config.enableClientSideDiff === "true" ? true : false
         }
         this.inputElementRef = React.createRef();
     }
@@ -166,19 +170,25 @@ export default class DiffResultsList extends Component {
         this.props.handlePageNav(true, value);
     }
 
-    increaseCollapseLength = (e, jsonPath, recordReqId, replayReqId) => {
-        const { collapseLength, collapseLengthIncrement, diffLayoutData } = this.state;
-        let newCollapseLength = collapseLength + collapseLengthIncrement;
+    increaseCollapseLength = (e, jsonPath, recordReqId, replayReqId, typeOfChunkHandler) => {
+        const { collapseLength, collapseLengthIncrement, diffLayoutData, maxLinesLength, maxLinesLengthIncrement } = this.state;
+        let newCollapseLength = collapseLength, newMaxLinesLength = maxLinesLength;
+        if(typeOfChunkHandler === "collapseChunkLength") {
+            newCollapseLength = collapseLength + collapseLengthIncrement;
+        } else {
+            newMaxLinesLength = maxLinesLength + maxLinesLengthIncrement;
+        }
 
         let newDiffLayoutData = diffLayoutData.map(diffItem => {
             if (diffItem.replayReqId === replayReqId) {
-                addCompressToggleData(diffItem.reductedDiffArray, newCollapseLength);
+                addCompressToggleData(diffItem.reductedDiffArray, newCollapseLength, newMaxLinesLength);
             }
             return diffItem;
         });
 
         this.setState({ 
             collapseLength: newCollapseLength, 
+            maxLinesLength: newMaxLinesLength,
             diffLayoutData: newDiffLayoutData,
         });
     }
@@ -421,6 +431,8 @@ export default class DiffResultsList extends Component {
                                     showAll={!this.state.showFragments}
                                     searchFilterPath={this.state.searchFilterPath}
                                     handleCollapseLength={this.increaseCollapseLength}
+                                    handleMaxLinesLength={this.increaseCollapseLength}
+                                    enableClientSideDiff={this.state.enableClientSideDiff}
                                 />
                             </div>
                         )}

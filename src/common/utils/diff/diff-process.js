@@ -57,7 +57,7 @@ const getDiffForMessagePart = (replayedPart, recordedPart, serverSideDiff, prefi
     return updatedReductedDiffArrayMsgPart;
 }
 
-const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId, templateVersion, collapseLength) => {
+const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId, templateVersion, collapseLength, maxLinesLength) => {
     let diffLayoutData = replayList.map((item) => {
         let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body",
             recordedRequestHeaders, replayedRequestHeaders, recordedRequestQParams, replayedRequestQParams, recordedRequestFParams, replayedRequestFParams,recordedRequestBody, replayedRequestBody, reductedDiffArrayReqHeaders, reductedDiffArrayReqBody, reductedDiffArrayReqQParams, reductedDiffArrayReqFParams;
@@ -178,7 +178,7 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
         });
 
 
-        let updatedReductedDiffArrayWithCollapsible = addCompressToggleData(updatedReductedDiffArray, collapseLength);
+        let updatedReductedDiffArrayWithCollapsible = addCompressToggleData(updatedReductedDiffArray, collapseLength, maxLinesLength);
         
         let updatedReducedDiffArrayRespHdr = reducedDiffArrayRespHdr && reducedDiffArrayRespHdr.map((eachItem) => {
             return {
@@ -258,8 +258,8 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
     return diffLayoutData;
 }
 
-const addCompressToggleData = (diffData, collapseLength, diffCollapseStartIndex) => {
-    let indx  = 0, atleastADiff = false;;
+const addCompressToggleData = (diffData, collapseLength, maxLinesLength, diffCollapseStartIndex) => {
+    let indx  = 0, atleastADiff = false;
     if(!diffData) return diffData;
     for (let i = config.diffCollapseStartIndex; i < diffData.length; i++) {
         let diffDataChunk = diffData[i];
@@ -289,17 +289,40 @@ const addCompressToggleData = (diffData, collapseLength, diffCollapseStartIndex)
             if(m >= diffData.length) break;
         }
     }
-    let toggleDrawChunk  = false;
+    let toggleDrawChunk  = false, arbitratryCount = 0;
+    let jsonPath, previousChunk, showMaxChunkToggle = false, arrayCount = 0, activatedCount;
     for (let eachChunk of diffData) {
+        eachChunk["showMaxChunk"] = false;
+        eachChunk["showMaxChunkToggle"] = false;
+        if(arbitratryCount >= maxLinesLength && !showMaxChunkToggle) {
+            eachChunk["showMaxChunk"] = true;
+            showMaxChunkToggle = true;
+            activatedCount = arrayCount;
+        }
+        if(showMaxChunkToggle) {
+            eachChunk["showMaxChunkToggle"] = true;
+        }
+        if(jsonPath === eachChunk.jsonPath && showMaxChunkToggle && activatedCount === arrayCount) {
+            previousChunk["showMaxChunk"] = true;
+        }
         if(eachChunk.collapseChunk === true && toggleDrawChunk === false) {
             toggleDrawChunk = true;
             eachChunk["drawChunk"] = true;
+            arbitratryCount++;
         } else if(eachChunk.collapseChunk === true && toggleDrawChunk === true) {
             eachChunk["drawChunk"] = false;
         } else if(eachChunk.collapseChunk === false) {
             toggleDrawChunk = false;
             eachChunk["drawChunk"] = false;
+            if(jsonPath !== eachChunk.jsonPath) {
+                arbitratryCount++;
+            }
+        } else if (!eachChunk.collapseChunk) {
+            arbitratryCount++;
         }
+        jsonPath = eachChunk.jsonPath;
+        previousChunk = eachChunk;
+        arrayCount++;
     }
     return diffData;
 }
@@ -346,18 +369,20 @@ const pruneResults = (diffLayoutData, fromBeginning) => {
     let i;
     if (fromBeginning) { // prune from top of the list
         i = 0;
-        while (accumulatedObjectSize <= diffObjectSizeThreshold && i < len && i < maxDiffResultsPerPage) {
-            accumulatedObjectSize += roughSizeOfObject(diffLayoutData[i]);
-            i++;
-        }
+        // while (accumulatedObjectSize <= diffObjectSizeThreshold && i < len && i < maxDiffResultsPerPage) {
+        //     accumulatedObjectSize += roughSizeOfObject(diffLayoutData[i]);
+        //     i++;
+        // }
+        i = maxDiffResultsPerPage - 1;
         let diffLayoutDataPruned = diffLayoutData.slice(0, i)
         return {diffLayoutDataPruned, i};
     } else { // prune from bottom of the list
         i = 0;
-        while (accumulatedObjectSize <= diffObjectSizeThreshold && i < len && i < maxDiffResultsPerPage) {
-            accumulatedObjectSize += roughSizeOfObject(diffLayoutData[len-i-1]);
-            i++;
-        }
+        // while (accumulatedObjectSize <= diffObjectSizeThreshold && i < len && i < maxDiffResultsPerPage) {
+        //     accumulatedObjectSize += roughSizeOfObject(diffLayoutData[len-i-1]);
+        //     i++;
+        // }
+        i = maxDiffResultsPerPage - 1;
         let diffLayoutDataPruned = diffLayoutData.slice(len - i, len);
         return {diffLayoutDataPruned, i} 
     }

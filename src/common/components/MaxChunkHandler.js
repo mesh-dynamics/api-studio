@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 
-class CollapsedChunkHandler extends Component {
+class MaxChunkHandler extends Component {
     constructor(props) {
         super(props);
         this.showMore = this.showMore.bind(this);
@@ -8,7 +8,7 @@ class CollapsedChunkHandler extends Component {
 
     showMore(e) {
         const { jsonPath , recordReqId, replayReqId } = this.props;
-        this.props.handleCollapseLength(e, jsonPath, recordReqId, replayReqId, "collapseChunkLength");
+        this.props.handleMaxLinesLength(e, jsonPath, recordReqId, replayReqId, "maxChunkLength");
     }
 
     render() {
@@ -20,4 +20,4 @@ class CollapsedChunkHandler extends Component {
     }
 }
 
-export default CollapsedChunkHandler;
+export default MaxChunkHandler;
