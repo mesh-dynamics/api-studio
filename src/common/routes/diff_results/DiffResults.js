@@ -351,7 +351,7 @@ class DiffResults extends Component {
 
     preProcessResults = (results) => {
         const {app, replayId, recordingId, templateVersion} = this.state;
-        let diffLayoutData = validateAndCreateDiffLayoutData(results, app, replayId, recordingId, templateVersion, config.diffCollapseLength);
+        let diffLayoutData = validateAndCreateDiffLayoutData(results, app, replayId, recordingId, templateVersion, config.diffCollapseLength, config.diffMaxLinesLength);
         this.updateResolutionFilterPaths(diffLayoutData);
         return diffLayoutData;
     }
