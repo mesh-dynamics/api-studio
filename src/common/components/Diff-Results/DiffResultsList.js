@@ -40,7 +40,7 @@ export default class DiffResultsList extends Component {
 
             maxLinesLength: parseInt(config.diffMaxLinesLength),
             maxLinesLengthIncrement: parseInt(config.diffMaxLinesLengthIncrement),
-            enableClientSideDiff: config.enableClientSideDiff === "true"
+            enableClientSideDiff: config.enableClientSideDiff === "true" ? true : false
         }
         this.inputElementRef = React.createRef();
     }

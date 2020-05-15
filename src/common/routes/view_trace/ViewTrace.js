@@ -128,7 +128,8 @@ class ViewTrace extends Component {
             incrementCollapseLengthForRecReqId: null,
             incrementCollapseLengthForRepReqId: null,
             incrementStartJsonPath: null,
-            testMockServices: []
+            testMockServices: [],
+            enableClientSideDiff: config.enableClientSideDiff === "true" ? true : false
         }
 
         this.inputElementRef = React.createRef();

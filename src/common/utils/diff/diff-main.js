@@ -160,7 +160,7 @@ var DiffViewer = /** @class */ (function (_super) {
             }
             var newStyles = _this.computeStyles(_this.props.styles);
             // author raj.maddireddy@cubecorp.io
-            if(enableClientSideDiff && !diffArray) {
+            if(!enableClientSideDiff && !diffArray) {
                 diffArray = [];
                 console.error("SERVER SIDE DIFF IS EMPTY");
             }
