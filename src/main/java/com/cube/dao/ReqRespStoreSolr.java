@@ -154,14 +154,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 }
             }
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(recordReplayRetrieveKey,  CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), toReturn,
+                config.recorder.record(recordReplayRetrieveKey, toReturn,
                     RetStatus.Success, Optional.empty(), key);
             }
         } catch (Exception e) {
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(recordReplayRetrieveKey, CommonUtils.getCurrentTraceId(), CommonUtils.getCurrentSpanId(),
-                    CommonUtils.getParentSpanId(), e, RetStatus.Exception,
+                config.recorder.record(recordReplayRetrieveKey
+                    , e, RetStatus.Exception,
                     Optional.of(e.getClass().getName()), key);
             }
             LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
@@ -198,8 +197,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
                 "Error while population RecordOrReplay in cache")) , e);
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(recordReplayStoreKey, CommonUtils.getCurrentTraceId(), CommonUtils.getCurrentSpanId(),
-                    CommonUtils.getParentSpanId(), e, RetStatus.Exception,
+                config.recorder.record(recordReplayStoreKey, e, RetStatus.Exception,
                     Optional.of(e.getClass().getName()), collectionKey , rr);
             }
         }
@@ -1272,16 +1270,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
         try {
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(saveFuncKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), fromSolr,
+                config.recorder.record(saveFuncKey, fromSolr,
                     RetStatus.Success, Optional.empty(), doc);
             }
             return toReturn;
         } catch (Throwable e) {
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(saveFuncKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(),
-                    CommonUtils.getParentSpanId(),
+                config.recorder.record(saveFuncKey,
                     e, RetStatus.Exception, Optional.of(e.getClass().getName()), doc);
             }
             throw e;
@@ -1323,16 +1318,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
         try {
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(deleteFuncKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), fromSolr,
+                config.recorder.record(deleteFuncKey, fromSolr,
                     RetStatus.Success, Optional.empty(), query);
             }
             return toReturn;
         } catch (Throwable e) {
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(deleteFuncKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(),
-                    CommonUtils.getParentSpanId(),
+                config.recorder.record(deleteFuncKey,
                     e, RetStatus.Exception, Optional.of(e.getClass().getName()), query);
             }
             throw e;
