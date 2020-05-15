@@ -52,7 +52,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.FnReqResponse;
-import io.cube.agent.Recorder;
 import io.cube.agent.UtilException;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
@@ -252,7 +251,7 @@ public class CubeStore {
                 requestEvent = Utils
                     .createHTTPRequestEvent(path, rid, queryParams, formParams, meta,
                         hdrs, method, rr.body, collection, timestamp, runType, customerId,
-                        app, config, requestComparator);
+                        app, requestComparator);
             } catch (JsonProcessingException | EventBuilder.InvalidEventException e) {
                 throw new CubeStoreException(e, "Invalid Event"
                     , cubeEventMetaInfo);

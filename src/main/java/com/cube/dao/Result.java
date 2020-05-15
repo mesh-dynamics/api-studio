@@ -16,12 +16,14 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import com.cube.services.CubeDSResult;
+
 /**
  * @author prasad
  *
  */
-public class Result<T> {
-			
+public class Result<T> implements CubeDSResult<T> {
+
 	/**
 	 * @param objects
 	 * @param numresults
@@ -48,7 +50,17 @@ public class Result<T> {
 		return objects;
 	}
 
-	/**
+    @Override
+    public long getNumResults() {
+        return numResults;
+    }
+
+    @Override
+    public long getNumFound() {
+        return numFound;
+    }
+
+    /**
 	 *
 	 * @param args - variable number of string arguments for recursive search
 	 * @return

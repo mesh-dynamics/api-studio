@@ -332,7 +332,6 @@ public class Utils {
                                                Optional<String> collection, Instant timestamp,
                                                Optional<Event.RunType> runType, Optional<String> customerId,
                                                Optional<String> app,
-                                               Config config,
                                                Comparator comparator)
 	    throws JsonProcessingException, EventBuilder.InvalidEventException {
 

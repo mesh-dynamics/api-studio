@@ -29,7 +29,6 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 
 	private static final Logger LOGGER = LogManager.getLogger(ReqRespStoreImplBase.class);
 
-
     @Override
     public Optional<Event> getRespEventForReqEvent(Event reqEvent){
         EventQuery.Builder builder = new EventQuery.Builder(reqEvent.customerId, reqEvent.app,
