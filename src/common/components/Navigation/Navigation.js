@@ -227,12 +227,12 @@ class Navigation extends Component{
                                 </div>
                             </div>
                         </div>
-                        <div className="margin-top-10 vertical-middle">
+                        <div className={!cube.hideHttpClient ? "margin-top-10 vertical-middle" : "hidden"}>
                             <Checkbox>
                                 SAVE AS COPY
                             </Checkbox>
                         </div>
-                        <div className="margin-top-20 text-center" >
+                        <div className={!cube.hideHttpClient ? "margin-top-20 text-center" : "hidden"}>
                             <div className="cube-btn width-50 text-center" style={{margin: "0 auto"}}>SAVE</div>
                         </div>
                     </div>

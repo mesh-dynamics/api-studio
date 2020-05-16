@@ -1,0 +1,89 @@
+/* md-hc -> MeshDynamics HttpClient */
+
+.md-hc-tabs-wrapper {
+    background: #DCD1B5;
+    border-radius: 16px 16px 0px 0px;
+    padding-top: 18px;
+    display: flex;
+}
+
+.md-hc-tab {
+    border-width: 0px;
+    border-style: solid;
+    border-color: transparent;
+    border-image: initial;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    cursor: pointer;
+    padding: 16px;
+    margin-left: 8px;
+    height: 48px;
+    flex: 0 0 auto;
+    background-color: #ADADAD;
+}
+
+.md-hc-tab-panel {
+    height: 550px;
+    margin-top: 1px;
+    background: #ECECE7;
+    border: 4px solid #DCD1B5;
+    box-sizing: border-box;
+    border-radius: 0px 0px 16px 16px;
+}
+
+.md-hc-tab.RRT__tab--selected {
+    background-color: #ECECE7;
+}
+
+.md-hc-tab.RRT__tab--selected:focus {
+    background-color: #ECECE7;
+}
+
+.RRT__removable {
+    position: relative;
+}
+
+.RRT__removable-text {
+    margin-right: 10px;
+}
+
+.RRT__tab--selected .RRT__removable-icon {
+    position: absolute;
+    font-size: 18px;
+    right: 0.5em;
+    top: 0.2em;
+    visibility: visible;
+}
+
+.RRT__removable-icon {
+    position: absolute;
+    font-size: 18px;
+    right: 0.5em;
+    top: 0.2em;
+    visibility: hidden;
+}
+  
+.tab-container {
+    position: relative;
+}
+
+.tab-name {
+    margin-right: 10px;
+    padding: 10px;
+}
+
+.tab-cross-icon {
+    font-size: 12px;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-align: center;
+    align-items: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    font-weight: bold;
+}

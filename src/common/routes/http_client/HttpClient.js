@@ -2,11 +2,33 @@ import  React , { Component, Fragment, createContext } from "react";
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 import { FormControl, FormGroup, Glyphicon } from 'react-bootstrap';
+import Tabs from 'react-responsive-tabs';
+// IMPORTANT you need to include the default styles
+import 'react-responsive-tabs/styles.css';
+
 import _ from 'lodash';
 import axios from "axios";
-import "./HttpClient.css"
+// import "./HttpClient.css";
+import "./Tabs.css";
 import {cubeActions} from "../../actions";
 import {cubeConstants} from "../../constants";
+
+const presidents = [{ name: 'George Washington', biography: 'George' }, { name: 'Theodore Roosevelt', biography: 'Theodore' }, { name: 'Theodedsvwdsvwesdvore Roosevelt', biography: 'Thewedvsfefdefdvedfodore' }];
+ 
+function getTabs() {
+    return presidents.map((president, index) => ({
+        title: (
+            <div className="tab-container">
+              <div className="tab-name">{president.name}</div>
+            </div>
+          ),
+        getContent: () => president.biography,
+        /* Optional parameters */
+        key: index,
+        tabClassName: 'md-hc-tab',
+        panelClassName: 'md-hc-tab-panel',
+    }));
+}
 
 class HttpClient extends Component {
 
@@ -51,7 +73,7 @@ class HttpClient extends Component {
                     </FormGroup>
                 </div>
 
-                <div className="tab-wrapper" style={{width: "100%"}}>
+                {/* <div className="tab-wrapper" style={{width: "100%"}}>
                     <div className="tabs">
                         <div className="tab active">
                             <div>
@@ -73,9 +95,11 @@ class HttpClient extends Component {
                     </div>
                 </div>
                 <div class="tab-body-wrapper">
-
+                    
+                </div> */}
+                <div style={{marginTop: "10px"}}>
+                    <Tabs items={getTabs()} tabsWrapperClass={"md-hc-tabs-wrapper"} allowRemove={true} removeActiveOnly={false} showMore={true} />
                 </div>
-                
             </div>
         );
     }
