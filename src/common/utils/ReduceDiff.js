@@ -203,7 +203,7 @@ class ReduceDiff {
                 */
                if(!removedPathObject && !addedPathObject) {
                     console.error("Circuit Breaker!");
-                    return [];
+                    return null;
                }
                 /*
                     Iterate through the entire object and add to the final result. This part is done as a separate method -> _addDiffedJSONSubObjToReducedDiffArray
@@ -229,7 +229,7 @@ class ReduceDiff {
                     A circuit breaker.
                 */
                 console.error("Circuit Breaker!");
-                return [];
+                return null;
             }
         }
         /*

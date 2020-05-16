@@ -521,7 +521,7 @@ class ViewTrace extends Component {
     }
 
     getDiffForMessagePart(replayedPart, recordedPart, serverSideDiff, prefix, service, path) {
-        if (!serverSideDiff || serverSideDiff.length === 0) return null; 
+        if (!serverSideDiff) return null; 
         let actpart = JSON.stringify(replayedPart, undefined, 4);
         let expPart = JSON.stringify(recordedPart, undefined, 4);
         let reducedDiffArrayMsgPart = new ReduceDiff(prefix, actpart, expPart, serverSideDiff);
@@ -694,6 +694,8 @@ class ViewTrace extends Component {
                 if (_.isEqual(expJSON, actJSON)) {
                     let reduceDiff = new ReduceDiff("/body", actJSON, expJSON, diff);
                     reductedDiffArray = reduceDiff.computeDiffArray();
+                    let reduceDiffHdr = new ReduceDiff("/hdrs", actRespHdrJSON, expRespHdrJSON, diff);
+                    reducedDiffArrayRespHdr = reduceDiffHdr.computeDiffArray();
                 }
             }
             let updatedReductedDiffArray = reductedDiffArray && reductedDiffArray.map((eachItem) => {
