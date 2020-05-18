@@ -15,9 +15,8 @@
     border-top-left-radius: 16px;
     border-top-right-radius: 16px;
     cursor: pointer;
-    padding: 16px;
+    padding: 12px;
     margin-left: 8px;
-    height: 48px;
     flex: 0 0 auto;
     background-color: #ADADAD;
 }
@@ -41,25 +40,23 @@
 
 .RRT__removable {
     position: relative;
+    display: flex;
 }
 
 .RRT__removable-text {
     margin-right: 10px;
+    margin: auto 0;
 }
 
 .RRT__tab--selected .RRT__removable-icon {
-    position: absolute;
+    position: relative;
     font-size: 18px;
-    right: 0.5em;
-    top: 0.2em;
     visibility: visible;
 }
 
 .RRT__removable-icon {
-    position: absolute;
+    position: relative;
     font-size: 18px;
-    right: 0.5em;
-    top: 0.2em;
     visibility: hidden;
 }
   
@@ -69,7 +66,6 @@
 
 .tab-name {
     margin-right: 10px;
-    padding: 10px;
 }
 
 .tab-cross-icon {

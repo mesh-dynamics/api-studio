@@ -2,12 +2,13 @@ import  React , { Component, Fragment, createContext } from "react";
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 import { FormControl, FormGroup, Glyphicon } from 'react-bootstrap';
-import Tabs from 'react-responsive-tabs';
-// IMPORTANT you need to include the default styles
-import 'react-responsive-tabs/styles.css';
 
 import _ from 'lodash';
 import axios from "axios";
+
+import Tabs from '../../components/Tabs';
+// IMPORTANT you need to include the default styles
+import '../../components/Tabs/styles.css';
 // import "./HttpClient.css";
 import "./Tabs.css";
 import {cubeActions} from "../../actions";
@@ -22,7 +23,11 @@ function getTabs() {
               <div className="tab-name">{president.name}</div>
             </div>
           ),
-        getContent: () => president.biography,
+        getContent: () => (
+            <div className="tab-container">
+              <div className="tab-name">{president.biography}</div>
+            </div>
+          ),
         /* Optional parameters */
         key: index,
         tabClassName: 'md-hc-tab',

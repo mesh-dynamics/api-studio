@@ -33,7 +33,7 @@
     "react-iframe": "^1.8.0",
     "react-plotly.js": "^2.2.0",
     "react-redux": "^5.0.7",
-    "react-responsive-tabs": "^3.3.0",
+    "react-resize-detector": "^4.2.3",
     "react-router": "^4.3.1",
     "react-router-dom": "^4.3.1",
     "react-scripts": "1.1.5",
