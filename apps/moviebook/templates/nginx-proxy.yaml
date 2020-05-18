@@ -16,11 +16,14 @@
       server_name {{cube_host}};
 
       location / {
+          resolver 8.8.8.8;
+          proxy_ssl_session_reuse off;
           proxy_http_version 1.1;
+          set $backend "https://{{cube_host}}";
           proxy_set_header Authorization "Bearer {{auth_token}}";
           proxy_pass_header Authorization;
           proxy_set_header Host {{cube_host}};
-          proxy_pass https://{{cube_host}};
+          proxy_pass $backend;
         }
       }
 ---

@@ -34,7 +34,7 @@ data:
       @type grep
       <regexp>
         key log
-        pattern /Cube\ Event/
+        pattern /CubeEvent/
       </regexp>
     </filter>
 
@@ -47,7 +47,7 @@ data:
       enable_ruby true
       renew_record true
       <record>
-        cubeEvent ${record["log"]["message"]["Cube Event"]}
+        cubeEvent ${record["log"]["CubeEvent"]}
       </record>
     </filter>
 
@@ -63,8 +63,12 @@ data:
         @type json
       </format>
       <buffer log>
-      @type memory
-      chunk_limit_records 50
-      flush_interval 10s
+        @type file
+        path /var/log/fluentd/{{namespace}}/course/buffer
+        chunk_limit_records 1000000
+        chunk_limit_size 20MB
+        flush_interval 10s
+        retry_max_times 2
+        retry_wait 2s
       </buffer>
     </match>
