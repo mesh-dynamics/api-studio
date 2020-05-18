@@ -44,7 +44,7 @@ public class CubeStoreController {
 
     @PostMapping("/getEvents")
     public ResponseEntity getEvents(HttpServletRequest request, @RequestBody EventQuery postBody) {
-        validation.validateCustomerName(request,postBody.customerId);
+        validation.validateCustomerName(request,postBody.getCustomerId());
         return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 
@@ -82,7 +82,7 @@ public class CubeStoreController {
 
     @PostMapping("/event/setDefaultResponse")
     public ResponseEntity setDefaultRespForEvent(HttpServletRequest request, @RequestBody DefaultEvent postBody) {
-        validation.validateCustomerName(request, postBody.event.customerId);
+        validation.validateCustomerName(request, postBody.getEvent().customerId);
         return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 

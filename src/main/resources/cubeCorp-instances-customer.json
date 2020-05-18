@@ -1,0 +1,64 @@
+{
+  "instanceData": [
+  {
+    "customerName": "CubeCorp",
+    "apps": [
+    {
+      "name": "MovieInfo",
+      "instances": [
+      {
+        "name": "test",
+        "gatewayEndpoint": "http://moviebook-test.prod.meshdynamics.io",
+        "loggingURL": "https://logging.prod.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:moviebook-prod),type:phrase,value:moviebook-prod),query:(match:(kubernetes.namespace_name:(query:moviebook-prod,type:phrase))))),query:(language:kuery,query:''))"
+      },
+      {
+        "name": "record",
+        "gatewayEndpoint": "http://demo.meshdynamics.io",
+        "loggingURL": "https://logging.prod.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:moviebook-record-prod),type:phrase,value:moviebook-record-prod),query:(match:(kubernetes.namespace_name:(query:moviebook-record-prod,type:phrase))))),query:(language:kuery,query:''))"
+      }
+      ]
+    },
+    {
+      "name": "Cube",
+      "instances": [
+      {
+        "name": "PROD",
+        "gatewayEndpoint": "http://staging1.meshdynamics.io",
+        "loggingURL": "https://logging.prod.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:staging1),type:phrase,value:staging1),query:(match:(kubernetes.namespace_name:(query:staging1,type:phrase))))),query:(language:kuery,query:''))"
+      }
+      ]
+    },
+    {
+      "name": "jersey_1_19_demo",
+      "instances": [
+      {
+        "name": "prod",
+        "gatewayEndpoint": "http://jersy119.meshdynamics.io",
+        "loggingURL": "https://logging.prod.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:jersy119),type:phrase,value:jersy119),query:(match:(kubernetes.namespace_name:(query:jersy119,type:phrase))))),query:(language:kuery,query:''))"
+      }
+      ]
+    },
+    {
+      "name": "CourseApp",
+      "instances": [
+      {
+        "name": "prod",
+        "gatewayEndpoint": "http://apachecxf.meshdynamics.io",
+        "loggingURL": "https://logging.prod.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:apachecxf),type:phrase,value:apachecxf),query:(match:(kubernetes.namespace_name:(query:apachecxf,type:phrase))))),query:(language:kuery,query:''))"
+      }
+      ]
+    },
+    {
+      "name": "Jersy2xApp",
+      "instances": [
+      {
+        "name": "prod",
+        "gatewayEndpoint": "http://jersy2x.meshdynamics.io",
+        "loggingURL": "https://logging.prod.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:jersy2x),type:phrase,value:jersy2x),query:(match:(kubernetes.namespace_name:(query:jersy2x,type:phrase))))),query:(language:kuery,query:''))"
+      }
+      ]
+    }
+    ]
+  }
+  ]
+}

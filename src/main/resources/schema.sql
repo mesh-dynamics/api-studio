@@ -47,6 +47,7 @@ CREATE TABLE cube.instance (
   app_id BIGINT REFERENCES cube.app(id) ON DELETE CASCADE,
   gateway_endpoint TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
+  loggingurl TEXT
 );
 
 create TABLE cube.instance_user (
