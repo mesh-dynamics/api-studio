@@ -79,6 +79,8 @@ public class DataFilter extends OncePerRequestFilter {
 						LOGGER.error("URI formation failed,  query params ignored!", e);
 					}
 
+					MultivaluedMap<String, String> formParams = getMultiMap(requestWrapper);
+
 					MDTraceInfo mdTraceInfo = io.md.utils.Utils.getTraceInfo(span);
 
 					String xRequestId = requestWrapper.getHeader(Constants.X_REQUEST_ID);
@@ -87,7 +89,7 @@ public class DataFilter extends OncePerRequestFilter {
 							xRequestId);
 
 					logRequest(requestWrapper, apiPath,
-						traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID), queryParams,
+						traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID), queryParams, formParams,
 						mdTraceInfo);
 					logResponse(responseWrapper, apiPath, traceMetaMap, mdTraceInfo);
 
@@ -113,7 +115,7 @@ public class DataFilter extends OncePerRequestFilter {
 
 
 	private void logRequest(ContentCachingRequestWrapper requestWrapper, String apiPath,
-		String cRequestId, MultivaluedMap<String, String> queryParams, MDTraceInfo mdTraceInfo)
+		String cRequestId, MultivaluedMap<String, String> queryParams, MultivaluedMap<String, String> formParams, MDTraceInfo mdTraceInfo)
 		throws IOException {
 		//hdrs
 		MultivaluedMap<String, String> requestHeaders = Utils.getHeaders(requestWrapper);
@@ -125,7 +127,7 @@ public class DataFilter extends OncePerRequestFilter {
 		//body
 		byte[] requestBody = requestWrapper.getContentAsByteArray();
 
-		Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta,
+		Utils.createAndLogReqEvent(apiPath, queryParams, formParams, requestHeaders, meta,
 			mdTraceInfo, requestBody);
 
 	}
@@ -163,6 +165,18 @@ public class DataFilter extends OncePerRequestFilter {
 				}
 			});
 		return headerMap;
+	}
+
+	private static MultivaluedMap<String, String> getMultiMap(ContentCachingRequestWrapper requestWrapper) {
+		MultivaluedMap<String, String> multivaluedMap = new MultivaluedHashMap<>();
+		requestWrapper.getParameterMap().entrySet().forEach(key -> {
+			String k = key.getKey();
+			String[] values = key.getValue();
+			for (int i=0; i<values.length; i++) {
+				multivaluedMap.add(k, values[i]);
+			}
+		});
+		return multivaluedMap;
 	}
 
 }
