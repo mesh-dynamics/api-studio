@@ -8,12 +8,12 @@
           "instances": [
             {
               "name": "prod",
-              "gatewayEndpoint": "http://demo.prod.cubecorp.io",
+              "gatewayEndpoint": "https://demo.prod.cubecorp.io",
               "loggingURL": "https://logging.prod.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:cube),type:phrase,value:cube),query:(match:(kubernetes.namespace_name:(query:cube,type:phrase))))),query:(language:kuery,query:''))"
             },
             {
               "name": "record",
-              "gatewayEndpoint": "http://demo.prod.cubecorp.io",
+              "gatewayEndpoint": "https://demo.prod.cubecorp.io",
               "loggingURL": "https://logging.prod.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:moviebook-record),type:phrase,value:moviebook-record),query:(match:(kubernetes.namespace_name:(query:moviebook-record,type:phrase))))),query:(language:kuery,query:''))"
             }
           ]
@@ -23,7 +23,7 @@
           "instances": [
             {
               "name": "PROD",
-              "gatewayEndpoint": "http://staging1.prod.cubecorp.io",
+              "gatewayEndpoint": "https://staging1.prod.cubecorp.io",
               "loggingURL": "https://logging.prod.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:staging1),type:phrase,value:staging1),query:(match:(kubernetes.namespace_name:(query:staging1,type:phrase))))),query:(language:kuery,query:''))"
             }
           ]
@@ -33,7 +33,7 @@
           "instances": [
             {
               "name": "prod",
-              "gatewayEndpoint": "http://jersy119.prod.cubecorp.io",
+              "gatewayEndpoint": "https://jersy119.prod.cubecorp.io",
               "loggingURL": "https://logging.prod.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:jersy119),type:phrase,value:jersy119),query:(match:(kubernetes.namespace_name:(query:jersy119,type:phrase))))),query:(language:kuery,query:''))"
             }
           ]
@@ -43,7 +43,7 @@
           "instances": [
             {
               "name": "prod",
-              "gatewayEndpoint": "http://apachecxf.prod.cuebcorp.io",
+              "gatewayEndpoint": "https://apachecxf.prod.cuebcorp.io",
               "loggingURL": "https://logging.prod.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:apachecxf),type:phrase,value:apachecxf),query:(match:(kubernetes.namespace_name:(query:apachecxf,type:phrase))))),query:(language:kuery,query:''))"
             }
           ]
@@ -53,7 +53,7 @@
           "instances": [
             {
               "name": "prod",
-              "gatewayEndpoint": "http://jersy2x.prod.cubecorp.io",
+              "gatewayEndpoint": "https://jersy2x.prod.cubecorp.io",
               "loggingURL": "https://logging.prod.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:jersy2x),type:phrase,value:jersy2x),query:(match:(kubernetes.namespace_name:(query:jersy2x,type:phrase))))),query:(language:kuery,query:''))"
             }
           ]
