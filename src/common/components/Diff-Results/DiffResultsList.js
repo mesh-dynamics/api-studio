@@ -315,7 +315,7 @@ export default class DiffResultsList extends Component {
                                 showAll={!this.state.showFragments}
                                 filterPaths={item.filterPaths}
                                 searchFilterPath={this.state.searchFilterPath}
-                                enableClientSideDiff={this.state.enableClientSideDiff}
+                                enableClientSideDiff={true}
                             />
                         </div>
                     </div>
@@ -335,7 +335,7 @@ export default class DiffResultsList extends Component {
                                 showAll={!this.state.showFragments}
                                 filterPaths={item.filterPaths}
                                 searchFilterPath={this.state.searchFilterPath}
-                                enableClientSideDiff={this.state.enableClientSideDiff}
+                                enableClientSideDiff={true}
                             />
                         </div>
                     </div>
@@ -355,7 +355,7 @@ export default class DiffResultsList extends Component {
                                 showAll={!this.state.showFragments}
                                 filterPaths={item.filterPaths}
                                 searchFilterPath={this.state.searchFilterPath}
-                                enableClientSideDiff={this.state.enableClientSideDiff}
+                                enableClientSideDiff={true}
                             />
                         </div>
                     </div>
@@ -375,7 +375,7 @@ export default class DiffResultsList extends Component {
                                 showAll={!this.state.showFragments}
                                 filterPaths={item.filterPaths}
                                 searchFilterPath={this.state.searchFilterPath}
-                                enableClientSideDiff={this.state.enableClientSideDiff}
+                                enableClientSideDiff={true}
                             />
                         </div>
                     </div>
