@@ -1,10 +1,15 @@
 package com.cubeui.readJson;
 
+import com.cubeui.readJson.dataModel.instances.AppData;
+import com.cubeui.readJson.dataModel.instances.AppInstanceData;
+import com.cubeui.readJson.dataModel.instances.InstanceData;
+import com.cubeui.readJson.dataModel.instances.Instances;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +17,7 @@ import java.util.Map;
 import com.cubeui.backend.web.exception.DuplicateRecordException;
 import com.cubeui.readJson.dataModel.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Optional;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.*;
 import org.springframework.http.*;
@@ -43,20 +49,27 @@ public class ReadJson {
     public static void main(String[] args)  throws  Exception {
         String url;
         String path;
+        String instancePath;
 
-        if (args.length != 2 ) {
+        if (args.length != 3 ) {
             System.out.println("Enter the domain url");
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
             url = reader.readLine();
 
-            System.out.println("Enter the json file path");
+            System.out.println("Enter the customer json file path");
             reader = new BufferedReader(new InputStreamReader(System.in));
 
             path = reader.readLine();
+
+            System.out.println("Enter the Instance json file path");
+            reader = new BufferedReader(new InputStreamReader(System.in));
+
+            instancePath = reader.readLine();
         } else {
             url = args[0];
             path = args[1];
+            instancePath = args[2];
         }
         ReadJson readJson= new ReadJson();
         try {
@@ -67,6 +80,7 @@ public class ReadJson {
 
             ObjectMapper  mapper = new ObjectMapper();
             JsonData data = mapper.readValue(new File(path), JsonData.class);
+            AppInstanceData appInstanceData = mapper.readValue(new File(instancePath), AppInstanceData.class);
 
             for(Customers customer: data.getCustomers()){
                 String body =  readJson.createCustomer(customer);
@@ -83,7 +97,9 @@ public class ReadJson {
                     int appId = Integer.parseInt(readJson.getDataField(response,"id").toString());
                     appIds.add(appId);
                     List<Integer> instanceIds = new ArrayList<>();
-                    for(Instances instance: app.getInstances()) {
+                    List<Instances> instances = readJson.getInstances(appInstanceData.getInstanceData(),
+                                    customer.getName(), app.getName());
+                    for(Instances instance: instances) {
                         body = readJson.createInstance(instance,appId);
                         response = readJson.fetchResponse(url+"/api/instance", HttpMethod.POST, token,body);
                         int instanceId =  Integer.parseInt(readJson.getDataField(response,"id").toString());
@@ -289,5 +305,19 @@ public class ReadJson {
         json.put("instanceId", instanceId);
         json.put("userId", userId);
         return  json.toString();
+    }
+
+    private List<Instances> getInstances(List<InstanceData> instanceDataList, String customerName, String appName) {
+        Optional<InstanceData> instanceData = instanceDataList.stream()
+                            .filter(i -> i.getCustomerName().equals(customerName))
+                            .findFirst();
+        if( instanceData.isPresent()) {
+            List<AppData> apps = instanceData.get().getApps();
+            Optional<AppData> app = apps.stream().filter(a -> a.getName().equals(appName)).findFirst();
+            if (app.isPresent()) {
+                return app.get().getInstances();
+            }
+        }
+        return Collections.emptyList();
     }
 }

@@ -1,0 +1,70 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cube-dev?schema=qui
+    username: cube
+    password: cubeio
+    cachePrepStmts: true
+    prepStmtCacheSize: 250
+    prepStmtCacheSqlLimit: 2048
+    useServerPrepStmts: true
+
+  jpa:
+    openInView: false
+    show_sql: false
+    generate-ddl: true
+    hibernate:
+      ddl-auto: create
+      dialect: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      # fixes Caused by: java.sql.SQLFeatureNotSupportedException: Method org.postgresql.jdbc.PgConnection.createClob() is not yet implemented.
+      hibernate.jdbc.lob.non_contextual_creation: true
+
+  mail:
+    host: smtp.office365.com
+    port: 587
+    username: email.sender@meshdynamics.io
+    password: Welcome@md123
+    properties:
+      mail.smtp:
+        auth: true
+        connectiontimeout: 30000
+        timeout: 30000
+        writetimeout: 5000
+        starttls.enable: true
+        # Change timeout if authentication/read exception is being thrown
+
+    frontend:
+      baseUrl: http://localhost:3006
+      loginEndpoint: /login
+      resetEndpoint: /login/reset-password
+      activationEndpoint: /activate
+
+security:
+  jwt:
+    token:
+      secret-key: "dev-secret"
+      expire-length: 604800
+logging:
+  level:
+    org.springframework.web: INFO
+    org.springframework.security: DEBUG
+    com.cubeui.backend: DEBUG
+  file: app.log
+
+cube:
+  server:
+    baseUrl:
+      replay: http://cubews-replay:8080
+      mock: http://cubews-mock:8080
+      record: http://cubews-record:8080
+
+external:
+  recaptcha:
+    base-url: https://www.google.com/recaptcha/api/siteverify
+    secret-key: 6Lf4x84UAAAAAHyQg5v10y8iCsx52xUdWKXXKIr-
+
+services:
+  user:
+    jwt:
+      secret-key: "dev-secret"
+      expiry-seconds: 172800

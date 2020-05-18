@@ -1,4 +1,4 @@
-package com.cubeui.readJson.dataModel;
+package com.cubeui.readJson.dataModel.instances;
 
 import lombok.Getter;
 import lombok.Setter;

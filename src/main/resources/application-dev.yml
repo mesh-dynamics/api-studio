@@ -1,8 +1,8 @@
 spring:
     datasource:
-        url: jdbc:postgresql://localhost:5432/cube-dev?schema=qui
-        username: cube
-        password: cubeio
+        url: jdbc:postgresql://cubeuibackend.cxg1ykcvrpg9.us-east-2.rds.amazonaws.com:5432/cubedevdb?schema=qui
+        username: cubedev
+        password: 52K4!2om^U3a
         cachePrepStmts: true
         prepStmtCacheSize: 250
         prepStmtCacheSqlLimit: 2048
@@ -13,7 +13,7 @@ spring:
         show_sql: false
         generate-ddl: true
         hibernate:
-            ddl-auto: create
+            ddl-auto: none
             dialect: org.hibernate.dialect.PostgreSQLDialect
         properties:
             # fixes Caused by: java.sql.SQLFeatureNotSupportedException: Method org.postgresql.jdbc.PgConnection.createClob() is not yet implemented.
