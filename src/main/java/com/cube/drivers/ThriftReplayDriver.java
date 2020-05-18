@@ -18,7 +18,7 @@ import org.apache.thrift.transport.TTransport;
 import io.md.dao.Event;
 
 import com.cube.core.Utils;
-import com.cube.dao.Replay;
+import io.md.dao.Replay;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
