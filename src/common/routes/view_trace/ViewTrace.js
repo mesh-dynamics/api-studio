@@ -1125,7 +1125,12 @@ class ViewTrace extends Component {
                                             disableWordDiff={false}
                                             diffArray={selectedDiffItem.reductedDiffArrayReqHeaders}
                                             onLineNumberClick={(lineId, e) => { return; }}
+                                            filterPaths={filterPaths}
+                                            inputElementRef={this.inputElementRef}
+                                            showAll={this.state.showAll}
+                                            searchFilterPath={this.state.searchFilterPath}
                                             disableOperationSet={true}
+                                            enableClientSideDiff={true}
                                         />
                                     </div>
                                 </div>
@@ -1142,7 +1147,12 @@ class ViewTrace extends Component {
                                             disableWordDiff={false}
                                             diffArray={selectedDiffItem.reductedDiffArrayReqQParams}
                                             onLineNumberClick={(lineId, e) => { return; }}
+                                            filterPaths={filterPaths}
+                                            inputElementRef={this.inputElementRef}
+                                            showAll={this.state.showAll}
+                                            searchFilterPath={this.state.searchFilterPath}
                                             disableOperationSet={true}
+                                            enableClientSideDiff={true}
                                         />
                                     </div>
                                 </div>
@@ -1159,7 +1169,12 @@ class ViewTrace extends Component {
                                             disableWordDiff={false}
                                             diffArray={selectedDiffItem.reductedDiffArrayReqFParams}
                                             onLineNumberClick={(lineId, e) => { return; }}
+                                            filterPaths={filterPaths}
+                                            inputElementRef={this.inputElementRef}
+                                            showAll={this.state.showAll}
+                                            searchFilterPath={this.state.searchFilterPath}
                                             disableOperationSet={true}
+                                            enableClientSideDiff={true}
                                         />
                                     </div>
                                 </div>
@@ -1176,7 +1191,12 @@ class ViewTrace extends Component {
                                             disableWordDiff={false}
                                             diffArray={selectedDiffItem.reductedDiffArrayReqBody}
                                             onLineNumberClick={(lineId, e) => { return; }}
+                                            filterPaths={filterPaths}
+                                            inputElementRef={this.inputElementRef}
+                                            showAll={this.state.showAll}
+                                            searchFilterPath={this.state.searchFilterPath}
                                             disableOperationSet={true}
+                                            enableClientSideDiff={true}
                                         />
                                     </div>
                                 </div>
@@ -1198,6 +1218,7 @@ class ViewTrace extends Component {
                                             showAll={this.state.showAll}
                                             searchFilterPath={this.state.searchFilterPath}
                                             disableOperationSet={true}
+                                            enableClientSideDiff={this.state.enableClientSideDiff}
                                         />
                                     </div>
                                 </div>
