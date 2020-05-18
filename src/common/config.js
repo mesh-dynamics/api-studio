@@ -10,6 +10,9 @@ const config = {
     diffCollapseLengthIncrement: process.env.REACT_APP_DIFF_COLLAPSE_LENGTH_INCREMENT || 10,
     diffCollapseStartIndex: process.env.REACT_APP_DIFF_COLLAPSE_START_INDEX || 3,
     timelineresRefreshIntervel: process.env.REACT_APP_TIMELINERES_REFRESH_INTERVAL || 15000,
+    diffMaxLinesLength: process.env.REACT_APP_DIFF_MAX_LENGTH || 1000,
+    diffMaxLinesLengthIncrement: process.env.REACT_APP_DIFF_MAX_LENGTH_INCREMENT || 100,
+    enableClientSideDiff: process.env.REACT_APP_ENABLE_CLIENT_SIDE_DIFF || false
 };
 
 export default config;

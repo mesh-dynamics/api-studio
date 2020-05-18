@@ -13,6 +13,7 @@ var Resolutions = require("../../components/Resolutions.js").default;
 var OperationSet = require("../../components/Golden/OperationSet.js").default;
 var OperationSetLabel = require("../../components/Golden/OperationSetLabel.js").default;
 var CollapsedChunkHandler = require("../../components/CollapsedChunkHandler.js").default;
+var MaxChunkHandler = require("../../components/MaxChunkHandler.js").default;
 
 var onLineNumberClickProxy = function (onLineNumberClick, id) {
     return function (e) { return onLineNumberClick(id, e); };
@@ -72,9 +73,12 @@ exports.DefaultLine = function (_a) {
     hasChildren = _a.hasChildren,
     collapseChunk = _a.collapseChunk,
     drawChunk = _a.drawChunk,
+    showMaxChunk = _a.showMaxChunk,
+    showMaxChunkToggle = _a.showMaxChunkToggle,
     hasDiff = _a.hasDiff,
     showDiff = _a.showDiff,
     handleCollapseLength = _a.handleCollapseLength,
+    handleMaxLinesLength = _a.handleMaxLinesLength,
     eventType = _a.eventType;
     // author raj.maddireddy@cubecorp.io
     var _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n;
@@ -100,7 +104,7 @@ exports.DefaultLine = function (_a) {
 
     // prefix match filter paths
     let showPath = jsonPath ? filterPaths.some(path => (jsonPath.indexOf(path) > -1)) : showPath;
-
+    
     return !jsonPath || (showAll || showPath) && (jsonPath.indexOf(searchFilterPath) > -1) ? 
     <React.Fragment>
         {showPath && !showAll && (
@@ -122,7 +126,7 @@ exports.DefaultLine = function (_a) {
                 <td className={classnames_1.default(styles.defaultTdClass, (_h = {}, _h[styles.diffAdded] = added, _h[styles.hightlightedLine] = hightlightRightLine, _h))}/>
             </tr>
         )}
-        {drawChunk && (
+        {!showMaxChunk && !showMaxChunkToggle && drawChunk && (
             <tr className={styles.line} ref={(el) => {
                 if (el) {
                     el.style.setProperty('background-color', "#f1f8ff", 'important');
@@ -185,9 +189,87 @@ exports.DefaultLine = function (_a) {
                 </td>
             </tr>
         )}
-        
+        {showMaxChunk === true && (
+            <tr className={styles.line} ref={(el) => {
+                if (el) {
+                    el.style.setProperty('background-color', "#f1f8ff", 'important');
+                }
+            }}>
+                <td className={classnames_1(styles.gutter, styles.leftGutter, {[styles.diffRemoved]: removed, [styles.hightlightedGutter]: hightlightLeftLine})} style={{textAlign: "center", verticalAlign: "middle", paddingBottom: 0}} ref={(el) => {
+                    if (el) {
+                        el.style.setProperty('background-color', "#dbedff", 'important');
+                    }
+                }}>
+                    <pre style={{backgroundColor:"transparent"}}>
+                        <MaxChunkHandler added={added} removed={removed} jsonPath={jsonPath} serverSideDiff={serverSideDiff} app={app} templateVersion={templateVersion} service={service} apiPath={apiPath} replayId={replayId} recordingId={recordingId} handleMaxLinesLength={handleMaxLinesLength} recordReqId={recordReqId} replayReqId={replayReqId}></MaxChunkHandler>
+                    </pre>
+                </td>
+                <td className={classnames_1.default(styles.gutter, styles.leftGutter, (_k = {}, _k[styles.diffRemoved] = removed, _k[styles.hightlightedGutter] = hightlightLeftLine, _k))} ref={(el) => {
+                    if (el) {
+                        el.style.setProperty('background-color', "#dbedff", 'important');
+                    }
+                }}>
+                </td>
+                <td className={classnames_1.default(styles.marker, (_l = {}, _l[styles.diffRemoved] = removed, _l[styles.hightlightedLine] = hightlightLeftLine, _l))} ref={(el) => {
+                    if (el) {
+                        el.style.setProperty('background-color', "#f1f8ff", 'important');
+                    }
+                }}/>
+                <td className={classnames_1.default(styles.marker, (_d = {}, _d[styles.diffRemoved] = removed, _d[styles.hightlightedLine] = hightlightLeftLine, _d))} ref={(el) => {
+                    if (el) {
+                        el.style.setProperty('background-color', "#f1f8ff", 'important');
+                    }
+                }}>
+                </td>
+                <td className={classnames_1.default(styles.defaultTdClass, (_e = {}, _e[styles.diffRemoved] = removed, _e[styles.hightlightedLine] = hightlightLeftLine, _e))} ref={(el) => {
+                    if (el) {
+                        el.style.setProperty('background-color', "#f1f8ff", 'important');
+                    }
+                }}>
+                    <pre style={{backgroundColor:"transparent"}}>@@ Max. Lines @@</pre>
+                </td>
+                <td className={classnames_1.default(styles.gutter, styles.rightGutter, (_j = {}, _j[styles.hightlightedGutter] = hightlightRightLine, _j))} ref={(el) => {
+                    if (el) {
+                        el.style.setProperty('background-color', "#dbedff", 'important');
+                    }
+                }}>
+                    
+                </td>
+                <td className={classnames_1.default(styles.gutter, styles.rightGutter, (_f = {}, _f[styles.diffAdded] = added, _f[styles.hightlightedGutter] = hightlightRightLine, _f))} ref={(el) => {
+                    if (el) {
+                        el.style.setProperty('background-color', "#dbedff", 'important');
+                    }
+                }}>
+                    <pre style={{backgroundColor:"transparent"}}>
+                        <MaxChunkHandler added={added} removed={removed} jsonPath={jsonPath} serverSideDiff={serverSideDiff} app={app} templateVersion={templateVersion} service={service} apiPath={apiPath} replayId={replayId} recordingId={recordingId} handleMaxLinesLength={handleMaxLinesLength} recordReqId={recordReqId} replayReqId={replayReqId}></MaxChunkHandler>
+                    </pre>
+                </td>
+                <td className={classnames_1.default(styles.gutter, styles.rightGutter, (_m = {}, _m[styles.diffAdded] = added, _m[styles.hightlightedGutter] = hightlightRightLine, _m))} ref={(el) => {
+                    if (el) {
+                        el.style.setProperty('background-color', "#dbedff", 'important');
+                    }
+                }}/>
+                <td className={classnames_1.default(styles.marker, (_n = {}, _n[styles.diffAdded] = added, _n[styles.hightlightedLine] = hightlightRightLine, _n))} ref={(el) => {
+                    if (el) {
+                        el.style.setProperty('background-color', "#f1f8ff", 'important');
+                    }
+                }}/>
+                <td className={classnames_1.default(styles.marker, (_g = {}, _g[styles.diffAdded] = added, _g[styles.hightlightedLine] = hightlightRightLine, _g))} ref={(el) => {
+                    if (el) {
+                        el.style.setProperty('background-color', "#f1f8ff", 'important');
+                    }
+                }}/>
+                <td className={classnames_1.default(styles.defaultTdClass, (_h = {}, _h[styles.diffAdded] = added, _h[styles.hightlightedLine] = hightlightRightLine, _h))} ref={(el) => {
+                    if (el) {
+                        el.style.setProperty('background-color', "#f1f8ff", 'important');
+                    }
+                }}>
+                    <pre style={{backgroundColor:"transparent"}}>@@ Max. Lines @@</pre>
+                </td>
+            </tr>
+        )}
         {/* {(hasDiff || showDiff) && ( */}
-        {!collapseChunk && (
+        {!showMaxChunk && !showMaxChunkToggle && !collapseChunk && (
         
             <tr className={styles.line} onMouseOver = {() => showRefElement(actionsWrapperElementRef)} onMouseOut = {() => hideRefElement(actionsWrapperElementRef)} >
                 {!hideLineNumbers && (

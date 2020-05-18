@@ -121,12 +121,15 @@ class ViewTrace extends Component {
             traceId: null,
             showTrace: true,
             showLogs: false,
-            collapseLength: 2,
-            collapseLengthIncrement: 10,
+            collapseLength: parseInt(config.diffCollapseLength),
+            collapseLengthIncrement: parseInt(config.diffCollapseLengthIncrement),
+            maxLinesLength: parseInt(config.diffMaxLinesLength),
+            maxLinesLengthIncrement: parseInt(config.diffMaxLinesLengthIncrement),
             incrementCollapseLengthForRecReqId: null,
             incrementCollapseLengthForRepReqId: null,
             incrementStartJsonPath: null,
-            testMockServices: []
+            testMockServices: [],
+            enableClientSideDiff: config.enableClientSideDiff === "true" ? true : false
         }
 
         this.inputElementRef = React.createRef();
@@ -262,9 +265,21 @@ class ViewTrace extends Component {
         });
     }
 
-    increaseCollapseLength(e, jsonPath, recordReqId, replayReqId) {
-        const { collapseLength, collapseLengthIncrement } = this.state;
-        this.setState({ collapseLength: (collapseLength + collapseLengthIncrement), incrementCollapseLengthForRecReqId: recordReqId, incrementCollapseLengthForRepReqId: replayReqId, incrementStartJsonPath: jsonPath});
+    increaseCollapseLength(e, jsonPath, recordReqId, replayReqId, typeOfChunkHandler) {
+        const { collapseLength, collapseLengthIncrement, maxLinesLength, maxLinesLengthIncrement } = this.state;
+        let newCollapseLength = collapseLength, newMaxLinesLength = maxLinesLength;
+        if(typeOfChunkHandler === "collapseChunkLength") {
+            newCollapseLength = collapseLength + collapseLengthIncrement;
+        } else {
+            newMaxLinesLength = maxLinesLength + maxLinesLengthIncrement;
+        }
+        this.setState({
+            collapseLength: newCollapseLength, 
+            maxLinesLength: newMaxLinesLength,
+            incrementCollapseLengthForRecReqId: recordReqId,
+            incrementCollapseLengthForRepReqId: replayReqId,
+            incrementStartJsonPath: jsonPath
+        });
     }
 
     toggleBetweenTraceAndLogs(e) {
@@ -525,10 +540,10 @@ class ViewTrace extends Component {
         return updatedReductedDiffArrayMsgPart;
     }
 
-    addCompressToggleData(diffData, collapseLength) {
+    addCompressToggleData(diffData, collapseLength, maxLinesLength) {
         let indx  = 0, atleastADiff = false;
         if(!diffData) return diffData;
-        for (let i = 0; i < diffData.length; i++) {
+        for (let i = config.diffCollapseStartIndex; i < diffData.length; i++) {
             let diffDataChunk = diffData[i];
             if(diffDataChunk.serverSideDiff !== null || (diffDataChunk.added || diffDataChunk.removed)) {
                 let j = i - 1, chunkTopLength = 0;
@@ -556,17 +571,40 @@ class ViewTrace extends Component {
                 if(m >= diffData.length) break;
             }
         }
-        let toggleDrawChunk  = false;
+        let toggleDrawChunk  = false, arbitratryCount = 0;
+        let jsonPath, previousChunk, showMaxChunkToggle = false, arrayCount = 0, activatedCount;
         for (let eachChunk of diffData) {
+            eachChunk["showMaxChunk"] = false;
+            eachChunk["showMaxChunkToggle"] = false;
+            if(arbitratryCount >= maxLinesLength && !showMaxChunkToggle) {
+                eachChunk["showMaxChunk"] = true;
+                showMaxChunkToggle = true;
+                activatedCount = arrayCount;
+            }
+            if(showMaxChunkToggle) {
+                eachChunk["showMaxChunkToggle"] = true;
+            }
+            if(jsonPath === eachChunk.jsonPath && showMaxChunkToggle && activatedCount === arrayCount) {
+                previousChunk["showMaxChunk"] = true;
+            }
             if(eachChunk.collapseChunk === true && toggleDrawChunk === false) {
                 toggleDrawChunk = true;
                 eachChunk["drawChunk"] = true;
+                arbitratryCount++;
             } else if(eachChunk.collapseChunk === true && toggleDrawChunk === true) {
                 eachChunk["drawChunk"] = false;
             } else if(eachChunk.collapseChunk === false) {
                 toggleDrawChunk = false;
                 eachChunk["drawChunk"] = false;
+                if(jsonPath !== eachChunk.jsonPath) {
+                    arbitratryCount++;
+                }
+            } else if (!eachChunk.collapseChunk) {
+                arbitratryCount++;
             }
+            jsonPath = eachChunk.jsonPath;
+            previousChunk = eachChunk;
+            arrayCount++;
         }
         return diffData;
     }
@@ -672,7 +710,7 @@ class ViewTrace extends Component {
                 }
             });
 
-            let updatedReductedDiffArrayWithCollapsible = this.addCompressToggleData(updatedReductedDiffArray, this.state.collapseLength);
+            let updatedReductedDiffArrayWithCollapsible = this.addCompressToggleData(updatedReductedDiffArray, this.state.collapseLength, this.state.maxLinesLength);
 
             let updatedReducedDiffArrayRespHdr = reducedDiffArrayRespHdr && reducedDiffArrayRespHdr.map((eachItem) => {
                 return {
@@ -745,7 +783,7 @@ class ViewTrace extends Component {
                 reductedDiffArrayReqQParams,
                 reductedDiffArrayReqFParams,
                 reductedDiffArrayReqBody,
-                loggingURL: loggingURL ? loggingURL.replace("$STARTTIME", "'" + moment(item.replayReqTime).toISOString() + "'").replace("$ENDTIME", "'" + moment(Math.ceil(item.replayRespTime / (1.5 * 60 * 1000)) * (1.5 * 60 * 1000)).toISOString() + "'") : ""
+                loggingURL: loggingURL ? loggingURL.replace("$STARTTIME", "'" + moment(item.replayReqTime).toISOString() + "'").replace("$ENDTIME", "'" + moment(Math.ceil(item.replayRespTime / (2 * 60 * 1000)) * (1.5 * 60 * 1000)).toISOString() + "'") : ""
             }
         });
         return diffLayoutData;
@@ -767,7 +805,7 @@ class ViewTrace extends Component {
     };
 
     render() {
-        let { recProcessedTraceDataFlattenTree, repProcessedTraceDataFlattenTree, app, service, apiPath, selectedDiffItem, selectedResolutionType, showTrace, showLogs, collapseLength, incrementCollapseLengthForRecReqId, incrementCollapseLengthForRepReqId } = this.state;
+        let { recProcessedTraceDataFlattenTree, repProcessedTraceDataFlattenTree, app, service, apiPath, selectedDiffItem, selectedResolutionType, showTrace, showLogs, collapseLength, incrementCollapseLengthForRecReqId, incrementCollapseLengthForRepReqId, maxLinesLength } = this.state;
         let resolutionTypesForMenu = [];
         const filterFunction = (item, index, itself) => {
             item.count = itself.reduce((counter, currentItem, currentIndex) => {
@@ -786,7 +824,7 @@ class ViewTrace extends Component {
         let recProcessedTraceDataFlattenTreeResCount = recProcessedTraceDataFlattenTree.map(eachItem => {
             let resolutionTypes = [];
             if (incrementCollapseLengthForRepReqId && eachItem.replayReqId === incrementCollapseLengthForRepReqId) {
-                this.addCompressToggleData(eachItem.reductedDiffArray, collapseLength);
+                this.addCompressToggleData(eachItem.reductedDiffArray, collapseLength, maxLinesLength);
             }
             for (let eachJsonPathParsedDiff of eachItem.parsedDiff) {
                 resolutionTypes.push({value: eachJsonPathParsedDiff.resolution, count: 0});
@@ -800,7 +838,7 @@ class ViewTrace extends Component {
         let repProcessedTraceDataFlattenTreeResCount = repProcessedTraceDataFlattenTree.map(eachItem => {
             let resolutionTypes = [];
             if (incrementCollapseLengthForRepReqId && eachItem.replayReqId === incrementCollapseLengthForRepReqId) {
-                this.addCompressToggleData(eachItem.reductedDiffArray, collapseLength);
+                this.addCompressToggleData(eachItem.reductedDiffArray, collapseLength, maxLinesLength);
             }
             for (let eachJsonPathParsedDiff of eachItem.parsedDiff) {
                 resolutionTypes.push({value: eachJsonPathParsedDiff.resolution, count: 0});
@@ -1199,6 +1237,8 @@ class ViewTrace extends Component {
                                                 searchFilterPath={this.state.searchFilterPath}
                                                 disableOperationSet={true}
                                                 handleCollapseLength={this.increaseCollapseLength}
+                                                handleMaxLinesLength={this.increaseCollapseLength}
+                                                enableClientSideDiff={this.state.enableClientSideDiff}
                                             />
                                         </div>
                                     )}

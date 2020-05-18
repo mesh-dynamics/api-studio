@@ -286,12 +286,18 @@ class DiffResults extends Component {
     // fetch the analysis results
     // todo: move to service file 
     async fetchAnalysisResults(replayId, filter) {
-        console.log("fetching replay list")
+        console.log("fetching replay list");
+        let user = JSON.parse(localStorage.getItem('user'));
+        const app = this.state.app;
+        let numResultsToFetch = config.defaultFetchDiffResults;
+        if(app === "CourseApp" || user.customer_name === "Walmart") {
+            numResultsToFetch = 1;
+        }
         let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
         
         let searchParams = new URLSearchParams();
         searchParams.set("start", filter.startIndex);
-        searchParams.set("numResults", config.defaultFetchDiffResults); // 
+        searchParams.set("numResults", numResultsToFetch);
         searchParams.set("includeDiff", true);
 
         if (filter.selectedService !== "All") {
@@ -321,7 +327,6 @@ class DiffResults extends Component {
         }
         
         let url = analysisResUrl + "?" + searchParams.toString();
-        let user = JSON.parse(localStorage.getItem('user'));
         try {
         
             let response = await fetch(url, { 
@@ -351,7 +356,7 @@ class DiffResults extends Component {
 
     preProcessResults = (results) => {
         const {app, replayId, recordingId, templateVersion} = this.state;
-        let diffLayoutData = validateAndCreateDiffLayoutData(results, app, replayId, recordingId, templateVersion, config.diffCollapseLength);
+        let diffLayoutData = validateAndCreateDiffLayoutData(results, app, replayId, recordingId, templateVersion, config.diffCollapseLength, config.diffMaxLinesLength);
         this.updateResolutionFilterPaths(diffLayoutData);
         return diffLayoutData;
     }

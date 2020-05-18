@@ -30,7 +30,8 @@ class TestResults extends Component {
             noFilter: true,
             clearTimeline: true,
             showPopUp: false,
-            deleteReplayId:""
+            deleteReplayId:"",
+            showTimelineDeleteIcon: false,
         };
         this.setPathResultsParams = this.setPathResultsParams.bind(this);
     }
@@ -162,12 +163,17 @@ class TestResults extends Component {
         });
     }
 
+    showTimelineDeleteIcon = () => this.setState({ showTimelineDeleteIcon: true });
+
+    hideTimelineDeleteIcon = () => this.setState({ showTimelineDeleteIcon: false });
+
     showDeleteReplayConfirmPopup(deleteReplayId) {
         this.setState({
             showPopUp: true,
             deleteReplayId: deleteReplayId
         });
     }
+
     closeDeleteReplayConfirmPopup() {
         this.setState({
             showPopUp: false,
@@ -192,9 +198,13 @@ class TestResults extends Component {
 
     renderTimeLineHeader = (header) => {
         const { date, replayId, recordingId, goldenName, userName, goldenLabel, testConfigName } = header;
+        const { showTimelineDeleteIcon } = this.state;
 
         return (
-            <div>
+            <div
+                onMouseEnter={this.showTimelineDeleteIcon} 
+                onMouseLeave={this.hideTimelineDeleteIcon}
+            >
                 <Tippy 
                     arrow={true} 
                     interactive={true} 
@@ -229,8 +239,12 @@ class TestResults extends Component {
                     }
                 >
                     <div className="timeline-replay-header">
-                        <div>
-                            <i className="timeline-replay-icon fas fa-times" onClick={() => this.showDeleteReplayConfirmPopup(replayId)}></i>
+                        <div className="timeline-delete-icon-container">
+                            {
+                                showTimelineDeleteIcon
+                                &&
+                                <i className="timeline-delete-icon fas fa-times" onClick={() => this.showDeleteReplayConfirmPopup(replayId)}></i>
+                            }
                         </div>
                         <div className="timeline-header-text underline">
                                 {moment(date).format('lll')}
