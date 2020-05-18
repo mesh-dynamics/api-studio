@@ -80,11 +80,11 @@ class DiffResults extends Component {
             .map(_.partial(_.split, _, '=', 2))
             .fromPairs()
             .value();
-        
         const app = urlParameters["app"];
         const selectedAPI = urlParameters["selectedAPI"] || "All"; //"%2A";
         const replayId = urlParameters["replayId"];
         const recordingId = urlParameters["recordingId"];
+        const recordingName = urlParameters["recordingName"];
         const currentTemplateVer = urlParameters["currentTemplateVer"];
         const selectedService = urlParameters["selectedService"] || "All";
         const selectedReqMatchType = urlParameters["selectedReqMatchType"] || "match";
@@ -158,6 +158,7 @@ class DiffResults extends Component {
             },
             replayId: replayId,
             recordingId: recordingId,
+            recordingName: recordingName,
             currentTemplateVer: currentTemplateVer,
             app: app,
             searchFilterPath: searchFilterPath,
@@ -172,6 +173,7 @@ class DiffResults extends Component {
                 service: selectedService,
                 replayId: replayId,
                 recordingId: recordingId,
+                recordingName: recordingName,
                 currentTemplateVer: currentTemplateVer,
                 timeStamp: timeStamp
             }));
@@ -449,7 +451,7 @@ class DiffResults extends Component {
 
     showSaveGoldenModal = () => {
         this.setState({
-            nameG: (this.state.recordingId),
+            nameG: (this.state.recordingName),
             labelG: Date.now().toString(),
             branch: "",
             version: "",
