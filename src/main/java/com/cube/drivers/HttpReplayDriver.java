@@ -6,6 +6,8 @@
 
 package com.cube.drivers;
 
+import com.cube.core.RRTransformerOperations;
+import io.md.dao.Replay;
 import java.io.IOException;
 import java.net.Authenticator;
 import java.net.URI;
@@ -30,7 +32,6 @@ import io.md.dao.Event;
 import io.md.dao.HTTPRequestPayload;
 
 import com.cube.core.Utils;
-import com.cube.dao.Replay;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
@@ -101,7 +102,7 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 			HTTPRequestPayload httpRequest =  (HTTPRequestPayload) reqEvent.payload;
 
 			// transform fields in the request before the replay.
-			replay.xfmer.ifPresent(x -> x.transformRequest(httpRequest));
+			replay.xfmer.ifPresent(x -> RRTransformerOperations.transformRequest(httpRequest, x));
 
 			UriBuilder uribuilder = UriBuilder.fromUri(replay.endpoint)
 				.path(reqEvent.apiPath);

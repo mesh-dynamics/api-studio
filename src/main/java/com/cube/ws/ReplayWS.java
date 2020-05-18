@@ -3,7 +3,9 @@
  */
 package com.cube.ws;
 
-import com.cube.dao.Replay.ReplaySaveFailureException;
+import com.cube.dao.ReplayUpdate;
+import com.cube.dao.ReplayUpdate.ReplaySaveFailureException;
+import io.md.constants.ReplayStatus;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,8 +41,7 @@ import com.cube.cache.ReplayResultCache;
 import com.cube.core.Utils;
 import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.Recording;
-import com.cube.dao.Replay;
-import com.cube.dao.Replay.ReplayStatus;
+import io.md.dao.Replay;
 import com.cube.dao.ReplayBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.drivers.AbstractReplayDriver;
@@ -213,7 +214,7 @@ public class ReplayWS {
                 .entity(String.format("cannot find recording for golden  name %s", goldenName)).build();
         }
 
-        return  startReplay(formParams, recordingOpt);
+        return  startReplay(formParams, recordingOpt.get());
     }
 
     @POST
@@ -231,10 +232,10 @@ public class ReplayWS {
                 .entity(String.format("cannot find recording for id %s", recordingId)).build();
         }
 
-        return  startReplay(formParams, recordingOpt);
+        return  startReplay(formParams, recordingOpt.get());
     }
 
-    private Response startReplay( MultivaluedMap<String, String> formParams, Optional<Recording> recordingOpt) {
+    private Response startReplay( MultivaluedMap<String, String> formParams, Recording recording) {
         // TODO: move all these constant strings to a file so we can easily change them.
         boolean async = Utils.strToBool(formParams.getFirst("async")).orElse(false);
         boolean excludePaths = Utils.strToBool(formParams.getFirst("excludePaths")).orElse(false);
@@ -257,6 +258,7 @@ public class ReplayWS {
         boolean analyze = Utils.strToBool(formParams.getFirst("analyze")).orElse(true);
         Optional<String> testConfigName = Optional.ofNullable(formParams.getFirst("testConfigName"));
 
+        Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst("dynamicInjectionConfigVersion"));
 
         // Request transformations - for injecting tokens and such
         Optional<String> xfms = Optional.ofNullable(formParams.getFirst("transforms"));
@@ -273,7 +275,6 @@ public class ReplayWS {
                 .build();
         }
 
-        Recording recording = recordingOpt.get();
         // check if recording or replay is ongoing for (customer, app, instanceid)
         Optional<Response> errResp = WSUtils
             .checkActiveCollection(rrstore, Optional.ofNullable(recording.customerId),
@@ -302,6 +303,7 @@ public class ReplayWS {
             service.ifPresent(replayBuilder::withServiceToReplay);
             testConfigName.ifPresent(replayBuilder::withTestConfigName);
             xfms.ifPresent(replayBuilder::withXfms);
+            dynamicInjectionConfigVersion.ifPresent(replayBuilder::withDynamicInjectionConfigVersion);
             try {
                 recording.generatedClassJarPath
                     .ifPresent(UtilException.rethrowConsumer(replayBuilder::withGeneratedClassJar));
@@ -352,7 +354,7 @@ public class ReplayWS {
         Optional<Replay> replay = rrstore.getReplay(replayId);
         Response response = replay.map(rep -> {
             try {
-                Replay deletedReplay = rep.softDeleteReplay(rrstore);
+                Replay deletedReplay = ReplayUpdate.softDeleteReplay(rrstore, rep);
                 String json;
                 LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Soft deleting replay", "replayId", replayId)));
                 json = jsonMapper.writeValueAsString(deletedReplay);

@@ -3,6 +3,7 @@ package com.cube.ws;
 import static com.cube.core.Utils.buildErrorResponse;
 import static io.md.dao.FnReqRespPayload.RetStatus.Success;
 
+import io.md.dao.EventQuery.Builder;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URLClassLoader;
@@ -56,8 +57,7 @@ import com.cube.cache.ReplayResultCache;
 import com.cube.cache.TemplateKey;
 import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Utils;
-import com.cube.dao.EventQuery;
-import com.cube.dao.EventQuery.Builder;
+import io.md.dao.EventQuery;
 import com.cube.dao.ReqRespMatchResult;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStore.RecordOrReplay;

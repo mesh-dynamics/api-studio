@@ -1,5 +1,9 @@
 package com.cube.dao;
 
+import io.md.constants.ReplayStatus;
+import io.md.dao.RRTransformer;
+import io.md.dao.Replay;
+
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
@@ -18,15 +22,14 @@ import org.json.JSONObject;
 import io.cube.agent.UtilException;
 import io.md.core.ReplayTypeEnum;
 
-import com.cube.core.RRTransformer;
-import com.cube.dao.Replay.ReplayStatus;
 import com.cube.utils.Constants;
 
 public class ReplayBuilder {
-    private static final Logger LOGGER = LogManager.getLogger(ReplayBuilder.class);
+
+	private static final Logger LOGGER = LogManager.getLogger(ReplayBuilder.class);
 
 
-    private String replayEndpoint;
+	private String replayEndpoint;
 	private String customerId;
 	private String app;
 	private String instanceId;
@@ -53,16 +56,16 @@ public class ReplayBuilder {
 	int reqSent;
 	int reqFailed;
 	private Instant updateTimestamp;
-    public Optional<String> xfms;
-    public Optional<RRTransformer> xfmer;
-    public List<String> mockServices;
-  public Optional<String> testConfigName;
-  public Optional<String> goldenName;
-  public Optional<String> recordingId;
-  public boolean archived;
+	public Optional<String> xfms;
+	public Optional<RRTransformer> xfmer;
+	public List<String> mockServices;
+	public Optional<String> testConfigName;
+	public Optional<String> goldenName;
+	public Optional<String> recordingId;
+	public boolean archived;
+	public Optional<String> dynamicInjectionConfigVersion;
 
-
-    public ReplayBuilder (String endpoint, CubeMetaInfo metaInfo,
+	public ReplayBuilder(String endpoint, CubeMetaInfo metaInfo,
 		String collection, String userId) {
 		this.replayEndpoint = endpoint;
 		this.customerId = metaInfo.customerId;
@@ -74,7 +77,7 @@ public class ReplayBuilder {
 		this.pathsToReplay = Collections.EMPTY_LIST;
 		this.excludePaths = false;
 		this.reqIdsToReplay = Collections.EMPTY_LIST;
-		this.replayId = Replay.getReplayIdFromCollection(collection);
+		this.replayId = ReplayUpdate.getReplayIdFromCollection(collection);
 		this.replayStatus = ReplayStatus.Init;
 		async = false;
 		sampleRate = Optional.empty();
@@ -82,7 +85,9 @@ public class ReplayBuilder {
 		this.serviceToReplay = Optional.empty();
 		// Default replay type as HTTP
 		this.replayType = ReplayTypeEnum.HTTP;
-		reqCnt = 0;  reqFailed = 0 ; reqSent = 0;
+		reqCnt = 0;
+		reqFailed = 0;
+		reqSent = 0;
 		this.updateTimestamp = Instant.now();
 		this.xfms = Optional.empty();
 		this.xfmer = Optional.empty();
@@ -91,6 +96,7 @@ public class ReplayBuilder {
 		this.goldenName = Optional.empty();
 		this.recordingId = Optional.empty();
 		this.archived = false;
+		this.dynamicInjectionConfigVersion = Optional.empty();
 	}
 
 	private void populateClassLoader() throws Exception {
@@ -106,9 +112,11 @@ public class ReplayBuilder {
 	public Replay build() {
 		return new Replay(replayEndpoint, customerId, app, instanceId, collection, userId,
 			reqIdsToReplay, replayId, async, templateSetVersion, replayStatus, pathsToReplay,
-            excludePaths, reqCnt , reqSent , reqFailed, updateTimestamp, sampleRate, intermediateServices,
-			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, xfmer, mockServices
-	            , testConfigName, goldenName, recordingId, archived);
+			excludePaths, reqCnt, reqSent, reqFailed, updateTimestamp, sampleRate,
+			intermediateServices,
+			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, xfmer,
+			mockServices
+			, testConfigName, goldenName, recordingId, archived, dynamicInjectionConfigVersion);
 	}
 
 	public ReplayBuilder withPaths(List<String> paths) {
@@ -116,13 +124,13 @@ public class ReplayBuilder {
 		return this;
 	}
 
-    public ReplayBuilder withExcludePaths(Boolean excludePaths) {
-        this.excludePaths = excludePaths;
-        return this;
-    }
+	public ReplayBuilder withExcludePaths(Boolean excludePaths) {
+		this.excludePaths = excludePaths;
+		return this;
+	}
 
 
-    public ReplayBuilder withReqIds(List<String> reqIds) {
+	public ReplayBuilder withReqIds(List<String> reqIds) {
 		this.reqIdsToReplay = reqIds;
 		return this;
 	}
@@ -153,7 +161,7 @@ public class ReplayBuilder {
 	}
 
 	public ReplayBuilder withIntermediateServices(List<String> services) {
-		this.intermediateServices  = services;
+		this.intermediateServices = services;
 		return this;
 	}
 
@@ -185,48 +193,53 @@ public class ReplayBuilder {
 		return this;
 	}
 
-    /**
-     *
-     * @param xfms - the json string form of the transformation - multivalued map of {key : [{src, tgt}+]} in a
-     *             string representation
-     * @return
-     */
-    public ReplayBuilder withXfms(String xfms) {
-        try {
-            JSONObject obj = new JSONObject(xfms);
-            this.xfms = Optional.of(xfms);
-            this.xfmer = Optional.of(new RRTransformer(obj));
-        } catch (Exception e) {
-            LOGGER.error(new
-                ObjectMessage(Map.of(Constants.MESSAGE, "Unable to convert transformer string to Json Object",
-                Constants.DATA, xfms)));
-        }
-        return this;
-    }
-
-    public ReplayBuilder withMockServices(List<String> mockServices) {
-        this.mockServices = mockServices;
-        return this;
-    }
-
-    public ReplayBuilder withTestConfigName(String testConfigName) {
-    	this.testConfigName = Optional.of(testConfigName);
-    	return this;
+	/**
+	 * @param xfms - the json string form of the transformation - multivalued map of {key : [{src,
+	 *             tgt}+]} in a string representation
+	 * @return
+	 */
+	public ReplayBuilder withXfms(String xfms) {
+		try {
+			JSONObject obj = new JSONObject(xfms);
+			this.xfms = Optional.of(xfms);
+			this.xfmer = Optional.of(new RRTransformer(obj));
+		} catch (Exception e) {
+			LOGGER.error(new
+				ObjectMessage(
+				Map.of(Constants.MESSAGE, "Unable to convert transformer string to Json Object",
+					Constants.DATA, xfms)));
 		}
+		return this;
+	}
 
-		public ReplayBuilder withGoldenName(String goldenName) {
-    	this.goldenName = Optional.of(goldenName);
-    	return this;
-		}
+	public ReplayBuilder withMockServices(List<String> mockServices) {
+		this.mockServices = mockServices;
+		return this;
+	}
 
-		public ReplayBuilder withRecordingId(String recordingId) {
-    	this.recordingId = Optional.of(recordingId);
-    	return this;
-		}
+	public ReplayBuilder withTestConfigName(String testConfigName) {
+		this.testConfigName = Optional.of(testConfigName);
+		return this;
+	}
 
-		public ReplayBuilder withArchived(boolean archived) {
-    	this.archived = archived;
-    	return this;
-		}
+	public ReplayBuilder withGoldenName(String goldenName) {
+		this.goldenName = Optional.of(goldenName);
+		return this;
+	}
+
+	public ReplayBuilder withRecordingId(String recordingId) {
+		this.recordingId = Optional.of(recordingId);
+		return this;
+	}
+
+	public ReplayBuilder withArchived(boolean archived) {
+		this.archived = archived;
+		return this;
+	}
+
+	public ReplayBuilder withDynamicInjectionConfigVersion(String injectionConfigVersion) {
+		this.dynamicInjectionConfigVersion = Optional.of(injectionConfigVersion);
+		return this;
+	}
 
 }

@@ -3,6 +3,10 @@
  */
 package com.cube.dao;
 
+import io.md.constants.ReplayStatus;
+import io.md.dao.EventQuery;
+import io.md.dao.RecordingOperationSetSP;
+import io.md.dao.Replay;
 import java.io.IOException;
 import java.net.URLClassLoader;
 import java.time.Instant;
@@ -31,10 +35,11 @@ import io.md.dao.Event.RunType;
 import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
 import com.cube.cache.TemplateKey;
 import com.cube.dao.Recording.RecordingStatus;
-import com.cube.dao.Replay.ReplayStatus;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
+import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
+import com.cube.injection.DynamicInjectionConfig;
 import com.cube.utils.Constants;
 
 /**
@@ -107,7 +112,8 @@ public interface ReqRespStore {
         RecordingOperationSet,
         MatchResultAggregate,
 		Diff,
-		AttributeTemplate
+		AttributeTemplate,
+		DynamicInjectionConfig
     }
 
     boolean save(Event event);
@@ -308,8 +314,14 @@ public interface ReqRespStore {
      */
     boolean saveMatchResultAggregate(MatchResultAggregate resultAggregate);
 
+	/**
+	 * @param dynamicInjectionConfig
+	 * @return
+	 */
+    String saveDynamicInjectionConfig(DynamicInjectionConfig dynamicInjectionConfig) throws SolrStoreException;
 
-    /**
+
+	/**
      * @param replayId
      * @param service
      * @return If service is empty, return aggregate results for all services. If
@@ -438,7 +450,16 @@ public interface ReqRespStore {
 	 */
 	boolean commit();
 
-	class RecordOrReplay {
+	/**
+	 *
+	 * @param cubeMetaInfo
+	 * @param version
+	 * @return
+	 */
+	Optional<DynamicInjectionConfig> getDynamicInjectionConfig(CubeMetaInfo cubeMetaInfo, String version);
+
+
+		class RecordOrReplay {
 
         @JsonIgnore
 		public Optional<String> getCollection() {

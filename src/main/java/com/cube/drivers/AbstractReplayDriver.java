@@ -1,6 +1,9 @@
 package com.cube.drivers;
 
-import com.cube.dao.Replay.ReplayStatus;
+import com.cube.dao.CubeMetaInfo;
+import com.cube.dao.ReplayUpdate;
+import io.md.constants.ReplayStatus;
+import io.md.dao.Replay;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,8 +28,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.md.dao.Event;
 
 import com.cube.core.Utils;
-import com.cube.dao.Replay;
 import com.cube.dao.ReqRespStore;
+import com.cube.injection.DynamicInjectionConfig;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
@@ -37,6 +40,7 @@ public abstract class AbstractReplayDriver {
 	public final ReqRespStore rrstore;
 	protected final Config config;
 	protected ObjectMapper jsonMapper;
+	Optional<DynamicInjectionConfig> dynamicInjectionConfig;
 
 
 	static int UPDBATCHSIZE = 10; // replay metadata will be updated after each such batch
@@ -49,13 +53,18 @@ public abstract class AbstractReplayDriver {
 		this.rrstore = config.rrstore;
 		this.jsonMapper = config.jsonMapper;
 		this.config = config;
+		replay.dynamicInjectionConfigVersion.map(DIConfVersion -> {
+			return rrstore.getDynamicInjectionConfig(
+				new CubeMetaInfo(replay.customerId, replay.app, replay.instanceId), DIConfVersion);
+		}).orElse(Optional.empty());
+
 	}
 
 	public abstract IReplayClient initClient(Replay replay) throws Exception;
 
 	public boolean start(boolean analyze) {
 
-		if (replay.status != Replay.ReplayStatus.Init) {
+		if (replay.status != ReplayStatus.Init) {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 				"Replay already running or completed", Constants.REPLAY_ID_FIELD
 				, replay.replayId)));
@@ -106,10 +115,10 @@ public abstract class AbstractReplayDriver {
 
 		//List<Request> requests = getRequests();
 
-		if (replay.status != Replay.ReplayStatus.Init) {
+		if (replay.status != ReplayStatus.Init) {
 			return;
 		}
-		replay.status = Replay.ReplayStatus.Running;
+		replay.status = ReplayStatus.Running;
 		if (!rrstore.saveReplay(replay)) {
 			return;
 		}
@@ -125,8 +134,8 @@ public abstract class AbstractReplayDriver {
 
 		// TODO: add support for matrix params
 
-		Pair<Stream<List<Event>>, Long> batchedResult = replay
-			.getRequestBatchesUsingEvents(BATCHSIZE, rrstore);
+		Pair<Stream<List<Event>>, Long> batchedResult = ReplayUpdate
+			.getRequestBatchesUsingEvents(BATCHSIZE, rrstore, replay);
 		replay.reqcnt = batchedResult.getRight().intValue();
 		// NOTE: converting long to int, should be ok, since we
 		// never replay so many requests
@@ -175,7 +184,7 @@ public abstract class AbstractReplayDriver {
 			"totalRequests", replay.reqcnt, "errorRequests", replay.reqfailed)));
 
 		replay.status =
-			(replay.reqfailed == 0) ? Replay.ReplayStatus.Completed : Replay.ReplayStatus.Error;
+			(replay.reqfailed == 0) ? ReplayStatus.Completed : ReplayStatus.Error;
 
 		rrstore.saveReplay(replay);
 		if (analyze) {
