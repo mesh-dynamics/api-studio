@@ -521,7 +521,7 @@ class ViewTrace extends Component {
     }
 
     getDiffForMessagePart(replayedPart, recordedPart, serverSideDiff, prefix, service, path) {
-        if (!serverSideDiff || serverSideDiff.length === 0) return null; 
+        if (!serverSideDiff) return null; 
         let actpart = JSON.stringify(replayedPart, undefined, 4);
         let expPart = JSON.stringify(recordedPart, undefined, 4);
         let reducedDiffArrayMsgPart = new ReduceDiff(prefix, actpart, expPart, serverSideDiff);
@@ -694,6 +694,8 @@ class ViewTrace extends Component {
                 if (_.isEqual(expJSON, actJSON)) {
                     let reduceDiff = new ReduceDiff("/body", actJSON, expJSON, diff);
                     reductedDiffArray = reduceDiff.computeDiffArray();
+                    let reduceDiffHdr = new ReduceDiff("/hdrs", actRespHdrJSON, expRespHdrJSON, diff);
+                    reducedDiffArrayRespHdr = reduceDiffHdr.computeDiffArray();
                 }
             }
             let updatedReductedDiffArray = reductedDiffArray && reductedDiffArray.map((eachItem) => {
@@ -1123,7 +1125,12 @@ class ViewTrace extends Component {
                                             disableWordDiff={false}
                                             diffArray={selectedDiffItem.reductedDiffArrayReqHeaders}
                                             onLineNumberClick={(lineId, e) => { return; }}
+                                            filterPaths={filterPaths}
+                                            inputElementRef={this.inputElementRef}
+                                            showAll={this.state.showAll}
+                                            searchFilterPath={this.state.searchFilterPath}
                                             disableOperationSet={true}
+                                            enableClientSideDiff={true}
                                         />
                                     </div>
                                 </div>
@@ -1140,7 +1147,12 @@ class ViewTrace extends Component {
                                             disableWordDiff={false}
                                             diffArray={selectedDiffItem.reductedDiffArrayReqQParams}
                                             onLineNumberClick={(lineId, e) => { return; }}
+                                            filterPaths={filterPaths}
+                                            inputElementRef={this.inputElementRef}
+                                            showAll={this.state.showAll}
+                                            searchFilterPath={this.state.searchFilterPath}
                                             disableOperationSet={true}
+                                            enableClientSideDiff={true}
                                         />
                                     </div>
                                 </div>
@@ -1157,7 +1169,12 @@ class ViewTrace extends Component {
                                             disableWordDiff={false}
                                             diffArray={selectedDiffItem.reductedDiffArrayReqFParams}
                                             onLineNumberClick={(lineId, e) => { return; }}
+                                            filterPaths={filterPaths}
+                                            inputElementRef={this.inputElementRef}
+                                            showAll={this.state.showAll}
+                                            searchFilterPath={this.state.searchFilterPath}
                                             disableOperationSet={true}
+                                            enableClientSideDiff={true}
                                         />
                                     </div>
                                 </div>
@@ -1174,7 +1191,12 @@ class ViewTrace extends Component {
                                             disableWordDiff={false}
                                             diffArray={selectedDiffItem.reductedDiffArrayReqBody}
                                             onLineNumberClick={(lineId, e) => { return; }}
+                                            filterPaths={filterPaths}
+                                            inputElementRef={this.inputElementRef}
+                                            showAll={this.state.showAll}
+                                            searchFilterPath={this.state.searchFilterPath}
                                             disableOperationSet={true}
+                                            enableClientSideDiff={true}
                                         />
                                     </div>
                                 </div>
@@ -1196,6 +1218,7 @@ class ViewTrace extends Component {
                                             showAll={this.state.showAll}
                                             searchFilterPath={this.state.searchFilterPath}
                                             disableOperationSet={true}
+                                            enableClientSideDiff={this.state.enableClientSideDiff}
                                         />
                                     </div>
                                 </div>
