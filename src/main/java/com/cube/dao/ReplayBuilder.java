@@ -116,7 +116,7 @@ public class ReplayBuilder {
 			intermediateServices,
 			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, xfmer,
 			mockServices
-			, testConfigName, goldenName, recordingId, archived, dynamicInjectionConfigVersion);
+			, testConfigName, goldenName, recordingId, archived, dynamicInjectionConfigVersion, Instant.now());
 	}
 
 	public ReplayBuilder withPaths(List<String> paths) {
