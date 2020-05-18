@@ -44,6 +44,8 @@ public class FnReqRespPayloadSerializer extends JsonSerializer<FnReqRespPayload>
 				serializeClob(fnReqRespPayload, jsonGenerator);
 			} else if (fnReqRespPayload.retOrExceptionVal instanceof SerialBlob) {
 				serializeBlob(fnReqRespPayload, jsonGenerator);
+			} else if (fnReqRespPayload.retOrExceptionVal instanceof String) {
+				jsonGenerator.writeString("\"" + fnReqRespPayload.retOrExceptionVal + "\"");
 			} else {
 				jsonGenerator.writeRawValue(gson.toJson(fnReqRespPayload.retOrExceptionVal));
 			}

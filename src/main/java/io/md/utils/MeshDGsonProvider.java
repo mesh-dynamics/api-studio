@@ -1,5 +1,8 @@
 package io.md.utils;
 
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.slf4j.Logger;
@@ -8,9 +11,19 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import io.md.gsonadapters.DateTypeAdapter;
+import io.md.gsonadapters.TimeTypeAdapter;
+import io.md.gsonadapters.TimestampTypeAdapter;
+
 public class MeshDGsonProvider {
 
-	private static Gson singleInstance = (new GsonBuilder()).create();
+	private static Gson singleInstance = (new GsonBuilder())
+		.registerTypeAdapter(
+			Timestamp.class, new TimestampTypeAdapter())
+		.registerTypeAdapter(Time.class, new TimeTypeAdapter())
+		.registerTypeAdapter(Date.class, new DateTypeAdapter())
+		.create();
+
 
 	static Logger LOGGER = LoggerFactory.getLogger(MeshDGsonProvider.class);
 

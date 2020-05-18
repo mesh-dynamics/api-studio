@@ -8,20 +8,17 @@ package io.md.dao;
 
 import java.net.URLClassLoader;
 import java.time.Instant;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Collections;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import io.md.constants.Constants;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.core.ReplayTypeEnum;
@@ -362,9 +359,6 @@ public class Event {
 		}
 
 		public Event createEvent() throws io.md.dao.Event.EventBuilder.InvalidEventException {
-			if (!timestamp.isPresent()) {
-				LOGGER.info("Timestamp empty, using current instant");
-			}
 			Event event = new Event(customerId, app, service, instanceId, collection, traceId
 				, spanId, parentSpanId, runType, timestamp.orElse(Instant.now()), reqId, apiPath,
 				eventType , payload, payloadKey);
