@@ -28,7 +28,7 @@ import io.md.utils.Utils;
  * Date: 2019-10-01
  */
 @JsonDeserialize(using = HttpResponsePayloadDeserializer.class)
-public class HTTPResponsePayload extends LazyParseAbstractPayload {
+public class HTTPResponsePayload extends LazyParseAbstractPayload implements ResponsePayload {
 
 	@JsonDeserialize(as=MultivaluedHashMap.class)
 	public MultivaluedMap<String, String> hdrs;
@@ -91,6 +91,7 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload {
 	@Override
 	public String rawPayloadAsString()
 		throws RawPayloadProcessingException {
+		parseIfRequired();
 		return this.rawPayloadAsString(false);
 	}
 

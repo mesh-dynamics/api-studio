@@ -27,7 +27,7 @@ import io.md.utils.Utils;
  * Date: 2019-10-01
  */
 @JsonDeserialize(using = HttpRequestPayloadDeserializer.class)
-public class HTTPRequestPayload extends LazyParseAbstractPayload {
+public class HTTPRequestPayload extends LazyParseAbstractPayload implements RequestPayload {
 
 	@JsonDeserialize(as=MultivaluedHashMap.class)
 	public MultivaluedMap<String, String> hdrs;
