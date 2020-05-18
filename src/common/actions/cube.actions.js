@@ -45,6 +45,7 @@ export const cubeActions = {
     clearTimeline,
     getAnalysisStatus,
     removeReplayFromTimeline,
+    clearSelectedGolden,
 };
 
 function clear() {
@@ -401,4 +402,8 @@ function getJiraBugs(replayId, apiPath) {
 
 function removeReplayFromTimeline(replayId) {
     return {type: cubeConstants.REMOVE_REPLAY_FROM_TIMELINE, data: replayId};
+}
+
+function clearSelectedGolden () {
+    return {type: cubeConstants.CLEAR_SELECTED_GOLDEN};
 }

@@ -23,6 +23,7 @@ export const cubeService = {
     getTestConfig,
     fetchFacetData,
     removeReplay,
+    deleteGolden,
 };
 
 async function fetchAppsList() {
@@ -313,7 +314,7 @@ async function getTestIds (options) {
 async function fetchCollectionList(app) {
     let user = JSON.parse(localStorage.getItem('user'));
     let response, json;
-    let url = `${config.recordBaseUrl}/searchRecording?customerId=${user.customer_name}&app=${app}`;
+    let url = `${config.recordBaseUrl}/searchRecording?customerId=${user.customer_name}&app=${app}&archived=false`;
     let collections = [];
     try {
         response = await fetch(url, {
@@ -600,6 +601,31 @@ async function removeReplay(replayId) {
 
     } catch (error) {
         console.log("Error deleting Replay", error);
+        throw error;
+    }
+    return data;
+}
+
+async function deleteGolden(recordingId) {
+    let user = JSON.parse(localStorage.getItem('user'));
+    let response,data;
+    let url = `${config.recordBaseUrl}/softDelete/${recordingId}`;
+    try {
+        response = await fetch(url, {
+            method: "post",
+            headers: new Headers({
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + user['access_token']
+            }),
+        });
+        if (response.ok) {
+            data = await response.json();
+        } else {
+            throw new Error("Could not delete the Golden");
+        }
+
+    } catch (error) {
+        console.log("Error deleting Golden", error);
         throw error;
     }
     return data;

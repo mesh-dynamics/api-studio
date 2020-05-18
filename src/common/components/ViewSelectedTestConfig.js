@@ -11,6 +11,7 @@ import {GoldenMeta} from "./Golden-Visibility";
 import {goldenActions} from '../actions/golden.actions'
 import {validateGoldenName} from "../utils/lib/golden-utils";
 import classNames from "classnames"
+import { cubeService } from '../services';
 // import { history } from "../helpers";
 // import { Glyphicon } from 'react-bootstrap';
 
@@ -25,6 +26,7 @@ class ViewSelectedTestConfig extends React.Component {
             replayId: null,
             show: false,
             showCT: false,
+            showDeleteGoldenConfirmation:false,
             showAddCustomHeader: false,
             showGoldenMeta: false,
             showGoldenFilter: false,
@@ -535,6 +537,32 @@ class ViewSelectedTestConfig extends React.Component {
         }
     };
 
+    showDeleteGoldenConfirm = () => {
+        this.setState({
+            showDeleteGoldenConfirmation: true,
+        });
+        this.handleChangeForTestIds({target: {value: this.state.selectedGoldenFromFilter}});
+    }
+
+    closeDeleteGoldenConfirm = () => {
+        this.setState({
+            showDeleteGoldenConfirmation: false,
+        });
+    }
+
+    deleteGolden = async ()  => {
+        const { cube, dispatch} = this.props;
+        try {
+            await cubeService.deleteGolden(cube.selectedGolden);
+            dispatch(cubeActions.getTestIds(cube.selectedApp));
+            dispatch(cubeActions.clearSelectedGolden());
+        } catch (error) {
+            console.error("Error caught in softDelete Golden: " + error);
+        }
+        this.setState({
+            showDeleteGoldenConfirmation: false,
+        });
+    }
     
     renderInstances(cube) {
         if (!cube.instances) {
@@ -772,7 +800,7 @@ class ViewSelectedTestConfig extends React.Component {
             recName, stopDisabled, recStatus, showAddCustomHeader,
             goldenNameErrorMessage, fcEnabled, resumeModalVisible,
             dbWarningModalVisible, instanceWarningModalVisible, 
-            goldenSelectWarningModalVisible
+            goldenSelectWarningModalVisible, showDeleteGoldenConfirmation
         } = this.state;
 
         const replayDone = (cube.replayStatus === "Completed" || cube.replayStatus === "Error");
@@ -961,6 +989,7 @@ class ViewSelectedTestConfig extends React.Component {
                     </Modal.Body>
                     <Modal.Footer>
                         <span onClick={this.selectHighlighted} className={selectedGoldenFromFilter ? "cube-btn" : "disabled cube-btn"}>Select</span>&nbsp;&nbsp;
+                        <span onClick={this.showDeleteGoldenConfirm} className={selectedGoldenFromFilter ? "cube-btn" : "disabled cube-btn"}>Delete</span>&nbsp;&nbsp;
                         <span onClick={this.hideGoldenFilter} className="cube-btn">Cancel</span>
                     </Modal.Footer>
                 </Modal>
@@ -999,6 +1028,19 @@ class ViewSelectedTestConfig extends React.Component {
                         <span onClick={this.closeAddCustomHeaderModal} className="cube-btn">Add</span>
                         <span onClick={this.cancelAddCustomHeaderModal} className="cube-btn margin-left-15">Cancel</span>
                     </Modal.Footer>
+                </Modal>
+                <Modal show={showDeleteGoldenConfirmation}>
+                    <Modal.Body>
+                        <div style={{ display: "flex", flex: 1, justifyContent: "center"}}>
+                            <div className="margin-right-10" style={{ display: "flex", flexDirection: "column", fontSize:20 }}>
+                                This will delete the Golden. Please confirm.
+                            </div>
+                            <div style={{ display: "flex", alignItems: "flex-start" }}>
+                                    <span className="cube-btn margin-right-10" onClick={() => this.deleteGolden()}>Confirm</span>
+                                    <span className="cube-btn" onClick={() => this.closeDeleteGoldenConfirm()}>No</span>
+                            </div>
+                        </div>
+                    </Modal.Body>
                 </Modal>
             </div>
         );
