@@ -318,6 +318,7 @@ public class Analyzer {
         EventQuery.Builder builder = new EventQuery.Builder(reqEvent.customerId, reqEvent.app, reqEvent.eventType);
 
         return builder.withPath(reqEvent.apiPath)
+            .withService(reqEvent.service)
             .withCollection(replayId)
             .withRunType(Event.RunType.Replay)
             .withTraceId(reqEvent.getTraceId())
