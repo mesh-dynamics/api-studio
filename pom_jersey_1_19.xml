@@ -1,8 +1,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>io.cube.interceptor</groupId>
+    <groupId>io.cube</groupId>
     <artifactId>jersey_1_19</artifactId>
-    <version>0.0.1</version>
+    <version>1.2.0</version>
     <packaging>jar</packaging>
 
     <repositories>
@@ -15,15 +15,15 @@
 
     	<dependencies>
         	<dependency>
-							<groupId>com.cube.interceptor</groupId>
-							<artifactId>md-jersey-1x-ingress-interceptor</artifactId>
-							<version>0.0.1</version>
+          	<groupId>io.cube</groupId>
+        		<artifactId>jersey-1x-egress-interceptor</artifactId>
+        		<version>1.2.0</version>
         	</dependency>
-					<dependency>
-							<groupId>com.cube.interceptor</groupId>
-							<artifactId>md-jersey-1x-egress-interceptor</artifactId>
-							<version>0.0.1</version>
-					</dependency>
+          <dependency>
+            <groupId>io.cube</groupId>
+            <artifactId>jersey-1x-ingress-interceptor</artifactId>
+            <version>1.2.0</version>
+          </dependency>
       </dependencies>
     	<build>
   		<plugins>
@@ -31,16 +31,84 @@
   				<artifactId>maven-compiler-plugin</artifactId>
   				<version>3.8.0</version>
   				<configuration>
-  					<source>11</source>
-  					<target>11</target>
+  					<source>8</source>
+  					<target>8</target>
   				</configuration>
   			</plugin>
   			<!--  needed for unit and integration testing  -->
   			<plugin>
   				<groupId>org.apache.maven.plugins</groupId>
   				<artifactId>maven-shade-plugin</artifactId>
-  				<version>3.2.2</version>
-  				<executions>
+				<version>3.2.2</version>
+				<configuration>
+				  <relocations>
+				    <relocation>
+				      <pattern>com.fasterxml.jackson</pattern>
+				      <shadedPattern>io.md.fasterxml.jackson</shadedPattern>
+				    </relocation>
+				    <relocation>
+				      <pattern>com.google</pattern>
+				      <shadedPattern>io.md.google.code.gson</shadedPattern>
+				    </relocation>
+				    <relocation>
+				      <pattern>net.dongliu</pattern>
+				      <shadedPattern>io.md.dongliu</shadedPattern>
+				    </relocation>
+				    <relocation>
+				      <pattern>org.slf4j</pattern>
+				      <shadedPattern>io.md.slf4j</shadedPattern>
+				    </relocation>
+                                    <relocation>
+                                      <pattern>javax.annotation</pattern>
+                                      <shadedPattern>io.md.javax.annotation</shadedPattern>
+                                    </relocation>
+				    <relocation>
+				      <pattern>io.jaegertracing</pattern>
+				      <shadedPattern>io.md.jaegertracing</shadedPattern>
+				    </relocation>
+				    <relocation>
+				      <pattern>okhttp3</pattern>
+				      <shadedPattern>io.md.okhttp3</shadedPattern>
+				    </relocation>
+				    <relocation>
+				      <pattern>okio</pattern>
+				      <shadedPattern>io.md.okio</shadedPattern>
+				    </relocation>
+				    <relocation>
+				      <pattern>kotlin</pattern>
+				      <shadedPattern>io.md.kotlin</shadedPattern>
+				    </relocation>
+				    <relocation>
+				      <pattern>org.apache</pattern>
+				      <shadedPattern>io.md.apache</shadedPattern>
+				    </relocation>
+				    <relocation>
+				      <pattern>org.jetbrains</pattern>
+				      <shadedPattern>io.md.jetbrains</shadedPattern>
+				    </relocation>
+				    <relocation>
+				      <pattern>org.intellij</pattern>
+				      <shadedPattern>io.md.intellij</shadedPattern>
+				    </relocation>
+				    <relocation>
+				      <pattern>com.flipkart</pattern>
+				      <shadedPattern>io.md.flipkart</shadedPattern>
+				    </relocation>
+				    <relocation>
+				      <pattern>com.lmax</pattern>
+				      <shadedPattern>io.md.lmax</shadedPattern>
+				    </relocation>
+				    <relocation>
+				      <pattern>com.twitter</pattern>
+				      <shadedPattern>io.md.twitter</shadedPattern>
+				    </relocation>
+				    <relocation>
+				      <pattern>io.opentracing</pattern>
+				      <shadedPattern>io.md.opentracing</shadedPattern>
+				    </relocation>
+				  </relocations>
+				</configuration>
+ 				<executions>
   					<execution>
   						<phase>package</phase>
   						<goals>
@@ -48,14 +116,11 @@
   						</goals>
   						<configuration>
   							<promoteTransitiveDependencies>true</promoteTransitiveDependencies>
-  							<artifactSet>
-  								<includes>
-									<include>io.md:*</include>
-									<include>io.cube:*</include>
-									<include>com.cube.interceptor:md-jersey-1x-egress-interceptor</include>
- 									<include>com.cube.interceptor:md-jersey-1x-ingress-interceptor</include>
-  								</includes>
-  							</artifactSet>
+							  <artifactSet>
+								  <excludes>	
+									  <exclude>javax.ws.rs:javax.ws.rs-api</exclude>
+								  </excludes>
+							  </artifactSet>
   						</configuration>
   					</execution>
   				</executions>
