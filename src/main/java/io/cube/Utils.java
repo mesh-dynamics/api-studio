@@ -1,5 +1,6 @@
 package io.cube;
 
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -10,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.reflect.TypeToken;
 
+import io.cube.agent.CommonConfig;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
 import io.md.dao.FnReqRespPayload.RetStatus;
@@ -80,5 +82,11 @@ public class Utils {
 		}
 
 		return toReturn;
+	}
+
+	public static FnKey getFnKey(Method method) {
+		CommonConfig commonConfig = CommonConfig.getInstance();
+		return new FnKey(commonConfig.customerId, commonConfig.app, commonConfig.instance,
+			commonConfig.serviceName, method);
 	}
 }

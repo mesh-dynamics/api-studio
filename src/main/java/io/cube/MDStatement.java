@@ -1,5 +1,7 @@
 package io.cube;
 
+import static io.cube.Utils.getFnKey;
+
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.sql.Connection;
@@ -73,8 +75,7 @@ public class MDStatement implements Statement {
     public ResultSet executeQuery(String sql) throws SQLException {
         if (null == exqFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            exqFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            exqFnKey = getFnKey(method);
         }
 
         this.lastExecutedQuery = sql;
@@ -96,8 +97,7 @@ public class MDStatement implements Statement {
     public int executeUpdate(String sql) throws SQLException {
         if (null == exusFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            exusFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            exusFnKey = getFnKey(method);
         }
 
         this.lastExecutedQuery = sql;
@@ -115,8 +115,7 @@ public class MDStatement implements Statement {
     public int getMaxFieldSize() throws SQLException {
         if (null == gmaxfsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gmaxfsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gmaxfsFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, gmaxfsFnKey, (fnArgs) -> statement.getMaxFieldSize(),  this.statementInstanceId);
@@ -133,8 +132,7 @@ public class MDStatement implements Statement {
     public int getMaxRows() throws SQLException {
         if (null == gmaxFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gmaxFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gmaxFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, gmaxFnKey, (fnArgs) -> statement.getMaxRows(), this.statementInstanceId);
@@ -158,8 +156,7 @@ public class MDStatement implements Statement {
     public int getQueryTimeout() throws SQLException {
         if (null == gqtFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gqtFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gqtFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, gqtFnKey, (fnArgs) -> statement.getQueryTimeout(),  this.statementInstanceId);
@@ -183,8 +180,7 @@ public class MDStatement implements Statement {
     public SQLWarning getWarnings() throws SQLException {
         if (null == gwFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gwFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gwFnKey = getFnKey(method);
         }
 
         return (SQLWarning) Utils.recordOrMock(config, gwFnKey, (fnArgs) -> statement.getWarnings(),  this.statementInstanceId);
@@ -208,8 +204,7 @@ public class MDStatement implements Statement {
     public boolean execute(String sql) throws SQLException {
         if (null == exFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            exFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            exFnKey = getFnKey(method);
         }
 
         this.lastExecutedQuery = sql;
@@ -220,8 +215,7 @@ public class MDStatement implements Statement {
     public ResultSet getResultSet() throws SQLException {
         if (null == grsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            grsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            grsFnKey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -242,8 +236,7 @@ public class MDStatement implements Statement {
     public int getUpdateCount() throws SQLException {
         if (null == gucFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gucFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gucFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, gucFnKey, (fnArgs) -> statement.getUpdateCount(), this.lastExecutedQuery, this.statementInstanceId);
@@ -253,8 +246,7 @@ public class MDStatement implements Statement {
     public boolean getMoreResults() throws SQLException {
         if (null == gmrFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gmrFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gmrFnKey = getFnKey(method);
         }
 
         boolean toReturn = (boolean) Utils.recordOrMock(config, gmrFnKey, (fnArgs) -> statement.getMoreResults(),
@@ -274,8 +266,7 @@ public class MDStatement implements Statement {
     public int getFetchDirection() throws SQLException {
         if (null == gfdFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gfdFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gfdFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, gfdFnKey, (fnArgs) -> statement.getFetchDirection(), this.statementInstanceId);
@@ -292,8 +283,7 @@ public class MDStatement implements Statement {
     public int getFetchSize() throws SQLException {
         if (null == gfsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gfsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gfsFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, gfsFnKey, (fnArgs) -> statement.getFetchSize(), this.statementInstanceId);
@@ -303,8 +293,7 @@ public class MDStatement implements Statement {
     public int getResultSetConcurrency() throws SQLException {
         if (null == grscFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            grscFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            grscFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, grscFnKey, (fnArgs) -> statement.getResultSetConcurrency(), this.statementInstanceId);
@@ -314,8 +303,7 @@ public class MDStatement implements Statement {
     public int getResultSetType() throws SQLException {
         if (null == grstFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            grstFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            grstFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, grstFnKey, (fnArgs) -> statement.getResultSetType(), this.statementInstanceId);
@@ -339,8 +327,7 @@ public class MDStatement implements Statement {
     public int[] executeBatch() throws SQLException {
         if (null == exbFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            exbFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            exbFnKey = getFnKey(method);
         }
 
         return (int[]) Utils.recordOrMock(config, exbFnKey, (fnArgs) -> statement.executeBatch(), this.statementInstanceId);
@@ -355,8 +342,7 @@ public class MDStatement implements Statement {
     public boolean getMoreResults(int current) throws SQLException {
         if (null == gmrcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gmrcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gmrcFnKey = getFnKey(method);
         }
 
         boolean toReturn = (boolean) Utils.recordOrMock(config, gmrcFnKey,
@@ -371,8 +357,7 @@ public class MDStatement implements Statement {
     public ResultSet getGeneratedKeys() throws SQLException {
         if (null == ggkFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            ggkFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            ggkFnKey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -393,8 +378,7 @@ public class MDStatement implements Statement {
     public int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException {
         if (null == exusagFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            exusagFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            exusagFnKey = getFnKey(method);
         }
 
         this.lastExecutedQuery = sql;
@@ -407,8 +391,7 @@ public class MDStatement implements Statement {
     public int executeUpdate(String sql, int[] columnIndexes) throws SQLException {
         if (null == exusciFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            exusciFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            exusciFnKey = getFnKey(method);
         }
 
         this.lastExecutedQuery = sql;
@@ -420,8 +403,7 @@ public class MDStatement implements Statement {
     public int executeUpdate(String sql, String[] columnNames) throws SQLException {
         if (null == exuscnFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            exuscnFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            exuscnFnKey = getFnKey(method);
         }
 
         this.lastExecutedQuery = sql;
@@ -433,8 +415,7 @@ public class MDStatement implements Statement {
     public boolean execute(String sql, int autoGeneratedKeys) throws SQLException {
         if (null == exsagFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            exsagFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            exsagFnKey = getFnKey(method);
         }
 
         this.lastExecutedQuery = sql;
@@ -446,8 +427,7 @@ public class MDStatement implements Statement {
     public boolean execute(String sql, int[] columnIndexes) throws SQLException {
         if (null == exsciFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            exsciFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            exsciFnKey = getFnKey(method);
         }
 
         this.lastExecutedQuery = sql;
@@ -459,8 +439,7 @@ public class MDStatement implements Statement {
     public boolean execute(String sql, String[] columnNames) throws SQLException {
         if (null == exscnFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            exscnFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            exscnFnKey = getFnKey(method);
         }
 
         this.lastExecutedQuery = sql;
@@ -472,8 +451,7 @@ public class MDStatement implements Statement {
     public int getResultSetHoldability() throws SQLException {
         if (null == grshFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            grshFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            grshFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, grshFnKey, (fnArgs) -> statement.getResultSetHoldability(), this.statementInstanceId);
@@ -483,8 +461,7 @@ public class MDStatement implements Statement {
     public boolean isClosed() throws SQLException {
         if (null == icFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            icFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            icFnKey = getFnKey(method);
         }
 
         return (boolean) Utils.recordOrMock(config, icFnKey, (fnArgs) -> statement.isClosed(), this.statementInstanceId);
@@ -501,8 +478,7 @@ public class MDStatement implements Statement {
     public boolean isPoolable() throws SQLException {
         if (null == ipFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            ipFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            ipFnKey = getFnKey(method);
         }
 
         return (boolean) Utils.recordOrMock(config, ipFnKey, (fnArgs) -> statement.isPoolable(), this.statementInstanceId);
@@ -519,8 +495,7 @@ public class MDStatement implements Statement {
     public boolean isCloseOnCompletion() throws SQLException {
         if (null == icocFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            icocFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            icocFnKey = getFnKey(method);
         }
 
         return (boolean) Utils.recordOrMock(config, icocFnKey, (fnArgs) -> statement.isCloseOnCompletion(), this.statementInstanceId);

@@ -1,5 +1,7 @@
 package io.cube;
 
+import static io.cube.Utils.getFnKey;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.lang.reflect.Method;
@@ -193,8 +195,7 @@ public class MDResultSet implements ResultSet {
     public boolean next() throws SQLException {
         if (null == nxtFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            nxtFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            nxtFnKey = getFnKey(method);
         }
 
         boolean toReturn = (boolean) Utils.recordOrMock(config, nxtFnKey, (fnArgs) -> resultSet.next(),
@@ -217,8 +218,7 @@ public class MDResultSet implements ResultSet {
     public boolean wasNull() throws SQLException {
         if (null == wnFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            wnFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            wnFnKey = getFnKey(method);
         }
 
         return (boolean) Utils.recordOrMock(config, wnFnKey, (fnArgs) -> resultSet.wasNull(),
@@ -229,8 +229,7 @@ public class MDResultSet implements ResultSet {
     public String getString(int columnIndex) throws SQLException {
         if (null == gsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gsFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -242,8 +241,7 @@ public class MDResultSet implements ResultSet {
     public boolean getBoolean(int columnIndex) throws SQLException {
         if (null == gbFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -255,8 +253,7 @@ public class MDResultSet implements ResultSet {
     public byte getByte(int columnIndex) throws SQLException {
         if (null == gbyFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbyFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbyFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -268,8 +265,7 @@ public class MDResultSet implements ResultSet {
     public short getShort(int columnIndex) throws SQLException {
         if (null == gshcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gshcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gshcFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -281,8 +277,7 @@ public class MDResultSet implements ResultSet {
     public int getInt(int columnIndex) throws SQLException {
         if (null == gicFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gicFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gicFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -294,8 +289,7 @@ public class MDResultSet implements ResultSet {
     public long getLong(int columnIndex) throws SQLException {
         if (null == glcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            glcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            glcFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -307,8 +301,7 @@ public class MDResultSet implements ResultSet {
     public float getFloat(int columnIndex) throws SQLException {
         if (null == gfFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gfFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gfFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -320,8 +313,7 @@ public class MDResultSet implements ResultSet {
     public double getDouble(int columnIndex) throws SQLException {
         if (null == gdFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gdFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gdFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -333,8 +325,7 @@ public class MDResultSet implements ResultSet {
     public BigDecimal getBigDecimal(int columnIndex, int scale) throws SQLException {
         if (null == gbdcsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbdcsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbdcsFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -347,8 +338,7 @@ public class MDResultSet implements ResultSet {
     public byte[] getBytes(int columnIndex) throws SQLException {
         if (null == gbysFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbysFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbysFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -360,8 +350,7 @@ public class MDResultSet implements ResultSet {
     public Date getDate(int columnIndex) throws SQLException {
         if (null == gdciFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gdciFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gdciFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -373,8 +362,7 @@ public class MDResultSet implements ResultSet {
     public Time getTime(int columnIndex) throws SQLException {
         if (null == gtiFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gtiFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gtiFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -386,8 +374,7 @@ public class MDResultSet implements ResultSet {
     public Timestamp getTimestamp(int columnIndex) throws SQLException {
         if (null == gtFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gtFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gtFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -423,8 +410,7 @@ public class MDResultSet implements ResultSet {
     public String getString(String columnLabel) throws SQLException {
         if (null == gscFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gscFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gscFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -436,8 +422,7 @@ public class MDResultSet implements ResultSet {
     public boolean getBoolean(String columnLabel) throws SQLException {
         if (null == gbcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbcFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -449,8 +434,7 @@ public class MDResultSet implements ResultSet {
     public byte getByte(String columnLabel) throws SQLException {
         if (null == gbyFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbyFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbyFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -462,8 +446,7 @@ public class MDResultSet implements ResultSet {
     public short getShort(String columnLabel) throws SQLException {
         if (null == gshFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gshFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gshFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -475,8 +458,7 @@ public class MDResultSet implements ResultSet {
     public int getInt(String columnLabel) throws SQLException {
         if (null == giFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            giFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            giFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -488,8 +470,7 @@ public class MDResultSet implements ResultSet {
     public long getLong(String columnLabel) throws SQLException {
         if (null == glclFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            glclFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            glclFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -501,8 +482,7 @@ public class MDResultSet implements ResultSet {
     public float getFloat(String columnLabel) throws SQLException {
         if (null == gfcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gfcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gfcFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -514,8 +494,7 @@ public class MDResultSet implements ResultSet {
     public double getDouble(String columnLabel) throws SQLException {
         if (null == gdcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gdcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gdcFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -527,8 +506,7 @@ public class MDResultSet implements ResultSet {
     public BigDecimal getBigDecimal(String columnLabel, int scale) throws SQLException {
         if (null == gbdclsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbdclsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbdclsFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -540,8 +518,7 @@ public class MDResultSet implements ResultSet {
     public byte[] getBytes(String columnLabel) throws SQLException {
         if (null == gbyscFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbyscFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbyscFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -553,8 +530,7 @@ public class MDResultSet implements ResultSet {
     public Date getDate(String columnLabel) throws SQLException {
         if (null == gdclFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gdclFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gdclFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -566,8 +542,7 @@ public class MDResultSet implements ResultSet {
     public Time getTime(String columnLabel) throws SQLException {
         if (null == gticlFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gticlFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gticlFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -579,13 +554,12 @@ public class MDResultSet implements ResultSet {
     public Timestamp getTimestamp(String columnLabel) throws SQLException {
         if (null == gtclFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gtclFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gtclFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
         return (Timestamp) Utils.recordOrMock(config, gtclFnKey,
-                (fnArgs) -> resultSet.getTimestamp(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
+            (fnArgs) -> resultSet.getTimestamp(columnLabel), columnLabel, this.resultSetInstanceId, this.rowIndex);
     }
 
     @Override
@@ -616,8 +590,7 @@ public class MDResultSet implements ResultSet {
     public SQLWarning getWarnings() throws SQLException {
         if (null == gwFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gwFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gwFnKey = getFnKey(method);
         }
 
         return (SQLWarning) Utils.recordOrMock(config, gwFnKey, (fnArgs) -> resultSet.getWarnings(), this.resultSetInstanceId, this.rowIndex);
@@ -634,8 +607,7 @@ public class MDResultSet implements ResultSet {
     public String getCursorName() throws SQLException {
         if (null == gcnFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gcnFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gcnFnKey = getFnKey(method);
         }
 
         return (String) Utils.recordOrMock(config, gtclFnKey, (fnArgs) -> resultSet.getCursorName(), this.resultSetInstanceId);
@@ -645,8 +617,7 @@ public class MDResultSet implements ResultSet {
     public ResultSetMetaData getMetaData() throws SQLException {
         if (null == gmdFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gmdFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gmdFnkey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -667,8 +638,7 @@ public class MDResultSet implements ResultSet {
     public Object getObject(int columnIndex) throws SQLException {
         if (null == goFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            goFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            goFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -680,8 +650,7 @@ public class MDResultSet implements ResultSet {
     public Object getObject(String columnLabel) throws SQLException {
         if (null == gocFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gocFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gocFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -693,8 +662,7 @@ public class MDResultSet implements ResultSet {
     public int findColumn(String columnLabel) throws SQLException {
         if (null == fcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            fcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            fcFnKey = getFnKey(method);
         }
 
         return (int)Utils.recordOrMock(config, fcFnKey,
@@ -721,8 +689,7 @@ public class MDResultSet implements ResultSet {
     public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
         if (null == gbdFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbdFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbdFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -734,8 +701,7 @@ public class MDResultSet implements ResultSet {
     public BigDecimal getBigDecimal(String columnLabel) throws SQLException {
         if (null == gbdcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbdcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbdcFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -747,8 +713,7 @@ public class MDResultSet implements ResultSet {
     public boolean isBeforeFirst() throws SQLException {
         if (null == ibfFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            ibfFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            ibfFnKey = getFnKey(method);
         }
 
         return (boolean) Utils.recordOrMock(config, ibfFnKey, (fnArgs) -> resultSet.isBeforeFirst(),
@@ -759,8 +724,7 @@ public class MDResultSet implements ResultSet {
     public boolean isAfterLast() throws SQLException {
         if (null == ialFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            ialFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            ialFnKey = getFnKey(method);
         }
 
         return (boolean) Utils.recordOrMock(config, ialFnKey, (fnArgs) -> resultSet.isAfterLast(),
@@ -771,8 +735,7 @@ public class MDResultSet implements ResultSet {
     public boolean isFirst() throws SQLException {
         if (null == ifFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            ifFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            ifFnKey = getFnKey(method);
         }
 
         return (boolean) Utils.recordOrMock(config, ifFnKey, (fnArgs) -> resultSet.isFirst(),
@@ -783,8 +746,7 @@ public class MDResultSet implements ResultSet {
     public boolean isLast() throws SQLException {
         if (null == ilFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            ilFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            ilFnKey = getFnKey(method);
         }
 
         return (boolean) Utils.recordOrMock(config, ilFnKey, (fnArgs) -> resultSet.isLast(),
@@ -811,8 +773,7 @@ public class MDResultSet implements ResultSet {
     public boolean first() throws SQLException {
         if (null == fFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            fFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            fFnKey = getFnKey(method);
         }
 
         boolean toReturn = (boolean) Utils.recordOrMock(config, fFnKey, (fnArgs) -> resultSet.first(),
@@ -826,8 +787,7 @@ public class MDResultSet implements ResultSet {
     public boolean last() throws SQLException {
         if (null == lFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            lFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            lFnKey = getFnKey(method);
         }
 
         this.rowIndex = (int) Utils.recordOrMock(config, lFnKey, (fnArgs) -> resultSet.last() ? resultSet.getRow() : 0,
@@ -839,8 +799,7 @@ public class MDResultSet implements ResultSet {
     public int getRow() throws SQLException {
         if (null == grFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            grFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            grFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, grFnKey, (fnArgs) -> resultSet.getRow(),
@@ -851,8 +810,7 @@ public class MDResultSet implements ResultSet {
     public boolean absolute(int row) throws SQLException {
         if (null == abFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            abFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            abFnKey = getFnKey(method);
         }
 
         boolean toReturn = (boolean) Utils.recordOrMock(config, abFnKey,
@@ -866,8 +824,7 @@ public class MDResultSet implements ResultSet {
     public boolean relative(int rows) throws SQLException {
         if (null == reFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            reFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            reFnKey = getFnKey(method);
         }
 
         boolean toReturn = (boolean) Utils.recordOrMock(config, reFnKey,
@@ -881,8 +838,7 @@ public class MDResultSet implements ResultSet {
     public boolean previous() throws SQLException {
         if (null == prevFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            prevFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            prevFnKey = getFnKey(method);
         }
 
         boolean toReturn = (boolean) Utils.recordOrMock(config, prevFnKey, (fnArgs) -> resultSet.previous(),
@@ -904,8 +860,7 @@ public class MDResultSet implements ResultSet {
     public int getFetchDirection() throws SQLException {
         if (null == gfdFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gfdFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gfdFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, gfdFnKey, (fnArgs) -> resultSet.getFetchDirection(),
@@ -923,8 +878,7 @@ public class MDResultSet implements ResultSet {
     public int getFetchSize() throws SQLException {
         if (null == gfsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gfsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gfsFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, gfsFnKey, (fnArgs) -> resultSet.getFetchSize(),
@@ -935,8 +889,7 @@ public class MDResultSet implements ResultSet {
     public int getType() throws SQLException {
         if (null == gftFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gftFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gftFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, gftFnKey, (fnArgs) -> resultSet.getType(),
@@ -947,8 +900,7 @@ public class MDResultSet implements ResultSet {
     public int getConcurrency() throws SQLException {
         if (null == gfcoFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gfcoFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gfcoFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, gfcoFnKey, (fnArgs) -> resultSet.getConcurrency(),
@@ -959,8 +911,7 @@ public class MDResultSet implements ResultSet {
     public boolean rowUpdated() throws SQLException {
         if (null == ruFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            ruFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            ruFnKey = getFnKey(method);
         }
 
         return (boolean) Utils.recordOrMock(config, ruFnKey, (fnArgs) -> resultSet.rowUpdated(),
@@ -971,8 +922,7 @@ public class MDResultSet implements ResultSet {
     public boolean rowInserted() throws SQLException {
         if (null == riFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            riFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            riFnKey = getFnKey(method);
         }
 
         return (boolean) Utils.recordOrMock(config, riFnKey, (fnArgs) -> resultSet.rowInserted(),
@@ -983,8 +933,7 @@ public class MDResultSet implements ResultSet {
     public boolean rowDeleted() throws SQLException {
         if (null == rdFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            rdFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            rdFnKey = getFnKey(method);
         }
 
         return (boolean) Utils.recordOrMock(config, rdFnKey, (fnArgs) -> resultSet.rowDeleted(),
@@ -1331,8 +1280,7 @@ public class MDResultSet implements ResultSet {
     public Blob getBlob(int columnIndex) throws SQLException {
         if (null == gbciFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbciFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                Config.commonConfig.serviceName, method);
+            gbciFnkey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -1344,8 +1292,7 @@ public class MDResultSet implements ResultSet {
     public Clob getClob(int columnIndex) throws SQLException {
         if (null == gcFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gcFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                Config.commonConfig.serviceName, method);
+            gcFnkey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -1381,8 +1328,7 @@ public class MDResultSet implements ResultSet {
     public Blob getBlob(String columnLabel) throws SQLException {
         if (null == gbclFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbclFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                Config.commonConfig.serviceName, method);
+            gbclFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -1394,8 +1340,7 @@ public class MDResultSet implements ResultSet {
     public Clob getClob(String columnLabel) throws SQLException {
         if (null == gcclFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gcclFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                Config.commonConfig.serviceName, method);
+            gcclFnkey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -1415,8 +1360,7 @@ public class MDResultSet implements ResultSet {
     public Date getDate(int columnIndex, Calendar cal) throws SQLException {
         if (null == gdcicFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gdcicFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gdcicFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -1428,8 +1372,7 @@ public class MDResultSet implements ResultSet {
     public Date getDate(String columnLabel, Calendar cal) throws SQLException {
         if (null == gdclcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gdclcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gdclcFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -1441,8 +1384,7 @@ public class MDResultSet implements ResultSet {
     public Time getTime(int columnIndex, Calendar cal) throws SQLException {
         if (null == gticFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gticFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gticFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -1454,8 +1396,7 @@ public class MDResultSet implements ResultSet {
     public Time getTime(String columnLabel, Calendar cal) throws SQLException {
         if (null == gticlcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gticlcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gticlcFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -1467,12 +1408,11 @@ public class MDResultSet implements ResultSet {
     public Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
         if (null == gtcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gtcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gtcFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
-        return (Timestamp) Utils.recordOrMock(config, gtcFnKey,
+        return (Timestamp)Utils.recordOrMock(config, gtcFnKey,
                 (fnArgs) -> resultSet.getTimestamp(columnIndex, cal), columnIndex, cal, this.resultSetInstanceId, this.rowIndex);
     }
 
@@ -1480,8 +1420,7 @@ public class MDResultSet implements ResultSet {
     public Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
         if (null == gtccFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gtccFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gtccFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -1493,8 +1432,7 @@ public class MDResultSet implements ResultSet {
     public URL getURL(int columnIndex) throws SQLException {
         if (null == guFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            guFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            guFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -1506,8 +1444,7 @@ public class MDResultSet implements ResultSet {
     public URL getURL(String columnLabel) throws SQLException {
         if (null == gurFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gurFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gurFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;
@@ -1605,8 +1542,7 @@ public class MDResultSet implements ResultSet {
     public int getHoldability() throws SQLException {
         if (null == ghFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            ghFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            ghFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, ghFnKey, (fnArgs) -> resultSet.getHoldability(), this.resultSetInstanceId);
@@ -1616,8 +1552,7 @@ public class MDResultSet implements ResultSet {
     public boolean isClosed() throws SQLException {
         if (null == icFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            icFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            icFnKey = getFnKey(method);
         }
 
         return (boolean) Utils.recordOrMock(config, icFnKey, (fnArgs) -> resultSet.isClosed(), this.resultSetInstanceId);
@@ -1701,8 +1636,7 @@ public class MDResultSet implements ResultSet {
     public String getNString(int columnIndex) throws SQLException {
         if (null == gnsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gnsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gnsFnKey = getFnKey(method);
         }
 
         this.columnIndex = columnIndex;
@@ -1714,8 +1648,7 @@ public class MDResultSet implements ResultSet {
     public String getNString(String columnLabel) throws SQLException {
         if (null == gnscFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gnscFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gnscFnKey = getFnKey(method);
         }
 
         this.columnLabel = columnLabel;

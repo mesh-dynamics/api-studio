@@ -1,5 +1,7 @@
 package io.cube;
 
+import static io.cube.Utils.getFnKey;
+
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.sql.Connection;
@@ -67,8 +69,7 @@ public class MDDriver implements Driver {
 
         if (null == connectFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            connectFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            connectFnKey = getFnKey(method);
         }
 
         Optional<MDDriver> realDriver = getRealDriver(url);
@@ -116,8 +117,7 @@ public class MDDriver implements Driver {
 
         if (null == driverFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            driverFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            driverFnKey = getFnKey(method);
         }
 
         Optional<Driver> realDriver;
@@ -209,8 +209,7 @@ public class MDDriver implements Driver {
     public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
         if (null == propertyFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            propertyFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            propertyFnKey = getFnKey(method);
         }
 
         return (DriverPropertyInfo[]) Utils.recordOrMock(config, propertyFnKey, (fnArgs) -> {

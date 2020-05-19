@@ -1,5 +1,7 @@
 package io.cube;
 
+import static io.cube.Utils.getFnKey;
+
 import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.sql.Savepoint;
@@ -37,8 +39,7 @@ public class MDSavepoint implements Savepoint {
     public int getSavepointId() throws SQLException {
         if (null == gsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gsFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, gsFnKey, (fnArgs) -> savepoint.getSavepointId(),
@@ -49,8 +50,7 @@ public class MDSavepoint implements Savepoint {
     public String getSavepointName() throws SQLException {
         if (null == gsnFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gsnFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gsnFnKey = getFnKey(method);
         }
 
         return (String) Utils.recordOrMock(config, gsnFnKey, (fnArgs) -> savepoint.getSavepointName(),

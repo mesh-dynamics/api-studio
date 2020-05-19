@@ -1,5 +1,7 @@
 package io.cube;
 
+import static io.cube.Utils.getFnKey;
+
 import java.lang.reflect.Method;
 import java.sql.ParameterMetaData;
 import java.sql.SQLException;
@@ -43,8 +45,7 @@ public class MDParameterMetaData implements ParameterMetaData {
 	public int getParameterCount() throws SQLException {
 		if (null == gpcFnKey) {
 			Method method = new Object() {}.getClass().getEnclosingMethod();
-			gpcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-				Config.commonConfig.serviceName, method);
+			gpcFnKey = getFnKey(method);
 		}
 
 		return (int) Utils.recordOrMock(config, gpcFnKey,
@@ -55,8 +56,7 @@ public class MDParameterMetaData implements ParameterMetaData {
 	public int isNullable(int param) throws SQLException {
 		if (null == inpFnKey) {
 			Method method = new Object() {}.getClass().getEnclosingMethod();
-			inpFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-				Config.commonConfig.serviceName, method);
+			inpFnKey = getFnKey(method);
 		}
 
 		return (int) Utils.recordOrMock(config, inpFnKey,
@@ -67,8 +67,7 @@ public class MDParameterMetaData implements ParameterMetaData {
 	public boolean isSigned(int param) throws SQLException {
 		if (null == ispFnKey) {
 			Method method = new Object() {}.getClass().getEnclosingMethod();
-			ispFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-				Config.commonConfig.serviceName, method);
+			ispFnKey = getFnKey(method);
 		}
 
 		return (boolean) Utils.recordOrMock(config, ispFnKey,
@@ -79,8 +78,7 @@ public class MDParameterMetaData implements ParameterMetaData {
 	public int getPrecision(int param) throws SQLException {
 		if (null == gppFnKey) {
 			Method method = new Object() {}.getClass().getEnclosingMethod();
-			gppFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-				Config.commonConfig.serviceName, method);
+			gppFnKey = getFnKey(method);
 		}
 
 		return (int) Utils.recordOrMock(config, gppFnKey,
@@ -91,8 +89,7 @@ public class MDParameterMetaData implements ParameterMetaData {
 	public int getScale(int param) throws SQLException {
 		if (null == gspFnKey) {
 			Method method = new Object() {}.getClass().getEnclosingMethod();
-			gspFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-				Config.commonConfig.serviceName, method);
+			gspFnKey = getFnKey(method);
 		}
 
 		return (int) Utils.recordOrMock(config, gspFnKey,
@@ -103,8 +100,7 @@ public class MDParameterMetaData implements ParameterMetaData {
 	public int getParameterType(int param) throws SQLException {
 		if (null == gptFnKey) {
 			Method method = new Object() {}.getClass().getEnclosingMethod();
-			gptFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-				Config.commonConfig.serviceName, method);
+			gptFnKey = getFnKey(method);
 		}
 
 		return (int) Utils.recordOrMock(config, gptFnKey,
@@ -115,8 +111,7 @@ public class MDParameterMetaData implements ParameterMetaData {
 	public String getParameterTypeName(int param) throws SQLException {
 		if (null == gptnFnKey) {
 			Method method = new Object() {}.getClass().getEnclosingMethod();
-			gptnFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-				Config.commonConfig.serviceName, method);
+			gptnFnKey = getFnKey(method);
 		}
 
 		return (String) Utils.recordOrMock(config, gptnFnKey,
@@ -127,8 +122,7 @@ public class MDParameterMetaData implements ParameterMetaData {
 	public String getParameterClassName(int param) throws SQLException {
 		if (null == gpcnFnKey) {
 			Method method = new Object() {}.getClass().getEnclosingMethod();
-			gpcnFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-				Config.commonConfig.serviceName, method);
+			gpcnFnKey = getFnKey(method);
 		}
 
 		return (String) Utils.recordOrMock(config, gpcnFnKey,
@@ -139,8 +133,7 @@ public class MDParameterMetaData implements ParameterMetaData {
 	public int getParameterMode(int param) throws SQLException {
 		if (null == gpmFnKey) {
 			Method method = new Object() {}.getClass().getEnclosingMethod();
-			gpmFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-				Config.commonConfig.serviceName, method);
+			gpmFnKey = getFnKey(method);
 		}
 
 		return (int) Utils.recordOrMock(config, gpmFnKey,

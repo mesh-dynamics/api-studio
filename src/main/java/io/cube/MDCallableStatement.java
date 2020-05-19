@@ -1,5 +1,7 @@
 package io.cube;
 
+import static io.cube.Utils.getFnKey;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.lang.reflect.Method;
@@ -21,6 +23,11 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Map;
 import java.util.Optional;
+
+import javax.sql.rowset.serial.SerialBlob;
+import javax.sql.rowset.serial.SerialClob;
+
+import com.google.gson.reflect.TypeToken;
 
 import javax.sql.rowset.serial.SerialBlob;
 import javax.sql.rowset.serial.SerialClob;
@@ -113,8 +120,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public boolean wasNull() throws SQLException {
         if (null == wnFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            wnFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            wnFnKey = getFnKey(method);
         }
 
         return (boolean) Utils.recordOrMock(config, wnFnKey, (fnArgs) -> callableStatement.wasNull(),
@@ -125,8 +131,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public String getString(int parameterIndex) throws SQLException {
         if (null == gsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gsFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -137,8 +142,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public boolean getBoolean(int parameterIndex) throws SQLException {
         if (null == gbFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -150,8 +154,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public byte getByte(int parameterIndex) throws SQLException {
         if (null == gbyFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbyFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbyFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -163,8 +166,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public short getShort(int parameterIndex) throws SQLException {
         if (null == gshcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gshcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gshcFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -176,8 +178,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public int getInt(int parameterIndex) throws SQLException {
         if (null == gicFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gicFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gicFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -189,8 +190,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public long getLong(int parameterIndex) throws SQLException {
         if (null == glcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            glcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            glcFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -202,8 +202,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public float getFloat(int parameterIndex) throws SQLException {
         if (null == gfFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gfFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gfFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -215,8 +214,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public double getDouble(int parameterIndex) throws SQLException {
         if (null == gdFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gdFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gdFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -228,8 +226,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public BigDecimal getBigDecimal(int parameterIndex, int scale) throws SQLException {
         if (null == gbdcsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbdcsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbdcsFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -241,8 +238,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public byte[] getBytes(int parameterIndex) throws SQLException {
         if (null == gbysFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbysFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbysFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -254,8 +250,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public Date getDate(int parameterIndex) throws SQLException {
         if (null == gdciFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gdciFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gdciFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -267,8 +262,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public Time getTime(int parameterIndex) throws SQLException {
         if (null == gtiFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gtiFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gtiFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -280,8 +274,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public Timestamp getTimestamp(int parameterIndex) throws SQLException {
         if (null == gtFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gtFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gtFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -293,8 +286,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public Object getObject(int parameterIndex) throws SQLException {
         if (null == goFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            goFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            goFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -306,8 +298,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public BigDecimal getBigDecimal(int parameterIndex) throws SQLException {
         if (null == gbdFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbdFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbdFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -335,8 +326,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public Blob getBlob(int parameterIndex) throws SQLException {
         if (null == gbpiFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbpiFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                Config.commonConfig.serviceName, method);
+            gbpiFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -348,8 +338,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public Clob getClob(int parameterIndex) throws SQLException {
         if (null == gcFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gcFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                Config.commonConfig.serviceName, method);
+            gcFnkey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -369,8 +358,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public Date getDate(int parameterIndex, Calendar cal) throws SQLException {
         if (null == gdcicFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gdcicFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gdcicFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -382,8 +370,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public Time getTime(int parameterIndex, Calendar cal) throws SQLException {
         if (null == gticFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gticFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gticFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -395,8 +382,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public Timestamp getTimestamp(int parameterIndex, Calendar cal) throws SQLException {
         if (null == gtcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gtcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gtcFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -436,8 +422,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public URL getURL(int parameterIndex) throws SQLException {
         if (null == guFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            guFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            guFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -624,8 +609,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public String getString(String parameterName) throws SQLException {
         if (null == gscFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gscFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gscFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -637,8 +621,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public boolean getBoolean(String parameterName) throws SQLException {
         if (null == gbcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbcFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -650,8 +633,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public byte getByte(String parameterName) throws SQLException {
         if (null == gbyFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbyFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbyFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -663,8 +645,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public short getShort(String parameterName) throws SQLException {
         if (null == gshFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gshFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gshFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -676,8 +657,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public int getInt(String parameterName) throws SQLException {
         if (null == giFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            giFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            giFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -689,8 +669,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public long getLong(String parameterName) throws SQLException {
         if (null == glclFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            glclFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            glclFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -702,8 +681,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public float getFloat(String parameterName) throws SQLException {
         if (null == gfcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gfcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gfcFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -715,8 +693,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public double getDouble(String parameterName) throws SQLException {
         if (null == gdcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gdcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gdcFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -728,8 +705,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public byte[] getBytes(String parameterName) throws SQLException {
         if (null == gbyscFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbyscFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbyscFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -741,8 +717,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public Date getDate(String parameterName) throws SQLException {
         if (null == gdclFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gdclFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gdclFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -754,8 +729,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public Time getTime(String parameterName) throws SQLException {
         if (null == gticlFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gticlFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gticlFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -767,8 +741,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public Timestamp getTimestamp(String parameterName) throws SQLException {
         if (null == gtclFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gtclFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gtclFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -780,8 +753,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public Object getObject(String parameterName) throws SQLException {
         if (null == gocFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gocFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gocFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -793,8 +765,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public BigDecimal getBigDecimal(String parameterName) throws SQLException {
         if (null == gbdcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbdcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gbdcFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -822,8 +793,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public Blob getBlob(String parameterName) throws SQLException {
         if (null == gbpnFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gbpnFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                Config.commonConfig.serviceName, method);
+            gbpnFnkey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -835,8 +805,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public Clob getClob(String parameterName) throws SQLException {
         if (null == gcpnFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gcpnFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                Config.commonConfig.serviceName, method);
+            gcpnFnkey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -856,8 +825,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public Date getDate(String parameterName, Calendar cal) throws SQLException {
         if (null == gdclcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gdclcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gdclcFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -869,8 +837,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public Time getTime(String parameterName, Calendar cal) throws SQLException {
         if (null == gticlcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gticlcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gticlcFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -882,8 +849,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public Timestamp getTimestamp(String parameterName, Calendar cal) throws SQLException {
         if (null == gtccFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gtccFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gtccFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -895,8 +861,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public URL getURL(String parameterName) throws SQLException {
         if (null == gurFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gurFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gurFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;
@@ -1012,8 +977,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public String getNString(int parameterIndex) throws SQLException {
         if (null == gnsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gnsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gnsFnKey = getFnKey(method);
         }
 
         this.parameterIndex = parameterIndex;
@@ -1025,8 +989,7 @@ public class MDCallableStatement extends MDPreparedStatement implements Callable
     public String getNString(String parameterName) throws SQLException {
         if (null == gnscFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gnscFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gnscFnKey = getFnKey(method);
         }
 
         this.parameterName = parameterName;

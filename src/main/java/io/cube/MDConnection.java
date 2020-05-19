@@ -1,5 +1,7 @@
 package io.cube;
 
+import static io.cube.Utils.getFnKey;
+
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.sql.Array;
@@ -97,8 +99,7 @@ public class MDConnection implements Connection {
     public Statement createStatement() throws SQLException {
         if (null == csFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            csFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            csFnKey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -119,8 +120,7 @@ public class MDConnection implements Connection {
     public PreparedStatement prepareStatement(String sql) throws SQLException {
         if (null == psFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            psFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            psFnKey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -141,8 +141,7 @@ public class MDConnection implements Connection {
     public CallableStatement prepareCall(String sql) throws SQLException {
         if (null == pcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            pcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            pcFnKey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -163,8 +162,7 @@ public class MDConnection implements Connection {
     public String nativeSQL(String sql) throws SQLException {
         if (null == nsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            nsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            nsFnKey = getFnKey(method);
         }
 
         return (String) Utils.recordOrMock(config, nsFnKey, (fnArgs) -> connection.nativeSQL(sql), sql, this.connectionInstanceId);
@@ -181,8 +179,7 @@ public class MDConnection implements Connection {
     public boolean getAutoCommit() throws SQLException {
         if (null == gacFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gacFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gacFnKey = getFnKey(method);
         }
 
         return (boolean) Utils.recordOrMock(config, gacFnKey, (fnArgs) -> connection.getAutoCommit(),
@@ -214,8 +211,7 @@ public class MDConnection implements Connection {
     public boolean isClosed() throws SQLException {
         if (null == icFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            icFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            icFnKey = getFnKey(method);
         }
 
         return (boolean) Utils.recordOrMock(config, icFnKey, (fnArgs) -> connection.isClosed(),
@@ -226,8 +222,7 @@ public class MDConnection implements Connection {
     public DatabaseMetaData getMetaData() throws SQLException {
         if (null == gmdFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gmdFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gmdFnkey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -255,8 +250,7 @@ public class MDConnection implements Connection {
     public boolean isReadOnly() throws SQLException {
         if (null == irFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            irFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            irFnKey = getFnKey(method);
         }
 
         return (boolean) Utils.recordOrMock(config, irFnKey, (fnArgs) -> connection.isReadOnly(),
@@ -274,8 +268,7 @@ public class MDConnection implements Connection {
     public String getCatalog() throws SQLException {
         if (null == gcFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gcFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gcFnKey = getFnKey(method);
         }
 
         return (String) Utils.recordOrMock(config, gcFnKey, (fnArgs) -> connection.getCatalog(), this.connectionInstanceId);
@@ -292,8 +285,7 @@ public class MDConnection implements Connection {
     public int getTransactionIsolation() throws SQLException {
         if (null == gtiFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gtiFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gtiFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, gtiFnKey, (fnArgs) -> connection.getTransactionIsolation(), this.connectionInstanceId);
@@ -303,8 +295,7 @@ public class MDConnection implements Connection {
     public SQLWarning getWarnings() throws SQLException {
         if (null == gwFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gwFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gwFnKey = getFnKey(method);
         }
 
         return (SQLWarning) Utils.recordOrMock(config, gwFnKey, (fnArgs) -> connection.getWarnings(), this.connectionInstanceId);
@@ -321,8 +312,7 @@ public class MDConnection implements Connection {
     public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
         if (null == csrsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            csrsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            csrsFnKey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -343,8 +333,7 @@ public class MDConnection implements Connection {
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
         if (null == psrsFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            psrsFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            psrsFnkey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -365,8 +354,7 @@ public class MDConnection implements Connection {
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
         if (null == pcrsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            pcrsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            pcrsFnKey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -410,8 +398,7 @@ public class MDConnection implements Connection {
     public int getHoldability() throws SQLException {
         if (null == ghFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            ghFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            ghFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, ghFnKey, (fnArgs) -> connection.getHoldability(), this.connectionInstanceId);
@@ -421,8 +408,7 @@ public class MDConnection implements Connection {
     public Savepoint setSavepoint() throws SQLException {
         if (null == ssFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            ssFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            ssFnKey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -443,8 +429,7 @@ public class MDConnection implements Connection {
     public Savepoint setSavepoint(String name) throws SQLException {
         if (null == ssnFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            ssnFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            ssnFnKey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -480,8 +465,7 @@ public class MDConnection implements Connection {
     public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
         if (null == csrshFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            csrshFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            csrshFnKey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -503,8 +487,7 @@ public class MDConnection implements Connection {
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
         if (null == psrshFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            psrshFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            psrshFnkey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -525,8 +508,7 @@ public class MDConnection implements Connection {
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
         if (null == pcrshFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            pcrshFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            pcrshFnKey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -547,8 +529,7 @@ public class MDConnection implements Connection {
     public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
         if (null == psaFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            psaFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            psaFnkey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -569,8 +550,7 @@ public class MDConnection implements Connection {
     public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
         if (null == pscFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            pscFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            pscFnkey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -591,8 +571,7 @@ public class MDConnection implements Connection {
     public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
         if (null == pscnFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            pscnFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            pscnFnkey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -613,8 +592,7 @@ public class MDConnection implements Connection {
     public Clob createClob() throws SQLException {
         if (null == ccFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            ccFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                Config.commonConfig.serviceName, method);
+            ccFnkey = getFnKey(method);
         }
 
         return (Clob) Utils.recordOrMock(config, ccFnkey,
@@ -625,8 +603,7 @@ public class MDConnection implements Connection {
     public Blob createBlob() throws SQLException {
         if (null == cbFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            cbFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                Config.commonConfig.serviceName, method);
+            cbFnkey = getFnKey(method);
         }
 
         return (Blob) Utils.recordOrMock(config, cbFnkey,
@@ -653,8 +630,7 @@ public class MDConnection implements Connection {
     public boolean isValid(int timeout) throws SQLException {
         if (null == ivFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            ivFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            ivFnKey = getFnKey(method);
         }
 
         return (boolean) Utils.recordOrMock(config, ivFnKey, (fnArgs) -> connection.isValid(timeout), timeout, this.connectionInstanceId);
@@ -678,8 +654,7 @@ public class MDConnection implements Connection {
     public String getClientInfo(String name) throws SQLException {
         if (null == gciFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gciFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gciFnKey = getFnKey(method);
         }
 
         return (String) Utils.recordOrMock(config, gciFnKey, (fnArgs) -> connection.getClientInfo(name), name, this.connectionInstanceId);
@@ -689,8 +664,7 @@ public class MDConnection implements Connection {
     public Properties getClientInfo() throws SQLException {
         if (null == gcipFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gcipFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gcipFnkey = getFnKey(method);
         }
 
         return (Properties) Utils.recordOrMock(config, gcipFnkey, (fnArgs) -> connection.getClientInfo(), this.connectionInstanceId);
@@ -723,8 +697,7 @@ public class MDConnection implements Connection {
     public String getSchema() throws SQLException {
         if (null == gsFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gsFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gsFnKey = getFnKey(method);
         }
 
         return (String) Utils.recordOrMock(config, gsFnKey, (fnArgs) -> connection.getSchema(), this.connectionInstanceId);
@@ -748,8 +721,7 @@ public class MDConnection implements Connection {
     public int getNetworkTimeout() throws SQLException {
         if (null == gntFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gntFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            gntFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, gntFnKey, (fnArgs) -> connection.getNetworkTimeout(), this.connectionInstanceId);

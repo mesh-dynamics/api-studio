@@ -1,5 +1,7 @@
 package io.cube;
 
+import static io.cube.Utils.getFnKey;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.lang.reflect.Method;
@@ -57,8 +59,7 @@ public class MDPreparedStatement extends MDStatement implements PreparedStatemen
     public ResultSet executeQuery() throws SQLException {
         if (null == exqFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            exqFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            exqFnKey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -79,8 +80,7 @@ public class MDPreparedStatement extends MDStatement implements PreparedStatemen
     public int executeUpdate() throws SQLException {
         if (null == euFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            euFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            euFnKey = getFnKey(method);
         }
 
         return (int) Utils.recordOrMock(config, euFnKey, (fnArgs) -> preparedStatement.executeUpdate(),
@@ -231,8 +231,7 @@ public class MDPreparedStatement extends MDStatement implements PreparedStatemen
     public boolean execute() throws SQLException {
         if (null == exFnKey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            exFnKey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                    Config.commonConfig.serviceName, method);
+            exFnKey = getFnKey(method);
         }
 
         return (boolean) Utils.recordOrMock(config, exFnKey, (fnArgs) -> preparedStatement.execute(),
@@ -285,8 +284,7 @@ public class MDPreparedStatement extends MDStatement implements PreparedStatemen
     public ResultSetMetaData getMetaData() throws SQLException {
         if (null == gmdFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gmdFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                Config.commonConfig.serviceName, method);
+            gmdFnkey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
@@ -342,8 +340,7 @@ public class MDPreparedStatement extends MDStatement implements PreparedStatemen
     public ParameterMetaData getParameterMetaData() throws SQLException {
         if (null == gpmdFnkey) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
-            gpmdFnkey = new FnKey(Config.commonConfig.customerId, Config.commonConfig.app, Config.commonConfig.instance,
-                Config.commonConfig.serviceName, method);
+            gpmdFnkey = getFnKey(method);
         }
 
         if (config.intentResolver.isIntentToMock()) {
