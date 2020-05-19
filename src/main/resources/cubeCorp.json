@@ -77,16 +77,16 @@
                 {
                   "name": "Actions",
                   "paths": [
-                    "/rentmovie",
-                    "/returnmovie",
+                    "minfo/rentmovie",
+                    "minfo/returnmovie",
                     "/overduerental"
                   ]
                 },
                 {
                   "name": "List",
                   "paths": [
-                    "/listmovies",
-                    "/liststores"
+                    "minfo/listmovies",
+                    "minfo/liststores"
                   ]
                 }
               ]
@@ -97,8 +97,8 @@
               "testConfigName": "MovieInfo-List",
               "serviceName": "List",
               "paths": [
-                "/listmovies",
-                "/liststores"
+                "minfo/listmovies",
+                "minfo/liststores"
               ],
               "test_virtualized_services": ["RestWrapJDBC", "Reviews", "Details"],
               "test_intermediate_services": []
@@ -563,8 +563,8 @@
                 {
                   "name": "Actions",
                   "paths": [
-                    "/rentmovie",
-                    "/returnmovie",
+                    "minfo/rentmovie",
+                    "minfo/returnmovie",
                     "/overduerental"
                   ]
                 },
