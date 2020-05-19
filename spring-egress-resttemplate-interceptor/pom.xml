@@ -6,7 +6,7 @@
 
   <groupId>io.cube</groupId>
   <artifactId>md-spring-egress-resttemplate-interceptor</artifactId>
-  <version>1.2.1</version>
+  <version>1.2.2</version>
   <packaging>jar</packaging>
 
   <name>spring-egress-resttemplate-interceptor</name>

@@ -38,11 +38,7 @@ public class RestTemplateTracingInterceptor implements ClientHttpRequestIntercep
 
 			//Need to add the md-context headers to the original request
 			//if underlying framework doesn't have MultivaluedMap o/p for headers
-			//httpRequest.getHeaders().putAll(mdTraceHeaders);
-
-			for (String key : mdTraceHeaders.keySet()) {
-				((MyHttpRequestWrapper) httpRequest).putHeader(key, mdTraceHeaders.get(key));
-			}
+			httpRequest.getHeaders().putAll(mdTraceHeaders);
 		} catch (Exception ex) {
 			LOGGER.error("Exception occured during logging, proceeding to the application!", ex);
 		}
