@@ -49,8 +49,6 @@ public class DataFilter extends OncePerRequestFilter {
 		throws ServletException, IOException {
 		CachedBodyHttpServletRequest requestWrapper = null;
 		ContentCachingResponseWrapper responseWrapper = null;
-		boolean isSampled = false;
-		boolean isVetoed = false;
 		String apiPath = null;
 		MultivaluedMap<String, String> traceMetaMap = new MultivaluedHashMap<>();
 		MDTraceInfo mdTraceInfo = new MDTraceInfo();
@@ -60,9 +58,9 @@ public class DataFilter extends OncePerRequestFilter {
 			if (currentSpan.isPresent()) {
 				Span span = currentSpan.get();
 				//Either baggage has sampling set to true or this service uses its veto power to sample.
-				isSampled = BooleanUtils
+				boolean isSampled = BooleanUtils
 					.toBoolean(span.getBaggageItem(Constants.MD_IS_SAMPLED));
-				isVetoed = BooleanUtils
+				boolean isVetoed = BooleanUtils
 					.toBoolean(span.getBaggageItem(Constants.MD_IS_VETOED));
 
 				if (isSampled || isVetoed) {
