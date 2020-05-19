@@ -12,6 +12,7 @@ import static io.md.core.Comparator.MatchType.ExactMatch;
 
 import com.cube.dao.ReplayUpdate;
 import io.md.dao.Replay;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -416,7 +417,10 @@ public class Analyzer {
 
             // Everything including aggregation completed
             analyzer.analysis.status = Analysis.Status.Completed;
-            rrstore.saveAnalysis(analyzer.analysis);
+            if (rrstore.saveAnalysis(analyzer.analysis)) {
+                r.analysisCompleteTimestamp = Instant.now();
+                rrstore.saveReplay(r);
+            }
 
             return Optional.of(analyzer.analysis);
         }));

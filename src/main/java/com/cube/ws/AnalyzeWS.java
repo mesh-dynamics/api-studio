@@ -567,7 +567,11 @@ public class AnalyzeWS {
         String finalJson = replays.map(replay -> {
             String replayId = replay.replayId;
             String testConfigNameValue = replay.testConfigName.orElse("");
-            Instant creationTimeStamp = replay.creationTimeStamp;
+          /**
+           * TODO
+           * once all replays will be having the updateTimestamp, we can directy set updationTimestamp
+           */
+            Instant timeStamp = replay.analysisCompleteTimestamp != Instant.EPOCH ? replay.analysisCompleteTimestamp : replay.creationTimeStamp;
             Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerId, replay.app,
                 replay.collection , replay.templateVersion);
             String recordingInfo = "";
@@ -589,7 +593,7 @@ public class AnalyzeWS {
 //            Collection<MatchResultAggregate> res = rrstore.computeResultAggregate(replayId, service, bypath);
             StringBuilder jsonBuilder = new StringBuilder();
             String json;
-            jsonBuilder.append("{ \"replayId\" : \"" + replayId + "\" , \"timestamp\" : \"" + creationTimeStamp.toString()
+            jsonBuilder.append("{ \"replayId\" : \"" + replayId + "\" , \"timestamp\" : \"" + timeStamp.toString()
                 + "\" , \"testConfigName\" : \"" +  testConfigNameValue + recordingInfo +  "\" , \"results\" : ");
             try {
                 json = jsonMapper.writeValueAsString(res);
