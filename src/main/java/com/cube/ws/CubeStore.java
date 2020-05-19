@@ -239,7 +239,7 @@ public class CubeStore {
 
             Comparator requestComparator = null;
             try {
-                requestComparator = config.comparatorCache
+                requestComparator = config.rrstore
                     .getComparator(tkey, Event.EventType.HTTPRequest);
             } catch (ComparatorCache.TemplateNotFoundException e) {
                 throw new CubeStoreException(e, "Request Comparator Not Found"
@@ -580,7 +580,7 @@ public class CubeStore {
                     classLoader = recordOrReplay.flatMap(RecordOrReplay::getClassLoader);
                 }
 
-                event.parseAndSetKey(Utils.getRequestMatchTemplate(config, event,
+                event.parseAndSetKey(rrstore.getRequestMatchTemplate(event,
                         recordOrReplay.get().getTemplateVersion()), classLoader);
             } catch (ComparatorCache.TemplateNotFoundException e) {
                 throw new CubeStoreException(e, "Compare Template Not Found", event);
@@ -759,8 +759,8 @@ public class CubeStore {
             eventBuilder.setPayload(reqEvent.payload);
             Event defaultReqEvent = eventBuilder.createEvent();
             try {
-                defaultReqEvent.parseAndSetKey(Utils.
-                    getRequestMatchTemplate(config, defaultReqEvent
+                defaultReqEvent.parseAndSetKey(rrstore.
+                    getRequestMatchTemplate(defaultReqEvent
                         , Constants.DEFAULT_TEMPLATE_VER));
             } catch (ComparatorCache.TemplateNotFoundException e) {
                 LOGGER.error(new ObjectMessage(
@@ -1211,7 +1211,7 @@ public class CubeStore {
         try {
             TemplateKey key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, "ravivj", "movieinfo"
                 , "movieinfo", "minfo/listmovies", Type.ResponseCompare);
-            Comparator comparator = this.config.comparatorCache.getComparator(key, Event.EventType.HTTPResponse);
+            Comparator comparator = this.config.rrstore.getComparator(key, Event.EventType.HTTPResponse);
             LOGGER.info("Got Response Comparator :: " + comparator.toString());
         } catch (Exception e) {
             LOGGER.error("Error occured :: " + e.getMessage() + " "

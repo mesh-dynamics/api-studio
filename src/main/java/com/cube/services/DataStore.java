@@ -22,7 +22,7 @@ import com.cube.dao.ReqRespStore;
  * Created by IntelliJ IDEA.
  * Date: 14/05/20
  */
-public interface CubeDataStore {
+public interface DataStore {
 
     /**
      * @param customerId
@@ -35,9 +35,9 @@ public interface CubeDataStore {
     Comparator getComparator(TemplateKey key, Event.EventType eventType) throws
         ComparatorCache.TemplateNotFoundException;
 
-    CubeDSResult<Event> getEvents(EventQuery eventQuery);
+    DSResult<Event> getEvents(EventQuery eventQuery);
 
-    Optional<Event> getSingleEvent(EventQuery build);
+    Optional<Event> getSingleEvent(EventQuery eventQuery);
 
     Optional<Event> getRespEventForReqEvent(Event reqEvent);
 

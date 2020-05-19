@@ -32,8 +32,7 @@ public class EventPayloadKeyTest {
 			Event event = jsonMapper.readValue(cubeEventJson, Event.class);
 			TemplateKey key = new TemplateKey("templateVersion", "customerId", "app", "service", "path", Type.ResponseCompare);
 			Comparator comparator = null;
-			ComparatorCache comparatorCache = config.comparatorCache;
-			comparator = comparatorCache.getComparator(key , EventType.HTTPResponse);
+            comparator = config.rrstore.getComparator(key , EventType.HTTPResponse);
 			event.parseAndSetKey(comparator.getCompareTemplate());
 			System.out.println(event.payloadKey);
 		} catch (Exception e) {

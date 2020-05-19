@@ -22,7 +22,7 @@ public class RetrieveAttributeRuleMap {
 				, "ravivj" , "random" , "randomSerive"
 				, "randomPath" , Type.ResponseCompare);
 
-			Comparator comparator = config.comparatorCache.getComparator(key);
+			Comparator comparator = config.rrstore.getComparator(key);
 
 			TemplateEntry entry = comparator.getCompareTemplate().getRule("/timestamp");
 

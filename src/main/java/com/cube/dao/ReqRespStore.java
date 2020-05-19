@@ -25,6 +25,7 @@ import io.cube.agent.FnReqResponse;
 import io.cube.agent.FnResponse;
 import io.md.constants.ReplayStatus;
 import io.md.core.AttributeRuleMap;
+import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.dao.Event;
 import io.md.dao.Event.RunType;
@@ -32,7 +33,7 @@ import io.md.dao.EventQuery;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.Replay;
 
-import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
+import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateKey;
 import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
@@ -40,19 +41,23 @@ import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.injection.DynamicInjectionConfig;
+import com.cube.services.DataStore;
 import com.cube.utils.Constants;
 
 /**
  * @author prasad
  *
  */
-public interface ReqRespStore  {
+public interface ReqRespStore extends DataStore {
 
 
     Optional<TemplateSet> getTemplateSet(String customerId, String app, String version);
 
+    // void invalidateCacheFromTemplateSet(TemplateSet templateSet);
 
-    public class ReqResp {
+    void invalidateCache();
+
+    class ReqResp {
 
 
 		/**
@@ -116,9 +121,6 @@ public interface ReqRespStore  {
 		DynamicInjectionConfig
     }
 
-    boolean save(Event event);
-
-
     /**
 	 * @param reqId
 	 * @return the matching response on the reqId
@@ -131,10 +133,8 @@ public interface ReqRespStore  {
      */
     Optional<Event> getRequestEvent(String reqId);
 
-	Optional<Event> getRespEventForReqEvent(Event reqEvent);
 
-
-	/**
+    /**
 	 *
 	 * @param customerId
 	 * @param app
@@ -148,11 +148,10 @@ public interface ReqRespStore  {
 	public Result<Event> getRequests(String customerId, String app, String collection,
 		List<String> reqids, List<String> services, List<String> paths, Optional<Event.RunType> runType);
 
+	@Override
     Result<Event> getEvents(EventQuery eventQuery);
 
-    Optional<Event> getSingleEvent(EventQuery eventQuery);
-
-	Optional<Event> getSingleResponseEvent(String customerId, String app, String collection, List<String> services,
+    Optional<Event> getSingleResponseEvent(String customerId, String app, String collection, List<String> services,
 		List<String> paths, Optional<Event.RunType> runType);
 
 	/**
@@ -198,8 +197,9 @@ public interface ReqRespStore  {
 	 */
 	Optional<CompareTemplate> getCompareTemplate(TemplateKey key);
 
+    Comparator getComparator(TemplateKey key) throws ComparatorCache.TemplateNotFoundException;
 
-	Optional<AttributeRuleMap> getAttributeRuleMap(TemplateKey key);
+    Optional<AttributeRuleMap> getAttributeRuleMap(TemplateKey key);
 
 
     /**
@@ -300,12 +300,6 @@ public interface ReqRespStore  {
 	 * @return
 	 */
 	boolean saveAnalysis(Analysis analysis);
-
-	/**
-	 * @param res
-	 * @return
-	 */
-	boolean saveResult(ReqRespMatchResult res);
 
 
     /**
@@ -608,26 +602,8 @@ public interface ReqRespStore  {
      */
     boolean deleteReqResByTraceId(String traceId, String collectionName);
 
+
     /**
-	 * Save replay results (request match / not match counts) for a given customer/app/virtual(mock) service
-	 * combination. The counts are stored in the backend path wise.
-	 * @param pathStatistics
-	 * @param replayId
-	 */
-	void saveReplayResult(Map<String , List<ReplayPathStatistic>> pathStatistics, String replayId);
-
-	/**
-	 * Get replay results (request match / not match counts) from the backend for a given customer/app/virtual(mock)
-	 * service and replay combination
-	 * @param customer
-	 * @param app
-	 * @param service
-	 * @param replayId
-	 * @return
-	 */
-	List<String> getReplayRequestCounts(String customer, String app, String service, String replayId);
-
-	/**
 	 * Given a request Id , find all the ReqRespMatchResults for Requests having the same traceId
 	 * as the given request in the same collection as Request (This function can be used for getting match results for
 	 * both record and replay)

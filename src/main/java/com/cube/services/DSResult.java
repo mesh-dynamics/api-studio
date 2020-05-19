@@ -12,7 +12,7 @@ import java.util.stream.Stream;
  * Created by IntelliJ IDEA.
  * Date: 14/05/20
  */
-public interface CubeDSResult<T> {
+public interface DSResult<T> {
 
     /**
      * @return

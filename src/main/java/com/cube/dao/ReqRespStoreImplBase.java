@@ -4,7 +4,6 @@
 package com.cube.dao;
 
 import io.md.constants.ReplayStatus;
-import io.md.dao.EventQuery;
 import io.md.dao.Replay;
 import java.util.Collections;
 import java.util.Map;
@@ -16,31 +15,17 @@ import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.google.common.base.MoreObjects;
 
-import io.md.dao.Event;
-
 import com.cube.dao.Recording.RecordingStatus;
+import com.cube.services.AbstractDataStore;
 import com.cube.utils.Constants;
 
 /**
  * @author prasad
  *
  */
-public abstract class ReqRespStoreImplBase implements ReqRespStore {
+public abstract class ReqRespStoreImplBase extends AbstractDataStore implements ReqRespStore {
 
 	private static final Logger LOGGER = LogManager.getLogger(ReqRespStoreImplBase.class);
-
-    @Override
-    public Optional<Event> getRespEventForReqEvent(Event reqEvent){
-        EventQuery.Builder builder = new EventQuery.Builder(reqEvent.customerId, reqEvent.app,
-            Event.EventType.getResponseType(reqEvent.eventType));
-        EventQuery eventQuery = builder.withCollection(reqEvent.getCollection())
-            .withService(reqEvent.service)
-            .withTraceId(reqEvent.getTraceId())
-            .withReqId(reqEvent.reqId)
-            .withLimit(1)
-            .build();
-        return getSingleEvent(eventQuery);
-    }
 
     /* (non-Javadoc)
 	 * @see com.cube.dao.ReqRespStore#getCurrentCollection(java.util.Optional, java.util.Optional, java.util.Optional)
@@ -54,9 +39,13 @@ public abstract class ReqRespStoreImplBase implements ReqRespStore {
 		return getCurrentRecordOrReplay(customerId, app, instanceId).flatMap(rr -> rr.getCollection());
 	}
 
+    @Override
+    public Optional<ReqRespStore.RecordOrReplay> getCurrentRecordOrReplay(String customerId, String app, String instanceId) {
+        return getCurrentRecordOrReplay(Optional.of(customerId),
+            Optional.of(app), Optional.of(instanceId));
+    }
 
-
-	/* (non-Javadoc)
+    /* (non-Javadoc)
 	 * @see com.cube.dao.ReqRespStore#getCurrentRecordingCollection(java.util.Optional, java.util.Optional, java.util.Optional)
 	 */
 	@Override

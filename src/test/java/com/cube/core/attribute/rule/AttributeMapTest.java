@@ -121,7 +121,7 @@ public class AttributeMapTest {
 			templateUpdateMap);
 
 		TemplateSet updatedTemplateSet = templateSetTransformer.updateTemplateSet(
-			templateSet, templateUpdateOperationSet, config.comparatorCache);
+			templateSet, templateUpdateOperationSet, config.rrstore);
 
 		Assertions.assertEquals(updatedTemplateSet.appAttributeRuleMap.get().getRule("/timestamp").get().ct
 			, ComparisonType.Equal);

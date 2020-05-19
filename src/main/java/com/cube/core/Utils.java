@@ -250,18 +250,6 @@ public class Utils {
 
     }
 
-    static public void invalidateCacheFromTemplateSet(TemplateSet templateSet,
-                                                      ComparatorCache comparatorCache)
-    {
-        templateSet.templates.stream().forEach(compareTemplateVersioned -> {
-            TemplateKey key =
-                new TemplateKey(templateSet.version, templateSet.customer, templateSet.app,
-                    compareTemplateVersioned.service,
-                    compareTemplateVersioned.prefixpath, compareTemplateVersioned.type);
-            comparatorCache.invalidateKey(key);
-        });
-    }
-
     static Pattern templateKeyPattern = Pattern.compile("TemplateKey\\{customerId=(.+?),"
 	    + " appId=(.+?), serviceId=(.+?), path=(.+?), version=(.+?), type=(.+?)}");
 
@@ -276,15 +264,6 @@ public class Utils {
         URIBuilder uriBuilder = new URIBuilder(baseUrl);
         return uriBuilder.setPath(uriBuilder.getPath() + "/" + suffix)
             .build().normalize().toString();
-    }
-
-    public static CompareTemplate getRequestMatchTemplate(Config config, Event event
-	    , String templateVersion) throws TemplateNotFoundException {
-        TemplateKey tkey =
-            new TemplateKey(templateVersion, event.customerId,
-                event.app, event.service, event.apiPath, Type.RequestMatch);
-
-        return config.comparatorCache.getComparator(tkey, event.eventType).getCompareTemplate();
     }
 
     public static String buildSuccessResponse(String status, JSONObject data) {

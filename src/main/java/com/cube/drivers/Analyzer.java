@@ -65,17 +65,13 @@ public class Analyzer {
         analysis = new Analysis(replayId, reqcnt, templateVersion);
         this.jsonMapper = config.jsonMapper;
 
-        this.comparatorCache = config.comparatorCache;
         this.templateVersion = templateVersion;
     }
 
 
     private Analysis analysis;
-    //private ResponseComparator comparator = ResponseComparator.EQUALITYCOMPARATOR;
     private final ObjectMapper jsonMapper;
     private final Config config;
-    // Template cache being passed from the config
-    private final ComparatorCache comparatorCache;
     private final String templateVersion;
 
 
@@ -241,7 +237,7 @@ public class Analyzer {
         try {
             TemplateKey reqCompareKey = new TemplateKey(templateVersion, recordreq.customerId,
                 recordreq.app, recordreq.service, recordreq.apiPath, Type.RequestCompare);
-            Comparator reqComparator = comparatorCache
+            Comparator reqComparator = config.rrstore
                 .getComparator(reqCompareKey, recordreq.eventType);
             if (reqComparator.getCompareTemplate().getRules() != null &&
                 ! reqComparator.getCompareTemplate().getRules().isEmpty()) {
@@ -257,7 +253,7 @@ public class Analyzer {
             if (recordedResponse.isPresent() && replayresp.isPresent()) {
                 Event recordedr = recordedResponse.get();
                 Event replayr = replayresp.get();
-                Comparator respComparator = comparatorCache
+                Comparator respComparator = config.rrstore
                     .getComparator(respCompareKey, recordedr.eventType);
                 respCompareRes = respComparator
                     .compare(recordedr.payload, replayr.payload);

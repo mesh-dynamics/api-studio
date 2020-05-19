@@ -16,13 +16,13 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import com.cube.services.CubeDSResult;
+import com.cube.services.DSResult;
 
 /**
  * @author prasad
  *
  */
-public class Result<T> implements CubeDSResult<T> {
+public class Result<T> implements DSResult<T> {
 
 	/**
 	 * @param objects

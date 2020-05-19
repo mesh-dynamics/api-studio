@@ -189,27 +189,6 @@ public class AnalyzeWS {
         }
     }
 
-	/**
-	 * Api to get replay results for a given customer/app/virtual(mock) service and replay combination.
-	 * The result would contain request match / not match counts for all the paths covered by
-	 * the service during replay.
-	 * @param uriInfo
-	 * @param customerId
-	 * @param app
-	 * @param service
-	 * @param replayId
-	 * @return
-	 */
-	@GET
-    @Path("replayRes/{customerId}/{app}/{service}/{replayId}")
-    public Response replayResult(@Context UriInfo uriInfo, @PathParam("customerId") String customerId,
-                                 @PathParam("app") String app, @PathParam("service") String service,
-                                 @PathParam("replayId") String replayId) {
-        List<String> replayRequestCountResults = rrstore.getReplayRequestCounts(customerId, app, service, replayId);
-        String resultJson = replayRequestCountResults.stream().collect(Collectors.joining(",", "[", "]"));
-        return Response.ok().type(MediaType.APPLICATION_JSON).entity(resultJson).build();
-    }
-
 
 	@POST
     @Path("registerTemplateApp/{customerId}/{appId}/{version}")
@@ -255,7 +234,6 @@ public class AnalyzeWS {
                 return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
             }
 
-            Utils.invalidateCacheFromTemplateSet(templateSet, comparatorCache);
             rrstore.saveTemplateSet(templateSet);
 
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(String.format(
@@ -309,7 +287,6 @@ public class AnalyzeWS {
 	                    .toString()).build();
             }
             rrstore.saveCompareTemplate(key, templateAsJson);
-            comparatorCache.invalidateKey(key);
             return Response.ok().type(MediaType.TEXT_PLAIN)
 	            .entity("Json String successfully stored in Solr").build();
         } catch (JsonProcessingException e) {
@@ -371,7 +348,7 @@ public class AnalyzeWS {
             ruleType);
 
         try {
-	        TemplateEntry rule = comparatorCache.getComparator(tkey).getCompareTemplate()
+	        TemplateEntry rule = rrstore.getComparator(tkey).getCompareTemplate()
 		        .getRule(jsonpath.get());
 	        return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
 		        .entity(jsonMapper.writeValueAsString(rule)).build();
@@ -828,7 +805,7 @@ public class AnalyzeWS {
     @POST
     @Path("cache/flushall")
     public Response cacheFlushAll() {
-        comparatorCache.invalidateAll();
+        rrstore.invalidateCache();
         try (Jedis jedis = config.jedisPool.getResource()) {
             jedis.flushAll();
             return Response.ok().build();
@@ -924,7 +901,7 @@ public class AnalyzeWS {
 		        templateSet -> updateOperationSetOpt.map(UtilException.rethrowFunction(
 			        updateOperationSet ->
 				        transformer.updateTemplateSet(templateSet, updateOperationSet,
-					        config.comparatorCache)))))
+					        config.rrstore)))))
 		        .orElseThrow(
 			        () -> new Exception("Missing template set or template update operation set"));
             // Validate updated template set
@@ -1002,7 +979,7 @@ public class AnalyzeWS {
                     new Exception("Unable to find Template Update Operation Set of specified id"));
             TemplateSetTransformer setTransformer = new TemplateSetTransformer();
             TemplateSet updatedTemplateSet = setTransformer.updateTemplateSet(
-            	templateSet, templateUpdateOperationSet, config.comparatorCache);
+            	templateSet, templateUpdateOperationSet, config.rrstore);
 
 	        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully updated template set",
 		        Constants.OLD_TEMPLATE_SET_VERSION, templateSet.version, Constants.NEW_TEMPLATE_SET_VERSION, updatedTemplateSet.version,
@@ -1408,7 +1385,6 @@ public class AnalyzeWS {
 		this.rrstore = config.rrstore;
 		this.jsonMapper = config.jsonMapper;
 		this.config = config;
-		this.comparatorCache = config.comparatorCache;
 		this.recordingUpdate = new RecordingUpdate(config);
 	}
 
@@ -1417,8 +1393,6 @@ public class AnalyzeWS {
 	ObjectMapper jsonMapper;
 	Config config;
     private final RecordingUpdate recordingUpdate;
-    // Template cache to retrieve analysis templates from solr
-    final ComparatorCache comparatorCache;
 
     /**
      * some fields from ReqRespMatchResult and some from Request to be returned by some api calls

@@ -42,14 +42,11 @@ import io.md.dao.EventQuery;
 import io.md.dao.EventQuery.Builder;
 import io.md.dao.HTTPResponsePayload;
 
-import com.cube.cache.ComparatorCache;
-import com.cube.cache.ReplayResultCache;
 import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStore.RecordOrReplay;
-import com.cube.services.CubeDataStoreLocal;
-import com.cube.services.CubeMocker;
-import com.cube.services.CubeMockerLocal;
+import com.cube.services.Mocker;
+import com.cube.services.RealMocker;
 import com.cube.utils.Constants;
 
 /**
@@ -116,7 +113,7 @@ public class MockServiceHTTP {
         try {
             FnResponse fnResponse = mocker.mockFunction(event);
             return getFuncResp(event, fnResponse);
-        } catch (CubeMocker.MockerException e) {
+        } catch (Mocker.MockerException e) {
             return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                 buildErrorResponse(Constants.ERROR, e.errorType, e.getMessage())).build();
         }
@@ -151,8 +148,8 @@ public class MockServiceHTTP {
                             + " , app :: " + thriftMockRequest.app + " , instanceId :: "
                             + thriftMockRequest.instanceId));
             Optional<URLClassLoader> urlClassLoader = recordOrReplay.getClassLoader();
-            thriftMockRequest.parseAndSetKey(Utils
-                .getRequestMatchTemplate(config, thriftMockRequest,
+            thriftMockRequest.parseAndSetKey(rrstore
+                .getRequestMatchTemplate(thriftMockRequest,
                     recordOrReplay.getTemplateVersion()), urlClassLoader);
 
             EventQuery.Builder builder = new Builder(thriftMockRequest.customerId,
@@ -280,22 +277,18 @@ public class MockServiceHTTP {
 		this.config = config;
 		this.rrstore = config.rrstore;
 		this.jsonMapper = config.jsonMapper;
-		this.comparatorCache = config.comparatorCache;
-		this.replayResultCache = config.replayResultCache;
-		//LOGGER.info("Cube mock service started");
+        //LOGGER.info("Cube mock service started");
 
-        mocker = new CubeMockerLocal(new CubeDataStoreLocal(config.rrstore, config.comparatorCache));
+        mocker = new RealMocker(rrstore);
 	}
 
 
 	private ReqRespStore rrstore;
 	private ObjectMapper jsonMapper;
-	private ComparatorCache comparatorCache;
-	private ReplayResultCache replayResultCache;
-	private static String tracefield = Constants.DEFAULT_TRACE_FIELD;
+    private static String tracefield = Constants.DEFAULT_TRACE_FIELD;
 	private final Config config;
 
-	private CubeMocker mocker;
+	private Mocker mocker;
 
 
 }

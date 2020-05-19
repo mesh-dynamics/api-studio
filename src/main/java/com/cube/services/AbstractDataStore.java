@@ -19,7 +19,7 @@ import com.cube.cache.TemplateKey;
  * Created by IntelliJ IDEA.
  * Date: 15/05/20
  */
-public abstract class AbstractCubeDataStore implements CubeDataStore {
+public abstract class AbstractDataStore implements DataStore {
 
     @Override
     public Optional<Event> getSingleEvent(EventQuery eventQuery) {

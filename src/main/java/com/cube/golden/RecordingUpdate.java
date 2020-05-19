@@ -206,7 +206,7 @@ public class RecordingUpdate {
                 TemplateKey key = new TemplateKey(newTemplateSetVersion, originalRec.customerId,
                     originalRec.app, recordRequest.service, recordRequest.apiPath,
                     Type.RequestMatch);
-                Comparator comparator = config.comparatorCache.getComparator(key
+                Comparator comparator = config.rrstore.getComparator(key
                     , Event.EventType.HTTPRequest);
 
                 // Transform request

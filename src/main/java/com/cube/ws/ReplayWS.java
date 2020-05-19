@@ -37,7 +37,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cube.agent.UtilException;
 import io.md.core.ReplayTypeEnum;
 
-import com.cube.cache.ReplayResultCache;
 import com.cube.core.Utils;
 import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.Recording;
@@ -155,7 +154,6 @@ public class ReplayWS {
             if (!rrstore.saveReplay(r)) {
                 return Response.serverError().build();
             }
-            //replayResultCache.stopReplay(r.customerId, r.app, r.instanceid, replayId);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Replay not found for replayId: " + replayId).build());
         return resp;
@@ -187,7 +185,6 @@ public class ReplayWS {
             if (!rrstore.saveReplay(r)) {
                 return Response.serverError().build();
             }
-            //replayResultCache.startReplay(r.customerId, r.app, r.instanceid, replayId);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
         }).orElse(Response.status(Response.Status.NOT_FOUND).entity("Replay not found for replayId: " + replayId).build());
         return resp;
@@ -391,13 +388,11 @@ public class ReplayWS {
 		super();
 		this.rrstore = config.rrstore;
 		this.jsonMapper = config.jsonMapper;
-		this.replayResultCache = config.replayResultCache;
 		this.config = config;
 	}
 
 
 	ReqRespStore rrstore;
 	ObjectMapper jsonMapper;
-	ReplayResultCache replayResultCache;
-	private final Config config;
+    private final Config config;
 }

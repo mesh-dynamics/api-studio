@@ -47,12 +47,12 @@ import com.cube.utils.Constants;
  * Created by IntelliJ IDEA.
  * Date: 14/05/20
  */
-public class CubeMockerLocal implements CubeMocker {
+public class RealMocker implements Mocker {
 
-    private CubeDataStore cube;
-    private static final Logger LOGGER = LogManager.getLogger(CubeMockerLocal.class);
+    private DataStore cube;
+    private static final Logger LOGGER = LogManager.getLogger(RealMocker.class);
 
-    public CubeMockerLocal(CubeDataStore cube) {
+    public RealMocker(DataStore cube) {
         this.cube = cube;
     }
 
@@ -60,7 +60,7 @@ public class CubeMockerLocal implements CubeMocker {
     public FnResponse mockFunction(Event event) throws MockerException {
         if (setFunctionPayloadKeyAndCollection(event)) {
             EventQuery eventQuery = buildFunctionEventQuery(event, 0, 1, true);
-            CubeDSResult<Event> matchingEvent = cube.getEvents(eventQuery);
+            DSResult<Event> matchingEvent = cube.getEvents(eventQuery);
 
             return matchingEvent.getObjects().findFirst()
                 .map(UtilException.rethrowFunction(retEvent -> getFuncResp(event, matchingEvent.getNumFound(),
@@ -177,9 +177,6 @@ public class CubeMockerLocal implements CubeMocker {
         respEvent.ifPresentOrElse(
             respEventVal -> createResponseFromEvent(mockRequestEvent, respEventVal),
             () -> {
-                // Increment not match counter in cache
-                // TODO commenting out call to cache
-                //replayResultCache.incrementReqNotMatchCounter(customerId, app, service, path, instanceId);
                 //TODO this is a hack : as ReqRespMatchResult is calculated from the perspective of
                 //a recorded request, here in the mock we have a replay request which did not match
                 //with any recorded request, but still to properly calculate no match counts for
@@ -436,9 +433,6 @@ public class CubeMockerLocal implements CubeMocker {
     private void createResponseFromEvent(
         Event mockRequestEvent, Event respEventVal) {
 
-        // Increment match counter in cache
-        // TODO commenting out call to cache
-        //replayResultCache.incrementReqMatchCounter(customerId, app, service, path, instanceId);
         // store a req-resp analysis match result for the mock request (during replay)
         // and the matched recording request
         String recordReqId = respEventVal.reqId;
