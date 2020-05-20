@@ -33,6 +33,7 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
 import com.cube.cache.TemplateCache;
+import com.cube.cache.TemplateCacheRedis;
 import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr;
@@ -91,7 +92,7 @@ public class Config {
         if (solrurl != null) {
             solr = new HttpSolrClient.Builder(solrurl).build();
             rrstore = new ReqRespStoreSolr(solr, this);
-            templateCache = new TemplateCache(rrstore , this);
+            templateCache = new TemplateCacheRedis(rrstore , this);
         } else {
             final String msg = String.format("Solrurl missing in the config file %s", CONFFILE);
             LOGGER.error(msg);

@@ -71,6 +71,8 @@ import redis.clients.jedis.Jedis;
 
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateCache;
+import com.cube.cache.TemplateCacheRedis;
+import com.cube.cache.TemplateCacheWithoutCaching;
 import com.cube.cache.TemplateKey;
 import com.cube.cache.TemplateKey.Type;
 import com.cube.core.CompareTemplateVersioned;
@@ -772,12 +774,24 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @param config
      */
     public ReqRespStoreSolr(SolrClient solr, Config config) {
+        this(solr, config, true);
+    }
+
+    /**
+     * @param solr
+     * @param config
+     */
+    public ReqRespStoreSolr(SolrClient solr, Config config, boolean useTemplateCaching) {
         super();
         this.solr = solr;
         this.config = config;
         SolrIterator.setConfig(config);
 
-        this.templateCache = new TemplateCache(this , config);
+        if (useTemplateCaching) {
+            this.templateCache = new TemplateCacheRedis(this, config);
+        } else {
+            this.templateCache = new TemplateCacheWithoutCaching(this);
+        }
         this.comparatorCache = new ComparatorCache(templateCache, config.jsonMapper, this);
 
     }
