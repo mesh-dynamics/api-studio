@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.cube</groupId>
   <artifactId>md-springboot-resttemplate-interceptor</artifactId>
-  <version>1.2.0</version>
+  <version>1.2.2</version>
   <packaging>jar</packaging>
 
   <distributionManagement>
@@ -19,12 +19,12 @@
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>md-spring-ingress-interceptor</artifactId>
-      <version>1.2.0</version>
+      <version>1.2.2</version>
     </dependency>
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>md-spring-egress-resttemplate-interceptor</artifactId>
-      <version>1.2.0</version>
+      <version>1.2.2</version>
     </dependency>
   </dependencies>
   <build>

@@ -84,8 +84,8 @@ public class Utils {
 		MultivaluedMap<String, String> meta, MDTraceInfo mdTraceInfo, byte[] requestBody) {
 		try {
 			Event requestEvent = io.md.utils.Utils
-				.createHTTPRequestEvent(apiPath, queryParams,
-					new MultivaluedHashMap<>(), meta, requestHeaders, mdTraceInfo,
+				.createHTTPRequestEvent(apiPath, queryParams, new MultivaluedHashMap<>(),
+					 meta, requestHeaders, mdTraceInfo,
 					requestBody, Optional.empty(), config.jsonMapper, true);
 			config.recorder.record(requestEvent);
 		} catch (InvalidEventException e) {

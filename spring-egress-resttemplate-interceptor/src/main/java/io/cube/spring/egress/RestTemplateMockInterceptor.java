@@ -1,14 +1,11 @@
 package io.cube.spring.egress;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -47,29 +44,27 @@ public class RestTemplateMockInterceptor implements ClientHttpRequestInterceptor
 		CommonConfig commonConfig = CommonConfig.getInstance();
 		String serviceName = CommonUtils.getEgressServiceName(originalUri);
 		HttpRequestWrapper newRequest = null;
-		Optional<Span>[] ingressSpan = (Optional<Span>[])new Optional[1];
 		Span[] clientSpan = {null};
-		Scope[] clientScope ={null};
+		Scope[] clientScope = {null};
 
 		try {
 			newRequest = commonConfig.getMockingURI(originalUri, serviceName).map(mockURI -> {
 
-				ingressSpan[0] = CommonUtils.getCurrentSpan();
+				Optional<Span> ingressSpan = CommonUtils.getCurrentSpan();
 
 				//Empty ingress span pertains to DB initialization scenarios.
-				SpanContext spanContext = ingressSpan[0].map(Span::context)
-						.orElse(CommonUtils.createDefSpanContext());
+				SpanContext spanContext = ingressSpan.map(Span::context)
+					.orElse(CommonUtils.createDefSpanContext());
 
 				clientSpan[0] = CommonUtils
-						.startClientSpan(Constants.MD_CHILD_SPAN, spanContext, false);
-
-				ingressSpan[0].map(span -> clientSpan[0].setBaggageItem("md-parent-span",  span.context().toSpanId()));
+					.startClientSpan(Constants.MD_CHILD_SPAN, spanContext, false);
 
 				clientScope[0] = CommonUtils.activateSpan(clientSpan[0]);
 
 				MyHttpRequestWrapper request = new MyHttpRequestWrapper(httpRequest, mockURI);
 				commonConfig.authToken.ifPresent(auth -> {
-					request.putHeader(io.cube.agent.Constants.AUTHORIZATION_HEADER, Arrays.asList(auth));
+					request.putHeader(io.cube.agent.Constants.AUTHORIZATION_HEADER,
+						Arrays.asList(auth));
 				});
 
 				if (!commonConfig.authToken.isPresent()) {
@@ -77,7 +72,7 @@ public class RestTemplateMockInterceptor implements ClientHttpRequestInterceptor
 				}
 
 				return request;
-			}).orElse(new MyHttpRequestWrapper(httpRequest, originalUri));
+			}).orElse(null);
 
 		} catch (URISyntaxException e) {
 			LOGGER.error("Mocking filter issue, exception during setting URI!", e);
@@ -90,7 +85,8 @@ public class RestTemplateMockInterceptor implements ClientHttpRequestInterceptor
 			}
 			return execution.execute(httpRequest, bytes);
 		}
-		ClientHttpResponse response = execution.execute(newRequest, bytes);
+		ClientHttpResponse response = (newRequest == null) ? execution.execute(httpRequest, bytes)
+			: execution.execute(newRequest, bytes);
 
 		if (clientSpan[0] != null) {
 			clientSpan[0].finish();

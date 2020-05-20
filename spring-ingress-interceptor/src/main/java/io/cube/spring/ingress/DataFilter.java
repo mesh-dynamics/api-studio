@@ -1,8 +1,7 @@
 package io.cube.spring.ingress;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.servlet.FilterChain;
@@ -12,20 +11,20 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import io.cube.agent.CommonConfig;
 import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
-import io.md.utils.UtilException;
 import io.opentracing.Span;
 
 /**
@@ -48,18 +47,16 @@ public class DataFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(HttpServletRequest httpServletRequest,
 		HttpServletResponse httpServletResponse, FilterChain filterChain)
 		throws ServletException, IOException {
-		ContentCachingRequestWrapper requestWrapper = new ContentCachingRequestWrapper(
-			httpServletRequest);
-		ContentCachingResponseWrapper responseWrapper = new ContentCachingResponseWrapper(
-			httpServletResponse);
-
-		filterChain.doFilter(requestWrapper, responseWrapper);
-
+		CachedBodyHttpServletRequest requestWrapper = null;
+		ContentCachingResponseWrapper responseWrapper = null;
+		String apiPath = null;
+		MultivaluedMap<String, String> traceMetaMap = new MultivaluedHashMap<>();
+		MDTraceInfo mdTraceInfo = new MDTraceInfo();
+		Optional<Span> currentSpan = Optional.empty();
 		try {
-
-			Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
-			currentSpan.ifPresent(UtilException.rethrowConsumer(span ->
-			{
+			currentSpan = CommonUtils.getCurrentSpan();
+			if (currentSpan.isPresent()) {
+				Span span = currentSpan.get();
 				//Either baggage has sampling set to true or this service uses its veto power to sample.
 				boolean isSampled = BooleanUtils
 					.toBoolean(span.getBaggageItem(Constants.MD_IS_SAMPLED));
@@ -67,29 +64,26 @@ public class DataFilter extends OncePerRequestFilter {
 					.toBoolean(span.getBaggageItem(Constants.MD_IS_VETOED));
 
 				if (isSampled || isVetoed) {
+					requestWrapper = new CachedBodyHttpServletRequest(httpServletRequest);
+					responseWrapper = new ContentCachingResponseWrapper(httpServletResponse);
+
 					//path
-					String apiPath = requestWrapper.getRequestURI();
+					apiPath = requestWrapper.getRequestURI();
 
 					//query params
-					MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
-					try {
-						queryParams = Utils
-							.getQueryParams(new URI(requestWrapper.getRequestURL().toString()));
-					} catch (URISyntaxException e) {
-						LOGGER.error("URI formation failed,  query params ignored!", e);
-					}
+					MultivaluedMap<String, String> queryParams = getQueryParameters(
+						requestWrapper.getQueryString());
 
-					MDTraceInfo mdTraceInfo = io.md.utils.Utils.getTraceInfo(span);
+					mdTraceInfo = io.md.utils.Utils.getTraceInfo(span);
 
 					String xRequestId = requestWrapper.getHeader(Constants.X_REQUEST_ID);
-					MultivaluedMap<String, String> traceMetaMap = CommonUtils
+					traceMetaMap = CommonUtils
 						.buildTraceInfoMap(CommonConfig.getInstance().serviceName, mdTraceInfo,
 							xRequestId);
 
 					logRequest(requestWrapper, apiPath,
 						traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID), queryParams,
 						mdTraceInfo);
-					logResponse(responseWrapper, apiPath, traceMetaMap, mdTraceInfo);
 
 					//Setting the ingress md span as parent span and re-injecting them into the headers.
 					// This is done after the capture as this is the parent only for the subsequent capture
@@ -98,22 +92,32 @@ public class DataFilter extends OncePerRequestFilter {
 					LOGGER
 						.debug("Sampling is false!");
 				}
-			}));
+			}
 		} catch (Exception ex) {
 			LOGGER.error("Exception occured while capturing "
 				+ "request/response in logging filter!", ex);
 		}
 
+		if (requestWrapper != null && responseWrapper != null) {
+			filterChain.doFilter(requestWrapper, responseWrapper);
+			logResponse(responseWrapper, apiPath, traceMetaMap, mdTraceInfo);
+		} else {
+			filterChain.doFilter(httpServletRequest, httpServletResponse);
+		}
+
 		//Need to copy back the response body as it is consumed by responseWrapper.
 		//first call to copyBodyToResponse() makes the content empty once it copies it
 		// to the original response, so multiple calls do not have an impact.
-		responseWrapper.copyBodyToResponse();
+		if (responseWrapper != null) {
+			responseWrapper.copyBodyToResponse();
+		}
 
 	}
 
 
-	private void logRequest(ContentCachingRequestWrapper requestWrapper, String apiPath,
-		String cRequestId, MultivaluedMap<String, String> queryParams, MDTraceInfo mdTraceInfo)
+	private void logRequest(CachedBodyHttpServletRequest requestWrapper, String apiPath,
+		String cRequestId, MultivaluedMap<String, String> queryParams,
+		MDTraceInfo mdTraceInfo)
 		throws IOException {
 		//hdrs
 		MultivaluedMap<String, String> requestHeaders = Utils.getHeaders(requestWrapper);
@@ -123,7 +127,7 @@ public class DataFilter extends OncePerRequestFilter {
 			.getRequestMeta(requestWrapper.getMethod(), cRequestId, Optional.empty());
 
 		//body
-		byte[] requestBody = requestWrapper.getContentAsByteArray();
+		byte[] requestBody = IOUtils.toByteArray(requestWrapper.getInputStream());
 
 		Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta,
 			mdTraceInfo, requestBody);
@@ -149,7 +153,6 @@ public class DataFilter extends OncePerRequestFilter {
 		//hdrs
 		MultivaluedMap<String, String> responseHeaders = getHeaders(responseWrapper);
 
-
 		Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, mdTraceInfo, responseBody);
 	}
 
@@ -163,6 +166,26 @@ public class DataFilter extends OncePerRequestFilter {
 				}
 			});
 		return headerMap;
+	}
+
+	private static MultivaluedMap<String, String> getQueryParameters(String queryString) {
+		MultivaluedMap<String, String> queryParameters = new MultivaluedHashMap<>();
+
+		if (StringUtils.isEmpty(queryString)) {
+			return queryParameters;
+		}
+
+		String[] parameters = queryString.split("&");
+
+		for (String parameter : parameters) {
+			String[] keyValuePair = parameter.split("=");
+			if (keyValuePair.length == 1) {
+				queryParameters.add(keyValuePair[0], "");
+			} else {
+				queryParameters.add(keyValuePair[0], keyValuePair[1]);
+			}
+		}
+		return queryParameters;
 	}
 
 }
