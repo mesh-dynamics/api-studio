@@ -74,9 +74,6 @@ public class DataFilter extends OncePerRequestFilter {
 					MultivaluedMap<String, String> queryParams = getQueryParameters(
 						requestWrapper.getQueryString());
 
-					MultivaluedMap<String, String> formParams = getMultiMap(
-						requestWrapper.getParameterMap());
-
 					mdTraceInfo = io.md.utils.Utils.getTraceInfo(span);
 
 					String xRequestId = requestWrapper.getHeader(Constants.X_REQUEST_ID);
@@ -86,7 +83,6 @@ public class DataFilter extends OncePerRequestFilter {
 
 					logRequest(requestWrapper, apiPath,
 						traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID), queryParams,
-						formParams,
 						mdTraceInfo);
 
 					//Setting the ingress md span as parent span and re-injecting them into the headers.
@@ -121,7 +117,7 @@ public class DataFilter extends OncePerRequestFilter {
 
 	private void logRequest(CachedBodyHttpServletRequest requestWrapper, String apiPath,
 		String cRequestId, MultivaluedMap<String, String> queryParams,
-		MultivaluedMap<String, String> formParams, MDTraceInfo mdTraceInfo)
+		MDTraceInfo mdTraceInfo)
 		throws IOException {
 		//hdrs
 		MultivaluedMap<String, String> requestHeaders = Utils.getHeaders(requestWrapper);
@@ -133,7 +129,7 @@ public class DataFilter extends OncePerRequestFilter {
 		//body
 		byte[] requestBody = IOUtils.toByteArray(requestWrapper.getInputStream());
 
-		Utils.createAndLogReqEvent(apiPath, queryParams, formParams, requestHeaders, meta,
+		Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta,
 			mdTraceInfo, requestBody);
 
 	}
@@ -170,16 +166,6 @@ public class DataFilter extends OncePerRequestFilter {
 				}
 			});
 		return headerMap;
-	}
-
-	private static MultivaluedMap<String, String> getMultiMap(Map<String, String[]> parameterMap) {
-		MultivaluedMap<String, String> multivaluedMap = new MultivaluedHashMap<>();
-		parameterMap.forEach((key, values) -> {
-			for (String value : values) {
-				multivaluedMap.add(key, value);
-			}
-		});
-		return multivaluedMap;
 	}
 
 	private static MultivaluedMap<String, String> getQueryParameters(String queryString) {

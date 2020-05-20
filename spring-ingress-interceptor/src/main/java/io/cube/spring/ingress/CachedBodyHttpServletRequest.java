@@ -1,22 +1,19 @@
 package io.cube.spring.ingress;
 
 import java.io.IOException;
-import java.util.Map;
+import java.io.InputStream;
 
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.io.IOUtils;
-import org.springframework.http.HttpMethod;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 
 public class CachedBodyHttpServletRequest extends ContentCachingRequestWrapper {
-
-	private HttpServletRequest cachedRequest;
+	private boolean isCached;
 
 	public CachedBodyHttpServletRequest(HttpServletRequest request) {
 		super(request);
-		this.cachedRequest = request;
+		this.isCached = false;
 	}
 
 	@Override
@@ -26,24 +23,16 @@ public class CachedBodyHttpServletRequest extends ContentCachingRequestWrapper {
 	}
 
 	private void cacheInputStream() throws IOException {
-		IOUtils.toByteArray(super.getInputStream());
-	}
-
-	@Override
-	public  Map<String, String[]> getParameterMap() {
-		//If the request is not form-urlencoded,
-		if (isFormPost()) {
-			return super.getParameterMap();
-		} else {
-			//This is the case where request params are sent as Query String
-			//We should not cache the Inputstream, so we call the original
-			//request's getParameterMap() method
-			return cachedRequest.getParameterMap();
+		if (!this.isCached) {
+			//This is called to load the parameter map before
+			//consuming the inputstream. Otherwise  request with
+			//content-type x-form-url-encoded, will return empty parameter map.
+			super.getParameterMap();
+			InputStream is = super.getInputStream();
+			//To make the ContentCachingRequestWrapper to cache.
+			while(is.read() != -1);
+			this.isCached = true;
 		}
 	}
 
-	private boolean isFormPost() {
-		String contentType = this.getContentType();
-		return contentType != null && contentType.contains("application/x-www-form-urlencoded") && HttpMethod.POST.matches(this.getMethod());
-	}
 }
