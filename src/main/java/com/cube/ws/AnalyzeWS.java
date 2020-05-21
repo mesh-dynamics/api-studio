@@ -7,6 +7,7 @@ import static com.cube.core.Utils.buildErrorResponse;
 import static com.cube.core.Utils.buildSuccessResponse;
 
 import io.md.constants.ReplayStatus;
+import io.md.dao.DataObj;
 import io.md.dao.RecordingOperationSetSP;
 import java.io.IOException;
 import java.time.Instant;
@@ -696,7 +697,8 @@ public class AnalyzeWS {
 	                }
 
 	                Optional<Event> recordResponseEvent = matchRes.recordReqId.flatMap(rrstore::getResponseEvent);
-	                recordResponse = recordResponseEvent.map(e -> e.getPayloadAsJsonString(true));
+	                //remove the data if size is bigger than threshold
+	                recordResponse = recordResponseEvent.map(e -> checkAndConvertResponseToString(e));
 	                recordRespTime = recordResponseEvent.map(e -> e.timestamp.toEpochMilli());
 
 
@@ -739,6 +741,16 @@ public class AnalyzeWS {
                 buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
                     e.getMessage())).build();
         }
+    }
+
+    private String checkAndConvertResponseToString(Event e) {
+      e.updatePayloadBody();
+      int size = e.getPayloadBodySize();
+      if (size > 500) {
+
+      }
+      DataObj o = e.payload.getVal("/body/0/timestamp");
+      return e.getPayloadAsJsonString(true);
     }
 
 
