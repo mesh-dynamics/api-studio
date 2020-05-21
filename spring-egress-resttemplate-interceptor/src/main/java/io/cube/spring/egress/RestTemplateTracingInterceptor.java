@@ -43,6 +43,7 @@ public class RestTemplateTracingInterceptor implements ClientHttpRequestIntercep
 			for (String key : mdTraceHeaders.keySet()) {
 				((MyHttpRequestWrapper) httpRequest).putHeader(key, mdTraceHeaders.get(key));
 			}
+
 		} catch (Exception ex) {
 			LOGGER.error("Exception occured during logging, proceeding to the application!", ex);
 		}
