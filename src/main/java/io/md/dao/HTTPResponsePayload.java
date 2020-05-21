@@ -123,4 +123,8 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload implements Res
 		return false;
 	}
 
+	@Override
+	public String getStatusCode() {
+		return String.valueOf(status);
+	}
 }
