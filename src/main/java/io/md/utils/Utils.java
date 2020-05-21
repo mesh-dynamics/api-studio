@@ -192,7 +192,7 @@ public class Utils {
 			.isPresent()) && runType.isPresent() && method.isPresent()) {
 
 			HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
-				formParams, method.get(), body);
+				formParams, method.get(), body , apiPath);
 
 			/*String payloadStr = null;
 			final Span span = CommonUtils.startClientSpan("reqPayload");

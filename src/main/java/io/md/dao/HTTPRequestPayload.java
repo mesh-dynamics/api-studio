@@ -5,18 +5,24 @@
  */
 package io.md.dao;
 
+import java.util.Arrays;
+
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
 import io.md.utils.HttpRequestPayloadDeserializer;
@@ -29,6 +35,8 @@ import io.md.utils.Utils;
 @JsonDeserialize(using = HttpRequestPayloadDeserializer.class)
 public class HTTPRequestPayload extends LazyParseAbstractPayload implements RequestPayload {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(HTTPRequestPayload.class);
+
 	@JsonDeserialize(as=MultivaluedHashMap.class)
 	public MultivaluedMap<String, String> hdrs;
 	@JsonDeserialize(as=MultivaluedHashMap.class)
@@ -39,7 +47,9 @@ public class HTTPRequestPayload extends LazyParseAbstractPayload implements Requ
 	@JsonSerialize(using = ByteArraySerializer.class)
 	@JsonDeserialize(as = byte[].class)
 	private byte[] body;
-	static String BODY = "body";
+	static final String BODY = "body";
+	public String path;
+	static final String PATH_SEGMENTS = "pathSegments";
 
     /**
      *
@@ -55,12 +65,13 @@ public class HTTPRequestPayload extends LazyParseAbstractPayload implements Requ
 	    @JsonProperty("queryParams") MultivaluedMap<String, String> queryParams,
 	    @JsonProperty("formParams") MultivaluedMap<String, String> formParams,
 	    @JsonProperty("method") String method,
-	    @JsonProperty("body") byte[] body) {
+	    @JsonProperty("body") byte[] body, @JsonProperty("path") String path) {
 	    this.hdrs = Utils.setLowerCaseKeys(hdrs);
 	    this.queryParams = queryParams;
 	    this.formParams = formParams;
 	    this.method = method;
 	    this.body = body;
+	    this.path = path;
     }
 
 
@@ -136,6 +147,16 @@ public class HTTPRequestPayload extends LazyParseAbstractPayload implements Requ
 		if (!this.dataObj.isDataObjEmpty()) {
 			this.dataObj.unwrapAsJson("/".concat(BODY),
 				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN));
+			try {
+				String[] pathSplits = this.dataObj.getValAsString("/path").split("/");
+				ObjectNode root = (ObjectNode) this.dataObj.objRoot;
+				ArrayNode pathArrayNode = JsonNodeFactory.instance.arrayNode();
+				Arrays.stream(pathSplits).forEach(pathSegment ->
+					pathArrayNode.add(JsonNodeFactory.instance.textNode(pathSegment)));
+				root.set(PATH_SEGMENTS , pathArrayNode);
+			} catch (PathNotFoundException e) {
+				LOGGER.error("Unable to split api path into segments" ,e);
+			}
 		}
 	}
 }
