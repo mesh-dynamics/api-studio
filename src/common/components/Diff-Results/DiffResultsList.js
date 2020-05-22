@@ -192,6 +192,17 @@ export default class DiffResultsList extends Component {
             diffLayoutData: newDiffLayoutData,
         });
     }
+
+    renderSectionLabel = () => (
+        <div className="row margin-top-10">
+            <div className="col-md-6">
+                <span className="diff-section-label">Baseline</span>
+            </div>
+            <div className="col-md-6">
+                <span className="diff-section-label shift-left-align">Test</span>
+            </div>
+        </div>
+    );
     
     // page navigation
     renderPageNav = () => {
@@ -302,6 +313,7 @@ export default class DiffResultsList extends Component {
                 </div>
                 {(showRequestMessageHeaders || shownRequestMessageHeaders) && (
                     <div style={{ display: showRequestMessageHeaders ? "" : "none" }}>
+                        {this.renderSectionLabel()}
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Headers</Label></h4>
                         <div className="headers-diff-wrapper">
                             < ReactDiffViewer
@@ -322,6 +334,7 @@ export default class DiffResultsList extends Component {
                 )}
                 {(showRequestMessageQParams || shownRequestMessageQParams) && (
                     <div style={{ display: showRequestMessageQParams ? "" : "none" }}>
+                        {this.renderSectionLabel()}
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Query Params</Label></h4>
                         <div className="headers-diff-wrapper">
                             < ReactDiffViewer
@@ -342,6 +355,7 @@ export default class DiffResultsList extends Component {
                 )}
                 {(showRequestMessageFParams || shownRequestMessageFParams) && (
                     <div style={{ display: showRequestMessageFParams ? "" : "none" }}>
+                        {this.renderSectionLabel()}
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Form Params</Label></h4>
                         <div className="headers-diff-wrapper">
                             < ReactDiffViewer
@@ -362,6 +376,7 @@ export default class DiffResultsList extends Component {
                 )}
                 {(showRequestMessageBody || shownRequestMessageBody) && (
                     <div style={{ display: showRequestMessageBody ? "" : "none" }}>
+                        {this.renderSectionLabel()}
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Body</Label></h4>
                         <div className="headers-diff-wrapper">
                             < ReactDiffViewer
@@ -382,6 +397,7 @@ export default class DiffResultsList extends Component {
                 )}
                 {(showResponseMessageHeaders || shownResponseMessageHeaders) && (
                     <div style={{ display: showResponseMessageHeaders ? "" : "none" }}>
+                        {this.renderSectionLabel()}
                         <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Headers</Label></h4>
                         <div className="headers-diff-wrapper">
                             < ReactDiffViewer
@@ -403,6 +419,7 @@ export default class DiffResultsList extends Component {
                 )}
                 {(
                     <div style={{ display: showResponseMessageBody ? "" : "none" }}>
+                        {this.renderSectionLabel()}
                         <div className="row">
                             <div className="col-md-6">
                                 <h4>

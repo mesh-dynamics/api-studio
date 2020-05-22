@@ -80,11 +80,11 @@ class DiffResults extends Component {
             .map(_.partial(_.split, _, '=', 2))
             .fromPairs()
             .value();
-        
         const app = urlParameters["app"];
         const selectedAPI = urlParameters["selectedAPI"] || "All"; //"%2A";
         const replayId = urlParameters["replayId"];
         const recordingId = urlParameters["recordingId"];
+        const recordingName = urlParameters["recordingName"];
         const currentTemplateVer = urlParameters["currentTemplateVer"];
         const selectedService = urlParameters["selectedService"] || "All";
         const selectedReqMatchType = urlParameters["selectedReqMatchType"] || "match";
@@ -158,6 +158,7 @@ class DiffResults extends Component {
             },
             replayId: replayId,
             recordingId: recordingId,
+            recordingName: recordingName,
             currentTemplateVer: currentTemplateVer,
             app: app,
             searchFilterPath: searchFilterPath,
@@ -172,6 +173,7 @@ class DiffResults extends Component {
                 service: selectedService,
                 replayId: replayId,
                 recordingId: recordingId,
+                recordingName: recordingName,
                 currentTemplateVer: currentTemplateVer,
                 timeStamp: timeStamp
             }));
@@ -367,7 +369,7 @@ class DiffResults extends Component {
     
     updatePageResults = async (isNextPage, index) => {
         let {filter, replayId} = this.state;
-        let {pageSize} = config.defaultFetchDiffResults;
+        let pageSize = config.defaultFetchDiffResults;
         let startIndex, endIndex;
         let diffLayoutDataPruned, resultsData;
 
@@ -376,15 +378,16 @@ class DiffResults extends Component {
         if (isNextPage) {
             startIndex = index;
             resultsData = await this.fetchAnalysisResults(replayId, {...filter, startIndex});
-            
             const results = resultsData.data && resultsData.data.res || [];
+            const numFound = resultsData.data && resultsData.data.numFound || 0;
             const diffLayoutData = this.preProcessResults(results);
             
-            let pruneEndIndex;
+            let pruneEndIndex, updatedEndIndex;
             ({diffLayoutDataPruned, i: pruneEndIndex} = pruneResults(diffLayoutData, true));
             
-            endIndex = startIndex + pruneEndIndex;
-            
+            updatedEndIndex = startIndex + pruneEndIndex;
+            // Use the number of results found on server to limit the endIndex
+            endIndex = updatedEndIndex > numFound ?  numFound : updatedEndIndex;            
         } else {
             endIndex = index;
             startIndex = Math.max(endIndex - pageSize, 0);
@@ -449,7 +452,7 @@ class DiffResults extends Component {
 
     showSaveGoldenModal = () => {
         this.setState({
-            nameG: (this.state.recordingId),
+            nameG: (this.state.recordingName),
             labelG: Date.now().toString(),
             branch: "",
             version: "",

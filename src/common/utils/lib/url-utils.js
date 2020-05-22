@@ -116,7 +116,7 @@ const updateSearchHistoryParams = (metaDataType, value, state) => {
 
 const constructUrlParamsDiffResults = (state, isNextPage) => {
     const {
-        app, replayId, timeStamp, recordingId, searchFilterPath, currentTemplateVer,
+        app, replayId, timeStamp, recordingId, recordingName, searchFilterPath, currentTemplateVer,
         filter : {
             selectedService, selectedAPI, 
             selectedReqMatchType, selectedDiffType, 
@@ -133,7 +133,7 @@ const constructUrlParamsDiffResults = (state, isNextPage) => {
         }
     } =  state;
 
-    return `replayId=${replayId}&app=${app}&recordingId=${recordingId}&currentTemplateVer=${currentTemplateVer}&timeStamp=${timeStamp}&searchFilterPath=${searchFilterPath}&selectedService=${selectedService}&selectedAPI=${selectedAPI}&selectedResolutionType=${selectedResolutionType}&requestHeaders=${showRequestMessageHeaders}&requestQParams=${showRequestMessageQParams}&requestFParams=${showRequestMessageFParams}&requestBody=${showRequestMessageBody}&responseHeaders=${showResponseMessageHeaders}&responseBody=${showResponseMessageBody}&selectedReqMatchType=${selectedReqMatchType}&selectedDiffType=${selectedDiffType}&` + (isNextPage ? `startIndex=${startIndex}` : `endIndex=${endIndex}`);
+    return `replayId=${replayId}&app=${app}&recordingId=${recordingId}&recordingName=${recordingName}&currentTemplateVer=${currentTemplateVer}&timeStamp=${timeStamp}&searchFilterPath=${searchFilterPath}&selectedService=${selectedService}&selectedAPI=${selectedAPI}&selectedResolutionType=${selectedResolutionType}&requestHeaders=${showRequestMessageHeaders}&requestQParams=${showRequestMessageQParams}&requestFParams=${showRequestMessageFParams}&requestBody=${showRequestMessageBody}&responseHeaders=${showResponseMessageHeaders}&responseBody=${showResponseMessageBody}&selectedReqMatchType=${selectedReqMatchType}&selectedDiffType=${selectedDiffType}&` + (isNextPage ? `startIndex=${startIndex}` : `endIndex=${endIndex}`);
 
 }
 
