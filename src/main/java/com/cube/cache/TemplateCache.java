@@ -78,8 +78,7 @@ public class TemplateCache {
                     , "key" , key.toString())));
             }
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(cacheFnKey,  CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), toReturn, RetStatus.Success,
+                config.recorder.record(cacheFnKey, toReturn, RetStatus.Success,
                     Optional.empty(), key);
             }
             return toReturn;
@@ -87,9 +86,7 @@ public class TemplateCache {
             // wrapping all exceptions in CacheException class
             CacheException ce = new CacheException("Error while fetching template for :".concat(key.toString()) , e);
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(cacheFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(),
-                    CommonUtils.getParentSpanId(),
+                config.recorder.record(cacheFnKey,
                     ce, RetStatus.Exception, Optional.of(ce.getClass().getName()), key);
             }
             throw ce;

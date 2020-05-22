@@ -55,7 +55,7 @@ public class ReplayBuilder {
 	int reqCnt;
 	int reqSent;
 	int reqFailed;
-	private Instant updateTimestamp;
+	private Instant creationTimestamp;
 	public Optional<String> xfms;
 	public Optional<RRTransformer> xfmer;
 	public List<String> mockServices;
@@ -64,6 +64,7 @@ public class ReplayBuilder {
 	public Optional<String> recordingId;
 	public boolean archived;
 	public Optional<String> dynamicInjectionConfigVersion;
+	public Instant analysisCompleteTimestamp;
 
 	public ReplayBuilder(String endpoint, CubeMetaInfo metaInfo,
 		String collection, String userId) {
@@ -88,7 +89,7 @@ public class ReplayBuilder {
 		reqCnt = 0;
 		reqFailed = 0;
 		reqSent = 0;
-		this.updateTimestamp = Instant.now();
+		this.creationTimestamp = Instant.now();
 		this.xfms = Optional.empty();
 		this.xfmer = Optional.empty();
 		this.mockServices = Collections.emptyList();
@@ -97,6 +98,11 @@ public class ReplayBuilder {
 		this.recordingId = Optional.empty();
 		this.archived = false;
 		this.dynamicInjectionConfigVersion = Optional.empty();
+		/**
+		 * the value is set to the EPOCH so we won't be able to fetch replay in timeline till its analyis is complete
+		 * Once analysis is complete the value is set to the corresponding time
+		 */
+		this.analysisCompleteTimestamp = Instant.EPOCH;
 	}
 
 	private void populateClassLoader() throws Exception {
@@ -112,11 +118,10 @@ public class ReplayBuilder {
 	public Replay build() {
 		return new Replay(replayEndpoint, customerId, app, instanceId, collection, userId,
 			reqIdsToReplay, replayId, async, templateSetVersion, replayStatus, pathsToReplay,
-			excludePaths, reqCnt, reqSent, reqFailed, updateTimestamp, sampleRate,
-			intermediateServices,
-			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, xfmer,
-			mockServices
-			, testConfigName, goldenName, recordingId, archived, dynamicInjectionConfigVersion);
+            excludePaths, reqCnt , reqSent , reqFailed, creationTimestamp, sampleRate, intermediateServices,
+			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, xfmer, mockServices
+	            , testConfigName, goldenName, recordingId, archived,dynamicInjectionConfigVersion,
+				analysisCompleteTimestamp);
 	}
 
 	public ReplayBuilder withPaths(List<String> paths) {
@@ -188,8 +193,8 @@ public class ReplayBuilder {
 		return this;
 	}
 
-	public ReplayBuilder withUpdateTimestamp(Instant updateTimestamp) {
-		this.updateTimestamp = updateTimestamp;
+	public ReplayBuilder withCreationTimestamp(Instant creationTimestamp) {
+		this.creationTimestamp = creationTimestamp;
 		return this;
 	}
 
@@ -240,6 +245,11 @@ public class ReplayBuilder {
 	public ReplayBuilder withDynamicInjectionConfigVersion(String injectionConfigVersion) {
 		this.dynamicInjectionConfigVersion = Optional.of(injectionConfigVersion);
 		return this;
+	}
+
+	public ReplayBuilder withAnalysisCompleteTimestamp(Instant analysisCompleteTimestamp) {
+    	this.analysisCompleteTimestamp = analysisCompleteTimestamp;
+    	return this;
 	}
 
 }
