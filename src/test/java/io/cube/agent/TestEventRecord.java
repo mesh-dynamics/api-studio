@@ -27,8 +27,9 @@ public class TestEventRecord {
 				, "test", "movie-info", "mi-rest");
 			MDTraceInfo traceInfo = new MDTraceInfo("random-trace"
 				, null , null);
+			String apiPath = "/minfo/health";
 			EventBuilder eventBuilder = new EventBuilder(cubeMetaInfo, traceInfo
-				, RunType.Record, "/minfo/health", EventType.HTTPRequest
+				, RunType.Record, apiPath, EventType.HTTPRequest
 				, Optional.empty(), "random-req-id", "random-collection");
 
 			MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
@@ -36,7 +37,7 @@ public class TestEventRecord {
 			MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
 			queryParams.add("filmName" , "Beverly Outlaw");
 			eventBuilder.setPayload(new HTTPRequestPayload(headers, queryParams,
-				null, "GET", null));
+				null, "GET", null, apiPath));
 			Event httpRequestEvent = eventBuilder.createEvent();
 			for (int i = 0 ; i < 1000 ; i++) {
 				consoleRecorder.record(httpRequestEvent);
