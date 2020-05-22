@@ -45,3 +45,13 @@ span.small {
 .green-b {
     background: #6FCF97;
 }
+
+.diff-section-label {
+    font-size: 14px;
+    font-weight: 800;
+    color: #5B5B5B;
+}
+.shift-left-align {
+    margin-left: 18%;
+}
+

@@ -146,7 +146,7 @@ class TestResults extends Component {
         this.intervalID = setInterval(this.updateTimelineResults, config.timelineresRefreshIntervel);
     }
 
-    setPathResultsParams(path, service, replayId, recordingId, currentTemplateVer, dateTime, cellData) {
+    setPathResultsParams(path, service, replayId, recordingId, recordingName, currentTemplateVer, dateTime, cellData) {
         if (!cellData) return;
         const { dispatch, history, cube } = this.props;
         dispatch(cubeActions.setPathResultsParams({
@@ -154,12 +154,13 @@ class TestResults extends Component {
             service: service,
             replayId: replayId,
             recordingId: recordingId,
+            recordingName: recordingName,
             timeStamp: dateTime,
             currentTemplateVer: currentTemplateVer
         }));
         setTimeout(() => {
             // initial default path
-            history.push(`/diff_results?replayId=${replayId}&app=${cube.selectedApp}&selectedAPI=${path}&selectedService=${service}&recordingId=${recordingId}&timeStamp=${dateTime}&currentTemplateVer=${currentTemplateVer}&selectedReqMatchType=match&startIndex=0`);
+            history.push(`/diff_results?replayId=${replayId}&app=${cube.selectedApp}&selectedAPI=${path}&selectedService=${service}&recordingId=${recordingId}&timeStamp=${dateTime}&currentTemplateVer=${currentTemplateVer}&selectedReqMatchType=match&startIndex=0&recordingName=${recordingName}`);
         });
     }
 
@@ -350,6 +351,7 @@ class TestResults extends Component {
             let collection = testResult.collection,
                 dateTime = localMomentDateObejct.format('lll'),
                 recordingId = testResult.recordingid,
+                recordingName = testResult.goldenName,
                 templateVer = testResult.templateVer;
             if (allRunsTimestamps.indexOf(momentDateObject.valueOf()) < 0) 
                 allRunsTimestamps.push({
@@ -376,6 +378,7 @@ class TestResults extends Component {
                     collection,
                     dateTime,
                     recordingId,
+                    recordingName,
                     templateVer
                 });
                 if (rTableRowKey.indexOf("--") > 0) {
@@ -623,7 +626,7 @@ class TestResults extends Component {
                                 }}
                                 onClick={
                                     () => {
-                                        return this.setPathResultsParams(row.value.path, row.value.service, row.value.replayId, row.value.recordingId, row.value.templateVer, row.value.dateTime, 1)
+                                        return this.setPathResultsParams(row.value.path, row.value.service, row.value.replayId, row.value.recordingId, row.value.recordingName, row.value.templateVer, row.value.dateTime, 1)
                                     }
                                 }
                             >
