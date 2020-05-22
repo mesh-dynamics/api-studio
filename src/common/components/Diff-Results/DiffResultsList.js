@@ -327,6 +327,7 @@ export default class DiffResultsList extends Component {
                                 showAll={!this.state.showFragments}
                                 filterPaths={item.filterPaths}
                                 searchFilterPath={this.state.searchFilterPath}
+                                enableClientSideDiff={true}
                             />
                         </div>
                     </div>
@@ -347,6 +348,7 @@ export default class DiffResultsList extends Component {
                                 showAll={!this.state.showFragments}
                                 filterPaths={item.filterPaths}
                                 searchFilterPath={this.state.searchFilterPath}
+                                enableClientSideDiff={true}
                             />
                         </div>
                     </div>
@@ -367,6 +369,7 @@ export default class DiffResultsList extends Component {
                                 showAll={!this.state.showFragments}
                                 filterPaths={item.filterPaths}
                                 searchFilterPath={this.state.searchFilterPath}
+                                enableClientSideDiff={true}
                             />
                         </div>
                     </div>
@@ -387,6 +390,7 @@ export default class DiffResultsList extends Component {
                                 showAll={!this.state.showFragments}
                                 filterPaths={item.filterPaths}
                                 searchFilterPath={this.state.searchFilterPath}
+                                enableClientSideDiff={true}
                             />
                         </div>
                     </div>
@@ -408,6 +412,7 @@ export default class DiffResultsList extends Component {
                                 searchFilterPath={this.state.searchFilterPath}
                                 filterPaths={item.filterPaths}
                                 inputElementRef={this.inputElementRef}
+                                enableClientSideDiff={this.state.enableClientSideDiff}
                             />
                         </div>
                     </div>

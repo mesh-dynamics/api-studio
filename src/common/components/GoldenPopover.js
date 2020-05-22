@@ -186,7 +186,7 @@ class GoldenPopover extends React.Component {
             try {
                 const { path, dt, pt, ct, em , customization } = await this.getResponseTemplate();
                 const newlyFetchedRule = {
-                    path,
+                    path: jsonPath.replace("<BEGIN>", ""),
                     dt, 
                     pt: pt === "Default" ? "Optional" : pt, 
                     ct: ct === "Default" ? "Ignore": ct, 
