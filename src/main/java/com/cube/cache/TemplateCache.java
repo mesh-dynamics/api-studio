@@ -7,6 +7,7 @@
 package com.cube.cache;
 
 import io.md.core.CompareTemplate;
+import io.md.core.TemplateKey;
 
 import com.cube.exception.CacheException;
 

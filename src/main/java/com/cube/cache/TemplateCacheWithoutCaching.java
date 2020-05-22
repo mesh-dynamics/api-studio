@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
 import io.md.core.CompareTemplate;
+import io.md.core.TemplateKey;
 
 import com.cube.dao.ReqRespStore;
 import com.cube.exception.CacheException;

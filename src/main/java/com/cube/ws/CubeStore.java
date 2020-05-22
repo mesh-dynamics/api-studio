@@ -5,9 +5,9 @@ package com.cube.ws;
 
 import static com.cube.core.Utils.buildErrorResponse;
 import static com.cube.core.Utils.buildSuccessResponse;
+import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
+import static io.md.utils.Utils.createHTTPRequestEvent;
 
-import io.md.dao.DefaultEvent;
-import io.md.dao.EventQuery;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -55,26 +55,28 @@ import io.cube.agent.FnReqResponse;
 import io.cube.agent.UtilException;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
+import io.md.core.TemplateKey;
+import io.md.core.TemplateKey.Type;
+import io.md.dao.DefaultEvent;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
+import io.md.dao.EventQuery;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Payload;
+import io.md.dao.RecordOrReplay;
+import io.md.dao.Recording;
+import io.md.dao.Recording.RecordingSaveFailureException;
+import io.md.dao.Recording.RecordingStatus;
+import io.md.services.DataStore.TemplateNotFoundException;
 
-import com.cube.cache.ComparatorCache;
-import com.cube.cache.TemplateKey;
-import com.cube.cache.TemplateKey.Type;
 import com.cube.core.Utils;
 import com.cube.dao.CubeEventMetaInfo;
 import com.cube.dao.CubeMetaInfo;
-import com.cube.dao.Recording;
-import com.cube.dao.Recording.RecordingSaveFailureException;
-import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
-import com.cube.dao.ReqRespStore.RecordOrReplay;
 import com.cube.dao.Result;
 import com.cube.dao.WrapperEvent;
 import com.cube.utils.Constants;
@@ -241,15 +243,14 @@ public class CubeStore {
             try {
                 requestComparator = config.rrstore
                     .getComparator(tkey, Event.EventType.HTTPRequest);
-            } catch (ComparatorCache.TemplateNotFoundException e) {
+            } catch (TemplateNotFoundException e) {
                 throw new CubeStoreException(e, "Request Comparator Not Found"
                     , cubeEventMetaInfo);
             }
 
             Event requestEvent = null;
             try {
-                requestEvent = Utils
-                    .createHTTPRequestEvent(path, rid, queryParams, formParams, meta,
+                requestEvent = createHTTPRequestEvent(path, rid, queryParams, formParams, meta,
                         hdrs, method, rr.body, collection, timestamp, runType, customerId,
                         app, requestComparator);
             } catch (JsonProcessingException | EventBuilder.InvalidEventException e) {
@@ -582,7 +583,7 @@ public class CubeStore {
 
                 event.parseAndSetKey(rrstore.getRequestMatchTemplate(event,
                         recordOrReplay.get().getTemplateVersion()), classLoader);
-            } catch (ComparatorCache.TemplateNotFoundException e) {
+            } catch (TemplateNotFoundException e) {
                 throw new CubeStoreException(e, "Compare Template Not Found", event);
             }
         }
@@ -761,8 +762,8 @@ public class CubeStore {
             try {
                 defaultReqEvent.parseAndSetKey(rrstore.
                     getRequestMatchTemplate(defaultReqEvent
-                        , Constants.DEFAULT_TEMPLATE_VER));
-            } catch (ComparatorCache.TemplateNotFoundException e) {
+                        , DEFAULT_TEMPLATE_VER));
+            } catch (TemplateNotFoundException e) {
                 LOGGER.error(new ObjectMessage(
                     Map.of(Constants.EVENT_TYPE_FIELD, defaultReqEvent.eventType,
                         Constants.REQ_ID_FIELD, defaultReqEvent.reqId,
@@ -878,7 +879,7 @@ public class CubeStore {
                 , e.getMessage()))).toString()).build();
         }
 
-        Optional<Response> resp = Recording
+        Optional<Response> resp = ReqRespStore
             .startRecording(recordingBuilder.build() ,rrstore)
             .map(newr -> {
                 String json;
@@ -924,7 +925,7 @@ public class CubeStore {
 
     public Response resumeRecording(Optional<Recording> recording) {
         return recording.map(r -> {
-            Recording resumedRecording = Recording.resumeRecording(r, rrstore);
+            Recording resumedRecording = ReqRespStore.resumeRecording(r, rrstore);
             String json;
             try {
                 json = jsonMapper.writeValueAsString(resumedRecording);
@@ -1066,7 +1067,7 @@ public class CubeStore {
 
     public Response stopRecording(Optional<Recording> recording) {
         return recording.map(r -> {
-            Recording stoppedr = Recording.stopRecording(r, rrstore);
+            Recording stoppedr = ReqRespStore.stopRecording(r, rrstore);
             String json;
             try {
                 json = jsonMapper.writeValueAsString(stoppedr);
@@ -1088,7 +1089,7 @@ public class CubeStore {
         Optional<Recording> recording = rrstore.getRecording(recordingId);
         Response resp = recording.map(rec -> {
             try {
-                Recording deletedR = rec.softDeleteRecording(rrstore);
+                Recording deletedR = ReqRespStore.softDeleteRecording(rec, rrstore);
                 String json;
                 LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Soft deleting recording", "RecordingId", recordingId)));
                 json = jsonMapper.writeValueAsString(deletedR);
@@ -1209,7 +1210,7 @@ public class CubeStore {
     @Path("/warmupcache")
     public Response warmUpCache(@Context UriInfo uriInfo) {
         try {
-            TemplateKey key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, "ravivj", "movieinfo"
+            TemplateKey key = new TemplateKey(DEFAULT_TEMPLATE_VER, "ravivj", "movieinfo"
                 , "movieinfo", "minfo/listmovies", Type.ResponseCompare);
             Comparator comparator = this.config.rrstore.getComparator(key, Event.EventType.HTTPResponse);
             LOGGER.info("Got Response Comparator :: " + comparator.toString());

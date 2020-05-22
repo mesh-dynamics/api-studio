@@ -1,5 +1,6 @@
 package com.cube.core;
 
+import static io.md.core.TemplateKey.*;
 import static org.apache.commons.io.FileUtils.readFileToString;
 
 import java.io.File;
@@ -11,8 +12,8 @@ import org.json.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
-import com.cube.cache.TemplateKey;
-import com.cube.cache.TemplateKey.Type;
+import io.md.core.TemplateKey;
+
 import com.cube.dao.ReqRespStore;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;

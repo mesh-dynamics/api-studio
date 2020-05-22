@@ -16,12 +16,10 @@ import io.md.core.AttributeRuleMap;
 import io.md.core.CompareTemplate;
 import io.md.core.CompareTemplate.ComparisonType;
 import io.md.core.TemplateEntry;
-import io.md.dao.Event.EventType;
+import io.md.core.TemplateKey;
+import io.md.core.TemplateKey.Type;
 import io.md.dao.ReqRespUpdateOperation.OperationType;
 
-import com.cube.cache.ComparatorCache.TemplateNotFoundException;
-import com.cube.cache.TemplateKey;
-import com.cube.cache.TemplateKey.Type;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateEntryOperation;
 import com.cube.golden.TemplateEntryOperation.RuleType;

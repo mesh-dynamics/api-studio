@@ -1,5 +1,8 @@
 package com.cube.golden.transform;
 
+import static io.md.core.TemplateKey.*;
+import static io.md.services.DataStore.*;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,11 +21,11 @@ import org.apache.logging.log4j.message.ObjectMessage;
 import io.md.core.AttributeRuleMap;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
+import io.md.core.TemplateKey;
 import io.md.dao.ReqRespUpdateOperation.OperationType;
+import io.md.services.DataStore;
 
 import com.cube.cache.ComparatorCache;
-import com.cube.cache.TemplateKey;
-import com.cube.cache.TemplateKey.Type;
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.SingleTemplateUpdateOperation;
@@ -90,7 +93,7 @@ public class TemplateSetTransformer {
                         // queried from backend store for the given api path
                         template = rrstore
                             .getComparator(key).getCompareTemplate();
-                    } catch (ComparatorCache.TemplateNotFoundException e) {
+                    } catch (TemplateNotFoundException e) {
                         LOGGER.error(new ObjectMessage(Map.of(
                             Constants.MESSAGE, "Unable to fetch DEFAULT template from comparator " +
                                 "cache during template set update", Constants.TEMPLATE_KEY_FIELD, key.toString())), e);

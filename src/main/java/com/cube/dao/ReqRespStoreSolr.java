@@ -3,8 +3,14 @@
  */
 package com.cube.dao;
 
+import static io.md.core.TemplateKey.*;
+
 import io.md.constants.ReplayStatus;
+import io.md.core.TemplateKey;
 import io.md.dao.EventQuery;
+import io.md.dao.RecordOrReplay;
+import io.md.dao.Recording;
+import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.Replay;
 import java.io.IOException;
@@ -47,7 +53,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import io.cube.agent.FnReqResponse;
-import io.cube.agent.FnResponse;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
 import io.md.core.AttributeRuleMap;
@@ -64,8 +69,10 @@ import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Payload;
+import io.md.dao.ReqRespMatchResult;
 import io.md.dao.ReqRespUpdateOperation;
 import io.md.dao.FnReqRespPayload.RetStatus;
+import io.md.services.FnResponse;
 import io.md.utils.FnKey;
 import redis.clients.jedis.Jedis;
 
@@ -73,11 +80,8 @@ import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateCache;
 import com.cube.cache.TemplateCacheRedis;
 import com.cube.cache.TemplateCacheWithoutCaching;
-import com.cube.cache.TemplateKey;
-import com.cube.cache.TemplateKey.Type;
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.Utils;
-import com.cube.dao.Recording.RecordingStatus;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
@@ -260,7 +264,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 
     @Override
-    public Comparator getComparator(TemplateKey key, EventType eventType) throws ComparatorCache.TemplateNotFoundException {
+    public Comparator getComparator(TemplateKey key, EventType eventType) throws TemplateNotFoundException {
         return comparatorCache.getComparator(key, eventType);
     }
 
@@ -717,7 +721,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         try {
             CompareTemplate compareTemplateObj = config.jsonMapper.readValue(compareTemplate.get() , CompareTemplate.class);
-            TemplateKey.Type templateType = Utils.valueOf(TemplateKey.Type.class, type.get()).orElseThrow(
+            Type templateType = Utils.valueOf(Type.class, type.get()).orElseThrow(
                 () -> new Exception("Couldn't obtain proper template type from solr doc"));
             CompareTemplateVersioned compareTemplateVersioned = new CompareTemplateVersioned(service , requestPath,
                 templateType, compareTemplateObj);
@@ -1676,7 +1680,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Comparator getComparator(TemplateKey key) throws ComparatorCache.TemplateNotFoundException {
+    public Comparator getComparator(TemplateKey key) throws TemplateNotFoundException {
         return comparatorCache.getComparator(key);
     }
 

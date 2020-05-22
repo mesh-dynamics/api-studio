@@ -5,9 +5,11 @@ package com.cube.ws;
 
 import static com.cube.core.Utils.buildErrorResponse;
 import static com.cube.core.Utils.buildSuccessResponse;
+import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
+import static io.md.core.TemplateKey.Type;
+import static io.md.dao.Recording.RecordingStatus;
+import static io.md.services.DataStore.TemplateNotFoundException;
 
-import io.md.constants.ReplayStatus;
-import io.md.dao.RecordingOperationSetSP;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -49,31 +51,30 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.UtilException;
+import io.md.constants.ReplayStatus;
 import io.md.core.Comparator;
 import io.md.core.Comparator.MatchType;
 import io.md.core.CompareTemplate;
 import io.md.core.CompareTemplate.CompareTemplateStoreException;
 import io.md.core.TemplateEntry;
+import io.md.core.TemplateKey;
 import io.md.core.ValidateCompareTemplate;
 import io.md.dao.Event;
 import io.md.dao.Event.RunType;
+import io.md.dao.Recording;
+import io.md.dao.RecordingOperationSetSP;
+import io.md.dao.Replay;
+import io.md.dao.ReqRespMatchResult;
 import io.md.dao.ReqRespUpdateOperation;
 import redis.clients.jedis.Jedis;
 
-import com.cube.cache.ComparatorCache;
-import com.cube.cache.ComparatorCache.TemplateNotFoundException;
-import com.cube.cache.TemplateKey;
 import com.cube.core.TemplateRegistries;
 import com.cube.core.Utils;
 import com.cube.dao.Analysis;
 import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.MatchResultAggregate;
-import com.cube.dao.Recording;
-import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.RecordingBuilder;
-import io.md.dao.Replay;
-import com.cube.dao.ReqRespMatchResult;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.Result;
@@ -129,7 +130,7 @@ public class AnalyzeWS {
                     return Response.serverError().build();
                 }
             }).orElse(Response.serverError().build());
-        } catch (ComparatorCache.TemplateNotFoundException e) {
+        } catch (TemplateNotFoundException e) {
             return Response.serverError().entity((
                 buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_NOT_FOUND,
                     "Cannot analyze since template does not exist : " +
@@ -275,10 +276,10 @@ public class AnalyzeWS {
             //This is just to see the template is not invalid, and can be parsed according
             // to our class definition , otherwise send error response
             CompareTemplate template = jsonMapper.readValue(templateAsJson, CompareTemplate.class);
-            TemplateKey.Type templateType = Utils.valueOf(TemplateKey.Type.class, type).orElseThrow(
+            Type templateType = Utils.valueOf(Type.class, type).orElseThrow(
 	            () -> new CompareTemplateStoreException("Invalid Template Type, should be "
 		            + "either RequestMatch, RequestCompare or ResponseCompare"));
-	        TemplateKey key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId,
+	        TemplateKey key = new TemplateKey(DEFAULT_TEMPLATE_VER, customerId, appId,
 		        serviceName, path, templateType);
             ValidateCompareTemplate validTemplate = template.validate();
             if (!validTemplate.isValid()) {
@@ -317,7 +318,7 @@ public class AnalyzeWS {
     public Response getRespTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
 	    @PathParam("customerId") String customerId, @PathParam("templateVersion") String templateVersion,
 	    @PathParam("service") String service, @PathParam("type") String type) {
-    	return Utils.valueOf(TemplateKey.Type.class, type).map(templateType ->
+    	return Utils.valueOf(Type.class, type).map(templateType ->
 		     getCompareTemplate(urlInfo, appId, customerId, templateVersion, service
 			     , templateType))
 		    .orElse(Response.serverError().entity(new JSONObject(Map.of(Constants.MESSAGE
@@ -329,7 +330,7 @@ public class AnalyzeWS {
                                        String customerId,
                                        String templateVersion,
                                        String service,
-                                       TemplateKey.Type ruleType) {
+                                       Type ruleType) {
 
         MultivaluedMap<String, String> queryParams = urlInfo.getQueryParameters();
         Optional<String> apipath = Optional.ofNullable(queryParams.getFirst(Constants.API_PATH_FIELD));
@@ -1290,7 +1291,7 @@ public class AnalyzeWS {
 			responseOptional.ifPresentOrElse(UtilException.rethrowConsumer(response -> {
 
 				Map<String, TemplateEntry> responseCompareRules = Utils
-					.getAllPathRules(response, recording, TemplateKey.Type.ResponseCompare,
+					.getAllPathRules(response, recording, Type.ResponseCompare,
 						service, normalisedApiPath, rrstore, config);
 
 				jsonObject.put(Constants.RESPONSE, response.getPayloadAsJsonString());
@@ -1368,11 +1369,11 @@ public class AnalyzeWS {
 		jsonObject.put(Constants.REQUEST, request.getPayloadAsJsonString());
 
 		Map<String, TemplateEntry> requestMatchRules = Utils
-			.getAllPathRules(request, recording, TemplateKey.Type.RequestMatch,
+			.getAllPathRules(request, recording, Type.RequestMatch,
 				service, apiPath, rrstore, config);
 
 		Map<String, TemplateEntry> requestCompareRules = Utils
-			.getAllPathRules(request, recording, TemplateKey.Type.RequestCompare,
+			.getAllPathRules(request, recording, Type.RequestCompare,
 				service, apiPath, rrstore, config);
 		jsonObject.put(Constants.REQUEST_MATCH_RULES,
 			jsonMapper.writeValueAsString(requestMatchRules));

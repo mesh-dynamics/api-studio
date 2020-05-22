@@ -4,7 +4,6 @@
 package com.cube.dao;
 
 import java.io.IOException;
-import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
@@ -15,33 +14,38 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ObjectMessage;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import io.cube.agent.FnReqResponse;
-import io.cube.agent.FnResponse;
 import io.md.constants.ReplayStatus;
 import io.md.core.AttributeRuleMap;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
+import io.md.core.TemplateKey;
 import io.md.dao.Event;
 import io.md.dao.Event.RunType;
 import io.md.dao.EventQuery;
+import io.md.dao.RecordOrReplay;
+import io.md.dao.Recording;
+import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.Replay;
+import io.md.dao.ReqRespMatchResult;
+import io.md.services.DataStore;
+import io.md.services.FnResponse;
 
-import com.cube.cache.ComparatorCache;
-import com.cube.cache.TemplateKey;
-import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.injection.DynamicInjectionConfig;
-import com.cube.services.DataStore;
 import com.cube.utils.Constants;
 
 /**
@@ -50,6 +54,47 @@ import com.cube.utils.Constants;
  */
 public interface ReqRespStore extends DataStore {
 
+    Logger LOGGER = LogManager.getLogger(ReqRespStore.class);
+
+    static Optional<Recording> startRecording(Recording recording, ReqRespStore rrstore) {
+        if (rrstore.saveRecording(recording)) {
+            return Optional.of(recording);
+        }
+        return Optional.empty();
+    }
+
+    static Recording stopRecording(Recording recording, ReqRespStore rrstore) {
+		if (recording.status == RecordingStatus.Running) {
+			LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Stopping recording",
+				Constants.RECORDING_ID, recording.id)));
+			recording.status = RecordingStatus.Completed;
+			recording.updateTimestamp = Optional.of(Instant.now());
+			rrstore.saveRecording(recording);
+		}
+		return recording;
+	}
+
+    static Recording resumeRecording(Recording recording, ReqRespStore rrstore) {
+        if (recording.status != RecordingStatus.Running) {
+            LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Resuming recording",
+                Constants.RECORDING_ID, recording.id)));
+            recording.status = RecordingStatus.Running;
+            recording.updateTimestamp = Optional.of(Instant.now());
+            rrstore.saveRecording(recording);
+        }
+        return recording;
+    }
+
+    static Recording softDeleteRecording(Recording recording, ReqRespStore rrstore)
+		throws Recording.RecordingSaveFailureException {
+		recording.archived = true;
+		recording.updateTimestamp = Optional.of(Instant.now());
+		boolean success = rrstore.saveRecording(recording);
+		if (!success) {
+			throw new Recording.RecordingSaveFailureException("Cannot delete recording");
+		}
+		return recording;
+	}
 
     Optional<TemplateSet> getTemplateSet(String customerId, String app, String version);
 
@@ -197,7 +242,7 @@ public interface ReqRespStore extends DataStore {
 	 */
 	Optional<CompareTemplate> getCompareTemplate(TemplateKey key);
 
-    Comparator getComparator(TemplateKey key) throws ComparatorCache.TemplateNotFoundException;
+    Comparator getComparator(TemplateKey key) throws TemplateNotFoundException;
 
     Optional<AttributeRuleMap> getAttributeRuleMap(TemplateKey key);
 
@@ -357,9 +402,9 @@ public interface ReqRespStore extends DataStore {
 	 * @return
 	 */
 	Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
-		Optional<String> collection, Optional<String> templateVersion, Optional<String> name, Optional<String> parentRecordingId, Optional<String> rootRecordingId,
-		Optional<String> codeVersion, Optional<String> branch, List<String> tags, Optional<Boolean> archived, Optional<String> gitCommitId,
-		Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label);
+                                   Optional<String> collection, Optional<String> templateVersion, Optional<String> name, Optional<String> parentRecordingId, Optional<String> rootRecordingId,
+                                   Optional<String> codeVersion, Optional<String> branch, List<String> tags, Optional<Boolean> archived, Optional<String> gitCommitId,
+                                   Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label);
 
 
     Optional<Recording> getRecording(String recordingId);
@@ -436,7 +481,7 @@ public interface ReqRespStore extends DataStore {
 	 * @return
 	 */
 	Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId, Optional<String> app,
-			Optional<String> instanceId);
+                                                      Optional<String> instanceId);
 
 	Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, boolean extendTTL);
 	/**
@@ -453,105 +498,7 @@ public interface ReqRespStore extends DataStore {
 	Optional<DynamicInjectionConfig> getDynamicInjectionConfig(CubeMetaInfo cubeMetaInfo, String version);
 
 
-		class RecordOrReplay {
-
-        @JsonIgnore
-		public Optional<String> getCollection() {
-			// Note that replayId is the collection for replay requests/responses
-			// replay.collection refers to the original collection
-			// return replay collection if non empty, else return recording collection
-			return replay.map(replay -> replay.replayId)
-					.or(() -> recording.map(recording -> recording.collection));
-		}
-
-		@JsonIgnore
-		public Optional<String> getRecordingCollection() {
-			// return collection of recording corresponding to replay if non empty, else return recording collection
-			return replay.map(replay -> replay.collection)
-					.or(() -> recording.map(recording -> recording.collection));
-		}
-
-		@JsonIgnore
-        public Optional<String> getReplayId() {
-            return replay.map(replay -> replay.replayId);
-        }
-
-		@JsonIgnore
-		public Optional<String> getRecordingId() {
-			return recording.map(recording -> recording.id);
-		}
-
-		@JsonIgnore
-		public boolean isRecording() {
-			return recording.isPresent();
-		}
-
-		@JsonIgnore
-		public RunType getRunType(){
-        	return recording.isPresent() ? RunType.Record : RunType.Replay;
-        }
-
-		@JsonIgnore
-        public String getTemplateVersion() {
-            return replay.map(replay1 -> replay1.templateVersion)
-                .orElseGet(() -> recording.map(recording1 -> recording1.templateVersion).orElse(
-                    Constants.DEFAULT_TEMPLATE_VER));
-        }
-
-        @JsonIgnore
-        public Optional<URLClassLoader> getClassLoader() {
-        	// TODO add replay logic as well
-	        return replay.flatMap(replay1 -> replay1.generatedClassLoader).or(() ->
-		        recording.flatMap(rec -> rec.generatedClassLoader));
-        }
-
-
-		// for json de-serialization
-		public RecordOrReplay() {
-		    super();
-		    replay = Optional.empty();
-		    recording = Optional.empty();
-        }
-
-		/**
-		 *
-		 */
-		private RecordOrReplay(Optional<Recording> recording, Optional<Replay> replay) {
-			super();
-			this.replay = replay;
-			this.recording = recording;
-		}
-
-		private RecordOrReplay(Recording recording) {
-			this(Optional.of(recording), Optional.empty());
-		}
-
-		private RecordOrReplay(Replay replay) {
-			this(Optional.empty(), Optional.of(replay));
-		}
-
-		public static RecordOrReplay createFromRecording(Recording recording) {
-			RecordOrReplay rr = new RecordOrReplay(recording);
-			return rr;
-		}
-
-		public static RecordOrReplay createFromReplay(Replay replay) {
-			RecordOrReplay rr = new RecordOrReplay(replay);
-			return rr;
-		}
-
-		@Override
-        public String toString() {
-		    return getCollection().or(() -> getRecordingCollection()).orElse("N/A");
-        }
-
-        @JsonProperty("recording")
-		public final Optional<Recording> recording;
-		@JsonProperty("replay")
-		public final Optional<Replay> replay;
-	}
-
-	/**
+    /**
 	 * Get ReqResponseMatchResult for the given request and replay Id
 	 * @param recordReqId
 	 * @param replayId

@@ -1,5 +1,7 @@
 package com.cube.core;
 
+import static io.md.core.TemplateKey.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -17,9 +19,8 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
+import io.md.core.TemplateKey;
 
-import com.cube.cache.TemplateKey;
-import com.cube.cache.TemplateKey.Type;
 import com.cube.dao.ReqRespStore;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;

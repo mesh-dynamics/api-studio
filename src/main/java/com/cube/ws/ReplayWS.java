@@ -39,7 +39,8 @@ import io.md.core.ReplayTypeEnum;
 
 import com.cube.core.Utils;
 import com.cube.dao.CubeMetaInfo;
-import com.cube.dao.Recording;
+
+import io.md.dao.Recording;
 import io.md.dao.Replay;
 import com.cube.dao.ReplayBuilder;
 import com.cube.dao.ReqRespStore;

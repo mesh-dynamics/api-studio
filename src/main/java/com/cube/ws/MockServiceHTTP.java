@@ -34,19 +34,19 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.FnReqResponse;
-import io.cube.agent.FnResponse;
+import io.md.dao.RecordOrReplay;
+import io.md.services.FnResponse;
 import io.md.dao.Event;
 import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
 import io.md.dao.EventQuery;
 import io.md.dao.EventQuery.Builder;
 import io.md.dao.HTTPResponsePayload;
+import io.md.services.Mocker;
+import io.md.services.RealMocker;
 
 import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
-import com.cube.dao.ReqRespStore.RecordOrReplay;
-import com.cube.services.Mocker;
-import com.cube.services.RealMocker;
 import com.cube.utils.Constants;
 
 /**

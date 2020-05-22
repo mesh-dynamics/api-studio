@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import com.cube.services.DSResult;
+import io.md.services.DSResult;
 
 /**
  * @author prasad

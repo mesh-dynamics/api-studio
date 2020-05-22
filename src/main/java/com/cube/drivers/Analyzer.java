@@ -9,8 +9,11 @@ package com.cube.drivers;
 
 import static io.md.core.Comparator.MatchType.DontCare;
 import static io.md.core.Comparator.MatchType.ExactMatch;
+import static io.md.core.TemplateKey.*;
 
 import com.cube.dao.ReplayUpdate;
+
+import io.md.core.TemplateKey;
 import io.md.dao.Replay;
 import java.time.Instant;
 import java.util.Collection;
@@ -36,17 +39,13 @@ import io.md.core.Comparator;
 import io.md.core.Comparator.Match;
 import io.md.core.Comparator.MatchType;
 import io.md.dao.Event;
+import io.md.dao.ReqRespMatchResult;
+import io.md.services.DataStore.TemplateNotFoundException;
 
-import com.cube.cache.ComparatorCache;
-import com.cube.cache.ComparatorCache.TemplateNotFoundException;
-import com.cube.cache.TemplateKey;
-import com.cube.cache.TemplateKey.Type;
-import com.cube.core.JsonComparator;
 import com.cube.dao.Analysis;
 import com.cube.dao.Analysis.ReqRespMatchWithEvent;
 import io.md.dao.EventQuery;
 import com.cube.dao.MatchResultAggregate;
-import com.cube.dao.ReqRespMatchResult;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Result;
 import com.cube.utils.Constants;
@@ -205,13 +204,13 @@ public class Analyzer {
                     new ObjectMessage(Map.of(Constants.MESSAGE, "Unable to log debug message")), e);
             }
 
-            ReqRespMatchResult res = new ReqRespMatchResult(bestmatch, bestReqMt,
+            ReqRespMatchResult res = Analysis.createReqRespMatchResult(bestmatch, bestReqMt,
                 (int) matches.numResults, analysis.replayId);
             rrstore.saveResult(res);
 
         } else {
             // TODO change it back to RecReqNoMatch
-            ReqRespMatchResult res = new ReqRespMatchResult(new ReqRespMatchWithEvent(recordReq,
+            ReqRespMatchResult res = Analysis.createReqRespMatchResult(new ReqRespMatchWithEvent(recordReq,
                 Optional.empty(), Comparator.Match.NOMATCH, Optional.empty() , Optional.empty(), Comparator.Match.DONT_CARE),
                 MatchType.NoMatch, (int)matches.numResults, analysis.replayId);
             rrstore.saveResult(res);

@@ -1,18 +1,14 @@
 package com.cube;
 
+import static io.md.core.TemplateKey.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.md.core.Comparator;
-import io.md.core.CompareTemplate;
-import io.md.cryptography.JcaEncryption;
+import io.md.core.TemplateKey;
 import io.md.dao.Event;
 import io.md.dao.Event.EventType;
-import io.md.dao.HTTPResponsePayload;
-import io.md.utils.CubeObjectMapperProvider;
 
-import com.cube.cache.ComparatorCache;
-import com.cube.cache.TemplateKey;
-import com.cube.cache.TemplateKey.Type;
 import com.cube.ws.Config;
 
 public class EventPayloadKeyTest {

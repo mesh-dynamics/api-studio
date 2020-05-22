@@ -4,6 +4,7 @@
 package com.cube.dao;
 
 import io.md.constants.ReplayStatus;
+import io.md.dao.Recording;
 import io.md.dao.Replay;
 import java.util.Collections;
 import java.util.Map;
@@ -15,8 +16,9 @@ import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.google.common.base.MoreObjects;
 
-import com.cube.dao.Recording.RecordingStatus;
-import com.cube.services.AbstractDataStore;
+import io.md.services.AbstractDataStore;
+import io.md.dao.RecordOrReplay;
+
 import com.cube.utils.Constants;
 
 /**
@@ -40,7 +42,7 @@ public abstract class ReqRespStoreImplBase extends AbstractDataStore implements 
 	}
 
     @Override
-    public Optional<ReqRespStore.RecordOrReplay> getCurrentRecordOrReplay(String customerId, String app, String instanceId) {
+    public Optional<RecordOrReplay> getCurrentRecordOrReplay(String customerId, String app, String instanceId) {
         return getCurrentRecordOrReplay(Optional.of(customerId),
             Optional.of(app), Optional.of(instanceId));
     }
@@ -101,7 +103,7 @@ public abstract class ReqRespStoreImplBase extends AbstractDataStore implements 
 				app.orElse(Constants.NOT_PRESENT), Constants.INSTANCE_ID_FIELD,
 				instanceId.orElse(Constants.NOT_PRESENT))));
 			Optional<RecordOrReplay> rr = getRecording(ncustomerid, napp, ninstanceid,
-				Optional.of(RecordingStatus.Running), Optional.empty(), Optional.empty(),
+				Optional.of(Recording.RecordingStatus.Running), Optional.empty(), Optional.empty(),
                 Optional.empty(),Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty(), Collections.emptyList(), Optional.empty(),
                 Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty())

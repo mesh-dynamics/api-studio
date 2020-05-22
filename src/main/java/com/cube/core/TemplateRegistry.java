@@ -3,8 +3,7 @@ package com.cube.core;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.md.core.CompareTemplate;
-
-import com.cube.cache.TemplateKey;
+import io.md.core.TemplateKey;
 
 public class TemplateRegistry {
 
