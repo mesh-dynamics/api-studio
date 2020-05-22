@@ -62,7 +62,7 @@ public class EventPayloadTests {
 			MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
 			queryParams.add("filmName" , "Beverly Outlaw");
 			eventBuilder.setPayload(new HTTPRequestPayload(headers, queryParams,
-				null, "GET", null));
+				null, "GET", null, "a/b/c"));
 			httpRequestEvent = eventBuilder.createEvent();
 
 

@@ -196,7 +196,7 @@ public class Utils {
 			.isPresent()) && runType.isPresent() && method.isPresent()) {
 
 			HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
-				formParams, method.get(), body);
+				formParams, method.get(), body , apiPath);
 
 			/*String payloadStr = null;
 			final Span span = CommonUtils.startClientSpan("reqPayload");
@@ -239,10 +239,10 @@ public class Utils {
 		// We treat empty body ("") as null
 		if (body != null && (!body.isEmpty())) {
 			httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams, formParams, method,
-				body.getBytes(StandardCharsets.UTF_8));
+				body.getBytes(StandardCharsets.UTF_8), apiPath);
 		} else {
 			httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams, formParams, method,
-				null);
+				null, apiPath);
 		}
 
 		//httpRequestPayload.postParse();
