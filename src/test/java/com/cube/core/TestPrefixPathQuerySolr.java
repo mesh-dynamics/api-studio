@@ -1,5 +1,6 @@
 package com.cube.core;
 
+import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 import static io.md.core.TemplateKey.*;
 
 import java.util.ArrayList;
@@ -60,7 +61,7 @@ public class TestPrefixPathQuerySolr {
             if (countWrapper.count != pathElements.size() - 1) {
                 keyPath = keyPath.concat("/*");
             }
-            TemplateKey templateKey = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, "ravivj" , "cube"
+            TemplateKey templateKey = new TemplateKey(DEFAULT_TEMPLATE_VER, "ravivj" , "cube"
                     , "as" , keyPath , Type.RequestMatch);
             CompareTemplate template = new CompareTemplate();
             // adding a single template entry to the comparator. The path field of the entry
@@ -96,7 +97,7 @@ public class TestPrefixPathQuerySolr {
             String fullPath,
             List<String> pathElements , ReqRespStore reqRespStore , SolrClient Solr) {
         TemplateKey searchKey =
-                new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, "ravivj" , "cube" , "as"
+                new TemplateKey(DEFAULT_TEMPLATE_VER, "ravivj" , "cube" , "as"
                         , fullPath , Type.RequestMatch);
 
 

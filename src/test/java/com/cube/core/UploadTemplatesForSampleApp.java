@@ -1,5 +1,6 @@
 package com.cube.core;
 
+import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 import static io.md.core.TemplateKey.*;
 import static org.apache.commons.io.FileUtils.readFileToString;
 
@@ -47,7 +48,7 @@ public class UploadTemplatesForSampleApp {
                 String templateAsString = template.toString();
                 try {
                     reqRespStore.saveCompareTemplate(
-                            new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId , app , service , path , Type.ResponseCompare)
+                            new TemplateKey(DEFAULT_TEMPLATE_VER, customerId , app , service , path , Type.ResponseCompare)
                      , templateAsString);
                 } catch (Exception e) {
                     e.printStackTrace();
