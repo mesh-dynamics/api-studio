@@ -1,6 +1,7 @@
 package io.md.utils;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,6 +14,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Predicate;
@@ -35,7 +37,9 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import io.jaegertracing.internal.JaegerSpanContext;
 import io.md.constants.Constants;
+import io.md.core.Comparator;
 import io.md.dao.Event;
+import io.md.dao.Event.EventBuilder;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
@@ -219,6 +223,54 @@ public class Utils {
 
 	}
 
+	// this is server side version, used by RealMocker
+	public static Event createHTTPRequestEvent(String apiPath, Optional<String> reqId,
+		MultivaluedMap<String, String> queryParams,
+		MultivaluedMap<String, String> formParams,
+		MultivaluedMap<String, String> meta,
+		MultivaluedMap<String, String> hdrs, String method, String body,
+		Optional<String> collection, Instant timestamp,
+		Optional<Event.RunType> runType, Optional<String> customerId,
+		Optional<String> app,
+		Comparator comparator)
+		throws JsonProcessingException, EventBuilder.InvalidEventException {
+
+		HTTPRequestPayload httpRequestPayload;
+		// We treat empty body ("") as null
+		if (body != null && (!body.isEmpty())) {
+			httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams, formParams, method,
+				body.getBytes(StandardCharsets.UTF_8), apiPath);
+		} else {
+			httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams, formParams, method,
+				null, apiPath);
+		}
+
+		//httpRequestPayload.postParse();
+
+		Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
+		Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
+		Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
+		Optional<String> spanId = getFirst(meta, Constants.DEFAULT_SPAN_FIELD);
+		Optional<String> parentSpanId = getFirst(meta, Constants.DEFAULT_PARENT_SPAN_FIELD);
+
+		if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection.isPresent() && runType.isPresent()) {
+			EventBuilder eventBuilder = new EventBuilder(customerId.get(), app.get(),
+				service.get(), instance.orElse("NA"), collection.get(),
+				new MDTraceInfo(traceId.orElse(generateTraceId()) , spanId.orElse("NA") , parentSpanId.orElse("NA"))
+				, runType.get(), Optional.of(timestamp),
+				reqId.orElse("NA"),
+				apiPath, Event.EventType.HTTPRequest);
+			eventBuilder.setPayload(httpRequestPayload);
+			Event event = eventBuilder.createEvent();
+			event.parseAndSetKey(comparator.getCompareTemplate());
+
+			return event;
+		} else {
+			throw new EventBuilder.InvalidEventException();
+		}
+
+	}
+
 	public static MultivaluedMap<String, String> setLowerCaseKeys(
 		MultivaluedMap<String, String> mvMap) {
 		if (mvMap == null) {
@@ -327,4 +379,59 @@ public class Utils {
 			.findFirst().map(x -> x.toLowerCase().trim());
 	}
 
+	//Referred from io.jaegertracing.internal.propagation
+	public static String generateTraceId() {
+		long high = random.nextLong();
+		long low = random.nextLong();
+		char[] result = new char[32];
+		int pos = 0;
+		writeHexLong(result, pos, high);
+		pos += 16;
+
+		writeHexLong(result, pos, low);
+		return new String(result);
+	}
+
+	// Taken from io.jaegertracing.internal.propagation
+	/**
+	 * Inspired by {@code okio.Buffer.writeLong}
+	 */
+	static void writeHexLong(char[] data, int pos, long v) {
+		writeHexByte(data, pos + 0, (byte) ((v >>> 56L) & 0xff));
+		writeHexByte(data, pos + 2, (byte) ((v >>> 48L) & 0xff));
+		writeHexByte(data, pos + 4, (byte) ((v >>> 40L) & 0xff));
+		writeHexByte(data, pos + 6, (byte) ((v >>> 32L) & 0xff));
+		writeHexByte(data, pos + 8, (byte) ((v >>> 24L) & 0xff));
+		writeHexByte(data, pos + 10, (byte) ((v >>> 16L) & 0xff));
+		writeHexByte(data, pos + 12, (byte) ((v >>> 8L) & 0xff));
+		writeHexByte(data, pos + 14, (byte) (v & 0xff));
+	}
+	static final char[] HEX_DIGITS =
+		{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
+	static void writeHexByte(char[] data, int pos, byte b) {
+		data[pos + 0] = HEX_DIGITS[(b >> 4) & 0xf];
+		data[pos + 1] = HEX_DIGITS[b & 0xf];
+	}
+
+
+	private static final long traceIdRandomSeed = System.currentTimeMillis();
+
+	private static final Random random = new Random(traceIdRandomSeed);
+
+	public static String createLogMessasge(Object ...objects) {
+	    StringBuilder sb = new StringBuilder();
+	    sb.append("{");
+	    for (int i=1; i<objects.length; i+=2) {
+	        String key = objects[i-1].toString();
+	        String val = objects[i].toString();
+	        sb.append("\"").append(key).append("\":");
+	        sb.append("\"").append(val).append("\"");
+	        if (i+2 < objects.length) {
+	            sb.append(", ");
+	        }
+	    }
+	    sb.append("}");
+	    return sb.toString();
+	}
 }
