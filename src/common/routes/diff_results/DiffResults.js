@@ -369,7 +369,7 @@ class DiffResults extends Component {
     
     updatePageResults = async (isNextPage, index) => {
         let {filter, replayId} = this.state;
-        let {pageSize} = config.defaultFetchDiffResults;
+        let pageSize = config.defaultFetchDiffResults;
         let startIndex, endIndex;
         let diffLayoutDataPruned, resultsData;
 
@@ -378,15 +378,16 @@ class DiffResults extends Component {
         if (isNextPage) {
             startIndex = index;
             resultsData = await this.fetchAnalysisResults(replayId, {...filter, startIndex});
-            
             const results = resultsData.data && resultsData.data.res || [];
+            const numFound = resultsData.data && resultsData.data.numFound || 0;
             const diffLayoutData = this.preProcessResults(results);
             
-            let pruneEndIndex;
+            let pruneEndIndex, updatedEndIndex;
             ({diffLayoutDataPruned, i: pruneEndIndex} = pruneResults(diffLayoutData, true));
             
-            endIndex = startIndex + pruneEndIndex;
-            
+            updatedEndIndex = startIndex + pruneEndIndex;
+            // Use the number of results found on server to limit the endIndex
+            endIndex = updatedEndIndex > numFound ?  numFound : updatedEndIndex;            
         } else {
             endIndex = index;
             startIndex = Math.max(endIndex - pageSize, 0);
