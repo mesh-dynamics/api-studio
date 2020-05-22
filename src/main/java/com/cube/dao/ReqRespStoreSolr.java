@@ -67,7 +67,6 @@ import io.md.dao.MDTraceInfo;
 import io.md.dao.Payload;
 import io.md.dao.ReqRespUpdateOperation;
 import io.md.dao.FnReqRespPayload.RetStatus;
-import io.md.utils.CommonUtils;
 import io.md.utils.FnKey;
 import redis.clients.jedis.Jedis;
 
@@ -154,14 +153,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 }
             }
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(recordReplayRetrieveKey,  CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), toReturn,
+                config.recorder.record(recordReplayRetrieveKey, toReturn,
                     RetStatus.Success, Optional.empty(), key);
             }
         } catch (Exception e) {
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(recordReplayRetrieveKey, CommonUtils.getCurrentTraceId(), CommonUtils.getCurrentSpanId(),
-                    CommonUtils.getParentSpanId(), e, RetStatus.Exception,
+                config.recorder.record(recordReplayRetrieveKey
+                    , e, RetStatus.Exception,
                     Optional.of(e.getClass().getName()), key);
             }
             LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
@@ -198,8 +196,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
                 "Error while population RecordOrReplay in cache")) , e);
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(recordReplayStoreKey, CommonUtils.getCurrentTraceId(), CommonUtils.getCurrentSpanId(),
-                    CommonUtils.getParentSpanId(), e, RetStatus.Exception,
+                config.recorder.record(recordReplayStoreKey, e, RetStatus.Exception,
                     Optional.of(e.getClass().getName()), collectionKey , rr);
             }
         }
@@ -912,11 +909,22 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         query.addFilterQuery(prefix + " ( " + filter + " ) ");
     }
 
-    private static void addRangeFilter(SolrQuery query, String fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive, boolean endInclusive) {
+    private static String getRangeFilterString(String fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive, boolean endInclusive) {
         String startDateVal = startDate.isPresent() ? SolrIterator.escapeQueryChars(startDate.get().toString()) : "*";
         String endDateVal = endDate.isPresent() ? SolrIterator.escapeQueryChars(endDate.get().toString()) : "*";
         String queryFmt = "%s:" + (startInclusive ? "[": "{") + "%s TO %s" + (endInclusive ? "]" : "}");
-        query.addFilterQuery(String.format(queryFmt, fieldname, startDateVal, endDateVal));
+        return String.format(queryFmt, fieldname, startDateVal, endDateVal);
+    }
+
+    private static void addOrRangeFilter(SolrQuery query, List<String> fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive,
+            boolean endInclusive) {
+        String rangeQuery = fieldname.stream().map(v -> getRangeFilterString(v, startDate, endDate, startInclusive, endInclusive))
+            .collect(Collectors.joining(" OR ", "( ", " )"));
+        query.addFilterQuery(rangeQuery);
+    }
+
+    private static void addRangeFilter(SolrQuery query,String fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive, boolean endInclusive) {
+        query.addFilterQuery(getRangeFilterString(fieldname, startDate, endDate, startInclusive, endInclusive));
     }
 
     private static void addWeightedPathFilter(SolrQuery query , String fieldName , String originalPath) {
@@ -1272,16 +1280,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
         try {
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(saveFuncKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), fromSolr,
+                config.recorder.record(saveFuncKey, fromSolr,
                     RetStatus.Success, Optional.empty(), doc);
             }
             return toReturn;
         } catch (Throwable e) {
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(saveFuncKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(),
-                    CommonUtils.getParentSpanId(),
+                config.recorder.record(saveFuncKey,
                     e, RetStatus.Exception, Optional.of(e.getClass().getName()), doc);
             }
             throw e;
@@ -1323,16 +1328,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
         try {
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(deleteFuncKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), fromSolr,
+                config.recorder.record(deleteFuncKey, fromSolr,
                     RetStatus.Success, Optional.empty(), query);
             }
             return toReturn;
         } catch (Throwable e) {
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(deleteFuncKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(),
-                    CommonUtils.getParentSpanId(),
+                config.recorder.record(deleteFuncKey,
                     e, RetStatus.Exception, Optional.of(e.getClass().getName()), query);
             }
             throw e;
@@ -1353,6 +1355,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String REQSENTF = CPREFIX + "reqsent" + INT_SUFFIX;
     private static final String REQFAILEDF = CPREFIX + "reqfailed" + INT_SUFFIX;
     private static final String CREATIONTIMESTAMPF = CPREFIX + "creationtimestamp" + DATE_SUFFIX;
+    private static final String ANALYSISCOMPLETETIMESTAMPF = CPREFIX + "analysiscompletetimestamp" + DATE_SUFFIX;
     private static final String SAMPLERATEF = CPREFIX + "samplerate" + DOUBLE_SUFFIX;
     private static final String REPLAYPATHSTATF = CPREFIX + "pathstat" + STRINGSET_SUFFIX;
     private static final String INTERMEDIATESERVF = CPREFIX + "intermediateserv" + STRINGSET_SUFFIX;
@@ -1406,6 +1409,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         replay.goldenName.ifPresent(goldenName -> doc.setField(GOLDEN_NAMEF, goldenName));
         replay.recordingId.ifPresent(recordingId -> doc.setField(RECORDING_IDF, recordingId));
         doc.setField(ARCHIVEDF,replay.archived);
+        doc.setField(ANALYSISCOMPLETETIMESTAMPF,  replay.analysisCompleteTimestamp.toString());
         replay.dynamicInjectionConfigVersion.ifPresent(DIConfVersion -> doc.setField(DYNACMIC_INJECTION_CONFIG_VERSIONF, DIConfVersion));
 
         return doc;
@@ -1470,6 +1474,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             Utils.valueOf(ReplayTypeEnum.class, repType)).orElse(ReplayTypeEnum.HTTP);
         Optional<String> xfms = getStrField(doc, XFMSF);
         Optional<Boolean> archived = getBoolField(doc, ARCHIVEDF);
+        Optional<Instant> analysisCompleteTimestamp = getTSField(doc, ANALYSISCOMPLETETIMESTAMPF);
         Optional<String> dynamicInjectionConfigVersion = getStrField(doc, DYNACMIC_INJECTION_CONFIG_VERSIONF);
 
         Optional<Replay> replay = Optional.empty();
@@ -1487,7 +1492,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                     .withMockServices(mockServices)
                     .withIntermediateServices(intermediateService)
                     .withReqCounts(reqcnt, reqsent, reqfailed)
-                    .withReplayType(replayType).withUpdateTimestamp(
+                    .withReplayType(replayType).withCreationTimestamp(
                         creationTimestamp.orElseGet(() -> Instant.now()));
                 excludePaths.ifPresent(builder::withExcludePaths);
                 sampleRate.ifPresent(builder::withSampleRate);
@@ -1499,6 +1504,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 goldenName.ifPresent(builder::withGoldenName);
                 recordingId.ifPresent(builder::withRecordingId);
                 archived.ifPresent(builder::withArchived);
+                analysisCompleteTimestamp.ifPresent(builder::withAnalysisCompleteTimestamp);
                 dynamicInjectionConfigVersion.ifPresent(builder::withDynamicInjectionConfigVersion);
 
                 replay = Optional.of(builder.build());
@@ -1704,9 +1710,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, USERIDF, userId);
         addFilter(query, TESTCONFIGNAMEF, testConfigName);
         addFilter(query, GOLDEN_NAMEF, goldenName);
-        addRangeFilter(query, CREATIONTIMESTAMPF, startDate, endDate, true, true);
+        /**TODO
+         * the filter is based on two fields(updationTimestamp and creationTimestamp)
+         *Once all the replays will be having the updationTimeStamp, we can remove addOrRange and use addRangeFilter with UPDATIONTIMESTAMPF
+         */
+        addOrRangeFilter(query, Arrays.asList(ANALYSISCOMPLETETIMESTAMPF, CREATIONTIMESTAMPF), startDate, endDate, true, true);
         // Heuristic: getting the latest replayid if there are multiple.
-        // TODO: what happens if there are multiple replays running for the
+        /**TODO: what happens if there are multiple replays running for the
+         * the sort will based on updationTimestamp once each replay will be having it
+         */
         // same triple (customer, app, instance)
         addSort(query, CREATIONTIMESTAMPF, false /* desc */);
 

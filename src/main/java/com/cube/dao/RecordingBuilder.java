@@ -84,8 +84,8 @@ public class RecordingBuilder {
 
 	private String recalculateId() {
 		return ReqRespStoreSolr.Types.Recording.toString().concat("-")
-			.concat(String.valueOf(Objects.hash(customerId, app,
-				collection, templateVersion)));
+			.concat(String.valueOf(Math.abs(Objects.hash(customerId, app,
+				collection, templateVersion))));
 	}
 
 	private void populateClassLoader() throws Exception {
