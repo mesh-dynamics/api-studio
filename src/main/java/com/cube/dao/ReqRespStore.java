@@ -685,6 +685,20 @@ public interface ReqRespStore {
     // get all recordingOperationSets for a given operationset id
     Stream<RecordingOperationSetSP> getRecordingOperationSetSPs(String recordingOperationSetId);
 
+	/**
+	 *
+	 * @param apiTraceFacetQuery
+	 * @return
+	 */
+    ArrayList getApiFacets(ApiTraceFacetQuery apiTraceFacetQuery);
+
+	/**
+	 *
+	 * @param apiTraceFacetQuery
+	 * @return
+	 */
+	Result<Event> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery);
+
     /**
      * Save a template set
      * @param templateSet Template Set
