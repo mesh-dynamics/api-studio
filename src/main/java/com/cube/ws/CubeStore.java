@@ -241,7 +241,7 @@ public class CubeStore {
 
             Comparator requestComparator = null;
             try {
-                requestComparator = config.rrstore
+                requestComparator = rrstore
                     .getComparator(tkey, Event.EventType.HTTPRequest);
             } catch (TemplateNotFoundException e) {
                 throw new CubeStoreException(e, "Request Comparator Not Found"
@@ -1212,7 +1212,7 @@ public class CubeStore {
         try {
             TemplateKey key = new TemplateKey(DEFAULT_TEMPLATE_VER, "ravivj", "movieinfo"
                 , "movieinfo", "minfo/listmovies", Type.ResponseCompare);
-            Comparator comparator = this.config.rrstore.getComparator(key, Event.EventType.HTTPResponse);
+            Comparator comparator = rrstore.getComparator(key, Event.EventType.HTTPResponse);
             LOGGER.info("Got Response Comparator :: " + comparator.toString());
         } catch (Exception e) {
             LOGGER.error("Error occured :: " + e.getMessage() + " "

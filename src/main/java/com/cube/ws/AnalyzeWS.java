@@ -914,7 +914,7 @@ public class AnalyzeWS {
 		        templateSet -> updateOperationSetOpt.map(UtilException.rethrowFunction(
 			        updateOperationSet ->
 				        transformer.updateTemplateSet(templateSet, updateOperationSet,
-					        config.rrstore)))))
+					        rrstore)))))
 		        .orElseThrow(
 			        () -> new Exception("Missing template set or template update operation set"));
             // Validate updated template set

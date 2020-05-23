@@ -1,7 +1,6 @@
 package com.cube.core;
 
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
-import static io.md.core.TemplateKey.*;
 import static org.apache.commons.io.FileUtils.readFileToString;
 
 import java.io.File;
@@ -14,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
 import io.md.core.TemplateKey;
+import io.md.core.TemplateKey.Type;
 
 import com.cube.dao.ReqRespStore;
 import com.cube.utils.Constants;
