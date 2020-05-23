@@ -10,6 +10,13 @@ import static io.md.core.TemplateKey.Type;
 import static io.md.dao.Recording.RecordingStatus;
 import static io.md.services.DataStore.TemplateNotFoundException;
 
+import com.cube.dao.ApiTraceFacetQuery;
+import com.cube.dao.ApiTraceResponse;
+import com.cube.dao.ApiTraceResponse.ServiceReqRes;
+import io.md.constants.ReplayStatus;
+import io.md.dao.Event.EventType;
+import io.md.dao.HTTPResponsePayload;
+import io.md.dao.RecordingOperationSetSP;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -34,6 +41,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -1363,6 +1371,125 @@ public class AnalyzeWS {
 
 	}
 
+	@GET
+  @Path("getApiFacets/{customerId}/{appId}")
+  public Response getApiFacets(@Context UriInfo uriInfo,
+      @PathParam("customerId") String customerId,
+      @PathParam("appId") String appId) {
+    try {
+      ApiTraceFacetQuery apiTraceFacetQuery = new ApiTraceFacetQuery(customerId, appId, uriInfo.getQueryParameters());
+      ArrayList servicePathFacets =  rrstore.getApiFacets(apiTraceFacetQuery);
+      Map jsonMap = new HashMap();
+      jsonMap.put(Constants.SERVICE_FACET, servicePathFacets);
+      return Response.ok().entity(jsonMapper.writeValueAsString(jsonMap)).build();
+    } catch (JsonProcessingException e) {
+      LOGGER.error(
+          new ObjectMessage(Map.of(Constants.MESSAGE, "Error while parsing the servicePathFacets",
+              Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, appId)), e);
+      return Response.serverError().entity(
+          buildErrorResponse(Constants.ERROR, "Error while parsing the servicePathFacets",
+              e.getMessage())).build();
+    }
+  }
+
+  @GET
+  @Path("getApiTrace/{customerId}/{appId}")
+  public Response getApiTrace(@Context UriInfo uriInfo,
+      @PathParam("customerId") String customerId,
+      @PathParam("appId") String appId) {
+    try {
+      ApiTraceFacetQuery apiTraceFacetQuery = new ApiTraceFacetQuery(customerId, appId, uriInfo.getQueryParameters());
+      Optional<Integer> depth = Optional.ofNullable(uriInfo.getQueryParameters().getFirst("depth"))
+            .flatMap(val -> {
+              Optional<Integer> value = Utils.strToInt(val);
+              return  value.get() >= 0 ? value : Optional.of(1);
+            }).or(() -> Optional.of(1));
+      Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery);
+      MultivaluedMap<String, Event> traceCollectionMap = new MultivaluedHashMap<>();
+      result.getObjects().forEach(res -> traceCollectionMap.add(res.getTraceId() + " "+ res.getCollection(), res));
+
+      ArrayList<ApiTraceResponse> response = new ArrayList<>();
+      traceCollectionMap.forEach((traceCollectionKey, events) -> {
+
+        MultivaluedMap<String, Event> requestEventsByParentSpanId = new MultivaluedHashMap<>();
+        Map<String, Event> responseEventsByReqId = new HashMap<>();
+        List<Event> parentRequestEventsForApiPath = new ArrayList<>();
+
+        events.forEach(e -> {
+          if(e.eventType == EventType.HTTPRequest) {
+            requestEventsByParentSpanId.add(e.parentSpanId, e);
+            apiTraceFacetQuery.apiPath.ifPresent(path -> parentRequestEventsForApiPath.add(e));
+          }
+          if(e.eventType == EventType.HTTPResponse) {
+            responseEventsByReqId.put(e.reqId, e);
+          }
+        });
+
+        if(apiTraceFacetQuery.apiPath.isPresent()) {
+
+          for(Event parent: parentRequestEventsForApiPath) {
+            response.add(getApiTraceResponse(parent, depth.get(),
+                responseEventsByReqId, requestEventsByParentSpanId));
+          }
+
+        } else {
+          List<Event> parentRequestEvents = requestEventsByParentSpanId.get("NA");
+          if(parentRequestEvents == null) {
+            LOGGER.error(
+                new ObjectMessage(Map.of(Constants.MESSAGE, "No request events found",
+                    Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, appId,
+                    Constants.TRACE_ID_FIELD +" "+ Constants.COLLECTION_FIELD, traceCollectionKey)));
+            return;
+          }
+          for(Event parent: parentRequestEvents) {
+            response.add(getApiTraceResponse(parent, depth.get(),
+                responseEventsByReqId, requestEventsByParentSpanId));
+          }
+        }
+      });
+
+      Map jsonMap = new HashMap();
+
+      jsonMap.put("response", response);
+      return Response.ok().entity(jsonMapper.writeValueAsString(jsonMap)).build();
+    } catch (JsonProcessingException e) {
+      LOGGER.error(
+          new ObjectMessage(Map.of(Constants.MESSAGE, "Error while parsing the response",
+              Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, appId)), e);
+      return Response.serverError().entity(
+          buildErrorResponse(Constants.ERROR, "Error while parsing the response",
+              e.getMessage())).build();
+    }
+  }
+
+  private ApiTraceResponse getApiTraceResponse(Event parentRequestEvent, int depth, Map<String, Event> responseEventsByReqId,
+      MultivaluedMap<String, Event> requestEventsByParentSpanId ) {
+    final ApiTraceResponse apiTraceResponse = new ApiTraceResponse(parentRequestEvent.getTraceId(),
+        parentRequestEvent.getCollection());
+
+    levelOrderTraversal(parentRequestEvent,  depth, apiTraceResponse, responseEventsByReqId,
+        requestEventsByParentSpanId);
+
+    return apiTraceResponse;
+  }
+
+  private void levelOrderTraversal(Event e, int level, final ApiTraceResponse apiTraceResponse, Map<String, Event> responseEventsByReqId,
+      MultivaluedMap<String, Event> requestEventsByParentSpanId) {
+	  if(level == 0) return;
+
+	  Event responseEvent = responseEventsByReqId.get(e.reqId);
+
+    String status = responseEvent != null ? String.valueOf(((HTTPResponsePayload) responseEvent.payload).status) : "";
+    ServiceReqRes serviceReqRes = new ServiceReqRes(e.service, e.apiPath,
+        e.reqId, e.timestamp, e.spanId, e.parentSpanId, status);
+    apiTraceResponse.res.add(serviceReqRes);
+    List<Event> children = requestEventsByParentSpanId.get(e.spanId);
+    if(children == null) return;
+    for(Event child: children) {
+      levelOrderTraversal(child, level-1, apiTraceResponse, responseEventsByReqId,
+          requestEventsByParentSpanId);
+    }
+  }
 
 	private void setRequestAndRules(Recording recording, String service, String apiPath,
 		JSONObject jsonObject, Event request) throws JsonProcessingException {

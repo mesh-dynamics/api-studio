@@ -74,6 +74,7 @@ import io.md.dao.ReqRespUpdateOperation;
 import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.services.FnResponse;
 import io.md.utils.FnKey;
+import org.checkerframework.checker.nullness.Opt;
 import redis.clients.jedis.Jedis;
 
 import com.cube.cache.ComparatorCache;
@@ -2298,6 +2299,75 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return analysis;
     }
 
+    private SolrQuery getEventQuery(ApiTraceFacetQuery apiTraceFacetQuery) {
+        final SolrQuery query = new SolrQuery("*:*");
+        query.addField("*");
+        addFilter(query, TYPEF, Types.Event.toString());
+        addFilter(query, CUSTOMERIDF, apiTraceFacetQuery.customerId);
+        addFilter(query, APPF, apiTraceFacetQuery.appId);
+        addFilter(query, INSTANCEIDF, apiTraceFacetQuery.instanceId);
+        addRangeFilter(query, TIMESTAMPF, apiTraceFacetQuery.startDate,
+            apiTraceFacetQuery.endDate, true, true);
+        return query;
+    }
+
+    @Override
+    public ArrayList getApiFacets(ApiTraceFacetQuery apiTraceFacetQuery) {
+        final SolrQuery query = getEventQuery(apiTraceFacetQuery);
+        addFilter(query, SERVICEF,apiTraceFacetQuery.service);
+        addFilter(query,PATHF, apiTraceFacetQuery.apiPath);
+        FacetQ serviceFacetq = new FacetQ();
+        Facet servicef = Facet.createTermFacet(SERVICEF, Optional.empty());
+
+        FacetQ pathFacetq = new FacetQ();
+        Facet pathf = Facet.createTermFacet(PATHF, Optional.empty());
+
+        FacetQ instanceIdFacetq = new FacetQ();
+        Facet instanceIdf = Facet.createTermFacet(INSTANCEIDF, Optional.empty());
+        instanceIdFacetq.addFacet(INSTANCEFACET,instanceIdf);
+
+        pathf.addSubFacet(instanceIdFacetq);
+        pathFacetq.addFacet(PATHFACET,pathf);
+
+        servicef.addSubFacet(pathFacetq);
+        serviceFacetq.addFacet(SERVICEFACET, servicef);
+
+        query.setFacetMinCount(1);
+        String jsonFacets;
+        try {
+            jsonFacets = config.jsonMapper.writeValueAsString(serviceFacetq);
+            query.add(SOLRJSONFACETPARAM, jsonFacets);
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting facets to json"), e);
+        }
+        Result<Event> result = SolrIterator.getResults(solr, query, Optional.empty(),
+            this::docToEvent, Optional.empty());
+        ArrayList serviceFacetResults = result.getFacets(FACETSFIELD, SERVICEFACET, BUCKETFIELD);
+        serviceFacetResults.forEach(serviceFacetResult -> {
+            HashMap pathFacetMap = (HashMap) ((HashMap) serviceFacetResult).get(PATHFACET);
+            ArrayList pathFacetResults = result.solrNamedPairToMap((ArrayList) pathFacetMap.get(BUCKETFIELD));
+
+            pathFacetResults.forEach(pathFacetResult -> {
+                HashMap instanceFacetMap = (HashMap) ((HashMap) pathFacetResult).get(INSTANCEFACET);
+                ((HashMap)pathFacetResult).put(INSTANCEFACET,
+                    result.solrNamedPairToMap((ArrayList)instanceFacetMap.get(BUCKETFIELD)));
+            });
+
+            ((HashMap)serviceFacetResult).put(PATHFACET,pathFacetResults);
+        });
+        return serviceFacetResults;
+    }
+
+    @Override
+    public Result<Event> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery) {
+
+        final SolrQuery query = getEventQuery(apiTraceFacetQuery);
+        addFilter(query, TRACEIDF, apiTraceFacetQuery.traceId);
+        addSort(query, TRACEIDF, false /* desc */);
+        return SolrIterator.getResults(solr, query, Optional.empty(),
+            this::docToEvent, Optional.empty());
+    }
+
 
     private static final String RECORDINGSTATUSF = CPREFIX + Constants.STATUS + STRING_SUFFIX;
     private static final String ROOT_RECORDING_IDF = CPREFIX + Constants.ROOT_RECORDING_FIELD + STRING_SUFFIX;
@@ -2612,6 +2682,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String RESPMTFACET = "respmt_facets";
     private static final String PATHFACET = "path_facets";
     private static final String SERVICEFACET = "service_facets";
+    private static final String INSTANCEFACET = "instance_facets";
     private static final String SOLRJSONFACETPARAM = "json.facet"; // solr facet query param
     private static final String BUCKETFIELD = "buckets"; // term in solr results indicating facet buckets
     private static final String MISSINGBUCKETFIELD = "missing"; // term in solr results indicating facet bucket for
