@@ -5,6 +5,10 @@ package com.cube.ws;
 
 import static com.cube.core.Utils.buildErrorResponse;
 import static com.cube.core.Utils.buildSuccessResponse;
+import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
+import static io.md.core.TemplateKey.Type;
+import static io.md.dao.Recording.RecordingStatus;
+import static io.md.services.DataStore.TemplateNotFoundException;
 
 import com.cube.dao.ApiTraceFacetQuery;
 import com.cube.dao.ApiTraceResponse;
@@ -55,31 +59,30 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.UtilException;
+import io.md.constants.ReplayStatus;
 import io.md.core.Comparator;
 import io.md.core.Comparator.MatchType;
 import io.md.core.CompareTemplate;
 import io.md.core.CompareTemplate.CompareTemplateStoreException;
 import io.md.core.TemplateEntry;
+import io.md.core.TemplateKey;
 import io.md.core.ValidateCompareTemplate;
 import io.md.dao.Event;
 import io.md.dao.Event.RunType;
+import io.md.dao.Recording;
+import io.md.dao.RecordingOperationSetSP;
+import io.md.dao.Replay;
+import io.md.dao.ReqRespMatchResult;
 import io.md.dao.ReqRespUpdateOperation;
 import redis.clients.jedis.Jedis;
 
-import com.cube.cache.ComparatorCache;
-import com.cube.cache.ComparatorCache.TemplateNotFoundException;
-import com.cube.cache.TemplateKey;
 import com.cube.core.TemplateRegistries;
 import com.cube.core.Utils;
 import com.cube.dao.Analysis;
 import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.MatchResultAggregate;
-import com.cube.dao.Recording;
-import com.cube.dao.Recording.RecordingStatus;
 import com.cube.dao.RecordingBuilder;
-import io.md.dao.Replay;
-import com.cube.dao.ReqRespMatchResult;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.Result;
@@ -135,7 +138,7 @@ public class AnalyzeWS {
                     return Response.serverError().build();
                 }
             }).orElse(Response.serverError().build());
-        } catch (ComparatorCache.TemplateNotFoundException e) {
+        } catch (TemplateNotFoundException e) {
             return Response.serverError().entity((
                 buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_NOT_FOUND,
                     "Cannot analyze since template does not exist : " +
@@ -195,27 +198,6 @@ public class AnalyzeWS {
         }
     }
 
-	/**
-	 * Api to get replay results for a given customer/app/virtual(mock) service and replay combination.
-	 * The result would contain request match / not match counts for all the paths covered by
-	 * the service during replay.
-	 * @param uriInfo
-	 * @param customerId
-	 * @param app
-	 * @param service
-	 * @param replayId
-	 * @return
-	 */
-	@GET
-    @Path("replayRes/{customerId}/{app}/{service}/{replayId}")
-    public Response replayResult(@Context UriInfo uriInfo, @PathParam("customerId") String customerId,
-                                 @PathParam("app") String app, @PathParam("service") String service,
-                                 @PathParam("replayId") String replayId) {
-        List<String> replayRequestCountResults = rrstore.getReplayRequestCounts(customerId, app, service, replayId);
-        String resultJson = replayRequestCountResults.stream().collect(Collectors.joining(",", "[", "]"));
-        return Response.ok().type(MediaType.APPLICATION_JSON).entity(resultJson).build();
-    }
-
 
 	@POST
     @Path("registerTemplateApp/{customerId}/{appId}/{version}")
@@ -261,7 +243,6 @@ public class AnalyzeWS {
                 return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
             }
 
-            Utils.invalidateCacheFromTemplateSet(templateSet, comparatorCache);
             rrstore.saveTemplateSet(templateSet);
 
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(String.format(
@@ -303,10 +284,10 @@ public class AnalyzeWS {
             //This is just to see the template is not invalid, and can be parsed according
             // to our class definition , otherwise send error response
             CompareTemplate template = jsonMapper.readValue(templateAsJson, CompareTemplate.class);
-            TemplateKey.Type templateType = Utils.valueOf(TemplateKey.Type.class, type).orElseThrow(
+            Type templateType = Utils.valueOf(Type.class, type).orElseThrow(
 	            () -> new CompareTemplateStoreException("Invalid Template Type, should be "
 		            + "either RequestMatch, RequestCompare or ResponseCompare"));
-	        TemplateKey key = new TemplateKey(Constants.DEFAULT_TEMPLATE_VER, customerId, appId,
+	        TemplateKey key = new TemplateKey(DEFAULT_TEMPLATE_VER, customerId, appId,
 		        serviceName, path, templateType);
             ValidateCompareTemplate validTemplate = template.validate();
             if (!validTemplate.isValid()) {
@@ -315,7 +296,6 @@ public class AnalyzeWS {
 	                    .toString()).build();
             }
             rrstore.saveCompareTemplate(key, templateAsJson);
-            comparatorCache.invalidateKey(key);
             return Response.ok().type(MediaType.TEXT_PLAIN)
 	            .entity("Json String successfully stored in Solr").build();
         } catch (JsonProcessingException e) {
@@ -346,7 +326,7 @@ public class AnalyzeWS {
     public Response getRespTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
 	    @PathParam("customerId") String customerId, @PathParam("templateVersion") String templateVersion,
 	    @PathParam("service") String service, @PathParam("type") String type) {
-    	return Utils.valueOf(TemplateKey.Type.class, type).map(templateType ->
+    	return Utils.valueOf(Type.class, type).map(templateType ->
 		     getCompareTemplate(urlInfo, appId, customerId, templateVersion, service
 			     , templateType))
 		    .orElse(Response.serverError().entity(new JSONObject(Map.of(Constants.MESSAGE
@@ -358,7 +338,7 @@ public class AnalyzeWS {
                                        String customerId,
                                        String templateVersion,
                                        String service,
-                                       TemplateKey.Type ruleType) {
+                                       Type ruleType) {
 
         MultivaluedMap<String, String> queryParams = urlInfo.getQueryParameters();
         Optional<String> apipath = Optional.ofNullable(queryParams.getFirst(Constants.API_PATH_FIELD));
@@ -377,7 +357,7 @@ public class AnalyzeWS {
             ruleType);
 
         try {
-	        TemplateEntry rule = comparatorCache.getComparator(tkey).getCompareTemplate()
+	        TemplateEntry rule = rrstore.getComparator(tkey).getCompareTemplate()
 		        .getRule(jsonpath.get());
 	        return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
 		        .entity(jsonMapper.writeValueAsString(rule)).build();
@@ -838,7 +818,7 @@ public class AnalyzeWS {
     @POST
     @Path("cache/flushall")
     public Response cacheFlushAll() {
-        comparatorCache.invalidateAll();
+        rrstore.invalidateCache();
         try (Jedis jedis = config.jedisPool.getResource()) {
             jedis.flushAll();
             return Response.ok().build();
@@ -934,7 +914,7 @@ public class AnalyzeWS {
 		        templateSet -> updateOperationSetOpt.map(UtilException.rethrowFunction(
 			        updateOperationSet ->
 				        transformer.updateTemplateSet(templateSet, updateOperationSet,
-					        config.comparatorCache)))))
+					        rrstore)))))
 		        .orElseThrow(
 			        () -> new Exception("Missing template set or template update operation set"));
             // Validate updated template set
@@ -1012,7 +992,7 @@ public class AnalyzeWS {
                     new Exception("Unable to find Template Update Operation Set of specified id"));
             TemplateSetTransformer setTransformer = new TemplateSetTransformer();
             TemplateSet updatedTemplateSet = setTransformer.updateTemplateSet(
-            	templateSet, templateUpdateOperationSet, config.comparatorCache);
+            	templateSet, templateUpdateOperationSet, config.rrstore);
 
 	        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully updated template set",
 		        Constants.OLD_TEMPLATE_SET_VERSION, templateSet.version, Constants.NEW_TEMPLATE_SET_VERSION, updatedTemplateSet.version,
@@ -1319,7 +1299,7 @@ public class AnalyzeWS {
 			responseOptional.ifPresentOrElse(UtilException.rethrowConsumer(response -> {
 
 				Map<String, TemplateEntry> responseCompareRules = Utils
-					.getAllPathRules(response, recording, TemplateKey.Type.ResponseCompare,
+					.getAllPathRules(response, recording, Type.ResponseCompare,
 						service, normalisedApiPath, rrstore, config);
 
 				jsonObject.put(Constants.RESPONSE, response.getPayloadAsJsonString());
@@ -1516,11 +1496,11 @@ public class AnalyzeWS {
 		jsonObject.put(Constants.REQUEST, request.getPayloadAsJsonString());
 
 		Map<String, TemplateEntry> requestMatchRules = Utils
-			.getAllPathRules(request, recording, TemplateKey.Type.RequestMatch,
+			.getAllPathRules(request, recording, Type.RequestMatch,
 				service, apiPath, rrstore, config);
 
 		Map<String, TemplateEntry> requestCompareRules = Utils
-			.getAllPathRules(request, recording, TemplateKey.Type.RequestCompare,
+			.getAllPathRules(request, recording, Type.RequestCompare,
 				service, apiPath, rrstore, config);
 		jsonObject.put(Constants.REQUEST_MATCH_RULES,
 			jsonMapper.writeValueAsString(requestMatchRules));
@@ -1537,7 +1517,6 @@ public class AnalyzeWS {
 		this.rrstore = config.rrstore;
 		this.jsonMapper = config.jsonMapper;
 		this.config = config;
-		this.comparatorCache = config.comparatorCache;
 		this.recordingUpdate = new RecordingUpdate(config);
 	}
 
@@ -1546,8 +1525,6 @@ public class AnalyzeWS {
 	ObjectMapper jsonMapper;
 	Config config;
     private final RecordingUpdate recordingUpdate;
-    // Template cache to retrieve analysis templates from solr
-    final ComparatorCache comparatorCache;
 
     /**
      * some fields from ReqRespMatchResult and some from Request to be returned by some api calls

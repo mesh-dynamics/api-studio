@@ -7,7 +7,6 @@
 package com.cube.cache;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,9 +22,11 @@ import io.md.core.CompareTemplate.ComparisonType;
 import io.md.core.CompareTemplate.DataType;
 import io.md.core.CompareTemplate.PresenceType;
 import io.md.core.TemplateEntry;
+import io.md.core.TemplateKey;
+import io.md.core.TemplateKey.Type;
 import io.md.dao.Event.EventType;
+import io.md.services.DataStore.TemplateNotFoundException;
 
-import com.cube.cache.TemplateKey.Type;
 import com.cube.core.JsonComparator;
 import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
@@ -111,7 +112,7 @@ public class ComparatorCache {
      * @return
      * @throws TemplateNotFoundException
      */
-    public Comparator getComparator(TemplateKey key) throws  TemplateNotFoundException {
+    public Comparator getComparator(TemplateKey key) throws TemplateNotFoundException {
         // this will always return request type ... will have to be converted
         // to Request / Response based on the key type
         EventType defaultEventType = Utils.valueOf(EventType.class,
@@ -225,9 +226,6 @@ public class ComparatorCache {
         templateCache.invalidateAll();
     }
 
-
-    static public class TemplateNotFoundException extends Exception {
-    }
 
     private class ComparatorNotImplementedException extends Exception {
         public final EventType eventType;

@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
-import com.cube.cache.TemplateKey;
+import io.md.core.TemplateKey;
 
 public class TemplateKeySerializer extends JsonSerializer<TemplateKey> {
 
