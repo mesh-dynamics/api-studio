@@ -3,6 +3,8 @@
  */
 package com.cube.core;
 
+import static io.md.utils.Utils.*;
+
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
@@ -42,18 +44,15 @@ import io.cube.agent.UtilException;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
+import io.md.core.TemplateKey;
 import io.md.core.ValidateCompareTemplate;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
+import io.md.dao.Recording;
 
-import com.cube.cache.ComparatorCache;
-import com.cube.cache.ComparatorCache.TemplateNotFoundException;
-import com.cube.cache.TemplateKey;
-import com.cube.cache.TemplateKey.Type;
-import com.cube.dao.Recording;
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
 import com.cube.utils.Constants;
@@ -68,9 +67,6 @@ public class Utils {
 
     private static final Logger LOGGER = LogManager.getLogger(Utils.class);
 
-    private static final long traceIdRandomSeed = System.currentTimeMillis();
-
-    private static final Random random = new Random(traceIdRandomSeed);
 
     // Assumes name is not null
 	public static <T extends Enum<T>> Optional<T> valueOf(Class<T> clazz, String name) {
@@ -251,18 +247,6 @@ public class Utils {
 
     }
 
-    static public void invalidateCacheFromTemplateSet(TemplateSet templateSet,
-                                                      ComparatorCache comparatorCache)
-    {
-        templateSet.templates.stream().forEach(compareTemplateVersioned -> {
-            TemplateKey key =
-                new TemplateKey(templateSet.version, templateSet.customer, templateSet.app,
-                    compareTemplateVersioned.service,
-                    compareTemplateVersioned.prefixpath, compareTemplateVersioned.type);
-            comparatorCache.invalidateKey(key);
-        });
-    }
-
     static Pattern templateKeyPattern = Pattern.compile("TemplateKey\\{customerId=(.+?),"
 	    + " appId=(.+?), serviceId=(.+?), path=(.+?), version=(.+?), type=(.+?)}");
 
@@ -277,15 +261,6 @@ public class Utils {
         URIBuilder uriBuilder = new URIBuilder(baseUrl);
         return uriBuilder.setPath(uriBuilder.getPath() + "/" + suffix)
             .build().normalize().toString();
-    }
-
-    public static CompareTemplate getRequestMatchTemplate(Config config, Event event
-	    , String templateVersion) throws TemplateNotFoundException {
-        TemplateKey tkey =
-            new TemplateKey(templateVersion, event.customerId,
-                event.app, event.service, event.apiPath, Type.RequestMatch);
-
-        return config.comparatorCache.getComparator(tkey, event.eventType).getCompareTemplate();
     }
 
     public static String buildSuccessResponse(String status, JSONObject data) {
@@ -323,54 +298,6 @@ public class Utils {
 
     public static Optional<String> getFirst(MultivaluedMap<String, String> fieldMap, String fieldname) {
         return Optional.ofNullable(fieldMap.getFirst(fieldname));
-    }
-
-    public static Event createHTTPRequestEvent(String apiPath, Optional<String> reqId,
-                                               MultivaluedMap<String, String> queryParams,
-                                               MultivaluedMap<String, String> formParams,
-                                               MultivaluedMap<String, String> meta,
-                                               MultivaluedMap<String, String> hdrs, String method, String body,
-                                               Optional<String> collection, Instant timestamp,
-                                               Optional<Event.RunType> runType, Optional<String> customerId,
-                                               Optional<String> app,
-                                               Config config,
-                                               Comparator comparator)
-	    throws JsonProcessingException, EventBuilder.InvalidEventException {
-
-	    HTTPRequestPayload httpRequestPayload;
-	    // We treat empty body ("") as null
-	    if (body != null && (!body.isEmpty())) {
-		    httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams, formParams, method,
-			    body.getBytes(StandardCharsets.UTF_8));
-	    } else {
-		    httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams, formParams, method,
-			    null);
-	    }
-
-	    //httpRequestPayload.postParse();
-
-        Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
-        Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
-        Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
-        Optional<String> spanId = getFirst(meta, Constants.DEFAULT_SPAN_FIELD);
-        Optional<String> parentSpanId = getFirst(meta, Constants.DEFAULT_PARENT_SPAN_FIELD);
-
-        if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection.isPresent() && runType.isPresent()) {
-            EventBuilder eventBuilder = new EventBuilder(customerId.get(), app.get(),
-                service.get(), instance.orElse("NA"), collection.get(),
-                new MDTraceInfo(traceId.orElse(generateTraceId()) , spanId.orElse("NA") , parentSpanId.orElse("NA"))
-	            , runType.get(), Optional.of(timestamp),
-                reqId.orElse("NA"),
-                apiPath, Event.EventType.HTTPRequest);
-            eventBuilder.setPayload(httpRequestPayload);
-            Event event = eventBuilder.createEvent();
-            event.parseAndSetKey(comparator.getCompareTemplate());
-
-            return event;
-        } else {
-            throw new EventBuilder.InvalidEventException();
-        }
-
     }
 
     /*public static HTTPRequestPayload getRequestPayload(Event event, Config config)
@@ -424,7 +351,7 @@ public class Utils {
     }*/
 
 	public static Map<String, TemplateEntry> getAllPathRules(Event event, Recording recording, TemplateKey.Type templateKeyType,
-		String service, String apiPath, ReqRespStore rrstore, Config config) {
+                                                             String service, String apiPath, ReqRespStore rrstore, Config config) {
 		TemplateKey tkey = new TemplateKey(recording.templateVersion, recording.customerId, recording.app, service, apiPath,
 			templateKeyType);
 
@@ -435,41 +362,5 @@ public class Utils {
 		}));
 
 		return pathRules;
-    }
-
-    //Referred from io.jaegertracing.internal.propagation
-
-    private static String generateTraceId() {
-        long high = random.nextLong();
-        long low = random.nextLong();
-        char[] result = new char[32];
-        int pos = 0;
-        writeHexLong(result, pos, high);
-        pos += 16;
-
-        writeHexLong(result, pos, low);
-        return new String(result);
-    }
-
-    // Taken from io.jaegertracing.internal.propagation
-    /**
-     * Inspired by {@code okio.Buffer.writeLong}
-     */
-    static void writeHexLong(char[] data, int pos, long v) {
-        writeHexByte(data, pos + 0, (byte) ((v >>> 56L) & 0xff));
-        writeHexByte(data, pos + 2, (byte) ((v >>> 48L) & 0xff));
-        writeHexByte(data, pos + 4, (byte) ((v >>> 40L) & 0xff));
-        writeHexByte(data, pos + 6, (byte) ((v >>> 32L) & 0xff));
-        writeHexByte(data, pos + 8, (byte) ((v >>> 24L) & 0xff));
-        writeHexByte(data, pos + 10, (byte) ((v >>> 16L) & 0xff));
-        writeHexByte(data, pos + 12, (byte) ((v >>> 8L) & 0xff));
-        writeHexByte(data, pos + 14, (byte) (v & 0xff));
-    }
-    static final char[] HEX_DIGITS =
-        {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-
-    static void writeHexByte(char[] data, int pos, byte b) {
-        data[pos + 0] = HEX_DIGITS[(b >> 4) & 0xf];
-        data[pos + 1] = HEX_DIGITS[b & 0xf];
     }
 }

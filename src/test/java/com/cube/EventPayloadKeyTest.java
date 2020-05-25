@@ -1,18 +1,14 @@
 package com.cube;
 
+import static io.md.core.TemplateKey.*;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.md.core.Comparator;
-import io.md.core.CompareTemplate;
-import io.md.cryptography.JcaEncryption;
+import io.md.core.TemplateKey;
 import io.md.dao.Event;
 import io.md.dao.Event.EventType;
-import io.md.dao.HTTPResponsePayload;
-import io.md.utils.CubeObjectMapperProvider;
 
-import com.cube.cache.ComparatorCache;
-import com.cube.cache.TemplateKey;
-import com.cube.cache.TemplateKey.Type;
 import com.cube.ws.Config;
 
 public class EventPayloadKeyTest {
@@ -32,8 +28,7 @@ public class EventPayloadKeyTest {
 			Event event = jsonMapper.readValue(cubeEventJson, Event.class);
 			TemplateKey key = new TemplateKey("templateVersion", "customerId", "app", "service", "path", Type.ResponseCompare);
 			Comparator comparator = null;
-			ComparatorCache comparatorCache = config.comparatorCache;
-			comparator = comparatorCache.getComparator(key , EventType.HTTPResponse);
+            comparator = config.rrstore.getComparator(key , EventType.HTTPResponse);
 			event.parseAndSetKey(comparator.getCompareTemplate());
 			System.out.println(event.payloadKey);
 		} catch (Exception e) {

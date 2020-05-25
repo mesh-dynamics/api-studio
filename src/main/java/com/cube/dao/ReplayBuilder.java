@@ -1,8 +1,6 @@
 package com.cube.dao;
 
-import io.md.constants.ReplayStatus;
-import io.md.dao.RRTransformer;
-import io.md.dao.Replay;
+import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -11,18 +9,15 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
-import org.json.JSONObject;
 
 import io.cube.agent.UtilException;
+import io.md.constants.ReplayStatus;
 import io.md.core.ReplayTypeEnum;
-
-import com.cube.utils.Constants;
+import io.md.dao.Replay;
 
 public class ReplayBuilder {
 
@@ -55,15 +50,15 @@ public class ReplayBuilder {
 	int reqCnt;
 	int reqSent;
 	int reqFailed;
-	private Instant updateTimestamp;
+	private Instant creationTimestamp;
 	public Optional<String> xfms;
-	public Optional<RRTransformer> xfmer;
-	public List<String> mockServices;
+    public List<String> mockServices;
 	public Optional<String> testConfigName;
 	public Optional<String> goldenName;
 	public Optional<String> recordingId;
 	public boolean archived;
 	public Optional<String> dynamicInjectionConfigVersion;
+	public Instant analysisCompleteTimestamp;
 
 	public ReplayBuilder(String endpoint, CubeMetaInfo metaInfo,
 		String collection, String userId) {
@@ -73,7 +68,7 @@ public class ReplayBuilder {
 		this.instanceId = metaInfo.instance;
 		this.collection = collection;
 		this.userId = userId;
-		this.templateSetVersion = Constants.DEFAULT_TEMPLATE_VER;
+		this.templateSetVersion = DEFAULT_TEMPLATE_VER;
 		this.pathsToReplay = Collections.EMPTY_LIST;
 		this.excludePaths = false;
 		this.reqIdsToReplay = Collections.EMPTY_LIST;
@@ -88,15 +83,19 @@ public class ReplayBuilder {
 		reqCnt = 0;
 		reqFailed = 0;
 		reqSent = 0;
-		this.updateTimestamp = Instant.now();
+		this.creationTimestamp = Instant.now();
 		this.xfms = Optional.empty();
-		this.xfmer = Optional.empty();
 		this.mockServices = Collections.emptyList();
 		this.testConfigName = Optional.empty();
 		this.goldenName = Optional.empty();
 		this.recordingId = Optional.empty();
 		this.archived = false;
 		this.dynamicInjectionConfigVersion = Optional.empty();
+		/**
+		 * the value is set to the EPOCH so we won't be able to fetch replay in timeline till its analyis is complete
+		 * Once analysis is complete the value is set to the corresponding time
+		 */
+		this.analysisCompleteTimestamp = Instant.EPOCH;
 	}
 
 	private void populateClassLoader() throws Exception {
@@ -112,11 +111,10 @@ public class ReplayBuilder {
 	public Replay build() {
 		return new Replay(replayEndpoint, customerId, app, instanceId, collection, userId,
 			reqIdsToReplay, replayId, async, templateSetVersion, replayStatus, pathsToReplay,
-			excludePaths, reqCnt, reqSent, reqFailed, updateTimestamp, sampleRate,
-			intermediateServices,
-			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, xfmer,
-			mockServices
-			, testConfigName, goldenName, recordingId, archived, dynamicInjectionConfigVersion);
+            excludePaths, reqCnt , reqSent , reqFailed, creationTimestamp, sampleRate, intermediateServices,
+			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, mockServices
+	            , testConfigName, goldenName, recordingId, archived,dynamicInjectionConfigVersion,
+				analysisCompleteTimestamp);
 	}
 
 	public ReplayBuilder withPaths(List<String> paths) {
@@ -188,8 +186,8 @@ public class ReplayBuilder {
 		return this;
 	}
 
-	public ReplayBuilder withUpdateTimestamp(Instant updateTimestamp) {
-		this.updateTimestamp = updateTimestamp;
+	public ReplayBuilder withCreationTimestamp(Instant creationTimestamp) {
+		this.creationTimestamp = creationTimestamp;
 		return this;
 	}
 
@@ -199,16 +197,7 @@ public class ReplayBuilder {
 	 * @return
 	 */
 	public ReplayBuilder withXfms(String xfms) {
-		try {
-			JSONObject obj = new JSONObject(xfms);
-			this.xfms = Optional.of(xfms);
-			this.xfmer = Optional.of(new RRTransformer(obj));
-		} catch (Exception e) {
-			LOGGER.error(new
-				ObjectMessage(
-				Map.of(Constants.MESSAGE, "Unable to convert transformer string to Json Object",
-					Constants.DATA, xfms)));
-		}
+	    this.xfms = Optional.of(xfms);
 		return this;
 	}
 
@@ -240,6 +229,11 @@ public class ReplayBuilder {
 	public ReplayBuilder withDynamicInjectionConfigVersion(String injectionConfigVersion) {
 		this.dynamicInjectionConfigVersion = Optional.of(injectionConfigVersion);
 		return this;
+	}
+
+	public ReplayBuilder withAnalysisCompleteTimestamp(Instant analysisCompleteTimestamp) {
+    	this.analysisCompleteTimestamp = analysisCompleteTimestamp;
+    	return this;
 	}
 
 }

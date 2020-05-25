@@ -206,16 +206,13 @@ public class SolrIterator implements Iterator<SolrDocument> {
 
         try {
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(queryFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(), CommonUtils.getParentSpanId(), response, RetStatus.Success,
+                config.recorder.record(queryFnKey, response, RetStatus.Success,
                     Optional.empty(), query);
             }
             return toReturn;
         } catch (Throwable e) {
             if (config.intentResolver.isIntentToRecord()) {
-                config.recorder.record(queryFnKey, CommonUtils.getCurrentTraceId(),
-                    CommonUtils.getCurrentSpanId(),
-                    CommonUtils.getParentSpanId(),
+                config.recorder.record(queryFnKey,
                     e, RetStatus.Exception, Optional.of(e.getClass().getName()), query);
             }
             throw e;

@@ -9,6 +9,7 @@ package com.cube.drivers;
 import com.cube.core.RRTransformerOperations;
 
 import io.md.dao.HTTPResponsePayload;
+import io.md.dao.RRTransformer;
 import io.md.dao.Replay;
 import java.io.IOException;
 import java.net.Authenticator;
@@ -30,6 +31,7 @@ import javax.ws.rs.core.UriBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.jersey.uri.UriComponent;
+import org.json.JSONObject;
 
 import io.cube.agent.UtilException;
 import io.md.dao.Event;
@@ -49,21 +51,23 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 
 	private static Logger LOGGER = LogManager.getLogger(HttpReplayDriver.class);
 
+
 	HttpReplayDriver(Replay replay, Config config) {
-		super(replay, config);
-	}
+	    super(replay, config);
+    }
 
 	@Override
 	public IReplayClient initClient(Replay replay) throws Exception {
-		return new HttpReplayClient();
+		return new HttpReplayClient(replay);
 	}
 
 
 	static class HttpReplayClient implements IReplayClient {
 
 		private HttpClient httpClient;
+        private Optional<RRTransformer> xfmer = Optional.empty();
 
-		HttpReplayClient() throws Exception {
+        HttpReplayClient(Replay replay) throws Exception {
 			HttpClient.Builder clientbuilder = HttpClient.newBuilder()
 				.version(HttpClient.Version.HTTP_1_1) // need to explicitly set this
 				// if server is not supporting HTTP 2.0, getting a 403 error
@@ -73,7 +77,11 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 				clientbuilder.authenticator(Authenticator.getDefault());
 			}
 			httpClient = clientbuilder.build();
-		}
+            replay.xfms.ifPresent(xfms -> {
+                JSONObject obj = new JSONObject(xfms);
+                this.xfmer = Optional.of(new RRTransformer(obj));
+            });
+        }
 
 		@Override
 		public ResponsePayload send(Event requestEvent, Replay replay)
@@ -119,7 +127,7 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 			HTTPRequestPayload httpRequest =  (HTTPRequestPayload) reqEvent.payload;
 
 			// transform fields in the request before the replay.
-			replay.xfmer.ifPresent(x -> RRTransformerOperations.transformRequest(httpRequest, x));
+			xfmer.ifPresent(x -> RRTransformerOperations.transformRequest(httpRequest, x));
 
 			UriBuilder uribuilder = UriBuilder.fromUri(replay.endpoint)
 				.path(reqEvent.apiPath);
