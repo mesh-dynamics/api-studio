@@ -7,6 +7,8 @@
 package com.cube.drivers;
 
 import com.cube.core.RRTransformerOperations;
+
+import io.md.dao.HTTPResponsePayload;
 import io.md.dao.Replay;
 import java.io.IOException;
 import java.net.Authenticator;
@@ -14,22 +16,25 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
-import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.message.ObjectMessage;
 import org.glassfish.jersey.uri.UriComponent;
 
 import io.cube.agent.UtilException;
 import io.md.dao.Event;
 import io.md.dao.HTTPRequestPayload;
+import io.md.dao.ResponsePayload;
 
 import com.cube.core.Utils;
 import com.cube.utils.Constants;
@@ -71,30 +76,42 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 		}
 
 		@Override
-		public int send(IReplayRequest request) throws IOException, InterruptedException {
-			return httpClient
-				.send(((HttpReplayRequest) request).request, HttpResponse.BodyHandlers.discarding())
-				.statusCode();
+		public ResponsePayload send(Event requestEvent, Replay replay)
+			throws IOException, InterruptedException {
+			HttpRequest request = build(replay, requestEvent);
+			HttpResponse<byte[]> response = httpClient
+				.send(request, HttpResponse.BodyHandlers.ofByteArray());
+			return formResponsePayload(response);
 		}
 
-		@Override
-		public CompletableFuture<Integer> sendAsync(IReplayRequest request) {
-			return httpClient.sendAsync(((HttpReplayRequest) request).request,
-				HttpResponse.BodyHandlers.discarding())
-				.thenApply(HttpResponse::statusCode).handle((ret, e) -> {
-					if (e != null) {
-						LOGGER.error(
-							new ObjectMessage(
-								Map.of(Constants.MESSAGE, "Exception in replaying requests")),
-							e);
-						return Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
-					}
-					return ret;
+		private ResponsePayload formResponsePayload(HttpResponse<byte[]> response) {
+				byte[] responseBody = response.body();
+				MultivaluedMap<String, String> responseHeaders = new MultivaluedHashMap<>();
+				response.headers().map().forEach((k, v) -> {
+					responseHeaders.addAll(k, v);
 				});
+				HTTPResponsePayload responsePayload = new HTTPResponsePayload(responseHeaders,
+					response.statusCode(), responseBody);
+			return responsePayload;
 		}
 
 		@Override
-		public IReplayRequest build(Replay replay, Event reqEvent, Config config)
+		public CompletableFuture<ResponsePayload> sendAsync(Event requestEvent, Replay replay)
+			 {
+				 HttpRequest request = null;
+				 try {
+					 request = build(replay, requestEvent);
+				 } catch (IOException e) {
+					 e.printStackTrace();
+				 }
+				 CompletableFuture<HttpResponse<byte[]>> httpResponse = httpClient
+				.sendAsync(request, BodyHandlers.ofByteArray());
+			return httpResponse.thenApply(response -> {
+				return formResponsePayload(response);
+				});
+			 }
+
+		public HttpRequest build(Replay replay, Event reqEvent)
 			throws IOException {
 			if (!(reqEvent.payload instanceof  HTTPRequestPayload)) {
 				throw new IOException("Invalid Payload type");
@@ -137,21 +154,24 @@ public class HttpReplayDriver extends AbstractReplayDriver {
             //This will help to catch if the same request is replayed multiple times by Replay Driver
             reqbuilder.header(Constants.CUBE_HEADER_PREFIX + Constants.REQUEST_ID, UUID.randomUUID().toString());
 
-			return new HttpReplayRequest(reqbuilder.build());
+			return reqbuilder.build();
 		}
 
 		@Override
-		public boolean isSuccessStatusCode(int responseCode) {
-
-			if(Response.Status.Family.familyOf(responseCode).equals(Response.Status.Family.SUCCESSFUL)){
-				return true;
-			}
-			return false;
+		public boolean isSuccessStatusCode(String responseCode) {
+			Optional<Integer> intResponse = Utils.strToInt(responseCode);
+			return intResponse.map(intCode -> {
+				if(Response.Status.Family.familyOf(intCode)
+					.equals(Response.Status.Family.SUCCESSFUL)) {
+					return true;
+				}
+				return false;
+			}).orElse(false);
 		}
 
 		@Override
-		public int getErrorStatusCode() {
-			return Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
+		public String getErrorStatusCode() {
+			return String.valueOf(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
 		}
 
 		@Override

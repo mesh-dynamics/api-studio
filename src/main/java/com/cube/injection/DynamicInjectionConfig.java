@@ -2,6 +2,7 @@ package com.cube.injection;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,19 +51,19 @@ public class DynamicInjectionConfig {
 	public class ExtractionMeta {
 
 		@JsonProperty("apiPath")
-		final String apiPath;
+		public final String apiPath;
 
 		@JsonProperty("method")
-		final HTTPMethodType method;
+		public final HTTPMethodType method;
 
 		@JsonProperty("name")
-		final String name;
+		public final String name;
 
 		@JsonProperty("value")
-		final String value;
+		public final String value;
 
 		@JsonProperty("reset")
-		final boolean reset;
+		public final boolean reset;
 
 		private ExtractionMeta() {
 			apiPath = "";
@@ -74,9 +75,26 @@ public class DynamicInjectionConfig {
 
 	}
 
-	//TODO Define injection class
 	public class InjectionMeta {
 
+		@JsonProperty("apiPath")
+		public final List<String> apiPaths;
+
+		@JsonProperty("jsonPath")
+		public final String jsonPath;
+
+		@JsonProperty("injectAllPaths")
+		public final boolean injectAllPaths;
+
+		@JsonProperty("value")
+		public final String value;
+
+		public InjectionMeta() {
+			this.apiPaths = Collections.EMPTY_LIST;
+			this.jsonPath = "";
+			this.injectAllPaths = false;
+			this.value = "";
+		}
 	}
 
 	public enum HTTPMethodType {
@@ -84,11 +102,5 @@ public class DynamicInjectionConfig {
 		POST
 	}
 
-	public enum VariableSources {
-		GoldenRequest,
-		GoldenResponse,
-		TestSetRequest,
-		TestSetResponse
-	}
 
 }

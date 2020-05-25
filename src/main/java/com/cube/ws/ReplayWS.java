@@ -44,8 +44,10 @@ import com.cube.dao.Recording;
 import io.md.dao.Replay;
 import com.cube.dao.ReplayBuilder;
 import com.cube.dao.ReqRespStore;
+import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.drivers.AbstractReplayDriver;
 import com.cube.drivers.ReplayDriverFactory;
+import com.cube.injection.DynamicInjectionConfig;
 import com.cube.utils.Constants;
 
 /**
@@ -342,6 +344,28 @@ public class ReplayWS {
         }).orElse(Response.status(Status.BAD_REQUEST).entity("Endpoint not specified").build());
 
     }
+
+
+    @POST
+    @Path("saveDynamicInjectionConfig/")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response saveDynamicInjectionConfig(@Context UriInfo uriInfo, DynamicInjectionConfig dynamicInjectionConfig) {
+        try {
+            String templateSetId = rrstore.saveDynamicInjectionConfig(dynamicInjectionConfig);
+            return Response.ok().entity((new JSONObject(Map.of(
+                "Message", "Successfully saved Dynamic Injection Config",
+                "ID", templateSetId,
+                "templateSetVersion", dynamicInjectionConfig.version))).toString()).build();
+        } catch (SolrStoreException e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Unable to save Dynamic Injection Config",
+                "dynamicInjectionConfig.version", dynamicInjectionConfig.version)), e);
+            return Response.serverError().entity((
+                Utils.buildErrorResponse(Constants.ERROR, Constants.SOLR_STORE_FAILED, "Unable to save Dynamic Injection Config: " +
+                    e.getStackTrace()))).build();
+        }
+    }
+
 
     /**
      *

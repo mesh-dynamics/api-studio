@@ -2,11 +2,17 @@ package com.cube.drivers;
 
 import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.ReplayUpdate;
+
 import io.md.constants.ReplayStatus;
+import io.md.dao.DataObj.PathNotFoundException;
+import io.md.dao.HTTPResponsePayload;
+import io.md.dao.Payload;
 import io.md.dao.Replay;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -18,7 +24,10 @@ import java.util.stream.Stream;
 
 import com.cube.cache.ComparatorCache.TemplateNotFoundException;
 import com.cube.dao.Analysis;
+
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.text.StringSubstitutor;
+import org.apache.commons.text.lookup.StringLookup;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -26,6 +35,7 @@ import org.apache.logging.log4j.message.ObjectMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.md.dao.Event;
+import io.md.dao.ResponsePayload;
 
 import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
@@ -40,7 +50,8 @@ public abstract class AbstractReplayDriver {
 	public final ReqRespStore rrstore;
 	protected final Config config;
 	protected ObjectMapper jsonMapper;
-	Optional<DynamicInjectionConfig> dynamicInjectionConfig;
+	protected Optional<DynamicInjectionConfig> dynamicInjectionConfig;
+	Map<String, String> extractionMap;
 
 
 	static int UPDBATCHSIZE = 10; // replay metadata will be updated after each such batch
@@ -53,11 +64,8 @@ public abstract class AbstractReplayDriver {
 		this.rrstore = config.rrstore;
 		this.jsonMapper = config.jsonMapper;
 		this.config = config;
-		replay.dynamicInjectionConfigVersion.map(DIConfVersion -> {
-			return rrstore.getDynamicInjectionConfig(
-				new CubeMetaInfo(replay.customerId, replay.app, replay.instanceId), DIConfVersion);
-		}).orElse(Optional.empty());
-
+		this.dynamicInjectionConfig = Optional.empty();
+		this.extractionMap = new HashMap<>();
 	}
 
 	public abstract IReplayClient initClient(Replay replay) throws Exception;
@@ -74,14 +82,22 @@ public abstract class AbstractReplayDriver {
 			this.client = initClient(replay);
 		} catch (Exception e) {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-				"Unable to initialize replay client", Constants.REPLAY_ID_FIELD, replay.replayId)), e);
+				"Unable to initialize replay client", Constants.REPLAY_ID_FIELD, replay.replayId)),
+				e);
 		}
 		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Starting Replay",
-			Constants.REPLAY_ID_FIELD , replay.replayId)));
+			Constants.REPLAY_ID_FIELD, replay.replayId)));
+
+		this.dynamicInjectionConfig = replay.dynamicInjectionConfigVersion.map(DIConfVersion -> {
+			return rrstore.getDynamicInjectionConfig(
+				new CubeMetaInfo(replay.customerId, replay.app, replay.instanceId), DIConfVersion);
+		}).orElse(Optional.empty());
+
 		CompletableFuture.runAsync(() -> replay(analyze)).handle((ret, e) -> {
 			if (e != null) {
 				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-					"Exception in replaying requests", Constants.REPLAY_ID_FIELD, replay.replayId)), e);
+					"Exception in replaying requests", Constants.REPLAY_ID_FIELD, replay.replayId)),
+					e);
 			}
 			return ret;
 		});
@@ -90,18 +106,17 @@ public abstract class AbstractReplayDriver {
 
 	interface IReplayClient {
 
-		int send(IReplayRequest request) throws IOException, InterruptedException;
+		ResponsePayload send(Event requestEvent, Replay replay)
+			throws IOException, InterruptedException;
 
-		CompletableFuture<Integer> sendAsync(IReplayRequest request);
+		CompletableFuture<ResponsePayload> sendAsync(Event requestEvent, Replay replay);
 
-		IReplayRequest build(Replay replay, Event reqEvent, Config config)
-			throws IOException;
+		boolean isSuccessStatusCode(String statusCode);
 
-		boolean isSuccessStatusCode(int statusCode);
-
-		int getErrorStatusCode();
+		String getErrorStatusCode();
 
 		boolean tearDown();
+
 	}
 
 	// this is just a marker interface
@@ -144,7 +159,7 @@ public abstract class AbstractReplayDriver {
 
 			// replay.reqcnt += requests.size();
 
-			List<IReplayRequest> reqs = new ArrayList<>();
+			List<Event> reqs = new ArrayList<>();
 			requests.forEach(eventReq -> {
 
 				try {
@@ -157,22 +172,24 @@ public abstract class AbstractReplayDriver {
 						return; // drop this request
 					}
 					LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Enqueuing request"
-						+ "for reply", Constants.REPLAY_ID_FIELD , replay.replayId
+							+ "for reply", Constants.REPLAY_ID_FIELD, replay.replayId
 						, Constants.REQ_ID_FIELD, Optional.ofNullable(eventReq.reqId)
-							.orElse(Constants.NOT_PRESENT), Constants.TRACE_ID_FIELD, eventReq.getTraceId())));
-					reqs.add(client.build(replay, eventReq, config));
+							.orElse(Constants.NOT_PRESENT), Constants.TRACE_ID_FIELD,
+						eventReq.getTraceId())));
+					reqs.add(eventReq);
 
 				} catch (Exception e) {
 					LOGGER.error(new ObjectMessage(Map.of(
 						Constants.MESSAGE, "Skipping request. Exception in Creating Replay Request"
-						, Constants.REQ_ID_FIELD, Optional.ofNullable(eventReq.reqId).orElse(Constants.NOT_PRESENT)
+						, Constants.REQ_ID_FIELD,
+						Optional.ofNullable(eventReq.reqId).orElse(Constants.NOT_PRESENT)
 						, Constants.REPLAY_ID_FIELD, replay.replayId
 					)), e);
 				}
 			});
 
-			List<Integer> respcodes = replay.async ? sendReqAsync(reqs.stream())
-				: sendReqSync(reqs.stream());
+			List<String> respcodes = replay.async ? sendReqAsync(reqs.stream()) :
+				sendReqSync(reqs.stream());
 
 			// count number of errors
 			replay.reqfailed += respcodes.stream()
@@ -203,14 +220,31 @@ public abstract class AbstractReplayDriver {
 	}
 
 
-	private List<Integer> sendReqAsync(Stream<IReplayRequest> replayRequests) {
+	private List<String> sendReqAsync(Stream<Event> replayRequests) {
 		// exceptions are converted to status code indicating error
-		List<CompletableFuture<Integer>> respcodes = replayRequests.map(request -> {
+		List<CompletableFuture<String>> respcodes = replayRequests.map(request -> {
 			replay.reqsent++;
 			logUpdate();
-			return client.sendAsync(request);
+			// TODO Add injection logic here
+			CompletableFuture<ResponsePayload> responsePayloadCompletableFuture = client
+				.sendAsync(request, replay);
+
+			return responsePayloadCompletableFuture.thenApply(responsePayload -> {
+				extract(request, responsePayload, rrstore);
+				return responsePayload.getStatusCode();
+			}).handle((ret, e) -> {
+				if (e != null) {
+					LOGGER.error(
+						new ObjectMessage(
+							Map.of(Constants.MESSAGE, "Exception in replaying requests")),
+						e);
+					return client.getErrorStatusCode();
+				}
+				return ret;
+			});
 		}).collect(Collectors.toList());
-		CompletableFuture<List<Integer>> rcodes = Utils.sequence(respcodes);
+
+		CompletableFuture<List<String>> rcodes = Utils.sequence(respcodes);
 
 		try {
 			return rcodes.get();
@@ -223,25 +257,31 @@ public abstract class AbstractReplayDriver {
 		}
 	}
 
-	private List<Integer> sendReqSync(Stream<IReplayRequest> requests) {
+	private List<String> sendReqSync(Stream<Event> requests) {
 
 		return requests.map(request -> {
 			try {
 				replay.reqsent++;
 				logUpdate();
-				int ret = client.send(request);
+//				int ret = client.send(request, replay, rrstore, dynamicInjectionConfig, extractionMap);
+				// TODO Call injection function appropriately here
+				ResponsePayload responsePayload = client.send(request, replay);
+				// Extract variables in extractionMap
+				extract(request, responsePayload, rrstore);
+				String statusCode = responsePayload.getStatusCode();
+
 				// for debugging - can remove later
-				if (!client.isSuccessStatusCode(ret)) {
+				if (!client.isSuccessStatusCode(statusCode)) {
 					LOGGER.error(new ObjectMessage(
 						Map.of(Constants.MESSAGE, "Got Error Status while Replaying Request",
-							Constants.REQUEST, request.toString(), "Return Status", ret
-						,Constants.REPLAY_ID_FIELD, replay.replayId)));
+							Constants.REQUEST, request.toString(), "Return Status", statusCode
+							, Constants.REPLAY_ID_FIELD, replay.replayId)));
 				}
-				return ret;
+				return statusCode;
 			} catch (IOException | InterruptedException e) {
 				LOGGER.error(
 					new ObjectMessage(Map.of(Constants.MESSAGE, "Exception in replaying requests"
-					,Constants.REPLAY_ID_FIELD , replay.replayId)), e);
+						, Constants.REPLAY_ID_FIELD, replay.replayId)), e);
 				return client.getErrorStatusCode();
 			}
 		}).collect(Collectors.toList());
@@ -249,26 +289,28 @@ public abstract class AbstractReplayDriver {
 
 	public void analyze() {
 		ReplayStatus status = ReplayStatus.Running;
-		while( status == ReplayStatus.Running) {
+		while (status == ReplayStatus.Running) {
 			try {
 				Thread.sleep(5000);
-				Optional<Replay> currentRunningReplay = rrstore.getCurrentRecordOrReplay(Optional.of(replay.customerId),
+				Optional<Replay> currentRunningReplay = rrstore
+					.getCurrentRecordOrReplay(Optional.of(replay.customerId),
 						Optional.of(replay.app), Optional.of(replay.instanceId))
-						.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
+					.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
 				status = currentRunningReplay.filter(runningReplay -> runningReplay.
-						replayId.equals(replay.replayId)).map(r -> r.status).orElse(replay.status);
+					replayId.equals(replay.replayId)).map(r -> r.status).orElse(replay.status);
 			} catch (InterruptedException e) {
 				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-						"Exception while sleeping  the thread", Constants.REPLAY_ID_FIELD
-						, replay.replayId)));
+					"Exception while sleeping  the thread", Constants.REPLAY_ID_FIELD
+					, replay.replayId)));
 			}
 		}
 		try {
 			Analyzer.analyze(replay.replayId, "", config);
 		} catch (TemplateNotFoundException e) {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-					"Unable to analyze replay since template does not exist :", Constants.REPLAY_ID_FIELD,
-					replay.replayId)), e);
+				"Unable to analyze replay since template does not exist :",
+				Constants.REPLAY_ID_FIELD,
+				replay.replayId)), e);
 		}
 	}
 
@@ -276,10 +318,86 @@ public abstract class AbstractReplayDriver {
 		return replay;
 	}
 
+	public void extract(Event goldenRequestEvent, Payload testResponsePayload,
+		ReqRespStore rrstore) {
+		StringSubstitutor sub = new StringSubstitutor(
+			// Test request is same as golden for replay extraction.
+			new VarResolver(goldenRequestEvent, testResponsePayload, goldenRequestEvent.payload, rrstore));
+		dynamicInjectionConfig.get().extractionMetas.forEach(extractionMeta -> {
+			if (extractionMeta.apiPath.equalsIgnoreCase(goldenRequestEvent.apiPath)) {
+				//  TODO ADD checks for method type GET/POST & also on reset field
+				extractionMap
+					.put(sub.replace(extractionMeta.name), sub.replace(extractionMeta.value));
+			}
+		});
+
+	}
+
 
 	public static Optional<Replay> getStatus(String replayId, ReqRespStore rrstore) {
 		return rrstore.getReplay(replayId);
 	}
 
+
+	static class VarResolver implements StringLookup {
+
+		Event goldenRequestEvent;
+		Payload testResponsePayload;
+		Payload testRequestPayload;
+		ReqRespStore rrstore;
+
+		public VarResolver(Event goldenRequestEvent, Payload testResponsePayload,
+			Payload testRequestPayload, ReqRespStore rrstore) {
+			this.goldenRequestEvent = goldenRequestEvent;
+			this.testResponsePayload = testResponsePayload;
+			this.testRequestPayload = testRequestPayload;
+			this.rrstore = rrstore;
+		}
+
+		@Override
+		/** Lookup String will always be in format of
+		 {@link DynamicInjectionConfig.VariableSources}: "VariableSources: <JSONPath>
+		 **/
+		public String lookup(String lookupString) {
+			String[] splitStrings = lookupString.split(":");
+			if (splitStrings.length != 2) {
+				LOGGER.error("Lookup String format mismatch");
+				return null; // Null resorts to default variable in substitutor
+			}
+			String source = splitStrings[0].trim();
+			String jsonPath = splitStrings[1].trim();
+			Payload sourcePayload;
+			String value = null;
+			switch (source) {
+				case Constants.GOLDEN_REQUEST:
+					sourcePayload = goldenRequestEvent.payload;
+					break;
+				case Constants.GOLDEN_RESPONSE:
+					Optional<Event> goldenResponseOptional = rrstore
+						.getResponseEvent(goldenRequestEvent.reqId);
+					if (goldenResponseOptional.isEmpty()) {
+						LOGGER.error("Cannot fetch golden response for golden request");
+						return null; // Null resorts to default variable in substitutor
+					}
+					sourcePayload = goldenResponseOptional.get().payload;
+					break;
+				case Constants.TESTSET_RESPONSE:
+					sourcePayload = testResponsePayload;
+					break;
+				case Constants.TESTSET_REQUEST:
+					sourcePayload = testRequestPayload;
+					break;
+				default:
+					throw new IllegalStateException("Unexpected value: " + source);
+			}
+			try {
+				value = sourcePayload.getValAsString(jsonPath);
+			} catch (PathNotFoundException e) {
+				LOGGER.error("Cannot find JSONPath" + jsonPath + " in source", e);
+				return null;
+			}
+			return value;
+		}
+	}
 
 }

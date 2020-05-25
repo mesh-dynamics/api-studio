@@ -53,6 +53,7 @@ public class Constants {
     public static final String SERVICE_HEALTH_STATUS = "SERVICE_HEALTH_STATUS";
     public static final String SOLR_STATUS_CODE = "SOLR_STATUS_CODE";
     public static final String SOLR_STATUS_MESSAGE = "SOLR_STATUS_MESSAGE";
+    public static final String SOLR_STORE_FAILED = "SOLR_STORE_FAILED";
 
 
     //EXCEPTIONS
@@ -195,4 +196,10 @@ public class Constants {
 	public static final String REC_TRACE_ID = "recordTraceId";
 	public static final String SPAN_ID_FIELD = "spanId";
     public static final String PARENT_SPAN_ID_FIELD = "parentSpanId";
+
+    // VariableSources
+    public static final String GOLDEN_REQUEST = "Golden.Request";
+    public static final String GOLDEN_RESPONSE = "Golden.Response";
+    public static final String TESTSET_REQUEST = "TestSet.Request";
+    public static final String TESTSET_RESPONSE = "TestSet.Response";
 }
