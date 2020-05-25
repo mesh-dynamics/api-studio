@@ -1,6 +1,7 @@
 import React from "react";
 import { connect } from "react-redux";
 import { cubeActions } from "../actions";
+import { cubeService } from "../services";
 import config from "../config";
 
 class GoldenPopover extends React.Component {
@@ -156,15 +157,16 @@ class GoldenPopover extends React.Component {
         let jsonPath = this.props.jsonPath.replace("<BEGIN>", "");
         let replayId = cube.pathResultsParams.replayId;
         let requestId  = ""; // TODO
-        this.createJiraIssue(summary, description, issueTypeId, projectId, replayId, apiPath, requestId, jsonPath)
-            .then(r => {
-                    this.hideGR()
-                    this.setState({ jiraIssueId: r.id, jiraIssueKey: r.key, jiraIssueURL: r.url, showBugResponse: true })
-                    this.refreshList();
-                })
-            .catch(e => {
-                this.setState({ showJiraError: true, jiraErrorMessage: e.message, showBug: false })
-            });
+        cubeService
+            .createJiraIssue(summary, description, issueTypeId, projectId, replayId, apiPath, requestId, jsonPath)
+                .then(r => {
+                        this.hideGR()
+                        this.setState({ jiraIssueId: r.id, jiraIssueKey: r.key, jiraIssueURL: r.url, showBugResponse: true })
+                        this.refreshList();
+                    })
+                .catch(e => {
+                    this.setState({ showJiraError: true, jiraErrorMessage: e.message, showBug: false })
+                });
     }
 
     showGoldenModal() {
@@ -172,7 +174,9 @@ class GoldenPopover extends React.Component {
     }
 
     async showRuleModal() {
-        const { cube, jsonPath } = this.props;
+        const { cube, jsonPath, eventType } = this.props;
+        const reqOrRespCompare = (eventType === "Response" ? "ResponseCompare" : "RequestCompare");
+
         if(cube.defaultRuleBook[jsonPath.replace("<BEGIN>", "")]) {
             const defaultRule = cube.defaultRuleBook[jsonPath.replace("<BEGIN>", "")];
             this.setState({ defaultRule: { ...defaultRule }});
@@ -184,7 +188,13 @@ class GoldenPopover extends React.Component {
         } else {
             
             try {
-                const { path, dt, pt, ct, em , customization } = await this.getResponseTemplate();
+                const { path, dt, pt, ct, em , customization } = await cubeService.getResponseTemplate(
+                    cube.selectedApp, 
+                    cube.pathResultsParams, 
+                    reqOrRespCompare, 
+                    jsonPath.replace("<BEGIN>", "")
+                );
+                
                 const newlyFetchedRule = {
                     path: jsonPath.replace("<BEGIN>", ""),
                     dt, 
@@ -205,16 +215,16 @@ class GoldenPopover extends React.Component {
     showBugModal() {
         const firstElement = 0;
         this.setState({ showBug: true });
-        this.getProjectList()
-        .then(r => {
-            // On success, set the project list and set the
-            // default project id to first element on the list.
-            this.setState({ projectList: r.values, projectInput: r.values[firstElement].id});
-        }, err => {
-            console.error(err);
-        }).catch(err => {
-            console.error(err);
-        });
+        cubeService.getProjectList()
+            .then(r => {
+                // On success, set the project list and set the
+                // default project id to first element on the list.
+                this.setState({ projectList: r.values, projectInput: r.values[firstElement].id});
+            }, err => {
+                console.error(err);
+            }).catch(err => {
+                console.error(err);
+            });
     }
 
     openJiraLink() {
@@ -540,105 +550,6 @@ class GoldenPopover extends React.Component {
             </React.Fragment>
         );
     }
-
-    async getResponseTemplate() {
-        let user = JSON.parse(localStorage.getItem('user'));
-        let { cube, jsonPath, eventType } = this.props;
-        jsonPath = jsonPath.replace("<BEGIN>", "");
-        let reqOrRespCompare = eventType==="Response" ? "ResponseCompare" : "RequestCompare";
-
-        let url = `${config.analyzeBaseUrl}/getRespTemplate/${user.customer_name}/${cube.selectedApp}/${cube.pathResultsParams.currentTemplateVer}/${cube.pathResultsParams.service}/${reqOrRespCompare}?apiPath=${cube.pathResultsParams.path}&jsonPath=${jsonPath}`;
-        
-        try {
-            const response = await fetch(url, {
-                    method: "get",
-                    headers: new Headers({
-                        "cache-control": "no-cache",
-                        "Authorization": "Bearer " + user['access_token']
-                    })
-                });
-
-            if (response.ok) {
-                return await response.json();
-            } else {
-                console.log("Response not ok in fetchTimeline", response);
-                throw new Error("Response not ok fetchTimeline");
-            }
-        } catch (e) {
-            console.log("fetchTimeline has errors!", e);
-            throw e;
-        }
-    }
-
-    async createJiraIssue(summary, description, issueTypeId, projectId, replayId, apiPath, requestId, jsonPath) {
-        let user = JSON.parse(localStorage.getItem('user'));
-        let response, json;
-        let url = `${config.apiBaseUrl}/jira/issue/create`;
-        let resp;
-
-        let reqBody = {
-            summary: summary,
-            description: description,
-            issueTypeId: issueTypeId,
-            projectId: projectId,
-            replayId: replayId,
-            apiPath: apiPath,
-            requestId : requestId,
-            jsonPath: jsonPath,
-        }
-
-        try {
-            response = await fetch(url, {
-                method: "post",
-                headers: new Headers({
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer " + user['access_token']
-                }),
-                body: JSON.stringify(reqBody),
-            });
-            json = await response.json();
-            if (response.ok) {
-                resp = json;
-            } else {
-                console.log("Response not ok in createJiraIssue", response);
-                throw new Error("Response not ok createJiraIssue");
-            }
-        } catch (e) {
-            console.log("createJiraIssue has errors! ", e.message);
-            throw new Error(json.message);
-        }
-
-        return resp;
-    }
-
-    async getProjectList() {
-        let user = JSON.parse(localStorage.getItem('user'));
-        let response, json;
-        let url = `${config.apiBaseUrl}/jira/projects`;
-        let resp;
-        try {
-            response = await fetch(url, {
-                method: "get",
-                headers: new Headers({
-                    "Content-Type": "application/json",
-                    "Authorization": "Bearer " + user['access_token']
-                }),
-            });
-            if (response.ok) {
-                json = await response.json();
-                resp = json;
-            } else {
-                console.log("Response not ok in getProjectList", response);
-                throw new Error("Response not ok getProjectList");
-            }
-        } catch (e) {
-            console.log("getProjectList has errors!", e);
-            throw e;
-        }
-
-        return resp;
-    }
-
 }
 
 function mapStateToProps(state) {

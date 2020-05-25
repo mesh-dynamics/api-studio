@@ -1,5 +1,6 @@
-import { cubeConstants } from '../constants';
-import { cubeService } from '../services'
+import { cubeConstants } from "../constants";
+import { cubeService } from "../services";
+import { processInstanceList } from "../utils/lib/common-utils";
 
 export const cubeActions = {
     getApps,
@@ -16,8 +17,8 @@ export const cubeActions = {
     getGraphDataByAppId,
     getReplayStatus,
     clearReplayStatus,
-    getAnalysis,
-    getReport,
+    // getAnalysis,
+    // getReport,
     getTimelineData,
     hideServiceGraph,
     hideTestConfig,
@@ -192,7 +193,8 @@ function getInstances () {
     return async dispatch => {
         dispatch(request());
         try {
-            let iList = await cubeService.getInstanceList();
+            const instanceList = await cubeService.getInstanceList();
+            const iList = processInstanceList(instanceList);
             let il = iList.map(item => {
                 item.name = item.name.toLowerCase();
                 return item;
@@ -321,7 +323,7 @@ function getGraphData (app) {
     function failure(message, date) { return { type: cubeConstants.GRAPH_REQUEST_FAILURE, err: message, date: date } }
 }
 
-function getTimelineData(app = 'Cube', userId = 'ALL', endDate = new Date(), startDate = null, clearTimeline = false) {
+function getTimelineData(app = "Cube", userId = "ALL", endDate = new Date(), startDate = null, clearTimeline = false) {
     return async dispatch => {
         try {
             let timeline = await cubeService.fetchTimelineData(app, userId, endDate, startDate);
@@ -330,7 +332,7 @@ function getTimelineData(app = 'Cube', userId = 'ALL', endDate = new Date(), sta
             };
             dispatch(success(timeline, Date.now()));
         } catch (error) {
-
+            console.log("Error Fetching Time line data", error);
         }
     };
 
@@ -356,37 +358,13 @@ function getReplayStatus(collectionId, replayId, app) {
 function getAnalysisStatus(replayId, app) {
     return async dispatch => {
         try {
-            let analysisStatus = await cubeService.fetchAnalysisStatus(replayId);
-            dispatch(success(analysisStatus, Date.now()));
+            const analysisStatus = await cubeService.fetchAnalysisStatus(replayId);
+            dispatch(success(analysisStatus.data, Date.now()));
         } catch (error) {
             console.error("Error getting analysis status: " + error);
         }
     }
     function success(analysisStatus, date) { return { type: cubeConstants.ANALYSIS_STATUS_FETCHED, data: analysisStatus, date: date } }
-}
-
-function getAnalysis(collectionId, replayId, app) {
-    return async dispatch => {
-        try {
-            let analysis = await cubeService.fetchAnalysis(collectionId, replayId);
-            dispatch(success(analysis, Date.now()));
-            //dispatch(cubeActions.clearTimeline());
-            //dispatch(cubeActions.getTimelineData(app));
-        } catch (error) {
-        }
-    }
-    function success(analysis, date) { return { type: cubeConstants.ANALYSIS_FETCHED, data: analysis, date: date } }
-}
-
-function getReport(collectionId, replayId) {
-    return async dispatch => {
-        try {
-            let report = await cubeService.fetchReport(collectionId, replayId);
-            dispatch(success(report, Date.now()));
-        } catch (error) {
-        }
-    }
-    function success(analysis, date) { return { type: cubeConstants.REPORT_FETCHED, data: analysis, date: date } }
 }
 
 function getJiraBugs(replayId, apiPath) {
@@ -407,3 +385,30 @@ function removeReplayFromTimeline(replayId) {
 function clearSelectedGolden () {
     return {type: cubeConstants.CLEAR_SELECTED_GOLDEN};
 }
+
+/**
+ * Doesn't look like these are being used
+ */
+// function getAnalysis(collectionId, replayId, app) {
+//     return async dispatch => {
+//         try {
+//             let analysis = await cubeService.fetchAnalysis(collectionId, replayId);
+//             dispatch(success(analysis, Date.now()));
+//             //dispatch(cubeActions.clearTimeline());
+//             //dispatch(cubeActions.getTimelineData(app));
+//         } catch (error) {
+//         }
+//     }
+//     function success(analysis, date) { return { type: cubeConstants.ANALYSIS_FETCHED, data: analysis, date: date } }
+// }
+
+// function getReport(collectionId, replayId) {
+//     return async dispatch => {
+//         try {
+//             let report = await cubeService.fetchReport(collectionId, replayId);
+//             dispatch(success(report, Date.now()));
+//         } catch (error) {
+//         }
+//     }
+//     function success(analysis, date) { return { type: cubeConstants.REPORT_FETCHED, data: analysis, date: date } }
+// }
