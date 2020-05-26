@@ -31,7 +31,7 @@ public class Utils {
 
 	public static final long PAYLOAD_MAX_LIMIT = 25000000; //25 MB
 
-	private static final RestTemplateConfig config = new RestTemplateConfig();
+	private static final MDRestTemplateConfig config = new MDRestTemplateConfig();
 
 	public static MultivaluedMap<String, String> getRequestMeta(String method, String cRequestId,
 		Optional<String> serviceName) {

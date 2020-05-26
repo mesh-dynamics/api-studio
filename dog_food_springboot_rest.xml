@@ -3,7 +3,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.cube</groupId>
-  <artifactId>md-springboot-resttemplate-interceptor</artifactId>
+  <artifactId>md-df-springboot-resttemplate-interceptor</artifactId>
   <version>1.2.3</version>
   <packaging>jar</packaging>
 
@@ -44,6 +44,34 @@
         <version>3.2.2</version>
         <configuration>
           <relocations>
+            <relocation>
+                <pattern>io.cube</pattern>
+                <shadedPattern>io.md.cube</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.constants</pattern>
+                <shadedPattern>io.md.df</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.core</pattern>
+                <shadedPattern>io.md.df</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.cryptography</pattern>
+                <shadedPattern>io.md.df</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.dao</pattern>
+                <shadedPattern>io.md.df</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.tracer</pattern>
+                <shadedPattern>io.md.df</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.utils</pattern>
+                <shadedPattern>io.md.df</shadedPattern>
+            </relocation>
             <relocation>
               <pattern>com.fasterxml.jackson</pattern>
               <shadedPattern>io.md.fasterxml.jackson</shadedPattern>

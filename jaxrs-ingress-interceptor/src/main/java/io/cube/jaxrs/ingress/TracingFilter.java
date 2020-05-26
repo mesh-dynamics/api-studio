@@ -15,6 +15,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.cube.agent.CommonConfig;
 import io.md.constants.Constants;
 import io.md.utils.CommonUtils;
 import io.opentracing.Scope;
@@ -52,7 +53,7 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 				boolean isSampled = Utils.isSampled(requestHeaders);
 				currentSpan.setBaggageItem(Constants.MD_IS_SAMPLED, String.valueOf(isSampled));
 			} else if (!BooleanUtils.toBoolean(sampleBaggageItem)
-				&& Config.commonConfig.samplerVeto) {
+				&& CommonConfig.getInstance().samplerVeto) {
 				currentSpan.setBaggageItem(Constants.MD_IS_VETOED,
 					String.valueOf(Utils.isSampled(requestHeaders)));
 			}

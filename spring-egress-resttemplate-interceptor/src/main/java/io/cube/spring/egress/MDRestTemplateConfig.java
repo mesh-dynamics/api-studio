@@ -15,7 +15,7 @@ import io.md.utils.CubeObjectMapperProvider;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 
 @Component
-public class RestTemplateConfig {
+public class MDRestTemplateConfig {
 
 	public IntentResolver intentResolver = new TraceIntentResolver();
 
@@ -23,7 +23,7 @@ public class RestTemplateConfig {
 
 	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 
-	public RestTemplateConfig() {
+	public MDRestTemplateConfig() {
 		Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
 			.create();
 		recorder = new ConsoleRecorder(gson);

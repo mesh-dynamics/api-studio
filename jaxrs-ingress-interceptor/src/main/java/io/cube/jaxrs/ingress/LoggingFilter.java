@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.CommonConfig;
 import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
@@ -77,7 +78,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 
 					String xRequestId = requestHeaders.getFirst(Constants.X_REQUEST_ID);
 					MultivaluedMap<String, String> traceMetaMap = CommonUtils
-						.buildTraceInfoMap(Config.commonConfig.serviceName, mdTraceInfo,
+						.buildTraceInfoMap(CommonConfig.getInstance().serviceName, mdTraceInfo,
 							xRequestId);
 
 					reqContext.setProperty(Constants.MD_SAMPLE_REQUEST, true);
