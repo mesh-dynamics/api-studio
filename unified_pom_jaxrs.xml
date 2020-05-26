@@ -19,7 +19,7 @@
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>md-jaxrs-ingress-interceptor</artifactId>
-      <version>1.2.0</version>
+      <version>1.2.1</version>
     </dependency>
     <dependency>
       <groupId>io.cube</groupId>
