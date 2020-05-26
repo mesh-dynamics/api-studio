@@ -12,22 +12,6 @@
       "apps": [
         {
           "name": "MovieInfo",
-          "instances": [
-            {
-              "name": "PROD",
-              "gatewayEndpoint": "http://demo.dev.cubecorp.io",
-              "loggingURL": "http://logging.dev.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:cube),type:phrase,value:cube),query:(match:(kubernetes.namespace_name:(query:cube,type:phrase))))),query:(language:kuery,query:''))\n"},
-            {
-              "name": "FLIPKART",
-              "gatewayEndpoint": "http://flipkart.prod.v2.cubecorp.io",
-              "loggingURL": "http://logging.prod.v2.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:cube),type:phrase,value:cube),query:(match:(kubernetes.namespace_name:(query:cube,type:phrase))))),query:(language:kuery,query:''))"
-            },
-            {
-              "name": "NARVAR",
-              "gatewayEndpoint": "http://narvar.prod.v2.cubecorp.io",
-              "loggingURL": "http://logging.prod.v2.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:cube),type:phrase,value:cube),query:(match:(kubernetes.namespace_name:(query:cube,type:phrase))))),query:(language:kuery,query:''))"
-            }
-          ],
           "serviceGroups": [
             {
               "name": "GLOBAL",
@@ -93,16 +77,16 @@
                 {
                   "name": "Actions",
                   "paths": [
-                    "/rentmovie",
-                    "/returnmovie",
+                    "minfo/rentmovie",
+                    "minfo/returnmovie",
                     "/overduerental"
                   ]
                 },
                 {
                   "name": "List",
                   "paths": [
-                    "/listmovies",
-                    "/liststores"
+                    "minfo/listmovies",
+                    "minfo/liststores"
                   ]
                 }
               ]
@@ -113,8 +97,8 @@
               "testConfigName": "MovieInfo-List",
               "serviceName": "List",
               "paths": [
-                "/listmovies",
-                "/liststores"
+                "minfo/listmovies",
+                "minfo/liststores"
               ],
               "test_virtualized_services": ["RestWrapJDBC", "Reviews", "Details"],
               "test_intermediate_services": []
@@ -165,52 +149,6 @@
         },
         {
           "name": "Cube",
-          "instances": [
-            {
-              "name": "PROD",
-              "gatewayEndpoint": "http://staging1.dev.cubecorp.io",
-              "loggingURL": "http://logging.dev.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:cube),type:phrase,value:cube),query:(match:(kubernetes.namespace_name:(query:cube,type:phrase))))),query:(language:kuery,query:''))\n"
-            },
-            {
-              "name": "STAGING",
-              "gatewayEndpoint": "http://staging2.dev.cubecorp.io",
-              "loggingURL": "http://logging.dev.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:cube),type:phrase,value:cube),query:(match:(kubernetes.namespace_name:(query:cube,type:phrase))))),query:(language:kuery,query:''))\n"
-            },
-            {
-              "name": "DEMO-AS",
-              "gatewayEndpoint": "http://demo-as.dev.cubecorp.io",
-              "loggingURL": "http://logging.dev.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:cube),type:phrase,value:cube),query:(match:(kubernetes.namespace_name:(query:cube,type:phrase))))),query:(language:kuery,query:''))\n"
-            },
-            {
-              "name": "DEMO-PD",
-              "gatewayEndpoint": "http://demo-pd.dev.cubecorp.io",
-              "loggingURL": "http://logging.dev.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:cube),type:phrase,value:cube),query:(match:(kubernetes.namespace_name:(query:cube,type:phrase))))),query:(language:kuery,query:''))\n"
-            },
-            {
-              "name": "DEMO-SM",
-              "gatewayEndpoint": "http://demo-sm.dev.cubecorp.io",
-              "loggingURL": "http://logging.dev.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:cube),type:phrase,value:cube),query:(match:(kubernetes.namespace_name:(query:cube,type:phrase))))),query:(language:kuery,query:''))\n"},
-            {
-              "name": "DEMO.PROD",
-              "gatewayEndpoint": "http://demo.prod.cubecorp.io",
-              "loggingURL": "http://logging.prod.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:cube),type:phrase,value:cube),query:(match:(kubernetes.namespace_name:(query:cube,type:phrase))))),query:(language:kuery,query:''))"
-            },
-            {
-              "name": "DEMO.PROD.V2",
-              "gatewayEndpoint": "http://demo.prod.v2.cubecorp.io",
-              "loggingURL": "http://logging.prod.v2.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:cube),type:phrase,value:cube),query:(match:(kubernetes.namespace_name:(query:cube,type:phrase))))),query:(language:kuery,query:''))"
-            },
-            {
-              "name": "FLIPKART",
-              "gatewayEndpoint": "http://flipkart.prod.v2.cubecorp.io",
-              "loggingURL": "http://logging.prod.v2.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:cube),type:phrase,value:cube),query:(match:(kubernetes.namespace_name:(query:cube,type:phrase))))),query:(language:kuery,query:''))"
-            },
-            {
-              "name": "NARVAR",
-              "gatewayEndpoint": "http://narvar.prod.v2.cubecorp.io",
-              "loggingURL": "http://logging.prod.v2.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:cube),type:phrase,value:cube),query:(match:(kubernetes.namespace_name:(query:cube,type:phrase))))),query:(language:kuery,query:''))"
-            }
-          ],
           "serviceGroups": [
             {
               "name": "GLOBAL",
@@ -490,13 +428,6 @@
         },
         {
           "name": "jersey_1_19_demo",
-          "instances": [
-            {
-              "name": "prod",
-              "gatewayEndpoint": "http://jersy119.dev.cubecorp.io",
-              "loggingURL": "http://logging.dev.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:jersy119),type:phrase,value:jersy119),query:(match:(kubernetes.namespace_name:(query:jersy119,type:phrase))))),query:(language:kuery,query:''))"
-            }
-          ],
           "serviceGroups": [
             {
               "name": "GLOBAL",
@@ -534,13 +465,6 @@
         },
         {
           "name": "CourseApp",
-          "instances": [
-            {
-              "name": "prod",
-              "gatewayEndpoint": "http://apachecxf.dev.cuebcorp.io",
-              "loggingURL": "http://logging.dev.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:apachecxf),type:phrase,value:apachecxf),query:(match:(kubernetes.namespace_name:(query:apachecxf,type:phrase))))),query:(language:kuery,query:''))"
-            }
-          ],
           "serviceGroups": [
             {
               "name": "GLOBAL",
@@ -574,13 +498,6 @@
         },
         {
           "name": "Jersy2xApp",
-          "instances": [
-            {
-              "name": "prod",
-              "gatewayEndpoint": "http://jersy2x.dev.cubecorp.io",
-              "loggingURL": "http://logging.dev.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:jersy2x),type:phrase,value:jersy2x),query:(match:(kubernetes.namespace_name:(query:jersy2x,type:phrase))))),query:(language:kuery,query:''))"
-            }
-          ],
           "serviceGroups": [
             {
               "name": "GLOBAL",
@@ -646,16 +563,16 @@
                 {
                   "name": "Actions",
                   "paths": [
-                    "/rentmovie",
-                    "/returnmovie",
+                    "minfo/rentmovie",
+                    "minfo/returnmovie",
                     "/overduerental"
                   ]
                 },
                 {
                   "name": "List",
                   "paths": [
-                    "/listmovies",
-                    "/liststores"
+                    "minfo/listmovies",
+                    "minfo/liststores"
                   ]
                 }
               ]
@@ -666,8 +583,8 @@
               "testConfigName": "MovieInfo-List",
               "serviceName": "List",
               "paths": [
-                "/listmovies",
-                "/liststores"
+                "minfo/listmovies",
+                "minfo/liststores"
               ],
               "test_virtualized_services": ["RestWrapJDBC"],
               "test_intermediate_services": []

@@ -1,0 +1,34 @@
+{
+  "instanceData": [
+    {
+      "customerName": "CubeCorp",
+      "apps": [
+        {
+          "name": "MovieInfo",
+          "instances": [
+            {
+              "name": "prod",
+              "gatewayEndpoint": "https://demo.prod.cubecorp.io",
+              "loggingURL": "https://logging.prod.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:cube),type:phrase,value:cube),query:(match:(kubernetes.namespace_name:(query:cube,type:phrase))))),query:(language:kuery,query:''))"
+            },
+            {
+              "name": "record",
+              "gatewayEndpoint": "https://demo.prod.cubecorp.io",
+              "loggingURL": "https://logging.prod.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:moviebook-record),type:phrase,value:moviebook-record),query:(match:(kubernetes.namespace_name:(query:moviebook-record,type:phrase))))),query:(language:kuery,query:''))"
+            }
+          ]
+        },
+        {
+          "name": "Cube",
+          "instances": [
+            {
+              "name": "PROD",
+              "gatewayEndpoint": "https://staging1.prod.cubecorp.io",
+              "loggingURL": "https://logging.prod.cubecorp.io/app/kibana#/discover?_g=(filters:!(),time:(from:$STARTTIME,to:$ENDTIME))&_a=(filters:!(('$state':(store:appState),meta:(alias:!n,key:kubernetes.namespace_name,params:(query:staging1),type:phrase,value:staging1),query:(match:(kubernetes.namespace_name:(query:staging1,type:phrase))))),query:(language:kuery,query:''))"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
