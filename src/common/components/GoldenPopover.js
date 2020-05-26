@@ -80,12 +80,12 @@ class GoldenPopover extends React.Component {
         return "";
     };
 
-    updateRule() {
+    updateRule(operationType = "REPLACE") {
         const {dispatch, jsonPath, cube, eventType} = this.props;
         this.hideGR();
 
         let operationsObj = {};
-        operationsObj.type = "REPLACE";
+        operationsObj.type = operationType; // "REPLACE" or "REMOVE";
         operationsObj.path = jsonPath.replace("<BEGIN>", "");
         operationsObj.newRule = this.state.newRule;
 
@@ -370,6 +370,12 @@ class GoldenPopover extends React.Component {
                                 </span>
                             }
                             <span onClick={this.showRuleModal} className="cube-btn font-12">UPDATE RULE</span>
+                            {
+                                this.props.showDeleteRuleAction &&
+                                <span onClick={() => this.updateRule("REMOVE")}className="cube-btn font-12 margin-left-15">
+                                    DELETE RULE
+                                </span>
+                            }
                         </div>
                     </div>
                 </div>
