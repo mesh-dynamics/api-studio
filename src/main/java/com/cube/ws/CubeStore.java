@@ -605,7 +605,10 @@ public class CubeStore {
                             queryParamsMap.add(nameValuePair.getName(), nameValuePair.getValue());
                         });
                         ObjectNode rootAsNode = (ObjectNode) payload.dataObj.getRoot();
-                        rootAsNode.putPOJO("queryParams", queryParamsMap);
+                        if (!queryParamsMap.isEmpty()) {
+                            JsonNode converted = config.jsonMapper.convertValue(queryParamsMap, JsonNode.class);
+                            rootAsNode.put("queryParams", converted);
+                        }
                     } catch (URISyntaxException e) {
                         LOGGER.error("Unable to parse original api path with params" , e);
                     }
