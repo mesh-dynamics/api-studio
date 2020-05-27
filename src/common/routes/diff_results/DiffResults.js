@@ -84,7 +84,7 @@ class DiffResults extends Component {
         const selectedAPI = urlParameters["selectedAPI"] || "All"; //"%2A";
         const replayId = urlParameters["replayId"];
         const recordingId = urlParameters["recordingId"];
-        const recordingName = urlParameters["recordingName"];
+        const recordingName = decodeURI(urlParameters["recordingName"]);
         const currentTemplateVer = urlParameters["currentTemplateVer"];
         const selectedService = urlParameters["selectedService"] || "All";
         const selectedReqMatchType = urlParameters["selectedReqMatchType"] || "match";
