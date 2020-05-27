@@ -40,6 +40,7 @@ import javax.ws.rs.core.UriInfo;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -49,7 +50,9 @@ import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.ValueType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.Recorder;
@@ -61,8 +64,10 @@ import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
+import io.md.dao.HTTPRequestPayload;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Payload;
+import io.md.utils.HttpRequestPayloadDeserializer;
 
 import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateKey;
@@ -575,6 +580,38 @@ public class CubeStore {
         if (event.isRequestType()) {
             // if request type, need to extract keys from request and index it, so that it can be
             // used while mocking
+            if (event.payload instanceof HTTPRequestPayload)  {
+                HTTPRequestPayload payload = (HTTPRequestPayload) event.payload;
+                Optional<MultivaluedHashMap> queryParamsOpt =
+                    payload.dataObj.getValAsObject("/".concat("queryParams"), MultivaluedHashMap.class);
+                StringBuilder orginalPath = new StringBuilder();
+                orginalPath.append(event.apiPath);
+                queryParamsOpt.ifPresent(queryParams -> {
+                    MultivaluedMap<String, String> queryParamsCast =
+                        (MultivaluedMap<String, String>) queryParams;
+                    orginalPath.append("?");
+                    queryParamsCast.forEach((k, vlist) -> {
+                        vlist.forEach(value -> orginalPath.append(k)
+                            .append("=").append(value).append("&"));
+                    });
+                    String originalPathWithParams = orginalPath.substring(0, orginalPath.length()-1);
+                    URIBuilder uriBuilder = null;
+                    try {
+                        uriBuilder = new URIBuilder(originalPathWithParams);
+                        //String path = uriBuilder.getPath();
+                        List<NameValuePair> queryParamsDecoded = uriBuilder.getQueryParams();
+                        MultivaluedHashMap<String,String> queryParamsMap = new MultivaluedHashMap();
+                        queryParamsDecoded.forEach(nameValuePair -> {
+                            queryParamsMap.add(nameValuePair.getName(), nameValuePair.getValue());
+                        });
+                        ObjectNode rootAsNode = (ObjectNode) payload.dataObj.getRoot();
+                        rootAsNode.putPOJO("queryParams", queryParamsMap);
+                    } catch (URISyntaxException e) {
+                        LOGGER.error("Unable to parse original api path with params" , e);
+                    }
+                });
+            }
+
             try {
                 Optional<URLClassLoader> classLoader = Optional.empty();
                 if (event.eventType.equals(EventType.ThriftRequest)) {
