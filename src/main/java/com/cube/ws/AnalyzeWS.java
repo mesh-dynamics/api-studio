@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -695,15 +696,15 @@ public class AnalyzeWS {
 		                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 			                "Unable to convert diff to json string")), e);
 	                }
+	                List<String > pathsToKeep = getPathsToKeep(matchRes.respCompareRes.diffs);
 
 	                Optional<Event> recordResponseEvent = matchRes.recordReqId.flatMap(rrstore::getResponseEvent);
-	                //remove the data if size is bigger than threshold
-	                recordResponse = recordResponseEvent.map(e -> checkAndConvertResponseToString(e));
+	                recordResponse = recordResponseEvent.map(e -> e.checkAndConvertResponseToString(true, pathsToKeep, 500, "/body"));
 	                recordRespTime = recordResponseEvent.map(e -> e.timestamp.toEpochMilli());
 
 
 	                Optional<Event> replayResponseEvent = matchRes.replayReqId.flatMap(rrstore::getResponseEvent);
-	                replayResponse = replayResponseEvent.map(e -> e.getPayloadAsJsonString(true));
+	                replayResponse = replayResponseEvent.map(e -> e.checkAndConvertResponseToString(true, pathsToKeep, 500, "/body"));
 	                replayRespTime = replayResponseEvent.map(e -> e.timestamp.toEpochMilli());
                 }
 
@@ -743,14 +744,14 @@ public class AnalyzeWS {
         }
     }
 
-    private String checkAndConvertResponseToString(Event e) {
-      e.updatePayloadBody();
-      int size = e.getPayloadBodySize();
-      if (size > 500) {
-
+    private List<String> getPathsToKeep(List<Comparator.Diff> diffs) {
+      List<String> pathsToKeep = new ArrayList<>();
+      for(Comparator.Diff diff: diffs) {
+        if(diff.path.contains("body")) {
+          pathsToKeep.add(diff.path);
+        }
       }
-      DataObj o = e.payload.getVal("/body/0/timestamp");
-      return e.getPayloadAsJsonString(true);
+      return pathsToKeep;
     }
 
 
