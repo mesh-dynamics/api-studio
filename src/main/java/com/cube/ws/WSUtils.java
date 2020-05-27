@@ -18,6 +18,8 @@ import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.request.SolrPing;
 import org.apache.solr.client.solrj.response.SolrPingResponse;
 
+import io.md.dao.RecordOrReplay;
+
 import com.cube.dao.ReqRespStore;
 import com.cube.utils.Constants;
 
@@ -31,7 +33,7 @@ public class WSUtils {
     static public Optional<Response> checkActiveCollection(ReqRespStore rrstore, Optional<String> customerId,
                                                            Optional<String> app, Optional<String> instanceId,
                                                            Optional<String> userId) {
-        Optional<ReqRespStore.RecordOrReplay> recordOrReplay = rrstore.getCurrentRecordOrReplay(customerId, app,
+        Optional<RecordOrReplay> recordOrReplay = rrstore.getCurrentRecordOrReplay(customerId, app,
             instanceId);
         Optional<String> rrcollection = recordOrReplay.flatMap(rr -> rr.getRecordingCollection());
         Optional<String> replayId = recordOrReplay.flatMap(rr -> rr.getReplayId());

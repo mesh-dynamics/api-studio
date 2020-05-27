@@ -1,18 +1,16 @@
 package com.cube.core;
 
+import static io.md.core.TemplateKey.*;
+
 import java.util.Collection;
-import java.util.Map;
 import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import io.md.core.AttributeRuleMap;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
+import io.md.core.TemplateKey;
 import io.md.core.ValidateCompareTemplate;
-
-import com.cube.cache.TemplateKey;
-import com.cube.cache.TemplateKey.Type;
 
 public class CompareTemplateVersioned extends CompareTemplate {
 
@@ -21,14 +19,14 @@ public class CompareTemplateVersioned extends CompareTemplate {
     @JsonProperty("requestPath")
     public String requestPath;
     @JsonProperty("type")
-    public TemplateKey.Type type;
+    public Type type;
 
     public CompareTemplateVersioned() {
         super();
     }
 
     public CompareTemplateVersioned(Optional<String> service, Optional<String> requestPath
-        , TemplateKey.Type type, CompareTemplate contained) {
+        , Type type, CompareTemplate contained) {
         super(contained.prefixpath);
         this.service = service.orElse("");
         this.requestPath = requestPath.map(reqPath -> {
