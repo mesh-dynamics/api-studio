@@ -114,6 +114,11 @@ public class ThriftResponsePayload implements ResponsePayload {
 	}
 
 	@Override
+	public boolean put(String path, DataObj value) throws PathNotFoundException {
+		return false;
+	}
+
+	@Override
 	public byte[] rawPayloadAsByteArray() throws NotImplementedException, RawPayloadEmptyException {
 		return new byte[0];
 	}

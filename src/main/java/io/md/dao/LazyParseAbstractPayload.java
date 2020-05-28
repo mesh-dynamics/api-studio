@@ -163,5 +163,11 @@ public abstract class LazyParseAbstractPayload implements Payload {
 		}
 		return this;
 	}
+
+	@Override
+	public boolean put(String path, DataObj value) throws PathNotFoundException {
+		parseIfRequired();
+		return dataObj.put(path, value);
+	}
 }
 

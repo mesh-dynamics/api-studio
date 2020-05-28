@@ -64,6 +64,9 @@ public interface DataObj {
 	@JsonIgnore
 	byte[] getValAsByteArray(String path) throws PathNotFoundException;
 
+	@JsonIgnore
+	boolean put(String path, DataObj value) throws PathNotFoundException;
+
 
 	class PathNotFoundException extends Exception{
 

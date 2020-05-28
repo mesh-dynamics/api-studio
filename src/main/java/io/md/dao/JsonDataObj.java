@@ -37,6 +37,7 @@ import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
 import io.md.cryptography.EncryptionAlgorithm;
 import io.md.utils.JsonTransformer;
+import io.md.utils.Utils;
 
 public class JsonDataObj implements DataObj {
 
@@ -428,6 +429,31 @@ public class JsonDataObj implements DataObj {
 			operationList);
 
 		return new JsonDataObj(transformedRoot, jsonMapper);
+	}
+
+	@Override
+	public boolean put(String path, DataObj value) throws PathNotFoundException {
+		JsonPointer pathPtr = JsonPointer.compile(path);
+		JsonNode valParent = getNode(pathPtr.head().toString());
+		if (valParent != null && valParent.isObject()) {
+			ObjectNode valParentObj = (ObjectNode) valParent;
+			String fieldName = pathPtr.last().getMatchingProperty();
+			valParentObj.set(fieldName, ((JsonDataObj)value).objRoot);
+			return true;
+		} else if (valParent != null && valParent.isArray()) {
+			ArrayNode valParentObj = (ArrayNode) valParent;
+			String indexStr = pathPtr.last().getMatchingProperty();
+			Optional<Integer> index = Utils.strToInt(indexStr);
+			index.ifPresent(ind -> {
+				valParentObj.set(ind, ((JsonDataObj) value).objRoot);
+			});
+			if(!index.isPresent()) {
+				LOGGER.error("Cannot convert string to integer in put method");
+			}
+			return true;
+		} else {
+			throw new PathNotFoundException(path);
+		}
 	}
 
 
