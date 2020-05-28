@@ -1,9 +1,5 @@
 package com.cube.drivers;
 
-import com.cube.dao.CubeMetaInfo;
-import com.cube.dao.ReplayUpdate;
-import io.md.constants.ReplayStatus;
-import io.md.dao.Replay;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,8 +12,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.cube.cache.ComparatorCache.TemplateNotFoundException;
-import com.cube.dao.Analysis;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,9 +19,15 @@ import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.md.constants.ReplayStatus;
 import io.md.dao.Event;
+import io.md.dao.RecordOrReplay;
+import io.md.dao.Replay;
+import io.md.services.DataStore;
 
 import com.cube.core.Utils;
+import com.cube.dao.CubeMetaInfo;
+import com.cube.dao.ReplayUpdate;
 import com.cube.dao.ReqRespStore;
 import com.cube.injection.DynamicInjectionConfig;
 import com.cube.utils.Constants;
@@ -124,7 +124,7 @@ public abstract class AbstractReplayDriver {
 		}
 		// This is a dummy lookup, just to get the Replay running status into Redis, so that
 		// deferred delete  can be applied when replay ends. This is needed for very small replays
-		Optional<ReqRespStore.RecordOrReplay> recordOrReplay =
+		Optional<RecordOrReplay> recordOrReplay =
 			rrstore.getCurrentRecordOrReplay(Optional.of(replay.customerId),
 				Optional.of(replay.app), Optional.of(replay.instanceId));
 
@@ -265,7 +265,7 @@ public abstract class AbstractReplayDriver {
 		}
 		try {
 			Analyzer.analyze(replay.replayId, "", config);
-		} catch (TemplateNotFoundException e) {
+		} catch (DataStore.TemplateNotFoundException e) {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 					"Unable to analyze replay since template does not exist :", Constants.REPLAY_ID_FIELD,
 					replay.replayId)), e);

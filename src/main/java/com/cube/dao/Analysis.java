@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 import io.md.core.Comparator;
 import io.md.dao.Event;
+import io.md.dao.ReqRespMatchResult;
 
 import com.cube.ws.Config;
 
@@ -150,6 +151,25 @@ public class Analysis {
         public Optional<String> getRecordReq(Config config) {
 	        return Optional.of(recordReq.getPayloadAsJsonString());
         }
+    }
+
+    static public ReqRespMatchResult createReqRespMatchResult(ReqRespMatchWithEvent rm,
+                                                              Comparator.MatchType reqmt, int size, String replayId) {
+        return new ReqRespMatchResult(Optional.of(rm.recordReq.reqId),
+            rm.replayReq.map(req -> req.reqId),
+            reqmt,
+            size,
+            replayId,
+            rm.recordReq.service,
+            rm.recordReq.apiPath,
+            Optional.of(rm.recordReq.getTraceId()),
+            rm.replayReq.map(Event::getTraceId),
+            Optional.ofNullable(rm.recordReq.spanId),
+            Optional.ofNullable(rm.recordReq.parentSpanId),
+            rm.replayReq.map(repEvent -> repEvent.spanId),
+            rm.replayReq.map(repEvent -> repEvent.parentSpanId),
+            rm.respCompareRes,
+            rm.reqCompareRes);
     }
 
 

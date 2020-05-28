@@ -1,5 +1,7 @@
 package com.cube.dao;
 
+import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
+
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
@@ -11,9 +13,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.cube.agent.UtilException;
-
-import com.cube.dao.Recording.RecordingStatus;
-import com.cube.utils.Constants;
+import io.md.dao.Recording;
+import io.md.dao.Recording.RecordingStatus;
 
 public class RecordingBuilder {
 
@@ -48,7 +49,7 @@ public class RecordingBuilder {
 		this.collection = collection;
 		this.status = RecordingStatus.Running;
 		this.timestamp = Optional.of(Instant.now());
-		this.templateVersion = Constants.DEFAULT_TEMPLATE_VER;
+		this.templateVersion = DEFAULT_TEMPLATE_VER;
 		this.id = Optional.empty();
 		//recalculateId();
 		this.parentRecordingId = Optional.empty();

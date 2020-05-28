@@ -1,5 +1,8 @@
 package com.cube.golden.transform;
 
+import static io.md.core.TemplateKey.*;
+import static io.md.services.DataStore.*;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,20 +17,19 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
-import org.apache.solr.common.util.Template;
 
 import io.md.core.AttributeRuleMap;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
+import io.md.core.TemplateKey;
 import io.md.dao.ReqRespUpdateOperation.OperationType;
+import io.md.services.DataStore;
 
 import com.cube.cache.ComparatorCache;
-import com.cube.cache.TemplateKey;
-import com.cube.cache.TemplateKey.Type;
 import com.cube.core.CompareTemplateVersioned;
+import com.cube.dao.ReqRespStore;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateEntryOperation;
-import com.cube.golden.TemplateEntryOperation.RuleType;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.utils.Constants;
@@ -40,10 +42,11 @@ public class TemplateSetTransformer {
      * Update a template set based on a given template update operation set
      * @param sourceTemplateSet Source Template Set
      * @param templateSetUpdateSpec Update Operations to arrive at the new Template Set
+     * @param rrstore
      * @return Updated Template Set (needs to be stored in backend explicitly later)
      */
     public TemplateSet updateTemplateSet(TemplateSet sourceTemplateSet
-        , TemplateUpdateOperationSet templateSetUpdateSpec, ComparatorCache comparatorCache)
+        , TemplateUpdateOperationSet templateSetUpdateSpec, ReqRespStore rrstore)
         throws Exception {
         List<CompareTemplateVersioned> sourceTemplates = sourceTemplateSet.templates;
         Map<TemplateKey, SingleTemplateUpdateOperation> updates =   templateSetUpdateSpec.getTemplateUpdates();
@@ -88,9 +91,9 @@ public class TemplateSetTransformer {
                     try {
                         // try to get default compare template based on event type
                         // queried from backend store for the given api path
-                        template = comparatorCache
+                        template = rrstore
                             .getComparator(key).getCompareTemplate();
-                    } catch (ComparatorCache.TemplateNotFoundException e) {
+                    } catch (TemplateNotFoundException e) {
                         LOGGER.error(new ObjectMessage(Map.of(
                             Constants.MESSAGE, "Unable to fetch DEFAULT template from comparator " +
                                 "cache during template set update", Constants.TEMPLATE_KEY_FIELD, key.toString())), e);
@@ -113,7 +116,7 @@ public class TemplateSetTransformer {
         return new TemplateSet(newVersion, sourceTemplateSet.customer
             , sourceTemplateSet.app, Instant.now(), updatedCompareTemplates, pathVsEntryAttributes.isEmpty() ? Optional.empty() : Optional.of(new AttributeRuleMap(pathVsEntryAttributes)));
     }
-    
+
     /**
      * Update a template given update operations
      * @param sourceTemplate The existing template

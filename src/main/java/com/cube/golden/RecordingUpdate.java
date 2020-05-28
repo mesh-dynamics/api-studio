@@ -1,6 +1,8 @@
 package com.cube.golden;
 
 
+import static io.md.core.TemplateKey.*;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -16,18 +18,18 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
 import io.md.core.Comparator;
+import io.md.core.TemplateKey;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.MDTraceInfo;
+import io.md.dao.Recording;
+import io.md.dao.ReqRespMatchResult;
 import io.md.dao.ReqRespUpdateOperation;
 
-import com.cube.cache.TemplateKey;
-import com.cube.cache.TemplateKey.Type;
 import com.cube.dao.AnalysisMatchResultQuery;
-import com.cube.dao.Recording;
 import com.cube.dao.RecordingOperationSetMeta;
 import io.md.dao.RecordingOperationSetSP;
-import com.cube.dao.ReqRespMatchResult;
+
 import com.cube.dao.Result;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
@@ -153,7 +155,7 @@ public class RecordingUpdate {
     // TODO: sort the match results by (service, apiPath) and process each apiPath at a
     //  time, so that comparator need not be lookup up repeatedly
     public boolean applyRecordingOperationSet(String replayId, String newCollectionName,
-        String recordingOperationSetId
+                                              String recordingOperationSetId
         , Recording originalRec, String newTemplateSetVersion) {
 
         // use recordingOperationSetId to fetch the list of operations
@@ -206,7 +208,7 @@ public class RecordingUpdate {
                 TemplateKey key = new TemplateKey(newTemplateSetVersion, originalRec.customerId,
                     originalRec.app, recordRequest.service, recordRequest.apiPath,
                     Type.RequestMatch);
-                Comparator comparator = config.comparatorCache.getComparator(key
+                Comparator comparator = config.rrstore.getComparator(key
                     , Event.EventType.HTTPRequest);
 
                 // Transform request

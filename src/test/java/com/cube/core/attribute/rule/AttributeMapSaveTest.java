@@ -1,10 +1,9 @@
 package com.cube.core.attribute.rule;
 
-import com.cube.cache.TemplateKey;
-import com.cube.dao.ReqRespStore;
 import io.md.core.AttributeRuleMap;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
+import io.md.core.TemplateKey;
 
 import java.util.HashMap;
 import java.util.Map;

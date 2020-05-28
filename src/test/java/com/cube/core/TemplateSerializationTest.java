@@ -25,6 +25,7 @@ import io.md.core.TemplateEntry;
 import io.md.utils.CubeObjectMapperProvider;
 
 import com.cube.dao.ReqRespStore;
+import com.cube.dao.ReqRespStoreSolr;
 import com.cube.golden.TemplateSet;
 import com.cube.ws.Config;
 
@@ -98,7 +99,8 @@ public class TemplateSerializationTest {
     @DisplayName("Template Version Test")
     public void testTemplateVersion() throws Exception {
         Config config = new Config();
-        ReqRespStore reqRespStore = config.rrstore;
+        ReqRespStore reqRespStore = new ReqRespStoreSolr(config.solr, config, false);
+
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new Jdk8Module());
         String url1 = "TemplateMovieInfoReqNoMatch.json";

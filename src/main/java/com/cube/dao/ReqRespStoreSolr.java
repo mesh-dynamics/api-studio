@@ -3,8 +3,14 @@
  */
 package com.cube.dao;
 
+import static io.md.core.TemplateKey.*;
+
 import io.md.constants.ReplayStatus;
+import io.md.core.TemplateKey;
 import io.md.dao.EventQuery;
+import io.md.dao.RecordOrReplay;
+import io.md.dao.Recording;
+import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.Replay;
 import java.io.IOException;
@@ -45,10 +51,8 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.FnReqResponse;
-import io.cube.agent.FnResponse;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
 import io.md.core.AttributeRuleMap;
@@ -65,17 +69,20 @@ import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Payload;
+import io.md.dao.ReqRespMatchResult;
 import io.md.dao.ReqRespUpdateOperation;
 import io.md.dao.FnReqRespPayload.RetStatus;
+import io.md.services.FnResponse;
 import io.md.utils.FnKey;
+import org.checkerframework.checker.nullness.Opt;
 import redis.clients.jedis.Jedis;
 
-import com.cube.cache.ReplayResultCache.ReplayPathStatistic;
-import com.cube.cache.TemplateKey;
-import com.cube.cache.TemplateKey.Type;
+import com.cube.cache.ComparatorCache;
+import com.cube.cache.TemplateCache;
+import com.cube.cache.TemplateCacheRedis;
+import com.cube.cache.TemplateCacheWithoutCaching;
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.core.Utils;
-import com.cube.dao.Recording.RecordingStatus;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
@@ -93,6 +100,25 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private static final Logger LOGGER = LogManager.getLogger(ReqRespStoreSolr.class);
 
+/*
+    @Override
+    public void invalidateCacheFromTemplateSet(TemplateSet templateSet)
+    {
+        templateSet.templates.stream().forEach(compareTemplateVersioned -> {
+            TemplateKey key =
+                new TemplateKey(templateSet.version, templateSet.customer, templateSet.app,
+                    compareTemplateVersioned.service,
+                    compareTemplateVersioned.prefixpath, compareTemplateVersioned.type);
+            comparatorCache.invalidateKey(key);
+        });
+    }
+
+*/
+
+    @Override
+    public void invalidateCache() {
+        comparatorCache.invalidateAll();
+    }
 
     @Override
     public boolean save(Event event) {
@@ -239,6 +265,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 
     @Override
+    public Comparator getComparator(TemplateKey key, EventType eventType) throws TemplateNotFoundException {
+        return comparatorCache.getComparator(key, eventType);
+    }
+
+    @Override
     public Result<Event> getEvents(EventQuery eventQuery) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
@@ -257,11 +288,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         return SolrIterator.getResults(solr, query, eventQuery.getLimit(),
             this::docToEvent, eventQuery.getOffset());
-    }
-
-    @Override
-    public Optional<Event> getSingleEvent(EventQuery eventQuery) {
-        return getEvents(eventQuery).getObjects().findFirst();
     }
 
     @Override
@@ -696,7 +722,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         try {
             CompareTemplate compareTemplateObj = config.jsonMapper.readValue(compareTemplate.get() , CompareTemplate.class);
-            TemplateKey.Type templateType = Utils.valueOf(TemplateKey.Type.class, type.get()).orElseThrow(
+            Type templateType = Utils.valueOf(Type.class, type.get()).orElseThrow(
                 () -> new Exception("Couldn't obtain proper template type from solr doc"));
             CompareTemplateVersioned compareTemplateVersioned = new CompareTemplateVersioned(service , requestPath,
                 templateType, compareTemplateObj);
@@ -753,14 +779,32 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @param config
      */
     public ReqRespStoreSolr(SolrClient solr, Config config) {
+        this(solr, config, true);
+    }
+
+    /**
+     * @param solr
+     * @param config
+     */
+    public ReqRespStoreSolr(SolrClient solr, Config config, boolean useTemplateCaching) {
         super();
         this.solr = solr;
         this.config = config;
         SolrIterator.setConfig(config);
+
+        if (useTemplateCaching) {
+            this.templateCache = new TemplateCacheRedis(this, config);
+        } else {
+            this.templateCache = new TemplateCacheWithoutCaching(this);
+        }
+        this.comparatorCache = new ComparatorCache(templateCache, config.jsonMapper, this);
+
     }
 
     private final SolrClient solr;
     private final Config config;
+    private final TemplateCache templateCache;
+    private final ComparatorCache comparatorCache;
 
     private static final String TYPEF = CPREFIX + "type" + STRING_SUFFIX;
 
@@ -1208,31 +1252,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 
-    private static SolrInputDocument replayStatisticsToSolrDoc(String service, String replayId,
-                                                               List<ReplayPathStatistic> pathStatistics,
-                                                               ObjectMapper jsonMapper) {
-
-        final SolrInputDocument doc = new SolrInputDocument();
-        ReplayPathStatistic first = pathStatistics.get(0);
-        doc.setField(CUSTOMERIDF, first.customer);
-        doc.setField(APPF , first.app);
-        doc.setField(SERVICEF , service);
-        doc.setField(TYPEF , Types.ReplayStats.toString());
-        doc.setField(REPLAYIDF , replayId);
-        doc.setField(IDF , Types.ReplayStats.toString()+ "-"
-                + Objects.hash(replayId , first.customer, first.app , first.service));
-        pathStatistics.forEach(pathStatistic -> {
-            try {
-                doc.addField(REPLAYPATHSTATF, jsonMapper.writeValueAsString(pathStatistic));
-            } catch (JsonProcessingException e) {
-                LOGGER.error("Unable to write to solr path statistic for path ::" + pathStatistic.path + " :: service :: "
-                        + service +  " :: replayId :: " + replayId);
-            }
-        });
-
-        return doc;
-    }
-
 
     private static void addFieldsToDoc(SolrInputDocument doc,
             String ftype, MultivaluedMap<String, String> fields) {
@@ -1357,7 +1376,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String CREATIONTIMESTAMPF = CPREFIX + "creationtimestamp" + DATE_SUFFIX;
     private static final String ANALYSISCOMPLETETIMESTAMPF = CPREFIX + "analysiscompletetimestamp" + DATE_SUFFIX;
     private static final String SAMPLERATEF = CPREFIX + "samplerate" + DOUBLE_SUFFIX;
-    private static final String REPLAYPATHSTATF = CPREFIX + "pathstat" + STRINGSET_SUFFIX;
     private static final String INTERMEDIATESERVF = CPREFIX + "intermediateserv" + STRINGSET_SUFFIX;
     private static final String XFMSF = CPREFIX + "transforms" + STRING_SUFFIX;
 
@@ -1590,6 +1608,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if(!success) {
             throw new CompareTemplate.CompareTemplateStoreException("Error saving Compare Template in Solr");
         }
+        comparatorCache.invalidateKey(key);
         return solrDoc.getFieldValue(IDF).toString();
     }
 
@@ -1659,6 +1678,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         });
 
         return fromSolr;
+    }
+
+    @Override
+    public Comparator getComparator(TemplateKey key) throws TemplateNotFoundException {
+        return comparatorCache.getComparator(key);
     }
 
     @Override
@@ -1881,10 +1905,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // usually result will never be updated. But we set id field uniquely anyway
 
         String type = Types.ReqRespMatchResult.toString();
+        // The recReplayReqIdCombined field is set to (recordReqId, replayReqId, replay) which is unique for each replay.
         String recReplayReqIdCombined =
-            res.recordReqId.orElse("None") + '-' + res.replayReqId.orElse("None");
+            res.recordReqId.orElse("None") + '-' + res.replayReqId.orElse("None") + res.replayId;
 
-        // the id field is to (recordReqId, replayReqId) which is unique
+
         String id = type + '-' + Objects.hash(recReplayReqIdCombined);
         doc.setField(TYPEF, type);
         doc.setField(IDF, id);
@@ -2181,47 +2206,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return deleteDocsByQuery(queryString);
     }
 
-    /**
-     * Save Replay Stats for a Virtual(Mock) Service. The stats (request match/not match counts)
-     * are stored path wise as a json string in the same solr document.
-     * @param pathStatistics
-     * @param replayId
-     */
-    @Override
-    public void saveReplayResult(Map<String, List<ReplayPathStatistic>> pathStatistics
-            , String replayId) {
-            pathStatistics.entrySet().forEach(entry-> {
-                SolrInputDocument inputDocument = replayStatisticsToSolrDoc(entry.getKey() , replayId
-                        , entry.getValue() ,config.jsonMapper);
-                saveDoc(inputDocument);
-            });
-    }
-
-    /**
-     * Get Request Match / Not Match Count for a given virtual(mock) service during replay.
-     * Return the statistics for each path in the service as a separate json string
-     * @param customer
-     * @param app
-     * @param service
-     * @param replayId
-     * @return
-     */
-    @Override
-    public List<String> getReplayRequestCounts(String customer, String app, String service, String replayId) {
-        SolrQuery query = new SolrQuery("*:*");
-        query.setFields("*");
-        addFilter(query, CUSTOMERIDF, customer);
-        addFilter(query, APPF, app);
-        addFilter(query, SERVICEF, service);
-        addFilter(query, REPLAYIDF, replayId);
-        addFilter(query, TYPEF, Types.ReplayStats.toString());
-        return SolrIterator.getSingleResult(solr, query)
-                .map(doc -> getReplayStats(doc)).orElse(Collections.EMPTY_LIST);
-    }
-
-    private List<String> getReplayStats(SolrDocument document) {
-        return getStrFieldMV(document ,  REPLAYPATHSTATF);
-    }
 
     /**
      * Convert Solr document to corresponding ReqRespMatchResult object
@@ -2314,6 +2298,75 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             }
         });
         return analysis;
+    }
+
+    private SolrQuery getEventQuery(ApiTraceFacetQuery apiTraceFacetQuery) {
+        final SolrQuery query = new SolrQuery("*:*");
+        query.addField("*");
+        addFilter(query, TYPEF, Types.Event.toString());
+        addFilter(query, CUSTOMERIDF, apiTraceFacetQuery.customerId);
+        addFilter(query, APPF, apiTraceFacetQuery.appId);
+        addFilter(query, INSTANCEIDF, apiTraceFacetQuery.instanceId);
+        addRangeFilter(query, TIMESTAMPF, apiTraceFacetQuery.startDate,
+            apiTraceFacetQuery.endDate, true, true);
+        return query;
+    }
+
+    @Override
+    public ArrayList getApiFacets(ApiTraceFacetQuery apiTraceFacetQuery) {
+        final SolrQuery query = getEventQuery(apiTraceFacetQuery);
+        addFilter(query, SERVICEF,apiTraceFacetQuery.service);
+        addFilter(query,PATHF, apiTraceFacetQuery.apiPath);
+        FacetQ serviceFacetq = new FacetQ();
+        Facet servicef = Facet.createTermFacet(SERVICEF, Optional.empty());
+
+        FacetQ pathFacetq = new FacetQ();
+        Facet pathf = Facet.createTermFacet(PATHF, Optional.empty());
+
+        FacetQ instanceIdFacetq = new FacetQ();
+        Facet instanceIdf = Facet.createTermFacet(INSTANCEIDF, Optional.empty());
+        instanceIdFacetq.addFacet(INSTANCEFACET,instanceIdf);
+
+        pathf.addSubFacet(instanceIdFacetq);
+        pathFacetq.addFacet(PATHFACET,pathf);
+
+        servicef.addSubFacet(pathFacetq);
+        serviceFacetq.addFacet(SERVICEFACET, servicef);
+
+        query.setFacetMinCount(1);
+        String jsonFacets;
+        try {
+            jsonFacets = config.jsonMapper.writeValueAsString(serviceFacetq);
+            query.add(SOLRJSONFACETPARAM, jsonFacets);
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting facets to json"), e);
+        }
+        Result<Event> result = SolrIterator.getResults(solr, query, Optional.empty(),
+            this::docToEvent, Optional.empty());
+        ArrayList serviceFacetResults = result.getFacets(FACETSFIELD, SERVICEFACET, BUCKETFIELD);
+        serviceFacetResults.forEach(serviceFacetResult -> {
+            HashMap pathFacetMap = (HashMap) ((HashMap) serviceFacetResult).get(PATHFACET);
+            ArrayList pathFacetResults = result.solrNamedPairToMap((ArrayList) pathFacetMap.get(BUCKETFIELD));
+
+            pathFacetResults.forEach(pathFacetResult -> {
+                HashMap instanceFacetMap = (HashMap) ((HashMap) pathFacetResult).get(INSTANCEFACET);
+                ((HashMap)pathFacetResult).put(INSTANCEFACET,
+                    result.solrNamedPairToMap((ArrayList)instanceFacetMap.get(BUCKETFIELD)));
+            });
+
+            ((HashMap)serviceFacetResult).put(PATHFACET,pathFacetResults);
+        });
+        return serviceFacetResults;
+    }
+
+    @Override
+    public Result<Event> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery) {
+
+        final SolrQuery query = getEventQuery(apiTraceFacetQuery);
+        addFilter(query, TRACEIDF, apiTraceFacetQuery.traceId);
+        addSort(query, TRACEIDF, false /* desc */);
+        return SolrIterator.getResults(solr, query, Optional.empty(),
+            this::docToEvent, Optional.empty());
     }
 
 
@@ -2630,6 +2683,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String RESPMTFACET = "respmt_facets";
     private static final String PATHFACET = "path_facets";
     private static final String SERVICEFACET = "service_facets";
+    private static final String INSTANCEFACET = "instance_facets";
     private static final String SOLRJSONFACETPARAM = "json.facet"; // solr facet query param
     private static final String BUCKETFIELD = "buckets"; // term in solr results indicating facet buckets
     private static final String MISSINGBUCKETFIELD = "missing"; // term in solr results indicating facet bucket for
