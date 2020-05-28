@@ -1431,7 +1431,11 @@ public class AnalyzeWS {
         events.forEach(e -> {
           if(e.eventType == EventType.HTTPRequest) {
             requestEventsByParentSpanId.add(e.parentSpanId, e);
-            apiTraceFacetQuery.apiPath.ifPresent(path -> parentRequestEventsForApiPath.add(e));
+            apiTraceFacetQuery.apiPath.ifPresent(path -> {
+              if(e.apiPath.equals(path)) {
+                parentRequestEventsForApiPath.add(e);
+              }
+            });
           }
           if(e.eventType == EventType.HTTPResponse) {
             responseEventsByReqId.put(e.reqId, e);
