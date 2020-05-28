@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Table, ButtonGroup, Button, Radio, Tabs, Tab} from 'react-bootstrap';
 import _ from 'lodash';
 import arrayToTree  from 'array-to-tree';
+
 import axios from "axios";
 import Iframe from 'react-iframe'
 import * as moment from 'moment';
@@ -11,6 +12,7 @@ import ReactDiffViewer from '../../utils/diff/diff-main';
 import ReduceDiff from '../../utils/ReduceDiff';
 import config from "../../config";
 import generator from '../../utils/generator/json-path-generator';
+import api from "../../api";
 
 import {connect} from "react-redux";
 import {cubeActions} from "../../actions";
@@ -386,120 +388,115 @@ class ViewTrace extends Component {
         
         let promises = [], fetchedResults = 0, totalNumberOfRequest = 0, resultSize = 20, replayListData = [];
 
-
         try {
-            response = await fetch(url, {
-                method: "get",
-                headers: new Headers({
-                    "cache-control": "no-cache",
-                    "Authorization": "Bearer " + user['access_token']
-                })
-            });
-            if (response.ok) {
-                json = await response.json();
-                dataList = json;
-                const { cube } = this.props;
-                const { instances, selectedApp } = cube;
-                let instanceId = "";
-                for(let eachRequestItem of dataList.data.res) {
-                    if(eachRequestItem.instanceId) {
-                        instanceId = eachRequestItem.instanceId;
-                        break;
-                    }
+            const requestOptions = {
+                headers: {
+                    "cache-control": "no-cache",   
                 }
-                for(let eachInstance of instances) {
-                    if(eachInstance.app.name === selectedApp && eachInstance.name.toLowerCase() === instanceId.toLowerCase()) {
-                        this.loggingURL = eachInstance.loggingURL;
-                        break;
-                    }
+            };
+            const dataList = await api.get(url, requestOptions);
+            const { cube } = this.props;
+            const { instances, selectedApp } = cube;
+            let instanceId = "";
+            for(let eachRequestItem of dataList.data.res) {
+                if(eachRequestItem.instanceId) {
+                    instanceId = eachRequestItem.instanceId;
+                    break;
                 }
-                let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.data.res);
-                this.layoutDataWithDiff.push(...diffLayoutData);
-                fetchedResults = dataList.data.res.length;
-                totalNumberOfRequest = dataList.data.numFound;
-                let allFetched = false;
-                let requestHeaders = {
-                    headers: {
-                        "cache-control": "no-cache",
-                        "Authorization": "Bearer " + user['access_token']
-                    }
-                };
-                while(!allFetched) {
-                    if(fetchedResults >= totalNumberOfRequest) {
-                        allFetched = true;
-                        break;
-                    }
-                    url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=${fetchedResults}&includeDiff=true&path=%2A&traceId=${traceId}`;
-                    promises.push(axios.get(url, requestHeaders));
-                    fetchedResults = fetchedResults + resultSize;
-                }
-                axios.all(promises).then((results) => {
-                    results.forEach((eachResponse) => {
-                        let eachDiffLayoutData = this.validateAndCreateDiffLayoutData(eachResponse.data.data.res);
-                        this.layoutDataWithDiff.push(...eachDiffLayoutData);
-                    });
-                    this.layoutDataWithDiff.sort((a, b) => {
-                        let serviceA = a.service,
-                            serviceB = b.service,
-                            pathA = a.path,
-                            pathB = b.path;
-                        if(serviceA === serviceB) {
-                            return pathA < pathB ? -1 : pathA > pathB ? 1 : 0;
-                        } else {
-                            return serviceA < serviceB ? -1 : 1;
-                        }
-                    });
-                    let recordOnlyTree = this.layoutDataWithDiff.filter((item) => {
-                        return (item.recordReqId && item.replayReqId) || item.recordReqId; 
-                    });
-                    let replayOnlyTree = this.layoutDataWithDiff.filter((item) => {
-                        return (item.recordReqId && item.replayReqId) || item.replayReqId; 
-                    });
-                    for (let eachElementObject of this.layoutDataWithDiff) {
-                        let tempId = eachElementObject.recordReqId + eachElementObject.replayReqId;
-                        let isFound = false;
-                        for (let eachUniqueElement of this.uniqueRecordReplayData) {
-                            let uniqueTempKey = eachUniqueElement.recordReqId + eachUniqueElement.replayReqId;
-                            if(uniqueTempKey === tempId) {
-                                isFound = true;
-                                break;
-                            }
-                        }
-                        if(!isFound) this.uniqueRecordReplayData.push(eachElementObject);
-                    }
-                    this.uniqueRecordReplayData.sort((a, b) => {
-                        let serviceA = a.service,
-                            serviceB = b.service,
-                            pathA = a.path,
-                            pathB = b.path;
-                        if(serviceA === serviceB) {
-                            return pathA < pathB ? -1 : pathA > pathB ? 1 : 0;
-                        } else {
-                            return serviceA < serviceB ? -1 : 1;
-                        }
-                    });
-                    
-                    let recProcessedTraceDataTree = arrayToTree(recordOnlyTree, { customID: 'recordedSpanId', parentProperty: 'recordedParentSpanId' });
-                    let repProcessedTraceDataTree = arrayToTree(replayOnlyTree, { customID: 'replayedSpanId', parentProperty: 'replayedParentSpanId' });
-                    let recProcessedTraceDataFlattenTree = this.flattenTree(recProcessedTraceDataTree);
-                    let repProcessedTraceDataFlattenTree = this.flattenTree(repProcessedTraceDataTree);
-                    this.setState({
-                        recProcessedTraceDataTree: this.state.recProcessedTraceDataTree.concat(recProcessedTraceDataTree),
-                        repProcessedTraceDataTree: this.state.repProcessedTraceDataTree.concat(repProcessedTraceDataTree),
-                        recProcessedTraceDataFlattenTree: this.state.recProcessedTraceDataFlattenTree.concat(recProcessedTraceDataFlattenTree),
-                        repProcessedTraceDataFlattenTree: this.state.repProcessedTraceDataFlattenTree.concat(repProcessedTraceDataFlattenTree),
-                        fetchComplete: true,
-                        app: dataList.data.app,
-                        templateVersion: dataList.data.templateVersion,
-                        fetchedResults: fetchedResults
-                    });
-                });
-            } else {
-                throw new Error("Response not ok fetchTimeline");
             }
-        } catch (e) {
-            console.error("fetchTimeline has errors!", e);
-            throw e;
+            for(let eachInstance of instances) {
+                if(eachInstance.app.name === selectedApp && eachInstance.name.toLowerCase() === instanceId.toLowerCase()) {
+                    this.loggingURL = eachInstance.loggingURL;
+                    break;
+                }
+            }
+            let diffLayoutData = this.validateAndCreateDiffLayoutData(dataList.data.res);
+            this.layoutDataWithDiff.push(...diffLayoutData);
+            fetchedResults = dataList.data.res.length;
+            totalNumberOfRequest = dataList.data.numFound;
+            let allFetched = false;
+            let requestHeaders = {
+                headers: {
+                    "cache-control": "no-cache",
+                    // "Authorization": "Bearer " + user['access_token']
+                }
+            };
+            while(!allFetched) {
+                if(fetchedResults >= totalNumberOfRequest) {
+                    allFetched = true;
+                    break;
+                }
+                url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=${fetchedResults}&includeDiff=true&path=%2A&traceId=${traceId}`;
+                promises.push(api.get(url, requestHeaders));
+                fetchedResults = fetchedResults + resultSize;
+            }
+            
+            axios.all(promises).then((results) => {
+                results.forEach((eachResponse) => {
+                    let eachDiffLayoutData = this.validateAndCreateDiffLayoutData(eachResponse.data.data.res);
+                    this.layoutDataWithDiff.push(...eachDiffLayoutData);
+                });
+                this.layoutDataWithDiff.sort((a, b) => {
+                    let serviceA = a.service,
+                        serviceB = b.service,
+                        pathA = a.path,
+                        pathB = b.path;
+                    if(serviceA === serviceB) {
+                        return pathA < pathB ? -1 : pathA > pathB ? 1 : 0;
+                    } else {
+                        return serviceA < serviceB ? -1 : 1;
+                    }
+                });
+                let recordOnlyTree = this.layoutDataWithDiff.filter((item) => {
+                    return (item.recordReqId && item.replayReqId) || item.recordReqId; 
+                });
+                let replayOnlyTree = this.layoutDataWithDiff.filter((item) => {
+                    return (item.recordReqId && item.replayReqId) || item.replayReqId; 
+                });
+                for (let eachElementObject of this.layoutDataWithDiff) {
+                    let tempId = eachElementObject.recordReqId + eachElementObject.replayReqId;
+                    let isFound = false;
+                    for (let eachUniqueElement of this.uniqueRecordReplayData) {
+                        let uniqueTempKey = eachUniqueElement.recordReqId + eachUniqueElement.replayReqId;
+                        if(uniqueTempKey === tempId) {
+                            isFound = true;
+                            break;
+                        }
+                    }
+                    if(!isFound) this.uniqueRecordReplayData.push(eachElementObject);
+                }
+                this.uniqueRecordReplayData.sort((a, b) => {
+                    let serviceA = a.service,
+                        serviceB = b.service,
+                        pathA = a.path,
+                        pathB = b.path;
+                    if(serviceA === serviceB) {
+                        return pathA < pathB ? -1 : pathA > pathB ? 1 : 0;
+                    } else {
+                        return serviceA < serviceB ? -1 : 1;
+                    }
+                });
+                
+                let recProcessedTraceDataTree = arrayToTree(recordOnlyTree, { customID: 'recordedSpanId', parentProperty: 'recordedParentSpanId' });
+                let repProcessedTraceDataTree = arrayToTree(replayOnlyTree, { customID: 'replayedSpanId', parentProperty: 'replayedParentSpanId' });
+                let recProcessedTraceDataFlattenTree = this.flattenTree(recProcessedTraceDataTree);
+                let repProcessedTraceDataFlattenTree = this.flattenTree(repProcessedTraceDataTree);
+                this.setState({
+                    recProcessedTraceDataTree: this.state.recProcessedTraceDataTree.concat(recProcessedTraceDataTree),
+                    repProcessedTraceDataTree: this.state.repProcessedTraceDataTree.concat(repProcessedTraceDataTree),
+                    recProcessedTraceDataFlattenTree: this.state.recProcessedTraceDataFlattenTree.concat(recProcessedTraceDataFlattenTree),
+                    repProcessedTraceDataFlattenTree: this.state.repProcessedTraceDataFlattenTree.concat(repProcessedTraceDataFlattenTree),
+                    fetchComplete: true,
+                    app: dataList.data.app,
+                    templateVersion: dataList.data.templateVersion,
+                    fetchedResults: fetchedResults
+                });
+            });
+
+        } catch (error) {
+            console.log("Error fetching replay list\n", error);
+            // No point throwing from here since it is 
+            // not handled above in the invoking function
         }
     }
 

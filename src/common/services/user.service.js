@@ -1,82 +1,82 @@
-import { authHeader } from '../helpers';
-import config from '../config';
+// import { authHeader } from '../helpers';
+// import config from '../config';
 
-export const userService = {
-    register,
-    getAll,
-    getById,
-    update,
-    logout,
-    delete: _delete,
-};
+// export const userService = {
+//     register,
+//     getAll,
+//     getById,
+//     update,
+//     logout,
+//     delete: _delete,
+// };
 
-function logout() {
-    // remove user from local storage to log user out
-    localStorage.removeItem('user');
-}
+// function logout() {
+//     // remove user from local storage to log user out
+//     localStorage.removeItem('user');
+// }
 
-function getAll() {
-    const requestOptions = {
-        method: 'GET',
-        headers: authHeader()
-    };
+// function getAll() {
+//     const requestOptions = {
+//         method: 'GET',
+//         headers: authHeader()
+//     };
 
-    return fetch(`${config.apiBaseUrl}/users`, requestOptions).then(handleResponse);
-}
+//     return fetch(`${config.apiBaseUrl}/users`, requestOptions).then(handleResponse);
+// }
 
-function getById(id) {
-    const requestOptions = {
-        method: 'GET',
-        headers: authHeader()
-    };
+// function getById(id) {
+//     const requestOptions = {
+//         method: 'GET',
+//         headers: authHeader()
+//     };
 
-    return fetch(`${config.apiBaseUrl}/users/${id}`, requestOptions).then(handleResponse);
-}
+//     return fetch(`${config.apiBaseUrl}/users/${id}`, requestOptions).then(handleResponse);
+// }
 
-function register(user) {
-    const requestOptions = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(user)
-    };
+// function register(user) {
+//     const requestOptions = {
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify(user)
+//     };
 
-    return fetch(`${config.apiBaseUrl}/users/register`, requestOptions).then(handleResponse);
-}
+//     return fetch(`${config.apiBaseUrl}/users/register`, requestOptions).then(handleResponse);
+// }
 
-function update(user) {
-    const requestOptions = {
-        method: 'PUT',
-        headers: { ...authHeader(), 'Content-Type': 'application/json' },
-        body: JSON.stringify(user)
-    };
+// function update(user) {
+//     const requestOptions = {
+//         method: 'PUT',
+//         headers: { ...authHeader(), 'Content-Type': 'application/json' },
+//         body: JSON.stringify(user)
+//     };
 
-    return fetch(`${config.apiBaseUrl}/users/${user.id}`, requestOptions).then(handleResponse);;
-}
+//     return fetch(`${config.apiBaseUrl}/users/${user.id}`, requestOptions).then(handleResponse);;
+// }
 
-// prefixed function name with underscore because delete is a reserved word in javascript
-function _delete(id) {
-    const requestOptions = {
-        method: 'DELETE',
-        headers: authHeader()
-    };
+// // prefixed function name with underscore because delete is a reserved word in javascript
+// function _delete(id) {
+//     const requestOptions = {
+//         method: 'DELETE',
+//         headers: authHeader()
+//     };
 
-    return fetch(`${config.apiBaseUrl}/users/${id}`, requestOptions).then(handleResponse);
-}
+//     return fetch(`${config.apiBaseUrl}/users/${id}`, requestOptions).then(handleResponse);
+// }
 
-function handleResponse(response) {
-    return response.json().then(json => {
-        const data = json;
-        if (!response.ok) {
-            if (response.status === 401) {
-                // auto logout if 401 response returned from api
-                logout();
-                // XXX: react complains here
-                //location.reload(true);
-            }
+// function handleResponse(response) {
+//     return response.json().then(json => {
+//         const data = json;
+//         if (!response.ok) {
+//             if (response.status === 401) {
+//                 // auto logout if 401 response returned from api
+//                 logout();
+//                 // XXX: react complains here
+//                 //location.reload(true);
+//             }
 
-            const error = (data && data.message) || response.statusText;
-            return Promise.reject(error);
-        }
-        return data;
-    });
-}
+//             const error = (data && data.message) || response.statusText;
+//             return Promise.reject(error);
+//         }
+//         return data;
+//     });
+// }

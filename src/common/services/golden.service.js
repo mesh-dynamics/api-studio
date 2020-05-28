@@ -1,46 +1,35 @@
 import config from '../config';
+import api from '../api';
 
+// Overriding default Content-Type in the calls below
+// TODO: remove token parameter
 const fetchGoldenInsights = async (goldenId, service, apiPath, token) => {
     const requestOptions = {
-        method: 'GET',
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
-            "Authorization": `Bearer ${token}`
         }
     };
 
     try {
-        const response = await fetch(`${config.analyzeBaseUrl}/goldenInsights/${goldenId}?service=${service}&apiPath=${apiPath}`, requestOptions);
-
-        if(response.ok) {
-            const data = await response.json();
-
-            return data;
-        } else {
-            throw new Error("Error Fetching Golden Details");
-        }
+        return await api.get(`${config.analyzeBaseUrl}/goldenInsights/${goldenId}?service=${service}&apiPath=${apiPath}`, requestOptions);
     } catch (error) {
-        console.log("Error Caught", error)
+        console.log("Error Fetching Golden Insights\n", error)
+        throw new Error("Error Fetching Golden Insights");
     }
     
 };
 
 const fetchGoldenMeta = async (recordingId, token) => {
     const requestOptions = {
-        method: 'GET',
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
-            "Authorization": `Bearer ${token}`
         }
     };
 
-    const response = await fetch(`${config.analyzeBaseUrl}/getGoldenMetaData/${recordingId}`, requestOptions);
-
-    if(response.ok) {
-        const data = await response.json();
-
-        return data;
-    } else {
+    try {
+        return await api.get(`${config.analyzeBaseUrl}/getGoldenMetaData/${recordingId}`, requestOptions);
+    } catch(e) {
+        console.log("Error Fetching Golden Meta:\n", e)
         throw new Error("Error Fetching Golden Meta");
     }
 };
@@ -56,21 +45,16 @@ const postGoldenMeta = async (goldenDetails, token) => {
     urlencoded.append("code_version", codeVersionNumber);
 
     const requestOptions = {
-        method: 'POST',
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
-            "Authorization": `Bearer ${token}`
-        },
-        body: urlencoded
+            // "Authorization": "" // TODO: Remove this
+        }
     };
 
-    const response = await fetch(`${config.recordBaseUrl}/updateGoldenFields/${id}`, requestOptions);
-
-    if(response.ok) {
-        const data = await response.json();
-
-        return data;
-    } else {
+    try {
+        return await api.post(`${config.recordBaseUrl}/updateGoldenFields/${id}`, urlencoded, requestOptions);
+    } catch (error) {
+        console.log("Error updating golden", error);
         throw new Error("Error Updating Golden Details");
     }
 };
