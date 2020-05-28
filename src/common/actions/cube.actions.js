@@ -46,7 +46,7 @@ export const cubeActions = {
     clearTimeline,
     getAnalysisStatus,
     removeReplayFromTimeline,
-    clearSelectedGolden,
+    removeSelectedGoldenFromTestIds,
 };
 
 function clear() {
@@ -287,8 +287,8 @@ function getTestIds (app) {
     function failure(message, date) { return { type: cubeConstants.TESTIDS_FAILURE, err: message, date: date } }
 }
 
-function setSelectedTestIdAndVersion ( testIdLabel, version, golden ) {
-    return {type: cubeConstants.SET_SELECTED_TESTID, data: {collec: testIdLabel, ver: version, golden: golden}};
+function setSelectedTestIdAndVersion ( testIdLabel, version, golden, name ) {
+    return {type: cubeConstants.SET_SELECTED_TESTID, data: {collec: testIdLabel, ver: version, golden: golden, name: name}};
 }
 
 function getGraphDataByAppId(appId) {
@@ -382,8 +382,8 @@ function removeReplayFromTimeline(replayId) {
     return {type: cubeConstants.REMOVE_REPLAY_FROM_TIMELINE, data: replayId};
 }
 
-function clearSelectedGolden () {
-    return {type: cubeConstants.CLEAR_SELECTED_GOLDEN};
+function removeSelectedGoldenFromTestIds (selectedGolden) {
+    return {type: cubeConstants.REMOVE_SELECTED_GOLDEN_FROM_TESTIDS, data: selectedGolden};
 }
 
 /**

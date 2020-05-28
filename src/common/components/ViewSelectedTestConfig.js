@@ -145,15 +145,17 @@ class ViewSelectedTestConfig extends React.Component {
             dispatch(cubeActions.clear());
             let version = null;
             let golden = null;
+            let name = "";
             for (const collec of cube.testIds) {
                 if (collec.collec == e.target.value) {
                     golden = collec.id
                     version = collec.templateVer;
+                    name = collec.name;
                     break;
                 }
             }
             //dispatch(cubeActions.getGraphData(cube.selectedApp));
-            dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version, golden));
+            dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version, golden, name));
         }
     };
     
@@ -606,13 +608,13 @@ class ViewSelectedTestConfig extends React.Component {
         const { cube, dispatch} = this.props;
         try {
             await cubeService.deleteGolden(cube.selectedGolden);
-            dispatch(cubeActions.getTestIds(cube.selectedApp));
-            dispatch(cubeActions.clearSelectedGolden());
+            dispatch(cubeActions.removeSelectedGoldenFromTestIds(cube.selectedGolden));
         } catch (error) {
             console.error("Error caught in softDelete Golden: " + error);
         }
         this.setState({
             showDeleteGoldenConfirmation: false,
+            selectedGoldenFromFilter:"",
         });
     }
     
@@ -1088,7 +1090,7 @@ class ViewSelectedTestConfig extends React.Component {
                     <Modal.Body>
                         <div style={{ display: "flex", flex: 1, justifyContent: "center"}}>
                             <div className="margin-right-10" style={{ display: "flex", flexDirection: "column", fontSize:20 }}>
-                                This will delete the Golden. Please confirm.
+                                This will delete the {cube.selectedGoldenName}. Please confirm.
                             </div>
                             <div style={{ display: "flex", alignItems: "flex-start" }}>
                                     <span className="cube-btn margin-right-10" onClick={() => this.deleteGolden()}>Confirm</span>
