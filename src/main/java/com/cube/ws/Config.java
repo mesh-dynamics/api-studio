@@ -3,6 +3,7 @@
  */
 package com.cube.ws;
 
+import java.util.Optional;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
@@ -62,6 +63,8 @@ public class Config {
 
 	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.createDefaultMapper();
 
+	public final long responseSize;
+
 	//public final Tracer tracer = Utils.init("Cube");
 
 	public final Recorder recorder;
@@ -78,6 +81,8 @@ public class Config {
 		System.setProperty("io.md.intent" , "noop");
 		commonConfig = CommonConfig.getInstance();
 		String solrurl = null;
+    int size = Integer.valueOf(fromEnvOrProperties("response_size", "10"));
+    responseSize =  size*1000000;
         try {
             properties.load(this.getClass().getClassLoader().
                     getResourceAsStream(CONFFILE));
@@ -134,5 +139,9 @@ public class Config {
 		String value = this.properties.getProperty(key);
 		return value;
 	}
+
+	public long getResponseSize() {
+	  return responseSize;
+  }
 
 }

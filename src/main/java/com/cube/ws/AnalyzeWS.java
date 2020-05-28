@@ -607,6 +607,7 @@ public class AnalyzeWS {
     @Path("analysisResByPath/{replayId}")
     public Response getAnalysisResultsByPath(@Context UriInfo ui,
         @PathParam("replayId") String replayId) {
+      long size = config.getResponseSize();
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
         AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(replayId
 		    , queryParams);
@@ -684,12 +685,12 @@ public class AnalyzeWS {
 	                List<String > pathsToKeep = getPathsToKeep(matchRes.respCompareRes.diffs);
 
 	                Optional<Event> recordResponseEvent = matchRes.recordReqId.flatMap(rrstore::getResponseEvent);
-	                recordResponse = recordResponseEvent.map(e -> e.checkAndConvertResponseToString(true, pathsToKeep, 500, "/body"));
+	                recordResponse = recordResponseEvent.map(e -> e.checkAndConvertResponseToString(true, pathsToKeep, size, "/body"));
 	                recordRespTime = recordResponseEvent.map(e -> e.timestamp.toEpochMilli());
 
 
 	                Optional<Event> replayResponseEvent = matchRes.replayReqId.flatMap(rrstore::getResponseEvent);
-	                replayResponse = replayResponseEvent.map(e -> e.checkAndConvertResponseToString(true, pathsToKeep, 500, "/body"));
+	                replayResponse = replayResponseEvent.map(e -> e.checkAndConvertResponseToString(true, pathsToKeep, size, "/body"));
 	                replayRespTime = replayResponseEvent.map(e -> e.timestamp.toEpochMilli());
                 }
 
