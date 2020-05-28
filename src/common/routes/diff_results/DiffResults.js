@@ -448,7 +448,7 @@ class DiffResults extends Component {
     }
 
     updateGolden = async () => {
-        const { cube, auth: { user: username }, dispatch } = this.props;
+        const { cube, auth: { user: { username } }, dispatch } = this.props;
 
         let tagList = [];
         if (this.state.tag.trim()) {
@@ -502,7 +502,7 @@ class DiffResults extends Component {
 
             dispatch(cubeActions.clearGolden());
 
-            this.setState({ saveGoldenError: error.response.data });
+            this.setState({ saveGoldenError: error.response.data.message });
         }
         
         // needed for showing the updating dialog. (is this a good idea?)
