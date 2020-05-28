@@ -5,7 +5,7 @@
 
 	<groupId>io.cube</groupId>
 	<artifactId>md-jaxrs-ingress-interceptor</artifactId>
-	<version>1.2.0</version>
+	<version>1.2.1</version>
 	<packaging>jar</packaging>
 
 	<name>jaxrs-ingress-interceptor</name>
@@ -15,7 +15,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>10</java.version>
-		<version.md.agent>1.0.23</version.md.agent>
+		<version.md.agent>1.0.28</version.md.agent>
 	</properties>
 
 

@@ -3,8 +3,8 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.cube</groupId>
-  <artifactId>md-jaxrs-interceptor</artifactId>
-  <version>1.2.0</version>
+  <artifactId>md-df-springboot-resttemplate-interceptor</artifactId>
+  <version>1.2.3</version>
   <packaging>jar</packaging>
 
   <distributionManagement>
@@ -18,13 +18,13 @@
   <dependencies>
     <dependency>
       <groupId>io.cube</groupId>
-      <artifactId>md-jaxrs-ingress-interceptor</artifactId>
-      <version>1.2.1</version>
+      <artifactId>md-spring-ingress-interceptor</artifactId>
+      <version>1.2.2</version>
     </dependency>
     <dependency>
       <groupId>io.cube</groupId>
-      <artifactId>md-jaxrs-egress-interceptor</artifactId>
-      <version>1.2.0</version>
+      <artifactId>md-spring-egress-resttemplate-interceptor</artifactId>
+      <version>1.2.3</version>
     </dependency>
   </dependencies>
   <build>
@@ -33,8 +33,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.0</version>
         <configuration>
-          <source>11</source>
-          <target>11</target>
+          <source>8</source>
+          <target>8</target>
         </configuration>
       </plugin>
       <!--  needed for unit and integration testing  -->
@@ -44,6 +44,34 @@
         <version>3.2.2</version>
         <configuration>
           <relocations>
+            <relocation>
+                <pattern>io.cube</pattern>
+                <shadedPattern>io.md.cube</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.constants</pattern>
+                <shadedPattern>io.md.df</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.core</pattern>
+                <shadedPattern>io.md.df</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.cryptography</pattern>
+                <shadedPattern>io.md.df</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.dao</pattern>
+                <shadedPattern>io.md.df</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.tracer</pattern>
+                <shadedPattern>io.md.df</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.utils</pattern>
+                <shadedPattern>io.md.df</shadedPattern>
+            </relocation>
             <relocation>
               <pattern>com.fasterxml.jackson</pattern>
               <shadedPattern>io.md.fasterxml.jackson</shadedPattern>
@@ -56,18 +84,10 @@
               <pattern>net.dongliu</pattern>
               <shadedPattern>io.md.dongliu</shadedPattern>
             </relocation>
-            <relocation>
+            <!--<relocation>
               <pattern>org.slf4j</pattern>
               <shadedPattern>io.md.slf4j</shadedPattern>
-            </relocation>
-<!--            <relocation>-->
-<!--              <pattern>javax.ws.rs</pattern>-->
-<!--              <shadedPattern>io.md.javax.ws.rx</shadedPattern>-->
-<!--            </relocation>-->
-<!--            <relocation>-->
-<!--              <pattern>javax.annotation</pattern>-->
-<!--              <shadedPattern>io.md.javax.annotation</shadedPattern>-->
-<!--            </relocation>-->
+            </relocation>-->
             <relocation>
               <pattern>io.jaegertracing</pattern>
               <shadedPattern>io.md.jaegertracing</shadedPattern>
@@ -121,7 +141,29 @@
               <goal>shade</goal>
             </goals>
             <configuration>
-              <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+    		<filters>
+        		<filter>
+            			<artifact>*:*</artifact>
+            			<excludes>
+                			<exclude>META-INF/*.SF</exclude>
+                			<exclude>META-INF/*.DSA</exclude>
+                			<exclude>META-INF/*.RSA</exclude>
+            			</excludes>
+        		</filter>
+    		</filters>
+              <promoteTransitiveDependencies>false</promoteTransitiveDependencies>
+		<artifactSet>
+			<excludes>	
+				<exclude>org.springframework.boot:*</exclude>
+				<exclude>org.springframework:*</exclude>
+				<exclude>org.springframework.security:*</exclude>
+				<exclude>org.springframework.data:*</exclude>
+				<exclude>org.yaml:snakeyaml</exclude>
+				<exclude>org.apache.tomcat.embed:tomcat-embed-core</exclude>
+				<exclude>org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure</exclude>
+				<exclude>org.springframework.security.oauth:spring-security-oauth2</exclude>
+			</excludes>
+		</artifactSet>
             </configuration>
           </execution>
         </executions>

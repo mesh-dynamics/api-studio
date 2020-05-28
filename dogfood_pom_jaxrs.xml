@@ -3,8 +3,8 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.cube</groupId>
-  <artifactId>md-jaxrs-interceptor</artifactId>
-  <version>1.2.0</version>
+  <artifactId>md-df-jaxrs-interceptor</artifactId>
+  <version>1.2.1</version>
   <packaging>jar</packaging>
 
   <distributionManagement>
@@ -24,7 +24,7 @@
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>md-jaxrs-egress-interceptor</artifactId>
-      <version>1.2.0</version>
+      <version>1.2.1</version>
     </dependency>
   </dependencies>
   <build>
@@ -44,6 +44,34 @@
         <version>3.2.2</version>
         <configuration>
           <relocations>
+	    <relocation>
+		<pattern>io.cube</pattern>
+		<shadedPattern>io.md.cube</shadedPattern>
+	    </relocation>
+            <relocation>
+                <pattern>io.md.constants</pattern>
+                <shadedPattern>io.md.df</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.core</pattern>
+                <shadedPattern>io.md.df</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.cryptography</pattern>
+                <shadedPattern>io.md.df</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.dao</pattern>
+                <shadedPattern>io.md.df</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.tracer</pattern>
+                <shadedPattern>io.md.df</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.utils</pattern>
+                <shadedPattern>io.md.df</shadedPattern>
+            </relocation>
             <relocation>
               <pattern>com.fasterxml.jackson</pattern>
               <shadedPattern>io.md.fasterxml.jackson</shadedPattern>
@@ -56,10 +84,10 @@
               <pattern>net.dongliu</pattern>
               <shadedPattern>io.md.dongliu</shadedPattern>
             </relocation>
-            <relocation>
+            <!--<relocation>
               <pattern>org.slf4j</pattern>
               <shadedPattern>io.md.slf4j</shadedPattern>
-            </relocation>
+            </relocation>-->
 <!--            <relocation>-->
 <!--              <pattern>javax.ws.rs</pattern>-->
 <!--              <shadedPattern>io.md.javax.ws.rx</shadedPattern>-->

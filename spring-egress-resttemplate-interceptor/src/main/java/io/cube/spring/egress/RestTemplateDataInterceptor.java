@@ -47,10 +47,10 @@ public class RestTemplateDataInterceptor implements ClientHttpRequestInterceptor
 	private static final Logger LOGGER = LoggerFactory
 		.getLogger(RestTemplateDataInterceptor.class);
 
-	private static final RestTemplateConfig config;
+	private static final MDRestTemplateConfig config;
 
 	static {
-		config = new RestTemplateConfig();
+		config = new MDRestTemplateConfig();
 	}
 
 	@Override
