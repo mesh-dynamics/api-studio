@@ -2,9 +2,8 @@
 import  React , { Component, Fragment, createContext } from "react";
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
-import { Glyphicon} from 'react-bootstrap';
-import _ from 'lodash';
-import axios from "axios";
+import { Glyphicon} from "react-bootstrap";
+import _ from "lodash";
 
 // Application Imports
 import {
@@ -284,20 +283,12 @@ class DiffResults extends Component {
         );
     }
     
+    async getAnalysisResults(replayId, filter) {
+        const { app } = this.state;
+        const { auth: { user: { customer_name }}} = this.props;
+        const numResultsToFetch = ((app === "CourseApp" || customer_name === "Walmart") ? 1 : config.defaultFetchDiffResults);
 
-    // fetch the analysis results
-    // todo: move to service file 
-    async fetchAnalysisResults(replayId, filter) {
-        console.log("fetching replay list");
-        let user = JSON.parse(localStorage.getItem('user'));
-        const app = this.state.app;
-        let numResultsToFetch = config.defaultFetchDiffResults;
-        if(app === "CourseApp" || user.customer_name === "Walmart") {
-            numResultsToFetch = 1;
-        }
-        let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
-        
-        let searchParams = new URLSearchParams();
+        const searchParams = new URLSearchParams();
         searchParams.set("start", filter.startIndex);
         searchParams.set("numResults", numResultsToFetch);
         searchParams.set("includeDiff", true);
@@ -314,7 +305,7 @@ class DiffResults extends Component {
             searchParams.set("diffRes", filter.selectedResolutionType)
         }
 
-        let reqMatchType = filter.selectedReqMatchType === "mismatch" ? "NoMatch" : "ExactMatch"; // 
+        const reqMatchType = filter.selectedReqMatchType === "mismatch" ? "NoMatch" : "ExactMatch"; 
         searchParams.set("reqMatchType", reqMatchType); 
         
         switch (filter.selectedDiffType) {
@@ -327,32 +318,14 @@ class DiffResults extends Component {
                 searchParams.set("respMatchType", "NoMatch"); // misnomer in the API, should've been respCmpResType
                 break;
         }
-        
-        let url = analysisResUrl + "?" + searchParams.toString();
         try {
-        
-            let response = await fetch(url, { 
-                headers: { 
-                    "Authorization": "Bearer " + user['access_token']
-                }, 
-                "method": "GET", 
-            });
-            
-            if (response.ok) {
-                let dataList = {}
-                let json = await response.json();
-                dataList = json;
-                if (_.isEmpty(dataList.data) || _.isEmpty(dataList.data.res)) {
-                    console.log("results list is empty")
-                } 
-                return dataList;
-            } else {
-                console.error("unable to fetch analysis results");
-                throw new Error("unable to fetch analysis results");
-            }
-        } catch (e) {
-            console.error("Error fetching analysis results list");
-            throw e;
+            return await cubeService.fetchAnalysisResults(replayId, searchParams);
+        } catch(error) {
+            console.log("Error fetching analysis results list", error);
+            // Returning empty list will show No Results Found instead of being 
+            // stuck at "Loading..." since the thrown error is not processed 
+            // anywhere above
+            return [];
         }
     }
 
@@ -377,7 +350,8 @@ class DiffResults extends Component {
 
         if (isNextPage) {
             startIndex = index;
-            resultsData = await this.fetchAnalysisResults(replayId, {...filter, startIndex});
+            resultsData = await this.getAnalysisResults(replayId, {...filter, startIndex});
+            
             const results = resultsData.data && resultsData.data.res || [];
             const numFound = resultsData.data && resultsData.data.numFound || 0;
             const diffLayoutData = this.preProcessResults(results);
@@ -391,7 +365,7 @@ class DiffResults extends Component {
         } else {
             endIndex = index;
             startIndex = Math.max(endIndex - pageSize, 0);
-            resultsData = await this.fetchAnalysisResults(replayId, {...filter, startIndex});
+            resultsData = await this.getAnalysisResults(replayId, {...filter, startIndex});
             
             const results = resultsData.data && resultsData.data.res || [];
             const diffLayoutData = this.preProcessResults(results);
@@ -476,15 +450,7 @@ class DiffResults extends Component {
     }
 
     updateGolden = async () => {
-        const { cube, dispatch } = this.props;
-
-        let user = JSON.parse(localStorage.getItem('user'));
-
-        const headers = {
-            "Content-Type": "application/json",
-            'Access-Control-Allow-Origin': '*',
-            "Authorization": "Bearer " + user['access_token']
-        };
+        const { cube, auth: { user: { username } }, dispatch } = this.props;
 
         let tagList = [];
         if (this.state.tag.trim()) {
@@ -494,7 +460,7 @@ class DiffResults extends Component {
             }
         }
         
-        let data = {
+        const data = {
             templateOperationSet: {
                 params: {
                     operationSetId: cube.newTemplateVerInfo['ID'],
@@ -517,7 +483,7 @@ class DiffResults extends Component {
                 body: {
                     name: this.state.nameG,
                     label: this.state.labelG,
-                    userId: user.username,
+                    userId: username,
                     codeVersion:  this.state.version.trim(),
                     branch:  this.state.branch.trim(),
                     gitCommitId: this.state.commitId.trim(),
@@ -526,21 +492,20 @@ class DiffResults extends Component {
             }
         }
 
-        axios({
-            method: 'post',
-            url: `${config.analyzeBaseUrl}/goldenUpdateUnified`,
-            data: data,
-            headers: headers
-        })
-        .then((result) => {
+        try {
+            const result  = await cubeService.unifiedGoldenUpdate(data);
+
             this.setState({showSaveGoldenModal: false, saveGoldenError: ""});
-            dispatch(cubeActions.updateGoldenSet(result.data));
+
+            dispatch(cubeActions.updateGoldenSet(result));
+
             dispatch(cubeActions.getTestIds(this.state.app));
-        })
-        .catch((err) => {
+        } catch (error) {
+
             dispatch(cubeActions.clearGolden());
-            this.setState({saveGoldenError: err.response.data["Error"]});
-        });
+
+            this.setState({ saveGoldenError: error.response.data.message });
+        }
         
         // needed for showing the updating dialog. (is this a good idea?)
         dispatch(cubeActions.updateRecordingOperationSet()); 
@@ -638,7 +603,8 @@ class DiffResults extends Component {
 }
 
 const mapStateToProps = (state) => ({
-    cube: state.cube
+    cube: state.cube,
+    auth: state.authentication
 })
 
 const connectedDiffResults = connect(mapStateToProps)(DiffResults);

@@ -1,480 +1,101 @@
 import config from '../config';
-import axios from 'axios';
+import api from '../api';
 import _ from 'lodash';
 
+// TODO: replace console log statements with logging
+const fetchAppsList = async () => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    try {
+        return await api.get(`${config.apiBaseUrl}/app`);
+    } catch(error) {
+        console.log("Error Fetching Applist \n", error);
+        throw new Error("Error Fetching Applist");
+    }
+}
 
-export const cubeService = {
-    fetchAppsList,
-    getInstanceList,
-    getGraphData,
-    getTestConfigByAppId,
-    getGraphDataByAppId,
-    fetchCollectionList,
-    forceCompleteReplay,
-    checkStatusForReplay,
-    fetchAnalysis,
-    fetchReport,
-    fetchTimelineData,
-    getCollectionUpdateOperationSet,
-    updateGoldenSet,
-    getNewTemplateVerInfo,
-    fetchJiraBugData,
-    fetchAnalysisStatus,
-    getTestConfig,
-    fetchFacetData,
-    removeReplay,
-    deleteGolden,
+const getGraphDataByAppId = async (appId) => {
+    try {
+        return await api.get(`${config.apiBaseUrl}/app/${appId}/service-graphs`);
+    } catch (error) {
+        console.log("Error fetching service graphs \n", error);
+        throw new Error("Error fetching service graphs");
+    }
 };
 
-async function fetchAppsList() {
-    let user = JSON.parse(localStorage.getItem('user'));
-    let response, json;
-    let url = `${config.apiBaseUrl}/app`;
-    let appsList;
+const getInstanceList = async () => {
     try {
-        response = await fetch(url, {
-            method: "get",
-            headers: new Headers({
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + user['access_token']
-            })
-        });
-        if (response.ok) {
-            json = await response.json();
-            appsList = json;
-        } else {
-            console.log("Response not ok in fetchAppsList", response);
-            throw new Error("Response not ok fetchAppsList");
-        }
-    } catch (e) {
-        console.log("fetchAppsList has errors!", e);
-        throw e;
+        return await api.get(`${config.apiBaseUrl}/instance`);
+    } catch (error) {
+        console.log("Error fetching instance list \n", error);
+        throw new Error("Error fetching instance list"); 
     }
-    return appsList;
+};
 
-}
-
-async function updateGoldenSet(name, replayId, collectionUpdOpSetId, templateVer, recordingId) {
-    let response, json;
-    let user = JSON.parse(localStorage.getItem('user'));
-    let searchParams = new URLSearchParams();
-    searchParams.set('name', name);
-    searchParams.set('userId', user.username);
-    let url = `${config.analyzeBaseUrl}/updateGoldenSet/${recordingId}/${replayId}/${collectionUpdOpSetId}/${templateVer}`;
-    let updateRes;
+//TODO: Not sure if this call is actually being used
+const getGraphData = async () => {
     try {
-        response = await fetch(url, {
-            method: "post",
-            headers:{
-                'Access-Control-Allow-Origin': '*',
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Authorization": "Bearer " + user['access_token']
-            },
-            body: searchParams
-        });
-        if (response.ok) {
-            json = await response.json();
-            updateRes = json;
-        } else {
-            console.log("Response not ok in updateRecordingOperationSet", response);
-            throw new Error("Response not ok updateRecordingOperationSet");
-        }
-    } catch (e) {
-        console.log("updateRecordingOperationSet has errors!", e);
-        throw e;
+        return await api.get(`${config.apiBaseUrl}/service_graph`);
+    } catch (error) {
+        console.log("Error fetching graph data \n", error);
+        throw new Error("Error fetching graph data");
     }
-    return updateRes;
-}
+};
 
-async function getNewTemplateVerInfo(app, currentTemplateVer) {
-    let user = JSON.parse(localStorage.getItem('user'));
-    let response, json;
-    let url = `${config.analyzeBaseUrl}/initTemplateOperationSet/${user.customer_name}/${app}/${currentTemplateVer}`;
-    let newTemplateInfo;
+const getTestConfigByAppId = async (appId) => {
     try {
-        response = await fetch(url, {
-            method: "post",
-            headers:{
-                'Access-Control-Allow-Origin': '*',
-                "Authorization": "Bearer " + user['access_token'],
-                "Content-Type": "application/json"
-            }
-        });
-        if (response.ok) {
-            json = await response.json();
-            newTemplateInfo = json;
-        } else {
-            console.log("Response not ok in getNewTemplateVerInfo", response);
-            throw new Error("Response not ok getNewTemplateVerInfo");
-        }
-    } catch (e) {
-        console.log("getNewTemplateVerInfo has errors!", e);
-        throw e;
+        return await api.get(`${config.apiBaseUrl}/app/${appId}/test-configs`);
+    } catch(error) {
+        console.log("Error fetching test config \n", error);
+        throw new Error("Error fetching test config");
     }
-    return newTemplateInfo;
-}
+};
 
-async function getCollectionUpdateOperationSet(app) {
-    let user = JSON.parse(localStorage.getItem('user'));
-    let response, json;
-    let url = `${config.analyzeBaseUrl}/goldenUpdate/recordingOperationSet/create?customer=${user.customer_name}&app=${app}`;
-    let collectionUpdateOperationSetId;
+const fetchCollectionList = async (app) => {
+    const user = JSON.parse(localStorage.getItem('user')); // TODO: Change this to be passed from auth tree
     try {
-        response = await fetch(url, {
-            method: "post",
-            headers:{
-                'Access-Control-Allow-Origin': '*',
-                "Authorization": "Bearer " + user['access_token']
-            }
-        });
-        if (response.ok) {
-            json = await response.json();
-            collectionUpdateOperationSetId = json;
-        } else {
-            console.log("Response not ok in getCollectionUpdateOperationSet", response);
-            throw new Error("Response not ok getCollectionUpdateOperationSet");
-        }
-    } catch (e) {
-        console.log("getCollectionUpdateOperationSet has errors!", e);
-        throw e;
+        return await api.get(`${config.recordBaseUrl}/searchRecording?customerId=${user.customer_name}&app=${app}`);
+    } catch(error) {
+        console.log("Error fetching test config \n", error);
+        throw new Error("Error fetching test config");
     }
-    return collectionUpdateOperationSetId;
-}
+};
 
-async function getInstanceList() {
-    let user = JSON.parse(localStorage.getItem('user'));
-    let pageLocationURL = window.location.href;
-    let response, json;
-    let url = `${config.apiBaseUrl}/instance`;
-    let iList;
+const forceCompleteReplay = async (fcId) => {
     try {
-        response = await fetch(url, {
-            method: "get",
-            headers: new Headers({
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + user['access_token']
-            })
-        });
-        if (response.ok) {
-            json = await response.json();
-            iList = json;
-            if (pageLocationURL.indexOf('.prod.v2.') != -1) {
-                for (const il of iList) {
-                    il.gatewayEndpoint = il.gatewayEndpoint.replace(".dev.", ".prod.v2.");
-                }
-            } else if (pageLocationURL.indexOf('.prod.') != -1) {
-                for (const il of iList) {
-                    il.gatewayEndpoint = il.gatewayEndpoint.replace(".dev.", ".prod.");
-                }
-            }
-        } else {
-            console.log("Response not ok in getInstanceList", response);
-            throw new Error("Response not ok getInstanceList");
-        }
-    } catch (e) {
-        console.log("getInstanceList has errors!", e);
-        throw e;
-    }
-    return iList;
-}
-
-async function getGraphData(app) {
-    let user = JSON.parse(localStorage.getItem('user'));
-    let response, json;
-    let url = `${config.apiBaseUrl}/service_graph`;
-    let graphData;
-    try {
-        response = await fetch(url, {
-            method: "get",
-            headers: new Headers({
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + user['access_token']
-            })
-        });
-        if (response.ok) {
-            json = await response.json();
-            graphData = json;
-        } else {
-            console.log("Response not ok in getInstanceList", response);
-            throw new Error("Response not ok getInstanceList");
-        }
-    } catch (e) {
-        console.log("getInstanceList has errors!", e);
-        throw e;
-    }
-    return graphData;
-}
-
-async function getTestConfigByAppId(appId) {
-    let response, json;
-    let user = JSON.parse(localStorage.getItem('user'));
-    let url = `${config.apiBaseUrl}/app/${appId}/test-configs`;
-    let tcList;
-    try {
-        response = await fetch(url, {
-            method: "get",
-            headers: new Headers({
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + user['access_token']
-            })
-        });
-        if (response.ok) {
-            json = await response.json();
-            tcList = json;
-        } else {
-            console.error("Response not ok in getInstanceList", response);
-            throw new Error("Response not ok getInstanceList");
-        }
-    } catch (e) {
-        console.error("getInstanceList has errors!", e);
-        throw e;
-    }
-    return tcList;
-}
-
-async function getTestConfig(app, testConfigName) {
-    let response, json;
-    let user = JSON.parse(localStorage.getItem('user'));
-    let url = `${config.apiBaseUrl}/test_config/${user.customer_name}/${app}/${testConfigName}`;
-    let tc;
-    try {
-        response = await fetch(url, {
-            method: "get",
-            headers: new Headers({
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + user['access_token']
-            })
-        });
-        if (response.ok) {
-            json = await response.json();
-            tc = json;
-        } else {
-            console.error("Response not ok in getTestConfig", response);
-            throw new Error("Response not ok getTestConfig");
-        }
-    } catch (e) {
-        console.error("getTestConfig has errors!", e);
-        throw e;
-    }
-    return tc;
-}
-
-
-async function getGraphDataByAppId(appId) {
-    let response, json;
-    let user = JSON.parse(localStorage.getItem('user'));
-    let url = `${config.apiBaseUrl}/app/${appId}/service-graphs`;
-    let graphData;
-    try {
-        response = await fetch(url, {
-            method: "get",
-            headers: new Headers({
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + user['access_token']
-            })
-        });
-        if (response.ok) {
-            json = await response.json();
-            graphData = json;
-        } else {
-            console.error("Response not ok in getInstanceList", response);
-            throw new Error("Response not ok getInstanceList");
-        }
-    } catch (e) {
-        console.error("getInstanceList has errors!", e);
-        throw e;
-    }
-    return graphData;
-}
-
-async function getTestIds (options) {
-    let response, json;
-    try {
-        let url = `${config.apiBaseUrl}/getTestIds`;
-        let dataLen = JSON.stringify(options).length.toString();
-        response = await fetch(url, {
-            method: "post",
-            body: JSON.stringify(options),
-            headers: new Headers({
-                "Content-Type": "application/json",
-                "Content-Length": dataLen
-            })
-        });
-        if (response.ok) {
-            json = await response.json();
-            return json;
-        } else {
-            throw new Error("Response not ok getTestIds");
-        }
-    } catch (e) {
-        throw e;
-    }
-}
-
-async function fetchCollectionList(app) {
-    let user = JSON.parse(localStorage.getItem('user'));
-    let response, json;
-    let url = `${config.recordBaseUrl}/searchRecording?customerId=${user.customer_name}&app=${app}&archived=false`;
-    let collections = [];
-    try {
-        response = await fetch(url, {
-            method: "get",
-            mode: 'cors',
-            headers:{
-                'Access-Control-Allow-Origin': '*',
-                "Authorization": "Bearer " + user['access_token']
-            }
-        });
-        if (response.ok) {
-            json = await response.json();
-            collections = json;
-        } else {
-            console.log("Response not ok in fetchCollectionList", response);
-            throw new Error("Response not ok fetchCollectionList");
-        }
-    } catch (e) {
-        console.log("fetchCollectionList has errors!", e);
-        throw e;
-    }
-    return collections;
-}
-
-async function forceCompleteReplay(fcId) {
-    let user = JSON.parse(localStorage.getItem('user'));
-    let url = `${config.replayBaseUrl}/forcecomplete/${fcId}`;
-    await axios.post(url, null, {
-        headers: {
-            "Authorization": "Bearer " + user['access_token']
-        }
-    }).then(function(response){
-        return response;
-    }).catch(function(error){
+        return await api.post(`${config.replayBaseUrl}/forcecomplete/${fcId}`, null);
+    } catch (error) {
         throw (error.response);
-    });
-}
-
-async function checkStatusForReplay(replayId) {
-    let user = JSON.parse(localStorage.getItem('user'));
-    let response, json;
-    let url = `${config.replayBaseUrl}/status/${replayId}`;
-    let status = {};
-    try {
-        response = await fetch(url, {
-            method: "get",
-            headers: new Headers({
-                "cache-control": "no-cache",
-                "Authorization": "Bearer " + user['access_token']
-            })
-        });
-        if (response.ok) {
-            json = await response.json();
-            status = json;
-        } else {
-            console.log("Response not ok in checkStatusForReplay", response);
-            throw new Error("Response not ok checkStatusForReplay");
-        }
-    } catch (e) {
-        console.log("checkStatusForReplay has errors!", e);
-        throw e;
     }
-    console.log('checkStatusForReplay success: ', JSON.stringify(status, null, 4));
-    return status;
-}
+};
 
-async function fetchAnalysisStatus(replayId) {
-    let user = JSON.parse(localStorage.getItem('user'));
-    let response, json;
-    let url = `${config.analyzeBaseUrl}/status/${replayId}`;
-    let status = {};
-    try {
-        response = await fetch(url, {
-            method: "get",
-            headers: new Headers({
-                "cache-control": "no-cache",
-                "Authorization": "Bearer " + user['access_token']
-            })
-        });
-        if (response.ok) {
-            json = await response.json();
-            status = json.data;
-        } else {
-            console.log("Response not ok in fetchAnalysisStatus", response);
-            throw new Error("Response not ok fetchAnalysisStatus");
+const checkStatusForReplay = async (replayId) => {
+    const requestOptions = {
+        headers: {
+            "cache-control": "no-cache",
         }
-    } catch (e) {
-        console.log("fetchAnalysisStatus has errors!", e);
-        throw e;
-    }
-    console.log('fetchAnalysisStatus success: ', JSON.stringify(status, null, 4));
-    return status;
-}
+    };
 
-async function fetchAnalysis(collectionId, replayId) {
-    let response, json;
-    let user = JSON.parse(localStorage.getItem('user'));
-    let url = `${config.analyzeBaseUrl}/analyze/${replayId}`;
-    const searchParams = new URLSearchParams();
-    searchParams.set('tracefield', 'x-b3-traceid');
-    let analysis = {};
     try {
-        response = await fetch(url, {
-            method: "post",
-            body: searchParams,
-            headers: new Headers({
-                "Content-Type": "application/x-www-form-urlencoded",
-                "cache-control": "no-cache",
-                "Authorization": "Bearer " + user['access_token']
-            })
-        });
-        if (response.ok) {
-            json = await response.json();
-            analysis = json;
-        } else {
-            throw new Error("Response not ok fetchAnalysis");
-        }
-    } catch (e) {
-        console.log("fetchAnalysis has errors!", e);
-        throw e;
+        return await api.get(`${config.replayBaseUrl}/status/${replayId}`, requestOptions);
+    } catch (error) {
+        console.log("Errors in replay status \n", error);
+        throw error;
     }
-    return analysis;
-}
+};
 
-async function fetchReport(collectionId, replayId) {
-    let response, json;
-    let user = JSON.parse(localStorage.getItem('user'));
-    let url = `${config.analyzeBaseUrl}/aggrresult/${replayId}?bypath=y`;
-    let report = {};
-    try {
-        response = await fetch(url, {
-            method: "get",
-            headers: new Headers({
-                "cache-control": "no-cache",
-                "Authorization": "Bearer " + user['access_token']
-            })
-        });
-        if (response.ok) {
-            json = await response.json();
-            report = json;
-        } else {
-            console.log("Response not ok in fetchReport", response);
-            throw new Error("Response not ok fetchReport");
+const fetchTimelineData = (app, userId, endDate, startDate, numResults, testConfigName, goldenName) => {
+    const user = JSON.parse(localStorage.getItem('user')); // TODO: Update to pass user from correct place
+    const endDateString = endDate.toISOString();
+    const params = new URLSearchParams();
+    const requestOptions = {
+        headers: {
+            "cache-control": "no-cache",
         }
-    } catch (e) {
-        console.log("fetchReport has errors!", e);
-        throw e;
-    }
-    return report;
-}
+    };
 
-async function fetchTimelineData(app, userId, endDate, startDate, numResults, testConfigName, goldenName) {
-    let user = JSON.parse(localStorage.getItem('user'));
-    let response, json;
-    let ed = endDate.toISOString();
-
-    let params = new URLSearchParams();
-    params.set("byPath", "y")
-    params.set("endDate", ed)
-
+    params.set("byPath", "y");
+    params.set("endDate", endDateString);
+    // TODO: Simplify these ifs
     if(startDate) {
         let sd = startDate.toISOString();
         params.set("startDate", sd);
@@ -496,137 +117,217 @@ async function fetchTimelineData(app, userId, endDate, startDate, numResults, te
         params.set("golden_name", goldenName);
     }
 
-    let url = `${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?` + params.toString();
-
-    let timelineData = {};
     try {
-        response = await fetch(url, {
-            method: "get",
-            headers: new Headers({
-                "cache-control": "no-cache",
-                "Authorization": "Bearer " + user['access_token']
-            })
-        });
-        if (response.ok) {
-            json = await response.json();
-            timelineData = json;
-        } else {
-            console.log("Response not ok in fetchTimeline", response);
-            throw new Error("Response not ok fetchTimeline");
-        }
-    } catch (e) {
-        console.log("fetchTimeline has errors!", e);
-        throw e;
-    }
-    return timelineData;
-}
-
-async function fetchJiraBugData(replayId, apiPath) {  
-    let user = JSON.parse(localStorage.getItem('user'));
-    let response, json, data;
-    let url = `${config.apiBaseUrl}/jira/issue/details?replayId=${replayId}&apiPath=${apiPath}`;
-    try {
-        response = await fetch(url, {
-            method: "get",
-            headers: new Headers({
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + user['access_token']
-            }),
-        });
-        if (response.ok) {
-            data = await response.json();
-        } else {
-            throw new Error("Could not get list of Jira Bugs");
-        }
+        return api.get(`${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?${params.toString()}`, requestOptions);
     } catch (error) {
-        console.log("Error fetching Jira Bugs", error);
+        console.log("Error fetching timeline data \n", error);
         throw error;
     }
+};
 
-    return data;   
-}
+const getCollectionUpdateOperationSet = async (app) => {
+    const user = JSON.parse(localStorage.getItem('user')); // TODO: Update to pass user from correct place
+    const requestOptions = {
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+        }
+    }
+    const url = `${config.analyzeBaseUrl}/goldenUpdate/recordingOperationSet/create?customer=${user.customer_name}&app=${app}`;
+    try {
+        return await api.post(url, null, requestOptions);
+    } catch (error) {
+        console.log("Error updating operation set \n", error);
+        throw error;
+    }
+};
 
-async function fetchFacetData(replayId) {
-    let analysisResUrl = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}`;
-    let searchParams = new URLSearchParams();
+const fetchJiraBugData = async (replayId, apiPath) => {
+    try{
+        return await api.get(`${config.apiBaseUrl}/jira/issue/details?replayId=${replayId}&apiPath=${apiPath}`);
+    } catch(error) {
+        console.log("Error fetching Jira Bugs\n", error);
+        throw error;
+    }
+};
+
+const fetchAnalysisStatus = async (replayId) => {
+    const requestOptions = {
+        headers: {
+            "cache-control": "no-cache",
+        }
+    }
+
+    try {
+        return await api.get(`${config.analyzeBaseUrl}/status/${replayId}`, requestOptions);
+    } catch (error) {
+        console.log("Error fetching analysis", error);
+        throw error;
+    }
+};
+
+const getTestConfig = async (app, testConfigName) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    try {
+        return await api.get(`${config.apiBaseUrl}/test_config/${user.customer_name}/${app}/${testConfigName}`);
+    } catch (error) {
+        console.error("Error fetching Test Config for Test summary!", error);
+        throw error;
+    }
+};
+
+const fetchFacetData = async (replayId) => {
+    const searchParams = new URLSearchParams();
+    
     searchParams.set("numResults", 0);
 
-    let url = analysisResUrl + "?" + searchParams.toString();
-
-    let user = JSON.parse(localStorage.getItem('user'));
     try {
-    
-        let response = await fetch(url, { 
-            headers: { 
-                "Authorization": "Bearer " + user['access_token']
-            }, 
-            "method": "GET", 
-        });
+        const dataList = await api.get(`${config.analyzeBaseUrl}/analysisResByPath/${replayId}?${searchParams.toString()}`);
         
-        if (response.ok) {
-            let dataList = {}
-            let json = await response.json();
-            dataList = json;
-            if (_.isEmpty(dataList.data) || _.isEmpty(dataList.data.facets)) {
-                console.log("facets data is empty")
-            }
-            return dataList;
-        } else {
-            console.error("unable to fetch facet data");
-            throw new Error("unable to fetch facet data");
-        }
-    } catch (e) {
-        console.error("Error fetching facet data");
-        throw e;
-    }
-}
-
-async function removeReplay(replayId) {
-    let user = JSON.parse(localStorage.getItem('user'));
-    let response,data;
-    let url = `${config.replayBaseUrl}/softDelete/${replayId}`;
-    try {
-        response = await fetch(url, {
-            method: "post",
-            headers: new Headers({
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + user['access_token']
-            }),
-        });
-        if (response.ok) {
-            data = await response.json();
-        } else {
-            throw new Error("Could not delete the Replay");
+        if (_.isEmpty(dataList.data) || _.isEmpty(dataList.data.facets)) {
+            console.log("facets data is empty")
         }
 
-    } catch (error) {
-        console.log("Error deleting Replay", error);
+        return dataList;
+    } catch(error) {
+        console.error("Error fetching facet data \n", error);
         throw error;
     }
-    return data;
-}
 
-async function deleteGolden(recordingId) {
-    let user = JSON.parse(localStorage.getItem('user'));
-    let response,data;
-    let url = `${config.recordBaseUrl}/softDelete/${recordingId}`;
+};
+
+const removeReplay = async (replayId) => {
     try {
-        response = await fetch(url, {
-            method: "post",
-            headers: new Headers({
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + user['access_token']
-            }),
-        });
-        if (response.ok) {
-            data = await response.json();
-        } else {
-            throw new Error("Could not delete the Golden");
-        }
-
-    } catch (error) {
-        console.log("Error deleting Golden", error);
+        return await api.post(`${config.replayBaseUrl}/softDelete/${replayId}`);
+    } catch(error) {
+        console.log("Error deleting replay\n", error);
         throw error;
     }
-    return data;
+};
+
+const getNewTemplateVerInfo = async (app, currentTemplateVer) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    const requestOptions = {
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+        }
+    };
+
+    try {
+        return await api.post(`${config.analyzeBaseUrl}/initTemplateOperationSet/${user.customer_name}/${app}/${currentTemplateVer}`, null, requestOptions);
+    } catch (error) {
+        console.log("Error getting new template version info\n", error);
+        throw error;
+    }
+};
+
+const getProjectList = async () => {
+    try {
+        return await api.get(`${config.apiBaseUrl}/jira/projects`);
+    } catch (error) {
+        console.log("Error fetching jira projects", error);
+        throw error;
+    }
 }
+
+const createJiraIssue = async (summary, description, issueTypeId, projectId, replayId, apiPath, requestId, jsonPath) => {
+    const reqBody = {
+        summary: summary,
+        description: description,
+        issueTypeId: issueTypeId,
+        projectId: projectId,
+        replayId: replayId,
+        apiPath: apiPath,
+        requestId : requestId,
+        jsonPath: jsonPath,
+    }
+
+    try {
+        return await api.post(`${config.apiBaseUrl}/jira/issue/create`, reqBody);
+    } catch (error) {
+        const { response: { data: { message } } } = error;
+        console.log("Error creating jira issue\n", error.message);
+        throw new Error(message);
+    }
+}
+
+const getResponseTemplate = async (selectedApp, pathResultsParams, reqOrRespCompare, jsonPath) => {
+    const user = JSON.parse(localStorage.getItem('user')); // TODO: Take this from auth reducer
+    const { currentTemplateVer, service, path } = pathResultsParams;
+    const url = `${config.analyzeBaseUrl}/getRespTemplate/${user.customer_name}/${selectedApp}/${currentTemplateVer}/${service}/${reqOrRespCompare}?apiPath=${path}&jsonPath=${jsonPath}`;
+
+    const requestOptions = {
+        headers: {
+            "cache-control": "no-cache",
+        }
+    };
+
+    try {
+        return await api.get(url, requestOptions);
+    } catch (error) {
+        console.log("Error fetching response template", error);
+        throw error;
+    }
+};
+
+const fetchAnalysisResults = async (replayId, searchParams) => {
+    try {
+        const dataList = await api.get(`${config.analyzeBaseUrl}/analysisResByPath/${replayId}?${searchParams.toString()}`);
+        
+        if (_.isEmpty(dataList.data) || _.isEmpty(dataList.data.res)) {
+            console.log("results list is empty")
+        } 
+
+        return dataList;
+    } catch (error) {
+        throw error;
+    }
+};
+
+const unifiedGoldenUpdate = async (data) => {
+    const requestOptions = {
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+        }
+    }
+
+    try {
+        return await api.post(`${config.analyzeBaseUrl}/goldenUpdateUnified`, data, requestOptions);
+    } catch (error) {
+        console.log("Failed to update golden \n");
+        throw error;
+    }
+};
+
+const deleteGolden = async (recordingId) => {
+    try {
+        return await api.post(`${config.recordBaseUrl}/softDelete/${recordingId}`);
+    } catch (error) {
+        console.log("Error deleting Golden \n", error);
+        throw error;
+    }
+};
+
+export const cubeService = {
+    fetchAppsList,
+    getInstanceList,
+    getGraphData,
+    getTestConfigByAppId,
+    getGraphDataByAppId,
+    fetchCollectionList,
+    forceCompleteReplay,
+    checkStatusForReplay,
+    fetchTimelineData,
+    getCollectionUpdateOperationSet,
+    getNewTemplateVerInfo,
+    fetchJiraBugData,
+    fetchAnalysisStatus, 
+    getTestConfig,
+    fetchFacetData,
+    removeReplay,
+    getProjectList,
+    createJiraIssue,
+    getResponseTemplate,
+    fetchAnalysisResults,
+    unifiedGoldenUpdate,
+    deleteGolden
+};

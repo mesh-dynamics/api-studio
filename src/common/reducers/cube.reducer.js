@@ -32,6 +32,7 @@ const initialState = {
     fcId: null,
     selectedTestId: null,
     selectedGolden: null,
+    selectedGoldenName:"",
     collectionTemplateVersion: null,
     golden: null,
     goldenTimeStamp: null,
@@ -98,6 +99,7 @@ export function cube (state = initialState, action) {
                 ...state,
                 selectedTestId: null,
                 selectedGolden: null,
+                selectedGoldenName: "",
                 collectionTemplateVersion: null,
                 fcId: action.data
             };
@@ -106,6 +108,7 @@ export function cube (state = initialState, action) {
                 ...state,
                 selectedTestId: null,
                 selectedGolden: null,
+                selectedGoldenName: "",
                 collectionTemplateVersion: null,
                 fcId: null
             };
@@ -214,6 +217,7 @@ export function cube (state = initialState, action) {
                 ...state,
                 selectedTestId: action.data.collec,
                 selectedGolden: action.data.golden,
+                selectedGoldenName: action.data.name,
                 collectionTemplateVersion: action.data.ver
             };
         case cubeConstants.REPLAY_ID_SUCCESS:
@@ -457,11 +461,16 @@ export function cube (state = initialState, action) {
                 state.timelineData.splice(index, 1);
                 return state;
             }
-        case cubeConstants.CLEAR_SELECTED_GOLDEN:
-            return {
-                ...state,
-                selectedTestId:null,
-                selectedGolden: null
+        case cubeConstants.REMOVE_SELECTED_GOLDEN_FROM_TESTIDS:
+            {
+                let index = state.testIds.findIndex(item => item.id === action.data);
+                state.testIds.splice(index, 1);
+                return {
+                    ...state,
+                    selectedTestId:null,
+                    selectedGolden: null,
+                    selectedGoldenName: "",
+                }
             }
         default:
             return state

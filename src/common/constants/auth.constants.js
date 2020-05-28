@@ -8,5 +8,7 @@ export const authConstants = {
     SET_USER: "auth/SET_USER",
 
     SET_MESSAGE: "auth/SET_MESSAGE",
-    CLEAR_MESSAGE: "auth/CLEAR_MESSAGE"
+    CLEAR_MESSAGE: "auth/CLEAR_MESSAGE",
+
+    ACCESS_VIOLATION: "auth/ACCESS_VIOLATION",
 };

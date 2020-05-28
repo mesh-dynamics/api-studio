@@ -6,6 +6,7 @@ const initialState = {
   loggedIn: false,
   isFetching: false,
   messages: [],
+  accessViolation: false,
 };
 
 // TODO: To use redux-persist instead
@@ -62,6 +63,11 @@ const authenticationReducer = (state = persistedState, action) => {
     return {
       ...state,
       messages: []
+    };
+  case authConstants.ACCESS_VIOLATION:
+    return {
+      ...state,
+      accessViolation: true
     };
   default:
     return state
