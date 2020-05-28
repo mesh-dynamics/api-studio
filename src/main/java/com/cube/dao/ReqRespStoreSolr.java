@@ -1905,10 +1905,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // usually result will never be updated. But we set id field uniquely anyway
 
         String type = Types.ReqRespMatchResult.toString();
+        // The recReplayReqIdCombined field is set to (recordReqId, replayReqId, replay) which is unique for each replay.
         String recReplayReqIdCombined =
-            res.recordReqId.orElse("None") + '-' + res.replayReqId.orElse("None");
+            res.recordReqId.orElse("None") + '-' + res.replayReqId.orElse("None") + res.replayId;
 
-        // the id field is to (recordReqId, replayReqId) which is unique
+
         String id = type + '-' + Objects.hash(recReplayReqIdCombined);
         doc.setField(TYPEF, type);
         doc.setField(IDF, id);
