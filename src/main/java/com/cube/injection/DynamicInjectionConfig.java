@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class DynamicInjectionConfig {
@@ -65,12 +66,20 @@ public class DynamicInjectionConfig {
 		@JsonProperty("reset")
 		public final boolean reset;
 
+		// Boolean placeholder to specify if the value to be extracted
+		// is an Object and not a string. Defacto value to be false.
+		// NOTE - if this is true value should be a single source & jsonPath
+		// (Only one placeholder of ${Source: JSONPath}
+		@JsonProperty("valueObject")
+		public final boolean valueObject;
+
 		private ExtractionMeta() {
 			apiPath = "";
 			method = HTTPMethodType.POST;
 			name = "";
 			value = "";
 			reset = true;
+			valueObject = false;
 		}
 
 	}
@@ -83,17 +92,18 @@ public class DynamicInjectionConfig {
 		@JsonProperty("jsonPath")
 		public final String jsonPath;
 
+		// Can go away once we have regex matching for apiPath(s).
 		@JsonProperty("injectAllPaths")
 		public final boolean injectAllPaths;
 
-		@JsonProperty("value")
-		public final String value;
+		@JsonProperty("name")
+		public final String name;
 
 		public InjectionMeta() {
 			this.apiPaths = Collections.EMPTY_LIST;
 			this.jsonPath = "";
 			this.injectAllPaths = false;
-			this.value = "";
+			this.name = "";
 		}
 	}
 

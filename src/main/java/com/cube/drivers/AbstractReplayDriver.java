@@ -4,7 +4,9 @@ import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.ReplayUpdate;
 
 import io.md.constants.ReplayStatus;
+import io.md.dao.DataObj;
 import io.md.dao.DataObj.PathNotFoundException;
+import io.md.dao.JsonDataObj;
 import io.md.dao.Payload;
 import io.md.dao.Replay;
 
@@ -21,6 +23,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringSubstitutor;
 import org.apache.commons.text.lookup.StringLookup;
@@ -28,17 +31,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import io.md.dao.Event;
 import io.md.dao.ResponsePayload;
 import io.md.dao.RecordOrReplay;
-import io.md.dao.Replay;
 import io.md.services.DataStore;
 
 import com.cube.core.Utils;
-import com.cube.dao.CubeMetaInfo;
-import com.cube.dao.ReplayUpdate;
 import com.cube.dao.ReqRespStore;
 import com.cube.injection.DynamicInjectionConfig;
 import com.cube.utils.Constants;
@@ -52,7 +54,7 @@ public abstract class AbstractReplayDriver {
 	protected final Config config;
 	protected ObjectMapper jsonMapper;
 	protected Optional<DynamicInjectionConfig> dynamicInjectionConfig;
-	Map<String, String> extractionMap;
+	Map<String, DataObj> extractionMap;
 
 
 	static int UPDBATCHSIZE = 10; // replay metadata will be updated after each such batch
@@ -226,7 +228,7 @@ public abstract class AbstractReplayDriver {
 		List<CompletableFuture<String>> respcodes = replayRequests.map(request -> {
 			replay.reqsent++;
 			logUpdate();
-			// TODO Add injection logic here
+			inject(request);
 			CompletableFuture<ResponsePayload> responsePayloadCompletableFuture = client
 				.sendAsync(request, replay);
 
@@ -264,8 +266,7 @@ public abstract class AbstractReplayDriver {
 			try {
 				replay.reqsent++;
 				logUpdate();
-//				int ret = client.send(request, replay, rrstore, dynamicInjectionConfig, extractionMap);
-				// TODO Call injection function appropriately here
+				inject(request);
 				ResponsePayload responsePayload = client.send(request, replay);
 				// Extract variables in extractionMap
 				extract(request, responsePayload, rrstore);
@@ -321,14 +322,60 @@ public abstract class AbstractReplayDriver {
 
 	public void extract(Event goldenRequestEvent, Payload testResponsePayload,
 		ReqRespStore rrstore) {
-		StringSubstitutor sub = new StringSubstitutor(
-			// Test request is same as golden for replay extraction.
-			new VarResolver(goldenRequestEvent, testResponsePayload, goldenRequestEvent.payload, rrstore));
+		// Test request is same as golden for replay extraction.
+		VarResolver varResolver = new VarResolver(goldenRequestEvent, testResponsePayload,
+			goldenRequestEvent.payload, rrstore);
+		StringSubstitutor sub = new StringSubstitutor(varResolver);
 		dynamicInjectionConfig.get().extractionMetas.forEach(extractionMeta -> {
+			DataObj value;
 			if (extractionMeta.apiPath.equalsIgnoreCase(goldenRequestEvent.apiPath)) {
 				//  TODO ADD checks for method type GET/POST & also on reset field
+				String sourceString = extractionMeta.value;
+				// Boolean placeholder to specify if the value to be extracted
+				// is an Object and not a string.
+				// NOTE - if this is true value should be a single source & jsonPath
+				// (Only one placeholder of ${Source: JSONPath}
+				if (extractionMeta.valueObject) {
+					String lookupString = sourceString.trim()
+						.substring(sourceString.indexOf("{") + 1, sourceString.indexOf("}"));
+					value = varResolver.lookupObject(lookupString);
+				} else {
+					String valueString = sub.replace(sourceString);
+					value = new JsonDataObj(new TextNode(valueString), jsonMapper);
+				}
 				extractionMap
-					.put(sub.replace(extractionMeta.name), sub.replace(extractionMeta.value));
+					.put(sub.replace(extractionMeta.name), value);
+			}
+		});
+	}
+
+
+	public void inject(Event request) {
+		StringSubstitutor sub = new StringSubstitutor(
+			new VarResolver(request, null, request.payload, rrstore));
+
+		dynamicInjectionConfig.get().injectionMetas.forEach(injectionMeta -> {
+			if (injectionMeta.injectAllPaths || injectionMeta.apiPaths.contains(request.apiPath)) {
+				String key = sub.replace(injectionMeta.name);
+				DataObj value = extractionMap.get(key);
+				try {
+					if (value != null) {
+						request.payload.put(injectionMeta.jsonPath, value);
+						LOGGER.info(new ObjectMessage(
+							Map.of(Constants.MESSAGE, "Injecting value in request before replaying",
+								"Key", key,
+								"Value", value,
+								Constants.JSON_PATH_FIELD, injectionMeta.jsonPath,
+								Constants.REQ_ID_FIELD, request.reqId)));
+					}
+				} catch (PathNotFoundException e) {
+					LOGGER.error(new ObjectMessage(
+						Map.of(Constants.MESSAGE, "Not injecting value as key not found in request",
+							"Key", key,
+							Constants.JSON_PATH_FIELD, injectionMeta.jsonPath,
+							Constants.REQ_ID_FIELD, request.reqId)), e);
+				}
+
 			}
 		});
 
@@ -355,11 +402,7 @@ public abstract class AbstractReplayDriver {
 			this.rrstore = rrstore;
 		}
 
-		@Override
-		/** Lookup String will always be in format of
-		 {@link DynamicInjectionConfig.VariableSources}: "VariableSources: <JSONPath>
-		 **/
-		public String lookup(String lookupString) {
+		public Pair<Payload, String> getSourcePayloadAndJsonPath(String lookupString) {
 			String[] splitStrings = lookupString.split(":");
 			if (splitStrings.length != 2) {
 				LOGGER.error("Lookup String format mismatch");
@@ -368,7 +411,6 @@ public abstract class AbstractReplayDriver {
 			String source = splitStrings[0].trim();
 			String jsonPath = splitStrings[1].trim();
 			Payload sourcePayload;
-			String value = null;
 			switch (source) {
 				case Constants.GOLDEN_REQUEST:
 					sourcePayload = goldenRequestEvent.payload;
@@ -391,6 +433,27 @@ public abstract class AbstractReplayDriver {
 				default:
 					throw new IllegalStateException("Unexpected value: " + source);
 			}
+			return new ImmutablePair<>(sourcePayload, jsonPath);
+		}
+
+		public DataObj lookupObject(String lookupString) {
+			Pair<Payload, String> pair = getSourcePayloadAndJsonPath(lookupString);
+			Payload sourcePayload = pair.getLeft();
+			String jsonPath = pair.getRight();
+			DataObj value;
+			value = sourcePayload.getVal(jsonPath);
+			return value;
+		}
+
+		@Override
+		/** Lookup String will always be in format of
+		 "VariableSources: <JSONPath>
+		 **/
+		public String lookup(String lookupString) {
+			String value = null;
+			Pair<Payload, String> pair = getSourcePayloadAndJsonPath(lookupString);
+			Payload sourcePayload = pair.getLeft();
+			String jsonPath = pair.getRight();
 			try {
 				value = sourcePayload.getValAsString(jsonPath);
 			} catch (PathNotFoundException e) {
