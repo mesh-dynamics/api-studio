@@ -20,9 +20,10 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.http.client.utils.URIBuilder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.cube.interceptor.apachecxf.egress.ClientFilter;
-import io.cube.interceptor.apachecxf.egress.MockingClientFilter;
-import io.cube.interceptor.apachecxf.egress.TracingFilter;
+
+import io.cube.apachecxf.egress.MDClientLoggingFilter;
+import io.cube.apachecxf.egress.MDClientMockingFilter;
+import io.cube.apachecxf.egress.MDClientTracingFilter;
 
 
 @XmlRootElement(name = "Course")
@@ -35,7 +36,7 @@ public class Course {
         "http://34.220.106.159:8080/meshd/students?source=aaa&trial=bbb";
     //    private String URL = "http://34.220.106.159:8080/meshd/students?source=aaa&trial=bbb";
     private WebClient webClient = WebClient.create(URL, Arrays
-        .asList(new ClientFilter(), new TracingFilter(), new MockingClientFilter()), true).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
+        .asList(new MDClientLoggingFilter(), new MDClientTracingFilter(), new MDClientMockingFilter()), true).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
         javax.ws.rs.core.MediaType.APPLICATION_JSON);
 
     public int getId() {

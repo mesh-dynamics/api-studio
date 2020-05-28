@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -24,8 +23,8 @@ import org.apache.http.client.utils.URIBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.cube.interceptor.apachecxf.egress.ClientFilter;
-import io.cube.interceptor.apachecxf.egress.TracingFilter;
+import io.cube.apachecxf.egress.MDClientLoggingFilter;
+import io.cube.apachecxf.egress.MDClientTracingFilter;
 
 @Path("meshd")
 @Produces("application/json")
@@ -112,7 +111,7 @@ public class CourseRepository {
 //        WebClient studentWebClient = webClient.path(URL + id);
         URIBuilder uriBuilder = new URIBuilder(URL);
         uriBuilder.setPath(uriBuilder.getPath()+"/"+id);
-        WebClient studentWebClient = WebClient.create(uriBuilder.build().toString(), Arrays.asList(new ClientFilter(), new TracingFilter())).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
+        WebClient studentWebClient = WebClient.create(uriBuilder.build().toString(), Arrays.asList(new MDClientLoggingFilter(), new MDClientTracingFilter())).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
             javax.ws.rs.core.MediaType.APPLICATION_JSON);
 //        WebClient studentWebClient = webClient;
 
@@ -158,7 +157,7 @@ public class CourseRepository {
         uriBuilder.setPath(uriBuilder.getPath()+"/dummyStudentList");
         uriBuilder.addParameter("count", String.valueOf(studentCount));
         WebClient studentWebClient = WebClient.create(uriBuilder.build().toString(), Arrays
-            .asList(new ClientFilter(), new TracingFilter())).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
+            .asList(new MDClientLoggingFilter(), new MDClientTracingFilter())).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
             javax.ws.rs.core.MediaType.APPLICATION_JSON);
 //        WebClient studentWebClient = webClient;
 

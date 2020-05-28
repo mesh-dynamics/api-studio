@@ -1,7 +1,6 @@
 package com.meshd.cxf.jaxrs.implementation;
 
 import java.util.Arrays;
-import java.util.List;
 
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
@@ -9,8 +8,8 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 
-import io.cube.interceptor.apachecxf.ingress.LoggingFilter;
-import io.cube.interceptor.apachecxf.ingress.TracingFilter;
+import io.cube.apachecxf.ingress.MDLoggingFilter;
+import io.cube.apachecxf.ingress.MDTracingFilter;
 
 
 public class  CourseServer {
@@ -19,7 +18,7 @@ public class  CourseServer {
         factoryBean.setResourceClasses(CourseRepository.class);
         factoryBean.setResourceProvider(new SingletonResourceProvider(new CourseRepository()));
         factoryBean.setProviders(
-            Arrays.asList(new JacksonJaxbJsonProvider(), new TracingFilter(), new LoggingFilter()));
+            Arrays.asList(new JacksonJaxbJsonProvider(), new MDTracingFilter(), new MDLoggingFilter()));
         factoryBean.setAddress("http://0.0.0.0:8084/");
         Server server = factoryBean.create();
 

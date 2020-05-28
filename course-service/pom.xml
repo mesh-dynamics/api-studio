@@ -100,9 +100,9 @@
             <version>2.10.2.1</version>
         </dependency>
         <dependency>
-            <groupId>com.cube.interceptor</groupId>
-            <artifactId>apache_cxf_2_7_interceptors</artifactId>
-            <version>0.0.9</version>
+            <groupId>io.cube</groupId>
+            <artifactId>md-apache-cxf-interceptor</artifactId>
+            <version>1.2.0</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
