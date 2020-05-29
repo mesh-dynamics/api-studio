@@ -14,11 +14,17 @@ const processInstanceList = (instanceList) => {
     const pageLocationURL = window.location.href;
     
     if (pageLocationURL.indexOf('.prod.v2.') != -1) {
-        return instanceList.map(item => item.gatewayEndpoint.replace(".dev.", ".prod.v2."));
+        return instanceList.map(item => {
+            item.gatewayEndpoint.replace(".dev.", ".prod.v2.");
+            return item;
+        });
     }
     
     if (pageLocationURL.indexOf('.prod.') != -1) {
-        return instanceList.map(item => item.gatewayEndpoint.replace(".dev.", ".prod."));
+        return instanceList.map(item => {
+            item.gatewayEndpoint.replace(".dev.", ".prod.");
+            return item;
+        });
     }
 
     return instanceList;
