@@ -95,6 +95,11 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload implements Res
 		return this.rawPayloadAsString(false);
 	}
 
+	@Override
+	public long size() {
+		return this.body != null ? this.body.length : 0;
+	}
+
 	public String rawPayloadAsString(boolean wrapForDisplay) throws
 		NotImplementedException, RawPayloadProcessingException {
 		try {
@@ -107,6 +112,15 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload implements Res
 			}
 		} catch (Exception e) {
 			throw  new RawPayloadProcessingException(e);
+		}
+	}
+
+	@Override
+	public void updatePayloadBody() throws PathNotFoundException  {
+		if (this.dataObj.isDataObjEmpty()) {
+			return;
+		} else {
+			this.body = this.dataObj.getValAsByteArray("/".concat(BODY));
 		}
 	}
 

@@ -6,6 +6,7 @@ package io.md.dao;
  *
  */
 
+import io.md.dao.DataObj.PathNotFoundException;
 import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -120,6 +121,23 @@ public class Event {
 	@JsonIgnore
 	public String getPayloadAsJsonString() {
 		return getPayloadAsJsonString(false);
+	}
+
+	@JsonIgnore
+	public String checkAndConvertResponseToString(boolean wrapForDisplay, List<String> pathsToKeep, long size, String path) {
+		if(this.payload != null) {
+			try {
+				this.payload.updatePayloadBody();
+			} catch (PathNotFoundException e) {
+				LOGGER.error("Error while "
+						+ "updating payload body", e);
+			}
+			if(this.payload.size() > size) {
+				this.payload.replaceContent(pathsToKeep, path);
+			}
+			return this.getPayloadAsJsonString(wrapForDisplay);
+		}
+		return "";
 	}
 
 	@JsonIgnore

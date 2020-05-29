@@ -139,4 +139,19 @@ public class ThriftResponsePayload implements ResponsePayload {
 	public boolean isRawPayloadEmpty() {
 		return false;
 	}
+
+	@Override
+	public  void replaceContent(List<String> pathsToKeep, String path) {
+		return;
+	}
+
+	@Override
+	public long size() {
+		return 0;
+	}
+
+	@Override
+	public void updatePayloadBody() throws PathNotFoundException {
+		return;
+	}
 }
