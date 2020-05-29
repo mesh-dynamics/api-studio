@@ -80,7 +80,7 @@ public class Config {
 		System.setProperty("io.md.intent" , "noop");
 		commonConfig = CommonConfig.getInstance();
 		String solrurl = null;
-    int size = Integer.valueOf(fromEnvOrProperties("response_size", "10"));
+    int size = Integer.valueOf(fromEnvOrProperties("response_size", "1"));
     responseSize =  size*1000000;
         try {
             properties.load(this.getClass().getClassLoader().
