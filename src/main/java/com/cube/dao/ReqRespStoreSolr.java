@@ -2317,6 +2317,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         final SolrQuery query = getEventQuery(apiTraceFacetQuery);
         addFilter(query, SERVICEF,apiTraceFacetQuery.service);
         addFilter(query,PATHF, apiTraceFacetQuery.apiPath);
+        addFilter(query, EVENTTYPEF, EventType.HTTPRequest.toString());
         FacetQ serviceFacetq = new FacetQ();
         Facet servicef = Facet.createTermFacet(SERVICEF, Optional.empty());
 
