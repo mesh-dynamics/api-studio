@@ -61,6 +61,7 @@ const initialState = {
     newGoldenId: null,
     goldenInProg: false,
     jiraBugs: [],
+    hideHttpClient: false
 };
 
 export function cube (state = initialState, action) {
@@ -471,6 +472,11 @@ export function cube (state = initialState, action) {
                     selectedGolden: null,
                     selectedGoldenName: "",
                 }
+            }
+        case cubeConstants.HIDE_HTTP_CLIENT:
+            return {
+                ...state,
+                hideHttpClient: action.data,
             }
         default:
             return state

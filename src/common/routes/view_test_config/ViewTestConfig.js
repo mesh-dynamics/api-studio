@@ -8,11 +8,13 @@ class ViewTestConfig extends Component {
     componentDidMount() {
         const { dispatch } = this.props;
         dispatch(cubeActions.showTCInfo(true));
+        dispatch(cubeActions.hideHttpClient(true));
     }
 
     componentWillUnmount() {
         const { dispatch } = this.props;
         dispatch(cubeActions.showTCInfo(false));
+        dispatch(cubeActions.hideHttpClient(false));
     }
 
     render() {
