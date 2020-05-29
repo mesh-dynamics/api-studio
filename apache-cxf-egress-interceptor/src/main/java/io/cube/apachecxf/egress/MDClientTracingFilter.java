@@ -1,4 +1,4 @@
-package io.cube.interceptor.apachecxf.egress;
+package io.cube.apachecxf.egress;
 
 import java.util.List;
 import java.util.Map;
@@ -22,10 +22,10 @@ import io.md.utils.CommonUtils;
  * We want Client filter to execute before Tracing Filter.
  **/
 @Provider
-@Priority(4000)
-public class TracingFilter implements ClientRequestFilter {
+@Priority(4502)
+public class MDClientTracingFilter implements ClientRequestFilter {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(TracingFilter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(MDClientTracingFilter.class);
 
 	@Override
 	public void filter(ClientRequestContext clientRequestContext) {

@@ -1,9 +1,8 @@
-package io.cube.interceptor.apachecxf.ingress.utils;
+package io.cube.apachecxf.ingress;
 
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import io.cube.agent.CommonConfig;
 import io.md.constants.Constants;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
@@ -24,23 +24,17 @@ import io.md.dao.MDTraceInfo;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
-import io.cube.interceptor.apachecxf.ingress.config.Config;
-
 public class Utils {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(Utils.class);
 
 	public static final long PAYLOAD_MAX_LIMIT = 25000000; //25 MB
 
-	public static final Config config;
-
-	static {
-		config = new Config();
-	}
+	public static final Config config = new Config();
 
 	public static boolean isSampled(MultivaluedMap<String, String> requestHeaders) {
 		return ((config.intentResolver.isIntentToRecord()
-			&& config.commonConfig.sampler.isSampled(requestHeaders))
+			&& CommonConfig.getInstance().sampler.isSampled(requestHeaders))
 			|| config.intentResolver.isIntentToMock());
 	}
 
@@ -73,15 +67,17 @@ public class Utils {
 		} else if (config.intentResolver.isIntentToMock()) {
 			metaMap.add(Constants.RUN_TYPE_FIELD, Constants.REPLAY);
 		}
-		metaMap.add(Constants.CUSTOMER_ID_FIELD, config.commonConfig.customerId);
-		metaMap.add(Constants.APP_FIELD, config.commonConfig.app);
-		metaMap.add(Constants.INSTANCE_ID_FIELD, config.commonConfig.instance);
-		metaMap.add(Constants.SERVICE_FIELD, serviceName.orElse(config.commonConfig.serviceName));
+
+		CommonConfig commonConfig = CommonConfig.getInstance();
+		metaMap.add(Constants.CUSTOMER_ID_FIELD, commonConfig.customerId);
+		metaMap.add(Constants.APP_FIELD, commonConfig.app);
+		metaMap.add(Constants.INSTANCE_ID_FIELD, commonConfig.instance);
+		metaMap.add(Constants.SERVICE_FIELD, serviceName.orElse(commonConfig.serviceName));
 	}
 
 	public static MultivaluedMap<String, String> buildTraceInfoMap(MDTraceInfo mdTraceInfo,
 		String xRequestId) {
-		String cRequestId = config.commonConfig.serviceName.concat("-")
+		String cRequestId = CommonConfig.getInstance().serviceName.concat("-")
 			.concat(mdTraceInfo.traceId == null ? "" : mdTraceInfo.traceId).concat("-").concat(
 				UUID.randomUUID().toString());
 
@@ -108,22 +104,16 @@ public class Utils {
 		Event requestEvent = null;
 		final Span span = io.cube.agent.Utils.createPerformanceSpan(
 			Constants.CREATE_REQUEST_EVENT_INGRESS);
-		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)){
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
 			requestEvent = io.md.utils.Utils
 				.createHTTPRequestEvent(apiPath, queryParams,
 					Utils.createEmptyMultivaluedMap(), meta, requestHeaders, mdTraceInfo,
 					requestBody, Optional.empty(), config.jsonMapper, true);
 
 		} catch (InvalidEventException e) {
-			LOGGER.error(String.valueOf(
-				Map.of(Constants.MESSAGE, "Invalid Event",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Invalid Event", e);
 		} catch (JsonProcessingException e) {
-			LOGGER.error(String.valueOf(
-				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Json Processing Exception. Unable to create event!", e);
 		} finally {
 			span.finish();
 		}
@@ -131,7 +121,7 @@ public class Utils {
 		if (requestEvent != null) {
 			final Span reqLog = io.cube.agent.Utils.createPerformanceSpan(
 				Constants.LOG_REQUEST_EVENT_INGRESS);
-			try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(reqLog)){
+			try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(reqLog)) {
 				config.recorder.record(requestEvent);
 			} finally {
 				reqLog.finish();
@@ -145,21 +135,15 @@ public class Utils {
 		Event responseEvent = null;
 		final Span span = io.cube.agent.Utils.createPerformanceSpan(Constants
 			.CREATE_RESPONSE_EVENT_INGRESS);
-		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)){
+		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
 			responseEvent = io.md.utils.Utils
 				.createHTTPResponseEvent(apiPath, meta,
 					responseHeaders, mdTraceInfo, responseBody, Optional.empty(), config.jsonMapper,
 					true);
 		} catch (InvalidEventException e) {
-			LOGGER.error(String.valueOf(
-				Map.of(Constants.MESSAGE, "Invalid Event",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Invalid Event", e);
 		} catch (JsonProcessingException e) {
-			LOGGER.error(String.valueOf(
-				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
-					Constants.ERROR, e.getMessage(),
-			 		Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Json Processing Exception. Unable to create event!", e);
 		} finally {
 			span.finish();
 		}
@@ -167,7 +151,7 @@ public class Utils {
 		if (responseEvent != null) {
 			final Span respLog = io.cube.agent.Utils.createPerformanceSpan(Constants
 				.LOG_RESPONSE_EVENT_INGRESS);
-			try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(respLog)){
+			try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(respLog)) {
 				config.recorder.record(responseEvent);
 			} finally {
 				respLog.finish();
