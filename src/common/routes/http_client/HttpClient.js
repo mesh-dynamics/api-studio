@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import { FormControl, FormGroup, Glyphicon } from 'react-bootstrap';
 
 import _ from 'lodash';
-import axios from "axios";
+import { stringify } from 'query-string';
 
 import Tabs from '../../components/Tabs';
 // IMPORTANT you need to include the default styles
@@ -88,18 +88,19 @@ class HttpClient extends Component {
     }
 
     extractHeaders(httpReqestHeaders) {
-        let headers = {};
+        let headers = new Headers();
+        headers.delete('Content-Type');
         httpReqestHeaders.forEach(each => {
-            if(each.name && each.value) headers[each.name] = each.value;
+            if(each.name && each.value) headers.append(each.name, each.value);
         })
         return headers;
     }
 
     extractBody(httpRequestBody) {
-        let formData = [];
+        let formData = new FormData();
         if(_.isArray(httpRequestBody)) {
             httpRequestBody.forEach(each => {
-                if(each.name && each.value) formData[each.name] = each.value;
+                if(each.name && each.value) formData.append(each.name, each.value);
             })
             return formData;
         } else {
@@ -108,7 +109,7 @@ class HttpClient extends Component {
     }
 
     extractQueryStringParams(httpRequestQueryStringParams) {
-        let qsParams = [];
+        let qsParams = {};
         httpRequestQueryStringParams.forEach(each => {
             if(each.name && each.value) qsParams[each.name] = each.value;
         })
@@ -121,7 +122,8 @@ class HttpClient extends Component {
         // extract body
         const { headers, queryStringParams, bodyType, rawDataType } = this.state;
         const httpReqestHeaders = this.extractHeaders(headers);
-        const httpRequestQueryStringParams = this.extractQueryStringParams(queryStringParams);
+
+        const httpRequestQueryStringParams = stringify(this.extractQueryStringParams(queryStringParams));
         let httpRequestBody;
         if(bodyType === "formData") {
             const { formData } = this.state;
@@ -134,24 +136,37 @@ class HttpClient extends Component {
         const httpMethod = this.state.httpMethod;
         const httpRequestURL = this.state.httpURL;
 
+        let fetchConfig = {
+            method: httpMethod,
+            headers: httpReqestHeaders
+        }
+        if(httpMethod !== "GET".toLowerCase() && httpMethod !== "HEAD".toLowerCase()) {
+            fetchConfig["body"] = httpRequestBody;
+        }
+        let fetchURL = httpRequestURL + (httpRequestQueryStringParams ? "?" + httpRequestQueryStringParams : "");
+        
         // Make request
         // https://www.mocky.io/v2/5185415ba171ea3a00704eed
-        return axios({
-                method: httpMethod,
-                url: httpRequestURL,
-                headers: httpReqestHeaders,
-                params: httpRequestQueryStringParams,
-                data: httpRequestBody
-             }).then((response) => {
+        let fetchedResponseHeaders = {};
+        return fetch(fetchURL, fetchConfig).then((response) => {
+                for(const header of response.headers){
+                    fetchedResponseHeaders[header[0]] = header[1];
+                }
+                if (response.headers.get("content-type").indexOf("application/json") !== -1) {// checking response header
+                    return response.json();
+                } else {
+                    throw new TypeError('Response from has unexpected "content-type"');
+                }
+            })
+            .then((data) => {
                 // handle success
-                console.log("response: ", response);
                 this.setState({
-                    responseHeaders: JSON.stringify(response.headers, undefined, 4),
-                    responseBody: JSON.stringify(response.data, undefined, 4)
+                    responseHeaders: JSON.stringify(fetchedResponseHeaders, undefined, 4),
+                    responseBody: JSON.stringify(data, undefined, 4)
                 });
-            }).catch((error) => {
-                // handle error
-                console.log("error: ", error);
+            })
+            .catch((error) => {
+                console.error(error.message);
             });
     }
 

@@ -24,6 +24,7 @@
     "moment": "^2.24.0",
     "plotly.js": "^1.42.5",
     "prop-types": "^15.6.2",
+    "query-string": "^6.12.1",
     "react": "^16.6.0",
     "react-ace": "^8.1.0",
     "react-bootstrap": "^0.32.4",
