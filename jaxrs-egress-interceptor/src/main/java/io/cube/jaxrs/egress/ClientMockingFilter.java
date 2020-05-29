@@ -3,6 +3,7 @@ package io.cube.jaxrs.egress;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -31,23 +32,23 @@ public class ClientMockingFilter implements ClientRequestFilter {
 			String serviceName = CommonUtils.getEgressServiceName(originalUri);
 
 			commonConfig.getMockingURI(originalUri, serviceName).ifPresent(mockURI -> {
-				commonConfig.authToken.ifPresentOrElse(auth -> {
+				commonConfig.authToken.ifPresent(auth -> {
 					MultivaluedMap<String, Object> clientHeaders = requestContext
 						.getHeaders();
-					clientHeaders.put(io.cube.agent.Constants.AUTHORIZATION_HEADER, List.of(auth));
-				}, () -> {
-					LOGGER.info("Auth token not present for Mocking service");
+					clientHeaders.put(io.cube.agent.Constants.AUTHORIZATION_HEADER,
+						Arrays.asList(auth));
 				});
+
+				if (!commonConfig.authToken.isPresent()) {
+					LOGGER.info("Auth token not present for Mocking service");
+				}
+
 				requestContext.setUri(mockURI);
 			});
 		} catch (URISyntaxException e) {
-			LOGGER.error(String.valueOf(
-				Map.of(Constants.MESSAGE, "Mocking filter issue, exception during setting URI!",
-					Constants.EXCEPTION_STACK, e)));
+			LOGGER.error("Mocking filter issue, exception during setting URI!", e);
 		} catch (Exception ex) {
-			LOGGER.error(String.valueOf(
-				Map.of(Constants.MESSAGE, "Mocking filter issue, exception occured!",
-					Constants.EXCEPTION_STACK, ex)));
+			LOGGER.error("Mocking filter issue, exception occured!", ex);
 		}
 	}
 }

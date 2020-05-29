@@ -84,14 +84,9 @@ public class Utils {
 					new MultivaluedHashMap<>(), meta, requestHeaders, mdTraceInfo,
 					requestBody, Optional.empty(), config.jsonMapper, true);
 		} catch (InvalidEventException e) {
-			LOGGER.error(String.valueOf(
-				Map.of(Constants.MESSAGE, "Invalid Event", Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error( "Invalid Event", e);
 		} catch (JsonProcessingException e) {
-			LOGGER.error(String.valueOf(
-				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error( "Json Processing Exception. Unable to create event!", e);
 		} finally {
 			span.finish();
 		}
@@ -117,15 +112,9 @@ public class Utils {
 					responseHeaders, mdTraceInfo, responseBody, Optional.empty(), config.jsonMapper,
 					true);
 		} catch (InvalidEventException e) {
-			LOGGER.error(String.valueOf(
-				Map.of(Constants.MESSAGE, "Invalid Event",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error( "Invalid Event", e);
 		} catch (JsonProcessingException e) {
-			LOGGER.error(String.valueOf(
-				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error( "Json Processing Exception. Unable to create event!", e);
 		} finally {
 			span.finish();
 		}

@@ -33,9 +33,8 @@ public class ClientTracingFilter implements ClientRequestFilter {
 				}
 			}
 		} catch (Exception ex) {
-			LOGGER.error(String.valueOf(Map.of(Constants.MESSAGE,
-				"Exception occured during logging, proceeding to the application!",
-				Constants.EXCEPTION_STACK, ex)));
+			LOGGER.error(
+				"Exception occured during logging, proceeding to the application!", ex);
 		}
 	}
 }
