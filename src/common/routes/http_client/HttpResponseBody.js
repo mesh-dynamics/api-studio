@@ -1,9 +1,5 @@
 import React, { Component } from 'react';
 import { Glyphicon } from 'react-bootstrap';
-
-// import AceEditor from "react-ace";
-
-// import { split as SplitEditor } from "react-ace";
 import { diff as DiffEditor } from "react-ace";
 import "ace-builds/src-noconflict/mode-json";
 import "ace-builds/src-min-noconflict/ext-searchbox";
@@ -17,8 +13,7 @@ const defaultValue = ``;
 class HttpResponseBody extends Component {
     constructor(props) {
         super(props);
-        this.state = { 
-            // value: [defaultValue, this.props.responseBody],
+        this.state = {
             value: defaultValue,
             editor: null
         };
@@ -42,23 +37,6 @@ class HttpResponseBody extends Component {
         const showBody = this.props.showBody;
         return showBody ? (
             <div>
-                {/* <AceEditor
-                    mode="json"
-                    theme="github"
-                    name="UNIQUE_ID_OF_DIV"
-                    editorProps={{ $blockScrolling: true }}
-                    width="100%"
-                /> */}
-                {/* <SplitEditor
-                    mode="json"
-                    theme="github"
-                    splits={2}
-                    orientation="beside"
-                    value={[JSON.stringify({a: 1, b: 2}), JSON.stringify({a: 1, b: 2})]}
-                    name="UNIQUE_ID_OF_DIV"
-                    editorProps={{ $blockScrolling: true }}
-                    width="100%"
-                /> */}
                 <DiffEditor
                     name="responseBody"
                     value={[this.state.value, this.props.responseBody]}

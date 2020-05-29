@@ -1,18 +1,11 @@
 import React, { Component } from 'react';
 import { Glyphicon } from 'react-bootstrap';
 
-// import "./styles_here.css";
 import HttpRequestFormData from "./HttpRequestFormData";
 import HttpRequestRawData from "./HttpRequestRawData";
 import HttpRequestBinaryData from "./HttpRequestBinaryData";
 
 class HttpRequestBody extends Component {
-    constructor(props) {
-        super(props);
-        this.state = { 
-        };
-    }
-
 
     render() {
         return (
