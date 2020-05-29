@@ -11,33 +11,149 @@ import Tabs from '../../components/Tabs';
 import '../../components/Tabs/styles.css';
 // import "./HttpClient.css";
 import "./Tabs.css";
+
 import {cubeActions} from "../../actions";
 import {cubeConstants} from "../../constants";
 
-const presidents = [{ name: 'George Washington', biography: 'George' }, { name: 'Theodore Roosevelt', biography: 'Theodore' }, { name: 'Theodedsvwdsvwesdvore Roosevelt', biography: 'Thewedvsfefdefdvedfodore' }];
- 
-function getTabs() {
-    return presidents.map((president, index) => ({
-        title: (
-            <div className="tab-container">
-              <div className="tab-name">{president.name}</div>
-            </div>
-          ),
-        getContent: () => (
-            <div className="tab-container">
-              <div className="tab-name">{president.biography}</div>
-            </div>
-          ),
-        /* Optional parameters */
-        key: index,
-        tabClassName: 'md-hc-tab',
-        panelClassName: 'md-hc-tab-panel',
-    }));
-}
+import HttpRequestMessage from "./HttpRequestMessage";
+import HttpResponseMessage from "./HttpResponseMessage";
 
 class HttpClient extends Component {
 
-    
+    constructor(props) {
+        super(props);
+        this.state = { 
+            httpMethod: "get",
+            httpURL: "https://www.mocky.io/v2/5185415ba171ea3a00704eed",
+            headers: [],
+            queryStringParams: [],
+            bodyType: "formData",
+            formData: [],
+            rawData: "",
+            rawDataType: "json",
+            responseStatus: "",
+            responseHeaders: "",
+            responseBody: "",
+            tabs: [{ requestId: 'https://www.mocky.io/v2/5185415ba171ea3a00704eed' }]
+        };
+        this.addTab = this.addTab.bind(this);
+        this.addOrRemoveParam = this.addOrRemoveParam.bind(this);
+        this.updateParam = this.updateParam.bind(this);
+        this.updateBodyOrRawDataType = this.updateBodyOrRawDataType.bind(this);
+        this.driveRequest = this.driveRequest.bind(this);
+    }
+
+    addTab() {
+        this.setState({
+            tabs: [...this.state["tabs"], {
+                id: _.uniqueId('key_'),
+                requestId: "New"
+            }]
+        });
+    }
+
+    addOrRemoveParam(type, op, id) {
+        if(op === "delete") {
+            this.setState({
+                [type]: this.state[type].filter((e) => e.id !== id)
+            });
+        } else {
+            this.setState({
+                [type]: [...this.state[type], {
+                    id: _.uniqueId('key_'),
+                    name: "",
+                    value: "",
+                    description: ""
+                }]
+            });
+
+        }
+    }
+
+    updateParam(type, key, value, id) {
+        let params = this.state[type];
+        if(_.isArray(params)) {
+            let specificParamArr = params.filter((e) => e.id === id);
+            if(specificParamArr.length > 0) {
+                specificParamArr[0][key] = value;
+            }
+        } else {
+            params = value;
+        }
+        this.setState({[type]: params})
+    }
+
+    updateBodyOrRawDataType(type, value) {
+        this.setState({[type]: value});
+    }
+
+    extractHeaders(httpReqestHeaders) {
+        let headers = {};
+        httpReqestHeaders.forEach(each => {
+            if(each.name && each.value) headers[each.name] = each.value;
+        })
+        return headers;
+    }
+
+    extractBody(httpRequestBody) {
+        let formData = [];
+        if(_.isArray(httpRequestBody)) {
+            httpRequestBody.forEach(each => {
+                if(each.name && each.value) formData[each.name] = each.value;
+            })
+            return formData;
+        } else {
+            return httpRequestBody;
+        }
+    }
+
+    extractQueryStringParams(httpRequestQueryStringParams) {
+        let qsParams = [];
+        httpRequestQueryStringParams.forEach(each => {
+            if(each.name && each.value) qsParams[each.name] = each.value;
+        })
+        return qsParams;
+    }
+
+    driveRequest() {
+        // make the request and update response status, headers & body
+        // extract headers
+        // extract body
+        const { headers, queryStringParams, bodyType, rawDataType } = this.state;
+        const httpReqestHeaders = this.extractHeaders(headers);
+        const httpRequestQueryStringParams = this.extractQueryStringParams(queryStringParams);
+        let httpRequestBody;
+        if(bodyType === "formData") {
+            const { formData } = this.state;
+            httpRequestBody = this.extractBody(formData);
+        }
+        if(bodyType === "rawData") {
+            const { rawData } = this.state;
+            httpRequestBody = this.extractBody(rawData);
+        }
+        const httpMethod = this.state.httpMethod;
+        const httpRequestURL = this.state.httpURL;
+
+        // Make request
+        // https://www.mocky.io/v2/5185415ba171ea3a00704eed
+        return axios({
+                method: httpMethod,
+                url: httpRequestURL,
+                headers: httpReqestHeaders,
+                params: httpRequestQueryStringParams,
+                data: httpRequestBody
+             }).then((response) => {
+                // handle success
+                console.log("response: ", response);
+                this.setState({
+                    responseHeaders: JSON.stringify(response.headers, undefined, 4),
+                    responseBody: JSON.stringify(response.data, undefined, 4)
+                });
+            }).catch((error) => {
+                // handle error
+                console.log("error: ", error);
+            });
+    }
 
     componentDidMount() {
         const { dispatch } = this.props;
@@ -53,7 +169,41 @@ class HttpClient extends Component {
         dispatch(cubeActions.hideHttpClient(true));
     }
 
-    
+    getTabs() {
+        return this.state.tabs.map((eachRun, index) => ({
+            title: (
+                <div className="tab-container">
+                  <div className="tab-name">{eachRun.requestId}</div>
+                </div>
+              ),
+            getContent: () => (
+                <div className="tab-container">
+                  <HttpRequestMessage httpMethod={this.state.httpMethod} httpURL={this.state.httpURL}
+                    headers={this.state.headers} 
+                    queryStringParams={this.state.queryStringParams}
+                    bodyType={this.state.bodyType}
+                    formData={this.state.formData} 
+                    rawData={this.state.rawData}
+                    rawDataType={this.state.rawDataType}
+                    addOrRemoveParam={this.addOrRemoveParam} 
+                    updateParam={this.updateParam}
+                    updateBodyOrRawDataType={this.updateBodyOrRawDataType}
+                    driveRequest={this.driveRequest} >
+                      {eachRun.requestId}
+                  </HttpRequestMessage>
+                  <HttpResponseMessage responseStatus={this.state.responseStatus}
+                    responseHeaders={this.state.responseHeaders}
+                    responseBody={this.state.responseBody}>
+                        {eachRun.requestId}
+                </HttpResponseMessage>
+                </div>
+              ),
+            /* Optional parameters */
+            key: index,
+            tabClassName: 'md-hc-tab',
+            panelClassName: 'md-hc-tab-panel',
+        }));
+    }
 
     render() {
         const { cube } = this.props;
@@ -72,38 +222,20 @@ class HttpClient extends Component {
                     <FormGroup>
                         <FormControl style={{marginBottom: "12px", marginTop: "10px"}}
                             type="text"
-                            value=""
                             placeholder="Search"
                         />
                     </FormGroup>
                 </div>
-
-                {/* <div className="tab-wrapper" style={{width: "100%"}}>
-                    <div className="tabs">
-                        <div className="tab active">
-                            <div>
-                                <div className="tab-head">minfo/ListMoviews?film...</div>
-                            </div>
-                        </div>
-                        <div className="tab inactive">
-                            <div>
-                                <div className="tab-head">minfo/ListMoviews?film...</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="tab-last">
-                        <div style={{width: "16px"}}>
-                            <div className="tab-head">
-                                <Glyphicon glyph="plus" />
-                            </div>
+                <div style={{marginRight: "7px"}}>
+                    <div style={{marginBottom: "9px", display: "inline-block", width: "20%", fontSize: "11px"}}></div>
+                    <div style={{display: "inline-block", width: "80%", textAlign: "right"}}>
+                        <div className="btn btn-sm cube-btn text-center" style={{}} onClick={this.addTab}>
+                        <Glyphicon glyph="plus" /> ADD TAB
                         </div>
                     </div>
                 </div>
-                <div class="tab-body-wrapper">
-                    
-                </div> */}
                 <div style={{marginTop: "10px"}}>
-                    <Tabs items={getTabs()} tabsWrapperClass={"md-hc-tabs-wrapper"} allowRemove={true} removeActiveOnly={false} showMore={true} />
+                    <Tabs items={this.getTabs()} tabsWrapperClass={"md-hc-tabs-wrapper"} allowRemove={true} removeActiveOnly={false} showMore={true} />
                 </div>
             </div>
         );
