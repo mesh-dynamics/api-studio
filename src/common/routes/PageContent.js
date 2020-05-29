@@ -11,6 +11,7 @@ import ShareableLink from "./shareable_link";
 import ShareableDiff from "./shareable_diff";
 import ViewTrace from "./view_trace";
 import TestReport from "./test_report";
+import HttpClient from "./http_client";
 
 
 class PageContent extends Component {
@@ -48,6 +49,7 @@ class PageContent extends Component {
         {ShareableDiff}
         {ViewTrace}
         {TestReport}
+        {HttpClient}
       </div>
     )
   }

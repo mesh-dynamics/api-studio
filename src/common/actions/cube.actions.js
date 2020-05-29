@@ -47,6 +47,7 @@ export const cubeActions = {
     getAnalysisStatus,
     removeReplayFromTimeline,
     removeSelectedGoldenFromTestIds,
+    hideHttpClient
 };
 
 function clear() {
@@ -171,6 +172,10 @@ function updateGoldenSet(golden) {
 
 function hideTestConfig(bool) {
     return {type: cubeConstants.HIDE_TEST_CONFIG, data: bool};
+}
+
+function hideHttpClient(bool) {
+    return {type: cubeConstants.HIDE_HTTP_CLIENT, data: bool};
 }
 
 function showTCSetup(bool) {

@@ -7,11 +7,13 @@ class SetupTestConfig extends Component {
     componentDidMount() {
         const { dispatch } = this.props;
         dispatch(cubeActions.showTCSetup(true));
+        dispatch(cubeActions.hideHttpClient(true));
     }
 
     componentWillUnmount() {
         const { dispatch } = this.props;
         dispatch(cubeActions.showTCSetup(false));
+        dispatch(cubeActions.hideHttpClient(false));
     }
 
     render() {
