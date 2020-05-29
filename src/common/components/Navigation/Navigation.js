@@ -125,6 +125,10 @@ class Navigation extends Component{
                             <Link to="/test_config">
                                 <div className="link-q"><i className="fas fa-caret-square-right"></i></div>
                             </Link>
+                            <Link to={`/api_catalog?app=${cube.selectedApp}`}> 
+                                <div className="link-q"><i className="fas fa-indent"></i></div>
+                            </Link>
+
                             <Link to="/http_client">
                                 <div className="link-q">
                                     <svg width="29"  viewBox="0 0 22 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -151,6 +155,8 @@ class Navigation extends Component{
                             <i className={appsVisible ? "fa fa-angle-left" : "fa fa-angle-right"}></i>
                         </div>
                     </div>
+                    
+                    {!window.location.pathname.includes("api_catalog") && 
                     <div className="info-wrapper">
                         <div>
                             <div className="label-n">APPLICATION</div>
@@ -235,7 +241,7 @@ class Navigation extends Component{
                         <div className={!cube.hideHttpClient ? "margin-top-20 text-center" : "hidden"}>
                             <div className="cube-btn width-50 text-center" style={{margin: "0 auto"}}>SAVE</div>
                         </div>
-                    </div>
+                    </div>}
                 </div>
             </div>
         );
