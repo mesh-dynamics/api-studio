@@ -47,9 +47,7 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 			Span currentSpan = CommonUtils.startServerSpan(requestHeaders,
 				Constants.SERVICE_FIELD.concat("-").concat(Constants.MD_CHILD_SPAN));
 			Scope scope = CommonUtils.activateSpan(currentSpan);
-
 			getOrRunSampling(reqContext, currentSpan);
-
 			reqContext.setProperty(scopeKey, scope);
 			reqContext.setProperty(spanKey, currentSpan);
 			CommonUtils.injectContext(requestHeaders);
