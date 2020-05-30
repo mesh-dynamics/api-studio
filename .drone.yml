@@ -43,6 +43,7 @@ steps:
 trigger:
   branch:
   - master
+  - cxf-2.7-Deploy
   event:
   - push
   - pull_request
