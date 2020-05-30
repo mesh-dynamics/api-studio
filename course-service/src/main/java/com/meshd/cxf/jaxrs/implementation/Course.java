@@ -18,6 +18,8 @@ import javax.xml.bind.annotation.XmlRootElement;
 import org.apache.cxf.jaxrs.client.ClientConfiguration;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.http.client.utils.URIBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -38,6 +40,8 @@ public class Course {
     private WebClient webClient = WebClient.create(URL, Arrays
         .asList(new MDClientLoggingFilter(), new MDClientTracingFilter(), new MDClientMockingFilter()), true).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
         javax.ws.rs.core.MediaType.APPLICATION_JSON);
+
+    private Logger logger = LoggerFactory.getLogger(Course.class);
 
     public int getId() {
         return id;
@@ -113,11 +117,13 @@ public class Course {
 
         URIBuilder uriBuilder = new URIBuilder(URL);
         uriBuilder.setPath(uriBuilder.getPath()+"/"+id);
+        logger.info("Sending call to student service :" + uriBuilder.toString());
         WebClient studentWebClient = webClient.path(uriBuilder.build().toString());
 
         ClientConfiguration config = WebClient.getConfig(studentWebClient);
         Response response = studentWebClient.get();
 
+        logger.info("Response status from student service " + response.getStatus());
             int code = response.getStatus();
             if (code >= 200 && code <= 299) {
                 ObjectMapper objectMapper = new ObjectMapper();
