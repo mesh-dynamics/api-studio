@@ -75,9 +75,9 @@ public class StudentRepository {
   public List<Student> dummyStudentList(@QueryParam("count") int studentCount) {
     List<Student> studentList = new ArrayList<>();
     Student student = new Student();
+    student.setId(studentCount);
+    student.setName("Dummy Student");
     for (int i=0; i<studentCount; i++) {
-      student.setId(studentCount);
-      student.setName("Dummy Student");
       studentList.add(student);
     }
     return studentList;
