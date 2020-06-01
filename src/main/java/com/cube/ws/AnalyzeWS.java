@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -606,6 +607,7 @@ public class AnalyzeWS {
     @Path("analysisResByPath/{replayId}")
     public Response getAnalysisResultsByPath(@Context UriInfo ui,
         @PathParam("replayId") String replayId) {
+      long size = config.getResponseSize();
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
         AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(replayId
 		    , queryParams);
@@ -680,14 +682,15 @@ public class AnalyzeWS {
 		                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 			                "Unable to convert diff to json string")), e);
 	                }
+	                List<String > pathsToKeep = getPathsToKeep(matchRes.respCompareRes.diffs);
 
 	                Optional<Event> recordResponseEvent = matchRes.recordReqId.flatMap(rrstore::getResponseEvent);
-	                recordResponse = recordResponseEvent.map(e -> e.getPayloadAsJsonString(true));
+	                recordResponse = recordResponseEvent.map(e -> e.checkAndConvertResponseToString(true, pathsToKeep, size, "/body"));
 	                recordRespTime = recordResponseEvent.map(e -> e.timestamp.toEpochMilli());
 
 
 	                Optional<Event> replayResponseEvent = matchRes.replayReqId.flatMap(rrstore::getResponseEvent);
-	                replayResponse = replayResponseEvent.map(e -> e.getPayloadAsJsonString(true));
+	                replayResponse = replayResponseEvent.map(e -> e.checkAndConvertResponseToString(true, pathsToKeep, size, "/body"));
 	                replayRespTime = replayResponseEvent.map(e -> e.timestamp.toEpochMilli());
                 }
 
@@ -725,6 +728,16 @@ public class AnalyzeWS {
                 buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
                     e.getMessage())).build();
         }
+    }
+
+    private List<String> getPathsToKeep(List<Comparator.Diff> diffs) {
+      List<String> pathsToKeep = new ArrayList<>();
+      for(Comparator.Diff diff: diffs) {
+        if(diff.path.contains("body")) {
+          pathsToKeep.add(diff.path);
+        }
+      }
+      return pathsToKeep;
     }
 
 
