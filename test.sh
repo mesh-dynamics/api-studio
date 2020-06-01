@@ -10,10 +10,38 @@ record() {
 }
 
 generate_traffic() {
-  for ((i=1;i<=$1;i++)); do
+  #for ((i=1;i<=$1;i++)); do
     curl -f --location --request GET 'http://apachecxf.dev.cubecorp.io:8080/meshd/courses/1/students/1' \
     --header 'CUSTOM: ASD'
-  done
+  #done
+  curl --location --request GET 'http://apachecxf.dev.cubecorp.io:8080/meshd/courses/1'
+  curl --location --request PUT 'http://apachecxf.dev.cubecorp.io:8080/meshd/courses/1' \
+	--header 'Content-Type: application/json' \
+	--data-raw '{
+    	"id": 1,
+    	"name": "REST with Spring2",
+    	"students": [
+        	1,
+        	2,
+        	2
+    	]
+	}'  
+  curl --location --request GET 'http://apachecxf.dev.cubecorp.io:8080/meshd/dummyCourseList?count=2'
+  curl --location --request POST 'http://apachecxf.dev.cubecorp.io:8080/meshd/courses/1/students' \
+	--header 'Content-Type: application/json' \
+	--data-raw '{
+    		"id": 3,
+    		"name": "Student C"
+	}'
+  curl --location --request DELETE 'http://apachecxf.dev.cubecorp.io:8080/meshd/courses/1/students/3' \
+	--header 'Content-Type: application/json' \
+	--data-raw '{
+    		"id": 3,
+    	"name": "Student C"
+	}'
+  curl --location --request POST 'http://apachecxf.dev.cubecorp.io:8080/meshd/courses' \
+	--header 'Content-Type: application/x-www-form-urlencoded' \
+	--data-urlencode 'name=testcourse'
 }
 
 stop_recording() {
@@ -70,6 +98,7 @@ main() {
   stop_recording
   sleep 20
   replay
+  sleep 30
   analyze
   echo "Replay ID:" $REPLAY_ID
 	echo $TEST_STATUS

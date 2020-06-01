@@ -101,11 +101,16 @@ public class Course {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
+        logger.info("Student to be delete is found :" + studentId);
+
         URIBuilder uriBuilder = new URIBuilder(URL);
         uriBuilder.setPath(uriBuilder.getPath()+"/"+studentId);
+
+        logger.info("Student delete call to be sent  :" + uriBuilder.getPath());
         WebClient studentWebClient = webClient.path(uriBuilder.build().toString());
 
         Response response = studentWebClient.delete();
+        logger.info("Student delete call response  :" + response.getStatus());
 
         int code = response.getStatus();
 

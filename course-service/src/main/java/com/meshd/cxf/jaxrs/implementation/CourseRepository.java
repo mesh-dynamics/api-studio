@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -73,6 +74,18 @@ public class CourseRepository {
         courses.put(courseId, course);
         return Response.ok().build();
     }
+
+//    @POST
+//    @Path("courses")
+//    public Response addSCourse(@FormParam("name") String name) {
+//
+//        Course course = new Course();
+//        course.setName("name");
+//        course.setId(courses.size() + 1);
+//        courses.put(course.getId(), course);
+//
+//        return Response.ok(course).build();
+//    }
 
     @POST
     @Path("courses/{courseId}/student")
