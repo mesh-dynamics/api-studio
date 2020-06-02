@@ -155,7 +155,7 @@ public class HTTPRequestPayload extends LazyParseAbstractPayload implements Requ
 					pathArrayNode.add(JsonNodeFactory.instance.textNode(pathSegment)));
 				root.set(PATH_SEGMENTS , pathArrayNode);
 			} catch (PathNotFoundException e) {
-				LOGGER.error("Unable to split api path into segments" ,e);
+				LOGGER.error("Unable to split api path into segments " + e.getMessage());
 			}
 		}
 	}

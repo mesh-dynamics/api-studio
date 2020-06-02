@@ -153,6 +153,12 @@ public abstract class LazyParseAbstractPayload implements Payload {
 		return dataObj.applyTransform(rhs, operationList);
 	}
 
+	@Override
+	public void transformSubTree(String path, Function<String, String> transformFunction) {
+		parseIfRequired();
+		this.dataObj.transformSubTree(path, transformFunction);
+	}
+
 
 	@Override
 	public Payload applyTransform(Payload rhs, List<ReqRespUpdateOperation> operationList) {

@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BinaryNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -145,6 +146,41 @@ public class JsonDataObj implements DataObj {
 		// Using json pointer to handle proper escaping in case keys have special characters
 		JsonPointer path = JsonPointer.compile("");
 		processNode(objRoot, filter, vals, path);
+	}
+
+	@Override
+	public void transformSubTree(String path, Function<String, String> transformFunction) {
+		JsonPointer pathPointer = JsonPointer.compile(path);
+		transform(objRoot.at(pathPointer), objRoot.at(pathPointer.head()),
+			pathPointer.last().getMatchingProperty(), transformFunction);
+	}
+
+	public void transform(JsonNode node, JsonNode parentNode, String lastPathSegment,
+		Function<String, String> transformFunction) {
+		if (node.isTextual()) {
+			String transformedValue = transformFunction.apply(node.textValue());
+			if (parentNode.isObject()) {
+				ObjectNode parentObjectNode = (ObjectNode) parentNode;
+				parentObjectNode.set(lastPathSegment, JsonNodeFactory.instance.textNode(transformedValue));
+			} else if (parentNode.isArray()) {
+				ArrayNode parentArrayNode = (ArrayNode) parentNode;
+				Utils.strToInt(lastPathSegment).ifPresent(index ->
+					parentArrayNode.set(index, JsonNodeFactory.instance.textNode(transformedValue)));
+			}
+		} else if (node.isObject()) {
+			ObjectNode nodeAsObject = (ObjectNode) node;
+			Iterator<String> fieldNames = nodeAsObject.fieldNames();
+			while(fieldNames.hasNext()) {
+				String fieldName = fieldNames.next();
+				transform(nodeAsObject.get(fieldName) , nodeAsObject
+					, fieldName, transformFunction);
+			}
+		} else if (node.isArray()) {
+			ArrayNode nodeAsArray = (ArrayNode) node;
+			for (int i = 0 ; i < nodeAsArray.size() ; i++){
+				transform(nodeAsArray.get(i), nodeAsArray, String.valueOf(i), transformFunction);
+			}
+		}
 	}
 
 	@Override

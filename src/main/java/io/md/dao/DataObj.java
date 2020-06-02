@@ -38,6 +38,9 @@ public interface DataObj {
 	void collectKeyVals(Function<String, Boolean> filter, Collection<String> vals);
 
 	@JsonIgnore
+	void transformSubTree(String path, Function<String, String>  transformFunction);
+
+	@JsonIgnore
 	MatchType compare(DataObj rhs, CompareTemplate template);
 
 	@JsonIgnore

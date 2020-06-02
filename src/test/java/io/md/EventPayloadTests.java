@@ -2,6 +2,11 @@ package io.md;
 
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -31,6 +36,7 @@ import io.md.dao.JsonByteArrayPayload;
 import io.md.dao.JsonPayload;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CubeObjectMapperProvider;
+import io.md.utils.Utils;
 
 public class EventPayloadTests {
 
@@ -60,7 +66,7 @@ public class EventPayloadTests {
 			MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
 			headers.add("content-type" , MediaType.APPLICATION_JSON);
 			MultivaluedMap<String, String> queryParams = new MultivaluedHashMap<>();
-			queryParams.add("filmName" , "Beverly Outlaw");
+			queryParams.add("filmName" , "Beverly%20Outlaw");
 			eventBuilder.setPayload(new HTTPRequestPayload(headers, queryParams,
 				null, "GET", null, "a/b/c"));
 			httpRequestEvent = eventBuilder.createEvent();
@@ -120,7 +126,7 @@ public class EventPayloadTests {
 			Assert.assertTrue(payloadFromSerialized.formParams == null ||
 				 payloadFromSerialized.formParams.isEmpty());
 			Assert
-				.assertEquals("Beverly Outlaw", payloadFromSerialized
+				.assertEquals("Beverly%20Outlaw", payloadFromSerialized
 					.queryParams.getFirst("filmName"));
 			payloadFromSerialized.encryptField("/method" , new JcaEncryption());
 			String postEncryption = objectMapper.writeValueAsString(fromSerialized);
@@ -128,6 +134,17 @@ public class EventPayloadTests {
 			Event postEncryptionEvent = objectMapper.readValue(postEncryption, Event.class);
 			Assert.assertNotEquals( ((HTTPRequestPayload)postEncryptionEvent.payload)
 				.method , "GET");
+		}
+
+		@Test
+		public void testHttpRequestTransform() throws IOException, PathNotFoundException {
+			HTTPRequestPayload requestPayload = (HTTPRequestPayload) httpRequestEvent.payload;
+			assert requestPayload != null;
+			requestPayload.transformSubTree("/queryParams" , URLDecoder::decode);
+			System.out.println("After transform :: " + objectMapper.writeValueAsString(httpRequestEvent));
+			assert requestPayload.dataObj.getValAsString("/queryParams/filmName/0").equals("Beverly Outlaw");
+
+
 		}
 
 		@Test
