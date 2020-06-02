@@ -156,22 +156,24 @@ public class EventQuery {
             return this;
         }
 
-        public Builder withPayloadKey(int val) {
+        // Need to use boxed type (Integer) here instead of int, so that null can be passed if needed
+        // https://github.com/FasterXML/jackson-databind/issues/605
+        public Builder withPayloadKey(Integer val) {
             payloadKey = val;
             return this;
         }
 
-        public Builder withOffset(int val) {
+        public Builder withOffset(Integer val) {
             offset = val;
             return this;
         }
 
-        public Builder withLimit(int val) {
+        public Builder withLimit(Integer val) {
             limit = val;
             return this;
         }
 
-        public Builder withSortOrderAsc(boolean val) {
+        public Builder withSortOrderAsc(Boolean val) {
             sortOrderAsc = val;
             return this;
         }
