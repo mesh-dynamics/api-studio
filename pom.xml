@@ -326,7 +326,7 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>commons</artifactId>
-			<version>1.0.70</version>
+			<version>1.0.74</version>
 		</dependency>
 		<dependency>
 			<groupId>io.cube</groupId>
@@ -337,7 +337,7 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>md-df-jaxrs-interceptor</artifactId>
-			<version>1.2.1</version>
+			<version>1.2.2</version>
 		</dependency>
 	</dependencies>
   <groupId>com.cube</groupId>
