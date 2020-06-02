@@ -60,7 +60,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.UtilException;
-import io.md.constants.ReplayStatus;
 import io.md.core.Comparator;
 import io.md.core.Comparator.MatchType;
 import io.md.core.CompareTemplate;
@@ -71,7 +70,6 @@ import io.md.core.ValidateCompareTemplate;
 import io.md.dao.Event;
 import io.md.dao.Event.RunType;
 import io.md.dao.Recording;
-import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.Replay;
 import io.md.dao.ReqRespMatchResult;
 import io.md.dao.ReqRespUpdateOperation;

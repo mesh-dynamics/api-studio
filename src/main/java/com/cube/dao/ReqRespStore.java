@@ -69,7 +69,7 @@ public interface ReqRespStore extends DataStore {
 				Constants.RECORDING_ID, recording.id)));
 			recording.status = RecordingStatus.Completed;
 			recording.updateTimestamp = Optional.of(Instant.now());
-			rrstore.saveRecording(recording);
+			rrstore.expireRecordingInCache(recording);
 		}
 		return recording;
 	}
@@ -203,8 +203,9 @@ public interface ReqRespStore extends DataStore {
 	 * @param replay
 	 * @return
 	 */
-	boolean saveReplay(Replay replay);
+	boolean expireReplayInCache(Replay replay);
 
+	boolean saveReplay(Replay replay);
 	/**
 	 * @param replayId
 	 * @return
@@ -439,6 +440,12 @@ public interface ReqRespStore extends DataStore {
 	Optional<String> getCurrentRecordingCollection(Optional<String> customerId, Optional<String> app,
 			Optional<String> instanceId);
 
+
+	/**
+	 * @param recording
+	 * @return
+	 */
+	boolean expireRecordingInCache(Recording recording);
 
 	/**
 	 * @param recording

@@ -338,6 +338,7 @@ public class CubeStore {
             ct -> {
                 switch(ct) {
                     case Constants.APPLICATION_X_NDJSON:
+                    case "application/json":
                         try {
                             String jsonMultiline = new String(messageBytes);
                             String[] jsons = jsonMultiline.split("\n");

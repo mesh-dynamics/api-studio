@@ -74,7 +74,6 @@ import io.md.dao.ReqRespUpdateOperation;
 import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.services.FnResponse;
 import io.md.utils.FnKey;
-import org.checkerframework.checker.nullness.Opt;
 import redis.clients.jedis.Jedis;
 
 import com.cube.cache.ComparatorCache;
@@ -133,10 +132,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if (config.intentResolver.isIntentToMock()) return;
         try (Jedis jedis = config.jedisPool.getResource()) {
             //jedis.del(collectionKey.toString());
-            Long result = jedis.expire(collectionKey.toString(), Config.REDIS_DELETE_TTL);
-            LOGGER.info(
-                String.format("Expiring redis key \"%s\" in %d seconds", collectionKey.toString(),
-                    Config.REDIS_DELETE_TTL));
+            //Long result = jedis.expire(collectionKey.toString(), Config.REDIS_DELETE_TTL);
+            if (jedis.exists(collectionKey.toString())) {
+                String shadowKey = "shadowKey:" + collectionKey.toString();
+                Long result = jedis.expire(shadowKey, Config.REDIS_DELETE_TTL);
+                LOGGER.info(String.format("Expiring redis key \"%s\" in %d seconds"
+                        , shadowKey, Config.REDIS_DELETE_TTL));
+            }
         } catch (Exception e) {
             LOGGER.error("Unable to remove key from redis cache :: "+ e.getMessage());
         }
@@ -170,11 +172,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE,
                     "Successfully retrieved from redis",  "key" ,  keyStr)));
                 toReturn = Optional.of(config.jsonMapper.readValue(fromCache, RecordOrReplay.class));
-                Long ttl = jedis.ttl(keyStr);
+                String shadowKey = "shadowKey:" + keyStr;
+                Long ttl = jedis.ttl(shadowKey);
                 if (ttl != -1 && extendTTL) {
-                    jedis.expire(keyStr, config.REDIS_DELETE_TTL);
+                    jedis.expire(shadowKey, config.REDIS_DELETE_TTL);
                     LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE,
-                        "Extending ttl in redis","key" , keyStr,"duration"
+                        "Extending ttl in redis","key" , shadowKey,"duration"
                         , String.valueOf(config.REDIS_DELETE_TTL))));
                 }
             }
@@ -216,6 +219,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         try (Jedis jedis = config.jedisPool.getResource()) {
             String toString = config.jsonMapper.writeValueAsString(rr);
             jedis.set(collectionKey.toString() , toString);
+            jedis.set("shadowKey:" + collectionKey.toString(), "");
             LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully stored in redis"
                 , "key" , collectionKey.toString())));
         } catch (JsonProcessingException e) {
@@ -1558,7 +1562,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     @Override
     public boolean saveReplay(Replay replay) {
-        super.saveReplay(replay);
         SolrInputDocument doc = replayToSolrDoc(replay);
         return saveDoc(doc) && softcommit();
     }
@@ -2494,9 +2497,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     /* (non-Javadoc)
      * @see com.cube.dao.ReqRespStore#saveReplay(com.cube.dao.Replay)
      */
-    @Override
     public boolean saveRecording(Recording recording) {
-        super.saveRecording(recording);
         SolrInputDocument doc = recordingToSolrDoc(recording);
         return saveDoc(doc) && softcommit();
     }

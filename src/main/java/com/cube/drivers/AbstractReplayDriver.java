@@ -186,7 +186,8 @@ public abstract class AbstractReplayDriver {
 		replay.status =
 			(replay.reqfailed == 0) ? ReplayStatus.Completed : ReplayStatus.Error;
 
-		rrstore.saveReplay(replay);
+		//rrstore.saveReplay(replay);
+		rrstore.expireReplayInCache(replay);
 		if (analyze) {
 			analyze();
 		}

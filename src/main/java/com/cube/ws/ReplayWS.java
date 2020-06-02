@@ -140,7 +140,8 @@ public class ReplayWS {
         Optional<Replay> replay = AbstractReplayDriver.getStatus(replayId, this.rrstore);
 
         Response resp = replay.map(r -> {
-            rrstore.invalidateCurrentCollectionCache(r.customerId, r.app, r.instanceId);
+            //rrstore.invalidateCurrentCollectionCache(r.customerId, r.app, r.instanceId);
+            //Removing since invalidation is already happening in saveReplay
             if (r.status != ReplayStatus.Running && r.status != ReplayStatus.Init) {
                 return Response.ok(String.format("Replay id state is already terminal: %s", r.status.toString())).build();
             }
