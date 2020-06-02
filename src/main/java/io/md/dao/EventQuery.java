@@ -157,6 +157,7 @@ public class EventQuery {
         }
 
         // Need to use boxed type (Integer) here instead of int, so that null can be passed if needed
+        // https://github.com/FasterXML/jackson-databind/issues/605
         public Builder withPayloadKey(Integer val) {
             payloadKey = val;
             return this;
