@@ -1,6 +1,6 @@
 package io.md.dao;
 
-public class AgentStore {
+public class ConfigStore {
   public final String version;
   public final String customerId;
   public final String app;
@@ -8,7 +8,7 @@ public class AgentStore {
   public final String instanceId;
   public StoreConfig configJson;
 
-  public AgentStore() {
+  public ConfigStore() {
     this.version = null;
     this.customerId = null;
     this.app = null;
@@ -17,7 +17,7 @@ public class AgentStore {
     this.configJson = null;
   }
 
-  public AgentStore(String version, String customerId, String app, String service,
+  public ConfigStore(String version, String customerId, String app, String service,
       String instanceId) {
     this.version = version;
     this.customerId = customerId;
@@ -26,7 +26,7 @@ public class AgentStore {
     this.instanceId = instanceId;
   }
 
-  public AgentStore(String version, String customerId, String app, String service,
+  public ConfigStore(String version, String customerId, String app, String service,
       String instanceId, StoreConfig configJson) {
     this.version = version;
     this.customerId = customerId;
@@ -36,7 +36,7 @@ public class AgentStore {
     this.configJson = configJson;
   }
 
-  public AgentStore setConfigJson(StoreConfig configJson) {
+  public ConfigStore setConfigJson(StoreConfig configJson) {
     this.configJson = configJson;
     return this;
   }
