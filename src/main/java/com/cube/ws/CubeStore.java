@@ -778,33 +778,31 @@ public class CubeStore {
     }
 
     @GET
-    @Path("/fetchAgentConfig/{customerId}")
+    @Path("/fetchAgentConfig/{customerId}/{app}/{service}/{instanceId}")
     @Produces({MediaType.APPLICATION_JSON})
-    public Response fetchAgentConfig(@Context UriInfo uriInfo,
-        @PathParam("customerId") String customerId) {
-        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-        Optional<String> app = Optional
-            .ofNullable(queryParams.getFirst(Constants.APP_FIELD));
-        Optional<String> version = Optional
-            .ofNullable(queryParams.getFirst(Constants.VERSION_FIELD));
-        Optional<String> service = Optional
-            .ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
-        Optional<String> instanceId = Optional
-            .ofNullable(queryParams.getFirst(Constants.INSTANCE_ID_FIELD));
+    public Response fetchAgentConfig(@PathParam("customerId") String customerId, @PathParam("app") String app,
+        @PathParam("service") String service, @PathParam("instanceId") String instanceId) {
         try {
-            Result<ConfigStore> response = rrstore.getAgentConfig(Optional.of(customerId), version,
-                app, service, instanceId);
-            List<ConfigStore> responseData = new ArrayList<>();
-            response.getObjects().forEach(res -> responseData.add(res));
-            String json = jsonMapper.writeValueAsString(responseData);
-            return Response.ok().type(MediaType.APPLICATION_JSON).entity(
-                buildSuccessResponse(Constants.SUCCESS, new JSONObject(Map.of("response",json)))).build();
+            Optional<ConfigStore> response = rrstore.getAgentConfig(customerId, app,
+                service, instanceId);
+            if(response.isPresent()) {
+                String json = jsonMapper.writeValueAsString(response.get());
+                return Response.ok().type(MediaType.APPLICATION_JSON).entity(
+                    buildSuccessResponse(Constants.SUCCESS, new JSONObject(Map.of("response",json)))).build();
+            } else {
+                LOGGER.error(
+                    new ObjectMessage(Map.of(Constants.MESSAGE, "No Config found for given Customer",
+                        Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, app,
+                        Constants.SERVICE_FIELD, service, Constants.INSTANCE_ID_FIELD, instanceId)));
+                return Response.status(Status.NOT_FOUND).type(MediaType.APPLICATION_JSON).entity(
+                    buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
+                        "No Config found for given Customer")).build();
+            }
         } catch (Exception e) {
             LOGGER.error(
                 new ObjectMessage(Map.of(Constants.MESSAGE, "Error while retrieving the response",
-                    Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, app.orElse(null),
-                    Constants.VERSION_FIELD, version.orElse(null), Constants.SERVICE_FIELD, service.orElse(null),
-                    Constants.INSTANCE_ID_FIELD, instanceId.orElse(null))), e);
+                    Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, app,
+                    Constants.SERVICE_FIELD, service, Constants.INSTANCE_ID_FIELD, instanceId)), e);
             return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                 buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
                     "Error while retrieving the response")).build();

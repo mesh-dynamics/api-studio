@@ -608,17 +608,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Result<ConfigStore> getAgentConfig(Optional<String> customerId, Optional<String> version,
-                Optional<String> app, Optional<String> service, Optional<String> instanceId) {
+    public Optional<ConfigStore> getAgentConfig(String customerId, String app,
+            String service, String instanceId) {
         SolrQuery query = new SolrQuery("*:*");
         addFilter(query, TYPEF, ConfigType.AgentConfig.toString());
         addFilter(query, CUSTOMERIDF, customerId);
-        addFilter(query, VERSIONF, version);
         addFilter(query, APPF, app);
         addFilter(query, SERVICEF, service);
         addFilter(query,INSTANCEIDF, instanceId);
-        return SolrIterator.getResults(solr, query, Optional.empty(),
-            this::docToAgent, Optional.empty());
+        addSort(query, VERSIONF, false);
+        return SolrIterator.getSingleResult(solr, query).flatMap(this::docToAgent);
     }
 
     private SolrInputDocument agentToSolrDoc(ConfigStore store) {

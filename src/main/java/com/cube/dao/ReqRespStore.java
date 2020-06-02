@@ -641,7 +641,7 @@ public interface ReqRespStore extends DataStore {
 	    , String apiPath);
 
     boolean agentConfigToSolrDoc(ConfigStore store);
-    Result<ConfigStore> getAgentConfig(Optional<String> customerId, Optional<String> version,
-					Optional<String> app, Optional<String> service, Optional<String> instanceId);
+    Optional<ConfigStore> getAgentConfig(String customerId, String app, String service,
+						String instanceId);
 
 }
