@@ -640,7 +640,7 @@ public interface ReqRespStore extends DataStore {
     public Optional<String> getDefaultEventType(String customer, String app, String service
 	    , String apiPath);
 
-    boolean saveAgentConfig(ConfigStore store);
+    boolean agentConfigToSolrDoc(ConfigStore store);
     Result<ConfigStore> getAgentConfig(Optional<String> customerId, Optional<String> version,
 					Optional<String> app, Optional<String> service, Optional<String> instanceId);
 

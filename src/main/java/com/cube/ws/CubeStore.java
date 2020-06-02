@@ -750,7 +750,7 @@ public class CubeStore {
         }
         try {
             ValidateAgentStore.validate(store);
-            rrstore.saveAgentConfig(store);
+            rrstore.agentConfigToSolrDoc(store);
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(
                 buildSuccessResponse(Constants.SUCCESS,
                     new JSONObject(Map.of(Constants.MESSAGE, "The config is saved",

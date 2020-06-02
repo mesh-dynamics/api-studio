@@ -7,6 +7,7 @@ import static io.md.core.TemplateKey.*;
 
 import io.md.constants.ReplayStatus;
 import io.md.core.TemplateKey;
+import io.md.core.ValidateAgentStore;
 import io.md.dao.ConfigStore;
 import io.md.dao.ConfigType;
 import io.md.dao.EventQuery;
@@ -601,7 +602,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public boolean saveAgentConfig(ConfigStore store) {
+    public boolean agentConfigToSolrDoc(ConfigStore store) {
         SolrInputDocument doc = agentToSolrDoc(store);
         return saveDoc(doc) && softcommit();
     }
@@ -647,23 +648,20 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         ConfigStore agentStore = new ConfigStore(version.orElse(null), customerId.orElse(null),
             app.orElse(null), service.orElse(null), instanceId.orElse(null));
         try {
-            configJson.ifPresent(UtilException.rethrowConsumer(payload ->
-                agentStore.setConfigJson(this.config.jsonMapper.readValue(payload
+            configJson.ifPresent(UtilException.rethrowConsumer(config ->
+                agentStore.setConfigJson(this.config.jsonMapper.readValue(config
                     , StoreConfig.class))));
-
+            ValidateAgentStore.validate(agentStore);
+            return Optional.of(agentStore);
+        }catch (NullPointerException | IllegalArgumentException e) {
+            LOGGER.error(
+                new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Data fields are null or empty")), e);
         } catch (Exception e) {
-            try {
-                configJson.ifPresent(UtilException.rethrowConsumer(payload -> {
-                    String finalPayload = "{ \"" + "AgentConfig" + "\" , " + payload + " } ";
-                    agentStore
-                        .setConfigJson(this.config.jsonMapper.readValue(finalPayload, StoreConfig.class));
-                }));
-            } catch (Exception e1) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                    "Unable to convert json string back to StoreConfig object")), e1);
-            }
+                    "Unable to convert json string back to StoreConfig object")), e);
         }
-        return Optional.of(agentStore);
+        return Optional.empty();
     }
 
     private static final String TEMPLATE_ID = "template_id" + STRINGSET_SUFFIX;
