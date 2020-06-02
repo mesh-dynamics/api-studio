@@ -154,7 +154,7 @@ public class Constants {
     public static final String COLLECTION_UPD_OP_SET_ID_FIELD = "collection_upd_op_set_id";
     public static final String TEMPLATE_UPD_OP_SET_ID_FIELD = "template_upd_op_set_id";
     public static final String GOLDEN_COMMENT_FIELD = "golden_comment";
-    public static final String TEMPLATE_VERSION_FIELD = "version";
+    public static final String VERSION_FIELD = "version";
     public static final String SRC_REQUEST_ID = "src-request-id";
     public static final String REQUEST_ID = "request-id";
     public static final String CUBE_HEADER_PREFIX = "c-";
@@ -189,4 +189,5 @@ public class Constants {
 	public static final String REC_TRACE_ID = "recordTraceId";
 	public static final String SPAN_ID_FIELD = "spanId";
     public static final String PARENT_SPAN_ID_FIELD = "parentSpanId";
+    public static final String CONFIG_JSON = "config_json";
 }
