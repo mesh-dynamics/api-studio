@@ -314,4 +314,18 @@ public class AnalyzeWSController {
     public ResponseEntity getGoldenMetaData(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String recordingId) {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
+
+    @GetMapping("/getApiFacets/{customerId}/{appId}")
+    public  ResponseEntity getApiFacets(HttpServletRequest request, @RequestBody Optional<String> getBody,
+            @PathVariable String customerId, @PathVariable String appId) {
+        validation.validateCustomerName(request, customerId);
+        return cubeServerService.fetchGetResponse(request, getBody);
+    }
+
+    @GetMapping("/getApiTrace/{customerId}/{appId}")
+    public  ResponseEntity getApiTrace(HttpServletRequest request, @RequestBody Optional<String> getBody,
+        @PathVariable String customerId, @PathVariable String appId) {
+        validation.validateCustomerName(request, customerId);
+        return cubeServerService.fetchGetResponse(request, getBody);
+    }
 }
