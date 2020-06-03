@@ -6,7 +6,7 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import com.cube.cache.TemplateKey;
+import io.md.core.TemplateKey;
 
 public class TemplateUpdateOperationSet {
 

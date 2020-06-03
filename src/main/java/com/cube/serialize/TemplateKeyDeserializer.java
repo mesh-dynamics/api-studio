@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.KeyDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.cube.cache.TemplateKey;
+import io.md.core.TemplateKey;
 
 public class TemplateKeyDeserializer extends KeyDeserializer {
 

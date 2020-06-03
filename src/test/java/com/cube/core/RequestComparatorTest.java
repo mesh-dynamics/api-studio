@@ -279,15 +279,6 @@ public class RequestComparatorTest {
 
     }
 
-    private Event updateRequestEventQueryParams(Event event, String param, String val) throws IOException,
-        InvalidEventException {
-        HTTPRequestPayload requestPayload = (HTTPRequestPayload) event.payload;
-        requestPayload.queryParams.putSingle(param, val);
-
-        return cloneWithPayload(event, requestPayload);
-
-    }
-
     private Event cloneWithPayload(Event event, HTTPRequestPayload payload) throws JsonProcessingException, InvalidEventException {
         return new EventBuilder(event.customerId, event.app, event.service, event.instanceId,
             event.getCollection(), new MDTraceInfo(event.getTraceId() , null, null)
