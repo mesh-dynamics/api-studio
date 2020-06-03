@@ -21,6 +21,8 @@ const authActions = {
 
     clearUser: () => ({ type: authConstants.LOGOUT }),
 
+    accessViolationDetected: () => ({ type: authConstants.ACCESS_VIOLATION }),
+
     login: (username, password) => async (dispatch) => {
         dispatch(authActions.clearMessage());
 
@@ -48,7 +50,7 @@ const authActions = {
     
     createUser: (user) => createUser(user),
 
-    verifyToken: (token) => validateReCaptcha(token)
+    verifyToken: (token) => validateReCaptcha(token),
 };
 
 export default authActions;

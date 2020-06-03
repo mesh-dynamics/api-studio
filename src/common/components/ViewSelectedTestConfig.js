@@ -6,7 +6,7 @@ import {cubeConstants} from "../constants";
 import Modal from "react-bootstrap/es/Modal";
 import config from "../config";
 import {getTransformHeaders} from "../utils/lib/url-utils";
-import axios from "axios";
+import api from "../api";
 import {GoldenMeta} from "./Golden-Visibility";
 import {goldenActions} from '../actions/golden.actions'
 import {validateGoldenName} from "../utils/lib/golden-utils";
@@ -24,7 +24,7 @@ class ViewSelectedTestConfig extends React.Component {
             fcId: null,
             fcEnabled: false,
             replayId: null,
-            show: false,
+            showReplayModal: false,
             showCT: false,
             showDeleteGoldenConfirmation:false,
             showAddCustomHeader: false,
@@ -145,15 +145,17 @@ class ViewSelectedTestConfig extends React.Component {
             dispatch(cubeActions.clear());
             let version = null;
             let golden = null;
+            let name = "";
             for (const collec of cube.testIds) {
                 if (collec.collec == e.target.value) {
                     golden = collec.id
                     version = collec.templateVer;
+                    name = collec.name;
                     break;
                 }
             }
             //dispatch(cubeActions.getGraphData(cube.selectedApp));
-            dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version, golden));
+            dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version, golden, name));
         }
     };
     
@@ -162,7 +164,7 @@ class ViewSelectedTestConfig extends React.Component {
     handleClose = () => {
         const {cube} = this.props;
         this.handleChangeForTestIds({target: {value: cube.selectedTestId}});
-        this.setState({ show: false, showCT: false });
+        this.setState({ showReplayModal: false, showCT: false });
     };
 
     getFormattedDate(date) {
@@ -348,9 +350,55 @@ class ViewSelectedTestConfig extends React.Component {
         }
     };
 
+    handleRunTestClick = () => {
+        const { cube } = this.props;
+
+        const instancesForSelectedApp = cube.instances
+            .filter((item) => item.name == cube.selectedInstance && item.app.name == cube.selectedApp);
+
+        if(!cube.selectedInstance) {
+            this.showInstanceWarningModal();
+            return;
+        }
+
+        if (!cube.selectedTestId) {
+            this.showGoldenWarningModal();
+            return;
+        }
+
+        if(instancesForSelectedApp.length === 0) {
+            // TODO: Should be put in modal. 
+            alert('Gateway endpoint is unavailable');
+            return;
+        }
+
+        // When the conditions above are met
+        // then trigger replay
+        this.setState({ showReplayModal: true });
+        this.replay(instancesForSelectedApp);
+    };
+
+    handleReplayErrorCatchAll = (message, statusText) => {
+        this.setState({ showReplayModal: false });
+        alert(message || statusText);
+    }
+
+    handleReplayError = (data, status, statusText, username) => 
+        (
+            status && status === 409 && data["replayId"] !== "None"
+            ?
+                this.setState({ 
+                    fcId: data["replayId"], 
+                    fcEnabled: (data["userId"] === username), 
+                    showReplayModal: false
+                })
+                
+            : this.handleReplayErrorCatchAll(data["message"], statusText)
+        );
+
     checkStatus = (statusUrl, configForHTTP) => {
-        axios.get(statusUrl, configForHTTP)
-            .then(response => this.setState({ recStatus: response.data }));
+        api.get(statusUrl, configForHTTP)
+            .then(data => this.setState({ recStatus: data }));
     };
 
     resumeRecording = () => {
@@ -376,12 +424,12 @@ class ViewSelectedTestConfig extends React.Component {
         const configForHTTP = {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                "Authorization": `Bearer ${access_token}`
+                // "Authorization": `Bearer ${access_token}`
             }
         };
-        
-        axios.post(resumeUrl, {}, configForHTTP).then((response) => {
-            this.setState({ stopDisabled: false, recId: response.data.id, recName, recLabel });
+
+        api.post(resumeUrl, {}, configForHTTP).then((data) => {
+            this.setState({ stopDisabled: false, recId: data.id, recName, recLabel });
             this.recStatusInterval = setInterval(
                 () => (
                     !this.state.recId
@@ -416,7 +464,7 @@ class ViewSelectedTestConfig extends React.Component {
         const configForHTTP = {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                "Authorization": `Bearer ${access_token}` //"Bearer " + user['access_token']
+                // "Authorization": `Bearer ${access_token}` //"Bearer " + user['access_token']
             }
         };
         
@@ -426,8 +474,9 @@ class ViewSelectedTestConfig extends React.Component {
         searchParams.set('userId', username);
         searchParams.set('label', recLabel);
 
-        axios.post(recordUrl, searchParams, configForHTTP).then((response) => {
-            this.setState({ stopDisabled: false, recId: response.data.id, recLabel });
+        // axios.post(recordUrl, searchParams, configForHTTP
+        api.post(recordUrl, searchParams, configForHTTP).then((data) => {
+            this.setState({ stopDisabled: false, recId: data.id, recLabel });
             this.recStatusInterval = setInterval(
                 () => (
                     !this.state.recId
@@ -463,7 +512,8 @@ class ViewSelectedTestConfig extends React.Component {
                 "Authorization": `Bearer ${access_token}`
             }
         };
-        axios.post(stopUrl, {}, configForHTTP).then((response) => {
+        // axios.post(stopUrl, {}, configForHTTP)
+        api.post(stopUrl, {}, configForHTTP).then(() => {
             this.setState({ stopDisabled: true, recId: null });
             this.checkStatus(statusUrl, configForHTTP);
         });
@@ -471,69 +521,60 @@ class ViewSelectedTestConfig extends React.Component {
         dispatch(cubeActions.getTestIds(selectedApp));
     };
 
-    replay = async () => {
-        const { cube, dispatch, authentication, checkReplayStatus } = this.props;
-        const { testConfig: { testPaths, testMockServices, testConfigName }} = cube;
-        const selectedInstances = cube.instances
-            .filter((item) => item.name == cube.selectedInstance && item.app.name == cube.selectedApp);
-        cubeActions.clearReplayStatus();
-        if(!cube.selectedInstance){
-            alert('select an instance to replay')
-        } else if (!cube.selectedTestId) {
-            alert('select golden to replay');
-        } else if(selectedInstances.length === 0) {
-            alert('Gateway endpoint is unavailable')
-        } else {
-            this.setState({show: true});
-            let user = authentication.user;
-            let url = `${config.replayBaseUrl}/start/${cube.selectedGolden}`;
+    replay = async (instancesForSelectedApp) => {
+        const { 
+            cube: {
+                selectedInstance,
+                collectionTemplateVersion,
+                selectedGolden,
+                testConfig: { 
+                    testPaths, 
+                    testMockServices, 
+                    testConfigName 
+                }
+            }, 
+            authentication: { 
+                user: { 
+                    username 
+                } 
+            }, 
+            checkReplayStatus 
+        } = this.props;
+        const replayStartUrl = `${config.replayBaseUrl}/start/${selectedGolden}`;
 
-            const transforms = JSON.stringify(getTransformHeaders(this.state.customHeaders));
+        const transforms = JSON.stringify(getTransformHeaders(this.state.customHeaders));
 
-            const searchParams = new URLSearchParams();
-            searchParams.set('endPoint', selectedInstances[0].gatewayEndpoint);
-            searchParams.set('instanceId', cube.selectedInstance);
-            searchParams.set('templateSetVer', cube.collectionTemplateVersion);
-            searchParams.set('userId', user.username);
-            searchParams.set('transforms', transforms);
-            testMockServices && testMockServices.length != 0 &&
-                 testMockServices.map(testMockService => searchParams.append('mockServices',testMockService))
-            searchParams.set('testConfigName', testConfigName);
-            searchParams.set('analyze', true);
-            // Append Test Paths
-            // If not specified, it will run all paths
-            if(testPaths && testPaths.length !== 0) {
-                testPaths.map(path => searchParams.append("paths", path))
+        const searchParams = new URLSearchParams();
+
+        searchParams.set('endPoint', instancesForSelectedApp[0].gatewayEndpoint);
+        searchParams.set('instanceId', selectedInstance);
+        searchParams.set('templateSetVer', collectionTemplateVersion);
+        searchParams.set('userId', username);
+        searchParams.set('transforms', transforms);
+        searchParams.set('testConfigName', testConfigName);
+        searchParams.set('analyze', true);
+        // Append mock services
+        testMockServices && testMockServices.length != 0 &&
+            testMockServices.map(testMockService => searchParams.append('mockServices',testMockService))
+        // Append Test Paths, If not specified, it will run all paths
+        testPaths && testPaths.length !== 0 &&
+            testPaths.map(path => searchParams.append("paths", path))
+
+        const configForHTTP = {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
             }
+        };
 
-            const configForHTTP = {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    "Authorization": "Bearer " + user['access_token']
-                }
-            };
-            axios.post(url, searchParams, configForHTTP).then((response) => {
-                this.setState({replayId: response.data});
-                // check replay status periodically and call analyze at the end; and update timeline
-                // this method is run in the parent component (Navigation)
-                checkReplayStatus(this.state.replayId.replayId); 
-            }).catch((error) => {
-                if(error.response.data) {
-                    if (error.response.data['replayId'] !== "None") {
-                        this.setState({
-                            fcId: error.response.data['replayId'], 
-                            fcEnabled: (error.response.data['userId']===user.username), 
-                            show: false
-                        });
-                    } else {
-                        this.setState({show: false});
-                        alert(error.response.data['message']);
-                    }
-                } else {
-                    this.setState({show: false});
-                    alert(error.response.statusText);
-                }
-            });
+        try {
+            const data = await api.post(replayStartUrl, searchParams, configForHTTP);
+            this.setState({ replayId: data });
+            // check replay status periodically and call analyze at the end; and update timeline
+            // this method is run in the parent component (Navigation)
+            checkReplayStatus(this.state.replayId.replayId);
+        } catch(error) {
+            const { data, status, statusText } = error.response;
+            this.handleReplayError(data, status, statusText, username);
         }
     };
 
@@ -554,13 +595,13 @@ class ViewSelectedTestConfig extends React.Component {
         const { cube, dispatch} = this.props;
         try {
             await cubeService.deleteGolden(cube.selectedGolden);
-            dispatch(cubeActions.getTestIds(cube.selectedApp));
-            dispatch(cubeActions.clearSelectedGolden());
+            dispatch(cubeActions.removeSelectedGoldenFromTestIds(cube.selectedGolden));
         } catch (error) {
             console.error("Error caught in softDelete Golden: " + error);
         }
         this.setState({
             showDeleteGoldenConfirmation: false,
+            selectedGoldenFromFilter:"",
         });
     }
     
@@ -704,6 +745,7 @@ class ViewSelectedTestConfig extends React.Component {
 
     renderTestInfo = () => {
         const { cube, authentication: { user: { username } } } = this.props;
+        const { recStatus } = this.state;
         
         return(
             <Fragment>
@@ -746,7 +788,7 @@ class ViewSelectedTestConfig extends React.Component {
                 </div>
 
                 <div className="margin-top-10">
-                    <div className="label-n">SELECT MODE&nbsp;
+                    <div className="label-n">SELECT RECORD MODE&nbsp;
                         <select 
                             className="r-att" 
                             style={{ fontSize: "12px", fontWeight: "500", color: "#5f5f5f" }} 
@@ -763,10 +805,13 @@ class ViewSelectedTestConfig extends React.Component {
                     <div className="label-n">SELECT GOLDEN&nbsp;
                         <i onClick={this.showGoldenFilter} title="Browse Golden" className="link fas fa-folder-open pull-right font-15"></i>
                         {
-                            cube.selectedTestId &&
-                                    <span className="pull-right" onClick={this.handleViewGoldenClick} style={{ marginLeft: "5px", cursor: "pointer" }}>
-                                        <i className="fas fa-eye margin-right-10" style={{ fontSize: "12px", color: "#757575"}} aria-hidden="true"></i>
-                                    </span>
+                            cube.selectedTestId 
+                            && (!recStatus || recStatus.status !== "Running") 
+                            && (
+                                <span className="pull-right" onClick={this.handleViewGoldenClick} style={{ marginLeft: "5px", cursor: "pointer" }}>
+                                    <i className="fas fa-eye margin-right-10" style={{ fontSize: "12px", color: "#757575"}} aria-hidden="true"></i>
+                                </span>
+                            )
                         }
                     </div>
                     <div className="value-n">
@@ -783,7 +828,7 @@ class ViewSelectedTestConfig extends React.Component {
 
                 <div className="margin-top-10 row">
                     <div className="col-sm-6">
-                        <div onClick={() => this.replay()} className="cube-btn width-100 text-center">RUN TEST</div>
+                        <div onClick={this.handleRunTestClick} className="cube-btn width-100 text-center">RUN TEST</div>
                     </div>
                     <div className="col-sm-6"><div onClick={this.handleRecordButtonClick} className="cube-btn width-100 text-center">RECORD</div></div>
                 </div>
@@ -796,7 +841,7 @@ class ViewSelectedTestConfig extends React.Component {
         const { cube } = this.props;
         const { 
             showGoldenMeta, customHeaders, recordModalVisible, 
-            show, fcId, showGoldenFilter, selectedGoldenFromFilter,
+            showReplayModal, fcId, showGoldenFilter, selectedGoldenFromFilter,
             recName, stopDisabled, recStatus, showAddCustomHeader,
             goldenNameErrorMessage, fcEnabled, resumeModalVisible,
             dbWarningModalVisible, instanceWarningModalVisible, 
@@ -811,7 +856,6 @@ class ViewSelectedTestConfig extends React.Component {
                 {!showGoldenMeta && this.renderTestInfo()}
 
                 {showGoldenMeta && <GoldenMeta {...cube} handleBackToTestInfoClick={this.handleBackToTestInfoClick} />}
-                
                 
                 {dbWarningModalVisible && this.renderAlertModals(dbWarningModalVisible, this.handleDBWarningModalDismissClick)}
                 
@@ -879,7 +923,7 @@ class ViewSelectedTestConfig extends React.Component {
                     </Modal.Footer>
                 </Modal>
 
-                <Modal show={show}>
+                <Modal show={showReplayModal}>
                     <Modal.Header>
                         <Modal.Title>{cube.testConfig ? cube.testConfig.testConfigName : ''}</Modal.Title>
                     </Modal.Header>
@@ -1033,7 +1077,7 @@ class ViewSelectedTestConfig extends React.Component {
                     <Modal.Body>
                         <div style={{ display: "flex", flex: 1, justifyContent: "center"}}>
                             <div className="margin-right-10" style={{ display: "flex", flexDirection: "column", fontSize:20 }}>
-                                This will delete the Golden. Please confirm.
+                                This will delete the {cube.selectedGoldenName}. Please confirm.
                             </div>
                             <div style={{ display: "flex", alignItems: "flex-start" }}>
                                     <span className="cube-btn margin-right-10" onClick={() => this.deleteGolden()}>Confirm</span>

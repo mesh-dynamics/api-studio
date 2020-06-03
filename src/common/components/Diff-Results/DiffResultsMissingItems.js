@@ -100,8 +100,6 @@ class DiffResultsMissingItems extends Component{
     render(){
         const { missedRequiredFields } = this.props;
 
-        console.log({missedRequiredFields});
-
         return(
 
             <div style={{ padding: "10px 0" }}>
@@ -157,6 +155,7 @@ class DiffResultsMissingItems extends Component{
                                                 jsonPath={eachMissedField.path}
                                                 eventType={eachMissedField.eventType}
                                                 hideMarkForUpdate={true}
+                                                showDeleteRuleAction={true}
                                                 handleHidePopoverClick={this.handleHidePopoverClick} 
                                             />
                                         </div>
