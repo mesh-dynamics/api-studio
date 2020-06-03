@@ -378,6 +378,24 @@ class ViewSelectedTestConfig extends React.Component {
         this.replay(instancesForSelectedApp);
     };
 
+    handleReplayErrorCatchAll = (message, statusText) => {
+        this.setState({ showReplayModal: false });
+        alert(message || statusText);
+    }
+
+    handleReplayError = (data, status, statusText, username) => 
+        (
+            status && status === 409 && data["replayId"] !== "None"
+            ?
+                this.setState({ 
+                    fcId: data["replayId"], 
+                    fcEnabled: (data["userId"] === username), 
+                    showReplayModal: false
+                })
+                
+            : this.handleReplayErrorCatchAll(data["message"], statusText)
+        );
+
     checkStatus = (statusUrl, configForHTTP) => {
         api.get(statusUrl, configForHTTP)
             .then(data => this.setState({ recStatus: data }));
@@ -520,7 +538,6 @@ class ViewSelectedTestConfig extends React.Component {
                     username 
                 } 
             }, 
-            dispatch, 
             checkReplayStatus 
         } = this.props;
         const replayStartUrl = `${config.replayBaseUrl}/start/${selectedGolden}`;
@@ -556,38 +573,8 @@ class ViewSelectedTestConfig extends React.Component {
             // this method is run in the parent component (Navigation)
             checkReplayStatus(this.state.replayId.replayId);
         } catch(error) {
-            /**
-             * Old Code
-             */
-            //             if(error.response.data) {
-            //                 if (error.response.data['replayId'] !== "None") {
-            //                     this.setState({
-            //                         fcId: error.response.data['replayId'], 
-            //                         fcEnabled: (error.response.data['userId']===user.username), 
-            //                         showReplayModal: false
-            //                     });
-            //                 } else {
-            //                     this.setState({showReplayModal: false});
-            //                     alert(error.response.data['message']);
-            //                 }
-            //             } else {
-            //                 this.setState({showReplayModal: false});
-            //                 alert(error.response.statusText);
-            //             }
-            // TODO: This part requires critical review
-            const { data } = error.response;
-
-            if(data.status && (data.status >= 400 && data.status <= 500)){
-                // If this a network error
-                this.setState({ showReplayModal: false, fcId: null, fcEnabled: false });
-                alert(`An error occured during the replay proccess. Error Code: ${data.status}`);
-                return;
-            }
-
-            // If an application error is detected and an error 
-            // message is returned from the server
-            this.setState({ showReplayModal: false, fcId: null, fcEnabled: false });
-            alert(data);
+            const { data, status, statusText } = error.response;
+            this.handleReplayError(data, status, statusText, username);
         }
     };
 
