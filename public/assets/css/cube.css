@@ -4754,3 +4754,9 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
     display: flex;
     flex: 3;
 }
+
+.test-config-divider {
+    color: #797979;
+    border: .5px solid;
+    margin: 10px 0;
+}

@@ -307,6 +307,16 @@ const deleteGolden = async (recordingId) => {
     }
 };
 
+const fetchClusterList = async () => {
+    try {
+        return await api.get("http://www.mocky.io/v2/5ed0786c3500006000ff9c6d");
+    } catch (error) {
+        console.log("Error fetching cluster list \n", error);
+        throw error;
+    }
+};
+
+// TODO: Refactor the calls below
 const fetchAPIFacetData = async (app, startTime, endTime) => {
     const user = JSON.parse(localStorage.getItem('user'));
 
@@ -374,4 +384,5 @@ export const cubeService = {
     deleteGolden,
     fetchAPIFacetData,
     fetchAPITraceData,
+    fetchClusterList
 };
