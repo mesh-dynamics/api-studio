@@ -3,6 +3,7 @@
  */
 package com.cube.dao;
 
+import io.md.dao.ConfigStore;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.AbstractMap;
@@ -638,5 +639,9 @@ public interface ReqRespStore extends DataStore {
 
     public Optional<String> getDefaultEventType(String customer, String app, String service
 	    , String apiPath);
+
+    boolean agentConfigToSolrDoc(ConfigStore store);
+    Optional<ConfigStore> getAgentConfig(String customerId, String app, String service,
+						String instanceId);
 
 }
