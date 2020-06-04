@@ -21,6 +21,18 @@
       "target": "msi",
       "icon": "public/mesh-favicon.ico",
       "legalTrademarks": "2020-21 meshdynamics.io"
+    },
+    "linux": {
+      "target": [
+        "rpm, deb, apk"
+      ],
+      "executableName": "Cube",
+      "icon": "public/mesh-favicon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.developer-tools",
+      "icon": "public/mesh-favicon.icns"
     }
   },
   "dependencies": {
