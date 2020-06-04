@@ -1,13 +1,61 @@
-import React, { useEffect } from 'react'
+import React, {Fragment, useEffect,useState } from 'react'
 import { history } from '../../helpers';
 import ReactTable from "react-table";  
-import "react-table/react-table.css";  
-
+import Modal from "react-bootstrap/lib/Modal";
+import { cubeService } from "../../services";
+import './APICatalog.css';
 
 let tableData = []
 
+// TODO: refactor this into a class component which is compatible with react-table v6
 const APIRequestsTable = (props) => {
-    const {selectedService, selectedApiPath, apiTrace} = props;
+    const {selectedService, selectedApiPath, apiTrace,app} = props;
+    const [showModal, setShowModal] = useState(false);
+    const [query,setQuery] = useState([]);
+    const [form,setForm] = useState([]);
+    const [details,setDetails] = useState([]);
+
+    const columns = 
+    [
+      {  
+        Header: <input type="checkbox" id="selectAll" onChange={selectAll}></input>,
+        columns:
+        [
+          {
+            width:30,
+            accessor: 'check',
+            style:{
+              textAlign:'center',
+            }
+          }
+        ]
+      },
+      {  
+        Header: <div style={{textAlign:"left",fontWeight:"bold"}}>TIME</div>,
+        columns:
+        [
+          {
+            accessor: 'time',
+            getProps: (state, rowInfo) => ({
+              onClick: () => onCellClick(rowInfo)
+            }),
+            style: {
+              cursor: 'pointer',
+            },
+          }
+        ]
+      },
+      {  
+        Header: <div style={{textAlign:"left",fontWeight:"bold"}}>OUTGOING REQUESTS</div>,
+        columns:
+        [
+          {
+            accessor: 'out',
+
+          }
+        ]
+      }
+    ] 
 
     const generateTableData = ()=>{
       tableData = [];
@@ -19,17 +67,7 @@ const APIRequestsTable = (props) => {
                 if(req.res[1].parentSpanId === req.res[0].spanId){
                   const date = new Date(req.res[1].reqTimestamp*1000);
                   const dateString = date.toLocaleString();
-                  tableData.push(
-                    {
-                      check: <input type="checkbox" className="requestBox" value={req.res[1].requestEventId}></input>,  
-                      time: dateString,
-                      out:req.res.map((result, index) => {
-                        if(req.res[0].spanId === req.res[index].parentSpanId){
-                            return  <div>{req.res[index].apiPath}</div>
-                          }
-                      })
-                    }
-                  )
+                  makeTableData(true,req,dateString);
                 }
               }
             }
@@ -37,13 +75,7 @@ const APIRequestsTable = (props) => {
               if(req.res[0].service === selectedService && req.res[0].apiPath === selectedApiPath){
                   const date = new Date(req.res[0].reqTimestamp*1000);
                   const dateString = date.toLocaleString();
-                  tableData.push(
-                    {
-                      check: <input type="checkbox" className="requestBox" value={req.res[0].requestEventId}></input>,  
-                      time: dateString,
-                      out:"-"
-                    }
-                  )
+                  makeTableData(false,req,dateString);
               }
             }
         })
@@ -51,6 +83,31 @@ const APIRequestsTable = (props) => {
       }
       catch(e){
         console.log(e);
+      }
+    }
+
+    const makeTableData=(childExist,req,dateString)=>{
+      if(childExist){
+        tableData.push(
+          {
+            check: <input type="checkbox" className="requestBox" value={req.res[1].requestEventId}></input>,  
+            time: dateString,
+            out: req.res.map((result, index) => {
+              if(req.res[0].spanId === req.res[index].parentSpanId){
+                  return  <div>{req.res[index].apiPath}</div>
+                }
+            })
+          }
+        )
+      }
+      else{
+        tableData.push(
+          {
+            check: <input type="checkbox" className="requestBox" value={req.res[0].requestEventId}></input>,  
+            time: dateString,
+            out:"-"
+          }
+        )
       }
     }
 
@@ -85,42 +142,103 @@ const APIRequestsTable = (props) => {
       }
   }
 
- const columns = 
- [
-   {  
-      Header: <input type="checkbox" id="selectAll" onChange={selectAll}></input>,
-      columns:
-      [
-        {
-          width:30,
-          accessor: 'check',
-        }
-      ]
-   },
-   {  
-      Header: "Time",
-      columns:
-      [
-        {
-          accessor: 'time',
-        }
-      ]
-    },
-    {  
-      Header: "Outgoing Requests",
-      columns:
-      [
-        {
-          accessor: 'out',
-        }
-      ]
+  const onCellClick=(rowInfo)=>{
+    const requestId = rowInfo.original.check.props.value;
+
+    cubeService.fetchAPIEventData(app,requestId)
+    .then((result) => {
+      setDetails(result.objects[0]);
+      setQuery([result.objects[0].payload[1].queryParams]);
+      setForm([result.objects[0].payload[1].formParams]);
+      setShowModal(true);
+    })
+  }
+
+  const handleClose = () => {
+    setQuery([]);
+    setShowModal(false);
+  }
+
+  const showDetails = ()=>{
+    const date = new Date(details.timestamp*1000);
+    const dateString = date.toLocaleString();
+    return (
+      <div>
+        <label>API Path: </label> {details.apiPath}
+        <br/>
+        <label>Timestamp: </label> {dateString}
+      </div>
+    )
+  }
+
+  const makeTableQuery = ()=>{
+    try{
+      const keys = Object.keys(query[0]);
+      const values = Object.values(query[0]);
+      if(keys.length>0){
+        return (
+          <table className="Rtable">
+          <tr>
+              <th style={{width: "20%"}}>KEY</th>
+              <th style={{width: "80%"}}>VALUE</th>
+          </tr>
+          {keys.map((result,index)=>{
+            return(
+            <tr>
+              <td>{result}</td>
+              <td>{values[index]}</td>
+            </tr>
+            ) 
+          })}
+          </table>
+      )
+      }
+      else{
+        return "No Data"
+      }
     }
-  ]   
+    catch(e){
+      console.log(e);
+    }
+    
+  }
+
+  const makeTableForm = ()=>{
+    try{
+      const keys = Object.keys(form[0]);
+      const values = Object.values(form[0]);
+      if(keys.length>0){
+        return (
+            <table className="Rtable">
+            <tr>
+              <th style={{width: "20%"}}>KEY</th>
+              <th style={{width: "80%"}}>VALUE</th>
+            </tr>
+            {keys.map((result,index)=>{
+              return(
+              <tr>
+                <td>{result}</td>
+                <td>{values[index]}</td>
+              </tr>
+              ) 
+            })}
+            </table>
+        )
+      }
+      else{
+        return "No Data"
+      }
+    }
+    catch(e){
+      console.log(e);
+    }
+    
+  }
+  
 
     return <div>
       <div>
       {generateTableData()}
-      {console.log(tableData)}
         <ReactTable
             data={tableData}  
             columns={columns}  
@@ -130,8 +248,30 @@ const APIRequestsTable = (props) => {
             className="-striped -highlight"
         />
       </div>
+      <Modal show={showModal}>
+        <Modal.Header>
+          <Modal.Title>
+            Request Details
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+        <div style={{overflowY:"auto", maxHeight:"250px"}}>
+          {showDetails()}
+          <label>Query Params:</label>
+          <br/>
+          {makeTableQuery()}
+          <br/>
+          <label>Form Params:</label>
+          <br/>
+          {makeTableForm()}
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <div className="cube-btn text-center pull-right" style={{width:"100px"}} onClick={handleClose}>OK</div>
+        </Modal.Footer>
+      </Modal>
       <div>
-          <button style={{marginLeft:"10px"}} type="button" onClick={submitRequest}>View</button>
+          <div className="cube-btn text-center margin-top-10" style={{width:"100px"}} onClick={submitRequest}>VIEW</div>
       </div>
     </div>
 }

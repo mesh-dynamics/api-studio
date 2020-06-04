@@ -359,6 +359,32 @@ const fetchAPITraceData = async (app, startTime, endTime, selectedService, selec
     }
 }
 
+const fetchAPIEventData = async (app,reqIds) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+
+    let apiEventURL = `${config.recordBaseUrl}/getEvents`;
+
+    let body = {
+        "customerId":user.customer_name,
+        "app": app,
+        "eventTypes": ["HTTPRequest"],
+        "services": [],
+        "traceIds": [],
+        "reqIds": [
+            `${reqIds}`
+        ],
+        "paths": [],
+        "limit": 2
+    }
+
+    try {
+        return api.post(apiEventURL,body);
+    } catch (e) {
+        console.error("Error fetching API Event data");
+        throw e;
+    }
+}
+
 export const cubeService = {
     fetchAppsList,
     getInstanceList,
@@ -384,5 +410,6 @@ export const cubeService = {
     deleteGolden,
     fetchAPIFacetData,
     fetchAPITraceData,
+    fetchAPIEventData,
     fetchClusterList
 };

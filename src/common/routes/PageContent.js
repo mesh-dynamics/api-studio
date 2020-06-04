@@ -7,7 +7,6 @@ import TestReport from "./test_report";
 import ViewTrace from "./view_trace";
 import APICatalog from "./api_catalog";
 import HttpClient from "./http_client";
-import HttpClient from "./http_client";
 
 class PageContent extends Component {
   constructor(props) {
