@@ -18,6 +18,13 @@
 		<version.jersey>2.27</version.jersey>
 	</properties>
 
+	<distributionManagement>
+    		<repository>
+      			<id>github</id>
+      			<name>GitHub CubeIO Apache Maven Packages</name>
+      			<url>https://maven.pkg.github.com/cube-io-corp/interceptor-framework</url>
+    		</repository>
+  	</distributionManagement>
 
 	<repositories>
 		<repository>
