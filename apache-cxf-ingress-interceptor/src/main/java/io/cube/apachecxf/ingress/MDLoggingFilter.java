@@ -1,4 +1,4 @@
-package io.cube.interceptor.apachecxf.ingress;
+package io.cube.apachecxf.ingress;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -38,19 +38,17 @@ import io.md.utils.UtilException;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
-import io.cube.interceptor.apachecxf.ingress.utils.Utils;
-
 /**
  * Priority is to specify in which order the filters are to be executed.
  * Lower the order, early the filter is executed.
  * We want Logging filter to execute after Tracing Filter during Ingress
  **/
 @Provider
-@Priority(3000)
-public class LoggingFilter implements ContainerRequestFilter, ContainerResponseFilter,
+@Priority(3001)
+public class MDLoggingFilter implements ContainerRequestFilter, ContainerResponseFilter,
 	WriterInterceptor {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(LoggingFilter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(MDLoggingFilter.class);
 
 	@Override
 	public void filter(ContainerRequestContext reqContext) {

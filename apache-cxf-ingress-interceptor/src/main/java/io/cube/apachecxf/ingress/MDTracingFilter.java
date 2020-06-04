@@ -1,4 +1,4 @@
-package io.cube.interceptor.apachecxf.ingress;
+package io.cube.apachecxf.ingress;
 
 import java.util.Optional;
 
@@ -15,25 +15,23 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.cube.agent.CommonConfig;
 import io.md.constants.Constants;
 import io.md.utils.CommonUtils;
 import io.opentracing.Scope;
 import io.opentracing.Span;
-
-import io.cube.interceptor.apachecxf.ingress.config.Config;
-import io.cube.interceptor.apachecxf.ingress.utils.Utils;
 
 /**
  * Priority is to specify in which order the filters are to be executed. Lower the order, early the
  * filter is executed. We want Logging filter to execute after Tracing Filter during Ingress
  **/
 @Provider
-@Priority(1000)
-public class TracingFilter implements ContainerRequestFilter, ContainerResponseFilter {
+@Priority(3000)
+public class MDTracingFilter implements ContainerRequestFilter, ContainerResponseFilter {
 	// config not used but required to ensure commonConfig initailised properly before
 	// filter execution
 	public static final Config config = Utils.config;
-	private static final Logger LOGGER = LoggerFactory.getLogger(TracingFilter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(MDTracingFilter.class);
 
 	@Override
 	public void filter(ContainerRequestContext reqContext) {
@@ -44,16 +42,7 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 			Span span = CommonUtils.startServerSpan(requestHeaders, spanKey);
 			Scope scope = CommonUtils.activateSpan(span);
 
-			Optional<String> fieldCategory = Utils.config.commonConfig.sampler.getFieldCategory();
-			String sampleBaggageItem = span.getBaggageItem(Constants.MD_IS_SAMPLED);
-			if (sampleBaggageItem == null) {
-				//root span
-				boolean isSampled = runSampling(reqContext, fieldCategory);
-				span.setBaggageItem(Constants.MD_IS_SAMPLED, String.valueOf(isSampled));
-			} else if (!BooleanUtils.toBoolean(sampleBaggageItem) && Utils.config.commonConfig.samplerVeto) {
-				span.setBaggageItem(Constants.MD_IS_VETOED,
-					String.valueOf(runSampling(reqContext, fieldCategory)));
-			}
+			getOrRunSampling(reqContext, span);
 
 			String scopeKey = Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
 			reqContext.setProperty(scopeKey, scope);
@@ -64,6 +53,19 @@ public class TracingFilter implements ContainerRequestFilter, ContainerResponseF
 					Constants.MESSAGE + ":Exception occurred in interceptor\n" +
 					Constants.EXCEPTION_STACK, e
 				);
+		}
+	}
+
+	private void getOrRunSampling(ContainerRequestContext reqContext, Span span) {
+		Optional<String> fieldCategory = CommonConfig.getInstance().sampler.getFieldCategory();
+		String sampleBaggageItem = span.getBaggageItem(Constants.MD_IS_SAMPLED);
+		if (sampleBaggageItem == null) {
+			//root span
+			boolean isSampled = runSampling(reqContext, fieldCategory);
+			span.setBaggageItem(Constants.MD_IS_SAMPLED, String.valueOf(isSampled));
+		} else if (!BooleanUtils.toBoolean(sampleBaggageItem) && CommonConfig.getInstance().samplerVeto) {
+			span.setBaggageItem(Constants.MD_IS_VETOED,
+				String.valueOf(runSampling(reqContext, fieldCategory)));
 		}
 	}
 

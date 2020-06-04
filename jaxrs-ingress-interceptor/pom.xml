@@ -5,7 +5,7 @@
 
 	<groupId>io.cube</groupId>
 	<artifactId>md-jaxrs-ingress-interceptor</artifactId>
-	<version>1.2.1</version>
+	<version>1.2.2</version>
 	<packaging>jar</packaging>
 
 	<name>jaxrs-ingress-interceptor</name>
@@ -14,8 +14,8 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<java.version>10</java.version>
-		<version.md.agent>1.0.28</version.md.agent>
+		<java.version>8</java.version>
+		<version.md.agent>1.0.29</version.md.agent>
 	</properties>
 
 	<distributionManagement>
@@ -37,6 +37,12 @@
 	<dependencies>
 		<!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
 
+		<!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.4</version>
+		</dependency>
 
 		<dependency>
 			<groupId>io.cube</groupId>
@@ -52,8 +58,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.0</version>
 				<configuration>
-					<source>11</source>
-					<target>11</target>
+					<source>8</source>
+					<target>8</target>
 				</configuration>
 			</plugin>
 			<!--  needed for unit and integration testing  -->

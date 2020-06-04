@@ -39,11 +39,7 @@ public class ClientLoggingFilter implements ClientRequestFilter, ClientResponseF
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ClientLoggingFilter.class);
 
-	private static final Config config;
-
-	static {
-		config = new Config();
-	}
+	private static final Config config = new Config();
 
 	@Override
 	public void filter(ClientRequestContext requestContext) throws IOException {
@@ -75,7 +71,7 @@ public class ClientLoggingFilter implements ClientRequestFilter, ClientResponseF
 
 			//Empty ingress span pertains to DB initialization scenarios.
 			//So need to record all calls as these will not be driven by replay driver.
-			if (isSampled || isVetoed || ingressSpan.isEmpty()) {
+			if (isSampled || isVetoed || !ingressSpan.isPresent()) {
 				//this is local baggage item
 				clientSpan.setBaggageItem(Constants.MD_IS_VETOED, null);
 
@@ -125,8 +121,7 @@ public class ClientLoggingFilter implements ClientRequestFilter, ClientResponseF
 			}
 
 		} catch (Exception ex) {
-			LOGGER.error(String.valueOf(Map.of(Constants.MESSAGE,
-				"Exception occured during logging request!")), ex);
+			LOGGER.error("Exception occured during logging request!", ex);
 		}
 	}
 
@@ -169,8 +164,7 @@ public class ClientLoggingFilter implements ClientRequestFilter, ClientResponseF
 				removeSetContextProperty(requestContext);
 			}
 		} catch (Exception e) {
-			LOGGER.error(String.valueOf(Map.of(Constants.MESSAGE,
-				"Exception occured during logging the response!")), e);
+			LOGGER.error("Exception occured during logging the response!", e);
 		} finally {
 			if (span != null) {
 				span.finish();

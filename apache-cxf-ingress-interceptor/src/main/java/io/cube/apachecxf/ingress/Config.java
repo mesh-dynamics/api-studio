@@ -1,12 +1,9 @@
-package io.cube.interceptor.apachecxf.egress.config;
-
-import java.io.FileNotFoundException;
+package io.cube.apachecxf.ingress;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import io.cube.agent.CommonConfig;
 import io.cube.agent.ConsoleRecorder;
 import io.cube.agent.IntentResolver;
 import io.cube.agent.Recorder;
@@ -20,21 +17,11 @@ public class Config {
 
 	public final Recorder recorder;
 
-	public static CommonConfig commonConfig = null;
-
 	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 
-	static {
-		try {
-			commonConfig = CommonConfig.getInstance();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public Config()  {
+	public Config() {
 		Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
 			.create();
-			recorder = new ConsoleRecorder(gson);
+		recorder = new ConsoleRecorder(gson);
 	}
 }

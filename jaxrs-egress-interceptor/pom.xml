@@ -5,7 +5,7 @@
 
 	<groupId>io.cube</groupId>
 	<artifactId>md-jaxrs-egress-interceptor</artifactId>
-	<version>1.2.1</version>
+	<version>1.2.2</version>
 	<packaging>jar</packaging>
 
 	<name>jaxrs-egress-interceptor</name>
@@ -14,7 +14,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<java.version>10</java.version>
+		<java.version>8</java.version>
 		<version.jersey>2.27</version.jersey>
 	</properties>
 
@@ -45,7 +45,7 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>agent</artifactId>
-			<version>1.0.28</version>
+			<version>1.0.29</version>
 		</dependency>
 	</dependencies>
 
@@ -55,8 +55,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.0</version>
 				<configuration>
-					<source>11</source>
-					<target>11</target>
+					<source>8</source>
+					<target>8</target>
 				</configuration>
 			</plugin>
 			<!--  needed for unit and integration testing  -->

@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import io.cube.agent.CommonConfig;
 import io.md.constants.Constants;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
@@ -27,18 +28,7 @@ public class Utils {
 
 	public static final long PAYLOAD_MAX_LIMIT = 25000000; //25 MB
 
-	private static final Config config;
-
-	static {
-		config = new Config();
-	}
-
-	public static boolean isSampled(MultivaluedMap<String, String> requestHeaders) {
-		return (config.commonConfig.samplerVeto
-			|| (config.intentResolver.isIntentToRecord()
-			&& config.commonConfig.sampler.isSampled(requestHeaders))
-			|| config.intentResolver.isIntentToMock());
-	}
+	private static final Config config = new Config();
 
 	public static MultivaluedMap<String, String> getRequestMeta(String method, String cRequestId,
 		Optional<String> serviceName) {
@@ -69,10 +59,10 @@ public class Utils {
 		} else if (config.intentResolver.isIntentToMock()) {
 			metaMap.add(Constants.RUN_TYPE_FIELD, Constants.REPLAY);
 		}
-		metaMap.add(Constants.CUSTOMER_ID_FIELD, config.commonConfig.customerId);
-		metaMap.add(Constants.APP_FIELD, config.commonConfig.app);
-		metaMap.add(Constants.INSTANCE_ID_FIELD, config.commonConfig.instance);
-		metaMap.add(Constants.SERVICE_FIELD, serviceName.orElse(config.commonConfig.serviceName));
+		metaMap.add(Constants.CUSTOMER_ID_FIELD, CommonConfig.getInstance().customerId);
+		metaMap.add(Constants.APP_FIELD, CommonConfig.getInstance().app);
+		metaMap.add(Constants.INSTANCE_ID_FIELD, CommonConfig.getInstance().instance);
+		metaMap.add(Constants.SERVICE_FIELD, serviceName.orElse(CommonConfig.getInstance().serviceName));
 	}
 
 	public static void createAndLogReqEvent(String apiPath,
@@ -85,15 +75,9 @@ public class Utils {
 					requestBody, Optional.empty(), config.jsonMapper, true);
 			config.recorder.record(requestEvent);
 		} catch (InvalidEventException e) {
-			LOGGER.error(String.valueOf(
-				Map.of(Constants.MESSAGE, "Invalid Event",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error( "Invalid Event", e);
 		} catch (JsonProcessingException e) {
-			LOGGER.error(String.valueOf(
-				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Json Processing Exception. Unable to create event!", e);
 		}
 	}
 
@@ -107,15 +91,9 @@ public class Utils {
 					true);
 			config.recorder.record(responseEvent);
 		} catch (InvalidEventException e) {
-			LOGGER.error(String.valueOf(
-				Map.of(Constants.MESSAGE, "Invalid Event",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Invalid Event",e);
 		} catch (JsonProcessingException e) {
-			LOGGER.error(String.valueOf(
-				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
-					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+			LOGGER.error("Json Processing Exception. Unable to create event!", e);
 		}
 	}
 

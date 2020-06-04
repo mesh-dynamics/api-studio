@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.util.Map;
 import java.util.Optional;
 
 import javax.annotation.Priority;
@@ -21,6 +20,7 @@ import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptor;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +34,7 @@ import io.md.utils.CommonUtils;
 import io.md.utils.UtilException;
 import io.opentracing.Scope;
 import io.opentracing.Span;
+
 
 @Provider
 @Priority(3000)
@@ -92,8 +93,8 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 				}
 			}));
 		} catch (Exception ex) {
-			LOGGER.error(String.valueOf(Map.of(Constants.MESSAGE,
-				"Exception occured during logging, proceeding to the application!")), ex);
+			LOGGER.error(
+				"Exception occured during logging, proceeding to the application!", ex);
 		}
 	}
 
@@ -182,8 +183,8 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 				mdTraceInfo =
 					traceInfo != null ? (MDTraceInfo) traceInfo : new MDTraceInfo();
 			} catch (Exception ex) {
-				LOGGER.error(String.valueOf(Map.of(Constants.MESSAGE,
-					"Exception occured during logging response, proceeding to the application!")),
+				LOGGER.error(
+					"Exception occured during logging response, proceeding to the application!",
 					ex);
 				context.proceed();
 				return;
@@ -212,8 +213,8 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 	private byte[] getRequestBody(ContainerRequestContext reqContext) throws IOException {
 		final Span span = io.cube.agent.Utils.createPerformanceSpan("reqBody");
 		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
-			byte[] reqBytes = reqContext.getEntityStream().readAllBytes();
-			new ByteArrayInputStream(reqBytes);
+			byte[] reqBytes = IOUtils.toByteArray(reqContext.getEntityStream());
+
 			InputStream in = new ByteArrayInputStream(reqBytes);
 			reqContext.setEntityStream(in);
 
