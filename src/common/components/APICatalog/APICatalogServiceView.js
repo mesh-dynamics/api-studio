@@ -11,7 +11,7 @@ class APICatalogServiceView extends Component {
         return (
             <div style={{display: "flex", flexDirection:"column" }}>
                 {/* <div>
-                    <img src="/assets/images/serviceGraph.png" style={{width:"60%", height:"60%"}}></img>
+                    <img src="./assets/images/serviceGraph.png" style={{width:"60%", height:"60%"}}></img>
                 </div> */}
                 <div style={{width:"60%", height:"60%"}}>
                     <APIListTable app={app} apiPaths={apiPaths} selectedService={selectedService} startTime={startTime} endTime={endTime} />

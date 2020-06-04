@@ -61,7 +61,8 @@ class Navigation extends Component{
             return (
                 <div key={item.id} className="app-wrapper" onClick={() => this.handleChangeForApps(item.name)}>
                     <div className="app-img">
-                        <img src={"/assets/images/" + item.name + "-app.png"} alt=""/>
+                        <img src={"https://app.meshdynamics.io/assets/images/" + item.name + "-app.png"} alt=""/>
+                        {/* <img src={"./assets/images/" + item.name + "-app.png"} alt=""/> */}
                     </div>
                     <div className={cube.selectedApp == item.name ? "app-name selected" : "app-name"}>
                         {item.name}
@@ -116,7 +117,8 @@ class Navigation extends Component{
                 <div className="nav-cont h-100">
                     <div className="left-pane text-center">
                         <div className="company-name">
-                            <img className="inline-block" src="/assets/images/md-circle-logo.png" alt="MESH DYNAMICS"/>
+                        <img className="inline-block" src="https://app.meshdynamics.io/assets/images/md-circle-logo.png" alt="MESH DYNAMICS"/>
+                            {/* <img className="inline-block" src="./assets/images/md-circle-logo.png" alt="MESH DYNAMICS"/> */}
                         </div>
                         <div className="q-links-top">
                             <Link to="/">
@@ -206,7 +208,8 @@ class Navigation extends Component{
                                 Service Map
                             </div>
                             <div className="service-gph">
-                                <img src={"/assets/images/" + cube.selectedApp + "-app.png"} alt=""/>
+                                <img src={"https://app.meshdynamics.io/assets/images/" + cube.selectedApp + "-app.png"} alt=""/>
+                                {/* <img src={"./assets/images/" + cube.selectedApp + "-app.png"} alt=""/> */}
                             </div>
                         </div>
 

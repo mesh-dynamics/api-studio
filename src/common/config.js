@@ -1,8 +1,16 @@
+// const config = {
+//     apiBaseUrl: process.env.REACT_APP_API_BASE_URL || "/api",
+//     recordBaseUrl: process.env.REACT_APP_RECORD_BASE_URL || "/api/cs",
+//     replayBaseUrl: process.env.REACT_APP_REPLAY_BASE_URL || "/api/rs",
+//     analyzeBaseUrl: process.env.REACT_APP_ANALYZE_BASE_URL || "/api/as",
+//     defaultPageSize: process.env.REACT_APP_DEFAULT_PAGE_SIZE || 5,
+// };
+
 const config = {
-    apiBaseUrl: process.env.REACT_APP_API_BASE_URL || "/api",
-    recordBaseUrl: process.env.REACT_APP_RECORD_BASE_URL || "/api/cs",
-    replayBaseUrl: process.env.REACT_APP_REPLAY_BASE_URL || "/api/rs",
-    analyzeBaseUrl: process.env.REACT_APP_ANALYZE_BASE_URL || "/api/as",
+    // apiBaseUrl: process.env.REACT_APP_API_BASE_URL || "/api",
+    // recordBaseUrl: process.env.REACT_APP_RECORD_BASE_URL || "/api/cs",
+    // replayBaseUrl: process.env.REACT_APP_REPLAY_BASE_URL || "/api/rs",
+    // analyzeBaseUrl: process.env.REACT_APP_ANALYZE_BASE_URL || "/api/as",
     defaultFetchDiffResults: process.env.REACT_APP_DEFAULT_FETCH_DIFF_RESULTS || 5,
     diffObjectSizeThreshold: process.env.REACT_APP_DIFF_OBJECT_SIZE_THRESHOLD || 100000,
     maxDiffResultsPerPage: process.env.REACT_APP_MAX_DIFF_RESULTS_PER_PAGE || 5,
@@ -12,7 +20,16 @@ const config = {
     timelineresRefreshIntervel: process.env.REACT_APP_TIMELINERES_REFRESH_INTERVAL || 15000,
     diffMaxLinesLength: process.env.REACT_APP_DIFF_MAX_LENGTH || 1000,
     diffMaxLinesLengthIncrement: process.env.REACT_APP_DIFF_MAX_LENGTH_INCREMENT || 100,
-    enableClientSideDiff: process.env.REACT_APP_ENABLE_CLIENT_SIDE_DIFF || "false"
+    enableClientSideDiff: process.env.REACT_APP_ENABLE_CLIENT_SIDE_DIFF || "false",
+    apiBaseUrl: "https://demo.dev.cubecorp.io/api",
+    recordBaseUrl: "https://demo.dev.cubecorp.io/api/cs",
+    replayBaseUrl: "https://demo.dev.cubecorp.io/api/rs",
+    analyzeBaseUrl: "https://demo.dev.cubecorp.io/api/as",
+    // apiBaseUrl: "http://localhost:8080/api",
+    // recordBaseUrl: "http://localhost:8080/api/cs",
+    // replayBaseUrl: "http://localhost:8080/api/rs",
+    // analyzeBaseUrl: "http://localhost:8080/api/as",
+    defaultPageSize: 5,
 };
 
 export default config;

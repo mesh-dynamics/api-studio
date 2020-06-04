@@ -6,6 +6,8 @@ const BrowserWindow = electron.BrowserWindow
 
 let mainWindow
 
+const assetsPath = app.isPackaged ? path.join(process.resourcesPath, "assets") : "assets";
+
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 800,

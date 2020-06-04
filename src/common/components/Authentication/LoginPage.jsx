@@ -21,7 +21,8 @@ const LoginPage = (props) => {
                                 <div className="row vertical-align-middle">
                                     <div className="col-md-6 logo-wrapper">
                                         <div>
-                                            <img src="/assets/images/md-circle-logo.png" alt="CUBE LOGO"/>
+                                            <img src="https://app.meshdynamics.io/assets/images/md-circle-logo.png" alt="CUBE LOGO" />
+                                            {/* <img src="./assets/images/md-circle-logo.png" alt="CUBE LOGO"/> */}
                                             <span className="comp-name">Mesh Dynamics</span>
                                         </div>
                                         <div className="note">
