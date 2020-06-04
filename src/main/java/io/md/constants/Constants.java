@@ -155,7 +155,7 @@ public class Constants {
 	public static final String MD_CUSTOMER_PROP = "io.md.customer";
 	public static final String MD_APP_PROP = "io.md.app";
 	public static final String MD_INSTANCE_PROP = "io.md.instance";
-	public static final String MD_SERVICE_PROP = "io.md.service";
+	public static final String MD_SERVICE_PROP = "io.md.servicename";
 	public static final String MD_INTENT_PROP = "io.md.intent";
 	public static final String MD_ENCRYPTION_CONFIG_PATH = "io.md.encryptionconfig.path";
 	public static final String MD_API_PATH_PROP = "io.md.apiPath";
