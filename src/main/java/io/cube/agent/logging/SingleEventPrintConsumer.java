@@ -11,7 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.PrettyPrinter;
+import com.fasterxml.jackson.core.util.Instantiatable;
 import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -49,7 +52,6 @@ public class SingleEventPrintConsumer {
 			ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 			objectWriter = jsonMapper.writer();
 			generator = new JsonFactory().createGenerator(eventWriter);
-			generator.setPrettyPrinter(new MinimalPrettyPrinter("\n"));
 		} catch (IOException e) {
 			LOGGER.error("Unable to initialize json generator" ,e);
 			throw new RuntimeException(e);
@@ -58,10 +60,11 @@ public class SingleEventPrintConsumer {
 	}
 
 	public EventHandler<ValueEvent> getEventHandler() {
-		return (event, sequence, endOfBatch)
+		return (event, sequence, endOfBatch  )
 			-> {
 			objectWriter.writeValue(generator, event);
+			generator.writeRaw("\n");
+			generator.flush();
 		};
 	}
-
 }
