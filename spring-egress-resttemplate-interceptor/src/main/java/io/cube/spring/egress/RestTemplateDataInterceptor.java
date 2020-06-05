@@ -41,7 +41,7 @@ import io.opentracing.SpanContext;
  * filter is executed. We want Tracing filter to execute after Client Filter.
  **/
 @Component
-@Order(3000)
+@Order(2999)
 public class RestTemplateDataInterceptor implements ClientHttpRequestInterceptor {
 
 	private static final Logger LOGGER = LoggerFactory

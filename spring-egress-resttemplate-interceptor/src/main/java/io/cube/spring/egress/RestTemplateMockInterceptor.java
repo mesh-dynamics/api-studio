@@ -29,9 +29,12 @@ import io.opentracing.SpanContext;
 
 /**
  * Order is to specify in which order the filters are to be executed. Lower the order, early the
- * filter is executed. We want Tracing filter to execute after Mock Filter.
+ * filter is executed.
+ * Mock Filter should execute after Data Filter, so that in Mock mode, Data Filter can just
+ * return without recording the request. Otherwise Mock Filter would change the URI and
+ * the shouldMockService() will return false, as this would be evaluated on the changed URI.
  **/
-@Order(2999)
+@Order(3000)
 public class RestTemplateMockInterceptor implements ClientHttpRequestInterceptor {
 
 	private static final Logger LOGGER = LoggerFactory
