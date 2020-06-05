@@ -873,6 +873,7 @@ class ViewSelectedTestConfig extends React.Component {
         const { location: { pathname }} = this.props;
         
         const panel = {
+            ['/']: () => (<div />),
             ['/test_config_view']: () => this.renderTestInfo(),
             ['/test_config_view/golden_visibility']: () => this.renderGoldenMeta(),
             ['/test_config_view/test_cluster']: () => this.renderTestClusterPanel()

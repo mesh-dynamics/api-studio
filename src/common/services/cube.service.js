@@ -309,7 +309,7 @@ const deleteGolden = async (recordingId) => {
 
 const fetchClusterList = async () => {
     try {
-        return await api.get("http://www.mocky.io/v2/5ed0786c3500006000ff9c6d");
+        return await api.get("https://www.mocky.io/v2/5ed0786c3500006000ff9c6d");
     } catch (error) {
         console.log("Error fetching cluster list \n", error);
         throw error;
@@ -359,7 +359,7 @@ const fetchAPITraceData = async (app, startTime, endTime, selectedService, selec
     }
 }
 
-const fetchAPIEventData = async (app,reqIds) => {
+const fetchAPIEventData = async (app, reqIds, eventTypes) => {
     const user = JSON.parse(localStorage.getItem('user'));
 
     let apiEventURL = `${config.recordBaseUrl}/getEvents`;
@@ -367,12 +367,12 @@ const fetchAPIEventData = async (app,reqIds) => {
     let body = {
         "customerId":user.customer_name,
         "app": app,
-        "eventTypes": ["HTTPRequest"],
+        "eventTypes": eventTypes,
         "services": [],
         "traceIds": [],
         "reqIds": reqIds,
         "paths": [],
-        "limit": 2
+        // "limit": 2
     }
 
     try {

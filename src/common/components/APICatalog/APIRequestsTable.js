@@ -103,7 +103,7 @@ const APIRequestsTable = (props) => {
   const onCellClick=(rowInfo)=>{
     const requestId = rowInfo.original.check.props.value;
 
-    cubeService.fetchAPIEventData(app, [requestId])
+    cubeService.fetchAPIEventData(app, [requestId], ["HTTPRequest"])
     .then((result) => {
       setDetails(result.objects[0]);
       setQuery([result.objects[0].payload[1].queryParams]);
