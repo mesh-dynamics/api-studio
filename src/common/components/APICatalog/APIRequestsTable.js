@@ -123,7 +123,7 @@ const APIRequestsTable = (props) => {
         // /httpclient?requestIds=id1,id2
         history.push({
           pathname: "/http_client",
-          search: `?requestIds=${requestList}`
+          search: `?app=${app}&requestIds=${requestList}`
         })
     }
 
@@ -145,7 +145,7 @@ const APIRequestsTable = (props) => {
   const onCellClick=(rowInfo)=>{
     const requestId = rowInfo.original.check.props.value;
 
-    cubeService.fetchAPIEventData(app,requestId)
+    cubeService.fetchAPIEventData(app, [requestId])
     .then((result) => {
       setDetails(result.objects[0]);
       setQuery([result.objects[0].payload[1].queryParams]);

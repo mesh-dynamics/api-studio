@@ -370,9 +370,7 @@ const fetchAPIEventData = async (app,reqIds) => {
         "eventTypes": ["HTTPRequest"],
         "services": [],
         "traceIds": [],
-        "reqIds": [
-            `${reqIds}`
-        ],
+        "reqIds": reqIds,
         "paths": [],
         "limit": 2
     }
