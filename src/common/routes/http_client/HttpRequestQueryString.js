@@ -11,15 +11,18 @@ class HttpRequestQueryString extends Component {
     }
 
     handleAdd() {
-        this.props.addOrRemoveParam("queryStringParams", "add");
+        const { tabId } = this.props;
+        this.props.addOrRemoveParam(tabId, "queryStringParams", "add");
     }
 
     handleDelete(id) {
-        this.props.addOrRemoveParam("queryStringParams", "delete", id);
+        const { tabId } = this.props;
+        this.props.addOrRemoveParam(tabId, "queryStringParams", "delete", id);
     }
 
     handleChange(id, evt) {
-        this.props.updateParam("queryStringParams", evt.target.name, evt.target.value, id);
+        const { tabId } = this.props;
+        this.props.updateParam(tabId, "queryStringParams", evt.target.name, evt.target.value, id);
     }
 
 

@@ -11,8 +11,8 @@ class HttpResponseMessage extends Component {
         super(props);
         this.state = {
             status: "",
-            showHeaders: true,
-            showBody: false
+            showHeaders: false,
+            showBody: true
         };
         this.onChangeValue = this.onChangeValue.bind(this);
     }
@@ -57,8 +57,8 @@ class HttpResponseMessage extends Component {
                     </div>
                 </div>
                 <div>
-                    <HttpResponseHeaders showHeaders={this.state.showHeaders}  responseHeaders={this.props.responseHeaders}></HttpResponseHeaders>
-                    <HttpResponseBody showBody={this.state.showBody}  responseBody={this.props.responseBody}></HttpResponseBody>
+                    <HttpResponseHeaders tabId={this.props.tabId} showHeaders={this.state.showHeaders}  responseHeaders={this.props.responseHeaders}></HttpResponseHeaders>
+                    <HttpResponseBody tabId={this.props.tabId} showBody={this.state.showBody}  responseBody={this.props.responseBody}></HttpResponseBody>
                 </div>
             </div>
         );

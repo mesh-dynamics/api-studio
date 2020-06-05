@@ -6,7 +6,7 @@ import ViewTestConfig from "./view_test_config";
 import TestReport from "./test_report";
 import ViewTrace from "./view_trace";
 import APICatalog from "./api_catalog";
-import HttpClient from "./http_client";
+import HttpClientTabs from "./http_client";
 
 class PageContent extends Component {
   constructor(props) {
@@ -38,7 +38,7 @@ class PageContent extends Component {
         {TestReport}
         {ViewTestConfig}
         {APICatalog}
-        {HttpClient}
+        {HttpClientTabs}
       </div>
     )
   }
