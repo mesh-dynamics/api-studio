@@ -190,4 +190,7 @@ public class Constants {
 	public static final String SPAN_ID_FIELD = "spanId";
     public static final String PARENT_SPAN_ID_FIELD = "parentSpanId";
     public static final String CONFIG_JSON = "config_json";
+	public static final String TAG_FIELD = "tag";
+	public static final String AGENT_ID = "agentId" ;
+    public static final String INFO = "info";
 }

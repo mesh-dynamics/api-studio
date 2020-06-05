@@ -8,8 +8,10 @@ import static com.cube.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 import static io.md.utils.Utils.createHTTPRequestEvent;
 
+import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.ValidateAgentStore;
-import io.md.dao.ConfigStore;
+import io.md.dao.agent.config.AgentConfigTagInfo;
+import io.md.dao.agent.config.ConfigDAO;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -739,26 +741,35 @@ public class CubeStore {
     }
 
     @POST
-    @Path("/registerAgentConfig")
+    @Path("/setCurrentAgentConfigTag/{customerId}")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Response registerAgentConfig(ConfigStore store) {
-        if(store == null) {
+    public Response setAgentConfigTag(AgentConfigTagInfo tagInfo) {
+        rrstore.updateAgentConfigTag(tagInfo);
+        return Response.ok().build();
+    }
+
+    @POST
+    @Path("/storeAgentConfig")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response storeAgentConfig(ConfigDAO configDAO) {
+        if(configDAO == null) {
             return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                 buildErrorResponse(Constants.FAIL, Constants.INVALID_INPUT,
                     "Invalid input!")).build();
         }
         try {
-            ValidateAgentStore.validate(store);
-            rrstore.agentConfigToSolrDoc(store);
+            ValidateAgentStore.validate(configDAO);
+            rrstore.storeAgentConfig(configDAO);
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(
                 buildSuccessResponse(Constants.SUCCESS,
                     new JSONObject(Map.of(Constants.MESSAGE, "The config is saved",
-                        Constants.CUSTOMER_ID_FIELD, store.customerId, Constants.APP_FIELD, store.app,
-                        Constants.VERSION_FIELD, store.version, Constants.SERVICE_FIELD, store.service,
-                        Constants.INSTANCE_ID_FIELD, store.instanceId)))).build();
+                        Constants.CUSTOMER_ID_FIELD, configDAO.customerId, Constants.APP_FIELD, configDAO.app,
+                        Constants.VERSION_FIELD, configDAO.version, Constants.SERVICE_FIELD, configDAO.service,
+                        Constants.INSTANCE_ID_FIELD, configDAO.instanceId)))).build();
 
-        }catch (NullPointerException | IllegalArgumentException e) {
+        } catch (NullPointerException | IllegalArgumentException e) {
             LOGGER.error(
                 new ObjectMessage(Map.of(Constants.MESSAGE, "Data fields cannot be null or empty")), e);
 
@@ -768,9 +779,9 @@ public class CubeStore {
         }catch (Exception e) {
             LOGGER.error(
                 new ObjectMessage(Map.of(Constants.MESSAGE, "Error while saving the config",
-                    Constants.CUSTOMER_ID_FIELD, store.customerId, Constants.APP_FIELD, store.app,
-                    Constants.VERSION_FIELD, store.version, Constants.SERVICE_FIELD, store.service,
-                    Constants.INSTANCE_ID_FIELD, store.instanceId)), e);
+                    Constants.CUSTOMER_ID_FIELD, configDAO.customerId, Constants.APP_FIELD, configDAO.app,
+                    Constants.VERSION_FIELD, configDAO.version, Constants.SERVICE_FIELD, configDAO.service,
+                    Constants.INSTANCE_ID_FIELD, configDAO.instanceId)), e);
             return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                 buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
                     "Error while saving the config")).build();
@@ -781,14 +792,21 @@ public class CubeStore {
     @Path("/fetchAgentConfig/{customerId}/{app}/{service}/{instanceId}")
     @Produces({MediaType.APPLICATION_JSON})
     public Response fetchAgentConfig(@PathParam("customerId") String customerId, @PathParam("app") String app,
-        @PathParam("service") String service, @PathParam("instanceId") String instanceId) {
+        @PathParam("service") String service, @PathParam("instanceId") String instanceId , @Context UriInfo ui) {
+        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+        String existingTag = queryParams.getFirst(Constants.TAG_FIELD);
+        String existingVersion = queryParams.getFirst(Constants.VERSION_FIELD);
         try {
-            Optional<ConfigStore> response = rrstore.getAgentConfig(customerId, app,
+
+            Optional<ConfigDAO> response = rrstore.getAgentConfig(customerId, app,
                 service, instanceId);
             if(response.isPresent()) {
-                String json = jsonMapper.writeValueAsString(response.get());
-                return Response.ok().type(MediaType.APPLICATION_JSON).entity(
-                    buildSuccessResponse(Constants.SUCCESS, new JSONObject(Map.of("response",json)))).build();
+                //String json = jsonMapper.writeValueAsString(response.get());
+                ConfigDAO responseConfig = response.get();
+                if (responseConfig.tag.equals(existingTag) && String.valueOf(responseConfig.version).
+                    equals(existingVersion))
+                    return Response.notModified().build();
+                return Response.ok().type(MediaType.APPLICATION_JSON).entity(responseConfig).build();
             } else {
                 LOGGER.error(
                     new ObjectMessage(Map.of(Constants.MESSAGE, "No Config found for given Customer",
@@ -809,6 +827,24 @@ public class CubeStore {
         }
     }
 
+    @POST
+    @Path("/ackConfigApplication/{customerId}")
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response acknowledgeConfigApplication(ConfigApplicationAcknowledge confApplicationAck) {
+            try {
+                if (rrstore.saveAgentConfigAcknowledge(confApplicationAck)) {
+                    return Response.ok().build();
+                } else {
+                    throw new Exception("Unable to store acknowledge info");
+                }
+            } catch (Exception e) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Error while processing "
+                    + "agent config acknowledge")),e);
+                return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                    buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
+                        "Error while processing acknowledge")).build();
+            }
+    }
 
     private boolean storeDefaultRespEvent(
         Event defaultReqEvent, Payload payload) throws InvalidEventException {

@@ -3,7 +3,9 @@
  */
 package com.cube.dao;
 
-import io.md.dao.ConfigStore;
+import io.md.core.ConfigApplicationAcknowledge;
+import io.md.dao.agent.config.AgentConfigTagInfo;
+import io.md.dao.agent.config.ConfigDAO;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.AbstractMap;
@@ -42,6 +44,7 @@ import io.md.dao.ReqRespMatchResult;
 import io.md.services.DataStore;
 import io.md.services.FnResponse;
 
+import com.cube.dao.ReqRespStoreImplBase.CollectionKey;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.golden.TemplateSet;
@@ -103,7 +106,11 @@ public interface ReqRespStore extends DataStore {
 
     void invalidateCache();
 
-    class ReqResp {
+	boolean updateAgentConfigTag(AgentConfigTagInfo tagInfo);
+
+	boolean saveAgentConfigAcknowledge(ConfigApplicationAcknowledge confApplicationAck);
+
+	class ReqResp {
 
 
 		/**
@@ -164,8 +171,11 @@ public interface ReqRespStore extends DataStore {
         MatchResultAggregate,
 		Diff,
 		AttributeTemplate,
-		DynamicInjectionConfig
-    }
+		DynamicInjectionConfig,
+		AgentConfigTagInfo,
+		AgentConfig,
+		AgentConfigAcknowledge;
+	}
 
     /**
 	 * @param reqId
@@ -640,8 +650,8 @@ public interface ReqRespStore extends DataStore {
     public Optional<String> getDefaultEventType(String customer, String app, String service
 	    , String apiPath);
 
-    boolean agentConfigToSolrDoc(ConfigStore store);
-    Optional<ConfigStore> getAgentConfig(String customerId, String app, String service,
+    boolean storeAgentConfig(ConfigDAO store);
+    Optional<ConfigDAO> getAgentConfig(String customerId, String app, String service,
 						String instanceId);
 
 }
