@@ -78,6 +78,8 @@ class APICatalog extends Component {
       
         // make facet api call and populate dropdowns
         this.setAPIFacets(cube.selectedApp, selectedService, selectedApiPath, selectedInstance, startTime, endTime);
+        // update the requests table data
+        this.updateResults();
       });
 
     }
