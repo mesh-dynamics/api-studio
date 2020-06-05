@@ -27,18 +27,19 @@ generate_traffic() {
     	]
 	}'  
   curl --location --request GET 'http://apachecxf.dev.cubecorp.io:8080/meshd/dummyCourseList?count=2'
+  TIMESTAMP=$(date +%s)
   curl --location --request POST 'http://apachecxf.dev.cubecorp.io:8080/meshd/courses/1/students' \
 	--header 'Content-Type: application/json' \
 	--data-raw '{
-    		"id": 3,
+    		"id": "'$TIMESTAMP'",
     		"name": "Student C"
 	}'
-  curl --location --request DELETE 'http://apachecxf.dev.cubecorp.io:8080/meshd/courses/1/students/3' \
-	--header 'Content-Type: application/json' \
-	--data-raw '{
-    		"id": 3,
-    	"name": "Student C"
-	}'
+#  curl --location --request DELETE 'http://apachecxf.dev.cubecorp.io:8080/meshd/courses/1/students/3' \
+#	--header 'Content-Type: application/json' \
+#	--data-raw '{
+#    		"id": 3,
+##    	"name": "Student C"
+#	}'
   curl --location --request POST 'http://apachecxf.dev.cubecorp.io:8080/meshd/courses' \
 	--header 'Content-Type: application/x-www-form-urlencoded' \
 	--data-urlencode 'name=testcourse'
@@ -66,12 +67,13 @@ replay() {
 analyze() {
   ANALYZE=$(curl -X POST $CUBE_ENDPOINT/api/as/analyze/$REPLAY_ID -H 'Content-Type: application/x-www-form-urlencoded' -H "Authorization: Bearer $AUTH_TOKEN" -H 'cache-control: no-cache')
   REQCOUNT=$(echo $ANALYZE | jq .reqCnt )
+  REQMATCHED=$(echo $ANALYZE | jq .reqMatched)
   RESPNOTMATCHED=$(echo $ANALYZE | jq .respNotMatched )
 
   #Display replay ID
   echo "Replay ID:" $REPLAY_ID
   #Exit with non-zero exit code if reqstnotmatched and respnotmatchted are have nono-zero value
-  if [ "$RESPNOTMATCHED" = "0" ] && [ "$REQCOUNT" != "0" ]; then
+  if [ "$RESPNOTMATCHED" -le 2 ] && [ "$REQCOUNT" != "0" ] && [ "$REQMATCHED" = "$REQCOUNT" ]; then
     TEST_STATUS="test passed"
     EXIT_CODE=0
   else
