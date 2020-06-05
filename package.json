@@ -5,7 +5,7 @@
   "private": true,
   "main": "public/electron.js",
   "homepage": "./",
-  "author": "Mesh Dynamics",
+  "author": "Mesh Dynamics <dev@meshdynamics.io>",
   "build": {
     "appId": "com.meshdynamics.cubeui",
     "extraResources": [
@@ -23,11 +23,10 @@
       "legalTrademarks": "2020-21 meshdynamics.io"
     },
     "linux": {
-      "target": [
-        "rpm, deb, apk"
-      ],
+      "target": "deb",
       "executableName": "Cube",
-      "icon": "public/mesh-favicon.ico"
+      "icon": "public/mesh-favicon.png",
+      "maintainer": "Mesh Dynamics"
     },
     "mac": {
       "target": "dmg",
