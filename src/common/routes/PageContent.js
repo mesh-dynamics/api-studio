@@ -1,19 +1,12 @@
 import React, { Component } from 'react'
-import replay from './replay'
 import TestResults from "./test_results";
-import PathResults from "./path_results";
 import DiffResults from "./diff_results";
 import TestConfig from "./test_config";
-import SetupTestConfig from "./setup_test_config";
 import ViewTestConfig from "./view_test_config";
-import ReviewGolden from "./review_golden";
-import ShareableLink from "./shareable_link";
-import ShareableDiff from "./shareable_diff";
-import ViewTrace from "./view_trace";
 import TestReport from "./test_report";
+import ViewTrace from "./view_trace";
 import APICatalog from "./api_catalog";
-import HttpClient from "./http_client";
-
+import HttpClientTabs from "./http_client";
 
 class PageContent extends Component {
   constructor(props) {
@@ -39,22 +32,31 @@ class PageContent extends Component {
           <i onClick={this.toggleFullScreen} className={fullScreenMode ? "fas fa-compress pull-right link" : "hidden"}></i>
         </div>
         {TestResults}
-        {PathResults}
         {DiffResults}
-        {ReviewGolden}
-        {replay}
         {TestConfig}
-        {SetupTestConfig}
-        {ViewTestConfig}
-        {ShareableLink}
-        {ShareableDiff}
         {ViewTrace}
         {TestReport}
+        {ViewTestConfig}
         {APICatalog}
-        {HttpClient}
+        {HttpClientTabs}
       </div>
     )
   }
 }
 
 export default PageContent
+
+// import replay from './service_graph'
+// import PathResults from "./path_results";
+// import SetupTestConfig from "./setup_test_config";
+// import ReviewGolden from "./review_golden";
+// import ShareableLink from "./shareable_link";
+// import ShareableDiff from "./shareable_diff";
+// {/* {PathResults} */}
+//         {/* {ReviewGolden} */}
+//         {/* {SetupTestConfig} */}
+//         {/* {ShareableLink} */}
+//         {/* {ShareableDiff} */}
+//         {/*  */}
+
+        // {replay}

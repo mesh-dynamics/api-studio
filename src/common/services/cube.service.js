@@ -307,6 +307,16 @@ const deleteGolden = async (recordingId) => {
     }
 };
 
+const fetchClusterList = async () => {
+    try {
+        return await api.get("https://www.mocky.io/v2/5ed0786c3500006000ff9c6d");
+    } catch (error) {
+        console.log("Error fetching cluster list \n", error);
+        throw error;
+    }
+};
+
+// TODO: Refactor the calls below
 const fetchAPIFacetData = async (app, startTime, endTime) => {
     const user = JSON.parse(localStorage.getItem('user'));
 
@@ -349,6 +359,30 @@ const fetchAPITraceData = async (app, startTime, endTime, selectedService, selec
     }
 }
 
+const fetchAPIEventData = async (app, reqIds, eventTypes) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+
+    let apiEventURL = `${config.recordBaseUrl}/getEvents`;
+
+    let body = {
+        "customerId":user.customer_name,
+        "app": app,
+        "eventTypes": eventTypes,
+        "services": [],
+        "traceIds": [],
+        "reqIds": reqIds,
+        "paths": [],
+        // "limit": 2
+    }
+
+    try {
+        return api.post(apiEventURL,body);
+    } catch (e) {
+        console.error("Error fetching API Event data");
+        throw e;
+    }
+}
+
 export const cubeService = {
     fetchAppsList,
     getInstanceList,
@@ -374,4 +408,6 @@ export const cubeService = {
     deleteGolden,
     fetchAPIFacetData,
     fetchAPITraceData,
+    fetchAPIEventData,
+    fetchClusterList
 };

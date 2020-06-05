@@ -131,7 +131,7 @@ class Navigation extends Component{
                                 <div className="link-q"><i className="fas fa-indent"></i></div>
                             </Link>
 
-                            <Link to="/http_client">
+                            <Link to={`/http_client?app=${cube.selectedApp}`}>
                                 <div className="link-q">
                                     <svg width="29"  viewBox="0 0 22 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M14.6523 0.402344L8.25 4.14062V11.3594L14.6523 15.0977L21.0977 11.3594V4.14062L14.6523 0.402344ZM14.6523 2.55078L18.1328 4.52734L14.6523 6.54688L11.1719 4.52734L14.6523 2.55078ZM0 3.15234V5H6.40234V3.15234H0ZM10.0977 6.03125L13.75 8.13672V12.4336L10.0977 10.3281V6.03125ZM19.25 6.03125V10.3281L15.5977 12.4336V8.13672L19.25 6.03125ZM1.84766 6.84766V8.65234H6.40234V6.84766H1.84766ZM3.65234 10.5V12.3477H6.40234V10.5H3.65234Z" fill="#CCC6B0"/>

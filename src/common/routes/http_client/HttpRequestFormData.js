@@ -11,15 +11,18 @@ class HttpRequestFormData extends Component {
     }
 
     handleAdd() {
-        this.props.addOrRemoveParam("formData", "add");
+        const { tabId } = this.props;
+        this.props.addOrRemoveParam(tabId, "formData", "add");
     }
 
     handleDelete(id) {
-        this.props.addOrRemoveParam("formData", "delete", id);
+        const { tabId } = this.props;
+        this.props.addOrRemoveParam(tabId, "formData", "delete", id);
     }
 
     handleChange(id, evt) {
-        this.props.updateParam("formData", evt.target.name, evt.target.value, id);
+        const { tabId } = this.props;
+        this.props.updateParam(tabId, "formData", evt.target.name, evt.target.value, id);
     }
 
     render() {

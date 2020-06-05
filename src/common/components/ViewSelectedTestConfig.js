@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react';
-import {Link} from "react-router-dom";
+import {Link, withRouter} from "react-router-dom";
 import {connect} from "react-redux";
 import {cubeActions} from "../actions";
 import {cubeConstants} from "../constants";
@@ -10,7 +10,7 @@ import api from "../api";
 import {GoldenMeta} from "./Golden-Visibility";
 import {goldenActions} from '../actions/golden.actions'
 import {validateGoldenName} from "../utils/lib/golden-utils";
-import classNames from "classnames"
+import classNames from "classnames";
 import { cubeService } from '../services';
 // import { history } from "../helpers";
 // import { Glyphicon } from 'react-bootstrap';
@@ -263,7 +263,6 @@ class ViewSelectedTestConfig extends React.Component {
         
         this.setState({ showGoldenMeta: true });
         dispatch(cubeActions.hideGoldenVisibility(false))
-        // history.push({ pat}"/test_config_view/`");
     };
 
     handleBackToTestInfoClick = () => {
@@ -377,6 +376,24 @@ class ViewSelectedTestConfig extends React.Component {
         this.setState({ showReplayModal: true });
         this.replay(instancesForSelectedApp);
     };
+
+    handleReplayErrorCatchAll = (message, statusText) => {
+        this.setState({ showReplayModal: false });
+        alert(message || statusText);
+    }
+
+    handleReplayError = (data, status, statusText, username) => 
+        (
+            status && status === 409 && data["replayId"] !== "None"
+            ?
+                this.setState({ 
+                    fcId: data["replayId"], 
+                    fcEnabled: (data["userId"] === username), 
+                    showReplayModal: false
+                })
+                
+            : this.handleReplayErrorCatchAll(data["message"], statusText)
+        );
 
     checkStatus = (statusUrl, configForHTTP) => {
         api.get(statusUrl, configForHTTP)
@@ -520,7 +537,6 @@ class ViewSelectedTestConfig extends React.Component {
                     username 
                 } 
             }, 
-            dispatch, 
             checkReplayStatus 
         } = this.props;
         const replayStartUrl = `${config.replayBaseUrl}/start/${selectedGolden}`;
@@ -556,38 +572,8 @@ class ViewSelectedTestConfig extends React.Component {
             // this method is run in the parent component (Navigation)
             checkReplayStatus(this.state.replayId.replayId);
         } catch(error) {
-            /**
-             * Old Code
-             */
-            //             if(error.response.data) {
-            //                 if (error.response.data['replayId'] !== "None") {
-            //                     this.setState({
-            //                         fcId: error.response.data['replayId'], 
-            //                         fcEnabled: (error.response.data['userId']===user.username), 
-            //                         showReplayModal: false
-            //                     });
-            //                 } else {
-            //                     this.setState({showReplayModal: false});
-            //                     alert(error.response.data['message']);
-            //                 }
-            //             } else {
-            //                 this.setState({showReplayModal: false});
-            //                 alert(error.response.statusText);
-            //             }
-            // TODO: This part requires critical review
-            const { data } = error.response;
-
-            if(data.status && (data.status >= 400 && data.status <= 500)){
-                // If this a network error
-                this.setState({ showReplayModal: false, fcId: null, fcEnabled: false });
-                alert(`An error occured during the replay proccess. Error Code: ${data.status}`);
-                return;
-            }
-
-            // If an application error is detected and an error 
-            // message is returned from the server
-            this.setState({ showReplayModal: false, fcId: null, fcEnabled: false });
-            alert(data);
+            const { data, status, statusText } = error.response;
+            this.handleReplayError(data, status, statusText, username);
         }
     };
 
@@ -788,10 +774,14 @@ class ViewSelectedTestConfig extends React.Component {
                     <div className="label-n">MOCK(S)</div>
                     <div className="value-n">{cube.testConfig && cube.testConfig.mocks ? cube.testConfig.mocks.join(",") : ''}</div>
                 </div>
+                <div className="test-config-divider" />
 
+                {/* 
+                // Hiding this for now. Maybe used later
                 <div className="margin-top-10">
                     <div className="cube-btn width-100 text-center">SAVE TEST CONFIG</div>
-                </div>
+                </div> 
+                */}
 
                 <div className="margin-top-10">
                     <div className="label-n">SELECT TEST INSTANCE</div>
@@ -821,9 +811,14 @@ class ViewSelectedTestConfig extends React.Component {
                             cube.selectedTestId 
                             && (!recStatus || recStatus.status !== "Running") 
                             && (
-                                <span className="pull-right" onClick={this.handleViewGoldenClick} style={{ marginLeft: "5px", cursor: "pointer" }}>
-                                    <i className="fas fa-eye margin-right-10" style={{ fontSize: "12px", color: "#757575"}} aria-hidden="true"></i>
-                                </span>
+                                <Link to={{
+                                    pathname: "/test_config_view/golden_visibility",
+                                    search: `recordingId=${cube.selectedGolden}`
+                                }}>
+                                    <span className="pull-right" onClick={this.handleViewGoldenClick} style={{ marginLeft: "5px", cursor: "pointer" }}>
+                                        <i className="fas fa-eye margin-right-10" style={{ fontSize: "12px", color: "#757575"}} aria-hidden="true"></i>
+                                    </span>
+                                </Link>
                             )
                         }
                     </div>
@@ -845,16 +840,53 @@ class ViewSelectedTestConfig extends React.Component {
                     </div>
                     <div className="col-sm-6"><div onClick={this.handleRecordButtonClick} className="cube-btn width-100 text-center">RECORD</div></div>
                 </div>
+                <div className="test-config-divider" />
+                <div className="margin-top-10 row">
+                    <div className="col-sm-12">
+                        <Link to="/test_config_view/test_cluster">
+                            <div className="cube-btn width-100 text-center">TEST CLUSTER STATUS</div>
+                        </Link>
+                    </div>
+                </div>
+
             </Fragment>
         );
 
     };
 
+    renderTestClusterPanel = () => (
+        <div className="margin-top-10 row">
+            <div className="col-sm-12">
+                <Link to="/test_config_view">
+                    <div className="cube-btn width-100 text-center">BACK TO TEST CONFIG</div>
+                </Link>
+            </div>
+        </div>
+    );
+
+    renderGoldenMeta = () => {
+        const { cube } = this.props;
+        return (<GoldenMeta {...cube} handleBackToTestInfoClick={this.handleBackToTestInfoClick} />);
+    }
+
+    renderLeftPanelInfo = () => {
+        const { location: { pathname }} = this.props;
+        
+        const panel = {
+            ['/']: () => (<div />),
+            ['/test_config_view']: () => this.renderTestInfo(),
+            ['/test_config_view/golden_visibility']: () => this.renderGoldenMeta(),
+            ['/test_config_view/test_cluster']: () => this.renderTestClusterPanel()
+        };
+
+        return panel[pathname]();
+    };
+
     render() {
         const { cube } = this.props;
         const { 
-            showGoldenMeta, customHeaders, recordModalVisible, 
-            showReplayModal, fcId, showGoldenFilter, selectedGoldenFromFilter,
+            customHeaders, recordModalVisible, showReplayModal, 
+            fcId, showGoldenFilter, selectedGoldenFromFilter,
             recName, stopDisabled, recStatus, showAddCustomHeader,
             goldenNameErrorMessage, fcEnabled, resumeModalVisible,
             dbWarningModalVisible, instanceWarningModalVisible, 
@@ -866,9 +898,7 @@ class ViewSelectedTestConfig extends React.Component {
 
         return (
             <div>
-                {!showGoldenMeta && this.renderTestInfo()}
-
-                {showGoldenMeta && <GoldenMeta {...cube} handleBackToTestInfoClick={this.handleBackToTestInfoClick} />}
+                {this.renderLeftPanelInfo()}
                 
                 {dbWarningModalVisible && this.renderAlertModals(dbWarningModalVisible, this.handleDBWarningModalDismissClick)}
                 
@@ -1109,4 +1139,4 @@ const mapStateToProps = (state) => ({
     authentication: state.authentication
 });
 
-export default connect(mapStateToProps)(ViewSelectedTestConfig);
+export default withRouter(connect(mapStateToProps)(ViewSelectedTestConfig));

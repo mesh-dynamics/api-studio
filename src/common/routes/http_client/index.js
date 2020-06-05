@@ -1,7 +1,7 @@
 import React from 'react'
 import { Route } from 'react-router'
-import HttpClient from "./HttpClient";
+import HttpClientTabs from "./HttpClientTabs";
 
 export default [
-    <Route exact key="HttpClient" path="/http_client" component={HttpClient} />,
+    <Route exact key="HttpClientTabs" path="/http_client" component={HttpClientTabs} />,
 ]

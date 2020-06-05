@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import { Link } from 'react-router-dom'
+import './APICatalog.css';
 
 // incoming/outgoing requests table
 const APIListTable = (props) => {
@@ -9,16 +10,15 @@ const APIListTable = (props) => {
     const endTimeISO = new Date(endTime).toISOString();
 
     return(
-        <div style={{margin: "10px", width:"100%"}}>
-        <h5>INCOMING</h5>
-            <table className="table table-bordered table-striped">
+        <div style={{width:"100%"}}>
+            <table className="table">
                 <thead>
                     <tr>
-                        <th style={{width:"80%"}}>
+                        <th style={{width:"80%", fontWeight:"normal"}}>
                             API
                         </th>
-                        <th style={{width:"20%"}}>
-                            Count
+                        <th style={{width:"20%", fontWeight:"normal"}}>
+                            COUNT
                         </th>
                     </tr>
                 </thead>

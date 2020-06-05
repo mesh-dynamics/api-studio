@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
-import { APIListTable } from './APIListTable'
+import { APICountTable } from './APICountTable'
 import { APIRequestsTable } from './APIRequestsTable'
+import './APICatalog.css';
 
 class APICatalogAPIView extends Component {
     componentDidMount() {
@@ -8,19 +9,22 @@ class APICatalogAPIView extends Component {
     }
 
     render() {
-        const {selectedService, selectedApiPath, apiCount, apiTrace} = this.props;
+        const {selectedService, selectedApiPath, apiCount, apiTrace,app} = this.props;
         
         return (
             <div style={{display: "flex", flexDirection: "column" }}>
-                <div style={{margin: "10px"}}>
-                    <p>API</p>
+                <div className="margin-top-10">
+                    <span style={{fontWeight: 300}}>API</span>
                     <p><b>{selectedApiPath}</b></p>
                 </div>
-                <div style={{margin: "10px"}}>
-                    Count: {apiCount}
+                <div className="api-catalog-bordered-box width-50" style={{minHeight: "250px"}}>
+                    <p className="api-catalog-box-title">FROM SERVICE</p>
+                    <APICountTable apiCount={apiCount}/>
                 </div>
-                <label style={{marginLeft:"10px"}}>REQUESTS</label>
-                <APIRequestsTable selectedService={selectedService} selectedApiPath={selectedApiPath} apiTrace={apiTrace}/>
+                <div className="api-catalog-bordered-box">
+                    <p className="api-catalog-box-title">REQUESTS</p>
+                    <APIRequestsTable selectedService={selectedService} selectedApiPath={selectedApiPath} apiTrace={apiTrace} app={app}/>
+                </div>
             </div>
         )
     }
