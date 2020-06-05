@@ -13,49 +13,7 @@ const APIRequestsTable = (props) => {
     const [showModal, setShowModal] = useState(false);
     const [query,setQuery] = useState([]);
     const [form,setForm] = useState([]);
-    const [details,setDetails] = useState([]);
-
-    const columns = 
-    [
-      {  
-        Header: <input type="checkbox" id="selectAll" onChange={selectAll}></input>,
-        columns:
-        [
-          {
-            width:30,
-            accessor: 'check',
-            style:{
-              textAlign:'center',
-            }
-          }
-        ]
-      },
-      {  
-        Header: <div style={{textAlign:"left",fontWeight:"bold"}}>TIME</div>,
-        columns:
-        [
-          {
-            accessor: 'time',
-            getProps: (state, rowInfo) => ({
-              onClick: () => onCellClick(rowInfo)
-            }),
-            style: {
-              cursor: 'pointer',
-            },
-          }
-        ]
-      },
-      {  
-        Header: <div style={{textAlign:"left",fontWeight:"bold"}}>OUTGOING REQUESTS</div>,
-        columns:
-        [
-          {
-            accessor: 'out',
-
-          }
-        ]
-      }
-    ] 
+    const [details,setDetails] = useState([]); 
 
     const generateTableData = ()=>{
       tableData = [];
@@ -234,6 +192,48 @@ const APIRequestsTable = (props) => {
     }
     
   }
+
+  const columns = 
+    [
+      {  
+        Header: <input type="checkbox" id="selectAll" onChange={selectAll}></input>,
+        columns:
+        [
+          {
+            width:30,
+            accessor: 'check',
+            style:{
+              textAlign:'center',
+            }
+          }
+        ]
+      },
+      {  
+        Header: <div style={{textAlign:"left",fontWeight:"bold"}}>TIME</div>,
+        columns:
+        [
+          {
+            accessor: 'time',
+            getProps: (state, rowInfo) => ({
+              onClick: () => onCellClick(rowInfo)
+            }),
+            style: {
+              cursor: 'pointer',
+            },
+          }
+        ]
+      },
+      {  
+        Header: <div style={{textAlign:"left",fontWeight:"bold"}}>OUTGOING REQUESTS</div>,
+        columns:
+        [
+          {
+            accessor: 'out',
+
+          }
+        ]
+      }
+    ]
   
 
     return <div>
