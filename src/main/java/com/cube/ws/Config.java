@@ -139,7 +139,7 @@ public class Config {
 		        public void run() {
 			        Jedis jedis = jedisPool.getResource();
 			        jedis.configSet("notify-keyspace-events" , "Ex");
-			        jedis.psubscribe(new RedisPubSub(), "__key*__:*");
+			        jedis.psubscribe(new RedisPubSub(rrstore, jsonMapper, jedisPool), "__key*__:*");
 		        }
 	        };
 	        new Thread(subscribeThread).start();

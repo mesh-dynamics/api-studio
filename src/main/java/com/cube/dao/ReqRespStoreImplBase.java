@@ -153,12 +153,14 @@ public abstract class ReqRespStoreImplBase extends AbstractDataStore implements 
 	abstract void removeCollectionKey(CollectionKey collectionKey);
     abstract Optional<RecordOrReplay> retrieveFromCache(CollectionKey key, boolean extendTTL);
     abstract void populateCache(CollectionKey collectionKey, RecordOrReplay rr);
+	abstract void updaterFinalReplayStatusInCache(Replay replay);
 
 	/* (non-Javadoc)
 	 * @see com.cube.dao.ReqRespStore#saveReplay(com.cube.dao.Replay)
 	 */
 	@Override
 	public boolean expireReplayInCache(Replay replay) {
+		updaterFinalReplayStatusInCache(replay);
 		invalidateCurrentCollectionCache(replay.customerId, replay.app, replay.instanceId);
 		return true;
 	}
@@ -182,7 +184,7 @@ public abstract class ReqRespStoreImplBase extends AbstractDataStore implements 
 		 * @param app
 		 * @param instanceId
 		 */
-		private CollectionKey(String customerId, String app, String instanceId) {
+		public CollectionKey(String customerId, String app, String instanceId) {
 			super();
 			this.customerId = customerId;
 			this.app = app;
