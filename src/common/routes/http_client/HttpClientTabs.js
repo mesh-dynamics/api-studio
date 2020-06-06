@@ -27,18 +27,21 @@ class HttpClientTabs extends Component {
             tabs: [{ 
                 id: tabId,
                 requestId: requestId,
-                tabName: "New",
+                tabName: "",
                 httpMethod: "get",
-                httpURL: "",
+                httpURL: "http://www.mocky.io/v2/5ed952b7310000f4dec4ed0a",
                 headers: [],
                 queryStringParams: [],
                 bodyType: "formData",
                 formData: [],
                 rawData: "",
                 rawDataType: "json",
-                responseStatus: "",
+                responseStatus: "NA",
                 responseHeaders: "",
-                responseBody: ""
+                responseBody: "",
+                recordedResponseHeaders: "",
+                recordedResponseBody: "",
+                responseBodyType: "json"
             }],
             selectedTabKey: tabId
         };
@@ -109,6 +112,7 @@ class HttpClientTabs extends Component {
             tabs: this.state.tabs.map(eachTab => {
                 if (eachTab.id === tabId) {
                     eachTab[type] = params;
+                    if(type === "httpURL") eachTab.tabName = params;
                 }
                 return eachTab; 
             })
@@ -189,36 +193,54 @@ class HttpClientTabs extends Component {
             fetchConfig["body"] = httpRequestBody;
         }
         let fetchURL = httpRequestURL + (httpRequestQueryStringParams ? "?" + httpRequestQueryStringParams : "");
-        
+        this.setState({
+            tabs: this.state.tabs.map(eachTab => {
+                if (eachTab.id === tabId) {
+                    eachTab["responseStatus"] = "WAITING...";
+                }
+                return eachTab; 
+            })
+        });
         // Make request
         // https://www.mocky.io/v2/5185415ba171ea3a00704eed
-        let fetchedResponseHeaders = {};
+        let fetchedResponseHeaders = {}, responseStatus = "", responseStatusText = "";
         return fetch(fetchURL, fetchConfig).then((response) => {
-                for(const header of response.headers){
-                    fetchedResponseHeaders[header[0]] = header[1];
-                }
-                if (response.headers.get("content-type").indexOf("application/json") !== -1) {// checking response header
-                    return response.json();
-                } else {
-                    return response.text();
-                    //throw new TypeError('Response from has unexpected "content-type"');
-                }
-            })
-            .then((data) => {
-                // handle success
-                this.setState({
-                    tabs: this.state.tabs.map(eachTab => {
-                        if (eachTab.id === tabId) {
-                            eachTab["responseHeaders"] = JSON.stringify(fetchedResponseHeaders, undefined, 4);
-                            eachTab["responseBody"] = JSON.stringify(data, undefined, 4);
-                        }
-                        return eachTab; 
-                    })
-                });
-            })
-            .catch((error) => {
-                console.error(error.message);
+            responseStatus = response.status;
+            responseStatusText = response.statusText;
+            for(const header of response.headers){
+                fetchedResponseHeaders[header[0]] = header[1];
+            }
+            if (response.headers.get("content-type").indexOf("application/json") !== -1) {// checking response header
+                return response.json();
+            } else {
+                return response.text();
+                //throw new TypeError('Response from has unexpected "content-type"');
+            }
+        })
+        .then((data) => {
+            // handle success
+            this.setState({
+                tabs: this.state.tabs.map(eachTab => {
+                    if (eachTab.id === tabId) {
+                        eachTab["responseHeaders"] = JSON.stringify(fetchedResponseHeaders, undefined, 4);
+                        eachTab["responseBody"] = JSON.stringify(data, undefined, 4);
+                        eachTab["responseStatus"] = responseStatus + " " + responseStatusText;
+                    }
+                    return eachTab; 
+                })
             });
+        })
+        .catch((error) => {
+            console.error(error);
+            this.setState({
+                tabs: this.state.tabs.map(eachTab => {
+                    if (eachTab.id === tabId) {
+                        eachTab["responseStatus"] = error.message;
+                    }
+                    return eachTab; 
+                })
+            });
+        });
     }
 
     handleTabChange(tabKey) {
@@ -261,20 +283,34 @@ class HttpClientTabs extends Component {
                 formData: [],
                 rawData: "",
                 rawDataType: "json",
-                responseStatus: "",
+                responseStatus: "NA",
                 responseHeaders: "",
-                responseBody: ""
+                responseBody: "",
+                recordedResponseHeaders: "",
+                recordedResponseBody: "",
+                responseBodyType: ""
             };
         }
         this.setState({
             tabs: [...this.state["tabs"], {
                 id: tabId,
                 requestId: requestId,
-                tabName: "New",
+                tabName: reqObject.httpURL ? reqObject.httpURL : "New",
                 ...reqObject
             }],
             selectedTabKey: tabId
         });
+    }
+
+    getRequestIds(urlParams) {
+        let requestIds = {};
+        for(const eachUrlParam of urlParams.keys()) {
+            const requestIdMatches = eachUrlParam.match(/\[(.*?)\]/);
+            if(requestIdMatches && requestIdMatches.length > 0) {
+                requestIds[requestIdMatches[1]] = urlParams.get(eachUrlParam).split(",");
+            }
+        }
+        return requestIds;
     }
 
     componentDidMount() {
@@ -283,62 +319,65 @@ class HttpClientTabs extends Component {
         dispatch(cubeActions.hideServiceGraph(true));
         dispatch(cubeActions.hideHttpClient(false));
 
-        let urlParameters = _.chain(window.location.search)
-            .replace('?', '')
-            .split('&')
-            .map(_.partial(_.split, _, '=', 2))
-            .fromPairs()
-            .value();
+        let urlParameters = new URLSearchParams(window.location.search);
         
-        const reqIds = urlParameters["requestIds"], selectedApp = urlParameters["app"];
-        if(reqIds && reqIds.length > 0) {
-            const eventTypes = [], reqIdArray = reqIds.split(",");
+        const requestIds = this.getRequestIds(urlParameters), selectedApp = urlParameters.get("app"), reqIdArray = Object.keys(requestIds);
+        if(reqIdArray && reqIdArray.length > 0) {
+            const eventTypes = [];
             cubeService.fetchAPIEventData(selectedApp, reqIdArray, eventTypes).then((result) => {
                 if(result && result.numResults > 0) {
-                    result.objects.forEach(eachReq => {
-                        if(eachReq.eventType === "HTTPRequest") {
+                    for(let eachReqId of reqIdArray) {
+                        const reqResPair = result.objects.filter(eachReq => eachReq.reqId === eachReqId);
+                        if(reqResPair.length === 2) {
+                            const httpRequestEventTypeIndex = reqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
+                            const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
+                            const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
+                            const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
                             let headers = [], queryParams = [], formData = [];
-                            for(let eachHeader in eachReq.payload[1].hdrs) {
+                            for(let eachHeader in httpRequestEvent.payload[1].hdrs) {
                                 headers.push({
                                     id: _.uniqueId('key_'),
                                     name: eachHeader,
-                                    value: eachReq.payload[1].hdrs[eachHeader].join(","),
+                                    value: httpRequestEvent.payload[1].hdrs[eachHeader].join(","),
                                     description: ""
                                 });
                             }
-                            for(let eachQueryParam in eachReq.payload[1].queryParams) {
+                            for(let eachQueryParam in httpRequestEvent.payload[1].queryParams) {
                                 queryParams.push({
                                     id: _.uniqueId('key_'),
                                     name: eachQueryParam,
-                                    value: eachReq.payload[1].queryParams[eachQueryParam].join(","),
+                                    value: httpRequestEvent.payload[1].queryParams[eachQueryParam].join(","),
                                     description: ""
                                 });
                             }
-                            for(let eachFormParam in eachReq.payload[1].formParams) {
+                            for(let eachFormParam in httpRequestEvent.payload[1].formParams) {
                                 formData.push({
                                     id: _.uniqueId('key_'),
                                     name: eachFormParam,
-                                    value: eachReq.payload[1].formParams[eachFormParam].join(","),
+                                    value: httpRequestEvent.payload[1].formParams[eachFormParam].join(","),
                                     description: ""
                                 });
                             }
                             let reqObject = {
-                                httpMethod: eachReq.payload[1].method.toLowerCase(),
-                                httpURL: eachReq.payload[1].path,
+                                httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
+                                httpURL: httpRequestEvent.payload[1].path,
                                 headers: headers,
                                 queryStringParams: queryParams,
                                 bodyType: "formData",
                                 formData: formData,
                                 rawData: "",
                                 rawDataType: "json",
-                                responseStatus: "",
+                                responseStatus: "NA",
                                 responseHeaders: "",
-                                responseBody: ""
+                                responseBody: "",
+                                recordedResponseHeaders: JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4),
+                                recordedResponseBody: httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "",
+                                responseBodyType: ""
                             };
                             const mockEvent = {};
                             this.addTab(mockEvent, reqObject);
                         }
-                    })
+                    }
                 }
             });
         }
@@ -355,7 +394,7 @@ class HttpClientTabs extends Component {
         return this.state.tabs.map((eachTab, index) => ({
             title: (
                 <div className="tab-container">
-                  <div className="tab-name">{eachTab.tabName}</div>
+                  <div className="tab-name">{eachTab.tabName ? eachTab.tabName : eachTab.httpURL ? eachTab.httpURL : "New"}</div>
                 </div>
               ),
             getContent: () => {
@@ -377,7 +416,10 @@ class HttpClientTabs extends Component {
                         driveRequest={this.driveRequest}
                         responseStatus={eachTab.responseStatus}
                         responseHeaders={eachTab.responseHeaders}
-                        responseBody={eachTab.responseBody} >
+                        responseBody={eachTab.responseBody}
+                        recordedResponseHeaders={eachTab.recordedResponseHeaders}
+                        recordedResponseBody={eachTab.recordedResponseBody}
+                        responseBodyType={eachTab.responseBodyType} >
 
                         </HttpClient>
                     </div>

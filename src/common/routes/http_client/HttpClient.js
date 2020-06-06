@@ -30,9 +30,13 @@ class HttpClient extends Component {
                         driveRequest={this.props.driveRequest} >
                   </HttpRequestMessage>
                     <HttpResponseMessage tabId={this.props.tabId}
+                        updateParam={this.props.updateParam}
                         responseStatus={this.props.responseStatus}
                         responseHeaders={this.props.responseHeaders}
-                        responseBody={this.props.responseBody}>
+                        responseBody={this.props.responseBody}
+                        recordedResponseHeaders={this.props.recordedResponseHeaders}
+                        recordedResponseBody={this.props.recordedResponseBody}
+                        updateParam={this.props.updateParam} >
                     </HttpResponseMessage>
             </div>
         );

@@ -1,29 +1,36 @@
 import React, { Component } from 'react';
-import { Glyphicon } from 'react-bootstrap';
 import { diff as DiffEditor } from "react-ace";
+
+import "ace-builds/webpack-resolver";
+
 import "ace-builds/src-noconflict/mode-json";
+import "ace-builds/src-noconflict/mode-xml";
+import "ace-builds/src-noconflict/mode-html";
+import "ace-builds/src-noconflict/mode-text";
+import "ace-builds/src-noconflict/mode-javascript";
 import "ace-builds/src-min-noconflict/ext-searchbox";
 import "ace-builds/src-min-noconflict/ext-language_tools";
 import "ace-builds/src-noconflict/theme-github";
 
 import "./diff.css";
 
-const defaultValue = ``;
-
 class HttpResponseBody extends Component {
     constructor(props) {
         super(props);
+        const defaultValue = this.props.recordedResponseBody;
         this.state = {
             value: defaultValue,
             editor: null
         };
-        this.onChange = this.onChange.bind(this);
+        this.handleChange = this.handleChange.bind(this);
         this.onLoad = this.onLoad.bind(this);
     }
 
-    onChange(newValue) {
+    handleChange(value) {
+        const { tabId } = this.props;
+        this.props.updateParam(tabId, "recordedResponseBody", "recordedResponseBody", value[0]);
         this.setState({
-            value: newValue[0]
+            value: value[0]
         });
     }
 
@@ -41,11 +48,12 @@ class HttpResponseBody extends Component {
                     name="responseBody"
                     value={[this.state.value, this.props.responseBody]}
                     width="100%"
-                    mode="json"
+                    mode={this.props.responseBodyType}
+                    theme="github"
                     setOptions={{
                         useWorker: false
                     }}
-                    onChange={this.onChange}
+                    onChange={this.handleChange}
                     onLoad={this.onLoad}
                 />
             </div>

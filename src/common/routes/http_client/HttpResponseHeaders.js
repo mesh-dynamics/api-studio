@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import { Glyphicon } from 'react-bootstrap';
 // import "./styles_here.css";
 
 import { diff as DiffEditor } from "react-ace";
@@ -10,21 +9,21 @@ import "ace-builds/src-noconflict/theme-github";
 
 import "./diff.css";
 
-const defaultValue = ``;
-
 class HttpResponseHeaders extends Component {
     constructor(props) {
         super(props);
-        this.state = { 
-            //value: [defaultValue, this.props.responseHeaders]
+        const defaultValue = this.props.recordedResponseHeaders;
+        this.state = {
             value: defaultValue
         };
-        this.onChange = this.onChange.bind(this);
+        this.handleChange = this.handleChange.bind(this);
     }
 
-    onChange(newValue) {
+    handleChange(value) {
+        const { tabId } = this.props;
+        this.props.updateParam(tabId, "recordedResponseHeaders", "recordedResponseHeaders", value[0]);
         this.setState({
-            value: newValue[0]
+            value: value[0]
         });
     }
 
@@ -41,7 +40,7 @@ class HttpResponseHeaders extends Component {
                     setOptions={{
                         useWorker: false
                     }}
-                    onChange={this.onChange}
+                    onChange={this.handleChange}
                 />
             </div>
         ) : (<div></div>);
