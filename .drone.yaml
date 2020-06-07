@@ -16,8 +16,8 @@ steps:
         cpu: 0.1
         memory: "1500Mi"
       limits:
-        cpu: 1
-        memory: "1500Mi"
+        cpu: 2
+        memory: "2048Mi"
     when:
       branch:
       - master
