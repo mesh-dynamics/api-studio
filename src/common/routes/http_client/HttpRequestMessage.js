@@ -24,6 +24,8 @@ class HttpRequestMessage extends Component {
         this.handleChange = this.handleChange.bind(this);
         this.handleClick = this.handleClick.bind(this);
         this.handleBodyOrRawDataType = this.handleBodyOrRawDataType.bind(this);
+
+        this.handleShowOutgoingRequests = this.handleShowOutgoingRequests.bind(this);
     }
 
     handleChange(evt) {
@@ -34,6 +36,11 @@ class HttpRequestMessage extends Component {
     handleClick(evt) {
         const { tabId } = this.props;
         this.props.driveRequest(tabId);
+    }
+
+    handleShowOutgoingRequests() {
+        const { tabId, requestId } = this.props;
+        this.props.showOutgoingRequests(tabId, requestId);
     }
 
     onChangeValue(event) {
@@ -63,8 +70,13 @@ class HttpRequestMessage extends Component {
                 <div style={{marginRight: "7px"}}>
                     <div style={{marginBottom: "9px", display: "inline-block", width: "20%", fontSize: "11px"}}>REQUEST</div>
                     <div style={{display: "inline-block", width: "80%", textAlign: "right"}}>
-                        <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px"}} onClick={this.handleClick}>
-                        <Glyphicon glyph="play" /> RUN
+                        {this.props.requestId && (
+                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleShowOutgoingRequests}>
+                                <Glyphicon glyph="transfer" /> SHOW OUTGOING REQUESTS
+                            </div>
+                        )}
+                        <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleClick}>
+                            <Glyphicon glyph="play" /> RUN
                         </div>
                     </div>
                 </div>

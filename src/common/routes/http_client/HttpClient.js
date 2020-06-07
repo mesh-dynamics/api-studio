@@ -16,6 +16,7 @@ class HttpClient extends Component {
         return (
             <div>
                 <HttpRequestMessage tabId={this.props.tabId}
+                        requestId={this.props.requestId}
                         httpMethod={this.props.httpMethod}
                         httpURL={this.props.httpURL}
                         headers={this.props.headers} 
@@ -27,7 +28,8 @@ class HttpClient extends Component {
                         addOrRemoveParam={this.props.addOrRemoveParam} 
                         updateParam={this.props.updateParam}
                         updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
-                        driveRequest={this.props.driveRequest} >
+                        driveRequest={this.props.driveRequest}
+                        showOutgoingRequests={this.props.showOutgoingRequests} >
                   </HttpRequestMessage>
                     <HttpResponseMessage tabId={this.props.tabId}
                         updateParam={this.props.updateParam}
