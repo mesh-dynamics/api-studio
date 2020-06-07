@@ -4,8 +4,9 @@ import ReactTable from "react-table";
 import Modal from "react-bootstrap/lib/Modal";
 import { cubeService } from "../../services";
 import './APICatalog.css';
+import _ from "lodash";
 
-let tableData = []
+let tableData = {}
 
 // TODO: refactor this into a class component which is compatible with react-table v6
 const APIRequestsTable = (props) => {
@@ -15,73 +16,38 @@ const APIRequestsTable = (props) => {
     const [form,setForm] = useState([]);
     const [details,setDetails] = useState([]); 
 
-    const generateTableData = ()=>{
-      tableData = [];
-      // console.log(apiTrace);
-        try{
-          {apiTrace.response.map((req,index) => {
-            if(req.res.length>1){
-              if(req.res[0].service === selectedService && req.res[0].apiPath === selectedApiPath){
-                if(req.res[1].parentSpanId === req.res[0].spanId){
-                  const date = new Date(req.res[1].reqTimestamp*1000);
-                  const dateString = date.toLocaleString();
-                  makeTableData(true,req,dateString);
-                }
-              }
-            }
-            else if(req.res.length===1){
-              if(req.res[0].service === selectedService && req.res[0].apiPath === selectedApiPath){
-                  const date = new Date(req.res[0].reqTimestamp*1000);
-                  const dateString = date.toLocaleString();
-                  makeTableData(false,req,dateString);
-              }
-            }
-        })
-      }
-      }
-      catch(e){
-        console.log(e);
-      }
-    }
-
-    const makeTableData=(childExist,req,dateString)=>{
-      if(childExist){
-        tableData.push(
-          {
-            check: <input type="checkbox" className="requestBox" value={req.res[1].requestEventId}></input>,  
-            time: dateString,
-            out: req.res.map((result, index) => {
-              if(req.res[0].spanId === req.res[index].parentSpanId){
-                  return  <div>{req.res[index].apiPath}</div>
-                }
-            })
-          }
-        )
-      }
-      else{
-        tableData.push(
-          {
-            check: <input type="checkbox" className="requestBox" value={req.res[0].requestEventId}></input>,  
-            time: dateString,
-            out:"-"
-          }
-        )
-      }
-    }
-
-    const submitRequest=()=>{
-        const allCheckBox = window.document.getElementsByClassName("requestBox");
-        let requestList = "";
-        for(let i=0;i<allCheckBox.length;i++){
-            if(allCheckBox[i].checked){
-                requestList += allCheckBox[i].value +",";
-            }
+    const generateTableData = () => {
+      tableData = {};
+      apiTrace && !_.isEmpty(apiTrace.response) && apiTrace.response.forEach((trace) => {
+        const requests = trace.res;
+        const parentRequest = _.find(requests, {service: selectedService, apiPath: selectedApiPath});
+        if (!parentRequest) {
+          return
         }
-        requestList = requestList.substring(0,requestList.length-1);
-        // /httpclient?requestIds=id1,id2
+        const outgoingRequests = requests.filter((req) => req.parentSpanId === parentRequest.spanId)
+        const parentReqId = parentRequest.requestEventId;
+        
+        tableData[parentReqId] = {
+            check: <input type="checkbox" className="requestBox" value={parentReqId}/>,  
+            time: new Date(parentRequest.reqTimestamp * 1000).toLocaleString(),
+            out: outgoingRequests.length ? outgoingRequests.map((outgoingRequest) => <div>{outgoingRequest.apiPath}</div>) : "NA",
+            outgoingRequests: outgoingRequests,
+        };
+      });
+    }
+
+    const submitRequest = () => {
+        const allCheckBox = Array.from(window.document.getElementsByClassName("requestBox"));
+        const requestList = allCheckBox.filter((checkBox) => checkBox.checked)
+                    .map((checkBox) => {
+                      const reqId = checkBox.value;
+                      const reqData = tableData[reqId];
+                      const outgoingReqIds = reqData.outgoingRequests.map((req => req.requestEventId));
+                      return `requestIds[${reqId}]=${outgoingReqIds.join(",")}`;
+                    });
         history.push({
           pathname: "/http_client",
-          search: `?app=${app}&requestIds=${requestList}`
+          search: `?app=${app}&${requestList.join("&")}`
         })
     }
 
@@ -240,7 +206,7 @@ const APIRequestsTable = (props) => {
       <div>
       {generateTableData()}
         <ReactTable
-            data={tableData}  
+            data={Object.values(tableData)}  
             columns={columns}  
             style={{height: "500px"}}
             defaultPageSize = {5}  
