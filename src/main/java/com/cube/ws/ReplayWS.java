@@ -3,8 +3,10 @@
  */
 package com.cube.ws;
 
+import com.cube.dao.ReplayQuery;
 import com.cube.dao.ReplayUpdate;
 import com.cube.dao.ReplayUpdate.ReplaySaveFailureException;
+import com.cube.dao.Result;
 import io.md.constants.ReplayStatus;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -381,6 +384,19 @@ public class ReplayWS {
             Constants.MESSAGE, "Replay Not Found",
             "ReplayId", replayId))).build());
         return response;
+    }
+
+    @GET
+    @Path("getReplays/{customerId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getReplays(@Context UriInfo uriInfo, @PathParam("customerId") String customerId) {
+        ReplayQuery replayQuery = new ReplayQuery(customerId, uriInfo.getQueryParameters());
+        Result<Replay> result = rrstore.getReplay(replayQuery.customerId, replayQuery.app,
+            replayQuery.instanceId, replayQuery.status, replayQuery.collection,
+            replayQuery.numResults,  replayQuery.start, replayQuery.userId,  replayQuery.endDate,
+            replayQuery.startDate, replayQuery.testConfigName, replayQuery.goldenName,  false);
+        List<Replay> finalResult = result.getObjects().collect(Collectors.toList());
+        return Response.ok().type(MediaType.APPLICATION_JSON).entity(Map.of("response", finalResult)).build();
     }
 
 	/**
