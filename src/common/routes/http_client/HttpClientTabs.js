@@ -22,11 +22,10 @@ class HttpClientTabs extends Component {
     constructor(props) {
         super(props);
         const tabId = _.uniqueId('key_');
-        const requestId = _.uniqueId('request_');
         this.state = { 
             tabs: [{ 
                 id: tabId,
-                requestId: requestId,
+                requestId: "",
                 tabName: "",
                 httpMethod: "get",
                 httpURL: "http://www.mocky.io/v2/5ed952b7310000f4dec4ed0a",
@@ -41,9 +40,13 @@ class HttpClientTabs extends Component {
                 responseBody: "",
                 recordedResponseHeaders: "",
                 recordedResponseBody: "",
-                responseBodyType: "json"
+                responseBodyType: "json",
+                outgoingRequestIds: []
             }],
-            selectedTabKey: tabId
+            outgoingRequests: [],
+            toggleTestAndOutgoingRequests: true,
+            selectedTabKey: tabId,
+            app: ""
         };
         this.addTab = this.addTab.bind(this);
         this.handleTabChange = this.handleTabChange.bind(this);
@@ -54,6 +57,9 @@ class HttpClientTabs extends Component {
         this.updateBodyOrRawDataType = this.updateBodyOrRawDataType.bind(this);
 
         this.driveRequest = this.driveRequest.bind(this);
+        this.showOutgoingRequests = this.showOutgoingRequests.bind(this);
+
+        this.handleClick = this.handleClick.bind(this);
     }
 
     getTabIndexGivenTabId (tabId) {
@@ -131,6 +137,86 @@ class HttpClientTabs extends Component {
                 }
                 return eachTab; 
             })
+        });
+    }
+
+    showOutgoingRequests(tabId, reqId) {    
+        const tabIndex = this.getTabIndexGivenTabId(tabId), { tabs, app } = this.state;
+        const reqIdArray = tabs[tabIndex]["outgoingRequestIds"];
+        if(reqIdArray && reqIdArray.length > 0) {
+            const eventTypes = [];
+            cubeService.fetchAPIEventData(app, reqIdArray, eventTypes).then((result) => {
+                if(result && result.numResults > 0) {
+                    let outgoingRequests = [];
+                    for(let eachReqId of reqIdArray) {
+                        const reqResPair = result.objects.filter(eachReq => eachReq.reqId === eachReqId);
+                        if(reqResPair.length === 2) {
+                            const httpRequestEventTypeIndex = reqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
+                            const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
+                            const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
+                            const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
+                            let headers = [], queryParams = [], formData = [];
+                            for(let eachHeader in httpRequestEvent.payload[1].hdrs) {
+                                headers.push({
+                                    id: _.uniqueId('key_'),
+                                    name: eachHeader,
+                                    value: httpRequestEvent.payload[1].hdrs[eachHeader].join(","),
+                                    description: ""
+                                });
+                            }
+                            for(let eachQueryParam in httpRequestEvent.payload[1].queryParams) {
+                                queryParams.push({
+                                    id: _.uniqueId('key_'),
+                                    name: eachQueryParam,
+                                    value: httpRequestEvent.payload[1].queryParams[eachQueryParam].join(","),
+                                    description: ""
+                                });
+                            }
+                            for(let eachFormParam in httpRequestEvent.payload[1].formParams) {
+                                formData.push({
+                                    id: _.uniqueId('key_'),
+                                    name: eachFormParam,
+                                    value: httpRequestEvent.payload[1].formParams[eachFormParam].join(","),
+                                    description: ""
+                                });
+                            }
+                            let reqObject = {
+                                httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
+                                httpURL: httpRequestEvent.payload[1].path,
+                                headers: headers,
+                                queryStringParams: queryParams,
+                                bodyType: "formData",
+                                formData: formData,
+                                rawData: "",
+                                rawDataType: "json",
+                                responseStatus: "NA",
+                                responseHeaders: JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4),
+                                responseBody: httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "",
+                                recordedResponseHeaders: "",
+                                recordedResponseBody: "",
+                                responseBodyType: "json"
+                            };
+                            const tabId = _.uniqueId('key_');
+                            outgoingRequests.push({
+                                id: tabId,
+                                requestId: "",
+                                tabName: reqObject.httpURL ? reqObject.httpURL : "New",
+                                ...reqObject
+                            })
+                        }
+                    }
+                    this.setState({
+                        toggleTestAndOutgoingRequests: !this.state.toggleTestAndOutgoingRequests,
+                        outgoingRequests
+                    });
+                }
+            });
+        }
+    }
+
+    handleClick() {
+        this.setState({
+            toggleTestAndOutgoingRequests: !this.state.toggleTestAndOutgoingRequests
         });
     }
 
@@ -270,7 +356,7 @@ class HttpClientTabs extends Component {
         this.setState({ tabs: newTabs, selectedTabKey: newTabs[nextSelectedIndex].id });
     };
 
-    addTab(evt, reqObject) {
+    addTab(evt, reqObject, app) {
         const tabId = _.uniqueId('key_');
         const requestId = _.uniqueId('request_');
         if(!reqObject) {
@@ -288,17 +374,19 @@ class HttpClientTabs extends Component {
                 responseBody: "",
                 recordedResponseHeaders: "",
                 recordedResponseBody: "",
-                responseBodyType: ""
+                responseBodyType: "",
+                requestId: "",
+                outgoingRequestIds: []
             };
         }
         this.setState({
             tabs: [...this.state["tabs"], {
                 id: tabId,
-                requestId: requestId,
                 tabName: reqObject.httpURL ? reqObject.httpURL : "New",
                 ...reqObject
             }],
-            selectedTabKey: tabId
+            selectedTabKey: tabId,
+            app: app
         });
     }
 
@@ -372,10 +460,12 @@ class HttpClientTabs extends Component {
                                 responseBody: "",
                                 recordedResponseHeaders: JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4),
                                 recordedResponseBody: httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "",
-                                responseBodyType: ""
+                                responseBodyType: "json",
+                                requestId: eachReqId,
+                                outgoingRequestIds: requestIds[eachReqId]
                             };
                             const mockEvent = {};
-                            this.addTab(mockEvent, reqObject);
+                            this.addTab(mockEvent, reqObject, selectedApp);
                         }
                     }
                 }
@@ -390,8 +480,8 @@ class HttpClientTabs extends Component {
         dispatch(cubeActions.hideHttpClient(true));
     }
 
-    getTabs() {
-        return this.state.tabs.map((eachTab, index) => ({
+    getTabs(givenTabs) {
+        return givenTabs.map((eachTab, index) => ({
             title: (
                 <div className="tab-container">
                   <div className="tab-name">{eachTab.tabName ? eachTab.tabName : eachTab.httpURL ? eachTab.httpURL : "New"}</div>
@@ -419,8 +509,8 @@ class HttpClientTabs extends Component {
                         responseBody={eachTab.responseBody}
                         recordedResponseHeaders={eachTab.recordedResponseHeaders}
                         recordedResponseBody={eachTab.recordedResponseBody}
-                        responseBodyType={eachTab.responseBodyType} >
-
+                        responseBodyType={eachTab.responseBodyType}
+                        showOutgoingRequests={this.showOutgoingRequests} >
                         </HttpClient>
                     </div>
               )},
@@ -455,13 +545,21 @@ class HttpClientTabs extends Component {
                 <div style={{marginRight: "7px"}}>
                     <div style={{marginBottom: "9px", display: "inline-block", width: "20%", fontSize: "11px"}}></div>
                     <div style={{display: "inline-block", width: "80%", textAlign: "right"}}>
-                        <div className="btn btn-sm cube-btn text-center" style={{}} onClick={this.addTab}>
-                        <Glyphicon glyph="plus" /> ADD TAB
+                        <div className="btn btn-sm cube-btn text-center" style={{display: this.state.toggleTestAndOutgoingRequests ? "" : "none"}} onClick={this.addTab}>
+                            <Glyphicon glyph="plus" /> ADD TAB
                         </div>
                     </div>
                 </div>
-                <div style={{marginTop: "10px"}}>
-                    <Tabs items={this.getTabs()} tabsWrapperClass={"md-hc-tabs-wrapper"} allowRemove={true} removeActiveOnly={false} showMore={true} selectedTabKey={this.state.selectedTabKey} onChange={this.handleTabChange} onRemove={this.handleRemoveTab} />
+                <div style={{marginTop: "10px", display: this.state.toggleTestAndOutgoingRequests ? "" : "none"}}>
+                    <Tabs items={this.getTabs(this.state.tabs)} tabsWrapperClass={"md-hc-tabs-wrapper"} allowRemove={true} removeActiveOnly={false} showMore={true} selectedTabKey={this.state.selectedTabKey} onChange={this.handleTabChange} onRemove={this.handleRemoveTab} />
+                </div>
+                <div style={{marginTop: "10px", display: !this.state.toggleTestAndOutgoingRequests ? "" : "none"}}>
+                    <div style={{marginBottom: "10px"}}>
+                        <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleClick}>
+                            <Glyphicon glyph="chevron-left" /> BACK
+                        </div>
+                    </div>
+                    <Tabs items={this.getTabs(this.state.outgoingRequests)} tabsWrapperClass={"md-hc-tabs-wrapper"} allowRemove={false} showMore={true} />
                 </div>
             </div>
         );
