@@ -12,6 +12,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URLClassLoader;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -581,37 +583,7 @@ public class CubeStore {
             // used while mocking
             if (event.payload instanceof HTTPRequestPayload)  {
                 HTTPRequestPayload payload = (HTTPRequestPayload) event.payload;
-                Optional<MultivaluedHashMap> queryParamsOpt =
-                    payload.dataObj.getValAsObject("/".concat("queryParams"), MultivaluedHashMap.class);
-                StringBuilder orginalPath = new StringBuilder();
-                orginalPath.append(event.apiPath);
-                queryParamsOpt.ifPresent(queryParams -> {
-                    MultivaluedMap<String, String> queryParamsCast =
-                        (MultivaluedMap<String, String>) queryParams;
-                    orginalPath.append("?");
-                    queryParamsCast.forEach((k, vlist) -> {
-                        vlist.forEach(value -> orginalPath.append(k)
-                            .append("=").append(value).append("&"));
-                    });
-                    String originalPathWithParams = orginalPath.substring(0, orginalPath.length()-1);
-                    URIBuilder uriBuilder = null;
-                    try {
-                        uriBuilder = new URIBuilder(originalPathWithParams);
-                        //String path = uriBuilder.getPath();
-                        List<NameValuePair> queryParamsDecoded = uriBuilder.getQueryParams();
-                        MultivaluedHashMap<String,String> queryParamsMap = new MultivaluedHashMap();
-                        queryParamsDecoded.forEach(nameValuePair -> {
-                            queryParamsMap.add(nameValuePair.getName(), nameValuePair.getValue());
-                        });
-                        ObjectNode rootAsNode = (ObjectNode) payload.dataObj.getRoot();
-                        if (!queryParamsMap.isEmpty()) {
-                            JsonNode converted = config.jsonMapper.convertValue(queryParamsMap, JsonNode.class);
-                            rootAsNode.put("queryParams", converted);
-                        }
-                    } catch (URISyntaxException e) {
-                        LOGGER.error("Unable to parse original api path with params" , e);
-                    }
-                });
+                payload.transformSubTree("/queryParams" , URLDecoder::decode);
             }
 
             try {
