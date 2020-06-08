@@ -22,7 +22,7 @@ public class Replay {
 	public String replayId;
 	public boolean async;
 	public ReplayStatus status;
-	public Optional<String> service;
+	public List<String> service;
 	public List<String> paths;
 	public List<String> intermediateServices;
 	public int reqcnt;
@@ -50,7 +50,7 @@ public class Replay {
 		Instant creationTimestamp,
 		Optional<Double> sampleRate, List<String> intermediateServices,
 		Optional<String> generatedClassJarPath, Optional<URLClassLoader> classLoader,
-		Optional<String> service, ReplayTypeEnum replayType, Optional<String> xfms,
+		List<String> service, ReplayTypeEnum replayType, Optional<String> xfms,
 		List<String> mockServices,
 		Optional<String> testConfigName, Optional<String> goldenName, Optional<String> recordingId,
 		boolean archived, Optional<String> dynamicInjectionConfigVersion, Instant analysisCompleteTimestamp) {
@@ -101,7 +101,7 @@ public class Replay {
 		creationTimeStamp = Instant.now();
 		reqIds = Collections.emptyList();
 		paths = Collections.emptyList();
-		service = Optional.empty();
+		service = Collections.emptyList();
 		intermediateServices = Collections.emptyList();
 		templateVersion = "";
 		generatedClassJarPath = Optional.empty();
