@@ -40,7 +40,23 @@
     .help-block {
       font-size: 12px;
     }
+
+    #notification {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: 200px;
+      padding: 20px;
+      border-radius: 5px;
+      background-color: white;
+      box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+    }
+
+    .hidden {
+      display: none;
+    }
   </style>
+  <script type="text/javascript" src="./updater.js"></script>
 
 </head>
 
@@ -49,6 +65,15 @@
     You need to enable JavaScript to run this app.
   </noscript>
   <div id="root"></div>
+  <div id="notification" class="hidden">
+    <p id="message"></p>
+    <button id="close-button" onClick="closeNotification()">
+      Close
+    </button>
+    <button id="restart-button" onClick="restartApp()" class="hidden">
+      Restart
+    </button>
+  </div>
   <!--
       This HTML file is a template.
       If you open it directly in the browser, you will see an empty page.
