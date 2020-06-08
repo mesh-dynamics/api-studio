@@ -18,7 +18,11 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.cxf.transport.http.HTTPConduit;
+import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 import org.apache.http.client.utils.URIBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,6 +35,7 @@ import io.cube.apachecxf.egress.MDClientTracingFilter;
 @Produces("application/json")
 public class CourseRepository {
 
+	private Logger LOGGER = LoggerFactory.getLogger(CourseRepository.class);
 	ObjectMapper objectMapper = new ObjectMapper();
 	private Map<Integer, Course> courses = new HashMap<>();
 	private String BASE_URL = System.getenv("student.service.url");
@@ -165,6 +170,7 @@ public class CourseRepository {
 	@Path("/dummyStudentList")
 	public Response dummyStudentList(@QueryParam("count") int studentCount)
 		throws URISyntaxException {
+		LOGGER.info("Received called to course/dummyStudentList");
 		URIBuilder uriBuilder = new URIBuilder(URL);
 		uriBuilder.setPath(uriBuilder.getPath() + "/dummyStudentList");
 		uriBuilder.addParameter("count", String.valueOf(studentCount));
@@ -174,7 +180,14 @@ public class CourseRepository {
 			.accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
 				javax.ws.rs.core.MediaType.APPLICATION_JSON);
 
+
+		HTTPConduit http = WebClient.getConfig(studentWebClient).getHttpConduit();
+		HTTPClientPolicy httpClientPolicy = new HTTPClientPolicy();
+		httpClientPolicy.setConnectionTimeout(0);
+		http.setClient(httpClientPolicy);
+
 		Response response = studentWebClient.get();
+		LOGGER.info("Recieved response from student/dummyStudentList. \nStatus" + response.getStatus() + "\nResponse: " + response.toString());
 		return response;
 	}
 }
