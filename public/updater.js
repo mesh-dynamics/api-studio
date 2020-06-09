@@ -4,8 +4,6 @@ const notification = document.getElementById('notification');
 const message = document.getElementById('message');
 const restartButton = document.getElementById('restart-button');
 
-alert("This alert box was called with the onload event");
-
 ipcRenderer.on('update_available', () => {
   ipcRenderer.removeAllListeners('update_available');
   message.innerText = 'A new update is available. Downloading now...';
