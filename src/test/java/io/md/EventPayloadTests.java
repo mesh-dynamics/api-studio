@@ -1,13 +1,14 @@
 package io.md;
 
 
+import com.fasterxml.jackson.databind.JsonNode;
+import io.md.dao.ConvertEventPayloadResponse;
+import io.md.dao.Payload;
+import java.io.File;
 import java.io.IOException;
 import java.net.URLDecoder;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Optional;
 
 import javax.ws.rs.core.MediaType;
@@ -47,6 +48,7 @@ public class EventPayloadTests {
 		private Event byteArrayEvent;
 		private Event fnReqRespEvent;
 		private ObjectMapper objectMapper;
+		private Event httpResponseEvent;
 
 		@Before
 		/**
@@ -107,7 +109,14 @@ public class EventPayloadTests {
 			eventBuilder.setPayload(fnReqRespPayload);
 			fnReqRespEvent = eventBuilder.createEvent();
 			objectMapper = CubeObjectMapperProvider.getInstance();
-
+			try {
+				 Payload payload = objectMapper.readValue
+						(new File("src/test/resources/jsonResponsePayloadData.json"), Payload.class);
+				HTTPResponsePayload httpResponsePayload = (HTTPResponsePayload)payload;
+				eventBuilder.setPayload(httpResponsePayload);
+				httpResponseEvent = eventBuilder.createEvent();
+			} catch (IOException e) {
+			}
 		}
 
 		@Test
@@ -242,7 +251,29 @@ public class EventPayloadTests {
 			Assert.assertEquals(paylaod.argVals[0], "firstArg");
 		}
 
+		@Test
+		public void testSizeOfPayload() throws IOException, PathNotFoundException {
+			ConvertEventPayloadResponse resp = httpResponseEvent.checkAndConvertResponseToString
+					(true, Arrays.asList("/body/0"), 100, "/body");
+			JsonNode node = objectMapper.readTree(resp.getResponse());
+			JsonNode body = node.get("body");
+			Assert.assertTrue(body.isArray());
+			Assert.assertEquals(1, body.size());
+			Assert.assertTrue(resp.isTruncated());
+			Assert.assertEquals("bookinfo", body.at("/0/app_s").asText());
+			Assert.assertEquals("0f0de88e-1dae-4a19-af80-5f3cb0c3cffe", body.at("/0/id").asText());
+		}
 
-
-
+	@Test
+	public void testPayloadForSmallSize() throws IOException, PathNotFoundException {
+		ConvertEventPayloadResponse resp = httpResponseEvent.checkAndConvertResponseToString
+				(true, Arrays.asList("/body/0"), 20, "/body");
+		JsonNode node = objectMapper.readTree(resp.getResponse());
+		JsonNode body = node.get("body");
+		Assert.assertTrue(body.isArray());
+		Assert.assertEquals(1, body.size());
+		Assert.assertTrue(resp.isTruncated());
+		Assert.assertEquals("bookinfo", body.at("/0/app_s").asText());
+		Assert.assertEquals("", body.at("/0/id").asText());
+	}
 }

@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Collections;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,20 +125,27 @@ public class Event {
 	}
 
 	@JsonIgnore
-	public String checkAndConvertResponseToString(boolean wrapForDisplay, List<String> pathsToKeep, long size, String path) {
+	public ConvertEventPayloadResponse checkAndConvertResponseToString(boolean wrapForDisplay, List<String> pathsToKeep, long size, String path) {
+		ConvertEventPayloadResponse response = new ConvertEventPayloadResponse();
 		if(this.payload != null) {
-			try {
-				this.payload.updatePayloadBody();
-			} catch (PathNotFoundException e) {
-				LOGGER.error("Error while "
-						+ "updating payload body", e);
-			}
+			this.updatePayloadBody();
 			if(this.payload.size() > size) {
-				this.payload.replaceContent(pathsToKeep, path);
+				this.payload.replaceContent(pathsToKeep, path, size);
+				response.setTruncated(true);
 			}
-			return this.getPayloadAsJsonString(wrapForDisplay);
+			response.setResponse(this.getPayloadAsJsonString(wrapForDisplay));
 		}
-		return "";
+		return response;
+	}
+
+	@JsonIgnore
+	public void updatePayloadBody() {
+		try {
+			this.payload.updatePayloadBody();
+		} catch (PathNotFoundException e) {
+			LOGGER.error("Error while "
+					+ "updating payload body", e);
+		}
 	}
 
 	@JsonIgnore

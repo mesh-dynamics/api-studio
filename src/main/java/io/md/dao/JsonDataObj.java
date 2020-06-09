@@ -552,16 +552,24 @@ public class JsonDataObj implements DataObj {
 		}
 	}
 
-	public void replaceContent(JsonNode node, List<String> pathsToKeep, String path) {
+	public long replaceContent(JsonNode node, List<String> pathsToKeep, String path,
+			long curentSize, long maxSize) {
+		long nodeSize = 0;
 		if (node.isObject()) {
 			Iterator<Entry<String, JsonNode>> fields = node.fields();
 			while (fields.hasNext()) {
 				Entry<String, JsonNode> child = fields.next();
 				String pathValue = path.concat("/").concat(child.getKey());
-				if(!isSubPath(pathValue,pathsToKeep)) {
+				if(curentSize > maxSize || !isSubPath(pathValue,pathsToKeep)) {
 					fields.remove();
 				} else {
-					replaceContent(child.getValue(), pathsToKeep, pathValue);
+					long childSize = replaceContent(child.getValue(), pathsToKeep, pathValue, curentSize, maxSize);
+					if(curentSize+childSize > maxSize) {
+						fields.remove();
+					}else {
+						nodeSize += childSize;
+						curentSize += childSize;
+					}
 				}
 			}
 		} else if (node.isArray()) {
@@ -570,19 +578,28 @@ public class JsonDataObj implements DataObj {
 			while(elements.hasNext()) {
 				JsonNode child = elements.next();
 				String pathValue = path.concat("/").concat(String.valueOf(index));
-				if(!isSubPath(pathValue, pathsToKeep)) {
+				if(curentSize > maxSize || !isSubPath(pathValue, pathsToKeep)) {
 					elements.remove();
 				} else {
-					replaceContent(child, pathsToKeep, pathValue);
+					long childSize = replaceContent(child, pathsToKeep, pathValue, curentSize, maxSize);
+					if(curentSize+childSize > maxSize) {
+						elements.remove();
+					}else {
+						nodeSize += childSize;
+						curentSize += childSize;
+					}
 				}
 				index++;
 			}
+		}else {
+			return node.asText().length();
 		}
+		return nodeSize;
 	}
 
 	private boolean isSubPath(String path, List<String> pathsToKeep) {
 		for(String pathToKeep: pathsToKeep) {
-			if(pathToKeep.startsWith(path)) {
+			if(pathToKeep.startsWith(path) || path.startsWith(pathToKeep)) {
 				return true;
 			}
 		}

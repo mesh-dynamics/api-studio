@@ -181,8 +181,8 @@ public abstract class LazyParseAbstractPayload implements Payload {
 	}
 
 	@Override
-	public  void replaceContent(List<String> pathsToKeep, String path) {
-		 this.dataObj.replaceContent(this.dataObj.objRoot.at(path), pathsToKeep, path);
+	public  void replaceContent(List<String> pathsToKeep, String path, long maxSize) {
+		 this.dataObj.replaceContent(this.dataObj.objRoot.at(path), pathsToKeep, path, 0, maxSize);
 	}
 
 	public boolean put(String path, DataObj value) throws PathNotFoundException {

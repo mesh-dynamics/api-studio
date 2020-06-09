@@ -21,6 +21,6 @@ public interface Payload extends DataObj, RawPayload {
 	Payload applyTransform(Payload rhs, List<ReqRespUpdateOperation> operationList);
 	long size();
 	void updatePayloadBody() throws PathNotFoundException;
-	void replaceContent(List<String> pathsToKeep, String path);
+	void replaceContent(List<String> pathsToKeep, String path, long maxSize);
 
 }
