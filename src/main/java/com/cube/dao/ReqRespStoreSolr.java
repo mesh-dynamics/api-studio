@@ -1485,6 +1485,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> templateVersion = getStrField(doc, TEMPLATE_VERSIONF);
         Optional<String> generatedClassJarPath = getStrField(doc, GENERATED_CLASS_JAR_PATH);
         List<String> services = getStrFieldMV(doc, SERVICESF);
+        /**TODO Remove this once old replays are gone*/
         if(services.isEmpty()) {
             Optional<String> service = getStrField(doc, SERVICEF);
             service.map(s-> services.add(s));
