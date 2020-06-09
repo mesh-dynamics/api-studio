@@ -1,7 +1,7 @@
 package com.cubeui.backend;
 
-import io.md.cube.spring.egress.RestTemplateMockInterceptor;
-import io.md.cube.spring.egress.RestTemplateTracingInterceptor;
+//import io.md.cube.spring.egress.RestTemplateMockInterceptor;
+//import io.md.cube.spring.egress.RestTemplateTracingInterceptor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.SpringApplication;
@@ -27,7 +27,8 @@ import static com.cubeui.backend.security.Constants.SPRING_PROFILE_DEVELOPMENT;
 
 @Slf4j
 @EnableAsync
-@SpringBootApplication(scanBasePackages = {"com.cubeui.backend", "io.md.cube"})
+//@SpringBootApplication(scanBasePackages = {"com.cubeui.backend", "io.md.cube"})
+@SpringBootApplication
 public class BackendApplication {
 
     public static void main(String[] args) {
@@ -58,10 +59,10 @@ public class BackendApplication {
     @Bean
     public RestTemplate getRestTemplate() {
         RestTemplate restTemplate = new RestTemplate();
-        ArrayList<ClientHttpRequestInterceptor> interceptors = new ArrayList<>();
-        interceptors.add(new RestTemplateMockInterceptor());
-        interceptors.add(new RestTemplateTracingInterceptor());
-        restTemplate.setInterceptors(interceptors);
+//        ArrayList<ClientHttpRequestInterceptor> interceptors = new ArrayList<>();
+//        interceptors.add(new RestTemplateMockInterceptor());
+//        interceptors.add(new RestTemplateTracingInterceptor());
+//        restTemplate.setInterceptors(interceptors);
         return restTemplate;
     }
 
