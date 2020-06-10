@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.cube</groupId>
     <artifactId>commons-server</artifactId>
-    <version>1.0.11</version>
+    <version>1.0.12</version>
     <packaging>jar</packaging>
     <properties>
         <version.java>11</version.java>
@@ -45,7 +45,7 @@
         <dependency>
             <groupId>io.cube</groupId>
             <artifactId>commons</artifactId>
-            <version>1.0.68</version>
+            <version>1.0.77</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>
