@@ -70,9 +70,10 @@ autoUpdater.on('update-not-available', arg => {
     logger.info(arg);
 });
 
-autoUpdater.on('download-progress', arg => {
+autoUpdater.on('download-progress', (event, arg) => {
     logger.info('Download is in progress:::::::::::::');
-    logger.info(arg);
+    logger.info('Printing Event::::', event);
+    logger.info('Printing Arg::::::', arg);
     mainWindow.webContents.send('download_progress', Math.round(arg.percent));
 });
 

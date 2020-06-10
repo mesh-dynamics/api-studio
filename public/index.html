@@ -114,9 +114,9 @@
       notification.classList.remove('hidden');
     });
 
-    function processDownloadProgress(percent) {
+    function processDownloadProgress(event, percent) {
       ipcRenderer.removeAllListeners('download_progress');
-      message.innerText = "Please do not close the main window.\nDownloading... " + JSON.stringify(percent) + "%";
+      message.innerText = "Please do not close the main window.\nDownloading... " + percent + "..." + JSON.stringify(percent) + " % ";
       notification.classList.remove('hidden');
     }
 
