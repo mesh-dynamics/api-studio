@@ -106,9 +106,10 @@ public interface ReqRespStore extends DataStore {
 
     void invalidateCache();
 
-	boolean updateAgentConfigTag(AgentConfigTagInfo tagInfo);
+	boolean updateAgentConfigTag(AgentConfigTagInfo tagInfo, String customerId);
 
-	boolean saveAgentConfigAcknowledge(ConfigApplicationAcknowledge confApplicationAck);
+	boolean saveAgentConfigAcknowledge(ConfigApplicationAcknowledge confApplicationAck
+		, String customerId);
 
 	class ReqResp {
 
@@ -650,7 +651,7 @@ public interface ReqRespStore extends DataStore {
     public Optional<String> getDefaultEventType(String customer, String app, String service
 	    , String apiPath);
 
-    boolean storeAgentConfig(ConfigDAO store);
+    boolean storeAgentConfig(ConfigDAO store, String customerId);
     Optional<ConfigDAO> getAgentConfig(String customerId, String app, String service,
 						String instanceId);
 

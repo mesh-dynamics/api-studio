@@ -602,31 +602,32 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return storeTemplateSetMetadata(templateSet, templateIds, ruleMapId);
     }
 
-    public SolrInputDocument agentConfigTagInfoToDoc(AgentConfigTagInfo tagInfo) {
+    public SolrInputDocument agentConfigTagInfoToDoc(AgentConfigTagInfo tagInfo
+        , String customerId) {
         SolrInputDocument solrInputDocument = new SolrInputDocument();
-        solrInputDocument.setField(CUSTOMERIDF, tagInfo.customerId);
+        solrInputDocument.setField(CUSTOMERIDF, customerId);
         solrInputDocument.setField(APPF, tagInfo.app);
         solrInputDocument.setField(SERVICEF, tagInfo.service);
         solrInputDocument.setField(INSTANCEIDF, tagInfo.instanceId);
         solrInputDocument.setField(TYPEF, Types.AgentConfigTagInfo.toString());
         solrInputDocument.setField(TAG_F, tagInfo.tag);
         solrInputDocument.setField(IDF, Types.AgentConfigTagInfo.toString() + "-"+  Objects.hash(
-            tagInfo.customerId, tagInfo.app, tagInfo.service, tagInfo.instanceId));
+            customerId, tagInfo.app, tagInfo.service, tagInfo.instanceId));
         return solrInputDocument;
     }
 
     @Override
-    public boolean updateAgentConfigTag(AgentConfigTagInfo tagInfo) {
-        return saveDoc(agentConfigTagInfoToDoc(tagInfo)) && softcommit();
+    public boolean updateAgentConfigTag(AgentConfigTagInfo tagInfo, String customerId) {
+        return saveDoc(agentConfigTagInfoToDoc(tagInfo, customerId)) && softcommit();
     }
 
     @Override
-    public boolean storeAgentConfig(ConfigDAO store) {
+    public boolean storeAgentConfig(ConfigDAO store, String customerId) {
 
         SolrQuery maxVersionQuery = new SolrQuery("*:*");
         maxVersionQuery.setFields(INT_VERSION_F);
         addFilter(maxVersionQuery, TYPEF, Types.AgentConfig.toString());
-        addFilter(maxVersionQuery, CUSTOMERIDF, store.customerId);
+        addFilter(maxVersionQuery, CUSTOMERIDF, customerId);
         addFilter(maxVersionQuery, APPF, store.app);
         addFilter(maxVersionQuery, SERVICEF, store.service);
         addFilter(maxVersionQuery,INSTANCEIDF, store.instanceId);
@@ -636,7 +637,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             SolrIterator.getSingleResult(solr, maxVersionQuery).
                 flatMap(this::extractVersionFromDoc).orElse(0);
         store.setVersion(maxVersion+1);
-        SolrInputDocument doc = agentToSolrDoc(store);
+        SolrInputDocument doc = agentToSolrDoc(store, customerId);
         return saveDoc(doc) && softcommit();
     }
 
@@ -673,11 +674,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return SolrIterator.getSingleResult(solr, query).flatMap(this::docToAgent);
     }
 
-    private SolrInputDocument agentToSolrDoc(ConfigDAO store) {
+    private SolrInputDocument agentToSolrDoc(ConfigDAO store, String customerId) {
         final SolrInputDocument doc = new SolrInputDocument();
         doc.setField(TYPEF, ConfigType.AgentConfig.toString());
         doc.setField(INT_VERSION_F, store.version);
-        doc.setField(CUSTOMERIDF, store.customerId);
+        doc.setField(CUSTOMERIDF, customerId);
         doc.setField(APPF, store.app);
         doc.setField(SERVICEF, store.service);
         doc.setField(INSTANCEIDF, store.instanceId);
@@ -699,7 +700,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> instanceId = getStrField(doc, INSTANCEIDF);
         Optional<String> configJson = getStrField(doc, CONFIG_JSON_F);
         Optional<String> tag = getStrField(doc, TAG_F);
-        ConfigDAO agentStore = new ConfigDAO(customerId.orElse(null),
+        ConfigDAO agentStore = new ConfigDAO(/*customerId.orElse(null),*/
             app.orElse(null), service.orElse(null), instanceId.orElse(null),
             tag.orElse(null));
         agentStore.setVersion(version.orElse(0));
@@ -720,13 +721,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return Optional.empty();
     }
 
-    public boolean saveAgentConfigAcknowledge(ConfigApplicationAcknowledge confApplicationAck) {
-        return saveDoc(agentConfigAcknowledgeToSolrDoc(confApplicationAck)) && softcommit();
+    @Override
+    public boolean saveAgentConfigAcknowledge(ConfigApplicationAcknowledge confApplicationAck
+        , String customerId) {
+        return saveDoc(agentConfigAcknowledgeToSolrDoc(confApplicationAck, customerId)) && softcommit();
     }
 
-    private SolrInputDocument agentConfigAcknowledgeToSolrDoc(ConfigApplicationAcknowledge confApplicationAck)  {
+    private SolrInputDocument agentConfigAcknowledgeToSolrDoc(ConfigApplicationAcknowledge confApplicationAck, String customerId)  {
         SolrInputDocument doc = new SolrInputDocument();
-        doc.setField(CUSTOMERIDF, confApplicationAck.customerId);
+        doc.setField(CUSTOMERIDF, customerId);
         doc.setField(APPF, confApplicationAck.app);
         doc.setField(SERVICEF, confApplicationAck.service);
         doc.setField(INSTANCEIDF, confApplicationAck.instanceId);
