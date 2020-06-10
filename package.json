@@ -2,15 +2,24 @@
   "name": "cube-ui",
   "productName": "Mesh Dynamics",
   "description": "Web app for cube ui",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "private": true,
-  "main": "public/electron.js",
+  "main": "build/electron.js",
   "homepage": "./",
   "author": "Mesh Dynamics <developers@meshdynamics.io>",
   "build": {
     "appId": "com.meshdynamics.cubeui",
     "extraResources": [
       "./assets/**/*"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "cube-io-corp",
+        "repo": "cubeui",
+        "private": true,
+        "token": "5399d6cde7a6b57fe2ce9bcc22126e139d5581c6"
+      }
     ],
     "files": [
       "build/**/*",
@@ -118,7 +127,7 @@
     "postinstall": "electron-builder install-app-deps",
     "electron-pack": "build --em.main=build/electron.js",
     "build:package": "npm run build && npm run dist",
-    "package:deploy:win": "npm run build && electron-builder build --em.main=build/electron.js --win --publish always",
-    "package:deploy:mac": "npm run build && electron-builder build --em.main=build/electron.js --mac --publish always"
+    "package:deploy:win": "npm run build && electron-builder build --win --publish always",
+    "package:deploy:mac": "npm run build && electron-builder build --mac --publish always"
   }
 }
