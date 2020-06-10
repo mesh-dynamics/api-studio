@@ -722,7 +722,7 @@ public class CubeStore {
                 buildSuccessResponse(Constants.SUCCESS,
                     new JSONObject(
                         Map.of(Constants.MESSAGE, "The agent config tag has been changed",
-                            Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD
+                            Constants.CUSTOMER_ID_FIELD, tagInfo.customerId, Constants.APP_FIELD
                             , tagInfo.app, Constants.SERVICE_FIELD, tagInfo.service,
                             Constants.INSTANCE_ID_FIELD, tagInfo.instanceId, Constants.TAG_FIELD,
                             tagInfo.tag)))).build();
