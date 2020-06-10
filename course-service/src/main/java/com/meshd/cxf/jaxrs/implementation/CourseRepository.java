@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -155,15 +156,30 @@ public class CourseRepository {
 
 	@GET
 	@Path("/dummyCourseList")
-	public List<Course> dummyCourseList(@QueryParam("count") int courseCount) {
-		List<Course> courseList = new ArrayList<>();
+	public Course[] dummyCourseList(@QueryParam("count") int courseCount,
+		@QueryParam("changeNameCount") int changeNameCount, @QueryParam("changeAll") boolean changeAll) {
+		if(changeNameCount > courseCount || changeNameCount > 100) return new Course[1];
+		Course[] courseArray = new Course[courseCount];
 		Course course = new Course();
 		course.setId(courseCount);
-		course.setName("Dummy Course");
+		String name = changeAll ?  UUID.randomUUID().toString() : "Dummy Course";
+		course.setName(name);
 		for (int i = 0; i < courseCount; i++) {
-			courseList.add(course);
+			courseArray[i] = course;
 		}
-		return courseList;
+
+		//Change name count is assumed to be a lower number ideally less than 20
+		// Because we're creating that many objects.
+		if(changeAll==false && changeNameCount!=0) {
+			for (int i=0; i< changeNameCount; i++ ) {
+				int randInd = (int)(Math.random() * (courseCount));
+				Course courseChange = new Course();
+				courseChange.setId(courseCount);
+				courseChange.setName(UUID.randomUUID().toString());
+				courseArray[randInd] = courseChange;
+			}
+		}
+		return courseArray;
 	}
 
 	@GET
