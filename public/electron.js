@@ -73,6 +73,7 @@ autoUpdater.on('update-not-available', arg => {
 autoUpdater.on('download-progress', arg => {
     logger.info('Download is in progress:::::::::::::');
     logger.info(arg);
+    mainWindow.webContents.send('download_progress', Math.round(arg.percent));
 });
 
 autoUpdater.on('error', error => {
