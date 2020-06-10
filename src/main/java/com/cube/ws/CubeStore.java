@@ -717,8 +717,20 @@ public class CubeStore {
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public Response setAgentConfigTag(AgentConfigTagInfo tagInfo) {
-        rrstore.updateAgentConfigTag(tagInfo);
-        return Response.ok().build();
+        if (rrstore.updateAgentConfigTag(tagInfo)) {
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity(
+                buildSuccessResponse(Constants.SUCCESS,
+                    new JSONObject(
+                        Map.of(Constants.MESSAGE, "The agent config tag has been changed",
+                            Constants.CUSTOMER_ID_FIELD, tagInfo.customerId, Constants.APP_FIELD
+                            , tagInfo.app, Constants.SERVICE_FIELD, tagInfo.service,
+                            Constants.INSTANCE_ID_FIELD, tagInfo.instanceId, Constants.TAG_FIELD,
+                            tagInfo.tag)))).build();
+        } else {
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
+                    "Error while trying to change the tag for config")).build();
+        }
     }
 
     @POST

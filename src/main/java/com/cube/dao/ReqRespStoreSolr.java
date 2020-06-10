@@ -604,14 +604,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     public SolrInputDocument agentConfigTagInfoToDoc(AgentConfigTagInfo tagInfo) {
         SolrInputDocument solrInputDocument = new SolrInputDocument();
-        solrInputDocument.setField(CUSTOMERIDF, tagInfo.customer);
+        solrInputDocument.setField(CUSTOMERIDF, tagInfo.customerId);
         solrInputDocument.setField(APPF, tagInfo.app);
         solrInputDocument.setField(SERVICEF, tagInfo.service);
-        solrInputDocument.setField(INSTANCEIDF, tagInfo.instance);
+        solrInputDocument.setField(INSTANCEIDF, tagInfo.instanceId);
         solrInputDocument.setField(TYPEF, Types.AgentConfigTagInfo.toString());
         solrInputDocument.setField(TAG_F, tagInfo.tag);
         solrInputDocument.setField(IDF, Types.AgentConfigTagInfo.toString() + "-"+  Objects.hash(
-            tagInfo.customer, tagInfo.app, tagInfo.service, tagInfo.instance));
+            tagInfo.customerId, tagInfo.app, tagInfo.service, tagInfo.instanceId));
         return solrInputDocument;
     }
 
@@ -730,7 +730,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(APPF, confApplicationAck.app);
         doc.setField(SERVICEF, confApplicationAck.service);
         doc.setField(INSTANCEIDF, confApplicationAck.instanceId);
-        doc.setField(AGENT_ID_F , confApplicationAck.agentId);
         doc.setField(TYPEF, Types.AgentConfigAcknowledge.toString());
         doc.setField(TIMESTAMPF, Instant.now().toString());
         confApplicationAck.acknowledgeInfo.forEach((x, y)
