@@ -52,7 +52,7 @@ public class ReadJson {
         String instanceFile;
 
         if (args.length != 3 ) {
-            System.out.println("Enter the domain url");
+            System.out.println("Enter the environment url e.g https://demo.dev.cubecorp.io");
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
             url = reader.readLine();
