@@ -105,11 +105,7 @@
       notification.classList.remove('hidden');
     });
 
-    ipcRenderer.on('download_progress', (percent) => {
-      ipcRenderer.removeAllListeners('download_progress');
-      message.innerText = `Please do not close the main window.\nDownloading... ${percent}%`;
-      notification.classList.remove('hidden');
-    });
+    ipcRenderer.on('download_progress', processDownloadProgress);
 
     ipcRenderer.on('update_downloaded', () => {
       ipcRenderer.removeAllListeners('update_downloaded');
@@ -117,6 +113,12 @@
       restartButton.classList.remove('hidden');
       notification.classList.remove('hidden');
     });
+
+    function processDownloadProgress(percent) {
+      ipcRenderer.removeAllListeners('download_progress');
+      message.innerText = "Please do not close the main window.\nDownloading... " + percent + "%";
+      notification.classList.remove('hidden');
+    }
 
     function closeNotification() {
       notification.classList.add('hidden');
