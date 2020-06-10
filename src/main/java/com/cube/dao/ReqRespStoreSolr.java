@@ -611,7 +611,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         solrInputDocument.setField(TYPEF, Types.AgentConfigTagInfo.toString());
         solrInputDocument.setField(TAG_F, tagInfo.tag);
         solrInputDocument.setField(IDF, Types.AgentConfigTagInfo.toString() + "-"+  Objects.hash(
-            customerId, tagInfo.app, tagInfo.service, tagInfo.instanceId));
+            tagInfo.customerId, tagInfo.app, tagInfo.service, tagInfo.instanceId));
         return solrInputDocument;
     }
 
@@ -673,7 +673,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return SolrIterator.getSingleResult(solr, query).flatMap(this::docToAgent);
     }
 
-    private SolrInputDocument agentToSolrDoc(ConfigDAO store, String customerId) {
+    private SolrInputDocument agentToSolrDoc(ConfigDAO store) {
         final SolrInputDocument doc = new SolrInputDocument();
         doc.setField(TYPEF, ConfigType.AgentConfig.toString());
         doc.setField(INT_VERSION_F, store.version);
