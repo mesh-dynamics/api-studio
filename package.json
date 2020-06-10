@@ -12,15 +12,6 @@
     "extraResources": [
       "./assets/**/*"
     ],
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "cube-io-corp",
-        "repo": "cubeui",
-        "private": true,
-        "token": "c9e63dd007be3ff11d0b9cd4acb44d934f91819e"
-      }
-    ],
     "files": [
       "build/**/*",
       "build/assets/images/**/*",
@@ -28,7 +19,9 @@
       "node_modules/**/*"
     ],
     "win": {
-      "target": "msi",
+      "target": [
+        "nsis"
+      ],
       "icon": "public/mesh-favicon.ico",
       "legalTrademarks": "2020-21 meshdynamics.io"
     },
@@ -39,7 +32,10 @@
       "maintainer": "Mesh Dynamics"
     },
     "mac": {
-      "target": "dmg",
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "category": "public.app-category.developer-tools",
       "icon": "public/mesh-favicon.icns"
     }
@@ -61,6 +57,7 @@
     "cytoscape-klay": "^3.1.2",
     "cytoscape-popper": "^1.0.4",
     "electron-is-dev": "^1.2.0",
+    "electron-log": "^4.2.1",
     "electron-updater": "^4.3.1",
     "express": "^4.16.4",
     "file-saver": "^2.0.0",
@@ -107,7 +104,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/cube-io-corp/cubeui"
+    "url": "git+https://github.com/cube-io-corp/cubeui.git"
   },
   "scripts": {
     "electron-dev": "concurrently \"BROWSER=none npm start\" \"wait-on http://localhost:3006 && electron .\"",
@@ -120,8 +117,8 @@
     "eject": "react-scripts eject",
     "postinstall": "electron-builder install-app-deps",
     "electron-pack": "build --em.main=build/electron.js",
-    "preelectron-pack": "npm run build",
-    "build:app": "npm run build && npm run dist",
-    "deploy": "npm run build && electron-builder build --win --publish always"
+    "build:package": "npm run build && npm run dist",
+    "package:deploy:win": "npm run build && electron-builder build --em.main=build/electron.js --win --publish always",
+    "package:deploy:mac": "npm run build && electron-builder build --em.main=build/electron.js --mac --publish always"
   }
 }

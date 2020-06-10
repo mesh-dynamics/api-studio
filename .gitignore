@@ -1,5 +1,6 @@
 build
 dist
+electron-builder.yml
 node_modules/
 .idea/
 .DS_Store
