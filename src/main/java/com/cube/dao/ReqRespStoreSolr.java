@@ -602,10 +602,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return storeTemplateSetMetadata(templateSet, templateIds, ruleMapId);
     }
 
-    public SolrInputDocument agentConfigTagInfoToDoc(AgentConfigTagInfo tagInfo
-        , String customerId) {
+    public SolrInputDocument agentConfigTagInfoToDoc(AgentConfigTagInfo tagInfo) {
         SolrInputDocument solrInputDocument = new SolrInputDocument();
-        solrInputDocument.setField(CUSTOMERIDF, customerId);
+        solrInputDocument.setField(CUSTOMERIDF, tagInfo.customerId);
         solrInputDocument.setField(APPF, tagInfo.app);
         solrInputDocument.setField(SERVICEF, tagInfo.service);
         solrInputDocument.setField(INSTANCEIDF, tagInfo.instanceId);
@@ -617,17 +616,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public boolean updateAgentConfigTag(AgentConfigTagInfo tagInfo, String customerId) {
-        return saveDoc(agentConfigTagInfoToDoc(tagInfo, customerId)) && softcommit();
+    public boolean updateAgentConfigTag(AgentConfigTagInfo tagInfo) {
+        return saveDoc(agentConfigTagInfoToDoc(tagInfo)) && softcommit();
     }
 
     @Override
-    public boolean storeAgentConfig(ConfigDAO store, String customerId) {
+    public boolean storeAgentConfig(ConfigDAO store) {
 
         SolrQuery maxVersionQuery = new SolrQuery("*:*");
         maxVersionQuery.setFields(INT_VERSION_F);
         addFilter(maxVersionQuery, TYPEF, Types.AgentConfig.toString());
-        addFilter(maxVersionQuery, CUSTOMERIDF, customerId);
+        addFilter(maxVersionQuery, CUSTOMERIDF,  store.customerId);
         addFilter(maxVersionQuery, APPF, store.app);
         addFilter(maxVersionQuery, SERVICEF, store.service);
         addFilter(maxVersionQuery,INSTANCEIDF, store.instanceId);
@@ -637,7 +636,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             SolrIterator.getSingleResult(solr, maxVersionQuery).
                 flatMap(this::extractVersionFromDoc).orElse(0);
         store.setVersion(maxVersion+1);
-        SolrInputDocument doc = agentToSolrDoc(store, customerId);
+        SolrInputDocument doc = agentToSolrDoc(store);
         return saveDoc(doc) && softcommit();
     }
 
@@ -678,7 +677,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         final SolrInputDocument doc = new SolrInputDocument();
         doc.setField(TYPEF, ConfigType.AgentConfig.toString());
         doc.setField(INT_VERSION_F, store.version);
-        doc.setField(CUSTOMERIDF, customerId);
+        doc.setField(CUSTOMERIDF, store.customerId);
         doc.setField(APPF, store.app);
         doc.setField(SERVICEF, store.service);
         doc.setField(INSTANCEIDF, store.instanceId);
@@ -700,7 +699,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> instanceId = getStrField(doc, INSTANCEIDF);
         Optional<String> configJson = getStrField(doc, CONFIG_JSON_F);
         Optional<String> tag = getStrField(doc, TAG_F);
-        ConfigDAO agentStore = new ConfigDAO(/*customerId.orElse(null),*/
+        ConfigDAO agentStore = new ConfigDAO(customerId.orElse(null),
             app.orElse(null), service.orElse(null), instanceId.orElse(null),
             tag.orElse(null));
         agentStore.setVersion(version.orElse(0));
@@ -722,14 +721,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public boolean saveAgentConfigAcknowledge(ConfigApplicationAcknowledge confApplicationAck
-        , String customerId) {
-        return saveDoc(agentConfigAcknowledgeToSolrDoc(confApplicationAck, customerId)) && softcommit();
+    public boolean saveAgentConfigAcknowledge(ConfigApplicationAcknowledge confApplicationAck) {
+        return saveDoc(agentConfigAcknowledgeToSolrDoc(confApplicationAck)) && softcommit();
     }
 
-    private SolrInputDocument agentConfigAcknowledgeToSolrDoc(ConfigApplicationAcknowledge confApplicationAck, String customerId)  {
+    private SolrInputDocument agentConfigAcknowledgeToSolrDoc(ConfigApplicationAcknowledge confApplicationAck)  {
         SolrInputDocument doc = new SolrInputDocument();
-        doc.setField(CUSTOMERIDF, customerId);
+        doc.setField(CUSTOMERIDF, confApplicationAck.customerId);
         doc.setField(APPF, confApplicationAck.app);
         doc.setField(SERVICEF, confApplicationAck.service);
         doc.setField(INSTANCEIDF, confApplicationAck.instanceId);

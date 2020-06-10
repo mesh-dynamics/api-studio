@@ -713,12 +713,11 @@ public class CubeStore {
     }
 
     @POST
-    @Path("/setCurrentAgentConfigTag/{customerId}")
+    @Path("/setCurrentAgentConfigTag")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Response setAgentConfigTag(AgentConfigTagInfo tagInfo
-        , @PathParam("customerId") String customerId) {
-        if (rrstore.updateAgentConfigTag(tagInfo, customerId)) {
+    public Response setAgentConfigTag(AgentConfigTagInfo tagInfo) {
+        if (rrstore.updateAgentConfigTag(tagInfo)) {
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(
                 buildSuccessResponse(Constants.SUCCESS,
                     new JSONObject(
@@ -735,11 +734,10 @@ public class CubeStore {
     }
 
     @POST
-    @Path("/storeAgentConfig/{customerId}")
+    @Path("/storeAgentConfig")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Response storeAgentConfig(ConfigDAO configDAO
-        , @PathParam("customerId") String customerId) {
+    public Response storeAgentConfig(ConfigDAO configDAO) {
         if(configDAO == null) {
             return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                 buildErrorResponse(Constants.FAIL, Constants.INVALID_INPUT,
@@ -747,11 +745,11 @@ public class CubeStore {
         }
         try {
             ValidateAgentStore.validate(configDAO);
-            rrstore.storeAgentConfig(configDAO, customerId);
+            rrstore.storeAgentConfig(configDAO);
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(
                 buildSuccessResponse(Constants.SUCCESS,
                     new JSONObject(Map.of(Constants.MESSAGE, "The config is saved",
-                        Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, configDAO.app,
+                        Constants.CUSTOMER_ID_FIELD, configDAO.customerId, Constants.APP_FIELD, configDAO.app,
                         Constants.VERSION_FIELD, configDAO.version, Constants.SERVICE_FIELD, configDAO.service,
                         Constants.INSTANCE_ID_FIELD, configDAO.instanceId)))).build();
 
@@ -765,7 +763,7 @@ public class CubeStore {
         }catch (Exception e) {
             LOGGER.error(
                 new ObjectMessage(Map.of(Constants.MESSAGE, "Error while saving the config",
-                    Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, configDAO.app,
+                    Constants.CUSTOMER_ID_FIELD, configDAO.customerId, Constants.APP_FIELD, configDAO.app,
                     Constants.VERSION_FIELD, configDAO.version, Constants.SERVICE_FIELD, configDAO.service,
                     Constants.INSTANCE_ID_FIELD, configDAO.instanceId)), e);
             return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
@@ -814,12 +812,11 @@ public class CubeStore {
     }
 
     @POST
-    @Path("/ackConfigApplication/{customerId}")
+    @Path("/ackConfigApplication")
     @Produces({MediaType.APPLICATION_JSON})
-    public Response acknowledgeConfigApplication(ConfigApplicationAcknowledge confApplicationAck,
-        @PathParam("customerId") String customerId) {
+    public Response acknowledgeConfigApplication(ConfigApplicationAcknowledge confApplicationAck) {
             try {
-                if (rrstore.saveAgentConfigAcknowledge(confApplicationAck, customerId)) {
+                if (rrstore.saveAgentConfigAcknowledge(confApplicationAck)) {
                     return Response.ok().build();
                 } else {
                     throw new Exception("Unable to store acknowledge info");
