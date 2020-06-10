@@ -48,7 +48,8 @@ public class ReadJson {
     public static void main(String[] args)  throws  Exception {
         String url;
         String path;
-        String instancePath;
+        String instancePath = "";
+        String instanceFile;
 
         if (args.length != 3 ) {
             System.out.println("Enter the domain url");
@@ -61,14 +62,22 @@ public class ReadJson {
 
             path = reader.readLine();
 
-            System.out.println("Enter the Instance json file path");
+            System.out.println("Do you want to enter instance file: yes/no");
             reader = new BufferedReader(new InputStreamReader(System.in));
+            instanceFile = reader.readLine();
 
-            instancePath = reader.readLine();
+            if (instanceFile.equalsIgnoreCase("yes")) {
+                System.out.println("Enter the Instance json file path");
+                reader = new BufferedReader(new InputStreamReader(System.in));
+                instancePath = reader.readLine();
+            }
+
+
         } else {
             url = args[0];
             path = args[1];
             instancePath = args[2];
+            instanceFile = "yes";
         }
         ReadJson readJson= new ReadJson();
         try {
@@ -79,7 +88,11 @@ public class ReadJson {
 
             ObjectMapper  mapper = new ObjectMapper();
             JsonData data = mapper.readValue(new File(path), JsonData.class);
-            AppInstanceData appInstanceData = mapper.readValue(new File(instancePath), AppInstanceData.class);
+            AppInstanceData appInstanceData = null;
+            if (instanceFile.equalsIgnoreCase("yes")) {
+                 appInstanceData = mapper
+                    .readValue(new File(instancePath), AppInstanceData.class);
+            }
 
             for(Customers customer: data.getCustomers()){
                 String body =  readJson.createCustomer(customer);
@@ -96,13 +109,18 @@ public class ReadJson {
                     int appId = Integer.parseInt(readJson.getDataField(response,"id").toString());
                     appIds.add(appId);
                     List<Integer> instanceIds = new ArrayList<>();
-                    List<Instances> instances = readJson.getInstances(appInstanceData.getInstanceData(),
-                                    customer.getName(), app.getName());
-                    for(Instances instance: instances) {
-                        body = readJson.createInstance(instance,appId);
-                        response = readJson.fetchResponse(url+"/api/instance", HttpMethod.POST, token,body);
-                        int instanceId =  Integer.parseInt(readJson.getDataField(response,"id").toString());
-                        instanceIds.add(instanceId);
+                    if(appInstanceData != null) {
+                        List<Instances> instances = readJson
+                            .getInstances(appInstanceData.getInstanceData(),
+                                customer.getName(), app.getName());
+                        for (Instances instance : instances) {
+                            body = readJson.createInstance(instance, appId);
+                            response = readJson
+                                .fetchResponse(url + "/api/instance", HttpMethod.POST, token, body);
+                            int instanceId = Integer
+                                .parseInt(readJson.getDataField(response, "id").toString());
+                            instanceIds.add(instanceId);
+                        }
                     }
                     instanceMap.put(appId, instanceIds);
                     Map<String, Integer> servicesMap = new HashMap<>();

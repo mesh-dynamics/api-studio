@@ -4,10 +4,11 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.cube.readjson</groupId>
+  <packaging>jar</packaging>
   <artifactId>cubeui-backend-readjson</artifactId>
   <version>1.0</version>
   <properties>
-    <version.java>11</version.java>
+    <version.java>8</version.java>
     <org.projectlombok.version>1.18.10</org.projectlombok.version>
   </properties>
   <distributionManagement>
