@@ -8,6 +8,10 @@ import static com.cube.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 import static io.md.utils.Utils.createHTTPRequestEvent;
 
+import io.md.core.ConfigApplicationAcknowledge;
+import io.md.core.ValidateAgentStore;
+import io.md.dao.agent.config.AgentConfigTagInfo;
+import io.md.dao.agent.config.ConfigDAO;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -708,6 +712,124 @@ public class CubeStore {
         }
     }
 
+    @POST
+    @Path("/setCurrentAgentConfigTag")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response setAgentConfigTag(AgentConfigTagInfo tagInfo) {
+        if (rrstore.updateAgentConfigTag(tagInfo)) {
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity(
+                buildSuccessResponse(Constants.SUCCESS,
+                    new JSONObject(
+                        Map.of(Constants.MESSAGE, "The agent config tag has been changed",
+                            Constants.CUSTOMER_ID_FIELD, tagInfo.customerId, Constants.APP_FIELD
+                            , tagInfo.app, Constants.SERVICE_FIELD, tagInfo.service,
+                            Constants.INSTANCE_ID_FIELD, tagInfo.instanceId, Constants.TAG_FIELD,
+                            tagInfo.tag)))).build();
+        } else {
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
+                    "Error while trying to change the tag for config")).build();
+        }
+    }
+
+    @POST
+    @Path("/storeAgentConfig")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response storeAgentConfig(ConfigDAO configDAO) {
+        if(configDAO == null) {
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.FAIL, Constants.INVALID_INPUT,
+                    "Invalid input!")).build();
+        }
+        try {
+            ValidateAgentStore.validate(configDAO);
+            rrstore.storeAgentConfig(configDAO);
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity(
+                buildSuccessResponse(Constants.SUCCESS,
+                    new JSONObject(Map.of(Constants.MESSAGE, "The config is saved",
+                        Constants.CUSTOMER_ID_FIELD, configDAO.customerId, Constants.APP_FIELD, configDAO.app,
+                        Constants.VERSION_FIELD, configDAO.version, Constants.SERVICE_FIELD, configDAO.service,
+                        Constants.INSTANCE_ID_FIELD, configDAO.instanceId)))).build();
+
+        } catch (NullPointerException | IllegalArgumentException e) {
+            LOGGER.error(
+                new ObjectMessage(Map.of(Constants.MESSAGE, "Data fields cannot be null or empty")), e);
+
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.ERROR, Constants.INVALID_INPUT,
+                    "Data fields cannot be null or empty")).build();
+        }catch (Exception e) {
+            LOGGER.error(
+                new ObjectMessage(Map.of(Constants.MESSAGE, "Error while saving the config",
+                    Constants.CUSTOMER_ID_FIELD, configDAO.customerId, Constants.APP_FIELD, configDAO.app,
+                    Constants.VERSION_FIELD, configDAO.version, Constants.SERVICE_FIELD, configDAO.service,
+                    Constants.INSTANCE_ID_FIELD, configDAO.instanceId)), e);
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
+                    "Error while saving the config")).build();
+        }
+    }
+
+    @GET
+    @Path("/fetchAgentConfig/{customerId}/{app}/{service}/{instanceId}")
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response fetchAgentConfig(@PathParam("customerId") String customerId, @PathParam("app") String app,
+        @PathParam("service") String service, @PathParam("instanceId") String instanceId , @Context UriInfo ui) {
+        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+        String existingTag = queryParams.getFirst(Constants.TAG_FIELD);
+        String existingVersion = queryParams.getFirst(Constants.VERSION_FIELD);
+        try {
+
+            Optional<ConfigDAO> response = rrstore.getAgentConfig(customerId, app,
+                service, instanceId);
+            if(response.isPresent()) {
+                //String json = jsonMapper.writeValueAsString(response.get());
+                ConfigDAO responseConfig = response.get();
+                if (responseConfig.tag.equals(existingTag) && String.valueOf(responseConfig.version).
+                    equals(existingVersion))
+                    return Response.notModified().build();
+                return Response.ok().type(MediaType.APPLICATION_JSON).entity(responseConfig).build();
+            } else {
+                LOGGER.error(
+                    new ObjectMessage(Map.of(Constants.MESSAGE, "No Config found for given Customer",
+                        Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, app,
+                        Constants.SERVICE_FIELD, service, Constants.INSTANCE_ID_FIELD, instanceId)));
+                return Response.status(Status.NOT_FOUND).type(MediaType.APPLICATION_JSON).entity(
+                    buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
+                        "No Config found for given Customer")).build();
+            }
+        } catch (Exception e) {
+            LOGGER.error(
+                new ObjectMessage(Map.of(Constants.MESSAGE, "Error while retrieving the response",
+                    Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, app,
+                    Constants.SERVICE_FIELD, service, Constants.INSTANCE_ID_FIELD, instanceId)), e);
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
+                    "Error while retrieving the response")).build();
+        }
+    }
+
+    @POST
+    @Path("/ackConfigApplication")
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response acknowledgeConfigApplication(ConfigApplicationAcknowledge confApplicationAck) {
+            try {
+                if (rrstore.saveAgentConfigAcknowledge(confApplicationAck)) {
+                    return Response.ok().build();
+                } else {
+                    throw new Exception("Unable to store acknowledge info");
+                }
+            } catch (Exception e) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Error while processing "
+                    + "agent config acknowledge")),e);
+                return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                    buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
+                        "Error while processing acknowledge")).build();
+            }
+    }
+
     private boolean storeDefaultRespEvent(
         Event defaultReqEvent, Payload payload) throws InvalidEventException {
         //Store default response
@@ -965,7 +1087,7 @@ public class CubeStore {
         Optional<RecordingStatus> status = Optional.ofNullable(formParams.getFirst(Constants.STATUS))
             .flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
         Optional<String> collection = Optional.ofNullable(formParams.getFirst(Constants.COLLECTION_FIELD));
-        Optional<String> templateVersion = Optional.ofNullable(formParams.getFirst(Constants.TEMPLATE_VERSION_FIELD));
+        Optional<String> templateVersion = Optional.ofNullable(formParams.getFirst(Constants.VERSION_FIELD));
         Optional<String> parentRecordingId = Optional.ofNullable(formParams.getFirst(Constants.PARENT_RECORDING_FIELD));
         Optional<String> rootRecordingId = Optional.ofNullable(formParams.getFirst(Constants.ROOT_RECORDING_FIELD));
         Optional<String> name = Optional.ofNullable(formParams.getFirst(Constants.GOLDEN_NAME_FIELD));

@@ -6,13 +6,19 @@ package com.cube.dao;
 import static io.md.core.TemplateKey.*;
 
 import io.md.constants.ReplayStatus;
+import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.TemplateKey;
+import io.md.core.ValidateAgentStore;
+import io.md.dao.agent.config.AgentConfigTagInfo;
+import io.md.dao.agent.config.ConfigDAO;
+import io.md.dao.agent.config.ConfigType;
 import io.md.dao.EventQuery;
 import io.md.dao.RecordOrReplay;
 import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.Replay;
+import io.md.dao.Config;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -74,7 +80,6 @@ import io.md.dao.ReqRespUpdateOperation;
 import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.services.FnResponse;
 import io.md.utils.FnKey;
-import org.checkerframework.checker.nullness.Opt;
 import redis.clients.jedis.Jedis;
 
 import com.cube.cache.ComparatorCache;
@@ -90,7 +95,6 @@ import com.cube.injection.DynamicInjectionConfig;
 import com.cube.injection.DynamicInjectionConfig.ExtractionMeta;
 import com.cube.injection.DynamicInjectionConfig.InjectionMeta;
 import com.cube.utils.Constants;
-import com.cube.ws.Config;
 
 /**
  * @author prasad
@@ -133,10 +137,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if (config.intentResolver.isIntentToMock()) return;
         try (Jedis jedis = config.jedisPool.getResource()) {
             //jedis.del(collectionKey.toString());
-            Long result = jedis.expire(collectionKey.toString(), Config.REDIS_DELETE_TTL);
+            Long result = jedis.expire(collectionKey.toString(), com.cube.ws.Config.REDIS_DELETE_TTL);
             LOGGER.info(
                 String.format("Expiring redis key \"%s\" in %d seconds", collectionKey.toString(),
-                    Config.REDIS_DELETE_TTL));
+                    com.cube.ws.Config.REDIS_DELETE_TTL));
         } catch (Exception e) {
             LOGGER.error("Unable to remove key from redis cache :: "+ e.getMessage());
         }
@@ -325,7 +329,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String FUNC_RET_STATUSF = CPREFIX + FUNC_PREFIX + "funcstatus"  + STRING_SUFFIX;
     private static final String FUNC_EXCEPTION_TYPEF = CPREFIX + FUNC_PREFIX + "exceptiontype"  + STRING_SUFFIX;
     private static final String DEFAULT_EMPTY_FIELD_VALUE = "null";
-
+    private static final String AGENT_ID_F = CPREFIX + Constants.AGENT_ID + STRING_SUFFIX;
+    private static final String INFO_PREFIX = CPREFIX + Constants.INFO + "_";
 
 
 
@@ -597,10 +602,149 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return storeTemplateSetMetadata(templateSet, templateIds, ruleMapId);
     }
 
+    public SolrInputDocument agentConfigTagInfoToDoc(AgentConfigTagInfo tagInfo) {
+        SolrInputDocument solrInputDocument = new SolrInputDocument();
+        solrInputDocument.setField(CUSTOMERIDF, tagInfo.customerId);
+        solrInputDocument.setField(APPF, tagInfo.app);
+        solrInputDocument.setField(SERVICEF, tagInfo.service);
+        solrInputDocument.setField(INSTANCEIDF, tagInfo.instanceId);
+        solrInputDocument.setField(TYPEF, Types.AgentConfigTagInfo.toString());
+        solrInputDocument.setField(TAG_F, tagInfo.tag);
+        solrInputDocument.setField(IDF, Types.AgentConfigTagInfo.toString() + "-"+  Objects.hash(
+            tagInfo.customerId, tagInfo.app, tagInfo.service, tagInfo.instanceId));
+        return solrInputDocument;
+    }
+
+    @Override
+    public boolean updateAgentConfigTag(AgentConfigTagInfo tagInfo) {
+        return saveDoc(agentConfigTagInfoToDoc(tagInfo)) && softcommit();
+    }
+
+    @Override
+    public boolean storeAgentConfig(ConfigDAO store) {
+
+        SolrQuery maxVersionQuery = new SolrQuery("*:*");
+        maxVersionQuery.setFields(INT_VERSION_F);
+        addFilter(maxVersionQuery, TYPEF, Types.AgentConfig.toString());
+        addFilter(maxVersionQuery, CUSTOMERIDF,  store.customerId);
+        addFilter(maxVersionQuery, APPF, store.app);
+        addFilter(maxVersionQuery, SERVICEF, store.service);
+        addFilter(maxVersionQuery,INSTANCEIDF, store.instanceId);
+        addFilter(maxVersionQuery,TAG_F, store.tag);
+        addSort(maxVersionQuery, INT_VERSION_F, false);
+        int maxVersion =
+            SolrIterator.getSingleResult(solr, maxVersionQuery).
+                flatMap(this::extractVersionFromDoc).orElse(0);
+        store.setVersion(maxVersion+1);
+        SolrInputDocument doc = agentToSolrDoc(store);
+        return saveDoc(doc) && softcommit();
+    }
+
+    private  Optional<Integer> extractVersionFromDoc(SolrDocument entry) {
+        return getIntField(entry, INT_VERSION_F);
+    }
+
+    private Optional<String> extractTagFromDoc(SolrDocument entry) {
+        return getStrField(entry, TAG_F);
+    }
+
+    @Override
+    public Optional<ConfigDAO> getAgentConfig(String customerId, String app,
+            String service, String instanceId) {
+        // first get current tag
+        SolrQuery getCurrentTagQuery = new SolrQuery("*:*");
+        addFilter(getCurrentTagQuery, TYPEF , Types.AgentConfigTagInfo.toString());
+        addFilter(getCurrentTagQuery, CUSTOMERIDF, customerId);
+        addFilter(getCurrentTagQuery, APPF, app);
+        addFilter(getCurrentTagQuery, SERVICEF, service);
+        addFilter(getCurrentTagQuery, INSTANCEIDF, instanceId);
+        String currentTag = SolrIterator.getSingleResult(solr, getCurrentTagQuery)
+            .flatMap(this::extractTagFromDoc).orElse("NA");
+
+        // find the latest config the current tag
+        SolrQuery query = new SolrQuery("*:*");
+        addFilter(query, TYPEF, ConfigType.AgentConfig.toString());
+        addFilter(query, CUSTOMERIDF, customerId);
+        addFilter(query, APPF, app);
+        addFilter(query, SERVICEF, service);
+        addFilter(query,INSTANCEIDF, instanceId);
+        addFilter(query,TAG_F, currentTag);
+        addSort(query, INT_VERSION_F, false);
+        return SolrIterator.getSingleResult(solr, query).flatMap(this::docToAgent);
+    }
+
+    private SolrInputDocument agentToSolrDoc(ConfigDAO store) {
+        final SolrInputDocument doc = new SolrInputDocument();
+        doc.setField(TYPEF, ConfigType.AgentConfig.toString());
+        doc.setField(INT_VERSION_F, store.version);
+        doc.setField(CUSTOMERIDF, store.customerId);
+        doc.setField(APPF, store.app);
+        doc.setField(SERVICEF, store.service);
+        doc.setField(INSTANCEIDF, store.instanceId);
+        doc.setField(TAG_F, store.tag);
+        try {
+            doc.setField(CONFIG_JSON_F, config.jsonMapper.writeValueAsString(store.configJson));
+        } catch (JsonProcessingException e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Unable to convert "
+                + "store json as string")) , e);
+        }
+        return doc;
+    }
+
+    private Optional<ConfigDAO> docToAgent(SolrDocument doc) {
+        Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
+        Optional<String> app = getStrField(doc, APPF);
+        Optional<Integer> version = getIntField(doc, INT_VERSION_F);
+        Optional<String> service = getStrField(doc, SERVICEF);
+        Optional<String> instanceId = getStrField(doc, INSTANCEIDF);
+        Optional<String> configJson = getStrField(doc, CONFIG_JSON_F);
+        Optional<String> tag = getStrField(doc, TAG_F);
+        ConfigDAO agentStore = new ConfigDAO(customerId.orElse(null),
+            app.orElse(null), service.orElse(null), instanceId.orElse(null),
+            tag.orElse(null));
+        agentStore.setVersion(version.orElse(0));
+        try {
+            configJson.ifPresent(UtilException.rethrowConsumer(config ->
+                agentStore.setConfigJson(this.config.jsonMapper.readValue(config
+                    , Config.class))));
+            ValidateAgentStore.validate(agentStore);
+            return Optional.of(agentStore);
+        }catch (NullPointerException | IllegalArgumentException e) {
+            LOGGER.error(
+                new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Data fields are null or empty")), e);
+        } catch (Exception e) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Unable to convert json string back to StoreConfig object")), e);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public boolean saveAgentConfigAcknowledge(ConfigApplicationAcknowledge confApplicationAck) {
+        return saveDoc(agentConfigAcknowledgeToSolrDoc(confApplicationAck)) && softcommit();
+    }
+
+    private SolrInputDocument agentConfigAcknowledgeToSolrDoc(ConfigApplicationAcknowledge confApplicationAck)  {
+        SolrInputDocument doc = new SolrInputDocument();
+        doc.setField(CUSTOMERIDF, confApplicationAck.customerId);
+        doc.setField(APPF, confApplicationAck.app);
+        doc.setField(SERVICEF, confApplicationAck.service);
+        doc.setField(INSTANCEIDF, confApplicationAck.instanceId);
+        doc.setField(TYPEF, Types.AgentConfigAcknowledge.toString());
+        doc.setField(TIMESTAMPF, Instant.now().toString());
+        confApplicationAck.acknowledgeInfo.forEach((x, y)
+            -> doc.setField(INFO_PREFIX + x + STRING_SUFFIX, y));
+        return doc;
+    }
+
     private static final String TEMPLATE_ID = "template_id" + STRINGSET_SUFFIX;
-    private static final String TEMPLATE_VERSIONF = Constants.TEMPLATE_VERSION_FIELD + STRING_SUFFIX;
+    private static final String VERSIONF = Constants.VERSION_FIELD + STRING_SUFFIX;
+    private static final String INT_VERSION_F = Constants.VERSION_FIELD + INT_SUFFIX;
     private static final String ATTRIBUTE_RULE_MAP_ID = "attribute_rule_map_id" + STRING_SUFFIX;
-    private static final String DYNACMIC_INJECTION_CONFIG_VERSIONF = Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD + STRING_SUFFIX;
+    private static final String DYNACMIC_INJECTION_CONFIG_VERSIONF =
+        Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD + STRING_SUFFIX;
+    private static final String TAG_F = Constants.TAG_FIELD + STRING_SUFFIX;
 
 
     private String storeTemplateSetMetadata(TemplateSet templateSet, List<String> templateIds
@@ -611,7 +755,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         solrDoc.setField(IDF, id);
         solrDoc.setField(TYPEF, Types.TemplateSet.toString());
-        solrDoc.setField(TEMPLATE_VERSIONF, templateSet.version);
+        solrDoc.setField(VERSIONF, templateSet.version);
         solrDoc.setField(CUSTOMERIDF , templateSet.customer);
         solrDoc.setField(APPF, templateSet.app);
         solrDoc.setField(TIMESTAMPF , templateSet.timestamp.toString());
@@ -647,7 +791,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             addFilter(query, TYPEF, Types.TemplateSet.toString());
             addFilter(query, CUSTOMERIDF, customerId);
             addFilter(query, APPF, app);
-            addFilter(query, TEMPLATE_VERSIONF, version);
+            addFilter(query, VERSIONF, version);
             Optional<Integer> maxResults = Optional.of(1);
 
             return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(this::solrDocToTemplateSet);
@@ -690,7 +834,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private Optional<TemplateSet> solrDocToTemplateSet(SolrDocument doc) {
-        Optional<String> version = getStrField(doc, TEMPLATE_VERSIONF);
+        Optional<String> version = getStrField(doc, VERSIONF);
         Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
         Optional<String> app = getStrField(doc, APPF);
         Optional<Instant> creationTimestamp = getTSField(doc, TIMESTAMPF);
@@ -707,7 +851,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private Stream<CompareTemplateVersioned> solrDocToCompareTemplate(SolrDocument doc) {
-        Optional<String> version = getStrField(doc, TEMPLATE_VERSIONF);
+        Optional<String> version = getStrField(doc, VERSIONF);
         Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
         Optional<String> app = getStrField(doc, SERVICEF);
         String templateId = getStrField(doc, IDF).get();
@@ -778,7 +922,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @param solr
      * @param config
      */
-    public ReqRespStoreSolr(SolrClient solr, Config config) {
+    public ReqRespStoreSolr(SolrClient solr, com.cube.ws.Config config) {
         this(solr, config, true);
     }
 
@@ -786,7 +930,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @param solr
      * @param config
      */
-    public ReqRespStoreSolr(SolrClient solr, Config config, boolean useTemplateCaching) {
+    public ReqRespStoreSolr(SolrClient solr, com.cube.ws.Config config, boolean useTemplateCaching) {
         super();
         this.solr = solr;
         this.config = config;
@@ -802,7 +946,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private final SolrClient solr;
-    private final Config config;
+    private final com.cube.ws.Config config;
     private final TemplateCache templateCache;
     private final ComparatorCache comparatorCache;
 
@@ -833,6 +977,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String EVENTTYPEF = CPREFIX + Constants.EVENT_TYPE_FIELD + STRING_SUFFIX;
     private static final String SPAN_ID_F = CPREFIX  + Constants.SPAN_ID_FIELD + STRING_SUFFIX ;
     private static final String PARENT_SPAN_ID_F = CPREFIX  + Constants.PARENT_SPAN_ID_FIELD + STRING_SUFFIX;
+    private static final String CONFIG_JSON_F = CPREFIX + Constants.CONFIG_JSON + STRING_SUFFIX;
 
 
     private static String getFieldName(String fname, String fkey) {
@@ -1417,7 +1562,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REQSENTF, replay.reqsent);
         doc.setField(REQFAILEDF, replay.reqfailed);
         doc.setField(CREATIONTIMESTAMPF, replay.creationTimeStamp.toString());
-        doc.setField(TEMPLATE_VERSIONF, replay.templateVersion);
+        doc.setField(VERSIONF, replay.templateVersion);
         replay.intermediateServices.forEach(service -> doc.addField(INTERMEDIATESERVF , service));
         replay.sampleRate.ifPresent(sr -> doc.setField(SAMPLERATEF, sr));
         replay.generatedClassJarPath.ifPresent(jarPath -> doc.setField(GENERATED_CLASS_JAR_PATH, jarPath));
@@ -1455,7 +1600,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(CUSTOMERIDF , key.getCustomerId());
         doc.setField(SERVICEF , key.getServiceId());
         doc.setField(TYPEF , type);
-        doc.setField(TEMPLATE_VERSIONF, key.getVersion());
+        doc.setField(VERSIONF, key.getVersion());
         return doc;
     }
 
@@ -1482,7 +1627,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<Instant> creationTimestamp = getTSField(doc, CREATIONTIMESTAMPF);
         Optional<Double> sampleRate = getDblField(doc, SAMPLERATEF);
         List<String> intermediateService = getStrFieldMV(doc, INTERMEDIATESERVF);
-        Optional<String> templateVersion = getStrField(doc, TEMPLATE_VERSIONF);
+        Optional<String> templateVersion = getStrField(doc, VERSIONF);
         Optional<String> generatedClassJarPath = getStrField(doc, GENERATED_CLASS_JAR_PATH);
         List<String> services = getStrFieldMV(doc, SERVICESF);
         /**TODO Remove this once old replays are gone*/
@@ -1639,7 +1784,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(APPF , key.getAppId());
         doc.setField(CUSTOMERIDF , key.getCustomerId());
         doc.setField(TYPEF , type);
-        doc.setField(TEMPLATE_VERSIONF, key.getVersion());
+        doc.setField(VERSIONF, key.getVersion());
         return doc;
     }
 
@@ -1670,7 +1815,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, APPF, key.getAppId());
         addFilter(query , SERVICEF , key.getServiceId());
         addWeightedPathFilter(query , PATHF , key.getPath());
-        addFilter(query, TEMPLATE_VERSIONF, key.getVersion(), true);
+        addFilter(query, VERSIONF, key.getVersion(), true);
         //addFilter(query, PATHF , key.getPath());
         Optional<Integer> maxResults = Optional.of(1);
         Optional<CompareTemplate> fromSolr =  SolrIterator.getStream(solr , query , maxResults)
@@ -1697,7 +1842,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(appAttributeTemplateQuery, TYPEF, Types.AttributeTemplate.name());
         addFilter(appAttributeTemplateQuery, CUSTOMERIDF, key.getCustomerId());
         addFilter(appAttributeTemplateQuery, APPF, key.getAppId());
-        addFilter(appAttributeTemplateQuery, TEMPLATE_VERSIONF, key.getVersion(), true);
+        addFilter(appAttributeTemplateQuery, VERSIONF, key.getVersion(), true);
         return SolrIterator.getSingleResult(solr, appAttributeTemplateQuery)
             .flatMap(this::docToAttributeRuleMap);
     }
@@ -1869,7 +2014,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REPLAYIDF, analysis.replayId);
         doc.setField(OBJJSONF, json);
         doc.setField(TYPEF, type);
-        doc.setField(TEMPLATE_VERSIONF, analysis.templateVersion);
+        doc.setField(VERSIONF, analysis.templateVersion);
         return doc;
     }
 
@@ -2403,7 +2548,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<RecordingStatus> status = getStrField(doc, RECORDINGSTATUSF)
             .flatMap(s -> Utils.valueOf(RecordingStatus.class, s));
         Optional<Recording> recording = Optional.empty();
-        Optional<String> templateVersion = getStrField(doc, TEMPLATE_VERSIONF);
+        Optional<String> templateVersion = getStrField(doc, VERSIONF);
         Optional<String> parentRecordingId = getStrField(doc, PARENT_RECORDING_IDF);
         Optional<String> rootRecordingId = getStrField(doc, ROOT_RECORDING_IDF);
         Optional<String> name = getStrField(doc, GOLDEN_NAMEF);
@@ -2477,7 +2622,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(INSTANCEIDF, recording.instanceId);
         doc.setField(COLLECTIONF, recording.collection);
         doc.setField(RECORDINGSTATUSF, recording.status.toString());
-        doc.setField(TEMPLATE_VERSIONF, recording.templateVersion);
+        doc.setField(VERSIONF, recording.templateVersion);
         doc.setField(ROOT_RECORDING_IDF, recording.rootRecordingId);
         doc.setField(ARCHIVEDF, recording.archived);
         doc.setField(GOLDEN_NAMEF, recording.name);
@@ -2524,7 +2669,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, INSTANCEIDF, instanceId);
         addFilter(query, RECORDINGSTATUSF, status.map(Enum::toString));
         addFilter(query, COLLECTIONF, collection);
-        addFilter(query, TEMPLATE_VERSIONF, templateVersion);
+        addFilter(query, VERSIONF, templateVersion);
         addFilter(query, PARENT_RECORDING_IDF, parentRecordingId);
         addFilter(query, ROOT_RECORDING_IDF, rootRecordingId);
         addFilter(query, GOLDEN_NAMEF, name);
@@ -2566,7 +2711,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, CUSTOMERIDF, customerId);
         addFilter(query, APPF, app);
         addFilter(query, COLLECTIONF, collection);
-        addFilter(query, TEMPLATE_VERSIONF, templateSetVersion);
+        addFilter(query, VERSIONF, templateSetVersion);
         return SolrIterator.getSingleResult(solr, query).flatMap(doc -> docToRecording(doc));
     }
 
