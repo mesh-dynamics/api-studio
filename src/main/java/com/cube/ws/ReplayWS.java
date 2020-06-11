@@ -9,6 +9,7 @@ import com.cube.dao.ReplayUpdate.ReplaySaveFailureException;
 import com.cube.dao.Result;
 import io.md.constants.ReplayStatus;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -249,7 +250,8 @@ public class ReplayWS {
             .flatMap(v -> Utils.strToDouble(v));
         List<String> intermediateServices = Optional.ofNullable(formParams.get("intermService"))
             .orElse(new ArrayList<>());
-        Optional<String> service = Optional.ofNullable(formParams.getFirst("service"));
+        List<String> service = Optional.ofNullable(formParams.get("service"))
+            .orElse(Collections.emptyList());
         String userId = formParams.getFirst("userId");
         String instanceId = formParams.getFirst("instanceId");
         String replayType = formParams.getFirst("replayType");
@@ -301,7 +303,7 @@ public class ReplayWS {
                 .withRecordingId(recording.id)
                 .withGoldenName(recording.name);
             sampleRate.ifPresent(replayBuilder::withSampleRate);
-            service.ifPresent(replayBuilder::withServiceToReplay);
+            replayBuilder.withServiceToReplay(service);
             testConfigName.ifPresent(replayBuilder::withTestConfigName);
             xfms.ifPresent(replayBuilder::withXfms);
             dynamicInjectionConfigVersion.ifPresent(replayBuilder::withDynamicInjectionConfigVersion);

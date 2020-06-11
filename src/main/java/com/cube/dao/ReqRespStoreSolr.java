@@ -1421,7 +1421,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         replay.intermediateServices.forEach(service -> doc.addField(INTERMEDIATESERVF , service));
         replay.sampleRate.ifPresent(sr -> doc.setField(SAMPLERATEF, sr));
         replay.generatedClassJarPath.ifPresent(jarPath -> doc.setField(GENERATED_CLASS_JAR_PATH, jarPath));
-        replay.service.ifPresent(serv -> doc.setField(SERVICEF, serv));
+        replay.service.forEach(serv -> doc.addField(SERVICESF, serv));
         doc.setField(REPLAY_TYPE_F, replay.replayType.toString());
         replay.xfms.ifPresent(xfms -> doc.setField(XFMSF, xfms));
         replay.goldenName.ifPresent(goldenName -> doc.setField(GOLDEN_NAMEF, goldenName));
@@ -1484,7 +1484,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         List<String> intermediateService = getStrFieldMV(doc, INTERMEDIATESERVF);
         Optional<String> templateVersion = getStrField(doc, TEMPLATE_VERSIONF);
         Optional<String> generatedClassJarPath = getStrField(doc, GENERATED_CLASS_JAR_PATH);
-        Optional<String> service = getStrField(doc, SERVICEF);
+        List<String> services = getStrFieldMV(doc, SERVICESF);
+        /**TODO Remove this once old replays are gone*/
+        if(services.isEmpty()) {
+            Optional<String> service = getStrField(doc, SERVICEF);
+            service.map(s-> services.add(s));
+        }
         Optional<String> testConfigName = getStrField(doc, TESTCONFIGNAMEF);
         Optional<String> goldenName = getStrField(doc, GOLDEN_NAMEF);
         Optional<String> recordingId = getStrField(doc, RECORDING_IDF);
@@ -1516,7 +1521,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 sampleRate.ifPresent(builder::withSampleRate);
                 generatedClassJarPath
                     .ifPresent(UtilException.rethrowConsumer(builder::withGeneratedClassJar));
-                service.ifPresent(builder::withServiceToReplay);
+                builder.withServiceToReplay(services);
                 xfms.ifPresent(builder::withXfms);
                 testConfigName.ifPresent(builder::withTestConfigName);
                 goldenName.ifPresent(builder::withGoldenName);
@@ -1878,6 +1883,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String REQ_COMP_RES_META_F = CPREFIX + Constants.REQ_COMP_RES_META + STRING_SUFFIX;
     private static final String DIFFF = CPREFIX + "diff" + NOTINDEXED_SUFFIX;
     private static final String SERVICEF = CPREFIX + Constants.SERVICE_FIELD + STRING_SUFFIX;
+    private static final String SERVICESF = CPREFIX + Constants.SERVICE_FIELD + STRINGSET_SUFFIX;
     private static final String RECORDTRACEIDF = CPREFIX + "recordtraceid" + STRING_SUFFIX;
     private static final String REPLAYTRACEIDF = CPREFIX + "replaytraceid" + STRING_SUFFIX;
     private static final String RECORD_SPANID_F = CPREFIX + "recordSpanId" + STRING_SUFFIX;
