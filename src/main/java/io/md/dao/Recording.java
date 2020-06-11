@@ -31,6 +31,13 @@ public class Recording {
 		Error
 	}
 
+	public enum RecordingType {
+		Golden,
+		UserGolden,
+		Capture,
+		History
+	}
+
 	/**
 	 * @param customerId
 	 * @param app
@@ -45,7 +52,8 @@ public class Recording {
 		, Optional<String> codeVersion, Optional<String> branch, List<String> tags
 		, boolean archived, Optional<String> gitCommitId, Optional<String> collectionUpdOpSetId
 		, Optional<String> templateUpdOpSetId, Optional<String> comment, String userId,
-		Optional<String> generatedClassJarPath, Optional<URLClassLoader> generatedClassLoader, String label) {
+		Optional<String> generatedClassJarPath, Optional<URLClassLoader> generatedClassLoader, String label,
+			RecordingType recordingType) {
 
 		super();
 		this.customerId = customerId;
@@ -71,6 +79,7 @@ public class Recording {
 		this.generatedClassJarPath = generatedClassJarPath;
 		this.generatedClassLoader = generatedClassLoader;
 		this.label = label;
+		this.recordingType = recordingType;
 	}
 
 	// for json deserialization
@@ -142,6 +151,8 @@ public class Recording {
 	public final String userId;
 	@JsonProperty("jarPath")
 	public Optional<String> generatedClassJarPath;
+	@JsonProperty("recordingType")
+	public RecordingType recordingType;
 	public transient Optional<URLClassLoader> generatedClassLoader;
 
 
