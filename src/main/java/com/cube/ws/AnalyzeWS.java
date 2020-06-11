@@ -14,6 +14,7 @@ import com.cube.dao.ApiTraceFacetQuery;
 import com.cube.dao.ApiTraceResponse;
 import com.cube.dao.ApiTraceResponse.ServiceReqRes;
 import io.md.constants.ReplayStatus;
+import io.md.dao.ConvertEventPayloadResponse;
 import io.md.dao.Event.EventType;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.RecordingOperationSetSP;
@@ -464,7 +465,8 @@ public class AnalyzeWS {
 			    , replayedResponse, matchRes.recordTraceId, matchRes.replayTraceId,
                 matchRes.recordedSpanId, matchRes.recordedParentSpanId,
                 matchRes.replayedSpanId, matchRes.replayedParentSpanId,
-                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+            Optional.empty(), Optional.empty());
 
 		    String resultJson = null;
 		    try {
@@ -660,7 +662,9 @@ public class AnalyzeWS {
                 Optional<String> replayedRequest = Optional.empty();
                 Optional<String> respCompDiff = Optional.empty();
                 Optional<String> recordResponse = Optional.empty();
+                Optional<Boolean> recordResponseTruncated = Optional.of(false);
                 Optional<String> replayResponse = Optional.empty();
+                Optional<Boolean> replayResponseTruncated = Optional.of(false);
 				Optional<String> reqCompDiff = Optional.empty();
 	            Optional<Long> replayReqTime = Optional.empty();
 	            Optional<Long> recordRespTime = Optional.empty();
@@ -685,12 +689,19 @@ public class AnalyzeWS {
 	                List<String > pathsToKeep = getPathsToKeep(matchRes.respCompareRes.diffs);
 
 	                Optional<Event> recordResponseEvent = matchRes.recordReqId.flatMap(rrstore::getResponseEvent);
-	                recordResponse = recordResponseEvent.map(e -> e.checkAndConvertResponseToString(true, pathsToKeep, size, "/body"));
-	                recordRespTime = recordResponseEvent.map(e -> e.timestamp.toEpochMilli());
+                  Optional<ConvertEventPayloadResponse> convertRecordResponse = recordResponseEvent.map(e ->
+                      e.checkAndConvertResponseToString(true, pathsToKeep, size, "/body"));
+                  recordResponse = convertRecordResponse.map(resp -> resp.getResponse());
+                  recordResponseTruncated = convertRecordResponse.map(resp -> resp.isTruncated());
+                  recordRespTime = recordResponseEvent.map(e -> e.timestamp.toEpochMilli());
 
 
 	                Optional<Event> replayResponseEvent = matchRes.replayReqId.flatMap(rrstore::getResponseEvent);
-	                replayResponse = replayResponseEvent.map(e -> e.checkAndConvertResponseToString(true, pathsToKeep, size, "/body"));
+
+                  Optional<ConvertEventPayloadResponse> convertReplayResponse = replayResponseEvent.map(e ->
+                      e.checkAndConvertResponseToString(true, pathsToKeep, size, "/body"));
+                  replayResponse = convertReplayResponse.map(resp -> resp.getResponse());
+                  replayResponseTruncated = convertReplayResponse.map(resp -> resp.isTruncated());
 	                replayRespTime = replayResponseEvent.map(e -> e.timestamp.toEpochMilli());
                 }
 
@@ -702,7 +713,8 @@ public class AnalyzeWS {
                     matchRes.recordedSpanId, matchRes.recordedParentSpanId,
                     matchRes.replayedSpanId, matchRes.replayedParentSpanId,
 	                recordReqTime, recordRespTime,
-	                replayReqTime, replayRespTime, Optional.of(replay.instanceId));
+	                replayReqTime, replayRespTime, Optional.of(replay.instanceId)
+                    ,recordResponseTruncated, replayResponseTruncated);
             }).collect(Collectors.toList());
         }).orElse(Collections.emptyList());
 
@@ -1572,7 +1584,9 @@ public class AnalyzeWS {
 					    Optional<Long> recordRespTime,
 		                Optional<Long> replayReqTime,
 		                Optional<Long> replayRespTime,
-                    Optional<String> instanceId
+                    Optional<String> instanceId,
+          Optional<Boolean> recordResponseTruncated,
+          Optional<Boolean> replayResponseTruncated
 	        ) {
             this.recordReqId = recordReqId;
             this.replayReqId = replayReqId;
@@ -1599,6 +1613,8 @@ public class AnalyzeWS {
 		    this.replayReqTime = recordReqTime;
 		    this.replayRespTime = recordReqTime;
 		    this.instanceId = instanceId;
+		    this.recordResponseTruncated = recordResponseTruncated;
+		    this.replayResponseTruncated = replayResponseTruncated;
 	    }
 
         public final Optional<String> recordReqId;
@@ -1620,6 +1636,8 @@ public class AnalyzeWS {
 	    public final Optional<Long> replayReqTime;
 	    public final Optional<Long> replayRespTime;
 	    public final Optional<String> instanceId;
+	    public final Optional<Boolean> recordResponseTruncated;
+	    public final Optional<Boolean> replayResponseTruncated;
 
 	    //Using JsonRawValue on <Optional> field results in Jackson serialization failure.
 	    //Hence getMethods() are used to fetch the value.
