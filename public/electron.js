@@ -83,10 +83,7 @@ autoUpdater.on('error', error => {
 
 autoUpdater.on('update-downloaded', info => {
     logger.info("Update downloaded...")
-    mainWindow.webContents.send('update_available');
-    // const quitAndInstalled = autoUpdater.quitAndInstall();
-    // logger.info('Installed a new version');
-    // logger.info(quitAndInstalled);
+    mainWindow.webContents.send('update_downloaded');
 })
 
 ipcMain.on('restart_app', () => {

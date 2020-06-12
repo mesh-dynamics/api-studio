@@ -109,15 +109,14 @@
 
     ipcRenderer.on('update_downloaded', () => {
       ipcRenderer.removeAllListeners('update_downloaded');
-      message.innerText = 'A new version is downloaded. It will be installed on restart. Restart now?';
-      restartButton.classList.remove('hidden');
+      message.innerText = 'A new version has been downloaded. It will be installed on restart. Restart now?';
       notification.classList.remove('hidden');
+      restartButton.classList.remove('hidden');
     });
 
     function processDownloadProgress(event, percent) {
       ipcRenderer.removeAllListeners('download_progress');
       message.innerText = "Please do not close the main window.\nDownloading... " + percent + "%";
-      notification.classList.remove('hidden');
 
       if (percent === 100) {
         clearInterval(downloadProgressInterval);
