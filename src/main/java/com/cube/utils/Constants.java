@@ -139,6 +139,7 @@ public class Constants {
     public static final String OLD_TEMPLATE_SET_VERSION = "oldTemplateSetVersion";
     public static final String NEW_TEMPLATE_SET_VERSION = "newTemplateSetVersion";
     public static final String RECORDING_ID = "recordingId";
+    public static final String RECORDING_TYPE_FIELD = "recordingType";
     public static final String RECORDING_UPDATE_OPERATION_SET_ID = "recUpdateOpSetId";
     public static final String RECORDING_UPDATE_API_OPERATION_SET_ID = "recUpdateApiPathOpSetId";
 

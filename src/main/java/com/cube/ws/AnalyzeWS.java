@@ -17,6 +17,7 @@ import io.md.constants.ReplayStatus;
 import io.md.dao.ConvertEventPayloadResponse;
 import io.md.dao.Event.EventType;
 import io.md.dao.HTTPResponsePayload;
+import io.md.dao.Recording.RecordingType;
 import io.md.dao.RecordingOperationSetSP;
 import java.io.IOException;
 import java.time.Instant;
@@ -1050,7 +1051,7 @@ public class AnalyzeWS {
                 .withStatus(RecordingStatus.Completed).withTemplateSetVersion(updatedTemplateSet.version)
 	            .withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
                 .withName(name).withLabel(label).withTags(tags).withCollectionUpdateOpSetId(collectionUpdateOpSetId)
-	            .withTemplateUpdateOpSetId(templateUpdOpSetId).withUserId(userId);
+	            .withTemplateUpdateOpSetId(templateUpdOpSetId).withUserId(userId).withRecordingType(originalRec.recordingType);
             codeVersion.ifPresent(recordingBuilder::withCodeVersion);
             branch.ifPresent(recordingBuilder::withBranch);
             gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
@@ -1093,7 +1094,7 @@ public class AnalyzeWS {
 	            .withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateSet.version)
 	            .withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
 	            .withName(originalRec.name).withLabel(originalRec.label).withTags(originalRec.tags).withArchived(originalRec.archived)
-	            .withUserId(originalRec.userId);
+	            .withUserId(originalRec.userId).withRecordingType(originalRec.recordingType);
 	        originalRec.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
 	        originalRec.branch.ifPresent(recordingBuilder::withBranch);
 	        originalRec.gitCommitId.ifPresent(recordingBuilder::withGitCommitId);

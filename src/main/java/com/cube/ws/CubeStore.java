@@ -8,6 +8,7 @@ import static com.cube.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 import static io.md.utils.Utils.createHTTPRequestEvent;
 
+import io.md.dao.Recording.RecordingType;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.ValidateAgentStore;
 import io.md.dao.agent.config.AgentConfigTagInfo;
@@ -997,6 +998,9 @@ public class CubeStore {
         Optional<String> gitCommitId = Optional.ofNullable(formParams.getFirst("gitCommitId"));
         List<String> tags = Optional.ofNullable(formParams.get("tags")).orElse(new ArrayList<String>());
         Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
+      Optional<RecordingType> recordingType =
+          Optional.ofNullable(formParams.getFirst(Constants.RECORDING_TYPE_FIELD))
+              .flatMap(r -> Utils.valueOf(RecordingType.class, r)).or(() -> Optional.of(RecordingType.Golden));
 
         RecordingBuilder recordingBuilder = new RecordingBuilder(new CubeMetaInfo(customerId, app
             , instanceId), collection).withTemplateSetVersion(templateSetVersion).withName(name)
@@ -1005,6 +1009,7 @@ public class CubeStore {
         branch.ifPresent(recordingBuilder::withBranch);
         gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
         comment.ifPresent(recordingBuilder::withComment);
+        recordingType.ifPresent(recordingBuilder::withRecordingType);
         try {
             jarPath.ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
         } catch (Exception e) {
@@ -1284,7 +1289,8 @@ public class CubeStore {
                     .withTemplateSetVersion(rec.templateVersion)
                     .withRootRecordingId(rec.rootRecordingId)
                     .withArchived(rec.archived)
-                    .withId(rec.id); // same recording is updated, so carry over id
+                    .withId(rec.id) // same recording is updated, so carry over id
+                    .withRecordingType(rec.recordingType);
                 rec.parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
                 recordingBuilder.withName(name.orElse(rec.name));
                 recordingBuilder.withLabel(label.orElse(rec.label));

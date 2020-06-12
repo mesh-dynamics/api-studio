@@ -16,6 +16,7 @@ import io.md.dao.EventQuery;
 import io.md.dao.RecordOrReplay;
 import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingStatus;
+import io.md.dao.Recording.RecordingType;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.Replay;
 import io.md.dao.Config;
@@ -2523,6 +2524,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 
     private static final String RECORDINGSTATUSF = CPREFIX + Constants.STATUS + STRING_SUFFIX;
+    private static final String RECORDING_TYPE_F = CPREFIX + Constants.RECORDING_TYPE_FIELD + STRING_SUFFIX;
     private static final String ROOT_RECORDING_IDF = CPREFIX + Constants.ROOT_RECORDING_FIELD + STRING_SUFFIX;
     private static final String PARENT_RECORDING_IDF = CPREFIX + Constants.PARENT_RECORDING_FIELD + STRING_SUFFIX;
     private static final String GOLDEN_NAMEF = CPREFIX + Constants.GOLDEN_NAME_FIELD + STRING_SUFFIX;
@@ -2563,6 +2565,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> comment = getStrField(doc, GOLDEN_COMMENTF);
         Optional<String> userId = getStrField(doc, USERIDF);
         Optional<String> generatedClassJarPath = getStrField(doc, GENERATED_CLASS_JAR_PATH);
+        Optional<RecordingType> recordingType = getStrField(doc, RECORDING_TYPE_F)
+            .flatMap(r -> Utils.valueOf(RecordingType.class, r));
 
         if (id.isPresent() && customerId.isPresent() && app.isPresent() && instanceId.isPresent() && collection
             .isPresent() &&
@@ -2584,6 +2588,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             templateUpdOpSetId.ifPresent(recordingBuilder::withTemplateUpdateOpSetId);
             comment.ifPresent(recordingBuilder::withComment);
             label.ifPresent(recordingBuilder::withLabel);
+            recordingType.ifPresent(recordingBuilder::withRecordingType);
             try {
                 generatedClassJarPath.ifPresent(
                     UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
@@ -2628,6 +2633,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(GOLDEN_NAMEF, recording.name);
         doc.setField(GOLDEN_LABELF, recording.label);
         doc.setField(USERIDF, recording.userId);
+        doc.setField(RECORDING_TYPE_F, recording.recordingType.toString());
         recording.parentRecordingId.ifPresent(parentRecId -> doc.setField(PARENT_RECORDING_IDF, parentRecId));
         recording.generatedClassJarPath.ifPresent(jarPath -> doc.setField(GENERATED_CLASS_JAR_PATH, jarPath));
         recording.updateTimestamp.ifPresent(timestamp -> doc.setField(TIMESTAMPF , timestamp.toString()));
