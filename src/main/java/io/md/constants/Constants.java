@@ -35,6 +35,7 @@ public class Constants {
 	public static final String REQ_MATCH_TYPE = "reqMatchType";
 	public static final String RESP_MATCH_TYPE = "respMatchType";
 	public static final String INCLUDE_DIFF = "includeDiff";
+	public static final String LOWER_BOUND = "lowerBound";
 
 	//MESSAGE KEYS
 	public static final String CLASS_NAME = "className";
@@ -84,7 +85,7 @@ public class Constants {
 	public static final String PATH_PATH = "/path";
 	public static final String METHOD_PATH = "/method";
 	public static final String ARGS_PATH = "/args";
-	public static final String FN_RESPONSE_PATH = "/response";
+	public static final String FN_RESPONSE_PATH = "/retOrExceptionVal";
 	public static final String HDR_PATH = "/hdr";
 	public static final String META_PATH = "/meta";
 	public static final String BODY_PATH = "/body";
