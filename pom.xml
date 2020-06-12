@@ -331,14 +331,13 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>commons</artifactId>
-			<version>1.0.78</version>
+			<version>1.0.79</version>      
 		</dependency>
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>commons-server</artifactId>
 			<version>1.0.12</version>
 		</dependency>
-
 		<!--<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>md-df-jaxrs-interceptor</artifactId>

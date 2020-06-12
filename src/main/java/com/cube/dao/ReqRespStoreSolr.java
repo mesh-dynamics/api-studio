@@ -289,6 +289,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, PATHF, eventQuery.getPaths(), eventQuery.excludePaths());
         addFilter(query, EVENTTYPEF, eventQuery.getEventTypes().stream().map(type -> type.toString()).collect(Collectors.toList()));
         addFilterInt(query, PAYLOADKEYF, eventQuery.getPayloadKey());
+        // starting from timestamp, non inclusive
+        addRangeFilter(query, TIMESTAMPF, eventQuery.getTimestamp(), Optional.empty(), false, true);
         addSort(query, TIMESTAMPF, eventQuery.isSortOrderAsc());
 
         return SolrIterator.getResults(solr, query, eventQuery.getLimit(),
@@ -1100,7 +1102,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private static String getRangeFilterString(String fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive, boolean endInclusive) {
-        String startDateVal = startDate.isPresent() ? SolrIterator.escapeQueryChars(startDate.get().toString()) : "*";
+        // epoch millis of 0 is a special case. convert back to * to cover full range
+        String startDateVal = startDate.isPresent() && startDate.get().toEpochMilli() > 0 ?
+            SolrIterator.escapeQueryChars(startDate.get().toString()) :
+            "*";
         String endDateVal = endDate.isPresent() ? SolrIterator.escapeQueryChars(endDate.get().toString()) : "*";
         String queryFmt = "%s:" + (startInclusive ? "[": "{") + "%s TO %s" + (endInclusive ? "]" : "}");
         return String.format(queryFmt, fieldname, startDateVal, endDateVal);

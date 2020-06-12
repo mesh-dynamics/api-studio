@@ -131,6 +131,16 @@ public class Utils {
         }
     }
 
+
+    public static Optional<Instant> msStrToTimeStamp(String val) {
+	    try {
+	        return strToLong(val).map(Instant::ofEpochMilli);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+
     public static Optional<Boolean> strToBool(String boolStr) {
         try {
             return Optional.ofNullable(boolStr).map(BooleanUtils::toBoolean);

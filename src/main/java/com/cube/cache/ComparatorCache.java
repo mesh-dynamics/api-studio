@@ -6,6 +6,8 @@
 
 package com.cube.cache;
 
+import static io.md.constants.Constants.FN_RESPONSE_PATH;
+
 import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
@@ -84,7 +86,7 @@ public class ComparatorCache {
 
         // default rule for Java Response
         CompareTemplate defaultJavaResponseTemplate = new CompareTemplate();
-        defaultJavaResponseTemplate.addRule(new TemplateEntry(Constants.FN_RESPONSE_PATH, DataType.Obj,
+        defaultJavaResponseTemplate.addRule(new TemplateEntry(FN_RESPONSE_PATH, DataType.Obj,
             PresenceType.Required, ComparisonType.Equal));
         defaultJavaResponseComparator = new JsonComparator(defaultJavaResponseTemplate, jsonMapper);
 

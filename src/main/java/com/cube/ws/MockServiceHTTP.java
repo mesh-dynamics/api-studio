@@ -2,7 +2,7 @@ package com.cube.ws;
 
 import static com.cube.core.Utils.buildErrorResponse;
 
-import java.net.URLClassLoader;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,14 +34,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.FnReqResponse;
-import io.md.dao.RecordOrReplay;
-import io.md.services.FnResponse;
 import io.md.dao.Event;
-import io.md.dao.Event.EventType;
-import io.md.dao.Event.RunType;
-import io.md.dao.EventQuery;
-import io.md.dao.EventQuery.Builder;
 import io.md.dao.HTTPResponsePayload;
+import io.md.services.FnResponse;
+import io.md.services.MockResponse;
 import io.md.services.Mocker;
 import io.md.services.RealMocker;
 
@@ -106,19 +102,6 @@ public class MockServiceHTTP {
             entity((new JSONObject(Map.of(Constants.REASON, errorReason))).toString()).build();
     }
 
-    @POST
-    @Path("/mockFunction")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response mockFunction(Event event) {
-        try {
-            FnResponse fnResponse = mocker.mockFunction(event);
-            return getFuncResp(event, fnResponse);
-        } catch (Mocker.MockerException e) {
-            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
-                buildErrorResponse(Constants.ERROR, e.errorType, e.getMessage())).build();
-        }
-    }
-
     private Response getFuncResp(Event event, FnResponse fnResponse) {
         try {
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(fnResponse)
@@ -135,34 +118,30 @@ public class MockServiceHTTP {
     }
 
     @POST
+    @Path("/mockEvent")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response mockEvent(Event event, @Context UriInfo ui) {
+        try {
+            MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+            Optional<Instant> lowerBound =
+                Optional.ofNullable(queryParams.getFirst(io.md.constants.Constants.LOWER_BOUND)).flatMap(Utils::msStrToTimeStamp);
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity(mocker.mock(event, lowerBound))
+                .build();
+        } catch (Mocker.MockerException e) {
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.ERROR, e.errorType, e.getMessage())).build();
+        }
+    }
+
+    @POST
     @Path("/thrift")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response mockThrift(Event thriftMockRequest) {
         try {
-            RecordOrReplay recordOrReplay = rrstore
-                .getCurrentRecordOrReplay(Optional.ofNullable(thriftMockRequest.customerId),
-                    Optional.ofNullable(thriftMockRequest.app),
-                    Optional.ofNullable(thriftMockRequest.instanceId), true).orElseThrow(() ->
-                    new Exception(
-                        "Could not find running replay for cust:: " + thriftMockRequest.customerId
-                            + " , app :: " + thriftMockRequest.app + " , instanceId :: "
-                            + thriftMockRequest.instanceId));
-            Optional<URLClassLoader> urlClassLoader = recordOrReplay.getClassLoader();
-            thriftMockRequest.parseAndSetKey(rrstore
-                .getRequestMatchTemplate(thriftMockRequest,
-                    recordOrReplay.getTemplateVersion()), urlClassLoader);
-
-            EventQuery.Builder builder = new Builder(thriftMockRequest.customerId,
-                thriftMockRequest.app, EventType.ThriftRequest)
-                .withRunType(RunType.Record).withPayloadKey(thriftMockRequest.payloadKey)
-                .withService(thriftMockRequest.service).withTraceId(thriftMockRequest.getTraceId());
-
-            Optional<Event> matchingThriftRequest = rrstore.getSingleEvent(builder.build());
-            return matchingThriftRequest
-                .flatMap(matchingRequest ->rrstore.getResponseEvent(matchingRequest.reqId)).map(matchingResponse ->
+            return mocker.mock(thriftMockRequest, Optional.empty()).response
+                .map(matchingResponse ->
                     Response.ok().type(MediaType.APPLICATION_JSON).entity(matchingResponse).build())
                 .orElseThrow(() -> new Exception("No Matching Response Event Found"));
-
         } catch (Exception e) {
             return Response.serverError()
                 .entity((new JSONObject(Map.of(Constants.MESSAGE, e.getMessage()))).toString())
@@ -170,6 +149,7 @@ public class MockServiceHTTP {
         }
     }
 
+    // TODO: this will be deprecated
     @POST
     @Path("/fr")
     @Consumes(MediaType.TEXT_PLAIN)
@@ -225,10 +205,27 @@ public class MockServiceHTTP {
         String customerId, String app, String instanceId,
         String service, String method, String body, HttpHeaders headers) {
 
-        Optional<Event> respEvent = mocker.getResp(ui.getQueryParameters(), path, formParams, customerId, app,
-            instanceId,
-            service, method, body,
-            headers.getRequestHeaders());
+        LOGGER.info(io.md.utils.Utils.createLogMessasge(io.md.constants.Constants.MESSAGE, "Attempting to mock request",
+            io.md.constants.Constants.CUSTOMER_ID_FIELD, customerId, io.md.constants.Constants.APP_FIELD, app
+            , io.md.constants.Constants.INSTANCE_ID_FIELD, instanceId, io.md.constants.Constants.SERVICE_FIELD, service,
+            io.md.constants.Constants.METHOD_FIELD, method, io.md.constants.Constants.PATH_FIELD, path));
+
+        Optional<Event> respEvent = Optional.empty();
+        try {
+            Event mockRequestEvent = io.md.utils.Utils
+                .createRequestMockNew(path, formParams, customerId, app, instanceId,
+                    service, method, body, headers.getRequestHeaders(), ui.getQueryParameters());
+            MockResponse mockResponse = mocker.mock(mockRequestEvent, Optional.empty());
+            respEvent = mockResponse.response;
+
+        } catch (Exception e) {
+                LOGGER.error(io.md.utils.Utils.createLogMessasge(
+                    io.md.constants.Constants.MESSAGE, "Unable to mock request, exception while creating request",
+                    io.md.constants.Constants.CUSTOMER_ID_FIELD, customerId, io.md.constants.Constants.APP_FIELD, app
+                    , io.md.constants.Constants.INSTANCE_ID_FIELD, instanceId, io.md.constants.Constants.SERVICE_FIELD, service,
+                    io.md.constants.Constants.METHOD_FIELD, method, io.md.constants.Constants.PATH_FIELD, path, io.md.constants.Constants.BODY,
+                    body), e);
+        }
 
         return respEvent
             .flatMap(respEventVal -> createResponseFromEvent(respEventVal))

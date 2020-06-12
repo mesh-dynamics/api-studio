@@ -264,7 +264,7 @@ public class CubeStore {
                 requestEvent = createHTTPRequestEvent(path, rid, queryParams, formParams, meta,
                         hdrs, method, rr.body, collection, timestamp, runType, customerId,
                         app, requestComparator);
-            } catch (JsonProcessingException | EventBuilder.InvalidEventException e) {
+            } catch (EventBuilder.InvalidEventException e) {
                 throw new CubeStoreException(e, "Invalid Event"
                     , cubeEventMetaInfo);
             }
