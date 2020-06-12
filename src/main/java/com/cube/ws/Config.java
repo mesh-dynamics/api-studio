@@ -64,6 +64,8 @@ public class Config {
 
 	public final long responseSize;
 
+	public final long pathsToKeepLimit;
+
 	//public final Tracer tracer = Utils.init("Cube");
 
 	public final Recorder recorder;
@@ -81,6 +83,7 @@ public class Config {
 		commonConfig = CommonConfig.getInstance();
 		String solrurl = null;
     int size = Integer.valueOf(fromEnvOrProperties("response_size", "1"));
+    pathsToKeepLimit = Long.valueOf(fromEnvOrProperties("paths_to_keep_limit", "1000"));
     responseSize =  size*1000000;
         try {
             properties.load(this.getClass().getClassLoader().
@@ -141,6 +144,10 @@ public class Config {
 
 	public long getResponseSize() {
 	  return responseSize;
+  }
+
+  public long getPathsToKeepLimit() {
+	  return pathsToKeepLimit;
   }
 
 }

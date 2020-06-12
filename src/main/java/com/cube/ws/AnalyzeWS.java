@@ -745,7 +745,11 @@ public class AnalyzeWS {
 
     private List<String> getPathsToKeep(List<Comparator.Diff> diffs) {
       List<String> pathsToKeep = new ArrayList<>();
+      long pathsToKeepLimit = config.getPathsToKeepLimit();
       for(Comparator.Diff diff: diffs) {
+        if (pathsToKeep.size() == pathsToKeepLimit) {
+          return pathsToKeep;
+        }
         if(diff.path.contains("body")) {
           pathsToKeep.add(diff.path);
         }
