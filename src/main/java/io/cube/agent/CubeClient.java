@@ -3,9 +3,12 @@ package io.cube.agent;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.UnsupportedCharsetException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import javax.ws.rs.core.UriBuilder;
 
 import org.apache.http.Consts;
 import org.apache.http.HttpStatus;
@@ -25,7 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.md.constants.Constants;
 import io.md.dao.Event;
-import io.md.services.FnResponse;
+import io.md.services.MockResponse;
 import io.md.utils.CommonUtils;
 
 /**
@@ -117,32 +120,18 @@ public class CubeClient {
 	}
 
 
-	//TODO: Cleanup - phase this out
-	public Optional<FnResponse> getMockResponse(FnReqResponse fnReqResponse) {
+	public Optional<MockResponse> getMockResponseEvent(Event event, Optional<Instant> lowerBoundForMatching) {
 		URI mockURI = URI.create(CommonConfig.getInstance().CUBE_MOCK_SERVICE_URI)
-			.resolve("ms/").resolve("fr");
-		HttpPost mockReqbuilder = new HttpPost(mockURI);
-		return getResponse(mockReqbuilder, fnReqResponse, TEXT_PLAIN).flatMap(response -> {
-			try {
-				LOGGER.debug("Response : ".concat(response));
-				return Optional.of(jsonMapper.readValue(response, FnResponse.class));
-			} catch (Exception e) {
-				LOGGER.error("Error while parsing json response from mock server", e);
-				return Optional.empty();
-			}
-		});
-	}
-
-	public Optional<FnResponse> getMockResponse(Event event) {
-		URI mockURI = URI.create(CommonConfig.getInstance().CUBE_MOCK_SERVICE_URI)
-			.resolve("ms/").resolve("mockFunction");
-		HttpPost mockReqbuilder = new HttpPost(mockURI);
+				.resolve("ms/").resolve("mockEvent");
+		UriBuilder uriBuilder = UriBuilder.fromUri(mockURI);
+		lowerBoundForMatching.ifPresent(lb -> uriBuilder.queryParam(Constants.LOWER_BOUND, lb.toEpochMilli()));
+		HttpPost mockReqbuilder = new HttpPost(uriBuilder.build());
 		CommonConfig.getInstance().authToken.ifPresent(
-			val -> mockReqbuilder.setHeader(io.cube.agent.Constants.AUTHORIZATION_HEADER, val));
+				val -> mockReqbuilder.setHeader(io.cube.agent.Constants.AUTHORIZATION_HEADER, val));
 		return getResponse(mockReqbuilder, event, APPLICATION_JSON).flatMap(response -> {
 			try {
 				LOGGER.debug("Response : ".concat(response));
-				return Optional.of(jsonMapper.readValue(response, FnResponse.class));
+				return Optional.of(jsonMapper.readValue(response, MockResponse.class));
 			} catch (Exception e) {
 				LOGGER.error("Error while parsing json response from mock server", e);
 				return Optional.empty();
@@ -150,53 +139,54 @@ public class CubeClient {
 		});
 	}
 
-	public Optional<Event> getMockThriftResponse(Event event) {
-		URI mockURI = URI.create(CommonConfig.getInstance().CUBE_MOCK_SERVICE_URI)
-			.resolve("ms/").resolve("thrift");
-		HttpPost mockReqbuilder = new HttpPost(mockURI);
-		return getResponse(mockReqbuilder, event, APPLICATION_JSON).flatMap(response -> {
-			try {
-				LOGGER.debug("Response : ".concat(response));
-				return Optional.of(jsonMapper.readValue(response, Event.class));
-			} catch (Exception e) {
-				LOGGER.error("Error while parsing json response from mock server", e);
-				return Optional.empty();
-			}
-		});
-	}
 
 	public Optional<String> startRecording(String customerid, String app, String instanceid,
-		String collection) {
+		String goldenName, String userId, String label, String templateSetVersion) {
 		URI recordURI = URI.create(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
 			.resolve("cs/").resolve("start/")
 			.resolve(customerid.concat("/")).resolve(app.concat("/"))
-			.resolve(instanceid.concat("/")).resolve(collection);
-		return getResponse(recordURI);
+			.resolve(instanceid.concat("/")).resolve(templateSetVersion);
+		HttpPost reqBuilder = createPostRequest(recordURI, "name", goldenName, "userId", userId,
+				"label", label);
+		return getResponse(reqBuilder);
 	}
 
-	public Optional<String> stopRecording(String customerid, String app, String collection) {
+	public Optional<String> stopRecording(String customerid, String app, String goldenName, String label) {
 		URI recordURI = URI.create(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
-			.resolve("cs/").resolve("stop/")
-			.resolve(customerid.concat("/")).resolve(app.concat("/"))
-			.resolve(collection);
-		return getResponse(recordURI);
+			.resolve("cs/").resolve("stopRecordingByNameLabel/");
+		UriBuilder uriBuilder = UriBuilder.fromUri(recordURI)
+				.queryParam("customerId", customerid)
+				.queryParam("app", app)
+				.queryParam("golden_name", goldenName)
+				.queryParam("label", label);
+
+		return getResponse(uriBuilder.build());
 	}
 
-	public Optional<String> initReplay(String customerid, String app, String instanceid,
-		String collection, String endpoint) {
-		URI recordURI = URI.create(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
-			.resolve("rs/").resolve("init/")
-			.resolve(customerid.concat("/")).resolve(app.concat("/"))
-			.resolve(collection);
-
-		HttpPost recordReqbuilder = new HttpPost(recordURI);
+	static public HttpPost createPostRequest(URI uri, String ... nameVals) {
+		HttpPost recordReqbuilder = new HttpPost(uri);
 		List<NameValuePair> form = new ArrayList<>();
-		form.add(new BasicNameValuePair("instanceid", instanceid));
-		form.add(new BasicNameValuePair("endpoint", endpoint));
+		for (int i=1; i<nameVals.length; i+=2) {
+			form.add(new BasicNameValuePair(nameVals[i-1], nameVals[i]));
+		}
 		UrlEncodedFormEntity entity = new UrlEncodedFormEntity(form, Consts.UTF_8);
 		recordReqbuilder.setEntity(entity);
 		CommonUtils.addTraceHeaders(recordReqbuilder, "POST");
 		recordReqbuilder.setHeader("Content-Type", APPLICATION_FORM_URL_ENCODED);
+		return recordReqbuilder;
+	}
+
+
+	public Optional<String> initReplay(String customerid, String app, String instanceid,
+									   String goldenName, String endpoint, String user) {
+		URI recordURI = URI.create(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.resolve("rs/").resolve("start/byGoldenName/")
+			.resolve(customerid.concat("/")).resolve(app.concat("/"))
+			.resolve(goldenName);
+
+		HttpPost recordReqbuilder = createPostRequest(recordURI, "instanceId", instanceid,
+				"endPoint", endpoint, "sampleRate", "0", "userId", user,
+				"startReplay", "false", "analyze", "false");
 
 		return getResponse(recordReqbuilder);
 	}

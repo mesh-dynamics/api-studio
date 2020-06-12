@@ -28,30 +28,37 @@ import io.md.dao.FnReqRespPayload;
 import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.dao.MDTraceInfo;
 import io.md.services.FnResponse;
+import io.md.services.MockResponse;
 import io.md.utils.CommonUtils;
 import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.FnKey;
+import io.md.services.Mocker;
+import io.md.utils.Utils;
 
 /*
  * Created by IntelliJ IDEA.
  * Date: 2019-05-06
  * @author Prasad M D
  */
-public class SimpleMocker implements Mocker {
+public class ProxyMocker implements Mocker {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(SimpleMocker.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ProxyMocker.class);
 	private static Map<Integer, Instant> fnMap = new ConcurrentHashMap<>();
 	private ObjectMapper jsonMapper;
 	private Gson gson;
 	CubeClient cubeClient;
 
-	public SimpleMocker(Gson gson)  {
+	public ProxyMocker(Gson gson)  {
 		jsonMapper = CubeObjectMapperProvider.getInstance();
 		cubeClient = new CubeClient(jsonMapper);
 		this.gson = gson;
 	}
 
 	@Override
+	public MockResponse mock(Event event, Optional<Instant> lowerBoundForMatching) throws MockerException {
+		return cubeClient.getMockResponseEvent(event, lowerBoundForMatching).orElse(emptyResponse);
+	}
+
 	public FnResponseObj mock(FnKey fnKey,
 		Optional<Instant> prevRespTS, Optional<Type> retType, Object... args) {
 		MDTraceInfo mdTraceInfo;
@@ -74,12 +81,13 @@ public class SimpleMocker implements Mocker {
 
 		FnReqRespPayload fnReqRespPayload = new FnReqRespPayload(Optional.of(Instant.now()),
 			args, null, null , null);
+		Optional<Instant> lowerBound = prevRespTS.isPresent() ? prevRespTS : Optional.ofNullable(fnMap.get(key));
 		Optional<Event> event = CommonUtils.createEvent(fnKey, mdTraceInfo, RunType.Replay,
-			Optional.ofNullable(prevRespTS.orElse(fnMap.get(key))), fnReqRespPayload);
+			Optional.empty(), fnReqRespPayload);
 
 		try {
-			return event.map(eve -> {
-				Optional<FnResponse> fnResponse = cubeClient.getMockResponse(eve);
+			return event.map(UtilException.rethrowFunction(eve -> {
+				Optional<FnResponse> fnResponse = Utils.mockResponseToFnResponse(mock(eve, lowerBound));
 
 				return fnResponse.map(resp -> {
 					//If multiple Solr docs are returned, we need to maintain the last timestamp
@@ -113,8 +121,7 @@ public class SimpleMocker implements Mocker {
 					catch (Exception e) {
 						LOGGER.error("func_signature :".concat(eve.apiPath)
 							.concat(" , trace_id : ").concat(eve.getTraceId()), e);
-						return new FnResponseObj(null, Optional.empty(), RetStatus.Success,
-							Optional.empty());
+						return emptyFnResponseObj;
 					}
 
 					return new FnResponseObj(retOrExceptionVal, resp.timeStamp, resp.retStatus,
@@ -123,23 +130,20 @@ public class SimpleMocker implements Mocker {
 					LOGGER.error(
 						"No Matching Response Received : trace_id : ".concat(eve.getTraceId())
 							.concat(" , func_signature : ".concat(eve.apiPath)));
-					return new FnResponseObj(null, Optional.empty(), RetStatus.Success,
-						Optional.empty());
+					return emptyFnResponseObj;
 				});
-			}).orElseGet(() -> {
+			})).orElseGet(() -> {
 				LOGGER.error("Not able to form an event : trace_id :".concat(traceId.orElse(" NA "))
 					.concat(" , func_signature : ".concat(fnKey.signature)));
-				return new FnResponseObj(null, Optional.empty(), RetStatus.Success,
-					Optional.empty());
+				return emptyFnResponseObj;
 			});
 		} catch (Exception ex) {
 			LOGGER.error("Exception occurred while mocking function! Function Key : " + fnKey);
 		}
-		return new FnResponseObj(null, Optional.empty(), RetStatus.Success,
-			Optional.empty());
+		return emptyFnResponseObj;
 	}
 
-	private Type getRetOrExceptionClass(FnResponse response, Type returnType) throws Exception {
+	static private Type getRetOrExceptionClass(FnResponse response, Type returnType) throws Exception {
 		if (response.retStatus == RetStatus.Success) {
 			return returnType;
 		} else {
@@ -148,5 +152,9 @@ public class SimpleMocker implements Mocker {
 					"Exception class not specified"));
 		}
 	}
+
+	static final MockResponse emptyResponse = new MockResponse(Optional.empty(), 0);
+	static final FnResponseObj emptyFnResponseObj = new FnResponseObj(null, Optional.empty(), RetStatus.Success,
+			Optional.empty());
 
 }

@@ -1,6 +1,7 @@
 package io.cube.agent;
 
 import java.lang.reflect.Constructor;
+import java.util.Optional;
 
 import org.apache.thrift.TBase;
 import org.apache.thrift.TDeserializer;
@@ -33,7 +34,9 @@ public class ThriftMocker {
 	}
 
 	public TBase mockThriftRequest(Event thriftRequestEvent) throws Exception {
-		Event event = cubeClient.getMockThriftResponse(thriftRequestEvent).orElseThrow(() ->
+		// TODO: change 2nd param below to lowerBound to support multiple matches for same function call
+		Event event = cubeClient.getMockResponseEvent(thriftRequestEvent, Optional.empty())
+				.flatMap(mr -> mr.response).orElseThrow(() ->
 			new RuntimeException("Unable to get a response from the mock server"));
 		String className = extractThriftClass(event.apiPath);
 		TDeserializer tDeserializer = new TDeserializer();

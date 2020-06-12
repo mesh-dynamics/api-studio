@@ -25,6 +25,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import io.md.constants.Constants;
 import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.utils.FnKey;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
@@ -51,10 +52,14 @@ class RecorderAndMockerTest {
 
     static final String CUSTID = "Test";
     static final String APPID = "Test";
-    static final String INSTANCEID = "Test";
+    static final String INSTANCEID_BASE = "Test";
+    static String INSTANCEID = "Test"; // non final, set differently for each test since recordings take 15s to stop
     static final String SERVICE = "ProdDiscount";
-    private static final String COLLECTION = "RecorderAndMockTest";
+    private static final String GOLDENNAME = "RecorderAndMockTest";
     private static final String ENDPOINT = "Dummy";
+    private static final String TESTUSER = "AgentTest";
+    private static final String TEMPLATEVERSION = "Dummy";
+
 
     static Mode mode;
 
@@ -65,17 +70,17 @@ class RecorderAndMockerTest {
     static Map<String, Double> disc2 = new HashMap<String, Double>();
     static Map<String, Double> disc3 = new HashMap<String, Double>();
     static Recorder recorder;
-    static Mocker mocker;
+    static ProxyMocker mocker;
     static {
         try {
             recorder = new SimpleHttpRecorder(gson);
-            mocker = new SimpleMocker(gson);
+            mocker = new ProxyMocker(gson);
         } catch (Exception e) {
             LOGGER.error("Unable to initialize recorder/mocker", e);
         }
-        disc1.put("Prod1", 0.50); disc1.put("Prod2", 0.50); disc1.put("Prod3", 0.5); disc1.put("Prod4", 0.5);
-        disc2.put("Prod1", 0.25); disc2.put("Prod2", 0.25); disc2.put("Prod3", 0.25); disc2.put("Prod4", 0.25);
-        disc3.put("Prod1", 0.10); disc3.put("Prod2", 0.20); disc3.put("Prod3", 0.30); disc3.put("Prod4", 0.4);
+        disc1.put("Prod0", 0.50); disc1.put("Prod1", 0.50); disc1.put("Prod2", 0.5); disc1.put("Prod3", 0.5);
+        disc2.put("Prod0", 0.25); disc2.put("Prod1", 0.25); disc2.put("Prod2", 0.25); disc2.put("Prod3", 0.25);
+        disc3.put("Prod0", 0.10); disc3.put("Prod1", 0.20); disc3.put("Prod2", 0.30); disc3.put("Prod3", 0.4);
     }
     static ProdDiscount prodDiscount1 = new ProdDiscount(disc1, "Half");
     static ProdDiscount prodDiscount2 = new ProdDiscount(disc2, "Quarter");
@@ -99,7 +104,7 @@ class RecorderAndMockerTest {
         final Random randomGen;
 
         // instrumented for mocking
-        Optional<Instant> resTimeStamp;
+        static Optional<Instant> resTimeStamp;
 
         static class ProdPrice {
             String productId;
@@ -114,10 +119,11 @@ class RecorderAndMockerTest {
 
         double discountedPrice(String productId, float price) {
 
-            if (discountedPriceFnKey == null) {
+            // always create a new key since INSTANCEID is no longer final
+//            if (discountedPriceFnKey == null) {
                 Method function = new Object(){}.getClass().getEnclosingMethod();
                 discountedPriceFnKey = new FnKey(CUSTID, APPID, INSTANCEID, SERVICE, function);
-            }
+//            }
 
             if (mode == Mode.Mock) {
                 FnResponseObj ret = mocker.mock(discountedPriceFnKey,
@@ -139,13 +145,15 @@ class RecorderAndMockerTest {
         }
 
         double discountedPrice(ProdPrice pp) {
-            if (discountedPriceFnKey2 == null) {
+
+            // always create a new key since INSTANCEID is no longer final
+//            if (discountedPriceFnKey2 == null) {
                 Method function = new Object(){}.getClass().getEnclosingMethod();
                 discountedPriceFnKey2 = new FnKey(CUSTID, APPID, INSTANCEID, SERVICE, function);
-            }
+//            }
 
             if (mode == Mode.Mock) {
-                FnResponseObj ret = mocker.mock(discountedPriceFnKey,
+                FnResponseObj ret = mocker.mock(discountedPriceFnKey2,
                         resTimeStamp, Optional.empty(), pp);
                 resTimeStamp = ret.timeStamp;
                 return (double) ret.retVal;
@@ -165,10 +173,12 @@ class RecorderAndMockerTest {
          * v@return
          */
         double discountedPriceRuntimeException(ProdPrice pp) {
-            if (discountedPriceRuntimeExceptionFnKey == null) {
+
+            // always create a new key since INSTANCEID is no longer final
+//            if (discountedPriceRuntimeExceptionFnKey == null) {
                 Method function = new Object(){}.getClass().getEnclosingMethod();
                 discountedPriceRuntimeExceptionFnKey = new FnKey(CUSTID, APPID, INSTANCEID, SERVICE, function);
-            }
+//            }
 
             if (mode == Mode.Mock) {
                 FnResponseObj ret = mocker.mock(discountedPriceRuntimeExceptionFnKey,
@@ -210,10 +220,12 @@ class RecorderAndMockerTest {
          * v@return
          */
         double discountedPriceTypedException(ProdPrice pp) throws PriceException {
-            if (discountedPriceTypedExceptionFnKey == null) {
+
+            // always create a new key since INSTANCEID is no longer final
+//            if (discountedPriceTypedExceptionFnKey == null) {
                 Method function = new Object(){}.getClass().getEnclosingMethod();
                 discountedPriceTypedExceptionFnKey = new FnKey(CUSTID, APPID, INSTANCEID, SERVICE, function);
-            }
+//            }
 
             if (mode == Mode.Mock) {
                 FnResponseObj ret = mocker.mock(discountedPriceTypedExceptionFnKey,
@@ -246,10 +258,11 @@ class RecorderAndMockerTest {
 
         String getPromoName() {
 
-            if (getPromoNameFnKey == null) {
+            // always create a new key since INSTANCEID is no longer final
+//            if (getPromoNameFnKey == null) {
                 Method function = new Object(){}.getClass().getEnclosingMethod();
                 getPromoNameFnKey = new FnKey(CUSTID, APPID, INSTANCEID, SERVICE, function);
-            }
+//            }
 
             if (mode == Mode.Mock) {
                 FnResponseObj ret = mocker.mock(getPromoNameFnKey,
@@ -285,8 +298,14 @@ class RecorderAndMockerTest {
 
     void testGetPromoName(ProdDiscount[] prodDiscounts) {
 
+        Long currentTime = Instant.now().toEpochMilli();
+        String label = Instant.now().toString();
+        INSTANCEID = INSTANCEID_BASE + "_Record_" + currentTime;
+        String replayInstanceId = INSTANCEID_BASE + "_Replay_" + currentTime;
+
         // start recording
-        cubeClient.startRecording(CUSTID, APPID, INSTANCEID, COLLECTION);
+        cubeClient.startRecording(CUSTID, APPID, INSTANCEID, GOLDENNAME, TESTUSER, label,
+                TEMPLATEVERSION);
 
         // set mode to record
         mode = Mode.Record;
@@ -301,14 +320,14 @@ class RecorderAndMockerTest {
 
 
         // stop recording
-        cubeClient.stopRecording(CUSTID, APPID, COLLECTION);
+        cubeClient.stopRecording(CUSTID, APPID, GOLDENNAME, label);
 
         // start replay
-        Optional<String> resp = cubeClient.initReplay(CUSTID, APPID, INSTANCEID, COLLECTION, ENDPOINT);
+        Optional<String> resp = cubeClient.initReplay(CUSTID, APPID, replayInstanceId, GOLDENNAME, ENDPOINT, TESTUSER);
         Optional<String> replayid = resp.flatMap(r -> {
             try {
                 Map<String, String> attrs = jsonMapper.readValue(r, Map.class);
-                return Optional.ofNullable(attrs.get("replayid"));
+                return Optional.ofNullable(attrs.get(Constants.REPLAY_ID_FIELD));
             } catch (Exception e) {
                 LOGGER.error("Error in reading json resp about Replay: " + r + " : " + e.getMessage());
                 return Optional.empty();
@@ -318,6 +337,8 @@ class RecorderAndMockerTest {
         if (!replayid.isPresent()) {
             fail("Replay cannot be inited or started");
         }
+
+        INSTANCEID = replayInstanceId; // set instance id to replay instance
 
         replayid.ifPresent(replayidv -> {
 
@@ -368,7 +389,7 @@ class RecorderAndMockerTest {
                                   boolean nullObj, int seqSize, ExceptionTestType testException) {
         return Arrays.stream(prodPrice).flatMap(pp -> {
             // call the same function multiple times
-            prodDiscount.resTimeStamp = Optional.empty();
+            // prodDiscount.resTimeStamp = Optional.empty();
             return IntStream.range(0, seqSize).mapToObj(i -> {
                 if (testException == ExceptionTestType.ExceptionRuntime) {
                     try {
@@ -397,8 +418,15 @@ class RecorderAndMockerTest {
 
     private void testFnMultiArgs(boolean asObj, boolean nullObj, int seqSize, ExceptionTestType testException) {
 
+        ProdDiscount.resTimeStamp = Optional.empty();
+
+        Long currentTime = Instant.now().toEpochMilli();
+        String label = Instant.now().toString();
+        INSTANCEID = INSTANCEID_BASE + "_Record_" + currentTime;
+        String replayInstanceId = INSTANCEID_BASE + "_Replay_" + currentTime;
+
         // start recording
-        cubeClient.startRecording(CUSTID, APPID, INSTANCEID, COLLECTION);
+        cubeClient.startRecording(CUSTID, APPID, INSTANCEID, GOLDENNAME, TESTUSER, label, TEMPLATEVERSION);
 
         // set mode to record
         mode = Mode.Record;
@@ -422,14 +450,14 @@ class RecorderAndMockerTest {
 
 
         // stop recording
-        cubeClient.stopRecording(CUSTID, APPID, COLLECTION);
+        cubeClient.stopRecording(CUSTID, APPID, GOLDENNAME, label);
 
         // start replay
-        Optional<String> resp = cubeClient.initReplay(CUSTID, APPID, INSTANCEID, COLLECTION, ENDPOINT);
+        Optional<String> resp = cubeClient.initReplay(CUSTID, APPID, replayInstanceId, GOLDENNAME, ENDPOINT, TESTUSER);
         Optional<String> replayid = resp.flatMap(r -> {
             try {
                 Map<String, String> attrs = jsonMapper.readValue(r, Map.class);
-                return Optional.ofNullable(attrs.get("replayid"));
+                return Optional.ofNullable(attrs.get(Constants.REPLAY_ID_FIELD));
             } catch (Exception e) {
                 LOGGER.error("Error in reading json resp about Replay: " + r + " : " + e.getMessage());
                 return Optional.empty();
@@ -439,6 +467,8 @@ class RecorderAndMockerTest {
         if(!replayid.isPresent()) {
             fail("Replay cannot be inited or started");
         }
+
+        INSTANCEID = replayInstanceId; // set instance id to replay instance
 
         replayid.ifPresent(replayidv -> {
 
@@ -504,7 +534,7 @@ class RecorderAndMockerTest {
     void testFnNullReturnVal() {
         // create ProdDiscount with null promo name
         ProdDiscount[] prodDiscounts = {new ProdDiscount(new HashMap<String, Double>(), null)};
-        testGetPromoName(prodDiscounts);
+           testGetPromoName(prodDiscounts);
     }
 
 

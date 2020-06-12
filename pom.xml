@@ -5,12 +5,13 @@
   <modelVersion>4.0.0</modelVersion>
     <groupId>io.cube</groupId>
     <artifactId>agent</artifactId>
-    <version>1.0.30</version>
+    <version>1.0.31</version>
     <properties>
         <version.java>8</version.java>
         <version.httpcomponents>4.5.8</version.httpcomponents>
         <version.gson>2.8.5</version.gson>
-        <version.mdcommons>1.0.68</version.mdcommons>
+        <version.mdcommons>1.0.79</version.mdcommons>
+        <version.jersey>2.27</version.jersey>
     </properties>
     <distributionManagement>
       <repository>
@@ -89,6 +90,12 @@
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <version>5.4.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.jersey.core</groupId>
+      <artifactId>jersey-common</artifactId>
+      <version>${version.jersey}</version>
       <scope>test</scope>
     </dependency>
 

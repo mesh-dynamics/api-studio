@@ -5,6 +5,7 @@ import java.util.regex.Pattern;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import io.md.dao.Event;
 import io.md.utils.FnKey;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 
@@ -19,7 +20,7 @@ public class TestCubeAgent {
             //SimpleMocker mocker = new SimpleMocker(gson);
             Class classzz = CubeClient.class;
             FnKey fnKey = new FnKey("ravivj", "movieinfo", "dev", "movieinfo"
-                    , classzz.getMethod("getMockResponse" , FnReqResponse.class));
+                    , classzz.getMethod("getMockResponseEvent", Event.class));
 //            recorder.record(fnKey , Optional.of("trace_3"), Optional.of("span_3") , Optional.of("parentSpan_3")
 //                    , "Simple Response 3" , new Object[] {"1" , "5"});
 
