@@ -124,15 +124,27 @@ steps:
       event:
         exclude:
         - pull_request
-notify:
+
+  - name: notify
     image: drillster/drone-email
-    host: smtp.office365.com
-    username: email.sender@meshdynamics.io
-    password: Welcome@md123
-    from: email.sender@meshdynamics.io
-    recipients: [ aakash.singhal@meshdynamics.io ]
+    settings:
+      host: smtp.office365.com
+      username: email.sender@meshdynamics.io
+      password: Welcome@md123
+      from: email.sender@meshdynamics.io
+      recipients: [ aakash.singhal@meshdynamics.io ]
     when:
-      status: [ changed, failure ]
+      status:
+      - failure
+# notify:
+#     image: drillster/drone-email
+#     host: smtp.office365.com
+#     username: email.sender@meshdynamics.io
+#     password: Welcome@md123
+#     from: email.sender@meshdynamics.io
+#     recipients: [ aakash.singhal@meshdynamics.io ]
+#     when:
+#       status: [ changed, failure ]
 
 trigger:
   branch:
