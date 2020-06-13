@@ -132,6 +132,7 @@ steps:
       username: email.sender@meshdynamics.io
       password: Welcome@md123
       from: email.sender@meshdynamics.io
+      recipients: [ developers@meshdynamics.io ]
     when:
       status:
       - failure
