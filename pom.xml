@@ -19,7 +19,7 @@
 			<name>maven-repository</name>
 			<url>file:///${project.basedir}/repo</url>
 		</repository> -->
-    		<repository>
+    		<!-- <repository>
           		<id>github-agent</id>
           		<name>GitHub OWNER Apache Maven Packages</name>
           		<url>https://maven.pkg.github.com/cube-io-corp/agent</url>
@@ -39,7 +39,7 @@
 			<name>GitHub CubeIO Apache Maven Packages</name>
 			<url>https://maven.pkg.github.com/cube-io-corp/interceptor-framework</url>
 		</repository>
-	</repositories>
+	</repositories> -->
   <!--  this is for having consistent jackson versions -->
   <dependencyManagement>
     <dependencies>
@@ -331,7 +331,7 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>commons</artifactId>
-			<version>1.0.79</version>      
+			<version>1.0.79</version>
 		</dependency>
 		<dependency>
 			<groupId>io.cube</groupId>
