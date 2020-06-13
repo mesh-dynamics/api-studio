@@ -15,6 +15,7 @@ CUBEIO_TAG=$DRONE_COMMIT-$DRONE_BRANCH
 CUBEUI_TAG=master-latest
 CUBEUI_BACKEND_TAG=master-latest
 MOVIEINFO_TAG=master-latest
+SOLR_URL=http://172.20.62.223:8983/solr/
 AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBtZXNoZHluYW1pY3MuaW8iLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwidHlwZSI6InBhdCIsImN1c3RvbWVyX2lkIjoxLCJpYXQiOjE1ODI4ODE2MjgsImV4cCI6MTg5ODI0MTYyOH0.P4DAjXyODV8cFPgObaULjAMPg-7xSbUsVJ8Ohp7xTQI"
 SOLR_CORE=cube" > apps/cube/config/temp.conf
 
@@ -67,7 +68,7 @@ call_replay() {
 	#Status Check
 	COUNT=0
 	while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ] && [ "$COUNT" != "30" ]; do
-		STATUS=$(curl -X GET $CUBE_ENDPOINT/api/rs/status/$REPLAY_ID -H "Authorization: Bearer $AUTH_TOKEN" | jq .status)
+		STATUS=$(curl -X GET $CUBE_ENDPOINT/api/rs/status/$REPLAY_ID -H "Authorization: Bearer $AUTH_TOKEN" | jq .status | tr -d '"')
 		sleep 20
 		COUNT=$((COUNT+1))
 	done
