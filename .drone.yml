@@ -132,19 +132,9 @@ steps:
       username: email.sender@meshdynamics.io
       password: Welcome@md123
       from: email.sender@meshdynamics.io
-      recipients: [ aakash.singhal@meshdynamics.io ]
     when:
       status:
       - failure
-# notify:
-#     image: drillster/drone-email
-#     host: smtp.office365.com
-#     username: email.sender@meshdynamics.io
-#     password: Welcome@md123
-#     from: email.sender@meshdynamics.io
-#     recipients: [ aakash.singhal@meshdynamics.io ]
-#     when:
-#       status: [ changed, failure ]
 
 trigger:
   branch:
