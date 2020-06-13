@@ -129,7 +129,7 @@ notify:
     host: smtp.office365.com
     username: email.sender@meshdynamics.io
     password: Welcome@md123
-    from: Welcome@md123
+    from: email.sender@meshdynamics.io
     when:
       status: [ changed, failure ]
 
