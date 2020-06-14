@@ -39,7 +39,18 @@ steps:
     image: spotify/alpine
     command:
     - ./test.sh
-
+  
+  - name: notify
+    image: drillster/drone-email
+    settings:
+      host: smtp.office365.com
+      username: email.sender@meshdynamics.io
+      password: Welcome@md123
+      from: email.sender@meshdynamics.io
+      recipients: [ a80f6254.meshdynamics.io@amer.teams.ms ]
+    when:
+      status:
+      - failure
 trigger:
   branch:
   - master
