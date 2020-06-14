@@ -73,6 +73,18 @@ steps:
     command:
     - ./test.sh
 
+  - name: notify
+    image: drillster/drone-email
+    settings:
+      host: smtp.office365.com
+      username: email.sender@meshdynamics.io
+      password: Welcome@md123
+      from: email.sender@meshdynamics.io
+      recipients: [ developers@meshdynamics.io ]
+    when:
+      status:
+      - failure
+
 trigger:
   branch:
   - master
