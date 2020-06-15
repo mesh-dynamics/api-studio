@@ -5,7 +5,7 @@
 
 	<groupId>io.cube</groupId>
 	<artifactId>md-jaxrs-egress-interceptor</artifactId>
-	<version>1.2.2</version>
+	<version>1.2.3</version>
 	<packaging>jar</packaging>
 
 	<name>jaxrs-egress-interceptor</name>
@@ -45,7 +45,7 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>agent</artifactId>
-			<version>1.0.29</version>
+			<version>1.0.31</version>
 		</dependency>
 	</dependencies>
 
