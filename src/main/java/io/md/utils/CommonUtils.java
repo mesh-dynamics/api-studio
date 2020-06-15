@@ -176,26 +176,25 @@ public class CommonUtils {
 	}
 
 
-	public static String getDFSuffixBasedOnAgentConf(String key) {
-		 Optional<String> app = fromEnvOrSystemProperties(Constants.MD_APP_PROP);
-		 if (app.isPresent() && app.get().equalsIgnoreCase("Cube")) {
+	public static String getDFSuffixBasedOnApp(String key, String app) {
+		 if (app != null && app.equalsIgnoreCase("Cube")) {
 		 	return key + "-df";
 		 } else {
 		 	return  key;
 		 }
 	}
 
-	public static String getDFSuffixBasedOnApp(String key, String app) {
-		if ("Cube".equalsIgnoreCase(app) && !key.endsWith("-df")) {
-			return key + "-df";
-		} else {
-				if (key.endsWith("-df")) {
-					return key.substring(0, key.length() - 3);
-				} else {
-					return key;
-				}
-		}
-	}
+//	public static String getDFSuffixBasedOnApp(String key, String app) {
+//		if ("Cube".equalsIgnoreCase(app) && !key.endsWith("-df")) {
+//			return key + "-df";
+//		} else {
+//				if (key.endsWith("-df")) {
+//					return key.substring(0, key.length() - 3);
+//				} else {
+//					return key;
+//				}
+//		}
+//	}
 
 /*	public static boolean isIntentToRecord() {
 		return getCurrentIntent().equalsIgnoreCase(Constants.INTENT_RECORD);

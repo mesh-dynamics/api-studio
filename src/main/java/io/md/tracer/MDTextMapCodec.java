@@ -23,12 +23,12 @@ public class MDTextMapCodec implements Codec<TextMap> {
 	/**
 	 * Key used to store serialized span context representation
 	 */
-	public static final String SPAN_CONTEXT_KEY = CommonUtils.getDFSuffixBasedOnAgentConf("md-trace-id");
+	public static String SPAN_CONTEXT_KEY = "md-trace-id";
 
 	/**
 	 * Key prefix used for baggage items
 	 */
-	public static final String BAGGAGE_KEY_PREFIX = CommonUtils.getDFSuffixBasedOnAgentConf("mdctx-");
+	public static String BAGGAGE_KEY_PREFIX = "mdctx-";
 
 	private final String contextKey;
 
@@ -46,6 +46,12 @@ public class MDTextMapCodec implements Codec<TextMap> {
 		this.baggagePrefix = builder.baggagePrefix;
 		this.objectFactory = builder.objectFactory;
 	}
+
+	public static void sufficKeysWithDF(String app) {
+		SPAN_CONTEXT_KEY = CommonUtils.getDFSuffixBasedOnApp(SPAN_CONTEXT_KEY, app);
+		BAGGAGE_KEY_PREFIX = CommonUtils.getDFSuffixBasedOnApp(BAGGAGE_KEY_PREFIX, app);
+	}
+
 
 	static JaegerSpanContext contextFromString(String value)
 		throws MalformedTracerStateStringException, EmptyTracerStateStringException {

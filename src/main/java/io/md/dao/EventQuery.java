@@ -263,5 +263,8 @@ public class EventQuery {
         return sortOrderAsc;
     }
 
+    public Optional<Instant> getTimestamp() {
+        return timestamp;
+    }
 
 }

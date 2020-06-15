@@ -11,6 +11,7 @@ import java.util.Optional;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateKey;
 import io.md.dao.Event;
+import io.md.dao.Event.EventType;
 import io.md.dao.EventQuery;
 
 
@@ -37,6 +38,10 @@ public abstract class AbstractDataStore implements DataStore {
 
     @Override
     public Optional<Event> getRespEventForReqEvent(Event reqEvent){
+        if (reqEvent.eventType == EventType.JavaRequest) {
+            // Request and response is same event for Java requests
+            return Optional.of(reqEvent);
+        }
         EventQuery.Builder builder = new EventQuery.Builder(reqEvent.customerId, reqEvent.app,
             Event.EventType.getResponseType(reqEvent.eventType));
         EventQuery eventQuery = builder.withCollection(reqEvent.getCollection())

@@ -6,6 +6,7 @@
 
 package io.md.services;
 
+import java.time.Instant;
 import java.util.Optional;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -18,13 +19,7 @@ import io.md.dao.Event;
  */
 public interface Mocker {
 
-    FnResponse mockFunction(Event event) throws MockerException;
-
-    Optional<Event> getResp(MultivaluedMap<String, String> queryParams, String path,
-                            MultivaluedMap<String, String> formParams,
-                            String customerId, String app, String instanceId,
-                            String service, String method, String body,
-                            MultivaluedMap<String, String> headers);
+    MockResponse mock(Event reqEvent, Optional<Instant> lowerBoundForMatching) throws MockerException;
 
     class MockerException extends Exception {
         public final String errorType;

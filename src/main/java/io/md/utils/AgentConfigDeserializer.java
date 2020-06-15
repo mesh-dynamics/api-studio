@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import io.md.dao.AgentConfig;
+import io.md.dao.agent.config.AgentConfig;
 import java.io.IOException;
 
 public class AgentConfigDeserializer extends StdDeserializer<AgentConfig> {

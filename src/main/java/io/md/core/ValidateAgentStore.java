@@ -1,13 +1,13 @@
 package io.md.core;
 
-import io.md.dao.AgentConfig;
-import io.md.dao.ConfigStore;
+import io.md.dao.agent.config.AgentConfig;
+import io.md.dao.agent.config.ConfigDAO;
 import org.apache.commons.lang3.Validate;
 
 public class ValidateAgentStore {
 
-  public static void validate(ConfigStore store) {
-    Validate.notBlank(store.version);
+  public static void validate(ConfigDAO store) {
+    //Validate.notBlank(store.version);
     Validate.notBlank(store.customerId);
     Validate.notBlank(store.app);
     Validate.notBlank(store.service);

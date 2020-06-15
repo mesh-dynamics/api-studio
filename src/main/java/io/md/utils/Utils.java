@@ -1,25 +1,25 @@
 package io.md.utils;
 
+import static io.md.dao.FnReqRespPayload.RetStatus.Success;
+
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.Charset;
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -41,13 +41,18 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import io.jaegertracing.internal.JaegerSpanContext;
 import io.md.constants.Constants;
 import io.md.core.Comparator;
+import io.md.dao.DataObj;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
+import io.md.dao.Event.RunType;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.RawPayload.RawPayloadEmptyException;
 import io.md.dao.RawPayload.RawPayloadProcessingException;
+import io.md.services.FnResponse;
+import io.md.services.MockResponse;
+import io.md.services.Mocker.MockerException;
 import io.opentracing.Span;
 
 public class Utils {
@@ -174,13 +179,14 @@ public class Utils {
 		return Optional.ofNullable(fieldMap.getFirst(fieldname));
 	}
 
+	// TODO: jsonMapper can be removed. This will need change in all the interceptors
 	public static Event createHTTPRequestEvent(String apiPath,
 		MultivaluedMap<String, String> queryParams,
 		MultivaluedMap<String, String> formParams,
 		MultivaluedMap<String, String> meta,
 		MultivaluedMap<String, String> hdrs, MDTraceInfo mdTraceInfo, byte[] body,
 		Optional<String> collection,
-		ObjectMapper jsonMapper, boolean isRecordedAtSource)
+		ObjectMapper jsonMapper, boolean dontCheckCollection)
 		throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
 		Optional<String> customerId = getFirst(meta, Constants.CUSTOMER_ID_FIELD);
 		Optional<String> app = getFirst(meta, Constants.APP_FIELD);
@@ -194,30 +200,20 @@ public class Utils {
 		Optional<String> method = getFirst(meta, Constants.METHOD_FIELD);
 		Optional<String> reqId = getFirst(meta, Constants.DEFAULT_REQUEST_ID);
 
-		if (customerId.isPresent() && app.isPresent() && service.isPresent() && (isRecordedAtSource
+		if (customerId.isPresent() && app.isPresent() && service.isPresent() && (dontCheckCollection
 			|| collection
 			.isPresent()) && runType.isPresent() && method.isPresent()) {
 
 			HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
 				formParams, method.get(), body , apiPath);
 
-			/*String payloadStr = null;
-			final Span span = CommonUtils.startClientSpan("reqPayload");
-			try (Scope scope = CommonUtils.activateSpan(span)) {
-				payloadStr = jsonMapper.writeValueAsString(httpRequestPayload);
-			} finally {
-				span.finish();
-			}*/
-
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
-				service.get(), instance.orElse(Constants.NOT_APPLICABLE), isRecordedAtSource ? Constants.NOT_APPLICABLE : collection.get(),
+				service.get(), instance.orElse(Constants.NOT_APPLICABLE), dontCheckCollection ? Constants.NOT_APPLICABLE : collection.get(),
 				mdTraceInfo, runType.get(), timestamp,
 				reqId.orElse(Constants.NOT_APPLICABLE),
 				apiPath, Event.EventType.HTTPRequest);
 			eventBuilder.setPayload(httpRequestPayload);
 			Event event = eventBuilder.createEvent();
-			//TODO keep this logic on cube end
-			//event.parseAndSetKey(config, comparator.getCompareTemplate());
 
 			return event;
 		} else {
@@ -226,6 +222,29 @@ public class Utils {
 
 	}
 
+
+	public static Event createHTTPRequestEvent(String apiPath,
+		MultivaluedMap<String, String> queryParams,
+		MultivaluedMap<String, String> formParams,
+		MultivaluedMap<String, String> hdrs,
+		MDTraceInfo mdTraceInfo, byte[] body,
+		String customerId, String app, String service, String instance,
+		RunType runType, String method, String reqId)
+		throws Event.EventBuilder.InvalidEventException {
+
+			HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
+				formParams, method, body , apiPath);
+
+			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId, app,
+				service, instance, Constants.NOT_APPLICABLE,
+				mdTraceInfo, runType, Optional.empty(),
+				reqId, apiPath, Event.EventType.HTTPRequest);
+			eventBuilder.setPayload(httpRequestPayload);
+			Event event = eventBuilder.createEvent();
+			return event;
+	}
+
+	// TODO: This will go away once we remove storeSingleReqResp from CubeStore
 	// this is server side version, used by RealMocker
 	public static Event createHTTPRequestEvent(String apiPath, Optional<String> reqId,
 		MultivaluedMap<String, String> queryParams,
@@ -236,7 +255,9 @@ public class Utils {
 		Optional<Event.RunType> runType, Optional<String> customerId,
 		Optional<String> app,
 		Comparator comparator)
-		throws JsonProcessingException, EventBuilder.InvalidEventException {
+		throws EventBuilder.InvalidEventException {
+
+
 
 		HTTPRequestPayload httpRequestPayload;
 		// We treat empty body ("") as null
@@ -438,4 +459,115 @@ public class Utils {
 	    return sb.toString();
 	}
 
+	static public Optional<FnResponse> mockResponseToFnResponse(MockResponse mockResponse)
+		throws MockerException {
+		return mockResponse.response.map(UtilException.rethrowFunction(retEvent -> {
+			try {
+				return new FnResponse(
+					retEvent.payload.getValAsString(Constants.FN_RESPONSE_PATH),
+					Optional.of(retEvent.timestamp),
+					Success, Optional.empty(),
+					mockResponse.numResults > 1);
+			} catch (DataObj.PathNotFoundException e) {
+				LOGGER.error(Utils.createLogMessasge(
+					Constants.API_PATH_FIELD, retEvent.apiPath), e);
+				throw new MockerException(Constants.JSON_PARSING_EXCEPTION,
+					"Unable to find response path in json ");
+			}
+		}));
+	}
+
+	public static Event createRequestMockNew(String path, MultivaluedMap<String, String> formParams,
+		String customerId, String app, String instanceId, String service,
+		String method, String body,
+		MultivaluedMap<String, String> headers, MultivaluedMap<String, String> queryParams) throws EventBuilder.InvalidEventException, JsonProcessingException {
+		// At the time of mock, our lua filters don't get deployed, hence no request id is generated
+		// we can generate a new request id here in the mock service
+		String requestId = service.concat("-mock-").concat(String.valueOf(UUID.randomUUID()));
+
+		MultivaluedMap<String, String> meta = new MultivaluedHashMap<>();
+
+		setSpanTraceIDParentSpanInMeta(meta, headers, app);
+		Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
+		Optional<String> spanId = getFirst(meta, Constants.DEFAULT_SPAN_FIELD);
+		Optional<String> parentSpanId = getFirst(meta, Constants.DEFAULT_PARENT_SPAN_FIELD);
+		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId.orElse(generateTraceId()) ,
+			spanId.orElse("NA") , parentSpanId.orElse("NA"));
+
+		byte[] bodyBytes = (body != null && (!body.isEmpty())) ?
+			body.getBytes(StandardCharsets.UTF_8) : null;
+
+		return createHTTPRequestEvent(path, queryParams, formParams, headers, mdTraceInfo,
+			bodyBytes, customerId, app, service, instanceId, RunType.Replay, method, requestId);
+	}
+
+
+	static private void setSpanTraceIDParentSpanInMeta(MultivaluedMap<String, String> meta, MultivaluedMap<String, String> headers,
+			String app) {
+	    String mdTrace = headers.getFirst(CommonUtils.getDFSuffixBasedOnApp(Constants.MD_TRACE_FIELD, app));
+	    if (mdTrace != null && !mdTrace.equals("")) {
+	        String[] parts = decodedValue(mdTrace).split(":");
+	        if (parts.length != 4) {
+	            LOGGER.warn("trace id should have 4 parts but found: " + parts.length);
+	            return;
+	        } else {
+	            String traceId = parts[0];
+	            if (traceId.length() <= 32 && traceId.length() >= 1) {
+	                meta.putSingle(Constants.DEFAULT_SPAN_FIELD, Long.toHexString((new BigInteger(parts[1], 16)).longValue()));
+	                meta.putSingle(Constants.DEFAULT_TRACE_FIELD,
+		                convertTraceId(high(parts[0]), (new BigInteger(parts[0], 16)).longValue()));
+	            } else {
+	                LOGGER.error("Trace id [" + traceId + "] length is not within 1 and 32");
+	            }
+	        }
+	    } else if ( headers.getFirst(Constants.DEFAULT_TRACE_FIELD) != null ) {
+	        meta.putSingle(Constants.DEFAULT_TRACE_FIELD, headers.getFirst(Constants.DEFAULT_TRACE_FIELD));
+	        if ( headers.getFirst(Constants.DEFAULT_SPAN_FIELD) != null) {
+	            meta.putSingle(Constants.DEFAULT_SPAN_FIELD, decodedValue(headers.getFirst(Constants.DEFAULT_SPAN_FIELD)));
+	        }
+	    } else {
+	        LOGGER.warn("Neither default not md trace id header found to the mock sever request");
+	    }
+
+	    if (headers.getFirst(CommonUtils.getDFSuffixBasedOnApp(Constants.MD_BAGGAGE_PARENT_SPAN, app)) != null ) {
+	        meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(headers.getFirst(Constants.MD_BAGGAGE_PARENT_SPAN)));
+	    } else if (headers.getFirst(Constants.DEFAULT_BAGGAGE_PARENT_SPAN) != null ) {
+	        meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(headers.getFirst(Constants.DEFAULT_BAGGAGE_PARENT_SPAN)));
+	    } else {
+	        LOGGER.warn("Neither default not md baggage parent span id header found to the mock sever request");
+	    }
+	}
+
+	static private String convertTraceId(long traceIdHigh, long traceIdLow) {
+	    if (traceIdHigh == 0L) {
+	        return Long.toHexString(traceIdLow);
+	    }
+	    final String hexStringHigh = Long.toHexString(traceIdHigh);
+	    final String hexStringLow = Long.toHexString(traceIdLow);
+	    if (hexStringLow.length() < 16) {
+	        // left pad low trace id with '0'.
+	        // In theory, only 12.5% of all possible long values will be padded.
+	        // In practice, using Random.nextLong(), only 6% will need padding
+	        return hexStringHigh + "0000000000000000".substring(hexStringLow.length()) + hexStringLow;
+	    }
+	    return hexStringHigh + hexStringLow;
+	}
+
+	static private long high(String hexString) {
+	    if (hexString.length() > 16) {
+	        int highLength = hexString.length() - 16;
+	        String highString = hexString.substring(0, highLength);
+	        return (new BigInteger(highString, 16)).longValue();
+	    } else {
+	        return 0L;
+	    }
+	}
+
+	static private String decodedValue(String value) {
+	    try {
+	        return URLDecoder.decode(value, "UTF-8");
+	    } catch (UnsupportedEncodingException var3) {
+	        return value;
+	    }
+	}
 }

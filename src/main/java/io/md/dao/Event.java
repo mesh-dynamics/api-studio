@@ -161,6 +161,14 @@ public class Event {
 		return "";
 	}
 
+	public String getSpanId() {
+		return spanId;
+	}
+
+	public String getParentSpanId() {
+		return parentSpanId;
+	}
+
 	public enum EventType {
 		HTTPRequest,
 		HTTPResponse,
@@ -175,7 +183,8 @@ public class Event {
 			switch (sourceType) {
 				case JavaRequest:
 				case JavaResponse:
-					return requireResponseType ? JavaResponse : JavaRequest;
+					// For java, the response is stored in the request event itself
+					return requireResponseType ? JavaRequest : JavaRequest;
 				case ThriftRequest:
 				case ThriftResponse:
 					return requireResponseType ? ThriftResponse : ThriftRequest;

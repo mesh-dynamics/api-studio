@@ -22,7 +22,7 @@ public class FnResponse {
     final public FnReqRespPayload.RetStatus retStatus;
     @JsonProperty("exceptionType")
     final public Optional<String> exceptionType;
-    @JsonProperty("multipleResults")
+    @JsonProperty("numResults")
     final public boolean multipleResults;
 
     // for jackson deserialization
