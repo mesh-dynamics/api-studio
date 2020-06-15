@@ -2,6 +2,10 @@ package com.cubeui.backend.web.external;
 
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.service.CubeServerService;
+import io.md.core.ConfigApplicationAcknowledge;
+import io.md.core.ValidateAgentStore;
+import io.md.dao.agent.config.AgentConfigTagInfo;
+import io.md.dao.agent.config.ConfigDAO;
 import io.md.dao.DefaultEvent;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
@@ -121,5 +125,32 @@ public class CubeStoreController {
     @PostMapping("/resumeRecording/{recordingId}")
     public  ResponseEntity resumeRecordingByNameLabel(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId) {
         return  cubeServerService.fetchPostResponse(request, postBody);
+    }
+
+    @PostMapping("/setCurrentAgentConfigTag")
+    public ResponseEntity setAgentConfigTag(HttpServletRequest request, @RequestBody AgentConfigTagInfo postBody) {
+        validation.validateCustomerName(request, postBody.customerId);
+        return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
+    }
+
+    @PostMapping("/storeAgentConfig")
+    public ResponseEntity storeAgentConfig(HttpServletRequest request, @RequestBody ConfigDAO postBody) {
+        validation.validateCustomerName(request,postBody.customerId);
+        return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
+    }
+
+    @GetMapping("/fetchAgentConfig/{customerId}/{app}/{service}/{instanceId}")
+    public ResponseEntity fetchAgentConfig(HttpServletRequest request, @RequestBody Optional<String> getBody,
+            @PathVariable String customerId, @PathVariable String app, @PathVariable String service,
+            @PathVariable String instanceId) {
+        validation.validateCustomerName(request, customerId);
+        return cubeServerService.fetchGetResponse(request, getBody);
+    }
+
+    @PostMapping("/ackConfigApplication")
+    public ResponseEntity acknowledgeConfigApplication(HttpServletRequest request,
+            @RequestBody ConfigApplicationAcknowledge postBody) {
+        validation.validateCustomerName(request,postBody.customerId);
+        return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 }
