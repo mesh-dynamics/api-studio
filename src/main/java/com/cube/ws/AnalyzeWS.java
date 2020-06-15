@@ -677,17 +677,20 @@ public class AnalyzeWS {
 		                .flatMap(rrstore::getRequestEvent);
 	                replayedRequest = replayedRequestEvent.map(e -> e.getPayloadAsJsonString(true));
 	                replayReqTime = replayedRequestEvent.map(e -> e.timestamp.toEpochMilli());
+                  List<Comparator.Diff> responseCompDiffList =
+                      matchRes.respCompareRes.diffs.size() > config.getPathsToKeepLimit()
+                          ?  matchRes.respCompareRes.diffs.subList(0, (int)config.getPathsToKeepLimit())
+                      : matchRes.respCompareRes.diffs;
 
 	                try {
-		                respCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes
-			                .respCompareRes.diffs));
+		                respCompDiff = Optional.of(jsonMapper.writeValueAsString(responseCompDiffList));
 		                reqCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes
 			                .reqCompareRes.diffs));
 	                } catch (JsonProcessingException e) {
 		                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 			                "Unable to convert diff to json string")), e);
 	                }
-	                List<String > pathsToKeep = getPathsToKeep(matchRes.respCompareRes.diffs);
+	                List<String > pathsToKeep = getPathsToKeep(responseCompDiffList);
 
 	                Optional<Event> recordResponseEvent = matchRes.recordReqId.flatMap(rrstore::getResponseEvent);
                   Optional<ConvertEventPayloadResponse> convertRecordResponse = recordResponseEvent.map(e ->
@@ -745,11 +748,7 @@ public class AnalyzeWS {
 
     private List<String> getPathsToKeep(List<Comparator.Diff> diffs) {
       List<String> pathsToKeep = new ArrayList<>();
-      long pathsToKeepLimit = config.getPathsToKeepLimit();
       for(Comparator.Diff diff: diffs) {
-        if (pathsToKeep.size() == pathsToKeepLimit) {
-          return pathsToKeep;
-        }
         if(diff.path.contains("body")) {
           pathsToKeep.add(diff.path);
         }
