@@ -6,6 +6,9 @@ const logger = require('electron-log');
 const path = require('path');
 autoUpdater.autoDownload = true 
 
+// TODO: Add daily reminder for installing update 
+// manually if the window is not closed
+
 let mainWindow;
 
 function createWindow () {
