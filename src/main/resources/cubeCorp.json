@@ -95,7 +95,7 @@
           "testConfigs": [
             {
               "testConfigName": "MovieInfo-List",
-              "serviceName": "List",
+              "services": ["List"],
               "paths": [
                 "minfo/listmovies",
                 "minfo/liststores"
@@ -306,7 +306,7 @@
           "testConfigs": [
             {
               "testConfigName": "Cube-Analyze/Retrieval",
-              "serviceName": "Analyze/Retrieval",
+              "services": ["Analyze/Retrieval"],
               "paths": [
                 "/as/timelineres/*",
                 "/as/analysisResByPath/*"
@@ -450,7 +450,7 @@
           "testConfigs": [
             {
               "testConfigName": "Jersey 1.19 Demo",
-              "serviceName": "EmpService",
+              "services": ["EmpService"],
               "paths": [],
               "test_virtualized_services": ["Department"],
               "test_intermediate_services": []
@@ -483,7 +483,7 @@
           "testConfigs": [
             {
               "testConfigName": "CourseApp",
-              "serviceName": "course1",
+              "services": ["course1"],
               "paths": [],
               "test_virtualized_services": ["Student"],
               "test_intermediate_services": []
@@ -581,7 +581,7 @@
           "testConfigs": [
             {
               "testConfigName": "MovieInfo-List",
-              "serviceName": "List",
+              "services": ["List"],
               "paths": [
                 "minfo/listmovies",
                 "minfo/liststores"
