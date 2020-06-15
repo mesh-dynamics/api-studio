@@ -36,6 +36,7 @@ import io.md.dao.MDTraceInfo;
 import io.md.dao.RecordOrReplay;
 import io.md.dao.ReqRespMatchResult;
 import io.md.services.DataStore.TemplateNotFoundException;
+import io.md.utils.CommonUtils;
 import io.md.utils.UtilException;
 import io.md.utils.Utils;
 
@@ -331,15 +332,15 @@ public class RealMocker implements Mocker {
         MultivaluedMap<String, String> meta = new MultivaluedHashMap<>();
         meta.putSingle(Constants.SERVICE_FIELD, service);
         meta.putSingle(Constants.INSTANCE_ID_FIELD, instanceId);
-        setSpanTraceIDParentSpanInMeta(meta, headers);
+        setSpanTraceIDParentSpanInMeta(meta, headers, app);
         return Utils.createHTTPRequestEvent(path, requestId, queryParams, formParams, meta, headers,
             method, body, Optional.of(replayId), Instant.now(), Optional.of(Event.RunType.Replay), Optional.of(customerId),
             Optional.of(app), comparator);
 
     }
 
-    static private void setSpanTraceIDParentSpanInMeta(MultivaluedMap<String, String> meta, MultivaluedMap<String, String> headers) {
-        String mdTrace = headers.getFirst(Constants.MD_TRACE_FIELD);
+    static private void setSpanTraceIDParentSpanInMeta(MultivaluedMap<String, String> meta, MultivaluedMap<String, String> headers, String app) {
+        String mdTrace = headers.getFirst(CommonUtils.getDFSuffixBasedOnApp(Constants.MD_TRACE_FIELD, app));
         if (mdTrace != null && !mdTrace.equals("")) {
             String[] parts = decodedValue(mdTrace).split(":");
             if (parts.length != 4) {
@@ -363,7 +364,7 @@ public class RealMocker implements Mocker {
             LOGGER.warn("Neither default not md trace id header found to the mock sever request");
         }
 
-        if (headers.getFirst(Constants.MD_BAGGAGE_PARENT_SPAN) != null ) {
+        if (headers.getFirst(CommonUtils.getDFSuffixBasedOnApp(Constants.MD_BAGGAGE_PARENT_SPAN, app)) != null ) {
             meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(headers.getFirst(Constants.MD_BAGGAGE_PARENT_SPAN)));
         } else if (headers.getFirst(Constants.DEFAULT_BAGGAGE_PARENT_SPAN) != null ) {
             meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(headers.getFirst(Constants.DEFAULT_BAGGAGE_PARENT_SPAN)));

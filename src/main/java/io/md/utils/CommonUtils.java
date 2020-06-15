@@ -11,6 +11,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -172,6 +173,28 @@ public class CommonUtils {
 		currentIntent.ifPresent(
 			intent -> LOGGER.debug("Intent from trace : ".concat(intent)));
 		return currentIntent;
+	}
+
+
+	public static String getDFSuffixBasedOnAgentConf(String key) {
+		 Optional<String> app = fromEnvOrSystemProperties(Constants.MD_APP_PROP);
+		 if (app.isPresent() && app.get().equalsIgnoreCase("Cube")) {
+		 	return key + "-df";
+		 } else {
+		 	return  key;
+		 }
+	}
+
+	public static String getDFSuffixBasedOnApp(String key, String app) {
+		if ("Cube".equalsIgnoreCase(app) && !key.endsWith("-df")) {
+			return key + "-df";
+		} else {
+				if (key.endsWith("-df")) {
+					return key.substring(0, key.length() - 3);
+				} else {
+					return key;
+				}
+		}
 	}
 
 /*	public static boolean isIntentToRecord() {
@@ -434,7 +457,12 @@ public class CommonUtils {
 
 	public static MDTraceInfo mdTraceInfoFromContext() {
 		return new MDTraceInfo(getCurrentTraceId().orElse(null)
-			, getCurrentSpanId().orElse(null), getParentSpanId().orElse(null));
+			, getCurrentSpanId().orElse(null), getParentSpanId().orElse(null), getBaggageItems().orElse(null));
+	}
+
+	private static Optional<Iterable<Entry<String, String>>> getBaggageItems() {
+		return getCurrentContext()
+				.map(jaegerSpanContext -> jaegerSpanContext.baggageItems());
 	}
 
 	public static MDTraceInfo getDefaultTraceInfo() {

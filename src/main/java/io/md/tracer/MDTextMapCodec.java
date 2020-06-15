@@ -15,6 +15,7 @@ import io.jaegertracing.internal.exceptions.MalformedTracerStateStringException;
 import io.jaegertracing.internal.exceptions.TraceIdOutOfBoundException;
 import io.jaegertracing.internal.propagation.PrefixedKeys;
 import io.jaegertracing.spi.Codec;
+import io.md.utils.CommonUtils;
 import io.opentracing.propagation.TextMap;
 
 public class MDTextMapCodec implements Codec<TextMap> {
@@ -22,12 +23,12 @@ public class MDTextMapCodec implements Codec<TextMap> {
 	/**
 	 * Key used to store serialized span context representation
 	 */
-	public static final String SPAN_CONTEXT_KEY = "md-trace-id";
+	public static final String SPAN_CONTEXT_KEY = CommonUtils.getDFSuffixBasedOnAgentConf("md-trace-id");
 
 	/**
 	 * Key prefix used for baggage items
 	 */
-	public static final String BAGGAGE_KEY_PREFIX = "mdctx-";
+	public static final String BAGGAGE_KEY_PREFIX = CommonUtils.getDFSuffixBasedOnAgentConf("mdctx-");
 
 	private final String contextKey;
 
