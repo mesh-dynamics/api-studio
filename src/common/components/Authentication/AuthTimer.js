@@ -11,16 +11,16 @@ const AuthTimer = (props) => {
         auth: { 
             accessViolation,
             user: { 
-                expires_in 
+                expires_in // this is in seconds
             }
         }
     } = props;
 
     const warningIntervalCount = 60 // in seconds;
 
-    // expires_in is set 604800. Take of 1 min (60000 ms) off it
-    // to display the warning modal.
-    const idleTimeLimit = expires_in - (warningIntervalCount * 1000);
+    // expires_in is set 604800. Take of 1 min (60 s) off it
+    // to display the warning modal and convert to milliseconds
+    const idleTimeLimit = (expires_in - warningIntervalCount) * 1000; 
 
     const [showLogoutWarning, setShowLogoutWarning] = useState(false);
 
