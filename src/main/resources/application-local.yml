@@ -43,7 +43,7 @@ security:
   jwt:
     token:
       secret-key: "dev-secret"
-      expire-length: 604800
+      expire-length: 1209600
 logging:
   level:
     org.springframework.web: INFO
