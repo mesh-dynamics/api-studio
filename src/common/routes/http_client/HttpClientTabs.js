@@ -356,9 +356,11 @@ class HttpClientTabs extends Component {
         this.setState({ tabs: newTabs, selectedTabKey: newTabs[nextSelectedIndex].id });
     };
 
-    addTab(evt, reqObject, app) {
+    addTab(evt, reqObject, givenApp) {
         const tabId = _.uniqueId('key_');
         const requestId = _.uniqueId('request_');
+        const { app } = this.state;
+        const appAvailable =  givenApp ? givenApp : app ? app : "";
         if(!reqObject) {
             reqObject = {
                 httpMethod: "get",
@@ -386,7 +388,7 @@ class HttpClientTabs extends Component {
                 ...reqObject
             }],
             selectedTabKey: tabId,
-            app: app
+            app: appAvailable
         });
     }
 
