@@ -5,7 +5,7 @@ record() {
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H "Authorization: Bearer $AUTH_TOKEN" \
   -H 'cache-control: no-cache' \
-  -d "name=jersy119-$DRONE_BUILD_NUMBER&userId=CubeCorp" | jq .id | tr -d '"')
+  -d "name=jersy119-$DRONE_BUILD_NUMBER&userId=CubeCorp&label=$(date +%s)" | jq .id | tr -d '"')
   echo $RECORDING_ID
 }
 
