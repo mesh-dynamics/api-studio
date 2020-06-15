@@ -45,10 +45,10 @@ import io.opentracing.SpanContext;
 
 /**
  * Priority is to specify in which order the filters are to be executed. Lower the order, early the
- * filter is executed. We want Client filter to execute before Tracing Filter.
+ * filter is executed. We want Client filter to execute before Mock and Tracing Filter.
  **/
 @Provider
-@Priority(4501)
+@Priority(value = 4500)
 public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFilter, ClientResponseFilter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(MDClientLoggingFilter.class);
