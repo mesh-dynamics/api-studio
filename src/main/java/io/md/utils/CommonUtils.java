@@ -183,19 +183,7 @@ public class CommonUtils {
 		 	return  key;
 		 }
 	}
-
-//	public static String getDFSuffixBasedOnApp(String key, String app) {
-//		if ("Cube".equalsIgnoreCase(app) && !key.endsWith("-df")) {
-//			return key + "-df";
-//		} else {
-//				if (key.endsWith("-df")) {
-//					return key.substring(0, key.length() - 3);
-//				} else {
-//					return key;
-//				}
-//		}
-//	}
-
+	
 /*	public static boolean isIntentToRecord() {
 		return getCurrentIntent().equalsIgnoreCase(Constants.INTENT_RECORD);
 	}
