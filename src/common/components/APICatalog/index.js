@@ -4,3 +4,4 @@ export {default as APICatalogAPIView} from "./APICatalogAPIView";
 export {default as APICatalogLanding} from "./APICatalogLanding";
 export {default as APICatalogSearchResults} from "./APICatalogSearchResults";
 export {default as APICatalogServiceGraph} from "./APICatalogServiceGraph";
+export {default as APICatalogDiff} from "./APICatalogDiff";

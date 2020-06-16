@@ -9,7 +9,7 @@ class APICatalogAPIView extends Component {
     }
 
     render() {
-        const {selectedService, selectedApiPath, apiCount, apiTrace,app} = this.props;
+        const {selectedService, selectedApiPath, apiCount, apiTrace,app, createCompare, pinCount, selectedInstance} = this.props;
         
         return (
             <div style={{display: "flex", flexDirection: "column" }}>
@@ -17,13 +17,21 @@ class APICatalogAPIView extends Component {
                     <span style={{fontWeight: 300}}>API</span>
                     <p><b>{selectedApiPath}</b></p>
                 </div>
-                <div className="api-catalog-bordered-box width-50" style={{minHeight: "250px"}}>
+                <div className="api-catalog-bordered-box width-50">
                     <p className="api-catalog-box-title">FROM SERVICE</p>
                     <APICountTable apiCount={apiCount}/>
                 </div>
                 <div className="api-catalog-bordered-box">
                     <p className="api-catalog-box-title">REQUESTS</p>
-                    <APIRequestsTable selectedService={selectedService} selectedApiPath={selectedApiPath} apiTrace={apiTrace} app={app}/>
+                    <APIRequestsTable 
+                        selectedService={selectedService} 
+                        selectedApiPath={selectedApiPath} 
+                        apiTrace={apiTrace} 
+                        app={app} 
+                        createCompare={createCompare}
+                        pinCount={pinCount} 
+                        selectedInstance={selectedInstance}
+                    />
                 </div>
             </div>
         )

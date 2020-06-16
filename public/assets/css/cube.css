@@ -4501,7 +4501,7 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
     flex: 1;
     position: relative;
     overflow: auto !important;
-    height: calc(100vh - 36px);
+    height: 100vh;
     background: #FFFFFF;
 }
 .content-wrapper {
