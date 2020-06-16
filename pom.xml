@@ -10,7 +10,7 @@
         <version.java>8</version.java>
         <version.httpcomponents>4.5.8</version.httpcomponents>
         <version.gson>2.8.5</version.gson>
-        <version.mdcommons>1.0.79</version.mdcommons>
+        <version.mdcommons>1.0.81</version.mdcommons>
         <version.jersey>2.27</version.jersey>
     </properties>
     <distributionManagement>

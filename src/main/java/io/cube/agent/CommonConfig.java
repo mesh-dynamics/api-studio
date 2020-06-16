@@ -41,6 +41,7 @@ import io.cube.agent.samplers.SamplerConfig;
 import io.cube.agent.samplers.SimpleSampler;
 import io.md.constants.Constants;
 import io.md.tracer.MDGlobalTracer;
+import io.md.tracer.MDTextMapCodec;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
 
@@ -70,7 +71,10 @@ public class CommonConfig {
 
 	public static String intent;
 
-	public String customerId, app, instance, serviceName;
+	public String customerId, instance, serviceName;
+
+	public static String app;
+
 	public final Optional<String> authToken;
 	public final Optional<EncryptionConfig> encryptionConfig;
 	public final Optional<SamplerConfig> samplerConfig;
@@ -170,6 +174,7 @@ public class CommonConfig {
 		}
 		singleInstance = new AtomicReference<>();
 		singleInstance.set(config);
+		MDTextMapCodec.suffixKeysWithDF(app);
 	}
 
 	private CommonConfig() throws Exception {
