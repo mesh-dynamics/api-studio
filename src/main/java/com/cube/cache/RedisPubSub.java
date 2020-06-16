@@ -76,9 +76,13 @@ public class RedisPubSub extends JedisPubSub {
 							replay.status = ReplayStatus.Error;
 						}
 						jedis.del(statusKey);
-						rrStore.saveReplay(replay);
+					} else {
+						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+							"No status key in redis, setting status to error"
+							, Constants.REPLAY_ID_FIELD, replay.replayId)));
+						replay.status = ReplayStatus.Error;
 					}
-
+					rrStore.saveReplay(replay);
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
