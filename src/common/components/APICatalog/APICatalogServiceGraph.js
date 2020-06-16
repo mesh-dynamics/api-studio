@@ -8,7 +8,7 @@ class APICatalogServiceGraph extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            showGraph: true
+            showGraph: false,
         }
     }
 

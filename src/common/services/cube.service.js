@@ -359,7 +359,7 @@ const fetchAPITraceData = async (app, startTime, endTime, selectedService, selec
     }
 }
 
-const fetchAPIEventData = async (app, reqIds, eventTypes) => {
+const fetchAPIEventData = async (app, reqIds, eventTypes=[]) => {
     const user = JSON.parse(localStorage.getItem('user'));
 
     let apiEventURL = `${config.recordBaseUrl}/getEvents`;

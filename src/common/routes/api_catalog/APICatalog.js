@@ -5,7 +5,8 @@ import {
     APICatalogAPIView, 
     APICatalogLanding, 
     APICatalogSearchResults,
-    APICatalogServiceGraph
+    APICatalogServiceGraph,
+    APICatalogDiff,
 } from "../../components/APICatalog/"
 import {
     Route,
@@ -108,15 +109,16 @@ class APICatalog extends Component {
           apiTrace:{},
           apiCount: 0,
 
-          currentPage: "landing",
+          //currentPage: "landing",
+
         });
 
         this.setAPIFacets(nextProps.cube.selectedApp, "", "", "", startTime, endTime);
 
-        history.push({
-          pathname: "/api_catalog",
-          search: `?app=${nextProps.cube.selectedApp}`
-        });
+        // history.push({
+        //   pathname: "/api_catalog",
+        //   search: `?app=${nextProps.cube.selectedApp}`
+        // });
       }
     }
 
@@ -341,15 +343,14 @@ class APICatalog extends Component {
                         instances={instances}
                     />
                 </div>
-                <div className="content-wrapper" style={{width:"100%"}}>
-                    {/* <APICatalogDiff/> */}
+                <div className="content-wrapper" style={{width:"100%", overflow: "scroll"}}>
                     <div>
                         <div className="vertical-middle inline-block">
                             <svg height="21"  viewBox="0 0 22 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M14.6523 0.402344L8.25 4.14062V11.3594L14.6523 15.0977L21.0977 11.3594V4.14062L14.6523 0.402344ZM14.6523 2.55078L18.1328 4.52734L14.6523 6.54688L11.1719 4.52734L14.6523 2.55078ZM0 3.15234V5H6.40234V3.15234H0ZM10.0977 6.03125L13.75 8.13672V12.4336L10.0977 10.3281V6.03125ZM19.25 6.03125V10.3281L15.5977 12.4336V8.13672L19.25 6.03125ZM1.84766 6.84766V8.65234H6.40234V6.84766H1.84766ZM3.65234 10.5V12.3477H6.40234V10.5H3.65234Z" fill="#CCC6B0"/>
                             </svg>
                         </div>
-                        <div className="inline-block vertical-middle" style={{fontWeight: "bold", position: "relative", bottom: "3px", opacity: "0.5", paddingLeft: "10px"}}>API CATALOG - BROWSE</div>
+                        <div className="inline-block vertical-middle" style={{fontWeight: "bold", position: "relative", bottom: "3px", opacity: "0.5", paddingLeft: "10px"}}>{"API CATALOG - " + (currentPage==="diff" ? "COMPARE" : "BROWSE")}</div>
                     </div>
 
                     <div>
@@ -362,23 +363,11 @@ class APICatalog extends Component {
                     </div>
 
                     <APICatalogServiceGraph/>
-                    
                     <Route exact path="/api_catalog" 
                         render={() => <APICatalogLanding
                                         setCurrentPage={this.setCurrentPage}
                                       />
                                 }
-                    />
-                    <Route exact path="/api_catalog/service" 
-                        render={() => <APICatalogServiceView
-                                        app={cube.selectedApp} 
-                                        setCurrentPage={this.setCurrentPage}
-                                        apiPaths={apiPaths}
-                                        selectedService={selectedService}
-                                        startTime={startTime}
-                                        endTime={endTime}
-                                      />
-                                } 
                     />
                     <Route exact path="/api_catalog/api" 
                         render={() => <APICatalogAPIView
@@ -388,8 +377,16 @@ class APICatalog extends Component {
                                         apiCount={apiCount}
                                         apiTrace={apiTrace}
                                         app={cube.selectedApp} 
+                                        selectedInstance={selectedInstance}
                                       />
                                 } 
+                    />
+
+                    <Route exact path="/api_catalog/diff" 
+                        render={() => <APICatalogDiff
+                          setCurrentPage={this.setCurrentPage}
+                        />
+                        }
                     />
                     <Route path="/api_catalog/search" render={() => <APICatalogSearchResults/>} />
                 </div>

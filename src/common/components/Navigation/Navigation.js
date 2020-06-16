@@ -125,7 +125,7 @@ class Navigation extends Component{
                             <Link to="/test_config">
                                 <div className="link-q"><i className="fas fa-caret-square-right"></i></div>
                             </Link>
-                            <Link to={`/api_catalog?app=${cube.selectedApp}`}> 
+                            <Link to={`/api_catalog/api?app=${cube.selectedApp}`}> 
                                 <div className="link-q"><i className="fas fa-indent"></i></div>
                             </Link>
 
