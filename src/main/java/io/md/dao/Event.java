@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Collections;
+import io.md.dao.Recording.RecordingType;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +47,7 @@ public class Event {
 	private Event(String customerId, String app, String service, String instanceId,
 		String collection, String traceId, String spanId, String parentSpanId,
 		RunType runType, Instant timestamp, String reqId, String apiPath, EventType eventType,
-		Payload payload, int payloadKey) {
+		Payload payload, int payloadKey, RecordingType recordingType) {
 		this.customerId = customerId;
 		this.app = app;
 		this.service = service;
@@ -62,6 +63,7 @@ public class Event {
 		this.eventType = eventType;
 		this.payload = payload;
 		this.payloadKey = payloadKey;
+		this.recordingType = recordingType;
 	}
 
 	/**
@@ -83,6 +85,7 @@ public class Event {
 		this.eventType = null;
 		this.payload = null;
 		this.payloadKey = 0;
+		this.recordingType = RecordingType.Golden;
 	}
 
 	public static List<EventType> getRequestEventTypes() {
@@ -262,7 +265,7 @@ public class Event {
 				payload.applyTransform(rhsEvent.payload, operationList));
 		Event toReturn = new EventBuilder(customerId, app, service, instanceId, newCollection,
 			new MDTraceInfo(this.traceId, this.spanId, this.parentSpanId),
-			runType, Optional.of(timestamp), newReqId, apiPath, eventType)
+			runType, Optional.of(timestamp), newReqId, apiPath, eventType, recordingType)
 			.setPayload(newPayload.orElse(payload))
 			.createEvent();
 		// set key for request events
@@ -302,6 +305,7 @@ public class Event {
 	public final String apiPath; // apiPath for HTTP req, function signature for Java functions, etc
 	public final EventType eventType;
 	public final Payload payload;
+	public final RecordingType recordingType;
 
 	@JsonIgnore
 	public int payloadKey;
@@ -344,11 +348,12 @@ public class Event {
 		private final Event.EventType eventType;
 		private Payload payload;
 		private int payloadKey = 0;
+		private final RecordingType recordingType;
 
 		public EventBuilder(String customerId, String app, String service, String instanceId,
 			String collection, MDTraceInfo mdTraceInfo,
 			Event.RunType runType, Optional<Instant> timestamp, String reqId, String apiPath,
-			Event.EventType eventType) {
+			Event.EventType eventType, RecordingType recordingType) {
 			this.customerId = customerId;
 			this.app = app;
 			this.service = service;
@@ -362,11 +367,12 @@ public class Event {
 			this.reqId = reqId;
 			this.apiPath = apiPath;
 			this.eventType = eventType;
+			this.recordingType = recordingType;
 		}
 
 		public EventBuilder(CubeMetaInfo cubeMetaInfo, MDTraceInfo mdTraceInfo,
 			Event.RunType runType, String apiPath, EventType eventType, Optional<Instant> timestamp,
-			String reqId, String collection) {
+			String reqId, String collection, RecordingType recordingType) {
 			this.customerId = cubeMetaInfo.customerId;
 			this.app = cubeMetaInfo.appName;
 			this.instanceId = cubeMetaInfo.instance;
@@ -380,6 +386,7 @@ public class Event {
 			this.timestamp = timestamp;
 			this.reqId = reqId;
 			this.collection = collection;
+			this.recordingType = recordingType;
 		}
 
 
@@ -396,7 +403,7 @@ public class Event {
 		public Event createEvent() throws io.md.dao.Event.EventBuilder.InvalidEventException {
 			Event event = new Event(customerId, app, service, instanceId, collection, traceId
 				, spanId, parentSpanId, runType, timestamp.orElse(Instant.now()), reqId, apiPath,
-				eventType , payload, payloadKey);
+				eventType , payload, payloadKey, recordingType);
 			if (event.validate()) {
 				return event;
 			} else {
