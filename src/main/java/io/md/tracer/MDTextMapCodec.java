@@ -47,7 +47,7 @@ public class MDTextMapCodec implements Codec<TextMap> {
 		this.objectFactory = builder.objectFactory;
 	}
 
-	public static void sufficKeysWithDF(String app) {
+	public static void suffixKeysWithDF(String app) {
 		SPAN_CONTEXT_KEY = CommonUtils.getDFSuffixBasedOnApp(SPAN_CONTEXT_KEY, app);
 		BAGGAGE_KEY_PREFIX = CommonUtils.getDFSuffixBasedOnApp(BAGGAGE_KEY_PREFIX, app);
 	}

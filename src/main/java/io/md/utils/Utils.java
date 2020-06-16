@@ -529,8 +529,9 @@ public class Utils {
 	        LOGGER.warn("Neither default not md trace id header found to the mock sever request");
 	    }
 
-	    if (headers.getFirst(CommonUtils.getDFSuffixBasedOnApp(Constants.MD_BAGGAGE_PARENT_SPAN, app)) != null ) {
-	        meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(headers.getFirst(Constants.MD_BAGGAGE_PARENT_SPAN)));
+	    String mdParentSpanHdr = CommonUtils.getDFSuffixBasedOnApp(Constants.MD_BAGGAGE_PARENT_SPAN, app);
+	    if (headers.getFirst(mdParentSpanHdr) != null ) {
+	        meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(headers.getFirst(mdParentSpanHdr)));
 	    } else if (headers.getFirst(Constants.DEFAULT_BAGGAGE_PARENT_SPAN) != null ) {
 	        meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(headers.getFirst(Constants.DEFAULT_BAGGAGE_PARENT_SPAN)));
 	    } else {
