@@ -182,7 +182,7 @@ class HttpClientTabs extends Component {
                             }
                             let reqObject = {
                                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-                                httpURL: httpRequestEvent.payload[1].path,
+                                httpURL: httpRequestEvent.apiPath,
                                 headers: headers,
                                 queryStringParams: queryParams,
                                 bodyType: "formData",
@@ -450,7 +450,7 @@ class HttpClientTabs extends Component {
                             }
                             let reqObject = {
                                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-                                httpURL: httpRequestEvent.payload[1].path,
+                                httpURL: httpRequestEvent.apiPath,
                                 headers: headers,
                                 queryStringParams: queryParams,
                                 bodyType: "formData",
