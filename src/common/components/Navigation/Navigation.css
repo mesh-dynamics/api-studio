@@ -220,3 +220,16 @@
     display: flex;
     flex: 1;
 }
+
+.info-wrapper .nav-tabs>li.active>a, .nav-tabs>li.active>a:focus, .nav-tabs>li.active>a:hover {
+    color: #5A738E;
+    cursor: default;
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-bottom: 2px solid #fc6c0a;
+    font-weight: 500;
+}
+
+.info-wrapper .nav-tabs>li>a {
+    color: #555;
+}

@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import {connect} from "react-redux";
-import { Radio, Checkbox } from 'react-bootstrap';
+import { Radio, Checkbox, Tabs, Tab, Panel, Label } from 'react-bootstrap';
 import "./Navigation.css"
 import {cubeActions} from "../../actions";
 import {cubeConstants} from "../../constants";
@@ -216,30 +216,47 @@ class Navigation extends Component{
 
                         {!cube.hideTestConfigView ? <ViewSelectedTestConfig checkReplayStatus={this.checkReplayStatus}/> : null}
 
-                        <div className={!cube.hideHttpClient ? "margin-top-10 info-div" : "hidden"}>
-                            <div className="margin-top-10">
-                                <div className="value-n">VIEW</div>
-                            </div>
-                            <div className="margin-top-10">
-                                <div className="margin-top-10 vertical-middle">
-                                    <Radio>
-                                        TEST REQUESTS
-                                    </Radio>
-                                </div>
-                                <div className="margin-top-10 vertical-middle">
-                                    <Radio>
-                                        MOCK REQUESTS
-                                    </Radio>
-                                </div>
-                            </div>
-                        </div>
-                        <div className={!cube.hideHttpClient ? "margin-top-10 vertical-middle" : "hidden"}>
-                            <Checkbox>
-                                SAVE AS COPY
-                            </Checkbox>
-                        </div>
-                        <div className={!cube.hideHttpClient ? "margin-top-20 text-center" : "hidden"}>
-                            <div className="cube-btn width-50 text-center" style={{margin: "0 auto"}}>SAVE</div>
+                        <div className={!cube.hideHttpClient ? "margin-top-10" : "hidden"}>
+                            <Tabs defaultActiveKey={1} id="uncontrolled-tab-example">
+                                <Tab eventKey={1} title="History">
+                                    <div className="margin-top-10">
+                                        <div className="value-n">Sort</div>
+                                    </div>
+                                    <div className="margin-top-10">
+                                        <Panel id="collapsible-panel-example-2" defaultExpanded>
+                                            <Panel.Heading>
+                                                <Panel.Title toggle>
+                                                    May 29
+                                                </Panel.Title>
+                                            </Panel.Heading>
+                                            <Panel.Collapse>
+                                                <Panel.Body>
+                                                    <Label bsStyle="default" style={{fontWeight: "600"}}>POST</Label>
+                                                </Panel.Body>
+                                            </Panel.Collapse>
+                                        </Panel>
+                                    </div>
+                                </Tab>
+                                <Tab eventKey={2} title="Collections">
+                                    <div className="margin-top-10">
+                                        <div className="value-n">Sort</div>
+                                    </div>
+                                    <div className="margin-top-10">
+                                        <Panel id="collapsible-panel-example-2" defaultExpanded>
+                                            <Panel.Heading>
+                                                <Panel.Title toggle>
+                                                    May 29
+                                                </Panel.Title>
+                                            </Panel.Heading>
+                                            <Panel.Collapse>
+                                                <Panel.Body>
+                                                    <Label bsStyle="default" style={{fontWeight: "600"}}>POST</Label>
+                                                </Panel.Body>
+                                            </Panel.Collapse>
+                                        </Panel>
+                                    </div>
+                                </Tab>
+                            </Tabs>
                         </div>
                     </div>}
                 </div>
