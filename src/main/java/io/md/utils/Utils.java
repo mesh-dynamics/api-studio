@@ -497,7 +497,7 @@ public class Utils {
 
 		MultivaluedMap<String, String> meta = new MultivaluedHashMap<>();
 
-		setSpanTraceIDParentSpanInMeta(meta, headers);
+		setSpanTraceIDParentSpanInMeta(meta, headers, app);
 		Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
 		Optional<String> spanId = getFirst(meta, Constants.DEFAULT_SPAN_FIELD);
 		Optional<String> parentSpanId = getFirst(meta, Constants.DEFAULT_PARENT_SPAN_FIELD);
@@ -515,8 +515,9 @@ public class Utils {
 	}
 
 
-	static private void setSpanTraceIDParentSpanInMeta(MultivaluedMap<String, String> meta, MultivaluedMap<String, String> headers) {
-	    String mdTrace = headers.getFirst(Constants.MD_TRACE_FIELD);
+	static private void setSpanTraceIDParentSpanInMeta(MultivaluedMap<String, String> meta, MultivaluedMap<String, String> headers,
+			String app) {
+	    String mdTrace = headers.getFirst(CommonUtils.getDFSuffixBasedOnApp(Constants.MD_TRACE_FIELD, app));
 	    if (mdTrace != null && !mdTrace.equals("")) {
 	        String[] parts = decodedValue(mdTrace).split(":");
 	        if (parts.length != 4) {
@@ -541,10 +542,15 @@ public class Utils {
 	        LOGGER.warn("Neither default not md trace id header found to the mock sever request");
 	    }
 
-	    if (headers.getFirst(Constants.MD_BAGGAGE_PARENT_SPAN) != null ) {
-	        meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(headers.getFirst(Constants.MD_BAGGAGE_PARENT_SPAN)));
-	    } else if (headers.getFirst(Constants.DEFAULT_BAGGAGE_PARENT_SPAN) != null ) {
-	        meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(headers.getFirst(Constants.DEFAULT_BAGGAGE_PARENT_SPAN)));
+	    String mdParentSpanHdr = CommonUtils.getDFSuffixBasedOnApp(Constants.MD_BAGGAGE_PARENT_SPAN, app);
+	    String mdParentSpanVal = headers.getFirst(mdParentSpanHdr);
+
+	    String defaultParentSpanVal = headers.getFirst(Constants.DEFAULT_BAGGAGE_PARENT_SPAN);
+
+	    if ( mdParentSpanVal != null ) {
+	        meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(mdParentSpanVal));
+	    } else if (defaultParentSpanVal != null ) {
+	        meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(defaultParentSpanVal));
 	    } else {
 	        LOGGER.warn("Neither default not md baggage parent span id header found to the mock sever request");
 	    }

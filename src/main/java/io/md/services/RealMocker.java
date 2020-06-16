@@ -85,16 +85,16 @@ public class RealMocker implements Mocker {
     private static EventQuery buildRequestEventQuery(Event event, int offset, int limit,
         boolean isSortOrderAsc, Optional<Instant> lowerBoundForMatching, String collection) {
         EventQuery.Builder builder =
-        new EventQuery.Builder(event.customerId, event.app, event.eventType)
-            .withService(event.service)
-            .withCollection(collection)
-            //.withInstanceId(event.instanceId)
-            .withPaths(Arrays.asList(event.apiPath))
-            .withTraceId(event.getTraceId())
-            .withPayloadKey(event.payloadKey)
-            .withOffset(offset)
-            .withLimit(limit)
-            .withSortOrderAsc(isSortOrderAsc);
+            new EventQuery.Builder(event.customerId, event.app, event.eventType)
+                .withService(event.service)
+                .withCollection(collection)
+                //.withInstanceId(event.instanceId)
+                .withPaths(Arrays.asList(event.apiPath))
+                .withTraceId(event.getTraceId())
+                .withPayloadKey(event.payloadKey)
+                .withOffset(offset)
+                .withLimit(limit)
+                .withSortOrderAsc(isSortOrderAsc);
         lowerBoundForMatching.ifPresent(builder::withTimestamp);
         return builder.build();
     }
@@ -203,9 +203,9 @@ public class RealMocker implements Mocker {
      * @return
      */
     static private Event createMockResponseEvent(Event originalResponse,
-                                          Optional<String> mockReqId,
-                                          String instanceId,
-                                          String replayCollection) throws Event.EventBuilder.InvalidEventException {
+        Optional<String> mockReqId,
+        String instanceId,
+        String replayCollection) throws Event.EventBuilder.InvalidEventException {
         Event.EventBuilder builder = new Event.EventBuilder(originalResponse.customerId, originalResponse.app,
             originalResponse.service,
             instanceId, replayCollection,
