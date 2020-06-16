@@ -40,7 +40,7 @@ public class RedisPubSub extends JedisPubSub {
 	@Override
 	public void onMessage(String channel, String message) {
 		super.onMessage(channel, message);
-		System.out.println("CHANNEL :: " + channel + " MESSAGE :: " + message);
+		LOGGER.debug("CHANNEL :: " + channel + " MESSAGE :: " + message);
 	}
 
 	@Override
@@ -68,15 +68,17 @@ public class RedisPubSub extends JedisPubSub {
 				} else {
 					Replay replay = recordOrReplay.replay.get();
 					String statusKey = Constants.REDIS_STATUS_KEY_PREFIX + actualKey;
-					if (jedis.exists(statusKey)) {
-						if (jedis.get(statusKey).equals(ReplayStatus.Completed.toString())) {
+					String currentStatus = jedis.get(statusKey);
+					if (currentStatus != null && !currentStatus.equals("nil")) {
+						if (currentStatus.equals(ReplayStatus.Completed.toString())) {
 							replay.status = ReplayStatus.Completed;
-						} else if (jedis.get(statusKey).equals(ReplayStatus.Error.toString())) {
+						} else if (currentStatus.equals(ReplayStatus.Error.toString())) {
 							replay.status = ReplayStatus.Error;
 						}
 						jedis.del(statusKey);
+						rrStore.saveReplay(replay);
 					}
-					rrStore.saveReplay(replay);
+
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
