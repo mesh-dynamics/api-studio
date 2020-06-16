@@ -212,7 +212,7 @@ public class RealMocker implements Mocker {
             new MDTraceInfo(originalResponse.getTraceId() , null, null),
             Event.RunType.Replay, Optional.of(Instant.now()),
             mockReqId.orElse("NA"),
-            originalResponse.apiPath, Event.EventType.HTTPResponse);
+            originalResponse.apiPath, Event.EventType.HTTPResponse, originalResponse.recordingType);
         return builder.setPayload(originalResponse.payload).createEvent();
     }
 

@@ -38,6 +38,7 @@ import io.jaegertracing.internal.samplers.ConstSampler;
 import io.md.constants.Constants;
 import io.md.dao.CubeMetaInfo;
 import io.md.dao.Event;
+import io.md.dao.Recording.RecordingType;
 import io.md.dao.FnReqRespPayload;
 import io.md.dao.MDTraceInfo;
 import io.md.tracer.HTTPHeadersCarrier;
@@ -401,7 +402,8 @@ public class CommonUtils {
 	}
 
 	public static Optional<Event> createEvent(FnKey fnKey, MDTraceInfo mdTraceInfo,
-		Event.RunType rrType, Optional<Instant> timestamp, FnReqRespPayload payload) {
+		Event.RunType rrType, Optional<Instant> timestamp, FnReqRespPayload payload,
+			RecordingType recordingType) {
 		String reqId = fnKey.service == null ? "" : fnKey.service
 			.concat("-")
 			.concat(mdTraceInfo.traceId == null ? "" : mdTraceInfo.traceId)
@@ -410,7 +412,7 @@ public class CommonUtils {
 		Event.EventBuilder eventBuilder = new Event.EventBuilder(fnKey.customerId, fnKey.app,
 			fnKey.service, fnKey.instanceId, Constants.NOT_APPLICABLE,
 			mdTraceInfo, rrType, timestamp, reqId,
-			fnKey.signature, Event.EventType.JavaRequest);
+			fnKey.signature, Event.EventType.JavaRequest, recordingType);
 		eventBuilder.setPayload(payload);
 		return eventBuilder.createEventOpt();
 	}

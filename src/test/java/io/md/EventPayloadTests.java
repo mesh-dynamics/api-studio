@@ -14,6 +14,7 @@ import java.util.Optional;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
+import io.md.dao.Recording.RecordingType;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -63,7 +64,7 @@ public class EventPayloadTests {
 				, null , null);
 			EventBuilder eventBuilder = new EventBuilder(cubeMetaInfo, traceInfo
 				, RunType.Record, "/minfo/health", EventType.HTTPRequest
-				, Optional.empty(), "random-req-id", "random-collection");
+				, Optional.empty(), "random-req-id", "random-collection", RecordingType.Golden);
 
 			MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
 			headers.add("content-type" , MediaType.APPLICATION_JSON);
@@ -76,7 +77,7 @@ public class EventPayloadTests {
 
 			eventBuilder = new EventBuilder(cubeMetaInfo, traceInfo
 				, RunType.Record, "/minfo/health", EventType.HTTPResponse
-				, Optional.empty(), "random-req-id", "random-collection");
+				, Optional.empty(), "random-req-id", "random-collection", RecordingType.Golden);
 			eventBuilder.setPayload(new HTTPResponsePayload(headers, 200
 				,"{\"MIRest status\":\"MovieInfo is healthy\"}".getBytes()));
 			httpJsonResponseEvent = eventBuilder.createEvent();
@@ -85,7 +86,7 @@ public class EventPayloadTests {
 			headers.add("content-type" , MediaType.TEXT_HTML);
 			eventBuilder = new EventBuilder(cubeMetaInfo, traceInfo
 				, RunType.Record, "/minfo/health", EventType.HTTPResponse
-				, Optional.empty(), "random-req-id", "random-collection");
+				, Optional.empty(), "random-req-id", "random-collection", RecordingType.Golden);
 			eventBuilder.setPayload(new HTTPResponsePayload(headers, 200
 				,"<html><meta></meta><body>Sample Body</body></html>".getBytes()));
 			httpHtmlResponseEvent = eventBuilder.createEvent();
@@ -94,7 +95,7 @@ public class EventPayloadTests {
 
 			eventBuilder = new EventBuilder(cubeMetaInfo, traceInfo
 				, RunType.Record, "/minfo/health", EventType.HTTPResponse
-				, Optional.empty(), "random-req-id", "random-collection");
+				, Optional.empty(), "random-req-id", "random-collection", RecordingType.Golden);
 			eventBuilder.setPayload(new JsonPayload("{\"name\" : \"foo\" , \"age\" : "
 				+ "{ \"bar\" : 2} }"));
 			stringEvent = eventBuilder.createEvent();
