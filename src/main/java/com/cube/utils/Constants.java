@@ -189,6 +189,8 @@ public class Constants {
 	public static final String REC_TRACE_ID = "recordTraceId";
 	public static final String SPAN_ID_FIELD = "spanId";
     public static final String PARENT_SPAN_ID_FIELD = "parentSpanId";
+	public static final String REDIS_SHADOW_KEY_PREFIX = "shadowKey:";
+    public static final String REDIS_STATUS_KEY_PREFIX = "statusKey:";
     public static final String CONFIG_JSON = "config_json";
 	public static final String TAG_FIELD = "tag";
 	public static final String AGENT_ID = "agentId" ;

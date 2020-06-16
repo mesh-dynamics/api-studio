@@ -29,9 +29,11 @@ import io.cube.agent.TraceIntentResolver;
 import io.md.utils.CommonUtils;
 import io.md.utils.MeshDGsonProvider;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
+import com.cube.cache.RedisPubSub;
 import com.cube.cache.TemplateCache;
 import com.cube.cache.TemplateCacheRedis;
 import com.cube.core.Utils;
@@ -123,6 +125,27 @@ public class Config {
             jedisPool = new JedisPool(new JedisPoolConfig() , redisHost, redisPort , 2000,  redisPassword);
             REDIS_DELETE_TTL = Integer.parseInt(fromEnvOrProperties("redis_delete_ttl"
                 , "15"));
+	        Runnable subscribeThread = new Runnable() {
+		        /**
+		         * When an object implementing interface <code>Runnable</code> is
+		         * used to create a thread, starting the thread causes the object's
+		         * <code>run</code> method to be called in that separately
+		         * executing
+		         * thread.
+		         * <p>
+		         * The general contract of the method <code>run</code> is that it
+		         * may take any action whatsoever.
+		         *
+		         * @see Thread#run()
+		         */
+		        @Override
+		        public void run() {
+			        Jedis jedis = jedisPool.getResource();
+			        jedis.configSet("notify-keyspace-events" , "Ex");
+			        jedis.psubscribe(new RedisPubSub(rrstore, jsonMapper, jedisPool), "__key*__:*");
+		        }
+	        };
+	        new Thread(subscribeThread).start();
         } catch (Exception e) {
             LOGGER.error("Error while initializing redis thread pool :: " + e.getMessage());
             throw e;

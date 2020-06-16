@@ -138,12 +138,30 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if (config.intentResolver.isIntentToMock()) return;
         try (Jedis jedis = config.jedisPool.getResource()) {
             //jedis.del(collectionKey.toString());
-            Long result = jedis.expire(collectionKey.toString(), com.cube.ws.Config.REDIS_DELETE_TTL);
-            LOGGER.info(
-                String.format("Expiring redis key \"%s\" in %d seconds", collectionKey.toString(),
-                    com.cube.ws.Config.REDIS_DELETE_TTL));
+            //Long result = jedis.expire(collectionKey.toString(), Config.REDIS_DELETE_TTL);
+            if (jedis.exists(collectionKey.toString())) {
+                String shadowKey = Constants.REDIS_SHADOW_KEY_PREFIX + collectionKey.toString();
+                Long result = jedis.expire(shadowKey, com.cube.ws.Config.REDIS_DELETE_TTL);
+                LOGGER.info(String.format("Expiring redis key \"%s\" in %d seconds"
+                        , shadowKey, com.cube.ws.Config.REDIS_DELETE_TTL));
+            }
         } catch (Exception e) {
             LOGGER.error("Unable to remove key from redis cache :: "+ e.getMessage());
+        }
+    }
+
+    @Override
+    void updaterFinalReplayStatusInCache(Replay replay) {
+        try (Jedis jedis = config.jedisPool.getResource()) {
+            CollectionKey cKey = new CollectionKey(replay.customerId
+                , replay.app, replay.instanceId);
+            String statusKey = Constants.REDIS_STATUS_KEY_PREFIX + cKey.toString();
+            String result = jedis.set(statusKey, replay.status.toString());
+            LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,
+                "Successfully set replay status for status key", Constants.REPLAY_ID_FIELD,
+                replay.replayId, Constants.STATUS, replay.status.toString())));
+        } catch (Exception e) {
+            LOGGER.error("Error while updating replay status for status key", e);
         }
     }
 
@@ -175,11 +193,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE,
                     "Successfully retrieved from redis",  "key" ,  keyStr)));
                 toReturn = Optional.of(config.jsonMapper.readValue(fromCache, RecordOrReplay.class));
-                Long ttl = jedis.ttl(keyStr);
+                String shadowKey = Constants.REDIS_SHADOW_KEY_PREFIX + keyStr;
+                Long ttl = jedis.ttl(shadowKey);
                 if (ttl != -1 && extendTTL) {
-                    jedis.expire(keyStr, config.REDIS_DELETE_TTL);
+                    jedis.expire(shadowKey, config.REDIS_DELETE_TTL);
                     LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE,
-                        "Extending ttl in redis","key" , keyStr,"duration"
+                        "Extending ttl in redis","key" , shadowKey,"duration"
                         , String.valueOf(config.REDIS_DELETE_TTL))));
                 }
             }
@@ -221,6 +240,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         try (Jedis jedis = config.jedisPool.getResource()) {
             String toString = config.jsonMapper.writeValueAsString(rr);
             jedis.set(collectionKey.toString() , toString);
+            jedis.set(Constants.REDIS_SHADOW_KEY_PREFIX + collectionKey.toString(), "");
             LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully stored in redis"
                 , "key" , collectionKey.toString())));
         } catch (JsonProcessingException e) {
@@ -1714,7 +1734,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     @Override
     public boolean saveReplay(Replay replay) {
-        super.saveReplay(replay);
         SolrInputDocument doc = replayToSolrDoc(replay);
         return saveDoc(doc) && softcommit();
     }
@@ -2656,9 +2675,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     /* (non-Javadoc)
      * @see com.cube.dao.ReqRespStore#saveReplay(com.cube.dao.Replay)
      */
-    @Override
     public boolean saveRecording(Recording recording) {
-        super.saveRecording(recording);
         SolrInputDocument doc = recordingToSolrDoc(recording);
         return saveDoc(doc) && softcommit();
     }
