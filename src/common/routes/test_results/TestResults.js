@@ -47,6 +47,7 @@ class TestResults extends Component {
 
         dispatch(cubeActions.hideTestConfig(true));
         dispatch(cubeActions.hideServiceGraph(true));
+        dispatch(cubeActions.hideHttpClient(true));
 
         this.autoRefreshData();
     }
@@ -56,6 +57,7 @@ class TestResults extends Component {
 
         dispatch(cubeActions.hideTestConfig(false));
         dispatch(cubeActions.hideServiceGraph(false));
+        dispatch(cubeActions.hideHttpClient(false));
 
         clearInterval(this.intervalID);
     }

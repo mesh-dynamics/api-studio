@@ -307,6 +307,82 @@ const deleteGolden = async (recordingId) => {
     }
 };
 
+const fetchClusterList = async () => {
+    try {
+        return await api.get("https://www.mocky.io/v2/5ed0786c3500006000ff9c6d");
+    } catch (error) {
+        console.log("Error fetching cluster list \n", error);
+        throw error;
+    }
+};
+
+// TODO: Refactor the calls below
+const fetchAPIFacetData = async (app, startTime, endTime) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+
+    let apiFacetURL = `${config.analyzeBaseUrl}/getApiFacets/${user.customer_name}/${app}`;
+    
+    let searchParams = new URLSearchParams();
+    searchParams.set("startDate", startTime);
+    searchParams.set("endDate", endTime);
+
+    let url = apiFacetURL + "?" + searchParams.toString();
+
+    try {
+        return api.get(url);
+    } catch (e) {
+        console.error("Error fetching API facet data");
+        throw e;
+    }
+}
+
+const fetchAPITraceData = async (app, startTime, endTime, selectedService, selectedApiPath, selectedInstance) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+
+    let apiTraceURL = `${config.analyzeBaseUrl}/getApiTrace/${user.customer_name}/${app}`;
+    
+    let searchParams = new URLSearchParams();
+    searchParams.set("startDate", startTime);
+    searchParams.set("endDate", endTime);
+    searchParams.set("depth", 2);
+    searchParams.set("service", selectedService);
+    searchParams.set("apiPath", selectedApiPath);
+    searchParams.set("instanceId",selectedInstance);
+
+    let url = apiTraceURL + "?" + searchParams.toString();
+
+    try {
+        return api.get(url);
+    } catch (e) {
+        console.error("Error fetching API Trace data");
+        throw e;
+    }
+}
+
+const fetchAPIEventData = async (app, reqIds, eventTypes=[]) => {
+    const user = JSON.parse(localStorage.getItem('user'));
+
+    let apiEventURL = `${config.recordBaseUrl}/getEvents`;
+
+    let body = {
+        "customerId":user.customer_name,
+        "app": app,
+        "eventTypes": eventTypes,
+        "services": [],
+        "traceIds": [],
+        "reqIds": reqIds,
+        "paths": [],
+        // "limit": 2
+    }
+
+    try {
+        return api.post(apiEventURL,body);
+    } catch (e) {
+        console.error("Error fetching API Event data");
+        throw e;
+    }
+}
+
 export const cubeService = {
     fetchAppsList,
     getInstanceList,
@@ -329,5 +405,9 @@ export const cubeService = {
     getResponseTemplate,
     fetchAnalysisResults,
     unifiedGoldenUpdate,
-    deleteGolden
+    deleteGolden,
+    fetchAPIFacetData,
+    fetchAPITraceData,
+    fetchAPIEventData,
+    fetchClusterList
 };

@@ -180,6 +180,8 @@ class DiffResults extends Component {
             dispatch(cubeActions.setGolden({ golden: recordingId, timeStamp: "" }));
             dispatch(cubeActions.getNewTemplateVerInfo(app, currentTemplateVer));
             dispatch(cubeActions.getJiraBugs(replayId, selectedAPI));
+            dispatch(cubeActions.hideHttpClient(true));
+            
         });
     }
 
@@ -190,11 +192,13 @@ class DiffResults extends Component {
         } else {
             this.setState({ showNewGolden: false });
         }
+        
     }
 
     componentWillUnmount() {
         let { dispatch } = this.props;
         dispatch(cubeActions.clearGolden());
+        dispatch(cubeActions.hideHttpClient(false));
         this.setState({ showNewGolden: false });
     }
 
@@ -359,7 +363,7 @@ class DiffResults extends Component {
             let pruneEndIndex, updatedEndIndex;
             ({diffLayoutDataPruned, i: pruneEndIndex} = pruneResults(diffLayoutData, true));
             
-            updatedEndIndex = startIndex + pruneEndIndex;
+            updatedEndIndex = startIndex + diffLayoutDataPruned.length;
             // Use the number of results found on server to limit the endIndex
             endIndex = updatedEndIndex > numFound ?  numFound : updatedEndIndex;            
         } else {
@@ -373,7 +377,7 @@ class DiffResults extends Component {
             let pruneStartIndex;
             ({diffLayoutDataPruned, i: pruneStartIndex} = pruneResults(diffLayoutData, false))
             
-            startIndex = Math.max(endIndex - pruneStartIndex, 0);
+            startIndex = Math.max(endIndex - diffLayoutDataPruned.length, 0);
 
         }
 

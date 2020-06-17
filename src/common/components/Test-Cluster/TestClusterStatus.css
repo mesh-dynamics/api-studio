@@ -1,0 +1,22 @@
+.test-cluster-header {
+    padding: 15px; 
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.test-cluster-table-container {
+    padding: 0 15px;
+}
+
+.test-cluster-table-column-header {
+    display: flex;
+    font-weight: 800;
+}
+
+.test-cluster-table-cell {
+    display: flex;
+}
+
+.test-cluster-table-checkbox {
+    display: flex;
+}

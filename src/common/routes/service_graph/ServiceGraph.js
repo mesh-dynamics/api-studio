@@ -1,11 +1,13 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { withRouter } from "react-router-dom";
 import CytoscapeReactWrapper from '../../components/Cytoscape/CytoscapeReactWrapper';
 import GoldenVisibility from '../../components/Golden-Visibility/GoldenVisibility';
-import "./ReplayAttribute.css";
+import TestClusterStatus from '../../components/Test-Cluster/TestClusterStatus';
 import {cubeActions} from "../../actions";
+import "./ServiceGraph.css";
 
-class replay extends Component {
+class ServiceGraph extends Component {
     constructor (props) {
         super(props)
         this.state = {
@@ -122,33 +124,35 @@ class replay extends Component {
         }
     }
 
-    render () {
+    renderServiceGraph = () => {
         const { cube } = this.props;
         const graphData = this.getGD(cube);
+
+        return (
+            <div className="content-wrapper">                    
+                <h4>Service Graph</h4>
+                <CytoscapeReactWrapper graphData={graphData}/>
+            </div>
+        );
+    }
+
+    render () {
+        const { cube } = this.props;
         return (
             <div>
-                {!cube.hideGoldenVisibilityView ? 
-                    <GoldenVisibility /> : 
-                    (
-                        <div className="content-wrapper">                    
-                            <h4>Service Graph</h4>
-                            <CytoscapeReactWrapper graphData={graphData}/>
-                        </div>
-                    )
-                }
+            {
+                !cube.hideGoldenVisibilityView ?
+                <GoldenVisibility /> 
+                : this.renderServiceGraph()
+            }
             </div>
         )
     }
 }
 
-function mapStateToProps(state) {
-    const { user } = state.authentication;
-    const cube = state.cube;
-    return {
-        user, cube
-    }
-}
+const mapStateToProps = (state) => ({
+    user: state.authentication.user,
+    cube: state.cube
+});
 
-const connectedReplay = connect(mapStateToProps)(replay);
-
-export default connectedReplay
+export default withRouter(connect(mapStateToProps)(ServiceGraph));
