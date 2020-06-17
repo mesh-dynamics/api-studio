@@ -20,11 +20,9 @@ public class TestConfigDTO {
 
     private String appName;
 
-    private Long gatewayServiceId;
-
-    private String gatewayServiceName;
-
     private List<String> testPaths;
+
+    private List<String> testServices;
 
     private List<String> testMockServices;
 
