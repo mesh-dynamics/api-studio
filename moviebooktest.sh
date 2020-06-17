@@ -7,14 +7,15 @@ NAMESPACE_HOST=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 CUBE_HOST=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 CUBE_APP=Cube
 CUBE_CUSTOMER=CubeCorp
-INSTANCEID=prod
+INSTANCEID=$DRONE_COMMIT
 REPLAY_ENDPOINT=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 CUBE_SERVICE_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 SPRINGBOOT_PROFILE=prod
 CUBEIO_TAG=$DRONE_COMMIT-$DRONE_BRANCH
-CUBEUI_TAG=master-latest
-CUBEUI_BACKEND_TAG=master-latest
+CUBEUI_TAG=develop-latest
+CUBEUI_BACKEND_TAG=develop-latest
 MOVIEINFO_TAG=master-latest
+SOLR_URL=http://172.20.62.223:8983/solr/
 AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBtZXNoZHluYW1pY3MuaW8iLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwidHlwZSI6InBhdCIsImN1c3RvbWVyX2lkIjoxLCJpYXQiOjE1ODI4ODE2MjgsImV4cCI6MTg5ODI0MTYyOH0.P4DAjXyODV8cFPgObaULjAMPg-7xSbUsVJ8Ohp7xTQI"
 SOLR_CORE=cube" > apps/cube/config/temp.conf
 
@@ -24,13 +25,13 @@ NAMESPACE_HOST=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 CUBE_HOST=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 CUBE_APP=MovieInfo
 CUBE_CUSTOMER=CubeCorp
-INSTANCEID=prod
+INSTANCEID=$DRONE_COMMIT
 REPLAY_PATHS=minfo/listmovies,minfo/liststores,minfo/rentmovie,minfo/returnmovie
 REPLAY_ENDPOINT=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBtZXNoZHluYW1pY3MuaW8iLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwidHlwZSI6InBhdCIsImN1c3RvbWVyX2lkIjoxLCJpYXQiOjE1ODI4ODE2MjgsImV4cCI6MTg5ODI0MTYyOH0.P4DAjXyODV8cFPgObaULjAMPg-7xSbUsVJ8Ohp7xTQI"
 CUBEIO_TAG=$DRONE_COMMIT-$DRONE_BRANCH
-CUBEUI_TAG=master-latest
-CUBEUI_BACKEND_TAG=master-latest
+CUBEUI_TAG=develop-latest
+CUBEUI_BACKEND_TAG=develop-latest
 MOVIEINFO_TAG=master-latest" > apps/moviebook/config/temp.conf
 }
 
@@ -43,7 +44,7 @@ call_replay() {
 	REPLAY_PATHS=minfo/listmovies,minfo/returnmovie,minfo/rentmovie,minfo/liststores
 	REPLAY_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 	CUBE_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
-	INSTANCE_ID=prod
+	INSTANCE_ID=$DRONE_COMMIT
 	USER_ID=demo@cubecorp.io
 	REPLAY_PATHS=$(echo $REPLAY_PATHS | tr "," "\n")
 	for path in $REPLAY_PATHS
@@ -54,20 +55,21 @@ call_replay() {
 	REPLAY_PATHS=${TEMP_PATH::${#TEMP_PATH}-1}
 	BODY="$REPLAY_PATHS&endPoint=$REPLAY_ENDPOINT&instanceId=$INSTANCE_ID&templateSetVer=DEFAULT&userId=$USER_ID"
 
-	REPLAY_ID=$(curl -X POST \
+	REPLAY_RESPONSE=$(curl -X POST \
 		$CUBE_ENDPOINT/api/rs/start/$RECORDING_ID \
 		-H 'Content-Type: application/x-www-form-urlencoded' \
 		-H "Authorization: Bearer $AUTH_TOKEN" \
 		-H 'cache-control: no-cache' \
-		-d $BODY \
-	| sed 's/^.*"replayId":"\([^"]*\)".*/\1/')
+		-d $BODY)
+	echo $REPLAY_RESPONSE
+	REPLAY_ID=$(echo $REPLAY_RESPONSE | sed 's/^.*"replayId":"\([^"]*\)".*/\1/')
 
 	echo "REPLAYID:" $REPLAY_ID
 
 	#Status Check
 	COUNT=0
 	while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ] && [ "$COUNT" != "30" ]; do
-		STATUS=$(curl -X GET $CUBE_ENDPOINT/api/rs/status/$REPLAY_ID -H "Authorization: Bearer $AUTH_TOKEN" | jq .status)
+		STATUS=$(curl -X GET $CUBE_ENDPOINT/api/rs/status/$REPLAY_ID -H "Authorization: Bearer $AUTH_TOKEN" | jq .status | tr -d '"')
 		sleep 20
 		COUNT=$((COUNT+1))
 	done
