@@ -23,6 +23,7 @@ import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
 import io.md.dao.JsonByteArrayPayload;
+import io.md.dao.Recording.RecordingType;
 import io.md.utils.CommonUtils;
 
 // MESH-D Mostly overriding the process function in
@@ -72,7 +73,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 						CommonUtils.mdTraceInfoFromContext(), RunType.Record,
 						constructApiPath(methodName, args),
 						EventType.ThriftRequest, Optional.of(Instant.now()), reqId,
-						Constants.DEFAULT_COLLECTION)
+						Constants.DEFAULT_COLLECTION, RecordingType.Golden)
 						.setPayload(new JsonByteArrayPayload(serializer.serialize(args)));
 					fluentDLogRecorder.record(eventBuilder.createEvent());
 				}
@@ -99,7 +100,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 					CommonUtils.mdTraceInfoFromContext(), RunType.Replay,
 					constructApiPath(methodName, args),
 					EventType.ThriftRequest, Optional.of(Instant.now()), reqId,
-					Constants.DEFAULT_COLLECTION)
+					Constants.DEFAULT_COLLECTION, RecordingType.Golden)
 					.setPayload(new JsonByteArrayPayload(serializer.serialize(args)));
 				result = thriftMocker.mockThriftRequest(eventBuilder.createEvent());
 				LOGGER.info("Successfully retrieved result from mock service");
@@ -134,7 +135,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 					CommonUtils.mdTraceInfoFromContext(), RunType.Record,
 					constructApiPath(methodName, result),
 					EventType.ThriftResponse, Optional.of(Instant.now()), reqId,
-					Constants.DEFAULT_COLLECTION)
+					Constants.DEFAULT_COLLECTION, RecordingType.Golden)
 					.setPayload(new JsonByteArrayPayload(serializer.serialize(result)));
 				fluentDLogRecorder.record(eventBuilder.createEvent());
 			} catch (Exception e) {

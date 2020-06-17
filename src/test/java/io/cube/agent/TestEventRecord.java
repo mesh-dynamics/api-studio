@@ -15,6 +15,7 @@ import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.MDTraceInfo;
+import io.md.dao.Recording.RecordingType;
 
 public class TestEventRecord {
 
@@ -30,7 +31,7 @@ public class TestEventRecord {
 			String apiPath = "/minfo/health";
 			EventBuilder eventBuilder = new EventBuilder(cubeMetaInfo, traceInfo
 				, RunType.Record, apiPath, EventType.HTTPRequest
-				, Optional.empty(), "random-req-id", "random-collection");
+				, Optional.empty(), "random-req-id", "random-collection", RecordingType.Golden);
 
 			MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
 			headers.add("content-type" , MediaType.APPLICATION_JSON);

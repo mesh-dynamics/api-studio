@@ -19,6 +19,7 @@ import io.md.dao.Event;
 import io.md.dao.FnReqRespPayload;
 import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.dao.MDTraceInfo;
+import io.md.dao.Recording.RecordingType;
 import io.md.utils.CommonUtils;
 import io.md.utils.FnKey;
 
@@ -59,7 +60,7 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
 				args, responseOrException, retStatus, exceptionType);
 			Optional<Event> event = CommonUtils
 				.createEvent(fnKey, mdTraceInfo, Event.RunType.Record,
-					Optional.of(Instant.now()), fnReqRespPayload);
+					Optional.of(Instant.now()), fnReqRespPayload, RecordingType.Golden);
 			return event.map(ev -> record(ev)).orElseGet(() -> {
 				LOGGER.error("func_name : ".concat(fnKey.fnName)
 					.concat(" , trace_id : ").concat(mdTraceInfo.traceId)

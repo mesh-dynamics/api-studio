@@ -27,6 +27,7 @@ import io.md.dao.Event.RunType;
 import io.md.dao.FnReqRespPayload;
 import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.dao.MDTraceInfo;
+import io.md.dao.Recording.RecordingType;
 import io.md.services.FnResponse;
 import io.md.services.MockResponse;
 import io.md.utils.CommonUtils;
@@ -83,7 +84,7 @@ public class ProxyMocker implements Mocker {
 			args, null, null , null);
 		Optional<Instant> lowerBound = prevRespTS.isPresent() ? prevRespTS : Optional.ofNullable(fnMap.get(key));
 		Optional<Event> event = CommonUtils.createEvent(fnKey, mdTraceInfo, RunType.Replay,
-			Optional.empty(), fnReqRespPayload);
+			Optional.empty(), fnReqRespPayload, RecordingType.Golden);
 
 		try {
 			return event.map(UtilException.rethrowFunction(eve -> {

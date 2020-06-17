@@ -9,6 +9,7 @@ import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Payload;
+import io.md.dao.Recording.RecordingType;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
@@ -38,7 +39,7 @@ public class EncryptConsoleRecorder extends ConsoleRecorder {
 					EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
 						event.service, event.instanceId,
 						event.getCollection(), mdTraceInfo, event.getRunType(),
-						Optional.of(event.timestamp), event.reqId, event.apiPath, event.eventType)
+						Optional.of(event.timestamp), event.reqId, event.apiPath, event.eventType, RecordingType.Golden)
 						.setPayload(payload);
 					return eventBuilder.createEvent();
 				})).orElse(event);
