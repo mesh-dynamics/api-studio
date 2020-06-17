@@ -19,20 +19,12 @@
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>md-apache-cxf-egress-interceptor</artifactId>
-<<<<<<< HEAD
-      <version>1.2.1</version>
-=======
       <version>1.2.2</version>
->>>>>>> 96c12cc9518a29ae51b7c1ae92233432f14d458b
     </dependency>
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>md-apache-cxf-ingress-interceptor</artifactId>
-<<<<<<< HEAD
-      <version>1.2.1</version>
-=======
       <version>1.2.2</version>
->>>>>>> 96c12cc9518a29ae51b7c1ae92233432f14d458b
     </dependency>
   </dependencies>
   <build>
