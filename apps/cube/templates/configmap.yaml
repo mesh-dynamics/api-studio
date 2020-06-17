@@ -15,4 +15,4 @@ data:
   JAVA_OPTS: "-javaagent:/usr/local/tomcat/newrelic/newrelic.jar"
   NEW_RELIC_LOG: "STDOUT"
   SOLR_CORE: "{{solr_core}}"
-  SOLR_BASE_URL: "http://18.222.86.142:8983/solr/"
+  SOLR_BASE_URL: "{{solr_url}}"
