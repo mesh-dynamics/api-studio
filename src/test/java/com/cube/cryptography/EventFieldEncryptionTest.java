@@ -79,8 +79,7 @@ public class EventFieldEncryptionTest {
 		try {
 			Config config = new Config();
 			Optional<Event> eventOptional = config.rrstore
-				.getResponseEvent("OrderReceiver-14766e909f539fd1e9ebba339efe313a"
-					+ "-5e4dbd37-2fb6-45ea-8c52-aa1dd69a28e4");
+				.getResponseEvent("restwrapjdbc-mock-314cffbc-d7c2-4893-8381-328cfa3ce118");
 			Assertions.assertNotEquals(Optional.empty(), eventOptional);
 			Event event = eventOptional.get();
 			JSONObject services = object.getJSONObject("services");

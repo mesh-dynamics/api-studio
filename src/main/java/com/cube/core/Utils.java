@@ -5,6 +5,7 @@ package com.cube.core;
 
 import static io.md.utils.Utils.*;
 
+import io.md.dao.Recording.RecordingType;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
@@ -336,6 +337,9 @@ public class Utils {
 	    Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
         Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
         Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
+        RecordingType recordingType = getFirst(meta, Constants.RECORDING_TYPE_FIELD)
+          .flatMap(r -> io.md.utils.Utils.valueOf(RecordingType.class, r))
+          .orElse(RecordingType.Golden);
 
         if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection.isPresent() && runType.isPresent()) {
             EventBuilder eventBuilder = new EventBuilder(customerId.get(), app.get(),
@@ -344,7 +348,7 @@ public class Utils {
 	                .map(Event::getTraceId).orElse("NA")), null, null),
                 runType.get(), Optional.of(timestamp),
                 reqId.orElse("NA"),
-                apiPath, Event.EventType.HTTPResponse);
+                apiPath, Event.EventType.HTTPResponse, recordingType);
             eventBuilder.setPayload(httpResponsePayload);
             Event event = eventBuilder.createEvent();
             return event;

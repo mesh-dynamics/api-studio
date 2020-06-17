@@ -16,9 +16,11 @@ import com.cube.dao.ApiTraceResponse.ServiceReqRes;
 import io.md.constants.ReplayStatus;
 import io.md.dao.ConvertEventPayloadResponse;
 import io.md.dao.Event.EventType;
+import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.Recording.RecordingType;
 import io.md.dao.RecordingOperationSetSP;
+import io.md.dao.ResponsePayload;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -1509,10 +1511,11 @@ public class AnalyzeWS {
 	  if(level == 0) return;
 
 	  Event responseEvent = responseEventsByReqId.get(e.reqId);
+    HTTPRequestPayload payload = (HTTPRequestPayload) e.payload;
 
-    String status = responseEvent != null ? String.valueOf(((HTTPResponsePayload) responseEvent.payload).status) : "";
+    String status = responseEvent != null ? ((ResponsePayload) responseEvent.payload).getStatusCode() : "";
     ServiceReqRes serviceReqRes = new ServiceReqRes(e.service, e.apiPath,
-        e.reqId, e.timestamp, e.spanId, e.parentSpanId, status);
+        e.reqId, e.timestamp, e.spanId, e.parentSpanId, status, payload.method, payload.queryParams);
     apiTraceResponse.res.add(serviceReqRes);
     List<Event> children = requestEventsByParentSpanId.get(e.spanId);
     if(children == null) return;

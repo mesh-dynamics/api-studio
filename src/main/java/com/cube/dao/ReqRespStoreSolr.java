@@ -1258,6 +1258,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(REQIDF, event.reqId);
         doc.setField(PATHF, event.apiPath);
         doc.setField(EVENTTYPEF, event.eventType.toString());
+        doc.setField(RECORDING_TYPE_F, event.recordingType.toString());
         try {
             doc.setField(PAYLOADSTRF, config.jsonMapper.writeValueAsString(event.payload));
         } catch (JsonProcessingException e) {
@@ -1288,6 +1289,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> eventType = getStrField(doc, EVENTTYPEF);
         Optional<String> payloadStr = getStrFieldMVFirst(doc, PAYLOADSTRF);
         Optional<Integer> payloadKey = getIntField(doc, PAYLOADKEYF);
+        Optional<RecordingType> recordingType = getStrField(doc, RECORDING_TYPE_F)
+            .flatMap(r -> Utils.valueOf(RecordingType.class, r));
 
         Event.EventType eType = Utils.valueOf(Event.EventType.class, eventType.get()).orElse(null);
 
@@ -1295,7 +1298,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             , app.orElse(null), service.orElse(null), instanceId.orElse(null)
             , collection.orElse(null), new MDTraceInfo(traceid.orElse(null)
             , spanId.orElse(null), parentSpanId.orElse(null)), runType.orElse(null)
-            , timestamp, reqId.orElse(null), path.orElse(""), eType);
+            , timestamp, reqId.orElse(null), path.orElse(""), eType, recordingType.orElse(RecordingType.Golden));
         // TODO revisit this need to construct payload properly from type and json string
         try {
             payloadStr.ifPresent(UtilException.rethrowConsumer(payload ->
@@ -2485,6 +2488,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, INSTANCEIDF, apiTraceFacetQuery.instanceId);
         addRangeFilter(query, TIMESTAMPF, apiTraceFacetQuery.startDate,
             apiTraceFacetQuery.endDate, true, true);
+        addFilter(query, RECORDING_TYPE_F, apiTraceFacetQuery.recordingType);
+        addFilter(query, COLLECTIONF,apiTraceFacetQuery.collection);
         return query;
     }
 
@@ -2687,7 +2692,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
         Optional<String> collection, Optional<String> templateVersion, Optional<String> name, Optional<String> parentRecordingId, Optional<String> rootRecordingId,
         Optional<String> codeVersion, Optional<String> branch, List<String> tags, Optional<Boolean> archived, Optional<String> gitCommitId,
-        Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label) {
+        Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label, Optional<String> recordingType) {
 
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
@@ -2710,6 +2715,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, COLLECTION_UPD_OP_SET_IDF, collectionUpdOpSetId);
         addFilter(query, TEMPLATE_UPD_OP_SET_IDF, templateUpdOpSetId);
         addFilter(query, USERIDF, userId);
+        addFilter(query, RECORDING_TYPE_F, recordingType);
         addSort(query, TIMESTAMPF, false); // descending
 
         //Optional<Integer> maxresults = Optional.of(1);

@@ -840,7 +840,7 @@ public class CubeStore {
             defaultReqEvent.service, "NA", "NA",
             new MDTraceInfo("NA", null, null), RunType.Manual
             , Optional.of(Instant.now()), defaultReqEvent.reqId, defaultReqEvent.apiPath,
-            Event.EventType.getResponseType(defaultReqEvent.eventType));
+            Event.EventType.getResponseType(defaultReqEvent.eventType), defaultReqEvent.recordingType);
         eventBuilder.setPayload(payload);
         Event defaultRespEvent = eventBuilder.createEvent();
         // parseAndSetKey is needed only for requests
@@ -889,7 +889,7 @@ public class CubeStore {
                 reqEvent.service, "NA", "NA"
                 , new MDTraceInfo("NA", null, null), RunType.Manual,
                 Optional.of(Instant.now()),
-                reqEvent.reqId, reqEvent.apiPath, reqEvent.eventType);
+                reqEvent.reqId, reqEvent.apiPath, reqEvent.eventType, reqEvent.recordingType);
 
             //TODO:Add support for Binary payload.
             eventBuilder.setPayload(reqEvent.payload);
@@ -1106,6 +1106,7 @@ public class CubeStore {
         Optional<String> collectionUpdOpSetId = Optional.ofNullable(formParams.getFirst(Constants.COLLECTION_UPD_OP_SET_ID_FIELD));
         Optional<String> templateUpdOpSetId = Optional.ofNullable(formParams.getFirst(Constants.TEMPLATE_UPD_OP_SET_ID_FIELD));
         String archivedString = formParams.getFirst(Constants.ARCHIVED_FIELD);
+        Optional<String> recordingType = Optional.ofNullable(formParams.getFirst(Constants.RECORDING_TYPE_FIELD));
         Optional<Boolean> archived = Optional.empty();
 
         try {
@@ -1121,7 +1122,7 @@ public class CubeStore {
             }
 
             List<Recording> recordings = rrstore.getRecording(customerId, app, instanceId, status, collection, templateVersion, name, parentRecordingId, rootRecordingId,
-                codeVersion, branch, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, userId, label).collect(Collectors.toList());
+                codeVersion, branch, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, userId, label, recordingType).collect(Collectors.toList());
 
             String json;
             json = jsonMapper.writeValueAsString(recordings);

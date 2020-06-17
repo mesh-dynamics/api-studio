@@ -106,7 +106,8 @@ public abstract class ReqRespStoreImplBase extends AbstractDataStore implements 
 				Optional.of(Recording.RecordingStatus.Running), Optional.empty(), Optional.empty(),
                 Optional.empty(),Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty(), Collections.emptyList(), Optional.empty(),
-                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty())
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+								Optional.empty())
 				.findFirst()
 				.map(recording -> RecordOrReplay.createFromRecording(recording))
 				.or(() -> { // no ongoing recording, check replay
