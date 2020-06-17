@@ -39,7 +39,7 @@ public class EncryptConsoleRecorder extends ConsoleRecorder {
 					EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
 						event.service, event.instanceId,
 						event.getCollection(), mdTraceInfo, event.getRunType(),
-						Optional.of(event.timestamp), event.reqId, event.apiPath, event.eventType, RecordingType.Golden)
+						Optional.of(event.timestamp), event.reqId, event.apiPath, event.eventType, event.recordingType)
 						.setPayload(payload);
 					return eventBuilder.createEvent();
 				})).orElse(event);
