@@ -58,7 +58,6 @@ app.on('activate', function () {
 
 ipcMain.on('app_version', (event) => {
     logger.info("Sending App version to IPC Renderer");
-    logger.info("IPC Event", event);
     event.sender.send('app_version', { version: app.getVersion() });
 })
 
