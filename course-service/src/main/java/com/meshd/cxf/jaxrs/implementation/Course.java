@@ -38,7 +38,7 @@ public class Course {
         "http://34.220.106.159:8080/meshd/students?source=aaa&trial=bbb";
     //    private String URL = "http://34.220.106.159:8080/meshd/students?source=aaa&trial=bbb";
     private WebClient webClient = WebClient.create(URL, Arrays
-        .asList(new MDClientLoggingFilter(), new MDClientTracingFilter(), new MDClientMockingFilter()), true).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
+        .asList(new MDClientLoggingFilter(), new MDClientMockingFilter(), new MDClientTracingFilter()), true).accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
         javax.ws.rs.core.MediaType.APPLICATION_JSON);
 
     private Logger logger = LoggerFactory.getLogger(Course.class);
@@ -125,7 +125,6 @@ public class Course {
         logger.info("Sending call to student service :" + uriBuilder.toString());
         WebClient studentWebClient = webClient.path(uriBuilder.build().toString());
 
-        ClientConfiguration config = WebClient.getConfig(studentWebClient);
         Response response = studentWebClient.get();
 
         logger.info("Response status from student service " + response.getStatus());

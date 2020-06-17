@@ -191,8 +191,7 @@ public class CourseRepository {
 		uriBuilder.setPath(uriBuilder.getPath() + "/dummyStudentList");
 		uriBuilder.addParameter("count", String.valueOf(studentCount));
 		WebClient studentWebClient = WebClient.create(uriBuilder.build().toString(), Arrays
-			.asList(new MDClientLoggingFilter(), new MDClientTracingFilter(),
-				new MDClientMockingFilter()))
+			.asList(new MDClientLoggingFilter(), new MDClientMockingFilter(), new MDClientTracingFilter()))
 			.accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
 				javax.ws.rs.core.MediaType.APPLICATION_JSON);
 

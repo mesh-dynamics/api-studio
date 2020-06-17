@@ -102,7 +102,7 @@
         <dependency>
             <groupId>io.cube</groupId>
             <artifactId>md-apache-cxf-interceptor</artifactId>
-            <version>1.2.1</version>
+            <version>1.2.2</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-core -->
@@ -213,7 +213,7 @@
 
     <properties>
         <httpclient.version>4.5.2</httpclient.version>
-	      <cxf.version>2.7.18</cxf.version>
+	      <cxf.version>2.7.7</cxf.version>
     	  <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
     </properties>
