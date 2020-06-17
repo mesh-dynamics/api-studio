@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.cube</groupId>
   <artifactId>md-df-jaxrs-interceptor</artifactId>
-  <version>1.2.3</version>
+  <version>1.2.4</version>
   <packaging>jar</packaging>
 
   <distributionManagement>
@@ -19,12 +19,12 @@
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>md-jaxrs-ingress-interceptor</artifactId>
-      <version>1.2.2</version>
+      <version>1.2.3</version>
     </dependency>
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>md-jaxrs-egress-interceptor</artifactId>
-      <version>1.2.2</version>
+      <version>1.2.3</version>
     </dependency>
   </dependencies>
   <build>
