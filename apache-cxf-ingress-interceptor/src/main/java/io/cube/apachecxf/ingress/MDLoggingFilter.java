@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 
 import javax.annotation.Priority;
@@ -13,6 +14,7 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptor;
@@ -24,8 +26,8 @@ import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.cxf.jaxrs.impl.ContainerRequestContextImpl;
 import org.apache.cxf.jaxrs.impl.MetadataMap;
 import org.apache.cxf.jaxrs.impl.WriterInterceptorContextImpl;
-import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 import org.apache.cxf.message.Message;
+import org.apache.cxf.phase.PhaseInterceptorChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,9 +106,23 @@ public class MDLoggingFilter implements ContainerRequestFilter, ContainerRespons
 		ContainerResponseContext containerResponseContext) {
 		try {
 			if (containerRequestContext.getProperty(Constants.MD_SAMPLE_REQUEST) != null) {
+				MultivaluedMap<String, String> strHeaders = new MultivaluedHashMap<>();
+				//Don't use getStringHeaders() as the lib code is buggy if the header has empty/null value
+				MultivaluedMap<String, Object> headers = containerResponseContext.getHeaders();
+				headers.entrySet().forEach(entry -> {
+					String key = entry.getKey();
+					List<Object> values = entry.getValue();
+					if (values != null) {
+						for (Object value : values) {
+							if (value != null) {
+								strHeaders.add(key, value.toString());
+							}
+						}
+					}
+				});
+
 				containerRequestContext
-					.setProperty(Constants.MD_RESPONSE_HEADERS_PROP,
-						containerResponseContext.getStringHeaders());
+					.setProperty(Constants.MD_RESPONSE_HEADERS_PROP, strHeaders);
 				containerRequestContext
 					.setProperty(Constants.MD_STATUS_PROP, containerResponseContext.getStatus());
 				// aroundWriteTo will not be called for empty body
@@ -131,7 +147,7 @@ public class MDLoggingFilter implements ContainerRequestFilter, ContainerRespons
 			ContainerRequestContext reqContext = null;
 			//for Apache cxf
 			if (context instanceof WriterInterceptorContextImpl) {
-				Message message = JAXRSUtils.getCurrentMessage();
+				Message message = PhaseInterceptorChain.getCurrentMessage();
 				reqContext = new ContainerRequestContextImpl(message.getExchange().getInMessage(),
 					false, true);
 			}
