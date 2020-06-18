@@ -15,6 +15,8 @@ public class ApiTraceFacetQuery {
   public final Optional<Instant> startDate;
   public final Optional<Instant> endDate;
   public final Optional<String> traceId;
+  public final Optional<String> recordingType;
+  public final Optional<String> collection;
 
   public ApiTraceFacetQuery(String customerId, String appId) {
     this.customerId = customerId;
@@ -25,6 +27,8 @@ public class ApiTraceFacetQuery {
     this.startDate = Optional.empty();
     this.endDate = Optional.empty();
     this.traceId = Optional.empty();
+    this.recordingType = Optional.empty();
+    this.collection = Optional.empty();
   }
 
   public ApiTraceFacetQuery(String customerId, String appId, MultivaluedMap<String, String> queryParams) {
@@ -42,6 +46,8 @@ public class ApiTraceFacetQuery {
     this.startDate = startDate.flatMap(Utils::strToTimeStamp);
     this.traceId = Optional
         .ofNullable(queryParams.getFirst(Constants.TRACE_ID_FIELD));
+    this.recordingType = Optional.ofNullable(queryParams.getFirst(Constants.RECORDING_TYPE_FIELD));
+    this.collection = Optional.ofNullable(queryParams.getFirst(Constants.COLLECTION_FIELD));
   }
 
 }

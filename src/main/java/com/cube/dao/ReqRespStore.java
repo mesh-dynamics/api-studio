@@ -3,6 +3,9 @@
  */
 package com.cube.dao;
 
+import io.md.core.ConfigApplicationAcknowledge;
+import io.md.dao.agent.config.AgentConfigTagInfo;
+import io.md.dao.agent.config.ConfigDAO;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.AbstractMap;
@@ -41,6 +44,7 @@ import io.md.dao.ReqRespMatchResult;
 import io.md.services.DataStore;
 import io.md.services.FnResponse;
 
+import com.cube.dao.ReqRespStoreImplBase.CollectionKey;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.golden.TemplateSet;
@@ -69,7 +73,7 @@ public interface ReqRespStore extends DataStore {
 				Constants.RECORDING_ID, recording.id)));
 			recording.status = RecordingStatus.Completed;
 			recording.updateTimestamp = Optional.of(Instant.now());
-			rrstore.saveRecording(recording);
+			rrstore.expireRecordingInCache(recording);
 		}
 		return recording;
 	}
@@ -102,7 +106,11 @@ public interface ReqRespStore extends DataStore {
 
     void invalidateCache();
 
-    class ReqResp {
+	boolean updateAgentConfigTag(AgentConfigTagInfo tagInfo);
+
+	boolean saveAgentConfigAcknowledge(ConfigApplicationAcknowledge confApplicationAck);
+
+	class ReqResp {
 
 
 		/**
@@ -163,8 +171,11 @@ public interface ReqRespStore extends DataStore {
         MatchResultAggregate,
 		Diff,
 		AttributeTemplate,
-		DynamicInjectionConfig
-    }
+		DynamicInjectionConfig,
+		AgentConfigTagInfo,
+		AgentConfig,
+		AgentConfigAcknowledge;
+	}
 
     /**
 	 * @param reqId
@@ -203,8 +214,9 @@ public interface ReqRespStore extends DataStore {
 	 * @param replay
 	 * @return
 	 */
-	boolean saveReplay(Replay replay);
+	boolean expireReplayInCache(Replay replay);
 
+	boolean saveReplay(Replay replay);
 	/**
 	 * @param replayId
 	 * @return
@@ -404,7 +416,7 @@ public interface ReqRespStore extends DataStore {
 	Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
                                    Optional<String> collection, Optional<String> templateVersion, Optional<String> name, Optional<String> parentRecordingId, Optional<String> rootRecordingId,
                                    Optional<String> codeVersion, Optional<String> branch, List<String> tags, Optional<Boolean> archived, Optional<String> gitCommitId,
-                                   Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label);
+                                   Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label, Optional<String> recordingType);
 
 
     Optional<Recording> getRecording(String recordingId);
@@ -439,6 +451,12 @@ public interface ReqRespStore extends DataStore {
 	Optional<String> getCurrentRecordingCollection(Optional<String> customerId, Optional<String> app,
 			Optional<String> instanceId);
 
+
+	/**
+	 * @param recording
+	 * @return
+	 */
+	boolean expireRecordingInCache(Recording recording);
 
 	/**
 	 * @param recording
@@ -638,5 +656,9 @@ public interface ReqRespStore extends DataStore {
 
     public Optional<String> getDefaultEventType(String customer, String app, String service
 	    , String apiPath);
+
+    boolean storeAgentConfig(ConfigDAO store);
+    Optional<ConfigDAO> getAgentConfig(String customerId, String app, String service,
+						String instanceId);
 
 }

@@ -44,7 +44,7 @@ public class ReplayBuilder {
 	private Optional<Double> sampleRate;
 	List<String> intermediateServices;
 	Optional<String> generatedClassJarPath;
-	Optional<String> serviceToReplay;
+	List<String> serviceToReplay;
 	Optional<URLClassLoader> classLoader;
 	ReplayTypeEnum replayType;
 	int reqCnt;
@@ -77,7 +77,7 @@ public class ReplayBuilder {
 		async = false;
 		sampleRate = Optional.empty();
 		this.generatedClassJarPath = Optional.empty();
-		this.serviceToReplay = Optional.empty();
+		this.serviceToReplay = Collections.emptyList();
 		// Default replay type as HTTP
 		this.replayType = ReplayTypeEnum.HTTP;
 		reqCnt = 0;
@@ -169,8 +169,8 @@ public class ReplayBuilder {
 		return this;
 	}
 
-	public ReplayBuilder withServiceToReplay(String service) {
-		this.serviceToReplay = Optional.of(service);
+	public ReplayBuilder withServiceToReplay(List<String> service) {
+		this.serviceToReplay = service;
 		return this;
 	}
 

@@ -88,7 +88,6 @@ public class Constants {
     public static final String PATH_PATH = "/path";
     public static final String METHOD_PATH = "/method";
     public static final String ARGS_PATH = "/argVals";
-    public static final String FN_RESPONSE_PATH = "/retOrExceptionVal";
     public static final String HDR_PATH = "/hdrs";
     public static final String META_PATH = "/meta";
     public static final String BODY_PATH = "/body";
@@ -139,6 +138,7 @@ public class Constants {
     public static final String OLD_TEMPLATE_SET_VERSION = "oldTemplateSetVersion";
     public static final String NEW_TEMPLATE_SET_VERSION = "newTemplateSetVersion";
     public static final String RECORDING_ID = "recordingId";
+    public static final String RECORDING_TYPE_FIELD = "recordingType";
     public static final String RECORDING_UPDATE_OPERATION_SET_ID = "recUpdateOpSetId";
     public static final String RECORDING_UPDATE_API_OPERATION_SET_ID = "recUpdateApiPathOpSetId";
 
@@ -154,7 +154,7 @@ public class Constants {
     public static final String COLLECTION_UPD_OP_SET_ID_FIELD = "collection_upd_op_set_id";
     public static final String TEMPLATE_UPD_OP_SET_ID_FIELD = "template_upd_op_set_id";
     public static final String GOLDEN_COMMENT_FIELD = "golden_comment";
-    public static final String TEMPLATE_VERSION_FIELD = "version";
+    public static final String VERSION_FIELD = "version";
     public static final String SRC_REQUEST_ID = "src-request-id";
     public static final String REQUEST_ID = "request-id";
     public static final String CUBE_HEADER_PREFIX = "c-";
@@ -189,4 +189,10 @@ public class Constants {
 	public static final String REC_TRACE_ID = "recordTraceId";
 	public static final String SPAN_ID_FIELD = "spanId";
     public static final String PARENT_SPAN_ID_FIELD = "parentSpanId";
+	public static final String REDIS_SHADOW_KEY_PREFIX = "shadowKey:";
+    public static final String REDIS_STATUS_KEY_PREFIX = "statusKey:";
+    public static final String CONFIG_JSON = "config_json";
+	public static final String TAG_FIELD = "tag";
+	public static final String AGENT_ID = "agentId" ;
+    public static final String INFO = "info";
 }

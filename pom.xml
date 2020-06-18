@@ -19,20 +19,25 @@
 			<name>maven-repository</name>
 			<url>file:///${project.basedir}/repo</url>
 		</repository> -->
-    <repository>
-          <id>github-agent</id>
-          <name>GitHub OWNER Apache Maven Packages</name>
-          <url>https://maven.pkg.github.com/cube-io-corp/agent</url>
-    </repository>
-			<repository>
-				<id>github</id>
-				<name>GitHub OWNER Apache Maven Packages</name>
-				<url>https://maven.pkg.github.com/cube-io-corp/md-commons</url>
-			</repository>
+    		<repository>
+          		<id>github-agent</id>
+          		<name>GitHub OWNER Apache Maven Packages</name>
+          		<url>https://maven.pkg.github.com/cube-io-corp/agent</url>
+    		</repository>
+		<repository>
+			<id>github</id>
+			<name>GitHub OWNER Apache Maven Packages</name>
+			<url>https://maven.pkg.github.com/cube-io-corp/md-commons</url>
+		</repository>
 		<repository>
 			<id>github-md-commons-server</id>
 			<name>GitHub OWNER Apache Maven Packages</name>
 			<url>https://maven.pkg.github.com/cube-io-corp/md-commons-server</url>
+		</repository>
+		<repository>
+			<id>github-interceptor</id>
+			<name>GitHub CubeIO Apache Maven Packages</name>
+			<url>https://maven.pkg.github.com/cube-io-corp/interceptor-framework</url>
 		</repository>
 	</repositories>
   <!--  this is for having consistent jackson versions -->
@@ -320,20 +325,24 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>agent</artifactId>
-			<version>1.0.28</version>
+			<version>1.0.33</version>
 		</dependency>
 
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>commons</artifactId>
-			<version>1.0.68</version>
+			<version>1.0.81</version>
 		</dependency>
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>commons-server</artifactId>
-			<version>1.0.11</version>
+			<version>1.0.12</version>
 		</dependency>
-
+		<dependency>
+			<groupId>io.cube</groupId>
+			<artifactId>md-df-jaxrs-interceptor</artifactId>
+			<version>1.2.4</version>
+		</dependency>
 	</dependencies>
   <groupId>com.cube</groupId>
 </project>

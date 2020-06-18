@@ -23,15 +23,17 @@ import io.cube.agent.CommonConfig;
 import io.cube.agent.ConsoleRecorder;
 import io.cube.agent.IntentResolver;
 import io.cube.agent.Mocker;
+import io.cube.agent.ProxyMocker;
 import io.cube.agent.Recorder;
-import io.cube.agent.SimpleMocker;
 import io.cube.agent.TraceIntentResolver;
 import io.md.utils.CommonUtils;
 import io.md.utils.MeshDGsonProvider;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
+import com.cube.cache.RedisPubSub;
 import com.cube.cache.TemplateCache;
 import com.cube.cache.TemplateCacheRedis;
 import com.cube.core.Utils;
@@ -62,10 +64,14 @@ public class Config {
 
 	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.createDefaultMapper();
 
+	public final long responseSize;
+
+	public final long pathsToKeepLimit;
+
 	//public final Tracer tracer = Utils.init("Cube");
 
 	public final Recorder recorder;
-	public final Mocker mocker;
+	public final ProxyMocker mocker;
 
 	public final Gson gson;
 
@@ -78,6 +84,9 @@ public class Config {
 		System.setProperty("io.md.intent" , "noop");
 		commonConfig = CommonConfig.getInstance();
 		String solrurl = null;
+    int size = Integer.valueOf(fromEnvOrProperties("response_size", "1"));
+    pathsToKeepLimit = Long.valueOf(fromEnvOrProperties("paths_to_keep_limit", "1000"));
+    responseSize =  size*1000000;
         try {
             properties.load(this.getClass().getClassLoader().
                     getResourceAsStream(CONFFILE));
@@ -106,7 +115,7 @@ public class Config {
             .create();
         MeshDGsonProvider.setInstance(gson);
         recorder = new ConsoleRecorder(gson);
-        mocker = new SimpleMocker(gson);
+        mocker = new ProxyMocker(gson);
 
         try {
             String redisHost = fromEnvOrProperties("redis_host", "localhost");
@@ -116,6 +125,27 @@ public class Config {
             jedisPool = new JedisPool(new JedisPoolConfig() , redisHost, redisPort , 2000,  redisPassword);
             REDIS_DELETE_TTL = Integer.parseInt(fromEnvOrProperties("redis_delete_ttl"
                 , "15"));
+	        Runnable subscribeThread = new Runnable() {
+		        /**
+		         * When an object implementing interface <code>Runnable</code> is
+		         * used to create a thread, starting the thread causes the object's
+		         * <code>run</code> method to be called in that separately
+		         * executing
+		         * thread.
+		         * <p>
+		         * The general contract of the method <code>run</code> is that it
+		         * may take any action whatsoever.
+		         *
+		         * @see Thread#run()
+		         */
+		        @Override
+		        public void run() {
+			        Jedis jedis = jedisPool.getResource();
+			        jedis.configSet("notify-keyspace-events" , "Ex");
+			        jedis.psubscribe(new RedisPubSub(rrstore, jsonMapper, jedisPool), "__key*__:*");
+		        }
+	        };
+	        new Thread(subscribeThread).start();
         } catch (Exception e) {
             LOGGER.error("Error while initializing redis thread pool :: " + e.getMessage());
             throw e;
@@ -134,5 +164,13 @@ public class Config {
 		String value = this.properties.getProperty(key);
 		return value;
 	}
+
+	public long getResponseSize() {
+	  return responseSize;
+  }
+
+  public long getPathsToKeepLimit() {
+	  return pathsToKeepLimit;
+  }
 
 }

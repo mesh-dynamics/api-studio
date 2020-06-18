@@ -285,7 +285,7 @@ public class RecordingUpdate {
                     , "", new MDTraceInfo(recordResponse.getTraceId(), null
                     , null), recordResponse.getRunType()
                     , Optional.of(recordResponse.timestamp), newReqId, recordResponse.apiPath
-                    , recordResponse.eventType)
+                    , recordResponse.eventType, recordResponse.recordingType)
                     .setPayload(recordResponse.payload)
                     /*.setRawPayloadString(recordResponse.rawPayloadString)*/
                     .setPayloadKey(recordResponse.payloadKey)
@@ -301,7 +301,7 @@ public class RecordingUpdate {
                     , "", new MDTraceInfo(recordResponse.getTraceId(), null
                     , null), recordRequest.getRunType()
                     , Optional.of(recordRequest.timestamp), newReqId, recordRequest.apiPath
-                    , recordRequest.eventType)
+                    , recordRequest.eventType, recordRequest.recordingType)
                     .setPayload(recordRequest.payload)
                     /*.setRawPayloadString(recordRequest.rawPayloadString)*/
                     .setPayloadKey(recordRequest.payloadKey)
