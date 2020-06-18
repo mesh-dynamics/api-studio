@@ -325,24 +325,24 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>agent</artifactId>
-			<version>1.0.28</version>
+			<version>1.0.33</version>
 		</dependency>
 
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>commons</artifactId>
-			<version>1.0.80</version>
+			<version>1.0.81</version>
 		</dependency>
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>commons-server</artifactId>
 			<version>1.0.12</version>
 		</dependency>
-		<!--<dependency>
+		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>md-df-jaxrs-interceptor</artifactId>
-			<version>1.2.3</version>
-		</dependency>-->
+			<version>1.2.4</version>
+		</dependency>
 	</dependencies>
   <groupId>com.cube</groupId>
 </project>

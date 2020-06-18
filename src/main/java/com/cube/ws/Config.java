@@ -23,8 +23,8 @@ import io.cube.agent.CommonConfig;
 import io.cube.agent.ConsoleRecorder;
 import io.cube.agent.IntentResolver;
 import io.cube.agent.Mocker;
+import io.cube.agent.ProxyMocker;
 import io.cube.agent.Recorder;
-import io.cube.agent.SimpleMocker;
 import io.cube.agent.TraceIntentResolver;
 import io.md.utils.CommonUtils;
 import io.md.utils.MeshDGsonProvider;
@@ -71,7 +71,7 @@ public class Config {
 	//public final Tracer tracer = Utils.init("Cube");
 
 	public final Recorder recorder;
-	public final Mocker mocker;
+	public final ProxyMocker mocker;
 
 	public final Gson gson;
 
@@ -115,7 +115,7 @@ public class Config {
             .create();
         MeshDGsonProvider.setInstance(gson);
         recorder = new ConsoleRecorder(gson);
-        mocker = new SimpleMocker(gson);
+        mocker = new ProxyMocker(gson);
 
         try {
             String redisHost = fromEnvOrProperties("redis_host", "localhost");
