@@ -48,8 +48,8 @@ public class MockServiceController {
         return cubeServerService.fetchPostResponse(request, getBody);
     }
 
-    @PostMapping("/mockFunction")
-    public ResponseEntity mockFunction(HttpServletRequest request, @RequestBody Event event) {
+    @PostMapping("/mockEvent")
+    public ResponseEntity mockEvent(HttpServletRequest request, @RequestBody Event event) {
         validation.validateCustomerName(request,event.customerId);
         final Optional<Event> bodyData = Optional.of(event);
         return cubeServerService.fetchPostResponse(request, bodyData);
