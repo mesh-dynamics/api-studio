@@ -21,6 +21,8 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import lombok.extern.java.Log;
 import org.apache.tomcat.util.codec.binary.Base64;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,7 +39,8 @@ public class JiraAPIService {
     private String jiraBaseUrl = "https://cubeio.atlassian.net/rest/api/3";
     private RestTemplate restTemplate;
 
-    public JiraAPIService(RestTemplate restTemplate) {
+    @Autowired
+    public JiraAPIService(@Qualifier("appRestClient") RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
