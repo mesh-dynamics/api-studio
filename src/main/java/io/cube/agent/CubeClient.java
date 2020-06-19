@@ -54,6 +54,8 @@ public class CubeClient {
 		CommonConfig config = null;
 		try {
 			config = CommonConfig.getInstance();
+			config.authToken.ifPresent(
+					val -> postRequest.setHeader(io.cube.agent.Constants.AUTHORIZATION_HEADER, val));
 		} catch (Exception e) {
 			LOGGER.error("Error while getting Common config instance", e);
 		}
