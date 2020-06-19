@@ -35,7 +35,7 @@ import net.dongliu.gson.GsonJava8TypeAdapterFactory;
  * Date: 2019-05-10
  * @author Prasad M D
  */
-class RecorderAndMockerTest {
+public class RecorderAndMockerTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RecorderAndMockerTest.class);
 
@@ -50,7 +50,7 @@ class RecorderAndMockerTest {
         Mock
     }
 
-    static final String CUSTID = "Test";
+    static final String CUSTID = "CubeCorp";
     static final String APPID = "Test";
     static final String INSTANCEID_BASE = "Test";
     static String INSTANCEID = "Test"; // non final, set differently for each test since recordings take 15s to stop
@@ -303,8 +303,10 @@ class RecorderAndMockerTest {
         INSTANCEID = INSTANCEID_BASE + "_Record_" + currentTime;
         String replayInstanceId = INSTANCEID_BASE + "_Replay_" + currentTime;
 
+        String goldenName = GOLDENNAME + "_" + currentTime;
+
         // start recording
-        cubeClient.startRecording(CUSTID, APPID, INSTANCEID, GOLDENNAME, TESTUSER, label,
+        cubeClient.startRecording(CUSTID, APPID, INSTANCEID, goldenName, TESTUSER, label,
                 TEMPLATEVERSION);
 
         // set mode to record
@@ -320,10 +322,10 @@ class RecorderAndMockerTest {
 
 
         // stop recording
-        cubeClient.stopRecording(CUSTID, APPID, GOLDENNAME, label);
+        cubeClient.stopRecording(CUSTID, APPID, goldenName, label);
 
         // start replay
-        Optional<String> resp = cubeClient.initReplay(CUSTID, APPID, replayInstanceId, GOLDENNAME, ENDPOINT, TESTUSER);
+        Optional<String> resp = cubeClient.initReplay(CUSTID, APPID, replayInstanceId, goldenName, ENDPOINT, TESTUSER);
         Optional<String> replayid = resp.flatMap(r -> {
             try {
                 Map<String, String> attrs = jsonMapper.readValue(r, Map.class);
@@ -365,7 +367,7 @@ class RecorderAndMockerTest {
 
 
     @Test
-    void testFnNoArgs() {
+    public void testFnNoArgs() {
 
         ProdDiscount[] prodDiscounts = {prodDiscount1, prodDiscount2, prodDiscount3};
         testGetPromoName(prodDiscounts);
@@ -424,9 +426,10 @@ class RecorderAndMockerTest {
         String label = Instant.now().toString();
         INSTANCEID = INSTANCEID_BASE + "_Record_" + currentTime;
         String replayInstanceId = INSTANCEID_BASE + "_Replay_" + currentTime;
+        String goldenName = GOLDENNAME + "_" + currentTime;
 
         // start recording
-        cubeClient.startRecording(CUSTID, APPID, INSTANCEID, GOLDENNAME, TESTUSER, label, TEMPLATEVERSION);
+        cubeClient.startRecording(CUSTID, APPID, INSTANCEID, goldenName, TESTUSER, label, TEMPLATEVERSION);
 
         // set mode to record
         mode = Mode.Record;
@@ -450,10 +453,10 @@ class RecorderAndMockerTest {
 
 
         // stop recording
-        cubeClient.stopRecording(CUSTID, APPID, GOLDENNAME, label);
+        cubeClient.stopRecording(CUSTID, APPID, goldenName, label);
 
         // start replay
-        Optional<String> resp = cubeClient.initReplay(CUSTID, APPID, replayInstanceId, GOLDENNAME, ENDPOINT, TESTUSER);
+        Optional<String> resp = cubeClient.initReplay(CUSTID, APPID, replayInstanceId, goldenName, ENDPOINT, TESTUSER);
         Optional<String> replayid = resp.flatMap(r -> {
             try {
                 Map<String, String> attrs = jsonMapper.readValue(r, Map.class);
@@ -505,33 +508,33 @@ class RecorderAndMockerTest {
 
 
     @Test
-    void testFnMultipleArgs() {
+    public void testFnMultipleArgs() {
         testFnMultiArgs(false, false, 1, ExceptionTestType.None);
     }
 
     @Test
-    void testFnObjArgs() {
+    public void testFnObjArgs() {
         testFnMultiArgs(true, false, 1, ExceptionTestType.None);
     }
 
 
     @Test
-    void testFnNullObjArgs() {
+    public void testFnNullObjArgs() {
         testFnMultiArgs(true, true, 1, ExceptionTestType.None);
     }
 
     @Test
-    void testFnException() {
+    public void testFnException() {
         testFnMultiArgs(true, true, 1, ExceptionTestType.ExceptionRuntime);
     }
 
     @Test
-    void testFnExceptionChecked() {
+    public void testFnExceptionChecked() {
         testFnMultiArgs(true, true, 1, ExceptionTestType.ExceptionChecked);
     }
 
     @Test
-    void testFnNullReturnVal() {
+    public void testFnNullReturnVal() {
         // create ProdDiscount with null promo name
         ProdDiscount[] prodDiscounts = {new ProdDiscount(new HashMap<String, Double>(), null)};
            testGetPromoName(prodDiscounts);
@@ -539,7 +542,7 @@ class RecorderAndMockerTest {
 
 
     @Test
-    void testFnSeqOfCalls() {
+    public void testFnSeqOfCalls() {
         testFnMultiArgs(false, false, 5, ExceptionTestType.None);
     }
 

@@ -10,7 +10,7 @@ public class Constants {
 	public static final String SAMPLER_CONF_FILE_PATH = "io.md.samplerconfig.path";
 	public static final String SERVICES_TO_MOCK_PROP = "io.md.mock.services";
 	public static final String AUTH_TOKEN_PROP = "io.md.authtoken";
-	public static final String AUTHORIZATION_HEADER = "authorization";
+	public static final String AUTHORIZATION_HEADER = "Authorization";
 	public static final String RING_BUFFER_SIZE_PROP = "io.md.disruptor.size";
 	public static final String RING_BUFFER_OUTPUT_PROP = "io.md.disruptor.output";
 	public static final String RING_BUFFER_OUTPUT_FILE_NAME = "io.md.disruptor.output.file";
