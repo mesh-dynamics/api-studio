@@ -1,19 +1,22 @@
 #!/usr/bin/env bash
 
 record() {
-  RECORDING_ID=$(curl -X POST $CUBE_ENDPOINT/api/cs/start/CubeCorp/CourseApp/prod/default \
+  RESPONSE=$(curl -X POST \
+  $CUBE_ENDPOINT/api/cs/start/CubeCorp/CourseApp/$INSTANCE_ID/default \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H "Authorization: Bearer $AUTH_TOKEN" \
   -H 'cache-control: no-cache' \
-  -d "name=course-$DRONE_BUILD_NUMBER&userId=CubeCorp&label=$(date +%s)" | jq .id | tr -d '"')
+  -d "name=course-$DRONE_BUILD_NUMBER&userId=CubeCorp&label=$(date +%s)")
+  echo $RESPONSE
+  RECORDING_ID=$(echo $RESPONSE | jq -r ".id")
+  echo $RECORDING_ID
   echo $RECORDING_ID
 }
 
 generate_traffic() {
-  #for ((i=1;i<=$1;i++)); do
+  for ((i=1;i<=$1;i++)); do
     curl -f --location --request GET 'http://apachecxf.dev.cubecorp.io:8080/meshd/courses/1/students/1' \
     --header 'CUSTOM: ASD'
-  #done
   curl --location --request GET 'http://apachecxf.dev.cubecorp.io:8080/meshd/courses/1'
   curl --location --request PUT 'http://apachecxf.dev.cubecorp.io:8080/meshd/courses/1' \
 	--header 'Content-Type: application/json' \
@@ -25,7 +28,7 @@ generate_traffic() {
         	2,
         	2
     	]
-	}'  
+	}'
   curl --location --request GET 'http://apachecxf.dev.cubecorp.io:8080/meshd/dummyCourseList?count=2'
   TIMESTAMP=$(date +%s)
   curl --location --request POST 'http://apachecxf.dev.cubecorp.io:8080/meshd/courses/1/students' \
@@ -34,15 +37,11 @@ generate_traffic() {
     		"id": "'$TIMESTAMP'",
     		"name": "Student C"
 	}'
-#  curl --location --request DELETE 'http://apachecxf.dev.cubecorp.io:8080/meshd/courses/1/students/3' \
-#	--header 'Content-Type: application/json' \
-#	--data-raw '{
-#    		"id": 3,
-##    	"name": "Student C"
-#	}'
+
   curl --location --request POST 'http://apachecxf.dev.cubecorp.io:8080/meshd/courses' \
 	--header 'Content-Type: application/x-www-form-urlencoded' \
 	--data-urlencode 'name=testcourse'
+done
 }
 
 stop_recording() {
@@ -51,12 +50,26 @@ stop_recording() {
 }
 replay() {
   BODY="endPoint=$REPLAY_ENDPOINT&instanceId=$INSTANCE_ID&templateSetVer=$TEMPLATE&userId=$USER_ID"
-  REPLAY_ID=$(curl -X POST \
+  COUNT=0
+	while [ "$http_code" != "200" ] || [ "$REPLAY_ID" = "none" ] && [ "$COUNT" != "5" ]; do
+  resp=$(curl -sw "%{http_code}" -X POST \
 		$CUBE_ENDPOINT/api/rs/start/$RECORDING_ID \
 		-H 'Content-Type: application/x-www-form-urlencoded' \
 		-H "Authorization: Bearer $AUTH_TOKEN" \
 		-H 'cache-control: no-cache' \
-		-d $BODY | jq .replayId | tr -d '"')
+		-d $BODY)
+    http_code="${resp:${#res}-3}"
+    body="${resp:0:${#resp}-3}"
+    echo $body
+    REPLAY_ID=$(echo $body | jq -r ".replayId")
+    COUNT=$((COUNT+1))
+    if [ $COUNT -eq 5 ]; then
+      echo "Replay failed to start multiple times.."
+      exit 1
+    fi
+    sleep 5
+  done
+
   COUNT=0
   while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ] && [ "$COUNT" != "30" ]; do
     STATUS=$(curl -X GET $CUBE_ENDPOINT/api/rs/status/$REPLAY_ID -H "Authorization: Bearer $AUTH_TOKEN" | jq .status | tr -d '"')
@@ -91,14 +104,13 @@ main() {
   TEMPLATE=DEFAULT
   USER_ID=CubeCorp
   REPLAY_ENDPOINT=http://apachecxf.dev.cubecorp.io
-  INSTANCE_ID=prod
+  INSTANCE_ID=$DRONE_COMMIT
   AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s"
   record
   sleep 20
   generate_traffic 5
-  sleep 20
   stop_recording
-  sleep 20
+  sleep 40
   replay
   sleep 30
   analyze
