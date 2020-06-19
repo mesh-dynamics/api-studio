@@ -4,6 +4,7 @@ import io.md.cube.spring.egress.RestTemplateMockInterceptor;
 import io.md.cube.spring.egress.RestTemplateTracingInterceptor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -30,6 +31,8 @@ import static com.cubeui.backend.security.Constants.SPRING_PROFILE_DEVELOPMENT;
 @SpringBootApplication(scanBasePackages = {"com.cubeui.backend", "io.md.cube"})
 //@SpringBootApplication
 public class BackendApplication {
+
+    @Autowired RestTemplate restTemplate;
 
     public static void main(String[] args) {
 //        SpringApplication.run(BackendApplication.class, args);
@@ -58,7 +61,6 @@ public class BackendApplication {
 
     @Bean(name = "appRestClient")
     public RestTemplate getRestTemplate() {
-        RestTemplate restTemplate = new RestTemplate();
         ArrayList<ClientHttpRequestInterceptor> interceptors = new ArrayList<>();
         interceptors.add(new RestTemplateMockInterceptor());
         interceptors.add(new RestTemplateTracingInterceptor());
