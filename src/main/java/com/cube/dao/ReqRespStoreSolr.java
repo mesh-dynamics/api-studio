@@ -1042,9 +1042,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private static void addFilter(SolrQuery query, String fieldname, String fval, boolean quote) {
-        //String newfval = quote ? String.format("\"%s\"", StringEscapeUtils.escapeJava(fval)) : fval ;
-        String newfval = quote ? SolrIterator.escapeQueryChars(fval) : fval;
-        query.addFilterQuery(String.format("%s:%s", fieldname, newfval));
+        addFilter(query, fieldname, Optional.of(fval), quote, false);
     }
 
     private static void addNegativeFilter(SolrQuery query, String fieldname, String fval, boolean quote) {
@@ -1060,6 +1058,23 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private static void addFilter(SolrQuery query, String fieldname, Optional<String> fval) {
         addFilter(query, fieldname, fval, false);
+    }
+
+
+    private static void addFilter(SolrQuery query, String fieldname, Optional<String> fval, boolean quote, boolean includeEmpty) {
+        fval.ifPresent(val -> {
+            String newfval = quote ? SolrIterator.escapeQueryChars(val) : val;
+            if (newfval.isEmpty()) {
+                newfval = "\"\"";
+            }
+            if (includeEmpty) {
+                // empty val should be treated as fval
+                query.addFilterQuery(
+                    String.format("(*:* AND NOT %s:*) OR %s:%s", fieldname, fieldname, newfval));
+            } else {
+                query.addFilterQuery(String.format("%s:%s", fieldname, newfval));
+            }
+        });
     }
 
     private static void addFilter(SolrQuery query, String fieldname, Optional<String> fval, boolean enforceEmpty) {
@@ -2488,7 +2503,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, INSTANCEIDF, apiTraceFacetQuery.instanceId);
         addRangeFilter(query, TIMESTAMPF, apiTraceFacetQuery.startDate,
             apiTraceFacetQuery.endDate, true, true);
-        addFilter(query, RECORDING_TYPE_F, apiTraceFacetQuery.recordingType);
+        boolean includeEmpty = apiTraceFacetQuery.recordingType
+                .map(v -> v.equals(RecordingType.Golden.toString()))
+                .orElse(false);
+        addFilter(query, RECORDING_TYPE_F, apiTraceFacetQuery.recordingType, true, includeEmpty);
         addFilter(query, COLLECTIONF,apiTraceFacetQuery.collection);
         return query;
     }
@@ -2715,7 +2733,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, COLLECTION_UPD_OP_SET_IDF, collectionUpdOpSetId);
         addFilter(query, TEMPLATE_UPD_OP_SET_IDF, templateUpdOpSetId);
         addFilter(query, USERIDF, userId);
-        addFilter(query, RECORDING_TYPE_F, recordingType);
+        boolean includeEmpty = recordingType.map(v -> v.equals(RecordingType.Golden.toString()))
+                .orElse(false);
+        addFilter(query, RECORDING_TYPE_F, recordingType, true, includeEmpty);
         addSort(query, TIMESTAMPF, false); // descending
 
         //Optional<Integer> maxresults = Optional.of(1);
