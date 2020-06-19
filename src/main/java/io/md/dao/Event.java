@@ -11,7 +11,9 @@ import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Collections;
@@ -47,7 +49,7 @@ public class Event {
 	private Event(String customerId, String app, String service, String instanceId,
 		String collection, String traceId, String spanId, String parentSpanId,
 		RunType runType, Instant timestamp, String reqId, String apiPath, EventType eventType,
-		Payload payload, int payloadKey, RecordingType recordingType) {
+		Payload payload, int payloadKey, RecordingType recordingType, Map<String, String> metaData) {
 		this.customerId = customerId;
 		this.app = app;
 		this.service = service;
@@ -64,6 +66,7 @@ public class Event {
 		this.payload = payload;
 		this.payloadKey = payloadKey;
 		this.recordingType = recordingType;
+		this.metaData = metaData;
 	}
 
 	/**
@@ -86,6 +89,7 @@ public class Event {
 		this.payload = null;
 		this.payloadKey = 0;
 		this.recordingType = RecordingType.Golden;
+		this.metaData = null;
 	}
 
 	public static List<EventType> getRequestEventTypes() {
@@ -306,6 +310,7 @@ public class Event {
 	public final EventType eventType;
 	public final Payload payload;
 	public final RecordingType recordingType;
+	public final Map<String, String> metaData;
 
 	@JsonIgnore
 	public int payloadKey;
@@ -349,6 +354,8 @@ public class Event {
 		private Payload payload;
 		private int payloadKey = 0;
 		private final RecordingType recordingType;
+		private Map<String, String> metaData = Collections.EMPTY_MAP;
+
 
 		public EventBuilder(String customerId, String app, String service, String instanceId,
 			String collection, MDTraceInfo mdTraceInfo,
@@ -400,10 +407,15 @@ public class Event {
 			return this;
 		}
 
+		public EventBuilder withMetaData(Map<String, String> metaData) {
+			this.metaData = metaData;
+			return this;
+		}
+
 		public Event createEvent() throws io.md.dao.Event.EventBuilder.InvalidEventException {
 			Event event = new Event(customerId, app, service, instanceId, collection, traceId
 				, spanId, parentSpanId, runType, timestamp.orElse(Instant.now()), reqId, apiPath,
-				eventType , payload, payloadKey, recordingType);
+				eventType , payload, payloadKey, recordingType, metaData);
 			if (event.validate()) {
 				return event;
 			} else {
