@@ -4,7 +4,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.google.gson.Gson;
-import com.lmax.disruptor.BusySpinWaitStrategy;
+import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.InsufficientCapacityException;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.WaitStrategy;
@@ -30,7 +30,7 @@ public class ConsoleRecorder extends AbstractGsonSerializeRecorder {
 
 		ThreadFactory threadFactory = DaemonThreadFactory.INSTANCE;
 
-		WaitStrategy waitStrategy = new BusySpinWaitStrategy();
+		WaitStrategy waitStrategy = new BlockingWaitStrategy();
 		SingleEventPrintConsumer eventConsumer = new SingleEventPrintConsumer();
 		disruptor
 			= new Disruptor<>(
