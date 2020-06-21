@@ -8,6 +8,7 @@ import static com.cube.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 import static io.md.utils.Utils.createHTTPRequestEvent;
 
+import io.md.dao.LazyParseAbstractPayload;
 import io.md.dao.Recording.RecordingType;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.ValidateAgentStore;
@@ -50,6 +51,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
+import org.apache.solr.common.util.Pair;
 import org.json.JSONObject;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
@@ -84,12 +86,15 @@ import io.md.services.DataStore.TemplateNotFoundException;
 import io.md.dao.HTTPRequestPayload;
 
 import com.cube.core.Utils;
+import com.cube.dao.Analysis;
 import com.cube.dao.CubeEventMetaInfo;
 import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
+import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.dao.Result;
 import com.cube.dao.WrapperEvent;
+import com.cube.drivers.Analyzer;
 import com.cube.utils.Constants;
 import com.cube.ws.WSUtils.BadValueException;
 
@@ -747,7 +752,9 @@ public class CubeStore {
         }
         try {
             ValidateAgentStore.validate(configDAO);
-            rrstore.storeAgentConfig(configDAO);
+            if(!rrstore.storeAgentConfig(configDAO)) {
+                throw new SolrStoreException("Cannot store object in solr");
+            };
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(
                 buildSuccessResponse(Constants.SUCCESS,
                     new JSONObject(Map.of(Constants.MESSAGE, "The config is saved",
@@ -770,7 +777,7 @@ public class CubeStore {
                     Constants.INSTANCE_ID_FIELD, configDAO.instanceId)), e);
             return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
                 buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
-                    "Error while saving the config")).build();
+                    e.getMessage())).build();
         }
     }
 
@@ -817,20 +824,62 @@ public class CubeStore {
     @Path("/ackConfigApplication")
     @Produces({MediaType.APPLICATION_JSON})
     public Response acknowledgeConfigApplication(ConfigApplicationAcknowledge confApplicationAck) {
-            try {
-                if (rrstore.saveAgentConfigAcknowledge(confApplicationAck)) {
-                    return Response.ok().build();
-                } else {
-                    throw new Exception("Unable to store acknowledge info");
-                }
-            } catch (Exception e) {
-                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Error while processing "
-                    + "agent config acknowledge")),e);
-                return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
-                    buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
-                        "Error while processing acknowledge")).build();
+        try {
+            if (rrstore.saveAgentConfigAcknowledge(confApplicationAck)) {
+                return Response.ok().build();
+            } else {
+                throw new Exception("Unable to store acknowledge info");
             }
+        } catch (Exception e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Error while processing "
+                + "agent config acknowledge")), e);
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
+                    "Error while processing acknowledge")).build();
+        }
     }
+
+
+    /**
+     * API to get the sampling info for agents running for a particular {customerId}/{app}/{service}/{instanceId}
+     * @param customerId
+     * @param app
+     * @param service
+     * @param instanceId
+     * @param ui
+     * @return
+     */
+    @GET
+    @Path("/getAgentSamplingFacets/{customerId}/{app}/{service}/{instanceId}")
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response getAgentSamplingFacets(@PathParam("customerId") String customerId, @PathParam("app") String app,
+        @PathParam("service") String service, @PathParam("instanceId") String instanceId , @Context UriInfo ui) {
+        try {
+            io.md.dao.CubeMetaInfo cubeMetaInfo = new io.md.dao.CubeMetaInfo(customerId, instanceId,
+                app, service);
+
+            // Returns ack from now to last AGENT_ACK_DEFAULT_DELAY_SEC secs
+            // AGENT_ACK_DEFAULT_DELAY_SEC is set to match agent's default acknowledge delay
+            // This is done to ensure that we have "mostly" unique acknowledgements in this time frame.
+            // To ensure absolute unique ack all agents must send the ack in sync.
+            Pair<Result<ConfigApplicationAcknowledge>, List> pair = rrstore
+                .getLatestAgentConfigAcknowledge(cubeMetaInfo, true, Constants.AGENT_ACK_DEFAULT_DELAY_SEC);
+
+            List samplingFacets = pair.second();
+            return Response.ok().entity(jsonMapper.writeValueAsString(samplingFacets)).build();
+        } catch (JsonProcessingException e) {
+            String message = "Error while parsing SamplingFacets";
+            LOGGER.error(
+                new ObjectMessage(
+                    Map.of(Constants.MESSAGE, message,
+                        Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, app,
+                        Constants.INSTANCE_ID_FIELD, instanceId, Constants.SERVICE_FIELD, service)), e);
+            return Response.serverError().entity(
+                buildErrorResponse(Constants.ERROR, message,
+                    e.getMessage())).build();
+        }
+    }
+
 
     private boolean storeDefaultRespEvent(
         Event defaultReqEvent, Payload payload) throws InvalidEventException {

@@ -20,6 +20,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
+import org.apache.solr.common.util.Pair;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -44,7 +45,6 @@ import io.md.dao.ReqRespMatchResult;
 import io.md.services.DataStore;
 import io.md.services.FnResponse;
 
-import com.cube.dao.ReqRespStoreImplBase.CollectionKey;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.golden.TemplateSet;
@@ -109,6 +109,9 @@ public interface ReqRespStore extends DataStore {
 	boolean updateAgentConfigTag(AgentConfigTagInfo tagInfo);
 
 	boolean saveAgentConfigAcknowledge(ConfigApplicationAcknowledge confApplicationAck);
+
+	Pair<Result<ConfigApplicationAcknowledge> , List>getLatestAgentConfigAcknowledge(
+		io.md.dao.CubeMetaInfo cubeMetaInfo, boolean facetOnNodeSelected, int forLastNsec);
 
 	class ReqResp {
 

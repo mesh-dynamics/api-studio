@@ -184,6 +184,7 @@ public class Constants {
     public static final String DIFF_RES_FACET = "diffResFacets";
     public static final String SERVICE_FACET = "serviceFacets";
     public static final String PATH_FACET = "pathFacets";
+    public static final String SAMPLING_FACET = "samplingFacets";
 
 	public static final String REPLAY_TRACE_ID = "replayTraceId";
 	public static final String REC_TRACE_ID = "recordTraceId";
@@ -195,4 +196,9 @@ public class Constants {
 	public static final String TAG_FIELD = "tag";
 	public static final String AGENT_ID = "agentId" ;
     public static final String INFO = "info";
+    public static final String EVENT_META_DATA = "eventMetaData";
+    public static final String EVENT_META_DATA_KEY_FIELD = "eventMetaDataKey";
+    public static final String CONFIG_ACK_DATA_KEY_FIELD = "configAckDataKey";
+    public static final int AGENT_ACK_DEFAULT_DELAY_SEC = 30;
+
 }
