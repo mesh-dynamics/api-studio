@@ -8,10 +8,13 @@ import static com.cube.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 import static io.md.utils.Utils.createHTTPRequestEvent;
 
+import com.cube.dao.ReplayBuilder;
+import io.md.constants.ReplayStatus;
 import io.md.dao.LazyParseAbstractPayload;
 import io.md.dao.Recording.RecordingType;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.ValidateAgentStore;
+import io.md.dao.Replay;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
 import java.io.ByteArrayInputStream;
@@ -1070,6 +1073,18 @@ public class CubeStore {
         Optional<Response> resp = ReqRespStore
             .startRecording(recordingBuilder.build() ,rrstore)
             .map(newr -> {
+                if (newr.recordingType == RecordingType.UserGolden ||
+                    newr.recordingType == RecordingType.History) {
+                    ReplayBuilder replayBuilder = new ReplayBuilder(ui.getBaseUri().toString(),
+                        new CubeMetaInfo(newr.customerId,
+                            newr.app, userId), newr.collection, userId)
+                        .withTemplateSetVersion(newr.templateVersion)
+                        .withRecordingId(newr.id)
+                        .withGoldenName(newr.name)
+                        .withReplayStatus(ReplayStatus.Running);
+                    Replay replay = replayBuilder.build();
+                    rrstore.saveReplay(replay);
+                }
                 String json;
                 try {
                     json = jsonMapper.writeValueAsString(newr);
