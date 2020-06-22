@@ -146,7 +146,7 @@
         <dependency>
             <groupId>io.cube</groupId>
             <artifactId>commons</artifactId>
-            <version>1.0.81</version>
+            <version>1.0.83</version>
         </dependency>
         <dependency>
             <groupId>io.cube</groupId>

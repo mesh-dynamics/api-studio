@@ -168,4 +168,12 @@ public class CubeStoreController {
         return cubeServerService.fetchPostResponseForUserHistory(request,
             customerId, app,userId,Optional.of(queryMap));
     }
+
+    @GetMapping("/getAgentSamplingFacets/{customerId}/{app}/{service}/{instanceId}")
+    public ResponseEntity getAgentSamplingFacets(HttpServletRequest request,
+        @RequestBody Optional<String> getBody, @PathVariable String customerId,
+        @PathVariable String app, @PathVariable String service, @PathVariable String instanceId) {
+        validation.validateCustomerName(request, customerId);
+        return cubeServerService.fetchGetResponse(request, getBody);
+    }
 }
