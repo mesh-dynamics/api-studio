@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.cube</groupId>
   <artifactId>md-df-springboot-resttemplate-interceptor</artifactId>
-  <version>1.2.4</version>
+  <version>1.2.5</version>
   <packaging>jar</packaging>
 
   <distributionManagement>
@@ -19,12 +19,12 @@
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>md-spring-ingress-interceptor</artifactId>
-      <version>1.2.3</version>
+      <version>1.2.4</version>
     </dependency>
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>md-spring-egress-resttemplate-interceptor</artifactId>
-      <version>1.2.5</version>
+      <version>1.2.6</version>
     </dependency>
   </dependencies>
   <build>
@@ -50,27 +50,35 @@
             </relocation>
             <relocation>
                 <pattern>io.md.constants</pattern>
-                <shadedPattern>io.md.df</shadedPattern>
+                <shadedPattern>io.md.df.constants</shadedPattern>
             </relocation>
             <relocation>
                 <pattern>io.md.core</pattern>
-                <shadedPattern>io.md.df</shadedPattern>
+                <shadedPattern>io.md.df.core</shadedPattern>
             </relocation>
             <relocation>
                 <pattern>io.md.cryptography</pattern>
-                <shadedPattern>io.md.df</shadedPattern>
+                <shadedPattern>io.md.df.cryptography</shadedPattern>
             </relocation>
             <relocation>
                 <pattern>io.md.dao</pattern>
-                <shadedPattern>io.md.df</shadedPattern>
+                <shadedPattern>io.md.df.dao</shadedPattern>
             </relocation>
             <relocation>
                 <pattern>io.md.tracer</pattern>
-                <shadedPattern>io.md.df</shadedPattern>
+                <shadedPattern>io.md.df.tracer</shadedPattern>
             </relocation>
             <relocation>
                 <pattern>io.md.utils</pattern>
-                <shadedPattern>io.md.df</shadedPattern>
+                <shadedPattern>io.md.df.utils</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.gsonadapters</pattern>
+                <shadedPattern>io.md.df.gsonadapters</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.services</pattern>
+                <shadedPattern>io.md.df.services</shadedPattern>
             </relocation>
             <relocation>
               <pattern>com.fasterxml.jackson</pattern>
