@@ -23,7 +23,7 @@ spring:
         host: smtp.office365.com
         port: 587
         username: email.sender@meshdynamics.io
-        password: Welcome@md123
+        password: KqIFc%1vz#$6%
         properties:
             mail.smtp:
                 auth: true
