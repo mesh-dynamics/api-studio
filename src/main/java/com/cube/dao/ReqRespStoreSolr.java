@@ -1356,7 +1356,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
         doc.setField(PAYLOADKEYF, event.payloadKey);
 
-        if(event.metaData != null || !event.metaData.isEmpty()) {
+        if(event.metaData != null && !event.metaData.isEmpty()) {
             event.metaData.forEach((x, y)
                 -> doc.setField(EVENT_META_DATA_PREFIX + x + STRING_SUFFIX, y));
             // Storing key to later retrieve them into event object.
