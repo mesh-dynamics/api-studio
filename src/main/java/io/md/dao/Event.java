@@ -42,7 +42,7 @@ import io.md.dao.Event.EventBuilder.InvalidEventException;
  * data that can be encoded in different formats such as Json, ProtoBuf, Thrift etc depending on the
  * event type
  */
-public class Event {
+public class Event implements MDStorable {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(Event.class);
 
