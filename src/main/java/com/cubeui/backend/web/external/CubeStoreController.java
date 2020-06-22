@@ -1,9 +1,10 @@
 package com.cubeui.backend.web.external;
 
 import com.cubeui.backend.security.Validation;
+import com.cubeui.backend.security.jwt.JwtTokenProvider;
 import com.cubeui.backend.service.CubeServerService;
 import io.md.core.ConfigApplicationAcknowledge;
-import io.md.core.ValidateAgentStore;
+import io.md.dao.Recording.RecordingType;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
 import io.md.dao.DefaultEvent;
@@ -11,6 +12,7 @@ import io.md.dao.Event;
 import io.md.dao.EventQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -25,6 +27,8 @@ public class CubeStoreController {
     private CubeServerService cubeServerService;
     @Autowired
     private Validation validation;
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
 
     @GetMapping("/status/{customerId}/{app}/{name}/{label}")
     public ResponseEntity status(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String customerId,
@@ -152,5 +156,16 @@ public class CubeStoreController {
             @RequestBody ConfigApplicationAcknowledge postBody) {
         validation.validateCustomerName(request,postBody.customerId);
         return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
+    }
+
+    @PostMapping("/createUserHistory/{customerId}/{app}")
+    public ResponseEntity createUserHistory(HttpServletRequest request,
+            @RequestBody Optional<String> postBody, @PathVariable String customerId,
+            @PathVariable String app, @RequestParam MultiValueMap<String, String> queryMap) {
+        validation.validateCustomerName(request, customerId);
+        String userId = jwtTokenProvider.getUser(request).getUsername();
+        queryMap.set("recordingType", RecordingType.History.toString());
+        return cubeServerService.fetchPostResponseForUserHistory(request,
+            customerId, app,userId,Optional.of(queryMap));
     }
 }
