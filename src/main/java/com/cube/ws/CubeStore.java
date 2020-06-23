@@ -10,7 +10,6 @@ import static io.md.utils.Utils.createHTTPRequestEvent;
 
 import com.cube.dao.ReplayBuilder;
 import io.md.constants.ReplayStatus;
-import io.md.dao.LazyParseAbstractPayload;
 import io.md.dao.Recording.RecordingType;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.ValidateAgentStore;
@@ -22,7 +21,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -61,9 +59,7 @@ import org.msgpack.core.MessageUnpacker;
 import org.msgpack.value.ValueType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.UtilException;
@@ -89,7 +85,6 @@ import io.md.services.DataStore.TemplateNotFoundException;
 import io.md.dao.HTTPRequestPayload;
 
 import com.cube.core.Utils;
-import com.cube.dao.Analysis;
 import com.cube.dao.CubeEventMetaInfo;
 import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.RecordingBuilder;
@@ -97,7 +92,6 @@ import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.dao.Result;
 import com.cube.dao.WrapperEvent;
-import com.cube.drivers.Analyzer;
 import com.cube.utils.Constants;
 import com.cube.ws.WSUtils.BadValueException;
 
@@ -868,8 +862,13 @@ public class CubeStore {
             Pair<Result<ConfigApplicationAcknowledge>, List> pair = rrstore
                 .getLatestAgentConfigAcknowledge(cubeMetaInfo, true, Constants.AGENT_ACK_DEFAULT_DELAY_SEC);
 
+            List<ConfigApplicationAcknowledge> results = pair.first().getObjects()
+                .collect(Collectors.toList());
             List samplingFacets = pair.second();
-            return Response.ok().entity(jsonMapper.writeValueAsString(samplingFacets)).build();
+            Map jsonMap = new HashMap();
+            jsonMap.put("Results" , results);
+            jsonMap.put("SamplingFacets" , samplingFacets);
+            return Response.ok().entity(jsonMapper.writeValueAsString(jsonMap)).build();
         } catch (JsonProcessingException e) {
             String message = "Error while parsing SamplingFacets";
             LOGGER.error(
@@ -882,7 +881,6 @@ public class CubeStore {
                     e.getMessage())).build();
         }
     }
-
 
     private boolean storeDefaultRespEvent(
         Event defaultReqEvent, Payload payload) throws InvalidEventException {
