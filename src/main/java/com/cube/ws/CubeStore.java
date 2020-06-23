@@ -8,6 +8,13 @@ import static com.cube.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 import static io.md.utils.Utils.createHTTPRequestEvent;
 
+import io.md.core.Comparator.Match;
+import io.md.core.Comparator.MatchType;
+import io.md.dao.Recording.RecordingType;
+import io.md.core.ConfigApplicationAcknowledge;
+import io.md.core.ValidateAgentStore;
+import io.md.dao.ReqRespMatchResult;
+import io.md.dao.UserReqRespContainer;
 import com.cube.dao.ReplayBuilder;
 import io.md.constants.ReplayStatus;
 import io.md.dao.Recording.RecordingType;
@@ -1449,6 +1456,122 @@ public class CubeStore {
                 eventQuery.getCustomerId(), eventQuery.getApp(), eventQuery.getCollection().orElse(""), e));
             return Response.serverError().build();
         }
+    }
+
+    @POST
+    @Path("storeUserReqResp/{recordingId}")
+    @Consumes({MediaType.APPLICATION_JSON})
+    public Response storeUserReqResp(@Context UriInfo ui,
+        @PathParam("recordingId") String recordingId,
+        List<UserReqRespContainer> userReqRespContainers) {
+        Optional<Recording> recording = rrstore.getRecording(recordingId);
+        Response resp = recording.map(rec -> {
+            if(rec.recordingType == RecordingType.History
+                || rec.recordingType == RecordingType.UserGolden) {
+                for (UserReqRespContainer userReqRespContainer : userReqRespContainers) {
+                    Event response = userReqRespContainer.response;
+                    Event request = userReqRespContainer.request;
+
+                    TemplateKey tkey = new TemplateKey(rec.templateVersion, request.customerId,
+                        request.app, request.service, request.apiPath, Type.RequestMatch);
+                    try {
+                        Comparator comparator = rrstore
+                            .getComparator(tkey, request.eventType);
+                        final String reqId = io.md.utils.Utils.generateRequestId(
+                                request.service, request.getTraceId());
+                        Event requestEvent = buildEvent(request, rec.collection, rec.recordingType,
+                            reqId);
+                        requestEvent.parseAndSetKey(comparator.getCompareTemplate());
+
+                        final String resReqId = io.md.utils.Utils.generateRequestId(
+                                response.service, response.getTraceId());
+                        Event responseEvent = buildEvent(response, rec.collection,
+                            rec.recordingType, resReqId);
+
+                        if (!rrstore.save(requestEvent) && !rrstore.save(responseEvent)) {
+                            LOGGER.error(new ObjectMessage(
+                                Map.of(Constants.MESSAGE, "Unable to store event in solr",
+                                    Constants.RECORDING_ID, recordingId)));
+                            return Response.serverError().entity(
+                                buildErrorResponse(Constants.ERROR, Constants.RECORDING_ID,
+                                    "Unable to store event in solr")).build();
+                        }
+
+                        if (rec.recordingType == RecordingType.History) {
+                            TemplateKey templateKey = new TemplateKey(rec.templateVersion,
+                                response.customerId,
+                                response.app, response.service, response.apiPath,
+                                Type.ResponseCompare);
+                            Comparator respComparator = rrstore
+                                .getComparator(templateKey, response.eventType);
+                            Optional<Event> optionalResponseEvent = rrstore
+                                .getResponseEvent(request.reqId);
+                            Match responseMatch = Match.NOMATCH;
+                            if (optionalResponseEvent.isPresent()) {
+                                responseMatch = respComparator
+                                    .compare(response.payload, optionalResponseEvent.get().payload);
+                            }
+
+                            ReqRespMatchResult reqRespMatchResult = new ReqRespMatchResult(
+                                Optional.of(request.reqId), Optional.of(reqId),
+                                MatchType.ExactMatch, 1,
+                                rec.collection, request.service, request.apiPath,
+                                Optional.of(request.getTraceId()),
+                                Optional.of(requestEvent.getTraceId()), Optional.of(request.spanId),
+                                Optional.of(request.parentSpanId), Optional.of(requestEvent.spanId),
+                                Optional.of(requestEvent.parentSpanId), responseMatch,
+                                Match.DONT_CARE);
+                            if (!rrstore.saveResult(reqRespMatchResult)) {
+                                LOGGER.error(new ObjectMessage(
+                                    Map.of(Constants.MESSAGE, "Unable to store result in solr",
+                                        Constants.RECORDING_ID, recordingId)));
+                                return Response.serverError().entity(
+                                    buildErrorResponse(Constants.ERROR, Constants.RECORDING_ID,
+                                        "Unable to store result in solr")).build();
+                            }
+                        }
+                    } catch (TemplateNotFoundException e) {
+                        LOGGER.error(new ObjectMessage(
+                            Map.of(Constants.MESSAGE, "Request Comparator Not Found",
+                                Constants.RECORDING_ID, recordingId)), e);
+                        return Response.serverError().entity("Request Comparator Not Found"
+                            + e.getMessage()).build();
+                    } catch (InvalidEventException e) {
+                        LOGGER.error(new ObjectMessage(
+                            Map.of(Constants.MESSAGE, "Invalid Event",
+                                Constants.RECORDING_ID, recordingId)), e);
+                        return Response.serverError().entity("Invalid Event :: "
+                            + e.getMessage()).build();
+                    }
+                }
+                return Response.ok()
+                    .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject(
+                        Map.of(Constants.MESSAGE, "The UserData is saved",
+                            Constants.RECORDING_ID, recordingId)))).build();
+            }
+            LOGGER.error(new ObjectMessage(
+                Map.of(Constants.MESSAGE, "Recording is not a UserGolden or History ",
+                    Constants.RECORDING_ID, recordingId, Constants.RECORDING_TYPE_FIELD, rec.recordingType)));
+            return Response.status(Status.BAD_REQUEST).
+                entity(buildErrorResponse(Constants.ERROR, Constants.RECORDING_ID,
+                    "Recording is not a UserGolden or History " + recordingId)).build();
+
+        }).orElse(Response.status(Response.Status.NOT_FOUND).
+            entity(buildErrorResponse(Constants.ERROR, Constants.RECORDING_NOT_FOUND,
+                "Recording not found for recordingId " + recordingId)).build());
+        return resp;
+    }
+
+    private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId)
+        throws InvalidEventException {
+        EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
+            event.service, event.instanceId, collection,
+            new MDTraceInfo(event.getTraceId(), event.spanId, event.parentSpanId),
+            event.getRunType(), Optional.of(Instant.now()), reqId, event.apiPath,
+            event.eventType, recordingType);
+        eventBuilder.setPayload(event.payload);
+        eventBuilder.withMetaData(event.metaData);
+        return eventBuilder.createEvent();
     }
 
 
