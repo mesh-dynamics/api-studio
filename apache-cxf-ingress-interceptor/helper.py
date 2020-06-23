@@ -1,4 +1,4 @@
-#!/#!/usr/bin/env python
+#!/usr/bin/env python
 from xml.etree import ElementTree as et
 import os
 def findVersion(filename):
