@@ -25,7 +25,7 @@ jobs:
       run: |
         echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>$TOKEN</password></server></servers></settings>" > ~/.m2/settings.xml
         cd apache-cxf-ingress-interceptor && mvn install && cd ..
-        cd apache-cxf-egress-interceptor && mvn intall && cd ..
+        cd apache-cxf-egress-interceptor && mvn install && cd ..
         mvn package -f unified_pom_apache_cxf.pom
         mvn deploy -f unified_pom_apache_cxf.pom -Dregistry=https://maven.pkg.github.com/cube-io-corp
-        cd apache-cxf-egress-interceptor && python helper.py
+        cd apache-cxf-ingress-interceptor && python helper.py
