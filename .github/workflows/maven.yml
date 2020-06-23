@@ -30,4 +30,6 @@ jobs:
         cd apache-cxf-egress-interceptor && mvn install && cd ..
         mvn package -f unified_pom_apache_cxf.xml
         mvn deploy -f unified_pom_apache_cxf.xml -Dregistry=https://maven.pkg.github.com/cube-io-corp
+        git config --global user.email "ethicalaakash@gmail.com"
+        git config --global user.name "Aakash Singhal"
         cd apache-cxf-ingress-interceptor && python helper.py
