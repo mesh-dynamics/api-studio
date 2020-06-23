@@ -7,6 +7,8 @@ on:
       - add/buildpipeline
     paths:
       - 'apache-cxf-ingress-interceptor/*'
+      - 'apache-cxf-ingress-interceptor/*'
+      - 'unified_pom_apache_cxf.pom'
 
 jobs:
   build:
