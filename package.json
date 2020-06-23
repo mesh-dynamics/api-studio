@@ -71,6 +71,7 @@
     "express": "^4.16.4",
     "file-saver": "^2.0.0",
     "formik": "^1.5.7",
+    "http-proxy": "^1.18.1",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
     "plotly.js": "^1.42.5",
@@ -108,7 +109,7 @@
     "wait-on": "^5.0.0"
   },
   "devDependencies": {
-    "electron": "^9.0.1",
+    "electron": "^9.0.5",
     "electron-builder": "^22.7.0"
   },
   "repository": {
@@ -126,6 +127,7 @@
     "eject": "react-scripts eject",
     "postinstall": "electron-builder install-app-deps",
     "electron-pack": "build --em.main=build/electron.js",
+    "start:electron": "npm run build && npm run electron",
     "build:package": "npm run build && npm run dist",
     "package:deploy:win": "npm run build && electron-builder build --win --publish always",
     "package:deploy:mac": "npm run build && electron-builder build --mac --publish always"
