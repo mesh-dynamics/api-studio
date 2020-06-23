@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cube-replay-agent
+  namespace: staging-mn
+  labels:
+    app: cube
+data:
+  cube_replay_agent.conf: |-
+    #service URIs
+    io.md.service.record=https://demo.prod.cubecorp.io/api
+    io.md.service.mock=https://demo.prod.cubecorp.io/api
+
+    #customer info
+    io.md.customer=CubeCorp
+    io.md.app=Cube
+    io.md.instance=cube-dev
+    io.md.service=cubews-replay-dev
+
+    #connection info
+    io.md.read.timeout=100000
+    io.md.connect.timeout=100000
+    io.md.connect.retries=3
+
+    #intent
+    io.md.intent=record
+
+    #sampling info
+    io.md.samplerconfig.path=/etc/cube/samplerconf/x`xz`
+    io.md.sampler.veto=false
+
+    #performance test
+    io.md.performance.test=false
+
+    #services to mock
+    #io.md.mock.services=a,b,c,d
+
+    #Messaging queue
+    #This HAS to be a power of two
+    io.md.disruptor.size=16384
+    io.md.disruptor.output=stdout
+    io.md.disruptor.output.file=na
+
+    #api auth token
+    io.md.authtoken=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBtZXNoZHluYW1pY3MuaW8iLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwidHlwZSI6InBhdCIsImN1c3RvbWVyX2lkIjoxLCJpYXQiOjE1ODI4ODE2MjgsImV4cCI6MTg5ODI0MTYyOH0.P4DAjXyODV8cFPgObaULjAMPg-7xSbUsVJ8Ohp7xTQI
