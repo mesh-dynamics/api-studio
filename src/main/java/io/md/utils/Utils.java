@@ -588,4 +588,9 @@ public class Utils {
 	        return value;
 	    }
 	}
+
+	public static String generateRequestId(String service, String traceId) {
+		return service.concat("-").concat(traceId)
+				.concat("-").concat(UUID.randomUUID().toString());
+	}
 }
