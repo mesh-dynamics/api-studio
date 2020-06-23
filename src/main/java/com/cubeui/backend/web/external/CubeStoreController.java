@@ -5,11 +5,13 @@ import com.cubeui.backend.security.jwt.JwtTokenProvider;
 import com.cubeui.backend.service.CubeServerService;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.dao.Recording.RecordingType;
+import io.md.dao.UserReqRespContainer;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
 import io.md.dao.DefaultEvent;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
@@ -175,5 +177,11 @@ public class CubeStoreController {
         @PathVariable String app, @PathVariable String service, @PathVariable String instanceId) {
         validation.validateCustomerName(request, customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
+    }
+
+    @PostMapping("/storeUserReqResp/{recordingId}")
+    public ResponseEntity storeUserReqResp(HttpServletRequest request,
+        @RequestBody List<UserReqRespContainer> postBody, @PathVariable String recordingId) {
+        return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 }
