@@ -88,6 +88,7 @@ public class CommonConfig {
 	public String disruptorFileOutName;
 	public long disruptorLogFileMaxSize;
 	public int disruptorLogMaxBackup;
+	public int disruptorConsumerMemoryBufferSize;
 
 	//Node selection info to record
 	public final Sampler nodeSelector;
@@ -425,6 +426,9 @@ public class CommonConfig {
 
 		disruptorLogMaxBackup = dynamicConfig
 			.getInt(io.cube.agent.Constants.DISRUPTOR_LOG_FILE_MAX_BACKUPS_PROP);
+
+		disruptorConsumerMemoryBufferSize = dynamicConfig
+			.getInt(io.cube.agent.Constants.DISRUPTOR_CONSUMER_MEMORY_BUFFER_SIZE);
 	}
 
 	public CloseableHttpClient getHttpClient() {

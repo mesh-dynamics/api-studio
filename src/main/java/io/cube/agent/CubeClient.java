@@ -49,7 +49,7 @@ public class CubeClient {
 		this.jsonMapper = jsonMapper;
 	}
 
-	private Optional<String> getResponse(HttpPost postRequest) {
+	public static Optional<String> getResponse(HttpPost postRequest) {
 		CloseableHttpClient client = CommonConfig.getInstance().getHttpClient();
 		CommonConfig config = null;
 		int maxNumberOfAttempts = 3; //default

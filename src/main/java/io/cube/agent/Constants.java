@@ -20,15 +20,16 @@ public class Constants {
 	public static final String AUTH_TOKEN_PROP = "io.md.authtoken";
 	public static final String AUTHORIZATION_HEADER = "Authorization";
 	public static final String RING_BUFFER_SIZE_PROP = "io.md.disruptor.size";
+	
 	public static final String RING_BUFFER_OUTPUT_PROP = "io.md.disruptor.output.type";
 	public static final String RING_BUFFER_OUTPUT_FILE_NAME = "io.md.disruptor.output.file.name";
 	public static final String DISRUPTOR_LOG_FILE_MAX_SIZE_PROP = "io.md.disruptor.output.file.maxsizebytes";
 	public static final String DISRUPTOR_LOG_FILE_MAX_BACKUPS_PROP = "io.md.disruptor.output.file.backupnumber";
+	public static final String DISRUPTOR_CONSUMER_MEMORY_BUFFER_SIZE = "io.md.disruptor.event.memory.buffer.size";
 
 	//Node Selection
 	public static final String MD_NODE_SELECTION_CONFIG = "io.md.nodeselectionconfig";
 
 	public static final String CONFIG_VERSION_FIELD = "version";
 	public static final String CONFIG_TAG_FIELD = "tag";
-
 }
