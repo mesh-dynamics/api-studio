@@ -59,6 +59,7 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 		MutableBoolean didContextProceed = new MutableBoolean(false);
 
 		try {
+			LOGGER.info("Inside Egress Logging request filter");
 			ClientRequestContext reqContext = null;
 			Message message = null;
 			//get the request context
@@ -153,7 +154,7 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 		Message message = null;
 
 		try {
-
+			LOGGER.info("Inside Egress Logging response filter");
 			message = PhaseInterceptorChain.getCurrentMessage();
 			span = (Span) message.getExchange().get(Constants.MD_CHILD_SPAN);
 			scope = (Scope) message.getExchange().get(Constants.MD_SCOPE);
@@ -249,6 +250,7 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 	@Override
 	public void filter(ClientRequestContext clientRequestContext) throws IOException {
 		try {
+			LOGGER.info("Inside Egress Logging request filter");
 			Message message = PhaseInterceptorChain.getCurrentMessage();
 			if(clientRequestContext.getEntity()==null) {
 				//aroundWriteTo will not be called, as there will be no body to write.
@@ -256,7 +258,7 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 				//to create a get request with body, so double logging is not an issue.
 				recordRequest(message, null, clientRequestContext, new MutableBoolean(false));
 			}
-			message.getExchange().put(Constants.MD_SAMPLE_REQUEST, true);
+
 		} catch (Exception e) {
 			LOGGER.error(
 				Constants.MESSAGE + " Error occurred in intercepting the request\n" +

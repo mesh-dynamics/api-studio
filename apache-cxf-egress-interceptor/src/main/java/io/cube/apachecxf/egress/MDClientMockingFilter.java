@@ -41,6 +41,7 @@ public class MDClientMockingFilter implements ClientRequestFilter {
 		Span[] clientSpan = {null};
 		Scope[] clientScope = {null};
 		try {
+			LOGGER.info("Inside Egress Mocking filter");
 			URI originalUri = clientRequestContext.getUri();
 			CommonConfig commonConfig = CommonConfig.getInstance();
 			String serviceName = CommonUtils.getEgressServiceName(originalUri);

@@ -36,6 +36,7 @@ public class MDTracingFilter implements ContainerRequestFilter, ContainerRespons
 	@Override
 	public void filter(ContainerRequestContext reqContext) {
 		try {
+			LOGGER.info("Inside Ingress Tracing request filter");
 			//start a md-child-span
 			MultivaluedMap<String, String> requestHeaders = reqContext.getHeaders();
 			String spanKey = Constants.SERVICE_FIELD.concat(Constants.MD_CHILD_SPAN);
@@ -98,6 +99,7 @@ public class MDTracingFilter implements ContainerRequestFilter, ContainerRespons
 	public void filter(ContainerRequestContext reqContext,
 		ContainerResponseContext respContext) {
 		try {
+			LOGGER.info("Inside Ingress Tracing response filter");
 			String scopeKey = Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
 			String spanKey = Constants.SERVICE_FIELD.concat(Constants.MD_CHILD_SPAN);
 

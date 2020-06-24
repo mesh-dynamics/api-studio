@@ -102,7 +102,7 @@ public class Utils {
 			requestEvent = io.md.utils.Utils
 				.createHTTPRequestEvent(apiPath, queryParams,
 					Utils.createEmptyMultivaluedMap(), meta, requestHeaders, mdTraceInfo,
-					requestBody, Optional.empty(), config.jsonMapper, true);
+					requestBody, Optional.empty(), config.jsonMapper, true, CommonConfig.getInstance().clientMetaDataMap);
 		} catch (InvalidEventException e) {
 			LOGGER.error( "Invalid Event", e);
 		} catch (JsonProcessingException e) {
@@ -132,7 +132,7 @@ public class Utils {
 			responseEvent = io.md.utils.Utils
 				.createHTTPResponseEvent(apiPath, meta,
 					responseHeaders, mdTraceInfo, responseBody, Optional.empty(), config.jsonMapper,
-					true);
+					true, CommonConfig.getInstance().clientMetaDataMap);
 		} catch (InvalidEventException e) {
 			LOGGER.error("Invalid Event", e);
 		} catch (JsonProcessingException e) {
