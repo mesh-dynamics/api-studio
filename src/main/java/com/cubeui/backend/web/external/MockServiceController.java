@@ -2,6 +2,7 @@ package com.cubeui.backend.web.external;
 
 import static org.springframework.http.ResponseEntity.status;
 
+import io.md.dao.Recording;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
@@ -80,21 +81,27 @@ public class MockServiceController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @GetMapping("/mockWithCollection/{replayCollection}/{recordCollection}/{customerId}/{app}/{instanceId}/{service}/**")
+    @GetMapping("/mockWithCollection/{replayCollection}/{recordingId}/{service}/**")
     public ResponseEntity getmockWithCollection(HttpServletRequest request,
         @RequestBody Optional<String> getBody, @PathVariable String replayCollection,
-        @PathVariable String recordCollection, @PathVariable String customerId,
-        @PathVariable String app, @PathVariable String instanceId, @PathVariable String service) {
-        validation.validateCustomerName(request,customerId);
+        @PathVariable String recordingId, @PathVariable String service) {
+        Optional<Recording> recording = cubeServerService.getRecording(recordingId);
+        if(recording.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error while retrieving Recording Object for recordingId=" + recordingId);
+        validation.validateCustomerName(request,recording.get().customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @PostMapping("/mockWithCollection/{replayCollection}/{recordCollection}/{customerId}/{app}/{instanceId}/{service}/**")
+    @PostMapping("/mockWithCollection/{replayCollection}/{recordingId}/{service}/**")
     public ResponseEntity postMockWithCollection(HttpServletRequest request,
         @RequestBody Optional<String> getBody, @PathVariable String replayCollection,
-        @PathVariable String recordCollection, @PathVariable String customerId,
-        @PathVariable String app, @PathVariable String instanceId, @PathVariable String service) {
-        validation.validateCustomerName(request,customerId);
+        @PathVariable String recordingId, @PathVariable String service) {
+        Optional<Recording> recording = cubeServerService.getRecording(recordingId);
+        if(recording.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error while retrieving Recording Object for recordingId=" + recordingId);
+        validation.validateCustomerName(request,recording.get().customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 }
