@@ -950,6 +950,7 @@ public class CubeStore {
         String archivedString = formParams.getFirst(Constants.ARCHIVED_FIELD);
         Optional<String> recordingType = Optional.ofNullable(formParams.getFirst(Constants.RECORDING_TYPE_FIELD));
         Optional<Boolean> archived = Optional.empty();
+        Optional<String> recordingId = Optional.ofNullable(formParams.getFirst(Constants.RECORDING_ID));
 
         try {
 
@@ -964,7 +965,7 @@ public class CubeStore {
             }
 
             List<Recording> recordings = rrstore.getRecording(customerId, app, instanceId, status, collection, templateVersion, name, parentRecordingId, rootRecordingId,
-                codeVersion, branch, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, userId, label, recordingType).collect(Collectors.toList());
+                codeVersion, branch, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, userId, label, recordingType, recordingId).collect(Collectors.toList());
 
             String json;
             json = jsonMapper.writeValueAsString(recordings);
@@ -1332,6 +1333,24 @@ public class CubeStore {
         }).orElse(Response.status(Response.Status.NOT_FOUND).
             entity(buildErrorResponse(Constants.ERROR, Constants.RECORDING_NOT_FOUND,
                 "Recording not found for recordingId " + recordingId)).build());
+        return resp;
+    }
+
+    @GET
+    @Path("status/{recordingId}")
+    public Response status(@Context UriInfo ui,
+        @PathParam("recordingId") String recordingId) {
+        Optional<Recording> recording = rrstore.getRecording(recordingId);
+        Response resp = recording.map(r -> {
+            String json;
+            try {
+                json = jsonMapper.writeValueAsString(r);
+                return Response.ok(json, MediaType.APPLICATION_JSON).build();
+            } catch (JsonProcessingException e) {
+                LOGGER.error(String.format("Error in converting Recording object to Json for recordingId %s", recordingId), e);
+                return Response.serverError().build();
+            }
+        }).orElse(Response.status(Response.Status.NOT_FOUND).entity(String.format("Status not found for for recordingId %s", recordingId)).build());
         return resp;
     }
 
