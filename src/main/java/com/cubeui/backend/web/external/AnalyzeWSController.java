@@ -7,6 +7,7 @@ import com.cubeui.backend.web.GoldenSetRequest;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.md.dao.Recording;
 import io.md.dao.RecordingOperationSetSP;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
@@ -73,7 +74,7 @@ public class AnalyzeWSController {
     public ResponseEntity replayResult(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String customerId,
                                        @PathVariable String app, @PathVariable String service, @PathVariable String replayId){
         final Optional<Replay> replay =cubeServerService.getReplay(replayId);
-        if(replay == null)
+        if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
         validation.validateCustomerName(request,replay.get().customerId);
@@ -191,6 +192,11 @@ public class AnalyzeWSController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
         validation.validateCustomerName(request,replay.get().customerId);
+        Optional<Recording> recording = cubeServerService.getRecording(recordingId);
+        if(recording.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error while retrieving Recording Object for recordingId=" + recordingId);
+        validation.validateCustomerName(request,recording.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
@@ -246,6 +252,11 @@ public class AnalyzeWSController {
     @GetMapping("/goldenInsights/{recordingId}")
     public ResponseEntity goldenInsights(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String recordingId,
                                          @RequestParam String service, @RequestParam String apiPath) {
+        Optional<Recording> recording = cubeServerService.getRecording(recordingId);
+        if(recording.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error while retrieving Recording Object for recordingId=" + recordingId);
+        validation.validateCustomerName(request,recording.get().customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
@@ -312,6 +323,11 @@ public class AnalyzeWSController {
     }
     @GetMapping("/getGoldenMetaData/{recordingId}")
     public ResponseEntity getGoldenMetaData(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String recordingId) {
+        Optional<Recording> recording = cubeServerService.getRecording(recordingId);
+        if(recording.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error while retrieving Recording Object for recordingId=" + recordingId);
+        validation.validateCustomerName(request,recording.get().customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
