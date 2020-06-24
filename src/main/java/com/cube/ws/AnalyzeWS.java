@@ -563,7 +563,7 @@ public class AnalyzeWS {
            */
             Instant timeStamp = replay.analysisCompleteTimestamp != Instant.EPOCH ? replay.analysisCompleteTimestamp : replay.creationTimeStamp;
             Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerId, replay.app,
-                replay.collection , replay.templateVersion);
+                replay.collection , Optional.of(replay.templateVersion));
             String recordingInfo = "";
             if (recordingOpt.isEmpty()) {
                 LOGGER.error("Unable to find recording corresponding to given replay");

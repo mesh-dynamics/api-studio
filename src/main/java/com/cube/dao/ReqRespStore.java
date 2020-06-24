@@ -474,7 +474,7 @@ public interface ReqRespStore extends DataStore {
 	 * @return
 	 */
 	Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerId, String app, String collection,
-                                                               String templateSetVersion);
+                                                               Optional<String> templateSetVersion);
 
     /**
      * @param customerId

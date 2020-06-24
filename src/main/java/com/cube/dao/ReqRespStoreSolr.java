@@ -2846,7 +2846,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     @Override
     public Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerId, String app,
-                                                        String collection, String templateSetVersion) {
+                                                        String collection, Optional<String> templateSetVersion) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.Recording.toString());
