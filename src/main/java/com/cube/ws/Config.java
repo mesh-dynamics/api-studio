@@ -26,6 +26,7 @@ import io.cube.agent.Mocker;
 import io.cube.agent.ProxyMocker;
 import io.cube.agent.Recorder;
 import io.cube.agent.TraceIntentResolver;
+import io.md.dao.Event;
 import io.md.utils.CommonUtils;
 import io.md.utils.MeshDGsonProvider;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
@@ -39,6 +40,7 @@ import com.cube.cache.TemplateCacheRedis;
 import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr;
+import com.cube.queue.DisruptorEventQueue;
 import com.cube.serialize.GsonPatternSerializer;
 import com.cube.serialize.GsonSolrDocumentListSerializer;
 import com.cube.serialize.GsonSolrDocumentSerializer;
@@ -53,6 +55,7 @@ public class Config {
     private static final Logger LOGGER = LogManager.getLogger(Config.class);
     private static final String CONFFILE = "cube.conf";
     public static int REDIS_DELETE_TTL; // redis key expiry timeout in seconds
+	public static int DISRUPTOR_QUEUE_SIZE;
 
 	final Properties properties;
 	public final SolrClient solr;
@@ -77,6 +80,8 @@ public class Config {
 
     public IntentResolver intentResolver = new TraceIntentResolver();
     public CommonConfig commonConfig;
+
+    public final DisruptorEventQueue disruptorEventQueue;
 
 	public Config() throws Exception {
 		LOGGER.info("Creating config");
@@ -150,6 +155,11 @@ public class Config {
             LOGGER.error("Error while initializing redis thread pool :: " + e.getMessage());
             throw e;
         }
+
+        DISRUPTOR_QUEUE_SIZE = Integer.parseInt(fromEnvOrProperties("disruptor_queue_size"
+	        , "16384"));
+
+        disruptorEventQueue = new DisruptorEventQueue(rrstore, DISRUPTOR_QUEUE_SIZE);
 
 	}
 
