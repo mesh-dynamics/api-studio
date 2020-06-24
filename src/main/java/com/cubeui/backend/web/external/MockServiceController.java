@@ -79,4 +79,22 @@ public class MockServiceController {
     public ResponseEntity health(HttpServletRequest request, @RequestBody Optional<String> getBody) {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
+
+    @GetMapping("/mockWithCollection/{replayCollection}/{recordCollection}/{customerId}/{app}/{instanceId}/{service}/**")
+    public ResponseEntity getmockWithCollection(HttpServletRequest request,
+        @RequestBody Optional<String> getBody, @PathVariable String replayCollection,
+        @PathVariable String recordCollection, @PathVariable String customerId,
+        @PathVariable String app, @PathVariable String instanceId, @PathVariable String service) {
+        validation.validateCustomerName(request,customerId);
+        return cubeServerService.fetchGetResponse(request, getBody);
+    }
+
+    @PostMapping("/mockWithCollection/{replayCollection}/{recordCollection}/{customerId}/{app}/{instanceId}/{service}/**")
+    public ResponseEntity postMockWithCollection(HttpServletRequest request,
+        @RequestBody Optional<String> getBody, @PathVariable String replayCollection,
+        @PathVariable String recordCollection, @PathVariable String customerId,
+        @PathVariable String app, @PathVariable String instanceId, @PathVariable String service) {
+        validation.validateCustomerName(request,customerId);
+        return cubeServerService.fetchGetResponse(request, getBody);
+    }
 }
