@@ -2798,7 +2798,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
         Optional<String> collection, Optional<String> templateVersion, Optional<String> name, Optional<String> parentRecordingId, Optional<String> rootRecordingId,
         Optional<String> codeVersion, Optional<String> branch, List<String> tags, Optional<Boolean> archived, Optional<String> gitCommitId,
-        Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label, Optional<String> recordingType) {
+        Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label, Optional<String> recordingType,
+        Optional<String> recordingId) {
 
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
@@ -2821,6 +2822,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, COLLECTION_UPD_OP_SET_IDF, collectionUpdOpSetId);
         addFilter(query, TEMPLATE_UPD_OP_SET_IDF, templateUpdOpSetId);
         addFilter(query, USERIDF, userId);
+        addFilter(query, IDF, recordingId);
         boolean includeEmpty = recordingType.map(v -> v.equals(RecordingType.Golden.toString()))
                 .orElse(false);
         addFilter(query, RECORDING_TYPE_F, recordingType, true, includeEmpty);
