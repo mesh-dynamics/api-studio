@@ -203,63 +203,51 @@ public class MockServiceHTTP {
     }
 
     @GET
-    @Path("mockWithCollection/{replayCollection}/{recordCollection}/{customerId}/{app}/{instanceId}/{service}/{var:.+}")
+    @Path("mockWithCollection/{replayCollection}/{recordingId}/{service}/{var:.+}")
     public Response getmockWithCollection(@Context UriInfo ui, @PathParam("var") String path,
         @Context HttpHeaders headers,
         @PathParam("replayCollection") String replayCollection,
-        @PathParam("recordCollection") String recordCollection,
-        @PathParam("customerId") String customerId,
-        @PathParam("app") String app,
-        @PathParam("instanceId") String instanceId,
+        @PathParam("recordingId") String recordingId,
         @PathParam("service") String service,
         String body) {
 
-	    LOGGER.info(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordCollection: %s", customerId, app, path,
-            ui.toString(), body, replayCollection, recordCollection));
-        Optional<Recording> recording = rrstore.getRecordingByCollectionAndTemplateVer(customerId, app,
-            recordCollection , Optional.empty());
-        if(recording.isEmpty()) {
+	    LOGGER.info(String.format(" path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordingId: %s", path,
+            ui.toString(), body, replayCollection, recordingId));
+        Optional<Recording> optionalRecording = rrstore.getRecording(recordingId);
+        if(optionalRecording.isEmpty()) {
             LOGGER.error(new ObjectMessage(
                 Map.of(
-                    Constants.CUSTOMER_ID_FIELD, customerId,
-                    Constants.APP_FIELD, app,
-                    Constants.COLLECTION_FIELD, recordCollection,
-                    Constants.INSTANCE_ID_FIELD, instanceId,
+                    Constants.RECORDING_ID, recordingId,
                     Constants.SERVICE_FIELD, service)));
             return notFound();
         }
-        return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service,
-            HttpMethod.GET, body, headers, Optional.of(new MockWithCollection(replayCollection, recordCollection, recording.get().templateVersion)));
+        Recording recording = optionalRecording.get();
+        return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
+            HttpMethod.GET, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion)));
     }
 
     @POST
-    @Path("mockWithCollection/{replayCollection}/{recordCollection}/{customerId}/{app}/{instanceId}/{service}/{var:.+}")
+    @Path("mockWithCollection/{replayCollection}/{recordingId}/{service}/{var:.+}")
     public Response postMockWithCollection(@Context UriInfo ui, @PathParam("var") String path,
         @Context HttpHeaders headers,
         @PathParam("replayCollection") String replayCollection,
-        @PathParam("recordCollection") String recordCollection,
-        @PathParam("customerId") String customerId,
-        @PathParam("app") String app,
-        @PathParam("instanceId") String instanceId,
+        @PathParam("recordingId") String recordingId,
         @PathParam("service") String service,
         String body) {
 
-	    LOGGER.info(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordCollection: %s", customerId, app, path,
-            ui.toString(), body, replayCollection, recordCollection));
-        Optional<Recording> recording = rrstore.getRecordingByCollectionAndTemplateVer(customerId, app,
-            recordCollection , Optional.empty());
-        if(recording.isEmpty()) {
+	    LOGGER.info(String.format("path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordingId: %s", path,
+            ui.toString(), body, replayCollection, recordingId));
+        Optional<Recording> optionalRecording = rrstore.getRecording(recordingId);
+        if(optionalRecording.isEmpty()) {
             LOGGER.error(new ObjectMessage(
                 Map.of(
-                    Constants.CUSTOMER_ID_FIELD, customerId,
-                    Constants.APP_FIELD, app,
-                    Constants.COLLECTION_FIELD, recordCollection,
-                    Constants.INSTANCE_ID_FIELD, instanceId,
+                    Constants.RECORDING_ID, recordingId,
                     Constants.SERVICE_FIELD, service)));
             return notFound();
         }
-        return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service,
-            HttpMethod.POST, body, headers, Optional.of(new MockWithCollection(replayCollection, recordCollection, recording.get().templateVersion)));
+        Recording recording = optionalRecording.get();
+        return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
+            HttpMethod.POST, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion)));
     }
 
 
