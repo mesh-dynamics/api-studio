@@ -5,12 +5,12 @@
   <modelVersion>4.0.0</modelVersion>
     <groupId>io.cube</groupId>
     <artifactId>agent</artifactId>
-    <version>1.0.35</version>
+    <version>1.0.36</version>
     <properties>
         <version.java>8</version.java>
         <version.httpcomponents>4.5.8</version.httpcomponents>
         <version.gson>2.8.5</version.gson>
-        <version.mdcommons>1.0.81</version.mdcommons>
+        <version.mdcommons>1.0.86</version.mdcommons>
         <version.jersey>2.27</version.jersey>
     </properties>
     <distributionManagement>
@@ -128,6 +128,12 @@
       <groupId>org.clapper</groupId>
       <artifactId>javautil</artifactId>
       <version>3.2.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.typesafe</groupId>
+      <artifactId>config</artifactId>
+      <version>1.4.0</version>
     </dependency>
 
 

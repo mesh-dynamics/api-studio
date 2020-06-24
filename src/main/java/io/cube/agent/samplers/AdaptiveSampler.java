@@ -19,6 +19,14 @@ public class AdaptiveSampler extends Sampler {
 
 	public static final String TYPE = "adaptive";
 
+	@Override
+	public String toString() {
+		return "AdaptiveSampler{" +
+			"samplingParams=" + samplingParams +
+			", fieldCategory='" + fieldCategory + '\'' +
+			'}';
+	}
+
 	public static Sampler create(String samplingID,
 		Map<Pair<String, String>, Float> samplingParams) {
 		return new AdaptiveSampler(samplingID, samplingParams);

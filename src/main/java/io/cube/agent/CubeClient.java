@@ -1,5 +1,9 @@
 package io.cube.agent;
 
+import static io.cube.agent.Constants.APPLICATION_FORM_URL_ENCODED;
+import static io.cube.agent.Constants.APPLICATION_JSON;
+import static io.cube.agent.Constants.TEXT_PLAIN;
+
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.UnsupportedCharsetException;
@@ -38,10 +42,6 @@ public class CubeClient {
 
 	private ObjectMapper jsonMapper;
 
-
-	private static final String TEXT_PLAIN = "text/plain";
-	private static final String APPLICATION_JSON = "application/json";
-	private static final String APPLICATION_FORM_URL_ENCODED = "application/x-www-form-urlencoded";
 	private static final Logger LOGGER = LoggerFactory.getLogger(CubeClient.class);
 
 
@@ -52,18 +52,21 @@ public class CubeClient {
 	private Optional<String> getResponse(HttpPost postRequest) {
 		CloseableHttpClient client = CommonConfig.getInstance().getHttpClient();
 		CommonConfig config = null;
+		int maxNumberOfAttempts = 3; //default
 		try {
 			config = CommonConfig.getInstance();
+			maxNumberOfAttempts = config.RETRIES;
 			config.authToken.ifPresent(
 					val -> postRequest.setHeader(io.cube.agent.Constants.AUTHORIZATION_HEADER, val));
 		} catch (Exception e) {
 			LOGGER.error("Error while getting Common config instance", e);
 		}
-		int maxNumberOfAttempts = config.RETRIES;
+
 		int numberOfAttempts = 0;
 		CloseableHttpResponse response = null;
 		while (numberOfAttempts < maxNumberOfAttempts) {
 			try {
+				LOGGER.info("Sending request " + postRequest.toString());
 				response = client.execute(postRequest);
 				if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
 					String responseString = new BasicResponseHandler().handleResponse(response);

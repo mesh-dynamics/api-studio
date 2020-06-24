@@ -1,44 +1,42 @@
 package io.cube.agent;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.net.UnknownHostException;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException.Missing;
+import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigRenderOptions;
 
-import io.cube.agent.samplers.AdaptiveSampler;
-import io.cube.agent.samplers.Attributes;
-import io.cube.agent.samplers.BoundarySampler;
-import io.cube.agent.samplers.CountingSampler;
 import io.cube.agent.samplers.Sampler;
 import io.cube.agent.samplers.SamplerConfig;
-import io.cube.agent.samplers.SimpleSampler;
 import io.md.constants.Constants;
 import io.md.tracer.MDGlobalTracer;
 import io.md.tracer.MDTextMapCodec;
@@ -46,125 +44,87 @@ import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
 
 
-
 public class CommonConfig {
 
-	private static AtomicReference<CommonConfig> singleInstance = null;
-	static ScheduledExecutorService serviceExecutor;
+	private static final Logger LOGGER = LoggerFactory.getLogger(CommonConfig.class);
 
-	private static final String STATIC_CONFFILE = "agent.conf";
+	/******* PROPERTIES HOLDERS ******/
+	// Cube essentials
+	// Will not be dynamically polled. Will be initialised just once in the beginning
+	public final static String customerId, app, instance, serviceName;
 
-	static Properties staticProperties = new Properties();
-	static protected ObjectMapper jsonMapper = new ObjectMapper();
+	//intent
+	public static String intent;
 
+	// version
+	public static String tag = "NA";
+	public static String version = "NA";
+	public static String ackConfigApiURI;
+
+	// Mocking
+	public Optional<String> authToken;
+	public List servicesToMock;
+
+	// Cube Connection
 	public final String CUBE_RECORD_SERVICE_URI;
 	public final String CUBE_MOCK_SERVICE_URI;
 	public final int READ_TIMEOUT;
 	public final int CONNECT_TIMEOUT;
 	public final int RETRIES;
-	public final long disruptorLogFileMaxSize;
-	public final int disruptorLogMaxBackup;
 
-	private CloseableHttpClient httpClient;
+	// Encryption
+	public Optional<EncryptionConfig> encryptionConfig;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(CommonConfig.class);
-
-	public static String intent;
-
-	public String customerId, instance, serviceName;
-
-	public static String app;
-
-	public final Optional<String> authToken;
-	public final Optional<EncryptionConfig> encryptionConfig;
-	public final Optional<SamplerConfig> samplerConfig;
-
-	//Sampling
+	// Sampling
 	public boolean samplerVeto;
 	public Sampler sampler;
-	public final boolean performanceTest;
 
-	public List servicesToMock;
+	//performance test
+	public boolean performanceTest;
 
-	//disruptor
+	// Disruptor
 	public int ringBufferSize;
 	public String disruptorOutputLocation;
 	public String disruptorFileOutName;
+	public long disruptorLogFileMaxSize;
+	public int disruptorLogMaxBackup;
 
-	private static class Updater implements Runnable {
+	//Node selection info to record
+	public final Sampler nodeSelector;
 
-		String configFilePath;
+	/******* OTHER OBJECTS ******/
+	// Lightbend Config library by default throws exception on property not found
+	// We need to ensure that at least NOOP properties are always defined in staticConfFile
+	private static final String staticConfFile = "agent_conf.json";
 
-		public Updater(String configFilePath) {
-			this.configFilePath = configFilePath;
-		}
+	// Priority for default conf is envVar > sysProp > static_conf_file
+	static Config envSysStaticConf;
 
-		@Override
-		public void run() {
-			try {
-				InputStream input = new FileInputStream(configFilePath);
-				Properties dynamicProperties = new Properties();
-				dynamicProperties.load(input);
-				// Using just set instead of compareAndSet as the value being set is independent of the current value.
-				singleInstance.set(new CommonConfig(dynamicProperties));
-			} catch (Exception e) {
-				LOGGER.error("Error in updating common config object in thread", e);
-			}
-		}
-	}
-
-	@Override
-	public String toString() {
-		return "CommonConfig{" +
-			"CUBE_RECORD_SERVICE_URI='" + CUBE_RECORD_SERVICE_URI + '\'' +
-			", CUBE_MOCK_SERVICE_URI='" + CUBE_MOCK_SERVICE_URI + '\'' +
-			", READ_TIMEOUT=" + READ_TIMEOUT +
-			", CONNECT_TIMEOUT=" + CONNECT_TIMEOUT +
-			", RETRIES=" + RETRIES +
-			", customerId='" + customerId + '\'' +
-			", app='" + app + '\'' +
-			", instance='" + instance + '\'' +
-			", serviceName='" + serviceName + '\'' +
-			", encryptionConfig=" + encryptionConfig +
-			", samplerConfig=" + samplerConfig +
-			", intent=" + intent +
-			", performance_test=" + performanceTest +
-			'}';
-	}
-
-	public static CommonConfig getInstance() {
-		return singleInstance.get();
-	}
-
+	private static AtomicReference<CommonConfig> singleInstance = null;
+	static ScheduledExecutorService serviceExecutor;
+	private CloseableHttpClient httpClient;
+	static protected ObjectMapper jsonMapper = new ObjectMapper();
+	public static Map<String, String> clientMetaDataMap = new HashMap<>();
 
 	static {
 
-		//ConfigurationFactory.setConfigurationFactory(new MDConfigurationFactory());
-		//initializeLogging();
+		//initialize Logging
 		jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
 		try {
-			staticProperties.load(Class.forName("io.cube.agent.CommonConfig").getClassLoader().
-				getResourceAsStream(STATIC_CONFFILE));
-			intent = fromEnvOrProperties(Constants.MD_INTENT_PROP)
-				.orElseThrow(() -> new Exception("Mesh-D Intent Not Specified"));
+			envSysStaticConf = ConfigFactory.systemEnvironment()
+				.withFallback(ConfigFactory.systemProperties())
+				.withFallback(ConfigFactory.load(staticConfFile));
+
 		} catch (Exception e) {
 			LOGGER.error("Error while initializing config", e);
 		}
 
-		CommonUtils.fromEnvOrSystemProperties(io.cube.agent.Constants.MD_COMMON_CONF_FILE_PROP)
-			.ifPresent(dynamicConfigFilePath -> {
-
-				int delay = Integer.parseInt(
-					CommonUtils.fromEnvOrSystemProperties(
-						io.cube.agent.Constants.MD_CONFIG_POLL_DELAY_PROP)
-						.orElse(io.cube.agent.Constants.DEFAULT_CONFIG_POLL_DELAY));
-				serviceExecutor = Executors.newScheduledThreadPool(1);
-				serviceExecutor.scheduleWithFixedDelay(new Updater(dynamicConfigFilePath), 0, delay,
-					TimeUnit.SECONDS);
-				// TODO Where to call shutdown from - End of agent code ?
-				// serviceExecutor.shutdown();
-			});
+		intent = envSysStaticConf.getString(Constants.MD_INTENT_PROP);
+		customerId = envSysStaticConf.getString(Constants.MD_CUSTOMER_PROP);
+		app = envSysStaticConf.getString(Constants.MD_APP_PROP);
+		instance = envSysStaticConf.getString(Constants.MD_INSTANCE_PROP);
+		serviceName = envSysStaticConf.getString(Constants.MD_SERVICE_PROP);
 
 		CommonConfig config = null;
 		try {
@@ -174,11 +134,173 @@ public class CommonConfig {
 		}
 		singleInstance = new AtomicReference<>();
 		singleInstance.set(config);
-		MDTextMapCodec.suffixKeysWithDF(app);
+
+		boolean isServerPolling = envSysStaticConf
+			.getBoolean(io.cube.agent.Constants.MD_POLLINGCONFIG_POLLSERVER);
+
+		// This is only for developer user case allowing polling properties from file
+		// When polling from file the polling from cubeio will not be enabled.
+		try {
+			String dynamicConfigFilePath = envSysStaticConf
+				.getString(io.cube.agent.Constants.MD_POLLINGCONFIG_FILEPATH);
+			int delay = envSysStaticConf.getInt(io.cube.agent.Constants.MD_POLLINGCONFIG_DELAY);
+			serviceExecutor = Executors.newScheduledThreadPool(1);
+			serviceExecutor
+				.scheduleWithFixedDelay(new fileConfigUpdater(dynamicConfigFilePath), 0, delay,
+					TimeUnit.SECONDS);
+			isServerPolling = false;
+		} catch (Missing e) {
+			LOGGER.info("Dynamic config polling from file is not enabled");
+		}
+
+		if (isServerPolling) {
+
+			initClientMetaDataMap();
+
+			String fetchConfigApiURI = appendTrailingSlash(envSysStaticConf
+				.getString(io.cube.agent.Constants.MD_POLLINGCONFIG_FETCHCONFIGAPIURI));
+
+			ackConfigApiURI = appendTrailingSlash(envSysStaticConf
+				.getString(io.cube.agent.Constants.MD_POLLINGCONFIG_ACKCONFIGAPIURI));
+
+			int delay = envSysStaticConf.getInt(io.cube.agent.Constants.MD_POLLINGCONFIG_DELAY);
+			serviceExecutor = Executors.newScheduledThreadPool(1);
+			serviceExecutor
+				.scheduleWithFixedDelay(new serverConfigUpdater(fetchConfigApiURI),
+					0, delay,
+					TimeUnit.SECONDS);
+		}
 	}
 
+	private static void initClientMetaDataMap() {
+		//This is the default info sent to Cube Server if
+		//Customer is not calling the initialize()
+		InetAddress ipAddress = null;
+		try {
+			ipAddress = InetAddress.getLocalHost();
+		} catch (UnknownHostException e) {
+			LOGGER.debug("IP Address fetch issue");
+		}
+
+		clientMetaDataMap
+			.put("ipAddress", ipAddress == null ? "0.0.0.0" : ipAddress.getHostAddress());
+		clientMetaDataMap.put("uniqueId", UUID.randomUUID().toString());
+		//Default is set to true.
+		clientMetaDataMap.put(io.md.constants.Constants.IS_NODE_SELECTED, String.valueOf(true));
+	}
+
+
+	private static class fileConfigUpdater implements Runnable {
+
+		String configFilePath;
+
+		public fileConfigUpdater(String configFilePath) {
+			this.configFilePath = configFilePath;
+		}
+
+		@Override
+		public void run() {
+			try {
+				File input = new File(configFilePath);
+				Config fileConfigPolled = ConfigFactory.load(ConfigFactory.parseFile(input))
+					.withFallback(envSysStaticConf);
+				// Using just set instead of compareAndSet as the value being set is independent of the current value.
+				singleInstance.set(new CommonConfig(fileConfigPolled));
+			} catch (Exception e) {
+				LOGGER.error("Error in updating common config object in thread", e);
+			}
+		}
+	}
+
+	private static class serverConfigUpdater implements Runnable {
+
+		String fetchConfigApiURI;
+
+		public serverConfigUpdater(String fetchConfigApiURI) {
+			this.fetchConfigApiURI = fetchConfigApiURI;
+		}
+
+		@Override
+		public void run() {
+			try {
+
+				URIBuilder fetchConfigUriBuilder = new URIBuilder(
+					URI.create(this.fetchConfigApiURI)
+						.resolve(CommonConfig.customerId + "/" + CommonConfig.app + "/"
+							+ CommonConfig.serviceName + "/" + CommonConfig.instance)
+				);
+				fetchConfigUriBuilder.setParameter("tag", tag).setParameter("version", version);
+
+				HttpGet fetchConfigApiReq = new HttpGet(fetchConfigUriBuilder.build());
+
+				CommonConfig commonConfig = CommonConfig.getInstance();
+				commonConfig.authToken.ifPresent(
+					val -> fetchConfigApiReq.setHeader(io.cube.agent.Constants.AUTHORIZATION_HEADER, val));
+
+				Optional<CloseableHttpResponse> fetchConfigApiRespOpt = HttpUtils
+					.getResponse(fetchConfigApiReq);
+				fetchConfigApiRespOpt
+					.orElseThrow(() -> new Exception("Cannot get config from cube server"));
+				CloseableHttpResponse fetchConfigApiResp = fetchConfigApiRespOpt.get();
+
+				if (fetchConfigApiResp.getStatusLine().getStatusCode()
+					!= HttpStatus.SC_NOT_MODIFIED) {
+					String jsonString = new BasicResponseHandler()
+						.handleResponse(fetchConfigApiResp);
+					JsonNode jsonNode = jsonMapper.readTree(jsonString);
+					String configString = jsonNode.get("configJson").get("config")
+						.asText();
+
+					Config serverPollConfig = ConfigFactory.parseString(configString)
+						.withFallback(envSysStaticConf);
+					// Using just set instead of compareAndSet as the value being set is independent of the current value.
+					singleInstance.set(new CommonConfig(serverPollConfig));
+					tag = jsonNode.get(io.cube.agent.Constants.CONFIG_TAG_FIELD).asText();
+					version = jsonNode.get(io.cube.agent.Constants.CONFIG_VERSION_FIELD)
+						.asText();
+					//run node selection algo again
+					ClientUtils.addNodeSelectionDecision(clientMetaDataMap);
+				} else {
+					LOGGER.info("Server returned same properties. Not applying");
+				}
+
+				// Send ack even if the config is not re-applied
+				ClientUtils.sendAckToCubeServer();
+
+				fetchConfigApiResp.close();
+			} catch (Exception e) {
+				LOGGER.error("Error in updating common config object in thread", e);
+			}
+		}
+	}
+
+
+	@Override
+	public String toString() {
+		return "CommonConfig{" +
+			"CUBE_RECORD_SERVICE_URI='" + CUBE_RECORD_SERVICE_URI + '\'' +
+			", CUBE_MOCK_SERVICE_URI='" + CUBE_MOCK_SERVICE_URI + '\'' +
+			", intent=" + intent +
+			", customerId='" + customerId + '\'' +
+			", app='" + app + '\'' +
+			", instance='" + instance + '\'' +
+			", serviceName='" + serviceName + '\'' +
+			", encryptionConfig=" + encryptionConfig +
+			", sampler=" + sampler +
+			", READ_TIMEOUT=" + READ_TIMEOUT +
+			", CONNECT_TIMEOUT=" + CONNECT_TIMEOUT +
+			", RETRIES=" + RETRIES +
+			", performance_test=" + performanceTest +
+			'}';
+	}
+
+	public static CommonConfig getInstance() {
+		return singleInstance.get();
+	}
+
+
 	private CommonConfig() throws Exception {
-		this(new Properties());
+		this(envSysStaticConf);
 		//System.setProperty("JAEGER_AGENT_HOST", "jaeger-agent");
 		Tracer tracer = CommonUtils.init("tracer");
 		try {
@@ -188,104 +310,43 @@ public class CommonConfig {
 		}
 	}
 
-	private CommonConfig(Properties dynamicProperties) throws Exception {
-		CUBE_RECORD_SERVICE_URI = fromDynamicOREnvORStaticProperties(
-			Constants.MD_RECORD_SERVICE_PROP, dynamicProperties)
-			.orElseThrow(() -> new Exception("Mesh-D Record Endpoint Not Specified"));
-		CUBE_MOCK_SERVICE_URI = fromDynamicOREnvORStaticProperties(Constants.MD_MOCK_SERVICE_PROP,
-			dynamicProperties)
-			.orElseThrow(() -> new Exception("Mesh-D Mock Endpoint Not Specified"));
-		READ_TIMEOUT = Integer.parseInt(
-			fromDynamicOREnvORStaticProperties(Constants.MD_READ_TIMEOUT_PROP, dynamicProperties).
-				orElseThrow(() -> new Exception("Mesh-D Read Timeout Not Specified")));
-		CONNECT_TIMEOUT = Integer.parseInt(
-			fromDynamicOREnvORStaticProperties(Constants.MD_CONNECT_TIMEOUT_PROP, dynamicProperties)
-				.orElseThrow(() -> new Exception("Mesh-D Connection Timeout Not Specified")));
-		RETRIES = Integer.parseInt(
-			fromDynamicOREnvORStaticProperties(Constants.MD_RETRIES_PROP, dynamicProperties).
-				orElseThrow(() -> new Exception("Mesh-D Connection Retry Limit Not Specified")));
-		customerId = fromDynamicOREnvORStaticProperties(Constants.MD_CUSTOMER_PROP,
-			dynamicProperties)
-			.orElseThrow(() -> new Exception("Mesh-D Customer Id Not Specified"));
-		app = fromDynamicOREnvORStaticProperties(Constants.MD_APP_PROP, dynamicProperties)
-			.orElseThrow(() -> new Exception("Mesh-D App Name Not Specified"));
-		instance = fromDynamicOREnvORStaticProperties(Constants.MD_INSTANCE_PROP, dynamicProperties)
-			.orElseThrow(() -> new Exception("Mesh-D Instance Not Specified"));
-		serviceName = fromDynamicOREnvORStaticProperties(Constants.MD_SERVICE_PROP,
-			dynamicProperties)
-			.orElseThrow(() -> new Exception("Mesh-D Service Name Not Specified"));
-		intent = fromDynamicOREnvORStaticProperties(Constants.MD_INTENT_PROP, dynamicProperties)
-			.orElseThrow(() -> new Exception("Mesh-D Intent Not Specified"));
-		samplerConfig = fromDynamicOREnvORStaticProperties(
-			io.cube.agent.Constants.SAMPLER_CONF_FILE_PATH,
-			dynamicProperties).flatMap(scf -> {
-			try {
-				return Optional.of(jsonMapper.readValue(new File(scf), SamplerConfig.class));
-			} catch (FileNotFoundException ex) {
-				LOGGER.error("Sampler config file not found. Records will not be sampled/recorded.");
-				return Optional.empty();
-			}
-			catch (Exception e) {
-				LOGGER.error("Error in reading sampler config file", e);
-			}
-			return Optional.empty();
-		});
-		sampler = initSampler();
-		samplerVeto = BooleanUtils.toBoolean(
-			fromDynamicOREnvORStaticProperties(Constants.MD_SAMPLER_VETO, dynamicProperties)
-				.orElse("false"));
-		// TODO Replace with constants once it comes in commons
-//        fromEnvOrProperties(Constants.MD_ENCRYPTION_CONFIG_PATH).map(ecf -> {
+	private CommonConfig(Config dynamicConfig) throws Exception {
 
-		// TODO Should encryptionConfig be made static and not updated every time ?
-		encryptionConfig = fromDynamicOREnvORStaticProperties(
-			io.cube.agent.Constants.ENCRYPTION_CONF_FILE_PATH,
-			dynamicProperties).flatMap(ecf -> {
-			try {
-				return Optional.of(jsonMapper.readValue(new File(ecf), EncryptionConfig.class));
-			} catch (Exception e) {
-				LOGGER.error("Error in reading encryption config file", e);
-			}
-			return Optional.empty();
-		});
+		CUBE_RECORD_SERVICE_URI = appendTrailingSlash(dynamicConfig.getString(
+			Constants.MD_RECORD_SERVICE_PROP));
+		CUBE_MOCK_SERVICE_URI = appendTrailingSlash(dynamicConfig.getString(
+			Constants.MD_MOCK_SERVICE_PROP));
+		READ_TIMEOUT = dynamicConfig.getInt(
+			Constants.MD_READ_TIMEOUT_PROP);
+		CONNECT_TIMEOUT = dynamicConfig.getInt(
+			Constants.MD_CONNECT_TIMEOUT_PROP);
+		RETRIES = dynamicConfig.getInt(
+			Constants.MD_RETRIES_PROP);
 
-		authToken = fromDynamicOREnvORStaticProperties(
-			io.cube.agent.Constants.AUTH_TOKEN_PROP,
-			dynamicProperties);
+		intent = dynamicConfig.getString(Constants.MD_INTENT_PROP);
 
-		if (CUBE_RECORD_SERVICE_URI.endsWith("/api") || CUBE_MOCK_SERVICE_URI.endsWith("/api")) {
+		ConfigRenderOptions options = ConfigRenderOptions.concise();
+
+		nodeSelector = getNodeSelectionDetails(dynamicConfig, options);
+
+		sampler = getSamplerDetails(dynamicConfig, options);
+		samplerVeto = dynamicConfig.getBoolean(Constants.MD_SAMPLER_VETO);
+
+		getEncryptionDetails(dynamicConfig, options);
+
+		authToken = Optional.of(dynamicConfig.getString(io.cube.agent.Constants.AUTH_TOKEN_PROP));
+
+		if (CUBE_RECORD_SERVICE_URI.endsWith("/api/") || CUBE_MOCK_SERVICE_URI.endsWith("/api/")) {
 			authToken.orElseThrow(
 				() -> new Exception("Auth token not specified when /api present"));
 		}
 
-		servicesToMock = fromDynamicOREnvORStaticProperties(
-			io.cube.agent.Constants.SERVICES_TO_MOCK_PROP,
-			dynamicProperties).map(serv -> Arrays.asList(serv.split(",")))
-			.orElse(Collections.EMPTY_LIST);
+		servicesToMock = (List) getValueOrDefault(dynamicConfig,
+			io.cube.agent.Constants.SERVICES_TO_MOCK_PROP, Collections.EMPTY_LIST);
 
-		performanceTest = BooleanUtils.toBoolean(
-			fromDynamicOREnvORStaticProperties(io.cube.agent.Constants.MD_PERFORMANCE_TEST
-				, dynamicProperties).orElse("false"));
+		performanceTest = dynamicConfig.getBoolean(io.cube.agent.Constants.MD_PERFORMANCE_TEST);
 
-		ringBufferSize = fromDynamicOREnvORStaticProperties(
-			io.cube.agent.Constants.RING_BUFFER_SIZE_PROP, dynamicProperties)
-			.map(Integer::valueOf).orElse(16384);
-
-		disruptorOutputLocation = fromDynamicOREnvORStaticProperties(
-			io.cube.agent.Constants.RING_BUFFER_OUTPUT_PROP,
-			dynamicProperties).orElse("stdout");
-
-		disruptorFileOutName = fromDynamicOREnvORStaticProperties(
-			io.cube.agent.Constants.RING_BUFFER_OUTPUT_FILE_NAME,
-			dynamicProperties).orElse("/var/log/event.log");
-
-		disruptorLogFileMaxSize = Long.parseLong(fromDynamicOREnvORStaticProperties(
-			io.cube.agent.Constants.DISRUPTOR_LOG_FILE_MAX_SIZE_PROP,
-			dynamicProperties).orElse("10000000"));
-
-		disruptorLogMaxBackup = Integer.parseInt(fromDynamicOREnvORStaticProperties(
-			io.cube.agent.Constants.DISRUPTOR_LOG_FILE_MAX_BACKUPS_PROP,
-			dynamicProperties).orElse("10000"));
+		getMessageQueueDetails(dynamicConfig);
 
 		RequestConfig requestConfig = RequestConfig.custom()
 			.setConnectionRequestTimeout(READ_TIMEOUT)
@@ -295,25 +356,79 @@ public class CommonConfig {
 
 		httpClient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build();
 
-		LOGGER.info( "PROPERTIES POLLED :: " + this.toString());
+		LOGGER.info("PROPERTIES POLLED :: " + this.toString());
+	}
+
+	private static Sampler getNodeSelectionDetails(Config dynamicConfig,
+		ConfigRenderOptions options)
+		throws java.io.IOException {
+		Optional<SamplerConfig> nodeSelectionConfigTmp;
+		try {
+			String samplerConfigJsonString = dynamicConfig
+				.getValue(io.cube.agent.Constants.MD_NODE_SELECTION_CONFIG).render(options);
+			nodeSelectionConfigTmp = Optional
+				.of(jsonMapper.readValue(samplerConfigJsonString, SamplerConfig.class));
+		} catch (Missing e) {
+			nodeSelectionConfigTmp = Optional.empty();
+		}
+
+		return Utils.initSampler(nodeSelectionConfigTmp);
+	}
+
+	private static Sampler getSamplerDetails(Config dynamicConfig, ConfigRenderOptions options)
+		throws java.io.IOException {
+		Optional<SamplerConfig> samplerConfig;
+		try {
+			String samplerConfigJsonString = dynamicConfig
+				.getValue(io.cube.agent.Constants.SAMPLER_CONF_PROP).render(options);
+			samplerConfig = Optional
+				.of(jsonMapper.readValue(samplerConfigJsonString, SamplerConfig.class));
+		} catch (Missing e) {
+			samplerConfig = Optional.empty();
+		}
+
+		return Utils.initSampler(samplerConfig);
+	}
+
+	private void getEncryptionDetails(Config dynamicConfig, ConfigRenderOptions options) {
+		try {
+			String encryptionJsonString = dynamicConfig
+				.getValue(io.cube.agent.Constants.ENCRYPTION_CONF_PROP).render(options);
+			encryptionConfig = Optional.of(jsonMapper
+				.readValue(encryptionJsonString, EncryptionConfig.class));
+		} catch (Missing e) {
+			encryptionConfig = Optional.empty();
+		} catch (Exception e) {
+			LOGGER.error("Error in reading encryption config file", e);
+		}
+	}
+
+	// Method to append trailing slash to given uris
+	// This is done because resolve method in uri create
+	// has issues without the slash
+	private static String appendTrailingSlash(String uri) {
+		if(!uri.endsWith("/")) return uri + "/";
+		else return uri;
+	}
+
+	private void getMessageQueueDetails(Config dynamicConfig) {
+		ringBufferSize = dynamicConfig.getInt(io.cube.agent.Constants.RING_BUFFER_SIZE_PROP);
+
+		disruptorOutputLocation = dynamicConfig
+			.getString(io.cube.agent.Constants.RING_BUFFER_OUTPUT_PROP);
+
+		disruptorFileOutName = dynamicConfig
+			.getString(io.cube.agent.Constants.RING_BUFFER_OUTPUT_FILE_NAME);
+
+		disruptorLogFileMaxSize = dynamicConfig
+			.getLong(io.cube.agent.Constants.DISRUPTOR_LOG_FILE_MAX_SIZE_PROP);
+
+		disruptorLogMaxBackup = dynamicConfig
+			.getInt(io.cube.agent.Constants.DISRUPTOR_LOG_FILE_MAX_BACKUPS_PROP);
 	}
 
 	public CloseableHttpClient getHttpClient() {
 		return httpClient;
-	}
-
-	private Optional<String> fromDynamicOREnvORStaticProperties(String propertyName,
-		Properties dynamicProperty) {
-		Optional<String> property = Optional.ofNullable(dynamicProperty.getProperty(propertyName));
-		if (!property.isPresent()) {
-			property = fromEnvOrProperties(propertyName);
-		}
-		return property;
-	}
-
-	private static Optional<String> fromEnvOrProperties(String propertyName) {
-		return Optional.ofNullable(CommonUtils.fromEnvOrSystemProperties(propertyName)
-			.orElse(staticProperties.getProperty(propertyName)));
 	}
 
 	private static String getConfigIntent() {
@@ -342,6 +457,19 @@ public class CommonConfig {
 		return servicesToMock.contains(serviceName);
 	}
 
+	// Avoid using this method for default so that the source of truth remains single.
+	// Ideally all defaults should be set in the staticConfFile file.
+	// This method should be used for setting properties which maybe Optional.
+	private Object getValueOrDefault(Config conf, String property, Object defaultVal) {
+		Object toReturn;
+		try {
+			toReturn = conf.getAnyRef(property);
+		} catch (Missing e) {
+			toReturn = defaultVal;
+		}
+		return toReturn;
+	}
+
 	public Optional<URI> getMockingURI(URI originalURI, String serviceName)
 		throws URISyntaxException {
 		if (!shouldMockService(serviceName)) {
@@ -364,111 +492,5 @@ public class CommonConfig {
 		}
 	}
 
-	Sampler initSampler() {
-		if (!samplerConfig.isPresent()) {
-			LOGGER.debug("Invalid config file, not sampling!");
-			return Sampler.NEVER_SAMPLE;
-		}
-		SamplerConfig config = samplerConfig.get();
-		if (!validateSamplerConfig(config)) {
-			return Sampler.NEVER_SAMPLE;
-		}
-		return createSampler(samplerConfig.get());
-
-	}
-
-	private boolean validateSamplerConfig(SamplerConfig config) {
-		String type = config.getType();
-		Optional<Integer> accuracy = config.getAccuracy();
-		Optional<Float> rate = config.getRate();
-		Optional<String> fieldCategory = config.getFieldCategory();
-		Optional<List<Attributes>> attributes = config.getAttributes();
-
-		if (type == null) {
-			LOGGER.debug( "Sampler Type missing!");
-			return false;
-		}
-
-		if ((type.equalsIgnoreCase(SimpleSampler.TYPE)
-			|| type.equalsIgnoreCase(CountingSampler.TYPE))
-			&& (!rate.isPresent() || !accuracy.isPresent())) {
-			LOGGER.debug("Need sampling rate/accuracy for Simple/Counting Samplers!");
-			return false;
-		}
-
-		if (type.equalsIgnoreCase(BoundarySampler.TYPE)
-			&& (!rate.isPresent() || !accuracy.isPresent()
-			|| !fieldCategory.isPresent() || !attributes.isPresent())) {
-			LOGGER.debug("Need sampling rate/accuracy/ "
-				+ "fieldCategory/attributes for Boundary Sampler!");
-			return false;
-		}
-
-		if (type.equalsIgnoreCase(AdaptiveSampler.TYPE)
-			&& (!fieldCategory.isPresent() || !attributes.isPresent())) {
-			LOGGER.debug("Need field category/attributes "
-						+ "for Adaptive Sampler!");
-			return false;
-		}
-
-		return true;
-	}
-
-	Sampler createSampler(SamplerConfig samplerConfig) {
-		String type = samplerConfig.getType();
-		Optional<Integer> accuracy = samplerConfig.getAccuracy();
-		Optional<Float> rate = samplerConfig.getRate();
-		Optional<String> fieldCategory = samplerConfig.getFieldCategory();
-		Optional<List<Attributes>> attributes = samplerConfig.getAttributes();
-
-		if (SimpleSampler.TYPE.equalsIgnoreCase(type)) {
-			return SimpleSampler.create(rate.get(), accuracy.get());
-		}
-
-		if (CountingSampler.TYPE.equalsIgnoreCase(type)) {
-			return CountingSampler.create(rate.get(), accuracy.get());
-		}
-
-		//This sampler takes only a list of fields on which the sampling is to be done.
-		//Specific values are not looked at.
-		if (BoundarySampler.TYPE.equalsIgnoreCase(type)) {
-			List<String> samplingParams = new ArrayList<>();
-			for (Attributes attr : attributes.get()) {
-				if (attr.getField() == null || attr.getField().trim().isEmpty()) {
-					LOGGER.debug("Invalid input, using default sampler ");
-					samplingParams.clear();
-					return Sampler.NEVER_SAMPLE;
-				}
-				samplingParams.add(attr.getField());
-			}
-			return BoundarySampler
-				.create(rate.get(), accuracy.get(), fieldCategory.get(), samplingParams);
-		}
-
-		//This sampler takes fields, values and specific rates. However currently
-		//only one field and multiple values are supported. Not multiple fields.
-		//`other` is a special value that can be used to specify rate for every other
-		//value that are possible for the specified field. Special value should be the
-		//last in the rule hierarchy.
-		if (AdaptiveSampler.TYPE.equalsIgnoreCase(type)) {
-			//ordered map to allow special value `other` at the end.
-			Map<Pair<String, String>, Float> samplingParams = new LinkedHashMap<>();
-			for (Attributes attr : attributes.get()) {
-				if (attr.getField() == null || attr.getField().trim().isEmpty()
-					|| !attr.getValue().isPresent() || !attr.getRate().isPresent()) {
-					LOGGER.debug("Invalid input, using default sampler ");
-					samplingParams.clear();
-					return Sampler.NEVER_SAMPLE;
-				}
-
-				samplingParams.put(new ImmutablePair<>(attr.getField(), attr.getValue().get()),
-					attr.getRate().get());
-			}
-			return AdaptiveSampler.create(fieldCategory.get(), samplingParams);
-		}
-
-		LOGGER.error("Invalid sampling strategy, using default sampler , type : ".concat(type));
-		return Sampler.NEVER_SAMPLE;
-	}
 
 }

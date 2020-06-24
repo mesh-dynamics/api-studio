@@ -7,6 +7,10 @@ import javax.ws.rs.core.MultivaluedMap;
 public abstract class Sampler {
 
 	public static final Sampler NEVER_SAMPLE = new Sampler() {
+		@Override
+		public String toString() {
+			return "NEVER_SAMPLE";
+		}
 
 		@Override
 		public Optional<String> getFieldCategory() {
@@ -20,6 +24,11 @@ public abstract class Sampler {
 	};
 
 	public static final Sampler ALWAYS_SAMPLE = new Sampler() {
+		@Override
+		public String toString() {
+			return "ALWAYS_SAMPLE";
+		}
+
 		@Override
 		public Optional<String> getFieldCategory() {
 			return Optional.empty();

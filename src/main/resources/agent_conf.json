@@ -1,0 +1,76 @@
+{
+	"io": {
+		"md": {
+			"customer": "customer",
+			"app": "app",
+			"instance": "prod",
+			"servicename": "wrapper",
+			"service": {
+				"record": "https://demo.dev.cubecorp.io/api",
+				"mock": "https://demo.dev.cubecorp.io/api"
+			},
+			"authtoken": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s",
+			"read": {
+				"timeout": 100000
+			},
+			"connect": {
+				"timeout": 100000,
+				"retries": 3
+			},
+			"intent": "normal",
+			"pollingconfig": {
+				"delay": 25,
+				"fetchconfigapiuri": "http://localhost:8080/cubeio_war/cs/fetchAgentConfig/",
+				"ackconfigapiuri": "http://localhost:8080/cubeio_war/cs/ackConfigApplication/",
+				"pollserver": true
+			},
+			"samplerconfig": {
+				"type": "simple",
+				"accuracy": 1000,
+				"rate": 0
+			},
+			"sampler": {
+				"veto": false
+			},
+			"performance": {
+				"test": false
+			},
+			"mock": {
+				"services": [
+					"a",
+					"b",
+					"c",
+					"d"
+				]
+			},
+			"disruptor": {
+				"size": 16384,
+				"output": {
+					"type": "stdout",
+					"file": {
+						"name": "/var/log/event.log",
+						"maxsizebytes": 10000000,
+						"backupnumber": 10000
+					}
+				}
+			},
+			"nodeselectionconfig": {
+				"type": "adaptive",
+				"accuracy": 1000,
+				"fieldCategory": "paramsMap",
+				"attributes": [
+					{
+						"field": "datacenter",
+						"value": "DC1",
+						"rate": 0.9
+					},
+					{
+						"field": "datacenter",
+						"value": "other",
+						"rate": 0.3
+					}
+				]
+			}
+		}
+	}
+}

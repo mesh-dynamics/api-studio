@@ -15,6 +15,13 @@ public class SimpleSampler extends Sampler {
 	private final float samplingRate;
 	private final Random rnd;
 
+	@Override
+	public String toString() {
+		return "SimpleSampler{" +
+			"samplingRate=" + samplingRate +
+			'}';
+	}
+
 	public static Sampler create(float samplingRate, int samplingAccuracy) {
 		Optional<Sampler> sampler = Utils.getConstSamplerIfValid(samplingRate, samplingAccuracy);
 		return sampler.orElse(new SimpleSampler(samplingRate));

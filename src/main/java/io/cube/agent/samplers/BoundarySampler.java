@@ -36,6 +36,16 @@ public class BoundarySampler extends Sampler {
 				samplingAccuracy, samplingParams));
 	}
 
+	@Override
+	public String toString() {
+		return "BoundarySampler{" +
+			"samplingParams=" + samplingParams +
+			", boundary=" + boundary +
+			", samplingAccuracy=" + samplingAccuracy +
+			", fieldCategory='" + fieldCategory + '\'' +
+			'}';
+	}
+
 	private List<String> samplingParams;
 	private final long boundary;
 	private final int samplingAccuracy;

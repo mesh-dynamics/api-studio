@@ -47,6 +47,14 @@ public class CountingSampler extends Sampler {
 	}
 
 	@Override
+	public String toString() {
+		return "CountingSampler{" +
+			"counter=" + counter +
+			", samplingAccuracy=" + samplingAccuracy +
+			'}';
+	}
+
+	@Override
 	public Optional<String> getFieldCategory() {
 		return Optional.empty();
 	}
