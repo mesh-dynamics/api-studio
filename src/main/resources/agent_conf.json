@@ -52,6 +52,13 @@
 						"maxsizebytes": 10000000,
 						"backupnumber": 10000
 					}
+				},
+				"event": {
+					"memory": {
+						"buffer": {
+							"size": 100
+						}
+					}
 				}
 			},
 			"nodeselectionconfig": {

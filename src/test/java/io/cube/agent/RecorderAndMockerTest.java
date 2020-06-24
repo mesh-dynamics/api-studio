@@ -296,7 +296,7 @@ public class RecorderAndMockerTest {
         this.randomGen = new Random();
     }
 
-    void testGetPromoName(ProdDiscount[] prodDiscounts) {
+    void testGetPromoName(ProdDiscount[] prodDiscounts) throws InterruptedException {
 
         Long currentTime = Instant.now().toEpochMilli();
         String label = Instant.now().toString();
@@ -308,6 +308,8 @@ public class RecorderAndMockerTest {
         // start recording
         cubeClient.startRecording(CUSTID, APPID, INSTANCEID, goldenName, TESTUSER, label,
                 TEMPLATEVERSION);
+
+        Thread.sleep(3000);
 
         // set mode to record
         mode = Mode.Record;
@@ -340,6 +342,8 @@ public class RecorderAndMockerTest {
             fail("Replay cannot be inited or started");
         }
 
+        Thread.sleep(3000);
+
         INSTANCEID = replayInstanceId; // set instance id to replay instance
 
         replayid.ifPresent(replayidv -> {
@@ -367,7 +371,7 @@ public class RecorderAndMockerTest {
 
 
     @Test
-    public void testFnNoArgs() {
+    public void testFnNoArgs() throws InterruptedException {
 
         ProdDiscount[] prodDiscounts = {prodDiscount1, prodDiscount2, prodDiscount3};
         testGetPromoName(prodDiscounts);
@@ -418,7 +422,7 @@ public class RecorderAndMockerTest {
         }).toArray(Double[]::new);
     }
 
-    private void testFnMultiArgs(boolean asObj, boolean nullObj, int seqSize, ExceptionTestType testException) {
+    private void testFnMultiArgs(boolean asObj, boolean nullObj, int seqSize, ExceptionTestType testException) throws InterruptedException {
 
         ProdDiscount.resTimeStamp = Optional.empty();
 
@@ -430,6 +434,8 @@ public class RecorderAndMockerTest {
 
         // start recording
         cubeClient.startRecording(CUSTID, APPID, INSTANCEID, goldenName, TESTUSER, label, TEMPLATEVERSION);
+
+        Thread.sleep(3000);
 
         // set mode to record
         mode = Mode.Record;
@@ -454,6 +460,8 @@ public class RecorderAndMockerTest {
 
         // stop recording
         cubeClient.stopRecording(CUSTID, APPID, goldenName, label);
+
+        Thread.sleep(10000);
 
         // start replay
         Optional<String> resp = cubeClient.initReplay(CUSTID, APPID, replayInstanceId, goldenName, ENDPOINT, TESTUSER);
@@ -508,33 +516,33 @@ public class RecorderAndMockerTest {
 
 
     @Test
-    public void testFnMultipleArgs() {
+    public void testFnMultipleArgs() throws InterruptedException {
         testFnMultiArgs(false, false, 1, ExceptionTestType.None);
     }
 
     @Test
-    public void testFnObjArgs() {
+    public void testFnObjArgs() throws InterruptedException {
         testFnMultiArgs(true, false, 1, ExceptionTestType.None);
     }
 
 
     @Test
-    public void testFnNullObjArgs() {
+    public void testFnNullObjArgs() throws InterruptedException {
         testFnMultiArgs(true, true, 1, ExceptionTestType.None);
     }
 
     @Test
-    public void testFnException() {
+    public void testFnException() throws InterruptedException {
         testFnMultiArgs(true, true, 1, ExceptionTestType.ExceptionRuntime);
     }
 
     @Test
-    public void testFnExceptionChecked() {
+    public void testFnExceptionChecked() throws InterruptedException {
         testFnMultiArgs(true, true, 1, ExceptionTestType.ExceptionChecked);
     }
 
     @Test
-    public void testFnNullReturnVal() {
+    public void testFnNullReturnVal() throws InterruptedException {
         // create ProdDiscount with null promo name
         ProdDiscount[] prodDiscounts = {new ProdDiscount(new HashMap<String, Double>(), null)};
            testGetPromoName(prodDiscounts);
@@ -542,7 +550,7 @@ public class RecorderAndMockerTest {
 
 
     @Test
-    public void testFnSeqOfCalls() {
+    public void testFnSeqOfCalls() throws InterruptedException {
         testFnMultiArgs(false, false, 5, ExceptionTestType.None);
     }
 

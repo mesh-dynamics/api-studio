@@ -27,6 +27,7 @@ import io.md.dao.Event.RunType;
 import io.md.dao.FnReqRespPayload;
 import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.dao.MDTraceInfo;
+import io.md.dao.MockWithCollection;
 import io.md.dao.Recording.RecordingType;
 import io.md.services.FnResponse;
 import io.md.services.MockResponse;
@@ -56,7 +57,7 @@ public class ProxyMocker implements Mocker {
 	}
 
 	@Override
-	public MockResponse mock(Event event, Optional<Instant> lowerBoundForMatching) throws MockerException {
+	public MockResponse mock(Event event, Optional<Instant> lowerBoundForMatching, Optional<MockWithCollection> mockWithCollectionOptional) throws MockerException {
 		return cubeClient.getMockResponseEvent(event, lowerBoundForMatching).orElse(emptyResponse);
 	}
 
@@ -88,7 +89,7 @@ public class ProxyMocker implements Mocker {
 
 		try {
 			return event.map(UtilException.rethrowFunction(eve -> {
-				Optional<FnResponse> fnResponse = Utils.mockResponseToFnResponse(mock(eve, lowerBound));
+				Optional<FnResponse> fnResponse = Utils.mockResponseToFnResponse(mock(eve, lowerBound, Optional.empty()));
 
 				return fnResponse.map(resp -> {
 					//If multiple Solr docs are returned, we need to maintain the last timestamp
