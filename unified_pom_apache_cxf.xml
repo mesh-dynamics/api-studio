@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.cube</groupId>
   <artifactId>md-apache-cxf-interceptor</artifactId>
-  <version>1.2.6</version>
+  <version>1.2.7</version>
   <packaging>jar</packaging>
 
   <distributionManagement>
@@ -19,12 +19,12 @@
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>md-apache-cxf-egress-interceptor</artifactId>
-      <version>1.2.6</version>
+      <version>1.2.7</version>
     </dependency>
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>md-apache-cxf-ingress-interceptor</artifactId>
-      <version>1.2.6</version>
+      <version>1.2.7</version>
     </dependency>
   </dependencies>
   <build>

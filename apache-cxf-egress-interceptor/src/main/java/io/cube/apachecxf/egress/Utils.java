@@ -1,6 +1,9 @@
 package io.cube.apachecxf.egress;
 
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +24,7 @@ import io.md.constants.Constants;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.MDTraceInfo;
+import io.md.utils.CommonUtils;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
@@ -175,5 +179,43 @@ public class Utils {
 		if (scope != null) {
 			scope.close();
 		}
+	}
+
+	public static URI getMockingURI(URI originalUri) {
+
+		CommonConfig commonConfig = CommonConfig.getInstance();
+		String serviceName = CommonUtils.getEgressServiceName(originalUri);
+		Optional<URI> mockingURI = Optional.empty();
+
+		try {
+			mockingURI = commonConfig.getMockingURI(originalUri, serviceName);
+		} catch (URISyntaxException e) {
+			LOGGER.error("Exception during forming Mocking URI");
+		}
+
+		return mockingURI.orElse(originalUri);
+	}
+
+	public static URL getMockingURL(URL originalUrl) {
+
+		CommonConfig commonConfig = CommonConfig.getInstance();
+		String serviceName = null;
+		Optional<URL> mockingUrl = Optional.empty();
+		try {
+			URI originalUri = originalUrl.toURI();
+			serviceName = CommonUtils.getEgressServiceName(originalUri);
+			Optional<URI> mockingURI = commonConfig.getMockingURI(originalUri, serviceName);
+			if (mockingURI.isPresent()) {
+				mockingUrl = Optional.of(new URL(mockingURI.toString()));
+			}
+		} catch (URISyntaxException | MalformedURLException e) {
+			LOGGER.error("URI syntax exception : ", e);
+		}
+
+		return mockingUrl.orElse(originalUrl);
+	}
+
+	public static String getMockingURI(String originalUrl) {
+		return getMockingURI(URI.create(originalUrl)).toString();
 	}
 }

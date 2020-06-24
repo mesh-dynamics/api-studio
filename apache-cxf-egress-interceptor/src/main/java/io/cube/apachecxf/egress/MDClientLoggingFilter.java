@@ -161,6 +161,7 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 			if (message.getExchange().get(Constants.MD_SAMPLE_REQUEST) != null) {
 				// Do not log response in case the egress serivce is to be mocked
 				Object requestURI = message.getExchange().get(Message.REQUEST_URI);
+
 				String service = null;
 				if (requestURI != null) {
 					service = CommonUtils.getEgressServiceName(new URI(requestURI.toString()));
@@ -258,7 +259,6 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 				//to create a get request with body, so double logging is not an issue.
 				recordRequest(message, null, clientRequestContext, new MutableBoolean(false));
 			}
-
 		} catch (Exception e) {
 			LOGGER.error(
 				Constants.MESSAGE + " Error occurred in intercepting the request\n" +
@@ -272,7 +272,8 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 		Span newClientSpan = null;
 		Scope newClientScope = null;
 		try {
-			String service = CommonUtils.getEgressServiceName(clientRequestContext.getUri());
+			Object uriValue = message.get(Message.REQUEST_URI);
+			String service = uriValue == null ? null : CommonUtils.getEgressServiceName(URI.create(uriValue.toString()));
 			CommonConfig commonConfig = CommonConfig.getInstance();
 			if (commonConfig.shouldMockService(service)) {
 				didContextProceed.setFalse();

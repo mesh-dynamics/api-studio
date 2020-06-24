@@ -59,6 +59,7 @@ public class MDClientMockingFilter implements ClientRequestFilter {
 				clientScope[0] = CommonUtils.activateSpan(clientSpan[0]);
 
 				setAuthTokenAndMockURI(clientRequestContext, commonConfig, mockURI);
+
 			});
 		} catch (Exception e) {
 			LOGGER.error(
@@ -85,5 +86,4 @@ public class MDClientMockingFilter implements ClientRequestFilter {
 		}
 		clientRequestContext.setUri(mockURI);
 	}
-
 }
