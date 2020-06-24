@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
@@ -180,7 +181,6 @@ public class Utils {
 		return Optional.ofNullable(fieldMap.getFirst(fieldname));
 	}
 
-	// TODO: jsonMapper can be removed. This will need change in all the interceptors
 	public static Event createHTTPRequestEvent(String apiPath,
 		MultivaluedMap<String, String> queryParams,
 		MultivaluedMap<String, String> formParams,
@@ -188,6 +188,19 @@ public class Utils {
 		MultivaluedMap<String, String> hdrs, MDTraceInfo mdTraceInfo, byte[] body,
 		Optional<String> collection,
 		ObjectMapper jsonMapper, boolean dontCheckCollection)
+		throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
+		return createHTTPRequestEvent(apiPath, queryParams, formParams, meta, hdrs, mdTraceInfo, body,
+			collection, jsonMapper, dontCheckCollection, Collections.EMPTY_MAP);
+	}
+
+	// TODO: jsonMapper can be removed. This will need change in all the interceptors
+	public static Event createHTTPRequestEvent(String apiPath,
+		MultivaluedMap<String, String> queryParams,
+		MultivaluedMap<String, String> formParams,
+		MultivaluedMap<String, String> meta,
+		MultivaluedMap<String, String> hdrs, MDTraceInfo mdTraceInfo, byte[] body,
+		Optional<String> collection,
+		ObjectMapper jsonMapper, boolean dontCheckCollection, Map eventMetaData)
 		throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
 		Optional<String> customerId = getFirst(meta, Constants.CUSTOMER_ID_FIELD);
 		Optional<String> app = getFirst(meta, Constants.APP_FIELD);
@@ -215,12 +228,22 @@ public class Utils {
 				service.get(), instance.orElse(Constants.NOT_APPLICABLE), dontCheckCollection ? Constants.NOT_APPLICABLE : collection.get(),
 				mdTraceInfo, runType.get(), timestamp,
 				reqId.orElse(Constants.NOT_APPLICABLE),
-				apiPath, Event.EventType.HTTPRequest, recordingType);
+				apiPath, Event.EventType.HTTPRequest, recordingType).withMetaData(eventMetaData);
 			eventBuilder.setPayload(httpRequestPayload);
 			Event event = eventBuilder.createEvent();
 
 			return event;
 		} else {
+			LOGGER.info(
+				Constants.CUSTOMER_ID_FIELD + customerId.orElse("NOT PRESENT") + "\n" +
+					Constants.APP_FIELD + app.orElse("NOT PRESENT") + "\n" +
+					Constants.SERVICE_FIELD + service.orElse("NOT PRESENT") + "\n" +
+					Constants.COLLECTION_FIELD + collection.orElse("NOT PRESENT") + "\n" +
+					"DontCheckCollection" + dontCheckCollection + "\n" +
+					Constants.RUN_TYPE_FIELD + runType.map(rt -> rt.toString())
+					.orElse("NOT PRESENT") + "\n" +
+					Constants.METHOD_FIELD + method.orElse("NOT PRESENT") + "\n");
+
 			throw new Event.EventBuilder.InvalidEventException();
 		}
 
@@ -331,6 +354,18 @@ public class Utils {
 		Optional<String> collection,
 		ObjectMapper jsonMapper, boolean isRecordedAtSource)
 		throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
+		return createHTTPResponseEvent(apiPath, meta, hdrs, mdTraceInfo, body,
+			collection, jsonMapper, isRecordedAtSource, Collections.EMPTY_MAP);
+	}
+
+	public static Event createHTTPResponseEvent(String apiPath,
+		MultivaluedMap<String, String> meta,
+		MultivaluedMap<String, String> hdrs,
+		MDTraceInfo mdTraceInfo,
+		byte[] body,
+		Optional<String> collection,
+		ObjectMapper jsonMapper, boolean isRecordedAtSource, Map eventMetaData)
+		throws JsonProcessingException, Event.EventBuilder.InvalidEventException {
 
 		Optional<String> customerId = getFirst(meta, Constants.CUSTOMER_ID_FIELD);
 		Optional<String> app = getFirst(meta, Constants.APP_FIELD);
@@ -370,11 +405,23 @@ public class Utils {
 				service.get(), instance.orElse(Constants.NOT_APPLICABLE), isRecordedAtSource ? Constants.NOT_APPLICABLE : collection.get(),
 				mdTraceInfo, runType.get(), timestamp,
 				reqId.orElse(Constants.NOT_APPLICABLE),
-				apiPath, Event.EventType.HTTPResponse, recordingType);
+				apiPath, Event.EventType.HTTPResponse, recordingType).withMetaData(eventMetaData);
 			eventBuilder.setPayload(httpResponsePayload);
 			Event event = eventBuilder.createEvent();
 			return event;
 		} else {
+			LOGGER.info(
+				Constants.CUSTOMER_ID_FIELD + customerId.orElse("NOT PRESENT") + "\n" +
+					Constants.APP_FIELD + app.orElse("NOT PRESENT") + "\n" +
+					Constants.SERVICE_FIELD + service.orElse("NOT PRESENT") + "\n" +
+					Constants.COLLECTION_FIELD + collection.orElse("NOT PRESENT") + "\n" +
+					"isRecordedAtSource" + isRecordedAtSource + "\n" +
+					Constants.RUN_TYPE_FIELD + runType.map(rt -> {
+					return rt.toString();
+				}).orElse("NOT PRESENT") + "\n" +
+					Constants.STATUS + status.map(s -> String.valueOf(s)).orElse("NOT PRESENT")
+					+ "\n");
+
 			throw new Event.EventBuilder.InvalidEventException();
 		}
 
