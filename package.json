@@ -4,7 +4,7 @@
   "description": "Web app for cube ui",
   "version": "0.2.14",
   "private": true,
-  "main": "build/electron.js",
+  "main": "build/electron/main.js",
   "homepage": "./",
   "author": "Mesh Dynamics <developers@meshdynamics.io>",
   "build": {
@@ -58,6 +58,7 @@
     "concurrently": "^5.2.0",
     "cookie-parser": "^1.4.3",
     "cors": "^2.8.5",
+    "cross-env": "^7.0.2",
     "cytoscape": "^3.7.3",
     "cytoscape-canvas": "^3.0.1",
     "cytoscape-cola": "^2.3.0",
@@ -127,7 +128,8 @@
     "eject": "react-scripts eject",
     "postinstall": "electron-builder install-app-deps",
     "electron-pack": "build --em.main=build/electron.js",
-    "start:electron": "npm run build && npm run electron",
+    "start:electron": "npm run build && concurrently \"npm run start\" \"npm run electron\"",
+    "build:electron": "npm run build && npm run electron",
     "build:package": "npm run build && npm run dist",
     "package:deploy:win": "npm run build && electron-builder build --win --publish always",
     "package:deploy:mac": "npm run build && electron-builder build --mac --publish always"
