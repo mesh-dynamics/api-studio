@@ -15,6 +15,7 @@ import {cubeConstants} from "../../constants";
 import { cubeService } from "../../services";
 import api from '../../api';
 import config from '../../config';
+import { isElectron, ipcRenderer } from '../../helpers/ipc-renderer';
 
 import HttpClient from "./HttpClient";
 import ResponsiveTabs from '../../components/Tabs';
@@ -412,6 +413,14 @@ class HttpClientTabs extends Component {
         const {tabs} = this.state;
         let tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
         if(tabIndex < 0) return;
+        const {userHistoryCollection} = this.state;
+        const mockContext = {
+            collectionId: userHistoryCollection.collec,
+            recordingId: this.state.tabs[tabIndex].recordingIdAddedFromClient
+        }
+        if(isElectron()) {
+            ipcRenderer.send('mock_context_change', mockContext);
+        }
         // make the request and update response status, headers & body
         // extract headers
         // extract body
@@ -1022,7 +1031,8 @@ class HttpClientTabs extends Component {
                                 outgoingRequestIds: [],
                                 eventData: reqResPair,
                                 showOutgoingRequestsBtn: false,
-                                outgoingRequests: []
+                                outgoingRequests: [],
+                                recordingIdAddedFromClient: node.recordingIdAddedFromClient
                             };
                             const mockEvent = {};
                             this.addTab(mockEvent, reqObject, selectedApp);
