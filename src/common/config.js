@@ -1,11 +1,3 @@
-// const config = {
-//     apiBaseUrl: process.env.REACT_APP_API_BASE_URL || "/api",
-//     recordBaseUrl: process.env.REACT_APP_RECORD_BASE_URL || "/api/cs",
-//     replayBaseUrl: process.env.REACT_APP_REPLAY_BASE_URL || "/api/rs",
-//     analyzeBaseUrl: process.env.REACT_APP_ANALYZE_BASE_URL || "/api/as",
-//     defaultPageSize: process.env.REACT_APP_DEFAULT_PAGE_SIZE || 5,
-// };
-
 const config = {
     // apiBaseUrl: process.env.REACT_APP_API_BASE_URL || "/api",
     // recordBaseUrl: process.env.REACT_APP_RECORD_BASE_URL || "/api/cs",
@@ -25,10 +17,6 @@ const config = {
     recordBaseUrl: "https://demo.dev.cubecorp.io/api/cs",
     replayBaseUrl: "https://demo.dev.cubecorp.io/api/rs",
     analyzeBaseUrl: "https://demo.dev.cubecorp.io/api/as",
-    // apiBaseUrl: "http://localhost:8080/api",
-    // recordBaseUrl: "http://localhost:8080/api/cs",
-    // replayBaseUrl: "http://localhost:8080/api/rs",
-    // analyzeBaseUrl: "http://localhost:8080/api/as",
     defaultPageSize: 5,
 };
 
