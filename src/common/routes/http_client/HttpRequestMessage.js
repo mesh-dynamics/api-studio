@@ -23,6 +23,7 @@ class HttpRequestMessage extends Component {
         this.onChangeValue = this.onChangeValue.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.handleClick = this.handleClick.bind(this);
+        this.handleSaveClick = this.handleSaveClick.bind(this);
         this.handleBodyOrRawDataType = this.handleBodyOrRawDataType.bind(this);
 
         this.handleShowOutgoingRequests = this.handleShowOutgoingRequests.bind(this);
@@ -36,6 +37,11 @@ class HttpRequestMessage extends Component {
     handleClick(evt) {
         const { tabId } = this.props;
         this.props.driveRequest(tabId);
+    }
+
+    handleSaveClick(evt) {
+        const { tabId } = this.props;
+        this.props.showSaveModal(tabId);
     }
 
     handleShowOutgoingRequests() {
@@ -71,12 +77,15 @@ class HttpRequestMessage extends Component {
                     <div style={{marginBottom: "9px", display: "inline-block", width: "20%", fontSize: "11px"}}>REQUEST</div>
                     <div style={{display: "inline-block", width: "80%", textAlign: "right"}}>
                         {this.props.requestId && (
-                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleShowOutgoingRequests}>
+                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: this.props.showOutgoingRequestsBtn ? "inline-block" : "none"}} onClick={this.handleShowOutgoingRequests}>
                                 <Glyphicon glyph="transfer" /> SHOW OUTGOING REQUESTS
                             </div>
                         )}
                         <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleClick}>
                             <Glyphicon glyph="play" /> RUN
+                        </div>
+                        <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleSaveClick}>
+                            <Glyphicon glyph="play" /> SAVE
                         </div>
                     </div>
                 </div>
