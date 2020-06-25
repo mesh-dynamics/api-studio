@@ -221,6 +221,13 @@
     flex: 1;
 }
 
+.user-avatar {
+    color: #545454;
+    font-size: 13px !important;
+    font-weight: bold;
+    margin-left: 15px;
+}
+
 aside .nav-tabs>li.active>a, .nav-tabs>li.active>a:focus, .nav-tabs>li.active>a:hover {
     color: #5A738E;
     cursor: default;

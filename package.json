@@ -43,6 +43,7 @@
     "react-table": "^6.10.0",
     "react-table-hoc-fixed-columns": "^2.1.1",
     "react-tiny-popover": "^4.0.0",
+    "react-user-avatar": "^1.10.0",
     "react-treebeard": "^3.2.4",
     "recharts": "^1.5.0",
     "redux": "^4.0.0",

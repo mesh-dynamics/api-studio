@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import {connect} from "react-redux";
+import UserAvatar from 'react-user-avatar';
 import { Radio, Checkbox, Tabs, Tab, Panel, Label } from 'react-bootstrap';
 import "./Navigation.css"
 import {cubeActions} from "../../actions";
@@ -107,7 +108,7 @@ class Navigation extends Component{
     }
 
     render() {
-        const {lo, cube} = this.props;
+        const {lo, cube, user: {username}} = this.props;
         const {appsVisible} = this.state;
 
         return (
@@ -140,7 +141,7 @@ class Navigation extends Component{
                         <div className="q-links">
                             <div className="link-q"><i className="fas fa-bell"></i></div>
                             <div className="link-q"><i className="fas fa-cog"></i></div>
-                            <div className="link-q"><i className="fas fa-user-circle"></i></div>
+                            <div className="link-q"><UserAvatar size="24" name={username} className="user-avatar" color="#CCC6B0"/></div>
                             <div className="link-q" onClick={lo}><i title="Sign Out" className="fas fa-sign-out-alt"></i></div>
                         </div>
                     </div>
