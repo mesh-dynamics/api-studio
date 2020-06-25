@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import {connect} from "react-redux";
-import { Radio, Checkbox } from 'react-bootstrap';
+import UserAvatar from 'react-user-avatar';
+import { Radio, Checkbox, Tabs, Tab, Panel, Label } from 'react-bootstrap';
 import "./Navigation.css"
 import {cubeActions} from "../../actions";
 import {cubeConstants} from "../../constants";
@@ -108,7 +109,7 @@ class Navigation extends Component{
     }
 
     render() {
-        const {lo, cube} = this.props;
+        const {lo, cube, user: {username}} = this.props;
         const {appsVisible} = this.state;
 
         return (
@@ -142,7 +143,7 @@ class Navigation extends Component{
                         <div className="q-links">
                             <div className="link-q"><i className="fas fa-bell"></i></div>
                             <div className="link-q"><i className="fas fa-cog"></i></div>
-                            <div className="link-q"><i className="fas fa-user-circle"></i></div>
+                            <div className="link-q"><UserAvatar size="24" name={username} className="user-avatar" color="#CCC6B0"/></div>
                             <div className="link-q" onClick={lo}><i title="Sign Out" className="fas fa-sign-out-alt"></i></div>
                         </div>
                     </div>
@@ -158,7 +159,7 @@ class Navigation extends Component{
                         </div>
                     </div>
                     
-                    {!window.location.pathname.includes("api_catalog") && 
+                    {!window.location.pathname.includes("http_client") && !window.location.pathname.includes("api_catalog") && 
                     <div className="info-wrapper">
                         <div>
                             <div className="label-n">APPLICATION</div>
@@ -218,32 +219,6 @@ class Navigation extends Component{
                         </div>
 
                         {!cube.hideTestConfigView ? <ViewSelectedTestConfig checkReplayStatus={this.checkReplayStatus}/> : null}
-
-                        <div className={!cube.hideHttpClient ? "margin-top-10 info-div" : "hidden"}>
-                            <div className="margin-top-10">
-                                <div className="value-n">VIEW</div>
-                            </div>
-                            <div className="margin-top-10">
-                                <div className="margin-top-10 vertical-middle">
-                                    <Radio>
-                                        TEST REQUESTS
-                                    </Radio>
-                                </div>
-                                <div className="margin-top-10 vertical-middle">
-                                    <Radio>
-                                        MOCK REQUESTS
-                                    </Radio>
-                                </div>
-                            </div>
-                        </div>
-                        <div className={!cube.hideHttpClient ? "margin-top-10 vertical-middle" : "hidden"}>
-                            <Checkbox>
-                                SAVE AS COPY
-                            </Checkbox>
-                        </div>
-                        <div className={!cube.hideHttpClient ? "margin-top-20 text-center" : "hidden"}>
-                            <div className="cube-btn width-50 text-center" style={{margin: "0 auto"}}>SAVE</div>
-                        </div>
                     </div>}
                 </div>
             </div>

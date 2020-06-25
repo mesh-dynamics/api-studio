@@ -50,10 +50,16 @@ const getTestConfigByAppId = async (appId) => {
     }
 };
 
-const fetchCollectionList = async (app) => {
+const fetchCollectionList = async (app, recordingType="") => {
     const user = JSON.parse(localStorage.getItem('user')); // TODO: Change this to be passed from auth tree
     try {
-        return await api.get(`${config.recordBaseUrl}/searchRecording?customerId=${user.customer_name}&app=${app}`);
+        let url = `${config.recordBaseUrl}/searchRecording`;
+        const params = new URLSearchParams();
+        params.set("customerId", user.customer_name);
+        params.set("app", app);
+        recordingType && params.set("recordingType", recordingType); // todo
+
+        return await api.get(url + "?" + params.toString());
     } catch(error) {
         console.log("Error fetching test config \n", error);
         throw new Error("Error fetching test config");
@@ -316,15 +322,16 @@ const fetchClusterList = async () => {
     }
 };
 
-// TODO: Refactor the calls below
-const fetchAPIFacetData = async (app, startTime, endTime) => {
+const fetchAPIFacetData = async (app, recordingType, collectionName, startTime=null, endTime=null) => {
     const user = JSON.parse(localStorage.getItem('user'));
 
     let apiFacetURL = `${config.analyzeBaseUrl}/getApiFacets/${user.customer_name}/${app}`;
     
     let searchParams = new URLSearchParams();
-    searchParams.set("startDate", startTime);
-    searchParams.set("endDate", endTime);
+    startTime && searchParams.set("startDate", startTime);
+    endTime && searchParams.set("endDate", endTime);
+    recordingType && searchParams.set("recordingType", recordingType); // todo
+    collectionName && searchParams.set("collection", collectionName);
 
     let url = apiFacetURL + "?" + searchParams.toString();
 
@@ -336,19 +343,21 @@ const fetchAPIFacetData = async (app, startTime, endTime) => {
     }
 }
 
-const fetchAPITraceData = async (app, startTime, endTime, selectedService, selectedApiPath, selectedInstance) => {
+const fetchAPITraceData = async (app, startTime, endTime, service, apiPath, instance, recordingType, collectionName) => {
     const user = JSON.parse(localStorage.getItem('user'));
 
     let apiTraceURL = `${config.analyzeBaseUrl}/getApiTrace/${user.customer_name}/${app}`;
     
     let searchParams = new URLSearchParams();
-    searchParams.set("startDate", startTime);
-    searchParams.set("endDate", endTime);
+    startTime && searchParams.set("startDate", startTime);
+    endTime && searchParams.set("endDate", endTime);
     searchParams.set("depth", 2);
-    searchParams.set("service", selectedService);
-    searchParams.set("apiPath", selectedApiPath);
-    searchParams.set("instanceId",selectedInstance);
-
+    searchParams.set("service", service);
+    searchParams.set("apiPath", apiPath);
+    instance && searchParams.set("instanceId", instance);
+    recordingType && searchParams.set("recordingType", recordingType); // todo
+    collectionName && searchParams.set("collection", collectionName);
+    
     let url = apiTraceURL + "?" + searchParams.toString();
 
     try {

@@ -29,11 +29,14 @@ class HttpClient extends Component {
                         updateParam={this.props.updateParam}
                         updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
                         driveRequest={this.props.driveRequest}
-                        showOutgoingRequests={this.props.showOutgoingRequests} >
+                        showOutgoingRequests={this.props.showOutgoingRequests}
+                        showOutgoingRequestsBtn={this.props.showOutgoingRequestsBtn}
+                        showSaveModal={this.props.showSaveModal} >
                   </HttpRequestMessage>
                     <HttpResponseMessage tabId={this.props.tabId}
                         updateParam={this.props.updateParam}
                         responseStatus={this.props.responseStatus}
+                        responseStatusText={this.props.responseStatusText}
                         responseHeaders={this.props.responseHeaders}
                         responseBody={this.props.responseBody}
                         recordedResponseHeaders={this.props.recordedResponseHeaders}

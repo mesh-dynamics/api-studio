@@ -61,6 +61,7 @@ const authenticationReducer = (state = persistedState, action) => {
     return {
       ...state,
       loggedIn: false,
+      accessViolation: false,
       user: {},
     };
   case authConstants.SET_MESSAGE:

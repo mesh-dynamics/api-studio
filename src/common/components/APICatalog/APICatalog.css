@@ -32,3 +32,12 @@
 .react-datepicker-wrapper {
   display: inline !important;
 }
+
+.api-catalog-view-btn {
+  width: 10%;
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between;
+}

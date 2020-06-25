@@ -214,6 +214,14 @@ class ViewSelectedTestConfig extends React.Component {
         }
     });
 
+    showGoldenWarningForRunTest =  () => this.setState({
+        goldenSelectWarningModalVisible: true,
+        userAlertMessage: {
+            header: "Alert",
+            message: "Select a Golden to Run Test."
+        }
+    });
+
     showGoldenWarningModal = () => this.setState({ 
         goldenSelectWarningModalVisible: true,
         userAlertMessage: {
@@ -361,7 +369,7 @@ class ViewSelectedTestConfig extends React.Component {
         }
 
         if (!cube.selectedTestId) {
-            this.showGoldenWarningModal();
+            this.showGoldenWarningForRunTest();
             return;
         }
 
