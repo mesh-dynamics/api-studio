@@ -530,7 +530,7 @@ class HttpClientTabs extends Component {
             });
         } else if(_.isObject(headersReceived)) {
             Object.keys(headersReceived).map((eachHeader) => {
-                if(eachHeader && headersReceived[eachHeader]) headers[eachHeader] = headersReceived[eachHeader].split(",");
+                if(eachHeader && headersReceived[eachHeader]) headers[eachHeader] = headersReceived[eachHeader];
             })
         }
         
@@ -563,7 +563,7 @@ class HttpClientTabs extends Component {
         const httpRequestEvent = eachPair[httpRequestEventTypeIndex];
         const httpResponseEvent = eachPair[httpResponseEventTypeIndex];
 
-        const { headers, queryStringParams, bodyType, rawDataType, responseHeaders,responseBody } = tabToSave;
+        const { headers, queryStringParams, bodyType, rawDataType, responseHeaders,responseBody, recordedResponseHeaders, recordedResponseBody } = tabToSave;
         const httpReqestHeaders = this.extractHeadersToCubeFormat(headers);
         const httpRequestQueryStringParams = this.extractQueryStringParamsToCubeFormat(queryStringParams);
         let httpRequestBody;
@@ -577,7 +577,8 @@ class HttpClientTabs extends Component {
         }
         const httpMethod = tabToSave.httpMethod;
         const apiPath = httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : ""; 
-        const httpResponseHeaders = responseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : null;
+        const httpResponseHeaders = responseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : recordedResponseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : null;
+        const httpResponseBody = responseBody ? JSON.parse(responseBody) : recordedResponseBody ? JSON.parse(recordedResponseBody) : null;
         const reqResCubeFormattedData = {
             request: {
                 ...httpRequestEvent,
@@ -596,10 +597,10 @@ class HttpClientTabs extends Component {
             response: {
                 ...httpResponseEvent,
                 payload: [
-                    "HTTPRequestPayload",
+                    "HTTPResponsePayload",
                     {
                         hdrs: httpResponseHeaders,
-                        body: responseBody ? JSON.parse(responseBody) : null,
+                        body: httpResponseBody,
                         status: tabToSave.responseStatus,
                         statusCode: tabToSave.responseStatus
                     }
@@ -688,7 +689,7 @@ class HttpClientTabs extends Component {
     handleSave() {
         const { userCollectionId, userCollections, selectedSaveableTabId } = this.state;
         const selectedCollection = userCollections.find((eachCollection) => {
-            return eachCollection.collec = userCollectionId;
+            return eachCollection.id === userCollectionId;
         });
         this.saveToCollection(selectedSaveableTabId, selectedCollection.id);
     }
@@ -802,6 +803,7 @@ class HttpClientTabs extends Component {
                             eachApiTraceEvent["name"] = eachApiTraceEvent["apiPath"];
                             eachApiTraceEvent["id"] = eachApiTraceEvent["requestEventId"];
                             eachApiTraceEvent["toggled"] = false;
+                            eachApiTraceEvent["recordingIdAddedFromClient"] = selectedCollection.id;
                         });
                         const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
                             customID: "spanId", parentProperty: "parentSpanId"
