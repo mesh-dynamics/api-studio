@@ -61,7 +61,6 @@ public class BackendApplication {
 
     @Bean(name = "appRestClient")
     public RestTemplate getRestTemplate() {
-
         ArrayList<ClientHttpRequestInterceptor> interceptors = new ArrayList<>();
         interceptors.add(new RestTemplateMockInterceptor());
         interceptors.add(new RestTemplateTracingInterceptor());
