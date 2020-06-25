@@ -1,5 +1,6 @@
 package com.cubeui.backend.web.external;
 
+import io.md.dao.Recording;
 import io.md.dao.Replay;
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.service.CubeServerService;
@@ -33,6 +34,11 @@ public class ReplayWSController {
 
     @PostMapping("/start/{recordingId}")
     public ResponseEntity start(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId) {
+        Optional<Recording> recording = cubeServerService.getRecording(recordingId);
+        if(recording.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error while retrieving Recording Object for recordingId=" + recordingId);
+        validation.validateCustomerName(request,recording.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 

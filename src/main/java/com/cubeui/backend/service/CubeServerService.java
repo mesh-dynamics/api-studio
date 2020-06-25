@@ -1,8 +1,10 @@
 package com.cubeui.backend.service;
 
+import io.md.dao.Recording;
 import io.md.dao.Replay;
 import com.cubeui.backend.web.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -101,6 +103,33 @@ public class CubeServerService {
         }
     }
 
+    public Optional<Recording> getRecording(String recordingId) {
+        final String path  = cubeServerBaseUrlRecord + "/cs/status/" + recordingId;
+        final ResponseEntity  response = fetchGetResponse(path);
+        if (response.getStatusCode() == HttpStatus.OK) {
+            try {
+                final String body = response.getBody().toString();
+                final Recording recording = jsonMapper.readValue(body, Recording.class);
+                return Optional.of(recording);
+            } catch (Exception e) {
+                log.info("Error in converting Json to Recording" + recordingId + " message"  + e.getMessage());
+                return Optional.empty();
+            }
+        }
+        else {
+            log.error("Error while retrieving the data from "+ path + " with statusCode="+ response.getStatusCode() +", message="+response.getBody());
+            return Optional.empty();
+        }
+    }
+
+    public <T> ResponseEntity fetchPostResponseForUserHistory(HttpServletRequest request,
+            String customerId, String app, String instance, Optional<T> formParams) {
+        String userHistoryUrl =
+            "/cs/start/" + customerId+ "/" + app + "/" + instance + "/" + "Default" + app;
+        return fetchPostResponse(request, formParams, userHistoryUrl,
+                MediaType.APPLICATION_FORM_URLENCODED);
+    }
+
     public <T> ResponseEntity fetchGetResponse(HttpServletRequest request, Optional<T> requestBody, String... path) {
         return fetchResponse(request, requestBody, HttpMethod.GET, path);
     }
@@ -110,8 +139,9 @@ public class CubeServerService {
     }
 
     private <T> ResponseEntity fetchResponse(HttpServletRequest request, Optional<T> requestBody, HttpMethod method, String... pathValue){
-        updateCubeBaseUrl(request);
-        String path = cubeServerBaseUrl + (pathValue.length> 0 ? pathValue[0] : request.getRequestURI().replace("/api", ""));
+        String requestURI = pathValue.length> 0 ? pathValue[0] : request.getRequestURI().replace("/api", "");
+        updateCubeBaseUrl(requestURI);
+        String path = cubeServerBaseUrl + requestURI;
         if (request.getQueryString() != null) {
             path += "?" + request.getQueryString();
         }
@@ -141,13 +171,12 @@ public class CubeServerService {
         }
     }
 
-    private void updateCubeBaseUrl(HttpServletRequest request) {
-        String uri = request.getRequestURI();
-        if (uri.contains("/api/as/") || uri.contains("/api/rs"))
+    private void updateCubeBaseUrl(String uri) {
+        if (uri.startsWith("/as") || uri.startsWith("/rs"))
             cubeServerBaseUrl = cubeServerBaseUrlReplay;
-        else if (uri.contains("api/ms/"))
+        else if (uri.startsWith("/ms"))
             cubeServerBaseUrl = cubeServerBaseUrlMock;
-        else if (uri.contains("/api/cs/"))
+        else if (uri.startsWith("/cs"))
             cubeServerBaseUrl = cubeServerBaseUrlRecord;
     }
 }

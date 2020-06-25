@@ -90,9 +90,13 @@ public class JwtTokenProvider {
     }
 
     public Customer getCustomer(HttpServletRequest req) {
-        final String token = resolveToken((HttpServletRequest) req);
-        final UserDetails userDetails = this.userDetailsService.loadUserByUsername(getUsername(token));
+        final UserDetails userDetails = getUser(req);
         return ((User)userDetails).getCustomer();
+    }
+
+    public UserDetails getUser(HttpServletRequest request) {
+        final String token = resolveToken((HttpServletRequest) request);
+        return this.userDetailsService.loadUserByUsername(getUsername(token));
     }
 
     boolean validateToken(String token) {
