@@ -15,8 +15,8 @@ class HttpRequestRawData extends Component {
     }
 
     handleChange(value) {
-        const { tabId } = this.props;
-        this.props.updateParam(tabId, "rawData", "rawData", value);
+        const { tabId, isOutgoingRequest } = this.props;
+        this.props.updateParam(isOutgoingRequest, tabId, "rawData", "rawData", value);
     }
 
     render() {

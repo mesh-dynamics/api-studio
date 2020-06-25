@@ -70,14 +70,16 @@ class HttpResponseMessage extends Component {
                         showHeaders={this.state.showHeaders} 
                         responseHeaders={this.props.responseHeaders}
                         recordedResponseHeaders={this.props.recordedResponseHeaders}
-                        updateParam={this.props.updateParam} >
+                        updateParam={this.props.updateParam}
+                        isOutgoingRequest={this.props.isOutgoingRequest} >
                         </HttpResponseHeaders>
                     <HttpResponseBody tabId={this.props.tabId}
                         showBody={this.state.showBody}
                         responseBody={this.props.responseBody}
                         recordedResponseBody={this.props.recordedResponseBody}
                         updateParam={this.props.updateParam}
-                        responseBodyType={this.state.responseBodyType} >
+                        responseBodyType={this.state.responseBodyType}
+                        isOutgoingRequest={this.props.isOutgoingRequest} >
                         </HttpResponseBody>
                 </div>
             </div>

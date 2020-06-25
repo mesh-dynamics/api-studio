@@ -31,7 +31,8 @@ class HttpClient extends Component {
                         driveRequest={this.props.driveRequest}
                         showOutgoingRequests={this.props.showOutgoingRequests}
                         showOutgoingRequestsBtn={this.props.showOutgoingRequestsBtn}
-                        showSaveModal={this.props.showSaveModal} >
+                        showSaveModal={this.props.showSaveModal}
+                        isOutgoingRequest={this.props.isOutgoingRequest} >
                   </HttpRequestMessage>
                     <HttpResponseMessage tabId={this.props.tabId}
                         updateParam={this.props.updateParam}
@@ -41,7 +42,8 @@ class HttpClient extends Component {
                         responseBody={this.props.responseBody}
                         recordedResponseHeaders={this.props.recordedResponseHeaders}
                         recordedResponseBody={this.props.recordedResponseBody}
-                        updateParam={this.props.updateParam} >
+                        updateParam={this.props.updateParam}
+                        isOutgoingRequest={this.props.isOutgoingRequest} >
                     </HttpResponseMessage>
             </div>
         );
