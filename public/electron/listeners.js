@@ -9,7 +9,7 @@ const logger = require('electron-log');
 const path = require('path');
 autoUpdater.autoDownload = true 
 
-const setupListeners = (proxyServerOptions, mockContext) => {
+const setupListeners = (proxyServerOptions, mockContext, user) => {
     /**
     * ELECTRON WINDOW AND EVENT LISTENER SETUP
     */
@@ -27,7 +27,7 @@ const setupListeners = (proxyServerOptions, mockContext) => {
         mainWindow.loadURL(
             isDev
                 ? 'http://localhost:3006'
-                : `file://${path.join(__dirname, '../build/index.html')}`,
+                : `file://${path.join(__dirname, '../../build/index.html')}`,
             )
             
         // mainWindow.loadFile('index.html');
@@ -76,12 +76,27 @@ const setupListeners = (proxyServerOptions, mockContext) => {
     ipcMain.on('proxy_target_change', (event, arg) => {
         logger.info('Current target is :', targetServer);
         logger.info('Changing proxy target to : ', arg);
+
         proxyServerOptions.target.host = arg;
+        
         logger.info('Updated target server is : ', targetServer);
     });
 
+    ipcMain.on('set_user', (event, arg) => {
+        const { access_token, customer_name, token_type, username } = arg;
+
+        logger.info('Updating user info...\n');
+        
+        user.accessToken = access_token;
+        user.customerName = customer_name;
+        user.tokenType = token_type;
+        user.userName = username;
+
+        logger.info('Updated user info: \n', userInfo);
+    });
+
     ipcMain.on('mock_context_change', (event, arg) => {
-        const { collectionId, traceId, spanId, recordingId, service, apiPath } = arg;
+        const { collectionId, traceId, spanId, recordingId } = arg;
         
         logger.info('Current mock context :', mockContext);
         logger.info('Changing mock context to : ', arg);
@@ -90,8 +105,6 @@ const setupListeners = (proxyServerOptions, mockContext) => {
         mockContext.traceId = traceId;
         mockContext.spanId = spanId;
         mockContext.recordingId = recordingId;
-        mockContext.service = service;
-        mockContext.apiPath = apiPath;
 
         logger.info('Updated collection id is : ', mockContext);
     });

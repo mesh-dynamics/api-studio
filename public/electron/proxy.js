@@ -12,12 +12,18 @@ const rewriteMockPath = (resourcePath, collectionId, recordingId) => {
 
     const path = `${mockApiPrefix}/${collectionId}/${recordingId}${resourcePath}`;
 
-    logger.info('Updated Path is : ', path);
+    logger.info('Updated Resource URI : ', path);
 
     return path;
 }
 
-const setupProxy = (proxyServerOptions, mockContext) => {
+/**
+ * This function will setup the proxy server
+ * @param {*} proxyServerOptions 
+ * @param {*} mockContext 
+ * @param {*} user 
+ */
+const setupProxy = (proxyServerOptions, mockContext, user) => {
     /**
      * Listener for proxy request interceptor
      * @param {*} proxyReq 
@@ -27,6 +33,8 @@ const setupProxy = (proxyServerOptions, mockContext) => {
      */
     const proxyRequestInterceptor = (proxyReq) => {
         const { collectionId, traceId, spanId, recordingId, service, apiPath } = mockContext;
+        const { accessToken, tokenType } = user;
+        const token = `${tokenType} ${accessToken}`;
 
         logger.info('Request Intercepted. Removing Header <Origin>');
         proxyReq.removeHeader('Origin');
@@ -37,6 +45,9 @@ const setupProxy = (proxyServerOptions, mockContext) => {
 
         logger.info('Setting custom header x-b3-spanid', spanId);
         proxyReq.setHeader('x-b3-spanid', spanId);
+
+        // logger.info('Setting authorization header authorization:', token);
+        // proxyReq.setHeader('authorization', token);
 
         // rewrite request url
         logger.info('Rewritting url...');

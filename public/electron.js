@@ -1,5 +1,5 @@
-const listeners = require('./listeners');
-const serverProxy = require('./proxy');
+const listeners = require('./electron/listeners');
+const serverProxy = require('./electron/proxy');
 
 const proxyServerOptions = {
     target: {
@@ -10,16 +10,21 @@ const proxyServerOptions = {
     changeOrigin: true,
 };
 
+const user = {
+    accessToken: "",
+    customerName: "",
+    tokenType: "",
+    userName: ""
+};
+
 const mockContext = {
     collectionId: 'cf27823b-3463-4ef5-b26a-0ecb1ed33caf',
     traceId: '2d625c9ffcf592f851eb730c6ac898e6',
     spanId: '2d625c9ffcf592f851eb730c6ac898e6',
     recordingId: 'Recording-8618771',
-    service: '',
-    apiPath: ''
 };
 
 
-serverProxy.setupProxy(proxyServerOptions, mockContext);
+serverProxy.setupProxy(proxyServerOptions, mockContext, user);
 
-listeners.setupListeners(proxyServerOptions, mockContext);
+listeners.setupListeners(proxyServerOptions, mockContext, user);
