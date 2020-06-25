@@ -75,7 +75,7 @@ public class ReplayUpdate {
 			.withRunType(Event.RunType.Record).withReqIds(replay.reqIds).withPaths(replay.paths)
             .withExcludePaths(replay.excludePaths)
 			.withCollection(replay.collection)
-			.withServices(replay.service.map(List::of).orElse(Collections.emptyList())).withSortOrderAsc(true).build();
+			.withServices(replay.service).withSortOrderAsc(true).build();
 		return rrstore.getEvents(eventQuery);
 	}
 
