@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import io.cube.agent.CommonConfig;
 import io.cube.agent.ConsoleRecorder;
 import io.cube.agent.IntentResolver;
+import io.cube.agent.ProxyBatchRecorder;
 import io.cube.agent.Recorder;
 import io.cube.agent.TraceIntentResolver;
 import io.md.utils.CubeObjectMapperProvider;
@@ -15,13 +17,8 @@ public class Config {
 
 	public IntentResolver intentResolver = new TraceIntentResolver();
 
-	public final Recorder recorder;
+	public final CommonConfig commonConfig = CommonConfig.getInstance();
 
 	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 
-	public Config() {
-		Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
-			.create();
-		recorder = new ConsoleRecorder(gson);
-	}
 }

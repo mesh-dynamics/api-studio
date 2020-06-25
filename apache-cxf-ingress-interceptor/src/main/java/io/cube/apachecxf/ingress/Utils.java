@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.cube.agent.CommonConfig;
+import io.cube.agent.ConsoleRecorder;
 import io.md.constants.Constants;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
@@ -122,7 +123,7 @@ public class Utils {
 			final Span reqLog = io.cube.agent.Utils.createPerformanceSpan(
 				Constants.LOG_REQUEST_EVENT_INGRESS);
 			try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(reqLog)) {
-				config.recorder.record(requestEvent);
+				ConsoleRecorder.getInstance().record(requestEvent);
 			} finally {
 				reqLog.finish();
 			}
@@ -152,7 +153,7 @@ public class Utils {
 			final Span respLog = io.cube.agent.Utils.createPerformanceSpan(Constants
 				.LOG_RESPONSE_EVENT_INGRESS);
 			try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(respLog)) {
-				config.recorder.record(responseEvent);
+				ConsoleRecorder.getInstance().record(responseEvent);
 			} finally {
 				respLog.finish();
 			}

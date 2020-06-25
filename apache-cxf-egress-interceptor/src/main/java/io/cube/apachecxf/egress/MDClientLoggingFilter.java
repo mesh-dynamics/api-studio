@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Optional;
 
 import javax.annotation.Priority;
@@ -275,7 +276,8 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 			Object uriValue = message.get(Message.REQUEST_URI);
 			String service = uriValue == null ? null : CommonUtils.getEgressServiceName(URI.create(uriValue.toString()));
 			CommonConfig commonConfig = CommonConfig.getInstance();
-			if (commonConfig.shouldMockService(service)) {
+			if (commonConfig.shouldMockService(service) || (service != null && uriValue.toString()
+				.startsWith(new URI(commonConfig.CUBE_MOCK_SERVICE_URI).toString()))) {
 				didContextProceed.setFalse();
 				return;
 			}
@@ -342,6 +344,8 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 					Constants.MESSAGE + ": Sampling is false!"
 				);
 			}
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
 		} finally {
 			closeSpanAndScope(newClientSpan, newClientScope);
 		}
