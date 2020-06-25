@@ -1,12 +1,15 @@
 package com.cubeui.backend.web.rest;
 
+import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.ChangePasswordDTO;
 import com.cubeui.backend.domain.DTO.KeyAndPasswordDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
 import com.cubeui.backend.domain.EmailDomain;
 import com.cubeui.backend.domain.User;
+import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.EmailDomainRepository;
+import com.cubeui.backend.service.CubeServerService;
 import com.cubeui.backend.service.MailService;
 import com.cubeui.backend.service.ReCaptchaAPIService;
 import com.cubeui.backend.service.UserService;
@@ -15,9 +18,12 @@ import com.cubeui.backend.web.exception.ActivationKeyExpiredException;
 import com.cubeui.backend.web.exception.DuplicateRecordException;
 import com.cubeui.backend.web.exception.InvalidDataException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
+import io.md.dao.Recording.RecordingType;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +31,8 @@ import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.util.MultiValueMap;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -47,13 +55,18 @@ public class AccountController {
     private MailService mailService;
     private EmailDomainRepository emailDomainRepository;
     private ReCaptchaAPIService reCaptchaAPIService;
+    private CubeServerService cubeServerService;
+    private AppRepository appRepository;
 
     public AccountController(UserService userService,
-        MailService mailService, EmailDomainRepository emailDomainRepository, ReCaptchaAPIService reCaptchaAPIService) {
+        MailService mailService, EmailDomainRepository emailDomainRepository, ReCaptchaAPIService reCaptchaAPIService,
+        CubeServerService cubeServerService, AppRepository appRepository) {
         this.userService = userService;
         this.mailService = mailService;
         this.emailDomainRepository = emailDomainRepository;
         this.reCaptchaAPIService = reCaptchaAPIService;
+        this.cubeServerService = cubeServerService;
+        this.appRepository = appRepository;
     }
 
     Optional<Customer> validateEmailDomain(String email) {
@@ -88,6 +101,21 @@ public class AccountController {
 
                 // save user
                 User saved = this.userService.save(userDTO, false, true);
+                MultiValueMap<String, String> formParams= new LinkedMultiValueMap<>();
+                formParams.set("name", "History-" + saved.getUsername());
+                formParams.set("label", new Date().toString());
+                formParams.set("userId", saved.getUsername());
+                formParams.set("recordingType", RecordingType.History.toString());
+
+                Optional<List<App>> appsOptional = this.appRepository.findByCustomerId(customerOptional.get().getId());
+                if (appsOptional.isPresent()) {
+                    List<App> apps = appsOptional.get();
+                    apps.forEach(app -> {
+                        cubeServerService.fetchPostResponseForUserHistory(request,
+                            customerOptional.get().getName(), app.getName(),
+                            saved.getUsername(),Optional.of(formParams));
+                    });
+                }
 
                 // send activation mail
                 log.info("Sending activation mail");

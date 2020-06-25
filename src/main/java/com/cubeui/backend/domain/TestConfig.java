@@ -45,11 +45,6 @@ public class TestConfig {
 
     String description;
 
-    @ManyToOne
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    @JoinColumn(name = "gateway_service_id")
-    Service gatewayService;
-
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
     String gatewayReqSelection;

@@ -8,18 +8,23 @@ import com.cubeui.backend.domain.Service;
 import com.cubeui.backend.domain.TestConfig;
 import com.cubeui.backend.domain.TestIntermediateService;
 import com.cubeui.backend.domain.TestPath;
+import com.cubeui.backend.domain.TestService;
 import com.cubeui.backend.domain.TestVirtualizedService;
 import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.ServiceRepository;
 import com.cubeui.backend.repository.TestConfigRepository;
 import com.cubeui.backend.repository.TestIntermediateServiceRepository;
 import com.cubeui.backend.repository.TestPathRepository;
+import com.cubeui.backend.repository.TestServiceRepository;
 import com.cubeui.backend.repository.TestVirtualizedServiceRepository;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -44,10 +49,11 @@ public class TestConfigController {
     private TestIntermediateServiceRepository testIntermediateServiceRepository;
     private TestVirtualizedServiceRepository testVirtualizedServiceRepository;
     private TestPathRepository testPathRepository;
+    private TestServiceRepository testServiceRepository;
 
     public TestConfigController(TestConfigRepository testConfigRepository, ServiceRepository serviceRepository, AppRepository appRepository,
                 CustomerService customerService, TestIntermediateServiceRepository testIntermediateServiceRepository,
-                TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository) {
+                TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository, TestServiceRepository testServiceRepository) {
         this.testConfigRepository = testConfigRepository;
         this.serviceRepository = serviceRepository;
         this.appRepository = appRepository;
@@ -55,6 +61,7 @@ public class TestConfigController {
         this.testIntermediateServiceRepository = testIntermediateServiceRepository;
         this.testVirtualizedServiceRepository = testVirtualizedServiceRepository;
         this.testPathRepository = testPathRepository;
+        this.testServiceRepository = testServiceRepository;
     }
 
     @PostMapping("")
@@ -62,9 +69,8 @@ public class TestConfigController {
         if (testConfigDTO.getId() != null) {
             return status(FORBIDDEN).body(new ErrorResponse("TestConfig with ID '" + testConfigDTO.getId() +"' already exists."));
         }
-        Optional<Service> service = serviceRepository.findById(testConfigDTO.getGatewayServiceId());
         Optional<App> app = appRepository.findById(testConfigDTO.getAppId());
-        if (service.isPresent() && app.isPresent() &&
+        if (app.isPresent() &&
                 StringUtils.isNotBlank(testConfigDTO.getTestConfigName())) {
             Optional<TestConfig> testConfig = this.testConfigRepository.findByTestConfigNameAndAppId(
                     testConfigDTO.getTestConfigName(), testConfigDTO.getAppId());
@@ -75,7 +81,7 @@ public class TestConfigController {
                     TestConfig.builder()
                             .testConfigName(testConfigDTO.getTestConfigName())
                             .app(app.get())
-                            .gatewayService(service.get())
+                            //.gatewayService(service.get())
                             .description(testConfigDTO.getDescription())
                             .gatewayReqSelection(testConfigDTO.getGatewayReqSelection())
                             .maxRunTimeMin(testConfigDTO.getMaxRunTimeMin())
@@ -90,11 +96,7 @@ public class TestConfigController {
                             .toUri())
                     .body(saved);
         } else {
-            if (service.isEmpty()){
-                throw new RecordNotFoundException("Service with ID '" + testConfigDTO.getGatewayServiceId() + "' not found.");
-            } else {
-                throw new RecordNotFoundException("App with ID '" + testConfigDTO.getAppId() + "' not found.");
-            }
+            throw new RecordNotFoundException("App with ID '" + testConfigDTO.getAppId() + "' not found.");
         }
     }
 
@@ -104,11 +106,7 @@ public class TestConfigController {
             return status(FORBIDDEN).body(new ErrorResponse("TestConfig id not provided"));
         }
         Optional<TestConfig> existing = testConfigRepository.findById(testConfigDTO.getId());
-        Optional<Service> service = serviceRepository.findById(testConfigDTO.getGatewayServiceId());
         Optional<App> app = appRepository.findById(testConfigDTO.getAppId());
-        if (service.isEmpty()){
-            throw new RecordNotFoundException("Service with ID '" + testConfigDTO.getGatewayServiceId() + "' not found.");
-        }
         if (app.isEmpty()) {
             throw new RecordNotFoundException("App with ID '" + testConfigDTO.getAppId() + "' not found.");
         }
@@ -116,7 +114,6 @@ public class TestConfigController {
             existing.ifPresent(testConfig -> {
                 testConfig.setTestConfigName(testConfigDTO.getTestConfigName());
                 testConfig.setApp(app.get());
-                testConfig.setGatewayService(service.get());
                 testConfig.setDescription(testConfigDTO.getDescription());
                 testConfig.setGatewayReqSelection(testConfigDTO.getGatewayReqSelection());
                 testConfig.setEmailId(testConfigDTO.getEmailId());
@@ -162,9 +159,11 @@ public class TestConfigController {
         Optional<List<TestIntermediateService>> testIntermediateServices = this.testIntermediateServiceRepository.findByTestConfigId(testConfigValue.getId());
         Optional<List<TestVirtualizedService>> testVirtualizedServices = this.testVirtualizedServiceRepository.findByTestConfigId(testConfigValue.getId());
         Optional<List<TestPath>> testPaths = this.testPathRepository.findByTestConfigId(testConfigValue.getId());
+        Optional<List<TestService>> testServices = this.testServiceRepository.findByTestConfigId(testConfigValue.getId());
         List<String> testIntermediateServiceNames = new ArrayList<String>();
         List<String> testVirtualizedServiceNames = new ArrayList<String>();
-        List<String> testPathURLS = new ArrayList<String>();
+        Set<String> testPathURLS = new HashSet<>();
+        List<String> testServiceValues = new ArrayList<>();
         if(testIntermediateServices.isPresent()) {
             for(TestIntermediateService testIntermediateService : testIntermediateServices.get()) {
                 testIntermediateServiceNames.add(testIntermediateService.getService().getName());
@@ -180,9 +179,16 @@ public class TestConfigController {
                 testPathURLS.add(testPath.getPath().getPath());
             }
         }
+        if(testServices.isPresent()) {
+            for(TestService testService : testServices.get()) {
+                testServiceValues.add(testService.getService().getName());
+            }
+        }
+
         testConfigDTO.setTestIntermediateServices(testIntermediateServiceNames);
         testConfigDTO.setTestMockServices(testVirtualizedServiceNames);
-        testConfigDTO.setTestPaths(testPathURLS);
+        testConfigDTO.setTestPaths(testPathURLS.stream().collect(Collectors.toList()));
+        testConfigDTO.setTestServices(testServiceValues);
         return ok(testConfigDTO);
     }
 }

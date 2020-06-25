@@ -12,6 +12,8 @@ import lombok.extern.java.Log;
 import lombok.extern.log4j.Log4j;
 import lombok.extern.slf4j.Slf4j;
 import org.jboss.logging.Logger.Level;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +33,8 @@ public class ReCaptchaAPIService {
 
     private RestTemplate restTemplate;
 
-    public ReCaptchaAPIService(RestTemplate restTemplate) {
+    @Autowired
+    public ReCaptchaAPIService(@Qualifier("appRestClient") RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 

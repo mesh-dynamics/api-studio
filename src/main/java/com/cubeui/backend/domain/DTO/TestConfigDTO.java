@@ -17,8 +17,6 @@ public class TestConfigDTO {
 
     private Long appId;
 
-    private Long gatewayServiceId;
-
     private String gatewayReqSelection;
 
     private int maxRunTimeMin;
