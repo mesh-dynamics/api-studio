@@ -66,7 +66,6 @@
     "cytoscape-dagre": "^2.2.2",
     "cytoscape-klay": "^3.1.2",
     "cytoscape-popper": "^1.0.4",
-    "electron": "^9.0.5",
     "electron-is-dev": "^1.2.0",
     "electron-log": "^4.2.1",
     "electron-updater": "^4.3.1",
@@ -112,6 +111,7 @@
     "wait-on": "^5.0.0"
   },
   "devDependencies": {
+    "electron": "^9.0.5",
     "electron-builder": "^22.7.0"
   },
   "repository": {
