@@ -156,7 +156,7 @@ class Navigation extends Component{
                         </div>
                     </div>
                     
-                    {!window.location.pathname.includes("api_catalog") && 
+                    {!window.location.pathname.includes("http_client") && !window.location.pathname.includes("api_catalog") && 
                     <div className="info-wrapper">
                         <div>
                             <div className="label-n">APPLICATION</div>
@@ -215,49 +215,6 @@ class Navigation extends Component{
                         </div>
 
                         {!cube.hideTestConfigView ? <ViewSelectedTestConfig checkReplayStatus={this.checkReplayStatus}/> : null}
-
-                        <div className={!cube.hideHttpClient ? "margin-top-10" : "hidden"}>
-                            <Tabs defaultActiveKey={1} id="uncontrolled-tab-example">
-                                <Tab eventKey={1} title="History">
-                                    <div className="margin-top-10">
-                                        <div className="value-n">Sort</div>
-                                    </div>
-                                    <div className="margin-top-10">
-                                        <Panel id="collapsible-panel-example-2" defaultExpanded>
-                                            <Panel.Heading>
-                                                <Panel.Title toggle>
-                                                    May 29
-                                                </Panel.Title>
-                                            </Panel.Heading>
-                                            <Panel.Collapse>
-                                                <Panel.Body>
-                                                    <Label bsStyle="default" style={{fontWeight: "600"}}>POST</Label>
-                                                </Panel.Body>
-                                            </Panel.Collapse>
-                                        </Panel>
-                                    </div>
-                                </Tab>
-                                <Tab eventKey={2} title="Collections">
-                                    <div className="margin-top-10">
-                                        <div className="value-n">Sort</div>
-                                    </div>
-                                    <div className="margin-top-10">
-                                        <Panel id="collapsible-panel-example-2" defaultExpanded>
-                                            <Panel.Heading>
-                                                <Panel.Title toggle>
-                                                    May 29
-                                                </Panel.Title>
-                                            </Panel.Heading>
-                                            <Panel.Collapse>
-                                                <Panel.Body>
-                                                    <Label bsStyle="default" style={{fontWeight: "600"}}>POST</Label>
-                                                </Panel.Body>
-                                            </Panel.Collapse>
-                                        </Panel>
-                                    </div>
-                                </Tab>
-                            </Tabs>
-                        </div>
                     </div>}
                 </div>
             </div>

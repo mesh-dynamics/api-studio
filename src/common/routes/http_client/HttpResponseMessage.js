@@ -64,7 +64,7 @@ class HttpResponseMessage extends Component {
                         </FormGroup>
                     </div>
                 </div>
-                <div style={{opacity: "0.7", fontSize: "12px", marginBottom: "12px"}}>HTTP RESPONSE STATUS: <b>{this.props.responseStatus}</b></div>
+                <div style={{opacity: "0.7", fontSize: "12px", marginBottom: "12px"}}>HTTP RESPONSE STATUS: <b>{this.props.responseStatus + " " + this.props.responseStatusText}</b></div>
                 <div>
                     <HttpResponseHeaders tabId={this.props.tabId}
                         showHeaders={this.state.showHeaders} 

@@ -221,7 +221,7 @@
     flex: 1;
 }
 
-.info-wrapper .nav-tabs>li.active>a, .nav-tabs>li.active>a:focus, .nav-tabs>li.active>a:hover {
+aside .nav-tabs>li.active>a, .nav-tabs>li.active>a:focus, .nav-tabs>li.active>a:hover {
     color: #5A738E;
     cursor: default;
     background-color: transparent;
@@ -230,6 +230,6 @@
     font-weight: 500;
 }
 
-.info-wrapper .nav-tabs>li>a {
+aside .nav-tabs>li>a {
     color: #555;
 }
