@@ -4469,6 +4469,9 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 .width-100 {
     width: 100%;
 }
+.width-50 {
+    width: 50%;
+}
 .margin-right-10 {
     margin-right: 10px;
 }
@@ -4498,7 +4501,7 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
     flex: 1;
     position: relative;
     overflow: auto !important;
-    height: calc(100vh - 36px);
+    height: 100vh;
     background: #FFFFFF;
 }
 .content-wrapper {
@@ -4750,4 +4753,10 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 .resume-modal-content {
     display: flex;
     flex: 3;
+}
+
+.test-config-divider {
+    color: #797979;
+    border: .5px solid;
+    margin: 10px 0;
 }

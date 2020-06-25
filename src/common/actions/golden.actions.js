@@ -27,13 +27,13 @@ const loadGoldenExamples = (data) => ({ type: goldenConstants.SET_GOLDEN_EXAMPLE
 
 const loadSelectedGolden = (data) => ({ type: goldenConstants.SET_SELECTED_GOLDEN, data });
 
-const getGoldenMeta = () => async (dispatch, getState) => {
-    const { authentication: { user: { access_token } }, cube: { selectedGolden }} = getState();
+const getGoldenMeta = (recordingId) => async (dispatch, getState) => {
+    const { authentication: { user: { access_token } } } = getState();
 
     try {
         dispatch(beginFetch());
 
-        const goldenMetaData = await fetchGoldenMeta(selectedGolden, access_token);
+        const goldenMetaData = await fetchGoldenMeta(recordingId, access_token);
 
         dispatch(fetchComplete());
 

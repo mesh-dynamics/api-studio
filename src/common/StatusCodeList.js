@@ -32,4 +32,14 @@ const statusCodeList = [
     {status: 505, value: "505 HTTP Version Not Supported"},
 ];
 
+export const getHttpStatus = (code) => {
+    for (let httpStatus of statusCodeList) {
+        if (code == httpStatus.status) {
+            return httpStatus.value;
+        }
+    }
+
+    return code;
+};
+
 export default statusCodeList;

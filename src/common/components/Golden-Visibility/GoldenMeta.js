@@ -1,12 +1,15 @@
 import React, { useState, useEffect, Fragment } from 'react';
 import { connect } from "react-redux";
+import _ from "lodash";
 import moment from "moment";
+import { Link, withRouter } from "react-router-dom";
 import { 
     generateServiceOptionsFromFacets,
     generateApiOptionsFromFacets,
     validateGoldenName,
-} from '../../utils/lib/golden-utils';
-import { goldenActions } from '../../actions/golden.actions'
+} from "../../utils/lib/golden-utils";
+import { cubeActions } from "../../actions";
+import { goldenActions } from "../../actions/golden.actions";
 
 const GoldenMeta = (props) => {
 
@@ -17,13 +20,27 @@ const GoldenMeta = (props) => {
             selectedGolden, 
             selectedService, 
         },
+        location: {
+            search   
+        },
         handleBackToTestInfoClick, 
         setSelectedService, 
         setSelectedApiPath,
+        showServiceGraph,
+        hideServiceGraph,
         updateGoldenMeta,
         getGoldenData,
         getGoldenMeta,
     } = props;
+
+    const urlParameters = _.chain(search)
+            .replace('?', '')
+            .split('&')
+            .map(_.partial(_.split, _, '=', 2))
+            .fromPairs()
+            .value();
+
+    const recordingId = urlParameters["recordingId"] || "";
 
     const { id, name, label, gitCommitId, timestmp, userId, branch, codeVersion, rootRcrdngId, serviceFacets } = selectedGolden;
 
@@ -68,8 +85,13 @@ const GoldenMeta = (props) => {
     const handleApiPathChange = (e) => setSelectedApiPath(e.target.value);
 
     useEffect(() => {
-        getGoldenMeta();
-    }, [getGoldenMeta]);
+        getGoldenMeta(recordingId);
+        hideServiceGraph();
+
+        return () => { 
+            showServiceGraph();
+        };
+    }, [getGoldenMeta, recordingId]);
 
     useEffect(() => {
         setGoldenName(name);
@@ -197,7 +219,13 @@ const GoldenMeta = (props) => {
                     </Fragment>
                 </select>
             </div>
-            <div onClick={handleBackToTestInfoClick} className="margin-top-10 cube-btn width-100 text-center">Back</div>
+            <div className="margin-top-10 row">
+                <div className="col-sm-12">
+                    <Link to="/test_config_view">
+                        <div onClick={handleBackToTestInfoClick} className="cube-btn width-100 text-center">Back</div>
+                    </Link>
+                </div>
+            </div>
         </div>
     )
 }
@@ -214,11 +242,15 @@ const mapDispatchToProps = (dispatch) => ({
 
     updateGoldenMeta: (data) => { dispatch(goldenActions.updateGoldenMeta(data))},
 
-    getGoldenMeta: () => { dispatch(goldenActions.getGoldenMeta())},
+    showServiceGraph: () => { dispatch(cubeActions.hideServiceGraph(false)) },
+    
+    hideServiceGraph: () => { dispatch(cubeActions.hideServiceGraph(true)) },
+
+    getGoldenMeta: (recordingId) => { dispatch(goldenActions.getGoldenMeta(recordingId))},
 
     getGoldenData: (goldenId, service, apiPath) => { 
         dispatch(goldenActions.getGoldenData(goldenId, service, apiPath));
-    }
+    },
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(GoldenMeta);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(GoldenMeta));

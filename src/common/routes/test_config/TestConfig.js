@@ -20,12 +20,14 @@ class TestConfig extends Component {
         const { dispatch } = this.props;
         dispatch(cubeActions.hideTestConfig(true));
         dispatch(cubeActions.hideServiceGraph(true));
+        dispatch(cubeActions.hideHttpClient(true));
     }
 
     componentWillUnmount() {
         const { dispatch } = this.props;
         dispatch(cubeActions.hideTestConfig(false));
         dispatch(cubeActions.hideServiceGraph(false));
+        dispatch(cubeActions.hideHttpClient(false));
     }
 
     createTestConfig(cube) {
