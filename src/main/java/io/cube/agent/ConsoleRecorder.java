@@ -28,7 +28,7 @@ public class ConsoleRecorder extends AbstractGsonSerializeRecorder {
 
 	private static ConsoleRecorder singleInstance;
 
-	public static Disruptor<ValueEvent> disruptor;
+	public Disruptor<ValueEvent> disruptor;
 	public RingBuffer<ValueEvent> ringBuffer;
 
 	AtomicLong droppedRequests = new AtomicLong();
@@ -42,13 +42,16 @@ public class ConsoleRecorder extends AbstractGsonSerializeRecorder {
 	}
 
 	protected static synchronized ConsoleRecorder init() {
-		//TODO: stop and clear the earlier buffer.
+		if (singleInstance != null) {
+			Disruptor<ValueEvent> disruptor = singleInstance.disruptor;
+			new Thread(() -> doShutdown(disruptor)).start();
+		}
+
 		singleInstance = new ConsoleRecorder();
-		new Thread(ConsoleRecorder::doShutdown).start();
 		return singleInstance;
 	}
 
-	private static void doShutdown() {
+	private static void doShutdown(Disruptor<ValueEvent> disruptor) {
 		if (disruptor != null) {
 			long timeoutms =  60000;
 			try {

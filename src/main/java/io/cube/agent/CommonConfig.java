@@ -322,9 +322,6 @@ public class CommonConfig {
 	private CommonConfig() throws Exception {
 		this(envSysStaticConf);
 		//System.setProperty("JAEGER_AGENT_HOST", "jaeger-agent");
-	}
-
-	private static void initTracer() {
 		Tracer tracer = CommonUtils.init("tracer");
 		try {
 			MDGlobalTracer.register(tracer);
