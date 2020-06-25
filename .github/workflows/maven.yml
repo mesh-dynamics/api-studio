@@ -4,24 +4,21 @@ on:
   push:
     branches:
       - develop
-      - add/buildpipeline
     paths:
       - 'apache-cxf-ingress-interceptor/*'
-      - 'apache-cxf-ingress-interceptor/*'
+      - 'apache-cxf-egress-interceptor/*'
       - 'unified_pom_apache_cxf.xml'
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v1
     - name: Set up JDK 12
       uses: actions/setup-java@v1
       with:
         java-version: 12
-    - name: Build with Maven
+    - name: Build apachecxf interceptor
       env:
         TOKEN: ${{ secrets.TOKEN }}
       run: |
@@ -33,3 +30,59 @@ jobs:
         git config --global user.email "ethicalaakash@gmail.com"
         git config --global user.name "Aakash Singhal"
         cd apache-cxf-ingress-interceptor && python helper.py
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'jaxrs-ingress-interceptor/*'
+      - 'jaxrs-egress-interceptor/*'
+      - 'unified_pom_jaxrs.xml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up JDK 12
+      uses: actions/setup-java@v1
+      with:
+        java-version: 12
+    - name: Build jaxrs interceptor
+      env:
+        TOKEN: ${{ secrets.TOKEN }}
+      run: |
+        echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>$TOKEN</password></server></servers></settings>" > ~/.m2/settings.xml
+        cd jaxrs-ingress-interceptor && mvn install && cd ..
+        cd jaxrs-egress-interceptor && mvn install && cd ..
+        mvn package -f unified_pom_jaxrs.xml
+        mvn deploy -f unified_pom_jaxrs.xml -Dregistry=https://maven.pkg.github.com/cube-io-corp
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'spring-ingress-interceptor/*'
+      - 'spring-egress-resttemplate-interceptor/*'
+      - 'unified_pom_springboot_resttemplate.xml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up JDK 12
+      uses: actions/setup-java@v1
+      with:
+        java-version: 12
+    - name: Build with Maven
+      env:
+        TOKEN: ${{ secrets.TOKEN }}
+      run: |
+        echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>$TOKEN</password></server></servers></settings>" > ~/.m2/settings.xml
+        cd spring-ingress-interceptor && mvn install && cd ..
+        cd spring-egress-resttemplate-interceptor && mvn install && cd ..
+        mvn package -f unified_pom_springboot_resttemplate.xml
+        mvn deploy -f unified_pom_springboot_resttemplate.xml -Dregistry=https://maven.pkg.github.com/cube-io-corp
