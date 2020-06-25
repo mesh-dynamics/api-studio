@@ -46,8 +46,8 @@ const setupProxy = (proxyServerOptions, mockContext, user) => {
         logger.info('Setting custom header x-b3-spanid', spanId);
         proxyReq.setHeader('x-b3-spanid', spanId);
 
-        // logger.info('Setting authorization header authorization:', token);
-        // proxyReq.setHeader('authorization', token);
+        logger.info('Setting authorization header authorization:', token);
+        proxyReq.setHeader('authorization', token);
 
         // rewrite request url
         logger.info('Rewritting url...');

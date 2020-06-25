@@ -66,6 +66,7 @@
     "cytoscape-dagre": "^2.2.2",
     "cytoscape-klay": "^3.1.2",
     "cytoscape-popper": "^1.0.4",
+    "electron": "^9.0.5",
     "electron-is-dev": "^1.2.0",
     "electron-log": "^4.2.1",
     "electron-updater": "^4.3.1",
@@ -73,6 +74,7 @@
     "file-saver": "^2.0.0",
     "formik": "^1.5.7",
     "http-proxy": "^1.18.1",
+    "is-electron": "^2.2.0",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
     "plotly.js": "^1.42.5",
@@ -110,7 +112,6 @@
     "wait-on": "^5.0.0"
   },
   "devDependencies": {
-    "electron": "^9.0.5",
     "electron-builder": "^22.7.0"
   },
   "repository": {

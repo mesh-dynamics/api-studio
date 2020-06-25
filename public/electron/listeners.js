@@ -92,7 +92,7 @@ const setupListeners = (proxyServerOptions, mockContext, user) => {
         user.tokenType = token_type;
         user.userName = username;
 
-        logger.info('Updated user info: \n', userInfo);
+        logger.info('Updated user info: \n', user);
     });
 
     ipcMain.on('mock_context_change', (event, arg) => {
