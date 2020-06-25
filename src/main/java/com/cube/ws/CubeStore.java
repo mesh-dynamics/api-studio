@@ -766,8 +766,18 @@ public class CubeStore {
                           @PathParam("instanceId") String instanceId,
                           @PathParam("templateSetVersion") String templateSetVersion) {
 	    // check if recording or replay is ongoing for (customer, app, instanceId)
-        Optional<Response> errResp = WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(customerId), Optional.ofNullable(app),
-            Optional.ofNullable(instanceId), Optional.empty());
+
+      Optional<RecordingType> recordingType =
+          Optional.ofNullable(formParams.getFirst(Constants.RECORDING_TYPE_FIELD))
+              .flatMap(r -> Utils.valueOf(RecordingType.class, r)).or(() -> Optional.of(RecordingType.Golden));
+      Optional<Response> errResp = recordingType.flatMap(rt -> {
+          if(rt == RecordingType.History || rt == RecordingType.UserGolden) {
+              return Optional.empty();
+          } else {
+              return WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(customerId), Optional.ofNullable(app),
+                  Optional.ofNullable(instanceId), Optional.empty());
+          }
+      });
         if (errResp.isPresent()) {
             return errResp.get();
         }
@@ -829,9 +839,6 @@ public class CubeStore {
         Optional<String> gitCommitId = Optional.ofNullable(formParams.getFirst("gitCommitId"));
         List<String> tags = Optional.ofNullable(formParams.get("tags")).orElse(new ArrayList<String>());
         Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
-      Optional<RecordingType> recordingType =
-          Optional.ofNullable(formParams.getFirst(Constants.RECORDING_TYPE_FIELD))
-              .flatMap(r -> Utils.valueOf(RecordingType.class, r)).or(() -> Optional.of(RecordingType.Golden));
 
         RecordingBuilder recordingBuilder = new RecordingBuilder(new CubeMetaInfo(customerId, app
             , instanceId), collection).withTemplateSetVersion(templateSetVersion).withName(name)
@@ -1262,7 +1269,7 @@ public class CubeStore {
                         Event responseEvent = buildEvent(response, rec.collection,
                             rec.recordingType, resReqId);
 
-                        if (!rrstore.save(requestEvent) && !rrstore.save(responseEvent)) {
+                        if (!rrstore.save(requestEvent) || !rrstore.save(responseEvent)) {
                             LOGGER.error(new ObjectMessage(
                                 Map.of(Constants.MESSAGE, "Unable to store event in solr",
                                     Constants.RECORDING_ID, recordingId)));
