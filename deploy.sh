@@ -158,6 +158,9 @@ kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
 		-d "$BODY")
 	  echo $RESPONSE
 	  RECORDING_ID=$(echo $RESPONSE | jq -r ".id")
+		if [ $RECORDING_ID == "null" ]; then
+			unset RECORDING_ID
+		fi
 		COUNT=$((COUNT+1))
 		if [ $COUNT -eq 5 ]; then
 			echo "Recording failed to start multiple times.."
