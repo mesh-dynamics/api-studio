@@ -1,12 +1,16 @@
 package io.cube.agent;
 
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.google.gson.Gson;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.InsufficientCapacityException;
 import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.TimeoutException;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
@@ -20,13 +24,45 @@ import io.opentracing.Span;
 
 public class ConsoleRecorder extends AbstractGsonSerializeRecorder {
 
-	public Disruptor<ValueEvent> disruptor;
+	private static final Logger LOGGER = LoggerFactory.getLogger(ConsoleRecorder.class);
+
+	private static ConsoleRecorder singleInstance;
+
+	public static Disruptor<ValueEvent> disruptor;
 	public RingBuffer<ValueEvent> ringBuffer;
 
 	AtomicLong droppedRequests = new AtomicLong();
 
-	public ConsoleRecorder(Gson gson) {
-		super(gson);
+	public static ConsoleRecorder getInstance() {
+		if (singleInstance == null) {
+			throw new AssertionError("Need to call init first!");
+		}
+
+		return singleInstance;
+	}
+
+	protected static synchronized ConsoleRecorder init() {
+		//TODO: stop and clear the earlier buffer.
+		singleInstance = new ConsoleRecorder();
+		new Thread(ConsoleRecorder::doShutdown).start();
+		return singleInstance;
+	}
+
+	private static void doShutdown() {
+		if (disruptor != null) {
+			long timeoutms =  60000;
+			try {
+				disruptor.shutdown(timeoutms, TimeUnit.MILLISECONDS);
+			} catch (TimeoutException e) {
+				LOGGER.info("Timed out bringing down disruptor after " + timeoutms + "ms; forcing halt ");
+				disruptor.halt();
+				disruptor.shutdown();
+			}
+		}
+	}
+
+	private ConsoleRecorder() {
+		super();
 
 		ThreadFactory threadFactory = DaemonThreadFactory.INSTANCE;
 

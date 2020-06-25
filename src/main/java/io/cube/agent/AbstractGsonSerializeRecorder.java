@@ -29,7 +29,7 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
 
 	protected ObjectMapper jsonMapper;
 
-	public AbstractGsonSerializeRecorder(Gson gson) {
+	public AbstractGsonSerializeRecorder() {
 		// TODO pass this from above too
 		this.jsonMapper = new ObjectMapper();
 		jsonMapper.registerModule(new Jdk8Module());

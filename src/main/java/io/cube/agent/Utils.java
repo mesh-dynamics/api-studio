@@ -238,5 +238,34 @@ public class Utils {
 		return Sampler.NEVER_SAMPLE;
 	}
 
+	public static DisruptorData savePrevDisruptorData() {
+		DisruptorData prevDisruptorData = null;
+		CommonConfig configInstance = CommonConfig.getInstance();
+		if (configInstance != null) { //in init phase it will be null
+			prevDisruptorData = new DisruptorData(configInstance.disruptorOutputLocation,
+				configInstance.disruptorFileOutName, configInstance.disruptorLogFileMaxSize,
+				configInstance.disruptorLogMaxBackup, configInstance.ringBufferSize);
+		}
+		return prevDisruptorData;
+	}
+
+	public static void compAndInitConsoleRecorder(DisruptorData prevDisruptorData) {
+		CommonConfig configInstance;
+		if (prevDisruptorData != null) {
+			configInstance = CommonConfig.getInstance();
+			if (prevDisruptorData.compare(configInstance.disruptorOutputLocation,
+				configInstance.disruptorFileOutName, configInstance.disruptorLogFileMaxSize,
+				configInstance.disruptorLogMaxBackup, configInstance.ringBufferSize)) {
+				//toggle on ProxyBatchRecorder and off COnsoleRecorder if needed.
+				ConsoleRecorder.init();
+				//ProxyBatchRecorder.init();
+			}
+		} else {
+			//toggle on ProxyBatchRecorder and off COnsoleRecorder if needed.
+			ConsoleRecorder.init();
+			//ProxyBatchRecorder.init();
+		}
+	}
+
 }
 

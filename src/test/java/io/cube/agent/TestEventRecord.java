@@ -22,7 +22,7 @@ public class TestEventRecord {
 	public static void main(String[] args) {
 		try {
 			CommonConfig commonConfig =  CommonConfig.getInstance();
-			ConsoleRecorder consoleRecorder = new ConsoleRecorder(new GsonBuilder().create());
+			ConsoleRecorder consoleRecorder = ConsoleRecorder.getInstance();
 
 			CubeMetaInfo cubeMetaInfo = new CubeMetaInfo("random-user"
 				, "test", "movie-info", "mi-rest");

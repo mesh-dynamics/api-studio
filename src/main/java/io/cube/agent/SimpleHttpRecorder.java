@@ -16,8 +16,8 @@ public class SimpleHttpRecorder extends AbstractGsonSerializeRecorder {
 
     private CubeClient cubeClient;
 
-    public SimpleHttpRecorder(Gson gson) throws Exception {
-        super(gson);
+    public SimpleHttpRecorder() throws Exception {
+        super();
         this.cubeClient = new CubeClient(jsonMapper);
     }
 

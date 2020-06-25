@@ -38,7 +38,7 @@ public abstract class MeshDProcessFunction<I, T extends TBase> {
 	public MeshDProcessFunction(String methodName) {
 		this.methodName = methodName;
 		try {
-			fluentDLogRecorder = new ConsoleRecorder((new GsonBuilder()).create());
+			fluentDLogRecorder = ConsoleRecorder.getInstance();
 			serializer = new MeshDTSerializer();
 			thriftMocker = new ThriftMocker();
 		} catch (Exception e) {

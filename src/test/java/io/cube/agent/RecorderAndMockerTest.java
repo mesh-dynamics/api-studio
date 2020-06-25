@@ -73,7 +73,7 @@ public class RecorderAndMockerTest {
     static ProxyMocker mocker;
     static {
         try {
-            recorder = new SimpleHttpRecorder(gson);
+            recorder = new SimpleHttpRecorder();
             mocker = new ProxyMocker(gson);
         } catch (Exception e) {
             LOGGER.error("Unable to initialize recorder/mocker", e);

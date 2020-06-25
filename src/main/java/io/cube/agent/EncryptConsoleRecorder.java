@@ -3,6 +3,9 @@ package io.cube.agent;
 import java.io.FileNotFoundException;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.gson.Gson;
 
 import io.md.dao.Event;
@@ -13,15 +16,14 @@ import io.md.dao.Recording.RecordingType;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
-public class EncryptConsoleRecorder extends ConsoleRecorder {
+public class EncryptConsoleRecorder {
 
-	public EncryptConsoleRecorder(Gson gson) {
-		super(gson);
-	}
+	private static final Logger LOGGER = LoggerFactory.getLogger(EncryptConsoleRecorder.class);
 
 	public boolean record(Event event) {
 		try {
 			CommonConfig commonConfig = CommonConfig.getInstance();
+			ConsoleRecorder recorder = ConsoleRecorder.getInstance();
 			Optional<Payload> payloadOptional;
 			// TODO make encryptFields return AbstractMDPayload instead of DataObj
 			final Span span = Utils.createPerformanceSpan("encryptPayload");
@@ -46,7 +48,7 @@ public class EncryptConsoleRecorder extends ConsoleRecorder {
 			} finally {
 				eventCreate.finish();
 			}
-			return super.record(encryptedEvent);
+			return recorder.record(encryptedEvent);
 		} catch (Exception e) {
 			LOGGER.error("Unable to serialize Event Object", e);
 			return false;

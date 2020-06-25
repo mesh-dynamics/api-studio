@@ -16,7 +16,7 @@ public class TestCubeAgent {
         Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
                 .registerTypeAdapter(Pattern.class, new GsonPatternDeserializer()).create();
         try {
-            ConsoleRecorder recorder = new ConsoleRecorder(gson);
+            ConsoleRecorder recorder = ConsoleRecorder.getInstance();
             //SimpleMocker mocker = new SimpleMocker(gson);
             Class classzz = CubeClient.class;
             FnKey fnKey = new FnKey("ravivj", "movieinfo", "dev", "movieinfo"

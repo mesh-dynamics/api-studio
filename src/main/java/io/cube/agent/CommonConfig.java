@@ -1,5 +1,8 @@
 package io.cube.agent;
 
+import static io.cube.agent.Utils.compAndInitConsoleRecorder;
+import static io.cube.agent.Utils.savePrevDisruptorData;
+
 import java.io.File;
 import java.net.InetAddress;
 import java.net.URI;
@@ -39,7 +42,6 @@ import io.cube.agent.samplers.Sampler;
 import io.cube.agent.samplers.SamplerConfig;
 import io.md.constants.Constants;
 import io.md.tracer.MDGlobalTracer;
-import io.md.tracer.MDTextMapCodec;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
 
@@ -135,6 +137,9 @@ public class CommonConfig {
 		}
 		singleInstance = new AtomicReference<>();
 		singleInstance.set(config);
+		//toggle on ProxyBatchRecorder and off COnsoleRecorder if needed.
+		ConsoleRecorder.init();
+		//ProxyBatchRecorder.init();
 
 		boolean isServerPolling = envSysStaticConf
 			.getBoolean(io.cube.agent.Constants.MD_POLLINGCONFIG_POLLSERVER);
@@ -205,8 +210,15 @@ public class CommonConfig {
 				File input = new File(configFilePath);
 				Config fileConfigPolled = ConfigFactory.load(ConfigFactory.parseFile(input))
 					.withFallback(envSysStaticConf);
+
+				//fetch previous disruptor config values and compare with new ones.
+				//decision to init the ConsoleRecorder again or not.
+				DisruptorData prevDisruptorData = savePrevDisruptorData();
+
 				// Using just set instead of compareAndSet as the value being set is independent of the current value.
 				singleInstance.set(new CommonConfig(fileConfigPolled));
+
+				compAndInitConsoleRecorder(prevDisruptorData);
 			} catch (Exception e) {
 				LOGGER.error("Error in updating common config object in thread", e);
 			}
@@ -224,7 +236,6 @@ public class CommonConfig {
 		@Override
 		public void run() {
 			try {
-
 				URIBuilder fetchConfigUriBuilder = new URIBuilder(
 					URI.create(this.fetchConfigApiURI)
 						.resolve(CommonConfig.customerId + "/" + CommonConfig.app + "/"
@@ -254,8 +265,16 @@ public class CommonConfig {
 
 					Config serverPollConfig = ConfigFactory.parseString(configString)
 						.withFallback(envSysStaticConf);
+
+					//fetch previous disruptor config values and compare with new ones.
+					//decision to init the ConsoleRecorder again or not.
+					DisruptorData prevDisruptorData = savePrevDisruptorData();
+
 					// Using just set instead of compareAndSet as the value being set is independent of the current value.
 					singleInstance.set(new CommonConfig(serverPollConfig));
+
+					compAndInitConsoleRecorder(prevDisruptorData);
+
 					tag = jsonNode.get(io.cube.agent.Constants.CONFIG_TAG_FIELD).asText();
 					version = jsonNode.get(io.cube.agent.Constants.CONFIG_VERSION_FIELD)
 						.asText();
@@ -269,6 +288,7 @@ public class CommonConfig {
 				ClientUtils.sendAckToCubeServer();
 
 				fetchConfigApiResp.close();
+
 			} catch (Exception e) {
 				LOGGER.error("Error in updating common config object in thread", e);
 			}
@@ -299,10 +319,12 @@ public class CommonConfig {
 		return singleInstance.get();
 	}
 
-
 	private CommonConfig() throws Exception {
 		this(envSysStaticConf);
 		//System.setProperty("JAEGER_AGENT_HOST", "jaeger-agent");
+	}
+
+	private static void initTracer() {
 		Tracer tracer = CommonUtils.init("tracer");
 		try {
 			MDGlobalTracer.register(tracer);
@@ -495,6 +517,5 @@ public class CommonConfig {
 			return Optional.of(uriBuilder.build().normalize());
 		}
 	}
-
 
 }
