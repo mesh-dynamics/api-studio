@@ -748,6 +748,9 @@ class HttpClientTabs extends Component {
                                     eachApiTraceEvent["name"] = eachApiTraceEvent["apiPath"];
                                     eachApiTraceEvent["id"] = eachApiTraceEvent["requestEventId"];
                                     eachApiTraceEvent["toggled"] = true;
+                                    eachApiTraceEvent["recordingIdAddedFromClient"] = fetchedUserHistoryCollection.id;
+                                    eachApiTraceEvent["traceIdAddedFromClient"] = eachApiTrace.traceId;
+                                    eachApiTraceEvent["collectionIdAddedFromClient"] = eachApiTrace.collection;
                                 });
                                 
                                 if(objectKey in cubeRunHistory) {
@@ -804,6 +807,8 @@ class HttpClientTabs extends Component {
                             eachApiTraceEvent["id"] = eachApiTraceEvent["requestEventId"];
                             eachApiTraceEvent["toggled"] = false;
                             eachApiTraceEvent["recordingIdAddedFromClient"] = selectedCollection.id;
+                            eachApiTraceEvent["traceIdAddedFromClient"] = eachApiTrace.traceId;
+                            eachApiTraceEvent["collectionIdAddedFromClient"] = eachApiTrace.collection;
                         });
                         const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
                             customID: "spanId", parentProperty: "parentSpanId"
@@ -958,7 +963,6 @@ class HttpClientTabs extends Component {
     }
 
     handleTreeNodeClick(node) {
-        console.log("node: ", node);
         this.openTab(node);
     }
 
@@ -967,11 +971,25 @@ class HttpClientTabs extends Component {
         const {app} = this.state;
         const selectedApp = urlParameters.get("app"), reqIdArray = [node.requestEventId];
         if(reqIdArray && reqIdArray.length > 0) {
-            const eventTypes = [];
-            cubeService.fetchAPIEventData(selectedApp, reqIdArray, eventTypes).then((result) => {
+            const user = JSON.parse(localStorage.getItem('user'));
+            const apiEventURL = `${config.recordBaseUrl}/getEvents`;
+            let body = {
+                "customerId": user.customer_name,
+                "app": selectedApp,
+                "eventTypes": [],
+                "services": [node.service],
+                "traceIds": [node.traceIdAddedFromClient],
+                "reqIds": [],
+                "paths": [node.apiPath],
+                "collection": node.collectionIdAddedFromClient
+            }
+            api.post(apiEventURL, body).then((result) => {
                 if(result && result.numResults > 0) {
                     for(let eachReqId of reqIdArray) {
                         const reqResPair = result.objects.filter(eachReq => eachReq.reqId === eachReqId);
+                        if(reqResPair.length === 1) {
+                            reqResPair.push(result.objects.find(eachReq => eachReq.eventType === "HTTPResponse"));
+                        }
                         if(reqResPair.length > 0) {
                             const httpRequestEventTypeIndex = reqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
                             const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
@@ -1018,7 +1036,7 @@ class HttpClientTabs extends Component {
                                 recordedResponseHeaders: httpResponseEvent ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
                                 recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
                                 responseBodyType: "json",
-                                requestId: eachReqId,
+                                requestId: httpRequestEvent.reqId,
                                 outgoingRequestIds: [],
                                 eventData: reqResPair,
                                 showOutgoingRequestsBtn: false,
