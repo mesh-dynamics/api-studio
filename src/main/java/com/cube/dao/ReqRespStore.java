@@ -20,6 +20,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
+import org.apache.solr.common.util.Pair;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -62,6 +63,9 @@ public interface ReqRespStore extends DataStore {
 
     static Optional<Recording> startRecording(Recording recording, ReqRespStore rrstore) {
         if (rrstore.saveRecording(recording)) {
+        	rrstore.populateCache(
+        		new CollectionKey(recording.customerId, recording.app, recording.instanceId),
+		        RecordOrReplay.createFromRecording(recording));
             return Optional.of(recording);
         }
         return Optional.empty();
@@ -109,6 +113,11 @@ public interface ReqRespStore extends DataStore {
 	boolean updateAgentConfigTag(AgentConfigTagInfo tagInfo);
 
 	boolean saveAgentConfigAcknowledge(ConfigApplicationAcknowledge confApplicationAck);
+
+	public void populateCache(CollectionKey collectionKey, RecordOrReplay rr);
+
+	Pair<Result<ConfigApplicationAcknowledge> , List>getLatestAgentConfigAcknowledge(
+		io.md.dao.CubeMetaInfo cubeMetaInfo, boolean facetOnNodeSelected, int forLastNsec);
 
 	class ReqResp {
 
@@ -416,7 +425,8 @@ public interface ReqRespStore extends DataStore {
 	Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
                                    Optional<String> collection, Optional<String> templateVersion, Optional<String> name, Optional<String> parentRecordingId, Optional<String> rootRecordingId,
                                    Optional<String> codeVersion, Optional<String> branch, List<String> tags, Optional<Boolean> archived, Optional<String> gitCommitId,
-                                   Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label, Optional<String> recordingType);
+                                   Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label, Optional<String> recordingType,
+																	 Optional<String> recordingId);
 
 
     Optional<Recording> getRecording(String recordingId);
@@ -471,7 +481,7 @@ public interface ReqRespStore extends DataStore {
 	 * @return
 	 */
 	Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerId, String app, String collection,
-                                                               String templateSetVersion);
+                                                               Optional<String> templateSetVersion);
 
     /**
      * @param customerId

@@ -2,6 +2,8 @@ package com.cube.ws;
 
 import static com.cube.core.Utils.buildErrorResponse;
 
+import io.md.dao.MockWithCollection;
+import io.md.dao.Recording;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -75,7 +77,7 @@ public class MockServiceHTTP {
                         String body) {
         LOGGER.debug(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s", customerId, app, path, ui.toString()));
         return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service,
-            HttpMethod.GET, body, headers);
+            HttpMethod.GET, body, headers, Optional.empty());
     }
 
 	// TODO: unify the following two methods and extend them to support all @Consumes types -- not just two.
@@ -93,7 +95,7 @@ public class MockServiceHTTP {
                               String body) {
         LOGGER.info(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s, body: %s", customerId, app, path,
             ui.toString(), body));
-        return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service, HttpMethod.POST, body, headers);
+        return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service, HttpMethod.POST, body, headers, Optional.empty());
     }
 
 
@@ -125,7 +127,7 @@ public class MockServiceHTTP {
             MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
             Optional<Instant> lowerBound =
                 Optional.ofNullable(queryParams.getFirst(io.md.constants.Constants.LOWER_BOUND)).flatMap(Utils::msStrToTimeStamp);
-            return Response.ok().type(MediaType.APPLICATION_JSON).entity(mocker.mock(event, lowerBound))
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity(mocker.mock(event, lowerBound, Optional.empty()))
                 .build();
         } catch (Mocker.MockerException e) {
             return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
@@ -138,7 +140,7 @@ public class MockServiceHTTP {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response mockThrift(Event thriftMockRequest) {
         try {
-            return mocker.mock(thriftMockRequest, Optional.empty()).response
+            return mocker.mock(thriftMockRequest, Optional.empty(), Optional.empty()).response
                 .map(matchingResponse ->
                     Response.ok().type(MediaType.APPLICATION_JSON).entity(matchingResponse).build())
                 .orElseThrow(() -> new Exception("No Matching Response Event Found"));
@@ -200,10 +202,58 @@ public class MockServiceHTTP {
         }
     }
 
+    @GET
+    @Path("mockWithCollection/{replayCollection}/{recordingId}/{service}/{var:.+}")
+    public Response getmockWithCollection(@Context UriInfo ui, @PathParam("var") String path,
+        @Context HttpHeaders headers,
+        @PathParam("replayCollection") String replayCollection,
+        @PathParam("recordingId") String recordingId,
+        @PathParam("service") String service,
+        String body) {
+
+	    LOGGER.info(String.format(" path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordingId: %s", path,
+            ui.toString(), body, replayCollection, recordingId));
+        Optional<Recording> optionalRecording = rrstore.getRecording(recordingId);
+        if(optionalRecording.isEmpty()) {
+            LOGGER.error(new ObjectMessage(
+                Map.of(
+                    Constants.RECORDING_ID, recordingId,
+                    Constants.SERVICE_FIELD, service)));
+            return notFound();
+        }
+        Recording recording = optionalRecording.get();
+        return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
+            HttpMethod.GET, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion)));
+    }
+
+    @POST
+    @Path("mockWithCollection/{replayCollection}/{recordingId}/{service}/{var:.+}")
+    public Response postMockWithCollection(@Context UriInfo ui, @PathParam("var") String path,
+        @Context HttpHeaders headers,
+        @PathParam("replayCollection") String replayCollection,
+        @PathParam("recordingId") String recordingId,
+        @PathParam("service") String service,
+        String body) {
+
+	    LOGGER.info(String.format("path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordingId: %s", path,
+            ui.toString(), body, replayCollection, recordingId));
+        Optional<Recording> optionalRecording = rrstore.getRecording(recordingId);
+        if(optionalRecording.isEmpty()) {
+            LOGGER.error(new ObjectMessage(
+                Map.of(
+                    Constants.RECORDING_ID, recordingId,
+                    Constants.SERVICE_FIELD, service)));
+            return notFound();
+        }
+        Recording recording = optionalRecording.get();
+        return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
+            HttpMethod.POST, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion)));
+    }
+
 
     private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
         String customerId, String app, String instanceId,
-        String service, String method, String body, HttpHeaders headers) {
+        String service, String method, String body, HttpHeaders headers, Optional<MockWithCollection> collection) {
 
         LOGGER.info(io.md.utils.Utils.createLogMessasge(io.md.constants.Constants.MESSAGE, "Attempting to mock request",
             io.md.constants.Constants.CUSTOMER_ID_FIELD, customerId, io.md.constants.Constants.APP_FIELD, app
@@ -215,7 +265,7 @@ public class MockServiceHTTP {
             Event mockRequestEvent = io.md.utils.Utils
                 .createRequestMockNew(path, formParams, customerId, app, instanceId,
                     service, method, body, headers.getRequestHeaders(), ui.getQueryParameters());
-            MockResponse mockResponse = mocker.mock(mockRequestEvent, Optional.empty());
+            MockResponse mockResponse = mocker.mock(mockRequestEvent, Optional.empty(), collection);
             respEvent = mockResponse.response;
 
         } catch (Exception e) {

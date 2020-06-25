@@ -52,6 +52,7 @@ import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
+import org.apache.solr.common.util.Pair;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -219,7 +220,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    void populateCache(CollectionKey collectionKey, RecordOrReplay rr) {
+    public void populateCache(CollectionKey collectionKey, RecordOrReplay rr) {
         if (recordReplayStoreKey == null) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
             recordReplayStoreKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
@@ -354,6 +355,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String DEFAULT_EMPTY_FIELD_VALUE = "null";
     private static final String AGENT_ID_F = CPREFIX + Constants.AGENT_ID + STRING_SUFFIX;
     private static final String INFO_PREFIX = CPREFIX + Constants.INFO + "_";
+    private static final String EVENT_META_DATA_PREFIX = CPREFIX + Constants.EVENT_META_DATA + "_";
+    private static final String EVENT_META_DATA_KEYSF = CPREFIX + Constants.EVENT_META_DATA_KEY_FIELD + STRINGSET_SUFFIX;
+    private static final String CONFIG_ACK_DATA_KEYSF = CPREFIX + Constants.CONFIG_ACK_DATA_KEY_FIELD + STRINGSET_SUFFIX;
 
 
 
@@ -758,8 +762,78 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(TIMESTAMPF, Instant.now().toString());
         confApplicationAck.acknowledgeInfo.forEach((x, y)
             -> doc.setField(INFO_PREFIX + x + STRING_SUFFIX, y));
+        // Storing key to later retrieve them into event object.
+        confApplicationAck.acknowledgeInfo.keySet().forEach(key -> doc.addField(CONFIG_ACK_DATA_KEYSF, key));
         return doc;
     }
+
+    public Pair<Result<ConfigApplicationAcknowledge> , List> getLatestAgentConfigAcknowledge(
+        io.md.dao.CubeMetaInfo cubeMetaInfo, boolean facetOnNodeSelected, int forLastNsec) {
+        SolrQuery query = new SolrQuery("*:*");
+        addFilter(query, TYPEF, Types.AgentConfigAcknowledge.toString());
+        addFilter(query, CUSTOMERIDF, cubeMetaInfo.customerId);
+        addFilter(query, APPF, cubeMetaInfo.appName);
+        addFilter(query, INSTANCEIDF, cubeMetaInfo.instance);
+        addFilter(query, SERVICEF, cubeMetaInfo.serviceName);
+        Instant startTimeStamp = Instant.now().minusSeconds(forLastNsec);
+        addRangeFilter(query, TIMESTAMPF, Optional.of(startTimeStamp), Optional.empty(), true, true);
+//        addSort(query, TIMESTAMPF, false);
+
+        if(facetOnNodeSelected) {
+            FacetQ facetq = new FacetQ();
+            Facet samplingFacet = Facet.createTermFacet(
+                INFO_PREFIX + io.md.constants.Constants.IS_NODE_SELECTED + STRING_SUFFIX,
+                Optional.empty());
+
+            facetq.addFacet(SAMPLINGFACET, samplingFacet);
+
+            String jsonFacets;
+            try {
+                jsonFacets = config.jsonMapper.writeValueAsString(facetq);
+                query.add(SOLRJSONFACETPARAM, jsonFacets);
+            } catch (JsonProcessingException e) {
+                LOGGER.error(String.format("Error in converting facets to json"), e);
+            }
+        }
+
+        Result<ConfigApplicationAcknowledge> result = SolrIterator.getResults(solr, query, Optional.empty(),
+            this::docToAgentConfigAcknowledge, Optional.empty());
+
+        if(facetOnNodeSelected) {
+            ArrayList samplingFacetResults = result.getFacets(FACETSFIELD, SAMPLINGFACET, BUCKETFIELD);
+            return new Pair(result, samplingFacetResults);
+        }
+
+        else {
+            return new Pair(result, Collections.EMPTY_LIST);
+        }
+    }
+
+
+    private Optional<ConfigApplicationAcknowledge> docToAgentConfigAcknowledge(SolrDocument doc) {
+
+        Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
+        Optional<String> app = getStrField(doc, APPF);
+        Optional<String> service = getStrField(doc, SERVICEF);
+        Optional<String> instanceId = getStrField(doc, INSTANCEIDF);
+        List<String> agentConfigDataKeys = getStrFieldMV(doc, CONFIG_ACK_DATA_KEYSF);
+
+
+        Map<String, String> agentConfigDataMap = new HashMap<String, String>();
+        agentConfigDataKeys.forEach(key -> {
+            Optional<String> val = getStrField(doc, INFO_PREFIX + key + STRING_SUFFIX);
+            val.ifPresent(v -> agentConfigDataMap.put(key, v));
+        });
+
+        if (customerId.isEmpty() || app.isEmpty() || service.isEmpty() || instanceId.isEmpty()) {
+            LOGGER.error("Improper agent acknowledgement stored in solr");
+            return Optional.empty();
+        }
+
+        return Optional.of(new ConfigApplicationAcknowledge(customerId.get(), app.get(),
+            service.get(), instanceId.get(), agentConfigDataMap));
+    }
+
 
     private static final String TEMPLATE_ID = "template_id" + STRINGSET_SUFFIX;
     private static final String VERSIONF = Constants.VERSION_FIELD + STRING_SUFFIX;
@@ -1042,9 +1116,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private static void addFilter(SolrQuery query, String fieldname, String fval, boolean quote) {
-        //String newfval = quote ? String.format("\"%s\"", StringEscapeUtils.escapeJava(fval)) : fval ;
-        String newfval = quote ? SolrIterator.escapeQueryChars(fval) : fval;
-        query.addFilterQuery(String.format("%s:%s", fieldname, newfval));
+        addFilter(query, fieldname, Optional.of(fval), quote, false);
     }
 
     private static void addNegativeFilter(SolrQuery query, String fieldname, String fval, boolean quote) {
@@ -1060,6 +1132,23 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private static void addFilter(SolrQuery query, String fieldname, Optional<String> fval) {
         addFilter(query, fieldname, fval, false);
+    }
+
+
+    private static void addFilter(SolrQuery query, String fieldname, Optional<String> fval, boolean quote, boolean includeEmpty) {
+        fval.ifPresent(val -> {
+            String newfval = quote ? SolrIterator.escapeQueryChars(val) : val;
+            if (newfval.isEmpty()) {
+                newfval = "\"\"";
+            }
+            if (includeEmpty) {
+                // empty val should be treated as fval
+                query.addFilterQuery(
+                    String.format("(*:* AND NOT %s:*) OR %s:%s", fieldname, fieldname, newfval));
+            } else {
+                query.addFilterQuery(String.format("%s:%s", fieldname, newfval));
+            }
+        });
     }
 
     private static void addFilter(SolrQuery query, String fieldname, Optional<String> fval, boolean enforceEmpty) {
@@ -1267,6 +1356,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
         doc.setField(PAYLOADKEYF, event.payloadKey);
 
+        if(event.metaData != null && !event.metaData.isEmpty()) {
+            event.metaData.forEach((x, y)
+                -> doc.setField(EVENT_META_DATA_PREFIX + x + STRING_SUFFIX, y));
+            // Storing key to later retrieve them into event object.
+            event.metaData.keySet().forEach(key -> doc.addField(EVENT_META_DATA_KEYSF, key));
+        }
+
         return doc;
     }
 
@@ -1289,6 +1385,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> eventType = getStrField(doc, EVENTTYPEF);
         Optional<String> payloadStr = getStrFieldMVFirst(doc, PAYLOADSTRF);
         Optional<Integer> payloadKey = getIntField(doc, PAYLOADKEYF);
+        List<String> eventMetaDataKeys = getStrFieldMV(doc, EVENT_META_DATA_KEYSF);
+
+        Map<String, String> eventMetaDataMap = new HashMap<String, String>();
+        eventMetaDataKeys.forEach(key -> {
+            Optional<String> val = getStrField(doc, EVENT_META_DATA_PREFIX + key + STRING_SUFFIX);
+            val.ifPresent(v -> eventMetaDataMap.put(key, v));
+        });
         Optional<RecordingType> recordingType = getStrField(doc, RECORDING_TYPE_F)
             .flatMap(r -> Utils.valueOf(RecordingType.class, r));
 
@@ -1298,7 +1401,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             , app.orElse(null), service.orElse(null), instanceId.orElse(null)
             , collection.orElse(null), new MDTraceInfo(traceid.orElse(null)
             , spanId.orElse(null), parentSpanId.orElse(null)), runType.orElse(null)
-            , timestamp, reqId.orElse(null), path.orElse(""), eType, recordingType.orElse(RecordingType.Golden));
+            , timestamp, reqId.orElse(null), path.orElse(""), eType, recordingType.orElse(RecordingType.Golden)).withMetaData(eventMetaDataMap);;
         // TODO revisit this need to construct payload properly from type and json string
         try {
             payloadStr.ifPresent(UtilException.rethrowConsumer(payload ->
@@ -2488,7 +2591,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, INSTANCEIDF, apiTraceFacetQuery.instanceId);
         addRangeFilter(query, TIMESTAMPF, apiTraceFacetQuery.startDate,
             apiTraceFacetQuery.endDate, true, true);
-        addFilter(query, RECORDING_TYPE_F, apiTraceFacetQuery.recordingType);
+        boolean includeEmpty = apiTraceFacetQuery.recordingType
+                .map(v -> v.equals(RecordingType.Golden.toString()))
+                .orElse(false);
+        addFilter(query, RECORDING_TYPE_F, apiTraceFacetQuery.recordingType, true, includeEmpty);
         addFilter(query, COLLECTIONF,apiTraceFacetQuery.collection);
         return query;
     }
@@ -2692,7 +2798,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
         Optional<String> collection, Optional<String> templateVersion, Optional<String> name, Optional<String> parentRecordingId, Optional<String> rootRecordingId,
         Optional<String> codeVersion, Optional<String> branch, List<String> tags, Optional<Boolean> archived, Optional<String> gitCommitId,
-        Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label, Optional<String> recordingType) {
+        Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label, Optional<String> recordingType,
+        Optional<String> recordingId) {
 
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
@@ -2715,7 +2822,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, COLLECTION_UPD_OP_SET_IDF, collectionUpdOpSetId);
         addFilter(query, TEMPLATE_UPD_OP_SET_IDF, templateUpdOpSetId);
         addFilter(query, USERIDF, userId);
-        addFilter(query, RECORDING_TYPE_F, recordingType);
+        addFilter(query, IDF, recordingId);
+        boolean includeEmpty = recordingType.map(v -> v.equals(RecordingType.Golden.toString()))
+                .orElse(false);
+        addFilter(query, RECORDING_TYPE_F, recordingType, true, includeEmpty);
         addSort(query, TIMESTAMPF, false); // descending
 
         //Optional<Integer> maxresults = Optional.of(1);
@@ -2738,7 +2848,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      */
     @Override
     public Optional<Recording> getRecordingByCollectionAndTemplateVer(String customerId, String app,
-                                                        String collection, String templateSetVersion) {
+                                                        String collection, Optional<String> templateSetVersion) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.Recording.toString());
@@ -2881,6 +2991,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String RESPMATCHTYPEFACET = "respMatchType_facets";
     private static final String REQMATCHTYPEFACET = "reqMatchType_facets";
     private static final String REQCOMPAPARETYPEFACET = "reqCmpResType_facets";
+    private static final String SAMPLINGFACET = "sampling_facets";
 
 
     /**
