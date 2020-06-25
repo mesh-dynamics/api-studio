@@ -13,19 +13,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: build
-      uses: docker/build-push-action@v1.1.0
-      with:
-        repository: cubeiocorp/kubectl
-        tags: latest
-    - name: login
-      uses: docker/build-push-action@v1.1.0
-      with:
-        registry: cubeiocorp/kubectl
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-    - name: push
-      uses: docker/build-push-action@v1.1.0
-      with:
-        registry: cubeiocorp/kubectl
-        tags: latest
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Publish image
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: cubeiocorp/kubectl
+          tags: latest
