@@ -96,14 +96,12 @@ const setupListeners = (proxyServerOptions, mockContext, user) => {
     });
 
     ipcMain.on('mock_context_change', (event, arg) => {
-        const { collectionId, traceId, spanId, recordingId } = arg;
+        const { collectionId, recordingId } = arg;
         
         logger.info('Current mock context :', mockContext);
         logger.info('Changing mock context to : ', arg);
 
         mockContext.collectionId = collectionId;
-        mockContext.traceId = traceId;
-        mockContext.spanId = spanId;
         mockContext.recordingId = recordingId;
 
         logger.info('Updated collection id is : ', mockContext);

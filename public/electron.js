@@ -18,10 +18,8 @@ const user = {
 };
 
 const mockContext = {
-    collectionId: 'cf27823b-3463-4ef5-b26a-0ecb1ed33caf',
-    traceId: '2d625c9ffcf592f851eb730c6ac898e6',
-    spanId: '2d625c9ffcf592f851eb730c6ac898e6',
-    recordingId: 'Recording-8618771',
+    collectionId: '',
+    recordingId: '',
 };
 
 
