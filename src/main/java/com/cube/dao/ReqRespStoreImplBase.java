@@ -153,7 +153,7 @@ public abstract class ReqRespStoreImplBase extends AbstractDataStore implements 
 
 	abstract void removeCollectionKey(CollectionKey collectionKey);
     abstract Optional<RecordOrReplay> retrieveFromCache(CollectionKey key, boolean extendTTL);
-    abstract void populateCache(CollectionKey collectionKey, RecordOrReplay rr);
+    //abstract void populateCache(CollectionKey collectionKey, RecordOrReplay rr);
 	abstract void updaterFinalReplayStatusInCache(Replay replay);
 
 	/* (non-Javadoc)

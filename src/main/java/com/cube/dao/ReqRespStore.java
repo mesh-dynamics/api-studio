@@ -45,6 +45,7 @@ import io.md.dao.ReqRespMatchResult;
 import io.md.services.DataStore;
 import io.md.services.FnResponse;
 
+import com.cube.dao.ReqRespStoreImplBase.CollectionKey;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.golden.TemplateSet;
@@ -62,6 +63,9 @@ public interface ReqRespStore extends DataStore {
 
     static Optional<Recording> startRecording(Recording recording, ReqRespStore rrstore) {
         if (rrstore.saveRecording(recording)) {
+        	rrstore.populateCache(
+        		new CollectionKey(recording.customerId, recording.app, recording.instanceId),
+		        RecordOrReplay.createFromRecording(recording));
             return Optional.of(recording);
         }
         return Optional.empty();
@@ -109,6 +113,8 @@ public interface ReqRespStore extends DataStore {
 	boolean updateAgentConfigTag(AgentConfigTagInfo tagInfo);
 
 	boolean saveAgentConfigAcknowledge(ConfigApplicationAcknowledge confApplicationAck);
+
+	public void populateCache(CollectionKey collectionKey, RecordOrReplay rr);
 
 	Pair<Result<ConfigApplicationAcknowledge> , List>getLatestAgentConfigAcknowledge(
 		io.md.dao.CubeMetaInfo cubeMetaInfo, boolean facetOnNodeSelected, int forLastNsec);

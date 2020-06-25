@@ -220,7 +220,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    void populateCache(CollectionKey collectionKey, RecordOrReplay rr) {
+    public void populateCache(CollectionKey collectionKey, RecordOrReplay rr) {
         if (recordReplayStoreKey == null) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
             recordReplayStoreKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
