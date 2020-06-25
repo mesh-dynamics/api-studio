@@ -95,6 +95,8 @@ class HttpClientTabs extends Component {
 
         this.handleChange = this.handleChange.bind(this);
         this.handleCreateCollection = this.handleCreateCollection.bind(this);
+        this.handleTreeNodeClick = this.handleTreeNodeClick.bind(this);
+        this.renderTreeNodeHeader = this.renderTreeNodeHeader.bind(this);
     }
 
     handleCloseModal() {
@@ -953,6 +955,82 @@ class HttpClientTabs extends Component {
         dispatch(cubeActions.hideHttpClient(true));
     }
 
+    handleTreeNodeClick(node) {
+        console.log("node: ", node);
+        this.openTab(node);
+    }
+
+    openTab(node) {
+        let urlParameters = new URLSearchParams(window.location.search);
+        const {app} = this.state;
+        const selectedApp = urlParameters.get("app"), reqIdArray = [node.requestEventId];
+        if(reqIdArray && reqIdArray.length > 0) {
+            const eventTypes = [];
+            cubeService.fetchAPIEventData(selectedApp, reqIdArray, eventTypes).then((result) => {
+                if(result && result.numResults > 0) {
+                    for(let eachReqId of reqIdArray) {
+                        const reqResPair = result.objects.filter(eachReq => eachReq.reqId === eachReqId);
+                        if(reqResPair.length > 0) {
+                            const httpRequestEventTypeIndex = reqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
+                            const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
+                            const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
+                            const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
+                            let headers = [], queryParams = [], formData = [];
+                            for(let eachHeader in httpRequestEvent.payload[1].hdrs) {
+                                headers.push({
+                                    id: uuidv4(),
+                                    name: eachHeader,
+                                    value: httpRequestEvent.payload[1].hdrs[eachHeader].join(","),
+                                    description: ""
+                                });
+                            }
+                            for(let eachQueryParam in httpRequestEvent.payload[1].queryParams) {
+                                queryParams.push({
+                                    id: uuidv4(),
+                                    name: eachQueryParam,
+                                    value: httpRequestEvent.payload[1].queryParams[eachQueryParam].join(","),
+                                    description: ""
+                                });
+                            }
+                            for(let eachFormParam in httpRequestEvent.payload[1].formParams) {
+                                formData.push({
+                                    id: uuidv4(),
+                                    name: eachFormParam,
+                                    value: httpRequestEvent.payload[1].formParams[eachFormParam].join(","),
+                                    description: ""
+                                });
+                            }
+                            let reqObject = {
+                                httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
+                                httpURL: "https://moviebook.dev.cubecorp.io/" + httpRequestEvent.apiPath,
+                                headers: headers,
+                                queryStringParams: queryParams,
+                                bodyType: "formData",
+                                formData: formData,
+                                rawData: "",
+                                rawDataType: "json",
+                                responseStatus: "NA",
+                                responseStatusText: "",
+                                responseHeaders: "",
+                                responseBody: "",
+                                recordedResponseHeaders: httpResponseEvent ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
+                                recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
+                                responseBodyType: "json",
+                                requestId: eachReqId,
+                                outgoingRequestIds: [],
+                                eventData: reqResPair,
+                                showOutgoingRequestsBtn: false,
+                                outgoingRequests: []
+                            };
+                            const mockEvent = {};
+                            this.addTab(mockEvent, reqObject, selectedApp);
+                        }
+                    }
+                }
+            });
+        }
+    }
+
     getSelectedTabKey(givenTabs, type) {
         const {selectedTabKey} = this.state;
         if(type && type === "outgoingRequests") {
@@ -1022,7 +1100,7 @@ class HttpClientTabs extends Component {
                         <div style={{flexDirection: "column", width: "36px", verticalAlign: "top", }}>
                             <Label bsStyle="default" style={{fontWeight: "600", fontSize: "9px"}}>{props.node.method}</Label>
                         </div>
-                        <div style={{flex: "1", wordBreak: "break-word", verticalAlign: "top", fontSize: "12px"}}>
+                        <div style={{flex: "1", wordBreak: "break-word", verticalAlign: "top", fontSize: "12px"}} onClick={() => this.handleTreeNodeClick(props.node)}>
                             <span style={{paddingLeft: "5px", marginLeft: "5px", borderLeft: "2px solid #fc6c0a"}} >{props.node.name + " " + moment(props.node.reqTimestamp * 1000).format("hh:mm:ss")}</span>
                         </div>
                     </div>
