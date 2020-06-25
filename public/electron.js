@@ -4,7 +4,7 @@ const serverProxy = require('./electron/proxy');
 const proxyServerOptions = {
     target: {
         protocol: 'https:',
-        host: 'demo.dev.cubecorp.io',
+        host: 'demo.prod.cubecorp.io',
         port: 443,
     },
     changeOrigin: true,
