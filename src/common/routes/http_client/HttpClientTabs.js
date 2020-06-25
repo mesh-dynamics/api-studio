@@ -864,15 +864,9 @@ class HttpClientTabs extends Component {
         });
     }
 
-    getRequestIds(urlParams) {
-        let requestIds = {};
-        for(const eachUrlParam of urlParams.keys()) {
-            const requestIdMatches = eachUrlParam.match(/\[(.*?)\]/);
-            if(requestIdMatches && requestIdMatches.length > 0) {
-                requestIds[requestIdMatches[1]] = urlParams.get(eachUrlParam).split(",");
-            }
-        }
-        return requestIds;
+    getRequestIds() {
+        const {apiCatalog: {httpClientRequestIds}} = this.props;
+        return httpClientRequestIds;
     }
 
     componentDidMount() {
@@ -883,7 +877,8 @@ class HttpClientTabs extends Component {
         this.loadFromHistory();
         this.loadUserCollections();
         let urlParameters = new URLSearchParams(window.location.search);
-        const requestIds = this.getRequestIds(urlParameters), selectedApp = urlParameters.get("app"), reqIdArray = Object.keys(requestIds);
+        
+        const requestIds = this.getRequestIds(), selectedApp = urlParameters.get("app"), reqIdArray = Object.keys(requestIds);
         if(reqIdArray && reqIdArray.length > 0) {
             const eventTypes = [];
             cubeService.fetchAPIEventData(selectedApp, reqIdArray, eventTypes).then((result) => {
@@ -1218,9 +1213,10 @@ class HttpClientTabs extends Component {
 }
 
 function mapStateToProps(state) {
-    const cube = state.cube;
+    const {cube, apiCatalog} = state;
     return {
-        cube
+        cube,
+        apiCatalog,
     }
 }
 
