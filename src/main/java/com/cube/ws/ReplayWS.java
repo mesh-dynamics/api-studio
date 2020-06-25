@@ -157,7 +157,7 @@ public class ReplayWS {
                 LOGGER.error(String.format("Error in converting Replay object to Json for replayId %s", replayId), e);
                 return Response.serverError().build();
             }
-            if (!rrstore.saveReplay(r)) {
+            if (!rrstore.expireReplayInCache(r)) {
                 return Response.serverError().build();
             }
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
