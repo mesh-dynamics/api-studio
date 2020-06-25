@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.Optional;
 
 import javax.annotation.Priority;
@@ -278,6 +279,15 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 			CommonConfig commonConfig = CommonConfig.getInstance();
 			if (commonConfig.shouldMockService(service) || (service != null && uriValue.toString()
 				.startsWith(new URI(commonConfig.CUBE_MOCK_SERVICE_URI).toString()))) {
+				if (commonConfig.authToken.isPresent()) {
+					String auth = commonConfig.authToken.get();
+					MultivaluedMap<String, Object> clientHeaders = clientRequestContext
+						.getHeaders();
+
+					clientHeaders.put(io.cube.agent.Constants.AUTHORIZATION_HEADER, Collections.singletonList(auth));
+				} else {
+					LOGGER.info("Auth token not present for Mocking service");
+				}
 				didContextProceed.setFalse();
 				return;
 			}
