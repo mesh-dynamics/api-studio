@@ -28,4 +28,4 @@ jobs:
       uses: docker/push-action@v1
       with:
         registry: cubeiocorp/kubectl
-        tags: ${{ outputs.build.tags }}
+        tags: latest
