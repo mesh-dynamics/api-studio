@@ -37,6 +37,10 @@ MOVIEINFO_TAG=master-latest" > apps/moviebook/config/temp.conf
 
 call_deploy_script() {
 	TRACE=1 ./deploy.sh $@
+	if [ $? -ne 0 ]; then
+		EXIT_CODE=1
+		clean
+	fi
 }
 
 call_replay() {
@@ -131,6 +135,10 @@ clean() {
 
 main() {
 	set -x
+	# DRONE_BRANCH="develop"
+	# DRONE_COMMIT="11a5c543c9086ecd3cb6f91a3d62e2efd1ceee1a"
+	# DRONE_COMMIT_AUTHOR="abdulquyoombhat41"
+	# DRONE_BUILD_NUMBER="test101"
 	AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBtZXNoZHluYW1pY3MuaW8iLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwidHlwZSI6InBhdCIsImN1c3RvbWVyX2lkIjoxLCJpYXQiOjE1ODI4ODE2MjgsImV4cCI6MTg5ODI0MTYyOH0.P4DAjXyODV8cFPgObaULjAMPg-7xSbUsVJ8Ohp7xTQI"
 	check_test_status
 	generate_config_file

@@ -64,7 +64,7 @@ init() {
 	if ls $APP_DIR/kubernetes/route* 1> /dev/null 2>&1; then
 		kubectl apply -f $APP_DIR/kubernetes/route-v1.yaml
 	fi
-	kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.json)" -n logging --record
+	kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.json)" -n logging --record || :
 	#Check fluentd rollout status, exit once rollout is complete
 	kubectl rollout status ds/fluentd -n logging
 }
@@ -147,23 +147,26 @@ start_record() {
 	BODY="name=$GOLDEN_NAME&userId=$CUBE_CUSTOMER&label=$TIMESTAMP"
 
 kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
-
-	RESPONSE="$(curl -X POST \
-  https://$CUBE_HOST/api/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$TEMPLATE_VERSION \
-  -H 'Content-Type: application/x-www-form-urlencoded' \
-	-H "Authorization: Bearer $AUTH_TOKEN" \
-	-H "Host:$CUBE_HOST" \
-  -H 'cache-control: no-cache'\
-  -d "$BODY" )"
-  echo $RESPONSE
-  RECORDING_ID=$(echo $RESPONSE | sed 's/^.*"id":"\([^"]*\)".*/\1/')
+	COUNT=0
+	while [ -z "$RECORDING_ID" ] && [ "$COUNT" != "5" ] && [ "$RECORDING" = "null" ]; do
+		RESPONSE=$(curl -X POST \
+	  https://$CUBE_HOST/api/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$TEMPLATE_VERSION \
+		-H 'Content-Type: application/x-www-form-urlencoded' \
+		-H "Authorization: Bearer $AUTH_TOKEN" \
+		-H "Host:$CUBE_HOST" \
+		-H 'cache-control: no-cache'\
+		-d "$BODY")
+	  echo $RESPONSE
+	  RECORDING_ID=$(echo $RESPONSE | jq -r ".id")
+		COUNT=$((COUNT+1))
+		if [ $COUNT -eq 5 ]; then
+			echo "Recording failed to start multiple times.."
+			exit 1
+		fi
+		sleep 5
+	done
   echo "RECORDING_ID:" $RECORDING_ID
 
-  if [ $? -eq 0 ]; then
-		echo "Recording started"
-	else
-		echo "ERROR!! Recording did not started"
-	fi
 	echo $RECORDING_ID > $RECORDING_ID_TEMP_FILE
 }
 
@@ -310,16 +313,16 @@ clean() {
 	kubectl delete destinationrules.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
 	kubectl delete gateways.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
 	kubectl delete serviceentries.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
-	kubectl delete cm fluentd-$APP_NAME-conf-$NAMESPACE -n logging
-	volumeMountsindex=$(kubectl get ds fluentd -n logging -o json | jq '.spec.template.spec.containers[0].volumeMounts[].name' | awk "/fluentd-$APP_NAME-conf-$NAMESPACE/{print NR-1}")
-	volumeindex=$(kubectl get ds fluentd -n logging -o json | jq '.spec.template.spec.volumes[].name' | awk "/fluentd-$APP_NAME-conf-$NAMESPACE/{print NR-1}")
-	# TODO: check that volumeMountsindex and volumeindex are not empty, otherwise
-	# it throws an error
-	sed -e "s/add/remove/g" $APP_DIR/kubernetes/fluentd_patch.json > $APP_DIR/kubernetes/fluentd_patch_remove.json
-	sed -i -e "s:/spec/template/spec/containers/0/volumeMounts/-:/spec/template/spec/containers/0/volumeMounts/$volumeMountsindex:g" $APP_DIR/kubernetes/fluentd_patch_remove.json
-	sed -i -e "s:/spec/template/spec/volumes/-:/spec/template/spec/volumes/$volumeindex:g" $APP_DIR/kubernetes/fluentd_patch_remove.json
-	rm $APP_DIR/kubernetes/fluentd_patch_remove.json-e || : #http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_16
-	kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch_remove.json)" -n logging --record
+	# kubectl delete cm fluentd-$APP_NAME-conf-$NAMESPACE -n logging
+	# volumeMountsindex=$(kubectl get ds fluentd -n logging -o json | jq '.spec.template.spec.containers[0].volumeMounts[].name' | awk "/fluentd-$APP_NAME-conf-$NAMESPACE/{print NR-1}")
+	# volumeindex=$(kubectl get ds fluentd -n logging -o json | jq '.spec.template.spec.volumes[].name' | awk "/fluentd-$APP_NAME-conf-$NAMESPACE/{print NR-1}")
+	# # TODO: check that volumeMountsindex and volumeindex are not empty, otherwise
+	# # it throws an error
+	# sed -e "s/add/remove/g" $APP_DIR/kubernetes/fluentd_patch.json > $APP_DIR/kubernetes/fluentd_patch_remove.json
+	# sed -i -e "s:/spec/template/spec/containers/0/volumeMounts/-:/spec/template/spec/containers/0/volumeMounts/$volumeMountsindex:g" $APP_DIR/kubernetes/fluentd_patch_remove.json
+	# sed -i -e "s:/spec/template/spec/volumes/-:/spec/template/spec/volumes/$volumeindex:g" $APP_DIR/kubernetes/fluentd_patch_remove.json
+	# rm $APP_DIR/kubernetes/fluentd_patch_remove.json-e || : #http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_16
+	# kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch_remove.json)" -n logging --record
 
 }
 
