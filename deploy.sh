@@ -148,7 +148,7 @@ start_record() {
 
 kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
 	COUNT=0
-	while [ -z "$RECORDING_ID" ] && [ "$COUNT" != "5" ] && [ "$RECORDING" = "null" ]; do
+	while [ -z "$RECORDING_ID" ] && [ "$COUNT" != "5" ]; do
 		RESPONSE=$(curl -X POST \
 	  https://$CUBE_HOST/api/cs/start/$CUBE_CUSTOMER/$CUBE_APP/$INSTANCEID/$TEMPLATE_VERSION \
 		-H 'Content-Type: application/x-www-form-urlencoded' \
