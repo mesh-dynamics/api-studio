@@ -17,9 +17,11 @@ import "./diff.css";
 class HttpResponseBody extends Component {
     constructor(props) {
         super(props);
-        const defaultValue = this.props.recordedResponseBody;
+        const leftValue = this.props.recordedResponseBody;
+        const rightValue = this.props.responseBody;
         this.state = {
-            value: defaultValue,
+            leftValue: leftValue,
+            rightValue: rightValue,
             editor: null
         };
         this.handleChange = this.handleChange.bind(this);
@@ -27,10 +29,12 @@ class HttpResponseBody extends Component {
     }
 
     handleChange(value) {
-        const { tabId } = this.props;
-        this.props.updateParam(tabId, "recordedResponseBody", "recordedResponseBody", value[0]);
+        const { tabId, isOutgoingRequest } = this.props;
+        this.props.updateParam(isOutgoingRequest, tabId, "recordedResponseBody", "recordedResponseBody", value[0]);
+        this.props.updateParam(isOutgoingRequest, tabId, "responseBody", "responseBody", value[1]);
         this.setState({
-            value: value[0]
+            leftValue: value[0],
+            rightValue: value[1]
         });
     }
 
@@ -46,7 +50,7 @@ class HttpResponseBody extends Component {
             <div>
                 <DiffEditor
                     name="responseBody"
-                    value={[this.state.value, this.props.responseBody]}
+                    value={[this.props.recordedResponseBody, this.props.responseBody]}
                     width="100%"
                     mode={this.props.responseBodyType}
                     theme="github"

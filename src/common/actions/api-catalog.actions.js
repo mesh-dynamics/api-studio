@@ -194,5 +194,8 @@ export const apiCatalogActions = {
 
         const apiCount = getAPICount(apiFacets, selectedService, selectedApiPath, selectedInstance);
         dispatch({ type: apiCatalogConstants.SET_API_COUNT , data: { apiCount } });
-    }
+    },
+
+    setHttpClientRequestIds: (requestIdMap) => ({type: apiCatalogConstants.SET_HTTP_CLIENT_REQUESTIDS, data: requestIdMap}),
+
 }
