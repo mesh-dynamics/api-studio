@@ -13,10 +13,10 @@ const config = {
     diffMaxLinesLength: process.env.REACT_APP_DIFF_MAX_LENGTH || 1000,
     diffMaxLinesLengthIncrement: process.env.REACT_APP_DIFF_MAX_LENGTH_INCREMENT || 100,
     enableClientSideDiff: process.env.REACT_APP_ENABLE_CLIENT_SIDE_DIFF || "false",
-    apiBaseUrl: "https://demo.prod.cubecorp.io/api",
-    recordBaseUrl: "https://demo.prod.cubecorp.io/api/cs",
-    replayBaseUrl: "https://demo.prod.cubecorp.io/api/rs",
-    analyzeBaseUrl: "https://demo.prod.cubecorp.io/api/as",
+    apiBaseUrl: "https://demo.dev.cubecorp.io/api",
+    recordBaseUrl: "https://demo.dev.cubecorp.io/api/cs",
+    replayBaseUrl: "https://demo.dev.cubecorp.io/api/rs",
+    analyzeBaseUrl: "https://demo.dev.cubecorp.io/api/as",
     defaultPageSize: 5,
 };
 
