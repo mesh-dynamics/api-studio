@@ -1,94 +1,28 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
-const { autoUpdater } = require('electron-updater');
-autoUpdater.logger = require("electron-log")
-const isDev = require('electron-is-dev');
-const logger = require('electron-log');
-const path = require('path');
-autoUpdater.autoDownload = true 
+const listeners = require('./electron/listeners');
+const serverProxy = require('./electron/proxy');
 
-// TODO: Add daily reminder for installing update 
-// manually if the window is not closed
+const proxyServerOptions = {
+    target: {
+        protocol: 'https:',
+        host: 'demo.dev.cubecorp.io',
+        port: 443,
+    },
+    changeOrigin: true,
+};
 
-let mainWindow;
+const user = {
+    accessToken: "",
+    customerName: "",
+    tokenType: "",
+    userName: ""
+};
 
-function createWindow () {
-    mainWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
-        webPreferences: {
-        nodeIntegration: true,
-        },
-    });
-
-    mainWindow.loadURL(
-        isDev
-            ? 'http://localhost:3006'
-            : `file://${path.join(__dirname, '../build/index.html')}`,
-        )
-        
-    // mainWindow.loadFile('index.html');
-    
-    mainWindow.on('closed', function () {
-        mainWindow = null;
-    });
-}
-
-app.on('ready', async () => {
-    logger.info("App is ready... Creating Window");
-    
-    createWindow();
-
-    logger.info("Window created... Checking for updates...")
-
-    autoUpdater.checkForUpdatesAndNotify();
-});
-
-app.on('window-all-closed', function () {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
-});
-
-app.on('activate', function () {
-    if (mainWindow === null) {
-        createWindow();
-    }
-});
+const mockContext = {
+    collectionId: '',
+    recordingId: '',
+};
 
 
-ipcMain.on('app_version', (event) => {
-    logger.info("Sending App version to IPC Renderer");
-    event.sender.send('app_version', { version: app.getVersion() });
-})
+serverProxy.setupProxy(proxyServerOptions, mockContext, user);
 
-autoUpdater.on('update-available', () => {
-    logger.info("Update available")
-    mainWindow.webContents.send('update_available');
-});
-
-autoUpdater.on('update-not-available', arg => {
-    logger.info('Update not available');
-    logger.info(arg);
-});
-
-autoUpdater.on('download-progress', (arg) => {
-    logger.info('Download is in progress...');
-    logger.info(arg)
-    mainWindow.webContents.send('download_progress', Math.round(arg.percent));
-});
-
-autoUpdater.on('error', error => {
-    logger.info('An error has occured::');
-    logger.info(error.message);
-    logger.info(error.stack);
-});
-
-autoUpdater.on('update-downloaded', info => {
-    logger.info("Update downloaded...")
-    mainWindow.webContents.send('update_downloaded');
-})
-
-ipcMain.on('restart_app', () => {
-    logger.info("Performing a quit and install");
-    autoUpdater.quitAndInstall();
-});
+listeners.setupListeners(proxyServerOptions, mockContext, user);
