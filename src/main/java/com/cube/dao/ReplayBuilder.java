@@ -76,6 +76,7 @@ public class ReplayBuilder {
 		this.replayStatus = ReplayStatus.Init;
 		async = false;
 		sampleRate = Optional.empty();
+		this.intermediateServices = Collections.emptyList();
 		this.generatedClassJarPath = Optional.empty();
 		this.serviceToReplay = Collections.emptyList();
 		// Default replay type as HTTP
