@@ -137,6 +137,8 @@
     "start:electron": "npm run build && concurrently \"npm run start\" \"npm run electron\"",
     "build:electron": "npm run build && npm run electron",
     "build:package": "npm run build && npm run dist",
+    "build:electron:win": "electron-builder build --win --publish never",
+    "package:deploy": "npm run build && electron-builder build --win --mac --publish always",
     "package:deploy:win": "npm run build && electron-builder build --win --publish always",
     "package:deploy:mac": "npm run build && electron-builder build --mac --publish always"
   }
