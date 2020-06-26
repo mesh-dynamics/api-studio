@@ -14,8 +14,8 @@ class HttpRequestMessage extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            showHeaders: true,
-            showQueryParams: false,
+            showHeaders: false,
+            showQueryParams: true,
             showBody: false,
             showFormData: this.props.bodyType === "formData",
             showRawData: this.props.bodyType === "rawData"
@@ -84,7 +84,7 @@ class HttpRequestMessage extends Component {
                         <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleClick}>
                             <Glyphicon glyph="play" /> RUN
                         </div>
-                        <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: this.props.showOutgoingRequestsBtn ? "inline-block" : "none"}} onClick={this.handleSaveClick}>
+                        <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: this.props.showSaveBtn ? "inline-block" : "none"}} onClick={this.handleSaveClick}>
                             <Glyphicon glyph="play" /> SAVE
                         </div>
                     </div>
