@@ -55,6 +55,7 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
+import org.clapper.util.misc.MultiValueMap;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -1445,7 +1446,7 @@ public class AnalyzeWS {
         List<Event> parentRequestEventsForApiPath = new ArrayList<>();
 
         events.forEach(e -> {
-          if(e.eventType == EventType.HTTPRequest) {
+          if(e.isRequestType()) {
             requestEventsByParentSpanId.add(e.parentSpanId, e);
             apiTraceFacetQuery.apiPath.ifPresent(path -> {
               if(e.apiPath.equals(path)) {
@@ -1466,8 +1467,17 @@ public class AnalyzeWS {
           }
 
         } else {
-          List<Event> parentRequestEvents = requestEventsByParentSpanId.get("NA");
-          if(parentRequestEvents == null) {
+            // find event such that there is no event having span id equal to its parent span id
+            Map<String, Event> requestEventsBySpanId = new HashMap<>();
+            events.forEach(e -> {
+                if (e.isRequestType()) {
+                    requestEventsBySpanId.put(e.spanId, e);
+                }
+            });
+            List<Event> parentRequestEvents = events.stream()
+              .filter(e -> requestEventsBySpanId.get(e.parentSpanId) == null && e.isRequestType())
+                      .collect(Collectors.toList());
+          if(parentRequestEvents.isEmpty()) {
             LOGGER.error(
                 new ObjectMessage(Map.of(Constants.MESSAGE, "No request events found",
                     Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, appId,
