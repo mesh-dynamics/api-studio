@@ -419,6 +419,13 @@ class HttpClientTabs extends Component {
         let tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
         if(tabIndex < 0) return;
         const {userHistoryCollection} = this.state;
+        const mockContext = {
+            collectionId: userHistoryCollection.collec,
+            recordingId: this.state.tabs[tabIndex].recordingIdAddedFromClient
+        }
+        if(isElectron()) {
+            ipcRenderer.send('mock_context_change', mockContext);
+        }
         // make the request and update response status, headers & body
         // extract headers
         // extract body
