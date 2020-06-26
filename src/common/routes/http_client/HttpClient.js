@@ -31,6 +31,7 @@ class HttpClient extends Component {
                         driveRequest={this.props.driveRequest}
                         showOutgoingRequests={this.props.showOutgoingRequests}
                         showOutgoingRequestsBtn={this.props.showOutgoingRequestsBtn}
+                        showSaveBtn={this.props.showSaveBtn}
                         showSaveModal={this.props.showSaveModal}
                         isOutgoingRequest={this.props.isOutgoingRequest} >
                   </HttpRequestMessage>

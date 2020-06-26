@@ -18,6 +18,8 @@ import config from '../../config';
 import { isElectron, ipcRenderer } from '../../helpers/ipc-renderer';
 
 import HttpClient from "./HttpClient";
+import TreeNodeContainer from "./TreeNodeContainer";
+import TreeNodeToggle from "./TreeNodeToggle";
 import ResponsiveTabs from '../../components/Tabs';
 // IMPORTANT you need to include the default styles
 import '../../components/Tabs/styles.css';
@@ -55,6 +57,7 @@ class HttpClientTabs extends Component {
                 outgoingRequestIds: [],
                 eventData: null,
                 showOutgoingRequestsBtn: false,
+                showSaveBtn: false,
                 outgoingRequests: []
             }],
             toggleTestAndOutgoingRequests: true,
@@ -348,6 +351,7 @@ class HttpClientTabs extends Component {
                                 recordedResponseBody: httpResponseEvent ?  httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
                                 responseBodyType: "json",
                                 showOutgoingRequestsBtn: false,
+                                showSaveBtn: false,
                                 outgoingRequests: []
                             };
                             const tabId = uuidv4();
@@ -629,7 +633,7 @@ class HttpClientTabs extends Component {
             data.push(this.getReqResFromTabData(reqResPair, tabToSave));
             tabToSave.outgoingRequests.forEach((eachOutgoingTab) => {
                 if(eachOutgoingTab.eventData && eachOutgoingTab.eventData.length > 0) {
-                    data.push(this.getReqResFromTabData(eachOutgoingTab.eventData, tabToSave));
+                    data.push(this.getReqResFromTabData(eachOutgoingTab.eventData, eachOutgoingTab));
                 }
             });
 
@@ -756,7 +760,7 @@ class HttpClientTabs extends Component {
                                 eachApiTrace.res.map((eachApiTraceEvent) => {
                                     eachApiTraceEvent["name"] = eachApiTraceEvent["apiPath"];
                                     eachApiTraceEvent["id"] = eachApiTraceEvent["requestEventId"];
-                                    eachApiTraceEvent["toggled"] = true;
+                                    eachApiTraceEvent["toggled"] = false;
                                     eachApiTraceEvent["recordingIdAddedFromClient"] = fetchedUserHistoryCollection.id;
                                     eachApiTraceEvent["traceIdAddedFromClient"] = eachApiTrace.traceId;
                                     eachApiTraceEvent["collectionIdAddedFromClient"] = eachApiTrace.collection;
@@ -868,6 +872,7 @@ class HttpClientTabs extends Component {
                 outgoingRequestIds: [],
                 eventData: null,
                 showOutgoingRequestsBtn: false,
+                showSaveBtn: false,
                 outgoingRequests: []
             };
         }
@@ -953,6 +958,7 @@ class HttpClientTabs extends Component {
                                 outgoingRequestIds: requestIds[eachReqId],
                                 eventData: reqResPair,
                                 showOutgoingRequestsBtn: requestIds[eachReqId].length > 0,
+                                showSaveBtn: requestIds[eachReqId].length > 0,
                                 outgoingRequests: []
                             };
                             const mockEvent = {};
@@ -1050,6 +1056,7 @@ class HttpClientTabs extends Component {
                                 eventData: reqResPair,
                                 showOutgoingRequestsBtn: false,
                                 outgoingRequests: [],
+                                showSaveBtn: true,
                                 recordingIdAddedFromClient: node.recordingIdAddedFromClient
                             };
                             const mockEvent = {};
@@ -1110,6 +1117,7 @@ class HttpClientTabs extends Component {
                         responseBodyType={eachTab.responseBodyType}
                         showOutgoingRequests={this.showOutgoingRequests}
                         showOutgoingRequestsBtn={eachTab.showOutgoingRequestsBtn}
+                        showSaveBtn={eachTab.showSaveBtn}
                         showSaveModal={this.showSaveModal} 
                         isOutgoingRequest={type === "outgoingRequests" ? true : false}>
                         </HttpClient>
@@ -1136,6 +1144,18 @@ class HttpClientTabs extends Component {
                     </div>
                 </div>
             </div>
+        );
+    }
+
+    renderTreeNodeContainer(props) {
+        return (
+            <TreeNodeContainer {...props} />
+        );
+    }
+
+    renderTreeNodeToggle(props) {
+        return (
+            <TreeNodeToggle {...props} />
         );
     }
 
@@ -1183,7 +1203,7 @@ class HttpClientTabs extends Component {
                                                                 data={eachTabRun}
                                                                 style={CollectionTreeCSS}
                                                                 onToggle={this.onToggle}
-                                                                decorators={{...decorators, Header: this.renderTreeNodeHeader}}
+                                                                decorators={{...decorators, Header: this.renderTreeNodeHeader, Container: this.renderTreeNodeContainer, Toggle: this.renderTreeNodeToggle}}
                                                             />
                                                         );
                                                     })}
@@ -1215,7 +1235,7 @@ class HttpClientTabs extends Component {
                                                                 data={eachApiTrace}
                                                                 style={CollectionTreeCSS}
                                                                 onToggle={this.onToggle}
-                                                                decorators={{...decorators, Header: this.renderTreeNodeHeader}}
+                                                                decorators={{...decorators, Header: this.renderTreeNodeHeader, Container: this.renderTreeNodeContainer, Toggle: this.renderTreeNodeToggle}}
                                                             />
                                                         );
                                                     })}
