@@ -13,6 +13,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import java.util.Collection;
 
 import com.cubeui.readJson.dataModel.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -124,7 +127,7 @@ public class ReadJson {
                     }
                     instanceMap.put(appId, instanceIds);
                     Map<String, Integer> servicesMap = new HashMap<>();
-                    Map<String, Integer> pathMap = new HashMap<>();
+                    MultiValuedMap<String, Integer> pathMap = new ArrayListValuedHashMap<>();
                     for(ServiceGroups serviceGroup: app.getServiceGroups()){
                         body = readJson.createServiceGroup(serviceGroup,appId);
                         response = readJson.fetchResponse(url+"/api/service-group", HttpMethod.POST, token,body);
@@ -139,29 +142,37 @@ public class ReadJson {
                                     body = readJson.createPath(paths, serviceId);
                                     response = readJson.fetchResponse(url + "/api/path", HttpMethod.POST, token, body);
                                     int pathId = Integer.parseInt(readJson.getDataField(response, "id").toString());
-                                    pathMap.put(service.getName() + "_" + paths, pathId);
+                                    pathMap.put(paths, pathId);
                                 }
                             }
                         }
                     }
                     for(TestConfigs testConfig: app.getTestConfigs()) {
-                        int serviceId = servicesMap.get(testConfig.getServiceName());
-                        body = readJson.createTestConfig(testConfig,appId,serviceId);
+                        body = readJson.createTestConfig(testConfig,appId);
                         response = readJson.fetchResponse(url+"/api/test_config", HttpMethod.POST, token,body);
                         int testConfigId = Integer.parseInt(readJson.getDataField(response,"id").toString());
+                        for(String service: testConfig.getServices()) {
+                            int serviceId = servicesMap.get(service);
+                            body = readJson.createTestService(testConfigId, serviceId);
+                            response = readJson.fetchResponse(url+"/api/test-service", HttpMethod.POST, token, body);
+                        }
                         for(String paths: testConfig.getPaths()) {
-                            int pathId = pathMap.get(testConfig.getServiceName()+"_"+paths);
-                            body = readJson.createTestPath(testConfigId,pathId);
-                            response = readJson.fetchResponse(url+"/api/test-path", HttpMethod.POST, token,body);
+                            Collection<Integer> pathIds = pathMap.get(paths);
+                            for(Integer pathId: pathIds) {
+                                body = readJson.createTestPath(testConfigId, pathId);
+                                response = readJson
+                                    .fetchResponse(url + "/api/test-path", HttpMethod.POST, token,
+                                        body);
+                            }
                         }
                         for (String testVirtualizedService: testConfig.getTest_virtualized_services()) {
-                            serviceId = servicesMap.get(testVirtualizedService);
-                            body = readJson.createTestVirtualizedService(testConfigId, serviceId);
+                            int serviceId = servicesMap.get(testVirtualizedService);
+                            body = readJson.createTestService(testConfigId, serviceId);
                             response = readJson.fetchResponse(url + "/api/test_virtualized_service", HttpMethod.POST, token, body);
                         }
                         for (String testIntermediateService: testConfig.getTest_intermediate_services()) {
-                            serviceId = servicesMap.get(testIntermediateService);
-                            body = readJson.createTestVirtualizedService(testConfigId, serviceId);
+                            int serviceId = servicesMap.get(testIntermediateService);
+                            body = readJson.createTestService(testConfigId, serviceId);
                             response = readJson.fetchResponse(url + "/api/test_intermediate_service", HttpMethod.POST, token, body);
                         }
                     }
@@ -269,11 +280,10 @@ public class ReadJson {
         return json.toString();
     }
 
-    private String createTestConfig(TestConfigs testConfig, int appId, int serviceId) {
+    private String createTestConfig(TestConfigs testConfig, int appId) {
         JSONObject json = new JSONObject();
         json.put("testConfigName", testConfig.getTestConfigName());
         json.put("appId", appId);
-        json.put("gatewayServiceId", serviceId);
         return json.toString();
     }
 
@@ -284,7 +294,7 @@ public class ReadJson {
         return json.toString();
     }
 
-    private String createTestVirtualizedService(int testId, int serviceId) {
+    private String createTestService(int testId, int serviceId) {
         JSONObject json = new JSONObject();
         json.put("testId", testId);
         json.put("serviceId", serviceId);
