@@ -73,7 +73,8 @@ class HttpClientTabs extends Component {
             selectedSaveableTabId: "",
             collectionName: "",
             collectionLabel: "",
-            modalErroMessage: ""
+            modalErroSaveMessage: "",
+            modalErroCreateCollectionMessage: ""
         };
         this.addTab = this.addTab.bind(this);
         this.handleTabChange = this.handleTabChange.bind(this);
@@ -108,7 +109,7 @@ class HttpClientTabs extends Component {
     }
     
     showSaveModal(tabId) {
-        this.setState({ showSaveModal: true, collectionName: "", collectionLabel: "", selectedSaveableTabId: tabId});
+        this.setState({ showSaveModal: true, collectionName: "", collectionLabel: "", selectedSaveableTabId: tabId, modalErroSaveMessage: "", modalErroCreateCollectionMessage: ""});
     }
 
     onToggle(node, toggled){
@@ -418,13 +419,6 @@ class HttpClientTabs extends Component {
         let tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
         if(tabIndex < 0) return;
         const {userHistoryCollection} = this.state;
-        const mockContext = {
-            collectionId: userHistoryCollection.collec,
-            recordingId: this.state.tabs[tabIndex].recordingIdAddedFromClient
-        }
-        if(isElectron()) {
-            ipcRenderer.send('mock_context_change', mockContext);
-        }
         // make the request and update response status, headers & body
         // extract headers
         // extract body
@@ -640,21 +634,25 @@ class HttpClientTabs extends Component {
                 api.post(`${config.apiBaseUrl}/cs/storeUserReqResp/${recordingId}`, data)
                     .then((serverRes) => {
                         this.setState({
-                            showSaveModal : false,
-                            modalErroMessage: ""
+                            showSaveModal : true,
+                            modalErroSaveMessage: "Saved Successfully! You can close this modal."
                         })
                         setTimeout(() => {
                             this.loadFromHistory();
                             this.loadUserCollections();
                         }, 2000);
                     }, (error) => {
+                        this.setState({
+                            showSaveModal : true,
+                            modalErroSaveMessage: "Error saving: " + error
+                        })
                         console.log("error: ", error);
                     })
             } catch(error) {
                 console.log("Error ", error);
                 this.setState({
-                    showSaveModal : false,
-                    modalErroMessage: error
+                    showSaveModal : true,
+                    modalErroSaveMessage: "Error saving: " + error
                 })
                 throw new Error("Error");
             }
@@ -689,10 +687,22 @@ class HttpClientTabs extends Component {
             api.post(`${config.apiBaseUrl}/cs/start/${user.customer_name}/${app}/dev/Default${app}`, searchParams, configForHTTP)
                 .then((serverRes) => {
                     this.loadUserCollections();
+                    this.setState({
+                        showSaveModal : true,
+                        modalErroCreateCollectionMessage: "Created Successfully! Please select this newly created collection from below dropdown and click save."
+                    });
                 }, (error) => {
+                    this.setState({
+                        showSaveModal : true,
+                        modalErroCreateCollectionMessage: "Error saving: " + error
+                    })
                     console.log("error: ", error);
                 })
         } catch(error) {
+            this.setState({
+                showSaveModal : true,
+                modalErroCreateCollectionMessage: "Error saving: " + error
+            })
             console.log("Error ", error);
             throw new Error("Error");
         }
@@ -1160,7 +1170,7 @@ class HttpClientTabs extends Component {
 
     render() {
         const { cube } = this.props;
-        const { app, cubeRunHistory, userCollections, collectionName, collectionLabel, modalErroMessage } = this.state;
+        const { app, cubeRunHistory, userCollections, collectionName, collectionLabel, modalErroSaveMessage, modalErroCreateCollectionMessage } = this.state;
 
         return (
             <div className="" style={{display: "flex", height: "100%"}}>
@@ -1306,6 +1316,7 @@ class HttpClientTabs extends Component {
                                         <FormControl componentClass="input" placeholder="Label" name="collectionLabel" value={collectionLabel} onChange={this.handleChange} />
                                     </FormGroup>
                                 </div>
+                                <p style={{fontWeight: 500}}>{modalErroCreateCollectionMessage}</p>
                                 <div>
                                     <Button onClick={this.handleCreateCollection}>Create</Button>
                                 </div>
@@ -1325,7 +1336,7 @@ class HttpClientTabs extends Component {
                                         </FormControl>
                                     </FormGroup>
                                 </div>
-                                <p>{modalErroMessage}</p>
+                                <p style={{marginTop: "10px", fontWeight: 500}}>{modalErroSaveMessage}</p>
                             </Modal.Body>
                             <Modal.Footer>
                                 <Button onClick={this.handleSave}>Save</Button>
