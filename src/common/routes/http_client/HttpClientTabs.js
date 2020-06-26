@@ -17,6 +17,8 @@ import api from '../../api';
 import config from '../../config';
 
 import HttpClient from "./HttpClient";
+import TreeNodeContainer from "./TreeNodeContainer";
+import TreeNodeToggle from "./TreeNodeToggle";
 import ResponsiveTabs from '../../components/Tabs';
 // IMPORTANT you need to include the default styles
 import '../../components/Tabs/styles.css';
@@ -1135,6 +1137,18 @@ class HttpClientTabs extends Component {
         );
     }
 
+    renderTreeNodeContainer(props) {
+        return (
+            <TreeNodeContainer {...props} />
+        );
+    }
+
+    renderTreeNodeToggle(props) {
+        return (
+            <TreeNodeToggle {...props} />
+        );
+    }
+
     render() {
         const { cube } = this.props;
         const { app, cubeRunHistory, userCollections, collectionName, collectionLabel, modalErroMessage } = this.state;
@@ -1179,7 +1193,7 @@ class HttpClientTabs extends Component {
                                                                 data={eachTabRun}
                                                                 style={CollectionTreeCSS}
                                                                 onToggle={this.onToggle}
-                                                                decorators={{...decorators, Header: this.renderTreeNodeHeader}}
+                                                                decorators={{...decorators, Header: this.renderTreeNodeHeader, Container: this.renderTreeNodeContainer, Toggle: this.renderTreeNodeToggle}}
                                                             />
                                                         );
                                                     })}
@@ -1211,7 +1225,7 @@ class HttpClientTabs extends Component {
                                                                 data={eachApiTrace}
                                                                 style={CollectionTreeCSS}
                                                                 onToggle={this.onToggle}
-                                                                decorators={{...decorators, Header: this.renderTreeNodeHeader}}
+                                                                decorators={{...decorators, Header: this.renderTreeNodeHeader, Container: this.renderTreeNodeContainer, Toggle: this.renderTreeNodeToggle}}
                                                             />
                                                         );
                                                     })}
