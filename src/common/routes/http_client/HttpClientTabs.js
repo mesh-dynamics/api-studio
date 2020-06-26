@@ -948,7 +948,7 @@ class HttpClientTabs extends Component {
                             }
                             let reqObject = {
                                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-                                httpURL: "https://moviebook.dev.cubecorp.io/" + httpRequestEvent.apiPath,
+                                httpURL: "http://localhost/" + httpRequestEvent.apiPath,
                                 headers: headers,
                                 queryStringParams: queryParams,
                                 bodyType: "formData",
@@ -1002,7 +1002,7 @@ class HttpClientTabs extends Component {
                 "eventTypes": [],
                 "services": [node.service],
                 "traceIds": [node.traceIdAddedFromClient],
-                "reqIds": [],
+                "reqIds": reqIdArray,
                 "paths": [node.apiPath],
                 "collection": node.collectionIdAddedFromClient
             }
@@ -1045,7 +1045,7 @@ class HttpClientTabs extends Component {
                             }
                             let reqObject = {
                                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-                                httpURL: "https://moviebook.dev.cubecorp.io/" + httpRequestEvent.apiPath,
+                                httpURL: "http://localhost/" + httpRequestEvent.apiPath,
                                 headers: headers,
                                 queryStringParams: queryParams,
                                 bodyType: "formData",
@@ -1188,7 +1188,7 @@ class HttpClientTabs extends Component {
                                     return (
                                         <Panel key={k + "_" + i} id="collapsible-panel-example-2" defaultExpanded>
                                             <Panel.Heading style={{paddingLeft: "9px"}}>
-                                                <Panel.Title toggle>
+                                                <Panel.Title toggle style={{fontSize: "13px"}}>
                                                     {k}
                                                 </Panel.Title>
                                             </Panel.Heading>
@@ -1230,7 +1230,7 @@ class HttpClientTabs extends Component {
                                     return (
                                         <Panel id="collapsible-panel-example-2" key={eachCollec.collec} value={eachCollec.collec} onClick={() => this.handlePanelClick(eachCollec.collec)}>
                                             <Panel.Heading style={{paddingLeft: "9px"}}>
-                                                <Panel.Title toggle>
+                                                <Panel.Title toggle style={{fontSize: "13px"}}>
                                                     {eachCollec.name}
                                                 </Panel.Title>
                                             </Panel.Heading>
