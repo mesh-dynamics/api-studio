@@ -1263,11 +1263,8 @@ public class CubeStore {
                         Event requestEvent = buildEvent(request, rec.collection, rec.recordingType,
                             reqId);
                         requestEvent.parseAndSetKey(comparator.getCompareTemplate());
-
-                        final String resReqId = io.md.utils.Utils.generateRequestId(
-                                response.service, response.getTraceId());
                         Event responseEvent = buildEvent(response, rec.collection,
-                            rec.recordingType, resReqId);
+                            rec.recordingType, reqId);
 
                         if (!rrstore.save(requestEvent) || !rrstore.save(responseEvent)) {
                             LOGGER.error(new ObjectMessage(
