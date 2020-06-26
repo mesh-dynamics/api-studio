@@ -389,7 +389,7 @@ class HttpClientTabs extends Component {
         let headers = new Headers();
         headers.delete('Content-Type');
         httpReqestHeaders.forEach(each => {
-            if(each.name && each.value && each.name.indexOf(":") < 0 && each.name.indexOf("x-") < 0) headers.append(each.name, each.value);
+            if(each.name && each.value && each.name.indexOf(":") < 0) headers.append(each.name, each.value);
         })
         return headers;
     }
@@ -615,8 +615,8 @@ class HttpClientTabs extends Component {
                     {
                         hdrs: httpResponseHeaders,
                         body: httpResponseBody,
-                        status: tabToSave.responseStatus,
-                        statusCode: tabToSave.responseStatus
+                        status: httpResponseEvent.payload[1].status,
+                        statusCode: httpResponseEvent.payload[1].statusCode
                     }
                 ] 
             }
