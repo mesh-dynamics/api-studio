@@ -463,7 +463,6 @@ class HttpClientTabs extends Component {
         // Make request
         // https://www.mocky.io/v2/5185415ba171ea3a00704eed
         let fetchedResponseHeaders = {}, responseStatus = "", responseStatusText = "";
-        const {userHistoryCollection} = this.state;
         return fetch(fetchURL, fetchConfig).then((response) => {
             responseStatus = response.status;
             responseStatusText = response.statusText;
