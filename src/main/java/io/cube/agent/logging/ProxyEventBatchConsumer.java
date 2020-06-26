@@ -34,29 +34,32 @@ public class ProxyEventBatchConsumer {
 
 	private long lastTimeStamp = System.currentTimeMillis();
 
-	private long maxWaitTimeMillis = 2000;
+	private long maxWaitTimeMillis = 5000;
 
 	public ProxyEventBatchConsumer() {
 		new Thread(() -> {
-			try {
-				Thread.sleep(maxWaitTimeMillis);
-			} catch (InterruptedException e) {
-				LOGGER.error("Interrupt exception" ,e);
-			}
-			writeLock.lock();
-			try {
-				emptyBuffer();
-			} catch (Exception e) {
-				LOGGER.error("Error while emptying buffer", e);
-			} finally {
-				writeLock.unlock();
+			while (true) {
+				try {
+					Thread.sleep(maxWaitTimeMillis);
+				} catch (InterruptedException e) {
+					LOGGER.error("Interrupt exception", e);
+				}
+				writeLock.lock();
+				try {
+					emptyBuffer();
+				} catch (Exception e) {
+					LOGGER.error("Error while emptying buffer", e);
+				} finally {
+					writeLock.unlock();
+				}
 			}
 		}).start();
 	}
 
 	public void emptyBuffer() {
 		long currentTime = System.currentTimeMillis();
-		if (temporaryBuffer.size() >= maxQueueSize || (currentTime - lastTimeStamp >= 2000 && temporaryBuffer.size()
+		if (temporaryBuffer.size() >= maxQueueSize || (currentTime - lastTimeStamp >= 2000
+			&& temporaryBuffer.size()
 			> 0)) {
 			StringBuilder builder = new StringBuilder();
 			temporaryBuffer.forEach(
@@ -72,14 +75,15 @@ public class ProxyEventBatchConsumer {
 						if (bufferEvent.metaData != null) {
 							bufferEvent.metaData.forEach((x, y) ->
 								metaDataStringBuilder.append(x).append("->")
-									.append(y).append(" "));}
+									.append(y).append(" "));
+						}
 						LOGGER.info("SERIALIZED EVENT FOR BATCH REQUEST :: SERVICE :: " +
 							bufferEvent.service + " :: API PATH :: " + bufferEvent.apiPath
 							+ " :: REQ ID :: " + bufferEvent.reqId + " :: TRACE ID :: "
 							+ bufferEvent.getTraceId() + " :: SPAN ID :: " + bufferEvent.spanId
 							+ " :: PARENT SPAN ID " + bufferEvent.parentSpanId
-							+ " :: EVENT TYPE :: "+  bufferEvent.eventType
-							+ " :: EVENT META DATA "  + metaDataStringBuilder.toString());
+							+ " :: EVENT TYPE :: " + bufferEvent.eventType
+							+ " :: EVENT META DATA " + metaDataStringBuilder.toString());
 					} catch (JsonProcessingException e) {
 						LOGGER.error("Error while converting event to string", e);
 					}

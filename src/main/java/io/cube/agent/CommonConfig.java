@@ -138,8 +138,8 @@ public class CommonConfig {
 		singleInstance = new AtomicReference<>();
 		singleInstance.set(config);
 		//toggle on ProxyBatchRecorder and off COnsoleRecorder if needed.
-		ConsoleRecorder.init();
-		//ProxyBatchRecorder.init();
+//		ConsoleRecorder.init();
+		ProxyBatchRecorder.init();
 
 		boolean isServerPolling = envSysStaticConf
 			.getBoolean(io.cube.agent.Constants.MD_POLLINGCONFIG_POLLSERVER);

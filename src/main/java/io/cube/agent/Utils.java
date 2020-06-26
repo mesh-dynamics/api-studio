@@ -257,13 +257,13 @@ public class Utils {
 				configInstance.disruptorFileOutName, configInstance.disruptorLogFileMaxSize,
 				configInstance.disruptorLogMaxBackup, configInstance.ringBufferSize)) {
 				//toggle on ProxyBatchRecorder and off COnsoleRecorder if needed.
-				ConsoleRecorder.init();
-				//ProxyBatchRecorder.init();
+//				ConsoleRecorder.init();
+				ProxyBatchRecorder.init();
 			}
 		} else {
 			//toggle on ProxyBatchRecorder and off COnsoleRecorder if needed.
-			ConsoleRecorder.init();
-			//ProxyBatchRecorder.init();
+//			ConsoleRecorder.init();
+			ProxyBatchRecorder.init();
 		}
 	}
 
