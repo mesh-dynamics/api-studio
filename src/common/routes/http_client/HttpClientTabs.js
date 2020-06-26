@@ -16,7 +16,6 @@ import { cubeService } from "../../services";
 import api from '../../api';
 import config from '../../config';
 import { isElectron, ipcRenderer } from '../../helpers/ipc-renderer';
-import logger from 'electron-log';
 
 import HttpClient from "./HttpClient";
 import TreeNodeContainer from "./TreeNodeContainer";
@@ -426,8 +425,6 @@ class HttpClientTabs extends Component {
         }
         // TODO Need to refactor this
         if(isElectron()) {
-            if(logger) logger.info("collectionId: ", userHistoryCollection.collec);
-            if(logger) logger.info("recordingId: ", this.state.tabs[tabIndex].recordingIdAddedFromClient);
             ipcRenderer.send('mock_context_change', mockContext);
         }
         // make the request and update response status, headers & body
