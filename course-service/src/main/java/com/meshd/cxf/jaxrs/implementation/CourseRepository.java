@@ -1,5 +1,7 @@
 package com.meshd.cxf.jaxrs.implementation;
 
+import static io.cube.apachecxf.egress.Utils.getMockingURI;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.cxf.jaxrs.client.WebClient;
@@ -28,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.CommonConfig;
 import io.cube.apachecxf.egress.MDClientLoggingFilter;
 import io.cube.apachecxf.egress.MDClientMockingFilter;
 import io.cube.apachecxf.egress.MDClientTracingFilter;
@@ -130,7 +134,7 @@ public class CourseRepository {
 	public Student findStudentById(@PathParam("studentId") int id) throws URISyntaxException {
 		URIBuilder uriBuilder = new URIBuilder(URL);
 		uriBuilder.setPath(uriBuilder.getPath() + "/" + id);
-		WebClient studentWebClient = WebClient.create(uriBuilder.build().toString(),
+		WebClient studentWebClient = WebClient.create(getMockingURI(uriBuilder.build().toString()),
 			Arrays.asList(new MDClientLoggingFilter(), new MDClientTracingFilter(),
 				new MDClientMockingFilter()))
 			.accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
@@ -190,11 +194,10 @@ public class CourseRepository {
 		URIBuilder uriBuilder = new URIBuilder(URL);
 		uriBuilder.setPath(uriBuilder.getPath() + "/dummyStudentList");
 		uriBuilder.addParameter("count", String.valueOf(studentCount));
-		WebClient studentWebClient = WebClient.create(uriBuilder.build().toString(), Arrays
+		WebClient studentWebClient = WebClient.create(getMockingURI(uriBuilder.build().toString()), Arrays
 			.asList(new MDClientLoggingFilter(), new MDClientMockingFilter(), new MDClientTracingFilter()))
 			.accept(javax.ws.rs.core.MediaType.APPLICATION_JSON).type(
 				javax.ws.rs.core.MediaType.APPLICATION_JSON);
-
 
 		HTTPConduit http = WebClient.getConfig(studentWebClient).getHttpConduit();
 		HTTPClientPolicy httpClientPolicy = new HTTPClientPolicy();
@@ -204,5 +207,23 @@ public class CourseRepository {
 		Response response = studentWebClient.get();
 		LOGGER.info("Recieved response from student/dummyStudentList. \nStatus" + response.getStatus() + "\nResponse: " + response.toString());
 		return response;
+	}
+
+
+	@POST
+	@Path("/createStudentNew")
+	public Response createStudent(Student student) throws Exception     {
+
+		ObjectMapper objectMapper = new ObjectMapper();
+		WebClient localWebClient = WebClient.create(getMockingURI(URL), Arrays
+			.asList(new MDClientLoggingFilter(), new MDClientMockingFilter(), new MDClientTracingFilter()));
+		Response response = localWebClient.type(MediaType.APPLICATION_JSON).post(objectMapper.writeValueAsString(student));
+		int responseCode = response.getStatus();
+		if (responseCode >= 200 && responseCode <= 299) {
+			return Response.ok(student).build();
+		} else {
+			throw new IllegalArgumentException(
+				"HTTP error response returned by Transformer service " + responseCode);
+		}
 	}
 }

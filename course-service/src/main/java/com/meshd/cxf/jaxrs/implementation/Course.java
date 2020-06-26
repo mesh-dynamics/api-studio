@@ -1,5 +1,7 @@
 package com.meshd.cxf.jaxrs.implementation;
 
+import static io.cube.apachecxf.egress.Utils.getMockingURI;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -82,7 +84,9 @@ public class Course {
             }
         }
         ObjectMapper objectMapper = new ObjectMapper();
-        Response response = webClient.type(MediaType.APPLICATION_JSON).post(objectMapper.writeValueAsString(student));
+        WebClient localWebClient = WebClient.fromClient(webClient).create(getMockingURI(webClient.getBaseURI().toString()), Arrays
+            .asList(new MDClientLoggingFilter(), new MDClientMockingFilter(), new MDClientTracingFilter()));
+        Response response = localWebClient.type(MediaType.APPLICATION_JSON).post(objectMapper.writeValueAsString(student));
         int responseCode = response.getStatus();
         if (responseCode >= 200 && responseCode <= 299) {
             studentIds.add(student.getId());
