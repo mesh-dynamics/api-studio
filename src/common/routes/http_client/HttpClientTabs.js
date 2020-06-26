@@ -482,7 +482,7 @@ class HttpClientTabs extends Component {
                     return eachTab; 
                 })
             }, () => {
-                this.saveToCollection(tabId, userHistoryCollection.id);
+                this.saveToCollection(tabId, userHistoryCollection.id, "History");
             });
         })
         .catch((error) => {
@@ -496,7 +496,7 @@ class HttpClientTabs extends Component {
                 })
             });
         }, () => {
-            this.saveToCollection(tabId, userHistoryCollection.id);
+            this.saveToCollection(tabId, userHistoryCollection.id, "History");
         });
     }
 
@@ -615,7 +615,7 @@ class HttpClientTabs extends Component {
         return reqResCubeFormattedData;
     }
 
-    saveToCollection(tabId, recordingId) {
+    saveToCollection(tabId, recordingId, type) {
         const tabToSave = this.state.tabs.find(eachTab => eachTab.id === tabId);
         if(!tabToSave.eventData) return;
         const reqResPair = tabToSave.eventData;
@@ -633,7 +633,7 @@ class HttpClientTabs extends Component {
                 api.post(`${config.apiBaseUrl}/cs/storeUserReqResp/${recordingId}`, data)
                     .then((serverRes) => {
                         this.setState({
-                            showSaveModal : true,
+                            showSaveModal : type === "History" ? false : true,
                             modalErroSaveMessage: "Saved Successfully! You can close this modal."
                         })
                         setTimeout(() => {
@@ -642,7 +642,7 @@ class HttpClientTabs extends Component {
                         }, 2000);
                     }, (error) => {
                         this.setState({
-                            showSaveModal : true,
+                            showSaveModal : type === "History" ? false : true,
                             modalErroSaveMessage: "Error saving: " + error
                         })
                         console.log("error: ", error);
@@ -650,7 +650,7 @@ class HttpClientTabs extends Component {
             } catch(error) {
                 console.log("Error ", error);
                 this.setState({
-                    showSaveModal : true,
+                    showSaveModal : type === "History" ? false : true,
                     modalErroSaveMessage: "Error saving: " + error
                 })
                 throw new Error("Error");
