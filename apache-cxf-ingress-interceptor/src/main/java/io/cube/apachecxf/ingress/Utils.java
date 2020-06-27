@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.cube.agent.CommonConfig;
+import io.cube.agent.ProxyBatchRecorder;
 import io.md.constants.Constants;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
@@ -108,7 +109,7 @@ public class Utils {
 			requestEvent = io.md.utils.Utils
 				.createHTTPRequestEvent(apiPath, queryParams,
 					Utils.createEmptyMultivaluedMap(), meta, requestHeaders, mdTraceInfo,
-					requestBody, Optional.empty(), config.jsonMapper, true);
+					requestBody, Optional.empty(), config.jsonMapper, true, CommonConfig.getInstance().clientMetaDataMap);
 
 		} catch (InvalidEventException e) {
 			LOGGER.error("Invalid Event", e);
@@ -122,7 +123,7 @@ public class Utils {
 			final Span reqLog = io.cube.agent.Utils.createPerformanceSpan(
 				Constants.LOG_REQUEST_EVENT_INGRESS);
 			try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(reqLog)) {
-				config.recorder.record(requestEvent);
+				ProxyBatchRecorder.getInstance().record(requestEvent);
 			} finally {
 				reqLog.finish();
 			}
@@ -139,7 +140,7 @@ public class Utils {
 			responseEvent = io.md.utils.Utils
 				.createHTTPResponseEvent(apiPath, meta,
 					responseHeaders, mdTraceInfo, responseBody, Optional.empty(), config.jsonMapper,
-					true);
+					true, CommonConfig.getInstance().clientMetaDataMap);
 		} catch (InvalidEventException e) {
 			LOGGER.error("Invalid Event", e);
 		} catch (JsonProcessingException e) {
@@ -152,7 +153,7 @@ public class Utils {
 			final Span respLog = io.cube.agent.Utils.createPerformanceSpan(Constants
 				.LOG_RESPONSE_EVENT_INGRESS);
 			try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(respLog)) {
-				config.recorder.record(responseEvent);
+				ProxyBatchRecorder.getInstance().record(responseEvent);
 			} finally {
 				respLog.finish();
 			}

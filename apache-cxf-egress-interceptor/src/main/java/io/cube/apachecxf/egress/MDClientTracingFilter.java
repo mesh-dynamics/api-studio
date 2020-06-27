@@ -30,6 +30,7 @@ public class MDClientTracingFilter implements ClientRequestFilter {
 	@Override
 	public void filter(ClientRequestContext clientRequestContext) {
 		try {
+			LOGGER.info("Inside Egress tracing filter");
 			MultivaluedMap<String, String> mdTraceHeaders = new MultivaluedHashMap<>();
 			CommonUtils.injectContext(mdTraceHeaders);
 			MultivaluedMap<String, Object> clientHeaders = clientRequestContext.getHeaders();
