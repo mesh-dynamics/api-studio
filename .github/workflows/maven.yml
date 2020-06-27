@@ -3,7 +3,7 @@ name: interceptor build
 on:
   push:
     branches:
-      - develop
+      - master
     paths:
       - 'apache-cxf-ingress-interceptor/*'
       - 'apache-cxf-egress-interceptor/*'
@@ -34,7 +34,7 @@ jobs:
 on:
   push:
     branches:
-      - develop
+      - master
     paths:
       - 'jaxrs-ingress-interceptor/*'
       - 'jaxrs-egress-interceptor/*'
@@ -62,7 +62,7 @@ jobs:
 on:
   push:
     branches:
-      - develop
+      - master
     paths:
       - 'spring-ingress-interceptor/*'
       - 'spring-egress-resttemplate-interceptor/*'
