@@ -12,9 +12,11 @@ apps/cube/kubernetes/*
 apps/moviebook/kubernetes/*
 apps/jersy119/kubernetes/*
 apps/apachecxf/kubernetes/*
+apps/springboot/kubernetes/*
 !apps/moviebook/kubernetes/.gitkeep
 !apps/common/kubernetes/.gitkeep
 !apps/cube/kubernetes/.gitkeep
 !apps/jersy119/kubernetes/.gitkeep
 !apps/apachecxf/kubernetes/.gitkeep
+!apps/springboot/kubernetes/.gitkeep
 .idea
