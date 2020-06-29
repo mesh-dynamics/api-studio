@@ -85,13 +85,15 @@ export const apiCatalogActions = {
                 selectedService = ""
                 selectedApiPath = ""
                 selectedInstance = ""
-                startTime = new Date(Date.now() - 86400 * 1000).toISOString()
-                endTime = new Date(Date.now()).toISOString()
 
                 if (selectedSource==="UserGolden" || selectedSource==="Golden") {
-                  dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, selectedSource));
+                    startTime = null;
+                    endTime = null;
+                    dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, selectedSource));
                 } else if (selectedSource==="Capture") {
-                  dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, "Capture", null, startTime, endTime));   
+                    startTime = new Date(Date.now() - 86400 * 1000).toISOString()
+                    endTime = new Date(Date.now()).toISOString()
+                    dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, "Capture", null, startTime, endTime));   
                 }
                 break;
 
