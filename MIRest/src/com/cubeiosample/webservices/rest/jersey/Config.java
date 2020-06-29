@@ -51,6 +51,7 @@ public class Config {
     public static final String V2 = "v2";
     public String VERSION = "v1";
     public double TIME_BETWEEN_RUNS = 60000;
+    public boolean COMPACT_FORMAT = false;
 	
 	public Config() {
 		LOGGER.info("Creating config");
@@ -191,6 +192,14 @@ public class Config {
           ALWAYS_HIDE_LAST_NAME = false;
         } else {
           ALWAYS_HIDE_LAST_NAME = true;
+        }
+
+        // compact format settings
+        String compactFormat = this.getProperty("COMPACT_FORMAT");
+        if (compactFormat == null || !compactFormat.equalsIgnoreCase("true")) {
+          COMPACT_FORMAT = false;
+        } else {
+          COMPACT_FORMAT = true;
         }
 
         if (USE_KUBE) {

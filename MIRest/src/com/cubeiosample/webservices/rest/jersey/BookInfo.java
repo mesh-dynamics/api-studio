@@ -86,9 +86,13 @@ public class BookInfo {
                 JSONObject detailsResult = null;
                 bookInfo.put("details", detailsResult);
             } else {
+                String format = "full";
+                if (this.config.COMPACT_FORMAT) {
+                    format = "compact";
+                }
                 response = RestUtils.callWithRetries(tracer,
-                        bookDetailsService.path("details").path(String.format("%d", id)).request(MediaType.APPLICATION_JSON),
-                        null, "GET", 3, config.ADD_TRACING_HEADERS);
+                        bookDetailsService.path("details").path(String.format("%d", id)).queryParam("format", format)
+                            .request(MediaType.APPLICATION_JSON),null, "GET", 3, config.ADD_TRACING_HEADERS);
                 result = new JSONObject(response.readEntity(String.class));
                 bookInfo.put("details", result);
             }

@@ -39,6 +39,10 @@ end
 server.mount_proc '/details' do |req, res|
     pathParts = req.path.split('/')
     headers = get_forward_headers(req)
+    params = req.query()
+    if (params.include?('format'))
+        format = params['format']
+    end
 
     begin
         begin
@@ -46,7 +50,7 @@ server.mount_proc '/details' do |req, res|
         rescue
           raise 'please provide numeric product id'
         end
-        details = get_book_details(id, headers)
+        details = get_book_details(id, headers, format)
         res.body = details.to_json
         res['Content-Type'] = 'application/json'
     rescue => error
@@ -57,12 +61,20 @@ server.mount_proc '/details' do |req, res|
 end
 
 # TODO: provide details on different books.
-def get_book_details(id, headers)
+def get_book_details(id, headers, format)
     if ENV['ENABLE_EXTERNAL_BOOK_SERVICE'] === 'true' then
       # the ISBN of one of Comedy of Errors on the Amazon
       # that has Shakespeare as the single author
         isbn = '0486424618'
-        return fetch_details_from_external_service(isbn, id, headers)
+        return fetch_details_from_external_service(isbn, id, headers, format)
+    end
+
+    if(format === 'compact')
+        return {
+            'id' => id,
+            'author': 'William Shakespeare',
+            'language' => 'English'
+        }
     end
 
     return {
@@ -78,7 +90,7 @@ def get_book_details(id, headers)
     }
 end
 
-def fetch_details_from_external_service(isbn, id, headers)
+def fetch_details_from_external_service(isbn, id, headers, format)
     uri = URI.parse('https://www.googleapis.com/books/v1/volumes?q=isbn:' + isbn)
     http = Net::HTTP.new(uri.host, ENV['DO_NOT_ENCRYPT'] === 'true' ? 80:443)
     http.read_timeout = 5 # seconds
@@ -105,6 +117,14 @@ def fetch_details_from_external_service(isbn, id, headers)
     type = book['printType'] === 'BOOK'? 'paperback' : 'unknown'
     isbn10 = get_isbn(book, 'ISBN_10')
     isbn13 = get_isbn(book, 'ISBN_13')
+
+    if(format === 'compact')
+        return {
+            'id' => id,
+            'author': book['authors'][0],
+            'language' => language
+        }
+    end
 
     return {
         'id' => id,
