@@ -196,6 +196,7 @@ public class Config {
 
         // compact format settings
         String compactFormat = this.getProperty("COMPACT_FORMAT");
+        LOGGER.info("value for compact format  is :: " + compactFormat);
         if (compactFormat == null || !compactFormat.equalsIgnoreCase("true")) {
           COMPACT_FORMAT = false;
         } else {
@@ -210,6 +211,7 @@ public class Config {
         LOGGER.info("final value for number of actors to display is :: " + NUM_ACTORS_TO_DISPLAY);
         LOGGER.info("final value for use caching is :: " + USE_CACHING);
         LOGGER.info("final value for last name first is :: " + DISPLAYNAME_LASTFIRST);
+        LOGGER.info("final value for compact format  is :: " + COMPACT_FORMAT);
 
 	}
 	
