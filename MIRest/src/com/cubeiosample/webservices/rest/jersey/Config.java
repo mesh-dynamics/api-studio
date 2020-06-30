@@ -195,12 +195,14 @@ public class Config {
         }
 
         // compact format settings
-        String compactFormat = this.getProperty("COMPACT_FORMAT");
+        String compactFormat = System.getenv("COMPACT_FORMAT");
         LOGGER.info("value for compact format  is :: " + compactFormat);
-        if (compactFormat == null || !compactFormat.equalsIgnoreCase("true")) {
-          COMPACT_FORMAT = false;
-        } else {
-          COMPACT_FORMAT = true;
+        if (compactFormat != null) {
+          if (compactFormat.equalsIgnoreCase("true")) {
+            COMPACT_FORMAT = true;
+          } else {
+            COMPACT_FORMAT = false;
+          }
         }
 
         if (USE_KUBE) {
