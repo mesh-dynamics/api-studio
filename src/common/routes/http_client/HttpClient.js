@@ -4,12 +4,8 @@ import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, 
 import HttpRequestMessage from "./HttpRequestMessage";
 import HttpResponseMessage from "./HttpResponseMessage";
 
-import sortJson from "../../utils/sort-json";
 import ReactDiffViewer from '../../utils/diff/diff-main';
-import ReduceDiff from '../../utils/ReduceDiff';
 import config from "../../config";
-import generator from '../../utils/generator/json-path-generator';
-import api from "../../api";
 import statusCodeList from "../../StatusCodeList";
 import {resolutionsIconMap} from '../../components/Resolutions.js';
 
@@ -59,10 +55,104 @@ class HttpClient extends Component {
             selectedRequestMatchType: "All",
             selectedResponseMatchType: "All",
             selectedResolutionType: "All",
-            showAll: true
+            showAll: true,
+            collapseLength: parseInt(config.diffCollapseLength),
+            collapseLengthIncrement: parseInt(config.diffCollapseLengthIncrement),
+            maxLinesLength: parseInt(config.diffMaxLinesLength),
+            maxLinesLengthIncrement: parseInt(config.diffMaxLinesLengthIncrement),
+            incrementCollapseLengthForRecReqId: null,
+            incrementCollapseLengthForRepReqId: null,
+            incrementStartJsonPath: null
         };
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
         this.handleSearchFilterChange = this.handleSearchFilterChange.bind(this);
+        this.increaseCollapseLength = this.increaseCollapseLength.bind(this);
+    }
+
+    increaseCollapseLength(e, jsonPath, recordReqId, replayReqId, typeOfChunkHandler) {
+        const { collapseLength, collapseLengthIncrement, maxLinesLength, maxLinesLengthIncrement } = this.state;
+        let newCollapseLength = collapseLength, newMaxLinesLength = maxLinesLength;
+        if(typeOfChunkHandler === "collapseChunkLength") {
+            newCollapseLength = collapseLength + collapseLengthIncrement;
+        } else {
+            newMaxLinesLength = maxLinesLength + maxLinesLengthIncrement;
+        }
+        this.setState({
+            collapseLength: newCollapseLength, 
+            maxLinesLength: newMaxLinesLength,
+            incrementCollapseLengthForRecReqId: recordReqId,
+            incrementCollapseLengthForRepReqId: replayReqId,
+            incrementStartJsonPath: jsonPath
+        });
+    }
+
+    addCompressToggleData(diffData, collapseLength, maxLinesLength) {
+        let indx  = 0, atleastADiff = false;
+        if(!diffData) return diffData;
+        for (let i = config.diffCollapseStartIndex; i < diffData.length; i++) {
+            let diffDataChunk = diffData[i];
+            if(diffDataChunk.serverSideDiff !== null || (diffDataChunk.added || diffDataChunk.removed)) {
+                let j = i - 1, chunkTopLength = 0;
+                diffDataChunk["collapseChunk"] = false;
+                atleastADiff = true;
+                while (diffData[j] && diffData[j].serverSideDiff === null && chunkTopLength < collapseLength) {
+                    diffData[j]["collapseChunk"] = false;
+                    chunkTopLength++;
+                    j--;
+                }
+                let k = i + 1, chunkBottomLength = 0;
+                while (diffData[k] && diffData[k].serverSideDiff === null && chunkBottomLength < collapseLength) {
+                    diffData[k]["collapseChunk"] = false;
+                    chunkBottomLength++;
+                    k++;
+                }
+            } else {
+                if(!diffDataChunk.hasOwnProperty("collapseChunk")) diffDataChunk["collapseChunk"] = true;
+            }
+        }
+        if(!atleastADiff) {
+            for (let m = 0; m < collapseLength; m++) {
+                let tempDiffDataChunk = diffData[m];
+                if(tempDiffDataChunk) tempDiffDataChunk["collapseChunk"] = false;
+                if(m >= diffData.length) break;
+            }
+        }
+        let toggleDrawChunk  = false, arbitratryCount = 0;
+        let jsonPath, previousChunk, showMaxChunkToggle = false, arrayCount = 0, activatedCount;
+        for (let eachChunk of diffData) {
+            eachChunk["showMaxChunk"] = false;
+            eachChunk["showMaxChunkToggle"] = false;
+            if(arbitratryCount >= maxLinesLength && !showMaxChunkToggle) {
+                eachChunk["showMaxChunk"] = true;
+                showMaxChunkToggle = true;
+                activatedCount = arrayCount;
+            }
+            if(showMaxChunkToggle) {
+                eachChunk["showMaxChunkToggle"] = true;
+            }
+            if(jsonPath === eachChunk.jsonPath && showMaxChunkToggle && activatedCount === arrayCount) {
+                previousChunk["showMaxChunk"] = true;
+            }
+            if(eachChunk.collapseChunk === true && toggleDrawChunk === false) {
+                toggleDrawChunk = true;
+                eachChunk["drawChunk"] = true;
+                arbitratryCount++;
+            } else if(eachChunk.collapseChunk === true && toggleDrawChunk === true) {
+                eachChunk["drawChunk"] = false;
+            } else if(eachChunk.collapseChunk === false) {
+                toggleDrawChunk = false;
+                eachChunk["drawChunk"] = false;
+                if(jsonPath !== eachChunk.jsonPath) {
+                    arbitratryCount++;
+                }
+            } else if (!eachChunk.collapseChunk) {
+                arbitratryCount++;
+            }
+            jsonPath = eachChunk.jsonPath;
+            previousChunk = eachChunk;
+            arrayCount++;
+        }
+        return diffData;
     }
 
     handleSearchFilterChange(e) {
@@ -103,7 +193,7 @@ class HttpClient extends Component {
         const { diffLayoutData, showCompleteDiff } = this.props;
         const selectedDiffItem = diffLayoutData ? diffLayoutData[0] : null;
         console.log("diffLayoutData: ", diffLayoutData);
-        let { selectedResolutionType, showTrace, showLogs } = this.state;
+        let { selectedResolutionType, showTrace, showLogs, collapseLength, incrementCollapseLengthForRecReqId, incrementCollapseLengthForRepReqId, maxLinesLength } = this.state;
         let resolutionTypesForMenu = [];
         const filterFunction = (item, index, itself) => {
             item.count = itself.reduce((counter, currentItem, currentIndex) => {
@@ -119,6 +209,21 @@ class HttpClient extends Component {
             }
             return idx === index;
         };
+        let diffLayoutDataResCount = diffLayoutData && diffLayoutData.map(eachItem => {
+            let resolutionTypes = [];
+            if (incrementCollapseLengthForRepReqId && eachItem.replayReqId === incrementCollapseLengthForRepReqId) {
+                this.addCompressToggleData(eachItem.reductedDiffArray, collapseLength, maxLinesLength);
+            }
+            for (let eachJsonPathParsedDiff of eachItem.parsedDiff) {
+                resolutionTypes.push({value: eachJsonPathParsedDiff.resolution, count: 0});
+            }
+            resolutionTypes = resolutionTypes.filter(filterFunction);
+            return {
+                ...eachItem,
+                resolutionTypes
+            };
+        });
+      
         let filterPaths = [];
         if(selectedDiffItem) {
             for (let eachJsonPathParsedDiff of selectedDiffItem.parsedDiff) {
