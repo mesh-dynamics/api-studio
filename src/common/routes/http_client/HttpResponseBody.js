@@ -17,39 +17,21 @@ import "./diff.css";
 class HttpResponseBody extends Component {
     constructor(props) {
         super(props);
-        const leftValue = this.props.recordedResponseBody;
-        const rightValue = this.props.responseBody;
-        this.state = {
-            leftValue: leftValue,
-            rightValue: rightValue,
-            editor: null
-        };
         this.handleChange = this.handleChange.bind(this);
-        this.onLoad = this.onLoad.bind(this);
     }
 
     handleChange(value) {
         const { tabId, isOutgoingRequest } = this.props;
         this.props.updateParam(isOutgoingRequest, tabId, "recordedResponseBody", "recordedResponseBody", value[0]);
         this.props.updateParam(isOutgoingRequest, tabId, "responseBody", "responseBody", value[1]);
-        this.setState({
-            leftValue: value[0],
-            rightValue: value[1]
-        });
-    }
-
-    onLoad(editor) {
-        this.setState({
-            editor: editor
-        });
     }
 
     render() {
-        const showBody = this.props.showBody;
+        const { showBody, tabId } = this.props;
         return showBody ? (
             <div>
                 <DiffEditor
-                    name="responseBody"
+                    name={"responseBody" + tabId}
                     value={[this.props.recordedResponseBody, this.props.responseBody]}
                     width="100%"
                     mode={this.props.responseBodyType}
@@ -58,7 +40,6 @@ class HttpResponseBody extends Component {
                         useWorker: false
                     }}
                     onChange={this.handleChange}
-                    onLoad={this.onLoad}
                 />
             </div>
         ) : (<div></div>);
