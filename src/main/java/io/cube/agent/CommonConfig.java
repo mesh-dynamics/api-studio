@@ -42,6 +42,7 @@ import io.cube.agent.samplers.Sampler;
 import io.cube.agent.samplers.SamplerConfig;
 import io.md.constants.Constants;
 import io.md.tracer.MDGlobalTracer;
+import io.md.tracer.MDTextMapCodec;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
 
@@ -128,6 +129,11 @@ public class CommonConfig {
 		app = envSysStaticConf.getString(Constants.MD_APP_PROP);
 		instance = envSysStaticConf.getString(Constants.MD_INSTANCE_PROP);
 		serviceName = envSysStaticConf.getString(Constants.MD_SERVICE_PROP);
+
+		//Note: This is deliberately called before the CommonConfig instantiation for df support
+		//because the MDTextMapCodec is initialized during CommonConfig initialization so appropriate
+		//df suffix for "Cube" has to set before that.
+		MDTextMapCodec.suffixKeysWithDF(app);
 
 		CommonConfig config = null;
 		try {
@@ -513,6 +519,10 @@ public class CommonConfig {
 			uriBuilder.setPath(pathToSet);
 			return Optional.of(uriBuilder.build().normalize());
 		}
+	}
+
+	public Recorder getRecorder() {
+		return ProxyBatchRecorder.getInstance();
 	}
 
 }
