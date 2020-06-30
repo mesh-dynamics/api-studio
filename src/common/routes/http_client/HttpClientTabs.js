@@ -1255,6 +1255,7 @@ class HttpClientTabs extends Component {
                                 eventData: reqResPair,
                                 showOutgoingRequestsBtn: false,
                                 showSaveBtn: true,
+                                recordingIdAddedFromClient: node.recordingIdAddedFromClient,
                                 outgoingRequests: [],
                                 showCompleteDiff: false
                             };
