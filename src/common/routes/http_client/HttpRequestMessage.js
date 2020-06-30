@@ -35,13 +35,13 @@ class HttpRequestMessage extends Component {
     }
     
     handleClick(evt) {
-        const { tabId } = this.props;
-        this.props.driveRequest(tabId);
+        const { tabId, isOutgoingRequest } = this.props;
+        this.props.driveRequest(isOutgoingRequest, tabId);
     }
 
     handleSaveClick(evt) {
-        const { tabId } = this.props;
-        this.props.showSaveModal(tabId);
+        const { tabId, isOutgoingRequest } = this.props;
+        this.props.showSaveModal(isOutgoingRequest, tabId);
     }
 
     handleShowOutgoingRequests() {

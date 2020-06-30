@@ -17,6 +17,7 @@ class HttpResponseMessage extends Component {
         };
         this.onChangeValue = this.onChangeValue.bind(this);
         this.handleChange = this.handleChange.bind(this);
+        this.handleShowCompleteDiffClick = this.handleShowCompleteDiffClick.bind(this);
     }
 
     onChangeValue(event) {
@@ -30,6 +31,11 @@ class HttpResponseMessage extends Component {
         this.setState({
             responseBodyType: event.target.value
         })
+    }
+
+    handleShowCompleteDiffClick(evt) {
+        const { tabId, isOutgoingRequest } = this.props;
+        this.props.handleShowCompleteDiff(isOutgoingRequest, tabId);
     }
 
 
@@ -64,7 +70,12 @@ class HttpResponseMessage extends Component {
                         </FormGroup>
                     </div>
                 </div>
-                <div style={{opacity: "0.7", fontSize: "12px", marginBottom: "12px"}}>HTTP RESPONSE STATUS: <b>{this.props.responseStatus + " " + this.props.responseStatusText}</b></div>
+                <div style={{fontSize: "12px", marginBottom: "12px"}}>
+                    <div style={{opacity: "0.7", display: "inline-block", marginRight: "5px"}}>HTTP RESPONSE STATUS: <b>{this.props.responseStatus + " " + this.props.responseStatusText}</b></div>
+                    <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleShowCompleteDiffClick} >
+                        <Glyphicon glyph="transfer" /> SHOW COMPLETE DIFF
+                    </div>
+                </div>
                 <div>
                     <HttpResponseHeaders tabId={this.props.tabId}
                         showHeaders={this.state.showHeaders} 
