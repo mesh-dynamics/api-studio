@@ -14,13 +14,18 @@ import com.cube.dao.ApiTraceFacetQuery;
 import com.cube.dao.ApiTraceResponse;
 import com.cube.dao.ApiTraceResponse.ServiceReqRes;
 import io.md.constants.ReplayStatus;
+import io.md.dao.ConvertEventPayloadResponse;
 import io.md.dao.Event.EventType;
+import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
+import io.md.dao.Recording.RecordingType;
 import io.md.dao.RecordingOperationSetSP;
+import io.md.dao.ResponsePayload;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,6 +55,7 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
+import org.clapper.util.misc.MultiValueMap;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -59,7 +65,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.UtilException;
-import io.md.constants.ReplayStatus;
 import io.md.core.Comparator;
 import io.md.core.Comparator.MatchType;
 import io.md.core.CompareTemplate;
@@ -70,7 +75,6 @@ import io.md.core.ValidateCompareTemplate;
 import io.md.dao.Event;
 import io.md.dao.Event.RunType;
 import io.md.dao.Recording;
-import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.Replay;
 import io.md.dao.ReqRespMatchResult;
 import io.md.dao.ReqRespUpdateOperation;
@@ -463,7 +467,8 @@ public class AnalyzeWS {
 			    , replayedResponse, matchRes.recordTraceId, matchRes.replayTraceId,
                 matchRes.recordedSpanId, matchRes.recordedParentSpanId,
                 matchRes.replayedSpanId, matchRes.replayedParentSpanId,
-                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+            Optional.empty(), Optional.empty());
 
 		    String resultJson = null;
 		    try {
@@ -559,7 +564,7 @@ public class AnalyzeWS {
            */
             Instant timeStamp = replay.analysisCompleteTimestamp != Instant.EPOCH ? replay.analysisCompleteTimestamp : replay.creationTimeStamp;
             Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerId, replay.app,
-                replay.collection , replay.templateVersion);
+                replay.collection , Optional.of(replay.templateVersion));
             String recordingInfo = "";
             if (recordingOpt.isEmpty()) {
                 LOGGER.error("Unable to find recording corresponding to given replay");
@@ -606,6 +611,7 @@ public class AnalyzeWS {
     @Path("analysisResByPath/{replayId}")
     public Response getAnalysisResultsByPath(@Context UriInfo ui,
         @PathParam("replayId") String replayId) {
+      long size = config.getResponseSize();
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
         AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(replayId
 		    , queryParams);
@@ -658,7 +664,9 @@ public class AnalyzeWS {
                 Optional<String> replayedRequest = Optional.empty();
                 Optional<String> respCompDiff = Optional.empty();
                 Optional<String> recordResponse = Optional.empty();
+                Optional<Boolean> recordResponseTruncated = Optional.of(false);
                 Optional<String> replayResponse = Optional.empty();
+                Optional<Boolean> replayResponseTruncated = Optional.of(false);
 				Optional<String> reqCompDiff = Optional.empty();
 	            Optional<Long> replayReqTime = Optional.empty();
 	            Optional<Long> recordRespTime = Optional.empty();
@@ -670,24 +678,35 @@ public class AnalyzeWS {
 		                .flatMap(rrstore::getRequestEvent);
 	                replayedRequest = replayedRequestEvent.map(e -> e.getPayloadAsJsonString(true));
 	                replayReqTime = replayedRequestEvent.map(e -> e.timestamp.toEpochMilli());
+                  List<Comparator.Diff> responseCompDiffList =
+                      matchRes.respCompareRes.diffs.size() > config.getPathsToKeepLimit()
+                          ?  matchRes.respCompareRes.diffs.subList(0, (int)config.getPathsToKeepLimit())
+                      : matchRes.respCompareRes.diffs;
 
 	                try {
-		                respCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes
-			                .respCompareRes.diffs));
+		                respCompDiff = Optional.of(jsonMapper.writeValueAsString(responseCompDiffList));
 		                reqCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes
 			                .reqCompareRes.diffs));
 	                } catch (JsonProcessingException e) {
 		                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 			                "Unable to convert diff to json string")), e);
 	                }
+	                List<String > pathsToKeep = getPathsToKeep(responseCompDiffList);
 
 	                Optional<Event> recordResponseEvent = matchRes.recordReqId.flatMap(rrstore::getResponseEvent);
-	                recordResponse = recordResponseEvent.map(e -> e.getPayloadAsJsonString(true));
-	                recordRespTime = recordResponseEvent.map(e -> e.timestamp.toEpochMilli());
+                  Optional<ConvertEventPayloadResponse> convertRecordResponse = recordResponseEvent.map(e ->
+                      e.checkAndConvertResponseToString(true, pathsToKeep, size, "/body"));
+                  recordResponse = convertRecordResponse.map(resp -> resp.getResponse());
+                  recordResponseTruncated = convertRecordResponse.map(resp -> resp.isTruncated());
+                  recordRespTime = recordResponseEvent.map(e -> e.timestamp.toEpochMilli());
 
 
 	                Optional<Event> replayResponseEvent = matchRes.replayReqId.flatMap(rrstore::getResponseEvent);
-	                replayResponse = replayResponseEvent.map(e -> e.getPayloadAsJsonString(true));
+
+                  Optional<ConvertEventPayloadResponse> convertReplayResponse = replayResponseEvent.map(e ->
+                      e.checkAndConvertResponseToString(true, pathsToKeep, size, "/body"));
+                  replayResponse = convertReplayResponse.map(resp -> resp.getResponse());
+                  replayResponseTruncated = convertReplayResponse.map(resp -> resp.isTruncated());
 	                replayRespTime = replayResponseEvent.map(e -> e.timestamp.toEpochMilli());
                 }
 
@@ -699,7 +718,8 @@ public class AnalyzeWS {
                     matchRes.recordedSpanId, matchRes.recordedParentSpanId,
                     matchRes.replayedSpanId, matchRes.replayedParentSpanId,
 	                recordReqTime, recordRespTime,
-	                replayReqTime, replayRespTime, Optional.of(replay.instanceId));
+	                replayReqTime, replayRespTime, Optional.of(replay.instanceId)
+                    ,recordResponseTruncated, replayResponseTruncated);
             }).collect(Collectors.toList());
         }).orElse(Collections.emptyList());
 
@@ -725,6 +745,16 @@ public class AnalyzeWS {
                 buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
                     e.getMessage())).build();
         }
+    }
+
+    private List<String> getPathsToKeep(List<Comparator.Diff> diffs) {
+      List<String> pathsToKeep = new ArrayList<>();
+      for(Comparator.Diff diff: diffs) {
+        if(diff.path.contains("body")) {
+          pathsToKeep.add(diff.path);
+        }
+      }
+      return pathsToKeep;
     }
 
 
@@ -1025,7 +1055,7 @@ public class AnalyzeWS {
                 .withStatus(RecordingStatus.Completed).withTemplateSetVersion(updatedTemplateSet.version)
 	            .withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
                 .withName(name).withLabel(label).withTags(tags).withCollectionUpdateOpSetId(collectionUpdateOpSetId)
-	            .withTemplateUpdateOpSetId(templateUpdOpSetId).withUserId(userId);
+	            .withTemplateUpdateOpSetId(templateUpdOpSetId).withUserId(userId).withRecordingType(originalRec.recordingType);
             codeVersion.ifPresent(recordingBuilder::withCodeVersion);
             branch.ifPresent(recordingBuilder::withBranch);
             gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
@@ -1068,7 +1098,7 @@ public class AnalyzeWS {
 	            .withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateSet.version)
 	            .withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
 	            .withName(originalRec.name).withLabel(originalRec.label).withTags(originalRec.tags).withArchived(originalRec.archived)
-	            .withUserId(originalRec.userId);
+	            .withUserId(originalRec.userId).withRecordingType(originalRec.recordingType);
 	        originalRec.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
 	        originalRec.branch.ifPresent(recordingBuilder::withBranch);
 	        originalRec.gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
@@ -1416,9 +1446,13 @@ public class AnalyzeWS {
         List<Event> parentRequestEventsForApiPath = new ArrayList<>();
 
         events.forEach(e -> {
-          if(e.eventType == EventType.HTTPRequest) {
+          if(e.isRequestType()) {
             requestEventsByParentSpanId.add(e.parentSpanId, e);
-            apiTraceFacetQuery.apiPath.ifPresent(path -> parentRequestEventsForApiPath.add(e));
+            apiTraceFacetQuery.apiPath.ifPresent(path -> {
+              if(e.apiPath.equals(path)) {
+                parentRequestEventsForApiPath.add(e);
+              }
+            });
           }
           if(e.eventType == EventType.HTTPResponse) {
             responseEventsByReqId.put(e.reqId, e);
@@ -1433,8 +1467,17 @@ public class AnalyzeWS {
           }
 
         } else {
-          List<Event> parentRequestEvents = requestEventsByParentSpanId.get("NA");
-          if(parentRequestEvents == null) {
+            // find event such that there is no event having span id equal to its parent span id
+            Map<String, Event> requestEventsBySpanId = new HashMap<>();
+            events.forEach(e -> {
+                if (e.isRequestType()) {
+                    requestEventsBySpanId.put(e.spanId, e);
+                }
+            });
+            List<Event> parentRequestEvents = events.stream()
+              .filter(e -> requestEventsBySpanId.get(e.parentSpanId) == null && e.isRequestType())
+                      .collect(Collectors.toList());
+          if(parentRequestEvents.isEmpty()) {
             LOGGER.error(
                 new ObjectMessage(Map.of(Constants.MESSAGE, "No request events found",
                     Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, appId,
@@ -1478,10 +1521,11 @@ public class AnalyzeWS {
 	  if(level == 0) return;
 
 	  Event responseEvent = responseEventsByReqId.get(e.reqId);
+    HTTPRequestPayload payload = (HTTPRequestPayload) e.payload;
 
-    String status = responseEvent != null ? String.valueOf(((HTTPResponsePayload) responseEvent.payload).status) : "";
+    String status = responseEvent != null ? ((ResponsePayload) responseEvent.payload).getStatusCode() : "";
     ServiceReqRes serviceReqRes = new ServiceReqRes(e.service, e.apiPath,
-        e.reqId, e.timestamp, e.spanId, e.parentSpanId, status);
+        e.reqId, e.timestamp, e.spanId, e.parentSpanId, status, payload.method, payload.queryParams);
     apiTraceResponse.res.add(serviceReqRes);
     List<Event> children = requestEventsByParentSpanId.get(e.spanId);
     if(children == null) return;
@@ -1555,7 +1599,9 @@ public class AnalyzeWS {
 					    Optional<Long> recordRespTime,
 		                Optional<Long> replayReqTime,
 		                Optional<Long> replayRespTime,
-                    Optional<String> instanceId
+                    Optional<String> instanceId,
+          Optional<Boolean> recordResponseTruncated,
+          Optional<Boolean> replayResponseTruncated
 	        ) {
             this.recordReqId = recordReqId;
             this.replayReqId = replayReqId;
@@ -1582,6 +1628,8 @@ public class AnalyzeWS {
 		    this.replayReqTime = recordReqTime;
 		    this.replayRespTime = recordReqTime;
 		    this.instanceId = instanceId;
+		    this.recordResponseTruncated = recordResponseTruncated;
+		    this.replayResponseTruncated = replayResponseTruncated;
 	    }
 
         public final Optional<String> recordReqId;
@@ -1603,6 +1651,8 @@ public class AnalyzeWS {
 	    public final Optional<Long> replayReqTime;
 	    public final Optional<Long> replayRespTime;
 	    public final Optional<String> instanceId;
+	    public final Optional<Boolean> recordResponseTruncated;
+	    public final Optional<Boolean> replayResponseTruncated;
 
 	    //Using JsonRawValue on <Optional> field results in Jackson serialization failure.
 	    //Hence getMethods() are used to fetch the value.

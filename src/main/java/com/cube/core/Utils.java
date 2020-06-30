@@ -3,20 +3,19 @@
  */
 package com.cube.core;
 
-import static io.md.utils.Utils.*;
 
+import io.md.dao.Recording.RecordingType;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -32,23 +31,21 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.UtilException;
-import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
 import io.md.core.TemplateKey;
 import io.md.core.ValidateCompareTemplate;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
-import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Recording;
@@ -131,6 +128,16 @@ public class Utils {
             return Optional.empty();
         }
     }
+
+
+    public static Optional<Instant> msStrToTimeStamp(String val) {
+	    try {
+	        return strToLong(val).map(Instant::ofEpochMilli);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
 
     public static Optional<Boolean> strToBool(String boolStr) {
         try {
@@ -315,7 +322,7 @@ public class Utils {
                                                 Optional<String> collection, Instant timestamp,
                                                 Optional<Event.RunType> runType, Optional<String> customerId,
                                                 Optional<String> app,
-                                                Config config) throws JsonProcessingException, EventBuilder.InvalidEventException {
+                                                ReqRespStore rrstore) throws JsonProcessingException, EventBuilder.InvalidEventException {
 	    HTTPResponsePayload httpResponsePayload;
 	    // We treat empty body ("") as null
 	    if (body != null && (!body.isEmpty())) {
@@ -327,15 +334,18 @@ public class Utils {
 	    Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
         Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
         Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
+        RecordingType recordingType = getFirst(meta, Constants.RECORDING_TYPE_FIELD)
+          .flatMap(r -> io.md.utils.Utils.valueOf(RecordingType.class, r))
+          .orElse(RecordingType.Golden);
 
         if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection.isPresent() && runType.isPresent()) {
             EventBuilder eventBuilder = new EventBuilder(customerId.get(), app.get(),
                 service.get(), instance.orElse("NA"), collection.get(),
-                new MDTraceInfo(traceId.orElse(reqId.flatMap(config.rrstore::getRequestEvent)
+                new MDTraceInfo(traceId.orElse(reqId.flatMap(rrstore::getRequestEvent)
 	                .map(Event::getTraceId).orElse("NA")), null, null),
                 runType.get(), Optional.of(timestamp),
                 reqId.orElse("NA"),
-                apiPath, Event.EventType.HTTPResponse);
+                apiPath, Event.EventType.HTTPResponse, recordingType);
             eventBuilder.setPayload(httpResponsePayload);
             Event event = eventBuilder.createEvent();
             return event;

@@ -2,6 +2,7 @@ package com.cube.dao;
 
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
+import io.md.dao.Recording.RecordingType;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
@@ -41,6 +42,7 @@ public class RecordingBuilder {
 	private String userId;
 	private Optional<String> generatedClassJarPath;
 	private Optional<URLClassLoader> generatedClassLoader;
+	private RecordingType recordingType;
 
 	public RecordingBuilder(CubeMetaInfo cubeMetaInfo, String collection) {
 		this.customerId = cubeMetaInfo.customerId;
@@ -67,6 +69,7 @@ public class RecordingBuilder {
 		this.generatedClassJarPath = Optional.empty();
 		this.generatedClassLoader = Optional.empty();
 		this.label = "";
+		this.recordingType = RecordingType.Golden;
 	}
 
 	/**
@@ -80,7 +83,7 @@ public class RecordingBuilder {
 		return new Recording(idv, customerId, app, instanceId, collection, status, timestamp
 			, templateVersion, parentRecordingId, rootRecordingId, name, codeVersion, branch
 		, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment
-			, userId, generatedClassJarPath, generatedClassLoader, label);
+			, userId, generatedClassJarPath, generatedClassLoader, label, recordingType);
 	}
 
 	private String recalculateId() {
@@ -188,6 +191,11 @@ public class RecordingBuilder {
 	public RecordingBuilder withGeneratedClassJarPath(String generatedClassJarPath) throws  Exception {
 		this.generatedClassJarPath = Optional.ofNullable(generatedClassJarPath);
 		populateClassLoader();
+		return this;
+	}
+
+	public RecordingBuilder withRecordingType(RecordingType recordingType) {
+		this.recordingType = recordingType;
 		return this;
 	}
 
