@@ -12,32 +12,22 @@ import "./diff.css";
 class HttpResponseHeaders extends Component {
     constructor(props) {
         super(props);
-        const leftValue = this.props.recordedResponseHeaders;
-        const rightValue = this.props.responseHeaders;
-        this.state = {
-            leftValue: leftValue,
-            rightValue: rightValue,
-        };
         this.handleChange = this.handleChange.bind(this);
     }
 
     handleChange(value) {
         const { tabId, isOutgoingRequest } = this.props;
         this.props.updateParam(isOutgoingRequest, tabId, "recordedResponseHeaders", "recordedResponseHeaders", value[0]);
-        this.props.updateParam(isOutgoingRequest, tabId, "responseHeaders", "responseHeaders", value[0]);
-        this.setState({
-            leftValue: value[0],
-            rightValue: value[1]
-        }); 
+        this.props.updateParam(isOutgoingRequest, tabId, "responseHeaders", "responseHeaders", value[1]);
     }
 
 
     render() {
-        const showHeaders = this.props.showHeaders;
+        const { showHeaders, tabId } = this.props;
         return showHeaders ? (
-            <div style={{display: this.props.showHeaders === true ? "" : "none"}}>
+            <div>
                 <DiffEditor
-                    name="responseHeaders"
+                    name={"responseHeaders" + tabId}
                     value={[this.props.recordedResponseHeaders, this.props.responseHeaders]}
                     width="100%"
                     mode="json"
