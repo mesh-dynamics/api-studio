@@ -6,6 +6,7 @@
 
 package io.md.services;
 
+import io.md.dao.MockWithCollection;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,8 +42,8 @@ public class RealMocker implements Mocker {
     }
 
     @Override
-    public MockResponse mock(Event reqEvent, Optional<Instant> lowerBoundForMatching) throws MockerException {
-        Optional<String> recordingCollection = setPayloadKeyAndCollection(reqEvent);
+    public MockResponse mock(Event reqEvent, Optional<Instant> lowerBoundForMatching, Optional<MockWithCollection> mockWithCollections) throws MockerException {
+        Optional<String> recordingCollection = setPayloadKeyAndCollection(reqEvent, mockWithCollections);
         if (recordingCollection.isPresent()) {
             EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, 1, true, lowerBoundForMatching, recordingCollection.get());
             DSResult<Event> res = cube.getEvents(eventQuery);
@@ -99,19 +100,28 @@ public class RealMocker implements Mocker {
         return builder.build();
     }
 
-    private Optional<String> setPayloadKeyAndCollection(Event event) {
+    private Optional<String> setPayloadKeyAndCollection(Event event, Optional<MockWithCollection> mockWithCollections) {
         Optional<String> ret = Optional.empty();
-        Optional<RecordOrReplay> recordOrReplay = cube.getCurrentRecordOrReplay(
-            event.customerId, event.app, event.instanceId);
-        Optional<String> replayCollection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
-        Optional<String> collection = recordOrReplay
-            .flatMap(RecordOrReplay::getRecordingCollection);
+        Optional<String> replayCollection = Optional.empty();
+        Optional<String> collection = Optional.empty();
+        String templateVersion = "";
+        if (mockWithCollections.isPresent()) {
+            MockWithCollection mockWithCollection = mockWithCollections.get();
+            replayCollection = Optional.of(mockWithCollection.replayCollection);
+            collection = Optional.of(mockWithCollection.recordCollection);
+            templateVersion = mockWithCollection.templateVersion;
+        } else {
+            Optional<RecordOrReplay> recordOrReplay = cube.getCurrentRecordOrReplay(event.customerId, event.app, event.instanceId);
+            replayCollection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
+            collection = recordOrReplay.flatMap(RecordOrReplay::getRecordingCollection);
+            templateVersion = recordOrReplay.get().getTemplateVersion();
+        }
         // check collection, validate, fetch template for request, set key and store. If error at any point stop
         if (collection.isPresent() && replayCollection.isPresent()) {
             event.setCollection(replayCollection.get());
             try {
                 event.parseAndSetKey(cube
-                    .getRequestMatchTemplate(event, recordOrReplay.get().getTemplateVersion()));
+                    .getRequestMatchTemplate(event, templateVersion));
             } catch (TemplateNotFoundException e) {
                 LOGGER.error(Utils.createLogMessasge(
                     "message", "Compare template not found.",

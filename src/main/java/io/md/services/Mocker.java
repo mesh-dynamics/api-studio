@@ -6,6 +6,7 @@
 
 package io.md.services;
 
+import io.md.dao.MockWithCollection;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -19,7 +20,7 @@ import io.md.dao.Event;
  */
 public interface Mocker {
 
-    MockResponse mock(Event reqEvent, Optional<Instant> lowerBoundForMatching) throws MockerException;
+    MockResponse mock(Event reqEvent, Optional<Instant> lowerBoundForMatching, Optional<MockWithCollection> mockWithCollections) throws MockerException;
 
     class MockerException extends Exception {
         public final String errorType;
