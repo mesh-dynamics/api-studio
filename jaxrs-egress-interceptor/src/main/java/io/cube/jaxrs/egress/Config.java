@@ -16,13 +16,6 @@ public class Config {
 
 	public IntentResolver intentResolver = new TraceIntentResolver();
 
-	public final Recorder recorder;
-
 	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 
-	public Config() {
-		Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
-			.create();
-		recorder = new ConsoleRecorder(gson);
-	}
 }
