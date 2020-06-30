@@ -56,6 +56,7 @@ public class MDLoggingFilter implements ContainerRequestFilter, ContainerRespons
 	public void filter(ContainerRequestContext reqContext) {
 
 		try {
+			LOGGER.info("Inside Ingress Logging request filter");
 			Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
 			currentSpan.ifPresent(UtilException.rethrowConsumer(span ->
 			{
@@ -105,6 +106,7 @@ public class MDLoggingFilter implements ContainerRequestFilter, ContainerRespons
 	public void filter(ContainerRequestContext containerRequestContext,
 		ContainerResponseContext containerResponseContext) {
 		try {
+			LOGGER.info("Inside Ingress Logging response filter");
 			if (containerRequestContext.getProperty(Constants.MD_SAMPLE_REQUEST) != null) {
 				MultivaluedMap<String, String> strHeaders = new MultivaluedHashMap<>();
 				//Don't use getStringHeaders() as the lib code is buggy if the header has empty/null value
@@ -144,6 +146,7 @@ public class MDLoggingFilter implements ContainerRequestFilter, ContainerRespons
 		MutableBoolean didContextProceed = new MutableBoolean(false);
 
 		try {
+			LOGGER.info("Inside Ingress Logging response filter");
 			ContainerRequestContext reqContext = null;
 			//for Apache cxf
 			if (context instanceof WriterInterceptorContextImpl) {

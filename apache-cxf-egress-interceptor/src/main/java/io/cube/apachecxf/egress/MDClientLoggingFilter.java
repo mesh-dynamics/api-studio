@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.Optional;
 
 import javax.annotation.Priority;
@@ -59,6 +61,7 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 		MutableBoolean didContextProceed = new MutableBoolean(false);
 
 		try {
+			LOGGER.info("Inside Egress Logging request filter");
 			ClientRequestContext reqContext = null;
 			Message message = null;
 			//get the request context
@@ -153,13 +156,14 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 		Message message = null;
 
 		try {
-
+			LOGGER.info("Inside Egress Logging response filter");
 			message = PhaseInterceptorChain.getCurrentMessage();
 			span = (Span) message.getExchange().get(Constants.MD_CHILD_SPAN);
 			scope = (Scope) message.getExchange().get(Constants.MD_SCOPE);
 			if (message.getExchange().get(Constants.MD_SAMPLE_REQUEST) != null) {
 				// Do not log response in case the egress serivce is to be mocked
 				Object requestURI = message.getExchange().get(Message.REQUEST_URI);
+
 				String service = null;
 				if (requestURI != null) {
 					service = CommonUtils.getEgressServiceName(new URI(requestURI.toString()));
@@ -249,6 +253,7 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 	@Override
 	public void filter(ClientRequestContext clientRequestContext) throws IOException {
 		try {
+			LOGGER.info("Inside Egress Logging request filter");
 			Message message = PhaseInterceptorChain.getCurrentMessage();
 			if(clientRequestContext.getEntity()==null) {
 				//aroundWriteTo will not be called, as there will be no body to write.
@@ -256,7 +261,6 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 				//to create a get request with body, so double logging is not an issue.
 				recordRequest(message, null, clientRequestContext, new MutableBoolean(false));
 			}
-			message.getExchange().put(Constants.MD_SAMPLE_REQUEST, true);
 		} catch (Exception e) {
 			LOGGER.error(
 				Constants.MESSAGE + " Error occurred in intercepting the request\n" +
@@ -270,9 +274,11 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 		Span newClientSpan = null;
 		Scope newClientScope = null;
 		try {
-			String service = CommonUtils.getEgressServiceName(clientRequestContext.getUri());
+			Object uriValue = message.get(Message.REQUEST_URI);
+			String service = uriValue == null ? null : CommonUtils.getEgressServiceName(URI.create(uriValue.toString()));
 			CommonConfig commonConfig = CommonConfig.getInstance();
-			if (commonConfig.shouldMockService(service)) {
+			if (commonConfig.shouldMockService(service) || (service != null && uriValue.toString()
+				.startsWith(new URI(commonConfig.CUBE_MOCK_SERVICE_URI).toString()))) {
 				didContextProceed.setFalse();
 				return;
 			}
@@ -339,6 +345,8 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 					Constants.MESSAGE + ": Sampling is false!"
 				);
 			}
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
 		} finally {
 			closeSpanAndScope(newClientSpan, newClientScope);
 		}

@@ -9,9 +9,13 @@ import java.util.Optional;
 import javax.annotation.Priority;
 import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.client.ClientResponseContext;
+import javax.ws.rs.client.ClientResponseFilter;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
+import org.apache.cxf.message.Message;
+import org.apache.cxf.phase.PhaseInterceptorChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,20 +36,29 @@ import io.opentracing.SpanContext;
 
 @Provider
 @Priority(value = 4501)
-public class MDClientMockingFilter implements ClientRequestFilter {
+public class MDClientMockingFilter implements ClientRequestFilter, ClientResponseFilter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(MDClientMockingFilter.class);
+	private static final String MOCK_SPAN = "md-mock-span";
+	private static final String MOCK_SCOPE = "md-mock-scope";
 
 	@Override
 	public void filter(ClientRequestContext clientRequestContext) {
 		Span[] clientSpan = {null};
 		Scope[] clientScope = {null};
 		try {
+			LOGGER.info("Inside Egress Mocking Request filter");
 			URI originalUri = clientRequestContext.getUri();
 			CommonConfig commonConfig = CommonConfig.getInstance();
-			String serviceName = CommonUtils.getEgressServiceName(originalUri);
+			Message message = PhaseInterceptorChain.getCurrentMessage();
+//			String serviceName = CommonUtils.getEgressServiceName(originalUri);
 
-			commonConfig.getMockingURI(originalUri, serviceName).ifPresent(mockURI -> {
+//			commonConfig.getMockingURI(originalUri, serviceName).ifPresent(mockURI -> {
+
+			//mockURI is already set through app. Not able to set the URI in interceptor
+			//for apache cxf 2.7.7
+			if (originalUri != null && originalUri.toString()
+				.startsWith(new URI(commonConfig.CUBE_MOCK_SERVICE_URI).toString())) {
 				Optional<Span> ingressSpan = CommonUtils.getCurrentSpan();
 
 				//Empty ingress span pertains to DB initialization scenarios.
@@ -57,22 +70,25 @@ public class MDClientMockingFilter implements ClientRequestFilter {
 
 				clientScope[0] = CommonUtils.activateSpan(clientSpan[0]);
 
-				setAuthTokenAndMockURI(clientRequestContext, commonConfig, mockURI);
-			});
+				setAuthToken(clientRequestContext, commonConfig);
+
+				if (message != null) {
+					message.getExchange().put(MOCK_SPAN, clientSpan[0]);
+					message.getExchange().put(MOCK_SCOPE, clientScope[0]);
+				}
+
+			}
+			//);
 		} catch (Exception e) {
 			LOGGER.error(
 				io.md.constants.Constants.MESSAGE + ":Error occurred in Mocking filter\n" +
 				io.md.constants.Constants.EXCEPTION_STACK, e
 			);
-
-			closeSpanAndScope(clientSpan[0], clientScope[0]);
 		}
-
-		closeSpanAndScope(clientSpan[0], clientScope[0]);
 	}
 
-	private void setAuthTokenAndMockURI(ClientRequestContext clientRequestContext,
-		CommonConfig commonConfig, URI mockURI) {
+	private void setAuthToken(ClientRequestContext clientRequestContext,
+		CommonConfig commonConfig) {
 		if (commonConfig.authToken.isPresent()) {
 			String auth = commonConfig.authToken.get();
 			MultivaluedMap<String, Object> clientHeaders = clientRequestContext
@@ -82,7 +98,21 @@ public class MDClientMockingFilter implements ClientRequestFilter {
 		} else {
 			LOGGER.info("Auth token not present for Mocking service");
 		}
-		clientRequestContext.setUri(mockURI);
 	}
 
+	@Override
+	public void filter(ClientRequestContext clientRequestContext,
+		ClientResponseContext clientResponseContext) {
+		LOGGER.info("Inside Egress Mocking Response filter");
+		Message message = PhaseInterceptorChain.getCurrentMessage();
+		if (message != null) {
+			Object span = message.getExchange().get(MOCK_SPAN);
+			Object scope = message.getExchange().get(MOCK_SCOPE);
+
+			if (span != null && scope != null) {
+				closeSpanAndScope((Span) span, (Scope) scope);
+			}
+		}
+
+	}
 }
