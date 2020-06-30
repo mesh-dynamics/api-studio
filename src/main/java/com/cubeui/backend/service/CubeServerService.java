@@ -4,6 +4,7 @@ import io.md.dao.Recording;
 import io.md.dao.Replay;
 import com.cubeui.backend.web.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.UnknownHttpStatusCodeException;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
@@ -67,9 +69,9 @@ public class CubeServerService {
         restTemplate.setRequestFactory(clientHttpRequestFactory);
     }
 
-    public ResponseEntity fetchGetResponse(String path){
+    public ResponseEntity fetchGetResponse(String path, String query){
         try {
-            URI uri = new URI(null, null, null, 0, path, null, null);
+            URI uri = new URI(null, null, null, 0, path, query, null);
             String result = restTemplate.getForObject(uri, String.class);
             return ok().body(result);
         } catch (URISyntaxException e){
@@ -86,7 +88,7 @@ public class CubeServerService {
 
     public Optional<Replay> getReplay(String replayId) {
         final String path  = cubeServerBaseUrlReplay + "/rs/status/" + replayId;
-        final ResponseEntity  response = fetchGetResponse(path);
+        final ResponseEntity  response = fetchGetResponse(path, null);
         if (response.getStatusCode() == HttpStatus.OK) {
             try {
                 final String body = response.getBody().toString();
@@ -105,7 +107,7 @@ public class CubeServerService {
 
     public Optional<Recording> getRecording(String recordingId) {
         final String path  = cubeServerBaseUrlRecord + "/cs/status/" + recordingId;
-        final ResponseEntity  response = fetchGetResponse(path);
+        final ResponseEntity  response = fetchGetResponse(path, null);
         if (response.getStatusCode() == HttpStatus.OK) {
             try {
                 final String body = response.getBody().toString();
@@ -118,6 +120,29 @@ public class CubeServerService {
         }
         else {
             log.error("Error while retrieving the data from "+ path + " with statusCode="+ response.getStatusCode() +", message="+response.getBody());
+            return Optional.empty();
+        }
+    }
+
+    public Optional<Recording> searchRecording(String customerId, String app, String colletion) {
+        String path = cubeServerBaseUrlRecord + "/cs/searchRecording";
+        String query =  String.format("customerId=%s&app=%s&collection=%s", customerId, app, colletion);
+        ResponseEntity response = fetchGetResponse(path, query);
+        if (response.getStatusCode() == HttpStatus.OK) {
+            try {
+                final String body = response.getBody().toString();
+                TypeReference<List<Recording>> mapType = new TypeReference<List<Recording>>() {};
+                final List<Recording> recordings = jsonMapper.readValue(body, mapType);
+                return recordings.stream().findFirst();
+            } catch (Exception e) {
+                log.info(String.format("Error in converting Json to Recording for customerId=%s, app=%s, collection=%s, message= %s",
+                    customerId, app,  colletion, e.getMessage()));
+                return Optional.empty();
+            }
+        }
+        else {
+            log.error(String.format("Error while retrieving the data from path=%s , statusCode=%s, message=%s",
+                path, response.getStatusCode(), response.getBody()));
             return Optional.empty();
         }
     }
