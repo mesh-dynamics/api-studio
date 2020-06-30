@@ -20,15 +20,18 @@ import io.opentracing.propagation.TextMap;
 
 public class MDTextMapCodec implements Codec<TextMap> {
 
+	public static final String SPAN_CONTEXT_BASE = "md-trace-id";
+
+	public static final String BAGGAGE_KEY_PREFIX_BASE = "mdctx";
 	/**
 	 * Key used to store serialized span context representation
 	 */
-	public static String SPAN_CONTEXT_KEY = "md-trace-id";
+	public static String SPAN_CONTEXT_KEY;
 
 	/**
 	 * Key prefix used for baggage items
 	 */
-	public static String BAGGAGE_KEY_PREFIX = "mdctx-";
+	public static String BAGGAGE_KEY_PREFIX;
 
 	private final String contextKey;
 
@@ -48,8 +51,8 @@ public class MDTextMapCodec implements Codec<TextMap> {
 	}
 
 	public static void suffixKeysWithDF(String app) {
-		SPAN_CONTEXT_KEY = CommonUtils.getDFSuffixBasedOnApp(SPAN_CONTEXT_KEY, app);
-		BAGGAGE_KEY_PREFIX = CommonUtils.getDFSuffixBasedOnApp(BAGGAGE_KEY_PREFIX, app);
+		SPAN_CONTEXT_KEY = CommonUtils.getDFSuffixBasedOnApp(SPAN_CONTEXT_BASE, app);
+		BAGGAGE_KEY_PREFIX = CommonUtils.getDFSuffixBasedOnApp(BAGGAGE_KEY_PREFIX_BASE, app);
 	}
 
 
