@@ -26,6 +26,10 @@ import '../../components/Tabs/styles.css';
 import "./Tabs.css";
 import CollectionTreeCSS from "./CollectionTreeCSS";
 
+import {
+    validateAndCreateDiffLayoutData  
+} from "../../utils/diff/diff-process.js";
+
 class HttpClientTabs extends Component {
 
     constructor(props) {
@@ -57,7 +61,9 @@ class HttpClientTabs extends Component {
                 eventData: null,
                 showOutgoingRequestsBtn: false,
                 showSaveBtn: false,
-                outgoingRequests: []
+                outgoingRequests: [],
+                diffLayoutData: [],
+                showCompleteDiff: false
             }],
             toggleTestAndOutgoingRequests: true,
             selectedTabKey: tabId,
@@ -101,14 +107,72 @@ class HttpClientTabs extends Component {
         this.handleCreateCollection = this.handleCreateCollection.bind(this);
         this.handleTreeNodeClick = this.handleTreeNodeClick.bind(this);
         this.renderTreeNodeHeader = this.renderTreeNodeHeader.bind(this);
+
+        this.handleShowCompleteDiff = this.handleShowCompleteDiff.bind(this);
+    }
+
+    async handleShowCompleteDiff(isOutgoingRequest, tabId) {
+        const {selectedTabKey, tabs} = this.state;
+        let tabsToProcess = tabs;
+        if(isOutgoingRequest) {
+            const indexToFind = tabs.findIndex(tab => tab.id === selectedTabKey);
+            tabsToProcess = tabs[indexToFind]["outgoingRequests"];
+        }
+        const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
+        const tabToProcess = tabsToProcess[tabIndex];
+
+        let diffLayoutData = [];
+        if(tabToProcess && tabToProcess.eventData && tabToProcess.eventData[0].apiPath) {
+            const replayId = "d0a0a7de-9b29-40e2-b56c-3c711d79278c-0f9cb0d0-9354-4d0e-b19c-6e87a7c99265";
+            const traceId = "188d6e7aed2dc6af8e2c14c31bed922e";
+            let resultsData = await this.getAnalysisResults(replayId, traceId, tabToProcess.eventData[0].apiPath);
+            const results = resultsData.data && resultsData.data.res || [];
+            diffLayoutData = this.preProcessResults(results);
+        }
+
+        if(isOutgoingRequest) {
+            this.setState({
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === selectedTabKey) {
+                        eachTab.outgoingRequests.map((eachOutgoingTab) => {
+                            if (eachOutgoingTab.id === tabId) {
+                                eachOutgoingTab["showCompleteDiff"] = true;
+                                eachOutgoingTab["diffLayoutData"] = diffLayoutData;
+                            }
+                        })
+                    }
+                    return eachTab; 
+                })
+            });
+        } else {
+            let tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
+            if(tabIndex < 0) return;
+            // this.setState({[type]: value});
+            this.setState({
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === tabId) {
+                        eachTab["showCompleteDiff"] = true;
+                        eachTab["diffLayoutData"] = diffLayoutData;
+                    }
+                    return eachTab; 
+                })
+            });
+        } 
     }
 
     handleCloseModal() {
         this.setState({ showSaveModal: false });
     }
     
-    showSaveModal(tabId) {
-        this.setState({ showSaveModal: true, collectionName: "", collectionLabel: "", selectedSaveableTabId: tabId, modalErroSaveMessage: "", modalErroCreateCollectionMessage: ""});
+    showSaveModal(isOutgoingRequest, tabId) {
+        this.setState({ 
+            showSaveModal: true, 
+            collectionName: "", 
+            collectionLabel: "", 
+            selectedSaveableTabId: tabId, 
+            modalErroSaveMessage: "", 
+            modalErroCreateCollectionMessage: ""
+        });
     }
 
     onToggle(node, toggled){
@@ -284,8 +348,7 @@ class HttpClientTabs extends Component {
                     return eachTab; 
                 })
             });
-        }
-        
+        } 
     }
 
     showOutgoingRequests(tabId, reqId) {    
@@ -351,7 +414,7 @@ class HttpClientTabs extends Component {
                                 recordedResponseBody: httpResponseEvent ?  httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
                                 responseBodyType: "json",
                                 showOutgoingRequestsBtn: false,
-                                showSaveBtn: false,
+                                showSaveBtn: true,
                                 outgoingRequests: []
                             };
                             const tabId = uuidv4();
@@ -413,29 +476,35 @@ class HttpClientTabs extends Component {
         return qsParams;
     }
 
-    driveRequest(tabId) {
-        const {tabs} = this.state;
-        let tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
+    driveRequest(isOutgoingRequest, tabId) {
+        const {tabs, selectedTabKey} = this.state;
+        let tabsToProcess = tabs;
+        if(isOutgoingRequest) {
+            const indexToFind = tabs.findIndex(tab => tab.id === selectedTabKey);
+            tabsToProcess = tabs[indexToFind]["outgoingRequests"];
+        }
+        const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
+        const tabToProcess = tabsToProcess[tabIndex];
         if(tabIndex < 0) return;
         const {userHistoryCollection} = this.state;
         // make the request and update response status, headers & body
         // extract headers
         // extract body
-        const { headers, queryStringParams, bodyType, rawDataType } = this.state.tabs[tabIndex];
+        const { headers, queryStringParams, bodyType, rawDataType } = tabToProcess;
         const httpReqestHeaders = this.extractHeaders(headers);
 
         const httpRequestQueryStringParams = this.extractQueryStringParams(queryStringParams);
         let httpRequestBody;
         if(bodyType === "formData") {
-            const { formData } = this.state.tabs[tabIndex];
+            const { formData } = tabToProcess;
             httpRequestBody = this.extractBody(formData);
         }
         if(bodyType === "rawData") {
-            const { rawData } = this.state.tabs[tabIndex];
+            const { rawData } = tabToProcess;
             httpRequestBody = this.extractBody(rawData);
         }
-        const httpMethod = this.state.tabs[tabIndex].httpMethod;
-        const httpRequestURL = this.state.tabs[tabIndex].httpURL;
+        const httpMethod = tabToProcess.httpMethod;
+        const httpRequestURL = tabToProcess.httpURL;
 
         let fetchConfig = {
             method: httpMethod,
@@ -445,14 +514,31 @@ class HttpClientTabs extends Component {
             fetchConfig["body"] = httpRequestBody;
         }
         let fetchURL = httpRequestURL + (httpRequestQueryStringParams ? "?" + stringify(httpRequestQueryStringParams) : "");
-        this.setState({
-            tabs: this.state.tabs.map(eachTab => {
-                if (eachTab.id === tabId) {
-                    eachTab["responseStatus"] = "WAITING...";
-                }
-                return eachTab; 
-            })
-        });
+        if(isOutgoingRequest) {
+            this.setState({
+                tabs: tabs.map(eachTab => {
+                    if(eachTab.id === selectedTabKey) {
+                        eachTab.outgoingRequests.map((eachOutgoingTab) => {
+                            if (eachOutgoingTab.id === tabId) {
+                                eachOutgoingTab["responseStatus"] = "WAITING...";
+                                eachOutgoingTab["showCompleteDiff"] = false;
+                            }
+                        })
+                    }
+                    return eachTab; 
+                })
+            });
+        } else {
+            this.setState({
+                tabs: this.state.tabs.map(eachTab => {
+                    if (eachTab.id === tabId) {
+                        eachTab["responseStatus"] = "WAITING...";
+                        eachTab["showCompleteDiff"] = false;
+                    }
+                    return eachTab; 
+                })
+            });
+        }
         // Make request
         // https://www.mocky.io/v2/5185415ba171ea3a00704eed
         let fetchedResponseHeaders = {}, responseStatus = "", responseStatusText = "";
@@ -471,32 +557,69 @@ class HttpClientTabs extends Component {
         })
         .then((data) => {
             // handle success
-            this.setState({
-                tabs: this.state.tabs.map(eachTab => {
-                    if (eachTab.id === tabId) {
-                        eachTab["responseHeaders"] = JSON.stringify(fetchedResponseHeaders, undefined, 4);
-                        eachTab["responseBody"] = JSON.stringify(data, undefined, 4);
-                        eachTab["responseStatus"] = responseStatus;
-                        eachTab["responseStatusText"] = responseStatusText;
-                    }
-                    return eachTab; 
-                })
-            }, () => {
-                this.saveToCollection(tabId, userHistoryCollection.id, "History");
-            });
+            if(isOutgoingRequest) {
+                this.setState({
+                    tabs: tabs.map(eachTab => {
+                        if(eachTab.id === selectedTabKey) {
+                            eachTab.outgoingRequests.map((eachOutgoingTab) => {
+                                if (eachOutgoingTab.id === tabId) {
+                                    eachOutgoingTab["responseHeaders"] = JSON.stringify(fetchedResponseHeaders, undefined, 4);
+                                    eachOutgoingTab["responseBody"] = JSON.stringify(data, undefined, 4);
+                                    eachOutgoingTab["responseStatus"] = responseStatus;
+                                    eachOutgoingTab["responseStatusText"] = responseStatusText;
+                                }
+                            })
+                        }
+                        return eachTab; 
+                    })
+                }, () => {
+                    this.saveToCollection(isOutgoingRequest, tabId, userHistoryCollection.id, "History");
+                });
+            } else {
+                this.setState({
+                    tabs: this.state.tabs.map(eachTab => {
+                        if (eachTab.id === tabId) {
+                            eachTab["responseHeaders"] = JSON.stringify(fetchedResponseHeaders, undefined, 4);
+                            eachTab["responseBody"] = JSON.stringify(data, undefined, 4);
+                            eachTab["responseStatus"] = responseStatus;
+                            eachTab["responseStatusText"] = responseStatusText;
+                        }
+                        return eachTab; 
+                    })
+                }, () => {
+                    this.saveToCollection(isOutgoingRequest, tabId, userHistoryCollection.id, "History");
+                });
+            }
         })
         .catch((error) => {
             console.error(error);
-            this.setState({
-                tabs: this.state.tabs.map(eachTab => {
-                    if (eachTab.id === tabId) {
-                        eachTab["responseStatus"] = error.message;
-                    }
-                    return eachTab; 
-                })
-            });
-        }, () => {
-            this.saveToCollection(tabId, userHistoryCollection.id, "History");
+            if(isOutgoingRequest) {
+                this.setState({
+                    tabs: tabs.map(eachTab => {
+                        if(eachTab.id === selectedTabKey) {
+                            eachTab.outgoingRequests.map((eachOutgoingTab) => {
+                                if (eachOutgoingTab.id === tabId) {
+                                    eachOutgoingTab["responseStatus"] = error.message;
+                                }
+                            })
+                        }
+                        return eachTab; 
+                    })
+                }, () => {
+                    this.saveToCollection(isOutgoingRequest, tabId, userHistoryCollection.id, "History");
+                });
+            } else {
+                this.setState({
+                    tabs: this.state.tabs.map(eachTab => {
+                        if (eachTab.id === tabId) {
+                            eachTab["responseStatus"] = error.message;
+                        }
+                        return eachTab; 
+                    })
+                }, () => {
+                    this.saveToCollection(isOutgoingRequest, tabId, userHistoryCollection.id, "History");
+                });
+            }
         });
     }
 
@@ -615,20 +738,27 @@ class HttpClientTabs extends Component {
         return reqResCubeFormattedData;
     }
 
-    saveToCollection(tabId, recordingId, type) {
-        const tabToSave = this.state.tabs.find(eachTab => eachTab.id === tabId);
-        if(!tabToSave.eventData) return;
-        const reqResPair = tabToSave.eventData;
+    saveToCollection(isOutgoingRequest, tabId, recordingId, type) {
+        const {tabs, selectedTabKey} = this.state;
+        let tabsToProcess = tabs;
+        if(isOutgoingRequest) {
+            const indexToFind = tabs.findIndex(tab => tab.id === selectedTabKey);
+            tabsToProcess = tabs[indexToFind]["outgoingRequests"];
+        }
+        const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
+        const tabToProcess = tabsToProcess[tabIndex];
+        if(!tabToProcess.eventData) return;
+        const reqResPair = tabToProcess.eventData;
         if(reqResPair.length > 0) {
-            
             const data = [];
-            data.push(this.getReqResFromTabData(reqResPair, tabToSave));
-            tabToSave.outgoingRequests.forEach((eachOutgoingTab) => {
-                if(eachOutgoingTab.eventData && eachOutgoingTab.eventData.length > 0) {
-                    data.push(this.getReqResFromTabData(eachOutgoingTab.eventData, eachOutgoingTab));
-                }
-            });
-
+            data.push(this.getReqResFromTabData(reqResPair, tabToProcess));
+            if(isOutgoingRequest) {
+                tabToProcess.outgoingRequests.forEach((eachOutgoingTab) => {
+                    if(eachOutgoingTab.eventData && eachOutgoingTab.eventData.length > 0) {
+                        data.push(this.getReqResFromTabData(eachOutgoingTab.eventData, eachOutgoingTab));
+                    }
+                });
+            }
             try {
                 api.post(`${config.apiBaseUrl}/cs/storeUserReqResp/${recordingId}`, data)
                     .then((serverRes) => {
@@ -709,10 +839,22 @@ class HttpClientTabs extends Component {
 
     handleSave() {
         const { userCollectionId, userCollections, selectedSaveableTabId } = this.state;
+        let isOutgoingRequest = false;
+        const {tabs, selectedTabKey} = this.state;
+        let tabsToProcess = tabs;
+        let tabIndex = this.getTabIndexGivenTabId(selectedSaveableTabId, tabsToProcess);
+        if(tabIndex < 0) {
+            const indexToFind = tabs.findIndex(tab => tab.id === selectedTabKey);
+            tabsToProcess = tabs[indexToFind]["outgoingRequests"];
+            tabIndex = this.getTabIndexGivenTabId(selectedSaveableTabId, tabsToProcess);
+            if(tabIndex > -1) {
+                isOutgoingRequest = true;
+            }
+        }
         const selectedCollection = userCollections.find((eachCollection) => {
             return eachCollection.id === userCollectionId;
         });
-        this.saveToCollection(selectedSaveableTabId, selectedCollection.id);
+        this.saveToCollection(isOutgoingRequest, selectedSaveableTabId, selectedCollection.id);
     }
 
     loadUserCollections() {
@@ -881,7 +1023,8 @@ class HttpClientTabs extends Component {
                 eventData: null,
                 showOutgoingRequestsBtn: false,
                 showSaveBtn: false,
-                outgoingRequests: []
+                outgoingRequests: [],
+                showCompleteDiff: false
             };
         }
         this.setState({
@@ -967,7 +1110,8 @@ class HttpClientTabs extends Component {
                                 eventData: reqResPair,
                                 showOutgoingRequestsBtn: requestIds[eachReqId].length > 0,
                                 showSaveBtn: requestIds[eachReqId].length > 0,
-                                outgoingRequests: []
+                                outgoingRequests: [],
+                                showCompleteDiff: false
                             };
                             const mockEvent = {};
                             this.addTab(mockEvent, reqObject, selectedApp);
@@ -985,7 +1129,54 @@ class HttpClientTabs extends Component {
         dispatch(cubeActions.hideHttpClient(true));
     }
 
+    async getAnalysisResults(replayId, traceId, path) {
+        const { app } = this.state;
+
+        const searchParams = new URLSearchParams();
+        searchParams.set("start", 0);
+        searchParams.set("includeDiff", true);
+        searchParams.set("traceId", traceId);
+        searchParams.set("path", path);
+
+        try {
+            return await cubeService.fetchAnalysisResults(replayId, searchParams);
+        } catch(error) {
+            console.log("Error fetching analysis results list", error);
+            // Returning empty list will show No Results Found instead of being 
+            // stuck at "Loading..." since the thrown error is not processed 
+            // anywhere above
+            return [];
+        }
+    }
+
+    preProcessResults = (results) => {
+        const {app, replayId, recordingId, templateVersion} = this.state;
+        let diffLayoutData = validateAndCreateDiffLayoutData(results, app, replayId, recordingId, templateVersion, config.diffCollapseLength, config.diffMaxLinesLength);
+        this.updateResolutionFilterPaths(diffLayoutData);
+        return diffLayoutData;
+    }
+
+    updateResolutionFilterPaths = (diffLayoutData) => {
+        // const selectedResolutionType = this.state.filter.selectedResolutionType;
+        const selectedResolutionType = "All";
+        diffLayoutData && diffLayoutData.forEach(item => {
+            item.filterPaths = [];
+            for (let jsonPathParsedDiff of item.parsedDiff) {
+                // add path to the filter list if the resolution is All or matches the current selected one,
+                // and if the selected type is 'All Errors' it is an error type
+                if (selectedResolutionType === "All"
+                || selectedResolutionType === jsonPathParsedDiff.resolution
+                || (selectedResolutionType === "ERR" && jsonPathParsedDiff.resolution.indexOf("ERR_") > -1)) {
+                    // add only the json paths we want to show in the diff
+                    let path = jsonPathParsedDiff.path;
+                    item.filterPaths.push(path);
+                }
+            }
+        });
+    }
+
     handleTreeNodeClick(node) {
+        console.log("node: ", node);
         this.openTab(node);
     }
 
@@ -1064,7 +1255,8 @@ class HttpClientTabs extends Component {
                                 eventData: reqResPair,
                                 showOutgoingRequestsBtn: false,
                                 showSaveBtn: true,
-                                outgoingRequests: []
+                                outgoingRequests: [],
+                                showCompleteDiff: false
                             };
                             const mockEvent = {};
                             this.addTab(mockEvent, reqObject, selectedApp);
@@ -1126,7 +1318,10 @@ class HttpClientTabs extends Component {
                         showOutgoingRequestsBtn={eachTab.showOutgoingRequestsBtn}
                         showSaveBtn={eachTab.showSaveBtn}
                         showSaveModal={this.showSaveModal} 
-                        isOutgoingRequest={type === "outgoingRequests" ? true : false}>
+                        isOutgoingRequest={type === "outgoingRequests" ? true : false}
+                        diffLayoutData={eachTab.diffLayoutData}
+                        handleShowCompleteDiff={this.handleShowCompleteDiff}
+                        showCompleteDiff={eachTab.showCompleteDiff} >
                         </HttpClient>
                     </div>
               )},
