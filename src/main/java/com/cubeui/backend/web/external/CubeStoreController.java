@@ -6,6 +6,8 @@ import com.cubeui.backend.service.CubeServerService;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingType;
+import io.md.dao.Replay;
+import io.md.dao.ReqRespMatchResult;
 import io.md.dao.UserReqRespContainer;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
@@ -220,5 +222,15 @@ public class CubeStoreController {
                 .body("Error while retrieving Recording Object for recordingId=" + recordingId);
         validation.validateCustomerName(request,recording.get().customerId);
         return ResponseEntity.ok(recording);
+    }
+
+    @PostMapping("/saveResult")
+    public ResponseEntity saveResult(HttpServletRequest request, @RequestBody ReqRespMatchResult reqRespMatchResult) {
+        Optional<Replay> replay = cubeServerService.getReplay(reqRespMatchResult.replayId);
+        if(replay.isEmpty())
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("No Replay found for replayId=" + reqRespMatchResult.replayId);
+        validation.validateCustomerName(request, replay.get().customerId);
+        return cubeServerService.fetchPostResponse(request, Optional.of(reqRespMatchResult));
     }
 }
