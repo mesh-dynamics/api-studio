@@ -405,7 +405,7 @@ class ViewSelectedTestConfig extends React.Component {
 
     checkStatus = (statusUrl, configForHTTP) => {
         api.get(statusUrl, configForHTTP)
-            .then(data => this.setState({ recStatus: data }));
+            .then(data => !this.state.stopDisabled && this.setState({ recStatus: data }));
     };
 
     resumeRecording = () => {
@@ -520,9 +520,9 @@ class ViewSelectedTestConfig extends React.Component {
             }
         };
         // axios.post(stopUrl, {}, configForHTTP)
-        api.post(stopUrl, {}, configForHTTP).then(() => {
-            this.setState({ stopDisabled: true, recId: null });
-            this.checkStatus(statusUrl, configForHTTP);
+        api.post(stopUrl, {}, configForHTTP).then((data) => {
+            this.setState({ stopDisabled: true, recId: null, recStatus: data });
+            // this.checkStatus(statusUrl, configForHTTP);
         });
 
         dispatch(cubeActions.getTestIds(selectedApp));
