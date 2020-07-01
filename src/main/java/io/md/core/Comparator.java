@@ -164,6 +164,13 @@ public interface Comparator {
 			this.diffs = diffs;
 		}
 
+		// for Jackson serialization
+		private Match() {
+			this.mt = MatchType.Default;
+			this.matchmeta = "";
+			this.diffs = Collections.EMPTY_LIST;
+		}
+
 		public MatchType mt;
 		final public String matchmeta;
 		final public List<Diff> diffs;

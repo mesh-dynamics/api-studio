@@ -1,11 +1,31 @@
 package io.md.dao;
 
+import io.md.core.Comparator.MatchType;
 import java.util.Optional;
 
 import io.md.core.Comparator;
 import io.md.core.Comparator.Match;
 
 public class ReqRespMatchResult {
+
+	// for Jackson serialization
+	private ReqRespMatchResult() {
+		this.recordReqId = Optional.empty();
+		this.replayReqId = Optional.empty();
+		this.reqMatchRes = MatchType.Default;
+		this.numMatch = 0;
+		this.replayId = "";
+		this.service = "";
+		this.path = "";
+		this.recordTraceId = Optional.empty();
+		this.replayTraceId = Optional.empty();
+		this.recordedSpanId = Optional.empty();
+		this.recordedParentSpanId = Optional.empty();
+		this.replayedSpanId = Optional.empty();
+		this.replayedParentSpanId = Optional.empty();
+		this.respCompareRes = Match.DEFAULT;
+		this.reqCompareRes = Match.DEFAULT;
+	}
 
     public ReqRespMatchResult(Optional<String> recordReqId, Optional<String> replayReqId
 		, Comparator.MatchType reqMatchRes, int numMatch, String replayId
