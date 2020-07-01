@@ -326,7 +326,7 @@ public class AnalyzeWS {
      * @return
      */
     @GET
-    @Path("getRespTemplate/{customerId}/{appId}/{templateVersion}/{service}/{type}")
+    @Path("getTemplate/{customerId}/{appId}/{templateVersion}/{service}/{type}")
     public Response getRespTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
 	    @PathParam("customerId") String customerId, @PathParam("templateVersion") String templateVersion,
 	    @PathParam("service") String service, @PathParam("type") String type) {
@@ -352,19 +352,21 @@ public class AnalyzeWS {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
                 .entity(Map.of(Constants.ERROR, "Api Path not Specified")).build();
         }
-        if (jsonpath.isEmpty()) {
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-                .entity(Map.of(Constants.ERROR, "Json Path not Specified")).build();
-        }
 
         TemplateKey tkey = new TemplateKey(templateVersion, customerId, appId, service, apipath.get(),
             ruleType);
 
         try {
-	        TemplateEntry rule = rrstore.getComparator(tkey).getCompareTemplate()
-		        .getRule(jsonpath.get());
+          CompareTemplate compareTemplate = rrstore.getComparator(tkey).getCompareTemplate();
+          String resp = "";
+          if (jsonpath.isEmpty()) {
+            resp = jsonMapper.writeValueAsString(compareTemplate);
+          } else {
+            TemplateEntry rule = compareTemplate.getRule(jsonpath.get());
+            resp = jsonMapper.writeValueAsString(rule);
+          }
 	        return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
-		        .entity(jsonMapper.writeValueAsString(rule)).build();
+		        .entity(resp).build();
 
         } catch (JsonProcessingException e) {
 	        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
