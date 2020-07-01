@@ -21,9 +21,21 @@ const initialState = {
     selectedSource: "",
     selectedCollection: "",
     selectedGolden: "",
+
     selectedService: "",
+    selectedCaptureService: "",
+    selectedCollectionService: "",
+    selectedGoldenService: "",
+    
+
     selectedApiPath: "",
+    selectedCaptureApi: "",
+    selectedCollectionApi: "",
+    selectedGoldenApi: "",
+
     selectedInstance: "",
+    selectedCaptureInstance: "",
+
     startTime: new Date(Date.now() - 86400 * 1000).toISOString(),
     endTime: new Date(Date.now()).toISOString(),
 
@@ -82,7 +94,16 @@ export const apiCatalog = (state = initialState, { type, data }) => {
                 selectedCollection: data.selectedCollection,
                 selectedGolden: data.selectedGolden,
                 selectedService: data.selectedService,
+                selectedGoldenService: data.selectedGoldenService,
+                selectedCollectionService: data.selectedCollectionService,
+                selectedCaptureService: data.selectedCaptureService,
+                selectedCaptureInstance: data.selectedCaptureInstance,
+
                 selectedApiPath: data.selectedApiPath,
+                selectedCaptureApi: data.selectedCaptureApi,
+                selectedCollectionApi: data.selectedCollectionApi,
+                selectedGoldenApi: data.selectedGoldenApi,
+
                 selectedInstance: data.selectedInstance,
                 startTime: data.startTime,
                 endTime: data.endTime,

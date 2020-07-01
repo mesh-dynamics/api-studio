@@ -33,7 +33,7 @@ const getInstanceList = (apiFacets, service, apiPath) => {
         .value()
 }
 
-// get api count for the selected service, api, instance
+// get api count for the selected service, api, instance (if present)
 const getAPICount = (apiFacets, selectedService, selectedApiPath, selectedInstance) => {
     const serviceObject = _.find(apiFacets.serviceFacets, { val: selectedService })
     if (_.isEmpty(serviceObject)) {
@@ -43,6 +43,10 @@ const getAPICount = (apiFacets, selectedService, selectedApiPath, selectedInstan
     const pathObject = _.find(serviceObject.path_facets, { val: selectedApiPath })
     if (_.isEmpty(pathObject)) {
         return 0;
+    }
+
+    if (!selectedInstance) {
+        return pathObject.count
     }
 
     const instanceObject = _.find(pathObject.instance_facets, { val: selectedInstance })

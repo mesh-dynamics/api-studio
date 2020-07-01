@@ -45,8 +45,8 @@ export const apiCatalogActions = {
 
     resetCompareRequest: () => ({ type: apiCatalogConstants.RESET_COMPARE_REQUEST }),
 
-    fetchAPIFacets: (app, selectedSource, selectedGoldenCollection, startTime, endTime) => async (dispatch, getState) => {
-        const { selectedService, selectedApiPath, selectedInstance } = getState().apiCatalog;
+    fetchAPIFacets: (app, selectedSource, selectedGoldenCollection, startTime, endTime, selectedService, selectedApiPath,) => async (dispatch, getState) => {
+        //const { selectedService, selectedApiPath, selectedInstance } = getState().apiCatalog;
 
         const apiFacets = await cubeService.fetchAPIFacetData(app, selectedSource, selectedGoldenCollection, startTime, endTime);
         const services = getServiceList(apiFacets);
@@ -75,89 +75,148 @@ export const apiCatalogActions = {
     handleFilterChange: (metadata, value) => (dispatch, getState) => {
         const state = getState();
         const { selectedApp } = state.cube;
-        let {selectedSource, selectedCollection, selectedGolden, selectedService, selectedApiPath, selectedInstance, startTime, endTime, apiPaths, instances, apiFacets} = state.apiCatalog;
-        
+        let {selectedSource, selectedCollection, selectedGolden,
+            selectedService, selectedGoldenService, selectedCollectionService, 
+            selectedCaptureService, selectedApiPath, selectedCaptureApi,
+            selectedCollectionApi, selectedGoldenApi, selectedInstance, selectedCaptureInstance,
+            startTime, endTime, apiPaths, instances, apiFacets} = state.apiCatalog;
+
         switch (metadata) {
             case "selectedSource":
                 selectedSource = value;
-                selectedCollection = ""
-                selectedGolden = ""
-                selectedService = ""
-                selectedApiPath = ""
-                selectedInstance = ""
-
-                if (selectedSource==="UserGolden" || selectedSource==="Golden") {
+                
+                // since the source has changed, we set the selections from the respective stored values
+                if (selectedSource==="UserGolden") {
                     startTime = null;
                     endTime = null;
-                    dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, selectedSource));
+                    selectedService = selectedCollectionService;
+                    selectedApiPath = selectedCollectionApi;
+                    selectedInstance = ""
+
+                    dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "UserGolden"));
+                    dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, "UserGolden", selectedCollection, null, null, selectedService, selectedApiPath)); 
+                } else if (selectedSource==="Golden") {
+                    startTime = null;
+                    endTime = null;
+                    selectedService = selectedGoldenService;
+                    selectedApiPath = selectedGoldenApi;
+                    selectedInstance = ""
+
+                    dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "Golden"));
+                    dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, "Golden", selectedGolden, null, null, selectedService, selectedApiPath)); 
                 } else if (selectedSource==="Capture") {
                     startTime = new Date(Date.now() - 86400 * 1000).toISOString()
                     endTime = new Date(Date.now()).toISOString()
-                    dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, "Capture", null, startTime, endTime));   
+                    selectedService = selectedCaptureService;
+                    selectedApiPath = selectedCaptureApi;
+                    selectedInstance = selectedCaptureInstance
+
+                    dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, "Capture", null, startTime, endTime, selectedService, selectedApiPath));   
                 }
                 break;
 
             case "selectedCollection":
                 selectedCollection = value;
+
                 selectedService = ""
+                selectedCollectionService = selectedService
+                
                 selectedApiPath = ""
-                dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, "UserGolden", selectedCollection, null, null)); 
+                selectedCollectionApi = selectedApiPath
+
+                dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, "UserGolden", selectedCollection, null, null, selectedService, selectedApiPath)); 
                 break;
 
             case "selectedGolden":
                 selectedGolden = value;
+                
                 selectedService = ""
+                selectedGoldenService = selectedService
+
                 selectedApiPath = ""
-                dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, "Golden", selectedGolden, null, null)); 
+                selectedGoldenApi = selectedApiPath
+
+                dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, "Golden", selectedGolden, null, null, selectedService, selectedApiPath)); 
                 break;
 
             case "selectedService":
                 selectedService = value;
+
+                apiPaths = getIncomingAPIList(apiFacets, selectedService)
+                selectedApiPath = !_.isEmpty(apiPaths) ? apiPaths[0].val : "";
+
+                
+                if (selectedSource==="Golden") {
+                    selectedGoldenService = selectedService;
+                    selectedGoldenApi = selectedApiPath;
+                } else if (selectedSource==="UserGolden") {
+                    selectedCollectionService = selectedService;
+                    selectedCollectionApi = selectedApiPath;
+                } else if (selectedSource==="Capture") {
+                    selectedCaptureService = selectedService;
+                    selectedCaptureApi = selectedApiPath;
+                
+                    instances = getInstanceList(apiFacets, selectedService, selectedApiPath)
+                    selectedInstance = !_.isEmpty(instances) ? instances[0].val : "";
+                    selectedCaptureInstance = selectedInstance
+                }
                 break;
 
             case "selectedApiPath":
                 selectedApiPath = value;
+                if (selectedSource==="Golden") {
+                    selectedGoldenApi = selectedService;
+                } else if (selectedSource==="UserGolden") {
+                    selectedCollectionApi = selectedService;
+                } else if (selectedSource==="Capture") {
+                    selectedCaptureApi = selectedService;
+                }
                 break;
 
-            case "selectedInstance":
+            case "selectedInstance": // used only in capture
                 selectedInstance = value;
+                selectedCaptureInstance = selectedInstance;
                 break;
 
-            case "startTime":
+            case "startTime": // used only in capture
                 startTime = new Date(value).toISOString();
-                dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, selectedSource, null, startTime, endTime));
+                
                 selectedService = ""
+                selectedCaptureService = selectedService
+                
                 selectedApiPath = ""
+                selectedCaptureApi = selectedApiPath
+                
                 selectedInstance = ""
+                selectedCaptureInstance = selectedInstance
+                
+                dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, selectedSource, null, startTime, endTime, selectedService, selectedApiPath));
                 break;
 
-            case "endTime":
+            case "endTime": // used only in capture
                 endTime = new Date(value).toISOString();
-                dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, selectedSource, null, startTime, endTime));
                 selectedService = ""
+                selectedCaptureService = selectedService
+                
                 selectedApiPath = ""
+                selectedCaptureApi = selectedApiPath
+                
                 selectedInstance = ""
+                selectedCaptureInstance = selectedInstance
+                dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, selectedSource, null, startTime, endTime, selectedService, selectedApiPath));
                 break;
 
-            default:
-                break;
-        }
-
-        switch (metadata) { // utilizing fallthroughs
-            case "selectedService":
-                apiPaths = getIncomingAPIList(apiFacets, selectedService)
-                selectedApiPath = !_.isEmpty(apiPaths) ? apiPaths[0].val : "";
-            case "selectedApiPath":
-                instances = getInstanceList(apiFacets, selectedService, selectedApiPath)
-                selectedInstance = !_.isEmpty(instances) ? instances[0].val : "";
-            case "selectedInstance":
             default:
                 break;
         }
 
         dispatch({
             type: apiCatalogConstants.SET_FILTER_CHANGE,
-            data: { selectedSource, selectedCollection, selectedGolden, selectedService, selectedApiPath, selectedInstance, startTime, endTime, apiPaths, instances }
+            data: { selectedSource, selectedCollection, selectedGolden,
+                selectedService,selectedGoldenService, selectedCollectionService,
+                selectedCaptureService, selectedApiPath,selectedCaptureApi,
+                selectedCollectionApi,selectedGoldenApi, selectedInstance, selectedCaptureInstance, 
+                startTime, endTime,apiPaths, instances }
         })
 
         dispatch(apiCatalogActions.fetchAPITrace(selectedSource, selectedCollection, selectedGolden, selectedService, selectedApiPath, selectedInstance, startTime, endTime));
