@@ -1,0 +1,196 @@
+##################################################################################################
+# springboot order receiver replay services
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: receiver-replay
+  namespace: {{namespace}}
+  labels:
+    app: springboot
+    component: receiver-replay
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    component: receiver-replay
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: receiver-replay
+  namespace: {{namespace}}
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: springboot
+        component: receiver-replay
+        version: v1
+        namespace: {{namespace}}
+    spec:
+      containers:
+      - name: receiver
+        image: cubeiocorp/sample-order-receiver:stable_1_0
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "2048Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 8080
+        env:
+          - name: io.md.intent
+            value: "mock"
+          - name: spring.profiles.active
+            value: "replay"
+          - name: io.md.disruptor.output
+            value: "stdout"
+          - name: io.md.customer
+            value: "{{customer}}"
+          - name: io.md.servicename
+            value: "{{cube_application}}"
+          - name: io.md.instance
+            value: "{{cube_instance}}"
+          - name: io.md.app
+            value: "springboot_demo"
+          - name: io.md.service.record
+            value: https://{{cube_host}}/api
+          - name: io.md.service.mock
+            value: https://{{cube_host}}/api
+          - name: io.md.mock.services
+            value: transformer:8081
+          - name: io.md.authtoken
+            value: {{auth_token}}
+
+##################################################################################################
+# springboot employee record services
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: receiver-record
+  namespace: {{namespace}}
+  labels:
+    app: springboot
+    component: receiver-record
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    component: receiver-record
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: receiver-record
+  namespace: {{namespace}}
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: springboot
+        component: receiver-record
+        version: v1
+        namespace: {{namespace}}
+    spec:
+      containers:
+      - name: receiver
+        image: cubeiocorp/sample-order-receiver:stable_1_0
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "2048Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 8080
+        env:
+          - name: io.md.customer
+            value: "{{customer}}"
+          - name: io.md.disruptor.output
+            value: "stdout"
+          - name: spring.profiles.active
+            value: "replay"
+          - name: io.md.servicename
+            value: "{{cube_application}}"
+          - name: io.md.instance
+            value: "{{cube_instance}}"
+          - name: io.md.intent
+            value: "record"
+          - name: io.md.app
+            value: "springboot_demo"
+
+##################################################################################################
+# springboot order transformer services
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: transformer
+  namespace: {{namespace}}
+  labels:
+    app: springboot
+    component: transformer
+spec:
+  ports:
+  - port: 8081
+    targetPort: 8081
+    name: http
+  selector:
+    component: transformer
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: transformer
+  namespace: {{namespace}}
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: springboot
+        component: transformer
+        version: v1
+        namespace: {{namespace}}
+    spec:
+      containers:
+      - name: transformer
+        image: cubeiocorp/sample-order-transformer:stable_1_0
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 8081

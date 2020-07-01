@@ -37,6 +37,10 @@ MOVIEINFO_TAG=master-latest" > apps/moviebook/config/temp.conf
 
 call_deploy_script() {
 	TRACE=1 ./deploy.sh $@
+	if [ $? -ne 0 ]; then
+		EXIT_CODE=1
+		clean
+	fi
 }
 
 call_replay() {
@@ -55,15 +59,26 @@ call_replay() {
 	REPLAY_PATHS=${TEMP_PATH::${#TEMP_PATH}-1}
 	BODY="$REPLAY_PATHS&endPoint=$REPLAY_ENDPOINT&instanceId=$INSTANCE_ID&templateSetVer=DEFAULT&userId=$USER_ID"
 
-	REPLAY_RESPONSE=$(curl -X POST \
-		$CUBE_ENDPOINT/api/rs/start/$RECORDING_ID \
-		-H 'Content-Type: application/x-www-form-urlencoded' \
-		-H "Authorization: Bearer $AUTH_TOKEN" \
-		-H 'cache-control: no-cache' \
-		-d $BODY)
-	echo $REPLAY_RESPONSE
-	REPLAY_ID=$(echo $REPLAY_RESPONSE | sed 's/^.*"replayId":"\([^"]*\)".*/\1/')
-
+	COUNT=0
+	while [ "$http_code" != "200" ] || [ "$REPLAY_ID" = "none" ] && [ "$COUNT" != "5" ]; do
+		resp=$(curl -sw "%{http_code}" -X POST \
+			$CUBE_ENDPOINT/api/rs/start/$RECORDING_ID \
+			-H 'Content-Type: application/x-www-form-urlencoded' \
+			-H "Authorization: Bearer $AUTH_TOKEN" \
+			-H 'cache-control: no-cache' \
+			-d $BODY)
+			http_code="${resp:${#res}-3}"
+			body="${resp:0:${#resp}-3}"
+			echo $body
+			REPLAY_ID=$(echo $body | jq -r ".replayId")
+			COUNT=$((COUNT+1))
+			if [ $COUNT -eq 5 ]; then
+				echo "Replay failed to start multiple times.."
+				EXIT_CODE=1
+				clean
+			fi
+			sleep 5
+	done
 	echo "REPLAYID:" $REPLAY_ID
 
 	#Status Check
@@ -109,8 +124,21 @@ check_test_status() {
 	done
 }
 
+clean() {
+	call_deploy_script moviebook clean $CONFIG_FILE
+	call_deploy_script cube clean $CONFIG_FILE
+	kubectl delete ns $DRONE_COMMIT_AUTHOR
+	echo "Replay ID:" $REPLAY_ID
+	echo $TEST_STATUS
+	exit $EXIT_CODE
+}
+
 main() {
 	set -x
+	# DRONE_BRANCH="develop"
+	# DRONE_COMMIT="11a5c543c9086ecd3cb6f91a3d62e2efd1ceee1a"
+	# DRONE_COMMIT_AUTHOR="abdulquyoombhat41"
+	# DRONE_BUILD_NUMBER="test101"
 	AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBtZXNoZHluYW1pY3MuaW8iLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwidHlwZSI6InBhdCIsImN1c3RvbWVyX2lkIjoxLCJpYXQiOjE1ODI4ODE2MjgsImV4cCI6MTg5ODI0MTYyOH0.P4DAjXyODV8cFPgObaULjAMPg-7xSbUsVJ8Ohp7xTQI"
 	check_test_status
 	generate_config_file
@@ -131,16 +159,10 @@ main() {
 	kubectl get deploy -o name -l app=moviebook -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout restart -n $DRONE_COMMIT_AUTHOR
 	kubectl get deploy -o name -l app=moviebook -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout status -n $DRONE_COMMIT_AUTHOR
 	sleep 60
-
 	call_replay
 	sleep 20
 	analyze
-	call_deploy_script moviebook clean $CONFIG_FILE
-	call_deploy_script cube clean $CONFIG_FILE
-	kubectl delete ns $DRONE_COMMIT_AUTHOR
-	echo "Replay ID:" $REPLAY_ID
-	echo $TEST_STATUS
-	exit $EXIT_CODE
+	clean
 }
 
 main "$@"
