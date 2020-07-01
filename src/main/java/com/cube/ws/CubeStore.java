@@ -662,6 +662,29 @@ public class CubeStore {
         }
     }
 
+    @POST
+    @Path("/saveResult")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response saveResult(ReqRespMatchResult reqRespMatchResult) {
+        if (reqRespMatchResult == null) {
+            LOGGER.error(Map.of(Constants.MESSAGE, "ReqRespMatchResult is null"));
+            return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.FAIL, Constants.INVALID_INPUT,
+                    "Invalid input!")).build();
+        }
+        boolean result = rrstore.saveResult(reqRespMatchResult);
+        if (!result) {
+            LOGGER.error(Map.of(Constants.MESSAGE, "Unable to store result in solr",
+                    Constants.REPLAY_ID_FIELD, reqRespMatchResult.replayId));
+            return Response.serverError().entity(
+                buildErrorResponse(Constants.ERROR, Constants.REPLAY_ID_FIELD,
+                    "Unable to store result in solr")).build();
+        }
+        return Response.ok().type(MediaType.APPLICATION_JSON)
+            .entity("The Result is saved in Solr").build();
+    }
+
     private boolean storeDefaultRespEvent(
         Event defaultReqEvent, Payload payload) throws InvalidEventException {
         //Store default response
