@@ -12,8 +12,8 @@ public class Constants {
 	public static final String X_REQUEST_ID = "x-request-id";
 
 	public static final String DEFAULT_BAGGAGE_PARENT_SPAN = "baggage-parent-span-id";
-	public static final String MD_BAGGAGE_PARENT_SPAN = MDTextMapCodec.BAGGAGE_KEY_PREFIX + io.md.constants.Constants.MD_PARENT_SPAN;
-	public static final String MD_TRACE_FIELD = MDTextMapCodec.SPAN_CONTEXT_KEY;
+	public static final String MD_BAGGAGE_PARENT_SPAN = MDTextMapCodec.BAGGAGE_KEY_PREFIX_BASE + io.md.constants.Constants.MD_PARENT_SPAN;
+	public static final String MD_TRACE_FIELD = MDTextMapCodec.SPAN_CONTEXT_BASE;
 
 	public static final String DEFAULT_TEMPLATE_VER = "DEFAULT";
 
