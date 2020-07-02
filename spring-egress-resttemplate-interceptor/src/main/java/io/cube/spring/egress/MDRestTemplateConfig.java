@@ -18,14 +18,7 @@ import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 public class MDRestTemplateConfig {
 
 	public IntentResolver intentResolver = new TraceIntentResolver();
-
-	public final Recorder recorder;
-
+	
 	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 
-	public MDRestTemplateConfig() {
-		Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
-			.create();
-		recorder = new ConsoleRecorder(gson);
-	}
 }
