@@ -233,4 +233,12 @@ public class CubeStoreController {
         validation.validateCustomerName(request, replay.get().customerId);
         return cubeServerService.fetchPostResponse(request, Optional.of(reqRespMatchResult));
     }
+
+    @GetMapping("/getCurrentRecordOrReplay/{customerId}/{app}/{instanceId}")
+    public ResponseEntity getCurrentRecordOrReplay(HttpServletRequest request,
+        @RequestBody Optional<String> getBody, @PathVariable String customerId,
+        @PathVariable String app, @PathVariable String instanceId) {
+        validation.validateCustomerName(request, customerId);
+        return cubeServerService.fetchGetResponse(request, getBody);
+    }
 }
