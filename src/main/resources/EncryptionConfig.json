@@ -1,6 +1,6 @@
 {
 	"services": {
-		"OrderReceiver": {
+		"restwrapjdbc": {
 			"/status": {
 				"algorithm": "AES/CBC/PKCS5Padding",
 				"metaData": {

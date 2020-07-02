@@ -125,6 +125,20 @@ steps:
         exclude:
         - pull_request
 
+  - name: notify
+    image: drillster/drone-email
+    settings:
+      host: smtp.office365.com
+      username:
+        from_secret: EMAIL_USERNAME
+      password:
+        from_secret: EMAIL_PASSWORD
+      from: email.sender@meshdynamics.io
+      recipients: [ a80f6254.meshdynamics.io@amer.teams.ms, developers@meshdynamics.io ]
+    when:
+      status:
+      - failure
+
 trigger:
   branch:
   - master

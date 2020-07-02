@@ -3,6 +3,7 @@ package com.cube.dao;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import javax.ws.rs.core.MultivaluedMap;
 
 public class ApiTraceResponse {
   public String traceId;
@@ -30,10 +31,12 @@ public class ApiTraceResponse {
     public String spanId;
     public String parentSpanId;
     public String status;
+    public String method;
+    public MultivaluedMap<String, String> queryParams;
 
     public ServiceReqRes(String service, String apiPath, String requestEventId,
         Instant reqTimestamp, String spanId,
-        String parentSpanId, String status) {
+        String parentSpanId, String status, String method, MultivaluedMap<String, String> queryParams) {
       this.service = service;
       this.apiPath = apiPath;
       this.requestEventId = requestEventId;
@@ -41,6 +44,8 @@ public class ApiTraceResponse {
       this.spanId = spanId;
       this.parentSpanId = parentSpanId;
       this.status = status;
+      this.method = method;
+      this.queryParams = queryParams;
     }
   }
 }

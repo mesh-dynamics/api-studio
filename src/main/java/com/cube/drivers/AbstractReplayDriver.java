@@ -152,61 +152,69 @@ public abstract class AbstractReplayDriver {
 
 		// TODO: add support for matrix params
 
-		Pair<Stream<List<Event>>, Long> batchedResult = ReplayUpdate
-			.getRequestBatchesUsingEvents(BATCHSIZE, rrstore, replay);
-		replay.reqcnt = batchedResult.getRight().intValue();
-		// NOTE: converting long to int, should be ok, since we
-		// never replay so many requests
+		try {
+			Pair<Stream<List<Event>>, Long> batchedResult = ReplayUpdate
+				.getRequestBatchesUsingEvents(BATCHSIZE, rrstore, replay);
+			replay.reqcnt = batchedResult.getRight().intValue();
+			// NOTE: converting long to int, should be ok, since we
+			// never replay so many requests
 
-		batchedResult.getLeft().forEach(requests -> {
+			batchedResult.getLeft().forEach(requests -> {
 
-			// replay.reqcnt += requests.size();
+				// replay.reqcnt += requests.size();
 
-			List<Event> reqs = new ArrayList<>();
-			requests.forEach(eventReq -> {
+				List<Event> reqs = new ArrayList<>();
+				requests.forEach(eventReq -> {
 
-				try {
+					try {
 					/*
                      TODO: currently sampling samples across all paths with same rate.
                       If we want to ensure that we have some minimum requests from each path
                       (particularly the rare ones), we need to add more logic
                     */
-					if (replay.sampleRate.map(sr -> random.nextDouble() > sr).orElse(false)) {
-						return; // drop this request
-					}
-					LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Enqueuing request"
-							+ "for reply", Constants.REPLAY_ID_FIELD, replay.replayId
-						, Constants.REQ_ID_FIELD, Optional.ofNullable(eventReq.reqId)
-							.orElse(Constants.NOT_PRESENT), Constants.TRACE_ID_FIELD,
-						eventReq.getTraceId())));
-					reqs.add(eventReq);
+						if (replay.sampleRate.map(sr -> random.nextDouble() > sr).orElse(false)) {
+							return; // drop this request
+						}
+						LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Enqueuing request"
+								+ "for reply", Constants.REPLAY_ID_FIELD, replay.replayId
+							, Constants.REQ_ID_FIELD, Optional.ofNullable(eventReq.reqId)
+								.orElse(Constants.NOT_PRESENT), Constants.TRACE_ID_FIELD,
+							eventReq.getTraceId())));
+						reqs.add(eventReq);
 
-				} catch (Exception e) {
-					LOGGER.error(new ObjectMessage(Map.of(
-						Constants.MESSAGE, "Skipping request. Exception in Creating Replay Request"
-						, Constants.REQ_ID_FIELD,
-						Optional.ofNullable(eventReq.reqId).orElse(Constants.NOT_PRESENT)
-						, Constants.REPLAY_ID_FIELD, replay.replayId
-					)), e);
-				}
+					} catch (Exception e) {
+						LOGGER.error(new ObjectMessage(Map.of(
+							Constants.MESSAGE,
+							"Skipping request. Exception in Creating Replay Request"
+							, Constants.REQ_ID_FIELD,
+							Optional.ofNullable(eventReq.reqId).orElse(Constants.NOT_PRESENT)
+							, Constants.REPLAY_ID_FIELD, replay.replayId
+						)), e);
+					}
+				});
+
+				List<String> respcodes = replay.async ? sendReqAsync(reqs.stream()) :
+					sendReqSync(reqs.stream());
+
+				// count number of errors
+				replay.reqfailed += respcodes.stream()
+					.filter(s -> (!client.isSuccessStatusCode(s))).count();
 			});
 
-			List<String> respcodes = replay.async ? sendReqAsync(reqs.stream()) :
-				sendReqSync(reqs.stream());
+			LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Replay Completed"
+				, Constants.REPLAY_ID_FIELD, replay.replayId,
+				"totalRequests", replay.reqcnt, "errorRequests", replay.reqfailed)));
 
-			// count number of errors
-			replay.reqfailed += respcodes.stream()
-				.filter(s -> (!client.isSuccessStatusCode(s))).count();
-		});
+			replay.status =
+				(replay.reqfailed == 0) ? ReplayStatus.Completed : ReplayStatus.Error;
+		} catch (Exception e) {
+			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+				"Error during replay", Constants.REPLAY_ID_FIELD, replay.replayId)), e);
+			replay.status = ReplayStatus.Error;
+		}
 
-		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Replay Completed"
-			, Constants.REPLAY_ID_FIELD, replay.replayId,
-			"totalRequests", replay.reqcnt, "errorRequests", replay.reqfailed)));
-
-		replay.status =
-			(replay.reqfailed == 0) ? ReplayStatus.Completed : ReplayStatus.Error;
-
-		rrstore.saveReplay(replay);
+		//rrstore.saveReplay(replay);
+		rrstore.expireReplayInCache(replay);
 		if (analyze) {
 			analyze();
 		}
