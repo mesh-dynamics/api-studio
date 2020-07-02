@@ -9,6 +9,7 @@ import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
 import io.md.core.Comparator.Match;
 import io.md.core.Comparator.MatchType;
+import io.md.dao.RecordOrReplay;
 import io.md.dao.Recording.RecordingType;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.ValidateAgentStore;
@@ -683,6 +684,27 @@ public class CubeStore {
         }
         return Response.ok().type(MediaType.APPLICATION_JSON)
             .entity("The Result is saved in Solr").build();
+    }
+
+    @GET
+    @Path("getCurrentRecordOrReplay/{customerId}/{app}/{instanceId}")
+    public Response getCurrentRecordOrReplay(@Context UriInfo ui, @PathParam("customerId") String customerId,
+        @PathParam("app") String app, @PathParam("instanceId") String instanceId) {
+        Optional<RecordOrReplay> recordOrReplay = rrstore.getCurrentRecordOrReplay(customerId, app,
+            instanceId);
+        Response resp = recordOrReplay.map(rr -> {
+            String json;
+            try {
+                json = jsonMapper.writeValueAsString(rr);
+                return Response.ok(json, MediaType.APPLICATION_JSON).build();
+            } catch (JsonProcessingException e) {
+                LOGGER.error(String.format("Error in converting RecordOrReplay object to Json for "
+                    + "customerId=%s, app=%s, instanceId=%s", customerId, app, instanceId), e);
+                return Response.serverError().build();
+            }
+        }).orElse(Response.status(Response.Status.NOT_FOUND)
+            .entity(String.format("RecordOrReplay Object not found for customerId=%s", customerId)).build());
+        return resp;
     }
 
     private boolean storeDefaultRespEvent(
