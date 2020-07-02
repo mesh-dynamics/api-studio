@@ -45,9 +45,7 @@ export const apiCatalogActions = {
 
     resetCompareRequest: () => ({ type: apiCatalogConstants.RESET_COMPARE_REQUEST }),
 
-    fetchAPIFacets: (app, selectedSource, selectedGoldenCollection, startTime, endTime, selectedService, selectedApiPath,) => async (dispatch, getState) => {
-        //const { selectedService, selectedApiPath, selectedInstance } = getState().apiCatalog;
-
+    fetchAPIFacets: (app, selectedSource, selectedGoldenCollection, startTime, endTime, selectedService, selectedApiPath,) => async (dispatch) => {
         const apiFacets = await cubeService.fetchAPIFacetData(app, selectedSource, selectedGoldenCollection, startTime, endTime);
         const services = getServiceList(apiFacets);
         const apiPaths = getIncomingAPIList(apiFacets, selectedService);
@@ -220,8 +218,6 @@ export const apiCatalogActions = {
         })
 
         dispatch(apiCatalogActions.fetchAPITrace(selectedSource, selectedCollection, selectedGolden, selectedService, selectedApiPath, selectedInstance, startTime, endTime));
-
-        dispatch(apiCatalogActions.setApiCount(selectedService, selectedApiPath, selectedInstance));
     },
 
     resetFilters: () => ({ type: apiCatalogConstants.RESET_FILTERS }),
@@ -248,13 +244,6 @@ export const apiCatalogActions = {
         const apiTrace = await cubeService.fetchAPITraceData(selectedApp, startTime, endTime, selectedService, selectedApiPath, selectedInstance, selectedSource, goldenCollection);
 
         dispatch({ type: apiCatalogConstants.FETCH_API_TRACE , data: { apiTrace } })
-    },
-
-    setApiCount: (selectedService, selectedApiPath, selectedInstance) => (dispatch, getState) => {
-        const { apiFacets } = getState().apiCatalog;
-
-        const apiCount = getAPICount(apiFacets, selectedService, selectedApiPath, selectedInstance);
-        dispatch({ type: apiCatalogConstants.SET_API_COUNT , data: { apiCount } });
     },
 
     setHttpClientRequestIds: (requestIdMap) => ({type: apiCatalogConstants.SET_HTTP_CLIENT_REQUESTIDS, data: requestIdMap}),

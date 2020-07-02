@@ -13,9 +13,8 @@ const initialState = {
     services: [],
     apiPaths: [],
     instances: [],
-    apiCount: 0,
-    apiTrace: {},
 
+    apiTrace: {},
     apiTraceLoading: false,
 
     selectedSource: "",
@@ -145,13 +144,6 @@ export const apiCatalog = (state = initialState, { type, data }) => {
                 ...state,
                 apiTrace: data.apiTrace,
                 apiTraceLoading: false,
-            }
-        }
-
-        case apiCatalogConstants.SET_API_COUNT: {
-            return {
-                ...state,
-                apiCount: data.apiCount
             }
         }
 
