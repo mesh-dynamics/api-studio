@@ -1,18 +1,25 @@
 package io.md.dao;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
+import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.FnReqRespPayloadDeserializer;
 
 @JsonDeserialize(using = FnReqRespPayloadDeserializer.class)
 public class FnReqRespPayload extends LazyParseAbstractPayload {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(FnReqRespPayload.class);
 
 
 	@JsonProperty("respTs")
@@ -78,4 +85,26 @@ public class FnReqRespPayload extends LazyParseAbstractPayload {
 
 	}
 
+	@Override
+	public void parseIfRequired()  {
+		if (this.dataObj == null) {
+			// serialize and read it back so that args and ret val gets serialized by gson and read back
+			ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
+			FnReqRespPayload fnReqRespPayload = this;
+			try {
+				String payloadStr = jsonMapper.writeValueAsString(this);
+				fnReqRespPayload = jsonMapper
+					.readValue(payloadStr, FnReqRespPayload.class);
+			} catch (IOException e) {
+				LOGGER.error("Exception in parsing FnReqRespPayload object", e);
+				// we are ignoring the error and serializing the original object
+				// if we throw exception, a lot of function signatures will change since
+				// parseIfRequired is called from many place.
+				// TODO: address this later if needed
+				fnReqRespPayload = this;
+			};
+			this.dataObj = new JsonDataObj(fnReqRespPayload, mapper);
+			postParse();
+		}
+	}
 }
