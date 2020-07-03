@@ -7,25 +7,8 @@ import static com.cube.core.Utils.buildErrorResponse;
 import static com.cube.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
-import io.md.core.Comparator.Match;
-import io.md.core.Comparator.MatchType;
-import io.md.dao.RecordOrReplay;
-import io.md.dao.Recording.RecordingType;
-import io.md.core.ConfigApplicationAcknowledge;
-import io.md.core.ValidateAgentStore;
-import io.md.dao.ReqRespMatchResult;
-import io.md.dao.UserReqRespContainer;
-import com.cube.dao.ReplayBuilder;
-import io.md.constants.ReplayStatus;
-import io.md.dao.Recording.RecordingType;
-import io.md.core.ConfigApplicationAcknowledge;
-import io.md.core.ValidateAgentStore;
-import io.md.dao.Replay;
-import io.md.dao.agent.config.AgentConfigTagInfo;
-import io.md.dao.agent.config.ConfigDAO;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,7 +51,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.UtilException;
+import io.md.constants.ReplayStatus;
 import io.md.core.Comparator;
+import io.md.core.Comparator.Match;
+import io.md.core.Comparator.MatchType;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.TemplateKey;
 import io.md.core.TemplateKey.Type;
@@ -81,10 +67,14 @@ import io.md.dao.Event.RunType;
 import io.md.dao.EventQuery;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Payload;
+import io.md.dao.RecordOrReplay;
 import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingSaveFailureException;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
+import io.md.dao.Replay;
+import io.md.dao.ReqRespMatchResult;
+import io.md.dao.UserReqRespContainer;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
 import io.md.services.DataStore.TemplateNotFoundException;
@@ -93,17 +83,17 @@ import com.cube.core.Utils;
 import com.cube.dao.CubeEventMetaInfo;
 import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.RecordingBuilder;
+import com.cube.dao.ReplayBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.dao.Result;
 import com.cube.dao.WrapperEvent;
-
 import com.cube.queue.DisruptorEventQueue;
 import com.cube.queue.RREvent;
-
-
 import com.cube.utils.Constants;
 import com.cube.ws.WSUtils.BadValueException;
+
+//import com.cube.queue.StoreUtils;
 
 /**
  * @author prasad
@@ -366,9 +356,16 @@ public class CubeStore {
     @Path("/storeEvent")
     @Consumes({MediaType.APPLICATION_JSON})
     public Response storeEvent(Event event) {
-            eventQueue.enqueue(event);
-            //StoreUtils.processEvent(event, config.rrstore);
-            logStoreInfo("Enqueued Event", new CubeEventMetaInfo(event), true);
+	    eventQueue.enqueue(event);
+	    /*
+        try {
+            StoreUtils.processEvent(event, config.rrstore);
+        } catch (CubeStoreException e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                "Error while storing event/rr in solr")), e);
+        }
+	    */
+        logStoreInfo("Enqueued Event", new CubeEventMetaInfo(event), true);
             return Response.ok().build();
     }
 
@@ -771,8 +768,9 @@ public class CubeStore {
             Event defaultReqEvent = eventBuilder.createEvent();
             try {
                 defaultReqEvent.parseAndSetKey(rrstore.
-                    getRequestMatchTemplate(defaultReqEvent
-                        , DEFAULT_TEMPLATE_VER));
+                    getTemplate(defaultReqEvent.customerId, defaultReqEvent.app, defaultReqEvent.service,
+                        defaultReqEvent.apiPath, DEFAULT_TEMPLATE_VER,
+                        Type.RequestMatch, Optional.ofNullable(defaultReqEvent.eventType)));
             } catch (TemplateNotFoundException e) {
                 LOGGER.error(new ObjectMessage(
                     Map.of(Constants.EVENT_TYPE_FIELD, defaultReqEvent.eventType,
