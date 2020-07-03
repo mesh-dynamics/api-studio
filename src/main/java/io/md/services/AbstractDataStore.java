@@ -8,8 +8,6 @@ package io.md.services;
 
 import java.util.Optional;
 
-import io.md.core.CompareTemplate;
-import io.md.core.TemplateKey;
 import io.md.dao.Event;
 import io.md.dao.Event.EventType;
 import io.md.dao.EventQuery;
@@ -24,16 +22,6 @@ public abstract class AbstractDataStore implements DataStore {
     @Override
     public Optional<Event> getSingleEvent(EventQuery eventQuery) {
         return getEvents(eventQuery).getObjects().findFirst();
-    }
-
-    @Override
-    public CompareTemplate getRequestMatchTemplate(Event event
-        , String templateVersion) throws TemplateNotFoundException {
-        TemplateKey tkey =
-            new TemplateKey(templateVersion, event.customerId,
-                event.app, event.service, event.apiPath, TemplateKey.Type.RequestMatch);
-
-        return getComparator(tkey, event.eventType).getCompareTemplate();
     }
 
     @Override
