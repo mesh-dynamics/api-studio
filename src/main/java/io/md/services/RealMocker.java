@@ -6,6 +6,7 @@
 
 package io.md.services;
 
+import io.md.core.TemplateKey.Type;
 import io.md.dao.MockWithCollection;
 import java.time.Instant;
 import java.util.Arrays;
@@ -104,24 +105,24 @@ public class RealMocker implements Mocker {
         Optional<String> ret = Optional.empty();
         Optional<String> replayCollection = Optional.empty();
         Optional<String> collection = Optional.empty();
-        String templateVersion = "";
+        Optional<String> templateVersion = Optional.empty();
         if (mockWithCollections.isPresent()) {
             MockWithCollection mockWithCollection = mockWithCollections.get();
             replayCollection = Optional.of(mockWithCollection.replayCollection);
             collection = Optional.of(mockWithCollection.recordCollection);
-            templateVersion = mockWithCollection.templateVersion;
+            templateVersion = Optional.of(mockWithCollection.templateVersion);
         } else {
             Optional<RecordOrReplay> recordOrReplay = cube.getCurrentRecordOrReplay(event.customerId, event.app, event.instanceId);
             replayCollection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
             collection = recordOrReplay.flatMap(RecordOrReplay::getRecordingCollection);
-            templateVersion = recordOrReplay.get().getTemplateVersion();
+            templateVersion = recordOrReplay.map(RecordOrReplay::getTemplateVersion);
         }
         // check collection, validate, fetch template for request, set key and store. If error at any point stop
-        if (collection.isPresent() && replayCollection.isPresent()) {
+        if (collection.isPresent() && replayCollection.isPresent() && templateVersion.isPresent()) {
             event.setCollection(replayCollection.get());
             try {
-                event.parseAndSetKey(cube
-                    .getRequestMatchTemplate(event, templateVersion));
+                event.parseAndSetKey(cube.getTemplate(event.customerId, event.app, event.service,
+                    event.apiPath, templateVersion.get(), Type.RequestMatch, Optional.ofNullable(event.eventType)));
             } catch (TemplateNotFoundException e) {
                 LOGGER.error(Utils.createLogMessasge(
                     "message", "Compare template not found.",
