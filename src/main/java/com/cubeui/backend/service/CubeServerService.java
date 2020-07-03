@@ -46,8 +46,6 @@ public class CubeServerService {
     @Value("${cube.server.baseUrl.record}")
     private String cubeServerBaseUrlRecord = CUBE_SERVER_HREF;
 
-    private String cubeServerBaseUrl = CUBE_SERVER_HREF;
-
     @Autowired
     @Qualifier("appRestClient")
     private RestTemplate restTemplate;
@@ -165,8 +163,7 @@ public class CubeServerService {
 
     private <T> ResponseEntity fetchResponse(HttpServletRequest request, Optional<T> requestBody, HttpMethod method, String... pathValue){
         String requestURI = pathValue.length> 0 ? pathValue[0] : request.getRequestURI().replace("/api", "");
-        updateCubeBaseUrl(requestURI);
-        String path = cubeServerBaseUrl + requestURI;
+        String path = getCubeServerUrl(requestURI);
         if (request.getQueryString() != null) {
             path += "?" + request.getQueryString();
         }
@@ -196,12 +193,13 @@ public class CubeServerService {
         }
     }
 
-    private void updateCubeBaseUrl(String uri) {
+    private String getCubeServerUrl(String uri) {
         if (uri.startsWith("/as") || uri.startsWith("/rs"))
-            cubeServerBaseUrl = cubeServerBaseUrlReplay;
+            return cubeServerBaseUrlReplay.concat(uri);
         else if (uri.startsWith("/ms"))
-            cubeServerBaseUrl = cubeServerBaseUrlMock;
+            return  cubeServerBaseUrlMock.concat(uri);
         else if (uri.startsWith("/cs"))
-            cubeServerBaseUrl = cubeServerBaseUrlRecord;
+            return cubeServerBaseUrlRecord.concat(uri);
+        return "";
     }
 }
