@@ -327,7 +327,7 @@ public class AnalyzeWS {
      */
     @GET
     @Path("getTemplate/{customerId}/{appId}/{templateVersion}/{service}/{type}")
-    public Response getRespTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
+    public Response getTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
 	    @PathParam("customerId") String customerId, @PathParam("templateVersion") String templateVersion,
 	    @PathParam("service") String service, @PathParam("type") String type) {
     	return Utils.valueOf(Type.class, type).map(templateType ->
@@ -347,6 +347,8 @@ public class AnalyzeWS {
         MultivaluedMap<String, String> queryParams = urlInfo.getQueryParameters();
         Optional<String> apipath = Optional.ofNullable(queryParams.getFirst(Constants.API_PATH_FIELD));
         Optional<String> jsonpath = Optional.ofNullable(queryParams.getFirst(Constants.JSON_PATH_FIELD));
+        Optional<EventType> eventType = Optional.ofNullable(queryParams.getFirst(Constants.EVENT_TYPE_FIELD))
+            .flatMap(v -> Utils.valueOf(EventType.class, v));
 
         if (apipath.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
@@ -357,7 +359,7 @@ public class AnalyzeWS {
             ruleType);
 
         try {
-          CompareTemplate compareTemplate = rrstore.getComparator(tkey).getCompareTemplate();
+          CompareTemplate compareTemplate = rrstore.getComparator(tkey, eventType).getCompareTemplate();
           String resp = "";
           if (jsonpath.isEmpty()) {
             resp = jsonMapper.writeValueAsString(compareTemplate);

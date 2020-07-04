@@ -246,8 +246,9 @@ public class StoreUtils {
 					classLoader = recordOrReplay.flatMap(RecordOrReplay::getClassLoader);
 				}
 
-				event.parseAndSetKey(rrstore.getRequestMatchTemplate(event,
-					recordOrReplay.get().getTemplateVersion()), classLoader);
+				event.parseAndSetKey(rrstore.getTemplate(event.customerId, event.app, event.service, event.apiPath,
+					recordOrReplay.get().getTemplateVersion(), Type.RequestMatch, Optional.ofNullable(event.eventType)),
+                    classLoader);
 			} catch (TemplateNotFoundException e) {
 				throw new CubeStoreException(e, "Compare Template Not Found", event);
 			}

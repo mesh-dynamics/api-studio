@@ -291,7 +291,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 
     @Override
-    public Comparator getComparator(TemplateKey key, EventType eventType) throws TemplateNotFoundException {
+    public Comparator getComparator(TemplateKey key, Optional<EventType> eventType) throws TemplateNotFoundException {
         return comparatorCache.getComparator(key, eventType);
     }
 
@@ -1959,11 +1959,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         });
 
         return fromSolr;
-    }
-
-    @Override
-    public Comparator getComparator(TemplateKey key) throws TemplateNotFoundException {
-        return comparatorCache.getComparator(key);
     }
 
     @Override
