@@ -20,8 +20,8 @@
 			"intent": "normal",
 			"pollingconfig": {
 				"delay": 25,
-				"fetchconfigapiuri": "http://localhost:8080/cubeio_war/cs/fetchAgentConfig/",
-				"ackconfigapiuri": "http://localhost:8080/cubeio_war/cs/ackConfigApplication/",
+				"fetchconfigapiuri": "https://demo.dev.cubecorp.io/api/cs/fetchAgentConfig/",
+				"ackconfigapiuri": "https://demo.dev.cubecorp.io/api/cs/ackConfigApplication/",
 				"pollserver": true
 			},
 			"samplerconfig": {

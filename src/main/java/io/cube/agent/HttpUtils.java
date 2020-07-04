@@ -32,10 +32,12 @@ public class HttpUtils {
 				LOGGER.info("Sending request " + request.toString());
 				response = client.execute(request);
 				int responseCode = response.getStatusLine().getStatusCode();
-				if (Response.Status.Family.familyOf(responseCode)
-					.equals(Response.Status.Family.SUCCESSFUL) || Response.Status.Family
-					.familyOf(responseCode).equals(Family.REDIRECTION)) {
+				if (Response.Status.Family.familyOf(responseCode).equals(Response.Status.Family.SUCCESSFUL) ||
+						Response.Status.Family.familyOf(responseCode).equals(Family.REDIRECTION) ||
+						Response.Status.Family.familyOf(responseCode).equals(Family.CLIENT_ERROR)) {
 					return Optional.of(response);
+				} else {
+					response.close();
 				}
 				numberOfAttempts++;
 			} catch (Exception e) {

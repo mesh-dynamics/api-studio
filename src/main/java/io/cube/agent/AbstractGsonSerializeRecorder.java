@@ -42,7 +42,7 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
 	public abstract boolean record(Event event);
 
 	@Override
-	public boolean record(FnKey fnKey, Object responseOrException, RetStatus retStatus,
+	public boolean  record(FnKey fnKey, Object responseOrException, RetStatus retStatus,
 		Optional<String> exceptionType, Object... args) {
 
 		MDTraceInfo mdTraceInfo;

@@ -70,11 +70,12 @@ public class RecorderAndMockerTest {
     static Map<String, Double> disc2 = new HashMap<String, Double>();
     static Map<String, Double> disc3 = new HashMap<String, Double>();
     static Recorder recorder;
-    static ProxyMocker mocker;
+    static FnMockerHelper mocker;
     static {
         try {
             recorder = new SimpleHttpRecorder();
-            mocker = new ProxyMocker(gson);
+            mocker = new FnMockerHelper(new NonIdempotentMocker(new ProxyMocker()));
+            //mocker = new FnMockerHelper(new NonIdempotentMocker(new RealMocker(new ProxyDataStore())));
         } catch (Exception e) {
             LOGGER.error("Unable to initialize recorder/mocker", e);
         }
@@ -342,7 +343,7 @@ public class RecorderAndMockerTest {
             fail("Replay cannot be inited or started");
         }
 
-        Thread.sleep(3000);
+        Thread.sleep(15000);
 
         INSTANCEID = replayInstanceId; // set instance id to replay instance
 
@@ -461,7 +462,7 @@ public class RecorderAndMockerTest {
         // stop recording
         cubeClient.stopRecording(CUSTID, APPID, goldenName, label);
 
-        Thread.sleep(10000);
+        Thread.sleep(25000);
 
         // start replay
         Optional<String> resp = cubeClient.initReplay(CUSTID, APPID, replayInstanceId, goldenName, ENDPOINT, TESTUSER);

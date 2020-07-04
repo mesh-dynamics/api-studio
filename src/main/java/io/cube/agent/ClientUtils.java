@@ -4,6 +4,8 @@ import static io.cube.agent.Constants.APPLICATION_JSON;
 import static io.cube.agent.HttpUtils.getResponse;
 import static io.md.constants.Constants.NO_INTENT;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
@@ -78,7 +80,8 @@ public class ClientUtils {
 				.equals(Response.Status.Family.SUCCESSFUL)) {
 				LOGGER.error("Could not send acknowledgement to cube");
 			}
-		} catch (JsonProcessingException e) {
+			response.ifPresent(UtilException.rethrowConsumer(Closeable::close));
+		} catch (IOException e) {
 			LOGGER.error("Sending Config Ack resulted in exception", e);
 		}
 	}
