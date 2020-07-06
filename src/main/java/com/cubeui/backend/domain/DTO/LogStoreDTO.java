@@ -9,7 +9,7 @@ public class LogStoreDTO {
   public String app;
   public String instance;
   public String service;
-  public String sourecType;
+  public String sourceType;
   public String version;
   public String logMessage;
 
@@ -18,7 +18,7 @@ public class LogStoreDTO {
     this.app = "";
     this.instance = "";
     this.service = "";
-    this.sourecType = "";
+    this.sourceType = "";
     this.version = "";
     this.logMessage = "";
   }
