@@ -13,6 +13,7 @@ import ReduceDiff from '../../utils/ReduceDiff';
 import config from "../../config";
 import generator from '../../utils/generator/json-path-generator';
 import api from "../../api";
+import { history } from '../../helpers';
 
 import {connect} from "react-redux";
 import {cubeActions} from "../../actions";
@@ -247,6 +248,13 @@ class ViewTrace extends Component {
             showAll : (value ===  "All")
         });
     }
+
+    handleBackToDiffClick = () => {
+        history.push({
+            pathname: "/diff_results",
+            search: `${removeURLParameter(window.location.search, "traceId")}`
+        })
+    };
 
     toggleMessageContents(e) {
         const { history } = this.props;
@@ -911,7 +919,14 @@ class ViewTrace extends Component {
                     <div style={{display: "inline-block"}} className="pull-right">
                         <Button bsSize="small" bsStyle={"primary"} href={"/test_config_view"} style={{}}>VIEW SERVICE MESH</Button>
                         <span style={{borderRight: "1px solid #ccc", paddingLeft: "5px", marginRight: "9px"}}></span>
-                        <Button bsSize="small" bsStyle={"primary"} href={"/diff_results" + removeURLParameter(window.location.search, "traceId")} style={{}}><Glyphicon style={{ visibility:  "visible" }} glyph="menu-left" /> <span>BACK TO DIFF</span></Button>
+                        <Button 
+                            bsSize="small" 
+                            bsStyle={"primary"}
+                            onClick={this.handleBackToDiffClick}
+                            >
+                                <Glyphicon style={{ visibility:  "visible" }} glyph="menu-left" /> 
+                                <span>BACK TO DIFF</span>
+                        </Button>
                     </div>
                 </div>
                 

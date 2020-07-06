@@ -259,7 +259,7 @@ const createJiraIssue = async (summary, description, issueTypeId, projectId, rep
 const getResponseTemplate = async (selectedApp, pathResultsParams, reqOrRespCompare, jsonPath) => {
     const user = JSON.parse(localStorage.getItem('user')); // TODO: Take this from auth reducer
     const { currentTemplateVer, service, path } = pathResultsParams;
-    const url = `${config.analyzeBaseUrl}/getRespTemplate/${user.customer_name}/${selectedApp}/${currentTemplateVer}/${service}/${reqOrRespCompare}?apiPath=${path}&jsonPath=${jsonPath}`;
+    const url = `${config.analyzeBaseUrl}/getTemplate/${user.customer_name}/${selectedApp}/${currentTemplateVer}/${service}/${reqOrRespCompare}?apiPath=${path}&jsonPath=${jsonPath}`;
 
     const requestOptions = {
         headers: {

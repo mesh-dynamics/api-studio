@@ -70,7 +70,7 @@ class APICatalog extends Component {
 
   render() {
     const {  currentPage } = this.state;
-    const { cube, apiCatalog: { apiCount, selectedApiPath } } = this.props;
+    const { cube } = this.props;
     return (
       <div className="h-100" style={{ display: "flex" }}>
         <div className="info-wrapper">

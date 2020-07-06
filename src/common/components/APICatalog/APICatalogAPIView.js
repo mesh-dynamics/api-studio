@@ -3,6 +3,7 @@ import { connect } from "react-redux";
 import { APICountTable } from './APICountTable'
 import { APIRequestsTable } from './APIRequestsTable'
 import './APICatalog.css';
+import { getAPICount } from '../../utils/api-catalog/api-catalog-utils';
 
 class APICatalogAPIView extends Component {
     componentDidMount() {
@@ -10,8 +11,9 @@ class APICatalogAPIView extends Component {
     }
 
     render() {
-        const { apiCatalog: {selectedApiPath,apiCount}, app } = this.props;
+        const { apiCatalog: {apiFacets, selectedService, selectedApiPath, selectedInstance}, app } = this.props;
 
+        const apiCount = getAPICount(apiFacets, selectedService, selectedApiPath, selectedInstance);
         return (
             <div style={{ display: "flex", flexDirection: "column" }}>
                 <div className="margin-top-10">
