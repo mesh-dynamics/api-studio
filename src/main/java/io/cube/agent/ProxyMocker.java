@@ -35,6 +35,7 @@ import io.md.utils.CommonUtils;
 import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.FnKey;
 import io.md.services.Mocker;
+import io.md.utils.MeshDGsonProvider;
 import io.md.utils.Utils;
 
 /*
@@ -50,10 +51,10 @@ public class ProxyMocker implements Mocker {
 	private Gson gson;
 	CubeClient cubeClient;
 
-	public ProxyMocker(Gson gson)  {
+	public ProxyMocker()  {
 		jsonMapper = CubeObjectMapperProvider.getInstance();
 		cubeClient = new CubeClient(jsonMapper);
-		this.gson = gson;
+		this.gson = MeshDGsonProvider.getInstance();
 	}
 
 	@Override

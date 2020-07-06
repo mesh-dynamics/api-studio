@@ -19,6 +19,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.ws.rs.core.Response;
+
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -257,43 +259,50 @@ public class CommonConfig {
 
 				Optional<CloseableHttpResponse> fetchConfigApiRespOpt = HttpUtils
 					.getResponse(fetchConfigApiReq);
-				fetchConfigApiRespOpt
+				CloseableHttpResponse fetchConfigApiResp = fetchConfigApiRespOpt
 					.orElseThrow(() -> new Exception("Cannot get config from cube server"));
-				CloseableHttpResponse fetchConfigApiResp = fetchConfigApiRespOpt.get();
 
-				if (fetchConfigApiResp.getStatusLine().getStatusCode()
-					!= HttpStatus.SC_NOT_MODIFIED) {
-					String jsonString = new BasicResponseHandler()
-						.handleResponse(fetchConfigApiResp);
-					JsonNode jsonNode = jsonMapper.readTree(jsonString);
-					String configString = jsonNode.get("configJson").get("config")
-						.asText();
+				try {
+					// response can be CLIENT error so check for it
+					if (Response.Status.Family.familyOf(fetchConfigApiResp.getStatusLine().getStatusCode())
+							.equals(Response.Status.Family.CLIENT_ERROR)) {
+						throw new Exception("Cannot get config from cube server");
+					}
 
-					Config serverPollConfig = ConfigFactory.parseString(configString)
-						.withFallback(envSysStaticConf);
+					if (fetchConfigApiResp.getStatusLine().getStatusCode()
+							!= HttpStatus.SC_NOT_MODIFIED) {
+						String jsonString = new BasicResponseHandler()
+								.handleResponse(fetchConfigApiResp);
+						JsonNode jsonNode = jsonMapper.readTree(jsonString);
+						String configString = jsonNode.get("configJson").get("config")
+								.asText();
 
-					//fetch previous disruptor config values and compare with new ones.
-					//decision to init the ConsoleRecorder again or not.
-					DisruptorData prevDisruptorData = savePrevDisruptorData();
+						Config serverPollConfig = ConfigFactory.parseString(configString)
+								.withFallback(envSysStaticConf);
 
-					// Using just set instead of compareAndSet as the value being set is independent of the current value.
-					singleInstance.set(new CommonConfig(serverPollConfig));
+						//fetch previous disruptor config values and compare with new ones.
+						//decision to init the ConsoleRecorder again or not.
+						DisruptorData prevDisruptorData = savePrevDisruptorData();
 
-					compAndInitConsoleRecorder(prevDisruptorData);
+						// Using just set instead of compareAndSet as the value being set is independent of the current value.
+						singleInstance.set(new CommonConfig(serverPollConfig));
 
-					tag = jsonNode.get(io.cube.agent.Constants.CONFIG_TAG_FIELD).asText();
-					version = jsonNode.get(io.cube.agent.Constants.CONFIG_VERSION_FIELD)
-						.asText();
-					//run node selection algo again
-					ClientUtils.addNodeSelectionDecision(clientMetaDataMap);
-				} else {
-					LOGGER.info("Server returned same properties. Not applying");
+						compAndInitConsoleRecorder(prevDisruptorData);
+
+						tag = jsonNode.get(io.cube.agent.Constants.CONFIG_TAG_FIELD).asText();
+						version = jsonNode.get(io.cube.agent.Constants.CONFIG_VERSION_FIELD)
+								.asText();
+						//run node selection algo again
+						ClientUtils.addNodeSelectionDecision(clientMetaDataMap);
+					} else {
+						LOGGER.info("Server returned same properties. Not applying");
+					}
+
+					// Send ack even if the config is not re-applied
+					ClientUtils.sendAckToCubeServer();
+				} finally {
+					fetchConfigApiResp.close();
 				}
-
-				// Send ack even if the config is not re-applied
-				ClientUtils.sendAckToCubeServer();
-
-				fetchConfigApiResp.close();
 
 			} catch (Exception e) {
 				LOGGER.error("Error in updating common config object in thread", e);
@@ -338,10 +347,10 @@ public class CommonConfig {
 
 	private CommonConfig(Config dynamicConfig) throws Exception {
 
-		CUBE_RECORD_SERVICE_URI = appendTrailingSlash(dynamicConfig.getString(
-			Constants.MD_RECORD_SERVICE_PROP));
-		CUBE_MOCK_SERVICE_URI = appendTrailingSlash(dynamicConfig.getString(
-			Constants.MD_MOCK_SERVICE_PROP));
+		CUBE_RECORD_SERVICE_URI = dynamicConfig.getString(
+			Constants.MD_RECORD_SERVICE_PROP);
+		CUBE_MOCK_SERVICE_URI = dynamicConfig.getString(
+			Constants.MD_MOCK_SERVICE_PROP);
 		READ_TIMEOUT = dynamicConfig.getInt(
 			Constants.MD_READ_TIMEOUT_PROP);
 		CONNECT_TIMEOUT = dynamicConfig.getInt(
