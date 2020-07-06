@@ -70,6 +70,6 @@ services:
             expiry-seconds: 172800
 
 elasticsearch:
-    host: elasticsearch.logging.svc.cluster.local
+    host: localhost
     port: 9200
 
