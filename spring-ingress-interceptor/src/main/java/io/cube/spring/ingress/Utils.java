@@ -87,7 +87,7 @@ public class Utils {
 				.createHTTPRequestEvent(apiPath, queryParams, new MultivaluedHashMap<>(),
 					 meta, requestHeaders, mdTraceInfo,
 					requestBody, Optional.empty(), config.jsonMapper, true);
-			config.recorder.record(requestEvent);
+			CommonConfig.getInstance().getRecorder().record(requestEvent);
 		} catch (InvalidEventException e) {
 			LOGGER.error("Invalid Event for apiPath : " + apiPath, e);
 		} catch (JsonProcessingException e) {
@@ -104,7 +104,7 @@ public class Utils {
 				.createHTTPResponseEvent(apiPath, meta,
 					responseHeaders, mdTraceInfo, responseBody, Optional.empty(), config.jsonMapper,
 					true);
-			config.recorder.record(responseEvent);
+			CommonConfig.getInstance().getRecorder().record(responseEvent);
 		} catch (InvalidEventException e) {
 			LOGGER.error("Invalid Event for apiPath " + apiPath, e);
 		} catch (JsonProcessingException e) {
