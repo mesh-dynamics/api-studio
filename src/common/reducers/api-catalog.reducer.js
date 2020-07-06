@@ -29,6 +29,8 @@ const initialState = {
 
     collectionList: [],
     goldenList: [],
+
+    httpClientRequestIds: {},
 }
 
 export const apiCatalog = (state = initialState, { type, data }) => {
@@ -138,6 +140,14 @@ export const apiCatalog = (state = initialState, { type, data }) => {
                 apiTraceLoading: true,
             }
         }
+
+        case apiCatalogConstants.SET_HTTP_CLIENT_REQUESTIDS: {
+            return {
+                ...state,
+                httpClientRequestIds: data,
+            }
+        }
+        
         default:
             return state;
     }

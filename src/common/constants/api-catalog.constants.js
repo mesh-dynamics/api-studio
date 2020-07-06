@@ -11,4 +11,5 @@ export const apiCatalogConstants = {
     FETCH_API_TRACE:"api-catalog/FETCH_API_TRACE",
     SET_API_COUNT:"api-catalog/SET_API_COUNT",
     SET_API_TRACE_LOADING: "api-catalog/SET_API_TRACE_LOADING",
+    SET_HTTP_CLIENT_REQUESTIDS: "api-catalog/SET_HTTP_CLIENT_REQUESTIDS",
 }

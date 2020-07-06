@@ -17,36 +17,22 @@ import "./diff.css";
 class HttpResponseBody extends Component {
     constructor(props) {
         super(props);
-        const defaultValue = this.props.recordedResponseBody;
-        this.state = {
-            value: defaultValue,
-            editor: null
-        };
         this.handleChange = this.handleChange.bind(this);
-        this.onLoad = this.onLoad.bind(this);
     }
 
     handleChange(value) {
-        const { tabId } = this.props;
-        this.props.updateParam(tabId, "recordedResponseBody", "recordedResponseBody", value[0]);
-        this.setState({
-            value: value[0]
-        });
-    }
-
-    onLoad(editor) {
-        this.setState({
-            editor: editor
-        });
+        const { tabId, isOutgoingRequest } = this.props;
+        this.props.updateParam(isOutgoingRequest, tabId, "recordedResponseBody", "recordedResponseBody", value[0]);
+        this.props.updateParam(isOutgoingRequest, tabId, "responseBody", "responseBody", value[1]);
     }
 
     render() {
-        const showBody = this.props.showBody;
+        const { showBody, tabId } = this.props;
         return showBody ? (
             <div>
                 <DiffEditor
-                    name="responseBody"
-                    value={[this.state.value, this.props.responseBody]}
+                    name={"responseBody" + tabId}
+                    value={[this.props.recordedResponseBody, this.props.responseBody]}
                     width="100%"
                     mode={this.props.responseBodyType}
                     theme="github"
@@ -54,7 +40,6 @@ class HttpResponseBody extends Component {
                         useWorker: false
                     }}
                     onChange={this.handleChange}
-                    onLoad={this.onLoad}
                 />
             </div>
         ) : (<div></div>);

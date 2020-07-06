@@ -2,7 +2,7 @@
   "name": "cube-ui",
   "productName": "Mesh Dynamics",
   "description": "Web app for cube ui",
-  "version": "0.2.14",
+  "version": "0.2.28",
   "private": true,
   "main": "build/electron.js",
   "homepage": "./",
@@ -50,9 +50,11 @@
     }
   },
   "dependencies": {
+    "@emotion/styled": "^10.0.27",
     "@tippy.js/react": "^2.2.2",
     "array-to-tree": "^3.3.2",
     "axios": "^0.18.1",
+    "chokidar": "^3.4.0",
     "classnames": "^2.2.6",
     "compression": "^1.7.3",
     "concurrently": "^5.2.0",
@@ -97,8 +99,8 @@
     "react-table": "^6.10.0",
     "react-table-hoc-fixed-columns": "^2.1.1",
     "react-tiny-popover": "^4.0.0",
-    "react-user-avatar": "^1.10.0",
     "react-treebeard": "^3.2.4",
+    "react-user-avatar": "^1.10.0",
     "recharts": "^1.5.0",
     "redux": "^4.0.0",
     "redux-form": "^7.4.2",
@@ -111,7 +113,8 @@
     "tippy.js": "^4.3.5",
     "uuid": "^8.1.0",
     "validator": "^12.1.0",
-    "wait-on": "^5.0.0"
+    "wait-on": "^5.0.0",
+    "velocity-react": "^1.4.3"
   },
   "devDependencies": {
     "electron": "^9.0.5",
@@ -134,6 +137,8 @@
     "start:electron": "npm run build && concurrently \"npm run start\" \"npm run electron\"",
     "build:electron": "npm run build && npm run electron",
     "build:package": "npm run build && npm run dist",
+    "build:electron:win": "electron-builder build --win --publish never",
+    "package:deploy": "npm run build && electron-builder build --win --mac --publish always",
     "package:deploy:win": "npm run build && electron-builder build --win --publish always",
     "package:deploy:mac": "npm run build && electron-builder build --mac --publish always"
   }

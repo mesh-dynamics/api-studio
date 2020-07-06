@@ -32,19 +32,12 @@ const setupProxy = (proxyServerOptions, mockContext, user) => {
      * @param {*} options 
      */
     const proxyRequestInterceptor = (proxyReq) => {
-        const { collectionId, traceId, spanId, recordingId, service, apiPath } = mockContext;
+        const { collectionId, recordingId } = mockContext;
         const { accessToken, tokenType } = user;
         const token = `${tokenType} ${accessToken}`;
 
         logger.info('Request Intercepted. Removing Header <Origin>');
         proxyReq.removeHeader('Origin');
-        
-        // Set mandatory custom headers
-        logger.info('Setting custom header x-b3-traceid', traceId);
-        proxyReq.setHeader('x-b3-traceid', traceId);
-
-        logger.info('Setting custom header x-b3-spanid', spanId);
-        proxyReq.setHeader('x-b3-spanid', spanId);
 
         logger.info('Setting authorization header authorization:', token);
         proxyReq.setHeader('authorization', token);

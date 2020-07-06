@@ -96,19 +96,19 @@ class APIRequestsTable extends Component {
 
   handleViewRequests = () => {
     const { tableData } = this.state;
-    const { app } = this.props;
+    const { app, dispatch } = this.props;
 
+    // create a map of the request ids need to passed to the http client via redux, and redirect to http_client
     const requestList = tableData
       .filter(r => r.checked)
-      .map((traceData) => {
-        const reqId = traceData.parentReqId;
-        const outgoingReqIds = traceData.outgoingRequests.map((req => req.requestEventId));
-        return `requestIds[${reqId}]=${outgoingReqIds.join(",")}`;
-      });
+      .map((traceData) => [traceData.parentReqId, traceData.outgoingRequests.map((req => req.requestEventId))]);
+
+    const requestIdMap = Object.fromEntries(requestList);
+    dispatch(apiCatalogActions.setHttpClientRequestIds(requestIdMap))
 
     history.push({
       pathname: "/http_client",
-      search: `?app=${app}&${requestList.join("&")}`
+      search: `?app=${app}`
     })
   }
 
