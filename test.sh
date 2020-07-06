@@ -167,7 +167,6 @@ main() {
   USER_ID=CubeCorp
   REPLAY_ENDPOINT=http://apachecxf.dev.cubecorp.io
   INSTANCE_ID=test
-  DRONE_BUILD_NUMBER=test001
   AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s"
   register_config
   record
