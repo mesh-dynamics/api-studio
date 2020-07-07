@@ -68,8 +68,3 @@ services:
         jwt:
             secret-key: "dev-secret"
             expiry-seconds: 172800
-
-elasticsearch:
-    host: localhost
-    port: 9200
-

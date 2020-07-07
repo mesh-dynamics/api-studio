@@ -68,7 +68,3 @@ services:
         jwt:
             secret-key: "dev-secret"
             expiry-seconds: 172800
-
-elasticsearch:
-    host: elasticsearch.logging.svc.cluster.local
-    port: 9200
