@@ -1292,6 +1292,7 @@ public class CubeStore {
         Response resp = recording.map(rec -> {
             if(rec.recordingType == RecordingType.History
                 || rec.recordingType == RecordingType.UserGolden) {
+                final String traceId = io.md.utils.Utils.generateTraceId();
                 for (UserReqRespContainer userReqRespContainer : userReqRespContainers) {
                     Event response = userReqRespContainer.response;
                     Event request = userReqRespContainer.request;
@@ -1302,12 +1303,12 @@ public class CubeStore {
                         Comparator comparator = rrstore
                             .getComparator(tkey, request.eventType);
                         final String reqId = io.md.utils.Utils.generateRequestId(
-                                request.service, request.getTraceId());
+                                request.service, traceId);
                         Event requestEvent = buildEvent(request, rec.collection, rec.recordingType,
-                            reqId);
+                            reqId, traceId);
                         requestEvent.parseAndSetKey(comparator.getCompareTemplate());
                         Event responseEvent = buildEvent(response, rec.collection,
-                            rec.recordingType, reqId);
+                            rec.recordingType, reqId, traceId);
 
                         if (!rrstore.save(requestEvent) || !rrstore.save(responseEvent)) {
                             LOGGER.error(new ObjectMessage(
@@ -1338,7 +1339,7 @@ public class CubeStore {
                                 MatchType.ExactMatch, 1,
                                 rec.collection, request.service, request.apiPath,
                                 Optional.of(request.getTraceId()),
-                                Optional.of(requestEvent.getTraceId()), Optional.of(request.spanId),
+                                Optional.of(traceId), Optional.of(request.spanId),
                                 Optional.of(request.parentSpanId), Optional.of(requestEvent.spanId),
                                 Optional.of(requestEvent.parentSpanId), responseMatch,
                                 Match.DONT_CARE);
@@ -1401,11 +1402,11 @@ public class CubeStore {
         return resp;
     }
 
-    private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId)
+    private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId)
         throws InvalidEventException {
         EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
             event.service, event.instanceId, collection,
-            new MDTraceInfo(event.getTraceId(), event.spanId, event.parentSpanId),
+            new MDTraceInfo(traceId, event.spanId, event.parentSpanId),
             event.getRunType(), Optional.of(Instant.now()), reqId, event.apiPath,
             event.eventType, recordingType);
         eventBuilder.setPayload(event.payload);
