@@ -68,3 +68,4 @@ services:
         jwt:
             secret-key: "dev-secret"
             expiry-seconds: 172800
+
