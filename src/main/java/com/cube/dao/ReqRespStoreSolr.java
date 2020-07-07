@@ -2647,10 +2647,22 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Result<Event> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfResults, Optional<Integer> start) {
 
         final SolrQuery query = getEventQuery(apiTraceFacetQuery);
+        addFilter(query, EVENTTYPEF, EventType.HTTPRequest.toString());
         addFilter(query, TRACEIDF, apiTraceFacetQuery.traceId);
         addSort(query, TRACEIDF, false /* desc */);
         return SolrIterator.getResults(solr, query, numOfResults,
             this::docToEvent, start);
+    }
+
+    @Override
+    public Result<Event> getEventsByTraceIdAndCollection(String traceId, String collection) {
+        final SolrQuery query = new SolrQuery("*:*");
+        query.addField("*");
+        addFilter(query, TYPEF, Types.Event.toString());
+        addFilter(query, COLLECTIONF, collection);
+        addFilter(query, TRACEIDF, traceId);
+        return SolrIterator.getResults(solr, query, Optional.empty(),
+            this::docToEvent, Optional.empty());
     }
 
 
