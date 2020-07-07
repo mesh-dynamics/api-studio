@@ -16,6 +16,7 @@ import com.cube.dao.ApiTraceResponse.ServiceReqRes;
 import io.md.constants.ReplayStatus;
 import io.md.dao.ConvertEventPayloadResponse;
 import io.md.dao.Event.EventType;
+import io.md.dao.EventQuery;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.ResponsePayload;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1440,14 +1442,22 @@ public class AnalyzeWS {
 
       Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start);
       MultivaluedMap<String, Event> traceCollectionMap = new MultivaluedHashMap<>();
-      result.getObjects().forEach(res -> traceCollectionMap.add(res.getTraceId() + " "+ res.getCollection(), res));
+      List<String> traceIds = new ArrayList<>();
+      result.getObjects().forEach(res -> {
+        traceCollectionMap.add(res.getTraceId() + " "+ res.getCollection(), res);
+        traceIds.add(res.getTraceId());
+      });
+      EventQuery.Builder builder = new EventQuery.Builder(customerId, appId, Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse));
+      builder.withTraceIds(traceIds);
+      Result<Event> eventResultsForTraceIds = rrstore.getEvents(builder.build());
+      MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
+      eventResultsForTraceIds.getObjects().forEach(res -> mapForEventsTraceIds.add(res.getTraceId() + " "+ res.getCollection(), res));
 
       ArrayList<ApiTraceResponse> response = new ArrayList<>();
       traceCollectionMap.forEach((traceCollectionKey, events) -> {
-
         if(apiTraceFacetQuery.apiPath.isPresent()) {
           for(Event parent: events) {
-            response.add(getApiTraceResponse(parent, depth.get()));
+            response.add(getApiTraceResponse(parent, depth.get(), mapForEventsTraceIds.get(traceCollectionKey)));
           }
 
         } else {
@@ -1465,7 +1475,7 @@ public class AnalyzeWS {
             return;
           }
           for(Event parent: parentRequestEvents) {
-            response.add(getApiTraceResponse(parent, depth.get()));
+            response.add(getApiTraceResponse(parent, depth.get(), mapForEventsTraceIds.get(traceCollectionKey)));
           }
         }
       });
@@ -1484,20 +1494,19 @@ public class AnalyzeWS {
     }
   }
 
-  private ApiTraceResponse getApiTraceResponse(Event parentRequestEvent, int depth) {
+  private ApiTraceResponse getApiTraceResponse(Event parentRequestEvent, int depth, List<Event> eventsForTraceId) {
     final ApiTraceResponse apiTraceResponse = new ApiTraceResponse(parentRequestEvent.getTraceId(),
         parentRequestEvent.getCollection());
 
-    final Result<Event> result = rrstore.getEventsByTraceIdAndCollection(parentRequestEvent.getTraceId(), parentRequestEvent.getCollection());
     MultivaluedMap<String, Event> requestEventsByParentSpanId = new MultivaluedHashMap<>();
     Map<String, Event> responseEventsByReqId = new HashMap<>();
-    result.getObjects().forEach(e -> {
-      if(e.isRequestType()) {
-        requestEventsByParentSpanId.add(e.parentSpanId, e);
-      }
-      if(e.eventType == EventType.HTTPResponse) {
-        responseEventsByReqId.put(e.reqId, e);
-      }
+    eventsForTraceId.forEach(e -> {
+        if(e.isRequestType()) {
+          requestEventsByParentSpanId.add(e.parentSpanId, e);
+        }
+        if(e.eventType == EventType.HTTPResponse) {
+          responseEventsByReqId.put(e.reqId, e);
+        }
     });
 
     levelOrderTraversal(parentRequestEvent,  depth, apiTraceResponse, responseEventsByReqId,

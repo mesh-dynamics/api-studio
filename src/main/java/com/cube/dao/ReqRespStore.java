@@ -656,14 +656,6 @@ public interface ReqRespStore extends DataStore {
 	 */
 	Result<Event> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfResults, Optional<Integer> start);
 
-	/**
-	 *
-	 * @param traceId
-	 * @param collection
-	 * @return
-	 */
-	Result<Event> getEventsByTraceIdAndCollection(String traceId, String collection);
-
     /**
      * Save a template set
      * @param templateSet Template Set

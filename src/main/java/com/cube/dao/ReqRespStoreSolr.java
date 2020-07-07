@@ -2654,18 +2654,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             this::docToEvent, start);
     }
 
-    @Override
-    public Result<Event> getEventsByTraceIdAndCollection(String traceId, String collection) {
-        final SolrQuery query = new SolrQuery("*:*");
-        query.addField("*");
-        addFilter(query, TYPEF, Types.Event.toString());
-        addFilter(query, COLLECTIONF, collection);
-        addFilter(query, TRACEIDF, traceId);
-        return SolrIterator.getResults(solr, query, Optional.empty(),
-            this::docToEvent, Optional.empty());
-    }
-
-
     private static final String RECORDINGSTATUSF = CPREFIX + Constants.STATUS + STRING_SUFFIX;
     private static final String RECORDING_TYPE_F = CPREFIX + Constants.RECORDING_TYPE_FIELD + STRING_SUFFIX;
     private static final String ROOT_RECORDING_IDF = CPREFIX + Constants.ROOT_RECORDING_FIELD + STRING_SUFFIX;
