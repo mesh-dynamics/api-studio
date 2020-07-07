@@ -2591,6 +2591,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 .orElse(false);
         addFilter(query, RECORDING_TYPE_F, apiTraceFacetQuery.recordingType, true, includeEmpty);
         addFilter(query, COLLECTIONF,apiTraceFacetQuery.collection);
+        addFilter(query, PATHF, apiTraceFacetQuery.apiPath);
         return query;
     }
 
@@ -2643,13 +2644,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Result<Event> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery) {
+    public Result<Event> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfResults, Optional<Integer> start) {
 
         final SolrQuery query = getEventQuery(apiTraceFacetQuery);
         addFilter(query, TRACEIDF, apiTraceFacetQuery.traceId);
         addSort(query, TRACEIDF, false /* desc */);
-        return SolrIterator.getResults(solr, query, Optional.empty(),
-            this::docToEvent, Optional.empty());
+        return SolrIterator.getResults(solr, query, numOfResults,
+            this::docToEvent, start);
     }
 
 
