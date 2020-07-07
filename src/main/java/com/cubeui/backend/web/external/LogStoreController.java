@@ -29,7 +29,7 @@ public class LogStoreController {
       @PathVariable String customerId) {
 
     validation.validateCustomerName(request, customerId);
-    LOGGER.info(new ObjectMessage(Map.of("customerId", customerId,
+    LOGGER.error(new ObjectMessage(Map.of("customerId", customerId,
         "app", postBody.app, "instance", postBody.instance, "service", postBody.service,
         "version", postBody.version, "sourceType", postBody.sourceType,
         "logMessage", postBody.logMessage, "level", postBody.level)));
