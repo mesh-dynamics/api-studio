@@ -35,7 +35,7 @@ public class DataController {
     public ResponseEntity getData1() {
         String urlString = "https://my-json-server.typicode.com/typicode/demo/db";
         log.info("Fetching data from: {}", urlString);
-        return cubeServerService.fetchGetResponse(urlString);
+        return cubeServerService.fetchGetResponse(urlString, null);
     }
 
     @PostMapping("")
