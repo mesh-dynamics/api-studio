@@ -1457,7 +1457,8 @@ public class AnalyzeWS {
       traceCollectionMap.forEach((traceCollectionKey, events) -> {
         if(apiTraceFacetQuery.apiPath.isPresent()) {
           for(Event parent: events) {
-            response.add(getApiTraceResponse(parent, depth.get(), mapForEventsTraceIds.get(traceCollectionKey)));
+            response.add(getApiTraceResponse(parent, depth.get(),
+                Utils.getFromMVMapAsOptional(mapForEventsTraceIds,traceCollectionKey)));
           }
 
         } else {
@@ -1475,7 +1476,8 @@ public class AnalyzeWS {
             return;
           }
           for(Event parent: parentRequestEvents) {
-            response.add(getApiTraceResponse(parent, depth.get(), mapForEventsTraceIds.get(traceCollectionKey)));
+            response.add(getApiTraceResponse(parent, depth.get(),
+                Utils.getFromMVMapAsOptional(mapForEventsTraceIds,traceCollectionKey)));
           }
         }
       });

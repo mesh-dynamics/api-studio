@@ -372,4 +372,8 @@ public class Utils {
 
 		return pathRules;
     }
+
+   public static <K,T> List<T> getFromMVMapAsOptional(MultivaluedMap<K, T> map,  K key) {
+	  return Optional.ofNullable(map.get(key)).orElse(Collections.emptyList());
+  }
 }
