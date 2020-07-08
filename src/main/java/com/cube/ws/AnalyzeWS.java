@@ -1439,8 +1439,9 @@ public class AnalyzeWS {
               Optional<Integer> value = Utils.strToInt(val);
               return  value.get() >= 0 ? value : Optional.of(1);
             }).or(() -> Optional.of(1));
+
       Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).or(()->Optional.of(50));
-	    Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
+      Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
 
       Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start);
       MultivaluedMap<String, Event> traceCollectionMap = new MultivaluedHashMap<>();
