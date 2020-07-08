@@ -1,7 +1,6 @@
 package io.cube.spring.egress;
 
 import java.io.IOException;
-import java.util.Map.Entry;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;

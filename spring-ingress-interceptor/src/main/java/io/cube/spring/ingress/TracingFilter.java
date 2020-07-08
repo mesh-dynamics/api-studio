@@ -1,6 +1,9 @@
 package io.cube.spring.ingress;
 
+import static io.cube.spring.ingress.Utils.getHeaders;
+
 import java.io.IOException;
+import java.util.Optional;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -32,8 +35,6 @@ public class TracingFilter extends OncePerRequestFilter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TracingFilter.class);
 
-	private static final Config config = new Config();
-
 	@Override
 	protected void doFilterInternal(HttpServletRequest httpServletRequest,
 		HttpServletResponse httpServletResponse, FilterChain filterChain)
@@ -49,16 +50,7 @@ public class TracingFilter extends OncePerRequestFilter {
 			span = CommonUtils.startServerSpan(requestHeaders, spanKey);
 			scope = CommonUtils.activateSpan(span);
 
-			String sampleBaggageItem = span.getBaggageItem(Constants.MD_IS_SAMPLED);
-			if (sampleBaggageItem == null) {
-				//root span
-				boolean isSampled = Utils.isSampled(requestHeaders);
-				span.setBaggageItem(Constants.MD_IS_SAMPLED, String.valueOf(isSampled));
-			} else if (!BooleanUtils.toBoolean(sampleBaggageItem)
-				&& CommonConfig.getInstance().samplerVeto) {
-				span.setBaggageItem(Constants.MD_IS_VETOED,
-					String.valueOf(Utils.isSampled(requestHeaders)));
-			}
+			getorRunSampling(httpServletRequest, span);
 
 			MultivaluedMap<String, String> mdTraceHeaders = new MultivaluedHashMap<>();
 			CommonUtils.injectContext(mdTraceHeaders);
@@ -83,6 +75,47 @@ public class TracingFilter extends OncePerRequestFilter {
 		if (span != null) {
 			span.finish();
 		}
+	}
+
+	private void getorRunSampling(HttpServletRequest httpServletRequest, Span currentSpan) {
+		Optional<String> fieldCategory = CommonConfig.getInstance().sampler.getFieldCategory();
+		String sampleBaggageItem = currentSpan.getBaggageItem(Constants.MD_IS_SAMPLED);
+		if (sampleBaggageItem == null) {
+			//root span
+			boolean isSampled = runSampling(httpServletRequest, fieldCategory);
+			currentSpan.setBaggageItem(Constants.MD_IS_SAMPLED, String.valueOf(isSampled));
+		} else if (!BooleanUtils.toBoolean(sampleBaggageItem)
+			&& CommonConfig.getInstance().samplerVeto) {
+			currentSpan.setBaggageItem(Constants.MD_IS_VETOED,
+				String.valueOf(runSampling(httpServletRequest, fieldCategory)));
+		}
+	}
+
+	private boolean runSampling(
+		HttpServletRequest httpServletRequest, Optional<String> fieldCategory) {
+		boolean isSampled;
+		if (!fieldCategory.isPresent()) {
+			isSampled = Utils.isSampled(new MultivaluedHashMap<>());
+		} else {
+			switch (fieldCategory.get()) {
+				case Constants.HEADERS:
+					isSampled = Utils.isSampled(getHeaders(httpServletRequest));
+					break;
+				case Constants.QUERY_PARAMS:
+					isSampled = Utils.isSampled(Utils.getQueryParameters(
+						httpServletRequest.getQueryString()));
+					break;
+				case Constants.API_PATH_FIELD:
+					String apiPath = httpServletRequest.getRequestURI();
+					MultivaluedMap<String,String> apiPathMap = new MultivaluedHashMap<>();
+					apiPathMap.add(Constants.API_PATH_FIELD, apiPath);
+					isSampled = Utils.isSampled(apiPathMap);
+					break;
+				default:
+					isSampled = Utils.isSampled(new MultivaluedHashMap<>());
+			}
+		}
+		return isSampled;
 	}
 }
 
