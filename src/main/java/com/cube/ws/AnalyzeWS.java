@@ -1503,8 +1503,7 @@ public class AnalyzeWS {
     eventsForTraceId.forEach(e -> {
         if(e.isRequestType()) {
           requestEventsByParentSpanId.add(e.parentSpanId, e);
-        }
-        else {
+        } else {
           responseEventsByReqId.put(e.reqId, e);
         }
     });
