@@ -291,7 +291,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 
     @Override
-    public Comparator getComparator(TemplateKey key, EventType eventType) throws TemplateNotFoundException {
+    public Comparator getComparator(TemplateKey key, Optional<EventType> eventType) throws TemplateNotFoundException {
         return comparatorCache.getComparator(key, eventType);
     }
 
@@ -1962,11 +1962,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Comparator getComparator(TemplateKey key) throws TemplateNotFoundException {
-        return comparatorCache.getComparator(key);
-    }
-
-    @Override
     public Optional<AttributeRuleMap> getAttributeRuleMap(TemplateKey key) {
         final SolrQuery appAttributeTemplateQuery = new SolrQuery("*:*");
         appAttributeTemplateQuery.addField("*");
@@ -2652,6 +2647,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Result<Event> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfResults, Optional<Integer> start) {
 
         final SolrQuery query = getEventQuery(apiTraceFacetQuery);
+        addFilter(query, EVENTTYPEF, EventType.HTTPRequest.toString());
         addFilter(query, TRACEIDF, apiTraceFacetQuery.traceId);
         addSort(query, TRACEIDF, false /* desc */);
         return SolrIterator.getResults(solr, query, numOfResults,

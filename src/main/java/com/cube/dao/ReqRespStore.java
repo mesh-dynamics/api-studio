@@ -263,6 +263,12 @@ public interface ReqRespStore extends DataStore {
 	 */
 	Optional<CompareTemplate> getCompareTemplate(TemplateKey key);
 
+    Comparator getComparator(TemplateKey key, Optional<Event.EventType> eventType) throws
+        TemplateNotFoundException;
+
+    Comparator getComparator(TemplateKey key, Event.EventType eventType) throws
+        TemplateNotFoundException;
+
     Comparator getComparator(TemplateKey key) throws TemplateNotFoundException;
 
     Optional<AttributeRuleMap> getAttributeRuleMap(TemplateKey key);

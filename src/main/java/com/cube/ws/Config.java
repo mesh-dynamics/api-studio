@@ -119,7 +119,7 @@ public class Config {
             .registerTypeAdapter(SolrDocument.class, new GsonSolrDocumentSerializer())
             .create();
         MeshDGsonProvider.setInstance(gson);
-        recorder = new ConsoleRecorder(gson);
+        recorder = commonConfig.getRecorder();
         mocker = new ProxyMocker(gson);
 
         try {
