@@ -150,6 +150,7 @@ public class Constants {
 	public static final String DEFAULT_PARENT_SPAN_ID = "pSpanId";
 
 	//Properties
+	public static final String MD_SERVICE_ENDPOINT_PROP = "io.md.service.endpoint";
 	public static final String MD_RECORD_SERVICE_PROP = "io.md.service.record";
 	public static final String MD_MOCK_SERVICE_PROP = "io.md.service.mock";
 	public static final String MD_READ_TIMEOUT_PROP = "io.md.read.timeout";
