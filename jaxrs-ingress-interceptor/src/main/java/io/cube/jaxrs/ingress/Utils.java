@@ -94,7 +94,7 @@ public class Utils {
 		if (requestEvent != null) {
 			final Span reqLog = io.cube.agent.Utils.createPerformanceSpan("reqEventLog");
 			try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(reqLog)) {
-				config.recorder.record(requestEvent);
+				CommonConfig.getInstance().getRecorder().record(requestEvent);
 			} finally {
 				reqLog.finish();
 			}
@@ -122,7 +122,7 @@ public class Utils {
 		if (responseEvent != null) {
 			final Span respLog = io.cube.agent.Utils.createPerformanceSpan("respEventLog");
 			try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(respLog)) {
-				config.recorder.record(responseEvent);
+				CommonConfig.getInstance().getRecorder().record(responseEvent);
 			} finally {
 				respLog.finish();
 			}

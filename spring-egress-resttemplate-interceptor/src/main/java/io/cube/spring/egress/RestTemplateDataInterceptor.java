@@ -6,6 +6,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -41,7 +43,7 @@ import io.opentracing.SpanContext;
  * filter is executed. We want Tracing filter to execute after Client Filter.
  **/
 @Component
-@Order(3000)
+@Order(2999)
 public class RestTemplateDataInterceptor implements ClientHttpRequestInterceptor {
 
 	private static final Logger LOGGER = LoggerFactory

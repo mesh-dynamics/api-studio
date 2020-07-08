@@ -22,7 +22,7 @@ import io.md.utils.CommonUtils;
  * We want Client filter to execute before Tracing Filter.
  **/
 @Provider
-@Priority(4502)
+@Priority(value = 4502)
 public class MDClientTracingFilter implements ClientRequestFilter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(MDClientTracingFilter.class);
@@ -30,6 +30,7 @@ public class MDClientTracingFilter implements ClientRequestFilter {
 	@Override
 	public void filter(ClientRequestContext clientRequestContext) {
 		try {
+			LOGGER.info("Inside Egress tracing filter");
 			MultivaluedMap<String, String> mdTraceHeaders = new MultivaluedHashMap<>();
 			CommonUtils.injectContext(mdTraceHeaders);
 			MultivaluedMap<String, Object> clientHeaders = clientRequestContext.getHeaders();

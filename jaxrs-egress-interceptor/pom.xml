@@ -5,7 +5,7 @@
 
 	<groupId>io.cube</groupId>
 	<artifactId>md-jaxrs-egress-interceptor</artifactId>
-	<version>1.2.2</version>
+	<version>1.2.5</version>
 	<packaging>jar</packaging>
 
 	<name>jaxrs-egress-interceptor</name>
@@ -18,6 +18,13 @@
 		<version.jersey>2.27</version.jersey>
 	</properties>
 
+	<distributionManagement>
+    		<repository>
+      			<id>github</id>
+      			<name>GitHub CubeIO Apache Maven Packages</name>
+      			<url>https://maven.pkg.github.com/cube-io-corp/interceptor-framework</url>
+    		</repository>
+  	</distributionManagement>
 
 	<repositories>
 		<repository>
@@ -38,7 +45,7 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>agent</artifactId>
-			<version>1.0.29</version>
+			<version>1.0.43</version>
 		</dependency>
 	</dependencies>
 

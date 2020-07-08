@@ -1,25 +1,28 @@
 package io.cube.spring.ingress;
 
 import java.io.IOException;
-import java.util.Map;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.util.List;
 import java.util.Optional;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import io.cube.agent.CommonConfig;
 import io.md.constants.Constants;
@@ -41,14 +44,12 @@ public class DataFilter extends OncePerRequestFilter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DataFilter.class);
 
-	private static final Config config = new Config();
-
 	@Override
 	protected void doFilterInternal(HttpServletRequest httpServletRequest,
 		HttpServletResponse httpServletResponse, FilterChain filterChain)
 		throws ServletException, IOException {
 		CachedBodyHttpServletRequest requestWrapper = null;
-		ContentCachingResponseWrapper responseWrapper = null;
+
 		String apiPath = null;
 		MultivaluedMap<String, String> traceMetaMap = new MultivaluedHashMap<>();
 		MDTraceInfo mdTraceInfo = new MDTraceInfo();
@@ -65,13 +66,12 @@ public class DataFilter extends OncePerRequestFilter {
 
 				if (isSampled || isVetoed) {
 					requestWrapper = new CachedBodyHttpServletRequest(httpServletRequest);
-					responseWrapper = new ContentCachingResponseWrapper(httpServletResponse);
 
 					//path
 					apiPath = requestWrapper.getRequestURI();
 
 					//query params
-					MultivaluedMap<String, String> queryParams = getQueryParameters(
+					MultivaluedMap<String, String> queryParams = Utils.getQueryParameters(
 						requestWrapper.getQueryString());
 
 					mdTraceInfo = io.md.utils.Utils.getTraceInfo(span);
@@ -98,20 +98,72 @@ public class DataFilter extends OncePerRequestFilter {
 				+ "request/response in logging filter!", ex);
 		}
 
-		if (requestWrapper != null && responseWrapper != null) {
+		if (requestWrapper != null) {
+			ResponseWrapper responseWrapper = new ResponseWrapper(httpServletResponse);
 			filterChain.doFilter(requestWrapper, responseWrapper);
 			logResponse(responseWrapper, apiPath, traceMetaMap, mdTraceInfo);
 		} else {
 			filterChain.doFilter(httpServletRequest, httpServletResponse);
 		}
 
-		//Need to copy back the response body as it is consumed by responseWrapper.
-		//first call to copyBodyToResponse() makes the content empty once it copies it
-		// to the original response, so multiple calls do not have an impact.
-		if (responseWrapper != null) {
-			responseWrapper.copyBodyToResponse();
+	}
+
+	private class ResponseWrapper extends  HttpServletResponseWrapper {
+
+		ServletOutputStream originalStream = null;
+		PrintWriter writer = null;
+		FilterServletOutputStream filterStream = null;
+
+		public ResponseWrapper(HttpServletResponse response) {
+			super(response);
 		}
 
+		@Override
+		public ServletOutputStream getOutputStream() throws IOException {
+			if (writer != null) {
+				throw new IllegalStateException("getWriter() has already been called on this response!");
+			}
+
+			if (originalStream == null) {
+				originalStream = getResponse().getOutputStream();
+				filterStream = new FilterServletOutputStream(originalStream);
+			}
+
+			return filterStream;
+		}
+
+		@Override
+		public PrintWriter getWriter() throws IOException {
+			if (originalStream != null) {
+				throw new IllegalStateException("getOutputStream() has already been called on this response!");
+			}
+
+			if (writer == null) {
+				filterStream = new FilterServletOutputStream(getResponse().getOutputStream());
+				writer = new PrintWriter(
+					new OutputStreamWriter(filterStream, getResponse().getCharacterEncoding()),
+					true);
+			}
+
+			return writer;
+		}
+
+		@Override
+		public void flushBuffer() throws IOException {
+			if (writer != null) {
+				writer.flush();
+			} else if (originalStream != null) {
+				filterStream.flush();
+			}
+		}
+
+		public byte[] getResponseBody() {
+			if (filterStream != null) {
+				return filterStream.getBodyAsByteArray();
+			} else {
+				return new byte[0];
+			}
+		}
 	}
 
 
@@ -134,7 +186,7 @@ public class DataFilter extends OncePerRequestFilter {
 
 	}
 
-	private void logResponse(ContentCachingResponseWrapper responseWrapper, String apiPath,
+	private void logResponse(ResponseWrapper responseWrapper, String apiPath,
 		MultivaluedMap<String, String> traceMeta, MDTraceInfo mdTraceInfo)
 		throws IOException {
 		//meta
@@ -144,11 +196,8 @@ public class DataFilter extends OncePerRequestFilter {
 		meta.putAll(traceMeta);
 
 		//body
-		byte[] responseBody = responseWrapper.getContentAsByteArray();
-
-		//Need to do this before reading the headers. This call cannot be done
-		//before reading the response body.
-		responseWrapper.copyBodyToResponse();
+		byte[] responseBody = responseWrapper.getResponseBody();
+		int size = responseBody.length;
 
 		//hdrs
 		MultivaluedMap<String, String> responseHeaders = getHeaders(responseWrapper);
@@ -157,7 +206,7 @@ public class DataFilter extends OncePerRequestFilter {
 	}
 
 	private MultivaluedMap<String, String> getHeaders(
-		ContentCachingResponseWrapper responseWrapper) {
+		ResponseWrapper responseWrapper) {
 		MultivaluedMap<String, String> headerMap = new MultivaluedHashMap<>();
 		responseWrapper.getHeaderNames().stream()
 			.forEach(headerName -> {
@@ -166,26 +215,6 @@ public class DataFilter extends OncePerRequestFilter {
 				}
 			});
 		return headerMap;
-	}
-
-	private static MultivaluedMap<String, String> getQueryParameters(String queryString) {
-		MultivaluedMap<String, String> queryParameters = new MultivaluedHashMap<>();
-
-		if (StringUtils.isEmpty(queryString)) {
-			return queryParameters;
-		}
-
-		String[] parameters = queryString.split("&");
-
-		for (String parameter : parameters) {
-			String[] keyValuePair = parameter.split("=");
-			if (keyValuePair.length == 1) {
-				queryParameters.add(keyValuePair[0], "");
-			} else {
-				queryParameters.add(keyValuePair[0], keyValuePair[1]);
-			}
-		}
-		return queryParameters;
 	}
 
 }
