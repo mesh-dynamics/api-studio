@@ -16,9 +16,8 @@ import com.cube.dao.ApiTraceResponse.ServiceReqRes;
 import io.md.constants.ReplayStatus;
 import io.md.dao.ConvertEventPayloadResponse;
 import io.md.dao.Event.EventType;
+import io.md.dao.EventQuery;
 import io.md.dao.HTTPRequestPayload;
-import io.md.dao.HTTPResponsePayload;
-import io.md.dao.Recording.RecordingType;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.ResponsePayload;
 import java.io.IOException;
@@ -55,7 +54,6 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
-import org.clapper.util.misc.MultiValueMap;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -326,8 +324,8 @@ public class AnalyzeWS {
      * @return
      */
     @GET
-    @Path("getRespTemplate/{customerId}/{appId}/{templateVersion}/{service}/{type}")
-    public Response getRespTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
+    @Path("getTemplate/{customerId}/{appId}/{templateVersion}/{service}/{type}")
+    public Response getTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
 	    @PathParam("customerId") String customerId, @PathParam("templateVersion") String templateVersion,
 	    @PathParam("service") String service, @PathParam("type") String type) {
     	return Utils.valueOf(Type.class, type).map(templateType ->
@@ -347,24 +345,28 @@ public class AnalyzeWS {
         MultivaluedMap<String, String> queryParams = urlInfo.getQueryParameters();
         Optional<String> apipath = Optional.ofNullable(queryParams.getFirst(Constants.API_PATH_FIELD));
         Optional<String> jsonpath = Optional.ofNullable(queryParams.getFirst(Constants.JSON_PATH_FIELD));
+        Optional<EventType> eventType = Optional.ofNullable(queryParams.getFirst(Constants.EVENT_TYPE_FIELD))
+            .flatMap(v -> Utils.valueOf(EventType.class, v));
 
         if (apipath.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
                 .entity(Map.of(Constants.ERROR, "Api Path not Specified")).build();
-        }
-        if (jsonpath.isEmpty()) {
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-                .entity(Map.of(Constants.ERROR, "Json Path not Specified")).build();
         }
 
         TemplateKey tkey = new TemplateKey(templateVersion, customerId, appId, service, apipath.get(),
             ruleType);
 
         try {
-	        TemplateEntry rule = rrstore.getComparator(tkey).getCompareTemplate()
-		        .getRule(jsonpath.get());
+          CompareTemplate compareTemplate = rrstore.getComparator(tkey, eventType).getCompareTemplate();
+          String resp = "";
+          if (jsonpath.isEmpty()) {
+            resp = jsonMapper.writeValueAsString(compareTemplate);
+          } else {
+            TemplateEntry rule = compareTemplate.getRule(jsonpath.get());
+            resp = jsonMapper.writeValueAsString(rule);
+          }
 	        return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
-		        .entity(jsonMapper.writeValueAsString(rule)).build();
+		        .entity(resp).build();
 
         } catch (JsonProcessingException e) {
 	        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -1428,55 +1430,45 @@ public class AnalyzeWS {
       @PathParam("customerId") String customerId,
       @PathParam("appId") String appId) {
     try {
-      ApiTraceFacetQuery apiTraceFacetQuery = new ApiTraceFacetQuery(customerId, appId, uriInfo.getQueryParameters());
+      MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+      ApiTraceFacetQuery apiTraceFacetQuery = new ApiTraceFacetQuery(customerId, appId, queryParams);
       Optional<Integer> depth = Optional.ofNullable(uriInfo.getQueryParameters().getFirst("depth"))
             .flatMap(val -> {
               Optional<Integer> value = Utils.strToInt(val);
               return  value.get() >= 0 ? value : Optional.of(1);
             }).or(() -> Optional.of(1));
-      Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery);
+
+      Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).or(()->Optional.of(50));
+      Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
+
+      Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start);
       MultivaluedMap<String, Event> traceCollectionMap = new MultivaluedHashMap<>();
-      result.getObjects().forEach(res -> traceCollectionMap.add(res.getTraceId() + " "+ res.getCollection(), res));
+      List<String> traceIds = new ArrayList<>();
+      result.getObjects().forEach(res -> {
+        traceCollectionMap.add(res.getTraceId() + " "+ res.getCollection(), res);
+        traceIds.add(res.getTraceId());
+      });
+      EventQuery.Builder builder = new EventQuery.Builder(customerId, appId, Collections.emptyList());
+      builder.withTraceIds(traceIds);
+      Result<Event> eventResultsForTraceIds = rrstore.getEvents(builder.build());
+      MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
+      eventResultsForTraceIds.getObjects().forEach(res -> mapForEventsTraceIds.add(res.getTraceId() + " "+ res.getCollection(), res));
 
       ArrayList<ApiTraceResponse> response = new ArrayList<>();
       traceCollectionMap.forEach((traceCollectionKey, events) -> {
-
-        MultivaluedMap<String, Event> requestEventsByParentSpanId = new MultivaluedHashMap<>();
-        Map<String, Event> responseEventsByReqId = new HashMap<>();
-        List<Event> parentRequestEventsForApiPath = new ArrayList<>();
-
-        events.forEach(e -> {
-          if(e.isRequestType()) {
-            requestEventsByParentSpanId.add(e.parentSpanId, e);
-            apiTraceFacetQuery.apiPath.ifPresent(path -> {
-              if(e.apiPath.equals(path)) {
-                parentRequestEventsForApiPath.add(e);
-              }
-            });
-          }
-          if(e.eventType == EventType.HTTPResponse) {
-            responseEventsByReqId.put(e.reqId, e);
-          }
-        });
-
         if(apiTraceFacetQuery.apiPath.isPresent()) {
-
-          for(Event parent: parentRequestEventsForApiPath) {
+          for(Event parent: events) {
             response.add(getApiTraceResponse(parent, depth.get(),
-                responseEventsByReqId, requestEventsByParentSpanId));
+                Utils.getFromMVMapAsOptional(mapForEventsTraceIds,traceCollectionKey)));
           }
 
         } else {
             // find event such that there is no event having span id equal to its parent span id
             Map<String, Event> requestEventsBySpanId = new HashMap<>();
-            events.forEach(e -> {
-                if (e.isRequestType()) {
-                    requestEventsBySpanId.put(e.spanId, e);
-                }
-            });
+            events.forEach(e -> requestEventsBySpanId.put(e.spanId, e));
             List<Event> parentRequestEvents = events.stream()
-              .filter(e -> requestEventsBySpanId.get(e.parentSpanId) == null && e.isRequestType())
-                      .collect(Collectors.toList());
+              .filter(e -> requestEventsBySpanId.get(e.parentSpanId) == null)
+                .collect(Collectors.toList());
           if(parentRequestEvents.isEmpty()) {
             LOGGER.error(
                 new ObjectMessage(Map.of(Constants.MESSAGE, "No request events found",
@@ -1486,7 +1478,7 @@ public class AnalyzeWS {
           }
           for(Event parent: parentRequestEvents) {
             response.add(getApiTraceResponse(parent, depth.get(),
-                responseEventsByReqId, requestEventsByParentSpanId));
+                Utils.getFromMVMapAsOptional(mapForEventsTraceIds,traceCollectionKey)));
           }
         }
       });
@@ -1505,10 +1497,19 @@ public class AnalyzeWS {
     }
   }
 
-  private ApiTraceResponse getApiTraceResponse(Event parentRequestEvent, int depth, Map<String, Event> responseEventsByReqId,
-      MultivaluedMap<String, Event> requestEventsByParentSpanId ) {
+  private ApiTraceResponse getApiTraceResponse(Event parentRequestEvent, int depth, List<Event> eventsForTraceId) {
     final ApiTraceResponse apiTraceResponse = new ApiTraceResponse(parentRequestEvent.getTraceId(),
         parentRequestEvent.getCollection());
+
+    MultivaluedMap<String, Event> requestEventsByParentSpanId = new MultivaluedHashMap<>();
+    Map<String, Event> responseEventsByReqId = new HashMap<>();
+    eventsForTraceId.forEach(e -> {
+        if(e.isRequestType()) {
+          requestEventsByParentSpanId.add(e.parentSpanId, e);
+        } else {
+          responseEventsByReqId.put(e.reqId, e);
+        }
+    });
 
     levelOrderTraversal(parentRequestEvent,  depth, apiTraceResponse, responseEventsByReqId,
         requestEventsByParentSpanId);

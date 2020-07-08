@@ -129,10 +129,12 @@ steps:
     image: drillster/drone-email
     settings:
       host: smtp.office365.com
-      username: email.sender@meshdynamics.io
-      password: Welcome@md123
+      username:
+        from_secret: EMAIL_USERNAME
+      password:
+        from_secret: EMAIL_PASSWORD
       from: email.sender@meshdynamics.io
-      recipients: [ developers@meshdynamics.io ]
+      recipients: [ a80f6254.meshdynamics.io@amer.teams.ms, developers@meshdynamics.io ]
     when:
       status:
       - failure

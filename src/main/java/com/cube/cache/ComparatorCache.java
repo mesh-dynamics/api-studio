@@ -9,6 +9,7 @@ package com.cube.cache;
 import static io.md.constants.Constants.FN_RESPONSE_PATH;
 
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,6 +29,7 @@ import io.md.core.TemplateKey;
 import io.md.core.TemplateKey.Type;
 import io.md.dao.Event.EventType;
 import io.md.services.DataStore.TemplateNotFoundException;
+import io.md.utils.UtilException;
 
 import com.cube.core.JsonComparator;
 import com.cube.core.Utils;
@@ -107,33 +109,24 @@ public class ComparatorCache {
     }
 
     /**
-     * This function is used during template rule update and get Existing Rule Api
+     * eventType is empty during template rule update and get Existing Rule Api
      * Will return defaults only for Response Compare Template,
      * otherwise return whatever is find in cache/solr
      * @param key
      * @return
      * @throws TemplateNotFoundException
      */
-    public Comparator getComparator(TemplateKey key) throws TemplateNotFoundException {
-        // this will always return request type ... will have to be converted
-        // to Request / Response based on the key type
-        EventType defaultEventType = Utils.valueOf(EventType.class,
-            rrStore.getDefaultEventType(key.getCustomerId()
-            , key.getAppId(), key.getServiceId(), key.getPath()).orElseThrow(
-            TemplateNotFoundException::new)).orElseThrow(TemplateNotFoundException::new);
-        return getComparator(key, EventType.mapType(defaultEventType
-            , key.isResponseTemplate()), key.isResponseTemplate());
-    }
-
-
-    public Comparator getComparator(TemplateKey key, EventType eventType) throws
+    public Comparator getComparator(TemplateKey key, Optional<EventType> eventType) throws
         TemplateNotFoundException {
         return getComparator(key, eventType, true);
     }
 
-    private Comparator getComparator(TemplateKey key, EventType eventType, boolean sendDefault) throws TemplateNotFoundException {
+    private Comparator getComparator(TemplateKey key, Optional<EventType> eventTypeOpt, boolean sendDefault) throws TemplateNotFoundException {
         try {
             return comparatorCache.get(key, () -> {
+                // fetch default event type if not passed
+                EventType eventType =
+                    eventTypeOpt.orElseGet(UtilException.rethrowSupplier(() -> getDefaultEventType(key)));
                 try {
                     Comparator toReturn = createComparator(key, eventType);
                     LOGGER.info(new ObjectMessage(Map.of(
@@ -228,6 +221,16 @@ public class ComparatorCache {
         templateCache.invalidateAll();
     }
 
+    private EventType getDefaultEventType(TemplateKey key) throws TemplateNotFoundException {
+        // this will always return request type ... will have to be converted
+        // to Request / Response based on the key type
+        EventType defaultEventType = Utils.valueOf(EventType.class,
+            rrStore.getDefaultEventType(key.getCustomerId()
+                , key.getAppId(), key.getServiceId(), key.getPath()).orElseThrow(
+                TemplateNotFoundException::new)).orElseThrow(TemplateNotFoundException::new);
+        return EventType.mapType(defaultEventType
+            , key.isResponseTemplate());
+    }
 
     private class ComparatorNotImplementedException extends Exception {
         public final EventType eventType;
