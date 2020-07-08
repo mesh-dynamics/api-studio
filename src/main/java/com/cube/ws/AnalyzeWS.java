@@ -1447,7 +1447,7 @@ public class AnalyzeWS {
         traceCollectionMap.add(res.getTraceId() + " "+ res.getCollection(), res);
         traceIds.add(res.getTraceId());
       });
-      EventQuery.Builder builder = new EventQuery.Builder(customerId, appId, Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse));
+      EventQuery.Builder builder = new EventQuery.Builder(customerId, appId, Collections.emptyList());
       builder.withTraceIds(traceIds);
       Result<Event> eventResultsForTraceIds = rrstore.getEvents(builder.build());
       MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
@@ -1504,7 +1504,7 @@ public class AnalyzeWS {
         if(e.isRequestType()) {
           requestEventsByParentSpanId.add(e.parentSpanId, e);
         }
-        if(e.eventType == EventType.HTTPResponse) {
+        else {
           responseEventsByReqId.put(e.reqId, e);
         }
     });
