@@ -4,6 +4,10 @@
 package com.cube.dao;
 
 import io.md.constants.ReplayStatus;
+import io.md.core.Comparator;
+import io.md.core.CompareTemplate;
+import io.md.core.TemplateKey;
+import io.md.dao.Event;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
 import java.util.Collections;
@@ -177,6 +181,29 @@ public abstract class ReqRespStoreImplBase extends AbstractDataStore implements 
 		return true;
 	}
 
+
+    @Override
+    public Comparator getComparator(TemplateKey key) throws TemplateNotFoundException {
+        return getComparator(key, Optional.empty());
+    }
+
+    @Override
+    public Comparator getComparator(TemplateKey key, Event.EventType eventType) throws
+        TemplateNotFoundException {
+	    return getComparator(key, Optional.ofNullable(eventType));
+    }
+
+
+    @Override
+    public CompareTemplate getTemplate(String customerId, String app, String service, String apiPath,
+                                       String templateVersion, TemplateKey.Type templateType,
+                                       Optional<Event.EventType> eventType) throws TemplateNotFoundException {
+        TemplateKey tkey =
+            new TemplateKey(templateVersion, customerId,
+                app, service, apiPath, templateType);
+
+        return getComparator(tkey, eventType).getCompareTemplate();
+    }
 
 	static protected class CollectionKey {
 
