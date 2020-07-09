@@ -406,7 +406,7 @@ class ViewSelectedTestConfig extends React.Component {
 
     checkStatus = (statusUrl, configForHTTP) => {
         api.get(statusUrl, configForHTTP)
-            .then(data => !this.state.stopDisabled && this.setState({ recStatus: data }));
+            .then(data => this.setState({ recStatus: data }));
     };
 
     resumeRecording = () => {
@@ -522,11 +522,11 @@ class ViewSelectedTestConfig extends React.Component {
         };
         // axios.post(stopUrl, {}, configForHTTP)
         api.post(stopUrl, {}, configForHTTP).then(() => {
-            this.setState({ stopDisabled: true, recId: null, stoppingStatus: true});
+            this.setState({ recId: null, stoppingStatus: true});
             this.stopStatusInterval = setInterval(
                 () => { 
                     if(this.state.recStatus.status === "Completed") {
-                        this.setState({ stoppingStatus: false});
+                        this.setState({stopDisabled: true, stoppingStatus: false});
                         clearInterval(this.stopStatusInterval);
                     } else {
                         this.checkStatus(statusUrl, configForHTTP);
@@ -892,6 +892,7 @@ class ViewSelectedTestConfig extends React.Component {
         
         const panel = {
             ['/']: () => (<div />),
+            ['/test_config']: () => (<div />),
             ['/test_config_view']: () => this.renderTestInfo(),
             ['/test_config_view/golden_visibility']: () => this.renderGoldenMeta(),
             ['/test_config_view/test_cluster']: () => this.renderTestClusterPanel()
@@ -936,7 +937,7 @@ class ViewSelectedTestConfig extends React.Component {
                             </div>
                             <div style={{ display: "flex", alignItems: "flex-start" }}>
                                 <span onClick={this.showDBWarningModal} className={stopDisabled ? "cube-btn margin-right-10" : "cube-btn disabled margin-right-10"}>START</span>
-                                <span onClick={this.stopRecord} className={stopDisabled ? "cube-btn disabled" : "cube-btn"}>STOP</span>
+                                <span onClick={this.stopRecord} className={stopDisabled || stoppingStatus ? "cube-btn disabled" : "cube-btn"}>STOP</span>
                             </div>
                             
                         </div>
