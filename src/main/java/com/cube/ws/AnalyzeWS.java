@@ -1450,8 +1450,12 @@ public class AnalyzeWS {
       });
       ArrayList<ApiTraceResponse> response = new ArrayList<>();
       if(!traceIds.isEmpty()) {
+        /**TODO: we need to update the trace for other event types
+         *currently we are supporting only HTTPRequest and HTTPResponse
+         * we need to change the logic to support other eventTypes
+         */
         EventQuery.Builder builder = new EventQuery.Builder(customerId, appId,
-            Collections.emptyList());
+            Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse));
         builder.withTraceIds(traceIds);
         Result<Event> eventResultsForTraceIds = rrstore.getEvents(builder.build());
         MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
