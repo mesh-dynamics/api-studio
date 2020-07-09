@@ -1448,40 +1448,49 @@ public class AnalyzeWS {
         traceCollectionMap.add(res.getTraceId() + " "+ res.getCollection(), res);
         traceIds.add(res.getTraceId());
       });
-      EventQuery.Builder builder = new EventQuery.Builder(customerId, appId, Collections.emptyList());
-      builder.withTraceIds(traceIds);
-      Result<Event> eventResultsForTraceIds = rrstore.getEvents(builder.build());
-      MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
-      eventResultsForTraceIds.getObjects().forEach(res -> mapForEventsTraceIds.add(res.getTraceId() + " "+ res.getCollection(), res));
-
       ArrayList<ApiTraceResponse> response = new ArrayList<>();
-      traceCollectionMap.forEach((traceCollectionKey, events) -> {
-        if(apiTraceFacetQuery.apiPath.isPresent()) {
-          for(Event parent: events) {
-            response.add(getApiTraceResponse(parent, depth.get(),
-                Utils.getFromMVMapAsOptional(mapForEventsTraceIds,traceCollectionKey)));
-          }
+      if(!traceIds.isEmpty()) {
+        /**TODO: we need to update the trace for other event types
+         *currently we are supporting only HTTPRequest and HTTPResponse
+         * we need to change the logic to support other eventTypes
+         */
+        EventQuery.Builder builder = new EventQuery.Builder(customerId, appId,
+            Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse));
+        builder.withTraceIds(traceIds);
+        Result<Event> eventResultsForTraceIds = rrstore.getEvents(builder.build());
+        MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
+        eventResultsForTraceIds.getObjects().forEach(
+            res -> mapForEventsTraceIds.add(res.getTraceId() + " " + res.getCollection(), res));
 
-        } else {
+        traceCollectionMap.forEach((traceCollectionKey, events) -> {
+          if (apiTraceFacetQuery.apiPath.isPresent()) {
+            for (Event parent : events) {
+              response.add(getApiTraceResponse(parent, depth.get(),
+                  Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey)));
+            }
+
+          } else {
             // find event such that there is no event having span id equal to its parent span id
             Map<String, Event> requestEventsBySpanId = new HashMap<>();
             events.forEach(e -> requestEventsBySpanId.put(e.spanId, e));
             List<Event> parentRequestEvents = events.stream()
-              .filter(e -> requestEventsBySpanId.get(e.parentSpanId) == null)
+                .filter(e -> requestEventsBySpanId.get(e.parentSpanId) == null)
                 .collect(Collectors.toList());
-          if(parentRequestEvents.isEmpty()) {
-            LOGGER.error(
-                new ObjectMessage(Map.of(Constants.MESSAGE, "No request events found",
-                    Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, appId,
-                    Constants.TRACE_ID_FIELD +" "+ Constants.COLLECTION_FIELD, traceCollectionKey)));
-            return;
+            if (parentRequestEvents.isEmpty()) {
+              LOGGER.error(
+                  new ObjectMessage(Map.of(Constants.MESSAGE, "No request events found",
+                      Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, appId,
+                      Constants.TRACE_ID_FIELD + " " + Constants.COLLECTION_FIELD,
+                      traceCollectionKey)));
+              return;
+            }
+            for (Event parent : parentRequestEvents) {
+              response.add(getApiTraceResponse(parent, depth.get(),
+                  Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey)));
+            }
           }
-          for(Event parent: parentRequestEvents) {
-            response.add(getApiTraceResponse(parent, depth.get(),
-                Utils.getFromMVMapAsOptional(mapForEventsTraceIds,traceCollectionKey)));
-          }
-        }
-      });
+        });
+      }
 
       Map jsonMap = new HashMap();
 
