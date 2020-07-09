@@ -41,6 +41,7 @@ public class Replay {
 	public Optional<String> xfms;
 	public transient Optional<URLClassLoader> generatedClassLoader;
 	public Optional<String> dynamicInjectionConfigVersion;
+	public Optional<String> staticInjectionMap;
 	public Instant analysisCompleteTimestamp;
 
 	public Replay(String endpoint, String customerId, String app, String instanceId,
@@ -53,7 +54,8 @@ public class Replay {
 		List<String> service, ReplayTypeEnum replayType, Optional<String> xfms,
 		List<String> mockServices,
 		Optional<String> testConfigName, Optional<String> goldenName, Optional<String> recordingId,
-		boolean archived, Optional<String> dynamicInjectionConfigVersion, Instant analysisCompleteTimestamp) {
+		boolean archived, Optional<String> dynamicInjectionConfigVersion,
+		Instant analysisCompleteTimestamp, Optional<String> staticInjectionMap) {
 		this.endpoint = endpoint;
 		this.customerId = customerId;
 		this.app = app;
@@ -85,6 +87,7 @@ public class Replay {
 		this.archived = archived;
 		this.dynamicInjectionConfigVersion = dynamicInjectionConfigVersion;
 		this.analysisCompleteTimestamp = analysisCompleteTimestamp;
+		this.staticInjectionMap = staticInjectionMap;
 	}
 
 	//for deserialization
@@ -115,6 +118,7 @@ public class Replay {
 		xfms = Optional.empty();
 		dynamicInjectionConfigVersion = Optional.empty();
 		analysisCompleteTimestamp = null;
+		staticInjectionMap = null;
 	}
 
 }

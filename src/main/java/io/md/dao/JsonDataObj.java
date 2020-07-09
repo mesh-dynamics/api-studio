@@ -477,14 +477,55 @@ public class JsonDataObj implements DataObj {
 			valParentObj.set(fieldName, ((JsonDataObj)value).objRoot);
 			return true;
 		} else if (valParent != null && valParent.isArray()) {
+			// Assumption: the objRoot for value won't be singleton but
+			// wrapped in an array hence an array node. In this way it
+			// would be consistent with queryParams/hdrs being in an array
 			ArrayNode valParentObj = (ArrayNode) valParent;
 			String indexStr = pathPtr.last().getMatchingProperty();
 			Optional<Integer> index = Utils.strToInt(indexStr);
 			index.ifPresent(ind -> {
-				valParentObj.set(ind, ((JsonDataObj) value).objRoot);
+				// single index to be replaced
+				// get() on objRoot will return null in case of any other node than ArrayNode
+				JsonNode valToPut = ((JsonDataObj) value).objRoot.get(0);
+				if(valToPut!=null)
+				{
+					valParentObj.set(ind, valToPut);
+				} else {
+					// objRoot is a singleton and not an array
+					valToPut = ((JsonDataObj) value).objRoot;
+					valParentObj.set(ind, valToPut);
+				}
 			});
-			if(!index.isPresent()) {
-				LOGGER.error("Cannot convert string to integer in put method");
+			if (!index.isPresent()) {
+				Optional<Integer> ind = Utils
+					.strToInt(indexStr.substring(0, indexStr.length() - 1));
+				if (ind.isPresent()) {
+					int i = ind.get();
+					// Check for special character presence
+					if (indexStr.endsWith("*")) {
+						// Partial replacement from that(inclusive) index onwards
+						// "0*" will replace entire path
+
+						// Preserve path segments upto ind and remove all nodes from beyond that
+						for (int j = valParentObj.size() - 1; j >= i; j--) {
+							valParentObj.remove(j);
+						}
+						valParentObj.addAll((ArrayNode) ((JsonDataObj) value).objRoot);
+
+					} else if (indexStr.endsWith("^")) {
+						// insertion in between from that index
+						for (int j = 0; j < ((JsonDataObj) value).objRoot.size(); j++) {
+							valParentObj.insert(i + j, ((JsonDataObj) value).objRoot.get(j));
+						}
+					} else {
+						LOGGER.error("Cannot recognise wildcard format for injecting in array");
+					}
+				} else if (indexStr.equals("*")) {
+					// Add all at the end
+					valParentObj.addAll((ArrayNode) ((JsonDataObj) value).objRoot);
+				} else {
+					LOGGER.error("Cannot convert string to integer in put method");
+				}
 			}
 			return true;
 		} else {
