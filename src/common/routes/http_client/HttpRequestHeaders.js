@@ -11,18 +11,18 @@ class HttpRequestHeaders extends Component {
     }
 
     handleAdd() {
-        const { tabId } = this.props;
-        this.props.addOrRemoveParam(tabId, "headers", "add");
+        const { tabId, isOutgoingRequest } = this.props;
+        this.props.addOrRemoveParam(isOutgoingRequest, tabId, "headers", "add");
     }
 
     handleDelete(id) {
-        const { tabId } = this.props;
-        this.props.addOrRemoveParam(tabId, "headers", "delete", id);
+        const { tabId, isOutgoingRequest } = this.props;
+        this.props.addOrRemoveParam(isOutgoingRequest, tabId, "headers", "delete", id);
     }
 
     handleChange(id, evt) {
-        const { tabId } = this.props;
-        this.props.updateParam(tabId, "headers", evt.target.name, evt.target.value, id);
+        const { tabId, isOutgoingRequest } = this.props;
+        this.props.updateParam(isOutgoingRequest, tabId, "headers", evt.target.name, evt.target.value, id);
     }
 
     render() {

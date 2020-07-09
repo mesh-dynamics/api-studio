@@ -45,6 +45,7 @@ class ViewSelectedTestConfig extends React.Component {
             recLabel:"",
             recId: null,
             stopDisabled: true,
+            stoppingStatus: false,
             goldenNameErrorMessage: "",
             recordingMode: "new", //allowed values ["new", "resume"]
             userAlertMessage: {
@@ -405,7 +406,7 @@ class ViewSelectedTestConfig extends React.Component {
 
     checkStatus = (statusUrl, configForHTTP) => {
         api.get(statusUrl, configForHTTP)
-            .then(data => this.setState({ recStatus: data }));
+            .then(data => !this.state.stopDisabled && this.setState({ recStatus: data }));
     };
 
     resumeRecording = () => {
@@ -521,8 +522,17 @@ class ViewSelectedTestConfig extends React.Component {
         };
         // axios.post(stopUrl, {}, configForHTTP)
         api.post(stopUrl, {}, configForHTTP).then(() => {
-            this.setState({ stopDisabled: true, recId: null });
-            this.checkStatus(statusUrl, configForHTTP);
+            this.setState({ stopDisabled: true, recId: null, stoppingStatus: true});
+            this.stopStatusInterval = setInterval(
+                () => { 
+                    if(this.state.recStatus.status === "Completed") {
+                        this.setState({ stoppingStatus: false});
+                        clearInterval(this.stopStatusInterval);
+                    } else {
+                        this.checkStatus(statusUrl, configForHTTP);
+                    }
+                }, 
+                1000);
         });
 
         dispatch(cubeActions.getTestIds(selectedApp));
@@ -895,7 +905,7 @@ class ViewSelectedTestConfig extends React.Component {
         const { 
             customHeaders, recordModalVisible, showReplayModal, 
             fcId, showGoldenFilter, selectedGoldenFromFilter,
-            recName, stopDisabled, recStatus, showAddCustomHeader,
+            recName, stopDisabled,stoppingStatus, recStatus, showAddCustomHeader,
             goldenNameErrorMessage, fcEnabled, resumeModalVisible,
             dbWarningModalVisible, instanceWarningModalVisible, 
             goldenSelectWarningModalVisible, showDeleteGoldenConfirmation
@@ -935,7 +945,7 @@ class ViewSelectedTestConfig extends React.Component {
                         </div>
                         <div className={"padding-15 bold"}>
                             <span className={!recStatus ? "hidden" : ""}>Recording Id: {recStatus ? recStatus.id : ""}</span>&nbsp;&nbsp;&nbsp;&nbsp;
-                            Status: {recStatus ? recStatus.status : "Initialize"}
+                            Status: {recStatus ? (stoppingStatus ? "Stopping": recStatus.status) : "Initialize"}
                         </div>
                     </Modal.Body>
 
