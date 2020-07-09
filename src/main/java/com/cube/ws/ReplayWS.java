@@ -8,6 +8,8 @@ import com.cube.dao.ReplayUpdate;
 import com.cube.dao.ReplayUpdate.ReplaySaveFailureException;
 import com.cube.dao.Result;
 import io.md.constants.ReplayStatus;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,6 +41,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.UtilException;
+import io.md.core.CompareTemplate;
 import io.md.core.ReplayTypeEnum;
 
 import com.cube.core.Utils;
@@ -265,6 +268,7 @@ public class ReplayWS {
         Optional<String> testConfigName = Optional.ofNullable(formParams.getFirst("testConfigName"));
 
         Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst("dynamicInjectionConfigVersion"));
+        Optional<String> staticInjectionMap = Optional.ofNullable(formParams.getFirst("staticInjectionMap"));
 
         // Request transformations - for injecting tokens and such
         Optional<String> xfms = Optional.ofNullable(formParams.getFirst("transforms"));
@@ -310,6 +314,8 @@ public class ReplayWS {
             testConfigName.ifPresent(replayBuilder::withTestConfigName);
             xfms.ifPresent(replayBuilder::withXfms);
             dynamicInjectionConfigVersion.ifPresent(replayBuilder::withDynamicInjectionConfigVersion);
+            staticInjectionMap.ifPresent(replayBuilder::withStaticInjectionMap);
+
             try {
                 recording.generatedClassJarPath
                     .ifPresent(UtilException.rethrowConsumer(replayBuilder::withGeneratedClassJar));
@@ -356,11 +362,11 @@ public class ReplayWS {
     @Produces(MediaType.APPLICATION_JSON)
     public Response saveDynamicInjectionConfig(@Context UriInfo uriInfo, DynamicInjectionConfig dynamicInjectionConfig) {
         try {
-            String templateSetId = rrstore.saveDynamicInjectionConfig(dynamicInjectionConfig);
+            String dynamicInjectionConfigId = rrstore.saveDynamicInjectionConfig(dynamicInjectionConfig);
             return Response.ok().entity((new JSONObject(Map.of(
                 "Message", "Successfully saved Dynamic Injection Config",
-                "ID", templateSetId,
-                "templateSetVersion", dynamicInjectionConfig.version))).toString()).build();
+                "ID", dynamicInjectionConfigId,
+                "dynamicInjectionConfigVersion", dynamicInjectionConfig.version))).toString()).build();
         } catch (SolrStoreException e) {
             LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Unable to save Dynamic Injection Config",
                 "dynamicInjectionConfig.version", dynamicInjectionConfig.version)), e);

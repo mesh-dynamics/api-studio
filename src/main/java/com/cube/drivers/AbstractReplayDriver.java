@@ -14,8 +14,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
@@ -23,16 +25,21 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringSubstitutor;
-import org.apache.commons.text.lookup.StringLookup;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.DoubleNode;
+import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.LongNode;
+import com.fasterxml.jackson.databind.node.POJONode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import io.md.dao.Event;
@@ -44,6 +51,7 @@ import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
 import com.cube.injection.DynamicInjectionConfig;
 import com.cube.utils.Constants;
+import com.cube.utils.InjectionVarResolver;
 import com.cube.ws.Config;
 
 public abstract class AbstractReplayDriver {
@@ -95,6 +103,10 @@ public abstract class AbstractReplayDriver {
 			return rrstore.getDynamicInjectionConfig(
 				new CubeMetaInfo(replay.customerId, replay.app, replay.instanceId), DIConfVersion);
 		}).orElse(Optional.empty());
+
+		if (dynamicInjectionConfig.isPresent()) {
+			populateStaticExtactionMap();
+		}
 
 		CompletableFuture.runAsync(() -> replay(analyze)).handle((ret, e) -> {
 			if (e != null) {
@@ -328,65 +340,108 @@ public abstract class AbstractReplayDriver {
 		return replay;
 	}
 
+	private void populateStaticExtactionMap() {
+		this.extractionMap = replay.staticInjectionMap.map(sim -> {
+			try {
+				Map<String, DataObj> extractionMapTmp = new HashMap<>();
+				// Read tree will set correct type of json nodes while parsing the json
+				JsonNode jsonTree = jsonMapper.readTree(sim);
+				Iterator<Entry<String, JsonNode>> fields = jsonTree.fields();
+				while (fields.hasNext()) {
+					Entry<String, JsonNode> jsonField = fields.next();
+					extractionMapTmp.put(jsonField.getKey(), new JsonDataObj(jsonField.getValue(), jsonMapper));
+				}
+				return extractionMapTmp;
+			} catch (Exception ex) {
+				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+					"Error in reading static injection map from Replay",
+					Constants.REPLAY_ID_FIELD, replay.replayId)), ex);
+				return new HashMap<String, DataObj>();
+			}
+		}).orElse(new HashMap<String, DataObj>());
+	}
+
 	public void extract(Event goldenRequestEvent, Payload testResponsePayload,
 		ReqRespStore rrstore) {
-		// Test request is same as golden for replay extraction.
-		VarResolver varResolver = new VarResolver(goldenRequestEvent, testResponsePayload,
-			goldenRequestEvent.payload, rrstore);
-		StringSubstitutor sub = new StringSubstitutor(varResolver);
-		dynamicInjectionConfig.get().extractionMetas.forEach(extractionMeta -> {
-			DataObj value;
-			if (extractionMeta.apiPath.equalsIgnoreCase(goldenRequestEvent.apiPath)) {
-				//  TODO ADD checks for method type GET/POST & also on reset field
-				String sourceString = extractionMeta.value;
-				// Boolean placeholder to specify if the value to be extracted
-				// is an Object and not a string.
-				// NOTE - if this is true value should be a single source & jsonPath
-				// (Only one placeholder of ${Source: JSONPath}
-				if (extractionMeta.valueObject) {
-					String lookupString = sourceString.trim()
-						.substring(sourceString.indexOf("{") + 1, sourceString.indexOf("}"));
-					value = varResolver.lookupObject(lookupString);
-				} else {
-					String valueString = sub.replace(sourceString);
-					value = new JsonDataObj(new TextNode(valueString), jsonMapper);
+		dynamicInjectionConfig.ifPresent(dic-> {
+
+			dic.extractionMetas.forEach(extractionMeta -> {
+				// Test request is same as golden for replay extraction.
+				InjectionVarResolver varResolver = new InjectionVarResolver(goldenRequestEvent,
+					testResponsePayload,
+					goldenRequestEvent.payload, rrstore);
+				StringSubstitutor sub = new StringSubstitutor(varResolver);
+				DataObj value;
+				if (extractionMeta.apiPath.equalsIgnoreCase(goldenRequestEvent.apiPath)) {
+					//  TODO ADD checks for method type GET/POST & also on reset field
+					String sourceString = extractionMeta.value;
+					// Boolean placeholder to specify if the value to be extracted
+					// is an Object and not a string.
+					// NOTE - if this is true value should be a single source & jsonPath
+					// (Only one placeholder of ${Source: JSONPath}
+					if (extractionMeta.valueObject) {
+						String lookupString = sourceString.trim()
+							.substring(sourceString.indexOf("{") + 1, sourceString.indexOf("}"));
+						value = varResolver.lookupObject(lookupString);
+					} else {
+						String valueString = sub.replace(sourceString);
+						value = new JsonDataObj(new TextNode(valueString), jsonMapper);
+					}
+					extractionMap
+						.put(sub.replace(extractionMeta.name), value);
 				}
-				extractionMap
-					.put(sub.replace(extractionMeta.name), value);
-			}
+			});
 		});
 	}
 
-
 	public void inject(Event request) {
-		StringSubstitutor sub = new StringSubstitutor(
-			new VarResolver(request, null, request.payload, rrstore));
 
-		dynamicInjectionConfig.get().injectionMetas.forEach(injectionMeta -> {
-			if (injectionMeta.injectAllPaths || injectionMeta.apiPaths.contains(request.apiPath)) {
-				String key = sub.replace(injectionMeta.name);
-				DataObj value = extractionMap.get(key);
-				try {
-					if (value != null) {
-						request.payload.put(injectionMeta.jsonPath, value);
-						LOGGER.info(new ObjectMessage(
-							Map.of(Constants.MESSAGE, "Injecting value in request before replaying",
+		dynamicInjectionConfig.ifPresent(dic -> {
+			dic.injectionMetas.forEach(injectionMeta -> {
+				StringSubstitutor sub = new StringSubstitutor(
+					new InjectionVarResolver(request, null, request.payload, rrstore));
+
+				if (injectionMeta.injectAllPaths || injectionMeta.apiPaths
+					.contains(request.apiPath)) {
+					String key = sub.replace(injectionMeta.name);
+					DataObj value = extractionMap.get(key);
+					try {
+						if (value != null) {
+							request.payload.put(injectionMeta.jsonPath, value);
+							LOGGER.info(new ObjectMessage(
+								Map.of(Constants.MESSAGE,
+									"Injecting value in request before replaying",
+									"Key", key,
+									"Value", value,
+									Constants.JSON_PATH_FIELD, injectionMeta.jsonPath,
+									Constants.REQ_ID_FIELD, request.reqId)));
+						} else {
+							LOGGER.info(new ObjectMessage(
+								Map.of(Constants.MESSAGE,
+									"Not injecting value as key not found in extraction map",
+									"Key", key,
+									Constants.JSON_PATH_FIELD, injectionMeta.jsonPath,
+									Constants.REQ_ID_FIELD, request.reqId)));
+						}
+					} catch (PathNotFoundException e) {
+						LOGGER.error(new ObjectMessage(
+							Map.of(Constants.MESSAGE,
+								"Couldn't inject value as path not found in request",
 								"Key", key,
-								"Value", value,
 								Constants.JSON_PATH_FIELD, injectionMeta.jsonPath,
-								Constants.REQ_ID_FIELD, request.reqId)));
+								Constants.REQ_ID_FIELD, request.reqId)), e);
+					} catch (Exception e) {
+						LOGGER.error(new ObjectMessage(
+							Map.of(Constants.MESSAGE,
+								"Exception occurred while injecting in request",
+								"Key", key,
+								Constants.JSON_PATH_FIELD, injectionMeta.jsonPath,
+								Constants.REQ_ID_FIELD, request.reqId)), e);
 					}
-				} catch (PathNotFoundException e) {
-					LOGGER.error(new ObjectMessage(
-						Map.of(Constants.MESSAGE, "Not injecting value as key not found in request",
-							"Key", key,
-							Constants.JSON_PATH_FIELD, injectionMeta.jsonPath,
-							Constants.REQ_ID_FIELD, request.reqId)), e);
+
 				}
-
-			}
+			});
 		});
-
 	}
 
 
@@ -394,82 +449,5 @@ public abstract class AbstractReplayDriver {
 		return rrstore.getReplay(replayId);
 	}
 
-
-	static class VarResolver implements StringLookup {
-
-		Event goldenRequestEvent;
-		Payload testResponsePayload;
-		Payload testRequestPayload;
-		ReqRespStore rrstore;
-
-		public VarResolver(Event goldenRequestEvent, Payload testResponsePayload,
-			Payload testRequestPayload, ReqRespStore rrstore) {
-			this.goldenRequestEvent = goldenRequestEvent;
-			this.testResponsePayload = testResponsePayload;
-			this.testRequestPayload = testRequestPayload;
-			this.rrstore = rrstore;
-		}
-
-		public Pair<Payload, String> getSourcePayloadAndJsonPath(String lookupString) {
-			String[] splitStrings = lookupString.split(":");
-			if (splitStrings.length != 2) {
-				LOGGER.error("Lookup String format mismatch");
-				return null; // Null resorts to default variable in substitutor
-			}
-			String source = splitStrings[0].trim();
-			String jsonPath = splitStrings[1].trim();
-			Payload sourcePayload;
-			switch (source) {
-				case Constants.GOLDEN_REQUEST:
-					sourcePayload = goldenRequestEvent.payload;
-					break;
-				case Constants.GOLDEN_RESPONSE:
-					Optional<Event> goldenResponseOptional = rrstore
-						.getResponseEvent(goldenRequestEvent.reqId);
-					if (goldenResponseOptional.isEmpty()) {
-						LOGGER.error("Cannot fetch golden response for golden request");
-						return null; // Null resorts to default variable in substitutor
-					}
-					sourcePayload = goldenResponseOptional.get().payload;
-					break;
-				case Constants.TESTSET_RESPONSE:
-					sourcePayload = testResponsePayload;
-					break;
-				case Constants.TESTSET_REQUEST:
-					sourcePayload = testRequestPayload;
-					break;
-				default:
-					throw new IllegalStateException("Unexpected value: " + source);
-			}
-			return new ImmutablePair<>(sourcePayload, jsonPath);
-		}
-
-		public DataObj lookupObject(String lookupString) {
-			Pair<Payload, String> pair = getSourcePayloadAndJsonPath(lookupString);
-			Payload sourcePayload = pair.getLeft();
-			String jsonPath = pair.getRight();
-			DataObj value;
-			value = sourcePayload.getVal(jsonPath);
-			return value;
-		}
-
-		@Override
-		/** Lookup String will always be in format of
-		 "VariableSources: <JSONPath>
-		 **/
-		public String lookup(String lookupString) {
-			String value = null;
-			Pair<Payload, String> pair = getSourcePayloadAndJsonPath(lookupString);
-			Payload sourcePayload = pair.getLeft();
-			String jsonPath = pair.getRight();
-			try {
-				value = sourcePayload.getValAsString(jsonPath);
-			} catch (PathNotFoundException e) {
-				LOGGER.error("Cannot find JSONPath" + jsonPath + " in source", e);
-				return null;
-			}
-			return value;
-		}
-	}
 
 }

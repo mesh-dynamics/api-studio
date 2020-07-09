@@ -6,16 +6,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 public class DynamicInjectionConfig {
 
 	@JsonProperty("version")
 	public final String version;
 
-	@JsonProperty("customer")
-	public final String customer;
+	@JsonProperty("customerId")
+	public final String customerId;
 
 	@JsonProperty("app")
 	public final String app;
@@ -32,27 +32,30 @@ public class DynamicInjectionConfig {
 	// Default constructor for Jackson
 	private DynamicInjectionConfig() {
 		version = "";
-		customer = "";
+		customerId = "";
 		app = "";
 		timestamp = Instant.now();
 		extractionMetas = new ArrayList<>();
 		injectionMetas = new ArrayList<>();
 	}
 
-	public DynamicInjectionConfig(String version, String customer, String app, Optional<Instant> timestamp,
+	public DynamicInjectionConfig(String version, String customerId, String app, Optional<Instant> timestamp,
 		List<ExtractionMeta> extractionMetas, List<InjectionMeta> injectionMetas) {
 		this.version = version;
-		this.customer = customer;
+		this.customerId = customerId;
 		this.app = app;
 		this.timestamp = timestamp.orElse(Instant.now());
 		this.extractionMetas = extractionMetas;
 		this.injectionMetas = injectionMetas;
 	}
 
-	public class ExtractionMeta {
+	static public class ExtractionMeta {
 
 		@JsonProperty("apiPath")
 		public final String apiPath;
+
+		@JsonSetter
+
 
 		@JsonProperty("method")
 		public final HTTPMethodType method;
@@ -84,7 +87,7 @@ public class DynamicInjectionConfig {
 
 	}
 
-	public class InjectionMeta {
+	static public class InjectionMeta {
 
 		@JsonProperty("apiPath")
 		public final List<String> apiPaths;

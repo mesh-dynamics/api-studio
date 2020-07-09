@@ -7,24 +7,8 @@ import static com.cube.core.Utils.buildErrorResponse;
 import static com.cube.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
-import io.md.core.Comparator.Match;
-import io.md.core.Comparator.MatchType;
-import io.md.dao.Recording.RecordingType;
-import io.md.core.ConfigApplicationAcknowledge;
-import io.md.core.ValidateAgentStore;
-import io.md.dao.ReqRespMatchResult;
-import io.md.dao.UserReqRespContainer;
-import com.cube.dao.ReplayBuilder;
-import io.md.constants.ReplayStatus;
-import io.md.dao.Recording.RecordingType;
-import io.md.core.ConfigApplicationAcknowledge;
-import io.md.core.ValidateAgentStore;
-import io.md.dao.Replay;
-import io.md.dao.agent.config.AgentConfigTagInfo;
-import io.md.dao.agent.config.ConfigDAO;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,7 +51,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.UtilException;
+import io.md.constants.ReplayStatus;
 import io.md.core.Comparator;
+import io.md.core.Comparator.Match;
+import io.md.core.Comparator.MatchType;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.TemplateKey;
 import io.md.core.TemplateKey.Type;
@@ -80,10 +67,14 @@ import io.md.dao.Event.RunType;
 import io.md.dao.EventQuery;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Payload;
+import io.md.dao.RecordOrReplay;
 import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingSaveFailureException;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
+import io.md.dao.Replay;
+import io.md.dao.ReqRespMatchResult;
+import io.md.dao.UserReqRespContainer;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
 import io.md.services.DataStore.TemplateNotFoundException;
@@ -92,17 +83,17 @@ import com.cube.core.Utils;
 import com.cube.dao.CubeEventMetaInfo;
 import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.RecordingBuilder;
+import com.cube.dao.ReplayBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.dao.Result;
 import com.cube.dao.WrapperEvent;
-
 import com.cube.queue.DisruptorEventQueue;
 import com.cube.queue.RREvent;
-
-
 import com.cube.utils.Constants;
 import com.cube.ws.WSUtils.BadValueException;
+
+//import com.cube.queue.StoreUtils;
 
 /**
  * @author prasad
@@ -365,9 +356,16 @@ public class CubeStore {
     @Path("/storeEvent")
     @Consumes({MediaType.APPLICATION_JSON})
     public Response storeEvent(Event event) {
-            eventQueue.enqueue(event);
-            //StoreUtils.processEvent(event, config.rrstore);
-            logStoreInfo("Enqueued Event", new CubeEventMetaInfo(event), true);
+	    eventQueue.enqueue(event);
+	    /*
+        try {
+            StoreUtils.processEvent(event, config.rrstore);
+        } catch (CubeStoreException e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                "Error while storing event/rr in solr")), e);
+        }
+	    */
+        logStoreInfo("Enqueued Event", new CubeEventMetaInfo(event), true);
             return Response.ok().build();
     }
 
@@ -662,6 +660,50 @@ public class CubeStore {
         }
     }
 
+    @POST
+    @Path("/saveResult")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response saveResult(ReqRespMatchResult reqRespMatchResult) {
+        if (reqRespMatchResult == null) {
+            LOGGER.error(Map.of(Constants.MESSAGE, "ReqRespMatchResult is null"));
+            return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.FAIL, Constants.INVALID_INPUT,
+                    "Invalid input!")).build();
+        }
+        boolean result = rrstore.saveResult(reqRespMatchResult);
+        if (!result) {
+            LOGGER.error(Map.of(Constants.MESSAGE, "Unable to store result in solr",
+                    Constants.REPLAY_ID_FIELD, reqRespMatchResult.replayId));
+            return Response.serverError().entity(
+                buildErrorResponse(Constants.ERROR, Constants.REPLAY_ID_FIELD,
+                    "Unable to store result in solr")).build();
+        }
+        return Response.ok().type(MediaType.APPLICATION_JSON)
+            .entity("The Result is saved in Solr").build();
+    }
+
+    @GET
+    @Path("getCurrentRecordOrReplay/{customerId}/{app}/{instanceId}")
+    public Response getCurrentRecordOrReplay(@Context UriInfo ui, @PathParam("customerId") String customerId,
+        @PathParam("app") String app, @PathParam("instanceId") String instanceId) {
+        Optional<RecordOrReplay> recordOrReplay = rrstore.getCurrentRecordOrReplay(customerId, app,
+            instanceId);
+        Response resp = recordOrReplay.map(rr -> {
+            String json;
+            try {
+                json = jsonMapper.writeValueAsString(rr);
+                return Response.ok(json, MediaType.APPLICATION_JSON).build();
+            } catch (JsonProcessingException e) {
+                LOGGER.error(String.format("Error in converting RecordOrReplay object to Json for "
+                    + "customerId=%s, app=%s, instanceId=%s", customerId, app, instanceId), e);
+                return Response.serverError().build();
+            }
+        }).orElse(Response.status(Response.Status.NOT_FOUND)
+            .entity(String.format("RecordOrReplay Object not found for customerId=%s", customerId)).build());
+        return resp;
+    }
+
     private boolean storeDefaultRespEvent(
         Event defaultReqEvent, Payload payload) throws InvalidEventException {
         //Store default response
@@ -726,8 +768,9 @@ public class CubeStore {
             Event defaultReqEvent = eventBuilder.createEvent();
             try {
                 defaultReqEvent.parseAndSetKey(rrstore.
-                    getRequestMatchTemplate(defaultReqEvent
-                        , DEFAULT_TEMPLATE_VER));
+                    getTemplate(defaultReqEvent.customerId, defaultReqEvent.app, defaultReqEvent.service,
+                        defaultReqEvent.apiPath, DEFAULT_TEMPLATE_VER,
+                        Type.RequestMatch, Optional.ofNullable(defaultReqEvent.eventType)));
             } catch (TemplateNotFoundException e) {
                 LOGGER.error(new ObjectMessage(
                     Map.of(Constants.EVENT_TYPE_FIELD, defaultReqEvent.eventType,
@@ -1249,6 +1292,7 @@ public class CubeStore {
         Response resp = recording.map(rec -> {
             if(rec.recordingType == RecordingType.History
                 || rec.recordingType == RecordingType.UserGolden) {
+                final String traceId = io.md.utils.Utils.generateTraceId();
                 for (UserReqRespContainer userReqRespContainer : userReqRespContainers) {
                     Event response = userReqRespContainer.response;
                     Event request = userReqRespContainer.request;
@@ -1259,12 +1303,12 @@ public class CubeStore {
                         Comparator comparator = rrstore
                             .getComparator(tkey, request.eventType);
                         final String reqId = io.md.utils.Utils.generateRequestId(
-                                request.service, request.getTraceId());
+                                request.service, traceId);
                         Event requestEvent = buildEvent(request, rec.collection, rec.recordingType,
-                            reqId);
+                            reqId, traceId);
                         requestEvent.parseAndSetKey(comparator.getCompareTemplate());
                         Event responseEvent = buildEvent(response, rec.collection,
-                            rec.recordingType, reqId);
+                            rec.recordingType, reqId, traceId);
 
                         if (!rrstore.save(requestEvent) || !rrstore.save(responseEvent)) {
                             LOGGER.error(new ObjectMessage(
@@ -1295,7 +1339,7 @@ public class CubeStore {
                                 MatchType.ExactMatch, 1,
                                 rec.collection, request.service, request.apiPath,
                                 Optional.of(request.getTraceId()),
-                                Optional.of(requestEvent.getTraceId()), Optional.of(request.spanId),
+                                Optional.of(traceId), Optional.of(request.spanId),
                                 Optional.of(request.parentSpanId), Optional.of(requestEvent.spanId),
                                 Optional.of(requestEvent.parentSpanId), responseMatch,
                                 Match.DONT_CARE);
@@ -1358,11 +1402,11 @@ public class CubeStore {
         return resp;
     }
 
-    private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId)
+    private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId)
         throws InvalidEventException {
         EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
             event.service, event.instanceId, collection,
-            new MDTraceInfo(event.getTraceId(), event.spanId, event.parentSpanId),
+            new MDTraceInfo(traceId, event.spanId, event.parentSpanId),
             event.getRunType(), Optional.of(Instant.now()), reqId, event.apiPath,
             event.eventType, recordingType);
         eventBuilder.setPayload(event.payload);

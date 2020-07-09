@@ -326,8 +326,8 @@ public class AnalyzeWS {
      * @return
      */
     @GET
-    @Path("getRespTemplate/{customerId}/{appId}/{templateVersion}/{service}/{type}")
-    public Response getRespTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
+    @Path("getTemplate/{customerId}/{appId}/{templateVersion}/{service}/{type}")
+    public Response getTemplate(@Context UriInfo urlInfo, @PathParam("appId") String appId,
 	    @PathParam("customerId") String customerId, @PathParam("templateVersion") String templateVersion,
 	    @PathParam("service") String service, @PathParam("type") String type) {
     	return Utils.valueOf(Type.class, type).map(templateType ->
@@ -347,24 +347,28 @@ public class AnalyzeWS {
         MultivaluedMap<String, String> queryParams = urlInfo.getQueryParameters();
         Optional<String> apipath = Optional.ofNullable(queryParams.getFirst(Constants.API_PATH_FIELD));
         Optional<String> jsonpath = Optional.ofNullable(queryParams.getFirst(Constants.JSON_PATH_FIELD));
+        Optional<EventType> eventType = Optional.ofNullable(queryParams.getFirst(Constants.EVENT_TYPE_FIELD))
+            .flatMap(v -> Utils.valueOf(EventType.class, v));
 
         if (apipath.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
                 .entity(Map.of(Constants.ERROR, "Api Path not Specified")).build();
-        }
-        if (jsonpath.isEmpty()) {
-            return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-                .entity(Map.of(Constants.ERROR, "Json Path not Specified")).build();
         }
 
         TemplateKey tkey = new TemplateKey(templateVersion, customerId, appId, service, apipath.get(),
             ruleType);
 
         try {
-	        TemplateEntry rule = rrstore.getComparator(tkey).getCompareTemplate()
-		        .getRule(jsonpath.get());
+          CompareTemplate compareTemplate = rrstore.getComparator(tkey, eventType).getCompareTemplate();
+          String resp = "";
+          if (jsonpath.isEmpty()) {
+            resp = jsonMapper.writeValueAsString(compareTemplate);
+          } else {
+            TemplateEntry rule = compareTemplate.getRule(jsonpath.get());
+            resp = jsonMapper.writeValueAsString(rule);
+          }
 	        return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
-		        .entity(jsonMapper.writeValueAsString(rule)).build();
+		        .entity(resp).build();
 
         } catch (JsonProcessingException e) {
 	        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -1428,13 +1432,17 @@ public class AnalyzeWS {
       @PathParam("customerId") String customerId,
       @PathParam("appId") String appId) {
     try {
-      ApiTraceFacetQuery apiTraceFacetQuery = new ApiTraceFacetQuery(customerId, appId, uriInfo.getQueryParameters());
+      MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+      ApiTraceFacetQuery apiTraceFacetQuery = new ApiTraceFacetQuery(customerId, appId, queryParams);
       Optional<Integer> depth = Optional.ofNullable(uriInfo.getQueryParameters().getFirst("depth"))
             .flatMap(val -> {
               Optional<Integer> value = Utils.strToInt(val);
               return  value.get() >= 0 ? value : Optional.of(1);
             }).or(() -> Optional.of(1));
-      Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery);
+      Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).or(()->Optional.of(50));
+	    Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
+
+      Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start);
       MultivaluedMap<String, Event> traceCollectionMap = new MultivaluedHashMap<>();
       result.getObjects().forEach(res -> traceCollectionMap.add(res.getTraceId() + " "+ res.getCollection(), res));
 
