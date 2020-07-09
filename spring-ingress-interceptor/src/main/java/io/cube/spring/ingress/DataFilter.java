@@ -101,7 +101,7 @@ public class DataFilter extends OncePerRequestFilter {
 		if (requestWrapper != null) {
 			ResponseWrapper responseWrapper = new ResponseWrapper(httpServletResponse);
 			filterChain.doFilter(requestWrapper, responseWrapper);
-			logResponse(responseWrapper, apiPath, traceMetaMap, mdTraceInfo);
+			logResponse(responseWrapper, httpServletResponse, apiPath, traceMetaMap, mdTraceInfo);
 		} else {
 			filterChain.doFilter(httpServletRequest, httpServletResponse);
 		}
@@ -186,7 +186,7 @@ public class DataFilter extends OncePerRequestFilter {
 
 	}
 
-	private void logResponse(ResponseWrapper responseWrapper, String apiPath,
+	private void logResponse(ResponseWrapper responseWrapper, HttpServletResponse httpServletResponse, String apiPath,
 		MultivaluedMap<String, String> traceMeta, MDTraceInfo mdTraceInfo)
 		throws IOException {
 		//meta
@@ -198,6 +198,7 @@ public class DataFilter extends OncePerRequestFilter {
 		//body
 		byte[] responseBody = responseWrapper.getResponseBody();
 		int size = responseBody.length;
+		httpServletResponse.flushBuffer();
 
 		//hdrs
 		MultivaluedMap<String, String> responseHeaders = getHeaders(responseWrapper);
