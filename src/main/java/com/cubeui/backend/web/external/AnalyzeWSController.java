@@ -97,8 +97,8 @@ public class AnalyzeWSController {
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
-    @GetMapping("/getRespTemplate/{customerId}/{appId}/{templateVersion}/{service}/{type}")
-    public ResponseEntity getRespTemplate(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String customerId,
+    @GetMapping("/getTemplate/{customerId}/{appId}/{templateVersion}/{service}/{type}")
+    public ResponseEntity getTemplate(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String customerId,
                                           @PathVariable String appId, @PathVariable String templateVersion, @PathVariable String service,
                                           @PathVariable String type){
         validation.validateCustomerName(request,customerId);
