@@ -2657,6 +2657,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Result<Event> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfResults, Optional<Integer> start) {
 
         final SolrQuery query = getEventQuery(apiTraceFacetQuery);
+        addFilter(query, EVENTTYPEF, EventType.HTTPRequest.toString());
         addFilter(query, TRACEIDF, apiTraceFacetQuery.traceId);
         addSort(query, TRACEIDF, false /* desc */);
         return SolrIterator.getResults(solr, query, numOfResults,
