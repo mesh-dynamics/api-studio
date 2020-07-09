@@ -2,7 +2,6 @@ package com.meshd.cxf.jaxrs.implementation;
 
 import static io.cube.apachecxf.egress.Utils.getMockingURI;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -17,7 +16,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import org.apache.cxf.jaxrs.client.ClientConfiguration;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;

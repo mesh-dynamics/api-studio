@@ -25,19 +25,28 @@ public class  CourseServer {
         factoryBean.setAddress("http://0.0.0.0:8084/");
         Server server = factoryBean.create();
 
-        // Initialize agent
+        //Initialize agent
 
-        String serviceInstanceProp = "io.md.serviceinstance";
-        String serviceInstance = System.getenv(serviceInstanceProp);
-        if(serviceInstance==null) serviceInstance = "Default service instance";
+        Map<String, String> ccmMap = new HashMap<>();
+
         String cloudNameProp = "io.md.cloudname";
         String cloudName = System.getenv(cloudNameProp);
         if(cloudName==null) cloudName = "Default cloud";
 
-        Map<String, String> initMap = new HashMap();
-        initMap.put(serviceInstanceProp, serviceInstance);
-        initMap.put(cloudNameProp, cloudName);
-        ClientUtils.initialize(initMap);
+        String serviceInstanceProp = "io.md.serviceinstance";
+        String serviceInstance = System.getenv(serviceInstanceProp);
+        if(serviceInstance==null) serviceInstance = "Default service instance";
+
+        ccmMap.put("io.md.customer", "CubeCorp");
+        ccmMap.put("io.md.app", "CourseApp");
+        ccmMap.put("io.md.servicename", "course1");
+        ccmMap.put("io.md.instance", "prod");
+        ccmMap.put("io.md.authtoken", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s");
+        ccmMap.put("io.md.service.endpoint", "https://demo.dev.cubecorp.io/api/");
+
+        ccmMap.put(serviceInstanceProp, serviceInstance);
+        ccmMap.put(cloudNameProp, cloudName);
+        ClientUtils.initialize(ccmMap);
 
         System.out.println("Server ready...");
     }
