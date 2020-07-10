@@ -62,11 +62,45 @@ class HttpClient extends Component {
             maxLinesLengthIncrement: parseInt(config.diffMaxLinesLengthIncrement),
             incrementCollapseLengthForRecReqId: null,
             incrementCollapseLengthForRepReqId: null,
-            incrementStartJsonPath: null
+            incrementStartJsonPath: null,
+            selectedTab: this.props.currentSelectedTab
         };
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
         this.handleSearchFilterChange = this.handleSearchFilterChange.bind(this);
         this.increaseCollapseLength = this.increaseCollapseLength.bind(this);
+
+        this.handleClick = this.handleClick.bind(this);
+        this.handleSaveClick = this.handleSaveClick.bind(this);
+        this.handleRowClick = this.handleRowClick.bind(this);
+    }
+
+    handleRowClick(isOutgoingRequest, tabId) {
+        const { handleRowClick, currentSelectedTab } = this.props;
+        this.props.handleRowClick(isOutgoingRequest, tabId);
+        if(isOutgoingRequest) {
+            const outgoingRequests = currentSelectedTab.outgoingRequests;
+            const selectedTab = outgoingRequests.find((eachOutgoingReq) => {
+                return eachOutgoingReq.id === tabId;
+            });
+            this.setState({
+                selectedTab: selectedTab
+            })
+        } else {
+            this.setState({
+                selectedTab: currentSelectedTab
+            })
+        }
+    }
+
+    handleClick(evt) {
+        const { selectedTab } = this.state;
+        this.props.driveRequest(false, selectedTab.id);
+    }
+
+    handleSaveClick(evt) {
+        const { selectedTab } = this.state;
+        const { currentSelectedTab } = this.props;
+        this.props.showSaveModal(false, currentSelectedTab.id);
     }
 
     increaseCollapseLength(e, jsonPath, recordReqId, replayReqId, typeOfChunkHandler) {
@@ -190,10 +224,14 @@ class HttpClient extends Component {
     }
 
     render() {
-        const { diffLayoutData, showCompleteDiff } = this.props;
+        const {  currentSelectedTab, cubeRunHistory } = this.props;
+        const latestHistoryEntry = Object.keys(cubeRunHistory)[0],
+            latestHistoryRun = cubeRunHistory[latestHistoryEntry] && cubeRunHistory[latestHistoryEntry].length > 0 ? cubeRunHistory[latestHistoryEntry][0] : null;
+        const { diffLayoutData, showCompleteDiff, outgoingRequests, service, httpURL } = currentSelectedTab;
+        
         const selectedDiffItem = diffLayoutData ? diffLayoutData[0] : null;
-        console.log("diffLayoutData: ", diffLayoutData);
-        let { selectedResolutionType, showTrace, showLogs, collapseLength, incrementCollapseLengthForRecReqId, incrementCollapseLengthForRepReqId, maxLinesLength } = this.state;
+        let { selectedResolutionType, showTrace, showLogs, collapseLength, incrementCollapseLengthForRecReqId, incrementCollapseLengthForRepReqId, maxLinesLength, showResponseMessageHeaders, showResponseMessageBody, showRequestMessageHeaders, showRequestMessageQParams, showRequestMessageFParams, showRequestMessageBody, showAll, searchFilterPath,  shownResponseMessageHeaders, shownResponseMessageBody, shownRequestMessageHeaders, shownRequestMessageQParams, shownRequestMessageFParams, shownRequestMessageBody, selectedTab } = this.state;
+
         let resolutionTypesForMenu = [];
         const filterFunction = (item, index, itself) => {
             item.count = itself.reduce((counter, currentItem, currentIndex) => {
@@ -269,37 +307,133 @@ class HttpClient extends Component {
         };
         return (
             <div>
+                <div style={{display: "flex"}}>
+                    <div style={{marginLeft: "auto", order: "2"}}>
+                        <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleClick}>
+                            <Glyphicon glyph="play" /> RUN
+                        </div>
+                        <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: currentSelectedTab.showSaveBtn ? "inline-block" : "none"}} onClick={this.handleSaveClick}>
+                            <Glyphicon glyph="play" /> SAVE
+                        </div>
+                    </div>
+                </div>
+                {outgoingRequests && outgoingRequests.length > 0 && (
+                    <div style={{display: "flex", backgroundColor: "#ffffff", marginBottom: "9px"}}>
+                        <div style={{flex: "1", padding: "0.5rem"}}>
+                            <div>Reference</div>
+                            <Table hover style={{backgroundColor: "#fff", border: "1px solid #ddd", borderSpacing: "0px", borderCollapse: "separate", marginBottom: "0px"}}>
+                                <thead>
+                                    <tr>
+                                        <th>SERVICE BY TRACE ORDER</th>
+                                        <th>API PATH</th>
+                                        <th>REPLAY CONFIG</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style={{cursor: "pointer", backgroundColor: selectedTab.id === currentSelectedTab.id ? "#ccc" : "#fff"}} onClick={() => this.handleRowClick(false, currentSelectedTab.id)}>
+                                        <td>
+                                            <span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>
+                                            <span>
+                                                <i className="far fa-minus-square" style={{fontSize: "12px", marginRight: "12px", cursor: "pointer"}}></i>
+                                            </span>
+                                            {service}
+                                        </td>
+                                        <td>{httpURL}</td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                    {outgoingRequests && outgoingRequests.length > 0 && outgoingRequests.map((eachReq) => {
+                                        return (
+                                            <tr key={eachReq.id} style={{cursor: "pointer", backgroundColor: selectedTab.id === eachReq.id ? "#ccc" : "#fff"}} onClick={() => this.handleRowClick(true, eachReq.id)}>
+                                                <td>
+                                                    <span style={{marginRight: "30px", width: "25px"}}></span>
+                                                    <span>
+                                                        <i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i>
+                                                    </span>
+                                                    {eachReq.service}
+                                                </td>
+                                                <td>{eachReq.httpURL}</td>
+                                                <td></td>
+                                                <td></td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </Table>
+                        </div>
+                        {currentSelectedTab.responseStatusText && latestHistoryRun && (
+                            <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0"}}>
+                                <div>Test</div>
+                                <Table hover style={{backgroundColor: "#fff", border: "1px solid #ddd", borderSpacing: "0px", borderCollapse: "separate", marginBottom: "0px"}}>
+                                    <thead>
+                                        <tr>
+                                            <th>SERVICE BY TRACE ORDER</th>
+                                            <th>API PATH</th>
+                                            <th>SOURCE</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr style={{cursor: "pointer"}}>
+                                            <td>
+                                                <span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>
+                                                <span>
+                                                    <i className="far fa-minus-square" style={{fontSize: "12px", marginRight: "12px", cursor: "pointer"}}></i>
+                                                </span>
+                                                {latestHistoryRun.service}
+                                            </td>
+                                            <td>{latestHistoryRun.apiPath}</td>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        {latestHistoryRun.children && latestHistoryRun.children.length > 0 && latestHistoryRun.children.map((eachReq) => {
+                                            return (
+                                                <tr key={eachReq.requestEventId} style={{cursor: "pointer"}}>
+                                                    <td>
+                                                        <span style={{marginRight: "30px", width: "25px"}}></span>
+                                                        <span>
+                                                            <i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i>
+                                                        </span>
+                                                        {eachReq.service}
+                                                    </td>
+                                                    <td>{eachReq.apiPath}</td>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </Table>
+                            </div>
+                        )}
+                    </div>
+                )}
                 <div>
-                    <HttpRequestMessage tabId={this.props.tabId}
-                        requestId={this.props.requestId}
-                        httpMethod={this.props.httpMethod}
-                        httpURL={this.props.httpURL}
-                        headers={this.props.headers} 
-                        queryStringParams={this.props.queryStringParams}
-                        bodyType={this.props.bodyType}
-                        formData={this.props.formData} 
-                        rawData={this.props.rawData}
-                        rawDataType={this.props.rawDataType}
+                    <HttpRequestMessage tabId={selectedTab.id}
+                        requestId={selectedTab.requestId}
+                        httpMethod={selectedTab.httpMethod}
+                        httpURL={selectedTab.httpURL}
+                        headers={selectedTab.headers} 
+                        queryStringParams={selectedTab.queryStringParams}
+                        bodyType={selectedTab.bodyType}
+                        formData={selectedTab.formData} 
+                        rawData={selectedTab.rawData}
+                        rawDataType={selectedTab.rawDataType}
                         addOrRemoveParam={this.props.addOrRemoveParam} 
                         updateParam={this.props.updateParam}
                         updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
-                        driveRequest={this.props.driveRequest}
-                        showOutgoingRequests={this.props.showOutgoingRequests}
-                        showOutgoingRequestsBtn={this.props.showOutgoingRequestsBtn}
-                        showSaveBtn={this.props.showSaveBtn}
-                        showSaveModal={this.props.showSaveModal}
-                        isOutgoingRequest={this.props.isOutgoingRequest} >
+                        isOutgoingRequest={selectedTab.isOutgoingRequest} >
                     </HttpRequestMessage>
-                    <HttpResponseMessage tabId={this.props.tabId}
+                    <HttpResponseMessage tabId={selectedTab.id}
+                        responseStatus={selectedTab.responseStatus}
+                        responseStatusText={selectedTab.responseStatusText}
+                        responseHeaders={selectedTab.responseHeaders}
+                        responseBody={selectedTab.responseBody}
+                        recordedResponseHeaders={selectedTab.recordedResponseHeaders}
+                        recordedResponseBody={ selectedTab.recordedResponseBody}
                         updateParam={this.props.updateParam}
-                        responseStatus={this.props.responseStatus}
-                        responseStatusText={this.props.responseStatusText}
-                        responseHeaders={this.props.responseHeaders}
-                        responseBody={this.props.responseBody}
-                        recordedResponseHeaders={this.props.recordedResponseHeaders}
-                        recordedResponseBody={this.props.recordedResponseBody}
-                        updateParam={this.props.updateParam}
-                        isOutgoingRequest={this.props.isOutgoingRequest}
+                        isOutgoingRequest={ selectedTab.isOutgoingRequest}
                         handleShowCompleteDiff={this.props.handleShowCompleteDiff} >
                     </HttpResponseMessage>
                 </div>
@@ -309,13 +443,13 @@ class HttpClient extends Component {
                             <h4><Glyphicon style={{ visibility:  "visible", paddingRight: "5px", fontSize: "14px" }} glyph="random" /> <span>Selected Diff</span></h4>
                         </div>
                         <FormGroup>
-                            <Checkbox inline onChange={this.toggleMessageContents} value="requestHeaders" checked={this.state.showRequestMessageHeaders}>Request Headers</Checkbox>
-                            <Checkbox inline onChange={this.toggleMessageContents} value="requestQParams" checked={this.state.showRequestMessageQParams}>Request Query Params</Checkbox>
-                            <Checkbox inline onChange={this.toggleMessageContents} value="requestFParams" checked={this.state.showRequestMessageFParams}>Request Form Params</Checkbox>
-                            <Checkbox inline onChange={this.toggleMessageContents} value="requestBody" checked={this.state.showRequestMessageBody}>Request Body</Checkbox>
+                            <Checkbox inline onChange={this.toggleMessageContents} value="requestHeaders" checked={showRequestMessageHeaders}>Request Headers</Checkbox>
+                            <Checkbox inline onChange={this.toggleMessageContents} value="requestQParams" checked={showRequestMessageQParams}>Request Query Params</Checkbox>
+                            <Checkbox inline onChange={this.toggleMessageContents} value="requestFParams" checked={showRequestMessageFParams}>Request Form Params</Checkbox>
+                            <Checkbox inline onChange={this.toggleMessageContents} value="requestBody" checked={showRequestMessageBody}>Request Body</Checkbox>
                             <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
-                            <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={this.state.showResponseMessageHeaders}>Response Headers</Checkbox>
-                            <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={this.state.showResponseMessageBody} >Response Body</Checkbox>
+                            <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={showResponseMessageHeaders}>Response Headers</Checkbox>
+                            <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={showResponseMessageBody} >Response Body</Checkbox>
                             <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px"}}></span>
                             <div style={{display: "inline-block"}}>
                                 <label className="checkbox-inline">
@@ -347,7 +481,7 @@ class HttpClient extends Component {
                                 placeholder="Search"
                                 id="filterPathInputId"
                                 inputRef={ref => { this.input = ref; }}
-                                value={this.state.searchFilterPath}
+                                value={searchFilterPath}
                                 onChange={this.handleSearchFilterChange}
                             />
                         </FormGroup>
@@ -364,8 +498,8 @@ class HttpClient extends Component {
                             />
                         </div> */}
                         <div style={{marginTop: "9px", display: showLogs ? "none": ""}}>
-                            {(this.state.showRequestMessageHeaders || this.state.shownRequestMessageHeaders) && (
-                                <div style={{ display: this.state.showRequestMessageHeaders ? "" : "none" }}>
+                            {(showRequestMessageHeaders || shownRequestMessageHeaders) && (
+                                <div style={{ display: showRequestMessageHeaders ? "" : "none" }}>
                                     <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Headers</Label></h4>
                                     <div className="headers-diff-wrapper" style={{border: "1px solid #ccc"}}>
                                         < ReactDiffViewer
@@ -378,16 +512,16 @@ class HttpClient extends Component {
                                             onLineNumberClick={(lineId, e) => { return; }}
                                             filterPaths={filterPaths}
                                             inputElementRef={this.inputElementRef}
-                                            showAll={this.state.showAll}
-                                            searchFilterPath={this.state.searchFilterPath}
+                                            showAll={showAll}
+                                            searchFilterPath={searchFilterPath}
                                             disableOperationSet={true}
                                             enableClientSideDiff={true}
                                         />
                                     </div>
                                 </div>
                             )}
-                            {(this.state.showRequestMessageQParams || this.state.shownRequestMessageQParams) && (
-                                <div style={{ display: this.state.showRequestMessageQParams ? "" : "none" }}>
+                            {(showRequestMessageQParams || shownRequestMessageQParams) && (
+                                <div style={{ display: showRequestMessageQParams ? "" : "none" }}>
                                     <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Query Params</Label></h4>
                                     <div className="headers-diff-wrapper" style={{border: "1px solid #ccc"}}>
                                         < ReactDiffViewer
@@ -400,16 +534,16 @@ class HttpClient extends Component {
                                             onLineNumberClick={(lineId, e) => { return; }}
                                             filterPaths={filterPaths}
                                             inputElementRef={this.inputElementRef}
-                                            showAll={this.state.showAll}
-                                            searchFilterPath={this.state.searchFilterPath}
+                                            showAll={showAll}
+                                            searchFilterPath={searchFilterPath}
                                             disableOperationSet={true}
                                             enableClientSideDiff={true}
                                         />
                                     </div>
                                 </div>
                             )}
-                            {(this.state.showRequestMessageFParams || this.state.shownRequestMessageFParams) && (
-                                <div style={{ display: this.state.showRequestMessageFParams ? "" : "none" }}>
+                            {(showRequestMessageFParams || shownRequestMessageFParams) && (
+                                <div style={{ display: showRequestMessageFParams ? "" : "none" }}>
                                     <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Form Params</Label></h4>
                                     <div className="headers-diff-wrapper" style={{border: "1px solid #ccc"}}>
                                         < ReactDiffViewer
@@ -422,16 +556,16 @@ class HttpClient extends Component {
                                             onLineNumberClick={(lineId, e) => { return; }}
                                             filterPaths={filterPaths}
                                             inputElementRef={this.inputElementRef}
-                                            showAll={this.state.showAll}
-                                            searchFilterPath={this.state.searchFilterPath}
+                                            showAll={showAll}
+                                            searchFilterPath={searchFilterPath}
                                             disableOperationSet={true}
                                             enableClientSideDiff={true}
                                         />
                                     </div>
                                 </div>
                             )}
-                            {(this.state.showRequestMessageBody || this.state.shownRequestMessageBody) && (
-                                <div style={{ display: this.state.showRequestMessageBody ? "" : "none" }}>
+                            {(showRequestMessageBody || shownRequestMessageBody) && (
+                                <div style={{ display: showRequestMessageBody ? "" : "none" }}>
                                     <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Request Body</Label></h4>
                                     <div className="headers-diff-wrapper" style={{border: "1px solid #ccc"}}>
                                         < ReactDiffViewer
@@ -444,16 +578,16 @@ class HttpClient extends Component {
                                             onLineNumberClick={(lineId, e) => { return; }}
                                             filterPaths={filterPaths}
                                             inputElementRef={this.inputElementRef}
-                                            showAll={this.state.showAll}
-                                            searchFilterPath={this.state.searchFilterPath}
+                                            showAll={showAll}
+                                            searchFilterPath={searchFilterPath}
                                             disableOperationSet={true}
                                             enableClientSideDiff={true}
                                         />
                                     </div>
                                 </div>
                             )}
-                            {(this.state.showResponseMessageHeaders || this.state.shownResponseMessageHeaders) && (
-                                <div style={{ display: this.state.showResponseMessageHeaders ? "" : "none" }}>
+                            {(showResponseMessageHeaders || shownResponseMessageHeaders) && (
+                                <div style={{ display: showResponseMessageHeaders ? "" : "none" }}>
                                     <h4><Label bsStyle="primary" style={{textAlign: "left", fontWeight: "400"}}>Response Headers</Label></h4>
                                     <div className="headers-diff-wrapper" style={{border: "1px solid #ccc"}}>
                                         < ReactDiffViewer
@@ -466,16 +600,16 @@ class HttpClient extends Component {
                                             onLineNumberClick={(lineId, e) => { return; }}
                                             filterPaths={filterPaths}
                                             inputElementRef={this.inputElementRef}
-                                            showAll={this.state.showAll}
-                                            searchFilterPath={this.state.searchFilterPath}
+                                            showAll={showAll}
+                                            searchFilterPath={searchFilterPath}
                                             disableOperationSet={true}
-                                            enableClientSideDiff={this.state.enableClientSideDiff}
+                                            enableClientSideDiff={false}
                                         />
                                     </div>
                                 </div>
                             )}
                             {(
-                                <div style={{ display: this.state.showResponseMessageBody ? "" : "none" }}>
+                                <div style={{ display: showResponseMessageBody ? "" : "none" }}>
                                     <div className="row">
                                         <div className="col-md-6">
                                             <h4>
@@ -507,12 +641,12 @@ class HttpClient extends Component {
                                                 filterPaths={filterPaths}
                                                 onLineNumberClick={(lineId, e) => { return; }}
                                                 inputElementRef={this.inputElementRef}
-                                                showAll={this.state.showAll}
-                                                searchFilterPath={this.state.searchFilterPath}
+                                                showAll={showAll}
+                                                searchFilterPath={searchFilterPath}
                                                 disableOperationSet={true}
                                                 handleCollapseLength={this.increaseCollapseLength}
                                                 handleMaxLinesLength={this.increaseCollapseLength}
-                                                enableClientSideDiff={this.state.enableClientSideDiff}
+                                                enableClientSideDiff={false}
                                             />
                                         </div>
                                     )}
