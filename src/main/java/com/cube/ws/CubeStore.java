@@ -1296,6 +1296,11 @@ public class CubeStore {
                 for (UserReqRespContainer userReqRespContainer : userReqRespContainers) {
                     Event response = userReqRespContainer.response;
                     Event request = userReqRespContainer.request;
+                    if (rec.recordingType == RecordingType.UserGolden) {
+                        String oldTraceId = request.getTraceId();
+                        rrstore.deleteReqResByTraceId(oldTraceId, request.getCollection());
+                        rrstore.commit();
+                    }
 
                     TemplateKey tkey = new TemplateKey(rec.templateVersion, request.customerId,
                         request.app, request.service, request.apiPath, Type.RequestMatch);
