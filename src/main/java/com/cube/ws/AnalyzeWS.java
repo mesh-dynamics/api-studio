@@ -1459,6 +1459,7 @@ public class AnalyzeWS {
         EventQuery.Builder builder = new EventQuery.Builder(customerId, appId,
             Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse));
         builder.withTraceIds(traceIds);
+        apiTraceFacetQuery.collection.ifPresent(builder::withCollection);
         Result<Event> eventResultsForTraceIds = rrstore.getEvents(builder.build());
         MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
         eventResultsForTraceIds.getObjects().forEach(
