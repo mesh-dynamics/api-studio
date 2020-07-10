@@ -77,7 +77,7 @@ public class MockServiceHTTP {
                         String body) {
         LOGGER.debug(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s", customerId, app, path, ui.toString()));
         return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service,
-            HttpMethod.GET, body, headers, Optional.empty());
+            HttpMethod.GET, body, headers, Optional.empty(), Optional.empty());
     }
 
 	// TODO: unify the following two methods and extend them to support all @Consumes types -- not just two.
@@ -95,7 +95,7 @@ public class MockServiceHTTP {
                               String body) {
         LOGGER.info(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s, body: %s", customerId, app, path,
             ui.toString(), body));
-        return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service, HttpMethod.POST, body, headers, Optional.empty());
+        return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service, HttpMethod.POST, body, headers, Optional.empty(), Optional.empty());
     }
 
 
@@ -203,11 +203,12 @@ public class MockServiceHTTP {
     }
 
     @GET
-    @Path("mockWithCollection/{replayCollection}/{recordingId}/{service}/{var:.+}")
+    @Path("mockWithCollection/{replayCollection}/{recordingId}/{traceId}/{service}/{var:.+}")
     public Response getmockWithCollection(@Context UriInfo ui, @PathParam("var") String path,
         @Context HttpHeaders headers,
         @PathParam("replayCollection") String replayCollection,
         @PathParam("recordingId") String recordingId,
+        @PathParam("traceId") String traceId,
         @PathParam("service") String service,
         String body) {
 
@@ -223,15 +224,16 @@ public class MockServiceHTTP {
         }
         Recording recording = optionalRecording.get();
         return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            HttpMethod.GET, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion)));
+            HttpMethod.GET, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion)), Optional.of(traceId));
     }
 
     @POST
-    @Path("mockWithCollection/{replayCollection}/{recordingId}/{service}/{var:.+}")
+    @Path("mockWithCollection/{replayCollection}/{recordingId}/{traceId}/{service}/{var:.+}")
     public Response postMockWithCollection(@Context UriInfo ui, @PathParam("var") String path,
         @Context HttpHeaders headers,
         @PathParam("replayCollection") String replayCollection,
         @PathParam("recordingId") String recordingId,
+        @PathParam("traceId") String traceId,
         @PathParam("service") String service,
         String body) {
 
@@ -247,13 +249,13 @@ public class MockServiceHTTP {
         }
         Recording recording = optionalRecording.get();
         return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            HttpMethod.POST, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion)));
+            HttpMethod.POST, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion)), Optional.of(traceId));
     }
 
 
     private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
         String customerId, String app, String instanceId,
-        String service, String method, String body, HttpHeaders headers, Optional<MockWithCollection> collection) {
+        String service, String method, String body, HttpHeaders headers, Optional<MockWithCollection> collection, Optional<String> traceId) {
 
         LOGGER.info(io.md.utils.Utils.createLogMessasge(io.md.constants.Constants.MESSAGE, "Attempting to mock request",
             io.md.constants.Constants.CUSTOMER_ID_FIELD, customerId, io.md.constants.Constants.APP_FIELD, app
@@ -264,7 +266,7 @@ public class MockServiceHTTP {
         try {
             Event mockRequestEvent = io.md.utils.Utils
                 .createRequestMockNew(path, formParams, customerId, app, instanceId,
-                    service, method, body, headers.getRequestHeaders(), ui.getQueryParameters());
+                    service, method, body, headers.getRequestHeaders(), ui.getQueryParameters(), traceId);
             MockResponse mockResponse = mocker.mock(mockRequestEvent, Optional.empty(), collection);
             respEvent = mockResponse.response;
 
