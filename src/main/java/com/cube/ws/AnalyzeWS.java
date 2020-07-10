@@ -1568,16 +1568,17 @@ public class AnalyzeWS {
 	@GET
 	@Path("getReqRespMatchResult")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getReqRespMatchResult(@Context UriInfo uriInfo,
-		MultivaluedMap<String, String> formParams) {
-		if(formParams==null) {
+	public Response getReqRespMatchResult(@Context UriInfo uriInfo) {
+
+	  MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+		if(queryParams==null) {
 			return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-				.entity(Map.of(Constants.ERROR, "No formParams are specified for lhsReqId and rhsReqId")).build();
+				.entity(Map.of(Constants.ERROR, "No queryParams are specified for lhsReqId and rhsReqId")).build();
 		}
 
 		// lhsReqId should be from recording collection and rhsReqId from replay
-		Optional<String> lhsReqId = Optional.ofNullable(formParams.getFirst("lhsReqId"));
-		Optional<String> rhsReqId = Optional.ofNullable(formParams.getFirst("rhsReqId"));
+		Optional<String> lhsReqId = Optional.ofNullable(queryParams.getFirst("lhsReqId"));
+		Optional<String> rhsReqId = Optional.ofNullable(queryParams.getFirst("rhsReqId"));
 
 		if (lhsReqId.isEmpty() || rhsReqId.isEmpty()) {
 			return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
