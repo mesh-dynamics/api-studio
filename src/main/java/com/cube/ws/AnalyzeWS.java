@@ -6,14 +6,17 @@ package com.cube.ws;
 import static com.cube.core.Utils.buildErrorResponse;
 import static com.cube.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
+import static io.md.core.Comparator.MatchType.DontCare;
 import static io.md.core.TemplateKey.Type;
 import static io.md.dao.Recording.RecordingStatus;
 import static io.md.services.DataStore.TemplateNotFoundException;
 
+import com.cube.dao.Analysis.ReqRespMatchWithEvent;
 import com.cube.dao.ApiTraceFacetQuery;
 import com.cube.dao.ApiTraceResponse;
 import com.cube.dao.ApiTraceResponse.ServiceReqRes;
 import io.md.constants.ReplayStatus;
+import io.md.core.Comparator.Match;
 import io.md.dao.ConvertEventPayloadResponse;
 import io.md.dao.Event.EventType;
 import io.md.dao.EventQuery;
@@ -1561,9 +1564,115 @@ public class AnalyzeWS {
 			jsonMapper.writeValueAsString(requestCompareRules));
 	}
 
+
+	@GET
+	@Path("getReqRespMatchResult")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getReqRespMatchResult(@Context UriInfo uriInfo,
+		MultivaluedMap<String, String> formParams) {
+		if(formParams==null) {
+			return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+				.entity(Map.of(Constants.ERROR, "No formParams are specified for lhsReqId and rhsReqId")).build();
+		}
+
+		// lhsReqId should be from recording collection and rhsReqId from replay
+		Optional<String> lhsReqId = Optional.ofNullable(formParams.getFirst("lhsReqId"));
+		Optional<String> rhsReqId = Optional.ofNullable(formParams.getFirst("rhsReqId"));
+
+		if (lhsReqId.isEmpty() || rhsReqId.isEmpty()) {
+			return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+				.entity(Map.of(Constants.ERROR, "lhsReqId or rhsReqId not Specified")).build();
+		}
+
+		Optional<Event> lhsRequestEventOpt = rrstore.getRequestEvent(lhsReqId.get());
+		Optional<Event> rhsRequestEventOpt = rrstore.getRequestEvent(lhsReqId.get());
+
+		if (lhsRequestEventOpt.isEmpty() || rhsRequestEventOpt.isEmpty()) {
+			return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+				.entity(Map.of(Constants.ERROR, "lhsReqEvent or rhsReqEvent not found in solr"))
+				.build();
+		}
+		Event lhsRequestEvent = lhsRequestEventOpt.get();
+		Event rhsRequestEvent = rhsRequestEventOpt.get();
+
+		Optional<Event> lhsResponseEventOpt = rrstore.getResponseEvent(lhsReqId.get());
+		Optional<Event> rhsResponseEventOpt = rrstore.getResponseEvent(rhsReqId.get());
+
+		Optional<Recording> recordingOpt = rrstore
+			.getRecordingByCollectionAndTemplateVer(lhsRequestEvent.customerId, lhsRequestEvent.app,
+				lhsRequestEvent.getCollection(), Optional.empty());
+
+		if (recordingOpt.isEmpty()) {
+			return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+				.entity(Map.of(Constants.ERROR,
+					"Recording not found in solr. lhsReqId should be from recording collection and rhsReqId from replay"))
+				.build();
+		}
+		Recording recording = recordingOpt.get();
+
+		Comparator.Match reqCompareRes = Match.NOMATCH;
+		Comparator.Match respCompareRes = Match.NOMATCH;
+		try {
+			TemplateKey reqCompareKey = new TemplateKey(recording.templateVersion,
+				lhsRequestEvent.customerId,
+				lhsRequestEvent.app, lhsRequestEvent.service, lhsRequestEvent.apiPath,
+				Type.RequestCompare);
+			Comparator reqComparator = rrstore
+				.getComparator(reqCompareKey, lhsRequestEvent.eventType);
+			if (reqComparator.getCompareTemplate().getRules() != null &&
+				!reqComparator.getCompareTemplate().getRules().isEmpty()) {
+				reqCompareRes = reqComparator
+					.compare(lhsRequestEvent.payload, rhsRequestEvent.payload);
+			} else {
+				reqCompareRes = new Comparator.Match(DontCare, "",
+					Collections.emptyList());
+			}
+			TemplateKey respCompareKey = new TemplateKey(recording.templateVersion,
+				lhsRequestEvent.customerId,
+				lhsRequestEvent.app, lhsRequestEvent.service, lhsRequestEvent.apiPath,
+				Type.ResponseCompare);
+
+			if (lhsResponseEventOpt.isPresent() && rhsResponseEventOpt.isPresent()) {
+				Event lhsResponseEvent = lhsResponseEventOpt.get();
+				Event rhsResponseEvent = rhsResponseEventOpt.get();
+				Comparator respComparator = rrstore
+					.getComparator(respCompareKey, lhsResponseEvent.eventType);
+				respCompareRes = respComparator
+					.compare(lhsResponseEvent.payload, rhsResponseEvent.payload);
+			}
+		} catch (Exception e) {
+			LOGGER.error(new ObjectMessage(Map.of(
+				Constants.MESSAGE, "Exception while comparing request")), e);
+			return Response.serverError().entity(
+				buildErrorResponse(Constants.ERROR, "Error while comparing requests",
+					e.getMessage())).build();
+		}
+
+		ReqRespMatchWithEvent reqRespMatchWithEvent = new ReqRespMatchWithEvent(lhsRequestEvent,
+			Optional.of(rhsRequestEvent),
+			respCompareRes, lhsResponseEventOpt, rhsRequestEventOpt, reqCompareRes);
+
+		ReqRespMatchResult res = Analysis.createReqRespMatchResult(reqRespMatchWithEvent, DontCare,
+			1, "NA");
+
+		try {
+			Map jsonMap = new HashMap();
+			jsonMap.put(Constants.REQ_RESP_MATCH_RESULT, res);
+			return Response.ok().entity(jsonMapper.writeValueAsString(jsonMap)).build();
+		} catch (JsonProcessingException e) {
+			LOGGER.error(
+				new ObjectMessage(
+					Map.of(Constants.MESSAGE, "Error while parsing ReqRespMatchResult")), e);
+			return Response.serverError().entity(
+				buildErrorResponse(Constants.ERROR, "Error while parsing ReqRespMatchResult",
+					e.getMessage())).build();
+		}
+	}
+
+
 	/**
-         * @param config
-         */
+	 * @param config
+	 */
 	@Inject
 	public AnalyzeWS(Config config) {
 		super();
