@@ -24,11 +24,12 @@ const setupListeners = (proxyServerOptions, mockContext, user) => {
             },
         });
 
-        mainWindow.loadURL(
-            isDev
-                ? 'http://localhost:3006'
-                : `file://${path.join(__dirname, '../../build/index.html')}`,
-            )
+        mainWindow.loadURL(`file://${path.join(__dirname, '../../build/index.html')}`);
+        // mainWindow.loadURL(
+        //     isDev
+        //         ? 'http://localhost:3006'
+        //         : `file://${path.join(__dirname, '../../build/index.html')}`,
+        //     )
             
         // mainWindow.loadFile('index.html');
         
