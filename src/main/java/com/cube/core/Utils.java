@@ -98,6 +98,7 @@ public class Utils {
 		try {
 			return Optional.ofNullable(intStr).map(Integer::valueOf);
 		} catch (Exception e) {
+			LOGGER.error("Error while parsing int",e);
 			return Optional.empty();
 		}
 	}

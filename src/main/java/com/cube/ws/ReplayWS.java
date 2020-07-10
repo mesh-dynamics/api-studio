@@ -8,6 +8,8 @@ import com.cube.dao.ReplayUpdate;
 import com.cube.dao.ReplayUpdate.ReplaySaveFailureException;
 import com.cube.dao.Result;
 import io.md.constants.ReplayStatus;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,6 +41,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.UtilException;
+import io.md.core.CompareTemplate;
 import io.md.core.ReplayTypeEnum;
 
 import com.cube.core.Utils;
@@ -48,8 +51,10 @@ import io.md.dao.Recording;
 import io.md.dao.Replay;
 import com.cube.dao.ReplayBuilder;
 import com.cube.dao.ReqRespStore;
+import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.drivers.AbstractReplayDriver;
 import com.cube.drivers.ReplayDriverFactory;
+import com.cube.injection.DynamicInjectionConfig;
 import com.cube.utils.Constants;
 
 /**
@@ -263,6 +268,7 @@ public class ReplayWS {
         Optional<String> testConfigName = Optional.ofNullable(formParams.getFirst("testConfigName"));
 
         Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst("dynamicInjectionConfigVersion"));
+        Optional<String> staticInjectionMap = Optional.ofNullable(formParams.getFirst("staticInjectionMap"));
 
         // Request transformations - for injecting tokens and such
         Optional<String> xfms = Optional.ofNullable(formParams.getFirst("transforms"));
@@ -308,6 +314,8 @@ public class ReplayWS {
             testConfigName.ifPresent(replayBuilder::withTestConfigName);
             xfms.ifPresent(replayBuilder::withXfms);
             dynamicInjectionConfigVersion.ifPresent(replayBuilder::withDynamicInjectionConfigVersion);
+            staticInjectionMap.ifPresent(replayBuilder::withStaticInjectionMap);
+
             try {
                 recording.generatedClassJarPath
                     .ifPresent(UtilException.rethrowConsumer(replayBuilder::withGeneratedClassJar));
@@ -346,6 +354,28 @@ public class ReplayWS {
         }).orElse(Response.status(Status.BAD_REQUEST).entity("Endpoint not specified").build());
 
     }
+
+
+    @POST
+    @Path("saveDynamicInjectionConfig/")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response saveDynamicInjectionConfig(@Context UriInfo uriInfo, DynamicInjectionConfig dynamicInjectionConfig) {
+        try {
+            String dynamicInjectionConfigId = rrstore.saveDynamicInjectionConfig(dynamicInjectionConfig);
+            return Response.ok().entity((new JSONObject(Map.of(
+                "Message", "Successfully saved Dynamic Injection Config",
+                "ID", dynamicInjectionConfigId,
+                "dynamicInjectionConfigVersion", dynamicInjectionConfig.version))).toString()).build();
+        } catch (SolrStoreException e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Unable to save Dynamic Injection Config",
+                "dynamicInjectionConfig.version", dynamicInjectionConfig.version)), e);
+            return Response.serverError().entity((
+                Utils.buildErrorResponse(Constants.ERROR, Constants.SOLR_STORE_FAILED, "Unable to save Dynamic Injection Config: " +
+                    e.getStackTrace()))).build();
+        }
+    }
+
 
     /**
      *

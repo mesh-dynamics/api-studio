@@ -2,18 +2,20 @@ package com.cube.injection;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
 public class DynamicInjectionConfig {
 
 	@JsonProperty("version")
 	public final String version;
 
-	@JsonProperty("customer")
-	public final String customer;
+	@JsonProperty("customerId")
+	public final String customerId;
 
 	@JsonProperty("app")
 	public final String app;
@@ -30,72 +32,82 @@ public class DynamicInjectionConfig {
 	// Default constructor for Jackson
 	private DynamicInjectionConfig() {
 		version = "";
-		customer = "";
+		customerId = "";
 		app = "";
 		timestamp = Instant.now();
 		extractionMetas = new ArrayList<>();
 		injectionMetas = new ArrayList<>();
 	}
 
-	public DynamicInjectionConfig(String version, String customer, String app, Optional<Instant> timestamp,
+	public DynamicInjectionConfig(String version, String customerId, String app, Optional<Instant> timestamp,
 		List<ExtractionMeta> extractionMetas, List<InjectionMeta> injectionMetas) {
 		this.version = version;
-		this.customer = customer;
+		this.customerId = customerId;
 		this.app = app;
 		this.timestamp = timestamp.orElse(Instant.now());
 		this.extractionMetas = extractionMetas;
 		this.injectionMetas = injectionMetas;
 	}
 
-	public class ExtractionMeta {
+	static public class ExtractionMeta {
 
 		@JsonProperty("apiPath")
-		final String apiPath;
+		public final String apiPath;
+
+		@JsonSetter
+
 
 		@JsonProperty("method")
-		final HTTPMethodType method;
+		public final HTTPMethodType method;
 
 		@JsonProperty("name")
-		final SourceMeta nameMeta;
+		public final String name;
 
 		@JsonProperty("value")
-		final SourceMeta valueMeta;
+		public final String value;
 
 		@JsonProperty("reset")
-		final boolean reset;
+		public final boolean reset;
+
+		// Boolean placeholder to specify if the value to be extracted
+		// is an Object and not a string. Defacto value to be false.
+		// NOTE - if this is true value should be a single source & jsonPath
+		// (Only one placeholder of ${Source: JSONPath}
+		@JsonProperty("valueObject")
+		public final boolean valueObject;
 
 		private ExtractionMeta() {
 			apiPath = "";
 			method = HTTPMethodType.POST;
-			nameMeta = new SourceMeta();
-			valueMeta = new SourceMeta();
+			name = "";
+			value = "";
 			reset = true;
+			valueObject = false;
 		}
 
 	}
 
-	public class SourceMeta {
+	static public class InjectionMeta {
 
-		@JsonProperty("source")
-		final VariableSources source;
+		@JsonProperty("apiPath")
+		public final List<String> apiPaths;
 
 		@JsonProperty("jsonPath")
-		final String jsonPath;
+		public final String jsonPath;
 
-		@JsonProperty("suffix")
-		final String suffix;
+		// Can go away once we have regex matching for apiPath(s).
+		@JsonProperty("injectAllPaths")
+		public final boolean injectAllPaths;
 
-		private SourceMeta() {
-			source = VariableSources.GoldenResponse;
-			jsonPath = "";
-			suffix = "";
+		@JsonProperty("name")
+		public final String name;
+
+		public InjectionMeta() {
+			this.apiPaths = Collections.EMPTY_LIST;
+			this.jsonPath = "";
+			this.injectAllPaths = false;
+			this.name = "";
 		}
-
-	}
-
-	//TODO Define injection class
-	public class InjectionMeta {
-
 	}
 
 	public enum HTTPMethodType {
@@ -103,11 +115,5 @@ public class DynamicInjectionConfig {
 		POST
 	}
 
-	public enum VariableSources {
-		GoldenRequest,
-		GoldenResponse,
-		TestSetRequest,
-		TestSetResponse
-	}
 
 }
