@@ -1650,23 +1650,14 @@ public class AnalyzeWS {
 
 		ReqRespMatchWithEvent reqRespMatchWithEvent = new ReqRespMatchWithEvent(lhsRequestEvent,
 			Optional.of(rhsRequestEvent),
-			respCompareRes, lhsResponseEventOpt, rhsRequestEventOpt, reqCompareRes);
+			respCompareRes, lhsResponseEventOpt, rhsResponseEventOpt, reqCompareRes);
 
 		ReqRespMatchResult res = Analysis.createReqRespMatchResult(reqRespMatchWithEvent, DontCare,
 			1, "NA");
 
-		try {
-			Map jsonMap = new HashMap();
-			jsonMap.put(Constants.REQ_RESP_MATCH_RESULT, res);
-			return Response.ok().entity(jsonMapper.writeValueAsString(jsonMap)).build();
-		} catch (JsonProcessingException e) {
-			LOGGER.error(
-				new ObjectMessage(
-					Map.of(Constants.MESSAGE, "Error while parsing ReqRespMatchResult")), e);
-			return Response.serverError().entity(
-				buildErrorResponse(Constants.ERROR, "Error while parsing ReqRespMatchResult",
-					e.getMessage())).build();
-		}
+		Map jsonMap = new HashMap();
+		jsonMap.put(Constants.REQ_RESP_MATCH_RESULT, res);
+		return Response.ok().entity(jsonMap).build();
 	}
 
 
