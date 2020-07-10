@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.cube</groupId>
   <artifactId>commons</artifactId>
-  <version>1.0.93</version>
+  <version>1.0.94</version>
   <packaging>jar</packaging>
   <properties>
     <version.java>8</version.java>
