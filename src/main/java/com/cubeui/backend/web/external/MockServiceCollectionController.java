@@ -24,11 +24,11 @@ public class MockServiceCollectionController {
   @Autowired
   private Validation validation;
 
-  @GetMapping("/mock/{replayCollection}/{recordCollection}/{customerId}/{app}/{instanceId}/{traceId}/{service}/**")
+  @GetMapping("/mock/{replayCollection}/{recordCollection}/{customerId}/{app}/{traceId}/{service}/**")
   public ResponseEntity getData(HttpServletRequest request, @RequestBody Optional<String> getBody,
       @PathVariable String replayCollection, @PathVariable String recordCollection,
       @PathVariable String customerId, @PathVariable String app,
-      @PathVariable String instanceId, @PathVariable String traceId, @PathVariable String service) {
+      @PathVariable String traceId, @PathVariable String service) {
     validation.validateCustomerName(request,customerId);
     Optional<Recording> recording = cubeServerService.searchRecording(customerId, app, recordCollection);
     if(recording.isEmpty())
@@ -36,15 +36,15 @@ public class MockServiceCollectionController {
           .body(String.format("There is no Recording Object for customerId=%s, app=%s, collection=%s",
               customerId, app,  recordCollection));
     validation.validateCustomerName(request,recording.get().customerId);
-    String path = getPath(request.getRequestURI(), replayCollection, recordCollection, customerId, app, instanceId, recording.get().id);
+    String path = getPath(request.getRequestURI(), replayCollection, recordCollection, customerId, app, recording.get().id);
     return cubeServerService.fetchGetResponse(request, getBody, path);
   }
 
-  @PostMapping("/mock/{replayCollection}/{recordCollection}/{customerId}/{app}/{instanceId}/{traceId}/{service}/**")
+  @PostMapping("/mock/{replayCollection}/{recordCollection}/{customerId}/{app}/{traceId}/{service}/**")
   public ResponseEntity postData(HttpServletRequest request, @RequestBody Optional<String> postBody,
       @PathVariable String replayCollection, @PathVariable String recordCollection,
       @PathVariable String customerId, @PathVariable String app,
-      @PathVariable String instanceId, @PathVariable String traceId, @PathVariable String service) {
+      @PathVariable String traceId, @PathVariable String service) {
     validation.validateCustomerName(request,customerId);
     Optional<Recording> recording = cubeServerService.searchRecording(customerId, app, recordCollection);
     if(recording.isEmpty())
@@ -52,14 +52,14 @@ public class MockServiceCollectionController {
           .body(String.format("There is no Recording Object for customerId=%s, app=%s, collection=%s",
               customerId, app,  recordCollection));
     validation.validateCustomerName(request,recording.get().customerId);
-    String path = getPath(request.getRequestURI(), replayCollection, recordCollection, customerId, app, instanceId, recording.get().id);
+    String path = getPath(request.getRequestURI(), replayCollection, recordCollection, customerId, app, recording.get().id);
     return cubeServerService.fetchPostResponse(request, postBody, path);
   }
 
   private String getPath(String uri, String replayCollection, String recordCollection,
-      String customerId, String app, String instanceId,String recordingId) {
-    return uri.replace(String.format("/api/msc/mock/%s/%s/%s/%s/%s",
-        replayCollection, recordCollection, customerId, app, instanceId),
+      String customerId, String app,String recordingId) {
+    return uri.replace(String.format("/api/msc/mock/%s/%s/%s/%s",
+        replayCollection, recordCollection, customerId, app),
         String.format("/ms/mockWithCollection/%s/%s", replayCollection, recordingId));
   }
 }
