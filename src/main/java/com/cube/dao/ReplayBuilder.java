@@ -58,6 +58,7 @@ public class ReplayBuilder {
 	public Optional<String> recordingId;
 	public boolean archived;
 	public Optional<String> dynamicInjectionConfigVersion;
+	public Optional<String> staticInjectionMap;
 	public Instant analysisCompleteTimestamp;
 
 	public ReplayBuilder(String endpoint, CubeMetaInfo metaInfo,
@@ -92,6 +93,7 @@ public class ReplayBuilder {
 		this.recordingId = Optional.empty();
 		this.archived = false;
 		this.dynamicInjectionConfigVersion = Optional.empty();
+		this.staticInjectionMap = Optional.empty();
 		/**
 		 * the value is set to the EPOCH so we won't be able to fetch replay in timeline till its analyis is complete
 		 * Once analysis is complete the value is set to the corresponding time
@@ -115,7 +117,7 @@ public class ReplayBuilder {
             excludePaths, reqCnt , reqSent , reqFailed, creationTimestamp, sampleRate, intermediateServices,
 			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, mockServices
 	            , testConfigName, goldenName, recordingId, archived,dynamicInjectionConfigVersion,
-				analysisCompleteTimestamp);
+				analysisCompleteTimestamp, staticInjectionMap);
 	}
 
 	public ReplayBuilder withPaths(List<String> paths) {
@@ -229,6 +231,11 @@ public class ReplayBuilder {
 
 	public ReplayBuilder withDynamicInjectionConfigVersion(String injectionConfigVersion) {
 		this.dynamicInjectionConfigVersion = Optional.of(injectionConfigVersion);
+		return this;
+	}
+
+	public ReplayBuilder withStaticInjectionMap(String staticInjectionMap) {
+		this.staticInjectionMap = Optional.of(staticInjectionMap);
 		return this;
 	}
 

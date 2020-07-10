@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.net.URLClassLoader;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import org.apache.logging.log4j.LogManager;
@@ -19,6 +20,9 @@ import io.md.dao.Event;
 
 import com.cube.core.Utils;
 import io.md.dao.Replay;
+import io.md.dao.ResponsePayload;
+import io.md.dao.ThriftResponsePayload;
+
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
@@ -57,25 +61,24 @@ public class ThriftReplayDriver extends AbstractReplayDriver {
 		}
 
 		@Override
-		public int send(IReplayRequest request) {
+		public ResponsePayload send(Event requestEvent, Replay replay) {
 			try {
-				ThriftRequest thriftRequest = (ThriftRequest) request;
+				ThriftRequest thriftRequest = build(requestEvent, replay);
 				thriftServiceClient.sendBase(thriftRequest.methodName, thriftRequest.args);
 				thriftServiceClient.receiveBase(thriftRequest.result, thriftRequest.methodName);
 				thriftServiceClient.flushTransport();
-				return 1;
+				return new ThriftResponsePayload(1);
 			} catch (Exception e) {
-				return 0;
+				return new ThriftResponsePayload(0);
 			}
 		}
 
 		@Override
-		public CompletableFuture<Integer> sendAsync(IReplayRequest request) {
+		public CompletableFuture<ResponsePayload> sendAsync(Event requestEvent, Replay replay) {
 			return null;
 		}
 
-		@Override
-		public IReplayRequest build(Replay replay, Event reqEvent, Config config)
+		public ThriftRequest build(Event reqEvent, Replay replay)
 			throws IOException {
 			try {
 				Map<String, Object> params = Utils.extractThriftParams(reqEvent.apiPath);
@@ -104,14 +107,16 @@ public class ThriftReplayDriver extends AbstractReplayDriver {
 		}
 
 		@Override
-		public boolean isSuccessStatusCode(int responseCode) {
-
-			return responseCode==1 ? true : false;
+		public boolean isSuccessStatusCode(String responseCode) {
+			Optional<Integer> intResponse = Utils.strToInt(responseCode);
+			return intResponse.map(intCode -> {
+				return intCode==1 ? true : false;
+			}).orElse(false);
 		}
 
 		@Override
-		public int getErrorStatusCode() {
-			return 0;
+		public String getErrorStatusCode() {
+			return String.valueOf(0);
 		}
 
 		@Override

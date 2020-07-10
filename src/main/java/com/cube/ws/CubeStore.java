@@ -1292,10 +1292,16 @@ public class CubeStore {
         Response resp = recording.map(rec -> {
             if(rec.recordingType == RecordingType.History
                 || rec.recordingType == RecordingType.UserGolden) {
+                List<String> responseList = new ArrayList<>();
                 final String traceId = io.md.utils.Utils.generateTraceId();
                 for (UserReqRespContainer userReqRespContainer : userReqRespContainers) {
                     Event response = userReqRespContainer.response;
                     Event request = userReqRespContainer.request;
+                    if (rec.recordingType == RecordingType.UserGolden) {
+                        String oldTraceId = request.getTraceId();
+                        rrstore.deleteReqResByTraceId(oldTraceId, request.getCollection());
+                        rrstore.commit();
+                    }
 
                     TemplateKey tkey = new TemplateKey(rec.templateVersion, request.customerId,
                         request.app, request.service, request.apiPath, Type.RequestMatch);
@@ -1318,6 +1324,9 @@ public class CubeStore {
                                 buildErrorResponse(Constants.ERROR, Constants.RECORDING_ID,
                                     "Unable to store event in solr")).build();
                         }
+                        String responseString = jsonMapper.writeValueAsString(Map.of("oldReqId", request.reqId,
+                            "oldTraceId", request.getTraceId(), "newReqId", reqId, "newTraceId", traceId));
+                        responseList.add(responseString);
 
                         if (rec.recordingType == RecordingType.History) {
                             TemplateKey templateKey = new TemplateKey(rec.templateVersion,
@@ -1364,12 +1373,20 @@ public class CubeStore {
                                 Constants.RECORDING_ID, recordingId)), e);
                         return Response.serverError().entity("Invalid Event :: "
                             + e.getMessage()).build();
+                    } catch (JsonProcessingException e) {
+                        LOGGER.error(new ObjectMessage(
+                            Map.of(Constants.MESSAGE, "Error while creating response",
+                                Constants.RECORDING_ID, recordingId)), e);
+                        return Response.serverError().entity("Error while creating response"
+                            + e.getMessage()).build();
                     }
                 }
+                rrstore.commit();
                 return Response.ok()
                     .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject(
                         Map.of(Constants.MESSAGE, "The UserData is saved",
-                            Constants.RECORDING_ID, recordingId)))).build();
+                            Constants.RECORDING_ID, recordingId,
+                            Constants.RESPONSE, responseList)))).build();
             }
             LOGGER.error(new ObjectMessage(
                 Map.of(Constants.MESSAGE, "Recording is not a UserGolden or History ",

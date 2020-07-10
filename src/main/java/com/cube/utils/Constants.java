@@ -47,6 +47,7 @@ public class Constants {
     public static final String SERVICE_HEALTH_STATUS = "SERVICE_HEALTH_STATUS";
     public static final String SOLR_STATUS_CODE = "SOLR_STATUS_CODE";
     public static final String SOLR_STATUS_MESSAGE = "SOLR_STATUS_MESSAGE";
+    public static final String SOLR_STORE_FAILED = "SOLR_STORE_FAILED";
 
 
     //EXCEPTIONS
@@ -100,6 +101,7 @@ public class Constants {
     public static final String REQUEST_MATCH_RULES = "requestMatchRules";
     public static final String REQUEST_COMPARE_RULES = "requestCompareRules";
     public static final String RESPONSE_COMPARE_RULES = "responseCompareRules";
+    public static final String REQ_RESP_MATCH_RESULT = "ReqRespMatchResult";
 
 
     //COMMON STRINGS
@@ -161,6 +163,7 @@ public class Constants {
     public static final String DYNACMIC_INJECTION_CONFIG_VERSION_FIELD = "dynamicInjectionConfigVersion";
     public static final String EXTRACTION_METAS_JSON_FIELD = "extractionMetasJson";
     public static final String INJECTION_METAS_JSON_FIELD = "injectionMetasJson";
+    public static final String STATIC_INJECTION_MAP_FIELD = "staticInjectionMap";
 
 
 
@@ -190,6 +193,12 @@ public class Constants {
 	public static final String REC_TRACE_ID = "recordTraceId";
 	public static final String SPAN_ID_FIELD = "spanId";
     public static final String PARENT_SPAN_ID_FIELD = "parentSpanId";
+
+    // VariableSources
+    public static final String GOLDEN_REQUEST = "Golden.Request";
+    public static final String GOLDEN_RESPONSE = "Golden.Response";
+    public static final String TESTSET_REQUEST = "TestSet.Request";
+    public static final String TESTSET_RESPONSE = "TestSet.Response";
 	public static final String REDIS_SHADOW_KEY_PREFIX = "shadowKey:";
     public static final String REDIS_STATUS_KEY_PREFIX = "statusKey:";
     public static final String CONFIG_JSON = "config_json";
