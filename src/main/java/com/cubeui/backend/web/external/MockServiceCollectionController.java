@@ -24,11 +24,11 @@ public class MockServiceCollectionController {
   @Autowired
   private Validation validation;
 
-  @GetMapping("/mock/{replayCollection}/{recordCollection}/{customerId}/{app}/{instanceId}/{service}/**")
+  @GetMapping("/mock/{replayCollection}/{recordCollection}/{customerId}/{app}/{instanceId}/{traceId}/{service}/**")
   public ResponseEntity getData(HttpServletRequest request, @RequestBody Optional<String> getBody,
       @PathVariable String replayCollection, @PathVariable String recordCollection,
       @PathVariable String customerId, @PathVariable String app,
-      @PathVariable String instanceId, @PathVariable String service) {
+      @PathVariable String instanceId, @PathVariable String traceId, @PathVariable String service) {
     validation.validateCustomerName(request,customerId);
     Optional<Recording> recording = cubeServerService.searchRecording(customerId, app, recordCollection);
     if(recording.isEmpty())
@@ -40,11 +40,11 @@ public class MockServiceCollectionController {
     return cubeServerService.fetchGetResponse(request, getBody, path);
   }
 
-  @PostMapping("/mock/{replayCollection}/{recordCollection}/{customerId}/{app}/{instanceId}/{service}/**")
+  @PostMapping("/mock/{replayCollection}/{recordCollection}/{customerId}/{app}/{instanceId}/{traceId}/{service}/**")
   public ResponseEntity postData(HttpServletRequest request, @RequestBody Optional<String> postBody,
       @PathVariable String replayCollection, @PathVariable String recordCollection,
       @PathVariable String customerId, @PathVariable String app,
-      @PathVariable String instanceId, @PathVariable String service) {
+      @PathVariable String instanceId, @PathVariable String traceId, @PathVariable String service) {
     validation.validateCustomerName(request,customerId);
     Optional<Recording> recording = cubeServerService.searchRecording(customerId, app, recordCollection);
     if(recording.isEmpty())
