@@ -1381,6 +1381,7 @@ public class CubeStore {
                             + e.getMessage()).build();
                     }
                 }
+                rrstore.commit();
                 return Response.ok()
                     .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject(
                         Map.of(Constants.MESSAGE, "The UserData is saved",
