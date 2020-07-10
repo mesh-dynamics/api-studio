@@ -1585,7 +1585,7 @@ public class AnalyzeWS {
 		}
 
 		Optional<Event> lhsRequestEventOpt = rrstore.getRequestEvent(lhsReqId.get());
-		Optional<Event> rhsRequestEventOpt = rrstore.getRequestEvent(lhsReqId.get());
+		Optional<Event> rhsRequestEventOpt = rrstore.getRequestEvent(rhsReqId.get());
 
 		if (lhsRequestEventOpt.isEmpty() || rhsRequestEventOpt.isEmpty()) {
 			return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
@@ -1619,14 +1619,7 @@ public class AnalyzeWS {
 				Type.RequestCompare);
 			Comparator reqComparator = rrstore
 				.getComparator(reqCompareKey, lhsRequestEvent.eventType);
-			if (reqComparator.getCompareTemplate().getRules() != null &&
-				!reqComparator.getCompareTemplate().getRules().isEmpty()) {
-				reqCompareRes = reqComparator
-					.compare(lhsRequestEvent.payload, rhsRequestEvent.payload);
-			} else {
-				reqCompareRes = new Comparator.Match(DontCare, "",
-					Collections.emptyList());
-			}
+				reqCompareRes = reqComparator.compare(lhsRequestEvent.payload, rhsRequestEvent.payload);
 			TemplateKey respCompareKey = new TemplateKey(recording.templateVersion,
 				lhsRequestEvent.customerId,
 				lhsRequestEvent.app, lhsRequestEvent.service, lhsRequestEvent.apiPath,
