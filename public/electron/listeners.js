@@ -97,15 +97,18 @@ const setupListeners = (proxyServerOptions, mockContext, user) => {
     });
 
     ipcMain.on('mock_context_change', (event, arg) => {
-        const { collectionId, recordingId } = arg;
-        
+        const { collectionId, traceId, selectedApp, customerName, recordingCollectionId  } = arg;
+
         logger.info('Current mock context :', mockContext);
         logger.info('Changing mock context to : ', arg);
 
+        mockContext.traceId = traceId;
+        mockContext.selectedApp = selectedApp;
+        mockContext.customerName = customerName;
         mockContext.collectionId = collectionId;
-        mockContext.recordingId = recordingId;
+        mockContext.recordingCollectionId = recordingCollectionId;        
 
-        logger.info('Updated collection id is : ', mockContext);
+        logger.info('Updated context is : ', mockContext);
     });
 
     ipcMain.on('restart_app', () => {
