@@ -537,7 +537,7 @@ public class Utils {
 	public static Event createRequestMockNew(String path, MultivaluedMap<String, String> formParams,
 		String customerId, String app, String instanceId, String service,
 		String method, String body,
-		MultivaluedMap<String, String> headers, MultivaluedMap<String, String> queryParams) throws EventBuilder.InvalidEventException, JsonProcessingException {
+		MultivaluedMap<String, String> headers, MultivaluedMap<String, String> queryParams, Optional<String> traceIdValue) throws EventBuilder.InvalidEventException, JsonProcessingException {
 		// At the time of mock, our lua filters don't get deployed, hence no request id is generated
 		// we can generate a new request id here in the mock service
 		String requestId = service.concat("-mock-").concat(String.valueOf(UUID.randomUUID()));
@@ -545,7 +545,7 @@ public class Utils {
 		MultivaluedMap<String, String> meta = new MultivaluedHashMap<>();
 
 		setSpanTraceIDParentSpanInMeta(meta, headers, app);
-		Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
+		Optional<String> traceId = traceIdValue.isPresent() ? traceIdValue : getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
 		Optional<String> spanId = getFirst(meta, Constants.DEFAULT_SPAN_FIELD);
 		Optional<String> parentSpanId = getFirst(meta, Constants.DEFAULT_PARENT_SPAN_FIELD);
 		RecordingType recordingType = getFirst(meta, Constants.RECORDING_TYPE_FIELD)
