@@ -1,10 +1,10 @@
 import  React , { Component, Fragment, createContext } from "react";
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
-import { FormControl, FormGroup, Glyphicon, Radio, Checkbox, Tabs, Tab, Panel, Label, Modal, Button, ControlLabel } from 'react-bootstrap';
+import { FormControl, FormGroup, Glyphicon, Radio, Checkbox, Tabs, Tab, Panel, Label, Modal, Button, ControlLabel, OverlayTrigger, Popover } from 'react-bootstrap';
 import {Treebeard, decorators} from 'react-treebeard';
 
-import _ from 'lodash';
+import _, { head } from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import { stringify } from 'query-string';
 import arrayToTree  from 'array-to-tree';
@@ -25,6 +25,12 @@ import '../../components/Tabs/styles.css';
 // import "./HttpClient.css";
 import "./Tabs.css";
 import CollectionTreeCSS from "./CollectionTreeCSS";
+
+import {
+    validateAndCreateDiffLayoutData  
+} from "../../utils/diff/diff-process.js";
+import EnvVar from "./EnvVar";
+import Mustache from "mustache"
 
 class HttpClientTabs extends Component {
 
@@ -81,7 +87,9 @@ class HttpClientTabs extends Component {
             collectionName: "",
             collectionLabel: "",
             modalErroSaveMessage: "",
-            modalErroCreateCollectionMessage: ""
+            modalErroCreateCollectionMessage: "",
+            showEnvVarModal: false,
+            selectedEnvironment: "",
         };
         this.addTab = this.addTab.bind(this);
         this.handleTabChange = this.handleTabChange.bind(this);
@@ -438,6 +446,55 @@ class HttpClientTabs extends Component {
         return qsParams;
     }
 
+    applyEnvVars = (httpRequestURL, httpRequestQueryStringParams, fetchConfig) => {
+        const headers = fetchConfig.headers;
+        const body = fetchConfig.body;
+        let headersRendered = new Headers(), bodyRendered = "";
+
+        const currentEnvironment = this.getCurrentEnvirnoment();
+
+        // convert list of envvar objects to a map
+        const currentEnvVars = currentEnvironment ? Object.fromEntries(
+            currentEnvironment.vars.map((v) => ([v.key, v.value]))
+        ) : {};
+
+        // define method to render Mustache template
+        const renderEnvVars = (input) => input ? Mustache.render(input, currentEnvVars) : input;
+    
+        const httpRequestURLRendered = renderEnvVars(httpRequestURL);
+        
+        const httpRequestQueryStringParamsRendered = Object.fromEntries(
+            Object.entries(httpRequestQueryStringParams)
+            .map(
+                   ([key, value]) => [renderEnvVars(key), renderEnvVars(value)]
+                )
+            );
+        
+        if (headers) {
+            for(let pair of headers.entries()) {
+                headersRendered.append(renderEnvVars(pair[0]), renderEnvVars(pair[1]))
+            }
+        }
+
+        if (body instanceof FormData) {
+            bodyRendered = new FormData();
+            for(let pair of body.entries()) {
+                bodyRendered.append(renderEnvVars(pair[0]), renderEnvVars(pair[1]))
+            }
+        } else {
+            // string
+            bodyRendered = renderEnvVars(body)
+        }
+
+        const fetchConfigRendered = {
+            method: fetchConfig.method,
+            headers: headersRendered,
+            body: bodyRendered,
+        }
+
+        return [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered]
+    }
+
     driveRequest(isOutgoingRequest, tabId) {
         const {tabs, selectedTabKey, app} = this.state;
         const user = JSON.parse(localStorage.getItem('user'));
@@ -474,7 +531,11 @@ class HttpClientTabs extends Component {
         if(httpMethod !== "GET".toLowerCase() && httpMethod !== "HEAD".toLowerCase()) {
             fetchConfig["body"] = httpRequestBody;
         }
-        let fetchURL = httpRequestURL + (httpRequestQueryStringParams ? "?" + stringify(httpRequestQueryStringParams) : "");
+        // render environment variables
+        const [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] = this.applyEnvVars(httpRequestURL, httpRequestQueryStringParams, fetchConfig);
+
+        const fetchUrlRendered = httpRequestURLRendered + (httpRequestQueryStringParamsRendered ? "?" + stringify(httpRequestQueryStringParamsRendered) : "");
+
         this.setState({
             tabs: this.state.tabs.map(eachTab => {
                 if (eachTab.id === tabId) {
@@ -487,7 +548,7 @@ class HttpClientTabs extends Component {
         // Make request
         // https://www.mocky.io/v2/5185415ba171ea3a00704eed
         let fetchedResponseHeaders = {}, responseStatus = "", responseStatusText = "";
-        return fetch(fetchURL, fetchConfig).then((response) => {
+        return fetch(fetchUrlRendered, fetchConfigRendered).then((response) => {
             responseStatus = response.status;
             responseStatusText = response.statusText;
             for(const header of response.headers){
@@ -1366,13 +1427,69 @@ class HttpClientTabs extends Component {
         );
     }
 
+    getCurrentEnvirnoment = () => {
+        const {apiCatalog: {environmentList}} = this.props;
+        const {selectedEnvironment} = this.state;
+        return _.find(environmentList, {name: selectedEnvironment})
+    }
+    
+    renderEnvListDD = () => {
+        const {apiCatalog: {environmentList}} = this.props;
+        return (
+        <FormGroup bsSize="small" style={{marginBottom: "0px"}}>
+            <FormControl componentClass="select" placeholder="Environment" style={{fontSize: "12px"}} value={this.state.selectedEnvironment} onChange={this.handleEnvChange} className="btn-sm">
+                <option value="">No Environment</option>
+                {environmentList.map((env) => (<option key={env.name} value={env.name}>{env.name}</option>))}
+            </FormControl>
+        </FormGroup>)
+    }
+
+    handleEnvChange = (e) => {
+        this.setState({selectedEnvironment: e.target.value})
+    }
+
+    renderEnvPopoverBtn = () => {
+        const currentEnvironment = this.getCurrentEnvirnoment();
+        const envPopover = (<Popover title={this.state.selectedEnvironment || "No Environment"}>
+                      <div style={{margin: "5px", width: "200px"}}>
+                        {currentEnvironment && !_.isEmpty(currentEnvironment.vars) ? <table className="table table-bordered table-hover">
+                              <thead>
+                                  <tr>
+                                      <th style={{width: "20%"}}>
+                                          Variable
+                                      </th>
+                                      <th>
+                                          Value
+                                      </th>
+                                  </tr>
+                              </thead>
+                              <tbody>
+                                {
+                                    currentEnvironment.vars.map((varEntry) => (<tr><td>{varEntry.key}</td><td>{varEntry.value}</td></tr>))
+                                }
+                              </tbody>
+                          </table> : "No Variables"}
+                      </div>
+                    </Popover>)
+        return (
+            <OverlayTrigger trigger="click" placement="bottom" overlay={envPopover} rootClose>
+                <span title="Environment quick look" className="btn btn-sm cube-btn text-center" onClick={() => {}}>
+                    <i className="fas fa-eye"/>
+                </span>
+            </OverlayTrigger>)
+    }
+
+    hideEnvModal = () => {
+        this.setState({showEnvVarModal: false})
+    }
+
     render() {
         const { cube } = this.props;
-        const { app, cubeRunHistory, userCollections, collectionName, collectionLabel, modalErroSaveMessage, modalErroCreateCollectionMessage } = this.state;
+        const { app, cubeRunHistory, userCollections, collectionName, collectionLabel, modalErroSaveMessage, modalErroCreateCollectionMessage, showEnvVarModal } = this.state;
 
         return (
+
             <div className="" style={{display: "flex", height: "100%"}}>
-                
                 <aside className="" style={{ "width": "250px", "height": "100%", "background": "#EAEAEA", "padding": "10px", "display": "flex", "flexDirection": "column", overflow: "auto"}}>
                     <div style={{marginTop: "10px", marginBottom: "10px"}}>
                         <div className="label-n">APPLICATION</div>
@@ -1480,6 +1597,11 @@ class HttpClientTabs extends Component {
                             <div className="btn btn-sm cube-btn text-center" style={{display: "" }} onClick={this.addTab}>
                                 <Glyphicon glyph="plus" /> ADD TAB
                             </div>
+                                <div style={{display: "inline-block", padding: 0}} className="btn">{this.renderEnvListDD()}</div>
+                                {this.renderEnvPopoverBtn()}
+                                <span className="btn btn-sm cube-btn text-center" onClick={() => {this.setState({showEnvVarModal: true})}} title="Configure environments"><i className="fas fa-cog"/> </span>
+                            {/* <div style={{display: "inline-block", margin: "10px" }}>
+                            </div> */}
                         </div>
                     </div>
                     <div style={{marginTop: "10px", display: ""}}>
@@ -1532,6 +1654,9 @@ class HttpClientTabs extends Component {
                                 <Button onClick={this.handleSave}>Save</Button>
                                 <Button onClick={this.handleCloseModal}>Close</Button>
                             </Modal.Footer>
+                        </Modal>
+                        <Modal show={showEnvVarModal} onHide={this.hideEnvModal}>
+                            <EnvVar hideModal={this.hideEnvModal}/>
                         </Modal>
                     </div>
                 </main>

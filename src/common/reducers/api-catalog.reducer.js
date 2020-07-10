@@ -42,6 +42,9 @@ const initialState = {
     goldenList: [],
 
     httpClientRequestIds: {},
+
+    // env vars, (todo: should be part of the dev tool reducer)
+    environmentList: [],
 }
 
 export const apiCatalog = (state = initialState, { type, data }) => {
@@ -158,6 +161,14 @@ export const apiCatalog = (state = initialState, { type, data }) => {
             return {
                 ...state,
                 httpClientRequestIds: data,
+            }
+        }
+
+        // envvar
+        case apiCatalogConstants.UPDATE_ENVIRONMENT_LIST: {
+            return {
+                ...state,
+                environmentList: data,
             }
         }
         
