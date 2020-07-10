@@ -101,6 +101,7 @@ public class Constants {
     public static final String REQUEST_MATCH_RULES = "requestMatchRules";
     public static final String REQUEST_COMPARE_RULES = "requestCompareRules";
     public static final String RESPONSE_COMPARE_RULES = "responseCompareRules";
+    public static final String REQ_RESP_MATCH_RESULT = "ReqRespMatchResult";
 
 
     //COMMON STRINGS
