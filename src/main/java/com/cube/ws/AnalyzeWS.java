@@ -1666,7 +1666,7 @@ public class AnalyzeWS {
 			res.respCompareRes.mt, res.service, res.path, res.reqCompareRes.mt
 			, respCompDiff, reqCompDiff, Optional.of(lhsRequestEvent.getPayloadAsJsonString(true)),
 			Optional.of(rhsRequestEvent.getPayloadAsJsonString(true)),
-			lhsRequestEventOpt.map(e -> e.getPayloadAsJsonString(true))
+			lhsResponseEventOpt.map(e -> e.getPayloadAsJsonString(true))
 			, rhsResponseEventOpt.map(e -> e.getPayloadAsJsonString(true)), res.recordTraceId,
 			res.replayTraceId,
 			res.recordedSpanId, res.recordedParentSpanId,
