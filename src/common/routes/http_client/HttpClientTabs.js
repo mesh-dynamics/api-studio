@@ -72,7 +72,7 @@ class HttpClientTabs extends Component {
                 recordingIdAddedFromClient: "",
                 collectionIdAddedFromClient: "",
                 traceIdAddedFromClient: "",
-                recordedHistory: {}
+                recordedHistory: null
             }],
             toggleTestAndOutgoingRequests: true,
             selectedTabKey: tabId,
@@ -1006,18 +1006,16 @@ class HttpClientTabs extends Component {
         const historyCollectionId = userHistoryCollection.collec;
         /* const startTime = new Date(Date.now()).toISOString();
         api.get(`${config.apiBaseUrl}/as/getApiTrace/${user.customer_name}/${app}?depth=100&recordingType=History&collection=${historyCollectionId}&traceId=${traceId}&startDate=${startTime}`) */
-        const hardCodedTraceId = "72000528b405ef97caf81d4da7cc7d36",
-            hardCodedReqId = "movieinfo-72000528b405ef97caf81d4da7cc7d36-d950048e-aa3d-4b25-b9ec-dcbb9bedeb0a";
-        api.get(`${config.apiBaseUrl}/as/getApiTrace/${user.customer_name}/${app}?depth=100&recordingType=History&collection=${historyCollectionId}&traceId=${hardCodedTraceId}`)
+        api.get(`${config.apiBaseUrl}/as/getApiTrace/${user.customer_name}/${app}?depth=100&recordingType=History&collection=${historyCollectionId}&traceId=${traceId}`)
             .then((res) => {
                 const apiTraces = res.response;
                 const apiTraceMatched = apiTraces.find((eachApiTrace) => {
-                    const reqMatched = eachApiTrace.res.find((eachApiTraceEvent) => eachApiTraceEvent.requestEventId === hardCodedReqId);
+                    const reqMatched = eachApiTrace.res.find((eachApiTraceEvent) => eachApiTraceEvent.requestEventId === reqId);
                     return reqMatched !== undefined;
                 });
 
                 const selectedApp = app, reqIdArray = [];
-                apiTraceMatched.res.map((eachHttpObject) => {
+                apiTraceMatched && apiTraceMatched.res.map((eachHttpObject) => {
                     reqIdArray.push(eachHttpObject.requestEventId);
                 })
                 
@@ -1025,14 +1023,14 @@ class HttpClientTabs extends Component {
                     const eventTypes = [];
                     cubeService.fetchAPIEventData(selectedApp, reqIdArray, eventTypes).then((result) => {
                         if(result && result.numResults > 0) {
-                            const ingressReqResPair = result.objects.filter(eachReq => eachReq.reqId === hardCodedReqId);
+                            const ingressReqResPair = result.objects.filter(eachReq => eachReq.reqId === reqId);
                             let ingressReqObj;
                             if(ingressReqResPair.length > 0) {
-                                ingressReqObj = this.formatHttpEventToReqResObject(hardCodedReqId, ingressReqResPair);
+                                ingressReqObj = this.formatHttpEventToReqResObject(reqId, ingressReqResPair);
                             }
                             for(let eachReqId of reqIdArray) {
                                 const reqResPair = result.objects.filter(eachReq => eachReq.reqId === eachReqId);
-                                if(reqResPair.length > 0 && eachReqId !== hardCodedReqId) {
+                                if(reqResPair.length > 0 && eachReqId !== reqId) {
                                     let reqObject = this.formatHttpEventToReqResObject(eachReqId, reqResPair);
                                     ingressReqObj.outgoingRequests.push(reqObject);
                                 }
