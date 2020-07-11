@@ -548,6 +548,7 @@ class HttpClientTabs extends Component {
         // Make request
         // https://www.mocky.io/v2/5185415ba171ea3a00704eed
         let fetchedResponseHeaders = {}, responseStatus = "", responseStatusText = "";
+        const startDate = new Date(Date.now()).toISOString();
         return fetch(fetchUrlRendered, fetchConfigRendered).then((response) => {
             responseStatus = response.status;
             responseStatusText = response.statusText;
@@ -574,7 +575,7 @@ class HttpClientTabs extends Component {
                     return eachTab; 
                 })
             }, () => {
-                this.saveToCollection(isOutgoingRequest, tabId, userHistoryCollection.id, "History");
+                this.saveToCollection(isOutgoingRequest, tabId, userHistoryCollection.id, "History", startDate);
             });
         })
         .catch((error) => {
@@ -587,7 +588,7 @@ class HttpClientTabs extends Component {
                     return eachTab; 
                 })
             }, () => {
-                this.saveToCollection(isOutgoingRequest, tabId, userHistoryCollection.id, "History");
+                // this.saveToCollection(isOutgoingRequest, tabId, userHistoryCollection.id, "History");
             });
         });
     }
@@ -707,7 +708,7 @@ class HttpClientTabs extends Component {
         return reqResCubeFormattedData;
     }
 
-    saveToCollection(isOutgoingRequest, tabId, recordingId, type) {
+    saveToCollection(isOutgoingRequest, tabId, recordingId, type, startDate) {
         const {tabs, selectedTabKey} = this.state;
         let tabsToProcess = tabs;
         const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
@@ -731,7 +732,8 @@ class HttpClientTabs extends Component {
                             const jsonTraceReqData = serverRes.data.response && serverRes.data.response.length > 0 ? serverRes.data.response[0] : "";
                             try {
                                 const parsedTraceReqData = JSON.parse(jsonTraceReqData);
-                                this.loadRecordedHistory(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId);
+                                const endDate = new Date(Date.now()).toISOString();
+                                this.loadRecordedHistory(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, startDate, endDate);
                             } catch (error) {
                                 console.error("Error ", error);
                                 throw new Error("Error");
@@ -829,7 +831,7 @@ class HttpClientTabs extends Component {
         const selectedCollection = userCollections.find((eachCollection) => {
             return eachCollection.id === userCollectionId;
         });
-        this.saveToCollection(isOutgoingRequest, selectedSaveableTabId, selectedCollection.id);
+        this.saveToCollection(isOutgoingRequest, selectedSaveableTabId, selectedCollection.id, "UserGolden");
     }
 
     loadUserCollections() {
@@ -987,13 +989,11 @@ class HttpClientTabs extends Component {
         return reqObject;
     }
 
-    loadRecordedHistory(tabId, traceId, reqId) {
+    loadRecordedHistory(tabId, traceId, reqId, startDate, endDate) {
         const { userHistoryCollection, app } = this.state;
         const user = JSON.parse(localStorage.getItem('user'));
         const historyCollectionId = userHistoryCollection.collec;
-        /* const startTime = new Date(Date.now()).toISOString();
-        api.get(`${config.apiBaseUrl}/as/getApiTrace/${user.customer_name}/${app}?depth=100&recordingType=History&collection=${historyCollectionId}&traceId=${traceId}&startDate=${startTime}`) */
-        api.get(`${config.apiBaseUrl}/as/getApiTrace/${user.customer_name}/${app}?depth=100&recordingType=History&collection=${historyCollectionId}&traceId=${traceId}`)
+        api.get(`${config.apiBaseUrl}/as/getApiTrace/${user.customer_name}/${app}?depth=100&recordingType=History&collection=${historyCollectionId}&traceId=${traceId}&startDate=${startDate}&endDate=${endDate}`)
             .then((res) => {
                 const apiTraces = res.response;
                 const apiTraceMatched = apiTraces.find((eachApiTrace) => {
