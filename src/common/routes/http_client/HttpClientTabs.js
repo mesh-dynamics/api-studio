@@ -422,6 +422,8 @@ class HttpClientTabs extends Component {
         headers.delete('Content-Type');
         httpReqestHeaders.forEach(each => {
             if(each.name && each.value && each.name.indexOf(":") < 0) headers.append(each.name, each.value);
+            // ideally for ingress requests
+            if(each.name === "x-b3-spanid" && each.value) headers.append("baggage-parent-span-id", each.value);
         })
         return headers;
     }
@@ -733,7 +735,10 @@ class HttpClientTabs extends Component {
                             try {
                                 const parsedTraceReqData = JSON.parse(jsonTraceReqData);
                                 const endDate = new Date(Date.now()).toISOString();
-                                this.loadRecordedHistory(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, startDate, endDate);
+                                const httpRequestEventTypeIndex = reqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
+                                const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
+                                const apiPath = httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : ""; 
+                                this.loadRecordedHistory(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, startDate, endDate, apiPath);
                             } catch (error) {
                                 console.error("Error ", error);
                                 throw new Error("Error");
@@ -874,8 +879,8 @@ class HttpClientTabs extends Component {
                             userHistoryCollection: fetchedUserHistoryCollection
                         });
                     }
-                    const startTime = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-                    api.get(`${config.apiBaseUrl}/as/getApiTrace/${customerId}/${app}?depth=100&recordingType=History&collection=${fetchedUserHistoryCollection.collec}&startDate=${startTime}`)
+                    const startTime = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+                    api.get(`${config.apiBaseUrl}/as/getApiTrace/${customerId}/${app}?depth=100&collection=${fetchedUserHistoryCollection.collec}&startDate=${startTime}`)
                         .then((res) => {
                             const apiTraces = res.response;
                             const cubeRunHistory = {};
@@ -984,27 +989,31 @@ class HttpClientTabs extends Component {
             service: httpRequestEvent.service,
             recordingIdAddedFromClient: "",
             collectionIdAddedFromClient: httpRequestEvent.collection,
-            traceIdAddedFromClient: httpRequestEvent.traceId
+            traceIdAddedFromClient: httpRequestEvent.traceId,
+            apiPath: httpRequestEvent.apiPath
         };
         return reqObject;
     }
 
-    loadRecordedHistory(tabId, traceId, reqId, startDate, endDate) {
+    loadRecordedHistory(tabId, traceId, reqId, startDate, endDate, apiPath) {
         const { userHistoryCollection, app } = this.state;
         const user = JSON.parse(localStorage.getItem('user'));
         const historyCollectionId = userHistoryCollection.collec;
-        api.get(`${config.apiBaseUrl}/as/getApiTrace/${user.customer_name}/${app}?depth=100&recordingType=History&collection=${historyCollectionId}&traceId=${traceId}&startDate=${startDate}&endDate=${endDate}`)
+        api.get(`${config.apiBaseUrl}/as/getApiTrace/${user.customer_name}/${app}?depth=100&collection=${historyCollectionId}&apiPath=${apiPath}&startDate=${startDate}&endDate=${endDate}`)
             .then((res) => {
-                const apiTraces = res.response;
-                const apiTraceMatched = apiTraces.find((eachApiTrace) => {
-                    const reqMatched = eachApiTrace.res.find((eachApiTraceEvent) => eachApiTraceEvent.requestEventId === reqId);
-                    return reqMatched !== undefined;
+                res.response.sort((a, b) => {
+                    return b.res.length - a.res.length;
                 });
-
+                const apiTrace = res.response[0];
                 const selectedApp = app, reqIdArray = [];
-                apiTraceMatched && apiTraceMatched.res.map((eachHttpObject) => {
-                    reqIdArray.push(eachHttpObject.requestEventId);
-                })
+                const apiPaths = [];
+                apiTrace && apiTrace.res.map((eachApiTraceEvent) => {
+                    // assuming sorted by timestamp and so de-duplicating
+                    if(apiPaths.indexOf(eachApiTraceEvent.apiPath) < 0) {
+                        reqIdArray.push(eachApiTraceEvent.requestEventId);
+                        apiPaths.push(eachApiTraceEvent.apiPath);
+                    }
+                });
                 
                 if(reqIdArray && reqIdArray.length > 0) {
                     const eventTypes = [];
