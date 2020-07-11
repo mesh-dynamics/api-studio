@@ -1293,7 +1293,7 @@ public class CubeStore {
             if(rec.recordingType == RecordingType.History
                 || rec.recordingType == RecordingType.UserGolden) {
                 List<String> responseList = new ArrayList<>();
-                final String genaretedTraceId = io.md.utils.Utils.generateTraceId();
+                final String generatedTraceId = io.md.utils.Utils.generateTraceId();
                 for (UserReqRespContainer userReqRespContainer : userReqRespContainers) {
                     Event response = userReqRespContainer.response;
                     Event request = userReqRespContainer.request;
@@ -1302,7 +1302,7 @@ public class CubeStore {
                         String oldTraceId = request.getTraceId();
                         rrstore.deleteReqResByTraceId(oldTraceId, request.getCollection());
                         rrstore.commit();
-                        traceId = genaretedTraceId;
+                        traceId = generatedTraceId;
                     }
 
                     TemplateKey tkey = new TemplateKey(rec.templateVersion, request.customerId,
