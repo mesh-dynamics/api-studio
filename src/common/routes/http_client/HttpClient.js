@@ -86,26 +86,6 @@ class HttpClient extends Component {
         this.handleShowCompleteDiffClick = this.handleShowCompleteDiffClick.bind(this);
     }
 
-    async getAnalysisResults(replayId, traceId, path) {
-        const { app } = this.state;
-
-        const searchParams = new URLSearchParams();
-        searchParams.set("start", 0);
-        searchParams.set("includeDiff", true);
-        searchParams.set("traceId", traceId);
-        searchParams.set("path", path);
-
-        try {
-            return await cubeService.fetchAnalysisResults(replayId, searchParams);
-        } catch(error) {
-            console.log("Error fetching analysis results list", error);
-            // Returning empty list will show No Results Found instead of being 
-            // stuck at "Loading..." since the thrown error is not processed 
-            // anywhere above
-            return [];
-        }
-    }
-
     preProcessResults = (results) => {
         const {app, replayId, recordingId, templateVersion} = this.state;
         let diffLayoutData = validateAndCreateDiffLayoutData(results, app, replayId, recordingId, templateVersion, config.diffCollapseLength, config.diffMaxLinesLength);
@@ -132,34 +112,30 @@ class HttpClient extends Component {
         });
     }
 
-    async handleShowDiff() {
+    handleShowDiff() {
         const { selectedTab, selectedRecordedHistoryReqId, showCompleteDiff } = this.state;
         const tabToProcess = selectedTab;
 
         let diffLayoutData = [];
         if(tabToProcess && tabToProcess.eventData && tabToProcess.eventData[0].apiPath) {
-            const replayId = "d0a0a7de-9b29-40e2-b56c-3c711d79278c-0f9cb0d0-9354-4d0e-b19c-6e87a7c99265";
-            const traceId = "188d6e7aed2dc6af8e2c14c31bed922e";
-            let resultsData = await this.getAnalysisResults(replayId, traceId, tabToProcess.eventData[0].apiPath);
-            const results = resultsData.data && resultsData.data.res || [];
-            diffLayoutData = this.preProcessResults(results);
+            try {
+                api.get(`${config.apiBaseUrl}/as/getReqRespMatchResult?lhsReqId=${selectedTab.requestId}&rhsReqId=${selectedRecordedHistoryReqId}`)
+                    .then((serverRes) => {
+                        console.log("serverRes: ", serverRes);
+                        const results = serverRes.res && [serverRes.res];
+                        diffLayoutData = this.preProcessResults(results);
 
-            this.setState({
-                diffLayoutData: diffLayoutData,
-                showCompleteDiff: !showCompleteDiff
-            })
-        }
-
-        try {
-            api.get(`${config.apiBaseUrl}/as/getReqRespMatchResult?lhsReqId=${selectedTab.requestId}&rhsReqId=${selectedRecordedHistoryReqId}`)
-                .then((serverRes) => {
-                    console.log("serverRes: ", serverRes);
-                }, (error) => {
-                    console.error("error: ", error);
-                })
-        } catch(error) {
-            console.error("Error ", error);
-            throw new Error("Error");
+                        this.setState({
+                            diffLayoutData: diffLayoutData,
+                            showCompleteDiff: !showCompleteDiff
+                        })
+                    }, (error) => {
+                        console.error("error: ", error);
+                    })
+            } catch(error) {
+                console.error("Error ", error);
+                throw new Error("Error");
+            }
         }
     }
 
@@ -512,10 +488,10 @@ class HttpClient extends Component {
                         </div>
                         <div style={{display: "flex"}}>
                             <div style={{marginLeft: "auto", order: "2"}}>
-                                <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "none" : "inline-block"}} onClick={this.handleShowDiff}>
+                                <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "none" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleShowDiff}>
                                     <Glyphicon glyph="random" /> COMPARE REQUESTS
                                 </div>
-                                <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "none" : "inline-block"}} >
+                                <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "none" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} >
                                     <Glyphicon glyph="export" /> SET AS REFERENCE
                                 </div>
                                 <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "inline-block" : "none"}} onClick={this.handleShowCompleteDiffClick}>
@@ -525,35 +501,38 @@ class HttpClient extends Component {
                         </div>
                     </div>
                 )}
-                <div>
-                    <HttpRequestMessage tabId={selectedTab.id}
-                        requestId={selectedTab.requestId}
-                        httpMethod={selectedTab.httpMethod}
-                        httpURL={selectedTab.httpURL}
-                        headers={selectedTab.headers} 
-                        queryStringParams={selectedTab.queryStringParams}
-                        bodyType={selectedTab.bodyType}
-                        formData={selectedTab.formData} 
-                        rawData={selectedTab.rawData}
-                        rawDataType={selectedTab.rawDataType}
-                        addOrRemoveParam={this.props.addOrRemoveParam} 
-                        updateParam={this.props.updateParam}
-                        updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
-                        isOutgoingRequest={selectedTab.isOutgoingRequest} >
-                    </HttpRequestMessage>
-                    <HttpResponseMessage tabId={selectedTab.id}
-                        responseStatus={selectedTab.responseStatus}
-                        responseStatusText={selectedTab.responseStatusText}
-                        responseHeaders={selectedTab.responseHeaders}
-                        responseBody={selectedTab.responseBody}
-                        recordedResponseHeaders={selectedTab.recordedResponseHeaders}
-                        recordedResponseBody={ selectedTab.recordedResponseBody}
-                        updateParam={this.props.updateParam}
-                        isOutgoingRequest={ selectedTab.isOutgoingRequest} >
-                    </HttpResponseMessage>
-                </div>
+                {!showCompleteDiff && (
+                    <div>
+                        <HttpRequestMessage tabId={selectedTab.id}
+                            requestId={selectedTab.requestId}
+                            httpMethod={selectedTab.httpMethod}
+                            httpURL={selectedTab.httpURL}
+                            headers={selectedTab.headers} 
+                            queryStringParams={selectedTab.queryStringParams}
+                            bodyType={selectedTab.bodyType}
+                            formData={selectedTab.formData} 
+                            rawData={selectedTab.rawData}
+                            rawDataType={selectedTab.rawDataType}
+                            addOrRemoveParam={this.props.addOrRemoveParam} 
+                            updateParam={this.props.updateParam}
+                            updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
+                            isOutgoingRequest={selectedTab.isOutgoingRequest} >
+                        </HttpRequestMessage>
+                        <HttpResponseMessage tabId={selectedTab.id}
+                            responseStatus={selectedTab.responseStatus}
+                            responseStatusText={selectedTab.responseStatusText}
+                            responseHeaders={selectedTab.responseHeaders}
+                            responseBody={selectedTab.responseBody}
+                            recordedResponseHeaders={selectedTab.recordedResponseHeaders}
+                            recordedResponseBody={ selectedTab.recordedResponseBody}
+                            updateParam={this.props.updateParam}
+                            isOutgoingRequest={ selectedTab.isOutgoingRequest} >
+                        </HttpResponseMessage>
+                    </div>
+                )}
+                
                 {showCompleteDiff && selectedDiffItem && (
-                    <div style={{marginTop: "27px"}}>
+                    <div style={{marginTop: "27px", backgroundColor: "#fff", padding: "9px"}}>
                         <div style={{opacity: 0.6, marginTop: "9px"}}>
                             <h4><Glyphicon style={{ visibility:  "visible", paddingRight: "5px", fontSize: "14px" }} glyph="random" /> <span>Selected Diff</span></h4>
                         </div>
@@ -718,7 +697,7 @@ class HttpClient extends Component {
                                             showAll={showAll}
                                             searchFilterPath={searchFilterPath}
                                             disableOperationSet={true}
-                                            enableClientSideDiff={false}
+                                            enableClientSideDiff={true}
                                         />
                                     </div>
                                 </div>
@@ -761,7 +740,7 @@ class HttpClient extends Component {
                                                 disableOperationSet={true}
                                                 handleCollapseLength={this.increaseCollapseLength}
                                                 handleMaxLinesLength={this.increaseCollapseLength}
-                                                enableClientSideDiff={false}
+                                                enableClientSideDiff={true}
                                             />
                                         </div>
                                     )}
