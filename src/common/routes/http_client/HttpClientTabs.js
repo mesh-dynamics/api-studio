@@ -556,6 +556,7 @@ class HttpClientTabs extends Component {
                 if (eachTab.id === tabId) {
                     eachTab["responseStatus"] = "WAITING...";
                     eachTab["showCompleteDiff"] = false;
+                    if(eachTab["clearIntervalHandle"]) clearInterval(eachTab["clearIntervalHandle"]);
                 }
                 return eachTab; 
             })
@@ -622,6 +623,8 @@ class HttpClientTabs extends Component {
     
         // find index to remove
         const indexToRemove = currentTabs.findIndex(tab => tab.id === key);
+        const tabToProcess = currentTabs[indexToRemove];
+        if(tabToProcess && tabToProcess.clearIntervalHandle) clearInterval(tabToProcess.clearIntervalHandle);
     
         // create a new array without [indexToRemove] item
         const newTabs = [...currentTabs.slice(0, indexToRemove), ...currentTabs.slice(indexToRemove + 1)];
@@ -743,6 +746,7 @@ class HttpClientTabs extends Component {
             try {
                 api.post(`${config.apiBaseUrl}/cs/storeUserReqResp/${recordingId}`, data)
                     .then((serverRes) => {
+                        let clearIntervalHandle;
                         if(type === "History") {
                             const jsonTraceReqData = serverRes.data.response && serverRes.data.response.length > 0 ? serverRes.data.response[0] : "";
                             try {
@@ -752,6 +756,12 @@ class HttpClientTabs extends Component {
                                 const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
                                 const apiPath = httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : ""; 
                                 this.loadRecordedHistory(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, startDate, endDate, apiPath);
+                                clearIntervalHandle = setInterval(() => {
+                                    this.loadRecordedHistory(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, startDate, endDate, apiPath);
+                                }, 5000);
+                                setTimeout(() => {
+                                    if(clearIntervalHandle) clearInterval(clearIntervalHandle);
+                                }, 120000);
                             } catch (error) {
                                 console.error("Error ", error);
                                 throw new Error("Error");
@@ -759,8 +769,14 @@ class HttpClientTabs extends Component {
                         }
                         this.setState({
                             showSaveModal : type === "History" ? false : true,
-                            modalErroSaveMessage: "Saved Successfully! You can close this modal."
-                        })
+                            modalErroSaveMessage: "Saved Successfully! You can close this modal.",
+                            tabs: this.state.tabs.map(eachTab => {
+                                if (eachTab.id === tabId) {
+                                    if(clearIntervalHandle) eachTab["clearIntervalHandle"] = clearIntervalHandle;
+                                }
+                                return eachTab; 
+                            })
+                        });
                         setTimeout(() => {
                             this.loadFromHistory();
                             this.loadUserCollections();
@@ -1032,13 +1048,15 @@ class HttpClientTabs extends Component {
                     const eventTypes = [];
                     cubeService.fetchAPIEventData(selectedApp, reqIdArray, eventTypes).then((result) => {
                         if(result && result.numResults > 0) {
-                            const ingressReqResPair = result.objects.filter(eachReq => eachReq.reqId === reqId);
+                            const ingressReqResPair = result.objects.filter(eachReq => eachReq.apiPath === apiPath);
                             let ingressReqObj;
                             if(ingressReqResPair.length > 0) {
                                 ingressReqObj = this.formatHttpEventToReqResObject(reqId, ingressReqResPair);
                             }
                             for(let eachReqId of reqIdArray) {
-                                const reqResPair = result.objects.filter(eachReq => eachReq.reqId === eachReqId);
+                                const reqResPair = result.objects.filter(eachReq => {
+                                    return (eachReq.reqId === eachReqId && eachReq.apiPath !== apiPath);
+                                });
                                 if(reqResPair.length > 0 && eachReqId !== reqId) {
                                     let reqObject = this.formatHttpEventToReqResObject(eachReqId, reqResPair);
                                     ingressReqObj.outgoingRequests.push(reqObject);
@@ -1048,6 +1066,7 @@ class HttpClientTabs extends Component {
                                 tabs: this.state.tabs.map(eachTab => {
                                     if (eachTab.id === tabId) {
                                         eachTab["recordedHistory"] = ingressReqObj;
+                                        if(reqIdArray.length > 1 && eachTab["clearIntervalHandle"]) clearInterval(eachTab["clearIntervalHandle"]);
                                     }
                                     return eachTab; 
                                 })
@@ -1252,9 +1271,15 @@ class HttpClientTabs extends Component {
 
     componentWillUnmount() {
         const { dispatch } = this.props;
+        const { tabs } = this.state;
         dispatch(cubeActions.hideTestConfig(false));
         dispatch(cubeActions.hideServiceGraph(false));
         dispatch(cubeActions.hideHttpClient(true));
+        tabs.map((eachTab) => {
+            if(eachTab.clearIntervalHandle) {
+                clearInterval(eachTab.clearIntervalHandle);
+            }
+        });
     }
 
     handleTreeNodeClick(node) {
