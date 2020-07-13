@@ -1300,7 +1300,7 @@ public class CubeStore {
                     String traceId = request.getTraceId();
                     if (rec.recordingType == RecordingType.UserGolden) {
                         String oldTraceId = request.getTraceId();
-                        rrstore.deleteReqResByTraceId(oldTraceId, request.getCollection());
+                        rrstore.deleteReqResByTraceId(oldTraceId, rec.collection);
                         rrstore.commit();
                         traceId = generatedTraceId;
                     }

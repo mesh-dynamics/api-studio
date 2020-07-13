@@ -1570,8 +1570,7 @@ public class AnalyzeWS {
 	@Path("getReqRespMatchResult")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getReqRespMatchResult(@Context UriInfo uriInfo) {
-
-	  MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 		if(queryParams==null) {
 			return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
 				.entity(Map.of(Constants.ERROR, "No queryParams are specified for lhsReqId and rhsReqId")).build();
@@ -1650,8 +1649,35 @@ public class AnalyzeWS {
 		ReqRespMatchResult res = Analysis.createReqRespMatchResult(reqRespMatchWithEvent, DontCare,
 			1, "NA");
 
+		Optional<String> respCompDiff = Optional.empty();
+		Optional<String> reqCompDiff = Optional.empty();
+
+		try {
+			respCompDiff = Optional.of(jsonMapper.writeValueAsString(res.respCompareRes.diffs));
+			reqCompDiff = Optional.of(jsonMapper.writeValueAsString(
+				res.reqCompareRes.diffs));
+		} catch (JsonProcessingException e) {
+			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+				"Unable to convert diff to json string")), e);
+		}
+
+		MatchRes matchRes = new MatchRes(res.recordReqId, res.replayReqId,
+			res.reqMatchRes, res.numMatch,
+			res.respCompareRes.mt, res.service, res.path, res.reqCompareRes.mt
+			, respCompDiff, reqCompDiff, Optional.of(lhsRequestEvent.getPayloadAsJsonString(true)),
+			Optional.of(rhsRequestEvent.getPayloadAsJsonString(true)),
+			lhsResponseEventOpt.map(e -> e.getPayloadAsJsonString(true))
+			, rhsResponseEventOpt.map(e -> e.getPayloadAsJsonString(true)), res.recordTraceId,
+			res.replayTraceId,
+			res.recordedSpanId, res.recordedParentSpanId,
+			res.replayedSpanId, res.replayedParentSpanId,
+			Optional.empty(), Optional.empty(),
+			Optional.empty(), Optional.empty(), Optional.empty()
+			, Optional.empty(), Optional.empty());
+
+
 		Map jsonMap = new HashMap();
-		jsonMap.put(Constants.REQ_RESP_MATCH_RESULT, res);
+		jsonMap.put("res", matchRes);
 		return Response.ok().entity(jsonMap).build();
 	}
 
