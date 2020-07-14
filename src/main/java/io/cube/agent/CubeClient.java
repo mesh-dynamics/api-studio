@@ -56,7 +56,7 @@ public class CubeClient {
 		CommonConfig.getInstance().authToken.ifPresent(
 				val -> request.setHeader(io.cube.agent.Constants.AUTHORIZATION_HEADER, val));
 
-		Optional<CloseableHttpResponse> response = HttpUtils.getResponse(request);
+		Optional<CloseableHttpResponse> response = HttpUtils.getResponse(request, Optional.empty());
 		try {
 			return response.flatMap(UtilException.rethrowFunction(resp -> {
 				// response can be NOTFOUND so check for it

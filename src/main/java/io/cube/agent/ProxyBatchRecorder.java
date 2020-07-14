@@ -1,22 +1,19 @@
 package io.cube.agent;
 
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicLong;
-
-import com.lmax.disruptor.BlockingWaitStrategy;
-import com.lmax.disruptor.InsufficientCapacityException;
-import com.lmax.disruptor.RingBuffer;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.lmax.disruptor.BlockingWaitStrategy;
+import com.lmax.disruptor.InsufficientCapacityException;
+import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.TimeoutException;
-
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
-import com.lmax.disruptor.util.DaemonThreadFactory;
 
 import io.cube.agent.logging.ProxyEventBatchConsumer;
 import io.cube.agent.logging.ValueEvent;
@@ -68,7 +65,7 @@ public class ProxyBatchRecorder extends AbstractGsonSerializeRecorder {
 	private ProxyBatchRecorder() {
 		super();
 
-		ThreadFactory threadFactory = DaemonThreadFactory.INSTANCE;
+		ThreadFactory threadFactory = MDThreadFactory.INSTANCE;
 
 		WaitStrategy waitStrategy = new BlockingWaitStrategy();
 		ProxyEventBatchConsumer eventConsumer = new ProxyEventBatchConsumer();

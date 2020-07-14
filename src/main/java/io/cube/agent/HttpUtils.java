@@ -1,15 +1,11 @@
 package io.cube.agent;
 
-import java.io.IOException;
 import java.util.Optional;
 
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status.Family;
 
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -22,8 +18,10 @@ public class HttpUtils {
 
 	private static CloseableHttpClient client = HttpClientBuilder.create().build();
 
-	public static Optional<CloseableHttpResponse> getResponse(HttpRequestBase request) {
-		int maxNumberOfAttempts = 3; //default
+	private static final int defaultRetryCount = 2;
+
+	public static Optional<CloseableHttpResponse> getResponse(HttpRequestBase request, Optional<Integer> retryCount) {
+		int maxNumberOfAttempts = retryCount.orElse(defaultRetryCount); //default
 
 		int numberOfAttempts = 0;
 		CloseableHttpResponse response = null;
@@ -41,7 +39,9 @@ public class HttpUtils {
 				}
 				numberOfAttempts++;
 			} catch (Exception e) {
-				LOGGER.error("Error while sending request to cube service", e);
+				//This exception stack floods the logs, the stack trace does not provide any
+				//additional information, hence only printing the getMessage
+				LOGGER.error("Error while sending request to cube service : " + e.getMessage());
 				numberOfAttempts++;
 			}
 		}

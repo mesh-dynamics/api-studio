@@ -6,8 +6,7 @@
 			"instance": "prod",
 			"servicename": "wrapper",
 			"service": {
-				"record": "https://demo.dev.cubecorp.io/api",
-				"mock": "https://demo.dev.cubecorp.io/api"
+				"endpoint": "https://demo.dev.cubecorp.io/api"
 			},
 			"authtoken": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s",
 			"read": {
@@ -20,10 +19,9 @@
 			"intent": "normal",
 			"pollingconfig": {
 				"delay": 25,
-				"fetchconfigapiuri": "https://demo.dev.cubecorp.io/api/cs/fetchAgentConfig/",
-				"ackconfigapiuri": "https://demo.dev.cubecorp.io/api/cs/ackConfigApplication/",
-				"pollserver": true
-			},
+				"pollserver": true,
+				"retrycount": 3
+ 			},
 			"samplerconfig": {
 				"type": "simple",
 				"accuracy": 1000,

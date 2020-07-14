@@ -249,19 +249,27 @@ public class Utils {
 		return prevDisruptorData;
 	}
 
-	public static void compAndInitConsoleRecorder(DisruptorData prevDisruptorData) {
+	// Method to append trailing slash to given uris
+	// This is done because resolve method in uri create
+	// has issues without the slash
+	public static String appendTrailingSlash(String uri) {
+		if(!uri.endsWith("/")) return uri + "/";
+		else return uri;
+	}
+
+	public static void compAndInitRecorder(DisruptorData prevDisruptorData) {
 		CommonConfig configInstance;
 		if (prevDisruptorData != null) {
 			configInstance = CommonConfig.getInstance();
 			if (prevDisruptorData.compare(configInstance.disruptorOutputLocation,
 				configInstance.disruptorFileOutName, configInstance.disruptorLogFileMaxSize,
 				configInstance.disruptorLogMaxBackup, configInstance.ringBufferSize)) {
-				//toggle on ProxyBatchRecorder and off COnsoleRecorder if needed.
+				//toggle on and off ProxyBatchRecorder and COnsoleRecorder as needed.
 //				ConsoleRecorder.init();
 				ProxyBatchRecorder.init();
 			}
 		} else {
-			//toggle on ProxyBatchRecorder and off COnsoleRecorder if needed.
+			//toggle on and off ProxyBatchRecorder and COnsoleRecorder as needed.
 //			ConsoleRecorder.init();
 			ProxyBatchRecorder.init();
 		}

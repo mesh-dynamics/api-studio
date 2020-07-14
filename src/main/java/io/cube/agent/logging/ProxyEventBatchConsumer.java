@@ -36,11 +36,15 @@ public class ProxyEventBatchConsumer {
 
 	private long maxWaitTimeMillis = 5000;
 
+
+	private static int threadCount = 0;
+
 	//long totalTimeInMillis;
 	//long count;
 
 
 	public ProxyEventBatchConsumer() {
+		LOGGER.info("Thread number : " + threadCount);
 		new Thread(() -> {
 			while (true) {
 				try {
@@ -57,7 +61,7 @@ public class ProxyEventBatchConsumer {
 					writeLock.unlock();
 				}
 			}
-		}).start();
+		}, "md-lmax-consumer-"+threadCount++).start();
 	}
 
 	class MDEventEntity extends AbstractHttpEntity {

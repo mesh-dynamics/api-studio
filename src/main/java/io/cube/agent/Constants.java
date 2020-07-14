@@ -11,6 +11,7 @@ public class Constants {
 	public static final String MD_POLLINGCONFIG_FETCHCONFIGAPIURI = "io.md.pollingconfig.fetchconfigapiuri";
 	public static final String MD_POLLINGCONFIG_ACKCONFIGAPIURI = "io.md.pollingconfig.ackconfigapiuri";
 	public static final String MD_POLLINGCONFIG_POLLSERVER = "io.md.pollingconfig.pollserver";
+	public static final String MD_POLLINGCONFIG_RETRYCOUNT = "io.md.pollingconfig.retrycount";
 
 
 	public static final String ENCRYPTION_CONF_PROP = "io.md.encryptionconfig.path";
@@ -32,4 +33,7 @@ public class Constants {
 
 	public static final String CONFIG_VERSION_FIELD = "version";
 	public static final String CONFIG_TAG_FIELD = "tag";
+
+	public static final String MD_FETCH_AGENT_CONFIG_API_PATH= "cs/fetchAgentConfig/";
+	public static final String MD_ACK_CONFIG_API_PATH= "cs/ackConfigApplication/";
 }

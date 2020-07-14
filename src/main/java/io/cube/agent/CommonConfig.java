@@ -1,6 +1,7 @@
 package io.cube.agent;
 
-import static io.cube.agent.Utils.compAndInitConsoleRecorder;
+import static io.cube.agent.Utils.appendTrailingSlash;
+import static io.cube.agent.Utils.compAndInitRecorder;
 import static io.cube.agent.Utils.savePrevDisruptorData;
 
 import java.io.File;
@@ -8,6 +9,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -56,7 +59,7 @@ public class CommonConfig {
 	/******* PROPERTIES HOLDERS ******/
 	// Cube essentials
 	// Will not be dynamically polled. Will be initialised just once in the beginning
-	public final static String customerId, app, instance, serviceName;
+	public static String customerId, app, instance, serviceName;
 
 	//intent
 	public static String intent;
@@ -64,7 +67,12 @@ public class CommonConfig {
 	// version
 	public static String tag = "NA";
 	public static String version = "NA";
+	public static String fetchConfigApiURI;
 	public static String ackConfigApiURI;
+	public static int fetchDelay;
+	public static int fetchConfigRetryCount;
+	public static Future<?> fetchConfigFuture;
+	public static boolean isFetchThreadInit;
 
 	// Mocking
 	public Optional<String> authToken;
@@ -160,7 +168,7 @@ public class CommonConfig {
 			int delay = envSysStaticConf.getInt(io.cube.agent.Constants.MD_POLLINGCONFIG_DELAY);
 			serviceExecutor = Executors.newScheduledThreadPool(1);
 			serviceExecutor
-				.scheduleWithFixedDelay(new fileConfigUpdater(dynamicConfigFilePath), 0, delay,
+				.scheduleWithFixedDelay(new FileConfigUpdater(dynamicConfigFilePath), 0, delay,
 					TimeUnit.SECONDS);
 			isServerPolling = false;
 		} catch (Missing e) {
@@ -171,18 +179,26 @@ public class CommonConfig {
 
 			initClientMetaDataMap();
 
-			String fetchConfigApiURI = appendTrailingSlash(envSysStaticConf
-				.getString(io.cube.agent.Constants.MD_POLLINGCONFIG_FETCHCONFIGAPIURI));
+			String cubeServiceEndPoint = appendTrailingSlash(envSysStaticConf
+				.getString(Constants.MD_SERVICE_ENDPOINT_PROP));
 
-			ackConfigApiURI = appendTrailingSlash(envSysStaticConf
-				.getString(io.cube.agent.Constants.MD_POLLINGCONFIG_ACKCONFIGAPIURI));
+			fetchConfigApiURI = new URIBuilder(URI.create(cubeServiceEndPoint)
+				.resolve(io.cube.agent.Constants.MD_FETCH_AGENT_CONFIG_API_PATH)).toString();
 
-			int delay = envSysStaticConf.getInt(io.cube.agent.Constants.MD_POLLINGCONFIG_DELAY);
+			ackConfigApiURI = new URIBuilder(URI.create(cubeServiceEndPoint)
+				.resolve(io.cube.agent.Constants.MD_ACK_CONFIG_API_PATH)).toString();
+
+			fetchDelay = envSysStaticConf.getInt(io.cube.agent.Constants.MD_POLLINGCONFIG_DELAY);
+			fetchConfigRetryCount = envSysStaticConf.getInt(io.cube.agent.Constants.MD_POLLINGCONFIG_RETRYCOUNT);
+
 			serviceExecutor = Executors.newScheduledThreadPool(1);
-			serviceExecutor
-				.scheduleWithFixedDelay(new serverConfigUpdater(fetchConfigApiURI),
-					0, delay,
+			fetchConfigFuture = serviceExecutor
+				.scheduleWithFixedDelay(new ServerConfigUpdater(fetchConfigApiURI),
+					0, fetchDelay,
 					TimeUnit.SECONDS);
+			LOGGER.info("CommonConfig fetchConfig thread scheduled!!");
+			isFetchThreadInit = true;
+
 		}
 	}
 
@@ -204,16 +220,19 @@ public class CommonConfig {
 	}
 
 
-	private static class fileConfigUpdater implements Runnable {
+	private static class FileConfigUpdater implements Runnable {
 
 		String configFilePath;
 
-		public fileConfigUpdater(String configFilePath) {
+		public FileConfigUpdater(String configFilePath) {
 			this.configFilePath = configFilePath;
 		}
 
 		@Override
 		public void run() {
+
+			Thread.currentThread().setName("md-dynamicfile-thread");
+
 			try {
 				File input = new File(configFilePath);
 				Config fileConfigPolled = ConfigFactory.load(ConfigFactory.parseFile(input))
@@ -226,23 +245,26 @@ public class CommonConfig {
 				// Using just set instead of compareAndSet as the value being set is independent of the current value.
 				singleInstance.set(new CommonConfig(fileConfigPolled));
 
-				compAndInitConsoleRecorder(prevDisruptorData);
+				compAndInitRecorder(prevDisruptorData);
 			} catch (Exception e) {
 				LOGGER.error("Error in updating common config object in thread", e);
 			}
 		}
 	}
 
-	private static class serverConfigUpdater implements Runnable {
+	public static class ServerConfigUpdater implements Runnable {
 
-		String fetchConfigApiURI;
+		private String fetchConfigApiURI;
 
-		public serverConfigUpdater(String fetchConfigApiURI) {
+		public ServerConfigUpdater(String fetchConfigApiURI) {
 			this.fetchConfigApiURI = fetchConfigApiURI;
 		}
 
 		@Override
 		public void run() {
+
+			Thread.currentThread().setName("md-polling-thread");
+
 			try {
 				URIBuilder fetchConfigUriBuilder = new URIBuilder(
 					URI.create(this.fetchConfigApiURI)
@@ -255,30 +277,32 @@ public class CommonConfig {
 
 				CommonConfig commonConfig = CommonConfig.getInstance();
 				commonConfig.authToken.ifPresent(
-					val -> fetchConfigApiReq.setHeader(io.cube.agent.Constants.AUTHORIZATION_HEADER, val));
+					val -> fetchConfigApiReq
+						.setHeader(io.cube.agent.Constants.AUTHORIZATION_HEADER, val));
 
 				Optional<CloseableHttpResponse> fetchConfigApiRespOpt = HttpUtils
-					.getResponse(fetchConfigApiReq);
+					.getResponse(fetchConfigApiReq, Optional.of(fetchConfigRetryCount));
 				CloseableHttpResponse fetchConfigApiResp = fetchConfigApiRespOpt
 					.orElseThrow(() -> new Exception("Cannot get config from cube server"));
 
 				try {
 					// response can be CLIENT error so check for it
-					if (Response.Status.Family.familyOf(fetchConfigApiResp.getStatusLine().getStatusCode())
-							.equals(Response.Status.Family.CLIENT_ERROR)) {
+					if (Response.Status.Family
+						.familyOf(fetchConfigApiResp.getStatusLine().getStatusCode())
+						.equals(Response.Status.Family.CLIENT_ERROR)) {
 						throw new Exception("Cannot get config from cube server");
 					}
 
 					if (fetchConfigApiResp.getStatusLine().getStatusCode()
-							!= HttpStatus.SC_NOT_MODIFIED) {
+						!= HttpStatus.SC_NOT_MODIFIED) {
 						String jsonString = new BasicResponseHandler()
-								.handleResponse(fetchConfigApiResp);
+							.handleResponse(fetchConfigApiResp);
 						JsonNode jsonNode = jsonMapper.readTree(jsonString);
 						String configString = jsonNode.get("configJson").get("config")
-								.asText();
+							.asText();
 
 						Config serverPollConfig = ConfigFactory.parseString(configString)
-								.withFallback(envSysStaticConf);
+							.withFallback(envSysStaticConf);
 
 						//fetch previous disruptor config values and compare with new ones.
 						//decision to init the ConsoleRecorder again or not.
@@ -287,11 +311,11 @@ public class CommonConfig {
 						// Using just set instead of compareAndSet as the value being set is independent of the current value.
 						singleInstance.set(new CommonConfig(serverPollConfig));
 
-						compAndInitConsoleRecorder(prevDisruptorData);
+						compAndInitRecorder(prevDisruptorData);
 
 						tag = jsonNode.get(io.cube.agent.Constants.CONFIG_TAG_FIELD).asText();
 						version = jsonNode.get(io.cube.agent.Constants.CONFIG_VERSION_FIELD)
-								.asText();
+							.asText();
 						//run node selection algo again
 						ClientUtils.addNodeSelectionDecision(clientMetaDataMap);
 					} else {
@@ -305,9 +329,24 @@ public class CommonConfig {
 				}
 
 			} catch (Exception e) {
-				LOGGER.error("Error in updating common config object in thread", e);
+				//This exception stack floods the logs, the stack trace does not provide any
+				//additional information as this exception is likely thrown within this thread,
+				// hence only printing the getMessage
+				LOGGER.error("Error in updating common config object in thread : " + e.getMessage());
+				//Not able to fetch config from MD server. Set the intent to normal.
+				//Polling still continues, so when the MD server is reachable, it
+				//will get the latest config.
+				resetClient();
 			}
 		}
+	}
+
+	public static void resetClient() {
+		//These need to be reset when the MD Sever is not reachable.
+		CommonConfig.intent = Constants.NO_INTENT;
+		CommonConfig.tag = "NA";
+		CommonConfig.version = "NA";
+		CommonConfig.getInstance().servicesToMock = new ArrayList();
 	}
 
 
@@ -323,6 +362,7 @@ public class CommonConfig {
 			", serviceName='" + serviceName + '\'' +
 			", encryptionConfig=" + encryptionConfig +
 			", sampler=" + sampler +
+			", servicesToMock=" + servicesToMock +
 			", READ_TIMEOUT=" + READ_TIMEOUT +
 			", CONNECT_TIMEOUT=" + CONNECT_TIMEOUT +
 			", RETRIES=" + RETRIES +
@@ -348,9 +388,9 @@ public class CommonConfig {
 	private CommonConfig(Config dynamicConfig) throws Exception {
 
 		CUBE_RECORD_SERVICE_URI = dynamicConfig.getString(
-			Constants.MD_RECORD_SERVICE_PROP);
+			Constants.MD_SERVICE_ENDPOINT_PROP);
 		CUBE_MOCK_SERVICE_URI = dynamicConfig.getString(
-			Constants.MD_MOCK_SERVICE_PROP);
+			Constants.MD_SERVICE_ENDPOINT_PROP);
 		READ_TIMEOUT = dynamicConfig.getInt(
 			Constants.MD_READ_TIMEOUT_PROP);
 		CONNECT_TIMEOUT = dynamicConfig.getInt(
@@ -436,14 +476,6 @@ public class CommonConfig {
 		} catch (Exception e) {
 			LOGGER.error("Error in reading encryption config file", e);
 		}
-	}
-
-	// Method to append trailing slash to given uris
-	// This is done because resolve method in uri create
-	// has issues without the slash
-	private static String appendTrailingSlash(String uri) {
-		if(!uri.endsWith("/")) return uri + "/";
-		else return uri;
 	}
 
 	private void getMessageQueueDetails(Config dynamicConfig) {
