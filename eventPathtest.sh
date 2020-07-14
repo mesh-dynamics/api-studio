@@ -18,6 +18,16 @@ generate_traffic() {
     sleep 1
     curl --location --request GET 'http://springboot.dev.cubecorp.io:8080/orders/getOrders/' --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsib3JkZXJzIl0sInVzZXJfbmFtZSI6ImFkbWluQGFkbWluLmNvbSIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJleHAiOjE1ODg4MzczMDksImF1dGhvcml0aWVzIjpbIkFETUlOIl0sImp0aSI6ImQyMGEyYWY0LTNmOTYtNDdkMS05ZTM4LTRhMWI4MmE1MjQ1YiIsImNsaWVudF9pZCI6Im9yZGVyLXJlY2VpdmVyIn0.UZIlg5nGhL5QGpHrlupTI8qGFTwIS3jnbnaYNpXeRqQ' --header 'Content-Type: application/json'
     sleep 1
+    curl --location --request POST 'http://springboot.dev.cubecorp.io:8080/orders/postOrder/' --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsib3JkZXJzIl0sInVzZXJfbmFtZSI6ImFkbWluQGFkbWluLmNvbSIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJleHAiOjE1ODg4MzczMDksImF1dGhvcml0aWVzIjpbIkFETUlOIl0sImp0aSI6ImQyMGEyYWY0LTNmOTYtNDdkMS05ZTM4LTRhMWI4MmE1MjQ1YiIsImNsaWVudF9pZCI6Im9yZGVyLXJlY2VpdmVyIn0.UZIlg5nGhL5QGpHrlupTI8qGFTwIS3jnbnaYNpXeRqQ' --header 'Content-Type: application/json' --data-raw '{
+	"id": 5,
+    "productId": 1,
+    "customer": {
+        "firstName": "Lokesh1",
+        "lastName": "Gupta1",
+        "email": "xyz@gmail.com"
+    }
+}'
+sleep 1
   done
 }
 
@@ -27,7 +37,7 @@ stop_recording() {
 }
 
 replay() {
-  BODY="endPoint=$REPLAY_ENDPOINT&instanceId=$INSTANCE_ID&userId=$USER_ID"
+  BODY="endPoint=$REPLAY_ENDPOINT&instanceId=$REPLAY_INSTANCE_ID&userId=$USER_ID"
   COUNT=0
 	while [ "$http_code" != "200" ] || [ "$REPLAY_ID" = "none" ] && [ "$COUNT" != "5" ]; do
   resp=$(curl -sw "%{http_code}" -X POST \
@@ -83,6 +93,7 @@ main() {
   USER_ID=CubeCorp
   REPLAY_ENDPOINT=http://springboot.dev.cubecorp.io
   INSTANCE_ID=prod
+  REPLAY_INSTANCE_ID=prod-replay
   AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s"
   record
   generate_traffic 5
