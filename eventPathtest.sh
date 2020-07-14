@@ -27,7 +27,7 @@ stop_recording() {
 }
 
 replay() {
-  BODY="endPoint=$REPLAY_ENDPOINT&instanceId=$INSTANCE_ID&templateSetVer=$TEMPLATE&userId=$USER_ID"
+  BODY="endPoint=$REPLAY_ENDPOINT&instanceId=$INSTANCE_ID&userId=$USER_ID"
   COUNT=0
 	while [ "$http_code" != "200" ] || [ "$REPLAY_ID" = "none" ] && [ "$COUNT" != "5" ]; do
   resp=$(curl -sw "%{http_code}" -X POST \
