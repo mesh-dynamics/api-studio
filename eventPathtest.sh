@@ -2,7 +2,7 @@
 
 record() {
   RESPONSE=$(curl -X POST \
-  $CUBE_ENDPOINT/api/cs/start/CubeCorp/springboot_demo/$INSTANCE_ID/default \
+  $CUBE_ENDPOINT/api/cs/start/CubeCorp/springboot_demo/$INSTANCE_ID/$TEMPLATE \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H "Authorization: Bearer $AUTH_TOKEN" \
   -H 'cache-control: no-cache' \
