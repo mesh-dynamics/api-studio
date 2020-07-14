@@ -32,7 +32,7 @@ public class LogStoreController {
     LOGGER.log(postBody.level, new ObjectMessage(Map.of("customerId", customerId,
         "app", postBody.app, "instance", postBody.instance, "service", postBody.service,
         "version", postBody.version, "sourceType", postBody.sourceType,
-        "logMessage", postBody.logMessage)));
+        "logMessage", postBody.logMessage, "clientTimeStamp", postBody.clientTimeStamp)));
     return ResponseEntity.ok("Data added");
   }
 }
