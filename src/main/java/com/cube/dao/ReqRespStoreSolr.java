@@ -800,7 +800,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             this::docToAgentConfigAcknowledge, Optional.empty());
 
         if(facetOnNodeSelected) {
-            ArrayList samplingFacetResults = result.getFacets(FACETSFIELD, SAMPLINGFACET, BUCKETFIELD);
+            ArrayList samplingFacetResults = result.getFacets(FACETSFIELD, SAMPLINGFACET, Constants.BUCKETFIELD);
             return new Pair(result, samplingFacetResults);
         }
 
@@ -2379,7 +2379,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         Result<ReqRespMatchResult> result = SolrIterator.getResults(solr, query, matchResQuery.numMatches,
             this::docToAnalysisMatchResult, matchResQuery.start);
-        ArrayList diffResolutionFacets = result.getFacets(FACETSFIELD, DIFFRESOLUTIONFACET, BUCKETFIELD);
+        ArrayList diffResolutionFacets = result.getFacets(FACETSFIELD, DIFFRESOLUTIONFACET, Constants.BUCKETFIELD);
 
 
         SolrQuery queryForServPathFacets = new SolrQuery(queryStringSansDiffFilter);
@@ -2415,18 +2415,18 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Result<ReqRespMatchResult> resultsServPath = SolrIterator.getResults(solr, queryForServPathFacets, matchResQuery.numMatches,
                 this::docToAnalysisMatchResult, matchResQuery.start);
 
-        ArrayList serviceFacetResults = resultsServPath.getFacets(FACETSFIELD, SERVICEFACET, BUCKETFIELD);
-        ArrayList pathFacetResults = resultsServPath.getFacets(FACETSFIELD, PATHFACET, BUCKETFIELD);
+        ArrayList serviceFacetResults = resultsServPath.getFacets(FACETSFIELD, SERVICEFACET, Constants.BUCKETFIELD);
+        ArrayList pathFacetResults = resultsServPath.getFacets(FACETSFIELD, PATHFACET, Constants.BUCKETFIELD);
         pathFacetResults.forEach(pathFacetResult -> {
             HashMap respMatchTypeFacetMap = (HashMap) ((HashMap) pathFacetResult).get(RESPMATCHTYPEFACET);
             HashMap reqMatchTypeFacetMap = (HashMap) ((HashMap) pathFacetResult).get(REQMATCHTYPEFACET);
             HashMap reqCompareTypeFacetMap = (HashMap) ((HashMap) pathFacetResult).get(REQCOMPAPARETYPEFACET);
             ((HashMap)pathFacetResult).put(RESPMATCHTYPEFACET,
-                resultsServPath.solrNamedPairToMap((ArrayList)respMatchTypeFacetMap.get(BUCKETFIELD)));
+                resultsServPath.solrNamedPairToMap((ArrayList)respMatchTypeFacetMap.get(Constants.BUCKETFIELD)));
             ((HashMap)pathFacetResult).put(REQMATCHTYPEFACET,
-                resultsServPath.solrNamedPairToMap((ArrayList)reqMatchTypeFacetMap.get(BUCKETFIELD)));
+                resultsServPath.solrNamedPairToMap((ArrayList)reqMatchTypeFacetMap.get(Constants.BUCKETFIELD)));
             ((HashMap)pathFacetResult).put(REQCOMPAPARETYPEFACET,
-                resultsServPath.solrNamedPairToMap((ArrayList)reqCompareTypeFacetMap.get(BUCKETFIELD)));
+                resultsServPath.solrNamedPairToMap((ArrayList)reqCompareTypeFacetMap.get(Constants.BUCKETFIELD)));
         });
 
         return new ReqRespResultsWithFacets(result, diffResolutionFacets, serviceFacetResults, pathFacetResults);
@@ -2463,11 +2463,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Result<Event> result = SolrIterator.getResults(solr, query, Optional.empty(),
             this::docToEvent, Optional.empty());
 
-        ArrayList serviceFacetResults = result.getFacets(FACETSFIELD, SERVICEFACET, BUCKETFIELD);
+        ArrayList serviceFacetResults = result.getFacets(FACETSFIELD, SERVICEFACET, Constants.BUCKETFIELD);
         serviceFacetResults.forEach(serviceFacetResult -> {
             HashMap pathFacetMap = (HashMap) ((HashMap) serviceFacetResult).get(PATHFACET);
             ((HashMap)serviceFacetResult).put(PATHFACET,
-                result.solrNamedPairToMap((ArrayList)pathFacetMap.get(BUCKETFIELD)));
+                result.solrNamedPairToMap((ArrayList)pathFacetMap.get(Constants.BUCKETFIELD)));
         });
 
         return serviceFacetResults;
@@ -2637,15 +2637,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
         Result<Event> result = SolrIterator.getResults(solr, query, Optional.empty(),
             this::docToEvent, Optional.empty());
-        ArrayList serviceFacetResults = result.getFacets(FACETSFIELD, SERVICEFACET, BUCKETFIELD);
+        ArrayList serviceFacetResults = result.getFacets(FACETSFIELD, SERVICEFACET, Constants.BUCKETFIELD);
         serviceFacetResults.forEach(serviceFacetResult -> {
             HashMap pathFacetMap = (HashMap) ((HashMap) serviceFacetResult).get(PATHFACET);
-            ArrayList pathFacetResults = result.solrNamedPairToMap((ArrayList) pathFacetMap.get(BUCKETFIELD));
+            ArrayList pathFacetResults = result.solrNamedPairToMap((ArrayList) pathFacetMap.get(Constants.BUCKETFIELD));
 
             pathFacetResults.forEach(pathFacetResult -> {
                 HashMap instanceFacetMap = (HashMap) ((HashMap) pathFacetResult).get(INSTANCEFACET);
                 ((HashMap)pathFacetResult).put(INSTANCEFACET,
-                    result.solrNamedPairToMap((ArrayList)instanceFacetMap.get(BUCKETFIELD)));
+                    result.solrNamedPairToMap((ArrayList)instanceFacetMap.get(Constants.BUCKETFIELD)));
             });
 
             ((HashMap)serviceFacetResult).put(PATHFACET,pathFacetResults);
@@ -2654,14 +2654,30 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Result<Event> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfResults, Optional<Integer> start) {
+    public Result<Event> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfFacets, Optional<Integer> start, Optional<Integer> numberOfResults, List<EventType> eventTypes) {
 
         final SolrQuery query = getEventQuery(apiTraceFacetQuery);
-        addFilter(query, EVENTTYPEF, EventType.HTTPRequest.toString());
-        addFilter(query, TRACEIDF, apiTraceFacetQuery.traceId);
-        addSort(query, TRACEIDF, false /* desc */);
-        return SolrIterator.getResults(solr, query, numOfResults,
+        addFilter(query, EVENTTYPEF, eventTypes.stream().map(type -> type.toString()).collect(Collectors.toList()));
+        addFilter(query, TRACEIDF, apiTraceFacetQuery.traceIds);
+        addSort(query, TIMESTAMPF, false /* desc */);
+        FacetQ traceIdFacetq = new FacetQ();
+        Facet traceIdf = Facet.createTermFacet(TRACEIDF, Optional.empty());
+        traceIdFacetq.addFacet(Constants.TRACEIDFACET, traceIdf);
+
+        query.setFacetMinCount(1);
+        numOfFacets.ifPresent(query::setFacetLimit);
+        String jsonFacets;
+        try {
+            jsonFacets = config.jsonMapper.writeValueAsString(traceIdFacetq);
+            query.add(SOLRJSONFACETPARAM, jsonFacets);
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting facets to json"), e);
+        }
+
+        Result<Event> result = SolrIterator.getResults(solr, query, numberOfResults,
             this::docToEvent, start);
+
+        return result;
     }
 
 
@@ -2996,7 +3012,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String SERVICEFACET = "service_facets";
     private static final String INSTANCEFACET = "instance_facets";
     private static final String SOLRJSONFACETPARAM = "json.facet"; // solr facet query param
-    private static final String BUCKETFIELD = "buckets"; // term in solr results indicating facet buckets
     private static final String MISSINGBUCKETFIELD = "missing"; // term in solr results indicating facet bucket for
     // missing value
     private static final String VALFIELD = "val"; // term in solr facet results indicating a distinct value of the field
@@ -3469,7 +3484,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             head.forEach(facetname -> {
                 getNLFromNL(facetresult, facetname)
                     .ifPresent(bucketObj -> {
-                        getListFromNL(bucketObj, BUCKETFIELD).ifPresent(bucketarrobj -> {
+                        getListFromNL(bucketObj, Constants.BUCKETFIELD).ifPresent(bucketarrobj -> {
                             bucketarrobj.forEach(bucket -> {
                                 processFacetBucket(results, rest, facetname, bucket);
                             });

@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1442,28 +1443,33 @@ public class AnalyzeWS {
             }).or(() -> Optional.of(1));
       Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).or(()->Optional.of(50));
       Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
-
-      Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start);
-      MultivaluedMap<String, Event> traceCollectionMap = new MultivaluedHashMap<>();
       List<String> traceIds = new ArrayList<>();
-      result.getObjects().forEach(res -> {
-        traceCollectionMap.add(res.getTraceId() + " "+ res.getCollection(), res);
-        traceIds.add(res.getTraceId());
-      });
+      if(apiTraceFacetQuery.traceIds.isEmpty()) {
+        Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start, Optional.of(0), Arrays.asList(EventType.HTTPRequest));
+        ArrayList traceIdFacetResults = result
+            .getFacets(Constants.FACETS, Constants.TRACEIDFACET, Constants.BUCKETFIELD);
+        traceIdFacetResults.forEach(facet -> {
+          Map<String, String> map = (LinkedHashMap)facet;
+          traceIds.add(map.get(Constants.VALFIELD));
+        });
+      }
       ArrayList<ApiTraceResponse> response = new ArrayList<>();
       if(!traceIds.isEmpty()) {
         /**TODO: we need to update the trace for other event types
          *currently we are supporting only HTTPRequest and HTTPResponse
          * we need to change the logic to support other eventTypes
          */
-        EventQuery.Builder builder = new EventQuery.Builder(customerId, appId,
+        Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start, Optional.empty(),
             Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse));
-        builder.withTraceIds(traceIds);
-        apiTraceFacetQuery.collection.ifPresent(builder::withCollection);
-        Result<Event> eventResultsForTraceIds = rrstore.getEvents(builder.build());
         MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
-        eventResultsForTraceIds.getObjects().forEach(
-            res -> mapForEventsTraceIds.add(res.getTraceId() + " " + res.getCollection(), res));
+        MultivaluedMap<String, Event> traceCollectionMap = new MultivaluedHashMap<>();
+        result.getObjects().forEach(
+            res -> {
+              if(res.eventType == EventType.HTTPRequest) {
+                traceCollectionMap.add(res.getTraceId() + " " + res.getCollection(), res);
+              }
+              mapForEventsTraceIds.add(res.getTraceId() + " " + res.getCollection(), res);
+            });
 
         traceCollectionMap.forEach((traceCollectionKey, events) -> {
           if (apiTraceFacetQuery.apiPath.isPresent()) {

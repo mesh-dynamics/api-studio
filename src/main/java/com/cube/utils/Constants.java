@@ -188,6 +188,9 @@ public class Constants {
     public static final String SERVICE_FACET = "serviceFacets";
     public static final String PATH_FACET = "pathFacets";
     public static final String SAMPLING_FACET = "samplingFacets";
+    public static final String TRACEIDFACET = "traceId_facets";
+    public static final String BUCKETFIELD = "buckets"; // term in solr results indicating facet buckets
+    public static final String VALFIELD = "val";
 
 	public static final String REPLAY_TRACE_ID = "replayTraceId";
 	public static final String REC_TRACE_ID = "recordTraceId";
