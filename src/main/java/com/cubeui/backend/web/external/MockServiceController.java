@@ -81,10 +81,10 @@ public class MockServiceController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @GetMapping("/mockWithCollection/{replayCollection}/{recordingId}/{service}/**")
+    @GetMapping("/mockWithCollection/{replayCollection}/{recordingId}/{traceId}/{service}/**")
     public ResponseEntity getmockWithCollection(HttpServletRequest request,
         @RequestBody Optional<String> getBody, @PathVariable String replayCollection,
-        @PathVariable String recordingId, @PathVariable String service) {
+        @PathVariable String recordingId, @PathVariable String traceId, @PathVariable String service) {
         Optional<Recording> recording = cubeServerService.getRecording(recordingId);
         if(recording.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -93,10 +93,10 @@ public class MockServiceController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @PostMapping("/mockWithCollection/{replayCollection}/{recordingId}/{service}/**")
+    @PostMapping("/mockWithCollection/{replayCollection}/{recordingId}/{traceId}/{service}/**")
     public ResponseEntity postMockWithCollection(HttpServletRequest request,
         @RequestBody Optional<String> getBody, @PathVariable String replayCollection,
-        @PathVariable String recordingId, @PathVariable String service) {
+        @PathVariable String recordingId,@PathVariable String traceId, @PathVariable String service) {
         Optional<Recording> recording = cubeServerService.getRecording(recordingId);
         if(recording.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

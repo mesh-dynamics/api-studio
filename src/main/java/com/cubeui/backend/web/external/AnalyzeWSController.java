@@ -344,4 +344,9 @@ public class AnalyzeWSController {
         validation.validateCustomerName(request, customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
+
+    @GetMapping("/getReqRespMatchResult")
+    public ResponseEntity getReqRespMatchResult(HttpServletRequest request, @RequestBody Optional<String> getBody) {
+        return cubeServerService.fetchGetResponse(request, getBody);
+    }
 }
