@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -42,8 +41,8 @@ import static com.cubeui.backend.security.Constants.SPRING_PROFILE_DEVELOPMENT;
 @SpringBootApplication
 public class BackendApplication {
 
-    @Value("${allowed.origins}")
-    private String allowedOrigin;
+    @Value("${allowed.origins.path}")
+    private String allowedOriginPath;
 
     @Autowired RestTemplate restTemplate;
 
@@ -66,19 +65,14 @@ public class BackendApplication {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 final List<String> allowedOrigins = new ArrayList<>();
-                if (!allowedOrigin.isEmpty()) {
-                    String[] origins_from_env = allowedOrigin.split(",");
-                    allowedOrigins.addAll(Arrays.asList(origins_from_env));
-                } else {
-                    try {
-                        File file = ResourceUtils.getFile("classpath:webCorsAllowedOrigins.txt");
-                        Files.lines(Paths.get(file.toURI()), StandardCharsets.UTF_8)
+                try {
+                    File file = ResourceUtils.getFile(allowedOriginPath);
+                    Files.lines(Paths.get(file.toURI()), StandardCharsets.UTF_8)
                             .forEach(line -> allowedOrigins.add(line));
-                    } catch (FileNotFoundException e) {
-                        log.info("Allowed Origins File not found");
-                    } catch (IOException e) {
-                        log.info("Allowed Origins File Content Exception");
-                    }
+                } catch (FileNotFoundException e) {
+                    log.info("Allowed Origins File not found");
+                } catch (IOException e) {
+                    log.info("Allowed Origins File Content Exception");
                 }
                 registry.addMapping("/**").allowedOrigins(allowedOrigins.toArray(String[]::new));
             }

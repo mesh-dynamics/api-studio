@@ -82,4 +82,5 @@ logging:
     file: app.log
 
 allowed:
-    origins: ""
+    origins:
+        path: src/main/resources/webCorsAllowedOrigins.txt
