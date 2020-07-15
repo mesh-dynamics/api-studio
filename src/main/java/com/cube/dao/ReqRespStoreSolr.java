@@ -675,6 +675,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return getStrField(entry, TAG_F);
     }
 
+    private SolrQuery getAgentConfigQuery(String customerId, String app, Optional<String> service,
+        Optional<String> instanceId) {
+        SolrQuery query = new SolrQuery("*:*");
+        addFilter(query, TYPEF, ConfigType.AgentConfig.toString());
+        addFilter(query, CUSTOMERIDF, customerId);
+        addFilter(query, APPF, app);
+        addFilter(query, SERVICEF, service);
+        addFilter(query,INSTANCEIDF, instanceId);
+        return query;
+    }
+
     @Override
     public Optional<ConfigDAO> getAgentConfig(String customerId, String app,
             String service, String instanceId) {
@@ -689,15 +700,58 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             .flatMap(this::extractTagFromDoc).orElse("NA");
 
         // find the latest config the current tag
-        SolrQuery query = new SolrQuery("*:*");
-        addFilter(query, TYPEF, ConfigType.AgentConfig.toString());
-        addFilter(query, CUSTOMERIDF, customerId);
-        addFilter(query, APPF, app);
-        addFilter(query, SERVICEF, service);
-        addFilter(query,INSTANCEIDF, instanceId);
+        SolrQuery query = getAgentConfigQuery(customerId, app, Optional.of(service), Optional.of(instanceId));
         addFilter(query,TAG_F, currentTag);
         addSort(query, INT_VERSION_F, false);
         return SolrIterator.getSingleResult(solr, query).flatMap(this::docToAgent);
+    }
+
+    @Override
+    public Map getAgentConfigWithFacets(String customerId, String app, Optional<String> service,
+        Optional<String> instanceId, Optional<Integer> numOfResults, Optional<Integer> start) {
+        SolrQuery query = getAgentConfigQuery(customerId, app, service, instanceId);
+        FacetQ instanceIdFacetq = new FacetQ();
+        Facet instanceIdf = Facet.createTermFacet(INSTANCEIDF, Optional.empty());
+
+        FacetQ tagFacetq = new FacetQ();
+        Facet tagf = Facet.createTermFacet(TAG_F, Optional.empty());
+
+        FacetQ serviceFacetq = new FacetQ();
+        Facet servicef = Facet.createTermFacet(SERVICEF, Optional.empty());
+        serviceFacetq.addFacet(SERVICEFACET, servicef);
+
+        tagf.addSubFacet(serviceFacetq);
+        tagFacetq.addFacet(TAGFACET, tagf);
+
+
+        instanceIdf.addSubFacet(tagFacetq);
+        instanceIdFacetq.addFacet(INSTANCEFACET, instanceIdf);
+        query.setFacetMinCount(1);
+        String jsonFacets;
+        try {
+            jsonFacets = config.jsonMapper.writeValueAsString(instanceIdFacetq);
+            query.add(SOLRJSONFACETPARAM, jsonFacets);
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting facets to json"), e);
+        }
+        Result<ConfigDAO> result =  SolrIterator.getResults(solr, query, numOfResults,
+            this::docToAgent, start);
+        ArrayList instanceFacetResults = result.getFacets(FACETSFIELD, INSTANCEFACET, BUCKETFIELD);
+        instanceFacetResults.forEach(instanceFacetResult -> {
+            HashMap tagFacetMap = (HashMap) ((HashMap) instanceFacetResult).get(TAGFACET);
+            ArrayList tagFacetResults = result.solrNamedPairToMap((ArrayList) tagFacetMap.get(BUCKETFIELD));
+            tagFacetResults.forEach(tagFacetResult -> {
+                HashMap serviceFacetMap = (HashMap) ((HashMap) tagFacetResult).get(SERVICEFACET);
+                ((HashMap)tagFacetResult).put(SERVICEFACET,
+                    result.solrNamedPairToMap((ArrayList)serviceFacetMap.get(BUCKETFIELD)));
+            });
+            ((HashMap)instanceFacetResult).put(TAGFACET,tagFacetResults);
+        });
+
+
+        List<ConfigDAO> configs = result.getObjects().collect(Collectors.toList());
+
+        return Map.of("facets", Map.of(INSTANCEFACET, instanceFacetResults), "configs", configs);
     }
 
     private SolrInputDocument agentToSolrDoc(ConfigDAO store) {
@@ -2995,6 +3049,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String PATHFACET = "path_facets";
     private static final String SERVICEFACET = "service_facets";
     private static final String INSTANCEFACET = "instance_facets";
+    private static final String TAGFACET = "tag_facets";
     private static final String SOLRJSONFACETPARAM = "json.facet"; // solr facet query param
     private static final String BUCKETFIELD = "buckets"; // term in solr results indicating facet buckets
     private static final String MISSINGBUCKETFIELD = "missing"; // term in solr results indicating facet bucket for

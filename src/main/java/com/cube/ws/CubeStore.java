@@ -595,6 +595,35 @@ public class CubeStore {
         }
     }
 
+    @GET
+    @Path("/fetchAgentConfigWithFacets/{customerId}/{app}")
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response fetchAgentConfigWithFacets(@Context UriInfo ui, @PathParam("customerId") String customerId,
+        @PathParam("app") String app) {
+        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+        Optional<String> service = Optional
+            .ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
+        Optional<String> instanceId = Optional
+            .ofNullable(queryParams.getFirst(Constants.INSTANCE_ID_FIELD));
+        Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD))
+            .flatMap(Utils::strToInt);
+        Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD))
+            .flatMap(Utils::strToInt);
+        try {
+            Map result = rrstore.getAgentConfigWithFacets(customerId, app, service, instanceId,
+                numResults, start);
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity(result).build();
+
+        } catch (Exception e) {
+            LOGGER.error(
+                new ObjectMessage(Map.of(Constants.MESSAGE, "Error while retrieving the response",
+                    Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, app)), e);
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
+                    "Error while retrieving the response")).build();
+        }
+    }
+
     @POST
     @Path("/ackConfigApplication")
     @Produces({MediaType.APPLICATION_JSON})
