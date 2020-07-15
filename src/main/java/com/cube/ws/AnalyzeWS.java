@@ -1446,7 +1446,7 @@ public class AnalyzeWS {
       Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
       if(apiTraceFacetQuery.traceIds.isEmpty()) {
         Map<String, List> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start, Optional.of(0), Arrays.asList(EventType.HTTPRequest));
-        List<String> traceIds = result.get("traceIds");
+        List<String> traceIds = result.get(Constants.TRACEIDS);
         apiTraceFacetQuery.withTraceIds(traceIds);
       }
       ArrayList<ApiTraceResponse> response = new ArrayList<>();
@@ -1458,7 +1458,7 @@ public class AnalyzeWS {
         Map<String, List> result = rrstore
             .getApiTrace(apiTraceFacetQuery, numResults, start, Optional.empty(),
                 Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse));
-        List<Event> responseData = result.get("response");
+        List<Event> responseData = result.get(Constants.RESPONSE);
 
         MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
         MultivaluedMap<String, Event> traceCollectionMap = new MultivaluedHashMap<>();

@@ -2684,7 +2684,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             traceIds.add(map.get(VALFIELD));
         });
 
-        return Map.of("traceIds", traceIds, "response", result.getObjects().collect(Collectors.toList()));
+        return Map.of(Constants.TRACEIDS, traceIds, Constants.RESPONSE, result.getObjects().collect(Collectors.toList()));
     }
 
 
