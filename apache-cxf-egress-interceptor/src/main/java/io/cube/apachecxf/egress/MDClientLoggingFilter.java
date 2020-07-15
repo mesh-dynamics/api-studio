@@ -10,7 +10,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import javax.annotation.Priority;
@@ -18,6 +18,7 @@ import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.client.ClientResponseContext;
 import javax.ws.rs.client.ClientResponseFilter;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptor;
@@ -98,7 +99,7 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 		didContextProceed.setFalse();
 		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
 			//hdrs
-			MultivaluedMap<String, String> requestHeaders = clientRequestContext.getStringHeaders();
+			MultivaluedMap<String, String> requestHeaders = getStrHeaders(clientRequestContext);
 
 			//meta
 			MultivaluedMap<String, String> meta = Utils
@@ -320,8 +321,9 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 
 				MDTraceInfo mdTraceInfo = io.md.utils.Utils.getTraceInfo(newClientSpan);
 
-				String xRequestId = clientRequestContext.getStringHeaders()
-					.getFirst(Constants.X_REQUEST_ID);
+				MultivaluedMap<String, String> strHeaders = getStrHeaders(clientRequestContext);
+
+				String xRequestId = strHeaders.getFirst(Constants.X_REQUEST_ID);
 				MultivaluedMap<String, String> traceMetaMap = Utils
 					.buildTraceInfoMap(mdTraceInfo, xRequestId);
 
@@ -350,6 +352,25 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 		} finally {
 			closeSpanAndScope(newClientSpan, newClientScope);
 		}
+	}
+
+	private MultivaluedMap<String, String> getStrHeaders(
+		ClientRequestContext clientRequestContext) {
+		MultivaluedMap<String, String> strHeaders = new MultivaluedHashMap<>();
+		//Don't use getStringHeaders() as the lib code is buggy if the header has empty/null value
+		MultivaluedMap<String, Object> headers = clientRequestContext.getHeaders();
+		headers.entrySet().forEach(entry -> {
+			String key = entry.getKey();
+			List<Object> values = entry.getValue();
+			if (values != null) {
+				for (Object value : values) {
+					if (value != null) {
+						strHeaders.add(key, value.toString());
+					}
+				}
+			}
+		});
+		return strHeaders;
 	}
 
 }
