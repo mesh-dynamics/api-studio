@@ -254,6 +254,27 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
     }
 
+    @Override
+    public boolean forceDeleteInCache(Recording recording) {
+        CollectionKey key = new CollectionKey(recording.customerId, recording.app, recording.instanceId);
+        try (Jedis jedis = config.jedisPool.getResource()) {
+            jedis.del(key.toString());
+            jedis.del(Constants.REDIS_SHADOW_KEY_PREFIX + key.toString());
+        }
+        return true;
+    }
+
+    @Override
+    public boolean forceDeleteInCache(Replay replay) {
+        CollectionKey key = new CollectionKey(replay.customerId, replay.app, replay.instanceId);
+        try (Jedis jedis = config.jedisPool.getResource()) {
+            jedis.del(key.toString());
+            jedis.del(Constants.REDIS_SHADOW_KEY_PREFIX + key.toString());
+            jedis.del(Constants.REDIS_STATUS_KEY_PREFIX + key.toString());
+        }
+        return true;
+    }
+
     /* (non-Javadoc)
      * @see com.cube.dao.ReqRespStore#getRequests(java.lang.String, java.lang.String, java.lang.String, java.lang.Iterable, com.cube.dao.ReqRespStore.RR, com.cube.dao.ReqRespStore.Types)
      */
