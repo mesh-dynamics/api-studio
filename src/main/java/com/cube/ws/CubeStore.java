@@ -1292,9 +1292,18 @@ public class CubeStore {
         Response resp = recording.map(rec -> {
             if(rec.recordingType == RecordingType.History
                 || rec.recordingType == RecordingType.UserGolden) {
+                List<String> responseList = new ArrayList<>();
+                final String generatedTraceId = io.md.utils.Utils.generateTraceId();
                 for (UserReqRespContainer userReqRespContainer : userReqRespContainers) {
                     Event response = userReqRespContainer.response;
                     Event request = userReqRespContainer.request;
+                    String traceId = request.getTraceId();
+                    if (rec.recordingType == RecordingType.UserGolden) {
+                        String oldTraceId = request.getTraceId();
+                        rrstore.deleteReqResByTraceId(oldTraceId, rec.collection);
+                        rrstore.commit();
+                        traceId = generatedTraceId;
+                    }
 
                     TemplateKey tkey = new TemplateKey(rec.templateVersion, request.customerId,
                         request.app, request.service, request.apiPath, Type.RequestMatch);
@@ -1302,12 +1311,12 @@ public class CubeStore {
                         Comparator comparator = rrstore
                             .getComparator(tkey, request.eventType);
                         final String reqId = io.md.utils.Utils.generateRequestId(
-                                request.service, request.getTraceId());
+                                request.service, traceId);
                         Event requestEvent = buildEvent(request, rec.collection, rec.recordingType,
-                            reqId);
+                            reqId, traceId);
                         requestEvent.parseAndSetKey(comparator.getCompareTemplate());
                         Event responseEvent = buildEvent(response, rec.collection,
-                            rec.recordingType, reqId);
+                            rec.recordingType, reqId, traceId);
 
                         if (!rrstore.save(requestEvent) || !rrstore.save(responseEvent)) {
                             LOGGER.error(new ObjectMessage(
@@ -1317,6 +1326,9 @@ public class CubeStore {
                                 buildErrorResponse(Constants.ERROR, Constants.RECORDING_ID,
                                     "Unable to store event in solr")).build();
                         }
+                        String responseString = jsonMapper.writeValueAsString(Map.of("oldReqId", request.reqId,
+                            "oldTraceId", request.getTraceId(), "newReqId", reqId, "newTraceId", traceId));
+                        responseList.add(responseString);
 
                         if (rec.recordingType == RecordingType.History) {
                             TemplateKey templateKey = new TemplateKey(rec.templateVersion,
@@ -1338,7 +1350,7 @@ public class CubeStore {
                                 MatchType.ExactMatch, 1,
                                 rec.collection, request.service, request.apiPath,
                                 Optional.of(request.getTraceId()),
-                                Optional.of(requestEvent.getTraceId()), Optional.of(request.spanId),
+                                Optional.of(traceId), Optional.of(request.spanId),
                                 Optional.of(request.parentSpanId), Optional.of(requestEvent.spanId),
                                 Optional.of(requestEvent.parentSpanId), responseMatch,
                                 Match.DONT_CARE);
@@ -1363,12 +1375,20 @@ public class CubeStore {
                                 Constants.RECORDING_ID, recordingId)), e);
                         return Response.serverError().entity("Invalid Event :: "
                             + e.getMessage()).build();
+                    } catch (JsonProcessingException e) {
+                        LOGGER.error(new ObjectMessage(
+                            Map.of(Constants.MESSAGE, "Error while creating response",
+                                Constants.RECORDING_ID, recordingId)), e);
+                        return Response.serverError().entity("Error while creating response"
+                            + e.getMessage()).build();
                     }
                 }
+                rrstore.commit();
                 return Response.ok()
                     .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject(
                         Map.of(Constants.MESSAGE, "The UserData is saved",
-                            Constants.RECORDING_ID, recordingId)))).build();
+                            Constants.RECORDING_ID, recordingId,
+                            Constants.RESPONSE, responseList)))).build();
             }
             LOGGER.error(new ObjectMessage(
                 Map.of(Constants.MESSAGE, "Recording is not a UserGolden or History ",
@@ -1401,11 +1421,11 @@ public class CubeStore {
         return resp;
     }
 
-    private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId)
+    private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId)
         throws InvalidEventException {
         EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
             event.service, event.instanceId, collection,
-            new MDTraceInfo(event.getTraceId(), event.spanId, event.parentSpanId),
+            new MDTraceInfo(traceId, event.spanId, event.parentSpanId),
             event.getRunType(), Optional.of(Instant.now()), reqId, event.apiPath,
             event.eventType, recordingType);
         eventBuilder.setPayload(event.payload);

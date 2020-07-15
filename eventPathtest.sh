@@ -74,6 +74,7 @@ analyze() {
   echo "Replay ID:" $REPLAY_ID
   #Exit with non-zero exit code if reqstnotmatched and respnotmatchted are have nono-zero value
   if [ "$REQCOUNT" != "0" ] && [ "$REQMATCHED" = "$REQCOUNT" ]; then
+
     TEST_STATUS="test passed"
     EXIT_CODE=0
   else

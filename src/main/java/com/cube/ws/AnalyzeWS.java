@@ -6,19 +6,21 @@ package com.cube.ws;
 import static com.cube.core.Utils.buildErrorResponse;
 import static com.cube.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
+import static io.md.core.Comparator.MatchType.DontCare;
 import static io.md.core.TemplateKey.Type;
 import static io.md.dao.Recording.RecordingStatus;
 import static io.md.services.DataStore.TemplateNotFoundException;
 
+import com.cube.dao.Analysis.ReqRespMatchWithEvent;
 import com.cube.dao.ApiTraceFacetQuery;
 import com.cube.dao.ApiTraceResponse;
 import com.cube.dao.ApiTraceResponse.ServiceReqRes;
 import io.md.constants.ReplayStatus;
+import io.md.core.Comparator.Match;
 import io.md.dao.ConvertEventPayloadResponse;
 import io.md.dao.Event.EventType;
+import io.md.dao.EventQuery;
 import io.md.dao.HTTPRequestPayload;
-import io.md.dao.HTTPResponsePayload;
-import io.md.dao.Recording.RecordingType;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.ResponsePayload;
 import java.io.IOException;
@@ -55,7 +57,6 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
-import org.clapper.util.misc.MultiValueMap;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -1432,68 +1433,67 @@ public class AnalyzeWS {
       @PathParam("customerId") String customerId,
       @PathParam("appId") String appId) {
     try {
-      ApiTraceFacetQuery apiTraceFacetQuery = new ApiTraceFacetQuery(customerId, appId, uriInfo.getQueryParameters());
+      MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+      ApiTraceFacetQuery apiTraceFacetQuery = new ApiTraceFacetQuery(customerId, appId, queryParams);
       Optional<Integer> depth = Optional.ofNullable(uriInfo.getQueryParameters().getFirst("depth"))
             .flatMap(val -> {
               Optional<Integer> value = Utils.strToInt(val);
               return  value.get() >= 0 ? value : Optional.of(1);
             }).or(() -> Optional.of(1));
-      Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery);
+      Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).or(()->Optional.of(50));
+      Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
+
+      Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start);
       MultivaluedMap<String, Event> traceCollectionMap = new MultivaluedHashMap<>();
-      result.getObjects().forEach(res -> traceCollectionMap.add(res.getTraceId() + " "+ res.getCollection(), res));
-
+      List<String> traceIds = new ArrayList<>();
+      result.getObjects().forEach(res -> {
+        traceCollectionMap.add(res.getTraceId() + " "+ res.getCollection(), res);
+        traceIds.add(res.getTraceId());
+      });
       ArrayList<ApiTraceResponse> response = new ArrayList<>();
-      traceCollectionMap.forEach((traceCollectionKey, events) -> {
+      if(!traceIds.isEmpty()) {
+        /**TODO: we need to update the trace for other event types
+         *currently we are supporting only HTTPRequest and HTTPResponse
+         * we need to change the logic to support other eventTypes
+         */
+        EventQuery.Builder builder = new EventQuery.Builder(customerId, appId,
+            Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse));
+        builder.withTraceIds(traceIds);
+        apiTraceFacetQuery.collection.ifPresent(builder::withCollection);
+        Result<Event> eventResultsForTraceIds = rrstore.getEvents(builder.build());
+        MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
+        eventResultsForTraceIds.getObjects().forEach(
+            res -> mapForEventsTraceIds.add(res.getTraceId() + " " + res.getCollection(), res));
 
-        MultivaluedMap<String, Event> requestEventsByParentSpanId = new MultivaluedHashMap<>();
-        Map<String, Event> responseEventsByReqId = new HashMap<>();
-        List<Event> parentRequestEventsForApiPath = new ArrayList<>();
+        traceCollectionMap.forEach((traceCollectionKey, events) -> {
+          if (apiTraceFacetQuery.apiPath.isPresent()) {
+            for (Event parent : events) {
+              response.add(getApiTraceResponse(parent, depth.get(),
+                  Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey)));
+            }
 
-        events.forEach(e -> {
-          if(e.isRequestType()) {
-            requestEventsByParentSpanId.add(e.parentSpanId, e);
-            apiTraceFacetQuery.apiPath.ifPresent(path -> {
-              if(e.apiPath.equals(path)) {
-                parentRequestEventsForApiPath.add(e);
-              }
-            });
-          }
-          if(e.eventType == EventType.HTTPResponse) {
-            responseEventsByReqId.put(e.reqId, e);
-          }
-        });
-
-        if(apiTraceFacetQuery.apiPath.isPresent()) {
-
-          for(Event parent: parentRequestEventsForApiPath) {
-            response.add(getApiTraceResponse(parent, depth.get(),
-                responseEventsByReqId, requestEventsByParentSpanId));
-          }
-
-        } else {
+          } else {
             // find event such that there is no event having span id equal to its parent span id
             Map<String, Event> requestEventsBySpanId = new HashMap<>();
-            events.forEach(e -> {
-                if (e.isRequestType()) {
-                    requestEventsBySpanId.put(e.spanId, e);
-                }
-            });
+            events.forEach(e -> requestEventsBySpanId.put(e.spanId, e));
             List<Event> parentRequestEvents = events.stream()
-              .filter(e -> requestEventsBySpanId.get(e.parentSpanId) == null && e.isRequestType())
-                      .collect(Collectors.toList());
-          if(parentRequestEvents.isEmpty()) {
-            LOGGER.error(
-                new ObjectMessage(Map.of(Constants.MESSAGE, "No request events found",
-                    Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, appId,
-                    Constants.TRACE_ID_FIELD +" "+ Constants.COLLECTION_FIELD, traceCollectionKey)));
-            return;
+                .filter(e -> requestEventsBySpanId.get(e.parentSpanId) == null)
+                .collect(Collectors.toList());
+            if (parentRequestEvents.isEmpty()) {
+              LOGGER.error(
+                  new ObjectMessage(Map.of(Constants.MESSAGE, "No request events found",
+                      Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, appId,
+                      Constants.TRACE_ID_FIELD + " " + Constants.COLLECTION_FIELD,
+                      traceCollectionKey)));
+              return;
+            }
+            for (Event parent : parentRequestEvents) {
+              response.add(getApiTraceResponse(parent, depth.get(),
+                  Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey)));
+            }
           }
-          for(Event parent: parentRequestEvents) {
-            response.add(getApiTraceResponse(parent, depth.get(),
-                responseEventsByReqId, requestEventsByParentSpanId));
-          }
-        }
-      });
+        });
+      }
 
       Map jsonMap = new HashMap();
 
@@ -1509,10 +1509,19 @@ public class AnalyzeWS {
     }
   }
 
-  private ApiTraceResponse getApiTraceResponse(Event parentRequestEvent, int depth, Map<String, Event> responseEventsByReqId,
-      MultivaluedMap<String, Event> requestEventsByParentSpanId ) {
+  private ApiTraceResponse getApiTraceResponse(Event parentRequestEvent, int depth, List<Event> eventsForTraceId) {
     final ApiTraceResponse apiTraceResponse = new ApiTraceResponse(parentRequestEvent.getTraceId(),
         parentRequestEvent.getCollection());
+
+    MultivaluedMap<String, Event> requestEventsByParentSpanId = new MultivaluedHashMap<>();
+    Map<String, Event> responseEventsByReqId = new HashMap<>();
+    eventsForTraceId.forEach(e -> {
+        if(e.isRequestType()) {
+          requestEventsByParentSpanId.add(e.parentSpanId, e);
+        } else {
+          responseEventsByReqId.put(e.reqId, e);
+        }
+    });
 
     levelOrderTraversal(parentRequestEvent,  depth, apiTraceResponse, responseEventsByReqId,
         requestEventsByParentSpanId);
@@ -1556,9 +1565,126 @@ public class AnalyzeWS {
 			jsonMapper.writeValueAsString(requestCompareRules));
 	}
 
+
+	@GET
+	@Path("getReqRespMatchResult")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getReqRespMatchResult(@Context UriInfo uriInfo) {
+		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+		if(queryParams==null) {
+			return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+				.entity(Map.of(Constants.ERROR, "No queryParams are specified for lhsReqId and rhsReqId")).build();
+		}
+
+		// lhsReqId should be from recording collection and rhsReqId from replay
+		Optional<String> lhsReqId = Optional.ofNullable(queryParams.getFirst("lhsReqId"));
+		Optional<String> rhsReqId = Optional.ofNullable(queryParams.getFirst("rhsReqId"));
+
+		if (lhsReqId.isEmpty() || rhsReqId.isEmpty()) {
+			return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+				.entity(Map.of(Constants.ERROR, "lhsReqId or rhsReqId not Specified")).build();
+		}
+
+		Optional<Event> lhsRequestEventOpt = rrstore.getRequestEvent(lhsReqId.get());
+		Optional<Event> rhsRequestEventOpt = rrstore.getRequestEvent(rhsReqId.get());
+
+		if (lhsRequestEventOpt.isEmpty() || rhsRequestEventOpt.isEmpty()) {
+			return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+				.entity(Map.of(Constants.ERROR, "lhsReqEvent or rhsReqEvent not found in solr"))
+				.build();
+		}
+		Event lhsRequestEvent = lhsRequestEventOpt.get();
+		Event rhsRequestEvent = rhsRequestEventOpt.get();
+
+		Optional<Event> lhsResponseEventOpt = rrstore.getResponseEvent(lhsReqId.get());
+		Optional<Event> rhsResponseEventOpt = rrstore.getResponseEvent(rhsReqId.get());
+
+		Optional<Recording> recordingOpt = rrstore
+			.getRecordingByCollectionAndTemplateVer(lhsRequestEvent.customerId, lhsRequestEvent.app,
+				lhsRequestEvent.getCollection(), Optional.empty());
+
+		if (recordingOpt.isEmpty()) {
+			return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+				.entity(Map.of(Constants.ERROR,
+					"Recording not found in solr. lhsReqId should be from recording collection and rhsReqId from replay"))
+				.build();
+		}
+		Recording recording = recordingOpt.get();
+
+		Comparator.Match reqCompareRes = Match.NOMATCH;
+		Comparator.Match respCompareRes = Match.NOMATCH;
+		try {
+			TemplateKey reqCompareKey = new TemplateKey(recording.templateVersion,
+				lhsRequestEvent.customerId,
+				lhsRequestEvent.app, lhsRequestEvent.service, lhsRequestEvent.apiPath,
+				Type.RequestCompare);
+			Comparator reqComparator = rrstore
+				.getComparator(reqCompareKey, lhsRequestEvent.eventType);
+				reqCompareRes = reqComparator.compare(lhsRequestEvent.payload, rhsRequestEvent.payload);
+			TemplateKey respCompareKey = new TemplateKey(recording.templateVersion,
+				lhsRequestEvent.customerId,
+				lhsRequestEvent.app, lhsRequestEvent.service, lhsRequestEvent.apiPath,
+				Type.ResponseCompare);
+
+			if (lhsResponseEventOpt.isPresent() && rhsResponseEventOpt.isPresent()) {
+				Event lhsResponseEvent = lhsResponseEventOpt.get();
+				Event rhsResponseEvent = rhsResponseEventOpt.get();
+				Comparator respComparator = rrstore
+					.getComparator(respCompareKey, lhsResponseEvent.eventType);
+				respCompareRes = respComparator
+					.compare(lhsResponseEvent.payload, rhsResponseEvent.payload);
+			}
+		} catch (Exception e) {
+			LOGGER.error(new ObjectMessage(Map.of(
+				Constants.MESSAGE, "Exception while comparing request")), e);
+			return Response.serverError().entity(
+				buildErrorResponse(Constants.ERROR, "Error while comparing requests",
+					e.getMessage())).build();
+		}
+
+		ReqRespMatchWithEvent reqRespMatchWithEvent = new ReqRespMatchWithEvent(lhsRequestEvent,
+			Optional.of(rhsRequestEvent),
+			respCompareRes, lhsResponseEventOpt, rhsResponseEventOpt, reqCompareRes);
+
+		ReqRespMatchResult res = Analysis.createReqRespMatchResult(reqRespMatchWithEvent, DontCare,
+			1, "NA");
+
+		Optional<String> respCompDiff = Optional.empty();
+		Optional<String> reqCompDiff = Optional.empty();
+
+		try {
+			respCompDiff = Optional.of(jsonMapper.writeValueAsString(res.respCompareRes.diffs));
+			reqCompDiff = Optional.of(jsonMapper.writeValueAsString(
+				res.reqCompareRes.diffs));
+		} catch (JsonProcessingException e) {
+			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+				"Unable to convert diff to json string")), e);
+		}
+
+		MatchRes matchRes = new MatchRes(res.recordReqId, res.replayReqId,
+			res.reqMatchRes, res.numMatch,
+			res.respCompareRes.mt, res.service, res.path, res.reqCompareRes.mt
+			, respCompDiff, reqCompDiff, Optional.of(lhsRequestEvent.getPayloadAsJsonString(true)),
+			Optional.of(rhsRequestEvent.getPayloadAsJsonString(true)),
+			lhsResponseEventOpt.map(e -> e.getPayloadAsJsonString(true))
+			, rhsResponseEventOpt.map(e -> e.getPayloadAsJsonString(true)), res.recordTraceId,
+			res.replayTraceId,
+			res.recordedSpanId, res.recordedParentSpanId,
+			res.replayedSpanId, res.replayedParentSpanId,
+			Optional.empty(), Optional.empty(),
+			Optional.empty(), Optional.empty(), Optional.empty()
+			, Optional.empty(), Optional.empty());
+
+
+		Map jsonMap = new HashMap();
+		jsonMap.put("res", matchRes);
+		return Response.ok().entity(jsonMap).build();
+	}
+
+
 	/**
-         * @param config
-         */
+	 * @param config
+	 */
 	@Inject
 	public AnalyzeWS(Config config) {
 		super();

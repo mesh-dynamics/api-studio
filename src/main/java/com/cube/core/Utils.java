@@ -98,6 +98,7 @@ public class Utils {
 		try {
 			return Optional.ofNullable(intStr).map(Integer::valueOf);
 		} catch (Exception e) {
+			LOGGER.error("Error while parsing int",e);
 			return Optional.empty();
 		}
 	}
@@ -372,4 +373,8 @@ public class Utils {
 
 		return pathRules;
     }
+
+   public static <K,T> List<T> getFromMVMapAsOptional(MultivaluedMap<K, T> map,  K key) {
+	  return Optional.ofNullable(map.get(key)).orElse(Collections.emptyList());
+  }
 }
