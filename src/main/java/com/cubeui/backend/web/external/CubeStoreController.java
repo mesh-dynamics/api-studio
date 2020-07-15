@@ -241,4 +241,22 @@ public class CubeStoreController {
         validation.validateCustomerName(request, customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
+
+    @PostMapping("/forcestop/{recordingId}")
+    public ResponseEntity forceStop(HttpServletRequest request,
+        @RequestBody Optional<String> postBody,@PathVariable String recordingId) {
+        Optional<Recording> recording = cubeServerService.getRecording(recordingId);
+        if(recording.isEmpty())
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("No Recording found for recordingId=" + recordingId);
+        validation.validateCustomerName(request,recording.get().customerId);
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
+
+    @PostMapping("/stopRecordingByNameLabel")
+    public ResponseEntity stopRecordingByNameLabel(HttpServletRequest request,
+        @RequestBody Optional<String> postBody,@RequestParam String customerId) {
+        validation.validateCustomerName(request, customerId);
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
 }
