@@ -16,7 +16,7 @@ public class ApiTraceFacetQuery {
   public final Optional<String> instanceId;
   public final Optional<Instant> startDate;
   public final Optional<Instant> endDate;
-  public final List<String> traceIds;
+  public  List<String> traceIds;
   public final Optional<String> recordingType;
   public final Optional<String> collection;
 
@@ -51,5 +51,7 @@ public class ApiTraceFacetQuery {
     this.recordingType = Optional.ofNullable(queryParams.getFirst(Constants.RECORDING_TYPE_FIELD));
     this.collection = Optional.ofNullable(queryParams.getFirst(Constants.COLLECTION_FIELD));
   }
-
+  public void withTraceIds(List<String> traceIds) {
+    this.traceIds = traceIds;
+  }
 }

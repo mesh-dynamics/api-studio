@@ -6,6 +6,7 @@ package com.cube.ws;
 import static com.cube.core.Utils.buildErrorResponse;
 import static com.cube.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
+import static io.md.constants.Constants.TRACE_ID_FIELD;
 import static io.md.core.Comparator.MatchType.DontCare;
 import static io.md.core.TemplateKey.Type;
 import static io.md.dao.Recording.RecordingStatus;
@@ -1443,36 +1444,35 @@ public class AnalyzeWS {
             }).or(() -> Optional.of(1));
       Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).or(()->Optional.of(50));
       Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
-      List<String> traceIds = new ArrayList<>();
       if(apiTraceFacetQuery.traceIds.isEmpty()) {
-        Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start, Optional.of(0), Arrays.asList(EventType.HTTPRequest));
-        ArrayList traceIdFacetResults = result
-            .getFacets(Constants.FACETS, Constants.TRACEIDFACET, Constants.BUCKETFIELD);
-        traceIdFacetResults.forEach(facet -> {
-          Map<String, String> map = (LinkedHashMap)facet;
-          traceIds.add(map.get(Constants.VALFIELD));
-        });
+        Map<String, List> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start, Optional.of(0), Arrays.asList(EventType.HTTPRequest));
+        List<String> traceIds = result.get("traceIds");
+        apiTraceFacetQuery.withTraceIds(traceIds);
       }
       ArrayList<ApiTraceResponse> response = new ArrayList<>();
-      if(!traceIds.isEmpty()) {
+      if(!apiTraceFacetQuery.traceIds.isEmpty()) {
         /**TODO: we need to update the trace for other event types
          *currently we are supporting only HTTPRequest and HTTPResponse
          * we need to change the logic to support other eventTypes
          */
-        Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start, Optional.empty(),
-            Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse));
+        Map<String, List> result = rrstore
+            .getApiTrace(apiTraceFacetQuery, numResults, start, Optional.empty(),
+                Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse));
+        List<Event> responseData = result.get("response");
+
         MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
         MultivaluedMap<String, Event> traceCollectionMap = new MultivaluedHashMap<>();
-        result.getObjects().forEach(
+        responseData.forEach(
             res -> {
-              if(res.eventType == EventType.HTTPRequest) {
+              if (res.eventType == EventType.HTTPRequest) {
                 traceCollectionMap.add(res.getTraceId() + " " + res.getCollection(), res);
               }
               mapForEventsTraceIds.add(res.getTraceId() + " " + res.getCollection(), res);
             });
 
+        boolean apiPathExits = apiTraceFacetQuery.apiPath.isPresent();
         traceCollectionMap.forEach((traceCollectionKey, events) -> {
-          if (apiTraceFacetQuery.apiPath.isPresent()) {
+          if (apiPathExits) {
             for (Event parent : events) {
               response.add(getApiTraceResponse(parent, depth.get(),
                   Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey)));
@@ -1500,7 +1500,6 @@ public class AnalyzeWS {
           }
         });
       }
-
       Map jsonMap = new HashMap();
 
       jsonMap.put("response", response);
