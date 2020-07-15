@@ -39,12 +39,13 @@ public class ClientUtils {
 	public static void initialize(Map<String, String> attributeMap) {
 		try {
 
+			//Need to set before Node Selection decision
+			CommonConfig.clientMetaDataMap.putAll(attributeMap);
+
 			//set any CommonConfig variables if specified.
-			setCustomerAttributes(attributeMap);
+			setCustomerAttributesAndSchedulePolling(attributeMap);
 
 			addNodeSelectionDecision(attributeMap);
-
-			CommonConfig.clientMetaDataMap.putAll(attributeMap);
 
 			//call cube server API to send the attributeMap and sampling decision
 			sendAckToCubeServer();
@@ -55,7 +56,7 @@ public class ClientUtils {
 		}
 	}
 
-	private static void setCustomerAttributes(Map<String, String> attributeMap) {
+	private static void setCustomerAttributesAndSchedulePolling(Map<String, String> attributeMap) {
 
 		Optional.ofNullable(attributeMap.get(io.md.constants.Constants.MD_CUSTOMER_PROP))
 			.ifPresent(val -> CommonConfig.customerId = val);
@@ -79,9 +80,16 @@ public class ClientUtils {
 				URI.create(cubeServiceEndPoint)
 					.resolve(Constants.MD_ACK_CONFIG_API_PATH)).toString();
 
+			//stop the already scheduled task through common config
 			stopPolling();
 
-			//schedule again
+			//If the previous polling has already completed fetching,
+			//it is possible tag and version are set. This will not update the
+			//config values when the following fetch happens. So, setting it here.
+			CommonConfig.tag = "NA";
+			CommonConfig.version = "NA";
+
+			//schedule with the customer provided URI info
 			schedulePolling();
 		});
 
