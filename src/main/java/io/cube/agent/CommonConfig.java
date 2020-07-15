@@ -333,6 +333,7 @@ public class CommonConfig {
 				//additional information as this exception is likely thrown within this thread,
 				// hence only printing the getMessage
 				LOGGER.error("Error in updating common config object in thread : " + e.getMessage());
+				LOGGER.info("Resetting client to NORMAL mode!");
 				//Not able to fetch config from MD server. Set the intent to normal.
 				//Polling still continues, so when the MD server is reachable, it
 				//will get the latest config.
