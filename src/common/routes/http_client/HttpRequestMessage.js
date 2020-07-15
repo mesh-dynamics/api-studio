@@ -22,31 +22,12 @@ class HttpRequestMessage extends Component {
         };
         this.onChangeValue = this.onChangeValue.bind(this);
         this.handleChange = this.handleChange.bind(this);
-        this.handleClick = this.handleClick.bind(this);
-        this.handleSaveClick = this.handleSaveClick.bind(this);
         this.handleBodyOrRawDataType = this.handleBodyOrRawDataType.bind(this);
-
-        this.handleShowOutgoingRequests = this.handleShowOutgoingRequests.bind(this);
     }
 
     handleChange(evt) {
         const { tabId, isOutgoingRequest } = this.props;
         this.props.updateParam(isOutgoingRequest, tabId, evt.target.name, evt.target.name, evt.target.value);
-    }
-    
-    handleClick(evt) {
-        const { tabId, isOutgoingRequest } = this.props;
-        this.props.driveRequest(isOutgoingRequest, tabId);
-    }
-
-    handleSaveClick(evt) {
-        const { tabId, isOutgoingRequest } = this.props;
-        this.props.showSaveModal(isOutgoingRequest, tabId);
-    }
-
-    handleShowOutgoingRequests() {
-        const { tabId, requestId } = this.props;
-        this.props.showOutgoingRequests(tabId, requestId);
     }
 
     onChangeValue(event) {
@@ -75,19 +56,6 @@ class HttpRequestMessage extends Component {
             <div>
                 <div style={{marginRight: "7px"}}>
                     <div style={{marginBottom: "9px", display: "inline-block", width: "20%", fontSize: "11px"}}>REQUEST</div>
-                    <div style={{display: "inline-block", width: "80%", textAlign: "right"}}>
-                        {this.props.requestId && (
-                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: this.props.showOutgoingRequestsBtn ? "inline-block" : "none"}} onClick={this.handleShowOutgoingRequests}>
-                                <Glyphicon glyph="transfer" /> SHOW OUTGOING REQUESTS
-                            </div>
-                        )}
-                        <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleClick}>
-                            <Glyphicon glyph="play" /> RUN
-                        </div>
-                        <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: this.props.showSaveBtn ? "inline-block" : "none"}} onClick={this.handleSaveClick}>
-                            <Glyphicon glyph="play" /> SAVE
-                        </div>
-                    </div>
                 </div>
                 
                 <div style={{marginBottom: "0px"}}>

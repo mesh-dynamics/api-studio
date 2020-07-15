@@ -248,4 +248,7 @@ export const apiCatalogActions = {
 
     setHttpClientRequestIds: (requestIdMap) => ({type: apiCatalogConstants.SET_HTTP_CLIENT_REQUESTIDS, data: requestIdMap}),
 
+    // envvars
+    updateEnvironments: (environmentList) => ({type: apiCatalogConstants.UPDATE_ENVIRONMENT_LIST, data: environmentList})
+
 }
