@@ -860,8 +860,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String VERSIONF = Constants.VERSION_FIELD + STRING_SUFFIX;
     private static final String INT_VERSION_F = Constants.VERSION_FIELD + INT_SUFFIX;
     private static final String ATTRIBUTE_RULE_MAP_ID = "attribute_rule_map_id" + STRING_SUFFIX;
-    private static final String DYNACMIC_INJECTION_CONFIG_VERSIONF =
+    private static final String DYNAMIC_INJECTION_CONFIG_VERSIONF =
         Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD + STRING_SUFFIX;
+    private static final String STATIC_INJECTION_MAPF =
+        Constants.STATIC_INJECTION_MAP_FIELD + STRING_SUFFIX;
+
     private static final String TAG_F = Constants.TAG_FIELD + STRING_SUFFIX;
 
 
@@ -1726,7 +1729,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         replay.recordingId.ifPresent(recordingId -> doc.setField(RECORDING_IDF, recordingId));
         doc.setField(ARCHIVEDF,replay.archived);
         doc.setField(ANALYSISCOMPLETETIMESTAMPF,  replay.analysisCompleteTimestamp.toString());
-        replay.dynamicInjectionConfigVersion.ifPresent(DIConfVersion -> doc.setField(DYNACMIC_INJECTION_CONFIG_VERSIONF, DIConfVersion));
+        replay.dynamicInjectionConfigVersion.ifPresent(DIConfVersion -> doc.setField(
+            DYNAMIC_INJECTION_CONFIG_VERSIONF, DIConfVersion));
+        replay.staticInjectionMap.ifPresent(sim -> doc.setField(
+            STATIC_INJECTION_MAPF, sim));
 
         return doc;
     }
@@ -1796,7 +1802,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> xfms = getStrField(doc, XFMSF);
         Optional<Boolean> archived = getBoolField(doc, ARCHIVEDF);
         Optional<Instant> analysisCompleteTimestamp = getTSField(doc, ANALYSISCOMPLETETIMESTAMPF);
-        Optional<String> dynamicInjectionConfigVersion = getStrField(doc, DYNACMIC_INJECTION_CONFIG_VERSIONF);
+        Optional<String> dynamicInjectionConfigVersion = getStrField(doc,
+            DYNAMIC_INJECTION_CONFIG_VERSIONF);
+        Optional<String> staticInjectionMap = getStrField(doc,
+            STATIC_INJECTION_MAPF);
 
         Optional<Replay> replay = Optional.empty();
         if (endpoint.isPresent() && customerId.isPresent() && app.isPresent() &&
@@ -1827,6 +1836,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 archived.ifPresent(builder::withArchived);
                 analysisCompleteTimestamp.ifPresent(builder::withAnalysisCompleteTimestamp);
                 dynamicInjectionConfigVersion.ifPresent(builder::withDynamicInjectionConfigVersion);
+                staticInjectionMap.ifPresent(builder::withStaticInjectionMap);
 
                 replay = Optional.of(builder.build());
             } catch (Exception e) {
@@ -2919,13 +2929,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         String type = Types.DynamicInjectionConfig.name();
         String id = type.concat("-").concat(String.valueOf(Objects.hash(
-            dynamicInjectionConfig.customer , dynamicInjectionConfig.app , dynamicInjectionConfig.version)));
+            dynamicInjectionConfig.customerId, dynamicInjectionConfig.app , dynamicInjectionConfig.version)));
         doc.setField(IDF , id);
         doc.setField(EXTRACTION_METAS_JSON , extractionMetas);
         doc.setField(INJECTION_METAS_JSON , injectionMetas);
         doc.setField(APPF , dynamicInjectionConfig.app);
-        doc.setField(CUSTOMERIDF , dynamicInjectionConfig.customer);
-        doc.setField(DYNACMIC_INJECTION_CONFIG_VERSIONF, dynamicInjectionConfig.version);
+        doc.setField(CUSTOMERIDF , dynamicInjectionConfig.customerId);
+        doc.setField(DYNAMIC_INJECTION_CONFIG_VERSIONF, dynamicInjectionConfig.version);
         doc.setField(TIMESTAMPF , dynamicInjectionConfig.timestamp.toString());
         doc.setField(TYPEF , type);
         return doc;
@@ -2939,7 +2949,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, TYPEF, Types.DynamicInjectionConfig.name());
         addFilter(query, CUSTOMERIDF, cubeMetaInfo.customerId);
         addFilter(query, APPF, cubeMetaInfo.app);
-        addFilter(query, DYNACMIC_INJECTION_CONFIG_VERSIONF, version, true);
+        addFilter(query, DYNAMIC_INJECTION_CONFIG_VERSIONF, version, true);
         return SolrIterator.getSingleResult(solr, query)
             .flatMap(this::docToDynamicInjectionConfig);
     }
@@ -2947,28 +2957,36 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private Optional<DynamicInjectionConfig> docToDynamicInjectionConfig(SolrDocument doc) {
         Optional<List<ExtractionMeta>> extractionMetas = getStrField(doc, EXTRACTION_METAS_JSON).flatMap(em -> {
             try {
-                return config.jsonMapper.readValue(em, new TypeReference<List<ExtractionMeta>>(){});
+                return Optional.of(config.jsonMapper.readValue(em, new TypeReference<List<ExtractionMeta>>(){}));
             } catch (IOException e) {
                 LOGGER.error("Error while reading ExtractionMeta object from json :: " + getIntField(doc , IDF).orElse(-1),e);
-                return Optional.of(new ArrayList<ExtractionMeta>());
+                return Optional.empty();
+            }
+            catch (Exception e) {
+                LOGGER.error("Error while reading ExtractionMeta object from json :: " + getIntField(doc , IDF).orElse(-1),e);
+                return Optional.empty();
             }
         });
         Optional<List<InjectionMeta>> injectionMetas = getStrField(doc, INJECTION_METAS_JSON).flatMap(im -> {
             try {
-                return config.jsonMapper.readValue(im, new TypeReference<List<InjectionMeta>>(){});
+                return Optional.of(config.jsonMapper.readValue(im, new TypeReference<List<InjectionMeta>>(){}));
             } catch (IOException e) {
                 LOGGER.error("Error while reading InjectionMeta object from json :: " + getIntField(doc , IDF).orElse(-1),e);
-                return Optional.of(new ArrayList<InjectionMeta>());
+                return Optional.empty();
+            }
+            catch (Exception e) {
+                LOGGER.error("Error while reading InjectionMeta object from json :: " + getIntField(doc , IDF).orElse(-1),e);
+                return Optional.empty();
             }
         });
 
         Optional<DynamicInjectionConfig> dynamicInjectionConfig = Optional.empty();
         Optional<String> app = getStrField(doc, APPF);
         Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
-        Optional<String> version = getStrField(doc, DYNACMIC_INJECTION_CONFIG_VERSIONF);
+        Optional<String> version = getStrField(doc, DYNAMIC_INJECTION_CONFIG_VERSIONF);
         Optional<Instant> timestamp = getTSField(doc, TIMESTAMPF);
 
-        if(app.isPresent() && customerId.isPresent() && version.isPresent()) {
+        if(app.isPresent() && customerId.isPresent() && version.isPresent() && extractionMetas.isPresent() && injectionMetas.isPresent()) {
             dynamicInjectionConfig = Optional
                 .of(new DynamicInjectionConfig(version.get(), customerId.get(), app.get(), timestamp, extractionMetas.get(),
                     injectionMetas.get()));

@@ -6,14 +6,17 @@ package com.cube.ws;
 import static com.cube.core.Utils.buildErrorResponse;
 import static com.cube.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
+import static io.md.core.Comparator.MatchType.DontCare;
 import static io.md.core.TemplateKey.Type;
 import static io.md.dao.Recording.RecordingStatus;
 import static io.md.services.DataStore.TemplateNotFoundException;
 
+import com.cube.dao.Analysis.ReqRespMatchWithEvent;
 import com.cube.dao.ApiTraceFacetQuery;
 import com.cube.dao.ApiTraceResponse;
 import com.cube.dao.ApiTraceResponse.ServiceReqRes;
 import io.md.constants.ReplayStatus;
+import io.md.core.Comparator.Match;
 import io.md.dao.ConvertEventPayloadResponse;
 import io.md.dao.Event.EventType;
 import io.md.dao.EventQuery;
@@ -1437,7 +1440,6 @@ public class AnalyzeWS {
               Optional<Integer> value = Utils.strToInt(val);
               return  value.get() >= 0 ? value : Optional.of(1);
             }).or(() -> Optional.of(1));
-
       Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).or(()->Optional.of(50));
       Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
 
@@ -1457,6 +1459,7 @@ public class AnalyzeWS {
         EventQuery.Builder builder = new EventQuery.Builder(customerId, appId,
             Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse));
         builder.withTraceIds(traceIds);
+        apiTraceFacetQuery.collection.ifPresent(builder::withCollection);
         Result<Event> eventResultsForTraceIds = rrstore.getEvents(builder.build());
         MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
         eventResultsForTraceIds.getObjects().forEach(
@@ -1562,9 +1565,126 @@ public class AnalyzeWS {
 			jsonMapper.writeValueAsString(requestCompareRules));
 	}
 
+
+	@GET
+	@Path("getReqRespMatchResult")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getReqRespMatchResult(@Context UriInfo uriInfo) {
+		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+		if(queryParams==null) {
+			return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+				.entity(Map.of(Constants.ERROR, "No queryParams are specified for lhsReqId and rhsReqId")).build();
+		}
+
+		// lhsReqId should be from recording collection and rhsReqId from replay
+		Optional<String> lhsReqId = Optional.ofNullable(queryParams.getFirst("lhsReqId"));
+		Optional<String> rhsReqId = Optional.ofNullable(queryParams.getFirst("rhsReqId"));
+
+		if (lhsReqId.isEmpty() || rhsReqId.isEmpty()) {
+			return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+				.entity(Map.of(Constants.ERROR, "lhsReqId or rhsReqId not Specified")).build();
+		}
+
+		Optional<Event> lhsRequestEventOpt = rrstore.getRequestEvent(lhsReqId.get());
+		Optional<Event> rhsRequestEventOpt = rrstore.getRequestEvent(rhsReqId.get());
+
+		if (lhsRequestEventOpt.isEmpty() || rhsRequestEventOpt.isEmpty()) {
+			return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+				.entity(Map.of(Constants.ERROR, "lhsReqEvent or rhsReqEvent not found in solr"))
+				.build();
+		}
+		Event lhsRequestEvent = lhsRequestEventOpt.get();
+		Event rhsRequestEvent = rhsRequestEventOpt.get();
+
+		Optional<Event> lhsResponseEventOpt = rrstore.getResponseEvent(lhsReqId.get());
+		Optional<Event> rhsResponseEventOpt = rrstore.getResponseEvent(rhsReqId.get());
+
+		Optional<Recording> recordingOpt = rrstore
+			.getRecordingByCollectionAndTemplateVer(lhsRequestEvent.customerId, lhsRequestEvent.app,
+				lhsRequestEvent.getCollection(), Optional.empty());
+
+		if (recordingOpt.isEmpty()) {
+			return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+				.entity(Map.of(Constants.ERROR,
+					"Recording not found in solr. lhsReqId should be from recording collection and rhsReqId from replay"))
+				.build();
+		}
+		Recording recording = recordingOpt.get();
+
+		Comparator.Match reqCompareRes = Match.NOMATCH;
+		Comparator.Match respCompareRes = Match.NOMATCH;
+		try {
+			TemplateKey reqCompareKey = new TemplateKey(recording.templateVersion,
+				lhsRequestEvent.customerId,
+				lhsRequestEvent.app, lhsRequestEvent.service, lhsRequestEvent.apiPath,
+				Type.RequestCompare);
+			Comparator reqComparator = rrstore
+				.getComparator(reqCompareKey, lhsRequestEvent.eventType);
+				reqCompareRes = reqComparator.compare(lhsRequestEvent.payload, rhsRequestEvent.payload);
+			TemplateKey respCompareKey = new TemplateKey(recording.templateVersion,
+				lhsRequestEvent.customerId,
+				lhsRequestEvent.app, lhsRequestEvent.service, lhsRequestEvent.apiPath,
+				Type.ResponseCompare);
+
+			if (lhsResponseEventOpt.isPresent() && rhsResponseEventOpt.isPresent()) {
+				Event lhsResponseEvent = lhsResponseEventOpt.get();
+				Event rhsResponseEvent = rhsResponseEventOpt.get();
+				Comparator respComparator = rrstore
+					.getComparator(respCompareKey, lhsResponseEvent.eventType);
+				respCompareRes = respComparator
+					.compare(lhsResponseEvent.payload, rhsResponseEvent.payload);
+			}
+		} catch (Exception e) {
+			LOGGER.error(new ObjectMessage(Map.of(
+				Constants.MESSAGE, "Exception while comparing request")), e);
+			return Response.serverError().entity(
+				buildErrorResponse(Constants.ERROR, "Error while comparing requests",
+					e.getMessage())).build();
+		}
+
+		ReqRespMatchWithEvent reqRespMatchWithEvent = new ReqRespMatchWithEvent(lhsRequestEvent,
+			Optional.of(rhsRequestEvent),
+			respCompareRes, lhsResponseEventOpt, rhsResponseEventOpt, reqCompareRes);
+
+		ReqRespMatchResult res = Analysis.createReqRespMatchResult(reqRespMatchWithEvent, DontCare,
+			1, "NA");
+
+		Optional<String> respCompDiff = Optional.empty();
+		Optional<String> reqCompDiff = Optional.empty();
+
+		try {
+			respCompDiff = Optional.of(jsonMapper.writeValueAsString(res.respCompareRes.diffs));
+			reqCompDiff = Optional.of(jsonMapper.writeValueAsString(
+				res.reqCompareRes.diffs));
+		} catch (JsonProcessingException e) {
+			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+				"Unable to convert diff to json string")), e);
+		}
+
+		MatchRes matchRes = new MatchRes(res.recordReqId, res.replayReqId,
+			res.reqMatchRes, res.numMatch,
+			res.respCompareRes.mt, res.service, res.path, res.reqCompareRes.mt
+			, respCompDiff, reqCompDiff, Optional.of(lhsRequestEvent.getPayloadAsJsonString(true)),
+			Optional.of(rhsRequestEvent.getPayloadAsJsonString(true)),
+			lhsResponseEventOpt.map(e -> e.getPayloadAsJsonString(true))
+			, rhsResponseEventOpt.map(e -> e.getPayloadAsJsonString(true)), res.recordTraceId,
+			res.replayTraceId,
+			res.recordedSpanId, res.recordedParentSpanId,
+			res.replayedSpanId, res.replayedParentSpanId,
+			Optional.empty(), Optional.empty(),
+			Optional.empty(), Optional.empty(), Optional.empty()
+			, Optional.empty(), Optional.empty());
+
+
+		Map jsonMap = new HashMap();
+		jsonMap.put("res", matchRes);
+		return Response.ok().entity(jsonMap).build();
+	}
+
+
 	/**
-         * @param config
-         */
+	 * @param config
+	 */
 	@Inject
 	public AnalyzeWS(Config config) {
 		super();

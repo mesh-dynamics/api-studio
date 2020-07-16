@@ -13,9 +13,9 @@ public class ReplayDriverFactory {
 			case HTTP:
 				driver = new HttpReplayDriver(replay, config);
 				break;
-			case THRIFT:
-				driver = new ThriftReplayDriver(replay, config);
-				break;
+//			case THRIFT:
+//				driver = new ThriftReplayDriver(replay, config);
+//				break;
 			default:
 				return Optional.empty();
 		}
