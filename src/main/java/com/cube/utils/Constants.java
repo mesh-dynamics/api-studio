@@ -193,7 +193,7 @@ public class Constants {
 	public static final String REC_TRACE_ID = "recordTraceId";
 	public static final String SPAN_ID_FIELD = "spanId";
     public static final String PARENT_SPAN_ID_FIELD = "parentSpanId";
-    
+
     // VariableSources
     public static final String GOLDEN_REQUEST = "Golden.Request";
     public static final String GOLDEN_RESPONSE = "Golden.Response";
