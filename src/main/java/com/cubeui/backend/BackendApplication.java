@@ -1,7 +1,7 @@
 package com.cubeui.backend;
 
-//import io.md.cube.spring.egress.RestTemplateMockInterceptor;
-//mport io.md.cube.spring.egress.RestTemplateTracingInterceptor;
+import io.md.cube.spring.egress.RestTemplateMockInterceptor;
+import io.md.cube.spring.egress.RestTemplateTracingInterceptor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,8 +28,8 @@ import static com.cubeui.backend.security.Constants.SPRING_PROFILE_DEVELOPMENT;
 
 @Slf4j
 @EnableAsync
-//@SpringBootApplication(scanBasePackages = {"com.cubeui.backend", "io.md.cube"})
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.cubeui.backend", "io.md.cube"})
+//@SpringBootApplication
 public class BackendApplication {
 
     @Autowired RestTemplate restTemplate;
@@ -61,10 +61,11 @@ public class BackendApplication {
 
     @Bean(name = "appRestClient")
     public RestTemplate getRestTemplate() {
+        RestTemplate restTemplate = new RestTemplate();
         ArrayList<ClientHttpRequestInterceptor> interceptors = new ArrayList<>();
-        //interceptors.add(new RestTemplateMockInterceptor());
-        //interceptors.add(new RestTemplateTracingInterceptor());
-        //restTemplate.setInterceptors(interceptors);
+        interceptors.add(new RestTemplateMockInterceptor());
+        interceptors.add(new RestTemplateTracingInterceptor());
+        restTemplate.setInterceptors(interceptors);
         return restTemplate;
     }
 
@@ -90,6 +91,7 @@ public class BackendApplication {
                         "Local: \t\t{}://localhost:{}{}\n\t" +
                         "External: \t{}://{}:{}{}\n\t" +
                         "Profile(s): \t{}\n" +
+                        "DF Enabled\n" +
                         "-------------------------------------------------------------",
                 env.getProperty("spring.application.name"), protocol, serverPort, contextPath, protocol, hostAddress,
                 serverPort, contextPath, env.getActiveProfiles());
