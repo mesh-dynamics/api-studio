@@ -59,6 +59,7 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
+import org.apache.solr.common.util.Pair;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -1445,8 +1446,8 @@ public class AnalyzeWS {
       Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).or(()->Optional.of(50));
       Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
       if(apiTraceFacetQuery.traceIds.isEmpty()) {
-        Map<String, List> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start, Optional.of(0), Arrays.asList(EventType.HTTPRequest));
-        List<String> traceIds = result.get(Constants.TRACEIDS);
+        Pair<List, Stream<Event>> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start, Optional.of(0), Arrays.asList(EventType.HTTPRequest));
+        List<String> traceIds = result.first();
         apiTraceFacetQuery.withTraceIds(traceIds);
       }
       ArrayList<ApiTraceResponse> response = new ArrayList<>();
@@ -1455,14 +1456,13 @@ public class AnalyzeWS {
          *currently we are supporting only HTTPRequest and HTTPResponse
          * we need to change the logic to support other eventTypes
          */
-        Map<String, List> result = rrstore
+        Pair<List, Stream<Event>> result = rrstore
             .getApiTrace(apiTraceFacetQuery, numResults, start, Optional.empty(),
                 Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse));
-        List<Event> responseData = result.get(Constants.RESPONSE);
 
         MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
         MultivaluedMap<String, Event> traceCollectionMap = new MultivaluedHashMap<>();
-        responseData.forEach(
+        result.second().forEach(
             res -> {
               if (res.eventType == EventType.HTTPRequest) {
                 traceCollectionMap.add(res.getTraceId() + " " + res.getCollection(), res);
@@ -1470,9 +1470,9 @@ public class AnalyzeWS {
               mapForEventsTraceIds.add(res.getTraceId() + " " + res.getCollection(), res);
             });
 
-        boolean apiPathExits = apiTraceFacetQuery.apiPath.isPresent();
+        boolean apiPathExists = apiTraceFacetQuery.apiPath.isPresent();
         traceCollectionMap.forEach((traceCollectionKey, events) -> {
-          if (apiPathExits) {
+          if (apiPathExists) {
             for (Event parent : events) {
               response.add(getApiTraceResponse(parent, depth.get(),
                   Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey)));

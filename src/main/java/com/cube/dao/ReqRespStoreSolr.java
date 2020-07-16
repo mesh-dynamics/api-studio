@@ -2655,7 +2655,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Map<String, List> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfFacets, Optional<Integer> start, Optional<Integer> numberOfResults, List<EventType> eventTypes) {
+    public Pair<List, Stream<Event>> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfFacets, Optional<Integer> start, Optional<Integer> numberOfResults, List<EventType> eventTypes) {
 
         final SolrQuery query = getEventQuery(apiTraceFacetQuery);
         addFilter(query, EVENTTYPEF, eventTypes.stream().map(type -> type.toString()).collect(Collectors.toList()));
@@ -2683,8 +2683,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             Map<String, String> map = (LinkedHashMap)facet;
             traceIds.add(map.get(VALFIELD));
         });
-
-        return Map.of(Constants.TRACEIDS, traceIds, Constants.RESPONSE, result.getObjects().collect(Collectors.toList()));
+        return new Pair(traceIds, result.getObjects());
     }
 
 
