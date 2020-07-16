@@ -57,6 +57,7 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
+import org.apache.solr.common.util.Pair;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -1442,31 +1443,34 @@ public class AnalyzeWS {
             }).or(() -> Optional.of(1));
       Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).or(()->Optional.of(50));
       Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
-
-      Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start);
-      MultivaluedMap<String, Event> traceCollectionMap = new MultivaluedHashMap<>();
-      List<String> traceIds = new ArrayList<>();
-      result.getObjects().forEach(res -> {
-        traceCollectionMap.add(res.getTraceId() + " "+ res.getCollection(), res);
-        traceIds.add(res.getTraceId());
-      });
+      if(apiTraceFacetQuery.traceIds.isEmpty()) {
+        Pair<List, Stream<Event>> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start, Optional.of(0), Arrays.asList(EventType.HTTPRequest));
+        List<String> traceIds = result.first();
+        apiTraceFacetQuery.withTraceIds(traceIds);
+      }
       ArrayList<ApiTraceResponse> response = new ArrayList<>();
-      if(!traceIds.isEmpty()) {
+      if(!apiTraceFacetQuery.traceIds.isEmpty()) {
         /**TODO: we need to update the trace for other event types
          *currently we are supporting only HTTPRequest and HTTPResponse
          * we need to change the logic to support other eventTypes
          */
-        EventQuery.Builder builder = new EventQuery.Builder(customerId, appId,
-            Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse));
-        builder.withTraceIds(traceIds);
-        apiTraceFacetQuery.collection.ifPresent(builder::withCollection);
-        Result<Event> eventResultsForTraceIds = rrstore.getEvents(builder.build());
-        MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
-        eventResultsForTraceIds.getObjects().forEach(
-            res -> mapForEventsTraceIds.add(res.getTraceId() + " " + res.getCollection(), res));
+        Pair<List, Stream<Event>> result = rrstore
+            .getApiTrace(apiTraceFacetQuery, numResults, start, Optional.empty(),
+                Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse));
 
+        MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
+        MultivaluedMap<String, Event> traceCollectionMap = new MultivaluedHashMap<>();
+        result.second().forEach(
+            res -> {
+              if (res.eventType == EventType.HTTPRequest) {
+                traceCollectionMap.add(res.getTraceId() + " " + res.getCollection(), res);
+              }
+              mapForEventsTraceIds.add(res.getTraceId() + " " + res.getCollection(), res);
+            });
+
+        boolean apiPathExists = apiTraceFacetQuery.apiPath.isPresent();
         traceCollectionMap.forEach((traceCollectionKey, events) -> {
-          if (apiTraceFacetQuery.apiPath.isPresent()) {
+          if (apiPathExists) {
             for (Event parent : events) {
               response.add(getApiTraceResponse(parent, depth.get(),
                   Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey)));
@@ -1494,7 +1498,6 @@ public class AnalyzeWS {
           }
         });
       }
-
       Map jsonMap = new HashMap();
 
       jsonMap.put("response", response);

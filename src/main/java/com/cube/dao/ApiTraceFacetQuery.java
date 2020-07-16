@@ -3,6 +3,8 @@ package com.cube.dao;
 import com.cube.core.Utils;
 import com.cube.utils.Constants;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -14,7 +16,7 @@ public class ApiTraceFacetQuery {
   public final Optional<String> instanceId;
   public final Optional<Instant> startDate;
   public final Optional<Instant> endDate;
-  public final Optional<String> traceId;
+  public  List<String> traceIds;
   public final Optional<String> recordingType;
   public final Optional<String> collection;
 
@@ -26,7 +28,7 @@ public class ApiTraceFacetQuery {
     this.instanceId = Optional.empty();
     this.startDate = Optional.empty();
     this.endDate = Optional.empty();
-    this.traceId = Optional.empty();
+    this.traceIds = Collections.emptyList();
     this.recordingType = Optional.empty();
     this.collection = Optional.empty();
   }
@@ -44,10 +46,12 @@ public class ApiTraceFacetQuery {
     Optional<String> startDate = Optional.ofNullable(queryParams.getFirst(Constants.START_DATE_FIELD));
     this.endDate = endDate.flatMap(Utils::strToTimeStamp);
     this.startDate = startDate.flatMap(Utils::strToTimeStamp);
-    this.traceId = Optional
-        .ofNullable(queryParams.getFirst(Constants.TRACE_ID_FIELD));
+    this.traceIds = Optional
+        .ofNullable(queryParams.get(Constants.TRACE_ID_FIELD)).orElse(Collections.emptyList());
     this.recordingType = Optional.ofNullable(queryParams.getFirst(Constants.RECORDING_TYPE_FIELD));
     this.collection = Optional.ofNullable(queryParams.getFirst(Constants.COLLECTION_FIELD));
   }
-
+  public void withTraceIds(List<String> traceIds) {
+    this.traceIds = traceIds;
+  }
 }

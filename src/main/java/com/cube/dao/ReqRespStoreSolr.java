@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -2654,14 +2655,35 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Result<Event> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfResults, Optional<Integer> start) {
+    public Pair<List, Stream<Event>> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfFacets, Optional<Integer> start, Optional<Integer> numberOfResults, List<EventType> eventTypes) {
 
         final SolrQuery query = getEventQuery(apiTraceFacetQuery);
-        addFilter(query, EVENTTYPEF, EventType.HTTPRequest.toString());
-        addFilter(query, TRACEIDF, apiTraceFacetQuery.traceId);
-        addSort(query, TRACEIDF, false /* desc */);
-        return SolrIterator.getResults(solr, query, numOfResults,
+        addFilter(query, EVENTTYPEF, eventTypes.stream().map(type -> type.toString()).collect(Collectors.toList()));
+        addFilter(query, TRACEIDF, apiTraceFacetQuery.traceIds);
+        addSort(query, TIMESTAMPF, false /* desc */);
+        FacetQ traceIdFacetq = new FacetQ();
+        Facet traceIdf = Facet.createTermFacet(TRACEIDF, Optional.empty());
+        traceIdFacetq.addFacet(TRACEIDFACET, traceIdf);
+
+        query.setFacetMinCount(1);
+        numOfFacets.ifPresent(query::setFacetLimit);
+        String jsonFacets;
+        try {
+            jsonFacets = config.jsonMapper.writeValueAsString(traceIdFacetq);
+            query.add(SOLRJSONFACETPARAM, jsonFacets);
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting facets to json"), e);
+        }
+
+        Result<Event> result = SolrIterator.getResults(solr, query, numberOfResults,
             this::docToEvent, start);
+        List<String> traceIds = new ArrayList<>();
+        ArrayList traceIdFacetResults = result.getFacets(FACETSFIELD, TRACEIDFACET, BUCKETFIELD);
+        traceIdFacetResults.forEach(facet -> {
+            Map<String, String> map = (LinkedHashMap)facet;
+            traceIds.add(map.get(VALFIELD));
+        });
+        return new Pair(traceIds, result.getObjects());
     }
 
 
@@ -2994,6 +3016,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String RESPMTFACET = "respmt_facets";
     private static final String PATHFACET = "path_facets";
     private static final String SERVICEFACET = "service_facets";
+    private static final String TRACEIDFACET = "traceId_facets";
     private static final String INSTANCEFACET = "instance_facets";
     private static final String SOLRJSONFACETPARAM = "json.facet"; // solr facet query param
     private static final String BUCKETFIELD = "buckets"; // term in solr results indicating facet buckets
