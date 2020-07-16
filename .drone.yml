@@ -125,6 +125,18 @@ steps:
         exclude:
         - pull_request
 
+  - name: Run_event_path_test
+    image: spotify/alpine
+    command:
+    - ./eventPathtest.sh
+    when:
+      branch:
+      - develop
+      - staging
+      event:
+        include:
+        - pull_request
+
   - name: notify
     image: drillster/drone-email
     settings:
