@@ -716,7 +716,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Map getAgentConfigWithFacets(String customerId, String app, Optional<String> service,
+    public Pair<List, Stream<ConfigDAO>> getAgentConfigWithFacets(String customerId, String app, Optional<String> service,
         Optional<String> instanceId, Optional<Integer> numOfResults, Optional<Integer> start) {
         SolrQuery query = getAgentConfigQuery(customerId, app, service, instanceId);
         addFilter(query, LATESTF, true);
@@ -758,10 +758,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             ((HashMap)instanceFacetResult).put(TAGFACET,tagFacetResults);
         });
 
-
-        List<ConfigDAO> configs = result.getObjects().collect(Collectors.toList());
-
-        return Map.of("facets", Map.of(INSTANCEFACET, instanceFacetResults), "configs", configs);
+        return new Pair(instanceFacetResults, result.getObjects());
     }
 
     private SolrInputDocument agentToSolrDoc(ConfigDAO store) {

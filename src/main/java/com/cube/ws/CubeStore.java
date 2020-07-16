@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -610,9 +611,10 @@ public class CubeStore {
         Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD))
             .flatMap(Utils::strToInt);
         try {
-            Map result = rrstore.getAgentConfigWithFacets(customerId, app, service, instanceId,
+            Pair<List, Stream<ConfigDAO>> result = rrstore.getAgentConfigWithFacets(customerId, app, service, instanceId,
                 numResults, start);
-            return Response.ok().type(MediaType.APPLICATION_JSON).entity(result).build();
+            Map response = Map.of("facets", Map.of("instance_facets", result.first()), "configs", result.second());
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity(response).build();
 
         } catch (Exception e) {
             LOGGER.error(
