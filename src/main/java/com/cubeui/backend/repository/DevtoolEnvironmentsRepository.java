@@ -9,7 +9,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface DevtoolEnvironmentsRepository extends JpaRepository<DtEnvironment, Long> {
-
-  //@Query("SELECT j FROM JiraIssueDetails j WHERE (j.user = :user) AND (:replayId is null or j.replayId = :replayId) AND (:apiPath is null or j.apiPath = :apiPath) AND (:requestId is null or j.requestId = :requestId) AND (:jsonPath is null or j.jsonPath = :jsonPath) ")
   Optional<List<DtEnvironment>> findDtEnvironmentsByUser(User user);
+  Optional<DtEnvironment> findDtEnvironmentById(Long id);
+  Optional<DtEnvironment> findDtEnvironmentByUserAndName(User user, String name);
+  Optional<DtEnvironment> findDtEnvironmentByUserAndNameAndIdNot(User user, String name, Long id);
 }

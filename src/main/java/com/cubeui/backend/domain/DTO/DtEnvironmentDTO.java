@@ -9,6 +9,8 @@ import lombok.ToString;
 @Getter
 @ToString
 public class DtEnvironmentDTO {
+  Long id;
+
   @NotEmpty
   String name;
 
