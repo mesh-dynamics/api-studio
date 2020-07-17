@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/environment")
+@RequestMapping("/api/dtEnvironment")
 public class DevtoolEnvironmentsController {
 
   private DevtoolEnvironmentsRepository devtoolEnvironmentsRepository;
@@ -67,9 +67,10 @@ public class DevtoolEnvironmentsController {
   public ResponseEntity updateEnvironments(@RequestBody DtEnvironmentDTO environment,
       Authentication authentication, @PathVariable @NotEmpty Long id){
     User user = (User) authentication.getPrincipal();
+
+    // fetch environment with the given id
     Optional<DtEnvironment> dtEnvironmentOptional
         = devtoolEnvironmentsRepository.findDtEnvironmentById(id);
-
     if (dtEnvironmentOptional.isEmpty()) {
       throw new EnvironmentNotFoundException(id);
     }
@@ -77,13 +78,11 @@ public class DevtoolEnvironmentsController {
     DtEnvironment dtEnvironmentById = dtEnvironmentOptional.get();
 
     // check if some other environment has the same name
-    Optional<DtEnvironment> dtEnvironmentNameCheckOptional = devtoolEnvironmentsRepository.findDtEnvironmentByUserAndNameAndIdNot(user, environment.getName(), dtEnvironmentById.getId());
-
-    // check if the object with the same name isn't this one
-    //Boolean nameAlreadyPresent = dtEnvironmentNameCheckOptional.map(dtEnvironmentByName -> (!dtEnvironmentById.getId().equals(dtEnvironmentByName.getId()))).orElse(false);
+    Optional<DtEnvironment> dtEnvironmentNameCheckOptional
+        = devtoolEnvironmentsRepository.findDtEnvironmentByUserAndNameAndIdNot(user, environment.getName(), dtEnvironmentById.getId());
 
     if(dtEnvironmentNameCheckOptional.isPresent()) {
-      throw new EnvironmentNameExitsException(dtEnvironmentById.getName());
+      throw new EnvironmentNameExitsException(environment.getName());
     }
 
     dtEnvironmentById.setName(environment.getName());
@@ -104,7 +103,7 @@ public class DevtoolEnvironmentsController {
 
 
 
-  @GetMapping("/delete/{id}")
+  @PostMapping("/delete/{id}")
   public ResponseEntity<String> deleteEnvironment(@PathVariable @NotEmpty Long id, Authentication authentication) {
     User user = (User) authentication.getPrincipal();
     Optional<DtEnvironment> dtEnvironmentOptional = devtoolEnvironmentsRepository
