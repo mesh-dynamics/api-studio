@@ -10,6 +10,7 @@ public class ConfigDAO {
   public final String instanceId;
   public String tag;
   public Config configJson;
+  public boolean isLatest;
 
   public ConfigDAO() {
     this.customerId = null;
@@ -18,6 +19,7 @@ public class ConfigDAO {
     this.service = null;
     this.instanceId = null;
     this.configJson = null;
+    this.isLatest = false;
   }
 
   public ConfigDAO(String customerId, String app, String service,
@@ -42,4 +44,7 @@ public class ConfigDAO {
     this.version = version;
   }
 
+  public void setIsLatest(boolean isLatest) {
+    this.isLatest = isLatest;
+  }
 }
