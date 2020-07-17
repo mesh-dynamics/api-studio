@@ -663,17 +663,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         int maxVersion = currentDoc.flatMap(this::extractVersionFromDoc).orElse(0);
         store.setVersion(maxVersion+1);
-        store.setLatest(true);
+        store.setIsLatest(true);
         SolrInputDocument doc = agentToSolrDoc(store);
         return saveDoc(doc) && softcommit();
     }
 
     private boolean updateAgentConfigDoc(SolrDocument entry) {
-        entry.setField(LATESTF, false);
+        entry.setField(ISLATESTF, false);
         entry.remove("_version_");
         SolrInputDocument doc = new SolrInputDocument();
         entry.forEach((key, val) -> doc.setField(key, val));
-        return saveDoc(doc) && softcommit();
+        return saveDoc(doc);
     }
 
     private  Optional<Integer> extractVersionFromDoc(SolrDocument entry) {
@@ -719,7 +719,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Pair<List, Stream<ConfigDAO>> getAgentConfigWithFacets(String customerId, String app, Optional<String> service,
         Optional<String> instanceId, Optional<Integer> numOfResults, Optional<Integer> start) {
         SolrQuery query = getAgentConfigQuery(customerId, app, service, instanceId);
-        addFilter(query, LATESTF, true);
+        addFilter(query, ISLATESTF, true);
         FacetQ instanceIdFacetq = new FacetQ();
         Facet instanceIdf = Facet.createTermFacet(INSTANCEIDF, Optional.empty());
 
@@ -770,7 +770,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(SERVICEF, store.service);
         doc.setField(INSTANCEIDF, store.instanceId);
         doc.setField(TAG_F, store.tag);
-        doc.setField(LATESTF, store.latest);
+        doc.setField(ISLATESTF, store.isLatest);
         try {
             doc.setField(CONFIG_JSON_F, config.jsonMapper.writeValueAsString(store.configJson));
         } catch (JsonProcessingException e) {
@@ -788,12 +788,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> instanceId = getStrField(doc, INSTANCEIDF);
         Optional<String> configJson = getStrField(doc, CONFIG_JSON_F);
         Optional<String> tag = getStrField(doc, TAG_F);
-        Optional<Boolean> latest = getBoolField(doc, LATESTF);
+        Optional<Boolean> latest = getBoolField(doc, ISLATESTF);
         ConfigDAO agentStore = new ConfigDAO(customerId.orElse(null),
             app.orElse(null), service.orElse(null), instanceId.orElse(null),
             tag.orElse(null));
         agentStore.setVersion(version.orElse(0));
-        agentStore.setLatest(latest.orElse(false));
+        agentStore.setIsLatest(latest.orElse(false));
         try {
             configJson.ifPresent(UtilException.rethrowConsumer(config ->
                 agentStore.setConfigJson(this.config.jsonMapper.readValue(config
@@ -909,7 +909,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Constants.STATIC_INJECTION_MAP_FIELD + STRING_SUFFIX;
 
     private static final String TAG_F = Constants.TAG_FIELD + STRING_SUFFIX;
-    private static final String LATESTF = "latest" + BOOLEAN_SUFFIX;
+    private static final String ISLATESTF = "isLatest" + BOOLEAN_SUFFIX;
 
 
     private String storeTemplateSetMetadata(TemplateSet templateSet, List<String> templateIds
