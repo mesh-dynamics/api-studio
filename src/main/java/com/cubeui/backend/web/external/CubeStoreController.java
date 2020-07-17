@@ -259,4 +259,12 @@ public class CubeStoreController {
         validation.validateCustomerName(request, customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
+
+    @GetMapping("/fetchAgentConfigWithFacets/{customerId}/{app}")
+    public ResponseEntity fetchAgentConfigWithFacets(HttpServletRequest request,
+        @RequestBody Optional<String> getBody, @PathVariable String customerId,
+        @PathVariable String app) {
+        validation.validateCustomerName(request, customerId);
+        return cubeServerService.fetchGetResponse(request, getBody);
+    }
 }
