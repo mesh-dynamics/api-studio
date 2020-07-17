@@ -49,7 +49,7 @@ public class Event implements MDStorable {
 	private Event(String customerId, String app, String service, String instanceId,
 		String collection, String traceId, String spanId, String parentSpanId,
 		RunType runType, Instant timestamp, String reqId, String apiPath, EventType eventType,
-		Payload payload, int payloadKey, RecordingType recordingType, Map<String, String> metaData) {
+		Payload payload, int payloadKey, RecordingType recordingType, Map<String, String> metaData, Optional<String> runId) {
 		this.customerId = customerId;
 		this.app = app;
 		this.service = service;
@@ -67,6 +67,7 @@ public class Event implements MDStorable {
 		this.payloadKey = payloadKey;
 		this.recordingType = recordingType;
 		this.metaData = metaData;
+		this.runId = runId;
 	}
 
 	/**
@@ -90,6 +91,7 @@ public class Event implements MDStorable {
 		this.payloadKey = 0;
 		this.recordingType = RecordingType.Golden;
 		this.metaData = null;
+		this.runId = Optional.empty();
 	}
 
 	public static List<EventType> getRequestEventTypes() {
@@ -298,6 +300,7 @@ public class Event implements MDStorable {
 	public final String spanId;
 	public final String parentSpanId;
 	private RunType runType;
+	public final Optional<String> runId;
 
 
 	public void setCollection(String collection) {
@@ -355,6 +358,7 @@ public class Event implements MDStorable {
 		private int payloadKey = 0;
 		private final RecordingType recordingType;
 		private Map<String, String> metaData = Collections.EMPTY_MAP;
+		private Optional<String> runId;
 
 
 		public EventBuilder(String customerId, String app, String service, String instanceId,
@@ -375,6 +379,7 @@ public class Event implements MDStorable {
 			this.apiPath = apiPath;
 			this.eventType = eventType;
 			this.recordingType = recordingType;
+			this.runId = Optional.empty();
 		}
 
 		public EventBuilder(CubeMetaInfo cubeMetaInfo, MDTraceInfo mdTraceInfo,
@@ -394,6 +399,7 @@ public class Event implements MDStorable {
 			this.reqId = reqId;
 			this.collection = collection;
 			this.recordingType = recordingType;
+			this.runId = Optional.empty();
 		}
 
 
@@ -412,10 +418,15 @@ public class Event implements MDStorable {
 			return this;
 		}
 
+		public EventBuilder withRunId(Optional<String> rundId) {
+			this.runId = rundId;
+			return this;
+		}
+
 		public Event createEvent() throws io.md.dao.Event.EventBuilder.InvalidEventException {
 			Event event = new Event(customerId, app, service, instanceId, collection, traceId
 				, spanId, parentSpanId, runType, timestamp.orElse(Instant.now()), reqId, apiPath,
-				eventType , payload, payloadKey, recordingType, metaData);
+				eventType , payload, payloadKey, recordingType, metaData, runId);
 			if (event.validate()) {
 				return event;
 			} else {
