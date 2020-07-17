@@ -9,8 +9,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface DevtoolEnvironmentsRepository extends JpaRepository<DtEnvironment, Long> {
-  Optional<List<DtEnvironment>> findDtEnvironmentsByUser(User user);
+  Optional<List<DtEnvironment>> findDtEnvironmentsByUserId(Long userId);
   Optional<DtEnvironment> findDtEnvironmentById(Long id);
-  Optional<DtEnvironment> findDtEnvironmentByUserAndName(User user, String name);
-  Optional<DtEnvironment> findDtEnvironmentByUserAndNameAndIdNot(User user, String name, Long id);
+  Optional<DtEnvironment> findDtEnvironmentByUserIdAndName(Long userId, String name);
+  Optional<DtEnvironment> findDtEnvironmentByUserIdAndNameAndIdNot(Long userId, String name, Long id);
 }

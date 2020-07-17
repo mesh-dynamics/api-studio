@@ -38,7 +38,7 @@ public class DevtoolEnvironmentsController {
     User user = (User) authentication.getPrincipal();
     Optional<DtEnvironment> dtEnvironmentOptional
         = devtoolEnvironmentsRepository
-        .findDtEnvironmentByUserAndName(user, environment.getName());
+        .findDtEnvironmentByUserIdAndName(user.getId(), environment.getName());
     if (dtEnvironmentOptional.isPresent()) {
       throw new EnvironmentNameExitsException(environment.getName());
     }
@@ -79,7 +79,7 @@ public class DevtoolEnvironmentsController {
 
     // check if some other environment has the same name
     Optional<DtEnvironment> dtEnvironmentNameCheckOptional
-        = devtoolEnvironmentsRepository.findDtEnvironmentByUserAndNameAndIdNot(user, environment.getName(), dtEnvironmentById.getId());
+        = devtoolEnvironmentsRepository.findDtEnvironmentByUserIdAndNameAndIdNot(user.getId(), environment.getName(), dtEnvironmentById.getId());
 
     if(dtEnvironmentNameCheckOptional.isPresent()) {
       throw new EnvironmentNameExitsException(environment.getName());
@@ -105,7 +105,6 @@ public class DevtoolEnvironmentsController {
 
   @PostMapping("/delete/{id}")
   public ResponseEntity<String> deleteEnvironment(@PathVariable @NotEmpty Long id, Authentication authentication) {
-    User user = (User) authentication.getPrincipal();
     Optional<DtEnvironment> dtEnvironmentOptional = devtoolEnvironmentsRepository
         .findDtEnvironmentById(id);
     return dtEnvironmentOptional
@@ -120,7 +119,7 @@ public class DevtoolEnvironmentsController {
   public ResponseEntity getEnvironments(Authentication authentication){
     User user = (User) authentication.getPrincipal();
     Optional<List<DtEnvironment>> environmentOptional = devtoolEnvironmentsRepository
-        .findDtEnvironmentsByUser((user));
+        .findDtEnvironmentsByUserId((user.getId()));
     return environmentOptional
         .map(ResponseEntity::ok)
         .orElse(ResponseEntity.ok().body(Collections.emptyList()));
