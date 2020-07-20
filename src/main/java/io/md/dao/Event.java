@@ -300,7 +300,7 @@ public class Event implements MDStorable {
 	public final String spanId;
 	public final String parentSpanId;
 	private RunType runType;
-	public final Optional<String> runId;
+	public Optional<String> runId;
 
 
 	public void setCollection(String collection) {
@@ -336,6 +336,7 @@ public class Event implements MDStorable {
 	public RunType getRunType() {return this.runType;}
 
 	public void setRunType(RunType runType) {this.runType = runType;}
+	public void setRunId(Optional<String> runId) {this.runId = runId;}
 
 	public static class EventBuilder {
 

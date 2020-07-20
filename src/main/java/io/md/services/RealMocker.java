@@ -44,9 +44,9 @@ public class RealMocker implements Mocker {
 
     @Override
     public MockResponse mock(Event reqEvent, Optional<Instant> lowerBoundForMatching, Optional<MockWithCollection> mockWithCollections) throws MockerException {
-        Optional<String> recordingCollection = setPayloadKeyAndCollection(reqEvent, mockWithCollections);
-        if (recordingCollection.isPresent()) {
-            EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, 1, true, lowerBoundForMatching, recordingCollection.get());
+        Optional<MockWithCollection> mockWithCollection = setPayloadKeyAndCollection(reqEvent, mockWithCollections);
+        if (mockWithCollection.isPresent()) {
+            EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, 1, true, lowerBoundForMatching, mockWithCollection.get().recordCollection);
             DSResult<Event> res = cube.getEvents(eventQuery);
             Optional<Event> matchingResponse = res.getObjects().findFirst()
                 .flatMap(cube::getRespEventForReqEvent);
@@ -62,7 +62,7 @@ public class RealMocker implements Mocker {
                         "Unable to mock request since no default response found"));
                 }
             }
-            createResponseFromEvent(reqEvent, matchingResponse);
+            createResponseFromEvent(reqEvent, matchingResponse, mockWithCollection.get().runId);
             return new MockResponse(matchingResponse, res.getNumFound());
         } else {
             String errorReason = "Invalid event or no record/replay found.";
@@ -101,28 +101,35 @@ public class RealMocker implements Mocker {
         return builder.build();
     }
 
-    private Optional<String> setPayloadKeyAndCollection(Event event, Optional<MockWithCollection> mockWithCollections) {
-        Optional<String> ret = Optional.empty();
+    private Optional<MockWithCollection> setPayloadKeyAndCollection(Event event, Optional<MockWithCollection> mockWithCollections) {
+        Optional<MockWithCollection> ret = Optional.empty();
         Optional<String> replayCollection = Optional.empty();
         Optional<String> collection = Optional.empty();
         Optional<String> templateVersion = Optional.empty();
+        Optional<String> runId = Optional.empty();
         if (mockWithCollections.isPresent()) {
             MockWithCollection mockWithCollection = mockWithCollections.get();
             replayCollection = Optional.of(mockWithCollection.replayCollection);
             collection = Optional.of(mockWithCollection.recordCollection);
             templateVersion = Optional.of(mockWithCollection.templateVersion);
+            runId = mockWithCollection.runId;
         } else {
             Optional<RecordOrReplay> recordOrReplay = cube.getCurrentRecordOrReplay(event.customerId, event.app, event.instanceId);
             replayCollection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
             collection = recordOrReplay.flatMap(RecordOrReplay::getRecordingCollection);
             templateVersion = recordOrReplay.map(RecordOrReplay::getTemplateVersion);
+            runId = recordOrReplay.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay)
+                .flatMap(replay -> replay.runId);
         }
         // check collection, validate, fetch template for request, set key and store. If error at any point stop
         if (collection.isPresent() && replayCollection.isPresent() && templateVersion.isPresent()) {
+            ret = mockWithCollections.isPresent() ? mockWithCollections :
+                Optional.of(new MockWithCollection(replayCollection.get(), collection.get(), templateVersion.get(), runId));
             event.setCollection(replayCollection.get());
             try {
                 event.parseAndSetKey(cube.getTemplate(event.customerId, event.app, event.service,
                     event.apiPath, templateVersion.get(), Type.RequestMatch, Optional.ofNullable(event.eventType)));
+                event.setRunId(runId);
             } catch (TemplateNotFoundException e) {
                 LOGGER.error(Utils.createLogMessasge(
                     "message", "Compare template not found.",
@@ -130,7 +137,6 @@ public class RealMocker implements Mocker {
                     "reqId", event.reqId,
                     "path", event.apiPath), e);
             }
-            ret = collection;
         } else {
             LOGGER
                 .error(Utils.createLogMessasge(
@@ -165,7 +171,7 @@ public class RealMocker implements Mocker {
     }
 
     private void createResponseFromEvent(
-        Event mockRequestEvent, Optional<Event> respEvent) {
+        Event mockRequestEvent, Optional<Event> respEvent, Optional<String> runId) {
 
         if (shouldStore(mockRequestEvent.eventType)) {
 
@@ -192,7 +198,7 @@ public class RealMocker implements Mocker {
                 try {
                     Event mockResponseToStore = createMockResponseEvent(respEventVal,
                         Optional.of(mockRequestEvent.reqId),
-                        mockRequestEvent.instanceId, mockRequestEvent.getCollection());
+                        mockRequestEvent.instanceId, mockRequestEvent.getCollection(), runId);
                     cube.save(mockResponseToStore);
                 } catch (Event.EventBuilder.InvalidEventException e) {
                     LOGGER.error(Utils.createLogMessasge(
@@ -216,14 +222,14 @@ public class RealMocker implements Mocker {
     static private Event createMockResponseEvent(Event originalResponse,
         Optional<String> mockReqId,
         String instanceId,
-        String replayCollection) throws Event.EventBuilder.InvalidEventException {
+        String replayCollection, Optional<String> runId) throws Event.EventBuilder.InvalidEventException {
         Event.EventBuilder builder = new Event.EventBuilder(originalResponse.customerId, originalResponse.app,
             originalResponse.service,
             instanceId, replayCollection,
             new MDTraceInfo(originalResponse.getTraceId() , null, null),
             Event.RunType.Replay, Optional.of(Instant.now()),
             mockReqId.orElse("NA"),
-            originalResponse.apiPath, Event.EventType.HTTPResponse, originalResponse.recordingType);
+            originalResponse.apiPath, Event.EventType.HTTPResponse, originalResponse.recordingType).withRunId(runId);
         return builder.setPayload(originalResponse.payload).createEvent();
     }
 

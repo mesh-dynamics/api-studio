@@ -281,7 +281,7 @@ public class Utils {
 		Optional<String> collection, Instant timestamp,
 		Optional<Event.RunType> runType, Optional<String> customerId,
 		Optional<String> app,
-		Comparator comparator)
+		Comparator comparator, Optional<String> runId)
 		throws EventBuilder.InvalidEventException {
 
 
@@ -315,6 +315,7 @@ public class Utils {
 				reqId.orElse("NA"),
 				apiPath, Event.EventType.HTTPRequest, recordingType);
 			eventBuilder.setPayload(httpRequestPayload);
+			eventBuilder.withRunId(runId);
 			Event event = eventBuilder.createEvent();
 			event.parseAndSetKey(comparator.getCompareTemplate());
 
