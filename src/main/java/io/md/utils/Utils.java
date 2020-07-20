@@ -444,7 +444,7 @@ public class Utils {
 	}
 
 	private static final List<String> HTTP_CONTENT_TYPE_HEADERS = Arrays.asList("content-type"
-		/*, "Content-type", "Content-Type", "content-Type"*/);
+		, "Content-type", "Content-Type", "content-Type");
 
 	public static boolean isJsonMimeType(MultivaluedMap<String, String> headers) {
 		return HTTP_CONTENT_TYPE_HEADERS.stream()
