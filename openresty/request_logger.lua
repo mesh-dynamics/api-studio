@@ -245,7 +245,7 @@ cube_response["recordingType"] = recordingType
 resp_headers = upstream_response.header
 resp_headers_multimap = {}
 for k, v in pairs(resp_headers) do
-    resp_headers_multimap[string.lower(k)] = {v}
+    resp_headers_multimap[k] = {v}
 end
 
  
