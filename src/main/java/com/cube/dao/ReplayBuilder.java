@@ -117,7 +117,7 @@ public class ReplayBuilder {
             excludePaths, reqCnt , reqSent , reqFailed, creationTimestamp, sampleRate, intermediateServices,
 			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, mockServices
 	            , testConfigName, goldenName, recordingId, archived,dynamicInjectionConfigVersion,
-				analysisCompleteTimestamp, staticInjectionMap);
+				analysisCompleteTimestamp, staticInjectionMap, Optional.empty());
 	}
 
 	public ReplayBuilder withPaths(List<String> paths) {
