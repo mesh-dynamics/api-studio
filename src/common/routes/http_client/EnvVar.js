@@ -2,27 +2,27 @@ import React, { Component, Fragment } from 'react'
 import { apiCatalogActions } from '../../actions/api-catalog.actions'
 import { connect } from "react-redux";
 import {Modal} from 'react-bootstrap';
-import _ from 'lodash';
+import _, { isError } from 'lodash';
+import { cubeService } from '../../services';
 
 
 class EnvVar extends Component {
     constructor(props) {
         super(props)
         this.state = {
-            environments: [],
-            selectedEnvIndex: 0,
             selectedEnv: {},
-            showEnvList: true,
+            addNew: false,
         }
     }
 
-    componentDidMount() {
-        const {apiCatalog} = this.props;
-        this.setState({environments: apiCatalog.environmentList})
-    }
     
     handleEnvRowClick = (index) => {
-        this.setState({selectedEnvIndex: index, showEnvList: false, selectedEnv: this.state.environments[index]})
+        const {apiCatalog: {
+            environmentList
+        }} = this.props;
+        this.showEnvList(false)
+        const selectedEnv = {...environmentList[index]}
+        this.setState({selectedEnv: selectedEnv, addNew: false})
     }
 
     handleEnvVarKeyChange = (e, index) => {
@@ -44,15 +44,17 @@ class EnvVar extends Component {
     }
 
     handleAddNewEnv = () => {
-        let {environments} = this.state;
-        environments.push({
+        let selectedEnv = {
             name: "",
             vars: [],
-        })
-        let selectedEnvIndex = environments.length - 1
-        let selectedEnv = environments[selectedEnvIndex]
+        }
+        this.showEnvList(false)
+        this.setState({selectedEnv, addNew: true})
+    }
 
-        this.setState({environments, selectedEnvIndex, selectedEnv, showEnvList: false})
+    showEnvList = (show) => {
+        const {dispatch} = this.props;
+        dispatch(apiCatalogActions.showEnvList(show));
     }
 
     handleAddNewEnvVariable = () => {
@@ -65,9 +67,11 @@ class EnvVar extends Component {
     }
 
     handleRemoveEnv = (index) => {
-        let {environments} = this.state;
-        environments.splice(index, 1)
-        this.setState({environments})
+        const {apiCatalog: {
+            environmentList
+        }, dispatch} = this.props;
+        
+        dispatch(apiCatalogActions.removeEnvironment(environmentList[index].id))
     }
 
     handleRemoveEnvVariable = (index) => {
@@ -76,27 +80,54 @@ class EnvVar extends Component {
         this.setState({selectedEnv})
     }
 
-    handleSaveEnvironments = () => {
-        const {dispatch, hideModal} = this.props;
-        dispatch(apiCatalogActions.updateEnvironments(this.state.environments))
-        hideModal();
-    }
-
-    handleDoneEnv = () => {
+    handleSaveEnvironment = () => {
+        const {dispatch} = this.props;
         const {selectedEnv} = this.state;
         if (_.isEmpty(selectedEnv.name)) {
-            alert("Environment name cannot be empty")
+            this.setEnvStatusText("Environment name cannot be empty", true)
             return
         }
-        this.setState({showEnvList: true})
+        dispatch(apiCatalogActions.saveEnvironment(selectedEnv));
+    }
+
+    handleUpdateEnvironment = () => {
+        const {dispatch} = this.props;
+        const {selectedEnv} = this.state;
+        if (_.isEmpty(selectedEnv.name)) {
+            this.setEnvStatusText("Environment name cannot be empty", true)
+            return
+        }
+        dispatch(apiCatalogActions.updateEnvironment(selectedEnv));
+    }
+
+    setEnvStatusText = (text, isError) => {
+        const {dispatch} = this.props;
+        dispatch(apiCatalogActions.setEnvStatusText(text, isError))
+    }
+
+    resetEnvStatusText = () => {
+        const {dispatch} = this.props;
+        dispatch(apiCatalogActions.resetEnvStatusText())
+    }
+
+    handleBackEnv = () => {
+        this.resetEnvStatusText()
+        this.showEnvList(true)
+    }
+
+    componentWillUnmount() {
+        this.showEnvList(true)
     }
 
     render() {
-        const {environments, selectedEnvIndex, showEnvList, selectedEnv} = this.state;
+        const {selectedEnv, addNew} = this.state;
+        const {apiCatalog: {
+            environmentList, envStatusText, envStatusIsError, showEnvList
+        }} = this.props;
         return (
             <Fragment>
                 <Modal.Header closeButton>
-                    Configure Environment
+                    Configure Environments
                 </Modal.Header>
                 <Modal.Body>
                     <div style={{height: "300px", overflowY: "scroll"}}>
@@ -104,7 +135,7 @@ class EnvVar extends Component {
                             <label>Environments</label>
                             <table className="table table-hover">
                                 <tbody>
-                                    {environments.map((environment, index) => (
+                                    {environmentList.map((environment, index) => (
                                         <tr>
                                             <td style={{cursor: "pointer"}} onClick={() => this.handleEnvRowClick(index)}>
                                                 {environment.name}
@@ -160,8 +191,11 @@ class EnvVar extends Component {
                     </div>
                 </Modal.Body>
                 <Modal.Footer>
-                    {showEnvList && <span className="cube-btn margin-left-15" onClick={this.handleSaveEnvironments}>SAVE</span>}
-                    {!showEnvList && <span className="cube-btn margin-left-15" onClick={this.handleDoneEnv}>DONE</span>}
+                    <span className="pull-left" style={{color: envStatusIsError ? "red" : ""}}>{envStatusText}</span>
+                    {showEnvList && <span className="cube-btn margin-left-15" onClick={this.props.hideModal}>DONE</span>}
+                    {!showEnvList && <span className="cube-btn margin-left-15" onClick={this.handleBackEnv}>BACK</span>}
+                    {!showEnvList && addNew && <span className="cube-btn margin-left-15" onClick={this.handleSaveEnvironment}>SAVE</span>}
+                    {!showEnvList && !addNew && <span className="cube-btn margin-left-15" onClick={this.handleUpdateEnvironment}>UPDATE</span>}
                 </Modal.Footer>
             </Fragment>
         )

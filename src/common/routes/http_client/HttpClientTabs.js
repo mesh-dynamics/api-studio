@@ -31,6 +31,7 @@ import {
 } from "../../utils/diff/diff-process.js";
 import EnvVar from "./EnvVar";
 import Mustache from "mustache"
+import { apiCatalogActions } from "../../actions/api-catalog.actions";
 
 class HttpClientTabs extends Component {
 
@@ -1297,6 +1298,8 @@ class HttpClientTabs extends Component {
                 }
             });
         }
+
+        dispatch(apiCatalogActions.fetchEnvironments())
     }
 
     componentWillUnmount() {
