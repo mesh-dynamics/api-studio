@@ -1,11 +1,11 @@
 package com.cubeui.backend;
 
-import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.List;
 import io.md.cube.spring.egress.RestTemplateMockInterceptor;
 import io.md.cube.spring.egress.RestTemplateTracingInterceptor;
@@ -66,9 +66,18 @@ public class BackendApplication {
             public void addCorsMappings(CorsRegistry registry) {
                 final List<String> allowedOrigins = new ArrayList<>();
                 try {
-                    File file = ResourceUtils.getFile(allowedOriginPath);
-                    Files.lines(Paths.get(file.toURI()), StandardCharsets.UTF_8)
-                            .forEach(line -> allowedOrigins.add(line));
+                    InputStream inputStream = null;
+                    if(allowedOriginPath.isEmpty()) {
+                         inputStream =
+                            getClass().getClassLoader().getResourceAsStream("webCorsAllowedOrigins.txt");
+                    }else {
+                        inputStream = new FileInputStream(allowedOriginPath);
+                    }
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream ));
+                    String line;
+                    while((line = reader.readLine()) != null) {
+                        allowedOrigins.add(line);
+                    }
                 } catch (FileNotFoundException e) {
                     log.info("Allowed Origins File not found");
                 } catch (IOException e) {

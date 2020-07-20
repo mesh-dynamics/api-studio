@@ -83,4 +83,4 @@ logging:
 
 allowed:
     origins:
-        path: src/main/resources/webCorsAllowedOrigins.txt
+        path: ""
