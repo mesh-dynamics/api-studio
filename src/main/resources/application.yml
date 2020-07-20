@@ -80,4 +80,7 @@ logging:
         org.springframework.security: DEBUG
         com.cubeui.backend: DEBUG
     file: app.log
-  
+
+allowed:
+    origins:
+        path: src/main/resources/webCorsAllowedOrigins.txt
