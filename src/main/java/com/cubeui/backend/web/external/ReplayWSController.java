@@ -102,4 +102,11 @@ public class ReplayWSController {
         validation.validateCustomerName(request, customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
+
+    @PostMapping("/replay/restart/{customerId}/{app}/{replayId}")
+    public ResponseEntity restartReplay(HttpServletRequest request, @RequestBody Optional<String> postBody,
+        @PathVariable String customerId, @PathVariable String app, @PathVariable String replayId) {
+        validation.validateCustomerName(request, customerId);
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
 }
