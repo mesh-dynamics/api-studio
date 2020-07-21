@@ -566,7 +566,7 @@ class HttpClientTabs extends Component {
         // Make request
         // https://www.mocky.io/v2/5185415ba171ea3a00704eed
         let fetchedResponseHeaders = {}, responseStatus = "", responseStatusText = "";
-        const startDate = new Date(Date.now()).toISOString();
+        const startDate = new Date(Date.now() - 2 * 1000).toISOString();
         return fetch(fetchUrlRendered, fetchConfigRendered).then((response) => {
             responseStatus = response.status;
             responseStatusText = response.statusText;
@@ -754,7 +754,7 @@ class HttpClientTabs extends Component {
                             const jsonTraceReqData = serverRes.data.response && serverRes.data.response.length > 0 ? serverRes.data.response[0] : "";
                             try {
                                 const parsedTraceReqData = JSON.parse(jsonTraceReqData);
-                                const endDate = new Date(Date.now()).toISOString();
+                                const endDate = new Date(Date.now() + 2 * 1000).toISOString();
                                 const httpRequestEventTypeIndex = reqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
                                 const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
                                 const apiPath = httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : ""; 
