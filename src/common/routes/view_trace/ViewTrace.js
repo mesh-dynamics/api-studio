@@ -614,6 +614,13 @@ class ViewTrace extends Component {
         return diffData;
     }
 
+    getParameterCaseInsensitive (object, key) {
+        return object[
+            Object.keys(object)
+            .find(k => k.toLowerCase() === key.toLowerCase())
+        ];
+    }
+
     validateAndCreateDiffLayoutData(replayList) {
         let loggingURL = this.loggingURL;
         let diffLayoutData = replayList.map((item, index) => {
@@ -625,7 +632,8 @@ class ViewTrace extends Component {
             if (item.recordResponse) {
                 recordedResponseHeaders = item.recordResponse.hdrs ? item.recordResponse.hdrs : [];
                 // check if the content type is JSON and attempt to parse it
-                let recordedResponseMime = recordedResponseHeaders["content-type"] ? recordedResponseHeaders["content-type"][0] : "" ;
+                let recordedResponseContentType = this.getParameterCaseInsensitive(recordedResponseHeaders, "content-type");
+                let recordedResponseMime = recordedResponseContentType ? (_.isArray(recordedResponseContentType) ? recordedResponseContentType[0] : recordedResponseContentType) : "";
                 isJson = recordedResponseMime.toLowerCase().indexOf("json") > -1;
                 if (item.recordResponse.body && isJson) {
                     try {
@@ -647,7 +655,8 @@ class ViewTrace extends Component {
             if (item.replayResponse) {
                 replayedResponseHeaders = item.replayResponse.hdrs ? item.replayResponse.hdrs : [];
                 // check if the content type is JSON and attempt to parse it
-                let replayedResponseMime = replayedResponseHeaders["content-type"] ? replayedResponseHeaders["content-type"][0] : "";
+                let replayedResponseContentType = this.getParameterCaseInsensitive(replayedResponseHeaders, "content-type");
+                let replayedResponseMime = replayedResponseContentType ? (_.isArray(replayedResponseContentType) ? replayedResponseContentType[0] : replayedResponseContentType) : "";
                 isJson = replayedResponseMime.toLowerCase().indexOf("json") > -1;
                 if (item.replayResponse.body && isJson) {
                     try {
