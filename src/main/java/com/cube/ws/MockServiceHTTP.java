@@ -211,6 +211,8 @@ public class MockServiceHTTP {
         @PathParam("traceId") String traceId,
         @PathParam("service") String service,
         String body) {
+	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+	    Optional<String> runId = Optional.ofNullable(queryParams.getFirst(Constants.RUN_ID_FIELD));
 
 	    LOGGER.info(String.format(" path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordingId: %s", path,
             ui.toString(), body, replayCollection, recordingId));
@@ -224,7 +226,7 @@ public class MockServiceHTTP {
         }
         Recording recording = optionalRecording.get();
         return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            HttpMethod.GET, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion)), Optional.of(traceId));
+            HttpMethod.GET, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId)), Optional.of(traceId));
     }
 
     @POST
@@ -236,6 +238,8 @@ public class MockServiceHTTP {
         @PathParam("traceId") String traceId,
         @PathParam("service") String service,
         String body) {
+	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+	    Optional<String> runId = Optional.ofNullable(queryParams.getFirst(Constants.RUN_ID_FIELD));
 
 	    LOGGER.info(String.format("path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordingId: %s", path,
             ui.toString(), body, replayCollection, recordingId));
@@ -249,7 +253,7 @@ public class MockServiceHTTP {
         }
         Recording recording = optionalRecording.get();
         return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            HttpMethod.POST, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion)), Optional.of(traceId));
+            HttpMethod.POST, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId)), Optional.of(traceId));
     }
 
 

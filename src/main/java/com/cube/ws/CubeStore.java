@@ -1461,6 +1461,7 @@ public class CubeStore {
             event.eventType, recordingType);
         eventBuilder.setPayload(event.payload);
         eventBuilder.withMetaData(event.metaData);
+        eventBuilder.withRunId(event.runId);
         return eventBuilder.createEvent();
     }
 

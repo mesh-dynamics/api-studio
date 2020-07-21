@@ -111,6 +111,7 @@ public class Constants {
     public static final String INSTANCE_ID_FIELD = "instanceId";
     public static final String COLLECTION_FIELD = "collection";
     public static final String RUN_TYPE_FIELD = "runType";
+    public static final String RUN_ID_FIELD = "runId";
     public static final String PATH_FIELD = "path";
     public static final String MOCK_SERVICES_FIELD ="mockServices";
     public static final String EXCLUDE_PATH_FIELD = "excludePaths";

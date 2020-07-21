@@ -10,6 +10,7 @@ import com.cube.dao.Result;
 import io.md.constants.ReplayStatus;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -315,6 +316,7 @@ public class ReplayWS {
             xfms.ifPresent(replayBuilder::withXfms);
             dynamicInjectionConfigVersion.ifPresent(replayBuilder::withDynamicInjectionConfigVersion);
             staticInjectionMap.ifPresent(replayBuilder::withStaticInjectionMap);
+            replayBuilder.withRunId(Optional.of(replayBuilder.getReplayId() + " " + Instant.now().toString()));
 
             try {
                 recording.generatedClassJarPath

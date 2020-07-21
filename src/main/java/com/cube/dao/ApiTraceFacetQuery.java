@@ -19,6 +19,7 @@ public class ApiTraceFacetQuery {
   public  List<String> traceIds;
   public final Optional<String> recordingType;
   public final Optional<String> collection;
+  public final Optional<String> runId;
 
   public ApiTraceFacetQuery(String customerId, String appId) {
     this.customerId = customerId;
@@ -31,6 +32,7 @@ public class ApiTraceFacetQuery {
     this.traceIds = Collections.emptyList();
     this.recordingType = Optional.empty();
     this.collection = Optional.empty();
+    this.runId = Optional.empty();
   }
 
   public ApiTraceFacetQuery(String customerId, String appId, MultivaluedMap<String, String> queryParams) {
@@ -50,6 +52,7 @@ public class ApiTraceFacetQuery {
         .ofNullable(queryParams.get(Constants.TRACE_ID_FIELD)).orElse(Collections.emptyList());
     this.recordingType = Optional.ofNullable(queryParams.getFirst(Constants.RECORDING_TYPE_FIELD));
     this.collection = Optional.ofNullable(queryParams.getFirst(Constants.COLLECTION_FIELD));
+    this.runId =  Optional.ofNullable(queryParams.getFirst(Constants.RUN_ID_FIELD));
   }
   public void withTraceIds(List<String> traceIds) {
     this.traceIds = traceIds;

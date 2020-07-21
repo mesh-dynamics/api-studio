@@ -2,6 +2,7 @@ package com.cube.queue;
 
 import static io.md.utils.Utils.createHTTPRequestEvent;
 
+import io.md.dao.Replay;
 import java.net.URISyntaxException;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
@@ -102,6 +103,8 @@ public class StoreUtils {
 
 		Optional<Event.RunType> runType = Optional.of(recordOrReplay.get().getRunType());
 		cubeEventMetaInfo.setRunType(runType.map(Enum::name));
+		Optional<Replay> currentRunningReplay = recordOrReplay.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
+		Optional<String> runId = currentRunningReplay.flatMap(replay -> replay.runId);
 
 		Optional<String> collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
 		cubeEventMetaInfo.setCollection(collection);
@@ -145,7 +148,7 @@ public class StoreUtils {
 			try {
 				requestEvent = createHTTPRequestEvent(path, rid, queryParams, formParams, meta,
 					hdrs, method, rr.body, collection, timestamp, runType, customerId,
-					app, requestComparator);
+					app, requestComparator, runId);
 			} catch (EventBuilder.InvalidEventException e) {
 				throw new CubeStoreException(e, "Invalid Event"
 					, cubeEventMetaInfo);
@@ -179,7 +182,7 @@ public class StoreUtils {
 				}
 				responseEvent = Utils
 					.createHTTPResponseEvent(reqApiPath, rid, status, meta, hdrs, rr.body,
-						collection, timestamp, runType, customerId, app, rrstore);
+						collection, timestamp, runType, customerId, app, rrstore, runId);
 
 			} catch (JsonProcessingException | InvalidEventException | URISyntaxException e) {
 				throw new CubeStoreException(e, "Invalid Event"
@@ -222,6 +225,8 @@ public class StoreUtils {
 		if (recordOrReplay.isEmpty()) {
 			throw new CubeStoreException(null, "No current record/replay!", event);
 		}
+		Optional<Replay> currentRunningReplay = recordOrReplay.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
+		currentRunningReplay.ifPresent(replay -> event.setRunId(replay.runId));
 
 		event.setRunType(recordOrReplay.get().getRunType());
 

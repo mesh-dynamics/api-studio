@@ -1120,6 +1120,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     // field names in Solr
     private static final String PATHF = CPREFIX + Constants.PATH_FIELD + STRING_SUFFIX;
+    private static final String RUNIDF = CPREFIX + Constants.RUN_ID_FIELD + STRING_SUFFIX;
     private static final String MOCKSERVICESF = CPREFIX + Constants.MOCK_SERVICES_FIELD + STRINGSET_SUFFIX;
     private static final String REQIDF = CPREFIX + Constants.REQ_ID_FIELD + STRING_SUFFIX;
     private static final String METHODF = CPREFIX + Constants.METHOD_FIELD + STRING_SUFFIX;
@@ -1417,6 +1418,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(PATHF, event.apiPath);
         doc.setField(EVENTTYPEF, event.eventType.toString());
         doc.setField(RECORDING_TYPE_F, event.recordingType.toString());
+        event.runId.ifPresent(runId -> doc.setField(RUNIDF, runId));
         try {
             doc.setField(PAYLOADSTRF, config.jsonMapper.writeValueAsString(event.payload));
         } catch (JsonProcessingException e) {
@@ -1465,12 +1467,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             .flatMap(r -> Utils.valueOf(RecordingType.class, r));
 
         Event.EventType eType = Utils.valueOf(Event.EventType.class, eventType.get()).orElse(null);
+        Optional<String> runId = getStrField(doc,RUNIDF);
 
         EventBuilder eventBuilder = new EventBuilder(customerId.orElse(null)
             , app.orElse(null), service.orElse(null), instanceId.orElse(null)
             , collection.orElse(null), new MDTraceInfo(traceid.orElse(null)
             , spanId.orElse(null), parentSpanId.orElse(null)), runType.orElse(null)
-            , timestamp, reqId.orElse(null), path.orElse(""), eType, recordingType.orElse(RecordingType.Golden)).withMetaData(eventMetaDataMap);;
+            , timestamp, reqId.orElse(null), path.orElse(""), eType, recordingType.orElse(RecordingType.Golden)).withMetaData(eventMetaDataMap)
+            .withRunId(runId);
         // TODO revisit this need to construct payload properly from type and json string
         try {
             payloadStr.ifPresent(UtilException.rethrowConsumer(payload ->
@@ -2668,6 +2672,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, RECORDING_TYPE_F, apiTraceFacetQuery.recordingType, true, includeEmpty);
         addFilter(query, COLLECTIONF,apiTraceFacetQuery.collection);
         addFilter(query, PATHF, apiTraceFacetQuery.apiPath);
+        addFilter(query, RUNIDF, apiTraceFacetQuery.runId);
         return query;
     }
 
