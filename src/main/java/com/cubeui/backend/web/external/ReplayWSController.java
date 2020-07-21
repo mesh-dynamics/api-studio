@@ -109,4 +109,12 @@ public class ReplayWSController {
         validation.validateCustomerName(request, customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
+
+    @GetMapping("/getDynamicInjectionConfig/{customerId}/{app}/{version}")
+    public ResponseEntity getDynamicInjectionConfig(HttpServletRequest request,
+        @RequestBody Optional<String> getBody, @PathVariable String customerId,
+        @PathVariable String app, @PathVariable String version) {
+        validation.validateCustomerName(request,customerId);
+        return cubeServerService.fetchGetResponse(request, getBody);
+    }
 }
