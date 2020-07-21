@@ -1,10 +1,18 @@
 package com.cubeui.backend;
 
-//import io.md.cube.spring.egress.RestTemplateMockInterceptor;
-//mport io.md.cube.spring.egress.RestTemplateTracingInterceptor;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.List;
+import io.md.cube.spring.egress.RestTemplateMockInterceptor;
+import io.md.cube.spring.egress.RestTemplateTracingInterceptor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -13,6 +21,7 @@ import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.util.ResourceUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -28,9 +37,12 @@ import static com.cubeui.backend.security.Constants.SPRING_PROFILE_DEVELOPMENT;
 
 @Slf4j
 @EnableAsync
-//@SpringBootApplication(scanBasePackages = {"com.cubeui.backend", "io.md.cube"})
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.cubeui.backend", "io.md.cube"})
+//@SpringBootApplication
 public class BackendApplication {
+
+    @Value("${allowed.origins.path}")
+    private String allowedOriginPath;
 
     @Autowired RestTemplate restTemplate;
 
@@ -52,19 +64,37 @@ public class BackendApplication {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**").allowedOrigins("http://localhost:3006", "http://demo.dev.cubecorp.io", "http://demo.prod.cubecorp.io", "http://demo.prod.v2.cubecorp.io",
-                    "https://demo.dev.cubecorp.io", "https://demo.prod.cubecorp.io", "https://demo.prod.v2.cubecorp.io", "https://app.meshdynamics.io", "https://medallia.meshdynamics.io",
-                    "https://safensound.meshdynamics.io", "https://staging-mn.dev.cubecorp.io");
+                final List<String> allowedOrigins = new ArrayList<>();
+                try {
+                    InputStream inputStream = null;
+                    if(allowedOriginPath.isEmpty()) {
+                         inputStream =
+                            getClass().getClassLoader().getResourceAsStream("webCorsAllowedOrigins.txt");
+                    }else {
+                        inputStream = new FileInputStream(allowedOriginPath);
+                    }
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream ));
+                    String line;
+                    while((line = reader.readLine()) != null) {
+                        allowedOrigins.add(line);
+                    }
+                } catch (FileNotFoundException e) {
+                    log.info("Allowed Origins File not found");
+                } catch (IOException e) {
+                    log.info("Allowed Origins File Content Exception");
+                }
+                registry.addMapping("/**").allowedOrigins(allowedOrigins.toArray(String[]::new));
             }
         };
     }
 
     @Bean(name = "appRestClient")
     public RestTemplate getRestTemplate() {
+        RestTemplate restTemplate = new RestTemplate();
         ArrayList<ClientHttpRequestInterceptor> interceptors = new ArrayList<>();
-        //interceptors.add(new RestTemplateMockInterceptor());
-        //interceptors.add(new RestTemplateTracingInterceptor());
-        //restTemplate.setInterceptors(interceptors);
+        interceptors.add(new RestTemplateMockInterceptor());
+        interceptors.add(new RestTemplateTracingInterceptor());
+        restTemplate.setInterceptors(interceptors);
         return restTemplate;
     }
 
@@ -90,6 +120,7 @@ public class BackendApplication {
                         "Local: \t\t{}://localhost:{}{}\n\t" +
                         "External: \t{}://{}:{}{}\n\t" +
                         "Profile(s): \t{}\n" +
+                        "DF Enabled\n" +
                         "-------------------------------------------------------------",
                 env.getProperty("spring.application.name"), protocol, serverPort, contextPath, protocol, hostAddress,
                 serverPort, contextPath, env.getActiveProfiles());
