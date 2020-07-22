@@ -12,6 +12,7 @@ import {goldenActions} from '../actions/golden.actions'
 import {validateGoldenName} from "../utils/lib/golden-utils";
 import classNames from "classnames";
 import { cubeService } from '../services';
+import { apiCatalogActions } from '../actions/api-catalog.actions';
 // import { history } from "../helpers";
 // import { Glyphicon } from 'react-bootstrap';
 
@@ -528,6 +529,8 @@ class ViewSelectedTestConfig extends React.Component {
                     if(this.state.recStatus.status === "Completed") {
                         this.setState({stopDisabled: true, stoppingStatus: false});
                         clearInterval(this.stopStatusInterval);
+                        dispatch(cubeActions.getTestIds(selectedApp));
+                        dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "Golden"));
                     } else {
                         this.checkStatus(statusUrl, configForHTTP);
                     }
@@ -535,7 +538,6 @@ class ViewSelectedTestConfig extends React.Component {
                 1000);
         });
 
-        dispatch(cubeActions.getTestIds(selectedApp));
     };
 
     replay = async (instancesForSelectedApp) => {

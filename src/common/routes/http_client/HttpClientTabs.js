@@ -730,7 +730,8 @@ class HttpClientTabs extends Component {
     }
 
     saveToCollection(isOutgoingRequest, tabId, recordingId, type, startDate) {
-        const {tabs, selectedTabKey} = this.state;
+        const {tabs, selectedTabKey, app} = this.state;
+        const {dispatch} = this.props;
         let tabsToProcess = tabs;
         const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
         const tabToProcess = tabsToProcess[tabIndex];
@@ -783,6 +784,10 @@ class HttpClientTabs extends Component {
                         setTimeout(() => {
                             this.loadFromHistory();
                             this.loadUserCollections();
+                            // update api catalog golden and collection lists
+                            dispatch(apiCatalogActions.fetchGoldenCollectionList(app, "Golden"))
+                            dispatch(apiCatalogActions.fetchGoldenCollectionList(app, "UserGolden"))
+
                         }, 2000);
                     }, (error) => {
                         this.setState({
