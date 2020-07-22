@@ -111,6 +111,7 @@ public class Constants {
     public static final String INSTANCE_ID_FIELD = "instanceId";
     public static final String COLLECTION_FIELD = "collection";
     public static final String RUN_TYPE_FIELD = "runType";
+    public static final String RUN_ID_FIELD = "runId";
     public static final String PATH_FIELD = "path";
     public static final String MOCK_SERVICES_FIELD ="mockServices";
     public static final String EXCLUDE_PATH_FIELD = "excludePaths";
@@ -122,6 +123,7 @@ public class Constants {
     public static final String EVENT_TYPE_FIELD = "eventType";
     public static final String JSON_PATH_FIELD = "jsonPath";
     public static final String USER_ID_FIELD = "userId";
+    public static final String END_POINT_FIELD= "endPoint";
     public static final String TEST_CONFIG_NAME_FIELD = "testConfigName";
     public static final String RECORD_REQ_ID_FIELD = "recordReqId";
     public static final String REPLAY_REQ_ID_FIELD = "replayReqId";

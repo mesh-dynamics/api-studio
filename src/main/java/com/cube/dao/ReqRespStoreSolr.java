@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -672,7 +673,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public boolean storeAgentConfig(ConfigDAO store) {
 
         SolrQuery maxVersionQuery = new SolrQuery("*:*");
-        maxVersionQuery.setFields(INT_VERSION_F);
         addFilter(maxVersionQuery, TYPEF, Types.AgentConfig.toString());
         addFilter(maxVersionQuery, CUSTOMERIDF,  store.customerId);
         addFilter(maxVersionQuery, APPF, store.app);
@@ -680,12 +680,22 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(maxVersionQuery,INSTANCEIDF, store.instanceId);
         addFilter(maxVersionQuery,TAG_F, store.tag);
         addSort(maxVersionQuery, INT_VERSION_F, false);
-        int maxVersion =
-            SolrIterator.getSingleResult(solr, maxVersionQuery).
-                flatMap(this::extractVersionFromDoc).orElse(0);
+        Optional<SolrDocument> currentDoc = SolrIterator.getSingleResult(solr, maxVersionQuery);
+        currentDoc.ifPresent(this::updateAgentConfigDoc);
+
+        int maxVersion = currentDoc.flatMap(this::extractVersionFromDoc).orElse(0);
         store.setVersion(maxVersion+1);
+        store.setIsLatest(true);
         SolrInputDocument doc = agentToSolrDoc(store);
         return saveDoc(doc) && softcommit();
+    }
+
+    private boolean updateAgentConfigDoc(SolrDocument entry) {
+        entry.setField(ISLATESTF, false);
+        entry.remove("_version_");
+        SolrInputDocument doc = new SolrInputDocument();
+        entry.forEach((key, val) -> doc.setField(key, val));
+        return saveDoc(doc);
     }
 
     private  Optional<Integer> extractVersionFromDoc(SolrDocument entry) {
@@ -694,6 +704,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private Optional<String> extractTagFromDoc(SolrDocument entry) {
         return getStrField(entry, TAG_F);
+    }
+
+    private SolrQuery getAgentConfigQuery(String customerId, String app, Optional<String> service,
+        Optional<String> instanceId) {
+        SolrQuery query = new SolrQuery("*:*");
+        addFilter(query, TYPEF, ConfigType.AgentConfig.toString());
+        addFilter(query, CUSTOMERIDF, customerId);
+        addFilter(query, APPF, app);
+        addFilter(query, SERVICEF, service);
+        addFilter(query,INSTANCEIDF, instanceId);
+        return query;
     }
 
     @Override
@@ -710,15 +731,56 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             .flatMap(this::extractTagFromDoc).orElse("NA");
 
         // find the latest config the current tag
-        SolrQuery query = new SolrQuery("*:*");
-        addFilter(query, TYPEF, ConfigType.AgentConfig.toString());
-        addFilter(query, CUSTOMERIDF, customerId);
-        addFilter(query, APPF, app);
-        addFilter(query, SERVICEF, service);
-        addFilter(query,INSTANCEIDF, instanceId);
+        SolrQuery query = getAgentConfigQuery(customerId, app, Optional.of(service), Optional.of(instanceId));
         addFilter(query,TAG_F, currentTag);
         addSort(query, INT_VERSION_F, false);
         return SolrIterator.getSingleResult(solr, query).flatMap(this::docToAgent);
+    }
+
+    @Override
+    public Pair<List, Stream<ConfigDAO>> getAgentConfigWithFacets(String customerId, String app, Optional<String> service,
+        Optional<String> instanceId, Optional<Integer> numOfResults, Optional<Integer> start) {
+        SolrQuery query = getAgentConfigQuery(customerId, app, service, instanceId);
+        addFilter(query, ISLATESTF, true);
+        FacetQ instanceIdFacetq = new FacetQ();
+        Facet instanceIdf = Facet.createTermFacet(INSTANCEIDF, Optional.empty());
+
+        FacetQ tagFacetq = new FacetQ();
+        Facet tagf = Facet.createTermFacet(TAG_F, Optional.empty());
+
+        FacetQ serviceFacetq = new FacetQ();
+        Facet servicef = Facet.createTermFacet(SERVICEF, Optional.empty());
+        serviceFacetq.addFacet(SERVICEFACET, servicef);
+
+        tagf.addSubFacet(serviceFacetq);
+        tagFacetq.addFacet(TAGFACET, tagf);
+
+
+        instanceIdf.addSubFacet(tagFacetq);
+        instanceIdFacetq.addFacet(INSTANCEFACET, instanceIdf);
+        query.setFacetMinCount(1);
+        String jsonFacets;
+        try {
+            jsonFacets = config.jsonMapper.writeValueAsString(instanceIdFacetq);
+            query.add(SOLRJSONFACETPARAM, jsonFacets);
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting facets to json"), e);
+        }
+        Result<ConfigDAO> result =  SolrIterator.getResults(solr, query, numOfResults,
+            this::docToAgent, start);
+        ArrayList instanceFacetResults = result.getFacets(FACETSFIELD, INSTANCEFACET, BUCKETFIELD);
+        instanceFacetResults.forEach(instanceFacetResult -> {
+            HashMap tagFacetMap = (HashMap) ((HashMap) instanceFacetResult).get(TAGFACET);
+            ArrayList tagFacetResults = result.solrNamedPairToMap((ArrayList) tagFacetMap.get(BUCKETFIELD));
+            tagFacetResults.forEach(tagFacetResult -> {
+                HashMap serviceFacetMap = (HashMap) ((HashMap) tagFacetResult).get(SERVICEFACET);
+                ((HashMap)tagFacetResult).put(SERVICEFACET,
+                    result.solrNamedPairToMap((ArrayList)serviceFacetMap.get(BUCKETFIELD)));
+            });
+            ((HashMap)instanceFacetResult).put(TAGFACET,tagFacetResults);
+        });
+
+        return new Pair(instanceFacetResults, result.getObjects());
     }
 
     private SolrInputDocument agentToSolrDoc(ConfigDAO store) {
@@ -730,6 +792,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(SERVICEF, store.service);
         doc.setField(INSTANCEIDF, store.instanceId);
         doc.setField(TAG_F, store.tag);
+        doc.setField(ISLATESTF, store.isLatest);
         try {
             doc.setField(CONFIG_JSON_F, config.jsonMapper.writeValueAsString(store.configJson));
         } catch (JsonProcessingException e) {
@@ -747,10 +810,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> instanceId = getStrField(doc, INSTANCEIDF);
         Optional<String> configJson = getStrField(doc, CONFIG_JSON_F);
         Optional<String> tag = getStrField(doc, TAG_F);
+        Optional<Boolean> latest = getBoolField(doc, ISLATESTF);
         ConfigDAO agentStore = new ConfigDAO(customerId.orElse(null),
             app.orElse(null), service.orElse(null), instanceId.orElse(null),
             tag.orElse(null));
         agentStore.setVersion(version.orElse(0));
+        agentStore.setIsLatest(latest.orElse(false));
         try {
             configJson.ifPresent(UtilException.rethrowConsumer(config ->
                 agentStore.setConfigJson(this.config.jsonMapper.readValue(config
@@ -866,6 +931,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Constants.STATIC_INJECTION_MAP_FIELD + STRING_SUFFIX;
 
     private static final String TAG_F = Constants.TAG_FIELD + STRING_SUFFIX;
+    private static final String ISLATESTF = "isLatest" + BOOLEAN_SUFFIX;
 
 
     private String storeTemplateSetMetadata(TemplateSet templateSet, List<String> templateIds
@@ -1075,6 +1141,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     // field names in Solr
     private static final String PATHF = CPREFIX + Constants.PATH_FIELD + STRING_SUFFIX;
+    private static final String RUNIDF = CPREFIX + Constants.RUN_ID_FIELD + STRING_SUFFIX;
     private static final String MOCKSERVICESF = CPREFIX + Constants.MOCK_SERVICES_FIELD + STRINGSET_SUFFIX;
     private static final String REQIDF = CPREFIX + Constants.REQ_ID_FIELD + STRING_SUFFIX;
     private static final String METHODF = CPREFIX + Constants.METHOD_FIELD + STRING_SUFFIX;
@@ -1372,6 +1439,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(PATHF, event.apiPath);
         doc.setField(EVENTTYPEF, event.eventType.toString());
         doc.setField(RECORDING_TYPE_F, event.recordingType.toString());
+        event.runId.ifPresent(runId -> doc.setField(RUNIDF, runId));
         try {
             doc.setField(PAYLOADSTRF, config.jsonMapper.writeValueAsString(event.payload));
         } catch (JsonProcessingException e) {
@@ -1420,12 +1488,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             .flatMap(r -> Utils.valueOf(RecordingType.class, r));
 
         Event.EventType eType = Utils.valueOf(Event.EventType.class, eventType.get()).orElse(null);
+        Optional<String> runId = getStrField(doc,RUNIDF);
 
         EventBuilder eventBuilder = new EventBuilder(customerId.orElse(null)
             , app.orElse(null), service.orElse(null), instanceId.orElse(null)
             , collection.orElse(null), new MDTraceInfo(traceid.orElse(null)
             , spanId.orElse(null), parentSpanId.orElse(null)), runType.orElse(null)
-            , timestamp, reqId.orElse(null), path.orElse(""), eType, recordingType.orElse(RecordingType.Golden)).withMetaData(eventMetaDataMap);;
+            , timestamp, reqId.orElse(null), path.orElse(""), eType, recordingType.orElse(RecordingType.Golden)).withMetaData(eventMetaDataMap)
+            .withRunId(runId);
         // TODO revisit this need to construct payload properly from type and json string
         try {
             payloadStr.ifPresent(UtilException.rethrowConsumer(payload ->
@@ -2623,6 +2693,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, RECORDING_TYPE_F, apiTraceFacetQuery.recordingType, true, includeEmpty);
         addFilter(query, COLLECTIONF,apiTraceFacetQuery.collection);
         addFilter(query, PATHF, apiTraceFacetQuery.apiPath);
+        addFilter(query, RUNIDF, apiTraceFacetQuery.runId);
         return query;
     }
 
@@ -2675,14 +2746,35 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Result<Event> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfResults, Optional<Integer> start) {
+    public Pair<List, Stream<Event>> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfFacets, Optional<Integer> start, Optional<Integer> numberOfResults, List<EventType> eventTypes) {
 
         final SolrQuery query = getEventQuery(apiTraceFacetQuery);
-        addFilter(query, EVENTTYPEF, EventType.HTTPRequest.toString());
-        addFilter(query, TRACEIDF, apiTraceFacetQuery.traceId);
-        addSort(query, TRACEIDF, false /* desc */);
-        return SolrIterator.getResults(solr, query, numOfResults,
+        addFilter(query, EVENTTYPEF, eventTypes.stream().map(type -> type.toString()).collect(Collectors.toList()));
+        addFilter(query, TRACEIDF, apiTraceFacetQuery.traceIds);
+        addSort(query, TIMESTAMPF, false /* desc */);
+        FacetQ traceIdFacetq = new FacetQ();
+        Facet traceIdf = Facet.createTermFacet(TRACEIDF, Optional.empty());
+        traceIdFacetq.addFacet(TRACEIDFACET, traceIdf);
+
+        query.setFacetMinCount(1);
+        numOfFacets.ifPresent(query::setFacetLimit);
+        String jsonFacets;
+        try {
+            jsonFacets = config.jsonMapper.writeValueAsString(traceIdFacetq);
+            query.add(SOLRJSONFACETPARAM, jsonFacets);
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting facets to json"), e);
+        }
+
+        Result<Event> result = SolrIterator.getResults(solr, query, numberOfResults,
             this::docToEvent, start);
+        List<String> traceIds = new ArrayList<>();
+        ArrayList traceIdFacetResults = result.getFacets(FACETSFIELD, TRACEIDFACET, BUCKETFIELD);
+        traceIdFacetResults.forEach(facet -> {
+            Map<String, String> map = (LinkedHashMap)facet;
+            traceIds.add(map.get(VALFIELD));
+        });
+        return new Pair(traceIds, result.getObjects());
     }
 
 
@@ -3015,7 +3107,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String RESPMTFACET = "respmt_facets";
     private static final String PATHFACET = "path_facets";
     private static final String SERVICEFACET = "service_facets";
+    private static final String TRACEIDFACET = "traceId_facets";
     private static final String INSTANCEFACET = "instance_facets";
+    private static final String TAGFACET = "tag_facets";
     private static final String SOLRJSONFACETPARAM = "json.facet"; // solr facet query param
     private static final String BUCKETFIELD = "buckets"; // term in solr results indicating facet buckets
     private static final String MISSINGBUCKETFIELD = "missing"; // term in solr results indicating facet bucket for

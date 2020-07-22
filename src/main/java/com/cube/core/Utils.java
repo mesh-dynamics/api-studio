@@ -322,7 +322,7 @@ public class Utils {
                                                 Optional<String> collection, Instant timestamp,
                                                 Optional<Event.RunType> runType, Optional<String> customerId,
                                                 Optional<String> app,
-                                                ReqRespStore rrstore) throws JsonProcessingException, EventBuilder.InvalidEventException {
+                                                ReqRespStore rrstore, Optional<String> runId) throws JsonProcessingException, EventBuilder.InvalidEventException {
 	    HTTPResponsePayload httpResponsePayload;
 	    // We treat empty body ("") as null
 	    if (body != null && (!body.isEmpty())) {
@@ -347,6 +347,7 @@ public class Utils {
                 reqId.orElse("NA"),
                 apiPath, Event.EventType.HTTPResponse, recordingType);
             eventBuilder.setPayload(httpResponsePayload);
+            eventBuilder.withRunId(runId);
             Event event = eventBuilder.createEvent();
             return event;
         } else {
