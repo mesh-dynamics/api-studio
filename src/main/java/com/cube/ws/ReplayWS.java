@@ -432,6 +432,30 @@ public class ReplayWS {
         return Response.ok().type(MediaType.APPLICATION_JSON).entity(Map.of("response", finalResult)).build();
     }
 
+    @GET
+    @Path("getDynamicInjectionConfig/{customerId}/{app}/{version}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getDynamicInjectionConfig(@Context UriInfo uriInfo,
+        @PathParam("customerId") String customerId, @PathParam("app") String app,
+        @PathParam("version") String version) {
+        Optional<DynamicInjectionConfig> dynamicInjectionConfig = rrstore.getDynamicInjectionConfig(
+            new CubeMetaInfo(customerId, app, ""), version);
+        Response resp = dynamicInjectionConfig.map(d -> {
+            try{
+                String json = jsonMapper.writeValueAsString(d);
+                return Response.ok(json).build();
+            } catch (JsonProcessingException e) {
+                LOGGER.error(String.format("Error in converting DynamicInjectionConfig object to Json for customerId=%s, app=%s, version=%s",
+                    customerId, app, version), e);
+                return Response.serverError().entity(
+                    Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                        "Error in converting DynamicInjectionConfig object to Json")).build();
+            }
+        }).orElse(Response.status(Response.Status.NOT_FOUND)
+            .entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
+                "DynamicInjectionConfig object not found")).build());
+        return resp;
+    }
     @POST
     @Path("replay/restart/{customerId}/{app}/{replayId}")
     public Response restartReplay(@Context UriInfo uriInfo, @PathParam("customerId") String customerId,
