@@ -15,7 +15,7 @@ CUBEIO_TAG=$DRONE_COMMIT-$DRONE_BRANCH
 CUBEUI_TAG=develop-latest
 CUBEUI_BACKEND_TAG=develop-latest
 MOVIEINFO_TAG=master-latest
-SOLR_URL=http://172.20.62.223:8983/solr/
+SOLR_URL=http://solr-svc.solr.svc.cluster.local:8983/solr/
 AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBtZXNoZHluYW1pY3MuaW8iLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwidHlwZSI6InBhdCIsImN1c3RvbWVyX2lkIjoxLCJpYXQiOjE1ODI4ODE2MjgsImV4cCI6MTg5ODI0MTYyOH0.P4DAjXyODV8cFPgObaULjAMPg-7xSbUsVJ8Ohp7xTQI"
 SOLR_CORE=cube" > apps/cube/config/temp.conf
 
