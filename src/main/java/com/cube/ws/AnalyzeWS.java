@@ -19,7 +19,6 @@ import io.md.constants.ReplayStatus;
 import io.md.core.Comparator.Match;
 import io.md.dao.ConvertEventPayloadResponse;
 import io.md.dao.Event.EventType;
-import io.md.dao.EventQuery;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.ResponsePayload;
@@ -1444,7 +1443,8 @@ public class AnalyzeWS {
       Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).or(()->Optional.of(50));
       Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
       if(apiTraceFacetQuery.traceIds.isEmpty()) {
-        Pair<List, Stream<Event>> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start, Optional.of(0), Arrays.asList(EventType.HTTPRequest));
+        Pair<List, Stream<Event>> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start, Optional.of(0),
+            Arrays.asList(EventType.HTTPRequest), true);
         List<String> traceIds = result.first();
         apiTraceFacetQuery.withTraceIds(traceIds);
       }
@@ -1456,7 +1456,7 @@ public class AnalyzeWS {
          */
         Pair<List, Stream<Event>> result = rrstore
             .getApiTrace(apiTraceFacetQuery, numResults, start, Optional.empty(),
-                Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse));
+                Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse), false);
 
         MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
         MultivaluedMap<String, Event> traceCollectionMap = new MultivaluedHashMap<>();

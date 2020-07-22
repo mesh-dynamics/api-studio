@@ -2692,7 +2692,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 .orElse(false);
         addFilter(query, RECORDING_TYPE_F, apiTraceFacetQuery.recordingType, true, includeEmpty);
         addFilter(query, COLLECTIONF,apiTraceFacetQuery.collection);
-        addFilter(query, PATHF, apiTraceFacetQuery.apiPath);
+        //addFilter(query, PATHF, apiTraceFacetQuery.apiPath);
         addFilter(query, RUNIDF, apiTraceFacetQuery.runId);
         return query;
     }
@@ -2746,11 +2746,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Pair<List, Stream<Event>> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfFacets, Optional<Integer> start, Optional<Integer> numberOfResults, List<EventType> eventTypes) {
+    public Pair<List, Stream<Event>> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfFacets, Optional<Integer> start, Optional<Integer> numberOfResults, List<EventType> eventTypes, boolean addPathFilter) {
 
         final SolrQuery query = getEventQuery(apiTraceFacetQuery);
         addFilter(query, EVENTTYPEF, eventTypes.stream().map(type -> type.toString()).collect(Collectors.toList()));
         addFilter(query, TRACEIDF, apiTraceFacetQuery.traceIds);
+        if (addPathFilter) {
+            addFilter(query, PATHF, apiTraceFacetQuery.apiPath);
+        }
         addSort(query, TIMESTAMPF, false /* desc */);
         FacetQ traceIdFacetq = new FacetQ();
         Facet traceIdf = Facet.createTermFacet(TRACEIDF, Optional.empty());

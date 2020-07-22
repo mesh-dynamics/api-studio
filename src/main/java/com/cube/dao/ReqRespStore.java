@@ -667,9 +667,10 @@ public interface ReqRespStore extends DataStore {
 	/**
 	 *
 	 * @param apiTraceFacetQuery
-	 * @return
+	 * @param addPathFilter
+     * @return
 	 */
-	Pair<List, Stream<Event>> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfFacets, Optional<Integer> start, Optional<Integer> numberOfResults, List<EventType> eventTypes);
+	Pair<List, Stream<Event>> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfFacets, Optional<Integer> start, Optional<Integer> numberOfResults, List<EventType> eventTypes, boolean addPathFilter);
 
     /**
      * Save a template set
