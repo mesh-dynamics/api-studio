@@ -32,6 +32,7 @@ import {
 } from "../../utils/diff/diff-process.js";
 import EnvVar from "./EnvVar";
 import Mustache from "mustache"
+import { apiCatalogActions } from "../../actions/api-catalog.actions";
 
 class HttpClientTabs extends Component {
 
@@ -578,7 +579,7 @@ class HttpClientTabs extends Component {
         // Make request
         // https://www.mocky.io/v2/5185415ba171ea3a00704eed
         let fetchedResponseHeaders = {}, responseStatus = "", responseStatusText = "";
-        const startDate = new Date(Date.now()).toISOString();
+        const startDate = new Date(Date.now() - 2 * 1000).toISOString();
         return fetch(fetchUrlRendered, fetchConfigRendered).then((response) => {
             responseStatus = response.status;
             responseStatusText = response.statusText;
@@ -742,7 +743,8 @@ class HttpClientTabs extends Component {
     }
 
     saveToCollection(isOutgoingRequest, tabId, recordingId, type, startDate) {
-        const {tabs, selectedTabKey} = this.state;
+        const {tabs, selectedTabKey, app} = this.state;
+        const {dispatch} = this.props;
         let tabsToProcess = tabs;
         const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
         const tabToProcess = tabsToProcess[tabIndex];
@@ -766,7 +768,7 @@ class HttpClientTabs extends Component {
                             const jsonTraceReqData = serverRes.data.response && serverRes.data.response.length > 0 ? serverRes.data.response[0] : "";
                             try {
                                 const parsedTraceReqData = JSON.parse(jsonTraceReqData);
-                                const endDate = new Date(Date.now()).toISOString();
+                                const endDate = new Date(Date.now() + 2 * 1000).toISOString();
                                 const httpRequestEventTypeIndex = reqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
                                 const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
                                 const apiPath = httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : ""; 
@@ -795,6 +797,10 @@ class HttpClientTabs extends Component {
                         setTimeout(() => {
                             this.loadFromHistory();
                             this.loadUserCollections();
+                            // update api catalog golden and collection lists
+                            dispatch(apiCatalogActions.fetchGoldenCollectionList(app, "Golden"))
+                            dispatch(apiCatalogActions.fetchGoldenCollectionList(app, "UserGolden"))
+
                         }, 2000);
                     }, (error) => {
                         this.setState({
@@ -1310,6 +1316,8 @@ class HttpClientTabs extends Component {
                 }
             });
         }
+
+        dispatch(apiCatalogActions.fetchEnvironments())
     }
 
     componentWillUnmount() {

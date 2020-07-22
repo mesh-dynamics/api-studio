@@ -249,6 +249,56 @@ export const apiCatalogActions = {
     setHttpClientRequestIds: (requestIdMap) => ({type: apiCatalogConstants.SET_HTTP_CLIENT_REQUESTIDS, data: requestIdMap}),
 
     // envvars
-    updateEnvironments: (environmentList) => ({type: apiCatalogConstants.UPDATE_ENVIRONMENT_LIST, data: environmentList})
+    setEnvironmentList: (environmentList) => ({type: apiCatalogConstants.SET_ENVIRONMENT_LIST, data: environmentList}),
 
+    fetchEnvironments: () => async (dispatch) => {
+        dispatch(apiCatalogActions.setEnvStatusText("Loading..."))
+        try {
+            const environmentList = await cubeService.getAllEnvironments();
+            dispatch(apiCatalogActions.setEnvironmentList(environmentList))
+            dispatch(apiCatalogActions.resetEnvStatusText())
+        } catch (e) {
+            dispatch(apiCatalogActions.setEnvStatusText(e.response.data.message, true))
+        }  
+    },
+
+    saveEnvironment: (environment) => async (dispatch) => {
+        dispatch(apiCatalogActions.setEnvStatusText("Saving..."))
+        try {
+            await cubeService.insertNewEnvironment(environment);
+            dispatch(apiCatalogActions.fetchEnvironments())
+            dispatch(apiCatalogActions.resetEnvStatusText())
+            dispatch(apiCatalogActions.showEnvList(true));
+        } catch (e) {
+            dispatch(apiCatalogActions.setEnvStatusText(e.response.data.message, true))
+        } 
+    },
+
+    updateEnvironment: (environment) => async (dispatch) => {
+        dispatch(apiCatalogActions.setEnvStatusText("Updating..."))
+        try {
+            await cubeService.updateEnvironment(environment);
+            dispatch(apiCatalogActions.fetchEnvironments())
+            dispatch(apiCatalogActions.resetEnvStatusText())
+            dispatch(apiCatalogActions.showEnvList(true));
+        } catch (e) {
+            dispatch(apiCatalogActions.setEnvStatusText(e.response.data.message, true))
+        } 
+    },
+
+    removeEnvironment: (id) => async (dispatch) => {
+        dispatch(apiCatalogActions.setEnvStatusText("Removing..."))
+        try {
+            await cubeService.deleteEnvironment(id)
+            dispatch(apiCatalogActions.fetchEnvironments())
+        } catch (e) {
+            dispatch(apiCatalogActions.setEnvStatusText(e.response.data.message, true))
+        }
+    },
+
+    setEnvStatusText: (text, isError=false) => ({type: apiCatalogConstants.SET_ENV_STATUS_TEXT, data: {text, isError}}),
+
+    resetEnvStatusText: () => ({type: apiCatalogConstants.RESET_ENV_STATUS_TEXT}),
+
+    showEnvList: (show) => ({type: apiCatalogConstants.SHOW_ENV_LIST, data: show}),
 }

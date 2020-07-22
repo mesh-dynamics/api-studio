@@ -57,6 +57,13 @@ const getDiffForMessagePart = (replayedPart, recordedPart, serverSideDiff, prefi
     return updatedReductedDiffArrayMsgPart;
 }
 
+const getParameterCaseInsensitive = (object, key) => {
+    return object[
+        Object.keys(object)
+        .find(k => k.toLowerCase() === key.toLowerCase())
+    ];
+}
+
 const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId, templateVersion, collapseLength, maxLinesLength) => {
     let diffLayoutData = replayList.map((item) => {
         let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body",
@@ -68,7 +75,8 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
         if (item.recordResponse) {
             recordedResponseHeaders = item.recordResponse.hdrs ? item.recordResponse.hdrs : [];
             // check if the content type is JSON and attempt to parse it
-            let recordedResponseMime = recordedResponseHeaders["content-type"] ? _.isArray(recordedResponseHeaders["content-type"]) ? recordedResponseHeaders["content-type"][0] : recordedResponseHeaders["content-type"] : "";
+            let recordedResponseContentType = getParameterCaseInsensitive(recordedResponseHeaders, "content-type");
+            let recordedResponseMime = recordedResponseContentType ? (_.isArray(recordedResponseContentType) ? recordedResponseContentType[0] : recordedResponseContentType) : "";
             isJson = recordedResponseMime.toLowerCase().indexOf("json") > -1;
             if (_.isString(item.recordResponse.body) && item.recordResponse.body && isJson) {
                 try {
@@ -90,7 +98,8 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
         if (item.replayResponse) {
             replayedResponseHeaders = item.replayResponse.hdrs ? item.replayResponse.hdrs : [];
             // check if the content type is JSON and attempt to parse it
-            let replayedResponseMime = replayedResponseHeaders["content-type"] ? _.isArray(replayedResponseHeaders["content-type"]) ? replayedResponseHeaders["content-type"][0] : replayedResponseHeaders["content-type"] : "";
+            let replayedResponseContentType = getParameterCaseInsensitive(replayedResponseHeaders, "content-type");
+            let replayedResponseMime = replayedResponseContentType ? (_.isArray(replayedResponseContentType) ? replayedResponseContentType[0] : replayedResponseContentType) : "";
             isJson = replayedResponseMime.toLowerCase().indexOf("json") > -1;
             if (_.isString(item.replayResponse.body) && item.replayResponse.body && isJson) {
                 try {

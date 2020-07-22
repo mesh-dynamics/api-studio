@@ -392,6 +392,46 @@ const fetchAPIEventData = async (app, reqIds, eventTypes=[]) => {
     }
 }
 
+const getAllEnvironments = async () => {
+    try {
+        return await api.get(`${config.apiBaseUrl}/dtEnvironment/getAll`);
+    } catch (e) {
+        console.error("Error fetching environments")
+        throw e;
+    }
+}
+
+const insertNewEnvironment = async (environment) => {
+    try {
+        let url = `${config.apiBaseUrl}/dtEnvironment/insert`
+        return await api.post(url, environment);
+    } catch (e) {
+        console.error("Error inserting environment")
+        throw e;
+    }
+}
+
+const updateEnvironment = async (environment) => {
+    try {
+        let url = `${config.apiBaseUrl}/dtEnvironment/update/${environment.id}`
+        return await api.post(url, environment);
+    } catch (e) {
+        console.error("Error updating environment")
+        throw e;
+    }
+}
+
+const deleteEnvironment = async (id) => {
+    try {
+        let url = `${config.apiBaseUrl}/dtEnvironment/delete/${id}`
+        return await api.post(url);
+    } catch (e) {
+        console.error("Error deleting environment")
+        throw e;
+    }
+}
+
+
 export const cubeService = {
     fetchAppsList,
     getInstanceList,
@@ -418,5 +458,9 @@ export const cubeService = {
     fetchAPIFacetData,
     fetchAPITraceData,
     fetchAPIEventData,
-    fetchClusterList
+    fetchClusterList,
+    getAllEnvironments,
+    insertNewEnvironment,
+    updateEnvironment,
+    deleteEnvironment,
 };
