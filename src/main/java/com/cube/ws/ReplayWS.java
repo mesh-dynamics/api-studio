@@ -539,6 +539,27 @@ public class ReplayWS {
         }
     }
 
+    @POST
+    @Path("deferredDeleteReplay/{replayId}")
+    public Response deferredDeleteReplay(@Context UriInfo uriInfo,
+        @PathParam("replayId") String replayId) {
+        Optional<Replay> optionalReplay = rrstore.getReplay(replayId);
+        Response resp = optionalReplay.map(replay -> {
+            boolean expireReplayInCache = rrstore.expireReplayInCache(replay);
+            if(expireReplayInCache) {
+                return Response.ok().entity(replay).build();
+            } else {
+                LOGGER.error(String.format("The Replay in cache is not expired for replayId %s", replayId));
+                return Response.serverError().entity(
+                    Utils.buildErrorResponse(Constants.ERROR, Constants.REPLAY_ID_FIELD,
+                        "The Replay in cache is not expired")).build();
+            }
+        }).orElse(Response.status(Response.Status.NOT_FOUND)
+            .entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
+                "Replay object not found")).build());
+        return resp;
+    }
+
 	/**
 	 * @param config
 	 */
