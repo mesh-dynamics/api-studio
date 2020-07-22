@@ -102,4 +102,35 @@ public class ReplayWSController {
         validation.validateCustomerName(request, customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
+
+    @PostMapping("/replay/restart/{customerId}/{app}/{replayId}")
+    public ResponseEntity restartReplay(HttpServletRequest request, @RequestBody Optional<String> postBody,
+        @PathVariable String customerId, @PathVariable String app, @PathVariable String replayId) {
+        validation.validateCustomerName(request, customerId);
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
+
+    @PostMapping("/saveReplay")
+    public ResponseEntity saveReplay(HttpServletRequest request, @RequestBody Replay replay) {
+        validation.validateCustomerName(request, replay.customerId);
+        return cubeServerService.fetchPostResponse(request, Optional.of(replay));
+    }
+    @GetMapping("/getDynamicInjectionConfig/{customerId}/{app}/{version}")
+    public ResponseEntity getDynamicInjectionConfig(HttpServletRequest request,
+        @RequestBody Optional<String> getBody, @PathVariable String customerId,
+        @PathVariable String app, @PathVariable String version) {
+        validation.validateCustomerName(request,customerId);
+        return cubeServerService.fetchGetResponse(request, getBody);
+    }
+
+    @PostMapping("/deferredDeleteReplay/{replayId}")
+    public ResponseEntity deferredDeleteReplay(HttpServletRequest request,
+        @RequestBody Optional<String> postBody, @PathVariable String replayId) {
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+        if(replay.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("No Replay found for replayId=" + replayId);
+        validation.validateCustomerName(request,replay.get().customerId);
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
 }
