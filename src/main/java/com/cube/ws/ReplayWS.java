@@ -432,6 +432,71 @@ public class ReplayWS {
         return Response.ok().type(MediaType.APPLICATION_JSON).entity(Map.of("response", finalResult)).build();
     }
 
+    @POST
+    @Path("replay/restart/{customerId}/{app}/{replayId}")
+    public Response restartReplay(@Context UriInfo uriInfo, @PathParam("customerId") String customerId,
+        @PathParam("app") String app, @PathParam("replayId") String replayId) {
+
+        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+        String instanceId = queryParams.getFirst(Constants.INSTANCE_ID_FIELD);
+        String recordingCollection = queryParams.getFirst(Constants.COLLECTION_FIELD);
+        String userId = queryParams.getFirst(Constants.USER_ID_FIELD);
+        String endPoint = queryParams.getFirst(Constants.END_POINT_FIELD);
+        if (instanceId == null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("InstaceId needs to be given for a replay")
+                .build();
+        }
+        if (recordingCollection == null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("RecordingCollection needs to be given for a replay")
+                .build();
+        }
+        if (userId == null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("userId needs to be given for a replay")
+                .build();
+        }
+        if (endPoint == null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("endPoint needs to be given for a replay")
+                .build();
+        }
+        Optional<Replay> optionalReplay = rrstore.getReplay(replayId);
+        Replay replay = null;
+        if(optionalReplay.isPresent()) {
+            replay = optionalReplay.get();
+            replay.collection = recordingCollection;
+            if(!replay.customerId.equals(customerId)) {
+                LOGGER.error(String.format("customerId is not matching the replay customerId for replayId %s", replayId));
+                return Response.status(Status.BAD_REQUEST)
+                    .entity("customerId is not matching the replay customerId")
+                    .build();
+            }
+            if(!replay.app.equals(app)) {
+                LOGGER.error(String.format("App is not matching the replay app for replayId %s", replayId));
+                return Response.status(Status.BAD_REQUEST)
+                    .entity("App is not matching the replay app")
+                    .build();
+            }
+        } else {
+            ReplayBuilder replayBuilder = new ReplayBuilder(endPoint, new CubeMetaInfo(customerId, app, instanceId),
+                recordingCollection, userId)
+                .withReplayId(replayId);
+            replay = replayBuilder.build();
+        }
+        replay.status = ReplayStatus.Running;
+        replay.runId = Optional.of(replayId + " " + Instant.now().toString());
+        rrstore.saveReplay(replay);
+        try {
+            String json = jsonMapper.writeValueAsString(replay);
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+        }  catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting Replay object to Json for replayId %s", replayId), e);
+            return Response.serverError().build();
+        }
+    }
+
 	/**
 	 * @param config
 	 */
