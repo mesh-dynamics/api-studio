@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import io.md.core.TemplateKey;
+
 /**
  * @author prasad
  * This was needed for json support for java 8 objects in jackson
@@ -32,6 +34,8 @@ public class CubeObjectMapperProvider  {
         result.registerModule(new JavaTimeModule());
         result.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         SimpleModule module = new SimpleModule();
+        module.addKeySerializer(TemplateKey.class, new TemplateKeySerializer(result));
+        module.addKeyDeserializer(TemplateKey.class, new TemplateKeyDeserializer(result));
         module.setSerializerModifier(new PayloadSerializerModifier());
         result.registerModule(module);
         return result;
