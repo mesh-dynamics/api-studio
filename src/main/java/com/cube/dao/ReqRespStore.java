@@ -83,6 +83,16 @@ public interface ReqRespStore extends DataStore {
 		return recording;
 	}
 
+	static Recording forceStopRecording(Recording recording, ReqRespStore rrstore) {
+    	if (recording.status == RecordingStatus.Running) {
+    		recording.status = RecordingStatus.Completed;
+		    recording.updateTimestamp = Optional.of(Instant.now());
+		    rrstore.forceDeleteInCache(recording);
+		    rrstore.saveRecording(recording);
+	    }
+		return recording;
+    }
+
     static Recording resumeRecording(Recording recording, ReqRespStore rrstore) {
         if (recording.status != RecordingStatus.Running) {
             LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Resuming recording",
@@ -474,6 +484,10 @@ public interface ReqRespStore extends DataStore {
 	 * @return
 	 */
 	boolean expireRecordingInCache(Recording recording);
+
+	boolean forceDeleteInCache(Recording recording);
+
+	boolean forceDeleteInCache(Replay replay);
 
 	/**
 	 * @param recording

@@ -1112,6 +1112,28 @@ public class CubeStore {
     }
 
     @POST
+    @Path("forcestop/{recordingid}")
+    public Response forceStop(@Context UriInfo ui,
+        @PathParam("recordingid") String recordingid) {
+        Optional<Recording> recording = rrstore.getRecording(recordingid);
+        return recording.map(r -> {
+            Recording stoppedr = ReqRespStore.forceStopRecording(r, rrstore);
+            String json;
+            try {
+                json = jsonMapper.writeValueAsString(stoppedr);
+                return Response.ok(json, MediaType.APPLICATION_JSON).build();
+            } catch (JsonProcessingException ex) {
+                LOGGER.error(new ObjectMessage(Map.of(
+                    Constants.MESSAGE, "Error in converting response and match results to Json",
+                    Constants.RECORDING_ID, r.id
+                )));
+                return Response.serverError().build();
+            }
+        }).orElse(Response.status(Response.Status.NOT_FOUND).
+            entity(String.format("Recording not found")).build());
+    }
+
+    @POST
     @Path("stopRecordingByNameLabel/")
     public Response stopRecordingByNameLabel(@Context UriInfo ui) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
