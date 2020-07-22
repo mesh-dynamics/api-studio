@@ -435,6 +435,21 @@ public class ReplayWS {
         return Response.ok().type(MediaType.APPLICATION_JSON).entity(Map.of("response", finalResult)).build();
     }
 
+    @POST
+    @Path("saveReplay")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response saveReplay(@Context UriInfo uriInfo, Replay replay){
+        boolean saveReplay = rrstore.saveReplay(replay);
+        if(saveReplay) {
+            return Response.ok().entity(replay).build();
+        } else {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Unable to save Replay",
+                Constants.REPLAY_ID_FIELD, replay.replayId)));
+            return Response.serverError().entity(
+                Utils.buildErrorResponse(Constants.ERROR, Constants.SOLR_STORE_FAILED, "Unable to save Replay for replayId:" + replay.replayId))
+                .build();
+        }
+    }
     @GET
     @Path("getDynamicInjectionConfig/{customerId}/{app}/{version}")
     @Produces(MediaType.APPLICATION_JSON)
