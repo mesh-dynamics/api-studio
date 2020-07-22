@@ -122,4 +122,15 @@ public class ReplayWSController {
         validation.validateCustomerName(request,customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
+
+    @PostMapping("/deferredDeleteReplay/{replayId}")
+    public ResponseEntity deferredDeleteReplay(HttpServletRequest request,
+        @RequestBody Optional<String> postBody, @PathVariable String replayId) {
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+        if(replay.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("No Replay found for replayId=" + replayId);
+        validation.validateCustomerName(request,replay.get().customerId);
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
 }
