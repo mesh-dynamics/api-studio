@@ -110,6 +110,11 @@ public class ReplayWSController {
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
+    @PostMapping("/saveReplay")
+    public ResponseEntity saveReplay(HttpServletRequest request, @RequestBody Replay replay) {
+        validation.validateCustomerName(request, replay.customerId);
+        return cubeServerService.fetchPostResponse(request, Optional.of(replay));
+    }
     @GetMapping("/getDynamicInjectionConfig/{customerId}/{app}/{version}")
     public ResponseEntity getDynamicInjectionConfig(HttpServletRequest request,
         @RequestBody Optional<String> getBody, @PathVariable String customerId,
