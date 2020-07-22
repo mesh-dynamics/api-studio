@@ -45,6 +45,9 @@ const initialState = {
 
     // env vars, (todo: should be part of the dev tool reducer)
     environmentList: [],
+    envStatusText: "",
+    envStatusIsError: false,
+    showEnvList: true,
 }
 
 export const apiCatalog = (state = initialState, { type, data }) => {
@@ -165,10 +168,32 @@ export const apiCatalog = (state = initialState, { type, data }) => {
         }
 
         // envvar
-        case apiCatalogConstants.UPDATE_ENVIRONMENT_LIST: {
+        case apiCatalogConstants.SET_ENVIRONMENT_LIST: {
             return {
                 ...state,
                 environmentList: data,
+            }
+        }
+
+        case apiCatalogConstants.SET_ENV_STATUS_TEXT: {
+            return {
+                ...state,
+                envStatusText: data.text,
+                envStatusIsError: data.isError,
+            }
+        }
+
+        case apiCatalogConstants.RESET_ENV_STATUS_TEXT: {
+            return {
+                ...state,
+                envStatusText: "",
+            }
+        }
+        
+        case apiCatalogConstants.SHOW_ENV_LIST: {
+            return {
+                ...state,
+                showEnvList: data,
             }
         }
         

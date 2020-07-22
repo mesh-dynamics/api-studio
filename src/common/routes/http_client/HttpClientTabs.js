@@ -31,6 +31,7 @@ import {
 } from "../../utils/diff/diff-process.js";
 import EnvVar from "./EnvVar";
 import Mustache from "mustache"
+import { apiCatalogActions } from "../../actions/api-catalog.actions";
 
 class HttpClientTabs extends Component {
 
@@ -337,7 +338,7 @@ class HttpClientTabs extends Component {
                             const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
                             const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
                             const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
-                            let headers = [], queryParams = [], formData = [];
+                            let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "";
                             for(let eachHeader in httpRequestEvent.payload[1].hdrs) {
                                 headers.push({
                                     id: uuidv4(),
@@ -361,16 +362,30 @@ class HttpClientTabs extends Component {
                                     value: httpRequestEvent.payload[1].formParams[eachFormParam].join(","),
                                     description: ""
                                 });
+                                rawDataType = "";
+                            }
+                            if(httpRequestEvent.payload[1].body) {
+                                if(!_.isString(httpRequestEvent.payload[1].body)) {
+                                    try {
+                                        rawData = JSON.stringify(httpRequestEvent.payload[1].body, undefined, 4)
+                                        rawDataType = "json";
+                                    } catch (err) {
+                                        console.error(err);
+                                    }
+                                } else {
+                                    rawData = httpRequestEvent.payload[1].body;
+                                    rawDataType = "text";
+                                }
                             }
                             let reqObject = {
                                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
                                 httpURL: httpRequestEvent.apiPath,
                                 headers: headers,
                                 queryStringParams: queryParams,
-                                bodyType: "formData",
+                                bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
                                 formData: formData,
-                                rawData: "",
-                                rawDataType: "json",
+                                rawData: rawData,
+                                rawDataType: rawDataType,
                                 responseStatus: "NA",
                                 responseStatusText: "",
                                 responseHeaders: "",
@@ -551,7 +566,7 @@ class HttpClientTabs extends Component {
         // Make request
         // https://www.mocky.io/v2/5185415ba171ea3a00704eed
         let fetchedResponseHeaders = {}, responseStatus = "", responseStatusText = "";
-        const startDate = new Date(Date.now()).toISOString();
+        const startDate = new Date(Date.now() - 2 * 1000).toISOString();
         return fetch(fetchUrlRendered, fetchConfigRendered).then((response) => {
             responseStatus = response.status;
             responseStatusText = response.statusText;
@@ -669,10 +684,10 @@ class HttpClientTabs extends Component {
         const { headers, queryStringParams, bodyType, rawDataType, responseHeaders,responseBody, recordedResponseHeaders, recordedResponseBody } = tabToSave;
         const httpReqestHeaders = this.extractHeadersToCubeFormat(headers);
         const httpRequestQueryStringParams = this.extractQueryStringParamsToCubeFormat(queryStringParams);
-        let httpRequestBody;
+        let httpRequestFormParams = {}, httpRequestBody = "";
         if(bodyType === "formData") {
             const { formData } = tabToSave;
-            httpRequestBody = this.extractBodyToCubeFormat(formData);
+            httpRequestFormParams = this.extractBodyToCubeFormat(formData);
         }
         if(bodyType === "rawData") {
             const { rawData } = tabToSave;
@@ -690,7 +705,8 @@ class HttpClientTabs extends Component {
                     {
                         hdrs: httpReqestHeaders,
                         queryParams: httpRequestQueryStringParams,
-                        formParams: httpRequestBody,
+                        formParams: httpRequestFormParams,
+                        ...(httpRequestBody && {body: httpRequestBody}),
                         method: httpMethod.toUpperCase(),
                         path: apiPath,
                         pathSegments: apiPath.split("/")
@@ -738,7 +754,7 @@ class HttpClientTabs extends Component {
                             const jsonTraceReqData = serverRes.data.response && serverRes.data.response.length > 0 ? serverRes.data.response[0] : "";
                             try {
                                 const parsedTraceReqData = JSON.parse(jsonTraceReqData);
-                                const endDate = new Date(Date.now()).toISOString();
+                                const endDate = new Date(Date.now() + 2 * 1000).toISOString();
                                 const httpRequestEventTypeIndex = reqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
                                 const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
                                 const apiPath = httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : ""; 
@@ -953,7 +969,7 @@ class HttpClientTabs extends Component {
         const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
         const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
         const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
-        let headers = [], queryParams = [], formData = [];
+        let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "";
         for(let eachHeader in httpRequestEvent.payload[1].hdrs) {
             headers.push({
                 id: uuidv4(),
@@ -977,16 +993,30 @@ class HttpClientTabs extends Component {
                 value: httpRequestEvent.payload[1].formParams[eachFormParam].join(","),
                 description: ""
             });
+            rawDataType = "";
+        }
+        if(httpRequestEvent.payload[1].body) {
+            if(!_.isString(httpRequestEvent.payload[1].body)) {
+                try {
+                    rawData = JSON.stringify(httpRequestEvent.payload[1].body, undefined, 4)
+                    rawDataType = "json";
+                } catch (err) {
+                    console.error(err);
+                }
+            } else {
+                rawData = httpRequestEvent.payload[1].body;
+                rawDataType = "text";
+            }
         }
         let reqObject = {
             httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
             httpURL: "http://localhost/" + httpRequestEvent.apiPath,
             headers: headers,
             queryStringParams: queryParams,
-            bodyType: "formData",
+            bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
             formData: formData,
-            rawData: "",
-            rawDataType: "json",
+            rawData: rawData,
+            rawDataType: rawDataType,
             responseStatus: "NA",
             responseStatusText: "",
             responseHeaders: "",
@@ -1168,7 +1198,7 @@ class HttpClientTabs extends Component {
         const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
         const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
         const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
-        let headers = [], queryParams = [], formData = [];
+        let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "";
         for(let eachHeader in httpRequestEvent.payload[1].hdrs) {
             headers.push({
                 id: uuidv4(),
@@ -1192,16 +1222,30 @@ class HttpClientTabs extends Component {
                 value: httpRequestEvent.payload[1].formParams[eachFormParam].join(","),
                 description: ""
             });
+            rawDataType = "";
+        }
+        if(httpRequestEvent.payload[1].body) {
+            if(!_.isString(httpRequestEvent.payload[1].body)) {
+                try {
+                    rawData = JSON.stringify(httpRequestEvent.payload[1].body, undefined, 4)
+                    rawDataType = "json";
+                } catch (err) {
+                    console.error(err);
+                }
+            } else {
+                rawData = httpRequestEvent.payload[1].body;
+                rawDataType = "text";
+            }
         }
         let reqObject = {
             httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
             httpURL: "http://localhost/" + httpRequestEvent.apiPath,
             headers: headers,
             queryStringParams: queryParams,
-            bodyType: "formData",
+            bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
             formData: formData,
-            rawData: "",
-            rawDataType: "json",
+            rawData: rawData,
+            rawDataType: rawDataType,
             responseStatus: "NA",
             responseStatusText: "",
             responseHeaders: "",
@@ -1254,6 +1298,8 @@ class HttpClientTabs extends Component {
                 }
             });
         }
+
+        dispatch(apiCatalogActions.fetchEnvironments())
     }
 
     componentWillUnmount() {
@@ -1302,7 +1348,7 @@ class HttpClientTabs extends Component {
                             const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
                             const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
                             const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
-                            let headers = [], queryParams = [], formData = [];
+                            let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "";
                             for(let eachHeader in httpRequestEvent.payload[1].hdrs) {
                                 headers.push({
                                     id: uuidv4(),
@@ -1326,16 +1372,31 @@ class HttpClientTabs extends Component {
                                     value: httpRequestEvent.payload[1].formParams[eachFormParam].join(","),
                                     description: ""
                                 });
+                                rawDataType = "";
                             }
+                            if(httpRequestEvent.payload[1].body) {
+                                if(!_.isString(httpRequestEvent.payload[1].body)) {
+                                    try {
+                                        rawData = JSON.stringify(httpRequestEvent.payload[1].body, undefined, 4)
+                                        rawDataType = "json";
+                                    } catch (err) {
+                                        console.error(err);
+                                    }
+                                } else {
+                                    rawData = httpRequestEvent.payload[1].body;
+                                    rawDataType = "text";
+                                }
+                            }
+
                             let reqObject = {
                                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
                                 httpURL: "http://localhost/" + httpRequestEvent.apiPath,
                                 headers: headers,
                                 queryStringParams: queryParams,
-                                bodyType: "formData",
+                                bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
                                 formData: formData,
-                                rawData: "",
-                                rawDataType: "json",
+                                rawData: rawData,
+                                rawDataType: rawDataType,
                                 responseStatus: "NA",
                                 responseStatusText: "",
                                 responseHeaders: "",
