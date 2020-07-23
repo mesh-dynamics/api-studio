@@ -312,7 +312,7 @@ public class Event implements MDStorable {
 	public final String apiPath; // apiPath for HTTP req, function signature for Java functions, etc
 	public final EventType eventType;
 	public final Payload payload;
-	public final RecordingType recordingType;
+	public RecordingType recordingType;
 	public final Map<String, String> metaData;
 
 	@JsonIgnore
@@ -331,6 +331,10 @@ public class Event implements MDStorable {
 
 	public void setTraceId(String traceId) {
 		this.traceId = traceId;
+	}
+
+	public void setRecordingType(RecordingType recordingType) {
+		this.recordingType = recordingType;
 	}
 
 	public RunType getRunType() {return this.runType;}

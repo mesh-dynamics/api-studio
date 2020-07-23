@@ -35,7 +35,8 @@ public class Recording {
 		Golden,
 		UserGolden,
 		Capture,
-		History
+		History,
+		Replay
 	}
 
 	/**
