@@ -29,4 +29,6 @@ public class TestConfigDTO {
 
     private LocalDateTime updatedAt;
 
+    private String tag;
+
 }

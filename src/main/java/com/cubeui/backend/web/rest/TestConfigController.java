@@ -87,6 +87,7 @@ public class TestConfigController {
                             .maxRunTimeMin(testConfigDTO.getMaxRunTimeMin())
                             .emailId(testConfigDTO.getEmailId())
                             .slackId(testConfigDTO.getSlackId())
+                            .tag(testConfigDTO.getTag())
                             .build());
             return created(
                     ServletUriComponentsBuilder
@@ -119,6 +120,7 @@ public class TestConfigController {
                 testConfig.setEmailId(testConfigDTO.getEmailId());
                 testConfig.setSlackId(testConfigDTO.getSlackId());
                 testConfig.setMaxRunTimeMin(testConfigDTO.getMaxRunTimeMin());
+                testConfig.setTag(testConfigDTO.getTag());
             });
             this.testConfigRepository.save(existing.get());
             return created(
