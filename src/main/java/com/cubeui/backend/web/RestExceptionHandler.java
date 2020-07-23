@@ -3,6 +3,8 @@ package com.cubeui.backend.web;
 import com.cubeui.backend.security.jwt.InvalidJwtAuthenticationException;
 import com.cubeui.backend.web.exception.CustomerIdException;
 import com.cubeui.backend.web.exception.DuplicateRecordException;
+import com.cubeui.backend.web.exception.EnvironmentNameExitsException;
+import com.cubeui.backend.web.exception.EnvironmentNotFoundException;
 import com.cubeui.backend.web.exception.InvalidDataException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +47,19 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(value = {CustomerIdException.class})
     public ResponseEntity invalidData(CustomerIdException ex, WebRequest request) {
-        ErrorResponse errorResponse = new ErrorResponse("Inavlid Customer Id", ex.getMessage(), UNAUTHORIZED.value());
+        ErrorResponse errorResponse = new ErrorResponse("Invalid Customer Id", ex.getMessage(), UNAUTHORIZED.value());
         return status(UNAUTHORIZED).body(errorResponse);
+    }
+
+    @ExceptionHandler(value = {EnvironmentNameExitsException.class})
+    public ResponseEntity invalidData(EnvironmentNameExitsException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse<String>("Environment already exists", ex.getMessage(), CONFLICT.value());
+        return status(CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(value = {EnvironmentNotFoundException.class})
+    public ResponseEntity invalidData(EnvironmentNotFoundException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse<String>("Environment not found", ex.getMessage(), NOT_FOUND.value());
+        return status(NOT_FOUND).body(errorResponse);
     }
 }
