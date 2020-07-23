@@ -10,6 +10,7 @@ import com.cube.dao.Result;
 import io.md.constants.ReplayStatus;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -318,6 +319,7 @@ public class ReplayWS {
             xfms.ifPresent(replayBuilder::withXfms);
             dynamicInjectionConfigVersion.ifPresent(replayBuilder::withDynamicInjectionConfigVersion);
             staticInjectionMap.ifPresent(replayBuilder::withStaticInjectionMap);
+            replayBuilder.withRunId(Optional.of(replayBuilder.getReplayId() + " " + Instant.now().toString()));
 
             try {
                 recording.generatedClassJarPath
@@ -431,6 +433,131 @@ public class ReplayWS {
             replayQuery.startDate, replayQuery.testConfigName, replayQuery.goldenName,  false);
         List<Replay> finalResult = result.getObjects().collect(Collectors.toList());
         return Response.ok().type(MediaType.APPLICATION_JSON).entity(Map.of("response", finalResult)).build();
+    }
+
+    @POST
+    @Path("saveReplay")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response saveReplay(@Context UriInfo uriInfo, Replay replay){
+        boolean saveReplay = rrstore.saveReplay(replay);
+        if(saveReplay) {
+            return Response.ok().entity(replay).build();
+        } else {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Unable to save Replay",
+                Constants.REPLAY_ID_FIELD, replay.replayId)));
+            return Response.serverError().entity(
+                Utils.buildErrorResponse(Constants.ERROR, Constants.SOLR_STORE_FAILED, "Unable to save Replay for replayId:" + replay.replayId))
+                .build();
+        }
+    }
+    @GET
+    @Path("getDynamicInjectionConfig/{customerId}/{app}/{version}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getDynamicInjectionConfig(@Context UriInfo uriInfo,
+        @PathParam("customerId") String customerId, @PathParam("app") String app,
+        @PathParam("version") String version) {
+        Optional<DynamicInjectionConfig> dynamicInjectionConfig = rrstore.getDynamicInjectionConfig(
+            new CubeMetaInfo(customerId, app, ""), version);
+        Response resp = dynamicInjectionConfig.map(d -> {
+            try{
+                String json = jsonMapper.writeValueAsString(d);
+                return Response.ok(json).build();
+            } catch (JsonProcessingException e) {
+                LOGGER.error(String.format("Error in converting DynamicInjectionConfig object to Json for customerId=%s, app=%s, version=%s",
+                    customerId, app, version), e);
+                return Response.serverError().entity(
+                    Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                        "Error in converting DynamicInjectionConfig object to Json")).build();
+            }
+        }).orElse(Response.status(Response.Status.NOT_FOUND)
+            .entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
+                "DynamicInjectionConfig object not found")).build());
+        return resp;
+    }
+    @POST
+    @Path("replay/restart/{customerId}/{app}/{replayId}")
+    public Response restartReplay(@Context UriInfo uriInfo, @PathParam("customerId") String customerId,
+        @PathParam("app") String app, @PathParam("replayId") String replayId) {
+
+        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+        String instanceId = queryParams.getFirst(Constants.INSTANCE_ID_FIELD);
+        String recordingCollection = queryParams.getFirst(Constants.COLLECTION_FIELD);
+        String userId = queryParams.getFirst(Constants.USER_ID_FIELD);
+        String endPoint = queryParams.getFirst(Constants.END_POINT_FIELD);
+        if (instanceId == null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("InstaceId needs to be given for a replay")
+                .build();
+        }
+        if (recordingCollection == null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("RecordingCollection needs to be given for a replay")
+                .build();
+        }
+        if (userId == null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("userId needs to be given for a replay")
+                .build();
+        }
+        if (endPoint == null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("endPoint needs to be given for a replay")
+                .build();
+        }
+        Optional<Replay> optionalReplay = rrstore.getReplay(replayId);
+        Replay replay = null;
+        if(optionalReplay.isPresent()) {
+            replay = optionalReplay.get();
+            replay.collection = recordingCollection;
+            if(!replay.customerId.equals(customerId)) {
+                LOGGER.error(String.format("customerId is not matching the replay customerId for replayId %s", replayId));
+                return Response.status(Status.BAD_REQUEST)
+                    .entity("customerId is not matching the replay customerId")
+                    .build();
+            }
+            if(!replay.app.equals(app)) {
+                LOGGER.error(String.format("App is not matching the replay app for replayId %s", replayId));
+                return Response.status(Status.BAD_REQUEST)
+                    .entity("App is not matching the replay app")
+                    .build();
+            }
+        } else {
+            ReplayBuilder replayBuilder = new ReplayBuilder(endPoint, new CubeMetaInfo(customerId, app, instanceId),
+                recordingCollection, userId)
+                .withReplayId(replayId);
+            replay = replayBuilder.build();
+        }
+        replay.status = ReplayStatus.Running;
+        replay.runId = Optional.of(replayId + " " + Instant.now().toString());
+        rrstore.saveReplay(replay);
+        try {
+            String json = jsonMapper.writeValueAsString(replay);
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+        }  catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting Replay object to Json for replayId %s", replayId), e);
+            return Response.serverError().build();
+        }
+    }
+
+    @POST
+    @Path("deferredDeleteReplay/{replayId}")
+    public Response deferredDeleteReplay(@Context UriInfo uriInfo,
+        @PathParam("replayId") String replayId) {
+        Optional<Replay> optionalReplay = rrstore.getReplay(replayId);
+        Response resp = optionalReplay.map(replay -> {
+            boolean expireReplayInCache = rrstore.expireReplayInCache(replay);
+            if(expireReplayInCache) {
+                return Response.ok().entity(replay).build();
+            } else {
+                LOGGER.error(String.format("The Replay in cache is not expired for replayId %s", replayId));
+                return Response.serverError().entity(
+                    Utils.buildErrorResponse(Constants.ERROR, Constants.REPLAY_ID_FIELD,
+                        "The Replay in cache is not expired")).build();
+            }
+        }).orElse(Response.status(Response.Status.NOT_FOUND)
+            .entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
+                "Replay object not found")).build());
+        return resp;
     }
 
 	/**

@@ -4,6 +4,7 @@
 package com.cube.dao;
 
 import io.md.core.ConfigApplicationAcknowledge;
+import io.md.dao.Event.EventType;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
 import java.io.IOException;
@@ -666,9 +667,10 @@ public interface ReqRespStore extends DataStore {
 	/**
 	 *
 	 * @param apiTraceFacetQuery
-	 * @return
+	 * @param addPathFilter
+     * @return
 	 */
-	Result<Event> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfResults, Optional<Integer> start);
+	Pair<List, Stream<Event>> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfFacets, Optional<Integer> start, Optional<Integer> numberOfResults, List<EventType> eventTypes, boolean addPathFilter);
 
     /**
      * Save a template set
@@ -690,5 +692,8 @@ public interface ReqRespStore extends DataStore {
     boolean storeAgentConfig(ConfigDAO store);
     Optional<ConfigDAO> getAgentConfig(String customerId, String app, String service,
 						String instanceId);
+
+    Pair<List, Stream<ConfigDAO>> getAgentConfigWithFacets(String customerId, String app, Optional<String> service,
+				Optional<String> instanceId, Optional<Integer> numOfResults, Optional<Integer> start);
 
 }

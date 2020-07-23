@@ -60,6 +60,7 @@ public class ReplayBuilder {
 	public Optional<String> dynamicInjectionConfigVersion;
 	public Optional<String> staticInjectionMap;
 	public Instant analysisCompleteTimestamp;
+	public Optional<String> runId;
 
 	public ReplayBuilder(String endpoint, CubeMetaInfo metaInfo,
 		String collection, String userId) {
@@ -99,6 +100,7 @@ public class ReplayBuilder {
 		 * Once analysis is complete the value is set to the corresponding time
 		 */
 		this.analysisCompleteTimestamp = Instant.EPOCH;
+		this.runId = Optional.empty();
 	}
 
 	private void populateClassLoader() throws Exception {
@@ -117,7 +119,7 @@ public class ReplayBuilder {
             excludePaths, reqCnt , reqSent , reqFailed, creationTimestamp, sampleRate, intermediateServices,
 			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, mockServices
 	            , testConfigName, goldenName, recordingId, archived,dynamicInjectionConfigVersion,
-				analysisCompleteTimestamp, staticInjectionMap, Optional.empty());
+				analysisCompleteTimestamp, staticInjectionMap, runId);
 	}
 
 	public ReplayBuilder withPaths(List<String> paths) {
@@ -242,6 +244,15 @@ public class ReplayBuilder {
 	public ReplayBuilder withAnalysisCompleteTimestamp(Instant analysisCompleteTimestamp) {
     	this.analysisCompleteTimestamp = analysisCompleteTimestamp;
     	return this;
+	}
+
+	public ReplayBuilder withRunId(Optional<String> runId) {
+		this.runId = runId;
+		return this;
+	}
+
+	public String getReplayId() {
+		return this.replayId;
 	}
 
 }

@@ -211,6 +211,8 @@ public class MockServiceHTTP {
         @PathParam("traceId") String traceId,
         @PathParam("service") String service,
         String body) {
+	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+	    Optional<String> runId = Optional.ofNullable(queryParams.getFirst(Constants.RUN_ID_FIELD));
 
 	    LOGGER.info(String.format(" path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordingId: %s", path,
             ui.toString(), body, replayCollection, recordingId));
@@ -224,7 +226,7 @@ public class MockServiceHTTP {
         }
         Recording recording = optionalRecording.get();
         return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            HttpMethod.GET, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion)), Optional.of(traceId));
+            HttpMethod.GET, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId)), Optional.of(traceId));
     }
 
     @POST
@@ -236,6 +238,8 @@ public class MockServiceHTTP {
         @PathParam("traceId") String traceId,
         @PathParam("service") String service,
         String body) {
+	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+	    Optional<String> runId = Optional.ofNullable(queryParams.getFirst(Constants.RUN_ID_FIELD));
 
 	    LOGGER.info(String.format("path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordingId: %s", path,
             ui.toString(), body, replayCollection, recordingId));
@@ -249,7 +253,61 @@ public class MockServiceHTTP {
         }
         Recording recording = optionalRecording.get();
         return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            HttpMethod.POST, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion)), Optional.of(traceId));
+            HttpMethod.POST, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId)), Optional.of(traceId));
+    }
+
+    @GET
+    @Path("mockWithRunId/{replayCollection}/{recordingId}/{traceId}/{runId}/{service}/{var:.+}")
+    public Response getMockWithRunId(@Context UriInfo ui, @PathParam("var") String path,
+        @Context HttpHeaders headers,
+        @PathParam("replayCollection") String replayCollection,
+        @PathParam("recordingId") String recordingId,
+        @PathParam("traceId") String traceId,
+        @PathParam("service") String service,
+        @PathParam("runId") String runId,
+        String body) {
+        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+
+        LOGGER.info(String.format(" path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordingId: %s", path,
+            ui.toString(), body, replayCollection, recordingId));
+        Optional<Recording> optionalRecording = rrstore.getRecording(recordingId);
+        if(optionalRecording.isEmpty()) {
+            LOGGER.error(new ObjectMessage(
+                Map.of(
+                    Constants.RECORDING_ID, recordingId,
+                    Constants.SERVICE_FIELD, service)));
+            return notFound();
+        }
+        Recording recording = optionalRecording.get();
+        return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
+            HttpMethod.GET, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, Optional.of(runId))), Optional.of(traceId));
+    }
+
+    @POST
+    @Path("mockWithRunId/{replayCollection}/{recordingId}/{traceId}/{runId}/{service}/{var:.+}")
+    public Response postMockWithRunId(@Context UriInfo ui, @PathParam("var") String path,
+        @Context HttpHeaders headers,
+        @PathParam("replayCollection") String replayCollection,
+        @PathParam("recordingId") String recordingId,
+        @PathParam("traceId") String traceId,
+        @PathParam("service") String service,
+        @PathParam("runId") String runId,
+        String body) {
+        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+
+        LOGGER.info(String.format(" path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordingId: %s", path,
+            ui.toString(), body, replayCollection, recordingId));
+        Optional<Recording> optionalRecording = rrstore.getRecording(recordingId);
+        if(optionalRecording.isEmpty()) {
+            LOGGER.error(new ObjectMessage(
+                Map.of(
+                    Constants.RECORDING_ID, recordingId,
+                    Constants.SERVICE_FIELD, service)));
+            return notFound();
+        }
+        Recording recording = optionalRecording.get();
+        return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
+            HttpMethod.GET, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, Optional.of(runId))), Optional.of(traceId));
     }
 
 

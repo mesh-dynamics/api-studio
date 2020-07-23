@@ -17,17 +17,17 @@
 				"timeout": 100000,
 				"retries": 3
 			},
-			"intent": "record",
+			"intent": "normal",
 			"pollingconfig": {
 				"delay": 25,
 				"fetchconfigapiuri": "http://localhost:8080/cubeio_war/cs/fetchAgentConfig/",
 				"ackconfigapiuri": "http://localhost:8080/cubeio_war/cs/ackConfigApplication/",
-				"pollserver": true
+				"pollserver": false
 			},
 			"samplerconfig": {
 				"type": "simple",
 				"accuracy": 1000,
-				"rate": 1
+				"rate": 0
 			},
 			"sampler": {
 				"veto": false
