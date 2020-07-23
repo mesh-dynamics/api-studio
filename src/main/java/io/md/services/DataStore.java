@@ -13,7 +13,10 @@ import io.md.core.TemplateKey.Type;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
 import io.md.dao.RecordOrReplay;
+import io.md.dao.Recording;
+import io.md.dao.Replay;
 import io.md.dao.ReqRespMatchResult;
+import io.md.injection.DynamicInjectionConfig;
 
 
 /*
@@ -39,9 +42,29 @@ public interface DataStore {
 
     Optional<Event> getRespEventForReqEvent(Event reqEvent);
 
+    /**
+     * @param reqId
+     * @return the matching response on the reqId
+     */
+    Optional<Event> getResponseEvent(String reqId);
+
+
     CompareTemplate getTemplate(String customerId, String app, String service, String apiPath,
         String templateVersion, Type templateType,
         Optional<Event.EventType> eventType) throws TemplateNotFoundException;
+
+    /**
+     *
+     * @param customerId
+     * @param app
+     * @param version
+     * @return
+     */
+    Optional<DynamicInjectionConfig> getDynamicInjectionConfig(String customerId, String app, String version);
+
+    Optional<Replay> getReplay(String replayId);
+
+    Optional<Recording> getRecording(String recordingId);
 
     /**
      * @param res
@@ -50,4 +73,12 @@ public interface DataStore {
     boolean saveResult(ReqRespMatchResult res);
 
     boolean save(Event event);
+
+    boolean saveReplay(Replay replay);
+
+    /**
+     * @param replay
+     * @return
+     */
+    boolean deferredDelete(Replay replay);
 }

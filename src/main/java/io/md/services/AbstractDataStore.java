@@ -41,4 +41,14 @@ public abstract class AbstractDataStore implements DataStore {
         return getSingleEvent(eventQuery);
     }
 
+    @Override
+    public Optional<Event> getResponseEvent(String reqId) {
+
+        EventQuery.Builder builder = new EventQuery.Builder("*", "*", Event.RESPONSE_EVENT_TYPES);
+        builder.withReqId(reqId);
+
+        return getSingleEvent(builder.build());
+    }
+
+
 }
