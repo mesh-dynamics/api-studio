@@ -9,6 +9,7 @@ import com.cube.dao.ReplayUpdate.ReplaySaveFailureException;
 import com.cube.dao.Result;
 import io.md.constants.ReplayStatus;
 
+import io.md.dao.agent.config.AgentConfigTagInfo;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -273,6 +275,7 @@ public class ReplayWS {
 
         Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst("dynamicInjectionConfigVersion"));
         Optional<String> staticInjectionMap = Optional.ofNullable(formParams.getFirst("staticInjectionMap"));
+        Optional<String> tag = Optional.ofNullable(formParams.getFirst(Constants.TAG_FIELD));
 
         // Request transformations - for injecting tokens and such
         Optional<String> xfms = Optional.ofNullable(formParams.getFirst("transforms"));
@@ -296,6 +299,24 @@ public class ReplayWS {
                 Optional.ofNullable(userId));
         if (errResp.isPresent()) {
             return errResp.get();
+        }
+
+        if(tag.isPresent()) {
+            String tagValue = tag.get();
+            Result<AgentConfigTagInfo> response = rrstore.getAgentConfigTagInfoResults(
+                recording.customerId, recording.app, Optional.empty(), instanceId);
+            response.getObjects().forEach(agentconfig -> {
+                AgentConfigTagInfo agentConfigTagInfo = new AgentConfigTagInfo(
+                    agentconfig.customerId, agentconfig.app, agentconfig.service, agentconfig.instanceId, tagValue);
+                rrstore.updateAgentConfigTag(agentConfigTagInfo);
+            });
+            try {
+                TimeUnit.SECONDS.sleep(30);
+            } catch (InterruptedException ex) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Exception while sleeping the thread",
+                    Constants.TAG_FIELD, tagValue)), ex);
+            }
         }
 
         return endpoint.map(e -> {
