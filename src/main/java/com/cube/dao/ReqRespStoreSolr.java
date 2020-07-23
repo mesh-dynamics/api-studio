@@ -19,6 +19,7 @@ import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.Replay;
+import io.md.dao.Analysis;
 import io.md.dao.Config;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -83,6 +84,10 @@ import io.md.dao.ReqRespUpdateOperation;
 import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.services.FnResponse;
 import io.md.utils.FnKey;
+import io.md.injection.DynamicInjectionConfig;
+import io.md.injection.DynamicInjectionConfig.ExtractionMeta;
+import io.md.injection.DynamicInjectionConfig.InjectionMeta;
+
 import redis.clients.jedis.Jedis;
 
 import com.cube.cache.ComparatorCache;
@@ -94,9 +99,6 @@ import com.cube.core.Utils;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
-import com.cube.injection.DynamicInjectionConfig;
-import com.cube.injection.DynamicInjectionConfig.ExtractionMeta;
-import com.cube.injection.DynamicInjectionConfig.InjectionMeta;
 import com.cube.utils.Constants;
 
 /**
@@ -1080,18 +1082,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<Integer> maxResults = Optional.of(1);
         return SolrIterator.getStream(solr, query, maxResults).
             findFirst().flatMap(this::docToAttributeRuleMap);
-    }
-
-    /* (non-Javadoc)
-     * @see com.cube.dao.ReqRespStore#getResponseEvent(java.lang.String)
-     */
-    @Override
-    public Optional<Event> getResponseEvent(String reqId) {
-
-        EventQuery.Builder builder = new EventQuery.Builder("*", "*", Event.RESPONSE_EVENT_TYPES);
-        builder.withReqId(reqId);
-
-        return getSingleEvent(builder.build());
     }
 
 
@@ -3038,12 +3028,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 
     @Override
-    public Optional<DynamicInjectionConfig> getDynamicInjectionConfig(CubeMetaInfo cubeMetaInfo, String version) {
+    public Optional<DynamicInjectionConfig> getDynamicInjectionConfig(String customerId,
+                                                                      String app,
+                                                                      String version) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
         addFilter(query, TYPEF, Types.DynamicInjectionConfig.name());
-        addFilter(query, CUSTOMERIDF, cubeMetaInfo.customerId);
-        addFilter(query, APPF, cubeMetaInfo.app);
+        addFilter(query, CUSTOMERIDF, customerId);
+        addFilter(query, APPF, app);
         addFilter(query, DYNAMIC_INJECTION_CONFIG_VERSIONF, version, true);
         return SolrIterator.getSingleResult(solr, query)
             .flatMap(this::docToDynamicInjectionConfig);

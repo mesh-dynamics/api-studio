@@ -60,11 +60,6 @@ public abstract class ReqRespStoreImplBase extends AbstractDataStore implements 
 		return getCurrentRecordOrReplay(customerId, app, instanceId).flatMap(rr -> rr.getRecordingCollection());
 	}
 
-	@Override
-	public Optional<String> getCurrentReplayId(Optional<String> customerId, Optional<String> app, Optional<String> instanceId) {
-	    return getCurrentRecordOrReplay(customerId, app, instanceId).flatMap(rr -> rr.getReplayId());
-    }
-
     @Override
     public Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId, Optional<String> app,
                                                              Optional<String> instanceId) {
@@ -164,7 +159,7 @@ public abstract class ReqRespStoreImplBase extends AbstractDataStore implements 
 	 * @see com.cube.dao.ReqRespStore#saveReplay(com.cube.dao.Replay)
 	 */
 	@Override
-	public boolean expireReplayInCache(Replay replay) {
+	public boolean deferredDelete(Replay replay) {
 		updaterFinalReplayStatusInCache(replay);
 		invalidateCurrentCollectionCache(replay.customerId, replay.app, replay.instanceId);
 		return true;

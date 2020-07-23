@@ -848,8 +848,8 @@ public class CubeStore {
           if(rt == RecordingType.History || rt == RecordingType.UserGolden) {
               return Optional.empty();
           } else {
-              return WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(customerId), Optional.ofNullable(app),
-                  Optional.ofNullable(instanceId), Optional.empty());
+              return WSUtils.checkActiveCollection(rrstore, customerId, app,
+                  instanceId, Optional.empty());
           }
       });
         if (errResp.isPresent()) {

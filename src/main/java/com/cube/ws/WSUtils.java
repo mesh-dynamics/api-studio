@@ -19,8 +19,8 @@ import org.apache.solr.client.solrj.request.SolrPing;
 import org.apache.solr.client.solrj.response.SolrPingResponse;
 
 import io.md.dao.RecordOrReplay;
+import io.md.services.DataStore;
 
-import com.cube.dao.ReqRespStore;
 import com.cube.utils.Constants;
 
 /*
@@ -30,10 +30,10 @@ import com.cube.utils.Constants;
  */
 public class WSUtils {
 
-    static public Optional<Response> checkActiveCollection(ReqRespStore rrstore, Optional<String> customerId,
-                                                           Optional<String> app, Optional<String> instanceId,
+    static public Optional<Response> checkActiveCollection(DataStore dataStore, String customerId,
+                                                           String app, String instanceId,
                                                            Optional<String> userId) {
-        Optional<RecordOrReplay> recordOrReplay = rrstore.getCurrentRecordOrReplay(customerId, app,
+        Optional<RecordOrReplay> recordOrReplay = dataStore.getCurrentRecordOrReplay(customerId, app,
             instanceId);
         Optional<String> rrcollection = recordOrReplay.flatMap(rr -> rr.getRecordingCollection());
         Optional<String> replayId = recordOrReplay.flatMap(rr -> rr.getReplayId());
@@ -43,9 +43,9 @@ public class WSUtils {
         return rrcollection.map(collection -> {
             // TODO: use constant strings from Ashok's PR once its merged
             Map<String, String> respObj = Map.of("message", runType + " ongoing",
-                "customerId", customerId.orElse("None"),
-                "app", app.orElse("None"),
-                "instance", instanceId.orElse("None"),
+                "customerId", customerId,
+                "app", app,
+                "instance", instanceId,
                 "collection", collection,
                 "replayId", replayId.orElse("None"),
 	            "recordingId", recordingId.orElse("None"),

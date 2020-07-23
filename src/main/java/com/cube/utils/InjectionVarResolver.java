@@ -12,9 +12,7 @@ import io.md.dao.DataObj;
 import io.md.dao.DataObj.PathNotFoundException;
 import io.md.dao.Event;
 import io.md.dao.Payload;
-
-import com.cube.dao.ReqRespStore;
-import com.cube.drivers.AbstractReplayDriver;
+import io.md.services.DataStore;
 
 public class InjectionVarResolver implements StringLookup {
 
@@ -23,14 +21,14 @@ public class InjectionVarResolver implements StringLookup {
 	Event goldenRequestEvent;
 	Payload testResponsePayload;
 	Payload testRequestPayload;
-	ReqRespStore rrstore;
+	DataStore dataStore;
 
 	public InjectionVarResolver(Event goldenRequestEvent, Payload testResponsePayload,
-		Payload testRequestPayload, ReqRespStore rrstore) {
+                                Payload testRequestPayload, DataStore dataStore) {
 		this.goldenRequestEvent = goldenRequestEvent;
 		this.testResponsePayload = testResponsePayload;
 		this.testRequestPayload = testRequestPayload;
-		this.rrstore = rrstore;
+		this.dataStore = dataStore;
 	}
 
 	public Pair<Payload, String> getSourcePayloadAndJsonPath(String lookupString) {
@@ -47,7 +45,7 @@ public class InjectionVarResolver implements StringLookup {
 				sourcePayload = goldenRequestEvent.payload;
 				break;
 			case Constants.GOLDEN_RESPONSE:
-				Optional<Event> goldenResponseOptional = rrstore
+				Optional<Event> goldenResponseOptional = dataStore
 					.getResponseEvent(goldenRequestEvent.reqId);
 				if (goldenResponseOptional.isEmpty()) {
 					LOGGER.error("Cannot fetch golden response for golden request");
