@@ -932,15 +932,16 @@ public class CubeStore {
         Optional<Response> resp = ReqRespStore
             .startRecording(recordingBuilder.build() ,rrstore)
             .map(newr -> {
-                if (newr.recordingType == RecordingType.UserGolden ||
-                    newr.recordingType == RecordingType.History) {
+                if (newr.recordingType == RecordingType.History) {
                     ReplayBuilder replayBuilder = new ReplayBuilder(ui.getBaseUri().toString(),
                         new CubeMetaInfo(newr.customerId,
                             newr.app, userId), newr.collection, userId)
                         .withTemplateSetVersion(newr.templateVersion)
                         .withRecordingId(newr.id)
                         .withGoldenName(newr.name)
-                        .withReplayStatus(ReplayStatus.Running);
+                        .withReplayStatus(ReplayStatus.Running)
+                        .withReplayId(newr.collection)
+                        .withRunId(Optional.of(newr.collection + " " + Instant.now().toString()));
                     Replay replay = replayBuilder.build();
                     rrstore.saveReplay(replay);
                 }

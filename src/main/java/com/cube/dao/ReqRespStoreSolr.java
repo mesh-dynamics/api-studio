@@ -1803,6 +1803,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             DYNAMIC_INJECTION_CONFIG_VERSIONF, DIConfVersion));
         replay.staticInjectionMap.ifPresent(sim -> doc.setField(
             STATIC_INJECTION_MAPF, sim));
+        replay.runId.ifPresent(runId -> doc.setField(RUNIDF, runId));
 
         return doc;
     }
@@ -1876,6 +1877,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             DYNAMIC_INJECTION_CONFIG_VERSIONF);
         Optional<String> staticInjectionMap = getStrField(doc,
             STATIC_INJECTION_MAPF);
+        Optional<String> runId = getStrField(doc, RUNIDF);
 
         Optional<Replay> replay = Optional.empty();
         if (endpoint.isPresent() && customerId.isPresent() && app.isPresent() &&
@@ -1893,7 +1895,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                     .withIntermediateServices(intermediateService)
                     .withReqCounts(reqcnt, reqsent, reqfailed)
                     .withReplayType(replayType).withCreationTimestamp(
-                        creationTimestamp.orElseGet(() -> Instant.now()));
+                        creationTimestamp.orElseGet(() -> Instant.now()))
+                    .withRunId(runId);
                 excludePaths.ifPresent(builder::withExcludePaths);
                 sampleRate.ifPresent(builder::withSampleRate);
                 generatedClassJarPath
