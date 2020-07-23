@@ -2,6 +2,8 @@ package com.cube.queue;
 
 import static io.md.utils.Utils.createHTTPRequestEvent;
 
+import io.md.dao.Recording;
+import io.md.dao.Recording.RecordingType;
 import io.md.dao.Replay;
 import java.net.URISyntaxException;
 import java.net.URLClassLoader;
@@ -226,7 +228,12 @@ public class StoreUtils {
 			throw new CubeStoreException(null, "No current record/replay!", event);
 		}
 		Optional<Replay> currentRunningReplay = recordOrReplay.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
-		currentRunningReplay.ifPresent(replay -> event.setRunId(replay.runId));
+		currentRunningReplay.ifPresent(replay -> {
+			event.setRunId(replay.runId);
+			event.setRecordingType(RecordingType.Replay);
+		});
+		Optional<Recording> currentRunningRecording = recordOrReplay.flatMap(runningRecordOrReplay -> runningRecordOrReplay.recording);
+		currentRunningRecording.ifPresent(recording -> event.setRecordingType(recording.recordingType));
 
 		event.setRunType(recordOrReplay.get().getRunType());
 

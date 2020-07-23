@@ -122,6 +122,27 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 */
 
+    /**TODO Remove this once PR for this is merged
+     *
+     * @param var1
+     * @return
+     */
+    @Override
+    public boolean deferredDelete(Replay replay) {
+        return true;
+    }
+
+    /**TODO
+     * Remove this once PR for this is merged
+     * @param customerId
+     * @param app
+     * @param version
+     * @return
+     */
+    @Override
+    public Optional<io.md.injection.DynamicInjectionConfig> getDynamicInjectionConfig(String customerId, String app, String version) {
+        return Optional.empty();
+    }
     @Override
     public void invalidateCache() {
         comparatorCache.invalidateAll();
