@@ -5,6 +5,7 @@ package com.cube.ws;
 
 import com.cube.dao.Result;
 import io.md.dao.agent.config.AgentConfigTagInfo;
+import io.md.services.DataStore;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -65,14 +67,14 @@ public class ReplayBasicWS {
 	@GET
 	@Path("status/{replayId}")
     public Response status(@Context UriInfo ui, @PathParam("replayId") String replayId) {
-        Optional<Replay> replay = AbstractReplayDriver.getStatus(replayId, reqRespStore);
+        Optional<Replay> replay = AbstractReplayDriver.getStatus(replayId, dataStore);
         Response resp = replay.map(r -> {
             String json;
             try {
                 // check if there's a current running replay in cache , which matches the replay whose
                 // status is required. If there's a current running replay, set the status of the replay
                 // to Running before sending the status back.
-                Optional<Replay> currentRunningReplay = reqRespStore.getCurrentRecordOrReplay(r.customerId,
+                Optional<Replay> currentRunningReplay = dataStore.getCurrentRecordOrReplay(r.customerId,
                     r.app, r.instanceId)
                     .flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
                 r.status = currentRunningReplay.map(runningReplay -> runningReplay.
@@ -95,7 +97,7 @@ public class ReplayBasicWS {
     public Response start(@Context UriInfo ui,
         @PathParam("recordingId") String recordingId,
         MultivaluedMap<String, String> formParams) {
-        Optional<Recording> recordingOpt = reqRespStore.getRecording(recordingId);
+        Optional<Recording> recordingOpt = dataStore.getRecording(recordingId);
 
         if (recordingOpt.isEmpty()) {
             LOGGER.error(String
@@ -152,29 +154,11 @@ public class ReplayBasicWS {
 
         // check if recording or replay is ongoing for (customer, app, instanceid)
         Optional<Response> errResp = WSUtils
-            .checkActiveCollection(reqRespStore, recording.customerId,
+            .checkActiveCollection(dataStore, recording.customerId,
                 recording.app, instanceId,
                 Optional.ofNullable(userId));
         if (errResp.isPresent()) {
             return errResp.get();
-        }
-
-        if(tag.isPresent()) {
-            String tagValue = tag.get();
-            Result<AgentConfigTagInfo> response = reqRespStore.getAgentConfigTagInfoResults(
-                recording.customerId, recording.app, Optional.empty(), instanceId);
-            response.getObjects().forEach(agentconfig -> {
-                AgentConfigTagInfo agentConfigTagInfo = new AgentConfigTagInfo(
-                    agentconfig.customerId, agentconfig.app, agentconfig.service, agentconfig.instanceId, tagValue);
-                reqRespStore.updateAgentConfigTag(agentConfigTagInfo);
-            });
-            try {
-                TimeUnit.SECONDS.sleep(30);
-            } catch (InterruptedException ex) {
-                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                    "Exception while sleeping the thread",
-                    Constants.TAG_FIELD, tagValue)), ex);
-            }
         }
 
         return endpoint.map(e -> {
@@ -211,7 +195,7 @@ public class ReplayBasicWS {
             }
             Replay replay = replayBuilder.build();
             return ReplayDriverFactory
-                .initReplay(replay, reqRespStore)
+                .initReplay(replay, dataStore)
                 .map(replayDriver -> {
                     String json;
                     Replay replayFromDriver = replayDriver.getReplay();
@@ -239,18 +223,40 @@ public class ReplayBasicWS {
 
     }
 
+    private void setTag(Recording recording, String tag, ReqRespStore rrstore) {
+	    AtomicBoolean changed = new AtomicBoolean(false);
+	    Result<AgentConfigTagInfo> response = rrstore.getAgentConfigTagInfoResults(
+                recording.customerId, recording.app, Optional.empty(), recording.instanceId);
+	    response.getObjects().forEach(agentconfig -> {
+	        if(!agentconfig.tag.equals(tag)){
+              AgentConfigTagInfo agentConfigTagInfo = new AgentConfigTagInfo(
+                  agentconfig.customerId, agentconfig.app, agentconfig.service, agentconfig.instanceId, tag);
+              changed.set(true);
+              rrstore.updateAgentConfigTag(agentConfigTagInfo);
+          }
+	    });
+	    if(changed.get()) {
+          try {
+              TimeUnit.SECONDS.sleep(30);
+          } catch (InterruptedException ex) {
+              LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                  "Exception while sleeping the thread",
+                  Constants.TAG_FIELD, tag)), ex);
+          }
+      }
+    }
 
     /**
-     * @param reqRespStore
+     * @param dataStore
      */
     @Inject
-    public ReplayBasicWS(ReqRespStore reqRespStore, Analyzer analyzer) {
+    public ReplayBasicWS(ReqRespStore dataStore, Analyzer analyzer) {
         super();
-        this.reqRespStore = reqRespStore;
+        this.dataStore = dataStore;
         this.jsonMapper = CubeObjectMapperProvider.getInstance();
         this.analyzer = analyzer;
     }
 
-	ReqRespStore reqRespStore;
+	DataStore dataStore;
 	ObjectMapper jsonMapper;
 }
