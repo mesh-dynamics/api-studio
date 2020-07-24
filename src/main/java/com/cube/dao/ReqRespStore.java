@@ -665,5 +665,7 @@ public interface ReqRespStore extends DataStore {
 
     Pair<List, Stream<ConfigDAO>> getAgentConfigWithFacets(String customerId, String app, Optional<String> service,
 				Optional<String> instanceId, Optional<Integer> numOfResults, Optional<Integer> start);
+    Result<AgentConfigTagInfo> getAgentConfigTagInfoResults(String customerId, String app,
+				Optional<String> service, String instanceId);
 
 }

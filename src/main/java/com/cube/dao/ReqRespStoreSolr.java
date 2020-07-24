@@ -666,9 +666,38 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return solrInputDocument;
     }
 
+    public Optional<AgentConfigTagInfo> docToAgentConfigTagInfo(SolrDocument doc) {
+        Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
+        Optional<String> app = getStrField(doc, APPF);
+        Optional<String> service = getStrField(doc, SERVICEF);
+        Optional<String> instanceId = getStrField(doc, INSTANCEIDF);
+        Optional<String> tag = getStrField(doc, TAG_F);
+        Optional<AgentConfigTagInfo> agentConfigTagInfo = Optional.empty();
+        if (customerId.isPresent() && app.isPresent() &&
+            service.isPresent() && instanceId.isPresent() && tag.isPresent()) {
+            AgentConfigTagInfo agentConfig = new AgentConfigTagInfo(customerId.get(), app.get(),
+                service.get(), instanceId.get(), tag.get());
+            agentConfigTagInfo = Optional.of(agentConfig);
+        }
+        return agentConfigTagInfo;
+    }
+
     @Override
     public boolean updateAgentConfigTag(AgentConfigTagInfo tagInfo) {
         return saveDoc(agentConfigTagInfoToDoc(tagInfo)) && softcommit();
+    }
+
+    @Override
+    public Result<AgentConfigTagInfo> getAgentConfigTagInfoResults(String customerId, String app,
+        Optional<String> service, String instanceId) {
+        SolrQuery query = new SolrQuery("*:*");
+        addFilter(query, TYPEF , Types.AgentConfigTagInfo.toString());
+        addFilter(query, CUSTOMERIDF, customerId);
+        addFilter(query, APPF, app);
+        addFilter(query, SERVICEF, service);
+        addFilter(query, INSTANCEIDF, instanceId);
+        return SolrIterator.getResults(solr, query, Optional.empty(),
+            this::docToAgentConfigTagInfo, Optional.empty());
     }
 
     @Override

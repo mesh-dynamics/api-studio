@@ -3,6 +3,8 @@
  */
 package com.cube.ws;
 
+import com.cube.dao.Result;
+import io.md.dao.agent.config.AgentConfigTagInfo;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -44,7 +48,6 @@ import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.ReplayBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.drivers.AbstractReplayDriver;
-import com.cube.drivers.RealAnalyzer;
 import com.cube.drivers.ReplayDriverFactory;
 import com.cube.utils.Constants;
 
@@ -132,6 +135,7 @@ public class ReplayBasicWS {
 
         Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst("dynamicInjectionConfigVersion"));
         Optional<String> staticInjectionMap = Optional.ofNullable(formParams.getFirst("staticInjectionMap"));
+        Optional<String> tag = Optional.ofNullable(formParams.getFirst(Constants.TAG_FIELD));
 
         // Request transformations - for injecting tokens and such
         Optional<String> xfms = Optional.ofNullable(formParams.getFirst("transforms"));
@@ -219,6 +223,28 @@ public class ReplayBasicWS {
 
     }
 
+    private void setTag(Recording recording, String tag, ReqRespStore rrstore) {
+	    AtomicBoolean changed = new AtomicBoolean(false);
+	    Result<AgentConfigTagInfo> response = rrstore.getAgentConfigTagInfoResults(
+                recording.customerId, recording.app, Optional.empty(), recording.instanceId);
+	    response.getObjects().forEach(agentconfig -> {
+	        if(!agentconfig.tag.equals(tag)){
+              AgentConfigTagInfo agentConfigTagInfo = new AgentConfigTagInfo(
+                  agentconfig.customerId, agentconfig.app, agentconfig.service, agentconfig.instanceId, tag);
+              changed.set(true);
+              rrstore.updateAgentConfigTag(agentConfigTagInfo);
+          }
+	    });
+	    if(changed.get()) {
+          try {
+              TimeUnit.SECONDS.sleep(30);
+          } catch (InterruptedException ex) {
+              LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                  "Exception while sleeping the thread",
+                  Constants.TAG_FIELD, tag)), ex);
+          }
+      }
+    }
 
     /**
      * @param dataStore
