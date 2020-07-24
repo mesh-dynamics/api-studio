@@ -97,7 +97,7 @@ const setupListeners = (proxyServerOptions, mockContext, user) => {
     });
 
     ipcMain.on('mock_context_change', (event, arg) => {
-        const { collectionId, traceId, selectedApp, customerName, recordingCollectionId  } = arg;
+        const { collectionId, traceId, selectedApp, customerName, recordingCollectionId, runId } = arg;
 
         logger.info('Current mock context :', mockContext);
         logger.info('Changing mock context to : ', arg);
@@ -107,7 +107,8 @@ const setupListeners = (proxyServerOptions, mockContext, user) => {
         mockContext.customerName = customerName;
         mockContext.collectionId = collectionId;
         mockContext.recordingCollectionId = recordingCollectionId;        
-
+        mockContext.runId = runId   
+        
         logger.info('Updated context is : ', mockContext);
     });
 

@@ -4,8 +4,8 @@
 const httpProxy = require('http-proxy');
 const logger = require('electron-log');
 
-// Alt Mock With Collection API: /api/ms/mockWithCollection
-const mockApiPrefix = '/api/msc/mock';
+// Alt Mock With Collection API: /api/ms/mockWithCollection??
+const mockApiPrefix = '/api/msc/mockWithRunId';
 
 const rewriteMockPath = (resourcePath, mockContext) => {
     // Pure function. Does not modify parameters // recordingId 
@@ -14,7 +14,8 @@ const rewriteMockPath = (resourcePath, mockContext) => {
         selectedApp,
         collectionId, 
         customerName,
-        recordingCollectionId
+        recordingCollectionId,
+        runId,
     } = mockContext;
     
     logger.info('Intercepted Resource URI :', resourcePath);
@@ -23,10 +24,10 @@ const rewriteMockPath = (resourcePath, mockContext) => {
     // const path = `${mockApiPrefix}/${collectionId}/${recordingId}${resourcePath}`;
 
     // Path for mock
-    const path = `${mockApiPrefix}/${collectionId}/${recordingCollectionId}/${customerName}/${selectedApp}/${traceId}${resourcePath}`;
+    const path = `${mockApiPrefix}/${collectionId}/${recordingCollectionId}/${customerName}/${selectedApp}/${traceId}/${runId}${resourcePath}`;
 
     logger.info('Updated Resource URI : ', path);
-
+    logger.info("runId", runId);
     return path;
 }
 
@@ -55,7 +56,7 @@ const setupProxy = (proxyServerOptions, mockContext, user) => {
         proxyReq.setHeader('authorization', token);
 
         // rewrite request url
-        logger.info('Rewritting url...');
+        logger.info('Rewriting url...');
         proxyReq.path = rewriteMockPath(proxyReq.path, mockContext);
 
         logger.info('Logging Request Headers\n', proxyReq._headers);

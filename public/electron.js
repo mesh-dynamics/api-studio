@@ -27,6 +27,7 @@ const mockContext = {
     customerName: '',
     collectionId: '',
     recordingCollectionId: '',
+    runId: '',
 };
 
 // recordingId: '', // Do not delete

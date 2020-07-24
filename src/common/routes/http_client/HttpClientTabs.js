@@ -523,13 +523,16 @@ class HttpClientTabs extends Component {
         const tabToProcess = tabsToProcess[tabIndex];
         if(tabIndex < 0) return;
         const {userHistoryCollection} = this.state;
+        // generate a new run id every time a request is run
+        const runId = generateRunId();
         const mockContext = {
             collectionId: userHistoryCollection.collec,
             // recordingId: this.state.tabs[tabIndex].recordingIdAddedFromClient,
             recordingCollectionId: this.state.tabs[tabIndex].collectionIdAddedFromClient,
             traceId: this.state.tabs[tabIndex].traceIdAddedFromClient,
             selectedApp: app,
-            customerName: customerId
+            customerName: customerId,
+            runId: runId,
         }
         // TODO Need to refactor this
         if(isElectron()) {
