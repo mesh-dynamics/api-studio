@@ -1019,7 +1019,7 @@ class HttpClientTabs extends Component {
         }
         let reqObject = {
             httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-            httpURL: "http://localhost/" + httpRequestEvent.apiPath,
+            httpURL: "{{{url}}}/" + httpRequestEvent.apiPath,
             headers: headers,
             queryStringParams: queryParams,
             bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
@@ -1248,7 +1248,7 @@ class HttpClientTabs extends Component {
         }
         let reqObject = {
             httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-            httpURL: "http://localhost/" + httpRequestEvent.apiPath,
+            httpURL: "{{{url}}}/" + httpRequestEvent.apiPath,
             headers: headers,
             queryStringParams: queryParams,
             bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
@@ -1399,7 +1399,7 @@ class HttpClientTabs extends Component {
 
                             let reqObject = {
                                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-                                httpURL: "http://localhost/" + httpRequestEvent.apiPath,
+                                httpURL: "{{{url}}}/" + httpRequestEvent.apiPath,
                                 headers: headers,
                                 queryStringParams: queryParams,
                                 bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
