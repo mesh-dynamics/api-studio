@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.md.constants.Constants;
 import io.md.dao.Event.RunType;
+import io.md.dao.Recording.RecordingType;
 
 /*
  * Created by IntelliJ IDEA.
@@ -75,6 +76,11 @@ public class RecordOrReplay {
 		} else {
 			return recording.flatMap(rec -> rec.generatedClassLoader);
 		}
+	}
+
+	@JsonIgnore
+	public RecordingType getRecordingType() {
+		return recording.map(r -> r.recordingType).orElse(RecordingType.Replay);
 	}
 
 
