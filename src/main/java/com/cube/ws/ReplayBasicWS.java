@@ -5,7 +5,6 @@ package com.cube.ws;
 
 import com.cube.dao.Result;
 import io.md.dao.agent.config.AgentConfigTagInfo;
-import io.md.services.DataStore;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,6 +40,7 @@ import io.md.core.ReplayTypeEnum;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
 import io.md.services.Analyzer;
+import io.md.services.DataStore;
 import io.md.utils.CubeObjectMapperProvider;
 
 import com.cube.core.Utils;
@@ -250,7 +250,7 @@ public class ReplayBasicWS {
      * @param dataStore
      */
     @Inject
-    public ReplayBasicWS(ReqRespStore dataStore, Analyzer analyzer) {
+    public ReplayBasicWS(DataStore dataStore, Analyzer analyzer) {
         super();
         this.dataStore = dataStore;
         this.jsonMapper = CubeObjectMapperProvider.getInstance();
