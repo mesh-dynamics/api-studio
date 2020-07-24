@@ -33,6 +33,7 @@ import {
 import EnvVar from "./EnvVar";
 import Mustache from "mustache"
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
+import { generateRunId } from "../../utils/http_client/utils";
 
 class HttpClientTabs extends Component {
 
@@ -609,7 +610,7 @@ class HttpClientTabs extends Component {
                     return eachTab; 
                 })
             }, () => {
-                this.saveToCollection(isOutgoingRequest, tabId, userHistoryCollection.id, "History", startDate);
+                this.saveToCollection(isOutgoingRequest, tabId, userHistoryCollection.id, "History", runId);
             });
         })
         .catch((error) => {
@@ -691,7 +692,7 @@ class HttpClientTabs extends Component {
         }
     }
 
-    getReqResFromTabData(eachPair, tabToSave) {
+    getReqResFromTabData(eachPair, tabToSave, runId) {
         const httpRequestEventTypeIndex = eachPair[0].eventType === "HTTPRequest" ? 0 : 1;
         const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
         const httpRequestEvent = eachPair[httpRequestEventTypeIndex];
@@ -716,6 +717,7 @@ class HttpClientTabs extends Component {
         const reqResCubeFormattedData = {
             request: {
                 ...httpRequestEvent,
+                runId: runId,
                 payload: [
                     "HTTPRequestPayload",
                     {
@@ -731,6 +733,7 @@ class HttpClientTabs extends Component {
             },
             response: {
                 ...httpResponseEvent,
+                runId: runId,
                 payload: [
                     "HTTPResponsePayload",
                     {
@@ -745,7 +748,7 @@ class HttpClientTabs extends Component {
         return reqResCubeFormattedData;
     }
 
-    saveToCollection(isOutgoingRequest, tabId, recordingId, type, startDate) {
+    saveToCollection(isOutgoingRequest, tabId, recordingId, type, runId="") {
         const {tabs, selectedTabKey, app} = this.state;
         const {dispatch} = this.props;
         let tabsToProcess = tabs;
@@ -755,7 +758,7 @@ class HttpClientTabs extends Component {
         const reqResPair = tabToProcess.eventData;
         if(reqResPair.length > 0) {
             const data = [];
-            data.push(this.getReqResFromTabData(reqResPair, tabToProcess));
+            data.push(this.getReqResFromTabData(reqResPair, tabToProcess, runId));
             if(type !== "History") {
                 tabToProcess.outgoingRequests.forEach((eachOutgoingTab) => {
                     if(eachOutgoingTab.eventData && eachOutgoingTab.eventData.length > 0) {
@@ -771,13 +774,12 @@ class HttpClientTabs extends Component {
                             const jsonTraceReqData = serverRes.data.response && serverRes.data.response.length > 0 ? serverRes.data.response[0] : "";
                             try {
                                 const parsedTraceReqData = JSON.parse(jsonTraceReqData);
-                                const endDate = new Date(Date.now() + 2 * 1000).toISOString();
                                 const httpRequestEventTypeIndex = reqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
                                 const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
                                 const apiPath = httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : ""; 
-                                this.loadRecordedHistory(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, startDate, endDate, apiPath);
+                                this.loadRecordedHistory(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath);
                                 clearIntervalHandle = setInterval(() => {
-                                    this.loadRecordedHistory(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, startDate, endDate, apiPath);
+                                    this.loadRecordedHistory(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath);
                                 }, 5000);
                                 setTimeout(() => {
                                     if(clearIntervalHandle) clearInterval(clearIntervalHandle);
@@ -1031,7 +1033,7 @@ class HttpClientTabs extends Component {
         }
         let reqObject = {
             httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-            httpURL: "http://localhost/" + httpRequestEvent.apiPath,
+            httpURL: "{{{url}}}/" + httpRequestEvent.apiPath,
             headers: headers,
             queryStringParams: queryParams,
             bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
@@ -1062,11 +1064,11 @@ class HttpClientTabs extends Component {
         return reqObject;
     }
 
-    loadRecordedHistory(tabId, traceId, reqId, startDate, endDate, apiPath) {
+    loadRecordedHistory(tabId, traceId, reqId, runId, apiPath) {
         const { userHistoryCollection, app } = this.state;
         const user = JSON.parse(localStorage.getItem('user'));
         const historyCollectionId = userHistoryCollection.collec;
-        api.get(`${config.apiBaseUrl}/as/getApiTrace/${user.customer_name}/${app}?depth=100&collection=${historyCollectionId}&apiPath=${apiPath}&startDate=${startDate}&endDate=${endDate}`)
+        api.get(`${config.apiBaseUrl}/as/getApiTrace/${user.customer_name}/${app}?depth=100&collection=${historyCollectionId}&apiPath=${apiPath}&runId=${runId}`)
             .then((res) => {
                 res.response.sort((a, b) => {
                     return b.res.length - a.res.length;
@@ -1104,7 +1106,7 @@ class HttpClientTabs extends Component {
                                 tabs: this.state.tabs.map(eachTab => {
                                     if (eachTab.id === tabId) {
                                         eachTab["recordedHistory"] = ingressReqObj;
-                                        if(reqIdArray.length > 1 && eachTab["clearIntervalHandle"]) clearInterval(eachTab["clearIntervalHandle"]);
+                                        if(reqIdArray.length > 1 && eachTab["clearIntervalHandle"]) clearInterval(eachTab["clearIntervalHandle"]); // need interval for runid?
                                     }
                                     return eachTab; 
                                 })
@@ -1260,7 +1262,7 @@ class HttpClientTabs extends Component {
         }
         let reqObject = {
             httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-            httpURL: "http://localhost/" + httpRequestEvent.apiPath,
+            httpURL: "{{{url}}}/" + httpRequestEvent.apiPath,
             headers: headers,
             queryStringParams: queryParams,
             bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
@@ -1411,7 +1413,7 @@ class HttpClientTabs extends Component {
 
                             let reqObject = {
                                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-                                httpURL: "http://localhost/" + httpRequestEvent.apiPath,
+                                httpURL: "{{{url}}}/" + httpRequestEvent.apiPath,
                                 headers: headers,
                                 queryStringParams: queryParams,
                                 bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
