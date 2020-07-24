@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -35,6 +37,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.md.constants.ReplayStatus;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
+import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.injection.DynamicInjectionConfig;
 
 import com.cube.core.Utils;
@@ -355,7 +358,34 @@ public class ReplayWS extends ReplayBasicWS {
         return resp;
     }
 
-	/**
+    @Override
+    protected void beforeReplay(MultivaluedMap<String, String> formParams, Recording recording) {
+        Optional<String> tag = Optional.ofNullable(formParams.getFirst(Constants.TAG_FIELD));
+
+        AtomicBoolean changed = new AtomicBoolean(false);
+        Result<AgentConfigTagInfo> response = rrstore.getAgentConfigTagInfoResults(
+            recording.customerId, recording.app, Optional.empty(), recording.instanceId);
+        response.getObjects().forEach(agentconfig -> {
+            if(!agentconfig.tag.equals(tag)){
+                AgentConfigTagInfo agentConfigTagInfo = new AgentConfigTagInfo(
+                    agentconfig.customerId, agentconfig.app, agentconfig.service, agentconfig.instanceId, tag);
+                changed.set(true);
+                rrstore.updateAgentConfigTag(agentConfigTagInfo);
+            }
+        });
+        if(changed.get()) {
+            try {
+                TimeUnit.SECONDS.sleep(30);
+            } catch (InterruptedException ex) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Exception while sleeping the thread",
+                    Constants.TAG_FIELD, tag)), ex);
+            }
+        }
+    }
+
+
+    /**
 	 * @param config
 	 */
 	@Inject

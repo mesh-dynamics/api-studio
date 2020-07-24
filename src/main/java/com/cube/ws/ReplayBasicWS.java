@@ -135,7 +135,6 @@ public class ReplayBasicWS {
 
         Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst("dynamicInjectionConfigVersion"));
         Optional<String> staticInjectionMap = Optional.ofNullable(formParams.getFirst("staticInjectionMap"));
-        Optional<String> tag = Optional.ofNullable(formParams.getFirst(Constants.TAG_FIELD));
 
         // Request transformations - for injecting tokens and such
         Optional<String> xfms = Optional.ofNullable(formParams.getFirst("transforms"));
@@ -163,6 +162,8 @@ public class ReplayBasicWS {
 
         return endpoint.map(e -> {
             // TODO: introduce response transforms as necessary
+
+            beforeReplay(formParams, recording);
 
             ReplayBuilder replayBuilder = new ReplayBuilder(e,
                 new CubeMetaInfo(recording.customerId,
@@ -223,28 +224,10 @@ public class ReplayBasicWS {
 
     }
 
-    private void setTag(Recording recording, String tag, ReqRespStore rrstore) {
-	    AtomicBoolean changed = new AtomicBoolean(false);
-	    Result<AgentConfigTagInfo> response = rrstore.getAgentConfigTagInfoResults(
-                recording.customerId, recording.app, Optional.empty(), recording.instanceId);
-	    response.getObjects().forEach(agentconfig -> {
-	        if(!agentconfig.tag.equals(tag)){
-              AgentConfigTagInfo agentConfigTagInfo = new AgentConfigTagInfo(
-                  agentconfig.customerId, agentconfig.app, agentconfig.service, agentconfig.instanceId, tag);
-              changed.set(true);
-              rrstore.updateAgentConfigTag(agentConfigTagInfo);
-          }
-	    });
-	    if(changed.get()) {
-          try {
-              TimeUnit.SECONDS.sleep(30);
-          } catch (InterruptedException ex) {
-              LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                  "Exception while sleeping the thread",
-                  Constants.TAG_FIELD, tag)), ex);
-          }
-      }
+    protected void beforeReplay(MultivaluedMap<String, String> formParams, Recording recording) {
+	    // nothing to do
     }
+
 
     /**
      * @param dataStore
