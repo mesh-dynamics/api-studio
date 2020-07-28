@@ -238,7 +238,7 @@ public class RealMocker implements Mocker {
             new MDTraceInfo(mockRequest.getTraceId() , null, null),
             Event.RunType.Replay, Optional.of(Instant.now()),
             mockReqId.orElse("NA"),
-            mockRequest.apiPath, Event.EventType.HTTPResponse, mockRequest.recordingType).withRunId(runId);
+            mockRequest.apiPath, EventType.getResponseType(mockRequest.eventType), mockRequest.recordingType).withRunId(runId);
         Optional<Payload> payload = originalResponse.map(event -> event.payload);
         if (!payload.isPresent()) {
             payload = createNoMatchResponsePayload(mockRequest);
