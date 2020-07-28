@@ -27,9 +27,9 @@ public class Config {
     // restwrapjdbc
     public String RESTWRAPJDBC_URI = "http://restwrapjdbc:8080/restsql";
     public String PRODUCTPAGE_URI = "http://localhost:9000";
-   	public String BOOKDETAILS_URI = "http://details:9080";
-		public String BOOKRATINGS_URI = "http://ratings:9080";
-		public String BOOKREVIEWS_URI = "http://reviews:9080";
+    public String BOOKDETAILS_URI = "http://details:9080";
+    public String BOOKRATINGS_URI = "http://ratings:9080";
+    public String BOOKREVIEWS_URI = "http://reviews:9080";
 
 
 	// Flags
