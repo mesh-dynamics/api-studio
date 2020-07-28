@@ -1065,13 +1065,8 @@ class HttpClientTabs extends Component {
                 });
                 const apiTrace = res.response[0];
                 const selectedApp = app, reqIdArray = [];
-                const apiPaths = [];
                 apiTrace && apiTrace.res.map((eachApiTraceEvent) => {
-                    // assuming sorted by timestamp and so de-duplicating
-                    if(apiPaths.indexOf(eachApiTraceEvent.apiPath) < 0) {
-                        reqIdArray.push(eachApiTraceEvent.requestEventId);
-                        apiPaths.push(eachApiTraceEvent.apiPath);
-                    }
+                    reqIdArray.push(eachApiTraceEvent.requestEventId);
                 });
                 
                 if(reqIdArray && reqIdArray.length > 0) {
