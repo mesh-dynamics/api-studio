@@ -613,7 +613,7 @@ public class CubeStore {
         try {
             Pair<List, Stream<ConfigDAO>> result = rrstore.getAgentConfigWithFacets(customerId, app, service, instanceId,
                 numResults, start);
-            Map response = Map.of("facets", Map.of("instance_facets", result.first()), "configs", result.second());
+            Map response = Map.of("facets", Map.of("instance_facets", result.first()), "configs", result.second().collect(Collectors.toList()));
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(response).build();
 
         } catch (Exception e) {
