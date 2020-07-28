@@ -236,21 +236,7 @@ public class JsonDataObj implements DataObj {
 				} else if (mimetype.startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
 					try {
 						JsonNode parsedVal = null;
-						String encodedUrl = null;
-						if (val.isBinary()) {
-							// if unwrapping in agent itself
-							encodedUrl = new String(val.binaryValue()
-								, StandardCharsets.UTF_8);
-						} else {
-							try {
-								// if un-wrapping in cube, after batch event call
-								encodedUrl = new String(Base64.getDecoder()
-									.decode(val.textValue()));
-							} catch (Throwable e) {
-								// this for older documents already in solr
-								encodedUrl = val.textValue();
-							}
-						}
+						String encodedUrl = getValAsString(val);
 						List<NameValuePair> pairs = URLEncodedUtils
 							.parse(encodedUrl, StandardCharsets.UTF_8);
 						MultivaluedHashMap<String,String> formMap = new MultivaluedHashMap<>();
@@ -263,6 +249,15 @@ public class JsonDataObj implements DataObj {
 						LOGGER.error("Exception in parsing json string, path : "
 							.concat(path).concat(" , value : ").concat(val.toString()), ex);
 					}
+				} else if (mimetype.startsWith(MediaType.TEXT_PLAIN) || mimetype.startsWith(MediaType.TEXT_HTML)) {
+					try {
+						String strVal = getValAsString(val);
+						valParentObj.set(fieldName, new TextNode(strVal));
+					} catch (IOException ex) {
+						LOGGER.error("Exception in parsing json string, path : "
+							.concat(path).concat(" , value : ").concat(val.toString()), ex);
+					}
+
 				} else if (val.isTextual()) {
 					try {
 						// if the value is not object, it is always a byte array ,( for now )
@@ -281,6 +276,24 @@ public class JsonDataObj implements DataObj {
 			}
 		}
 		return false;
+	}
+
+	private String getValAsString(JsonNode val) throws IOException {
+		String strVal = "";
+		if (val.isBinary()) {
+			// if unwrapping in agent itself
+			strVal = new String(val.binaryValue(), StandardCharsets.UTF_8);
+		} else {
+			try {
+				// if un-wrapping in cube, after batch event call
+				strVal = new String(Base64.getDecoder()
+					.decode(val.textValue()));
+			} catch (Throwable e) {
+				// this for older documents already in solr
+				strVal = val.textValue();
+			}
+		}
+		return strVal;
 	}
 
 	/**
