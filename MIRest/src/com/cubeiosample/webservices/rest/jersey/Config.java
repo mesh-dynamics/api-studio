@@ -92,17 +92,17 @@ public class Config {
         String restwrapjdbc_uri = this.getProperty("RESTWRAPJDBC_URI");
         RESTWRAPJDBC_URI = (restwrapjdbc_uri == null) ? RESTWRAPJDBC_URI : restwrapjdbc_uri;
 
-				String productpage_uri = this.getProperty("PRODUCTPAGE_URI");
-				PRODUCTPAGE_URI = (productpage_uri == null) ? PRODUCTPAGE_URI : productpage_uri;
+        String productpage_uri = this.getProperty("PRODUCTPAGE_URI");
+        PRODUCTPAGE_URI = (productpage_uri == null) ? PRODUCTPAGE_URI : productpage_uri;
 
-				String bookdetails_uri = this.getProperty("BOOKDETAILS_URI");
-				BOOKDETAILS_URI = (bookdetails_uri == null) ? BOOKDETAILS_URI : bookdetails_uri;
+        String bookdetails_uri = this.getProperty("BOOKDETAILS_URI");
+        BOOKDETAILS_URI = (bookdetails_uri == null) ? BOOKDETAILS_URI : bookdetails_uri;
 
-				String bookratings_uri = this.getProperty("BOOKRATINGS_URI");
-				BOOKRATINGS_URI = (bookratings_uri == null) ? BOOKRATINGS_URI : bookratings_uri;
+        String bookratings_uri = this.getProperty("BOOKRATINGS_URI");
+        BOOKRATINGS_URI = (bookratings_uri == null) ? BOOKRATINGS_URI : bookratings_uri;
 
-				String bookreviews_uri = this.getProperty("BOOKREVIEWS_URI");
-				BOOKREVIEWS_URI = (bookreviews_uri == null) ? BOOKREVIEWS_URI : bookreviews_uri;
+        String bookreviews_uri = this.getProperty("BOOKREVIEWS_URI");
+        BOOKREVIEWS_URI = (bookreviews_uri == null) ? BOOKREVIEWS_URI : bookreviews_uri;
 
 
 		// Flags
