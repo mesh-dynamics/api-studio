@@ -27,7 +27,9 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerInterceptors;
 import io.grpc.stub.StreamObserver;
+
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -44,6 +46,7 @@ import java.util.logging.Logger;
  * A sample gRPC server that serve the RouteGuide (see route_guide.proto) service.
  */
 public class RouteGuideServer {
+
 	private static final Logger logger = Logger.getLogger(RouteGuideServer.class.getName());
 
 	private final int port;
@@ -53,19 +56,27 @@ public class RouteGuideServer {
 		this(port, RouteGuideUtil.getDefaultFeaturesFile());
 	}
 
-	/** Create a RouteGuide server listening on {@code port} using {@code featureFile} database. */
+	/**
+	 * Create a RouteGuide server listening on {@code port} using {@code featureFile} database.
+	 */
 	public RouteGuideServer(int port, URL featureFile) throws IOException {
 		this(ServerBuilder.forPort(port), port, RouteGuideUtil.parseFeatures(featureFile));
 	}
 
-	/** Create a RouteGuide server using serverBuilder as a base and features as data. */
-	public RouteGuideServer(ServerBuilder<?> serverBuilder, int port, Collection<Feature> features) {
+	/**
+	 * Create a RouteGuide server using serverBuilder as a base and features as data.
+	 */
+	public RouteGuideServer(ServerBuilder<?> serverBuilder, int port,
+		Collection<Feature> features) {
 		this.port = port;
-		server = serverBuilder.addService(new RouteGuideService(features))
+		server = serverBuilder.addService(
+			ServerInterceptors.intercept(new RouteGuideService(features)))
 			.build();
 	}
 
-	/** Start serving requests. */
+	/**
+	 * Start serving requests.
+	 */
 	public void start() throws IOException {
 		server.start();
 		logger.info("Server started, listening on " + port);
@@ -84,7 +95,9 @@ public class RouteGuideServer {
 		});
 	}
 
-	/** Stop serving requests and shutdown resources. */
+	/**
+	 * Stop serving requests and shutdown resources.
+	 */
 	public void stop() throws InterruptedException {
 		if (server != null) {
 			server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
@@ -115,6 +128,7 @@ public class RouteGuideServer {
 	 * <p>See route_guide.proto for details of the methods.
 	 */
 	private static class RouteGuideService extends RouteGuideGrpc.RouteGuideImplBase {
+
 		private final Collection<Feature> features;
 		private final ConcurrentMap<Point, List<RouteNote>> routeNotes =
 			new ConcurrentHashMap<Point, List<RouteNote>>();
@@ -127,8 +141,9 @@ public class RouteGuideServer {
 		 * Gets the {@link Feature} at the requested {@link Point}. If no feature at that location
 		 * exists, an unnamed feature is returned at the provided location.
 		 *
-		 * @param request the requested location for the feature.
-		 * @param responseObserver the observer that will receive the feature at the requested point.
+		 * @param request          the requested location for the feature.
+		 * @param responseObserver the observer that will receive the feature at the requested
+		 *                         point.
 		 */
 		@Override
 		public void getFeature(Point request, StreamObserver<Feature> responseObserver) {
@@ -139,7 +154,7 @@ public class RouteGuideServer {
 		/**
 		 * Gets all features contained within the given bounding {@link Rectangle}.
 		 *
-		 * @param request the bounding rectangle for the requested features.
+		 * @param request          the bounding rectangle for the requested features.
 		 * @param responseObserver the observer that will receive the features.
 		 */
 		@Override
@@ -171,7 +186,8 @@ public class RouteGuideServer {
 		 * @return an observer to receive the requested route points.
 		 */
 		@Override
-		public StreamObserver<Point> recordRoute(final StreamObserver<RouteSummary> responseObserver) {
+		public StreamObserver<Point> recordRoute(
+			final StreamObserver<RouteSummary> responseObserver) {
 			return new StreamObserver<Point>() {
 				int pointCount;
 				int featureCount;
@@ -217,7 +233,8 @@ public class RouteGuideServer {
 		 * @return an observer to handle requested message/location pairs.
 		 */
 		@Override
-		public StreamObserver<RouteNote> routeChat(final StreamObserver<RouteNote> responseObserver) {
+		public StreamObserver<RouteNote> routeChat(
+			final StreamObserver<RouteNote> responseObserver) {
 			return new StreamObserver<RouteNote>() {
 				@Override
 				public void onNext(RouteNote note) {
@@ -272,11 +289,11 @@ public class RouteGuideServer {
 		}
 
 		/**
-		 * Calculate the distance between two points using the "haversine" formula.
-		 * The formula is based on http://mathforum.org/library/drmath/view/51879.html.
+		 * Calculate the distance between two points using the "haversine" formula. The formula is
+		 * based on http://mathforum.org/library/drmath/view/51879.html.
 		 *
 		 * @param start The starting point
-		 * @param end The end point
+		 * @param end   The end point
 		 * @return The distance between the points in meters
 		 */
 		private static int calcDistance(Point start, Point end) {

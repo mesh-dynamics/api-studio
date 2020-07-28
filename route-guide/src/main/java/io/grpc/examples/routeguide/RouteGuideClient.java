@@ -261,7 +261,7 @@ public class RouteGuideClient {
       return;
     }
 
-    ManagedChannel channel = ManagedChannelBuilder.forTarget(target).usePlaintext().build();
+    ManagedChannel channel = ManagedChannelBuilder.forTarget(target).usePlaintext().intercept().build();
     try {
       RouteGuideClient client = new RouteGuideClient(channel);
       // Looking for a valid feature
