@@ -49,6 +49,7 @@ class HttpClientTabs extends Component {
                 tabName: "",
                 httpMethod: "get",
                 httpURL: "http://www.mocky.io/v2/5ed952b7310000f4dec4ed0a",
+                httpURLShowOnly: "http://www.mocky.io/v2/5ed952b7310000f4dec4ed0a",
                 headers: [],
                 queryStringParams: [],
                 bodyType: "formData",
@@ -257,7 +258,7 @@ class HttpClientTabs extends Component {
                         eachTab.outgoingRequests.map((eachOutgoingTab) => {
                             if (eachOutgoingTab.id === tabId) {
                                 eachOutgoingTab[type] = params;
-                                if(type === "httpURL") eachOutgoingTab.tabName = params;
+                                // if(type === "httpURL") eachOutgoingTab.tabName = params;
                             }
                         })
                     }
@@ -280,7 +281,7 @@ class HttpClientTabs extends Component {
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === tabId) {
                         eachTab[type] = params;
-                        if(type === "httpURL") eachTab.tabName = params;
+                        // if(type === "httpURL") eachTab.tabName = params;
                     }
                     return eachTab; 
                 })
@@ -340,6 +341,7 @@ class HttpClientTabs extends Component {
                             const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
                             const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
                             const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
+                            console.log(`httpRequestEvent.apiPath == ${httpRequestEvent.apiPath}`);
                             let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "";
                             for(let eachHeader in httpRequestEvent.payload[1].hdrs) {
                                 headers.push({
@@ -382,6 +384,7 @@ class HttpClientTabs extends Component {
                             let reqObject = {
                                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
                                 httpURL: httpRequestEvent.apiPath,
+                                httpURLShowOnly: httpRequestEvent.apiPath,
                                 headers: headers,
                                 queryStringParams: queryParams,
                                 bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
@@ -409,7 +412,7 @@ class HttpClientTabs extends Component {
                                 id: tabId,
                                 requestId: eachReqId,
                                 eventData: reqResPair,
-                                tabName: reqObject.httpURL ? reqObject.httpURL : "New",
+                                tabName: reqObject.httpURLShowOnly ? reqObject.httpURLShowOnly : "New",
                                 ...reqObject
                             })
                         }
@@ -1033,7 +1036,8 @@ class HttpClientTabs extends Component {
         }
         let reqObject = {
             httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-            httpURL: "{{{url}}}/" + httpRequestEvent.apiPath,
+            httpURL: httpRequestEvent.apiPath,
+            httpURLShowOnly:httpRequestEvent.apiPath,
             headers: headers,
             queryStringParams: queryParams,
             bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
@@ -1075,13 +1079,8 @@ class HttpClientTabs extends Component {
                 });
                 const apiTrace = res.response[0];
                 const selectedApp = app, reqIdArray = [];
-                const apiPaths = [];
                 apiTrace && apiTrace.res.map((eachApiTraceEvent) => {
-                    // assuming sorted by timestamp and so de-duplicating
-                    if(apiPaths.indexOf(eachApiTraceEvent.apiPath) < 0) {
-                        reqIdArray.push(eachApiTraceEvent.requestEventId);
-                        apiPaths.push(eachApiTraceEvent.apiPath);
-                    }
+                    reqIdArray.push(eachApiTraceEvent.requestEventId);
                 });
                 
                 if(reqIdArray && reqIdArray.length > 0) {
@@ -1175,6 +1174,7 @@ class HttpClientTabs extends Component {
             reqObject = {
                 httpMethod: "get",
                 httpURL: "",
+                httpURLShowOnly:"",
                 headers: [],
                 queryStringParams: [],
                 bodyType: "formData",
@@ -1202,7 +1202,7 @@ class HttpClientTabs extends Component {
         this.setState({
             tabs: [...this.state["tabs"], {
                 id: tabId,
-                tabName: reqObject.httpURL ? reqObject.httpURL : "New",
+                tabName: reqObject.httpURLShowOnly ? reqObject.httpURLShowOnly : "New",
                 ...reqObject
             }],
             selectedTabKey: tabId,
@@ -1262,7 +1262,8 @@ class HttpClientTabs extends Component {
         }
         let reqObject = {
             httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-            httpURL: "{{{url}}}/" + httpRequestEvent.apiPath,
+            httpURL: httpRequestEvent.apiPath,
+            httpURLShowOnly:httpRequestEvent.apiPath,
             headers: headers,
             queryStringParams: queryParams,
             bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
@@ -1413,7 +1414,8 @@ class HttpClientTabs extends Component {
 
                             let reqObject = {
                                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-                                httpURL: "{{{url}}}/" + httpRequestEvent.apiPath,
+                                httpURL: httpRequestEvent.apiPath,
+                                httpURLShowOnly: httpRequestEvent.apiPath,
                                 headers: headers,
                                 queryStringParams: queryParams,
                                 bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
@@ -1466,7 +1468,7 @@ class HttpClientTabs extends Component {
         return tabsToRender.map((eachTab, index) => ({
             title: (
                 <div className="tab-container">
-                  <div className="tab-name">{eachTab.tabName ? eachTab.tabName : eachTab.httpURL ? eachTab.httpURL : "New"}</div>
+                  <div className="tab-name">{eachTab.tabName ? eachTab.tabName : eachTab.httpURLShowOnly ? eachTab.httpURLShowOnly : "New"}</div>
                 </div>
             ),
             getContent: () => {
