@@ -6,12 +6,14 @@
 
 package io.md.services;
 
-import io.md.core.TemplateKey.Type;
-import io.md.dao.MockWithCollection;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
+
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response.Status;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,13 +21,19 @@ import org.slf4j.LoggerFactory;
 import io.md.constants.Constants;
 import io.md.core.Comparator;
 import io.md.core.Comparator.MatchType;
+import io.md.core.TemplateKey.Type;
 import io.md.dao.Event;
+import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Event.EventType;
 import io.md.dao.EventQuery;
+import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
+import io.md.dao.MockWithCollection;
+import io.md.dao.Payload;
 import io.md.dao.RecordOrReplay;
 import io.md.dao.ReqRespMatchResult;
 import io.md.services.DataStore.TemplateNotFoundException;
+import io.md.utils.UtilException;
 import io.md.utils.Utils;
 
 
@@ -62,8 +70,8 @@ public class RealMocker implements Mocker {
                         "Unable to mock request since no default response found"));
                 }
             }
-            createResponseFromEvent(reqEvent, matchingResponse, mockWithCollection.get().runId);
-            return new MockResponse(matchingResponse, res.getNumFound());
+            Optional<Event> mockResponse = createResponseFromEvent(reqEvent, matchingResponse, mockWithCollection.get().runId);
+            return new MockResponse(mockResponse, res.getNumFound());
         } else {
             String errorReason = "Invalid event or no record/replay found.";
             LOGGER.error(createMockReqErrorLogMessage(reqEvent, errorReason));
@@ -170,8 +178,10 @@ public class RealMocker implements Mocker {
             .build();
     }
 
-    private void createResponseFromEvent(
+    private Optional<Event> createResponseFromEvent(
         Event mockRequestEvent, Optional<Event> respEvent, Optional<String> runId) {
+
+        Optional<Event> mockResponse = respEvent;
 
         if (shouldStore(mockRequestEvent.eventType)) {
 
@@ -194,21 +204,19 @@ public class RealMocker implements Mocker {
                         respMatch, "", Collections.emptyList()));
 
             cube.saveResult(matchResult);
-            respEvent.ifPresent(respEventVal -> {
-                try {
-                    Event mockResponseToStore = createMockResponseEvent(respEventVal,
-                        Optional.of(mockRequestEvent.reqId),
-                        mockRequestEvent.instanceId, mockRequestEvent.getCollection(), runId);
-                    cube.save(mockResponseToStore);
-                } catch (Event.EventBuilder.InvalidEventException e) {
-                    LOGGER.error(Utils.createLogMessasge(
-                        Constants.MESSAGE, "Not able to store mock response event",
-                        Constants.TRACE_ID_FIELD, respEventVal.getTraceId(),
-                        Constants.REQ_ID_FIELD, respEventVal.reqId));
-                }
-            });
+            try {
+                mockResponse = createMockResponseEvent(mockRequestEvent, respEvent,
+                    Optional.of(mockRequestEvent.reqId),
+                    mockRequestEvent.instanceId, mockRequestEvent.getCollection(), runId);
+                mockResponse.ifPresent(cube::save);
+            } catch (InvalidEventException e) {
+                LOGGER.error(Utils.createLogMessasge(
+                    Constants.MESSAGE, "Not able to store mock response event",
+                    Constants.TRACE_ID_FIELD, mockRequestEvent.getTraceId(),
+                    Constants.REQ_ID_FIELD, mockRequestEvent.reqId));
+            }
         }
-        return;
+        return mockResponse;
     }
 
     /**
@@ -219,18 +227,36 @@ public class RealMocker implements Mocker {
      * @param replayCollection
      * @return
      */
-    static private Event createMockResponseEvent(Event originalResponse,
+    private Optional<Event> createMockResponseEvent(Event mockRequest, Optional<Event> originalResponse,
         Optional<String> mockReqId,
         String instanceId,
-        String replayCollection, Optional<String> runId) throws Event.EventBuilder.InvalidEventException {
-        Event.EventBuilder builder = new Event.EventBuilder(originalResponse.customerId, originalResponse.app,
-            originalResponse.service,
+        String replayCollection, Optional<String> runId)
+        throws Event.EventBuilder.InvalidEventException {
+        Event.EventBuilder builder = new Event.EventBuilder(mockRequest.customerId, mockRequest.app,
+            mockRequest.service,
             instanceId, replayCollection,
-            new MDTraceInfo(originalResponse.getTraceId() , null, null),
+            new MDTraceInfo(mockRequest.getTraceId() , null, null),
             Event.RunType.Replay, Optional.of(Instant.now()),
             mockReqId.orElse("NA"),
-            originalResponse.apiPath, Event.EventType.HTTPResponse, originalResponse.recordingType).withRunId(runId);
-        return builder.setPayload(originalResponse.payload).createEvent();
+            mockRequest.apiPath, Event.EventType.HTTPResponse, mockRequest.recordingType).withRunId(runId);
+        Optional<Payload> payload = originalResponse.map(event -> event.payload);
+        if (!payload.isPresent()) {
+            payload = createNoMatchResponsePayload(mockRequest);
+        }
+        return payload.map(UtilException.rethrowFunction(p -> builder.setPayload(p).createEvent()));
     }
 
+    private Optional<Payload> createNoMatchResponsePayload(Event reqEvent) {
+        if (reqEvent.eventType.equals(EventType.HTTPRequest)) {
+            return Optional.of(new HTTPResponsePayload(emptyMVMap, Status.NOT_FOUND.getStatusCode(), emptyBody));
+        } else {
+            String errorReason = "Empty response not implemented for " + reqEvent.eventType.toString();
+            LOGGER.error(createMockReqErrorLogMessage(reqEvent, errorReason));
+            return Optional.empty();
+        }
+
+    }
+
+    static private final MultivaluedMap<String, String> emptyMVMap = new MultivaluedHashMap<>();
+    static private final byte[] emptyBody = new byte[0];
 }

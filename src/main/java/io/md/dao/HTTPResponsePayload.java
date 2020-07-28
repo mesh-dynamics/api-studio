@@ -71,7 +71,7 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload implements Res
 	public byte[] getBody() {
 		if (this.body != null && !(this.body.length == 0)) {
 			return body;
-		} else if (!this.dataObj.isDataObjEmpty()) {
+		} else if (this.dataObj!= null && !this.dataObj.isDataObjEmpty()) {
 			try {
 				this.dataObj.wrapAsString("/".concat(BODY),
 					Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN));
@@ -138,6 +138,7 @@ public class HTTPResponsePayload extends LazyParseAbstractPayload implements Res
 	}
 
 	@Override
+	@JsonIgnore
 	public String getStatusCode() {
 		return String.valueOf(status);
 	}
