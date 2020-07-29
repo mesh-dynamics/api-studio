@@ -546,9 +546,7 @@ public class Utils {
 		Optional<String> traceId = traceIdValue.isPresent() ? traceIdValue : getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
 		Optional<String> spanId = getFirst(meta, Constants.DEFAULT_SPAN_FIELD);
 		Optional<String> parentSpanId = getFirst(meta, Constants.DEFAULT_PARENT_SPAN_FIELD);
-		RecordingType recordingType = getFirst(meta, Constants.RECORDING_TYPE_FIELD)
-						.flatMap(r -> Utils.valueOf(RecordingType.class, r))
-						.orElse(RecordingType.Golden);
+		RecordingType recordingType = RecordingType.Replay;
 		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId.orElse(generateTraceId()) ,
 			spanId.orElse("NA") , parentSpanId.orElse("NA"));
 
