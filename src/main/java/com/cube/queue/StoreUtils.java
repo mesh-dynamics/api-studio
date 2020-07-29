@@ -103,6 +103,7 @@ public class StoreUtils {
 				, cubeEventMetaInfo);
 		}
 
+		RecordingType recordingType = recordOrReplay.get().getRecordingType();
 		Optional<Event.RunType> runType = Optional.of(recordOrReplay.get().getRunType());
 		cubeEventMetaInfo.setRunType(runType.map(Enum::name));
 		Optional<Replay> currentRunningReplay = recordOrReplay.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
@@ -150,7 +151,7 @@ public class StoreUtils {
 			try {
 				requestEvent = createHTTPRequestEvent(path, rid, queryParams, formParams, meta,
 					hdrs, method, rr.body, collection, timestamp, runType, customerId,
-					app, requestComparator, runId);
+					app, requestComparator, runId, recordingType);
 			} catch (EventBuilder.InvalidEventException e) {
 				throw new CubeStoreException(e, "Invalid Event"
 					, cubeEventMetaInfo);
@@ -184,9 +185,9 @@ public class StoreUtils {
 				}
 				responseEvent = Utils
 					.createHTTPResponseEvent(reqApiPath, rid, status, meta, hdrs, rr.body,
-						collection, timestamp, runType, customerId, app, rrstore, runId);
+						collection, timestamp, runType, customerId, app, rrstore, runId, recordingType);
 
-			} catch (JsonProcessingException | InvalidEventException | URISyntaxException e) {
+			} catch (InvalidEventException | URISyntaxException e) {
 				throw new CubeStoreException(e, "Invalid Event"
 					, cubeEventMetaInfo);
 			}
@@ -227,13 +228,11 @@ public class StoreUtils {
 		if (recordOrReplay.isEmpty()) {
 			throw new CubeStoreException(null, "No current record/replay!", event);
 		}
+		event.setRecordingType(recordOrReplay.get().getRecordingType());
 		Optional<Replay> currentRunningReplay = recordOrReplay.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
 		currentRunningReplay.ifPresent(replay -> {
 			event.setRunId(replay.runId);
-			event.setRecordingType(RecordingType.Replay);
 		});
-		Optional<Recording> currentRunningRecording = recordOrReplay.flatMap(runningRecordOrReplay -> runningRecordOrReplay.recording);
-		currentRunningRecording.ifPresent(recording -> event.setRecordingType(recording.recordingType));
 
 		event.setRunType(recordOrReplay.get().getRunType());
 
