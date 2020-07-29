@@ -198,7 +198,8 @@ class HttpClientTabs extends Component {
                                         id: uuidv4(),
                                         name: "",
                                         value: "",
-                                        description: ""
+                                        description: "",
+                                        selected: true,
                                     }];
                                 }
                             })
@@ -227,7 +228,8 @@ class HttpClientTabs extends Component {
                                 id: uuidv4(),
                                 name: "",
                                 value: "",
-                                description: ""
+                                description: "",
+                                selected: true,
                             }];
                         }
                         return eachTab; 
@@ -273,6 +275,52 @@ class HttpClientTabs extends Component {
                 if(specificParamArr.length > 0) {
                     specificParamArr[0][key] = value;
                 }
+            } else {
+                params = value;
+            }
+            this.setState({
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === tabId) {
+                        eachTab[type] = params;
+                        // if(type === "httpURL") eachTab.tabName = params;
+                    }
+                    return eachTab; 
+                })
+            });
+            //this.setState({[type]: params})
+        }
+    }
+
+    updateAllParams = (isOutgoingRequest, tabId, type, key, value) => {
+        const {selectedTabKey, tabs} = this.state;
+        if(isOutgoingRequest) {
+            const selectedTabIndex = this.getTabIndexGivenTabId(selectedTabKey, tabs);
+            const selectedOutgoingTabIndex = this.getTabIndexGivenTabId(tabId, tabs[selectedTabIndex]["outgoingRequests"]);
+            let params = tabs[selectedTabIndex]["outgoingRequests"][selectedOutgoingTabIndex][type];
+            if(_.isArray(params)) {
+                params.forEach((param) => {param[key]=value})
+            } else {
+                params = value;
+            }
+            this.setState({
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === selectedTabKey) {
+                        eachTab.outgoingRequests.map((eachOutgoingTab) => {
+                            if (eachOutgoingTab.id === tabId) {
+                                eachOutgoingTab[type] = params;
+                                // if(type === "httpURL") eachOutgoingTab.tabName = params;
+                            }
+                        })
+                    }
+                    return eachTab; 
+                })
+            });
+        } else {
+            let tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
+            if(tabIndex < 0) return;
+            let params = tabs[tabIndex][type];
+            if(_.isArray(params)) {
+                params.forEach((param) => {param[key]=value})
             } else {
                 params = value;
             }
@@ -340,14 +388,15 @@ class HttpClientTabs extends Component {
                             const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
                             const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
                             const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
-                            console.log(`httpRequestEvent.apiPath == ${httpRequestEvent.apiPath}`);
                             let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "";
+                            
                             for(let eachHeader in httpRequestEvent.payload[1].hdrs) {
                                 headers.push({
                                     id: uuidv4(),
                                     name: eachHeader,
                                     value: httpRequestEvent.payload[1].hdrs[eachHeader].join(","),
-                                    description: ""
+                                    description: "",
+                                    selected: true,
                                 });
                             }
                             for(let eachQueryParam in httpRequestEvent.payload[1].queryParams) {
@@ -355,7 +404,8 @@ class HttpClientTabs extends Component {
                                     id: uuidv4(),
                                     name: eachQueryParam,
                                     value: httpRequestEvent.payload[1].queryParams[eachQueryParam][0],
-                                    description: ""
+                                    description: "",
+                                    selected: true,
                                 });
                             }
                             for(let eachFormParam in httpRequestEvent.payload[1].formParams) {
@@ -363,7 +413,8 @@ class HttpClientTabs extends Component {
                                     id: uuidv4(),
                                     name: eachFormParam,
                                     value: httpRequestEvent.payload[1].formParams[eachFormParam].join(","),
-                                    description: ""
+                                    description: "",
+                                    selected: true,
                                 });
                                 rawDataType = "";
                             }
@@ -439,20 +490,24 @@ class HttpClientTabs extends Component {
     extractHeaders(httpReqestHeaders) {
         let headers = new Headers();
         headers.delete('Content-Type');
-        httpReqestHeaders.forEach(each => {
-            if(each.name && each.value && each.name.indexOf(":") < 0) headers.append(each.name, each.value);
-            // ideally for ingress requests
-            if(each.name === "x-b3-spanid" && each.value) headers.append("baggage-parent-span-id", each.value);
-        })
+        httpReqestHeaders
+            .filter((header) => header.selected)
+            .forEach(each => {
+                if(each.name && each.value && each.name.indexOf(":") < 0) headers.append(each.name, each.value);
+                // ideally for ingress requests
+                if(each.name === "x-b3-spanid" && each.value) headers.append("baggage-parent-span-id", each.value);
+            })
         return headers;
     }
 
     extractBody(httpRequestBody) {
         let formData = new FormData();
         if(_.isArray(httpRequestBody)) {
-            httpRequestBody.forEach(each => {
-                if(each.name && each.value) formData.append(each.name, each.value);
-            })
+            httpRequestBody
+                .filter((fparam) => fparam.selected)
+                .forEach(each => {
+                    if(each.name && each.value) formData.append(each.name, each.value);
+                })
             return formData;
         } else {
             return httpRequestBody;
@@ -461,9 +516,11 @@ class HttpClientTabs extends Component {
 
     extractQueryStringParams(httpRequestQueryStringParams) {
         let qsParams = {};
-        httpRequestQueryStringParams.forEach(each => {
-            if(each.name && each.value) qsParams[each.name] = each.value;
-        })
+        httpRequestQueryStringParams
+            .filter((param) => param.selected)
+            .forEach(each => {
+                if(each.name && each.value) qsParams[each.name] = each.value;
+            })
         return qsParams;
     }
 
@@ -987,7 +1044,8 @@ class HttpClientTabs extends Component {
                 id: uuidv4(),
                 name: eachHeader,
                 value: httpRequestEvent.payload[1].hdrs[eachHeader].join(","),
-                description: ""
+                description: "",
+                selected: true,
             });
         }
         for(let eachQueryParam in httpRequestEvent.payload[1].queryParams) {
@@ -995,7 +1053,8 @@ class HttpClientTabs extends Component {
                 id: uuidv4(),
                 name: eachQueryParam,
                 value: httpRequestEvent.payload[1].queryParams[eachQueryParam][0],
-                description: ""
+                description: "",
+                selected: true,
             });
         }
         for(let eachFormParam in httpRequestEvent.payload[1].formParams) {
@@ -1003,7 +1062,8 @@ class HttpClientTabs extends Component {
                 id: uuidv4(),
                 name: eachFormParam,
                 value: httpRequestEvent.payload[1].formParams[eachFormParam].join(","),
-                description: ""
+                description: "",
+                selected: true,
             });
             rawDataType = "";
         }
@@ -1213,7 +1273,8 @@ class HttpClientTabs extends Component {
                 id: uuidv4(),
                 name: eachHeader,
                 value: httpRequestEvent.payload[1].hdrs[eachHeader].join(","),
-                description: ""
+                description: "",
+                selected: true,
             });
         }
         for(let eachQueryParam in httpRequestEvent.payload[1].queryParams) {
@@ -1221,7 +1282,8 @@ class HttpClientTabs extends Component {
                 id: uuidv4(),
                 name: eachQueryParam,
                 value: httpRequestEvent.payload[1].queryParams[eachQueryParam][0],
-                description: ""
+                description: "",
+                selected: true,
             });
         }
         for(let eachFormParam in httpRequestEvent.payload[1].formParams) {
@@ -1229,7 +1291,8 @@ class HttpClientTabs extends Component {
                 id: uuidv4(),
                 name: eachFormParam,
                 value: httpRequestEvent.payload[1].formParams[eachFormParam].join(","),
-                description: ""
+                description: "",
+                selected: true,
             });
             rawDataType = "";
         }
@@ -1364,7 +1427,8 @@ class HttpClientTabs extends Component {
                                     id: uuidv4(),
                                     name: eachHeader,
                                     value: httpRequestEvent.payload[1].hdrs[eachHeader].join(","),
-                                    description: ""
+                                    description: "",
+                                    selected: true,
                                 });
                             }
                             for(let eachQueryParam in httpRequestEvent.payload[1].queryParams) {
@@ -1372,7 +1436,8 @@ class HttpClientTabs extends Component {
                                     id: uuidv4(),
                                     name: eachQueryParam,
                                     value: httpRequestEvent.payload[1].queryParams[eachQueryParam][0],
-                                    description: ""
+                                    description: "",
+                                    selected: true,
                                 });
                             }
                             for(let eachFormParam in httpRequestEvent.payload[1].formParams) {
@@ -1380,7 +1445,8 @@ class HttpClientTabs extends Component {
                                     id: uuidv4(),
                                     name: eachFormParam,
                                     value: httpRequestEvent.payload[1].formParams[eachFormParam].join(","),
-                                    description: ""
+                                    description: "",
+                                    selected: true,
                                 });
                                 rawDataType = "";
                             }
@@ -1487,6 +1553,7 @@ class HttpClientTabs extends Component {
 
                         addOrRemoveParam={this.addOrRemoveParam} 
                         updateParam={this.updateParam}
+                        updateAllParams={this.updateAllParams}
                         updateBodyOrRawDataType={this.updateBodyOrRawDataType}
                         driveRequest={this.driveRequest}
                         showSaveModal={this.showSaveModal}
