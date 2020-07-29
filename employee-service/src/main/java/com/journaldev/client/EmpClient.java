@@ -14,7 +14,7 @@ public class EmpClient {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		String uri = "http://localhost:8081/employee_service_war/emp/emp/getEmp";
+		String uri = "http://localhost:8084/jersey_1_19_sampleapp_war/emp/emp/getEmp";
 		//String uri = "http://localhost:8080/emp/emp/getEmp";
 		//String uri = "http://35.160.68.101:8080/emp/emp/getEmp";
 		//String uri = "http://34.220.106.159:8080/emp/emp/getEmp";
