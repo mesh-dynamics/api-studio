@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Glyphicon, FormGroup, Button, FormControl, Radio, ControlLabel, Checkbox } from 'react-bootstrap';
+import "./HttpClient.css";
 // import "./styles_here.css";
 
 class HttpRequestQueryString extends Component {
@@ -92,10 +93,10 @@ class HttpRequestQueryString extends Component {
                 )})}
                 <div style={{ marginTop: "5px", marginRight: "7px"}}>
                     <div style={{display: "inline-block", width: "100%"}}> 
-                        <Button block style={{paddingLeft: "6px", textAlign: "left"}} onClick={this.handleAdd}>
-                            <span style={{fontSize: "14px", paddingRight: "18px", opacity: "0.7"}}> + </span>
-                            <span style={{paddingRight: "14px", opacity: "0.7", fontSize: "11px"}}>Add query string param</span>
-                        </Button>
+                        <button className="add-query-params-button" onClick={this.handleAdd}>
+                            <span style={{ fontSize: "20px" }}>+</span>
+                            <span style={{ marginLeft: "5px", fontWeight: 400 }}>Add query parameter</span>
+                        </button>
                     </div>
                 </div>
             </div>

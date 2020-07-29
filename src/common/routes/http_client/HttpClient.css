@@ -72,3 +72,17 @@
     box-sizing: border-box;
     border-radius: 0px 0px 16px 16px;
 }
+
+.add-query-params-button {
+    background: none;
+    outline: none;
+    border: none; 
+    padding-left: 6px; 
+    text-align: left;
+    cursor: pointer;
+    padding: 1.2% 1.8%;
+    font-size: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
