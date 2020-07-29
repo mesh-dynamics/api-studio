@@ -281,7 +281,7 @@ public class Utils {
 		Optional<String> collection, Instant timestamp,
 		Optional<Event.RunType> runType, Optional<String> customerId,
 		Optional<String> app,
-		Comparator comparator, Optional<String> runId)
+		Comparator comparator, Optional<String> runId, RecordingType recordingType)
 		throws EventBuilder.InvalidEventException {
 
 
@@ -303,9 +303,6 @@ public class Utils {
 		Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
 		Optional<String> spanId = getFirst(meta, Constants.DEFAULT_SPAN_FIELD);
 		Optional<String> parentSpanId = getFirst(meta, Constants.DEFAULT_PARENT_SPAN_FIELD);
-		RecordingType recordingType =getFirst(meta, Constants.RECORDING_TYPE_FIELD)
-						.flatMap(r -> Utils.valueOf(RecordingType.class, r))
-						.orElse(RecordingType.Golden);
 
 		if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection.isPresent() && runType.isPresent()) {
 			EventBuilder eventBuilder = new EventBuilder(customerId.get(), app.get(),
@@ -549,9 +546,7 @@ public class Utils {
 		Optional<String> traceId = traceIdValue.isPresent() ? traceIdValue : getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
 		Optional<String> spanId = getFirst(meta, Constants.DEFAULT_SPAN_FIELD);
 		Optional<String> parentSpanId = getFirst(meta, Constants.DEFAULT_PARENT_SPAN_FIELD);
-		RecordingType recordingType = getFirst(meta, Constants.RECORDING_TYPE_FIELD)
-						.flatMap(r -> Utils.valueOf(RecordingType.class, r))
-						.orElse(RecordingType.Golden);
+		RecordingType recordingType = RecordingType.Replay;
 		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId.orElse(generateTraceId()) ,
 			spanId.orElse("NA") , parentSpanId.orElse("NA"));
 
