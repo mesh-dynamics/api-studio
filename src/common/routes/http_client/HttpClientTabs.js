@@ -889,7 +889,7 @@ class HttpClientTabs extends Component {
         const userId = encodeURIComponent(user.username),
         customerId = encodeURIComponent(user.customer_name);
         try {
-            api.get(`${config.apiBaseUrl}/cs/searchRecording?customerId=${user.customer_name}&app=${app}&userId=${userId}&recordingType=UserGolden`)
+            api.get(`${config.apiBaseUrl}/cs/searchRecording?customerId=${user.customer_name}&app=${app}&userId=${userId}&recordingType=UserGolden&archived=false`)
                 .then((serverRes) => {
                     const userCollections = serverRes.filter((eachCollection) => {
                         return eachCollection.recordingType !== "History"
@@ -912,7 +912,7 @@ class HttpClientTabs extends Component {
         const userId = encodeURIComponent(user.username),
             customerId = encodeURIComponent(user.customer_name);
         try {
-            api.get(`${config.apiBaseUrl}/cs/searchRecording?customerId=${user.customer_name}&app=${app}&userId=${userId}&recordingType=History`)
+            api.get(`${config.apiBaseUrl}/cs/searchRecording?customerId=${user.customer_name}&app=${app}&userId=${userId}&recordingType=History&archived=false`)
                 .then((serverRes) => {
                     const { userHistoryCollection } = this.state;
                     const fetchedUserHistoryCollection = serverRes.find((eachCollection) => {

@@ -57,6 +57,8 @@ const fetchCollectionList = async (app, recordingType="") => {
         const params = new URLSearchParams();
         params.set("customerId", user.customer_name);
         params.set("app", app);
+        params.set("archived", false);
+        
         recordingType && params.set("recordingType", recordingType); // todo
 
         return await api.get(url + "?" + params.toString());
