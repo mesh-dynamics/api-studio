@@ -41,3 +41,7 @@
   display: flex;
   justify-content: space-between;
 }
+
+.api-catalog-title-container {
+  padding-bottom: 20px;
+}

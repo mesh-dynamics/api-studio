@@ -1687,14 +1687,14 @@ class HttpClientTabs extends Component {
                         <div className="inline-block vertical-middle" style={{fontWeight: "bold", position: "relative", bottom: "3px", opacity: "0.5", paddingLeft: "10px"}}>API CATALOG - VIEW REQUEST DETAILS</div>
                     </div>
 
-                    <div>
+                    {/* <div>
                         <FormGroup>
                             <FormControl style={{marginBottom: "12px", marginTop: "10px"}}
                                 type="text"
                                 placeholder="Search"
                             />
                         </FormGroup>
-                    </div>
+                    </div> */}
                     <div style={{marginRight: "7px"}}>
                         <div style={{marginBottom: "9px", display: "inline-block", width: "20%", fontSize: "11px"}}></div>
                         <div style={{display: "inline-block", width: "80%", textAlign: "right"}}>
