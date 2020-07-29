@@ -113,7 +113,6 @@ class Navigation extends Component{
 
         return (
             <div className="navigation-main">
-
                 <div className="nav-cont h-100">
                     <div className="left-pane text-center">
                         <div className="company-name">
@@ -123,7 +122,7 @@ class Navigation extends Component{
                             <Link to="/">
                                 <div className="link-q"><i className="fas fa-chart-bar"></i></div>
                             </Link>
-                            <Link to="/test_config">
+                            <Link to={`/configs?app=${cube.selectedApp}`}>
                                 <div className="link-q"><i className="fas fa-caret-square-right"></i></div>
                             </Link>
                             <Link to={`/api_catalog/api?app=${cube.selectedApp}`}> 

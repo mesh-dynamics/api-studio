@@ -392,6 +392,25 @@ const fetchAPIEventData = async (app, reqIds, eventTypes=[]) => {
     }
 }
 
+const fetchAgentConfigs = async (app) => {
+    const user = JSON.parse(localStorage.getItem('user')); 
+    try {
+        return await api.get(`${config.recordBaseUrl}/fetchAgentConfigWithFacets/${user.customer_name}/${app}`);
+    } catch(error) {
+        console.log("Error Fetching agent configs \n", error);
+        throw new Error("Error Fetching agent configs");
+    }
+}
+
+const updateAgentConfig = async (updatedConfig) => {
+    try {
+        return await api.post(`${config.recordBaseUrl}/storeAgentConfig`, updatedConfig);
+    } catch (error) {
+        console.log("Error updating config\n", error);
+        throw error;
+    }
+};
+
 const getAllEnvironments = async () => {
     try {
         return await api.get(`${config.apiBaseUrl}/dtEnvironment/getAll`);
@@ -432,6 +451,7 @@ const deleteEnvironment = async (id) => {
 }
 
 
+
 export const cubeService = {
     fetchAppsList,
     getInstanceList,
@@ -459,8 +479,11 @@ export const cubeService = {
     fetchAPITraceData,
     fetchAPIEventData,
     fetchClusterList,
+    fetchAgentConfigs,
+    updateAgentConfig,
     getAllEnvironments,
     insertNewEnvironment,
     updateEnvironment,
     deleteEnvironment,
+
 };

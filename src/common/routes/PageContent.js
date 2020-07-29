@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import TestResults from "./test_results";
 import DiffResults from "./diff_results";
-import TestConfig from "./test_config";
+import Configs from "./configs";
 import ViewTestConfig from "./view_test_config";
 import TestReport from "./test_report";
 import ViewTrace from "./view_trace";
@@ -33,7 +33,7 @@ class PageContent extends Component {
         </div>
         {TestResults}
         {DiffResults}
-        {TestConfig}
+        {Configs}
         {ViewTrace}
         {TestReport}
         {ViewTestConfig}
@@ -59,4 +59,4 @@ export default PageContent
 //         {/* {ShareableDiff} */}
 //         {/*  */}
 
-        // {replay}
+// {replay}
