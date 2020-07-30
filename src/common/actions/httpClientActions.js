@@ -28,6 +28,14 @@ export const httpClientActions = {
         return {type: httpClientConstants.UPDATE_PARAM_IN_TAB, data: {tabId, type, key, value, id}};
     },
 
+    updateAllParamsInSelectedOutgoingTab: (tabId, type, key, value) => {
+        return {type: httpClientConstants.UPDATE_ALL_PARAMS_IN_OUTGOING_TAB, data: {tabId, type, key, value}};
+    },
+
+    updateAllParamsInSelectedTab: (tabId, type, key, value) => {
+        return {type: httpClientConstants.UPDATE_ALL_PARAMS_IN_TAB, data: {tabId, type, key, value}};
+    },
+
     updateBodyOrRawDataTypeInOutgoingTab: (tabId, type, value) => {
         return {type: httpClientConstants.UPDATE_BODY_OR_RAWA_DATA_TYPE_IN_OUTGOING_TAB, data: {tabId, type, value}};
     },
