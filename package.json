@@ -80,7 +80,7 @@
     "formik": "^1.5.7",
     "http-proxy": "^1.18.1",
     "is-electron": "^2.2.0",
-    "jsoneditor": "^7.5.0",
+    "jsoneditor": "^9.0.3",
     "jsoneditor-react": "^3.0.0",
     "lodash": "^4.17.19",
     "moment": "^2.24.0",
