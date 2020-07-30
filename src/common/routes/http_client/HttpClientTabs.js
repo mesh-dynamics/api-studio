@@ -419,7 +419,7 @@ class HttpClientTabs extends Component {
             // recordingId: this.state.tabs[tabIndex].recordingIdAddedFromClient,
             recordingCollectionId: this.state.tabs[tabIndex].collectionIdAddedFromClient,
             traceId: this.state.tabs[tabIndex].traceIdAddedFromClient,
-            selectedApp: app,
+            selectedApp: selectedApp,
             customerName: customerId,
             runId: runId,
         }
