@@ -1468,21 +1468,19 @@ public class AnalyzeWS {
               mapForEventsTraceIds.add(res.getTraceId() + " " + res.getCollection(), res);
             });
 
-        boolean apiPathExists = apiTraceFacetQuery.apiPath.isPresent();
-        traceCollectionMap.forEach((traceCollectionKey, events) -> {
-          if (apiPathExists) {
-            for (Event parent : events) {
-              response.add(getApiTraceResponse(parent, depth.get(),
-                  Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey)));
-            }
-
-          } else {
-            // find event such that there is no event having span id equal to its parent span id
-            Map<String, Event> requestEventsBySpanId = new HashMap<>();
-            events.forEach(e -> requestEventsBySpanId.put(e.spanId, e));
-            List<Event> parentRequestEvents = events.stream()
-                .filter(e -> requestEventsBySpanId.get(e.parentSpanId) == null)
+          traceCollectionMap.forEach((traceCollectionKey, events) -> {
+            List<Event> parentRequestEvents = apiTraceFacetQuery.apiPath.map(path -> {
+                return events.stream()
+                .filter(e -> e.apiPath.equals(path))
                 .collect(Collectors.toList());
+            }).orElseGet(() -> {
+                // find event such that there is no event having span id equal to its parent span id
+                Map<String, Event> requestEventsBySpanId = new HashMap<>();
+                events.forEach(e -> requestEventsBySpanId.put(e.spanId, e));
+                return events.stream()
+                    .filter(e -> requestEventsBySpanId.get(e.parentSpanId) == null)
+                    .collect(Collectors.toList());
+            });
             if (parentRequestEvents.isEmpty()) {
               LOGGER.error(
                   new ObjectMessage(Map.of(Constants.MESSAGE, "No request events found",
@@ -1495,8 +1493,7 @@ public class AnalyzeWS {
               response.add(getApiTraceResponse(parent, depth.get(),
                   Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey)));
             }
-          }
-        });
+          });
       }
       Map jsonMap = new HashMap();
 
