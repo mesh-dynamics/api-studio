@@ -32,7 +32,9 @@ import {
 import EnvVar from "./EnvVar";
 import Mustache from "mustache"
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
+import { httpClientActions } from "../../actions/httpClientActions";
 import { generateRunId } from "../../utils/http_client/utils";
+import { httpClientConstants } from "../../constants/httpClientConstants";
 
 class HttpClientTabs extends Component {
 
@@ -44,9 +46,8 @@ class HttpClientTabs extends Component {
         };
         const tabId = uuidv4();
         const urlParameters = new URLSearchParams(window.location.search);
-        const selectedApp = urlParameters.get("app");
-        this.state = {
-            tabs: [{
+        this.state = { 
+            /* tabs: [{ 
                 id: tabId,
                 requestId: "",
                 tabName: "",
@@ -81,7 +82,6 @@ class HttpClientTabs extends Component {
                 recordedHistory: null,
                 showEnvPopoverOverlay: false
             }],
-            toggleTestAndOutgoingRequests: true,
             selectedTabKey: tabId,
             app: selectedApp,
             historyCursor: null,
@@ -95,7 +95,7 @@ class HttpClientTabs extends Component {
             collectionName: "",
             collectionLabel: "",
             modalErroSaveMessage: "",
-            modalErroCreateCollectionMessage: "",
+            modalErroCreateCollectionMessage: "", */
             showEnvVarModal: false,
             selectedEnvironment: "",
         };
@@ -110,8 +110,6 @@ class HttpClientTabs extends Component {
         this.driveRequest = this.driveRequest.bind(this);
         this.showOutgoingRequests = this.showOutgoingRequests.bind(this);
         this.saveToCollection = this.saveToCollection.bind(this);
-
-        this.handleClick = this.handleClick.bind(this);
 
         this.onToggle = this.onToggle.bind(this);
         this.handlePanelClick = this.handlePanelClick.bind(this);
@@ -134,25 +132,20 @@ class HttpClientTabs extends Component {
     }
 
     handleCloseModal() {
-        this.setState({ showSaveModal: false });
+        const { dispatch } = this.props;
+        dispatch(httpClientActions.closeSaveModal(false));
     }
 
     showSaveModal(isOutgoingRequest, tabId) {
-        this.setState({
-            showSaveModal: true,
-            collectionName: "",
-            collectionLabel: "",
-            selectedSaveableTabId: tabId,
-            modalErroSaveMessage: "",
-            modalErroCreateCollectionMessage: ""
-        });
+        const { dispatch } = this.props;
+        dispatch(httpClientActions.showSaveModal(tabId, true, "", "", "", ""));
     }
 
-    onToggle(node, toggled) {
-        const { historyCursor } = this.state;
-
+    onToggle(node, toggled){
+        const {httpClient: {historyCursor}} = this.props;
+        const { dispatch } = this.props;
         if (historyCursor) {
-            this.setState(() => ({ historyCursor, active: false }));
+            dispatch(httpClientActions.setInactiveHistoryCursor(historyCursor, false));
             /* if (!_.includes(cursor.children, node)) {
                 cursor.toggled = false;
                 cursor.active = false;
@@ -162,223 +155,57 @@ class HttpClientTabs extends Component {
         if (node.children) {
             node.toggled = toggled;
         }
-        this.setState(() => ({ historyCursor: node }));
+        dispatch(httpClientActions.setActiveHistoryCursor(node));
     }
 
-    getTabIndexGivenTabId(tabId, tabs) {
-        let filteredTabs = tabs.filter((e) => e.id === tabId);
-        for (let i = 0; i < tabs.length; i++) {
-            if (tabs[i].id === tabId) {
-                return i;
-            }
-        }
-        return -1;
+    getTabIndexGivenTabId (tabId, tabs) {
+        if(!tabs) return -1;
+        return tabs.findIndex((e) => e.id === tabId);
     }
-
-
 
     addOrRemoveParam(isOutgoingRequest, tabId, type, op, id) {
-        const { selectedTabKey, tabs } = this.state;
-        if (isOutgoingRequest) {
-            if (op === "delete") {
-                this.setState({
-                    tabs: tabs.map(eachTab => {
-                        if (eachTab.id === selectedTabKey) {
-                            eachTab.outgoingRequests.map((eachOutgoingTab) => {
-                                if (eachOutgoingTab.id === tabId) {
-                                    eachOutgoingTab[type] = eachOutgoingTab[type].filter((e) => e.id !== id);
-                                }
-                            })
-                        }
-                        return eachTab;
-                    })
-                });
+        const {dispatch} = this.props;
+        if(isOutgoingRequest) {
+            if(op === "delete") {
+                dispatch(httpClientActions.deleteParamInSelectedOutgoingTab(tabId, type, id));
             } else {
-                this.setState({
-                    tabs: tabs.map(eachTab => {
-                        if (eachTab.id === selectedTabKey) {
-                            eachTab.outgoingRequests.map((eachOutgoingTab) => {
-                                if (eachOutgoingTab.id === tabId) {
-                                    eachOutgoingTab[type] = [...eachOutgoingTab[type], {
-                                        id: uuidv4(),
-                                        name: "",
-                                        value: "",
-                                        description: "",
-                                        selected: true,
-                                    }];
-                                }
-                            })
-                        }
-                        return eachTab;
-                    })
-                });
+                dispatch(httpClientActions.addParamToSelectedOutgoingTab(tabId, type));
             }
         } else {
-            let tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
-            if (tabIndex < 0) return;
-            if (op === "delete") {
-                this.setState({
-                    tabs: tabs.map(eachTab => {
-                        if (eachTab.id === tabId) {
-                            eachTab[type] = eachTab[type].filter((e) => e.id !== id);
-                        }
-                        return eachTab;
-                    })
-                });
+            if(op === "delete") {
+                dispatch(httpClientActions.deleteParamInSelectedTab(tabId, type, id));
             } else {
-                this.setState({
-                    tabs: tabs.map(eachTab => {
-                        if (eachTab.id === tabId) {
-                            eachTab[type] = [...eachTab[type], {
-                                id: uuidv4(),
-                                name: "",
-                                value: "",
-                                description: "",
-                                selected: true,
-                            }];
-                        }
-                        return eachTab;
-                    })
-                });
+                dispatch(httpClientActions.addParamToSelectedTab(tabId, type));
             }
         }
     }
 
     updateParam(isOutgoingRequest, tabId, type, key, value, id) {
-        const { selectedTabKey, tabs } = this.state;
-        if (isOutgoingRequest) {
-            const selectedTabIndex = this.getTabIndexGivenTabId(selectedTabKey, tabs);
-            const selectedOutgoingTabIndex = this.getTabIndexGivenTabId(tabId, tabs[selectedTabIndex]["outgoingRequests"]);
-            let params = tabs[selectedTabIndex]["outgoingRequests"][selectedOutgoingTabIndex][type];
-            if (_.isArray(params)) {
-                let specificParamArr = params.filter((e) => e.id === id);
-                if (specificParamArr.length > 0) {
-                    specificParamArr[0][key] = value;
-                }
-            } else {
-                params = value;
-            }
-            this.setState({
-                tabs: tabs.map(eachTab => {
-                    if (eachTab.id === selectedTabKey) {
-                        eachTab.outgoingRequests.map((eachOutgoingTab) => {
-                            if (eachOutgoingTab.id === tabId) {
-                                eachOutgoingTab[type] = params;
-                                if(type === "httpURL") eachOutgoingTab.tabName = params;
-                            }
-                        })
-                    }
-                    return eachTab;
-                })
-            });
-        } else {
-            let tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
-            if (tabIndex < 0) return;
-            let params = tabs[tabIndex][type];
-            if (_.isArray(params)) {
-                let specificParamArr = params.filter((e) => e.id === id);
-                if (specificParamArr.length > 0) {
-                    specificParamArr[0][key] = value;
-                }
-            } else {
-                params = value;
-            }
-            this.setState({
-                tabs: tabs.map(eachTab => {
-                    if (eachTab.id === tabId) {
-                        eachTab[type] = params;
-                        if(type === "httpURL") eachTab.tabName = params;
-                    }
-                    return eachTab;
-                })
-            });
-            //this.setState({[type]: params})
-        }
-    }
-
-    updateAllParams = (isOutgoingRequest, tabId, type, key, value) => {
-        const {selectedTabKey, tabs} = this.state;
+        const {dispatch} = this.props;
         if(isOutgoingRequest) {
-            const selectedTabIndex = this.getTabIndexGivenTabId(selectedTabKey, tabs);
-            const selectedOutgoingTabIndex = this.getTabIndexGivenTabId(tabId, tabs[selectedTabIndex]["outgoingRequests"]);
-            let params = tabs[selectedTabIndex]["outgoingRequests"][selectedOutgoingTabIndex][type];
-            if(_.isArray(params)) {
-                params.forEach((param) => {param[key]=value})
-            } else {
-                params = value;
-            }
-            this.setState({
-                tabs: tabs.map(eachTab => {
-                    if (eachTab.id === selectedTabKey) {
-                        eachTab.outgoingRequests.map((eachOutgoingTab) => {
-                            if (eachOutgoingTab.id === tabId) {
-                                eachOutgoingTab[type] = params;
-                                // if(type === "httpURL") eachOutgoingTab.tabName = params;
-                            }
-                        })
-                    }
-                    return eachTab; 
-                })
-            });
+            dispatch(httpClientActions.updateParamInSelectedOutgoingTab(tabId, type, key, value, id));
         } else {
-            let tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
-            if(tabIndex < 0) return;
-            let params = tabs[tabIndex][type];
-            if(_.isArray(params)) {
-                params.forEach((param) => {param[key]=value})
-            } else {
-                params = value;
-            }
-            this.setState({
-                tabs: tabs.map(eachTab => {
-                    if (eachTab.id === tabId) {
-                        eachTab[type] = params;
-                        // if(type === "httpURL") eachTab.tabName = params;
-                    }
-                    return eachTab; 
-                })
-            });
-            //this.setState({[type]: params})
+            dispatch(httpClientActions.updateParamInSelectedTab(tabId, type, key, value, id));
+
         }
     }
 
     updateBodyOrRawDataType(isOutgoingRequest, tabId, type, value) {
-        const { selectedTabKey, tabs } = this.state;
-        if (isOutgoingRequest) {
-            this.setState({
-                tabs: tabs.map(eachTab => {
-                    if (eachTab.id === selectedTabKey) {
-                        eachTab.outgoingRequests.map((eachOutgoingTab) => {
-                            if (eachOutgoingTab.id === tabId) {
-                                eachOutgoingTab[type] = value;
-                            }
-                        })
-                    }
-                    return eachTab;
-                })
-            });
+        const {dispatch} = this.props;
+        if(isOutgoingRequest) {
+            dispatch(httpClientActions.updateBodyOrRawDataTypeInOutgoingTab(tabId, type, value));
         } else {
-            let tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
-            if (tabIndex < 0) return;
-            // this.setState({[type]: value});
-            this.setState({
-                tabs: tabs.map(eachTab => {
-                    if (eachTab.id === tabId) {
-                        eachTab[type] = value;
-                    }
-                    return eachTab;
-                })
-            });
-        }
+            dispatch(httpClientActions.updateBodyOrRawDataTypeInTab(tabId, type, value));
+        } 
     }
 
-    showOutgoingRequests(tabId, traceId, collectionId, recordingId) {
-        const { tabs, app } = this.state, tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
+    showOutgoingRequests(tabId, traceId, collectionId, recordingId) {    
+        const {httpClient: {tabs}} = this.props, tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
+        const { cube: {selectedApp} } = this.props;
+        const app = selectedApp;
+        const { dispatch } = this.props;
         const reqIdArray = tabs[tabIndex]["outgoingRequestIds"];
-        if (tabs[tabIndex]["outgoingRequests"] && tabs[tabIndex]["outgoingRequests"].length > 0) {
-            this.setState({
-                toggleTestAndOutgoingRequests: !this.state.toggleTestAndOutgoingRequests
-            });
+        if(tabs[tabIndex]["outgoingRequests"] && tabs[tabIndex]["outgoingRequests"].length > 0) {
             return;
         };
         if (reqIdArray && reqIdArray.length > 0) {
@@ -472,24 +299,10 @@ class HttpClientTabs extends Component {
                             })
                         }
                     }
-                    this.setState({
-                        toggleTestAndOutgoingRequests: !this.state.toggleTestAndOutgoingRequests,
-                        tabs: this.state.tabs.map(eachTab => {
-                            if (eachTab.id === tabId) {
-                                eachTab["outgoingRequests"] = outgoingRequests;
-                            }
-                            return eachTab;
-                        })
-                    });
+                    dispatch(httpClientActions.addOutgoingRequestsToTab(tabId, outgoingRequests));
                 }
             });
         }
-    }
-
-    handleClick() {
-        this.setState({
-            toggleTestAndOutgoingRequests: !this.state.toggleTestAndOutgoingRequests
-        });
     }
 
     extractHeaders(httpReqestHeaders) {
@@ -579,15 +392,16 @@ class HttpClientTabs extends Component {
     }
 
     driveRequest(isOutgoingRequest, tabId) {
-        const { tabs, selectedTabKey, app } = this.state;
+        const {httpClient: {tabs, selectedTabKey, userHistoryCollection}} = this.props;
+        const { cube: {app: selectedApp} } = this.props;
+        const { dispatch } = this.props;
         const user = JSON.parse(localStorage.getItem('user'));
         const userId = user.username,
             customerId = user.customer_name;
         let tabsToProcess = tabs;
         const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
         const tabToProcess = tabsToProcess[tabIndex];
-        if (tabIndex < 0) return;
-        const { userHistoryCollection } = this.state;
+        if(tabIndex < 0) return;
         // generate a new run id every time a request is run
         const runId = generateRunId();
         // make the request and update response status, headers & body
@@ -620,16 +434,12 @@ class HttpClientTabs extends Component {
         const [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] = this.applyEnvVars(httpRequestURL, httpRequestQueryStringParams, fetchConfig);
 
         const fetchUrlRendered = httpRequestURLRendered + (httpRequestQueryStringParamsRendered ? "?" + stringify(httpRequestQueryStringParamsRendered) : "");
-
-        this.setState({
-            tabs: this.state.tabs.map(eachTab => {
-                if (eachTab.id === tabId) {
-                    eachTab["responseStatus"] = "WAITING...";
-                    eachTab["showCompleteDiff"] = false;
-                    if (eachTab["clearIntervalHandle"]) clearInterval(eachTab["clearIntervalHandle"]);
-                }
-                return eachTab;
-            })
+        dispatch(httpClientActions.preDriveRequest(tabId, "WAITING...", false));
+        tabs.map(eachTab => {
+            if (eachTab.id === tabId) {
+                if(eachTab["clearIntervalHandle"]) clearInterval(eachTab["clearIntervalHandle"]);
+            }
+            return eachTab; 
         });
         // Make request
         // https://www.mocky.io/v2/5185415ba171ea3a00704eed
@@ -648,49 +458,29 @@ class HttpClientTabs extends Component {
                 //throw new TypeError('Response from has unexpected "content-type"');
             }
         })
-            .then((data) => {
-                // handle success
-                this.setState({
-                    tabs: this.state.tabs.map(eachTab => {
-                        if (eachTab.id === tabId) {
-                            eachTab["responseHeaders"] = JSON.stringify(fetchedResponseHeaders, undefined, 4);
-                            eachTab["responseBody"] = JSON.stringify(data, undefined, 4);
-                            eachTab["responseStatus"] = responseStatus;
-                            eachTab["responseStatusText"] = responseStatusText;
-                        }
-                        return eachTab;
-                    })
-                }, () => {
-                    this.saveToCollection(isOutgoingRequest, tabId, userHistoryCollection.id, "History", runId);
-                });
-            })
-            .catch((error) => {
-                console.error(error);
-                this.setState({
-                    tabs: this.state.tabs.map(eachTab => {
-                        if (eachTab.id === tabId) {
-                            eachTab["responseStatus"] = error.message;
-                        }
-                        return eachTab;
-                    })
-                }, () => {
-                    // this.saveToCollection(isOutgoingRequest, tabId, userHistoryCollection.id, "History");
-                });
-            });
+        .then((data) => {
+            // handle success
+            dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), JSON.stringify(data, undefined, 4)));
+            this.saveToCollection(isOutgoingRequest, tabId, userHistoryCollection.id, "History", runId);
+        })
+        .catch((error) => {
+            console.error(error);
+            dispatch(httpClientActions.postErrorDriveRequest(tabId, error.message));
+        });
     }
 
     handleTabChange(tabKey) {
-        this.setState({
-            selectedTabKey: tabKey
-        });
+        const { dispatch } = this.props;
+        dispatch(httpClientActions.setSelectedTabKey(tabKey));
     }
 
     handleRemoveTab(key, evt) {
         evt.stopPropagation();
-
+        const { dispatch } = this.props;
         // current tabs
-        const currentTabs = this.state.tabs;
-
+        const {httpClient: {tabs}} = this.props;
+        const currentTabs = tabs;
+    
         // find index to remove
         const indexToRemove = currentTabs.findIndex(tab => tab.id === key);
         const tabToProcess = currentTabs[indexToRemove];
@@ -704,8 +494,8 @@ class HttpClientTabs extends Component {
             alert('You can not delete the last tab!');
             return;
         }
-
-        this.setState({ tabs: newTabs, selectedTabKey: newTabs[nextSelectedIndex].id });
+        
+        dispatch(httpClientActions.removeTab(newTabs, newTabs[nextSelectedIndex].id));
     }
 
     extractHeadersToCubeFormat(headersReceived) {
@@ -799,9 +589,11 @@ class HttpClientTabs extends Component {
         return reqResCubeFormattedData;
     }
 
-    saveToCollection(isOutgoingRequest, tabId, recordingId, type, runId = "") {
-        const { tabs, selectedTabKey, app } = this.state;
-        const { dispatch } = this.props;
+    saveToCollection(isOutgoingRequest, tabId, recordingId, type, runId="") {
+        const {httpClient: {tabs, selectedTabKey}} = this.props;
+        const { cube: {selectedApp} } = this.props;
+        const app = selectedApp;
+        const {dispatch} = this.props;
         let tabsToProcess = tabs;
         const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
         const tabToProcess = tabsToProcess[tabIndex];
@@ -840,16 +632,7 @@ class HttpClientTabs extends Component {
                                 throw new Error("Error");
                             }
                         }
-                        this.setState({
-                            showSaveModal: type === "History" ? false : true,
-                            modalErroSaveMessage: "Saved Successfully! You can close this modal.",
-                            tabs: this.state.tabs.map(eachTab => {
-                                if (eachTab.id === tabId) {
-                                    if (clearIntervalHandle) eachTab["clearIntervalHandle"] = clearIntervalHandle;
-                                }
-                                return eachTab;
-                            })
-                        });
+                        dispatch(httpClientActions.postSuccessSaveToCollection(tabId, type === "History" ? false : true, "Saved Successfully! You can close this modal.", clearIntervalHandle));
                         setTimeout(() => {
                             this.loadFromHistory();
                             this.loadUserCollections();
@@ -859,32 +642,28 @@ class HttpClientTabs extends Component {
 
                         }, 2000);
                     }, (error) => {
-                        this.setState({
-                            showSaveModal: type === "History" ? false : true,
-                            modalErroSaveMessage: "Error saving: " + error
-                        })
+                        dispatch(httpClientActions.postErrorSaveToCollection(type === "History" ? false : true, "Error saving: " + error));
                         console.error("error: ", error);
                     })
             } catch (error) {
                 console.error("Error ", error);
-                this.setState({
-                    showSaveModal: type === "History" ? false : true,
-                    modalErroSaveMessage: "Error saving: " + error
-                })
+                dispatch(httpClientActions.catchErrorSaveToCollection(type === "History" ? false : true, "Error saving: " + error));
                 throw new Error("Error");
             }
         }
     }
 
     handleChange(evt) {
-        this.setState({
-            [evt.target.name]: evt.target.value
-        })
+        const {dispatch} = this.props;
+        dispatch(httpClientActions.setUpdatedModalUserCollectionDetails(evt.target.name, evt.target.value));
     }
 
     handleCreateCollection() {
         const user = JSON.parse(localStorage.getItem('user'));
-        const { app, collectionName, collectionLabel } = this.state;
+        const {httpClient: {collectionName, collectionLabel}} = this.props;
+        const {dispatch} = this.props;
+        const { cube: {selectedApp} } = this.props;
+        const app = selectedApp;
         const userId = user.username,
             customerId = user.customer_name;
         const searchParams = new URLSearchParams();
@@ -904,31 +683,21 @@ class HttpClientTabs extends Component {
             api.post(`${config.apiBaseUrl}/cs/start/${user.customer_name}/${app}/dev/Default${app}`, searchParams, configForHTTP)
                 .then((serverRes) => {
                     this.loadUserCollections();
-                    this.setState({
-                        showSaveModal: true,
-                        modalErroCreateCollectionMessage: "Created Successfully! Please select this newly created collection from below dropdown and click save."
-                    });
+                    dispatch(httpClientActions.postSuccessCreateCollection(true, "Created Successfully! Please select this newly created collection from below dropdown and click save."));
                 }, (error) => {
-                    this.setState({
-                        showSaveModal: true,
-                        modalErroCreateCollectionMessage: "Error saving: " + error
-                    })
+                    dispatch(httpClientActions.postErrorCreateCollection(true, "Error saving: " + error));
                     console.error("error: ", error);
                 })
-        } catch (error) {
-            this.setState({
-                showSaveModal: true,
-                modalErroCreateCollectionMessage: "Error saving: " + error
-            })
+        } catch(error) {
+            dispatch(httpClientActions.catchErrorCreateCollection(true, "Error saving: " + error));
             console.error("Error ", error);
             throw new Error("Error");
         }
     }
 
     handleSave() {
-        const { userCollectionId, userCollections, selectedSaveableTabId } = this.state;
+        const {httpClient: {userCollectionId, userCollections, selectedSaveableTabId, tabs, selectedTabKey}} = this.props;
         let isOutgoingRequest = false;
-        const { tabs, selectedTabKey } = this.state;
         let tabsToProcess = tabs;
         let tabIndex = this.getTabIndexGivenTabId(selectedSaveableTabId, tabsToProcess);
         if (tabIndex < 0) {
@@ -947,7 +716,9 @@ class HttpClientTabs extends Component {
 
     loadUserCollections() {
         const user = JSON.parse(localStorage.getItem('user'));
-        const { app } = this.state;
+        const { cube: {selectedApp} } = this.props;
+        const app = selectedApp;
+        const { dispatch } = this.props;
         const userId = encodeURIComponent(user.username),
             customerId = encodeURIComponent(user.customer_name);
         try {
@@ -956,9 +727,7 @@ class HttpClientTabs extends Component {
                     const userCollections = serverRes.filter((eachCollection) => {
                         return eachCollection.recordingType !== "History"
                     });
-                    this.setState({
-                        userCollections: userCollections
-                    });
+                    dispatch(httpClientActions.addUserCollections(userCollections));
                 }, (error) => {
                     console.error("error: ", error);
                 })
@@ -970,20 +739,24 @@ class HttpClientTabs extends Component {
 
     loadFromHistory() {
         const user = JSON.parse(localStorage.getItem('user'));
-        const { app } = this.state;
+        const { dispatch } = this.props;
+        const { cube: {selectedApp} } = this.props;
+        const app = selectedApp;
+        if(!app) {
+            console.error("app is null in httpClientTabs");
+            return;
+        }
         const userId = encodeURIComponent(user.username),
             customerId = encodeURIComponent(user.customer_name);
         try {
             api.get(`${config.apiBaseUrl}/cs/searchRecording?customerId=${user.customer_name}&app=${app}&userId=${userId}&recordingType=History&archived=false`)
                 .then((serverRes) => {
-                    const { userHistoryCollection } = this.state;
+                    const {httpClient: {userHistoryCollection}} = this.props;
                     const fetchedUserHistoryCollection = serverRes.find((eachCollection) => {
                         return eachCollection.recordingType === "History";
                     });
-                    if (!userHistoryCollection && fetchedUserHistoryCollection) {
-                        this.setState({
-                            userHistoryCollection: fetchedUserHistoryCollection
-                        });
+                    if(!userHistoryCollection && fetchedUserHistoryCollection) {
+                        dispatch(httpClientActions.addUserHistoryCollection(userHistoryCollection));
                     }
                     const startTime = new Date(Date.now() - 30 * 60 * 1000).toISOString();
                     api.get(`${config.apiBaseUrl}/as/getApiTrace/${customerId}/${app}?depth=100&collection=${fetchedUserHistoryCollection.collec}&startDate=${startTime}`)
@@ -1022,10 +795,7 @@ class HttpClientTabs extends Component {
                                     });
                                 }
                             });
-                            this.setState({
-                                userApiTraceHistory: apiTraces,
-                                cubeRunHistory
-                            });
+                            dispatch(httpClientActions.addCubeRunHistory(apiTraces, cubeRunHistory));
                         }, (err) => {
                             console.error("err: ", err);
                         })
@@ -1120,7 +890,10 @@ class HttpClientTabs extends Component {
     }
 
     loadRecordedHistory(tabId, traceId, reqId, runId, apiPath) {
-        const { userHistoryCollection, app } = this.state;
+        const {httpClient: {tabs, userHistoryCollection}} = this.props;
+        const { cube: {selectedApp} } = this.props;
+        const app = selectedApp;
+        const { dispatch } = this.props;
         const user = JSON.parse(localStorage.getItem('user'));
         const historyCollectionId = userHistoryCollection.collec;
         api.get(`${config.apiBaseUrl}/as/getApiTrace/${user.customer_name}/${app}?depth=100&collection=${historyCollectionId}&apiPath=${apiPath}&runId=${runId}`)
@@ -1129,15 +902,15 @@ class HttpClientTabs extends Component {
                     return b.res.length - a.res.length;
                 });
                 const apiTrace = res.response[0];
-                const selectedApp = app, reqIdArray = [];
+                const reqIdArray = [];
                 apiTrace && apiTrace.res.map((eachApiTraceEvent) => {
                     reqIdArray.push(eachApiTraceEvent.requestEventId);
                 });
 
                 if (reqIdArray && reqIdArray.length > 0) {
                     const eventTypes = [];
-                    cubeService.fetchAPIEventData(selectedApp, reqIdArray, eventTypes).then((result) => {
-                        if (result && result.numResults > 0) {
+                    cubeService.fetchAPIEventData(app, reqIdArray, eventTypes).then((result) => {
+                        if(result && result.numResults > 0) {
                             const ingressReqResPair = result.objects.filter(eachReq => eachReq.apiPath === apiPath);
                             let ingressReqObj;
                             if (ingressReqResPair.length > 0) {
@@ -1152,15 +925,14 @@ class HttpClientTabs extends Component {
                                     ingressReqObj.outgoingRequests.push(reqObject);
                                 }
                             }
-                            this.setState({
-                                tabs: this.state.tabs.map(eachTab => {
-                                    if (eachTab.id === tabId) {
-                                        eachTab["recordedHistory"] = ingressReqObj;
-                                        if (reqIdArray.length > 1 && eachTab["clearIntervalHandle"]) clearInterval(eachTab["clearIntervalHandle"]); // need interval for runid?
+                            dispatch(httpClientActions.postSuccessLoadRecordedHistory(tabId, ingressReqObj));
+                            if(reqIdArray.length > 1) {
+                                tabs.map((eachTab) => {
+                                    if(eachTab.clearIntervalHandle) {
+                                        clearInterval(eachTab.clearIntervalHandle);
                                     }
-                                    return eachTab;
-                                })
-                            });
+                                });
+                            }
                         }
                     });
                 }
@@ -1172,7 +944,10 @@ class HttpClientTabs extends Component {
     handlePanelClick(selectedCollectionId) {
         if (!selectedCollectionId) return;
         const user = JSON.parse(localStorage.getItem('user'));
-        const { app, userCollections } = this.state;
+        const {httpClient: {userCollections}} = this.props;
+        const { cube: {selectedApp} } = this.props;
+        const app = selectedApp;
+        const {dispatch} = this.props;
         const customerId = encodeURIComponent(user.customer_name);
         const selectedCollection = userCollections.find(eachCollection => eachCollection.collec === selectedCollectionId);
         const apiTracesForACollection = selectedCollection.apiTraces;
@@ -1201,13 +976,11 @@ class HttpClientTabs extends Component {
                             })
                         });
 
-                        selectedCollection.apiTraces = apiTraces;
-                        this.setState({
-                            userCollections: userCollections
-                        });
-                    }, (err) => {
-                        console.error("err: ", err);
-                    });
+                    selectedCollection.apiTraces = apiTraces;
+                    dispatch(httpClientActions.addUserCollections(userCollections));
+                }, (err) => {
+                    console.error("err: ", err);
+                });
             }
 
         } catch (error) {
@@ -1216,49 +989,46 @@ class HttpClientTabs extends Component {
         }
     }
 
+    getReqObj() {
+        return {
+            httpMethod: "get",
+            httpURL: "",
+            headers: [],
+            queryStringParams: [],
+            bodyType: "formData",
+            formData: [],
+            rawData: "",
+            rawDataType: "json",
+            responseStatus: "NA",
+            responseStatusText: "",
+            responseHeaders: "",
+            responseBody: "",
+            recordedResponseHeaders: "",
+            recordedResponseBody: "",
+            responseBodyType: "",
+            requestId: "",
+            outgoingRequestIds: [],
+            eventData: null,
+            showOutgoingRequestsBtn: false,
+            showSaveBtn: false,
+            outgoingRequests: [],
+            showCompleteDiff: false,
+            isOutgoingRequest: false,
+            service: ""
+        }
+    }
+
     addTab(evt, reqObject, givenApp) {
+        const { dispatch } = this.props;
         const tabId = uuidv4();
         const requestId = uuidv4();
-        const { app } = this.state;
-        const appAvailable = givenApp ? givenApp : app ? app : "";
-        if (!reqObject) {
-            reqObject = {
-                httpMethod: "get",
-                httpURL: "",
-                httpURLShowOnly: "",
-                headers: [],
-                queryStringParams: [],
-                bodyType: "formData",
-                formData: [],
-                rawData: "",
-                rawDataType: "json",
-                responseStatus: "NA",
-                responseStatusText: "",
-                responseHeaders: "",
-                responseBody: "",
-                recordedResponseHeaders: "",
-                recordedResponseBody: "",
-                responseBodyType: "",
-                requestId: "",
-                outgoingRequestIds: [],
-                eventData: null,
-                showOutgoingRequestsBtn: false,
-                showSaveBtn: false,
-                outgoingRequests: [],
-                showCompleteDiff: false,
-                isOutgoingRequest: false,
-                service: ""
-            };
+        const { cube: {selectedApp} } = this.props;
+        const app = selectedApp;
+        const appAvailable =  givenApp ? givenApp : app ? app : "";
+        if(!reqObject) {
+            reqObject = this.getReqObj();
         }
-        this.setState({
-            tabs: [...this.state["tabs"], {
-                id: tabId,
-                tabName: reqObject.httpURLShowOnly ? reqObject.httpURLShowOnly : "New",
-                ...reqObject
-            }],
-            selectedTabKey: tabId,
-            app: appAvailable
-        });
+        dispatch(httpClientActions.addTab(tabId, reqObject, appAvailable, tabId, reqObject.httpURL ? reqObject.httpURL : "New"));
         return tabId;
     }
 
@@ -1353,6 +1123,7 @@ class HttpClientTabs extends Component {
 
     componentDidMount() {
         const { dispatch } = this.props;
+        const { cube: {selectedApp} } = this.props;
         window.addEventListener('resize', this.updateDimensions);
         dispatch(cubeActions.hideTestConfig(true));
         dispatch(cubeActions.hideServiceGraph(true));
@@ -1360,8 +1131,8 @@ class HttpClientTabs extends Component {
         this.loadFromHistory();
         this.loadUserCollections();
         let urlParameters = new URLSearchParams(window.location.search);
-
-        const requestIds = this.getRequestIds(), selectedApp = urlParameters.get("app"), reqIdArray = Object.keys(requestIds);
+        
+        const requestIds = this.getRequestIds(), reqIdArray = Object.keys(requestIds);
         /* Object.keys(requestIds).map((objKey) => {
             reqIdArray.push(...requestIds[objKey]);
         }); */
@@ -1387,7 +1158,7 @@ class HttpClientTabs extends Component {
 
     componentWillUnmount() {
         const { dispatch } = this.props;
-        const { tabs } = this.state;
+        const {httpClient: {tabs}} = this.props;
         window.removeEventListener('resize', this.updateDimensions);
         dispatch(cubeActions.hideTestConfig(false));
         dispatch(cubeActions.hideServiceGraph(false));
@@ -1404,10 +1175,9 @@ class HttpClientTabs extends Component {
     }
 
     openTab(node) {
-        let urlParameters = new URLSearchParams(window.location.search);
-        const { app } = this.state;
-        const selectedApp = urlParameters.get("app"), reqIdArray = [node.requestEventId];
-        if (reqIdArray && reqIdArray.length > 0) {
+        const { cube: {selectedApp} } = this.props;
+        const reqIdArray = [node.requestEventId];
+        if(reqIdArray && reqIdArray.length > 0) {
             const user = JSON.parse(localStorage.getItem('user'));
             const apiEventURL = `${config.recordBaseUrl}/getEvents`;
             let body = {
@@ -1516,8 +1286,8 @@ class HttpClientTabs extends Component {
     }
 
     getSelectedTabKey(givenTabs, type) {
-        const { selectedTabKey } = this.state;
-        if (type && type === "outgoingRequests") {
+        const {httpClient: {selectedTabKey}} = this.props;
+        if(type && type === "outgoingRequests") {
             const currentTab = givenTabs.find((eachTab) => eachTab.id === selectedTabKey);
             const tabsToRender = currentTab[type];
             return tabsToRender.length > 0 ? tabsToRender[0].id : ""
@@ -1527,7 +1297,7 @@ class HttpClientTabs extends Component {
 
     getTabs(givenTabs) {
         let tabsToRender = givenTabs;
-        const { selectedTabKey, cubeRunHistory } = this.state;
+        const {httpClient: {selectedTabKey, cubeRunHistory}} = this.props;
         return tabsToRender.map((eachTab, index) => ({
             title: (
                 <div className="tab-container">
@@ -1680,7 +1450,10 @@ class HttpClientTabs extends Component {
 
     render() {
         const { cube } = this.props;
-        const { app, cubeRunHistory, userCollections, collectionName, collectionLabel, modalErroSaveMessage, modalErroCreateCollectionMessage, showEnvVarModal } = this.state;
+        const { showEnvVarModal } = this.state;
+        const { cube: {selectedApp} } = this.props;
+        const app = selectedApp;
+        const {httpClient: {cubeRunHistory, userCollections, collectionName, collectionLabel, modalErroSaveMessage, modalErroCreateCollectionMessage, tabs, selectedTabKey, showSaveModal}} = this.props;
 
         return (
 
@@ -1804,13 +1577,13 @@ class HttpClientTabs extends Component {
                             removeActiveOnly={false} 
                             onChange={this.handleTabChange} 
                             onRemove={this.handleRemoveTab}
-                            items={this.getTabs(this.state.tabs)} 
+                            items={this.getTabs(tabs)} 
                             tabsWrapperClass={"md-hc-tabs-wrapper"} 
-                            selectedTabKey={this.state.selectedTabKey} 
+                            selectedTabKey={selectedTabKey} 
                         />
                     </div>
                     <div>
-                        <Modal show={this.state.showSaveModal} onHide={this.handleCloseModal}>
+                        <Modal show={showSaveModal} onHide={this.handleCloseModal}>
                             <Modal.Header closeButton>
                                 <Modal.Title>Save to collection</Modal.Title>
                             </Modal.Header>
@@ -1868,10 +1641,11 @@ class HttpClientTabs extends Component {
 }
 
 function mapStateToProps(state) {
-    const { cube, apiCatalog } = state;
+    const {cube, apiCatalog, httpClient} = state;
     return {
         cube,
         apiCatalog,
+        httpClient
     }
 }
 
