@@ -1,15 +1,16 @@
-import React, { Component } from 'react';
+import React, { Component, Fragment } from 'react';
 import {connect} from "react-redux";
+import { history } from '../../../helpers';
 import "./TestConfig.css"
-import {cubeActions} from "../../actions";
+import {cubeActions} from "../../../actions";
 import {Link} from "react-router-dom";
-import Breadcrumb from "../../components/breadcrumb/Breadcrumb";
-import {cubeConstants} from "../../constants";
+import Breadcrumb from "../../../components/breadcrumb/Breadcrumb";
+import {cubeConstants} from "../../../constants";
 
 class TestConfig extends Component {
 
     setTestConfig(config) {
-        const { dispatch, history } = this.props;
+        const { dispatch} = this.props;
         dispatch(cubeActions.setTestConfig(config));
         setTimeout(() => {
             history.push("/test_config_view");
@@ -80,13 +81,12 @@ class TestConfig extends Component {
     render() {
         const { cube } = this.props;
         return (
-            <div className="content-wrapper">
+            <Fragment>
                 {/*<div className="crumb-wrap">
                     <Breadcrumb crumbs={[{label: "Application", value: "MovieInfo"}, {label: "Service", value: "List"},
                         {label: "Logical Service", value: "Reviews"}, {label: "API", value: "IMDb"}]}></Breadcrumb>
                 </div>*/}
                 <div>
-                    <h4 className="inline-block margin-right-10">Test Configurations</h4>
                     <Link to="/test_config_setup">
                         <span className="cube-btn">CONFIGURE NEW TEST</span>
                     </Link>
@@ -95,7 +95,7 @@ class TestConfig extends Component {
                 <div className="tc-grid">
                     {this.createTestConfig(cube)}
                 </div>
-            </div>
+            </Fragment>
         );
     }
 }

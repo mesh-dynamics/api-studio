@@ -515,6 +515,7 @@ class HttpClient extends Component {
                             rawDataType={selectedTab.rawDataType}
                             addOrRemoveParam={this.props.addOrRemoveParam} 
                             updateParam={this.props.updateParam}
+                            updateAllParams={this.props.updateAllParams}
                             updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
                             isOutgoingRequest={selectedTab.isOutgoingRequest} >
                         </HttpRequestMessage>

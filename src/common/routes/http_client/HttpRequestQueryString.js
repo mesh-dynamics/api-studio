@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Glyphicon, FormGroup, Button, FormControl, Radio, ControlLabel, Checkbox } from 'react-bootstrap';
+import "./HttpClient.css";
 // import "./styles_here.css";
 
 class HttpRequestQueryString extends Component {
@@ -25,6 +26,19 @@ class HttpRequestQueryString extends Component {
         this.props.updateParam(isOutgoingRequest, tabId, "queryStringParams", evt.target.name, evt.target.value, id);
     }
 
+    handleCheckChange = (id, currentChecked) => {
+        const { tabId, isOutgoingRequest } = this.props;
+        this.props.updateParam(isOutgoingRequest, tabId, "queryStringParams", "selected", !currentChecked, id);
+    }
+
+    allSelected = () => {
+        return this.props.queryStringParams.reduce((acc, param) => (acc = acc && param.selected), true)
+    }
+
+    handleAllCheckChange = (e) => {
+        const { tabId, isOutgoingRequest } = this.props;
+        this.props.updateAllParams(isOutgoingRequest, tabId, "queryStringParams", "selected", e.target.checked);
+    }
 
     render() {
         return (
@@ -33,7 +47,7 @@ class HttpRequestQueryString extends Component {
                     <div style={{marginBottom: "1px"}}>
                         <div style={{display: "inline-block", width: "2%", paddingRight: "9px"}}> 
                             <FormGroup bsSize="small" style={{marginBottom: "0px", textAlign: "center"}}>
-                                <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} />
+                                <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} checked={this.allSelected()} onChange={this.handleAllCheckChange}/>
                             </FormGroup>
                         </div>
                         <div style={{display: "inline-block", width: "20%", paddingRight: "9px"}}> 
@@ -58,32 +72,33 @@ class HttpRequestQueryString extends Component {
                         </div>
                     </div>
                 )}
-                {this.props.queryStringParams.map(eachHeader => {return (
-                    <div style={{marginBottom: "1px"}} key={eachHeader.id}>
+                {this.props.queryStringParams.map(eachParam => {return (
+                    <div style={{marginBottom: "1px"}} key={eachParam.id}>
                         <div style={{display: "inline-block", width: "2%", paddingRight: "9px"}}> 
                             <FormGroup style={{marginBottom: "0px", backgroundColor: "none", textAlign: "center"}}>
-                                <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} />
+                                <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} checked={eachParam.selected} 
+                                onChange={() => this.handleCheckChange(eachParam.id, eachParam.selected)}/>
                             </FormGroup>
                         </div>
                         <div style={{display: "inline-block", width: "20%", paddingRight: "9px"}}> 
                             <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
                                 <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="" 
-                                value={eachHeader.name} name="name" onChange={this.handleChange.bind(this, eachHeader.id)}/>
+                                value={eachParam.name} name="name" onChange={this.handleChange.bind(this, eachParam.id)}/>
                             </FormGroup>
                         </div>
                         <div style={{display: "inline-block", width: "20%", paddingRight: "9px"}}>
                             <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
-                                <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="" value={eachHeader.value} name="value" onChange={this.handleChange.bind(this, eachHeader.id)} />
+                                <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="" value={eachParam.value} name="value" onChange={this.handleChange.bind(this, eachParam.id)} />
                             </FormGroup>
                         </div>
                         <div style={{display: "inline-block", width: "54%", paddingRight: "9px"}}>
                             <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
                                 <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="optional" 
-                                value={eachHeader.description} name="description" onChange={this.handleChange.bind(this, eachHeader.id)} />
+                                value={eachParam.description} name="description" onChange={this.handleChange.bind(this, eachParam.id)} />
                             </FormGroup>
                         </div>
                         <div style={{display: "inline-block", width: "4%", paddingRight: "9px"}} 
-                                onClick={this.handleDelete.bind(this, eachHeader.id)} > 
+                                onClick={this.handleDelete.bind(this, eachParam.id)} > 
                             <FormGroup style={{marginBottom: "0px", backgroundColor: "#ffffff", textAlign: "center", padding: "5px"}}>
                                 <Glyphicon style={{fontSize: "16px", top: "5px"}} glyph="remove-sign" /> 
                             </FormGroup>
@@ -92,10 +107,10 @@ class HttpRequestQueryString extends Component {
                 )})}
                 <div style={{ marginTop: "5px", marginRight: "7px"}}>
                     <div style={{display: "inline-block", width: "100%"}}> 
-                        <Button block style={{paddingLeft: "6px", textAlign: "left"}} onClick={this.handleAdd}>
-                            <span style={{fontSize: "14px", paddingRight: "18px", opacity: "0.7"}}> + </span>
-                            <span style={{paddingRight: "14px", opacity: "0.7", fontSize: "11px"}}>Add query string param</span>
-                        </Button>
+                        <button className="add-request-options-button" onClick={this.handleAdd}>
+                            <span style={{ fontSize: "20px" }}>+</span>
+                            <span style={{ marginLeft: "5px", fontWeight: 400 }}>Add query parameter</span>
+                        </button>
                     </div>
                 </div>
             </div>
