@@ -307,12 +307,6 @@ public class Utils {
         return Optional.ofNullable(fieldMap.getFirst(fieldname));
     }
 
-    /*public static HTTPRequestPayload getRequestPayload(Event event, Config config)
-	    throws IOException, RawPayloadEmptyException, RawPayloadProcessingException {
-        String payload = event.getPayloadAsJsonString();
-        return config.jsonMapper.readValue(payload, HTTPRequestPayload.class);
-    }*/
-
 
     public static Event createHTTPResponseEvent(String apiPath, Optional<String> reqId,
                                                 Integer status,
@@ -322,7 +316,7 @@ public class Utils {
                                                 Optional<String> collection, Instant timestamp,
                                                 Optional<Event.RunType> runType, Optional<String> customerId,
                                                 Optional<String> app,
-                                                ReqRespStore rrstore, Optional<String> runId) throws JsonProcessingException, EventBuilder.InvalidEventException {
+                                                ReqRespStore rrstore, Optional<String> runId, RecordingType recordingType) throws EventBuilder.InvalidEventException {
 	    HTTPResponsePayload httpResponsePayload;
 	    // We treat empty body ("") as null
 	    if (body != null && (!body.isEmpty())) {
@@ -334,9 +328,6 @@ public class Utils {
 	    Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
         Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
         Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
-        RecordingType recordingType = getFirst(meta, Constants.RECORDING_TYPE_FIELD)
-          .flatMap(r -> io.md.utils.Utils.valueOf(RecordingType.class, r))
-          .orElse(RecordingType.Golden);
 
         if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection.isPresent() && runType.isPresent()) {
             EventBuilder eventBuilder = new EventBuilder(customerId.get(), app.get(),
