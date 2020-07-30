@@ -107,7 +107,7 @@ class HttpRequestQueryString extends Component {
                 )})}
                 <div style={{ marginTop: "5px", marginRight: "7px"}}>
                     <div style={{display: "inline-block", width: "100%"}}> 
-                        <button className="add-query-params-button" onClick={this.handleAdd}>
+                        <button className="add-request-options-button" onClick={this.handleAdd}>
                             <span style={{ fontSize: "20px" }}>+</span>
                             <span style={{ marginLeft: "5px", fontWeight: 400 }}>Add query parameter</span>
                         </button>

@@ -105,11 +105,11 @@ class HttpRequestFormData extends Component {
                     </div>
                 )})}
                 <div style={{ marginTop: "5px", marginRight: "7px"}}>
-                    <div style={{display: "inline-block", width: "100%"}}> 
-                        <Button block style={{paddingLeft: "6px", textAlign: "left"}} onClick={this.handleAdd}>
-                            <span style={{fontSize: "14px", paddingRight: "18px", opacity: "0.7"}}> + </span>
-                            <span style={{paddingRight: "14px", opacity: "0.7", fontSize: "11px"}}>Add form data</span>
-                        </Button>
+                    <div style={{display: "inline-block", width: "100%"}}>
+                        <button className="add-request-options-button" onClick={this.handleAdd}>
+                            <span style={{ fontSize: "20px" }}>+</span>
+                            <span style={{ marginLeft: "5px", fontWeight: 400 }}>Add form data</span>
+                        </button>
                     </div>
                 </div>
             </div>
