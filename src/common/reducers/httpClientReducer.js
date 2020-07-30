@@ -8,7 +8,7 @@ const initialState = {
         requestId: "",
         tabName: "",
         httpMethod: "get",
-        httpURL: "http://www.mocky.io/v2/5ed952b7310000f4dec4ed0a",
+        httpURL: "",
         headers: [],
         queryStringParams: [],
         bodyType: "formData",
@@ -87,7 +87,8 @@ export const httpClient = (state = initialState, { type, data }) => {
                                     id: uuidv4(),
                                     name: "",
                                     value: "",
-                                    description: ""
+                                    description: "",
+                                    selected: true,
                                 }];
                             }
                         })
@@ -120,7 +121,8 @@ export const httpClient = (state = initialState, { type, data }) => {
                             id: uuidv4(),
                             name: "",
                             value: "",
-                            description: ""
+                            description: "",
+                            selected: true,
                         }];
                     }
                     return eachTab; 
@@ -167,6 +169,55 @@ export const httpClient = (state = initialState, { type, data }) => {
                 if(specificParamArr.length > 0) {
                     specificParamArr[0][data.key] = data.value;
                 }
+            } else {
+                params = data.value;
+            }
+            //this.setState({[type]: params})
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab[data.type] = params;
+                        if(data.type === "httpURL") eachTab.tabName = params;
+                    }
+                    return eachTab; 
+                })
+            }
+        }
+
+        case httpClientConstants.UPDATE_ALL_PARAMS_IN_OUTGOING_TAB: {
+            let {tabs, selectedTabKey} = state;
+            const selectedTabIndex = tabs.findIndex(tab => tab.id === selectedTabKey);
+            const selectedOutgoingTabIndex = tabs[selectedTabIndex]["outgoingRequests"].findIndex(tab => tab.id === data.tabId);
+            let params = tabs[selectedTabIndex]["outgoingRequests"][selectedOutgoingTabIndex][data.type];
+            if(_.isArray(params)) {
+                params.forEach((param) => {param[data.key]=data.value})
+            } else {
+                params = data.value;
+            }
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === selectedTabKey) {
+                        eachTab.outgoingRequests.map((eachOutgoingTab) => {
+                            if (eachOutgoingTab.id === data.tabId) {
+                                eachOutgoingTab[data.type] = params;
+                                if(data.type === "httpURL") eachOutgoingTab.tabName = params;
+                            }
+                        })
+                    }
+                    return eachTab; 
+                })
+            }
+        }
+
+        case httpClientConstants.UPDATE_ALL_PARAMS_IN_TAB: {
+            let {tabs} = state;
+            const tabIndex = tabs.findIndex(tab => tab.id === data.tabId);
+            if(tabIndex < 0) return state;
+            let params = tabs[tabIndex][data.type];
+            if(_.isArray(params)) {
+                params.forEach((param) => {param[data.key]=data.value})
             } else {
                 params = data.value;
             }
