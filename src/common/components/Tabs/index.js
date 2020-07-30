@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Glyphicon } from 'react-bootstrap';
 import ResizeDetector from 'react-resize-detector';
 import cs from 'classnames';
 import throttle from 'lodash.throttle';
@@ -293,7 +294,7 @@ export default class Tabs extends Component {
   };
 
   render() {
-    const { showInkBar, containerClass, tabsWrapperClass, showMore, transform, showMoreLabel } = this.props;
+    const { showInkBar, containerClass, tabsWrapperClass, showMore, transform, showMoreLabel, onAddClick } = this.props;
     const { tabDimensions } = this.state;
     const { tabsVisible, tabsHidden, panels, isSelectedTabHidden } = this.getTabs();
     const isCollapsed = this.getIsCollapsed();
@@ -305,7 +306,7 @@ export default class Tabs extends Component {
 
     return (
       <div className={containerClasses} ref={e => (this.tabsWrapper = e)} onKeyDown={this.onKeyDown}>
-        <div className={tabsClasses}>
+        <div className={tabsClasses}>        
           {tabsVisible.reduce((result, tab) => {
             result.push(<Tab {...this.getTabProps(tab)} />);
 
@@ -322,6 +323,9 @@ export default class Tabs extends Component {
               ))}
             </ShowMore>
           )}
+          <div className="RRT_add-icon-container" onClick={onAddClick}>
+            <Glyphicon className="RRT__add-icon" className="" glyph="plus" />
+          </div>
         </div>
 
         {showInkBar && !isCollapsed && !isSelectedTabHidden && (
@@ -355,6 +359,8 @@ Tabs.propTypes = {
   transform: PropTypes.bool,
   // tabs will be transformed to accodrion for screen sizes below `transformWidth`px
   transformWidth: PropTypes.number,
+  // addTab callback,
+  onAddClick: PropTypes.func,
   // onChange active tab callback
   onChange: PropTypes.func,
   // onRemove callback

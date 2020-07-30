@@ -1765,9 +1765,6 @@ class HttpClientTabs extends Component {
                     <div style={{marginRight: "7px"}}>
                         <div style={{marginBottom: "9px", display: "inline-block", width: "20%", fontSize: "11px"}}></div>
                         <div style={{display: "inline-block", width: "80%", textAlign: "right"}}>
-                            <div className="btn btn-sm cube-btn text-center" style={{display: "" }} onClick={this.addTab}>
-                                <Glyphicon glyph="plus" /> ADD TAB
-                            </div>
                                 <div style={{display: "inline-block", padding: 0}} className="btn">{this.renderEnvListDD()}</div>
                                 {this.renderEnvPopoverBtn()}
                                 <span className="btn btn-sm cube-btn text-center" onClick={() => {this.setState({showEnvVarModal: true})}} title="Configure environments"><i className="fas fa-cog"/> </span>
@@ -1776,7 +1773,17 @@ class HttpClientTabs extends Component {
                         </div>
                     </div>
                     <div style={{marginTop: "10px", display: ""}}>
-                        <ResponsiveTabs items={this.getTabs(this.state.tabs)} tabsWrapperClass={"md-hc-tabs-wrapper"} allowRemove={true} removeActiveOnly={false} showMore={true} selectedTabKey={this.state.selectedTabKey} onChange={this.handleTabChange} onRemove={this.handleRemoveTab} />
+                        <ResponsiveTabs 
+                            showMore={true} 
+                            allowRemove={true} 
+                            onAddClick={this.addTab}
+                            removeActiveOnly={false} 
+                            onChange={this.handleTabChange} 
+                            onRemove={this.handleRemoveTab}
+                            items={this.getTabs(this.state.tabs)} 
+                            tabsWrapperClass={"md-hc-tabs-wrapper"} 
+                            selectedTabKey={this.state.selectedTabKey} 
+                        />
                     </div>
                     <div>
                         <Modal show={this.state.showSaveModal} onHide={this.handleCloseModal}>
