@@ -2,9 +2,10 @@ import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 
+const tabId = uuidv4();
 const initialState = { 
     tabs: [{ 
-        id: "",
+        id: tabId,
         requestId: "",
         tabName: "",
         httpMethod: "get",
@@ -38,7 +39,7 @@ const initialState = {
         clearIntervalHandle: null
     }],
     toggleTestAndOutgoingRequests: true,
-    selectedTabKey: "",
+    selectedTabKey: tabId,
     app: "",
     historyCursor: null,
     active: false,

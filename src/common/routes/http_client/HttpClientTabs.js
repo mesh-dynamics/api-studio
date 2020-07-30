@@ -44,8 +44,6 @@ class HttpClientTabs extends Component {
         this.handleEnvPopoverClick = e => {
             this.setState({ envPopoverOverlayTarget: e.target, showEnvPopoverOverlay: !this.state.showEnvPopoverOverlay });
         };
-        const tabId = uuidv4();
-        const urlParameters = new URLSearchParams(window.location.search);
         this.state = { 
             /* tabs: [{ 
                 id: tabId,
@@ -1133,18 +1131,20 @@ class HttpClientTabs extends Component {
     componentDidMount() {
         const { dispatch } = this.props;
         const { cube: {selectedApp} } = this.props;
+        const {httpClient: {tabs}} = this.props;
         window.addEventListener('resize', this.updateDimensions);
         dispatch(cubeActions.hideTestConfig(true));
         dispatch(cubeActions.hideServiceGraph(true));
         dispatch(cubeActions.hideHttpClient(false));
         this.loadFromHistory();
         this.loadUserCollections();
-        let urlParameters = new URLSearchParams(window.location.search);
         
         const requestIds = this.getRequestIds(), reqIdArray = Object.keys(requestIds);
-        /* Object.keys(requestIds).map((objKey) => {
-            reqIdArray.push(...requestIds[objKey]);
-        }); */
+        tabs.map(eachTab => {
+            const indx = reqIdArray.findIndex((eachReq) => eachReq === eachTab.requestId);
+            if(indx > -1) reqIdArray.splice(indx, 1);
+            return eachTab; 
+        });
         if (reqIdArray && reqIdArray.length > 0) {
             const eventTypes = [];
             cubeService.fetchAPIEventData(selectedApp, reqIdArray, eventTypes).then((result) => {
