@@ -13,11 +13,13 @@ import io.md.dao.Event;
 import io.md.dao.Event.EventType;
 import io.md.dao.EventQuery;
 import io.md.dao.Replay;
+import io.md.services.DSResult;
+import io.md.services.DataStore;
+
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -65,18 +67,19 @@ public class ReplayUpdate {
 	}
 
 	@JsonIgnore
-	public static Pair<Stream<List<Event>>, Long> getRequestBatchesUsingEvents(int batchSize, ReqRespStore rrstore, Replay replay) {
-        Result<Event> requests = getEventResult(rrstore, replay);
-        return Pair.of(BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize), requests.numFound);
+	public static Pair<Stream<List<Event>>, Long> getRequestBatchesUsingEvents(int batchSize, DataStore dataStore,
+                                                                               Replay replay) {
+        DSResult<Event> requests = getEventResult(dataStore, replay);
+        return Pair.of(BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize), requests.getNumFound());
     }
 
-	private static Result<Event> getEventResult(ReqRespStore rrstore, Replay replay) {
+	private static DSResult<Event> getEventResult(DataStore dataStore, Replay replay) {
 		EventQuery eventQuery = new EventQuery.Builder(replay.customerId, replay.app, EventType.fromReplayType(replay.replayType))
 			.withRunType(Event.RunType.Record).withReqIds(replay.reqIds).withPaths(replay.paths)
             .withExcludePaths(replay.excludePaths)
 			.withCollection(replay.collection)
 			.withServices(replay.service).withSortOrderAsc(true).build();
-		return rrstore.getEvents(eventQuery);
+		return dataStore.getEvents(eventQuery);
 	}
 
     public static Replay softDeleteReplay(ReqRespStore rrstore, Replay replay) throws ReplaySaveFailureException {

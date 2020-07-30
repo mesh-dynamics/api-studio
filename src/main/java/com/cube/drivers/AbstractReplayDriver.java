@@ -1,15 +1,5 @@
 package com.cube.drivers;
 
-import com.cube.dao.CubeMetaInfo;
-import com.cube.dao.ReplayUpdate;
-
-import io.md.constants.ReplayStatus;
-import io.md.dao.DataObj;
-import io.md.dao.DataObj.PathNotFoundException;
-import io.md.dao.JsonDataObj;
-import io.md.dao.Payload;
-import io.md.dao.Replay;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,35 +21,34 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.DoubleNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.LongNode;
-import com.fasterxml.jackson.databind.node.POJONode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import io.md.constants.ReplayStatus;
+import io.md.dao.DataObj;
+import io.md.dao.DataObj.PathNotFoundException;
 import io.md.dao.Event;
-import io.md.dao.ResponsePayload;
+import io.md.dao.JsonDataObj;
+import io.md.dao.Payload;
 import io.md.dao.RecordOrReplay;
+import io.md.dao.Replay;
+import io.md.dao.ResponsePayload;
+import io.md.injection.DynamicInjectionConfig;
+import io.md.services.Analyzer;
 import io.md.services.DataStore;
+import io.md.utils.CubeObjectMapperProvider;
 
 import com.cube.core.Utils;
-import com.cube.dao.ReqRespStore;
-import com.cube.injection.DynamicInjectionConfig;
+import com.cube.dao.ReplayUpdate;
 import com.cube.utils.Constants;
 import com.cube.utils.InjectionVarResolver;
-import com.cube.ws.Config;
 
 public abstract class AbstractReplayDriver {
 
 	private static Logger LOGGER = LogManager.getLogger(AbstractReplayDriver.class);
 	protected final Replay replay;
-	public final ReqRespStore rrstore;
-	protected final Config config;
+	public final DataStore dataStore;
 	protected ObjectMapper jsonMapper;
 	protected Optional<DynamicInjectionConfig> dynamicInjectionConfig;
 	Map<String, DataObj> extractionMap;
@@ -69,19 +58,18 @@ public abstract class AbstractReplayDriver {
 	static int BATCHSIZE = 40; // this controls the number of requests in a batch that
 	// could be sent in async fashion
 
-	AbstractReplayDriver(Replay replay, Config config) {
+	AbstractReplayDriver(Replay replay, DataStore dataStore) {
 		super();
 		this.replay = replay;
-		this.rrstore = config.rrstore;
-		this.jsonMapper = config.jsonMapper;
-		this.config = config;
+		this.dataStore = dataStore;
+		this.jsonMapper = CubeObjectMapperProvider.getInstance();
 		this.dynamicInjectionConfig = Optional.empty();
 		this.extractionMap = new HashMap<>();
 	}
 
 	public abstract IReplayClient initClient(Replay replay) throws Exception;
 
-	public boolean start(boolean analyze) {
+	public boolean start(Optional<Analyzer> analyzer) {
 
 		if (replay.status != ReplayStatus.Init) {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
@@ -100,15 +88,14 @@ public abstract class AbstractReplayDriver {
 			Constants.REPLAY_ID_FIELD, replay.replayId)));
 
 		this.dynamicInjectionConfig = replay.dynamicInjectionConfigVersion.map(DIConfVersion -> {
-			return rrstore.getDynamicInjectionConfig(
-				new CubeMetaInfo(replay.customerId, replay.app, replay.instanceId), DIConfVersion);
+			return dataStore.getDynamicInjectionConfig(replay.customerId, replay.app, DIConfVersion);
 		}).orElse(Optional.empty());
 
 		if (dynamicInjectionConfig.isPresent()) {
 			populateStaticExtactionMap();
 		}
 
-		CompletableFuture.runAsync(() -> replay(analyze)).handle((ret, e) -> {
+		CompletableFuture.runAsync(() -> replay(analyzer)).handle((ret, e) -> {
 			if (e != null) {
 				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 					"Exception in replaying requests", Constants.REPLAY_ID_FIELD, replay.replayId)),
@@ -141,7 +128,7 @@ public abstract class AbstractReplayDriver {
 
 	private IReplayClient client;
 
-	protected void replay(boolean analyze) {
+	protected void replay(Optional<Analyzer> analyzer) {
 
 		//List<Request> requests = getRequests();
 
@@ -149,14 +136,13 @@ public abstract class AbstractReplayDriver {
 			return;
 		}
 		replay.status = ReplayStatus.Running;
-		if (!rrstore.saveReplay(replay)) {
+		if (!dataStore.saveReplay(replay)) {
 			return;
 		}
 		// This is a dummy lookup, just to get the Replay running status into Redis, so that
 		// deferred delete  can be applied when replay ends. This is needed for very small replays
 		Optional<RecordOrReplay> recordOrReplay =
-			rrstore.getCurrentRecordOrReplay(Optional.of(replay.customerId),
-				Optional.of(replay.app), Optional.of(replay.instanceId));
+			dataStore.getCurrentRecordOrReplay(replay.customerId, replay.app, replay.instanceId);
 
 		// using seed generated from replayId so that same requests get picked in replay and analyze
 		long seed = replay.replayId.hashCode();
@@ -166,7 +152,7 @@ public abstract class AbstractReplayDriver {
 
 		try {
 			Pair<Stream<List<Event>>, Long> batchedResult = ReplayUpdate
-				.getRequestBatchesUsingEvents(BATCHSIZE, rrstore, replay);
+				.getRequestBatchesUsingEvents(BATCHSIZE, dataStore, replay);
 			replay.reqcnt = batchedResult.getRight().intValue();
 			// NOTE: converting long to int, should be ok, since we
 			// never replay so many requests
@@ -226,10 +212,8 @@ public abstract class AbstractReplayDriver {
 		}
 
 		//rrstore.saveReplay(replay);
-		rrstore.expireReplayInCache(replay);
-		if (analyze) {
-			analyze();
-		}
+		dataStore.deferredDelete(replay);
+		analyzer.ifPresent(this::analyze);
 		this.client.tearDown();
 	}
 
@@ -238,7 +222,7 @@ public abstract class AbstractReplayDriver {
 			LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Replay Update",
 				Constants.REPLAY_ID_FIELD, replay.replayId, "sentRequests", replay.reqsent
 				, "totalRequests", replay.reqcnt)));
-			rrstore.saveReplay(replay);
+			dataStore.saveReplay(replay);
 		}
 	}
 
@@ -253,7 +237,7 @@ public abstract class AbstractReplayDriver {
 				.sendAsync(request, replay);
 
 			return responsePayloadCompletableFuture.thenApply(responsePayload -> {
-				extract(request, responsePayload, rrstore);
+				extract(request, responsePayload);
 				return responsePayload.getStatusCode();
 			}).handle((ret, e) -> {
 				if (e != null) {
@@ -289,7 +273,7 @@ public abstract class AbstractReplayDriver {
 				inject(request);
 				ResponsePayload responsePayload = client.send(request, replay);
 				// Extract variables in extractionMap
-				extract(request, responsePayload, rrstore);
+				extract(request, responsePayload);
 				String statusCode = responsePayload.getStatusCode();
 
 				// for debugging - can remove later
@@ -309,14 +293,14 @@ public abstract class AbstractReplayDriver {
 		}).collect(Collectors.toList());
 	}
 
-	public void analyze() {
+	public void analyze(Analyzer analyzer) {
 		ReplayStatus status = ReplayStatus.Running;
 		while (status == ReplayStatus.Running) {
 			try {
 				Thread.sleep(5000);
-				Optional<Replay> currentRunningReplay = rrstore
-					.getCurrentRecordOrReplay(Optional.of(replay.customerId),
-						Optional.of(replay.app), Optional.of(replay.instanceId))
+				Optional<Replay> currentRunningReplay = dataStore
+					.getCurrentRecordOrReplay(replay.customerId,
+						replay.app, replay.instanceId)
 					.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
 				status = currentRunningReplay.filter(runningReplay -> runningReplay.
 					replayId.equals(replay.replayId)).map(r -> r.status).orElse(replay.status);
@@ -326,15 +310,8 @@ public abstract class AbstractReplayDriver {
 					, replay.replayId)));
 			}
 		}
-		try {
-			Analyzer.analyze(replay.replayId, "", config);
-		} catch (DataStore.TemplateNotFoundException e) {
-			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-				"Unable to analyze replay since template does not exist :",
-				Constants.REPLAY_ID_FIELD,
-				replay.replayId)), e);
-		}
-	}
+        analyzer.analyze(replay.replayId);
+    }
 
 	public Replay getReplay() {
 		return replay;
@@ -361,15 +338,14 @@ public abstract class AbstractReplayDriver {
 		}).orElse(new HashMap<String, DataObj>());
 	}
 
-	public void extract(Event goldenRequestEvent, Payload testResponsePayload,
-		ReqRespStore rrstore) {
+	public void extract(Event goldenRequestEvent, Payload testResponsePayload) {
 		dynamicInjectionConfig.ifPresent(dic-> {
 
 			dic.extractionMetas.forEach(extractionMeta -> {
 				// Test request is same as golden for replay extraction.
 				InjectionVarResolver varResolver = new InjectionVarResolver(goldenRequestEvent,
 					testResponsePayload,
-					goldenRequestEvent.payload, rrstore);
+					goldenRequestEvent.payload, dataStore);
 				StringSubstitutor sub = new StringSubstitutor(varResolver);
 				DataObj value;
 				if (extractionMeta.apiPath.equalsIgnoreCase(goldenRequestEvent.apiPath)) {
@@ -399,7 +375,7 @@ public abstract class AbstractReplayDriver {
 		dynamicInjectionConfig.ifPresent(dic -> {
 			dic.injectionMetas.forEach(injectionMeta -> {
 				StringSubstitutor sub = new StringSubstitutor(
-					new InjectionVarResolver(request, null, request.payload, rrstore));
+					new InjectionVarResolver(request, null, request.payload, dataStore));
 
 				if (injectionMeta.injectAllPaths || injectionMeta.apiPaths
 					.contains(request.apiPath)) {
@@ -445,8 +421,8 @@ public abstract class AbstractReplayDriver {
 	}
 
 
-	public static Optional<Replay> getStatus(String replayId, ReqRespStore rrstore) {
-		return rrstore.getReplay(replayId);
+	public static Optional<Replay> getStatus(String replayId, DataStore dataStore) {
+		return dataStore.getReplay(replayId);
 	}
 
 

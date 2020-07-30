@@ -11,7 +11,6 @@ import static io.md.core.TemplateKey.Type;
 import static io.md.dao.Recording.RecordingStatus;
 import static io.md.services.DataStore.TemplateNotFoundException;
 
-import com.cube.dao.Analysis.ReqRespMatchWithEvent;
 import com.cube.dao.ApiTraceFacetQuery;
 import com.cube.dao.ApiTraceResponse;
 import com.cube.dao.ApiTraceResponse.ServiceReqRes;
@@ -22,6 +21,7 @@ import io.md.dao.Event.EventType;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.ResponsePayload;
+import io.md.dao.Analysis.ReqRespMatchWithEvent;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -77,13 +77,14 @@ import io.md.dao.Event;
 import io.md.dao.Event.RunType;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
+import io.md.dao.Analysis;
 import io.md.dao.ReqRespMatchResult;
 import io.md.dao.ReqRespUpdateOperation;
+import io.md.services.Analyzer;
 import redis.clients.jedis.Jedis;
 
 import com.cube.core.TemplateRegistries;
 import com.cube.core.Utils;
-import com.cube.dao.Analysis;
 import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.MatchResultAggregate;
@@ -91,7 +92,7 @@ import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.Result;
-import com.cube.drivers.Analyzer;
+import com.cube.drivers.RealAnalyzer;
 import com.cube.golden.RecordingUpdate;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateSet;
@@ -108,6 +109,8 @@ import com.cube.utils.Constants;
 public class AnalyzeWS {
 
     private static final Logger LOGGER = LogManager.getLogger(AnalyzeWS.class);
+
+    private final Analyzer analyzer;
 
 
     @Path("/health")
@@ -130,25 +133,18 @@ public class AnalyzeWS {
             .flatMap(vals -> vals.stream().findFirst())
             .orElse(Constants.DEFAULT_TRACE_FIELD);
 
-        try {
-            Optional<Analysis> analysis = Analyzer.analyze(replayId, tracefield, config);
+        Optional<io.md.dao.Analysis> analysis = analyzer.analyze(replayId);
 
-            return analysis.map(av -> {
-                String json;
-                try {
-                    json = jsonMapper.writeValueAsString(av);
-                    return Response.ok(json, MediaType.APPLICATION_JSON).build();
-                } catch (JsonProcessingException e) {
-                    LOGGER.error(String.format("Error in converting Analysis object to Json for replayid %s", replayId), e);
-                    return Response.serverError().build();
-                }
-            }).orElse(Response.serverError().build());
-        } catch (TemplateNotFoundException e) {
-            return Response.serverError().entity((
-                buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_NOT_FOUND,
-                    "Cannot analyze since template does not exist : " +
-                    e.getMessage()))).build();
-        }
+        return analysis.map(av -> {
+            String json;
+            try {
+                json = jsonMapper.writeValueAsString(av);
+                return Response.ok(json, MediaType.APPLICATION_JSON).build();
+            } catch (JsonProcessingException e) {
+                LOGGER.error(String.format("Error in converting Analysis object to Json for replayid %s", replayId), e);
+                return Response.serverError().build();
+            }
+        }).orElse(Response.serverError().build());
     }
 
 
@@ -156,7 +152,7 @@ public class AnalyzeWS {
     @Path("status/{replayId}")
     public Response status(@Context UriInfo ui,
         @PathParam("replayId") String replayId) {
-		Optional<Analysis> analysis = Analyzer.getStatus(replayId, rrstore);
+		Optional<Analysis> analysis = RealAnalyzer.getStatus(replayId, rrstore);
 		Response resp = analysis.map(av -> {
 			String json;
 			try {
@@ -1692,7 +1688,8 @@ public class AnalyzeWS {
 		this.jsonMapper = config.jsonMapper;
 		this.config = config;
 		this.recordingUpdate = new RecordingUpdate(config);
-	}
+        analyzer = new RealAnalyzer(rrstore);
+    }
 
 
 	ReqRespStore rrstore;

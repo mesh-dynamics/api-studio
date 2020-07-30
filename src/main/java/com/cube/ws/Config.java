@@ -25,6 +25,7 @@ import io.cube.agent.ProxyMocker;
 import io.cube.agent.Recorder;
 import io.cube.agent.TraceIntentResolver;
 import io.md.utils.CommonUtils;
+import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.MeshDGsonProvider;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 import redis.clients.jedis.Jedis;
@@ -62,7 +63,7 @@ public class Config {
 
     public final JedisPool jedisPool;
 
-	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.createDefaultMapper();
+	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 
 	public final long responseSize;
 

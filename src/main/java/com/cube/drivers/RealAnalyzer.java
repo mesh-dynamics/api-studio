@@ -9,12 +9,8 @@ package com.cube.drivers;
 
 import static io.md.core.Comparator.MatchType.DontCare;
 import static io.md.core.Comparator.MatchType.ExactMatch;
-import static io.md.core.TemplateKey.*;
+import static io.md.core.TemplateKey.Type;
 
-import com.cube.dao.ReplayUpdate;
-
-import io.md.core.TemplateKey;
-import io.md.dao.Replay;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,49 +34,48 @@ import io.cube.agent.UtilException;
 import io.md.core.Comparator;
 import io.md.core.Comparator.Match;
 import io.md.core.Comparator.MatchType;
+import io.md.core.TemplateKey;
+import io.md.dao.Analysis;
+import io.md.dao.Analysis.ReqRespMatchWithEvent;
 import io.md.dao.Event;
-import io.md.dao.ReqRespMatchResult;
-import io.md.services.DataStore.TemplateNotFoundException;
-
-import com.cube.dao.Analysis;
-import com.cube.dao.Analysis.ReqRespMatchWithEvent;
 import io.md.dao.EventQuery;
+import io.md.dao.Replay;
+import io.md.dao.ReqRespMatchResult;
+import io.md.services.Analyzer;
+import io.md.utils.CubeObjectMapperProvider;
+
 import com.cube.dao.MatchResultAggregate;
+import com.cube.dao.ReplayUpdate;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Result;
 import com.cube.utils.Constants;
-import com.cube.ws.Config;
 
 /*
  * Created by IntelliJ IDEA.
  * Date: 2019-03-08
  * @author Prasad M D
  */
-public class Analyzer {
+public class RealAnalyzer implements Analyzer {
 
-    private static final Logger LOGGER = LogManager.getLogger(Analyzer.class);
+    private static final Logger LOGGER = LogManager.getLogger(RealAnalyzer.class);
 
-    private Analyzer(String replayId, int reqcnt, String templateVersion, Config config) {
-        this.config = config;
-        analysis = new Analysis(replayId, reqcnt, templateVersion);
-        this.jsonMapper = config.jsonMapper;
-
-        this.templateVersion = templateVersion;
+    public RealAnalyzer(ReqRespStore rrstore) {
+        this.rrstore = rrstore;
+        this.jsonMapper = CubeObjectMapperProvider.getInstance();
     }
 
 
-    private Analysis analysis;
     private final ObjectMapper jsonMapper;
-    private final Config config;
-    private final String templateVersion;
-
-
+    private final ReqRespStore rrstore;
 
     /**
      * @param rrstore
      * @param reqs
+     * @param templateVersion
+     * @param analysis
      */
-    private void analyzeWithEvent(ReqRespStore rrstore, Stream<List<Event>> reqs, Replay replay) throws TemplateNotFoundException {
+    private void analyzeWithEvent(ReqRespStore rrstore, Stream<List<Event>> reqs, Replay replay,
+                                  String templateVersion, Analysis analysis) {
 
         // using seed generated from replayId so that same requests get picked in replay and analyze
         long seed = replay.replayId.hashCode();
@@ -97,13 +92,13 @@ public class Analyzer {
                 replay.app, replay.collection, rrstore);
 
             enhancedRequests.forEach(UtilException.rethrowConsumer(r -> {
-                analyzeRequestEvent(rrstore, replay, r);
+                analyzeRequestEvent(rrstore, replay, r, templateVersion, analysis);
             }));
         }));
         analysis.status = Analysis.Status.MatchingCompleted;
     }
 
-    private void analyzeRequestEvent(ReqRespStore rrstore, Replay replay, Event recordReq) throws TemplateNotFoundException {
+    private void analyzeRequestEvent(ReqRespStore rrstore, Replay replay, Event recordReq, String templateVersion, Analysis analysis) {
         // find matching request in replay
         EventQuery eventQuery = reqEventToEventQuery(recordReq, analysis.replayId, 10);
 
@@ -138,7 +133,7 @@ public class Analyzer {
                 // we have removed EqualOptional in request match. So any match has to be ExactMatch
                 MatchType reqMt = ExactMatch;
                 ReqRespMatchWithEvent match = checkReqRespEventMatch(recordReq, replayReq, recordedResponse,
-                    replayResponseMap);
+                    replayResponseMap, templateVersion);
                 if (isReqRespMatchBetter(reqMt, match.getReqCompareResType(), match.getRespCompareResType(), bestReqMt, bestmatch.getReqCompareResType(), bestmatch.getRespCompareResType())) {
                     bestmatch = match;
                     bestReqMt = reqMt;
@@ -187,15 +182,15 @@ public class Analyzer {
                     "recordedReqId",
                     Optional.ofNullable(recordReq.reqId).orElse(Constants.NOT_PRESENT),
                     "recordedReqPayload",
-                    bestmatch.getRecordReq(config).orElse(Constants.NOT_PRESENT),
+                    bestmatch.getRecordReq().orElse(Constants.NOT_PRESENT),
                     "replayReqPayload",
-                    bestmatch.getReplayReq(config).orElse(Constants.NOT_PRESENT),
+                    bestmatch.getReplayReq().orElse(Constants.NOT_PRESENT),
                     "reqCompareResType", bestmatch.getReqCompareResType().name(),
                     Constants.REQUEST_DIFF, jsonMapper.writeValueAsString(bestmatch.getReqDiffs()),
                     "recordedRespPayload",
-                    bestmatch.getRecordedResponseBody(config).orElse(Constants.NOT_PRESENT),
+                    bestmatch.getRecordedResponseBody().orElse(Constants.NOT_PRESENT),
                     "replayRespPayload",
-                    bestmatch.getReplayResponseBody(config).orElse(Constants.NOT_PRESENT),
+                    bestmatch.getReplayResponseBody().orElse(Constants.NOT_PRESENT),
                     "respCompareResType", bestmatch.getRespCompareResType().name(),
                     Constants.RESPONSE_DIFF, jsonMapper.writeValueAsString(bestmatch.getRespDiffs())
                 )));
@@ -227,8 +222,8 @@ public class Analyzer {
 
     private ReqRespMatchWithEvent checkReqRespEventMatch(
         Event recordreq, Event replayreq,
-                                                      Optional<Event> recordedResponse ,
-                                                     Map<String, Event> replayResponseMap) {
+        Optional<Event> recordedResponse,
+        Map<String, Event> replayResponseMap, String templateVersion) {
 
         Comparator.Match reqCompareRes = Match.NOMATCH;
         Comparator.Match respCompareRes = Match.NOMATCH;
@@ -237,8 +232,7 @@ public class Analyzer {
         try {
             TemplateKey reqCompareKey = new TemplateKey(templateVersion, recordreq.customerId,
                 recordreq.app, recordreq.service, recordreq.apiPath, Type.RequestCompare);
-            Comparator reqComparator = config.rrstore
-                .getComparator(reqCompareKey, recordreq.eventType);
+            Comparator reqComparator = rrstore.getComparator(reqCompareKey, recordreq.eventType);
             if (reqComparator.getCompareTemplate().getRules() != null &&
                 ! reqComparator.getCompareTemplate().getRules().isEmpty()) {
                 reqCompareRes = reqComparator
@@ -253,7 +247,7 @@ public class Analyzer {
             if (recordedResponse.isPresent() && replayresp.isPresent()) {
                 Event recordedr = recordedResponse.get();
                 Event replayr = replayresp.get();
-                Comparator respComparator = config.rrstore
+                Comparator respComparator = rrstore
                     .getComparator(respCompareKey, recordedr.eventType);
                 respCompareRes = respComparator
                     .compare(recordedr.payload, replayr.payload);
@@ -372,13 +366,9 @@ public class Analyzer {
 
     /**
      * @param replayId
-     * @param tracefield
      * @return
      */
-    public static Optional<Analysis> analyze(String replayId, String tracefield,
-                                             Config config) throws TemplateNotFoundException {
-
-        ReqRespStore rrstore = config.rrstore;
+    public Optional<Analysis> analyze(String replayId) {
 
         Optional<Replay> replay = rrstore.getReplay(replayId);
 
@@ -390,16 +380,16 @@ public class Analyzer {
 
             String templateVersionToUse = r.templateVersion;
 
-            //Result<Request> reqs = r.getRequests(rrstore, true);
-            Analyzer analyzer = new Analyzer(replayId, result.getRight().intValue(), templateVersionToUse, config);
-            if (!rrstore.saveAnalysis(analyzer.analysis)) {
+            Analysis analysis = new Analysis(replayId, result.getRight().intValue(), templateVersionToUse);
+
+            if (!rrstore.saveAnalysis(analysis)) {
                 return Optional.empty();
             }
 
-            analyzer.analyzeWithEvent(rrstore, result.getLeft(), r);
+            analyzeWithEvent(rrstore, result.getLeft(), r, templateVersionToUse, analysis);
 
             // update the stored analysis
-            rrstore.saveAnalysis(analyzer.analysis);
+            rrstore.saveAnalysis(analysis);
 
 
             // Compute the aggregations here itself for all levels.
@@ -412,15 +402,14 @@ public class Analyzer {
             } );
 
             // Everything including aggregation completed
-            analyzer.analysis.status = Analysis.Status.Completed;
-            if (rrstore.saveAnalysis(analyzer.analysis)) {
+            analysis.status = Analysis.Status.Completed;
+            if (rrstore.saveAnalysis(analysis)) {
                 r.analysisCompleteTimestamp = Instant.now();
                 rrstore.saveReplay(r);
             }
 
-            return Optional.of(analyzer.analysis);
+            return Optional.of(analysis);
         }));
     }
-
 
 }
