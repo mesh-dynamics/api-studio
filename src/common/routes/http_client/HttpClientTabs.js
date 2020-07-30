@@ -190,6 +190,15 @@ class HttpClientTabs extends Component {
         }
     }
 
+    updateAllParams = (isOutgoingRequest, tabId, type, key, value) => {
+        const {dispatch} = this.props;
+        if(isOutgoingRequest) {
+            dispatch(httpClientActions.updateAllParamsInSelectedOutgoingTab(tabId, type, key, value));
+        } else {
+            dispatch(httpClientActions.updateAllParamsInSelectedTab(tabId, type, key, value));
+        }
+    }
+
     updateBodyOrRawDataType(isOutgoingRequest, tabId, type, value) {
         const {dispatch} = this.props;
         if(isOutgoingRequest) {
