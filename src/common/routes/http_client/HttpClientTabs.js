@@ -417,8 +417,8 @@ class HttpClientTabs extends Component {
         const mockContext = {
             collectionId: userHistoryCollection.collec,
             // recordingId: this.state.tabs[tabIndex].recordingIdAddedFromClient,
-            recordingCollectionId: this.state.tabs[tabIndex].collectionIdAddedFromClient,
-            traceId: this.state.tabs[tabIndex].traceIdAddedFromClient,
+            recordingCollectionId: tabs[tabIndex].collectionIdAddedFromClient,
+            traceId: tabs[tabIndex].traceIdAddedFromClient,
             selectedApp: selectedApp,
             customerName: customerId,
             runId: runId,
