@@ -779,7 +779,7 @@ class HttpClientTabs extends Component {
                         return eachCollection.recordingType === "History";
                     });
                     if(!userHistoryCollection && fetchedUserHistoryCollection) {
-                        dispatch(httpClientActions.addUserHistoryCollection(userHistoryCollection));
+                        dispatch(httpClientActions.addUserHistoryCollection(fetchedUserHistoryCollection));
                     }
                     const startTime = new Date(Date.now() - 30 * 60 * 1000).toISOString();
                     api.get(`${config.apiBaseUrl}/as/getApiTrace/${customerId}/${app}?depth=100&collection=${fetchedUserHistoryCollection.collec}&startDate=${startTime}`)
