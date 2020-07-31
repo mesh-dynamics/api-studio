@@ -43,15 +43,16 @@ import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.Replay;
 import io.md.dao.ReqRespMatchResult;
+import io.md.dao.Analysis;
 import io.md.services.DataStore;
 import io.md.services.FnResponse;
+import io.md.injection.DynamicInjectionConfig;
 
 import com.cube.dao.ReqRespStoreImplBase.CollectionKey;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
-import com.cube.injection.DynamicInjectionConfig;
 import com.cube.utils.Constants;
 
 /**
@@ -198,12 +199,6 @@ public interface ReqRespStore extends DataStore {
 	}
 
     /**
-	 * @param reqId
-	 * @return the matching response on the reqId
-	 */
-    Optional<Event> getResponseEvent(String reqId);
-
-    /**
      * @param reqId
      * @return the matching request on the reqId
      */
@@ -230,13 +225,7 @@ public interface ReqRespStore extends DataStore {
     Optional<Event> getSingleResponseEvent(String customerId, String app, String collection, List<String> services,
 		List<String> paths, Optional<Event.RunType> runType);
 
-	/**
-	 * @param replay
-	 * @return
-	 */
-	boolean expireReplayInCache(Replay replay);
 
-	boolean saveReplay(Replay replay);
 	/**
 	 * @param replayId
 	 * @return
@@ -458,18 +447,8 @@ public interface ReqRespStore extends DataStore {
 	Optional<String> getCurrentCollection(Optional<String> customerId, Optional<String> app,
 			Optional<String> instanceId);
 
+
     /**
-     *
-     * @param customerId
-     * @param app
-     * @param instanceId
-     * @return
-     */
-	Optional<String> getCurrentReplayId(Optional<String> customerId, Optional<String> app,
-                                        Optional<String> instanceId);
-
-
-	/**
 	 * @param customerId
 	 * @param app
 	 * @param instanceId
@@ -537,14 +516,6 @@ public interface ReqRespStore extends DataStore {
 	 *
 	 */
 	boolean commit();
-
-	/**
-	 *
-	 * @param cubeMetaInfo
-	 * @param version
-	 * @return
-	 */
-	Optional<DynamicInjectionConfig> getDynamicInjectionConfig(CubeMetaInfo cubeMetaInfo, String version);
 
 
     /**
@@ -695,5 +666,7 @@ public interface ReqRespStore extends DataStore {
 
     Pair<List, Stream<ConfigDAO>> getAgentConfigWithFacets(String customerId, String app, Optional<String> service,
 				Optional<String> instanceId, Optional<Integer> numOfResults, Optional<Integer> start);
+    Result<AgentConfigTagInfo> getAgentConfigTagInfoResults(String customerId, String app,
+				Optional<String> service, String instanceId);
 
 }

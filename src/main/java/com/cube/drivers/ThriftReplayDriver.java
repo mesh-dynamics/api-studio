@@ -35,7 +35,7 @@ public class ThriftReplayDriver extends AbstractReplayDriver {
 
 
 	ThriftReplayDriver(Replay replay, Config config) {
-		super(replay, config);
+		super(replay, config.rrstore);
 	}
 
 	@Override

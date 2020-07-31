@@ -613,7 +613,7 @@ public class CubeStore {
         try {
             Pair<List, Stream<ConfigDAO>> result = rrstore.getAgentConfigWithFacets(customerId, app, service, instanceId,
                 numResults, start);
-            Map response = Map.of("facets", Map.of("instance_facets", result.first()), "configs", result.second());
+            Map response = Map.of("facets", Map.of("instance_facets", result.first()), "configs", result.second().collect(Collectors.toList()));
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(response).build();
 
         } catch (Exception e) {
@@ -848,8 +848,8 @@ public class CubeStore {
           if(rt == RecordingType.History || rt == RecordingType.UserGolden) {
               return Optional.empty();
           } else {
-              return WSUtils.checkActiveCollection(rrstore, Optional.ofNullable(customerId), Optional.ofNullable(app),
-                  Optional.ofNullable(instanceId), Optional.empty());
+              return WSUtils.checkActiveCollection(rrstore, customerId, app,
+                  instanceId, Optional.empty());
           }
       });
         if (errResp.isPresent()) {

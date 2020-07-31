@@ -41,10 +41,10 @@ import io.cube.agent.UtilException;
 import io.md.dao.Event;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.ResponsePayload;
+import io.md.services.DataStore;
 
 import com.cube.core.Utils;
 import com.cube.utils.Constants;
-import com.cube.ws.Config;
 
 /*
  * Created by IntelliJ IDEA.
@@ -56,8 +56,8 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 	private static Logger LOGGER = LogManager.getLogger(HttpReplayDriver.class);
 
 
-	HttpReplayDriver(Replay replay, Config config) {
-		super(replay, config);
+	HttpReplayDriver(Replay replay, DataStore dataStore) {
+		super(replay, dataStore);
 	}
 
 	@Override
