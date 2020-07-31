@@ -21,7 +21,6 @@ import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.util.ResourceUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -90,7 +89,6 @@ public class BackendApplication {
 
     @Bean(name = "appRestClient")
     public RestTemplate getRestTemplate() {
-        RestTemplate restTemplate = new RestTemplate();
         ArrayList<ClientHttpRequestInterceptor> interceptors = new ArrayList<>();
         interceptors.add(new RestTemplateMockInterceptor());
         interceptors.add(new RestTemplateTracingInterceptor());
