@@ -65,4 +65,6 @@ public class TestConfig {
 
     @UpdateTimestamp
     LocalDateTime updatedAt;
+
+    String tag;
 }

@@ -18,12 +18,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.util.ResourceUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -47,8 +44,6 @@ public class BackendApplication {
     private String allowedOriginPath;
 
     @Autowired RestTemplate restTemplate;
-
-    @Autowired MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter;
 
     public static void main(String[] args) {
 //        SpringApplication.run(BackendApplication.class, args);
@@ -94,17 +89,10 @@ public class BackendApplication {
 
     @Bean(name = "appRestClient")
     public RestTemplate getRestTemplate() {
-        RestTemplate restTemplate = new RestTemplate();
         ArrayList<ClientHttpRequestInterceptor> interceptors = new ArrayList<>();
         interceptors.add(new RestTemplateMockInterceptor());
         interceptors.add(new RestTemplateTracingInterceptor());
         restTemplate.setInterceptors(interceptors);
-        for (int i = 0; i < restTemplate.getMessageConverters().size(); i++) {
-            final HttpMessageConverter<?> httpMessageConverter = restTemplate.getMessageConverters().get(i);
-            if (httpMessageConverter instanceof MappingJackson2HttpMessageConverter){
-                restTemplate.getMessageConverters().set(i, mappingJackson2HttpMessageConverter);
-            }
-        }
         return restTemplate;
     }
 
