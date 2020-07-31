@@ -5,6 +5,7 @@ import { navigation } from './navigation.reducer';
 import { golden } from './golden.reducer';
 import { cube } from './cube.reducer';
 import { apiCatalog } from './api-catalog.reducer';
+import { httpClient } from './httpClientReducer';
 
 const rootReducer = combineReducers({
   authentication,
@@ -12,6 +13,7 @@ const rootReducer = combineReducers({
   golden,
   cube,
   apiCatalog,
+  httpClient,
 });
 
 export default rootReducer;

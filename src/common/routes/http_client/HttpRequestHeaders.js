@@ -25,6 +25,20 @@ class HttpRequestHeaders extends Component {
         this.props.updateParam(isOutgoingRequest, tabId, "headers", evt.target.name, evt.target.value, id);
     }
 
+    handleCheckChange = (id, currentChecked) => {
+        const { tabId, isOutgoingRequest } = this.props;
+        this.props.updateParam(isOutgoingRequest, tabId, "headers", "selected", !currentChecked, id);
+    }
+
+    allSelected = () => {
+        return this.props.headers.reduce((acc, param) => (acc = acc && param.selected), true)
+    }
+
+    handleAllCheckChange = (e) => {
+        const { tabId, isOutgoingRequest } = this.props;
+        this.props.updateAllParams(isOutgoingRequest, tabId, "headers", "selected", e.target.checked);
+    }
+
     render() {
         return (
             <div style={{display: this.props.showHeaders === true ? "" : "none"}}>
@@ -32,7 +46,7 @@ class HttpRequestHeaders extends Component {
                     <div style={{marginBottom: "1px"}}>
                         <div style={{display: "inline-block", width: "2%", paddingRight: "9px"}}> 
                             <FormGroup bsSize="small" style={{marginBottom: "0px", textAlign: "center"}}>
-                                <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} />
+                                <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} checked={this.allSelected()} onChange={this.handleAllCheckChange}/>
                             </FormGroup>
                         </div>
                         <div style={{display: "inline-block", width: "20%", paddingRight: "9px"}}> 
@@ -61,7 +75,8 @@ class HttpRequestHeaders extends Component {
                     <div style={{marginBottom: "1px"}} key={eachHeader.id}>
                         <div style={{display: "inline-block", width: "2%", paddingRight: "9px"}}> 
                             <FormGroup style={{marginBottom: "0px", backgroundColor: "none", textAlign: "center"}}>
-                                <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} />
+                                <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} checked={eachHeader.selected} 
+                                onChange={() => this.handleCheckChange(eachHeader.id, eachHeader.selected)}/>                            
                             </FormGroup>
                         </div>
                         <div style={{display: "inline-block", width: "20%", paddingRight: "9px"}}> 
@@ -90,11 +105,11 @@ class HttpRequestHeaders extends Component {
                     </div>
                 )})}
                 <div style={{ marginTop: "5px", marginRight: "7px"}}>
-                    <div style={{display: "inline-block", width: "100%"}}> 
-                        <Button block style={{paddingLeft: "6px", textAlign: "left"}} onClick={this.handleAdd}>
-                            <span style={{fontSize: "14px", paddingRight: "18px", opacity: "0.7"}}> + </span>
-                            <span style={{paddingRight: "14px", opacity: "0.7", fontSize: "11px"}}>Add header</span>
-                        </Button>
+                    <div style={{display: "inline-block", width: "100%"}}>
+                        <button className="add-request-options-button" onClick={this.handleAdd}>
+                            <span style={{ fontSize: "20px" }}>+</span>
+                            <span style={{ marginLeft: "5px", fontWeight: 400 }}>Add header</span>
+                        </button>
                     </div>
                 </div>
             </div>

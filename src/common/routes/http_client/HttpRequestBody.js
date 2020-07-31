@@ -14,8 +14,9 @@ class HttpRequestBody extends Component {
                     formData={this.props.formData} 
                     addOrRemoveParam={this.props.addOrRemoveParam} 
                     updateParam={this.props.updateParam}
-                    isOutgoingRequest={this.props.isOutgoingRequest} >
-
+                    isOutgoingRequest={this.props.isOutgoingRequest} 
+                    updateAllParams={this.props.updateAllParams}
+                    >
                 </HttpRequestFormData>
                 <HttpRequestRawData tabId={this.props.tabId} showRawData={this.props.showRawData} 
                     rawData={this.props.rawData}

@@ -19,6 +19,7 @@ import {
 } from "../../utils/diff/diff-process.js";
 import config from "../../config";
 import { cubeService } from "../../services";
+import { apiCatalogActions } from "../../actions/api-catalog.actions";
 
 const DiffResultsContext = createContext();
 
@@ -502,8 +503,8 @@ class DiffResults extends Component {
             this.setState({showSaveGoldenModal: false, saveGoldenError: ""});
 
             dispatch(cubeActions.updateGoldenSet(result));
-
             dispatch(cubeActions.getTestIds(this.state.app));
+            dispatch(apiCatalogActions.fetchGoldenCollectionList(this.state.app, "Golden"));
         } catch (error) {
 
             dispatch(cubeActions.clearGolden());
