@@ -526,6 +526,7 @@ class HttpClient extends Component {
                             responseBody={selectedTab.responseBody}
                             recordedResponseHeaders={selectedTab.recordedResponseHeaders}
                             recordedResponseBody={ selectedTab.recordedResponseBody}
+                            recordedResponseStatus={selectedTab.recordedResponseStatus}
                             updateParam={this.props.updateParam}
                             isOutgoingRequest={ selectedTab.isOutgoingRequest} >
                         </HttpResponseMessage>

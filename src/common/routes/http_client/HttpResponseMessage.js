@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Glyphicon, FormGroup, Button, FormControl, Radio, ControlLabel, Checkbox } from 'react-bootstrap';
 import { getStatusColor } from "../../utils/http_client/utils";
+import { getHttpStatus } from "../../StatusCodeList"
 // import "./styles_here.css";
 
 import HttpResponseHeaders from "./HttpResponseHeaders";
@@ -34,6 +35,7 @@ class HttpResponseMessage extends Component {
 
 
     render() {
+        const { recordedResponseStatus, responseStatus, responseStatusText } = this.props;
         return (
             <div style={{ marginTop: "18px" }}>
                 <div style={{ fontSize: "11px" }}>RESPONSE</div>
@@ -64,9 +66,12 @@ class HttpResponseMessage extends Component {
                         </FormGroup>
                     </div>
                 </div>
-                <div style={{ fontSize: "12px", marginBottom: "12px", marginLeft: "50%" }}>
-                    <div style={{ opacity: "0.7", display: "inline-block", marginRight: "5px" }}>HTTP RESPONSE STATUS:  
-                        <b style={{ color: getStatusColor(this.props.responseStatus) }}> {this.props.responseStatus + " " + this.props.responseStatusText}</b>
+                <div style={{ fontSize: "12px", marginBottom: "12px"}}>
+                    <div style={{ opacity: "0.7", display: "inline-block" }}>HTTP RESPONSE STATUS: 
+                        <b style={{ color: getStatusColor(recordedResponseStatus) }}> {recordedResponseStatus? getHttpStatus(recordedResponseStatus): 'NA' }</b>
+                    </div>
+                    <div style={{ opacity: "0.7", display: "inline-block",marginLeft: "32.6%" }}>HTTP RESPONSE STATUS:  
+                        <b style={{ color: getStatusColor(responseStatus) }}> {responseStatus + " " + responseStatusText}</b>
                     </div>
                 </div>
                 <div>

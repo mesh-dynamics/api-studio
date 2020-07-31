@@ -64,6 +64,7 @@ class HttpClientTabs extends Component {
                 responseBody: "",
                 recordedResponseHeaders: "",
                 recordedResponseBody: "",
+                recordedResponseStatus: "",
                 responseBodyType: "json",
                 outgoingRequestIds: [],
                 eventData: null,
@@ -221,12 +222,13 @@ class HttpClientTabs extends Component {
                 if (result && result.numResults > 0) {
                     let outgoingRequests = [];
                     for (let eachReqId of reqIdArray) {
-                        const reqResPair = result.objects.filter(eachReq => eachReq.reqId === eachReqId);
+                        const reqResPair = result.objects.filter(eachReq => eachReq.reqId === eachReqId);                    
                         if (reqResPair.length > 0) {
                             const httpRequestEventTypeIndex = reqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
                             const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
                             const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
                             const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
+                            
                             let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "";
                             
                             for(let eachHeader in httpRequestEvent.payload[1].hdrs) {
@@ -286,6 +288,7 @@ class HttpClientTabs extends Component {
                                 responseBody: "",
                                 recordedResponseHeaders: httpResponseEvent ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
                                 recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
+                                recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
                                 responseBodyType: "json",
                                 showOutgoingRequestsBtn: false,
                                 isOutgoingRequest: true,
@@ -878,6 +881,7 @@ class HttpClientTabs extends Component {
             responseBody: "",
             recordedResponseHeaders: httpResponseEvent ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
             recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
+            recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
             responseBodyType: "json",
             requestId: reqId,
             outgoingRequestIds: [],
@@ -1029,11 +1033,37 @@ class HttpClientTabs extends Component {
         const { dispatch } = this.props;
         const tabId = uuidv4();
         const requestId = uuidv4();
-        const { cube: {selectedApp} } = this.props;
-        const app = selectedApp;
-        const appAvailable =  givenApp ? givenApp : app ? app : "";
-        if(!reqObject) {
-            reqObject = this.getReqObj();
+        const { app } = this.state;
+        const appAvailable = givenApp ? givenApp : app ? app : "";
+        if (!reqObject) {
+            reqObject = {
+                httpMethod: "get",
+                httpURL: "",
+                httpURLShowOnly: "",
+                headers: [],
+                queryStringParams: [],
+                bodyType: "formData",
+                formData: [],
+                rawData: "",
+                rawDataType: "json",
+                responseStatus: "NA",
+                responseStatusText: "",
+                responseHeaders: "",
+                responseBody: "",
+                recordedResponseHeaders: "",
+                recordedResponseBody: "",
+                recordedResponseStatus: "",
+                responseBodyType: "",
+                requestId: "",
+                outgoingRequestIds: [],
+                eventData: null,
+                showOutgoingRequestsBtn: false,
+                showSaveBtn: false,
+                outgoingRequests: [],
+                showCompleteDiff: false,
+                isOutgoingRequest: false,
+                service: ""
+            };
         }
         dispatch(httpClientActions.addTab(tabId, reqObject, appAvailable, tabId, reqObject.httpURL ? reqObject.httpURL : "New"));
         return tabId;
@@ -1107,6 +1137,7 @@ class HttpClientTabs extends Component {
             responseBody: "",
             recordedResponseHeaders: httpResponseEvent ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
             recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
+            recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
             responseBodyType: "json",
             requestId: reqId,
             outgoingRequestIds: requestIdsObj[reqId] ? requestIdsObj[reqId] : [],
@@ -1270,6 +1301,7 @@ class HttpClientTabs extends Component {
                                 responseBody: "",
                                 recordedResponseHeaders: httpResponseEvent ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
                                 recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
+                                recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
                                 responseBodyType: "json",
                                 requestId: httpRequestEvent.reqId,
                                 outgoingRequestIds: node.children ? node.children.map(eachChild => eachChild.requestEventId) : [],
