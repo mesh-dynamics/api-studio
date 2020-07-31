@@ -123,16 +123,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 */
-
-    /**TODO Remove this once PR for this is merged
-     *
-     * @param var1
-     * @return
-     */
-    @Override
-    public boolean deferredDelete(Replay replay) {
-        return true;
-    }
     
     @Override
     public void invalidateCache() {
