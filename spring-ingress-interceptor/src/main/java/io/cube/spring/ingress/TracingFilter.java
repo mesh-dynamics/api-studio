@@ -62,18 +62,20 @@ public class TracingFilter extends OncePerRequestFilter {
 			LOGGER.error("Exception occured while running Tracing filter!", ex);
 		}
 
-		if (wrappedRequest != null) {
-			filterChain.doFilter(wrappedRequest, httpServletResponse);
-		} else {
-			filterChain.doFilter(httpServletRequest, httpServletResponse);
-		}
+		try {
+			if (wrappedRequest != null) {
+				filterChain.doFilter(wrappedRequest, httpServletResponse);
+			} else {
+				filterChain.doFilter(httpServletRequest, httpServletResponse);
+			}
+		} finally {
+			if (scope != null) {
+				scope.close();
+			}
 
-		if (scope != null) {
-			scope.close();
-		}
-
-		if (span != null) {
-			span.finish();
+			if (span != null) {
+				span.finish();
+			}
 		}
 	}
 

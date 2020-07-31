@@ -19,7 +19,7 @@
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>md-spring-ingress-interceptor</artifactId>
-      <version>1.2.7</version>
+      <version>1.2.8</version>
     </dependency>
     <dependency>
       <groupId>io.cube</groupId>
