@@ -29,7 +29,7 @@ class HttpResponseBody extends Component {
     render() {
         const { showBody, tabId } = this.props;
         return showBody ? (
-            <div>
+            <div >
                 <DiffEditor
                     name={"responseBody" + tabId}
                     value={[this.props.recordedResponseBody, this.props.responseBody]}
@@ -40,6 +40,8 @@ class HttpResponseBody extends Component {
                         useWorker: false
                     }}
                     onChange={this.handleChange}
+                    showPrintMargin={false}
+                    className="diff-editor-container"
                 />
             </div>
         ) : (<div></div>);

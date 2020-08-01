@@ -303,7 +303,7 @@ class HttpClient extends Component {
 
     render() {
         const {  currentSelectedTab } = this.props;
-        const { outgoingRequests, service, httpURL } = currentSelectedTab;
+        const { outgoingRequests, service, httpURL, httpURLShowOnly } = currentSelectedTab;
 
         const { selectedResolutionType, showTrace, showLogs, collapseLength, incrementCollapseLengthForRecReqId, incrementCollapseLengthForRepReqId, maxLinesLength, showResponseMessageHeaders, showResponseMessageBody, showRequestMessageHeaders, showRequestMessageQParams, showRequestMessageFParams, showRequestMessageBody, showAll, searchFilterPath,  shownResponseMessageHeaders, shownResponseMessageBody, shownRequestMessageHeaders, shownRequestMessageQParams, shownRequestMessageFParams, shownRequestMessageBody, selectedTab, selectedRecordedHistoryReqId, diffLayoutData, showCompleteDiff } = this.state;
 
@@ -417,7 +417,7 @@ class HttpClient extends Component {
                                                 </span>
                                                 {service}
                                             </td>
-                                            <td>{httpURL}</td>
+                                            <td>{httpURLShowOnly}</td>
                                             <td></td>
                                             <td></td>
                                         </tr>
@@ -431,7 +431,7 @@ class HttpClient extends Component {
                                                         </span>
                                                         {eachReq.service}
                                                     </td>
-                                                    <td>{eachReq.httpURL}</td>
+                                                    <td>{eachReq.httpURLShowOnly}</td>
                                                     <td></td>
                                                     <td></td>
                                                 </tr>
@@ -515,6 +515,7 @@ class HttpClient extends Component {
                             rawDataType={selectedTab.rawDataType}
                             addOrRemoveParam={this.props.addOrRemoveParam} 
                             updateParam={this.props.updateParam}
+                            updateAllParams={this.props.updateAllParams}
                             updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
                             isOutgoingRequest={selectedTab.isOutgoingRequest} >
                         </HttpRequestMessage>

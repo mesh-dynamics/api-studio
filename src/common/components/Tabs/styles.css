@@ -138,3 +138,16 @@
   transition: left 800ms cubic-bezier(0.23, 1, 0.32, 1);
   z-index: 2;
 }
+
+.RRT_add-icon-container {
+  display: flex;
+  width: 30px;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  min-height: 40px;
+}
+
+.RRT__add-icon {
+  font-size: 16px;
+}

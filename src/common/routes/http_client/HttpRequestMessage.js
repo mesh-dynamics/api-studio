@@ -141,6 +141,7 @@ class HttpRequestMessage extends Component {
                     headers={this.props.headers} 
                     addOrRemoveParam={this.props.addOrRemoveParam} 
                     updateParam={this.props.updateParam}
+                    updateAllParams={this.props.updateAllParams}
                     isOutgoingRequest={this.props.isOutgoingRequest} >
 
                 </HttpRequestHeaders>
@@ -149,6 +150,7 @@ class HttpRequestMessage extends Component {
                     queryStringParams={this.props.queryStringParams} 
                     addOrRemoveParam={this.props.addOrRemoveParam} 
                     updateParam={this.props.updateParam}
+                    updateAllParams={this.props.updateAllParams}
                     isOutgoingRequest={this.props.isOutgoingRequest} >
 
                 </HttpRequestQueryString>
@@ -159,6 +161,7 @@ class HttpRequestMessage extends Component {
                     formData={this.props.formData} 
                     addOrRemoveParam={this.props.addOrRemoveParam} 
                     updateParam={this.props.updateParam}
+                    updateAllParams={this.props.updateAllParams}
                     rawData={this.props.rawData}
                     isOutgoingRequest={this.props.isOutgoingRequest} >
 
