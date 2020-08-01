@@ -401,7 +401,7 @@ class HttpClientTabs extends Component {
 
     driveRequest(isOutgoingRequest, tabId) {
         const {httpClient: {tabs, selectedTabKey, userHistoryCollection}} = this.props;
-        const { cube: {app: selectedApp} } = this.props;
+        const { cube: {selectedApp} } = this.props;
         const { dispatch } = this.props;
         const user = JSON.parse(localStorage.getItem('user'));
         const userId = user.username,
