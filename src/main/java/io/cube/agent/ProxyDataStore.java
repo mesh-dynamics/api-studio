@@ -14,7 +14,10 @@ import io.md.core.TemplateKey;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
 import io.md.dao.RecordOrReplay;
+import io.md.dao.Recording;
+import io.md.dao.Replay;
 import io.md.dao.ReqRespMatchResult;
+import io.md.injection.DynamicInjectionConfig;
 import io.md.services.AbstractDataStore;
 import io.md.services.DSResult;
 import io.md.services.DataStore;
@@ -80,6 +83,25 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
     }
 
     @Override
+    public Optional<DynamicInjectionConfig> getDynamicInjectionConfig(String s, String s1,
+        String s2) {
+        //TODO: Needs to be handled properly
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<Replay> getReplay(String s) {
+        //TODO: Needs to be handled properly
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<Recording> getRecording(String s) {
+        //TODO: Needs to be handled properly
+        return Optional.empty();
+    }
+
+    @Override
     public boolean saveResult(ReqRespMatchResult reqRespMatchResult) {
         return cubeClient.saveResult(reqRespMatchResult).isPresent();
     }
@@ -87,5 +109,17 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
     @Override
     public boolean save(Event event) {
         return cubeClient.storeEvent(event).isPresent();
+    }
+
+    @Override
+    public boolean saveReplay(Replay replay) {
+        //TODO: Needs to be handled properly
+        return true;
+    }
+
+    @Override
+    public boolean deferredDelete(Replay replay) {
+        //TODO: Needs to be handled properly
+        return true;
     }
 }
