@@ -34,10 +34,12 @@ public class BookInfo {
     private Double randomGuassianPercentGivenStdDevAndMean;
     private long requestTimeStamp;
 
+    /*
     private static String PRODUCTPAGE_URI = "http://productpage:9080";
     private static String BOOKDETAILS_URI = "http://details:9080";
     private static String BOOKRATINGS_URI = "http://ratings:9080";
     private static String BOOKREVIEWS_URI = "http://reviews:9080";
+     */
 
     public BookInfo(Tracer tracer, Config config) {
         ClientConfig clientConfig = new ClientConfig()
@@ -45,9 +47,9 @@ public class BookInfo {
                 .property(ClientProperties.CONNECT_TIMEOUT, 10000);
         restClient = ClientBuilder.newClient(clientConfig);
         //bookInfoService = restClient.target(PRODUCTPAGE_URI);
-        bookDetailsService = restClient.target(BOOKDETAILS_URI);
-        bookRatingsService = restClient.target(BOOKRATINGS_URI);
-        bookReviewsService = restClient.target(BOOKREVIEWS_URI);
+        bookDetailsService = restClient.target(config.BOOKDETAILS_URI);
+        bookRatingsService = restClient.target(config.BOOKRATINGS_URI);
+        bookReviewsService = restClient.target(config.BOOKREVIEWS_URI);
 
         this.tracer = tracer;
         this.config = config;

@@ -1,5 +1,6 @@
 package com.cubeiosample.webservices.rest.jersey;
 
+import java.util.Optional;
 import java.util.Properties;
 
 import javax.inject.Singleton;
@@ -25,8 +26,13 @@ public class Config {
 
     // restwrapjdbc
     public String RESTWRAPJDBC_URI = "http://restwrapjdbc:8080/restsql";
+    public String PRODUCTPAGE_URI = "http://productpage:9000";
+    public String BOOKDETAILS_URI = "http://details:9080";
+    public String BOOKRATINGS_URI = "http://ratings:9080";
+    public String BOOKREVIEWS_URI = "http://reviews:9080";
 
-    // Flags
+
+	// Flags
     public boolean USE_KUBE = false;
     
     //public static boolean USE_JDBC_SERVICE = true;
@@ -59,10 +65,11 @@ public class Config {
 		properties = new java.util.Properties();
 		
 		try {
+			String conffile = fromEnvOrSystemProperties("CONFFILE").orElse(CONFFILE);
             properties.load(this.getClass().getClassLoader().
-                    getResourceAsStream(CONFFILE));
+                    getResourceAsStream(conffile));
 		} catch(Exception eta){
-            LOGGER.error(String.format("Not able to load config file %s; using defaults", CONFFILE), eta);
+            LOGGER.error(String.format("Not able to load config file %s; using defaults"), eta);
 		}
         // mysql properties
         // host, username, pwd
@@ -83,8 +90,21 @@ public class Config {
         
 		// restwrapjdbc uri
         String restwrapjdbc_uri = this.getProperty("RESTWRAPJDBC_URI");
-        RESTWRAPJDBC_URI = (restwrapjdbc_uri == null) ? RESTWRAPJDBC_URI : restwrapjdbc_uri;      
-		
+        RESTWRAPJDBC_URI = (restwrapjdbc_uri == null) ? RESTWRAPJDBC_URI : restwrapjdbc_uri;
+
+        String productpage_uri = this.getProperty("PRODUCTPAGE_URI");
+        PRODUCTPAGE_URI = (productpage_uri == null) ? PRODUCTPAGE_URI : productpage_uri;
+
+        String bookdetails_uri = this.getProperty("BOOKDETAILS_URI");
+        BOOKDETAILS_URI = (bookdetails_uri == null) ? BOOKDETAILS_URI : bookdetails_uri;
+
+        String bookratings_uri = this.getProperty("BOOKRATINGS_URI");
+        BOOKRATINGS_URI = (bookratings_uri == null) ? BOOKRATINGS_URI : bookratings_uri;
+
+        String bookreviews_uri = this.getProperty("BOOKREVIEWS_URI");
+        BOOKREVIEWS_URI = (bookreviews_uri == null) ? BOOKREVIEWS_URI : bookreviews_uri;
+
+
 		// Flags
 		// use jdbc service
         // get book reviews
@@ -227,9 +247,14 @@ public class Config {
 		}
 		return value;
 	}
-	
-	
-    private void configureUseKube() {
+
+	public static Optional<String> fromEnvOrSystemProperties(String propertyName) {
+		Optional<String> ret = Optional.ofNullable(System.getenv(propertyName));
+		return ret.isPresent() ? ret : Optional.ofNullable(System.getProperty(propertyName));
+	}
+
+
+	private void configureUseKube() {
     	String useKube = System.getenv("USE_KUBE");
        	LOGGER.debug("use_kube value:" + useKube);
         if (useKube != null && useKube.equalsIgnoreCase("true")) {
