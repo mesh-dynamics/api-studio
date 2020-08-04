@@ -70,19 +70,18 @@ public class RedisPubSub extends JedisPubSub {
 					String statusKey = Constants.REDIS_STATUS_KEY_PREFIX + actualKey;
 					String currentStatus = jedis.get(statusKey);
 					if (currentStatus != null && !currentStatus.equals("nil")) {
-						if (currentStatus.equals(ReplayStatus.Completed.toString())) {
-							replay.status = ReplayStatus.Completed;
-						} else if (currentStatus.equals(ReplayStatus.Error.toString())) {
-							replay.status = ReplayStatus.Error;
-						}
-						jedis.del(statusKey);
+                        if (currentStatus.equals(ReplayStatus.Completed.toString())) {
+                            replay.status = ReplayStatus.Completed;
+                        } else if (currentStatus.equals(ReplayStatus.Error.toString())) {
+                            replay.status = ReplayStatus.Error;
+                        }
+                        jedis.del(statusKey);
+                        rrStore.saveReplay(replay);
 					} else {
 						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-							"No status key in redis, setting status to error"
+							"No status key in redis, probably deleted by someone else"
 							, Constants.REPLAY_ID_FIELD, replay.replayId)));
-						replay.status = ReplayStatus.Error;
 					}
-					rrStore.saveReplay(replay);
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
