@@ -14,6 +14,7 @@ apps/jersy119/kubernetes/*
 apps/apacheCXF/kubernetes/*
 apps/apacheCXFpolling/kubernetes/*
 apps/springboot/kubernetes/*
+apps/datadog/kubernetes/*
 !apps/moviebook/kubernetes/.gitkeep
 !apps/common/kubernetes/.gitkeep
 !apps/cube/kubernetes/.gitkeep
@@ -21,4 +22,5 @@ apps/springboot/kubernetes/*
 !apps/apacheCXF/kubernetes/.gitkeep
 !apps/apacheCXFpolling/kubernetes/.gitkeep
 !apps/springboot/kubernetes/.gitkeep
+!apps/datadog/kubernetes/.gitkeep
 .idea
