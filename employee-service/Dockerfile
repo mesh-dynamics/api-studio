@@ -6,6 +6,7 @@ FROM tomcat:9-jre11 AS dev
 RUN rm -rf /usr/local/tomcat/webapps/ROOT
 COPY target/jersey_1_19_emp.war /usr/local/tomcat/webapps/ROOT.war
 COPY src/main/java/resources/samplerconfig.json /tmp/samplerconfig.json
+ADD dd-java-agent-0.58.0.jar /usr/local/tomcat/dd-java-agent-0.58.0.jar
 # adding line below to speedup tomcat startup
 # see https://github.com/theotherp/nzbhydra2/issues/42
 # reduced time from 360 s to 6s!
