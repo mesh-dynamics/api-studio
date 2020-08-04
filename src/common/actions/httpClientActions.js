@@ -131,4 +131,59 @@ export const httpClientActions = {
     setUpdatedModalUserCollectionDetails: (name, value) => {
         return {type: httpClientConstants.SET_UPDATED_MODAL_USER_COLLECTION_DETAILS, data: {name, value}};
     },
+
+    setEnvironmentList: (environmentList) => ({type: httpClientConstants.SET_ENVIRONMENT_LIST, data: environmentList}),
+
+    fetchEnvironments: () => async (dispatch) => {
+        dispatch(httpClientActions.setEnvStatusText("Loading..."))
+        try {
+            const environmentList = await cubeService.getAllEnvironments();
+            dispatch(httpClientActions.setEnvironmentList(environmentList))
+            dispatch(httpClientActions.resetEnvStatusText())
+        } catch (e) {
+            dispatch(httpClientActions.setEnvStatusText(e.response.data.message, true))
+        }  
+    },
+
+    saveEnvironment: (environment) => async (dispatch) => {
+        dispatch(httpClientActions.setEnvStatusText("Saving..."))
+        try {
+            await cubeService.insertNewEnvironment(environment);
+            dispatch(httpClientActions.fetchEnvironments())
+            dispatch(httpClientActions.resetEnvStatusText())
+            dispatch(httpClientActions.showEnvList(true));
+        } catch (e) {
+            dispatch(httpClientActions.setEnvStatusText(e.response.data.message, true))
+        } 
+    },
+
+    updateEnvironment: (environment) => async (dispatch) => {
+        dispatch(httpClientActions.setEnvStatusText("Updating..."))
+        try {
+            await cubeService.updateEnvironment(environment);
+            dispatch(httpClientActions.fetchEnvironments())
+            dispatch(httpClientActions.resetEnvStatusText())
+            dispatch(httpClientActions.showEnvList(true));
+        } catch (e) {
+            dispatch(httpClientActions.setEnvStatusText(e.response.data.message, true))
+        } 
+    },
+
+    removeEnvironment: (id) => async (dispatch) => {
+        dispatch(httpClientActions.setEnvStatusText("Removing..."))
+        try {
+            await cubeService.deleteEnvironment(id)
+            dispatch(httpClientActions.fetchEnvironments())
+        } catch (e) {
+            dispatch(httpClientActions.setEnvStatusText(e.response.data.message, true))
+        }
+    },
+
+    setEnvStatusText: (text, isError=false) => ({type: httpClientConstants.SET_ENV_STATUS_TEXT, data: {text, isError}}),
+
+    resetEnvStatusText: () => ({type: httpClientConstants.RESET_ENV_STATUS_TEXT}),
+
+    showEnvList: (show) => ({type: httpClientConstants.SHOW_ENV_LIST, data: show}),
+
+    setSelectedEnvironment: (selectedEnvironment) => ({type: httpClientConstants.SET_SELECTED_ENVIRONMENT, data: selectedEnvironment}),
 }

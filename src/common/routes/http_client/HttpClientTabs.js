@@ -31,7 +31,6 @@ import {
 } from "../../utils/diff/diff-process.js";
 import EnvVar from "./EnvVar";
 import Mustache from "mustache"
-import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
 import { generateRunId } from "../../utils/http_client/utils";
 import { httpClientConstants } from "../../constants/httpClientConstants";
@@ -96,7 +95,6 @@ class HttpClientTabs extends Component {
             modalErroSaveMessage: "",
             modalErroCreateCollectionMessage: "", */
             showEnvVarModal: false,
-            selectedEnvironment: "",
         };
         this.addTab = this.addTab.bind(this);
         this.handleTabChange = this.handleTabChange.bind(this);
@@ -647,8 +645,8 @@ class HttpClientTabs extends Component {
                             this.loadFromHistory();
                             this.loadUserCollections();
                             // update api catalog golden and collection lists
-                            dispatch(apiCatalogActions.fetchGoldenCollectionList(app, "Golden"))
-                            dispatch(apiCatalogActions.fetchGoldenCollectionList(app, "UserGolden"))
+                            dispatch(httpClientActions.fetchGoldenCollectionList(app, "Golden"))
+                            dispatch(httpClientActions.fetchGoldenCollectionList(app, "UserGolden"))
 
                         }, 2000);
                     }, (error) => {
@@ -1193,7 +1191,7 @@ class HttpClientTabs extends Component {
             });
         }
 
-        dispatch(apiCatalogActions.fetchEnvironments())
+        dispatch(httpClientActions.fetchEnvironments())
     }
 
     componentWillUnmount() {
@@ -1422,16 +1420,15 @@ class HttpClientTabs extends Component {
     }
 
     getCurrentEnvirnoment = () => {
-        const { apiCatalog: { environmentList } } = this.props;
-        const { selectedEnvironment } = this.state;
+        const { httpClient: { environmentList, selectedEnvironment } } = this.props;
         return _.find(environmentList, { name: selectedEnvironment })
     }
 
     renderEnvListDD = () => {
-        const { apiCatalog: { environmentList } } = this.props;
+        const { httpClient: { environmentList, selectedEnvironment } } = this.props;
         return (
             <FormGroup bsSize="small" style={{ marginBottom: "0px" }}>
-                <FormControl componentClass="select" placeholder="Environment" style={{ fontSize: "12px" }} value={this.state.selectedEnvironment} onChange={this.handleEnvChange} className="btn-sm">
+                <FormControl componentClass="select" placeholder="Environment" style={{ fontSize: "12px" }} value={selectedEnvironment} onChange={this.handleEnvChange} className="btn-sm">
                     <option value="">No Environment</option>
                     {environmentList.map((env) => (<option key={env.name} value={env.name}>{env.name}</option>))}
                 </FormControl>
@@ -1439,7 +1436,8 @@ class HttpClientTabs extends Component {
     }
 
     handleEnvChange = (e) => {
-        this.setState({ selectedEnvironment: e.target.value })
+        const {dispatch} = this.props;
+        dispatch(httpClientActions.setSelectedEnvironment(e.target.value))
     }
 
     renderEnvPopoverBtn = () => {

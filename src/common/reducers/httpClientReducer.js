@@ -54,6 +54,11 @@ const initialState = {
     collectionLabel: "",
     modalErroSaveMessage: "",
     modalErroCreateCollectionMessage: "",
+    environmentList: [],
+    envStatusText: "",
+    envStatusIsError: false,
+    showEnvList: true,
+    selectedEnvironment: "",
 }
 
 export const httpClient = (state = initialState, { type, data }) => {
@@ -479,6 +484,43 @@ export const httpClient = (state = initialState, { type, data }) => {
             return {
                 ...state,
                 [data.name]: data.value
+            }
+        }
+
+        // envvar
+        case httpClientConstants.SET_ENVIRONMENT_LIST: {
+            return {
+                ...state,
+                environmentList: data,
+            }
+        }
+
+        case httpClientConstants.SET_ENV_STATUS_TEXT: {
+            return {
+                ...state,
+                envStatusText: data.text,
+                envStatusIsError: data.isError,
+            }
+        }
+
+        case httpClientConstants.RESET_ENV_STATUS_TEXT: {
+            return {
+                ...state,
+                envStatusText: "",
+            }
+        }
+        
+        case httpClientConstants.SHOW_ENV_LIST: {
+            return {
+                ...state,
+                showEnvList: data,
+            }
+        }
+
+        case httpClientConstants.SET_SELECTED_ENVIRONMENT: {
+            return {
+                ...state,
+                selectedEnvironment: data,
             }
         }
         
