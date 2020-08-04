@@ -123,7 +123,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 */
-
+    
     @Override
     public void invalidateCache() {
         comparatorCache.invalidateAll();
@@ -2714,7 +2714,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 .orElse(false);
         addFilter(query, RECORDING_TYPE_F, apiTraceFacetQuery.recordingType, true, includeEmpty);
         addFilter(query, COLLECTIONF,apiTraceFacetQuery.collection);
-        addFilter(query, PATHF, apiTraceFacetQuery.apiPath);
+        //addFilter(query, PATHF, apiTraceFacetQuery.apiPath);
         addFilter(query, RUNIDF, apiTraceFacetQuery.runId);
         return query;
     }
@@ -2768,18 +2768,19 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Pair<List, Stream<Event>> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfFacets, Optional<Integer> start, Optional<Integer> numberOfResults, List<EventType> eventTypes) {
+    public Pair<List, Stream<Event>> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfFacets, Optional<Integer> start, Optional<Integer> numberOfResults, List<EventType> eventTypes, boolean addPathFilter) {
 
         final SolrQuery query = getEventQuery(apiTraceFacetQuery);
         addFilter(query, EVENTTYPEF, eventTypes.stream().map(type -> type.toString()).collect(Collectors.toList()));
         addFilter(query, TRACEIDF, apiTraceFacetQuery.traceIds);
+        if (addPathFilter) {
+            addFilter(query, PATHF, apiTraceFacetQuery.apiPath);
+        }
         addSort(query, TIMESTAMPF, false /* desc */);
         FacetQ traceIdFacetq = new FacetQ();
-        Facet traceIdf = Facet.createTermFacet(TRACEIDF, Optional.empty());
+        Facet traceIdf = Facet.createTermFacet(TRACEIDF, numOfFacets, Optional.of(1));
         traceIdFacetq.addFacet(TRACEIDFACET, traceIdf);
 
-        query.setFacetMinCount(1);
-        numOfFacets.ifPresent(query::setFacetLimit);
         String jsonFacets;
         try {
             jsonFacets = config.jsonMapper.writeValueAsString(traceIdFacetq);
@@ -3366,6 +3367,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         private static final String LIMITK = "limit";
         private static final String FACETK = "facet";
         private static final String MISSINGK = "missing";
+        private static final String MINCOUNT = "mincount";
 
 
         /**
@@ -3391,10 +3393,20 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         final private Map<String, Object> params;
 
         static Facet createTermFacet(String fieldname, Optional<Integer> limit) {
-            return createTermFacetWithDomain(fieldname, Optional.empty(), limit);
+            return createTermFacet(fieldname, limit, Optional.empty());
+        }
+
+        static Facet createTermFacet(String fieldname, Optional<Integer> limit, Optional<Integer> mincount) {
+            return createTermFacetWithDomain(fieldname, Optional.empty(), limit, mincount);
         }
 
         static Facet createTermFacetWithDomain(String fieldname, Optional<Map> domainBlock, Optional<Integer> limit) {
+            return createTermFacetWithDomain(fieldname, domainBlock, limit, Optional.empty());
+
+        }
+
+        static Facet createTermFacetWithDomain(String fieldname, Optional<Map> domainBlock, Optional<Integer> limit,
+                                               Optional<Integer> mincount) {
             Map<String, Object> params = new HashMap<>();
             params.put(TYPEK, "terms");
             params.put(FIELDK, fieldname);
@@ -3404,6 +3416,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             });
             // include missing value in facet
             params.put(MISSINGK, true);
+            mincount.ifPresent(l -> params.put(MINCOUNT, l));
 
             return new Facet(params);
         }

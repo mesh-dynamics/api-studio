@@ -1431,15 +1431,15 @@ public class AnalyzeWS {
     try {
       MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
       ApiTraceFacetQuery apiTraceFacetQuery = new ApiTraceFacetQuery(customerId, appId, queryParams);
-      Optional<Integer> depth = Optional.ofNullable(uriInfo.getQueryParameters().getFirst("depth"))
-            .flatMap(val -> {
-              Optional<Integer> value = Utils.strToInt(val);
-              return  value.get() >= 0 ? value : Optional.of(1);
-            }).or(() -> Optional.of(1));
-      Optional<Integer> numResults = Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).or(()->Optional.of(50));
+      Integer depth = Optional.ofNullable(uriInfo.getQueryParameters().getFirst("depth"))
+            .flatMap(val -> Utils.strToInt(val).filter(v -> v >0)).orElse(1);
+      Integer numResults =
+          Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).orElse(20);
       Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
       if(apiTraceFacetQuery.traceIds.isEmpty()) {
-        Pair<List, Stream<Event>> result = rrstore.getApiTrace(apiTraceFacetQuery, numResults, start, Optional.of(0), Arrays.asList(EventType.HTTPRequest));
+        Pair<List, Stream<Event>> result = rrstore.getApiTrace(apiTraceFacetQuery, Optional.of(numResults), start,
+            Optional.of(0),
+            Arrays.asList(EventType.HTTPRequest), true);
         List<String> traceIds = result.first();
         apiTraceFacetQuery.withTraceIds(traceIds);
       }
@@ -1450,8 +1450,8 @@ public class AnalyzeWS {
          * we need to change the logic to support other eventTypes
          */
         Pair<List, Stream<Event>> result = rrstore
-            .getApiTrace(apiTraceFacetQuery, numResults, start, Optional.empty(),
-                Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse));
+            .getApiTrace(apiTraceFacetQuery, Optional.of(numResults), start, Optional.of(depth*numResults),
+                Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse), false);
 
         MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
         MultivaluedMap<String, Event> traceCollectionMap = new MultivaluedHashMap<>();
@@ -1463,21 +1463,21 @@ public class AnalyzeWS {
               mapForEventsTraceIds.add(res.getTraceId() + " " + res.getCollection(), res);
             });
 
-        boolean apiPathExists = apiTraceFacetQuery.apiPath.isPresent();
-        traceCollectionMap.forEach((traceCollectionKey, events) -> {
-          if (apiPathExists) {
-            for (Event parent : events) {
-              response.add(getApiTraceResponse(parent, depth.get(),
-                  Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey)));
-            }
-
-          } else {
-            // find event such that there is no event having span id equal to its parent span id
-            Map<String, Event> requestEventsBySpanId = new HashMap<>();
-            events.forEach(e -> requestEventsBySpanId.put(e.spanId, e));
-            List<Event> parentRequestEvents = events.stream()
-                .filter(e -> requestEventsBySpanId.get(e.parentSpanId) == null)
-                .collect(Collectors.toList());
+          traceCollectionMap.forEach((traceCollectionKey, events) -> {
+            List<Event> parentRequestEvents = apiTraceFacetQuery.apiPath.map(path -> {
+                return events.stream()
+                    .filter(e -> e.apiPath.equals(path))
+                    .limit(numResults)
+                    .collect(Collectors.toList());
+            }).orElseGet(() -> {
+                // find event such that there is no event having span id equal to its parent span id
+                Map<String, Event> requestEventsBySpanId = new HashMap<>();
+                events.forEach(e -> requestEventsBySpanId.put(e.spanId, e));
+                return events.stream()
+                    .filter(e -> requestEventsBySpanId.get(e.parentSpanId) == null)
+                    .limit(numResults)
+                    .collect(Collectors.toList());
+            });
             if (parentRequestEvents.isEmpty()) {
               LOGGER.error(
                   new ObjectMessage(Map.of(Constants.MESSAGE, "No request events found",
@@ -1487,11 +1487,10 @@ public class AnalyzeWS {
               return;
             }
             for (Event parent : parentRequestEvents) {
-              response.add(getApiTraceResponse(parent, depth.get(),
+              response.add(getApiTraceResponse(parent, depth,
                   Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey)));
             }
-          }
-        });
+          });
       }
       Map jsonMap = new HashMap();
 
