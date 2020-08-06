@@ -28,16 +28,12 @@ import io.opentracing.Span;
 public class TracingFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TracingFilter.class);
-	private static final Config config;
+	private static final Config config = new Config();
 
 	public static final String scopeKey
 		= Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);
 	public static final String spanKey
 		= Constants.SERVICE_FIELD.concat(Constants.MD_CHILD_SPAN);
-
-	static {
-		config = new Config();
-	}
 
 	@Override
 	public void filter(ContainerRequestContext reqContext) throws IOException {
