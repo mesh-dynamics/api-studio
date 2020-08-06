@@ -11,10 +11,4 @@ export const apiCatalogConstants = {
     FETCH_API_TRACE:"api-catalog/FETCH_API_TRACE",
     SET_API_TRACE_LOADING: "api-catalog/SET_API_TRACE_LOADING",
     SET_HTTP_CLIENT_REQUESTIDS: "api-catalog/SET_HTTP_CLIENT_REQUESTIDS",
-
-    // envvar
-    SET_ENVIRONMENT_LIST: "dev-tool/SET_ENVIRONMENT_LIST",
-    SET_ENV_STATUS_TEXT: "dev-tool/SET_ENV_STATUS_TEXT",
-    RESET_ENV_STATUS_TEXT: "dev-tool/RESET_ENV_STATUS_TEXT",
-    SHOW_ENV_LIST: "dev-tool/SHOW_ENV_LIST",
 }

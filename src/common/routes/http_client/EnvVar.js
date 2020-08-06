@@ -1,10 +1,8 @@
 import React, { Component, Fragment } from 'react'
-import { apiCatalogActions } from '../../actions/api-catalog.actions'
 import { connect } from "react-redux";
 import {Modal} from 'react-bootstrap';
-import _, { isError } from 'lodash';
-import { cubeService } from '../../services';
-
+import { httpClientActions } from '../../actions/httpClientActions';
+import _ from "lodash";
 
 class EnvVar extends Component {
     constructor(props) {
@@ -17,7 +15,7 @@ class EnvVar extends Component {
 
     
     handleEnvRowClick = (index) => {
-        const {apiCatalog: {
+        const {httpClient: {
             environmentList
         }} = this.props;
         this.showEnvList(false)
@@ -54,7 +52,7 @@ class EnvVar extends Component {
 
     showEnvList = (show) => {
         const {dispatch} = this.props;
-        dispatch(apiCatalogActions.showEnvList(show));
+        dispatch(httpClientActions.showEnvList(show));
     }
 
     handleAddNewEnvVariable = () => {
@@ -67,11 +65,11 @@ class EnvVar extends Component {
     }
 
     handleRemoveEnv = (index) => {
-        const {apiCatalog: {
+        const {httpClient: {
             environmentList
         }, dispatch} = this.props;
         
-        dispatch(apiCatalogActions.removeEnvironment(environmentList[index].id))
+        dispatch(httpClientActions.removeEnvironment(environmentList[index].id))
     }
 
     handleRemoveEnvVariable = (index) => {
@@ -87,7 +85,7 @@ class EnvVar extends Component {
             this.setEnvStatusText("Environment name cannot be empty", true)
             return
         }
-        dispatch(apiCatalogActions.saveEnvironment(selectedEnv));
+        dispatch(httpClientActions.saveEnvironment(selectedEnv));
     }
 
     handleUpdateEnvironment = () => {
@@ -97,17 +95,17 @@ class EnvVar extends Component {
             this.setEnvStatusText("Environment name cannot be empty", true)
             return
         }
-        dispatch(apiCatalogActions.updateEnvironment(selectedEnv));
+        dispatch(httpClientActions.updateEnvironment(selectedEnv));
     }
 
     setEnvStatusText = (text, isError) => {
         const {dispatch} = this.props;
-        dispatch(apiCatalogActions.setEnvStatusText(text, isError))
+        dispatch(httpClientActions.setEnvStatusText(text, isError))
     }
 
     resetEnvStatusText = () => {
         const {dispatch} = this.props;
-        dispatch(apiCatalogActions.resetEnvStatusText())
+        dispatch(httpClientActions.resetEnvStatusText())
     }
 
     handleBackEnv = () => {
@@ -121,7 +119,7 @@ class EnvVar extends Component {
 
     render() {
         const {selectedEnv, addNew} = this.state;
-        const {apiCatalog: {
+        const {httpClient: {
             environmentList, envStatusText, envStatusIsError, showEnvList
         }} = this.props;
         return (
@@ -202,7 +200,7 @@ class EnvVar extends Component {
     }
 }
 
-const mapStateToProps = (state) =>  ({apiCatalog: state.apiCatalog});
+const mapStateToProps = (state) =>  ({httpClient: state.httpClient});
 
 export default connect(mapStateToProps)(EnvVar);
 

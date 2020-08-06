@@ -31,7 +31,6 @@ import {
 } from "../../utils/diff/diff-process.js";
 import EnvVar from "./EnvVar";
 import Mustache from "mustache"
-import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
 import { generateRunId } from "../../utils/http_client/utils";
 import { httpClientConstants } from "../../constants/httpClientConstants";
@@ -64,6 +63,7 @@ class HttpClientTabs extends Component {
                 responseBody: "",
                 recordedResponseHeaders: "",
                 recordedResponseBody: "",
+                recordedResponseStatus: "",
                 responseBodyType: "json",
                 outgoingRequestIds: [],
                 eventData: null,
@@ -95,7 +95,6 @@ class HttpClientTabs extends Component {
             modalErroSaveMessage: "",
             modalErroCreateCollectionMessage: "", */
             showEnvVarModal: false,
-            selectedEnvironment: "",
         };
         this.addTab = this.addTab.bind(this);
         this.handleTabChange = this.handleTabChange.bind(this);
@@ -221,12 +220,13 @@ class HttpClientTabs extends Component {
                 if (result && result.numResults > 0) {
                     let outgoingRequests = [];
                     for (let eachReqId of reqIdArray) {
-                        const reqResPair = result.objects.filter(eachReq => eachReq.reqId === eachReqId);
+                        const reqResPair = result.objects.filter(eachReq => eachReq.reqId === eachReqId);                    
                         if (reqResPair.length > 0) {
                             const httpRequestEventTypeIndex = reqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
                             const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
                             const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
                             const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
+                            
                             let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "";
                             
                             for(let eachHeader in httpRequestEvent.payload[1].hdrs) {
@@ -286,6 +286,7 @@ class HttpClientTabs extends Component {
                                 responseBody: "",
                                 recordedResponseHeaders: httpResponseEvent ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
                                 recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
+                                recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
                                 responseBodyType: "json",
                                 showOutgoingRequestsBtn: false,
                                 isOutgoingRequest: true,
@@ -639,13 +640,13 @@ class HttpClientTabs extends Component {
                                 throw new Error("Error");
                             }
                         }
-                        dispatch(httpClientActions.postSuccessSaveToCollection(tabId, type === "History" ? false : true, "Saved Successfully! You can close this modal.", clearIntervalHandle));
+                        dispatch(httpClientActions.postSuccessSaveToCollection(tabId, type === "History" ? false : true, "Saved Successfully! You can close this window.", clearIntervalHandle));
                         setTimeout(() => {
                             this.loadFromHistory();
                             this.loadUserCollections();
                             // update api catalog golden and collection lists
-                            dispatch(apiCatalogActions.fetchGoldenCollectionList(app, "Golden"))
-                            dispatch(apiCatalogActions.fetchGoldenCollectionList(app, "UserGolden"))
+                            dispatch(httpClientActions.fetchGoldenCollectionList(app, "Golden"))
+                            dispatch(httpClientActions.fetchGoldenCollectionList(app, "UserGolden"))
 
                         }, 2000);
                     }, (error) => {
@@ -878,6 +879,7 @@ class HttpClientTabs extends Component {
             responseBody: "",
             recordedResponseHeaders: httpResponseEvent ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
             recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
+            recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
             responseBodyType: "json",
             requestId: reqId,
             outgoingRequestIds: [],
@@ -1029,11 +1031,37 @@ class HttpClientTabs extends Component {
         const { dispatch } = this.props;
         const tabId = uuidv4();
         const requestId = uuidv4();
-        const { cube: {selectedApp} } = this.props;
-        const app = selectedApp;
-        const appAvailable =  givenApp ? givenApp : app ? app : "";
-        if(!reqObject) {
-            reqObject = this.getReqObj();
+        const { app } = this.state;
+        const appAvailable = givenApp ? givenApp : app ? app : "";
+        if (!reqObject) {
+            reqObject = {
+                httpMethod: "get",
+                httpURL: "",
+                httpURLShowOnly: "",
+                headers: [],
+                queryStringParams: [],
+                bodyType: "formData",
+                formData: [],
+                rawData: "",
+                rawDataType: "json",
+                responseStatus: "NA",
+                responseStatusText: "",
+                responseHeaders: "",
+                responseBody: "",
+                recordedResponseHeaders: "",
+                recordedResponseBody: "",
+                recordedResponseStatus: "",
+                responseBodyType: "",
+                requestId: "",
+                outgoingRequestIds: [],
+                eventData: null,
+                showOutgoingRequestsBtn: false,
+                showSaveBtn: false,
+                outgoingRequests: [],
+                showCompleteDiff: false,
+                isOutgoingRequest: false,
+                service: ""
+            };
         }
         dispatch(httpClientActions.addTab(tabId, reqObject, appAvailable, tabId, reqObject.httpURL ? reqObject.httpURL : "New"));
         return tabId;
@@ -1107,6 +1135,7 @@ class HttpClientTabs extends Component {
             responseBody: "",
             recordedResponseHeaders: httpResponseEvent ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
             recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
+            recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
             responseBodyType: "json",
             requestId: reqId,
             outgoingRequestIds: requestIdsObj[reqId] ? requestIdsObj[reqId] : [],
@@ -1162,7 +1191,7 @@ class HttpClientTabs extends Component {
             });
         }
 
-        dispatch(apiCatalogActions.fetchEnvironments())
+        dispatch(httpClientActions.fetchEnvironments())
     }
 
     componentWillUnmount() {
@@ -1270,6 +1299,7 @@ class HttpClientTabs extends Component {
                                 responseBody: "",
                                 recordedResponseHeaders: httpResponseEvent ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
                                 recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
+                                recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
                                 responseBodyType: "json",
                                 requestId: httpRequestEvent.reqId,
                                 outgoingRequestIds: node.children ? node.children.map(eachChild => eachChild.requestEventId) : [],
@@ -1390,16 +1420,15 @@ class HttpClientTabs extends Component {
     }
 
     getCurrentEnvirnoment = () => {
-        const { apiCatalog: { environmentList } } = this.props;
-        const { selectedEnvironment } = this.state;
+        const { httpClient: { environmentList, selectedEnvironment } } = this.props;
         return _.find(environmentList, { name: selectedEnvironment })
     }
 
     renderEnvListDD = () => {
-        const { apiCatalog: { environmentList } } = this.props;
+        const { httpClient: { environmentList, selectedEnvironment } } = this.props;
         return (
             <FormGroup bsSize="small" style={{ marginBottom: "0px" }}>
-                <FormControl componentClass="select" placeholder="Environment" style={{ fontSize: "12px" }} value={this.state.selectedEnvironment} onChange={this.handleEnvChange} className="btn-sm">
+                <FormControl componentClass="select" placeholder="Environment" style={{ fontSize: "12px" }} value={selectedEnvironment} onChange={this.handleEnvChange} className="btn-sm">
                     <option value="">No Environment</option>
                     {environmentList.map((env) => (<option key={env.name} value={env.name}>{env.name}</option>))}
                 </FormControl>
@@ -1407,7 +1436,8 @@ class HttpClientTabs extends Component {
     }
 
     handleEnvChange = (e) => {
-        this.setState({ selectedEnvironment: e.target.value })
+        const {dispatch} = this.props;
+        dispatch(httpClientActions.setSelectedEnvironment(e.target.value))
     }
 
     renderEnvPopoverBtn = () => {
@@ -1419,17 +1449,18 @@ class HttpClientTabs extends Component {
                 {currentEnvironment && !_.isEmpty(currentEnvironment.vars) && <table className="table table-bordered table-hover">
                     <thead>
                         <tr>
-                            <th style={{ width: "20%" }}>
-                                Variable
-                                      </th>
-                            <th>
-                                Value
-                                      </th>
+                            <th style={{ width: "20%" }}>Variable</th>
+                            <th>Value</th>
                         </tr>
                     </thead>
                     <tbody>
                         {
-                            currentEnvironment.vars.map((varEntry) => (<tr><td>{varEntry.key}</td><td>{varEntry.value}</td></tr>))
+                            currentEnvironment.vars.map((varEntry) => (
+                            <tr>
+                                <td>{varEntry.key}</td>
+                                <td style={{wordBreak: "break-all"}}>{varEntry.value}</td>
+                            </tr>
+                            ))
                         }
                     </tbody>
                 </table>}
@@ -1572,7 +1603,7 @@ class HttpClientTabs extends Component {
                         <div style={{marginBottom: "9px", display: "inline-block", width: "20%", fontSize: "11px"}}></div>
                         <div style={{display: "inline-block", width: "80%", textAlign: "right"}}>
                                 <div style={{display: "inline-block", padding: 0}} className="btn">{this.renderEnvListDD()}</div>
-                                {this.renderEnvPopoverBtn()}
+                                <div style={{display: "inline-block"}}>{this.renderEnvPopoverBtn()}</div>
                                 <span className="btn btn-sm cube-btn text-center" onClick={() => {this.setState({showEnvVarModal: true})}} title="Configure environments"><i className="fas fa-cog"/> </span>
                             {/* <div style={{display: "inline-block", margin: "10px" }}>
                             </div> */}

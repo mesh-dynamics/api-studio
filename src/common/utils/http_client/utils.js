@@ -8,7 +8,9 @@ const getStatusColor = (status) => {
             return '#008000';
         }
         return '#FFFF00';
-    } else{
+    } else if ( status == 'NA' || status == '' || status == undefined) {
+        return 'none';
+    } else {
         return '#FF0000';
     }
 }
