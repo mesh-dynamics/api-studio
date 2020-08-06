@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Glyphicon, FormGroup, Button, FormControl, Radio, ControlLabel, Checkbox } from 'react-bootstrap';
 import { getStatusColor } from "../../utils/http_client/utils";
-import { getHttpStatus } from "../../StatusCodeList"
+import { getHttpStatus } from "../../status-code-list";
 // import "./styles_here.css";
 
 import HttpResponseHeaders from "./HttpResponseHeaders";

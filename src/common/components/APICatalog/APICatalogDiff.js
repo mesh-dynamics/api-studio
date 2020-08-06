@@ -7,7 +7,7 @@ import { cubeService } from '../../services';
 import { connect } from "react-redux";
 import { Checkbox, FormGroup, Label,Glyphicon,Button } from "react-bootstrap";
 import { apiCatalogActions } from '../../actions/api-catalog.actions';
-import {getHttpStatus} from "../../StatusCodeList.js"
+import { getHttpStatus } from "../../status-code-list";
 
 const newStyles = {
     variables: {

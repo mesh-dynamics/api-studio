@@ -6,7 +6,7 @@ import HttpResponseMessage from "./HttpResponseMessage";
 
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import config from "../../config";
-import statusCodeList from "../../StatusCodeList";
+import statusCodeList from "../../status-code-list";
 import {resolutionsIconMap} from '../../components/Resolutions.js';
 import { cubeService } from "../../services";
 import api from '../../api';

@@ -15,6 +15,7 @@ import { cubeConstants } from "../../constants";
 import { cubeService } from "../../services";
 import api from '../../api';
 import config from '../../config';
+import { ipcRenderer } from '../../helpers/ipc-renderer';
 
 import HttpClient from "./HttpClient";
 import TreeNodeContainer from "./TreeNodeContainer";
@@ -401,7 +402,7 @@ class HttpClientTabs extends Component {
 
     driveRequest(isOutgoingRequest, tabId) {
         const {httpClient: {tabs, selectedTabKey, userHistoryCollection}} = this.props;
-        const { cube: {app: selectedApp} } = this.props;
+        const { cube: {selectedApp} } = this.props;
         const { dispatch } = this.props;
         const user = JSON.parse(localStorage.getItem('user'));
         const userId = user.username,
@@ -412,18 +413,20 @@ class HttpClientTabs extends Component {
         if(tabIndex < 0) return;
         // generate a new run id every time a request is run
         const runId = generateRunId();
-        // make the request and update response status, headers & body
-        // extract headers
-        // extract body
-        const { headers, queryStringParams, bodyType, rawDataType } = tabToProcess;
-        const httpReqestHeaders = this.extractHeaders(headers);
+        if(PLATFORM_ELECTRON) {
+            const mockContext = {
+                collectionId: userHistoryCollection.collec,
+                // recordingId: this.state.tabs[tabIndex].recordingIdAddedFromClient,
+                recordingCollectionId: this.state.tabs[tabIndex].collectionIdAddedFromClient,
+                traceId: this.state.tabs[tabIndex].traceIdAddedFromClient,
+                selectedApp: app,
+                customerName: customerId,
+                runId: runId,
+            }
 
-        const httpRequestQueryStringParams = this.extractQueryStringParams(queryStringParams);
-        let httpRequestBody;
-        if (bodyType === "formData") {
-            const { formData } = tabToProcess;
-            httpRequestBody = this.extractBody(formData);
+            ipcRenderer.send('mock_context_change', mockContext);
         }
+        
         if (bodyType === "rawData") {
             const { rawData } = tabToProcess;
             httpRequestBody = this.extractBody(rawData);

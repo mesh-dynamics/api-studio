@@ -1,7 +1,10 @@
-build
 node_modules/
 .idea/
 .DS_Store
 .vscode
 package-lock.json
-dist/
+/java
+/bundle
+/dist
+/build
+/release

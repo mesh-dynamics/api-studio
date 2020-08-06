@@ -19,7 +19,7 @@ import {connect} from "react-redux";
 import {cubeActions} from "../../actions";
 import {Link} from "react-router-dom";
 import {getSearchHistoryParams, updateSearchHistoryParams} from "../../utils/lib/url-utils";
-import statusCodeList from "../../StatusCodeList";
+import statusCodeList from "../../status-code-list";
 import {resolutionsIconMap} from '../../components/Resolutions.js';
 import { cubeService } from '../../services';
 
