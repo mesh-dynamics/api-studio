@@ -25,7 +25,12 @@ class APIRequestsTable extends Component {
 
   componentWillReceiveProps(nextProps) {
     const tableData = this.generateTableData(nextProps);
-    this.setState({ tableData })
+    this.setState({ tableData });
+  }
+
+  componentDidMount() {
+    const tableData = this.generateTableData(this.props);
+    this.setState({ tableData });
   }
 
   generateTableData = (props) => {

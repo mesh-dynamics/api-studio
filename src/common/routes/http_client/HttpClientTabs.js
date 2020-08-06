@@ -640,7 +640,7 @@ class HttpClientTabs extends Component {
                                 throw new Error("Error");
                             }
                         }
-                        dispatch(httpClientActions.postSuccessSaveToCollection(tabId, type === "History" ? false : true, "Saved Successfully! You can close this modal.", clearIntervalHandle));
+                        dispatch(httpClientActions.postSuccessSaveToCollection(tabId, type === "History" ? false : true, "Saved Successfully! You can close this window.", clearIntervalHandle));
                         setTimeout(() => {
                             this.loadFromHistory();
                             this.loadUserCollections();
@@ -1449,17 +1449,18 @@ class HttpClientTabs extends Component {
                 {currentEnvironment && !_.isEmpty(currentEnvironment.vars) && <table className="table table-bordered table-hover">
                     <thead>
                         <tr>
-                            <th style={{ width: "20%" }}>
-                                Variable
-                                      </th>
-                            <th>
-                                Value
-                                      </th>
+                            <th style={{ width: "20%" }}>Variable</th>
+                            <th>Value</th>
                         </tr>
                     </thead>
                     <tbody>
                         {
-                            currentEnvironment.vars.map((varEntry) => (<tr><td>{varEntry.key}</td><td>{varEntry.value}</td></tr>))
+                            currentEnvironment.vars.map((varEntry) => (
+                            <tr>
+                                <td>{varEntry.key}</td>
+                                <td style={{wordBreak: "break-all"}}>{varEntry.value}</td>
+                            </tr>
+                            ))
                         }
                     </tbody>
                 </table>}
@@ -1602,7 +1603,7 @@ class HttpClientTabs extends Component {
                         <div style={{marginBottom: "9px", display: "inline-block", width: "20%", fontSize: "11px"}}></div>
                         <div style={{display: "inline-block", width: "80%", textAlign: "right"}}>
                                 <div style={{display: "inline-block", padding: 0}} className="btn">{this.renderEnvListDD()}</div>
-                                {this.renderEnvPopoverBtn()}
+                                <div style={{display: "inline-block"}}>{this.renderEnvPopoverBtn()}</div>
                                 <span className="btn btn-sm cube-btn text-center" onClick={() => {this.setState({showEnvVarModal: true})}} title="Configure environments"><i className="fas fa-cog"/> </span>
                             {/* <div style={{display: "inline-block", margin: "10px" }}>
                             </div> */}
