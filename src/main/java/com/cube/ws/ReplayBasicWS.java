@@ -3,8 +3,6 @@
  */
 package com.cube.ws;
 
-import com.cube.dao.Result;
-import io.md.dao.agent.config.AgentConfigTagInfo;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,14 +10,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CompletableFuture;
+
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -46,9 +46,9 @@ import io.md.utils.CubeObjectMapperProvider;
 import com.cube.core.Utils;
 import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.ReplayBuilder;
-import com.cube.dao.ReqRespStore;
 import com.cube.drivers.AbstractReplayDriver;
 import com.cube.drivers.ReplayDriverFactory;
+import com.cube.exception.ParameterException;
 import com.cube.utils.Constants;
 
 /**
@@ -94,28 +94,57 @@ public class ReplayBasicWS {
     @POST
     @Path("start/{recordingId}")
     @Consumes("application/x-www-form-urlencoded")
-    public Response start(@Context UriInfo ui,
-        @PathParam("recordingId") String recordingId,
-        MultivaluedMap<String, String> formParams) {
+    public void start(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui,
+                          @PathParam("recordingId") String recordingId,
+                          MultivaluedMap<String, String> formParams) {
         Optional<Recording> recordingOpt = dataStore.getRecording(recordingId);
+
 
         if (recordingOpt.isEmpty()) {
             LOGGER.error(String
                 .format("Cannot init Replay since cannot find recording for id %s", recordingId));
-            return Response.status(Status.NOT_FOUND)
-                .entity(String.format("cannot find recording for id %s", recordingId)).build();
+            asyncResponse.resume(Response.status(Status.NOT_FOUND)
+                .entity(String.format("cannot find recording for id %s", recordingId)).build());
         }
 
-        return  startReplay(formParams, recordingOpt.get());
+        startReplay(formParams, recordingOpt.get())
+        .thenApply(response -> asyncResponse.resume(response))
+        .exceptionally(e -> asyncResponse.resume(
+            Response.status(Status.INTERNAL_SERVER_ERROR)
+                .entity(String.format("Server error: " + e.getMessage())).build()));
     }
 
-    protected Response startReplay( MultivaluedMap<String, String> formParams, Recording recording) {
+    protected CompletableFuture<Response> startReplay(MultivaluedMap<String, String> formParams, Recording recording) {
+        try {
+            boolean startReplay = Utils.strToBool(formParams.getFirst("startReplay")).orElse(true);
+            boolean analyze = Utils.strToBool(formParams.getFirst("analyze")).orElse(true);
+
+            Replay replay = createReplayObject(formParams, recording);
+            // check if recording or replay is ongoing for (customer, app, instanceid)
+            Optional<Response> errResp = WSUtils
+                .checkActiveCollection(dataStore, recording.customerId,
+                    recording.app, replay.instanceId,
+                    Optional.ofNullable(replay.userId));
+            if (errResp.isPresent()) {
+                return CompletableFuture.completedFuture(errResp.get());
+            }
+            return beforeReplay(formParams, recording, replay)
+                .thenApply(v -> doStartReplay(replay, startReplay, analyze));
+        } catch (ParameterException e) {
+            return CompletableFuture.completedFuture(Response.status(Status.BAD_REQUEST)
+                .entity((new JSONObject(Map.of("Message", e.getMessage()))).toString())
+                .build());
+        }
+
+    }
+
+    private Replay createReplayObject(MultivaluedMap<String, String> formParams, Recording recording) throws ParameterException {
         // TODO: move all these constant strings to a file so we can easily change them.
         boolean async = Utils.strToBool(formParams.getFirst("async")).orElse(false);
         boolean excludePaths = Utils.strToBool(formParams.getFirst("excludePaths")).orElse(false);
         List<String> reqIds = Optional.ofNullable(formParams.get("reqIds"))
             .orElse(new ArrayList<String>());
-        Optional<String> endpoint = Optional.ofNullable(formParams.getFirst("endPoint"));
+        String endpoint = formParams.getFirst("endPoint");
         List<String> paths = Optional.ofNullable(formParams.get("paths"))
             .orElse(new ArrayList<String>());
         Optional<Double> sampleRate = Optional.ofNullable(formParams.getFirst("sampleRate"))
@@ -129,122 +158,94 @@ public class ReplayBasicWS {
         String replayType = formParams.getFirst("replayType");
         List<String> mockServices = Optional.ofNullable(formParams.get("mockServices"))
             .orElse(new ArrayList<String>());
-        boolean startReplay = Utils.strToBool(formParams.getFirst("startReplay")).orElse(true);
-        boolean analyze = Utils.strToBool(formParams.getFirst("analyze")).orElse(true);
         Optional<String> testConfigName = Optional.ofNullable(formParams.getFirst("testConfigName"));
 
         Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst("dynamicInjectionConfigVersion"));
         Optional<String> staticInjectionMap = Optional.ofNullable(formParams.getFirst("staticInjectionMap"));
-        Optional<String> tag = Optional.ofNullable(formParams.getFirst(Constants.TAG_FIELD));
 
         // Request transformations - for injecting tokens and such
         Optional<String> xfms = Optional.ofNullable(formParams.getFirst("transforms"));
 
         if (userId == null) {
-            return Response.status(Status.BAD_REQUEST)
-                .entity((new JSONObject(Map.of("Message", "userId Not Specified"))).toString())
-                .build();
+            throw new ParameterException("userId Not Specified");
         }
 
         if (instanceId == null) {
-            return Response.status(Status.BAD_REQUEST)
-                .entity((new JSONObject(Map.of("Message", "instanceId Not Specified"))).toString())
-                .build();
+            throw new ParameterException("instanceId Not Specified");
         }
 
-        // check if recording or replay is ongoing for (customer, app, instanceid)
-        Optional<Response> errResp = WSUtils
-            .checkActiveCollection(dataStore, recording.customerId,
-                recording.app, instanceId,
-                Optional.ofNullable(userId));
-        if (errResp.isPresent()) {
-            return errResp.get();
+        if (endpoint == null) {
+            throw new ParameterException("endpoint Not Specified");
         }
 
-        return endpoint.map(e -> {
-            // TODO: introduce response transforms as necessary
+        ReplayBuilder replayBuilder = new ReplayBuilder(endpoint,
+            new CubeMetaInfo(recording.customerId,
+                recording.app, instanceId), recording.collection, userId)
+            .withTemplateSetVersion(recording.templateVersion)
+            .withReqIds(reqIds).withAsync(async).withPaths(paths)
+            .withExcludePaths(excludePaths)
+            .withIntermediateServices(intermediateServices)
+            .withReplayType((replayType != null) ? Utils.valueOf(ReplayTypeEnum.class, replayType)
+                .orElse(ReplayTypeEnum.HTTP) : ReplayTypeEnum.HTTP)
+            .withMockServices(mockServices)
+            .withRecordingId(recording.id)
+            .withGoldenName(recording.name);
+        sampleRate.ifPresent(replayBuilder::withSampleRate);
+        replayBuilder.withServiceToReplay(service);
+        testConfigName.ifPresent(replayBuilder::withTestConfigName);
+        xfms.ifPresent(replayBuilder::withXfms);
+        dynamicInjectionConfigVersion.ifPresent(replayBuilder::withDynamicInjectionConfigVersion);
+        staticInjectionMap.ifPresent(replayBuilder::withStaticInjectionMap);
+        replayBuilder.withRunId(Optional.of(replayBuilder.getReplayId() + " " + Instant.now().toString()));
 
-            ReplayBuilder replayBuilder = new ReplayBuilder(e,
-                new CubeMetaInfo(recording.customerId,
-                    recording.app, instanceId), recording.collection, userId)
-                .withTemplateSetVersion(recording.templateVersion)
-                .withReqIds(reqIds).withAsync(async).withPaths(paths)
-                .withExcludePaths(excludePaths)
-                .withIntermediateServices(intermediateServices)
-                .withReplayType((replayType != null) ? Utils.valueOf(ReplayTypeEnum.class, replayType)
-                    .orElse(ReplayTypeEnum.HTTP) : ReplayTypeEnum.HTTP)
-                .withMockServices(mockServices)
-                .withRecordingId(recording.id)
-                .withGoldenName(recording.name);
-            sampleRate.ifPresent(replayBuilder::withSampleRate);
-            replayBuilder.withServiceToReplay(service);
-            testConfigName.ifPresent(replayBuilder::withTestConfigName);
-            xfms.ifPresent(replayBuilder::withXfms);
-            dynamicInjectionConfigVersion.ifPresent(replayBuilder::withDynamicInjectionConfigVersion);
-            staticInjectionMap.ifPresent(replayBuilder::withStaticInjectionMap);
-            replayBuilder.withRunId(Optional.of(replayBuilder.getReplayId() + " " + Instant.now().toString()));
+        try {
+            recording.generatedClassJarPath
+                .ifPresent(UtilException.rethrowConsumer(replayBuilder::withGeneratedClassJar));
+        } catch (Exception ex) {
+            LOGGER.error(new ObjectMessage(Map.of(
+                Constants.MESSAGE, "Error while constructing class loader from the specified jar path",
+                Constants.ERROR, ex.getMessage()
+            )), ex);
+            throw new ParameterException("Error while constructing class loader from the specified jar path", ex);
+        }
+        return replayBuilder.build();
+    }
 
-            try {
-                recording.generatedClassJarPath
-                    .ifPresent(UtilException.rethrowConsumer(replayBuilder::withGeneratedClassJar));
-            } catch (Exception ex) {
-                return Response.serverError().entity((new JSONObject(Map.of(
-                    Constants.MESSAGE, "Error while constructing class loader from the specified jar path"
-                    , Constants.ERROR, ex.getMessage()
-                ))).toString()).build();
-            }
-            Replay replay = replayBuilder.build();
-            return ReplayDriverFactory
-                .initReplay(replay, dataStore)
-                .map(replayDriver -> {
-                    String json;
-                    Replay replayFromDriver = replayDriver.getReplay();
-                    try {
-                        json = jsonMapper.writeValueAsString(replayFromDriver);
-                        if (startReplay) {
-                            boolean status = replayDriver.start(analyze ? Optional.ofNullable(analyzer) : Optional.empty());
-                            if (status) {
-                                return Response.ok(json, MediaType.APPLICATION_JSON).build();
-                            }
-                            return Response.status(Status.CONFLICT).entity(
-                                "Not able to start replay. It may be already running or completed")
-                                .build();
-                        } else {
+    private Response doStartReplay(Replay replay, boolean startReplay, boolean analyze) {
+
+        return ReplayDriverFactory
+            .initReplay(replay, dataStore)
+            .map(replayDriver -> {
+                String json;
+                Replay replayFromDriver = replayDriver.getReplay();
+                try {
+                    json = jsonMapper.writeValueAsString(replayFromDriver);
+                    if (startReplay) {
+                        boolean status = replayDriver.start(analyze ? Optional.ofNullable(analyzer) : Optional.empty());
+                        if (status) {
                             return Response.ok(json, MediaType.APPLICATION_JSON).build();
                         }
-                    } catch (JsonProcessingException ex) {
-                        LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                            "Error in converting Replay object to Json)) String",
-                            Constants.REPLAY_ID_FIELD, replay.replayId)), ex);
-                        return Response.serverError().build();
+                        return Response.status(Status.CONFLICT).entity(
+                            "Not able to start replay. It may be already running or completed")
+                            .build();
+                    } else {
+                        return Response.ok(json, MediaType.APPLICATION_JSON).build();
                     }
-                }).orElse(Response.serverError().build());
-        }).orElse(Response.status(Status.BAD_REQUEST).entity("Endpoint not specified").build());
-
+                } catch (JsonProcessingException ex) {
+                    LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                        "Error in converting Replay object to Json)) String",
+                        Constants.REPLAY_ID_FIELD, replay.replayId)), ex);
+                    return Response.serverError().build();
+                }
+            }).orElse(Response.serverError().build());
     }
 
-    private void setTag(Recording recording, String tag, ReqRespStore rrstore) {
-	    AtomicBoolean changed = new AtomicBoolean(false);
-	    Result<AgentConfigTagInfo> response = rrstore.getAgentConfigTagInfoResults(
-                recording.customerId, recording.app, Optional.empty(), recording.instanceId);
-	    response.getObjects().forEach(agentconfig -> {
-	        if(!agentconfig.tag.equals(tag)){
-              AgentConfigTagInfo agentConfigTagInfo = new AgentConfigTagInfo(
-                  agentconfig.customerId, agentconfig.app, agentconfig.service, agentconfig.instanceId, tag);
-              changed.set(true);
-              rrstore.updateAgentConfigTag(agentConfigTagInfo);
-          }
-	    });
-	    if(changed.get()) {
-          try {
-              TimeUnit.SECONDS.sleep(30);
-          } catch (InterruptedException ex) {
-              LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                  "Exception while sleeping the thread",
-                  Constants.TAG_FIELD, tag)), ex);
-          }
-      }
+    protected CompletableFuture<Void> beforeReplay(MultivaluedMap<String, String> formParams, Recording recording,
+                                                   Replay replay) {
+        // nothing to do
+	    return CompletableFuture.completedFuture(null);
     }
+
 
     /**
      * @param dataStore
