@@ -52,7 +52,6 @@ public class RedisPubSub extends JedisPubSub {
 			String actualKey = message.split(":")[1];
 			try (Jedis jedis = jedisPool.getResource()) {
 				String existingRecordOrReplay = jedis.get(actualKey);
-				jedis.del(actualKey);
 				RecordOrReplay recordOrReplay = jsonMapper.readValue(existingRecordOrReplay,
 					RecordOrReplay.class);
 				if (recordOrReplay.isRecording()) {
@@ -83,7 +82,9 @@ public class RedisPubSub extends JedisPubSub {
 							, Constants.REPLAY_ID_FIELD, replay.replayId)));
 					}
 				}
-			} catch (Exception e) {
+				// delete this only after solr is updated above
+                jedis.del(actualKey);
+            } catch (Exception e) {
 				e.printStackTrace();
 			}
 			//ReqRespStore.deleteRecording()
