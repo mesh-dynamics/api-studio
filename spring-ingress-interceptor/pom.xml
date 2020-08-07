@@ -78,7 +78,7 @@
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>agent</artifactId>
-      <version>1.0.43</version>
+      <version>1.0.47</version>
     </dependency>
 
   </dependencies>
