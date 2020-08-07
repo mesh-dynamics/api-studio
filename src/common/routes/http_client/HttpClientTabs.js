@@ -35,6 +35,7 @@ import Mustache from "mustache"
 import { httpClientActions } from "../../actions/httpClientActions";
 import { generateRunId } from "../../utils/http_client/utils";
 import { httpClientConstants } from "../../constants/httpClientConstants";
+import { apiCatalogActions } from "../../actions/api-catalog.actions";
 
 class HttpClientTabs extends Component {
 
@@ -682,8 +683,8 @@ class HttpClientTabs extends Component {
                             this.loadFromHistory();
                             this.loadUserCollections();
                             // update api catalog golden and collection lists
-                            dispatch(httpClientActions.fetchGoldenCollectionList(app, "Golden"))
-                            dispatch(httpClientActions.fetchGoldenCollectionList(app, "UserGolden"))
+                            dispatch(apiCatalogActions.fetchGoldenCollectionList(app, "Golden"))
+                            dispatch(apiCatalogActions.fetchGoldenCollectionList(app, "UserGolden"))
 
                         }, 2000);
                     }, (error) => {
