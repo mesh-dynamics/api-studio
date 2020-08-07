@@ -421,7 +421,7 @@ class HttpClientTabs extends Component {
 
     driveRequest(isOutgoingRequest, tabId) {
         const {httpClient: {tabs, selectedTabKey, userHistoryCollection}} = this.props;
-        const { cube: {selectedApp} } = this.props;
+        const { cube: { selectedApp } } = this.props;
         const { dispatch } = this.props;
         const user = JSON.parse(localStorage.getItem('user'));
         const userId = user.username,
@@ -436,9 +436,9 @@ class HttpClientTabs extends Component {
             const mockContext = {
                 collectionId: userHistoryCollection.collec,
                 // recordingId: this.state.tabs[tabIndex].recordingIdAddedFromClient,
-                recordingCollectionId: this.state.tabs[tabIndex].collectionIdAddedFromClient,
-                traceId: this.state.tabs[tabIndex].traceIdAddedFromClient,
-                selectedApp: app,
+                recordingCollectionId: tabs[tabIndex].collectionIdAddedFromClient,
+                traceId: tabs[tabIndex].traceIdAddedFromClient,
+                selectedApp,
                 customerName: customerId,
                 runId: runId,
             }
