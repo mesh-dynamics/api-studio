@@ -63,10 +63,10 @@ public class Utils {
 		} else if (config.intentResolver.isIntentToMock()) {
 			metaMap.add(Constants.RUN_TYPE_FIELD, Constants.REPLAY);
 		}
-		metaMap.add(Constants.CUSTOMER_ID_FIELD, CommonConfig.getInstance().customerId);
-		metaMap.add(Constants.APP_FIELD, CommonConfig.getInstance().app);
-		metaMap.add(Constants.INSTANCE_ID_FIELD, CommonConfig.getInstance().instance);
-		metaMap.add(Constants.SERVICE_FIELD, serviceName.orElse(CommonConfig.getInstance().serviceName));
+		metaMap.add(Constants.CUSTOMER_ID_FIELD, CommonConfig.customerId);
+		metaMap.add(Constants.APP_FIELD, CommonConfig.app);
+		metaMap.add(Constants.INSTANCE_ID_FIELD, CommonConfig.instance);
+		metaMap.add(Constants.SERVICE_FIELD, serviceName.orElse(CommonConfig.serviceName));
 	}
 
 	public static void createAndLogReqEvent(String apiPath,
