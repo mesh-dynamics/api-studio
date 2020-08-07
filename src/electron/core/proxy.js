@@ -43,12 +43,18 @@ const setupProxy = (mockContext, user) => {
 
     const proxyServerOptions = {
         target: {
-            protocol: mock.protocol,
+            protocol: `${mock.protocol}:`, // Do not forget the darn colon
             host: mock.host,
             port: mock.port,
         },
         changeOrigin: true,
     };
+
+    const proxyErrorHandler = (error) => {
+        logger.info('Error caught in proxy \n');
+        logger.info('Proxy server options \n', proxyServerOptions);
+        logger.info('Error : \n', error);
+    }
 
     /**
      * Listener for proxy request interceptor
@@ -90,12 +96,17 @@ const setupProxy = (mockContext, user) => {
     };
 
     */
+    logger.info("Creating server with options: \n", proxyServerOptions);
 
     const proxy = httpProxy.createProxyServer(proxyServerOptions);
 
     /**
      * Proxy Event Listeners
      */
+
+    // Error Listener
+    proxy.on('error', proxyErrorHandler);
+
     // Request Listener
     proxy.on('proxyReq', proxyRequestInterceptor);
 

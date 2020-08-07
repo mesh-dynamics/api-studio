@@ -19,12 +19,12 @@ const user = {
 };
 
 const mockContext = {
-    traceId: '',
-    selectedApp: '',
-    customerName: '',
-    collectionId: '',
-    recordingCollectionId: '',
-    runId: ''
+    traceId: 'sample-trace-id',
+    selectedApp: 'sample-selected-app',
+    customerName: 'sample-customer-name',
+    collectionId: 'sample-collection-id',
+    recordingCollectionId: 'sample-recording-collection-id',
+    runId: 'sample-recording-collection-id'
 };
 
 // const { mock: { proxyPort } } = getApplicationConfig();
