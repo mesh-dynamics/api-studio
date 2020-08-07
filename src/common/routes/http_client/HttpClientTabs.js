@@ -363,9 +363,28 @@ class HttpClientTabs extends Component {
             currentEnvironment.vars.map((v) => ([v.key, v.value]))
         ) : {};
 
-        // define method to render Mustache template
-        const renderEnvVars = (input) => input ? Mustache.render(input, currentEnvVars) : input;
+        // define method to check and render Mustache template
+        const renderEnvVars = (input) => {
+            if (!input) return input;
 
+            // get variables in the input string
+            // let pInput = Mustache.parse(input);
+            // console.log(pInput);
+            let inputVariables = Mustache.parse(input)
+                    .filter(v => (v[0]==='name') || v[0]==='&' || v[0]==='#')
+                    .map(v => v[1]);
+        
+            // check for the presence of variables in the environment
+            inputVariables.forEach((inputVariable) => {
+                if (!currentEnvVars.hasOwnProperty(inputVariable)) {
+                    throw new Error("The variable '" + inputVariable + "' is not defined in the current environment. \nPlease check your environment and the variables being used.")
+                }
+            })
+
+            return Mustache.render(input, currentEnvVars);
+        }
+
+        
         const httpRequestURLRendered = renderEnvVars(httpRequestURL);
 
         const httpRequestQueryStringParamsRendered = Object.fromEntries(
@@ -426,7 +445,15 @@ class HttpClientTabs extends Component {
 
             ipcRenderer.send('mock_context_change', mockContext);
         }
-        
+        const { headers, queryStringParams, bodyType, rawDataType } = tabToProcess;
+        const httpReqestHeaders = this.extractHeaders(headers);
+
+        const httpRequestQueryStringParams = this.extractQueryStringParams(queryStringParams);
+        let httpRequestBody;
+        if (bodyType === "formData") {
+            const { formData } = tabToProcess;
+            httpRequestBody = this.extractBody(formData);
+        }
         if (bodyType === "rawData") {
             const { rawData } = tabToProcess;
             httpRequestBody = this.extractBody(rawData);
@@ -441,9 +468,16 @@ class HttpClientTabs extends Component {
         if (httpMethod !== "GET".toLowerCase() && httpMethod !== "HEAD".toLowerCase()) {
             fetchConfig["body"] = httpRequestBody;
         }
+        
         // render environment variables
-        const [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] = this.applyEnvVars(httpRequestURL, httpRequestQueryStringParams, fetchConfig);
-
+        let httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered;
+        try {
+            [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] 
+                        = this.applyEnvVars(httpRequestURL, httpRequestQueryStringParams, fetchConfig);
+        } catch (e) {
+            alert(e) // prompt user for error in env vars
+            return
+        }
         const fetchUrlRendered = httpRequestURLRendered + (httpRequestQueryStringParamsRendered ? "?" + stringify(httpRequestQueryStringParamsRendered) : "");
         dispatch(httpClientActions.preDriveRequest(tabId, "WAITING...", false));
         tabs.map(eachTab => {
@@ -564,8 +598,8 @@ class HttpClientTabs extends Component {
         }
         const httpMethod = tabToSave.httpMethod;
         const apiPath = httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : "";
-        const httpResponseHeaders = responseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : recordedResponseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : null;
-        const httpResponseBody = responseBody ? JSON.parse(responseBody) : recordedResponseBody ? JSON.parse(recordedResponseBody) : null;
+        const httpResponseHeaders = recordedResponseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : responseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : null;
+        const httpResponseBody = recordedResponseBody ? JSON.parse(recordedResponseBody) : responseBody ? JSON.parse(responseBody) : null;
         const reqResCubeFormattedData = {
             request: {
                 ...httpRequestEvent,
