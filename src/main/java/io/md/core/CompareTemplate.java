@@ -316,7 +316,8 @@ public class CompareTemplate {
 	}
 
 	public static String normaliseAPIPath(String apiPath) {
-		return StringUtils.stripStart(StringUtils.stripEnd(apiPath,"/"), "/");
+		return apiPath.equals("/") ? apiPath : 
+			 StringUtils.stripStart(apiPath/*StringUtils.stripEnd(apiPath,"/")*/, "/");
 	}
 
 	public static class CompareTemplateStoreException extends Exception {
