@@ -7,9 +7,9 @@ const  DomainSettings = (props) => {
     return (
         <div className="col-md-12 col-sm-12 col-xs-12">
             <div className="panel panel-default">
-                <div className="panel-heading clearfix">
+                <div className="settings-panel">
                     <i className="icon-calendar"></i>
-                    <h3 className="panel-title">Target Domain Settings</h3>
+                    <span>Target Domain Settings</span>
                 </div>
 
                 <div className="panel-body">
@@ -34,7 +34,7 @@ const  DomainSettings = (props) => {
                                 disabled={!isUrl(domain)}
                                 id="save-button" 
                                 type="button" 
-                                className="btn btn-primary settings-custom-save-button"
+                                className="btn btn-sm cube-btn text-center"
                                 onClick={handleSaveDomainClick}
                             >
                                 Save

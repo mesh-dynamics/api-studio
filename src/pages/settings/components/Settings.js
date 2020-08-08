@@ -100,12 +100,12 @@ class Settings extends Component {
         return(
             <div className="settings-parent-container">
                 <div className="row settings-width-100">
-                    <div className="col-md-12 col-sm-12 col-xs-12 settings-back-button">
+                    <div className="col-md-12 col-sm-12 col-xs-12 settings-header">
                         <div className="settings-page-header">Application Settings</div>
-                        <Button onClick={this.handleBackClick} bsStyle="primary" className="settings-custom-back-button">
+                        <button onClick={this.handleBackClick} className="btn btn-sm cube-btn text-center">
                             <i className="fa fa-chevron-left" aria-hidden="true"></i>
                             <span className="settings-margin-left-10">Back</span>
-                        </Button>
+                        </button>
                     </div>
                 </div>
                 <div className="row settings-width-100">
@@ -138,8 +138,12 @@ class Settings extends Component {
                             The application will relaunch to apply the changes. Please click on update to proceed.
                         </Modal.Body>
                         <Modal.Footer>
-                            <Button onClick={this.handleHideDomainSettingsModal}>Cancel</Button>
-                            <Button bsStyle="primary" onClick={this.handleSaveToConfig}>Update</Button>
+                            <button 
+                                className="btn btn-sm cube-btn text-center settings-cancel-button" 
+                                onClick={this.handleHideDomainSettingsModal}>Cancel</button>
+                            <button 
+                                className="btn btn-sm cube-btn text-center" 
+                                onClick={this.handleSaveToConfig}>Update</button>
                         </Modal.Footer>
                     </Modal>
                     <Modal
@@ -158,8 +162,12 @@ class Settings extends Component {
                             Please click on update to proceed.
                         </Modal.Body>
                         <Modal.Footer>
-                            <Button onClick={this.handleHideMockSettingsModal}>Cancel</Button>
-                            <Button bsStyle="primary" onClick={this.handleSaveToConfig}>Update</Button>
+                            <button 
+                                className="btn btn-sm cube-btn text-center settings-cancel-button" 
+                                onClick={this.handleHideMockSettingsModal}>Cancel</button>
+                            <button 
+                                className="btn btn-sm cube-btn text-center" 
+                                onClick={this.handleSaveToConfig}>Update</button>
                         </Modal.Footer>
                     </Modal>
                     <Modal
@@ -171,7 +179,9 @@ class Settings extends Component {
                             Successfully updated config
                         </Modal.Body>
                         <Modal.Footer>
-                            <Button onClick={this.handleAlertModalDismissClick}>Dismiss</Button>
+                            <button 
+                                className="btn btn-sm cube-btn text-center settings-cancel-button" 
+                                onClick={this.handleAlertModalDismissClick}>Dismiss</button>
                         </Modal.Footer>
                     </Modal>
                 </div>

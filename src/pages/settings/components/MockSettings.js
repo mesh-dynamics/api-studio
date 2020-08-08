@@ -13,13 +13,14 @@ const MockSettings = (props) => {
     return (
         <div className="col-md-12 col-sm-12 col-xs-12">
             <div className="panel panel-default">
-                <div className="panel-heading clearfix">
+                <div className="settings-panel">
                     <i className="icon-calendar"></i>
-                    <h3 className="panel-title">Mock Settings</h3>
+                    <span>Mock Settings</span>
                 </div>
 
                 <div className="panel-body">
                     <br />
+                    <span>Protocol</span>
                     <div className="input-group input-group-sm">
                         <span className="input-group-addon settings-no-border">
                             <i className="fa fa-lock" aria-hidden="true"></i>
@@ -34,6 +35,7 @@ const MockSettings = (props) => {
                         />
                     </div>
                     <br />
+                    <span>Destination Host</span>
                     <div className="input-group input-group-sm">
                         <span className="input-group-addon settings-no-border">
                             <i className="fa fa-globe" aria-hidden="true"></i>
@@ -48,6 +50,7 @@ const MockSettings = (props) => {
                         />
                     </div>
                     <br />
+                    <span>Destination Port</span>
                     <div className="input-group input-group-sm">
                         <span className="input-group-addon settings-no-border">
                             <i className="fa fa-microchip" aria-hidden="true"></i>
@@ -62,6 +65,7 @@ const MockSettings = (props) => {
                         />
                     </div>
                     <br />
+                    {/* <span>Proxy Port</span>
                     <div className="input-group input-group-sm">
                         <span className="input-group-addon settings-no-border">
                             <i className="fa fa-server" aria-hidden="true"></i>
@@ -74,14 +78,14 @@ const MockSettings = (props) => {
                             value={proxyPort}
                             onChange={(event) => handleMockSettingsChange('proxyPort', event.target.value)}
                         />
-                    </div>
+                    </div> */}
                     <br />
                     <div className="settings-action-buttons">
                         <span className="settings-margin-left-10">
                             <button 
                                 id="save-button" 
                                 type="button" 
-                                className="btn btn-primary settings-custom-save-button" 
+                                className="btn btn-sm cube-btn text-center"
                                 onClick={handleSaveMockSettingsClick}
                             >Save</button>
                         </span>
@@ -91,5 +95,5 @@ const MockSettings = (props) => {
         </div>
     );
 }
- 
+
 export default MockSettings;
