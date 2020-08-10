@@ -44,6 +44,7 @@ AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyI
 CUBEIO_TAG=$DRONE_COMMIT-$DRONE_BRANCH
 CUBEUI_TAG=develop-latest
 CUBEUI_BACKEND_TAG=develop-latest
+MOVIEINFO_TAG=master-latest
 CUBE_HOST=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io" > apps/springboot/config/temp.conf
 }
 
