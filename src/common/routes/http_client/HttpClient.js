@@ -80,10 +80,12 @@ class HttpClient extends Component {
 
         this.handleClick = this.handleClick.bind(this);
         this.handleSaveClick = this.handleSaveClick.bind(this);
-        this.handleRowClick = this.handleRowClick.bind(this);
+        this.handleReferenceRequestClick = this.handleReferenceRequestClick.bind(this);
         this.handleShowDiff = this.handleShowDiff.bind(this);
         this.handleTestRequestClick = this.handleTestRequestClick.bind(this);
         this.handleShowCompleteDiffClick = this.handleShowCompleteDiffClick.bind(this);
+        this.handleOutgoingTestRequestClick = this.handleOutgoingTestRequestClick.bind(this);
+        this.handleOutgoingReferenceRequestClick = this.handleOutgoingReferenceRequestClick.bind(this);
     }
 
     preProcessResults = (results) => {
@@ -147,27 +149,67 @@ class HttpClient extends Component {
     }
 
     handleTestRequestClick(reqId) {
+        const { currentSelectedTab } = this.props;
+
         this.setState({
-            selectedRecordedHistoryReqId: reqId
-        })
+            selectedRecordedHistoryReqId: reqId,
+            selectedTab: currentSelectedTab
+        });
     }
 
-    handleRowClick(isOutgoingRequest, tabId) {
-        const { handleRowClick, currentSelectedTab } = this.props;
-        this.props.handleRowClick(isOutgoingRequest, tabId);
-        if(isOutgoingRequest) {
-            const outgoingRequests = currentSelectedTab.outgoingRequests;
-            const selectedTab = outgoingRequests.find((eachOutgoingReq) => {
-                return eachOutgoingReq.id === tabId;
-            });
-            this.setState({
-                selectedTab: selectedTab
-            })
-        } else {
-            this.setState({
-                selectedTab: currentSelectedTab
-            })
-        }
+    handleOutgoingTestRequestClick(reqId) {
+        const { selectedTab } = this.state;
+        const { 
+            currentSelectedTab: {
+                recordedHistory: {
+                    outgoingRequests
+                }
+            } 
+        } = this.props;
+        
+        const selectedOutgoingTestRequest = outgoingRequests
+            .find(outgoingRequest => outgoingRequest.requestId === reqId);
+
+        this.setState({
+            selectedRecordedHistoryReqId: reqId,
+            selectedTab: {
+                ...selectedTab,
+                responseBody: selectedOutgoingTestRequest.recordedResponseBody,
+                responseStatus: selectedOutgoingTestRequest.recordedResponseStatus,
+                responseStatusText: selectedOutgoingTestRequest.recordedResponseStatusText || "",
+            }
+        });
+    }
+
+    handleOutgoingReferenceRequestClick(isOutgoingRequest, tabId, requestId){
+        const { 
+            currentSelectedTab : {
+                outgoingRequests
+            }
+        } = this.props;
+        const { selectedTab } = this.state;
+
+        const outgoingReferenceRequest = outgoingRequests
+            .find(outgoingRequest => outgoingRequest.requestId === requestId);
+
+        this.setState({
+            selectedTab: {
+                ...outgoingReferenceRequest,
+                responseBody: selectedTab.responseBody,
+                responseStatus: selectedTab.responseStatus,
+                responseStatusText: selectedTab.responseStatusText || "",
+            }
+        });
+    }
+
+    handleReferenceRequestClick(isOutgoingRequest, tabId, requestId) {
+        const { currentSelectedTab } = this.props;
+
+        const selectedRecordedHistoryReqId = 
+            currentSelectedTab.recordedHistory ? 
+            currentSelectedTab.recordedHistory.requestId : "";
+
+        this.setState({ selectedTab: currentSelectedTab, selectedRecordedHistoryReqId });
     }
 
     handleClick(evt) {
@@ -409,7 +451,7 @@ class HttpClient extends Component {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr style={{cursor: "pointer", backgroundColor: selectedTab.requestId === currentSelectedTab.requestId ? "#ccc" : "#fff"}} onClick={() => this.handleRowClick(false, currentSelectedTab.id)}>
+                                        <tr style={{cursor: "pointer", backgroundColor: selectedTab.requestId === currentSelectedTab.requestId ? "#ccc" : "#fff"}} onClick={() => this.handleReferenceRequestClick(false, currentSelectedTab.id, currentSelectedTab.requestId)}>
                                             <td>
                                                 <span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>
                                                 <span>
@@ -423,7 +465,7 @@ class HttpClient extends Component {
                                         </tr>
                                         {outgoingRequests && outgoingRequests.length > 0 && outgoingRequests.map((eachReq) => {
                                             return (
-                                                <tr key={eachReq.id} style={{cursor: "pointer", backgroundColor: selectedTab.requestId === eachReq.requestId ? "#ccc" : "#fff"}} onClick={() => this.handleRowClick(true, eachReq.id)}>
+                                                <tr key={eachReq.id} style={{cursor: "pointer", backgroundColor: selectedTab.requestId === eachReq.requestId ? "#ccc" : "#fff"}} onClick={() => this.handleOutgoingReferenceRequestClick(true, eachReq.id, eachReq.requestId)}>
                                                     <td>
                                                         <span style={{marginRight: "30px", width: "25px"}}></span>
                                                         <span>
@@ -467,7 +509,7 @@ class HttpClient extends Component {
                                             </tr>
                                             {currentSelectedTab.recordedHistory.outgoingRequests && currentSelectedTab.recordedHistory.outgoingRequests.length > 0 && currentSelectedTab.recordedHistory.outgoingRequests.map((eachReq) => {
                                                 return (
-                                                    <tr key={eachReq.requestId} style={{cursor: "pointer", backgroundColor: selectedRecordedHistoryReqId === eachReq.requestId ? "#ccc" : "#fff"}} onClick={() => this.handleTestRequestClick(eachReq.requestId)} >
+                                                    <tr key={eachReq.requestId} style={{cursor: "pointer", backgroundColor: selectedRecordedHistoryReqId === eachReq.requestId ? "#ccc" : "#fff"}} onClick={() => this.handleOutgoingTestRequestClick(eachReq.requestId)} >
                                                         <td>
                                                             <span style={{marginRight: "30px", width: "25px"}}></span>
                                                             <span>
