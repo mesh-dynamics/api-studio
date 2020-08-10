@@ -38,8 +38,8 @@ spec:
     spec:
       containers:
       - name: receiver
-        image: cubeiocorp/sample-order-receiver:stable_1_0
-        imagePullPolicy: IfNotPresent
+        image: cubeiocorp/sample-order-receiver:latest
+        imagePullPolicy: Always
         resources:
           requests:
             memory: "256Mi"
@@ -50,28 +50,24 @@ spec:
         ports:
         - containerPort: 8080
         env:
-          - name: io.md.intent
-            value: "mock"
+          - name: io.md.service.endpoint
+            value: "https://{{cube_host}}/api/"
           - name: spring.profiles.active
-            value: "replay"
-          - name: io.md.disruptor.output
-            value: "stdout"
+            value: replay
+          - name: io.md.app
+            value: {{cube_application}}
           - name: io.md.customer
-            value: "{{customer}}"
-          - name: io.md.servicename
-            value: "{{cube_application}}"
+            value: {{customer}}
           - name: io.md.instance
             value: "{{cube_instance}}"
-          - name: io.md.app
-            value: "springboot_demo"
-          - name: io.md.service.record
-            value: https://{{cube_host}}/api
-          - name: io.md.service.mock
-            value: https://{{cube_host}}/api
-          - name: io.md.mock.services
-            value: transformer:8081
+          - name: io.md.servicename
+            value: "order"
+          - name: io.md.pollingconfig.fetchconfigapiuri
+            value: "https://{{cube_host}}/api/cs/fetchAgentConfig/"
+          - name: io.md.pollingconfig.ackconfigapiuri
+            value: "https://{{cube_host}}/api/cs/ackConfigApplication/"
           - name: io.md.authtoken
-            value: {{auth_token}}
+            value: "Bearer {{auth_token}}"
 
 ##################################################################################################
 # springboot employee record services
@@ -114,8 +110,8 @@ spec:
     spec:
       containers:
       - name: receiver
-        image: cubeiocorp/sample-order-receiver:stable_1_0
-        imagePullPolicy: IfNotPresent
+        image: cubeiocorp/sample-order-receiver:latest
+        imagePullPolicy: Always
         resources:
           requests:
             memory: "256Mi"
@@ -126,20 +122,24 @@ spec:
         ports:
         - containerPort: 8080
         env:
-          - name: io.md.customer
-            value: "{{customer}}"
-          - name: io.md.disruptor.output
-            value: "stdout"
+          - name: io.md.service.endpoint
+            value: "https://{{cube_host}}/api/"
           - name: spring.profiles.active
-            value: "replay"
-          - name: io.md.servicename
-            value: "{{cube_application}}"
+            value: replay
+          - name: io.md.app
+            value: {{cube_application}}
+          - name: io.md.customer
+            value: {{customer}}
           - name: io.md.instance
             value: "{{cube_instance}}"
-          - name: io.md.intent
-            value: "record"
-          - name: io.md.app
-            value: "springboot_demo"
+          - name: io.md.servicename
+            value: "order"
+          - name: io.md.pollingconfig.fetchconfigapiuri
+            value: "https://{{cube_host}}/api/cs/fetchAgentConfig/"
+          - name: io.md.pollingconfig.ackconfigapiuri
+            value: "https://{{cube_host}}/api/cs/ackConfigApplication/"
+          - name: io.md.authtoken
+            value: "Bearer {{auth_token}}"
 
 ##################################################################################################
 # springboot order transformer services
