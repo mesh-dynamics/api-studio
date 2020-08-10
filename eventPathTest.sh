@@ -35,16 +35,17 @@ curl --location --request POST 'https://ethicalaakash.dev.cubecorp.io/api/cs/sto
 }
 
 record() {
+	DATA="{
+	    \"customerId\":\"CubeCorp\",
+	    \"app\":\"springboot_demo\",
+	    \"instanceId\" : \"$INSTANCE_ID\",
+	    \"service\":\"order\",
+	    \"tag\" : \"record-spring-order\"
+	}"
 	curl --location --request POST 'https://ethicalaakash.dev.cubecorp.io/api/cs/setCurrentAgentConfigTag/' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s' \
---data-raw '{
-    "customerId":"CubeCorp",
-    "app":"springboot_demo",
-    "instanceId" : "411e4ee4dfeb290932122f3ad56141c5b8ec6b15",
-    "service":"order",
-    "tag" : "record-spring-order"
-}'
+--data-raw "$DATA"
 sleep 35
   RESPONSE=$(curl -X POST \
   $CUBE_ENDPOINT/api/cs/start/CubeCorp/springboot_demo/$INSTANCE_ID/$TEMPLATE \
@@ -82,16 +83,17 @@ stop_recording() {
 }
 
 replay() {
+	DATA="{
+	    \"customerId\":\"CubeCorp\",
+	    \"app\":\"springboot_demo\",
+	    \"instanceId\" : \"$INSTANCE_ID\",
+	    \"service\":\"order\",
+	    \"tag\" : \"replay-spring-order\"
+	}"
 	curl --location --request POST 'https://ethicalaakash.dev.cubecorp.io/api/cs/setCurrentAgentConfigTag/' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s' \
---data-raw '{
-    "customerId":"CubeCorp",
-    "app":"springboot_demo",
-    "instanceId" : "411e4ee4dfeb290932122f3ad56141c5b8ec6b15",
-    "service":"order",
-    "tag" : "replay-spring-order"
-}'
+--data-raw "$DATA"
 sleep 35
   BODY="endPoint=$SPRINGBOOT_HOST&instanceId=$INSTANCE_ID&templateSetVer=$TEMPLATE&userId=$USER_ID"
   COUNT=0
@@ -164,10 +166,10 @@ main() {
   then
 	  apk add jq
   fi
-	# DRONE_BRANCH="develop"
-	# DRONE_COMMIT="411e4ee4dfeb290932122f3ad56141c5b8ec6b15"
-	# DRONE_COMMIT_AUTHOR="ethicalaakash"
-	# DRONE_BUILD_NUMBER="test108"
+	DRONE_BRANCH="develop"
+	DRONE_COMMIT="411e4ee4dfeb290932122f3ad56141c5b8ec6b15"
+	DRONE_COMMIT_AUTHOR="ethicalaakash"
+	DRONE_BUILD_NUMBER="test108"
   CUBE_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 	CONFIG_FILE="temp"
   TEMPLATE=DEFAULT
