@@ -166,10 +166,10 @@ main() {
   then
 	  apk add jq
   fi
-	DRONE_BRANCH="develop"
-	DRONE_COMMIT="411e4ee4dfeb290932122f3ad56141c5b8ec6b15"
-	DRONE_COMMIT_AUTHOR="ethicalaakash"
-	DRONE_BUILD_NUMBER="test108"
+	# DRONE_BRANCH="develop"
+	# DRONE_COMMIT="411e4ee4dfeb290932122f3ad56141c5b8ec6b15"
+	# DRONE_COMMIT_AUTHOR="ethicalaakash"
+	# DRONE_BUILD_NUMBER="test108"
   CUBE_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 	CONFIG_FILE="temp"
   TEMPLATE=DEFAULT
