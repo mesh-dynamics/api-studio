@@ -148,13 +148,15 @@ call_deploy_script() {
 }
 
 clean() {
-	call_deploy_script springboot clean $CONFIG_FILE
-	call_deploy_script cube clean $CONFIG_FILE
-	kubectl delete ns $DRONE_COMMIT_AUTHOR
-	kubectl delete ns $DRONE_COMMIT_AUTHOR-springboot
-	echo "Replay ID:" $REPLAY_ID
-	echo $TEST_STATUS
-  exit $EXIT_CODE
+	NAMESPACE=$1
+	APP_NAME=$2
+	kubectl delete all -n $NAMESPACE -l app=$APP_NAME
+	kubectl delete virtualservices.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
+	kubectl delete envoyfilters.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
+	kubectl delete destinationrules.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
+	kubectl delete gateways.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
+	kubectl delete serviceentries.networking.istio.io -n $NAMESPACE -l app=$APP_NAME
+	kubectl delete ns $NAMESPACE
 }
 main() {
   set -x
@@ -183,7 +185,11 @@ main() {
   sleep 20
   replay
   analyze
-	clean
+	clean $DRONE_COMMIT_AUTHOR-springboot springboot
+	clean $DRONE_COMMIT_AUTHOR cube
+	echo "Replay ID:" $REPLAY_ID
+	echo $TEST_STATUS
+  exit $EXIT_CODE
 }
 main "$@"
 
