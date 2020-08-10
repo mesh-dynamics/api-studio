@@ -148,8 +148,8 @@ call_deploy_script() {
 }
 
 clean() {
-	call_deploy_script cube clean $CONFIG_FILE
 	call_deploy_script springboot clean $CONFIG_FILE
+	call_deploy_script cube clean $CONFIG_FILE
 	kubectl delete ns $DRONE_COMMIT_AUTHOR
 	kubectl delete ns $DRONE_COMMIT_AUTHOR-springboot
 	echo "Replay ID:" $REPLAY_ID
