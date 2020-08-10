@@ -38,6 +38,8 @@ public class RRTransformerOperations {
 			        req.hdrs.put(lowerCaseKey, transformedVals);
                 }
 			}
+			// Calling reparse here so that the injected values in HttpRequestPayload fields are propagated to dataObj
+			req.reParse();
 		} catch (Exception e) {
 			if (e != null) {
 				LOGGER.error(String.format("Error while transforming request: %s %s", req.toString(), e.toString()));
