@@ -1,8 +1,53 @@
 #!/usr/bin/env bash
 
+register_config() {
+# Replay configuration
+DATA="{
+	\"customerId\":\"CubeCorp\",
+	\"app\":\"springboot_demo\",
+	\"service\":\"order\",
+	\"instanceId\":\"$INSTANCE_ID\",
+	\"tag\":\"replay-spring-order\",
+	\"configJson\" :
+	{
+			\"type\" : \"AgentConfig\",
+			\"config\": \"{\\\"io\\\": {\\\"md\\\": {\\\"service\\\": {\\\"record\\\": \\\"https://ethicalaakash.dev.cubecorp.io/api\\\",\\\"mock\\\": \\\"https://ethicalaakash.dev.cubecorp.io/api\\\"},\\\"authtoken\\\": \\\"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s\\\", \\\"read\\\": {\\\"timeout\\\": 100000},\\\"connect\\\": {\\\"timeout\\\": 100000,\\\"retries\\\": 3},\\\"intent\\\": \\\"mock\\\",\\\"samplerconfig\\\": {\\\"type\\\": \\\"simple\\\",\\\"accuracy\\\": 1000,\\\"rate\\\": 1},\\\"sampler\\\": {\\\"veto\\\": false},\\\"nodeselectionconfig\\\": {\\\"type\\\":\\\"simple\\\",\\\"accuracy\\\":1000,\\\"rate\\\":1},\\\"mock\\\":{\\\"services\\\":[\\\"transformer:8081\\\"]}}}}\"
+	}
+}"
+curl --location --request POST https://ethicalaakash.dev.cubecorp.io/api/cs/storeAgentConfig --header 'Content-Type: application/json' --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s' --data-raw "$DATA"
+#Record configuration
+DATA="{
+	\"customerId\":\"CubeCorp\",
+	\"app\":\"springboot_demo\",
+	\"instanceId\" : \"$INSTANCE_ID\",
+	\"service\":\"order\",
+	\"tag\" : \"record-spring-order\",
+	\"configJson\" :
+	{
+			\"type\" : \"AgentConfig\",
+			\"config\": \"{\\\"io\\\":{\\\"md\\\":{\\\"service\\\":{\\\"record\\\":\\\"https://ethicalaakash.dev.cubecorp.io/api\\\",\\\"mock\\\":\\\"https://ethicalaakash.dev.cubecorp.io/api\\\"},\\\"authtoken\\\":\\\"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s\\\",\\\"read\\\":{\\\"timeout\\\":100000},\\\"connect\\\":{\\\"timeout\\\":100000,\\\"retries\\\":3},\\\"intent\\\":\\\"record\\\",\\\"samplerconfig\\\":{\\\"type\\\":\\\"simple\\\",\\\"accuracy\\\":1000,\\\"rate\\\":1},\\\"sampler\\\":{\\\"veto\\\":false},\\\"nodeselectionconfig\\\":{\\\"type\\\":\\\"simple\\\",\\\"accuracy\\\":1000,\\\"rate\\\":1}}}}\"
+	}
+}"
+curl --location --request POST 'https://ethicalaakash.dev.cubecorp.io/api/cs/storeAgentConfig' \
+--header 'Content-Type: application/json' \
+--header "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s" \
+--data-raw "$DATA"
+}
+
 record() {
+	curl --location --request POST 'https://ethicalaakash.dev.cubecorp.io/api/cs/setCurrentAgentConfigTag/' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s' \
+--data-raw '{
+    "customerId":"CubeCorp",
+    "app":"springboot_demo",
+    "instanceId" : "411e4ee4dfeb290932122f3ad56141c5b8ec6b15",
+    "service":"order",
+    "tag" : "record-spring-order"
+}'
+sleep 35
   RESPONSE=$(curl -X POST \
-  $CUBE_ENDPOINT/api/cs/start/CubeCorp/springboot_demo/$INSTANCE_ID/default \
+  $CUBE_ENDPOINT/api/cs/start/CubeCorp/springboot_demo/$INSTANCE_ID/$TEMPLATE \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -H "Authorization: Bearer $AUTH_TOKEN" \
   -H 'cache-control: no-cache' \
@@ -18,13 +63,7 @@ generate_traffic() {
     sleep 1
     curl --location --request GET "$SPRINGBOOT_HOST:8080/orders/getOrders/" --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsib3JkZXJzIl0sInVzZXJfbmFtZSI6ImFkbWluQGFkbWluLmNvbSIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJleHAiOjE1ODg4MzczMDksImF1dGhvcml0aWVzIjpbIkFETUlOIl0sImp0aSI6ImQyMGEyYWY0LTNmOTYtNDdkMS05ZTM4LTRhMWI4MmE1MjQ1YiIsImNsaWVudF9pZCI6Im9yZGVyLXJlY2VpdmVyIn0.UZIlg5nGhL5QGpHrlupTI8qGFTwIS3jnbnaYNpXeRqQ' --header 'Content-Type: application/json'
     sleep 1
-    curl --location --request GET "$SPRINGBOOT_HOST:8080/orders/getOrderByIndexQP?index=2"  --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsib3JkZXJzIl0sInVzZXJfbmFtZSI6ImFkbWluQGFkbWluLmNvbSIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJleHAiOjE1ODg4MzczMDksImF1dGhvcml0aWVzIjpbIkFETUlOIl0sImp0aSI6ImQyMGEyYWY0LTNmOTYtNDdkMS05ZTM4LTRhMWI4MmE1MjQ1YiIsImNsaWVudF9pZCI6Im9yZGVyLXJlY2VpdmVyIn0.UZIlg5nGhL5QGpHrlupTI8qGFTwIS3jnbnaYNpXeRqQ'
-    sleep 1
-    curl --location --request GET "$SPRINGBOOT_HOST:8080/orders/getOrderByIndexPV/1"  --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsib3JkZXJzIl0sInVzZXJfbmFtZSI6ImFkbWluQGFkbWluLmNvbSIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJleHAiOjE1ODg4MzczMDksImF1dGhvcml0aWVzIjpbIkFETUlOIl0sImp0aSI6ImQyMGEyYWY0LTNmOTYtNDdkMS05ZTM4LTRhMWI4MmE1MjQ1YiIsImNsaWVudF9pZCI6Im9yZGVyLXJlY2VpdmVyIn0.UZIlg5nGhL5QGpHrlupTI8qGFTwIS3jnbnaYNpXeRqQ'
-    sleep 1
-  done
-
-curl --location --request POST "$SPRINGBOOT_HOST:8080/orders/postOrder/" --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsib3JkZXJzIl0sInVzZXJfbmFtZSI6ImFkbWluQGFkbWluLmNvbSIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJleHAiOjE1ODg4MzczMDksImF1dGhvcml0aWVzIjpbIkFETUlOIl0sImp0aSI6ImQyMGEyYWY0LTNmOTYtNDdkMS05ZTM4LTRhMWI4MmE1MjQ1YiIsImNsaWVudF9pZCI6Im9yZGVyLXJlY2VpdmVyIn0.UZIlg5nGhL5QGpHrlupTI8qGFTwIS3jnbnaYNpXeRqQ' --header 'Content-Type: application/json' --data-raw '{
+    curl --location --request POST "$SPRINGBOOT_HOST:8080/orders/postOrder/" --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsib3JkZXJzIl0sInVzZXJfbmFtZSI6ImFkbWluQGFkbWluLmNvbSIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJleHAiOjE1ODg4MzczMDksImF1dGhvcml0aWVzIjpbIkFETUlOIl0sImp0aSI6ImQyMGEyYWY0LTNmOTYtNDdkMS05ZTM4LTRhMWI4MmE1MjQ1YiIsImNsaWVudF9pZCI6Im9yZGVyLXJlY2VpdmVyIn0.UZIlg5nGhL5QGpHrlupTI8qGFTwIS3jnbnaYNpXeRqQ' --header 'Content-Type: application/json' --data-raw '{
 	"id": 5,
     "productId": 1,
     "customer": {
@@ -33,24 +72,8 @@ curl --location --request POST "$SPRINGBOOT_HOST:8080/orders/postOrder/" --heade
         "email": "xyz@gmail.com"
     }
 }'
-sleep 5
-
-curl --location --request GET "$SPRINGBOOT_HOST:8080/orders/getOrders/" --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsib3JkZXJzIl0sInVzZXJfbmFtZSI6ImFkbWluQGFkbWluLmNvbSIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJleHAiOjE1ODg4MzczMDksImF1dGhvcml0aWVzIjpbIkFETUlOIl0sImp0aSI6ImQyMGEyYWY0LTNmOTYtNDdkMS05ZTM4LTRhMWI4MmE1MjQ1YiIsImNsaWVudF9pZCI6Im9yZGVyLXJlY2VpdmVyIn0.UZIlg5nGhL5QGpHrlupTI8qGFTwIS3jnbnaYNpXeRqQ' --header 'Content-Type: application/json'
 sleep 1
-
-curl --location --request POST "$SPRINGBOOT_HOST:8080/orders/postFormParams/" \
--H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsib3JkZXJzIl0sInVzZXJfbmFtZSI6ImFkbWluQGFkbWluLmNvbSIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJleHAiOjE1ODg4MzczMDksImF1dGhvcml0aWVzIjpbIkFETUlOIl0sImp0aSI6ImQyMGEyYWY0LTNmOTYtNDdkMS05ZTM4LTRhMWI4MmE1MjQ1YiIsImNsaWVudF9pZCI6Im9yZGVyLXJlY2VpdmVyIn0.UZIlg5nGhL5QGpHrlupTI8qGFTwIS3jnbnaYNpXeRqQ' \
--H 'Content-Type: application/x-www-form-urlencoded' \
--d 'key1=value1&key2=value2'
-
-sleep 5
-
-curl --location --request GET "$SPRINGBOOT_HOST:8080/orders/largePayload/"  --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsib3JkZXJzIl0sInVzZXJfbmFtZSI6ImFkbWluQGFkbWluLmNvbSIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJleHAiOjE1ODg4MzczMDksImF1dGhvcml0aWVzIjpbIkFETUlOIl0sImp0aSI6ImQyMGEyYWY0LTNmOTYtNDdkMS05ZTM4LTRhMWI4MmE1MjQ1YiIsImNsaWVudF9pZCI6Im9yZGVyLXJlY2VpdmVyIn0.UZIlg5nGhL5QGpHrlupTI8qGFTwIS3jnbnaYNpXeRqQ'
-sleep 5
-
-curl --location --request GET "$SPRINGBOOT_HOST:8080/orders/testChunkedResponse/"  --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsib3JkZXJzIl0sInVzZXJfbmFtZSI6ImFkbWluQGFkbWluLmNvbSIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJleHAiOjE1ODg4MzczMDksImF1dGhvcml0aWVzIjpbIkFETUlOIl0sImp0aSI6ImQyMGEyYWY0LTNmOTYtNDdkMS05ZTM4LTRhMWI4MmE1MjQ1YiIsImNsaWVudF9pZCI6Im9yZGVyLXJlY2VpdmVyIn0.UZIlg5nGhL5QGpHrlupTI8qGFTwIS3jnbnaYNpXeRqQ'
-sleep 5
-
+  done
 }
 
 stop_recording() {
@@ -59,7 +82,18 @@ stop_recording() {
 }
 
 replay() {
-  BODY="endPoint=$SPRINGBOOT_HOST&instanceId=$INSTANCE_ID-replay&templateSetVer=$TEMPLATE&userId=$USER_ID"
+	curl --location --request POST 'https://ethicalaakash.dev.cubecorp.io/api/cs/setCurrentAgentConfigTag/' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s' \
+--data-raw '{
+    "customerId":"CubeCorp",
+    "app":"springboot_demo",
+    "instanceId" : "411e4ee4dfeb290932122f3ad56141c5b8ec6b15",
+    "service":"order",
+    "tag" : "replay-spring-order"
+}'
+sleep 35
+  BODY="endPoint=$SPRINGBOOT_HOST&instanceId=$INSTANCE_ID&templateSetVer=$TEMPLATE&userId=$USER_ID"
   COUNT=0
 	while [ "$http_code" != "200" ] || [ "$REPLAY_ID" = "none" ] && [ "$COUNT" != "5" ]; do
   resp=$(curl -sw "%{http_code}" -X POST \
@@ -96,13 +130,21 @@ analyze() {
   #Display replay ID
   echo "Replay ID:" $REPLAY_ID
   #Exit with non-zero exit code if reqstnotmatched and respnotmatchted are have nono-zero value
-  if [ "$RESPNOTMATCHED" = "0" ] && [ "$REQCOUNT" != "0" ] && [ "$REQMATCHED" = "$REQCOUNT" ]; then
+  if [ "$REQCOUNT" != "0" ] && [ "$REQMATCHED" = "$REQCOUNT" ]; then
     TEST_STATUS="test passed"
     EXIT_CODE=0
   else
     TEST_STATUS="test failed"
     EXIT_CODE=1
   fi
+}
+
+call_deploy_script() {
+	TRACE=1 ./deploy.sh $@
+	if [ $? -ne 0 ]; then
+		EXIT_CODE=1
+		clean
+	fi
 }
 
 clean() {
@@ -120,18 +162,21 @@ main() {
   then
 	  apk add jq
   fi
-  sleep 60
 	# DRONE_BRANCH="develop"
 	# DRONE_COMMIT="411e4ee4dfeb290932122f3ad56141c5b8ec6b15"
 	# DRONE_COMMIT_AUTHOR="ethicalaakash"
-	# DRONE_BUILD_NUMBER="test102"
+	# DRONE_BUILD_NUMBER="test108"
   CUBE_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
+	CONFIG_FILE="temp"
   TEMPLATE=DEFAULT
   USER_ID=CubeCorp
   SPRINGBOOT_HOST=http://$DRONE_COMMIT_AUTHOR-springboot.dev.cubecorp.io
   INSTANCE_ID=$DRONE_COMMIT
-  AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBtZXNoZHluYW1pY3MuaW8iLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwidHlwZSI6InBhdCIsImN1c3RvbWVyX2lkIjoxLCJpYXQiOjE1ODI4ODE2MjgsImV4cCI6MTg5ODI0MTYyOH0.P4DAjXyODV8cFPgObaULjAMPg-7xSbUsVJ8Ohp7xTQI"
+  AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s"
+	register_config
+	sleep 20
   record
+	sleep 20
   generate_traffic 5
   sleep 20
   stop_recording
