@@ -60,6 +60,16 @@ public abstract class LazyParseAbstractPayload implements Payload {
 		}
 	}
 
+	@JsonIgnore
+	// This is default implementation. Can be overriden by specific payload types
+	public void reParse() {
+			// dataObj needs to be set to null before setting it to new JsonDataObj
+			// otherwise the custom deserializer will prioritize the existing dataObj while deserializing
+			this.dataObj = null;
+			this.dataObj = new JsonDataObj(this, mapper);
+			postParse();
+	}
+
 	@Override
 	public boolean isLeaf() {
 		parseIfRequired();

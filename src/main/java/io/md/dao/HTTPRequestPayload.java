@@ -148,7 +148,7 @@ public class HTTPRequestPayload extends LazyParseAbstractPayload implements Requ
 			this.dataObj.unwrapAsJson("/".concat(BODY),
 				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN));
 			try {
-				String[] pathSplits = this.dataObj.getValAsString("/path").split("/");
+				String[] pathSplits = this.dataObj.getValAsString("/path").split("/" , -1);
 				ObjectNode root = (ObjectNode) this.dataObj.objRoot;
 				ArrayNode pathArrayNode = JsonNodeFactory.instance.arrayNode();
 				Arrays.stream(pathSplits).forEach(pathSegment ->
