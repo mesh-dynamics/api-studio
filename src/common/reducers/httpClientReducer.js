@@ -53,6 +53,7 @@ const initialState = {
     collectionName: "",
     collectionLabel: "",
     modalErroSaveMessage: "",
+    modalErroSaveMessageIsError: false,
     modalErroCreateCollectionMessage: "",
     environmentList: [],
     envStatusText: "",
@@ -369,6 +370,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                 ...state,
                 showSaveModal : data.showSaveModal,
                 modalErroSaveMessage: data.modalErroSaveMessage,
+                modalErroSaveMessageIsError: false,
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         if(data.clearIntervalHandle) eachTab["clearIntervalHandle"] = data.clearIntervalHandle;
@@ -382,7 +384,8 @@ export const httpClient = (state = initialState, { type, data }) => {
             return {
                 ...state,
                 showSaveModal : data.showSaveModal,
-                modalErroSaveMessage: data.modalErroSaveMessage
+                modalErroSaveMessage: data.modalErroSaveMessage,
+                modalErroSaveMessageIsError: true
             }
         }
 
@@ -390,7 +393,8 @@ export const httpClient = (state = initialState, { type, data }) => {
             return {
                 ...state,
                 showSaveModal : data.showSaveModal,
-                modalErroSaveMessage: data.modalErroSaveMessage
+                modalErroSaveMessage: data.modalErroSaveMessage,
+                modalErroSaveMessageIsError: true
             }
         }
 
@@ -422,6 +426,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                 collectionLabel: data.collectionLabel, 
                 selectedSaveableTabId: data.selectedSaveableTabId, 
                 modalErroSaveMessage: data.modalErroSaveMessage, 
+                modalErroSaveMessageIsError: data.modalErroSaveMessageIsError,
                 modalErroCreateCollectionMessage: data.modalErroCreateCollectionMessage
             }
         }

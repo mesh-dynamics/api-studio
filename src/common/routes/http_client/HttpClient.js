@@ -114,7 +114,7 @@ class HttpClient extends Component {
         });
     }
 
-    handleShowDiff() {
+        handleShowDiff() {
         const { selectedTab, selectedRecordedHistoryReqId, showCompleteDiff } = this.state;
         const tabToProcess = selectedTab;
 
@@ -126,10 +126,9 @@ class HttpClient extends Component {
                         console.log("serverRes: ", serverRes);
                         const results = serverRes.res && [serverRes.res];
                         diffLayoutData = this.preProcessResults(results);
-
                         this.setState({
                             diffLayoutData: diffLayoutData,
-                            showCompleteDiff: !showCompleteDiff
+                            showCompleteDiff: true
                         })
                     }, (error) => {
                         console.error("error: ", error);
@@ -530,7 +529,7 @@ class HttpClient extends Component {
                         </div>
                         <div style={{display: "flex"}}>
                             <div style={{marginLeft: "auto", order: "2"}}>
-                                <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "none" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleShowDiff}>
+                                <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleShowDiff}>
                                     <Glyphicon glyph="random" /> COMPARE REQUESTS
                                 </div>
                                 <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "none" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} >

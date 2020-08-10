@@ -137,7 +137,7 @@ class HttpClientTabs extends Component {
 
     showSaveModal(isOutgoingRequest, tabId) {
         const { dispatch } = this.props;
-        dispatch(httpClientActions.showSaveModal(tabId, true, "", "", "", ""));
+        dispatch(httpClientActions.showSaveModal(tabId, true, "", "", "",false, ""));
     }
 
     onToggle(node, toggled){
@@ -646,16 +646,17 @@ class HttpClientTabs extends Component {
         if (!tabToProcess.eventData) return;
         const reqResPair = tabToProcess.eventData;
         if (reqResPair.length > 0) {
-            const data = [];
-            data.push(this.getReqResFromTabData(reqResPair, tabToProcess, runId));
-            if (type !== "History") {
-                tabToProcess.outgoingRequests.forEach((eachOutgoingTab) => {
-                    if (eachOutgoingTab.eventData && eachOutgoingTab.eventData.length > 0) {
-                        data.push(this.getReqResFromTabData(eachOutgoingTab.eventData, eachOutgoingTab));
-                    }
-                });
-            }
             try {
+                const data = [];
+                data.push(this.getReqResFromTabData(reqResPair, tabToProcess, runId));
+                console.log(`getReqResFromTabData == ${JSON.stringify(data)}`);
+                if (type !== "History") {
+                    tabToProcess.outgoingRequests.forEach((eachOutgoingTab) => {
+                        if (eachOutgoingTab.eventData && eachOutgoingTab.eventData.length > 0) {
+                            data.push(this.getReqResFromTabData(eachOutgoingTab.eventData, eachOutgoingTab));
+                        }
+                    });
+                }
                 api.post(`${config.apiBaseUrl}/cs/storeUserReqResp/${recordingId}`, data)
                     .then((serverRes) => {
                         let clearIntervalHandle;
@@ -678,7 +679,9 @@ class HttpClientTabs extends Component {
                                 throw new Error("Error");
                             }
                         }
+                        
                         dispatch(httpClientActions.postSuccessSaveToCollection(tabId, type === "History" ? false : true, "Saved Successfully! You can close this window.", clearIntervalHandle));
+    
                         setTimeout(() => {
                             this.loadFromHistory();
                             this.loadUserCollections();
@@ -1531,7 +1534,7 @@ class HttpClientTabs extends Component {
         const { showEnvVarModal } = this.state;
         const { cube: {selectedApp} } = this.props;
         const app = selectedApp;
-        const {httpClient: {cubeRunHistory, userCollections, collectionName, collectionLabel, modalErroSaveMessage, modalErroCreateCollectionMessage, tabs, selectedTabKey, showSaveModal}} = this.props;
+        const {httpClient: {cubeRunHistory, userCollections, collectionName, collectionLabel, modalErroSaveMessage,modalErroSaveMessageIsError, modalErroCreateCollectionMessage, tabs, selectedTabKey, showSaveModal}} = this.props;
 
         return (
 
@@ -1701,7 +1704,9 @@ class HttpClientTabs extends Component {
                                         </FormControl>
                                     </FormGroup>
                                 </div>
-                                <p style={{ marginTop: "10px", fontWeight: 500 }}>{modalErroSaveMessage}</p>
+                                <p style={{ marginTop: "10px", fontWeight: 500,color: modalErroSaveMessageIsError ? "red" : "" }} >
+                                    {modalErroSaveMessage}
+                                </p>
                             </Modal.Body>
                             <Modal.Footer>
                                 <Button onClick={this.handleSave}>Save</Button>

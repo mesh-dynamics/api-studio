@@ -96,8 +96,8 @@ export const httpClientActions = {
         return {type: httpClientConstants.CLOSE_SAVE_MODAL, data: {showSaveModal}};
     },
 
-    showSaveModal: (selectedSaveableTabId, showSaveModal, collectionName, collectionLabel, modalErroSaveMessage, modalErroCreateCollectionMessage) => {
-        return {type: httpClientConstants.SHOW_SAVE_MODAL, data: {selectedSaveableTabId, showSaveModal, collectionName, collectionLabel, modalErroSaveMessage, modalErroCreateCollectionMessage}};
+    showSaveModal: (selectedSaveableTabId, showSaveModal, collectionName, collectionLabel, modalErroSaveMessage,modalErroSaveMessageIsError, modalErroCreateCollectionMessage) => {
+        return {type: httpClientConstants.SHOW_SAVE_MODAL, data: {selectedSaveableTabId, showSaveModal, collectionName, collectionLabel, modalErroSaveMessage,modalErroSaveMessageIsError, modalErroCreateCollectionMessage}};
     },
 
     setInactiveHistoryCursor: (historyCursor, active) => {
