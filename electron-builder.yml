@@ -11,6 +11,8 @@ copyright: Copyright © 2020 Mesh Dynamics
 extraMetadata:
   main: "dist/electron/electron-main.js"
 
+afterSign: "scripts/notarize.js"
+
 publish:
   provider: github
   owner: cube-io-corp
@@ -33,6 +35,11 @@ extraResources:
 mac:
   icon: "public/mesh-favicon.icns"
   category: "public.app-category.developer-tools"
+  # hardenedRuntime: true
+  entitlements: "macOS/entitlements.mac.inherit.plist"
+  entitlementsInherit: "macOS/entitlements.mac.inherit.plist"
+  # type: distribution
+  # gatekeeperAssess: true
   target:
     - "dmg"
     - "zip"
