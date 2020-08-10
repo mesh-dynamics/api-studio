@@ -503,8 +503,8 @@ public class CubeStore {
     public Response setAgentConfigTag(AgentConfigTagInfo tagInfo) {
         Pair<List, Stream<ConfigDAO>> result = rrstore
             .getAgentConfigWithFacets(tagInfo.customerId, tagInfo.app, Optional.of(tagInfo.service),
-                Optional.of(tagInfo.instanceId),
-                Optional.empty(), Optional.empty());
+                Optional.of(tagInfo.instanceId), Optional.empty(), Optional.empty(),
+                Optional.of(tagInfo.tag));
         if (!result.second().anyMatch(configDAO ->
             configDAO.tag.equals(tagInfo.tag))) {
             String message = "Error while updating the config tag. Cannot find config for tag to update";
@@ -631,7 +631,7 @@ public class CubeStore {
             .flatMap(Utils::strToInt);
         try {
             Pair<List, Stream<ConfigDAO>> result = rrstore.getAgentConfigWithFacets(customerId, app, service, instanceId,
-                numResults, start);
+                numResults, start, Optional.empty());
             Map response = Map.of("facets", Map.of("instance_facets", result.first()), "configs", result.second().collect(Collectors.toList()));
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(response).build();
 
