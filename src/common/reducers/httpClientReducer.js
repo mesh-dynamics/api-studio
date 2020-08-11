@@ -8,8 +8,6 @@ const isoDate = new Date().toISOString();
 const timestamp = new Date(isoDate).getTime();
 const traceId = cryptoRandomString({length: 32});
 const spanId = cryptoRandomString({length: 16});
-const user = JSON.parse(localStorage.getItem('user'));
-const customerId = user.customer_name;
 const initialState = { 
     tabs: [{ 
         id: tabId,
@@ -33,7 +31,7 @@ const initialState = {
         outgoingRequestIds: [],
         eventData: [
             {
-                customerId: customerId,
+                customerId: "",
                 app: "",
                 service: "",
                 instanceId: "devtool",
@@ -64,7 +62,7 @@ const initialState = {
                 }
             },
             {
-                customerId: customerId,
+                customerId: "",
                 app: "",
                 service: "",
                 instanceId: "devtool",
