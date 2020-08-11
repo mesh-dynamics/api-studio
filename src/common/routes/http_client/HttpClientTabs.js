@@ -1885,9 +1885,10 @@ class HttpClientTabs extends Component {
 
     renderEnvPopoverBtn = () => {
         const currentEnvironment = this.getCurrentEnvirnoment();
+        const { httpClient: { selectedEnvironment } } = this.props;
         const envPopover = (<Popover
             style={{top: "56px" }}
-            title={this.state.selectedEnvironment || "No Environment Selected"}>
+            title={selectedEnvironment || "No Environment Selected"}>
             <div style={{ padding: "0 5px 0 5px",width: "100%" }}>
                 {currentEnvironment && !_.isEmpty(currentEnvironment.vars) && <table className="table table-bordered table-hover">
                     <thead>
