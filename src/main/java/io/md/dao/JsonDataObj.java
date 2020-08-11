@@ -3,8 +3,10 @@ package io.md.dao;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -249,10 +251,11 @@ public class JsonDataObj implements DataObj {
 						LOGGER.error("Exception in parsing json string, path : "
 							.concat(path).concat(" , value : ").concat(val.toString()), ex);
 					}
-				} else if (mimetype.startsWith(MediaType.TEXT_PLAIN) || mimetype.startsWith(MediaType.TEXT_HTML)) {
+				} else if (!isBinary(mimetype)) {
 					try {
 						String strVal = getValAsString(val);
 						valParentObj.set(fieldName, new TextNode(strVal));
+						return true;
 					} catch (IOException ex) {
 						LOGGER.error("Exception in parsing json string, path : "
 							.concat(path).concat(" , value : ").concat(val.toString()), ex);
@@ -355,8 +358,7 @@ public class JsonDataObj implements DataObj {
 					}
 				}
 			} else if (val != null && val.isBinary() && !asByteArray) {
-				if (mimetype.equals(MediaType.APPLICATION_XML) || mimetype.equals(MediaType.TEXT_HTML)
-					|| mimetype.equals(MediaType.TEXT_PLAIN)) {
+				if (!isBinary(mimetype)) {
 					try {
 						valParentObj.set(fieldName,
 							new TextNode(new String(val.binaryValue(), StandardCharsets.UTF_8)));
@@ -660,10 +662,17 @@ public class JsonDataObj implements DataObj {
 		return false;
 	}
 
+	private boolean isBinary(String mimeType) {
+		return binaryMimeTypes.stream().filter(type -> mimeType.startsWith(type))
+			.findAny().isPresent();
+	}
+
 	@JsonIgnore
 	protected final JsonNode objRoot;
 	@JsonIgnore
 	protected final ObjectMapper jsonMapper;
+
+	public static final List<String> binaryMimeTypes = Arrays.asList(MediaType.APPLICATION_OCTET_STREAM);
 
 	public JsonNode getRoot() {
 		return objRoot;
