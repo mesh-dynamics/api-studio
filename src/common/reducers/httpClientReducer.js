@@ -1,8 +1,15 @@
 import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
+import cryptoRandomString from 'crypto-random-string';
 
 const tabId = uuidv4();
+const isoDate = new Date().toISOString();
+const timestamp = new Date(isoDate).getTime();
+const traceId = cryptoRandomString({length: 32});
+const spanId = cryptoRandomString({length: 16});
+const user = JSON.parse(localStorage.getItem('user'));
+const customerId = user.customer_name;
 const initialState = { 
     tabs: [{ 
         id: tabId,
@@ -24,7 +31,68 @@ const initialState = {
         recordedResponseBody: "",
         responseBodyType: "json",
         outgoingRequestIds: [],
-        eventData: null,
+        eventData: [
+            {
+                customerId: customerId,
+                app: "",
+                service: "",
+                instanceId: "devtool",
+                collection: "NA",
+                traceId: traceId,
+                spanId: spanId,
+                parentSpanId: null,
+                runType: "Manual",
+                runId: null,
+                timestamp: timestamp,
+                reqId: "NA",
+                apiPath: "",
+                eventType: "HTTPRequest",
+                payload: [
+                    "HTTPRequestPayload",
+                    {
+                        hdrs: {},
+                        queryParams: {},
+                        formParams: {},
+                        method: "",
+                        path: "",
+                        pathSegments: []
+                    }
+                ],
+                recordingType: "UserGolden",
+                metaData: {
+    
+                }
+            },
+            {
+                customerId: customerId,
+                app: "",
+                service: "",
+                instanceId: "devtool",
+                collection: "NA",
+                traceId: traceId,
+                spanId: null,
+                parentSpanId: null,
+                runType: "Manual",
+                runId: null,
+                timestamp: timestamp,
+                reqId: "NA",
+                apiPath: "",
+                eventType: "HTTPResponse",
+                payload: [
+                    "HTTPResponsePayload",
+                    {
+                        hdrs: {},
+                        body: {},
+                        status: "",
+                        statusCode: ""
+                    }
+                ],
+                recordingType: "UserGolden",
+                metaData: {
+
+                }
+            }
+        ],
         showOutgoingRequestsBtn: false,
         showSaveBtn: true,
         outgoingRequests: [],
@@ -37,6 +105,7 @@ const initialState = {
         traceIdAddedFromClient: "",
         recordedHistory: null,
         clearIntervalHandle: null,
+        selectedTraceTableReqTabId: "",
         requestRunning: false,
     }],
     toggleTestAndOutgoingRequests: true,
@@ -61,6 +130,16 @@ const initialState = {
     envStatusIsError: false,
     showEnvList: true,
     selectedEnvironment: "",
+    showAddMockReqModal: false,
+    mockReqServiceName: "",
+    mockReqApiPath: "",
+    modalErrorAddMockReqMessage: "",
+    selectedTabIdToAddMockReq: "",
+}
+
+const getTabIndexGivenTabId = (tabId, tabs) => {
+    if(!tabs) return -1;
+    return tabs.findIndex((e) => e.id === tabId);
 }
 
 export const httpClient = (state = initialState, { type, data }) => {
@@ -529,33 +608,87 @@ export const httpClient = (state = initialState, { type, data }) => {
                 selectedEnvironment: data,
             }
         }
-
         case httpClientConstants.RESET_RUN_STATE: {
             let {tabs} = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
-                        if (eachTab.id === data.tabId) {
-                            eachTab["responseHeaders"] = ""
-                            eachTab["responseBody"] = ""
-                            eachTab["responseStatus"] = ""
-                            eachTab["responseStatusText"] = ""
-                        }
-                        return eachTab;
-                    })
+                    if (eachTab.id === data.tabId) {
+                        eachTab["responseHeaders"] = ""
+                        eachTab["responseBody"] = ""
+                        eachTab["responseStatus"] = ""
+                        eachTab["responseStatusText"] = ""
+                    }
+                    return eachTab;
+                })
             }
         }
 
-        case httpClientConstants.SET_REQUEST_RUNNING: {
+        case httpClientConstants.SET_AS_REFERENCE: {
             let {tabs} = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
-                        if (eachTab.id === data.tabId) {
-                            eachTab["requestRunning"] = true
-                        }
-                        return eachTab;
-                    })
+                    if (eachTab.id === data.tabId) {
+                        eachTab = {
+                            ...data.tab
+                        };
+                    }
+                    return eachTab; 
+                })
+            }
+        }
+
+        case httpClientConstants.CLOSE_ADD_MOCK_REQ_MODAL: {
+            return {
+                ...state,
+                showAddMockReqModal: data.showAddMockReqModal, 
+                mockReqServiceName: data.mockReqServiceName, 
+                mockReqApiPath: data.mockReqApiPath, 
+                selectedTabIdToAddMockReq: data.selectedTabIdToAddMockReq
+            }
+        }
+
+        case httpClientConstants.SET_UPDATED_MODAL_MOCK_REQ_DETAILS: {
+            return {
+                ...state,
+                [data.name]: data.value
+            }
+        }
+
+        case httpClientConstants.SHOW_ADD_MOCK_REQ_MODAL: {
+            return {
+                ...state,
+                showAddMockReqModal: data.showAddMockReqModal, 
+                mockReqServiceName: data.mockReqServiceName, 
+                mockReqApiPath: data.mockReqApiPath, 
+                selectedTabIdToAddMockReq: data.selectedTabIdToAddMockReq
+            }
+        }
+
+        case httpClientConstants.SET_SELECTED_TRACE_TABLE_REQ_TAB: {
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab.selectedTraceTableReqTabId = data.selectedTraceTableReqTabId
+                    }
+                    return eachTab; 
+                })
+            }
+        }
+        
+        case httpClientConstants.SET_REQUEST_RUNNING: {            
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab["requestRunning"] = true
+                    }
+                    return eachTab;
+                })
             }
         }
         
