@@ -36,7 +36,8 @@ const initialState = {
         collectionIdAddedFromClient: "",
         traceIdAddedFromClient: "",
         recordedHistory: null,
-        clearIntervalHandle: null
+        clearIntervalHandle: null,
+        requestRunning: false,
     }],
     toggleTestAndOutgoingRequests: true,
     selectedTabKey: tabId,
@@ -528,7 +529,48 @@ export const httpClient = (state = initialState, { type, data }) => {
                 selectedEnvironment: data,
             }
         }
+
+        case httpClientConstants.RESET_RUN_STATE: {
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                        if (eachTab.id === data.tabId) {
+                            eachTab["responseHeaders"] = ""
+                            eachTab["responseBody"] = ""
+                            eachTab["responseStatus"] = ""
+                            eachTab["responseStatusText"] = ""
+                        }
+                        return eachTab;
+                    })
+            }
+        }
+
+        case httpClientConstants.SET_REQUEST_RUNNING: {
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                        if (eachTab.id === data.tabId) {
+                            eachTab["requestRunning"] = true
+                        }
+                        return eachTab;
+                    })
+            }
+        }
         
+        case httpClientConstants.UNSET_REQUEST_RUNNING: {
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                        if (eachTab.id === data.tabId) {
+                            eachTab["requestRunning"] = false
+                        }
+                        return eachTab;
+                    })
+            }
+        }
         default:
             return state;
     }

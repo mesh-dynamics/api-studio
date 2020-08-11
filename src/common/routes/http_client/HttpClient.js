@@ -428,7 +428,7 @@ class HttpClient extends Component {
                 <div style={{display: "flex"}}>
                     <div style={{marginLeft: "auto", order: "2"}}>
                         <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleClick}>
-                            <Glyphicon glyph="play" /> RUN
+                        {currentSelectedTab.requestRunning ? <i class="fa fa-spinner fa-spin"></i> : <Glyphicon glyph="play" />} RUN
                         </div>
                         <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: currentSelectedTab.showSaveBtn ? "inline-block" : "none"}} onClick={this.handleSaveClick}>
                             <Glyphicon glyph="save" /> SAVE

@@ -297,7 +297,8 @@ class HttpClientTabs extends Component {
                                 service: httpRequestEvent.service,
                                 recordingIdAddedFromClient: recordingId,
                                 collectionIdAddedFromClient: collectionId,
-                                traceIdAddedFromClient: traceId
+                                traceIdAddedFromClient: traceId,
+                                requestRunning: false,
                             };
                             const tabId = uuidv4();
                             outgoingRequests.push({
@@ -431,6 +432,7 @@ class HttpClientTabs extends Component {
         const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
         const tabToProcess = tabsToProcess[tabIndex];
         if(tabIndex < 0) return;
+        dispatch(httpClientActions.resetRunState(tabId))
         // generate a new run id every time a request is run
         const runId = generateRunId();
         if(PLATFORM_ELECTRON) {
@@ -481,6 +483,7 @@ class HttpClientTabs extends Component {
         }
         const fetchUrlRendered = httpRequestURLRendered + (httpRequestQueryStringParamsRendered ? "?" + stringify(httpRequestQueryStringParamsRendered) : "");
         dispatch(httpClientActions.preDriveRequest(tabId, "WAITING...", false));
+        dispatch(httpClientActions.setReqRunning(tabId))
         tabs.map(eachTab => {
             if (eachTab.id === tabId) {
                 if(eachTab["clearIntervalHandle"]) clearInterval(eachTab["clearIntervalHandle"]);
@@ -508,10 +511,12 @@ class HttpClientTabs extends Component {
             // handle success
             dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), JSON.stringify(data, undefined, 4)));
             this.saveToCollection(isOutgoingRequest, tabId, userHistoryCollection.id, "History", runId);
+            dispatch(httpClientActions.unsetReqRunning(tabId))
         })
         .catch((error) => {
             console.error(error);
             dispatch(httpClientActions.postErrorDriveRequest(tabId, error.message));
+            dispatch(httpClientActions.unsetReqRunning(tabId))
         });
     }
 
@@ -934,7 +939,8 @@ class HttpClientTabs extends Component {
             recordingIdAddedFromClient: "",
             collectionIdAddedFromClient: httpRequestEvent.collection,
             traceIdAddedFromClient: httpRequestEvent.traceId,
-            apiPath: httpRequestEvent.apiPath
+            apiPath: httpRequestEvent.apiPath,
+            requestRunning: false,
         };
         return reqObject;
     }
@@ -1189,7 +1195,8 @@ class HttpClientTabs extends Component {
             service: httpRequestEvent.service,
             recordingIdAddedFromClient: "",
             collectionIdAddedFromClient: httpRequestEvent.collection,
-            traceIdAddedFromClient: httpRequestEvent.traceId
+            traceIdAddedFromClient: httpRequestEvent.traceId,
+            requestRunning: false,
         };
         return reqObject;
     }
@@ -1353,7 +1360,8 @@ class HttpClientTabs extends Component {
                                 outgoingRequests: [],
                                 showCompleteDiff: false,
                                 isOutgoingRequest: false,
-                                service: httpRequestEvent.service
+                                service: httpRequestEvent.service,
+                                requestRunning: false,
                             };
                             const mockEvent = {};
                             const savedTabId = this.addTab(mockEvent, reqObject, selectedApp);
