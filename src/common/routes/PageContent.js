@@ -31,7 +31,6 @@ class PageContent extends Component {
           <i onClick={this.toggleFullScreen} className={!fullScreenMode ? "fas fa-expand pull-right link" : "hidden"}></i>
           <i onClick={this.toggleFullScreen} className={fullScreenMode ? "fas fa-compress pull-right link" : "hidden"}></i>
         </div>
-        {TestResults}
         {DiffResults}
         {Configs}
         {ViewTrace}
@@ -39,6 +38,8 @@ class PageContent extends Component {
         {ViewTestConfig}
         {APICatalog}
         {HttpClientTabs}
+        {/* This has to be at the bottom since it has default routing handler */}
+        {TestResults}
       </div>
     )
   }
