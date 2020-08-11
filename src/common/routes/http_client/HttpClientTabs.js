@@ -1321,6 +1321,7 @@ class HttpClientTabs extends Component {
             }
         }
         let reqObject = {
+            id: uuidv4(),
             httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
             httpURL: "{{{url}}}/" + httpRequestEvent.apiPath,
             httpURLShowOnly: httpRequestEvent.apiPath,

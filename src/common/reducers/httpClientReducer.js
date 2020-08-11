@@ -401,7 +401,8 @@ export const httpClient = (state = initialState, { type, data }) => {
                 tabs: [...tabs, {
                     id: data.tabId,
                     tabName: data.tabName,
-                    ...data.reqObject
+                    ...data.reqObject,
+                    selectedTraceTableReqTabId: data.tabId
                 }],
                 selectedTabKey: data.selectedTabKey,
                 app: data.app
@@ -484,7 +485,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab["recordedHistory"] = data.recordedHistory;
-                        eachTab["selectedTraceTableTestReqTabId"] = data.recordedHistory.requestId;
+                        eachTab["selectedTraceTableTestReqTabId"] = data.recordedHistory.id;
                     }
                     return eachTab; 
                 })
