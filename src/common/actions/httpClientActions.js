@@ -150,7 +150,11 @@ export const httpClientActions = {
 
     setSelectedTraceTableReqTabId: (selectedTraceTableReqTabId, tabId) => {
         return {type: httpClientConstants.SET_SELECTED_TRACE_TABLE_REQ_TAB, data: {selectedTraceTableReqTabId, tabId}};
-    }, 
+    },
+    
+    setSelectedTraceTableTestReqId: (selectedTraceTableTestReqTabId, tabId) => {
+        return{type: httpClientConstants.SET_SELECTED_TRACE_TABLE_TEST_REQ_TAB, data: {selectedTraceTableTestReqTabId, tabId}};
+    },
 
     setEnvironmentList: (environmentList) => ({type: httpClientConstants.SET_ENVIRONMENT_LIST, data: environmentList}),
 

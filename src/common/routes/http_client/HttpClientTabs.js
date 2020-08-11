@@ -74,6 +74,7 @@ class HttpClientTabs extends Component {
         this.setAsReference = this.setAsReference.bind(this);
         this.addMockRequest = this.addMockRequest.bind(this);
 
+        this.handleTestRowClick = this.handleTestRowClick.bind(this);
         this.handleAddMockReqModalClose = this.handleAddMockReqModalClose.bind(this);
         this.handleAddMockReqInputChange = this.handleAddMockReqInputChange.bind(this);
         this.handleAddMockReq = this.handleAddMockReq.bind(this);
@@ -494,6 +495,11 @@ class HttpClientTabs extends Component {
     handleRowClick(isOutgoingRequest, selectedTraceTableReqTabId, tabId) {
         const { dispatch } = this.props;
         dispatch(httpClientActions.setSelectedTraceTableReqTabId(selectedTraceTableReqTabId, tabId));
+    }
+
+    handleTestRowClick(selectedTraceTableTestReqTabId, tabId) {
+        const { dispatch } = this.props;
+        dispatch(httpClientActions.setSelectedTraceTableTestReqId(selectedTraceTableTestReqTabId, tabId));
     }
 
     handleCloseModal() {
@@ -1811,6 +1817,7 @@ class HttpClientTabs extends Component {
                         driveRequest={this.driveRequest}
                         showSaveModal={this.showSaveModal}
                         handleRowClick={this.handleRowClick}
+                        handleTestRowClick={this.handleTestRowClick}
                         setAsReference={this.setAsReference}
                         cubeRunHistory={cubeRunHistory}
                         showAddMockReqModal={this.showAddMockReqModal} >

@@ -106,6 +106,7 @@ const initialState = {
         recordedHistory: null,
         clearIntervalHandle: null,
         selectedTraceTableReqTabId: "",
+        selectedTraceTableTestReqTabId: "",
         requestRunning: false,
     }],
     toggleTestAndOutgoingRequests: true,
@@ -485,6 +486,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab["recordedHistory"] = data.recordedHistory;
+                        eachTab["selectedTraceTableTestReqTabId"] = data.recordedHistory.requestId;
                     }
                     return eachTab; 
                 })
@@ -673,6 +675,19 @@ export const httpClient = (state = initialState, { type, data }) => {
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab.selectedTraceTableReqTabId = data.selectedTraceTableReqTabId
+                    }
+                    return eachTab; 
+                })
+            }
+        }
+
+        case httpClientConstants.SET_SELECTED_TRACE_TABLE_TEST_REQ_TAB: {
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab.selectedTraceTableTestReqTabId = data.selectedTraceTableTestReqTabId
                     }
                     return eachTab; 
                 })
