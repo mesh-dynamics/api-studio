@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from 'react'
 import { connect } from "react-redux";
-import {Modal} from 'react-bootstrap';
+import {Modal,Grid, Row, Col } from 'react-bootstrap';
 import { httpClientActions } from '../../actions/httpClientActions';
 import _ from "lodash";
 
@@ -152,40 +152,51 @@ class EnvVar extends Component {
                                 </tbody>
                             </table>
                         </div>}
-                        {!showEnvList && <div>
-                            <label>Environment Name: </label> <input type="text" value={selectedEnv["name"]} onChange={this.handleSelectedEnvNameChange}></input>
-                            <table className="table table-hover table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Variable</th>
-                                        <th>Value</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-                                    {(selectedEnv.vars || [])
-                                        .map(({key, value}, index) => (
-                                        <tr>
-                                            <td>
-                                                <input value={key} onChange={(e) => this.handleEnvVarKeyChange(e, index)}/>
-                                            </td>
-                                            <td>
-                                                <input value={value} onChange={(e) => this.handleEnvVarValueChange(e, index)}/>
-                                            </td>
-                                            <td style={{textAlign: "center", verticalAlign: "middle"}} onClick={() => this.handleRemoveEnvVariable(index)}>
-                                                <i className="fas fa-times pointer"/>
-                                            </td>
-                                        </tr>)
-                                    )}
-                                    <tr>
-                                        <td onClick={this.handleAddNewEnvVariable} className="pointer">
+                        {!showEnvList && 
+                        <Grid>
+                            <Row>
+                                <Col xs={3}>
+                                    <label style={{ marginTop: "8px" }}>Environment Name: </label>
+                                </Col>
+                                <Col xs={6}>
+                                    <input value={selectedEnv["name"]} onChange={this.handleSelectedEnvNameChange} class="form-control"/>
+                                </Col>  
+                            </Row>
+                            
+                                <Row className="show-grid margin-top-15">
+                                    <Col xs={5}>
+                                        <b>Variable</b>
+                                    </Col>
+                                    <Col xs={5}>
+                                        <b>Value</b>
+                                    </Col>
+                                </Row>
+                                {(selectedEnv.vars || [])
+                                    .map(({key, value}, index) => (
+                                            <Row className="show-grid margin-top-10">
+                                                <Col xs={5}>
+                                                    <input value={key} onChange={(e) => this.handleEnvVarKeyChange(e, index)} class="form-control"/>
+                                                </Col>
+                                                <Col xs={6}>
+                                                    <input value={value} onChange={(e) => this.handleEnvVarValueChange(e, index)} class="form-control"/>
+                                                </Col>
+                                                <Col xs style={{marginTop: "5px"}}>
+                                                    <span  onClick={() => this.handleRemoveEnvVariable(index)}>
+                                                        <i className="fas fa-times pointer"/>
+                                                    </span>
+                                                </Col>
+                                            </Row>
+                                    )
+                                )}                                    
+                                <Row className="show-grid margin-top-15">
+                                    <Col xs={4} style={{width: "26%"}}>
+                                        <div onClick={this.handleAddNewEnvVariable} className="pointer cube-btn">
                                             <i className="fas fa-plus" style={{marginRight: "5px"}}></i><span>Add new variable</span>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>}
+                                        </div>
+                                    </Col>
+                                </Row>
+                        </Grid>
+                        }
                     </div>
                 </Modal.Body>
                 <Modal.Footer>
