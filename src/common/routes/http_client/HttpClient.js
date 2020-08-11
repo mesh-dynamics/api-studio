@@ -534,7 +534,7 @@ class HttpClient extends Component {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr style={{cursor: "pointer", backgroundColor: selectedRecordedHistoryReqId === currentSelectedTab.recordedHistory.requestId ? "#ccc" : "#fff"}} onClick={() => this.handleTestRequestClick(currentSelectedTab.recordedHistory.requestId)}>
+                                        <tr style={{cursor: "pointer", backgroundColor: selectedRecordedHistoryReqId === currentSelectedTab.recordedHistory.requestId ? "#ccc" : (currentSelectedTab.recordedHistory.recordedResponseStatus==404 ? "red" : "#fff")}} onClick={() => this.handleTestRequestClick(currentSelectedTab.recordedHistory.requestId)}>
                                             <td>
                                                 <span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>
                                                 <span>
@@ -548,7 +548,7 @@ class HttpClient extends Component {
                                         </tr>
                                         {currentSelectedTab.recordedHistory.outgoingRequests && currentSelectedTab.recordedHistory.outgoingRequests.length > 0 && currentSelectedTab.recordedHistory.outgoingRequests.map((eachReq) => {
                                             return (
-                                                <tr key={eachReq.requestId} style={{cursor: "pointer", backgroundColor: selectedRecordedHistoryReqId === eachReq.requestId ? "#ccc" : "#fff"}} onClick={() => this.handleTestRequestClick(eachReq.requestId)} >
+                                                <tr key={eachReq.requestId} style={{cursor: "pointer", backgroundColor: selectedRecordedHistoryReqId === eachReq.requestId ? "#ccc" : (eachReq.recordedResponseStatus==404 ? "red" : "#fff")}} onClick={() => this.handleTestRequestClick(eachReq.requestId)} >
                                                     <td>
                                                         <span style={{marginRight: "30px", width: "25px"}}></span>
                                                         <span>

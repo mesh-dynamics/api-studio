@@ -986,7 +986,7 @@ class HttpClientTabs extends Component {
             httpResponseEvent = this.updateHttpEvent(apiPath, httpResponseEvent);
         }
 
-        const { headers, queryStringParams, bodyType, rawDataType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody } = tabToSave;
+        const { headers, queryStringParams, bodyType, rawDataType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus } = tabToSave;
         const httpReqestHeaders = this.extractHeadersToCubeFormat(headers);
         const httpRequestQueryStringParams = this.extractQueryStringParamsToCubeFormat(queryStringParams);
         let httpRequestFormParams = {}, httpRequestBody = "";
@@ -999,16 +999,17 @@ class HttpClientTabs extends Component {
             httpRequestBody = this.extractBodyToCubeFormat(rawData);
         }
         const httpMethod = tabToSave.httpMethod;
-        
-        let httpResponseHeaders = responseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : null;
-        if(type !== "History") {
-            httpResponseHeaders = recordedResponseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : null;
+        let httpResponseHeaders, httpResponseBody, httpResponseStatus;
+        if (type !== "History") {
+            httpResponseHeaders = recordedResponseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : responseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : null;
+            httpResponseBody = recordedResponseBody ? JSON.parse(recordedResponseBody) : responseBody ? JSON.parse(responseBody) : null;
+            httpResponseStatus = httpResponseEvent.payload[1].status
+        } else {
+            httpResponseHeaders = responseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : recordedResponseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : null;
+            httpResponseBody = responseBody ? JSON.parse(responseBody) : recordedResponseBody ? JSON.parse(recordedResponseBody) : null;
+            httpResponseStatus = responseStatus
         }
-        let httpResponseBody = responseBody ? JSON.parse(responseBody) : null;
-        if(type !== "History") {
-            httpResponseBody = recordedResponseBody ? JSON.parse(recordedResponseBody) : null;
-        }
-        const reqResCubeFormattedData = {
+        const reqResCubeFormattedData = {   
             request: {
                 ...httpRequestEvent,
                 runId: runId,
@@ -1033,8 +1034,8 @@ class HttpClientTabs extends Component {
                     {
                         hdrs: httpResponseHeaders,
                         body: httpResponseBody,
-                        status: httpResponseEvent.payload[1].status,
-                        statusCode: httpResponseEvent.payload[1].statusCode
+                        status: httpResponseStatus,
+                        statusCode: String(httpResponseStatus),
                     }
                 ]
             }
@@ -1052,15 +1053,14 @@ class HttpClientTabs extends Component {
         const tabToProcess = tabsToProcess[tabIndex];
         if (!tabToProcess.eventData) return;
         const reqResPair = tabToProcess.eventData;
-        if (reqResPair.length > 0) {
-            try {
+        try {
+            if (reqResPair.length > 0) {
                 const data = [];
-                data.push(this.getReqResFromTabData(reqResPair, tabToProcess, runId));
-                console.log(`getReqResFromTabData == ${JSON.stringify(data)}`);
+                data.push(this.getReqResFromTabData(reqResPair, tabToProcess, runId, type));
                 if (type !== "History") {
                     tabToProcess.outgoingRequests.forEach((eachOutgoingTab) => {
                         if (eachOutgoingTab.eventData && eachOutgoingTab.eventData.length > 0) {
-                            data.push(this.getReqResFromTabData(eachOutgoingTab.eventData, eachOutgoingTab));
+                            data.push(this.getReqResFromTabData(eachOutgoingTab.eventData, eachOutgoingTab, runId, type));
                         }
                     });
                 }
@@ -1099,12 +1099,13 @@ class HttpClientTabs extends Component {
                         dispatch(httpClientActions.postErrorSaveToCollection(type === "History" ? false : showSaveModal ? true : false, "Error saving: " + error));
                         console.error("error: ", error);
                     })
-            } catch (error) {
-                console.error("Error ", error);
-                dispatch(httpClientActions.catchErrorSaveToCollection(type === "History" ? false : showSaveModal ? true : false, "Error saving: " + error));
-                throw new Error("Error");
-            }
+            } 
+        } catch (error) {
+            console.error("Error ", error);
+            dispatch(httpClientActions.catchErrorSaveToCollection(type === "History" ? false : showSaveModal ? true : false, "Error saving: " + error));
+            throw new Error("Error");
         }
+        
     }
 
     handleChange(evt) {
