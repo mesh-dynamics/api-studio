@@ -1,4 +1,5 @@
-import React, { Component } from 'react'
+import React, { Component } from 'react';
+import { Switch } from 'react-router-dom';
 import TestResults from "./test_results";
 import DiffResults from "./diff_results";
 import Configs from "./configs";
@@ -31,15 +32,17 @@ class PageContent extends Component {
           <i onClick={this.toggleFullScreen} className={!fullScreenMode ? "fas fa-expand pull-right link" : "hidden"}></i>
           <i onClick={this.toggleFullScreen} className={fullScreenMode ? "fas fa-compress pull-right link" : "hidden"}></i>
         </div>
-        {DiffResults}
-        {Configs}
-        {ViewTrace}
-        {TestReport}
-        {ViewTestConfig}
-        {APICatalog}
-        {HttpClientTabs}
-        {/* This has to be at the bottom since it has default routing handler */}
-        {TestResults}
+        <Switch>
+          {DiffResults}
+          {Configs}
+          {ViewTrace}
+          {TestReport}
+          {ViewTestConfig}
+          {APICatalog}
+          {HttpClientTabs}
+          {/* This has to be at the bottom since it has default routing handler */}
+          {TestResults}
+        </Switch>
       </div>
     )
   }
