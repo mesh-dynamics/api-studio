@@ -35,7 +35,7 @@ class HttpResponseMessage extends Component {
 
 
     render() {
-        const { recordedResponseStatus, responseStatus, responseStatusText } = this.props;
+        const { recordedResponseStatus, responseStatus, responseStatusText, requestRunning } = this.props;
         return (
             <div style={{ marginTop: "18px" }}>
                 <div style={{ fontSize: "11px" }}>RESPONSE</div>
@@ -70,12 +70,12 @@ class HttpResponseMessage extends Component {
                     <Row className="show-grid">
                             <Col xs={5}>
                                 <div style={{ opacity: "0.7"}}>HTTP RESPONSE STATUS: 
-                                    <b style={{ color: getStatusColor(recordedResponseStatus) }}> {recordedResponseStatus? getHttpStatus(recordedResponseStatus): 'NA' }</b>
+                                    <b style={{ color: recordedResponseStatus && getStatusColor(recordedResponseStatus)}}> {recordedResponseStatus? getHttpStatus(recordedResponseStatus): 'NA' }</b>
                                 </div>
                             </Col>
                             <Col xs={5} style={{ marginLeft: "7.2%"}}>
                                 <div style={{ opacity: "0.7" }}>HTTP RESPONSE STATUS:  
-                                    <b style={{ color: getStatusColor(responseStatus) }}> {responseStatus? getHttpStatus(responseStatus): 'NA' }</b>
+                                    <b style={{ color: responseStatus && getStatusColor(responseStatus)}}> {requestRunning ? 'WAITING...' : responseStatus? getHttpStatus(responseStatus): 'NA' }</b>
                                 </div>
                             </Col>
                         </Row>

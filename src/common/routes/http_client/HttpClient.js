@@ -490,7 +490,7 @@ class HttpClient extends Component {
                                         </tr>
                                     </thead>
                                     <tbody>
- ̥                                       <tr 
+                                        <tr 
                                             style={{
                                                 cursor: "pointer", 
                                                 backgroundColor: 
@@ -586,7 +586,8 @@ class HttpClient extends Component {
                             recordedResponseBody={ selectedTraceTableReqTab.recordedResponseBody}
                             recordedResponseStatus={selectedTraceTableReqTab.recordedResponseStatus}
                             updateParam={this.props.updateParam}
-                            isOutgoingRequest={ selectedTraceTableReqTab.isOutgoingRequest} >
+                            isOutgoingRequest={ selectedTraceTableReqTab.isOutgoingRequest}
+                            requestRunning={currentSelectedTab.requestRunning} >
                         </HttpResponseMessage>
                     </div>
                 )}

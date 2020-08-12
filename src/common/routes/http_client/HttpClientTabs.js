@@ -904,7 +904,7 @@ class HttpClientTabs extends Component {
             // handle success
             dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), JSON.stringify(data, undefined, 4)));
             this.saveToCollection(isOutgoingRequest, tabId, userHistoryCollection.id, "History", runId);
-            dispatch(httpClientActions.unsetReqRunning(tabId))
+            //dispatch(httpClientActions.unsetReqRunning(tabId))
         })
         .catch((error) => {
             console.error(error);
@@ -1401,6 +1401,7 @@ class HttpClientTabs extends Component {
                                     }
                                 });
                             }
+                            dispatch(httpClientActions.unsetReqRunning(tabId))
                         }
                     });
                 }

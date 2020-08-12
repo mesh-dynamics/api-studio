@@ -615,10 +615,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                 ...state,
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
-                        eachTab["responseHeaders"] = ""
-                        eachTab["responseBody"] = ""
-                        eachTab["responseStatus"] = ""
-                        eachTab["responseStatusText"] = ""
+                        eachTab["recordedHistory"] = null
                     }
                     return eachTab;
                 })
