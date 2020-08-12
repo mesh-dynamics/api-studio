@@ -10,13 +10,13 @@ CUBE_CUSTOMER=CubeCorp
 INSTANCEID=$DRONE_COMMIT
 REPLAY_ENDPOINT=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
 CUBE_SERVICE_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
-SPRINGBOOT_PROFILE=prod
+SPRINGBOOT_PROFILE=dev
 CUBEIO_TAG=$DRONE_COMMIT-$DRONE_BRANCH
 CUBEUI_TAG=develop-latest
 CUBEUI_BACKEND_TAG=develop-latest
 MOVIEINFO_TAG=master-latest
 SOLR_URL=http://solr-svc.solr.svc.cluster.local:8983/solr/
-AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBtZXNoZHluYW1pY3MuaW8iLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwidHlwZSI6InBhdCIsImN1c3RvbWVyX2lkIjoxLCJpYXQiOjE1ODI4ODE2MjgsImV4cCI6MTg5ODI0MTYyOH0.P4DAjXyODV8cFPgObaULjAMPg-7xSbUsVJ8Ohp7xTQI"
+AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s"
 SOLR_CORE=cube" > apps/cube/config/temp.conf
 
 echo "
@@ -28,11 +28,24 @@ CUBE_CUSTOMER=CubeCorp
 INSTANCEID=$DRONE_COMMIT
 REPLAY_PATHS=minfo/listmovies,minfo/liststores,minfo/rentmovie,minfo/returnmovie
 REPLAY_ENDPOINT=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
-AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBtZXNoZHluYW1pY3MuaW8iLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwidHlwZSI6InBhdCIsImN1c3RvbWVyX2lkIjoxLCJpYXQiOjE1ODI4ODE2MjgsImV4cCI6MTg5ODI0MTYyOH0.P4DAjXyODV8cFPgObaULjAMPg-7xSbUsVJ8Ohp7xTQI"
+AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s"
 CUBEIO_TAG=$DRONE_COMMIT-$DRONE_BRANCH
 CUBEUI_TAG=develop-latest
 CUBEUI_BACKEND_TAG=develop-latest
 MOVIEINFO_TAG=master-latest" > apps/moviebook/config/temp.conf
+
+echo "
+NAMESPACE=$DRONE_COMMIT_AUTHOR-springboot
+NAMESPACE_HOST=$DRONE_COMMIT_AUTHOR-springboot.dev.cubecorp.io
+CUBE_APP=springboot_demo
+CUBE_CUSTOMER=CubeCorp
+INSTANCEID=$DRONE_COMMIT
+AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s"
+CUBEIO_TAG=$DRONE_COMMIT-$DRONE_BRANCH
+CUBEUI_TAG=develop-latest
+CUBEUI_BACKEND_TAG=develop-latest
+MOVIEINFO_TAG=master-latest
+CUBE_HOST=$DRONE_COMMIT_AUTHOR.dev.cubecorp.io" > apps/springboot/config/temp.conf
 }
 
 call_deploy_script() {
@@ -126,8 +139,12 @@ check_test_status() {
 
 clean() {
 	call_deploy_script moviebook clean $CONFIG_FILE
-	call_deploy_script cube clean $CONFIG_FILE
-	kubectl delete ns $DRONE_COMMIT_AUTHOR
+	if [ $EXIT_CODE -ne 0 ]; then
+		call_deploy_script cube clean $CONFIG_FILE
+		call_deploy_script springboot clean $CONFIG_FILE
+		kubectl delete ns $DRONE_COMMIT_AUTHOR
+		kubectl delete ns $DRONE_COMMIT_AUTHOR-springboot
+	fi
 	echo "Replay ID:" $REPLAY_ID
 	echo $TEST_STATUS
 	exit $EXIT_CODE
@@ -136,10 +153,10 @@ clean() {
 main() {
 	set -x
 	# DRONE_BRANCH="develop"
-	# DRONE_COMMIT="11a5c543c9086ecd3cb6f91a3d62e2efd1ceee1a"
-	# DRONE_COMMIT_AUTHOR="abdulquyoombhat41"
-	# DRONE_BUILD_NUMBER="test101"
-	AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBtZXNoZHluYW1pY3MuaW8iLCJyb2xlcyI6WyJST0xFX1VTRVIiXSwidHlwZSI6InBhdCIsImN1c3RvbWVyX2lkIjoxLCJpYXQiOjE1ODI4ODE2MjgsImV4cCI6MTg5ODI0MTYyOH0.P4DAjXyODV8cFPgObaULjAMPg-7xSbUsVJ8Ohp7xTQI"
+	# DRONE_COMMIT="411e4ee4dfeb290932122f3ad56141c5b8ec6b15"
+	# DRONE_COMMIT_AUTHOR="ethicalaakash"
+	# DRONE_BUILD_NUMBER="test102"
+	AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s"
 	check_test_status
 	generate_config_file
 	CONFIG_FILE="temp"
@@ -149,6 +166,7 @@ main() {
 	kubectl get deploy -o name -l app=cube -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout status -n $DRONE_COMMIT_AUTHOR
 	call_deploy_script moviebook init $CONFIG_FILE
 	kubectl get deploy -o name -l app=moviebook -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout status -n $DRONE_COMMIT_AUTHOR
+	call_deploy_script springboot init $CONFIG_FILE
 	call_deploy_script moviebook record $CONFIG_FILE moviebook-$DRONE_BUILD_NUMBER RespPartialMatch moviebook-$DRONE_BUILD_NUMBER
 	sleep 30
 	generate_traffic $NO_OF_REQUEST
