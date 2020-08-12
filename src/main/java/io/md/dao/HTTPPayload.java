@@ -1,7 +1,5 @@
 package io.md.dao;
 
-import java.util.Arrays;
-
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -15,9 +13,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
 import io.md.utils.Utils;
@@ -31,7 +26,13 @@ public class HTTPPayload extends LazyParseAbstractPayload {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(HTTPPayload.class);
 	static final String BODY = "body";
+	static final String PAYLOADSTATEPATH = "/payloadState";
 
+	public enum HTTPPayloadState {
+		WrappedEncoded,
+	    WrappedDecoded,
+	    UnwrappedDecoded
+	}
 
 	@JsonDeserialize(as= MultivaluedHashMap.class)
 	public MultivaluedMap<String, String> hdrs;
@@ -41,15 +42,15 @@ public class HTTPPayload extends LazyParseAbstractPayload {
 
 	// in case of bodies that need to be interpreted as string, there is no way to distinguish
 	// between the case where the body is a base64 encoded body or decoded body. So we keep this
-	// additional flag to keep track of whether the body has already been unwrapped
-	public boolean isBodyWrapped;
+	// additional state to keep track of whether the body has already been unwrapped
+	public HTTPPayloadState payloadState = HTTPPayloadState.WrappedEncoded;
 
 	protected HTTPPayload(
 		@JsonProperty("hdrs") MultivaluedMap<String, String> hdrs,
 		@JsonProperty("body") byte[] body) {
 		if (hdrs != null) this.hdrs = Utils.setLowerCaseKeys(hdrs);
 		this.body = body;
-		this.isBodyWrapped = true;
+		this.payloadState = HTTPPayloadState.WrappedEncoded;
 	}
 
 	protected HTTPPayload(JsonNode deserializedJsonTree) {
@@ -99,10 +100,10 @@ public class HTTPPayload extends LazyParseAbstractPayload {
 
 	@Override
 	public void postParse() {
-		this.isBodyWrapped = true;
+		this.payloadState = HTTPPayloadState.WrappedEncoded;
 		if (!this.dataObj.isDataObjEmpty()) {
-			this.dataObj.getValAsObject("/isBodyWrapped", Boolean.class)
-				.ifPresent(v -> isBodyWrapped=v);
+			this.dataObj.getValAsObject(PAYLOADSTATEPATH, HTTPPayloadState.class)
+				.ifPresent(v -> payloadState=v);
 			unWrapBody();
 		}
 	}
@@ -132,18 +133,33 @@ public class HTTPPayload extends LazyParseAbstractPayload {
 	}
 
 	protected void wrapBody() {
-		if (!isBodyWrapped) {
+		if (payloadState == HTTPPayloadState.UnwrappedDecoded) {
 			this.dataObj.wrapAsString("/".concat(HTTPRequestPayload.BODY),
 				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN));
-			isBodyWrapped = true;
+			setPayloadState(HTTPPayloadState.WrappedDecoded);
 		}
 	}
 
 	private void unWrapBody() {
-		if (isBodyWrapped) {
+		// Currently unwrapAsJson does both decoding and unwrapping.
+		// Will cleanup and separate the functions later
+		if (payloadState == HTTPPayloadState.WrappedDecoded || payloadState == HTTPPayloadState.WrappedEncoded) {
 			this.dataObj.unwrapAsJson("/".concat(HTTPRequestPayload.BODY),
 				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN));
-			isBodyWrapped = false;
+			setPayloadState(HTTPPayloadState.UnwrappedDecoded);
 		}
 	}
+
+	/*
+	 * this will update state both in this object and the parsed dataObj
+	 */
+	private void setPayloadState(HTTPPayloadState payloadState) {
+		this.payloadState = payloadState;
+		try {
+			dataObj.put(PAYLOADSTATEPATH, new JsonDataObj(payloadState, mapper));
+		} catch (PathNotFoundException e) {
+			LOGGER.error("Payload not an object, should not happen");
+		}
+	}
+
 }
