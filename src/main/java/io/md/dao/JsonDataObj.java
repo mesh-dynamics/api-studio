@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +69,10 @@ public class JsonDataObj implements DataObj {
 	public JsonDataObj(JsonNode root, ObjectMapper jsonMapper) {
 		this.objRoot = root;
 		this.jsonMapper = jsonMapper;
+	}
+
+	public JsonDataObj(Object obj, ObjectMapper jsonMapper) {
+		this((JsonNode) jsonMapper.valueToTree(obj), jsonMapper);
 	}
 
 	@Override
