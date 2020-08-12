@@ -4,5 +4,4 @@ import TestResults from "./TestResults";
 
 export default [
     <Route exact key="TestResults" path="/" component={TestResults} />,
-    <Route key="RedirectRoot" path="/*" component={TestResults} />
 ]
