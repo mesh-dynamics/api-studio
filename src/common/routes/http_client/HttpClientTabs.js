@@ -420,17 +420,17 @@ class HttpClientTabs extends Component {
         let httpResponseEvent = {
             customerId: customerId,
             app: app,
-            service: "",
+            service: "NA",
             instanceId: "devtool",
             collection: "NA",
             traceId: traceId,
-            spanId: null,
-            parentSpanId: null,
+            spanId: "NA",
+            parentSpanId: "NA",
             runType: "Manual",
-            runId: null,
+            runId: generateRunId(),
             timestamp: timestamp,
             reqId: "NA",
-            apiPath: "",
+            apiPath: "NA",
             eventType: "HTTPResponse",
             payload: [
                 "HTTPResponsePayload",
@@ -450,17 +450,17 @@ class HttpClientTabs extends Component {
         let httpRequestEvent = {
             customerId: customerId,
             app: app,
-            service: "",
+            service: "NA",
             instanceId: "devtool",
             collection: "NA",
             traceId: traceId,
             spanId: cryptoRandomString({length: 16}),
-            parentSpanId: null,
+            parentSpanId: "NA",
             runType: "Manual",
-            runId: null,
+            runId: generateRunId(),
             timestamp: timestamp,
             reqId: "NA",
-            apiPath: "",
+            apiPath: "NA",
             eventType: "HTTPRequest",
             payload: [
                 "HTTPRequestPayload",
@@ -482,13 +482,14 @@ class HttpClientTabs extends Component {
         return [...httpRequestEvent, ...httpResponseEvent];
     }
 
-    updateHttpEvent(apiPath, httpEvent) {
+    updateHttpEvent(apiPath, service, httpEvent) {
         const { cube: {selectedApp} } = this.props;
 
         return {
             ...httpEvent,
             app: selectedApp,
-            ...(apiPath && {apiPath: apiPath})
+            ...(apiPath && {apiPath: apiPath}),
+            ...(service && {service: service})
         };
     }
 
@@ -987,9 +988,10 @@ class HttpClientTabs extends Component {
 
         if(httpRequestEvent.reqId === "NA") {
             const parsedUrl = urlParser(tabToSave.httpURL, true);
-            if(parsedUrl.pathname) apiPath = parsedUrl.pathname;
-            httpRequestEvent = this.updateHttpEvent(apiPath, httpRequestEvent);
-            httpResponseEvent = this.updateHttpEvent(apiPath, httpResponseEvent);
+            apiPath = parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
+            let service = parsedUrl.host ? parsedUrl.host : "NA"
+            httpRequestEvent = this.updateHttpEvent(apiPath, service, httpRequestEvent);
+            httpResponseEvent = this.updateHttpEvent(apiPath, service, httpResponseEvent);
         }
 
         const { headers, queryStringParams, bodyType, rawDataType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus } = tabToSave;
