@@ -12,26 +12,11 @@ import HttpClientTabs from "./http_client";
 class PageContent extends Component {
   constructor(props) {
     super(props)
-    this.state = {
-      fullScreenMode: false,
-    };
-    this.toggleFullScreen = this.toggleFullScreen.bind(this);
-  }
-
-  toggleFullScreen() {
-    const { fullScreenMode } = this.state;
-    this.setState({ fullScreenMode: !fullScreenMode });
   }
 
   render() {
-    const { needMargin } = this.props;
-    const { fullScreenMode } = this.state;
     return (
-      <div role="main" className={fullScreenMode ? 'main fullscreen' : 'main'}>
-        <div className="utility">
-          <i onClick={this.toggleFullScreen} className={!fullScreenMode ? "fas fa-expand pull-right link" : "hidden"}></i>
-          <i onClick={this.toggleFullScreen} className={fullScreenMode ? "fas fa-compress pull-right link" : "hidden"}></i>
-        </div>
+      <div role="main" className='main'>
         <Switch>
           {DiffResults}
           {Configs}

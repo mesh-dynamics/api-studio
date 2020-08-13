@@ -4582,16 +4582,6 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 .modal-lg .modal-content {
     margin-top: 20px;
 }
-.fullscreen {
-    padding: 20px;
-    border: 5px solid #efefef;
-    z-index: 99;
-    width: 100%;
-    height: 100%;
-    position: fixed;
-    top: 0;
-    left: 0;
-}
 .utility {
     position: fixed;
     padding: 5px;
