@@ -477,69 +477,70 @@ class HttpClient extends Component {
                                 </div>
                             </div>
                         </div>
-                        {currentSelectedTab.recordedHistory && (
                             <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0"}}>
-                                <div>Test</div>
-                                <Table hover style={{backgroundColor: "#fff", border: "1px solid #ddd", borderSpacing: "0px", borderCollapse: "separate", marginBottom: "0px"}}>
-                                    <thead>
-                                        <tr>
-                                            <th>SERVICE BY TRACE ORDER</th>
-                                            <th>API PATH</th>
-                                            <th>SOURCE</th>
-                                            <th></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr 
-                                            style={{
-                                                cursor: "pointer", 
-                                                backgroundColor: 
-                                                selectedTraceTableTestReqTab.id === currentSelectedTab.recordedHistory.id 
-                                                    ? "#ccc" 
-                                                    : (currentSelectedTab.recordedHistory.recordedResponseStatus==404 ? "red" : "#fff")
+                                {currentSelectedTab.recordedHistory && (
+                                <div>
+                                    <div>Test</div>
+                                    <Table hover style={{backgroundColor: "#fff", border: "1px solid #ddd", borderSpacing: "0px", borderCollapse: "separate", marginBottom: "0px"}}>
+                                        <thead>
+                                            <tr>
+                                                <th>SERVICE BY TRACE ORDER</th>
+                                                <th>API PATH</th>
+                                                <th>SOURCE</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr 
+                                                style={{
+                                                    cursor: "pointer", 
+                                                    backgroundColor: 
+                                                    selectedTraceTableTestReqTab.id === currentSelectedTab.recordedHistory.id ? "#ccc" : "#fff",
+                                                    color: currentSelectedTab.recordedHistory.recordedResponseStatus==404 ? "red" : null,
                                                 }} 
-                                                onClick={() => this.handleTestRowClick(currentSelectedTab.recordedHistory.id)}>
-                                            <td>
-                                                <span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>
-                                                <span>
-                                                    <i className="far fa-minus-square" style={{fontSize: "12px", marginRight: "12px", cursor: "pointer"}}></i>
-                                                </span>
-                                                {currentSelectedTab.recordedHistory.service}
-                                            </td>
-                                            <td>{currentSelectedTab.recordedHistory.apiPath}</td>
-                                            <td></td>
-                                            <td></td>
-                                        </tr>
-                                        {currentSelectedTab.recordedHistory.outgoingRequests && currentSelectedTab.recordedHistory.outgoingRequests.length > 0 && currentSelectedTab.recordedHistory.outgoingRequests.map((eachReq) => {
-                                            return (
-                                                <tr 
-                                                    key={eachReq.requestId} 
-                                                    style={{
-                                                        cursor: "pointer", 
-                                                        backgroundColor: 
-                                                        selectedTraceTableTestReqTab.id === eachReq.id 
-                                                            ? "#ccc" 
-                                                            : (eachReq.recordedResponseStatus==404 ? "red" : "#fff")
-                                                        }} 
-                                                    onClick={() => this.handleTestRowClick(eachReq.id)} 
-                                                >
+                                                onClick={() => this.handleTestRowClick(currentSelectedTab.recordedHistory.id)}
+                                            >
+                                                
                                                     <td>
-                                                        <span style={{marginRight: "30px", width: "25px"}}></span>
+                                                        <span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>
                                                         <span>
-                                                            <i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i>
+                                                            <i className="far fa-minus-square" style={{fontSize: "12px", marginRight: "12px", cursor: "pointer"}}></i>
                                                         </span>
-                                                        {eachReq.service}
+                                                        {currentSelectedTab.recordedHistory.service}
                                                     </td>
-                                                    <td>{eachReq.apiPath}</td>
+                                                    <td>{currentSelectedTab.recordedHistory.apiPath}</td>
                                                     <td></td>
                                                     <td></td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </Table>
-                            </div>
-                        )}
+                                            </tr>
+                                            {currentSelectedTab.recordedHistory.outgoingRequests && currentSelectedTab.recordedHistory.outgoingRequests.length > 0 && currentSelectedTab.recordedHistory.outgoingRequests.map((eachReq) => {
+                                                return (
+                                                    <tr 
+                                                        key={eachReq.requestId} 
+                                                        style={{
+                                                            cursor: "pointer", 
+                                                            backgroundColor: selectedTraceTableTestReqTab.id === eachReq.id ? "#ccc" : "#fff",
+                                                            color: eachReq.recordedResponseStatus==404 ? "red" : null,
+                                                            }} 
+                                                        onClick={() => this.handleTestRowClick(eachReq.id)} 
+                                                    >
+                                                        <td>
+                                                            <span style={{marginRight: "30px", width: "25px"}}></span>
+                                                            <span>
+                                                                <i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i>
+                                                            </span>
+                                                            {eachReq.service}
+                                                        </td>
+                                                        <td>{eachReq.apiPath}</td>
+                                                        <td></td>
+                                                        <td></td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </Table>
+                                </div>
+                            )}
+                        </div>
                     </div>
                     <div style={{display: "flex"}}>
                         <div style={{marginLeft: "auto", order: "2"}}>
