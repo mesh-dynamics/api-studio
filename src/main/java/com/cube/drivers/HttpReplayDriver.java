@@ -75,7 +75,7 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 			HttpClient.Builder clientbuilder = HttpClient.newBuilder()
 				.version(HttpClient.Version.HTTP_1_1) // need to explicitly set this
 				// if server is not supporting HTTP 2.0, getting a 403 error
-				.followRedirects(HttpClient.Redirect.NORMAL)
+				//.followRedirects(HttpClient.Redirect.NORMAL)  // Don't follow redirects
 				.connectTimeout(Duration.ofSeconds(20));
 			if (Authenticator.getDefault() != null) {
 				clientbuilder.authenticator(Authenticator.getDefault());

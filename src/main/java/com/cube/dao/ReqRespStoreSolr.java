@@ -2472,6 +2472,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 + REPLAYTRACEIDF + ":" + traceId + ")"));
         addFilter(query, RECORDREQIDF, matchResQuery.recordReqId);
         addFilter(query, REPLAYREQIDF, matchResQuery.replayReqId);
+        addSort(query, IDF, true);
         query.addField(getDiffParentChildFilter());
         query.setFacetMinCount(1);
 
