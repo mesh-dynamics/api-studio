@@ -12,6 +12,8 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -383,7 +385,31 @@ public abstract class AbstractReplayDriver {
 					DataObj value = extractionMap.get(key);
 					try {
 						if (value != null) {
-							request.payload.put(injectionMeta.jsonPath, value);
+							request.payload.put(injectionMeta.jsonPath,
+								injectionMeta.regex.map(regex -> {
+									try {
+										String original = request.payload
+											.getValAsString(injectionMeta.jsonPath);
+										String replacement = ((JsonDataObj) value).getRoot()
+											.asText();
+										Matcher matcher = Pattern.compile(regex).matcher(original);
+										StringBuilder builder = new StringBuilder();
+										while (matcher.find()) {
+											matcher.appendReplacement(builder,
+												matcher.group(1) + replacement);
+										}
+										matcher.appendTail(builder);
+										return new JsonDataObj(new TextNode(builder.toString()), jsonMapper);
+									} catch (PathNotFoundException e) {
+										LOGGER.error(new ObjectMessage(
+											Map.of(Constants.MESSAGE,
+												"Couldn't inject value as path not found in request",
+												"Key", key,
+												Constants.JSON_PATH_FIELD, injectionMeta.jsonPath,
+												Constants.REQ_ID_FIELD, request.reqId)), e);
+									}
+									return null;
+								}).orElse((JsonDataObj) value));
 							LOGGER.info(new ObjectMessage(
 								Map.of(Constants.MESSAGE,
 									"Injecting value in request before replaying",

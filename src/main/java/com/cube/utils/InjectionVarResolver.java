@@ -1,6 +1,8 @@
 package com.cube.utils;
 
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -22,6 +24,10 @@ public class InjectionVarResolver implements StringLookup {
 	Payload testResponsePayload;
 	Payload testRequestPayload;
 	DataStore dataStore;
+	String source;
+	String jsonPath;
+	String regularExpression;
+	Payload sourcePayload;
 
 	public InjectionVarResolver(Event goldenRequestEvent, Payload testResponsePayload,
                                 Payload testRequestPayload, DataStore dataStore) {
@@ -31,15 +37,20 @@ public class InjectionVarResolver implements StringLookup {
 		this.dataStore = dataStore;
 	}
 
-	public Pair<Payload, String> getSourcePayloadAndJsonPath(String lookupString) {
+	public void getSourcePayloadAndJsonPath(String lookupString) {
 		String[] splitStrings = lookupString.split(":");
-		if (splitStrings.length != 2) {
+		if (splitStrings.length < 2 || splitStrings.length > 3) {
 			LOGGER.error("Lookup String format mismatch");
-			return null; // Null resorts to default variable in substitutor
+			//return null; // Null resorts to default variable in substitutor
 		}
-		String source = splitStrings[0].trim();
-		String jsonPath = splitStrings[1].trim();
-		Payload sourcePayload;
+		source = splitStrings[0].trim();
+		jsonPath = splitStrings[1].trim();
+
+		if (splitStrings.length == 3) {
+			regularExpression = splitStrings[2].trim();
+		}
+
+		//Payload sourcePayload;
 		switch (source) {
 			case Constants.GOLDEN_REQUEST:
 				sourcePayload = goldenRequestEvent.payload;
@@ -49,7 +60,7 @@ public class InjectionVarResolver implements StringLookup {
 					.getResponseEvent(goldenRequestEvent.reqId);
 				if (goldenResponseOptional.isEmpty()) {
 					LOGGER.error("Cannot fetch golden response for golden request");
-					return null; // Null resorts to default variable in substitutor
+					//return null; // Null resorts to default variable in substitutor
 				}
 				sourcePayload = goldenResponseOptional.get().payload;
 				break;
@@ -62,13 +73,11 @@ public class InjectionVarResolver implements StringLookup {
 			default:
 				throw new IllegalStateException("Unexpected value: " + source);
 		}
-		return new ImmutablePair<>(sourcePayload, jsonPath);
+		// new ImmutablePair<>(sourcePayload, jsonPath);
 	}
 
 	public DataObj lookupObject(String lookupString) {
-		Pair<Payload, String> pair = getSourcePayloadAndJsonPath(lookupString);
-		Payload sourcePayload = pair.getLeft();
-		String jsonPath = pair.getRight();
+		getSourcePayloadAndJsonPath(lookupString);
 		DataObj value;
 		value = sourcePayload.getVal(jsonPath);
 		return value;
@@ -76,15 +85,19 @@ public class InjectionVarResolver implements StringLookup {
 
 	@Override
 	/** Lookup String will always be in format of
-	 "VariableSources: <JSONPath>
+	 "VariableSources: <JSONPath> <regular expression>
 	 **/
 	public String lookup(String lookupString) {
 		String value = null;
-		Pair<Payload, String> pair = getSourcePayloadAndJsonPath(lookupString);
-		Payload sourcePayload = pair.getLeft();
-		String jsonPath = pair.getRight();
+		getSourcePayloadAndJsonPath(lookupString);
 		try {
 			value = sourcePayload.getValAsString(jsonPath);
+			if (regularExpression != null && !regularExpression.isEmpty()) {
+				Matcher match = Pattern.compile(regularExpression).matcher(value);
+				if (match.find()) {
+					value = match.group("mdgroup");
+				}
+			}
 		} catch (PathNotFoundException e) {
 			LOGGER.error("Cannot find JSONPath" + jsonPath + " in source", e);
 			return null;
