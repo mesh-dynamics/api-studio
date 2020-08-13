@@ -505,8 +505,7 @@ public class CubeStore {
             .getAgentConfigWithFacets(tagInfo.customerId, tagInfo.app, Optional.of(tagInfo.service),
                 Optional.of(tagInfo.instanceId), Optional.empty(), Optional.empty(),
                 Optional.of(tagInfo.tag));
-        if (result.second().findAny().isPresent()) 
-            configDAO.tag.equals(tagInfo.tag))) {
+        if (result.second().findAny().isPresent()) {
             String message = "Error while updating the config tag. Cannot find config for tag to update";
             LOGGER.error(
                 new ObjectMessage(Map.of(Constants.MESSAGE, message,
