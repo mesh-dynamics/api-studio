@@ -102,7 +102,7 @@ class Settings extends Component {
                 <div className="row settings-width-100">
                     <div className="col-md-12 col-sm-12 col-xs-12 settings-header">
                         <div className="settings-page-header">Application Settings</div>
-                        <button onClick={this.handleBackClick} className="btn btn-sm cube-btn text-center">
+                        <button onClick={this.handleBackClick} className="settings-btn-link">
                             <i className="fa fa-chevron-left" aria-hidden="true"></i>
                             <span className="settings-margin-left-10">Back</span>
                         </button>
