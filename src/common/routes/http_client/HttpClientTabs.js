@@ -1094,7 +1094,7 @@ class HttpClientTabs extends Component {
                                 throw new Error("Error");
                             }
                         }
-                        dispatch(httpClientActions.postSuccessSaveToCollection(tabId, type === "History" ? false : showSaveModal ? true : false, "Saved Successfully! You can close this window.", clearIntervalHandle));
+                        dispatch(httpClientActions.postSuccessSaveToCollection(tabId, type === "History" ? false : showSaveModal ? true : false, "Saved Successfully!", clearIntervalHandle));
                         setTimeout(() => {
                             this.loadFromHistory();
                             this.loadUserCollections();
@@ -1110,7 +1110,7 @@ class HttpClientTabs extends Component {
             } 
         } catch (error) {
             console.error("Error ", error);
-            dispatch(httpClientActions.catchErrorSaveToCollection(type === "History" ? false : showSaveModal ? true : false, "Error saving: " + error));
+            dispatch(httpClientActions.catchErrorSaveToCollection(type === "History" ? false : showSaveModal ? true : false, "Error: Invalid JSON body"));
             throw new Error("Error");
         }
         
@@ -1890,9 +1890,8 @@ class HttpClientTabs extends Component {
         const currentEnvironment = this.getCurrentEnvirnoment();
         const { httpClient: { selectedEnvironment } } = this.props;
         const envPopover = (<Popover
-            style={{top: "56px" }}
             title={selectedEnvironment || "No Environment Selected"}>
-            <div style={{ padding: "0 5px 0 5px",width: "100%" }}>
+            <div style={{ padding: "0 5px 0 5px",width: "400px" }}>
                 {currentEnvironment && !_.isEmpty(currentEnvironment.vars) && <table className="table table-bordered table-hover">
                     <thead>
                         <tr>
@@ -2092,7 +2091,7 @@ class HttpClientTabs extends Component {
                                 </div>
                                 <p style={{ fontWeight: 500 }}>{modalErroCreateCollectionMessage}</p>
                                 <div>
-                                    <Button onClick={this.handleCreateCollection}>Create</Button>
+                                    <div onClick={this.handleCreateCollection} className="btn btn-sm cube-btn text-center">Create</div>
                                 </div>
                                 <hr />
                                 <h5 style={{ textAlign: 'center' }}>
@@ -2115,11 +2114,11 @@ class HttpClientTabs extends Component {
                                 </p>
                             </Modal.Body>
                             <Modal.Footer>
-                                <Button onClick={this.handleSave}>Save</Button>
-                                <Button onClick={this.handleCloseModal}>Close</Button>
+                                <div onClick={this.handleSave} className="btn btn-sm cube-btn text-center">Save</div>
+                                <div onClick={this.handleCloseModal} className="btn btn-sm cube-btn text-center">Close</div>
                             </Modal.Footer>
                         </Modal>
-                        <Modal show={showEnvVarModal} onHide={this.hideEnvModal}>
+                        <Modal bsSize="large" show={showEnvVarModal} onHide={this.hideEnvModal} className="envModal">
                             <EnvVar hideModal={this.hideEnvModal} />
                         </Modal>
                     </div>

@@ -75,7 +75,7 @@ class APIRequestsTable extends Component {
               check: <input type="checkbox" value={traceData.parentReqId} checked={traceData.checked} onChange={this.handleRowCheckChanged}/>,
               time: traceData.parentRequest.reqTimestamp,
               out: traceData.outgoingRequests.length ? traceData.outgoingRequests.map((outgoingRequest) => <div>{outgoingRequest.apiPath}</div>) : "NA", // todo stylize
-              compare: <label onClick={() => this.handleCompareSelect(traceData.parentReqId)}><i className="fas fa-1x fa-thumb-tack" style={{cursor: "pointer", color: _.find(apiCatalog.compareRequests, {parentReqId: traceData.parentReqId}) ? "#00c853": "grey", fontSize: "large",}}></i></label>,
+              compare: <label onClick={() => this.handleCompareSelect(traceData.parentReqId)}><i className="fas fa-1x fa-thumbtack" style={{cursor: "pointer", color: _.find(apiCatalog.compareRequests, {parentReqId: traceData.parentReqId}) ? "#00c853": "grey", fontSize: "large",}}></i></label>,
               service: traceData.parentRequest.service,
               method: traceData.parentRequest.method,
               request: traceData.parentRequest.apiPath + (_.isEmpty(traceData.parentRequest.queryParams) ? "" : "?" + Object.entries(traceData.parentRequest.queryParams).map(([k, v]) => k + "=" + v).join("&")),
