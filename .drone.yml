@@ -74,6 +74,18 @@ steps:
         include:
         - pull_request
 
+  - name: Run_event_path_test
+    image: cubeiocorp/kubectl:latest
+    pull: always
+    commands:
+    - cd /code && ./eventPathTest.sh
+    when:
+      branch:
+      - develop
+      - staging
+      event:
+        include:
+        - pull_request
   - name: deploy_cubeServices_cube_dev
     image: quay.io/honestbee/drone-kubernetes
     settings:
@@ -123,18 +135,6 @@ steps:
       - master
       event:
         exclude:
-        - pull_request
-
-  - name: Run_event_path_test
-    image: spotify/alpine
-    command:
-    - ./eventPathtest.sh
-    when:
-      branch:
-      - develop
-      - staging
-      event:
-        include:
         - pull_request
 
   - name: notify

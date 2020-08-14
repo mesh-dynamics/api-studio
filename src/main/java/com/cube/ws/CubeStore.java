@@ -42,6 +42,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.solr.common.util.Pair;
+import org.apache.zookeeper.Op;
 import org.json.JSONObject;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
@@ -500,6 +501,23 @@ public class CubeStore {
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public Response setAgentConfigTag(AgentConfigTagInfo tagInfo) {
+        Pair<List, Stream<ConfigDAO>> result = rrstore
+            .getAgentConfigWithFacets(tagInfo.customerId, tagInfo.app, Optional.of(tagInfo.service),
+                Optional.of(tagInfo.instanceId), Optional.empty(), Optional.empty(),
+                Optional.of(tagInfo.tag));
+        if (!result.second().findAny().isPresent()) {
+            String message = "Error while updating the config tag. Cannot find config for tag to update";
+            LOGGER.error(
+                new ObjectMessage(Map.of(Constants.MESSAGE, message,
+                    Constants.CUSTOMER_ID_FIELD, tagInfo.customerId, Constants.APP_FIELD,
+                    tagInfo.app, Constants.SERVICE_FIELD, tagInfo.service,
+                    Constants.INSTANCE_ID_FIELD, tagInfo.instanceId, Constants.TAG_FIELD,
+                    tagInfo.tag)));
+            return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
+                    message)).build();
+        }
+
         if (rrstore.updateAgentConfigTag(tagInfo)) {
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(
                 buildSuccessResponse(Constants.SUCCESS,
@@ -612,7 +630,7 @@ public class CubeStore {
             .flatMap(Utils::strToInt);
         try {
             Pair<List, Stream<ConfigDAO>> result = rrstore.getAgentConfigWithFacets(customerId, app, service, instanceId,
-                numResults, start);
+                numResults, start, Optional.empty());
             Map response = Map.of("facets", Map.of("instance_facets", result.first()), "configs", result.second().collect(Collectors.toList()));
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(response).build();
 
