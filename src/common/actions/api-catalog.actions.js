@@ -44,6 +44,7 @@ export const apiCatalogActions = {
     setUnPinCompareRequest: (data) => ({ type: apiCatalogConstants.UNPIN_COMPARE_REQUEST, data: data }),
 
     resetCompareRequest: () => ({ type: apiCatalogConstants.RESET_COMPARE_REQUEST }),
+    setResizedColumns: (data) => ({ type: apiCatalogConstants.SET_RESIZED_COLUMNS, data: data }),
 
     fetchAPIFacets: (app, selectedSource, selectedGoldenCollection, startTime, endTime, selectedService, selectedApiPath,) => async (dispatch) => {
         const apiFacets = await cubeService.fetchAPIFacetData(app, selectedSource, selectedGoldenCollection, startTime, endTime);

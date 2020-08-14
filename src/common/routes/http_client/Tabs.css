@@ -24,15 +24,26 @@
 
 .md-hc-tab-panel {
     height: auto;
-    margin-top: 1px;
+    margin-top: 0px;
     background: #ECECE7;
     border: 4px solid #DCD1B5;
+    border-top: 0px;
     box-sizing: border-box;
     border-radius: 0px 0px 16px 16px;
 }
 
 .md-hc-tab.RRT__tab--selected {
     background-color: #ECECE7;
+    position: relative;
+}
+.md-hc-tab.RRT__tab--selected:after {
+    content: ' ';
+    height: 7px;
+    background: #ECECE7;
+    position: absolute;
+    left: 0px;
+    bottom: -7px;
+    width: 100%;
 }
 
 .md-hc-tab.RRT__tab--selected:focus {

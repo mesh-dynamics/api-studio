@@ -2,6 +2,7 @@ export const apiCatalogConstants = {
     SET_DIFF_DATA: "api-catalog/SET_DIFF_DATA",
     PIN_COMPARE_REQUEST: "api-catalog/PIN_COMPARE_REQUEST",
     UNPIN_COMPARE_REQUEST: "api-catalog/UNPIN_COMPARE_REQUEST",
+    SET_RESIZED_COLUMNS: "api-catalog/SET_RESIZED_COLUMNS",
     RESET_COMPARE_REQUEST: "api-catalog/RESET_COMPARE_REQUEST",
     FETCH_API_FACETS: "api-catalog/FETCH_API_FACETS",
     SET_FILTER_CHANGE: "api-catalog/SET_FILTER_CHANGE",
