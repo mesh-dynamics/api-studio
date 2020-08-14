@@ -1,3 +1,4 @@
+// import sortJson from 'sort-json';
 import ReduceDiff from '../ReduceDiff';
 import generator from '../generator/json-path-generator';
 import sortJson from "../sort-json";

@@ -228,6 +228,11 @@
     margin-left: 15px;
 }
 
+.UserAvatar--inner:hover {
+    background-color: #00B2FF !important;
+    cursor: pointer;
+}
+
 aside .nav-tabs>li.active>a, .nav-tabs>li.active>a:focus, .nav-tabs>li.active>a:hover {
     color: #5A738E;
     cursor: default;
@@ -239,4 +244,9 @@ aside .nav-tabs>li.active>a, .nav-tabs>li.active>a:focus, .nav-tabs>li.active>a:
 
 aside .nav-tabs>li>a {
     color: #555;
+}
+
+.link-q path:hover{
+    fill:#00B2FF;
+    pointer-events:all;
 }

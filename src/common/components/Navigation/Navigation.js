@@ -8,6 +8,8 @@ import {cubeConstants} from "../../constants";
 import {Link} from "react-router-dom";
 import AddTestConfig from "../AddTestConfig";
 import ViewSelectedTestConfig from "../ViewSelectedTestConfig";
+import config from '../../config';
+import { ipcRenderer } from '../../helpers/ipc-renderer';
 
 class Navigation extends Component{
     constructor (props) {
@@ -24,12 +26,40 @@ class Navigation extends Component{
         this.analysisStatusInterval;
     }
 
+    componentWillMount() {
+        const { dispatch } = this.props;
+
+        if(PLATFORM_ELECTRON) {
+            ipcRenderer.on('get_config', (event, appConfig) => {
+                ipcRenderer.removeAllListeners('get_config');
+                
+                config.apiBaseUrl= `${appConfig.domain}/api`;
+                config.recordBaseUrl= `${appConfig.domain}/api/cs`;
+                config.replayBaseUrl= `${appConfig.domain}/api/rs`;
+                config.analyzeBaseUrl= `${appConfig.domain}/api/as`;               
+                
+                dispatch(cubeActions.getApps());
+                dispatch(cubeActions.getInstances());
+            });
+        }
+    }
+
     componentDidMount() {
         const { dispatch } = this.props;
 
-        dispatch(cubeActions.getApps());
-        dispatch(cubeActions.getInstances());
+        if(PLATFORM_ELECTRON) {
+            ipcRenderer.send('get_config');
+        } else {
+            dispatch(cubeActions.getApps());
+            dispatch(cubeActions.getInstances());
+        }
     }
+
+    // componentWillUnmount() {
+    //     if(isElectron()) {
+    //         ipcRenderer.removeAllListeners('get_config');
+    //     }
+    // }
 
     handleShowHideApps() {
         const {appsVisible} = this.state;
@@ -62,7 +92,8 @@ class Navigation extends Component{
             return (
                 <div key={item.id} className="app-wrapper" onClick={() => this.handleChangeForApps(item.name)}>
                     <div className="app-img">
-                        <img src={"/assets/images/" + item.name + "-app.png"} alt=""/>
+                        <img src={"https://app.meshdynamics.io/assets/images/" + item.name + "-app.png"} alt=""/>
+                        {/* <img src={"./assets/images/" + item.name + "-app.png"} alt=""/> */}
                     </div>
                     <div className={cube.selectedApp == item.name ? "app-name selected" : "app-name"}>
                         {item.name}
@@ -116,7 +147,8 @@ class Navigation extends Component{
                 <div className="nav-cont h-100">
                     <div className="left-pane text-center">
                         <div className="company-name">
-                            <img className="inline-block" src="/assets/images/md-circle-logo.png" alt="MESH DYNAMICS"/>
+                        <img className="inline-block" src="https://app.meshdynamics.io/assets/images/md-circle-logo.png" alt="MESH DYNAMICS"/>
+                            {/* <img className="inline-block" src="./assets/images/md-circle-logo.png" alt="MESH DYNAMICS"/> */}
                         </div>
                         <div className="q-links-top">
                             <Link to={`/http_client`}>
@@ -205,7 +237,8 @@ class Navigation extends Component{
                                 Service Map
                             </div>
                             <div className="service-gph">
-                                <img src={"/assets/images/" + cube.selectedApp + "-app.png"} alt=""/>
+                                <img src={"https://app.meshdynamics.io/assets/images/" + cube.selectedApp + "-app.png"} alt=""/>
+                                {/* <img src={"./assets/images/" + cube.selectedApp + "-app.png"} alt=""/> */}
                             </div>
                         </div>
 

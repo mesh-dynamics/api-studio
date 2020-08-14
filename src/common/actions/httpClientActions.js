@@ -96,8 +96,8 @@ export const httpClientActions = {
         return {type: httpClientConstants.CLOSE_SAVE_MODAL, data: {showSaveModal}};
     },
 
-    showSaveModal: (selectedSaveableTabId, showSaveModal, collectionName, collectionLabel, modalErroSaveMessage, modalErroCreateCollectionMessage) => {
-        return {type: httpClientConstants.SHOW_SAVE_MODAL, data: {selectedSaveableTabId, showSaveModal, collectionName, collectionLabel, modalErroSaveMessage, modalErroCreateCollectionMessage}};
+    showSaveModal: (selectedSaveableTabId, showSaveModal, collectionName, collectionLabel, modalErroSaveMessage,modalErroSaveMessageIsError, modalErroCreateCollectionMessage) => {
+        return {type: httpClientConstants.SHOW_SAVE_MODAL, data: {selectedSaveableTabId, showSaveModal, collectionName, collectionLabel, modalErroSaveMessage,modalErroSaveMessageIsError, modalErroCreateCollectionMessage}};
     },
 
     setInactiveHistoryCursor: (historyCursor, active) => {
@@ -130,6 +130,30 @@ export const httpClientActions = {
 
     setUpdatedModalUserCollectionDetails: (name, value) => {
         return {type: httpClientConstants.SET_UPDATED_MODAL_USER_COLLECTION_DETAILS, data: {name, value}};
+    },
+
+    setAsReference: (tabId, tab) => {
+        return {type: httpClientConstants.SET_AS_REFERENCE, data: {tabId, tab}};
+    },
+
+    closeAddMockReqModal: (selectedTabIdToAddMockReq, showAddMockReqModal, mockReqServiceName, mockReqApiPath, modalErrorAddMockReqMessage) => {
+        return {type: httpClientConstants.CLOSE_ADD_MOCK_REQ_MODAL, data: {selectedTabIdToAddMockReq, showAddMockReqModal, mockReqServiceName, mockReqApiPath, modalErrorAddMockReqMessage}};
+    },
+
+    setUpdatedModalMockReqDetails: (name, value) => {
+        return {type: httpClientConstants.SET_UPDATED_MODAL_MOCK_REQ_DETAILS, data: {name, value}};
+    },
+
+    showAddMockReqModal: (selectedTabIdToAddMockReq, showAddMockReqModal, mockReqServiceName, mockReqApiPath, modalErrorAddMockReqMessage) => {
+        return {type: httpClientConstants.SHOW_ADD_MOCK_REQ_MODAL, data: {selectedTabIdToAddMockReq, showAddMockReqModal, mockReqServiceName, mockReqApiPath, modalErrorAddMockReqMessage}};
+    },
+
+    setSelectedTraceTableReqTabId: (selectedTraceTableReqTabId, tabId) => {
+        return {type: httpClientConstants.SET_SELECTED_TRACE_TABLE_REQ_TAB, data: {selectedTraceTableReqTabId, tabId}};
+    },
+    
+    setSelectedTraceTableTestReqId: (selectedTraceTableTestReqTabId, tabId) => {
+        return{type: httpClientConstants.SET_SELECTED_TRACE_TABLE_TEST_REQ_TAB, data: {selectedTraceTableTestReqTabId, tabId}};
     },
 
     setEnvironmentList: (environmentList) => ({type: httpClientConstants.SET_ENVIRONMENT_LIST, data: environmentList}),
@@ -186,4 +210,11 @@ export const httpClientActions = {
     showEnvList: (show) => ({type: httpClientConstants.SHOW_ENV_LIST, data: show}),
 
     setSelectedEnvironment: (selectedEnvironment) => ({type: httpClientConstants.SET_SELECTED_ENVIRONMENT, data: selectedEnvironment}),
+
+    resetRunState: (tabId) => ({type: httpClientConstants.RESET_RUN_STATE, data: {tabId}}),
+
+    setReqRunning: (tabId) => ({type: httpClientConstants.SET_REQUEST_RUNNING, data: {tabId}}),
+
+    unsetReqRunning: (tabId) => ({type: httpClientConstants.UNSET_REQUEST_RUNNING, data: {tabId}}),
+
 }

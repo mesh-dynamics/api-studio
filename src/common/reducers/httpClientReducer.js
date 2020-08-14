@@ -1,8 +1,13 @@
 import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
+import cryptoRandomString from 'crypto-random-string';
 
 const tabId = uuidv4();
+const isoDate = new Date().toISOString();
+const timestamp = new Date(isoDate).getTime();
+const traceId = cryptoRandomString({length: 32});
+const spanId = cryptoRandomString({length: 16});
 const initialState = { 
     tabs: [{ 
         id: tabId,
@@ -24,7 +29,68 @@ const initialState = {
         recordedResponseBody: "",
         responseBodyType: "json",
         outgoingRequestIds: [],
-        eventData: null,
+        eventData: [
+            {
+                customerId: "",
+                app: "",
+                service: "",
+                instanceId: "devtool",
+                collection: "NA",
+                traceId: traceId,
+                spanId: spanId,
+                parentSpanId: null,
+                runType: "Manual",
+                runId: null,
+                timestamp: timestamp,
+                reqId: "NA",
+                apiPath: "",
+                eventType: "HTTPRequest",
+                payload: [
+                    "HTTPRequestPayload",
+                    {
+                        hdrs: {},
+                        queryParams: {},
+                        formParams: {},
+                        method: "",
+                        path: "",
+                        pathSegments: []
+                    }
+                ],
+                recordingType: "UserGolden",
+                metaData: {
+    
+                }
+            },
+            {
+                customerId: "",
+                app: "",
+                service: "",
+                instanceId: "devtool",
+                collection: "NA",
+                traceId: traceId,
+                spanId: null,
+                parentSpanId: null,
+                runType: "Manual",
+                runId: null,
+                timestamp: timestamp,
+                reqId: "NA",
+                apiPath: "",
+                eventType: "HTTPResponse",
+                payload: [
+                    "HTTPResponsePayload",
+                    {
+                        hdrs: {},
+                        body: {},
+                        status: "",
+                        statusCode: ""
+                    }
+                ],
+                recordingType: "UserGolden",
+                metaData: {
+
+                }
+            }
+        ],
         showOutgoingRequestsBtn: false,
         showSaveBtn: true,
         outgoingRequests: [],
@@ -36,7 +102,10 @@ const initialState = {
         collectionIdAddedFromClient: "",
         traceIdAddedFromClient: "",
         recordedHistory: null,
-        clearIntervalHandle: null
+        clearIntervalHandle: null,
+        selectedTraceTableReqTabId: "",
+        selectedTraceTableTestReqTabId: "",
+        requestRunning: false,
     }],
     toggleTestAndOutgoingRequests: true,
     selectedTabKey: tabId,
@@ -53,12 +122,23 @@ const initialState = {
     collectionName: "",
     collectionLabel: "",
     modalErroSaveMessage: "",
+    modalErroSaveMessageIsError: false,
     modalErroCreateCollectionMessage: "",
     environmentList: [],
     envStatusText: "",
     envStatusIsError: false,
     showEnvList: true,
     selectedEnvironment: "",
+    showAddMockReqModal: false,
+    mockReqServiceName: "",
+    mockReqApiPath: "",
+    modalErrorAddMockReqMessage: "",
+    selectedTabIdToAddMockReq: "",
+}
+
+const getTabIndexGivenTabId = (tabId, tabs) => {
+    if(!tabs) return -1;
+    return tabs.findIndex((e) => e.id === tabId);
 }
 
 export const httpClient = (state = initialState, { type, data }) => {
@@ -321,7 +401,8 @@ export const httpClient = (state = initialState, { type, data }) => {
                 tabs: [...tabs, {
                     id: data.tabId,
                     tabName: data.tabName,
-                    ...data.reqObject
+                    ...data.reqObject,
+                    selectedTraceTableReqTabId: data.tabId
                 }],
                 selectedTabKey: data.selectedTabKey,
                 app: data.app
@@ -369,6 +450,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                 ...state,
                 showSaveModal : data.showSaveModal,
                 modalErroSaveMessage: data.modalErroSaveMessage,
+                modalErroSaveMessageIsError: false,
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         if(data.clearIntervalHandle) eachTab["clearIntervalHandle"] = data.clearIntervalHandle;
@@ -382,7 +464,8 @@ export const httpClient = (state = initialState, { type, data }) => {
             return {
                 ...state,
                 showSaveModal : data.showSaveModal,
-                modalErroSaveMessage: data.modalErroSaveMessage
+                modalErroSaveMessage: data.modalErroSaveMessage,
+                modalErroSaveMessageIsError: true
             }
         }
 
@@ -390,7 +473,8 @@ export const httpClient = (state = initialState, { type, data }) => {
             return {
                 ...state,
                 showSaveModal : data.showSaveModal,
-                modalErroSaveMessage: data.modalErroSaveMessage
+                modalErroSaveMessage: data.modalErroSaveMessage,
+                modalErroSaveMessageIsError: true
             }
         }
 
@@ -401,6 +485,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab["recordedHistory"] = data.recordedHistory;
+                        eachTab["selectedTraceTableTestReqTabId"] = data.recordedHistory.id;
                     }
                     return eachTab; 
                 })
@@ -422,6 +507,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                 collectionLabel: data.collectionLabel, 
                 selectedSaveableTabId: data.selectedSaveableTabId, 
                 modalErroSaveMessage: data.modalErroSaveMessage, 
+                modalErroSaveMessageIsError: data.modalErroSaveMessageIsError,
                 modalErroCreateCollectionMessage: data.modalErroCreateCollectionMessage
             }
         }
@@ -523,7 +609,112 @@ export const httpClient = (state = initialState, { type, data }) => {
                 selectedEnvironment: data,
             }
         }
+        case httpClientConstants.RESET_RUN_STATE: {
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab["recordedHistory"] = null
+                    }
+                    return eachTab;
+                })
+            }
+        }
+
+        case httpClientConstants.SET_AS_REFERENCE: {
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab = {
+                            ...data.tab
+                        };
+                    }
+                    return eachTab; 
+                })
+            }
+        }
+
+        case httpClientConstants.CLOSE_ADD_MOCK_REQ_MODAL: {
+            return {
+                ...state,
+                showAddMockReqModal: data.showAddMockReqModal, 
+                mockReqServiceName: data.mockReqServiceName, 
+                mockReqApiPath: data.mockReqApiPath, 
+                selectedTabIdToAddMockReq: data.selectedTabIdToAddMockReq
+            }
+        }
+
+        case httpClientConstants.SET_UPDATED_MODAL_MOCK_REQ_DETAILS: {
+            return {
+                ...state,
+                [data.name]: data.value
+            }
+        }
+
+        case httpClientConstants.SHOW_ADD_MOCK_REQ_MODAL: {
+            return {
+                ...state,
+                showAddMockReqModal: data.showAddMockReqModal, 
+                mockReqServiceName: data.mockReqServiceName, 
+                mockReqApiPath: data.mockReqApiPath, 
+                selectedTabIdToAddMockReq: data.selectedTabIdToAddMockReq
+            }
+        }
+
+        case httpClientConstants.SET_SELECTED_TRACE_TABLE_REQ_TAB: {
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab.selectedTraceTableReqTabId = data.selectedTraceTableReqTabId
+                    }
+                    return eachTab; 
+                })
+            }
+        }
+
+        case httpClientConstants.SET_SELECTED_TRACE_TABLE_TEST_REQ_TAB: {
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab.selectedTraceTableTestReqTabId = data.selectedTraceTableTestReqTabId
+                    }
+                    return eachTab; 
+                })
+            }
+        }
         
+        case httpClientConstants.SET_REQUEST_RUNNING: {            
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab["requestRunning"] = true
+                    }
+                    return eachTab;
+                })
+            }
+        }
+        
+        case httpClientConstants.UNSET_REQUEST_RUNNING: {
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                        if (eachTab.id === data.tabId) {
+                            eachTab["requestRunning"] = false
+                        }
+                        return eachTab;
+                    })
+            }
+        }
         default:
             return state;
     }

@@ -2,6 +2,7 @@ import React, { Component, createContext } from 'react';
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Breadcrumb, ButtonGroup, Button, Radio} from 'react-bootstrap';
 import _ from 'lodash';
 import axios from "axios";
+// import sortJson from 'sort-json';
 import sortJson from "../../utils/sort-json";
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import ReduceDiff from '../../utils/ReduceDiff';
@@ -13,7 +14,7 @@ import {Link} from "react-router-dom";
 import Modal from "react-bootstrap/lib/Modal";
 import {resolutionsIconMap} from '../../components/Resolutions.js'
 import {getSearchHistoryParams, updateSearchHistoryParams} from "../../utils/lib/url-utils";
-import statusCodeList from "../../StatusCodeList";
+import statusCodeList from "../../status-code-list";
 import "../../components/Diff.css"
 import {validateAndCreateDiffLayoutData, addCompressToggleData} from "../../utils/diff/diff-process.js"
 

@@ -32,7 +32,7 @@ class App extends Component {
         // In Top, need to remove top_nav class (or make up one more without the margin)
         // In PageContent, remove right_col class (or alternate class)
         return (
-            <div className="container body">
+            <div className="body">
                 <div className="main_container">
                     <AuthTimer />
                     <Navigation lo={this.handleLogout} user={ user } toggleCb={ this.toggleLeft }/>

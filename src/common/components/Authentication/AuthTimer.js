@@ -67,7 +67,7 @@ const AuthTimer = (props) => {
     return (
         <div>
             <IdleTimer
-                ref={ref => { this.idleTimer = ref }}
+                // ref={ref => { this.idleTimer = ref }}
                 element={document}
                 onActive={resetTimer}
                 onIdle={startTimer}

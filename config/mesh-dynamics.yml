@@ -1,0 +1,6 @@
+domain: "https://app.meshdynamics.io"
+mock:
+  protocol: https
+  host: demo.prod.cubecorp.io
+  port: 443
+  proxyPort: 9000
