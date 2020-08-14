@@ -32,8 +32,9 @@ import io.md.dao.MDTraceInfo;
 import io.md.dao.Recording.RecordingType;
 import io.md.injection.DynamicInjectionConfig;
 import io.md.injection.DynamicInjectionConfig.ExtractionMeta;
-import io.md.injection.DynamicInjectionConfig.HTTPMethodType;
+
 import io.md.injection.DynamicInjectionConfig.InjectionMeta;
+import io.md.injection.DynamicInjectionConfig.InjectionMeta.HTTPMethodType;
 
 import com.cube.utils.Constants;
 import com.cube.utils.InjectionVarResolver;
@@ -50,12 +51,12 @@ public class DynamicInjectionTest {
 			//String apiPath, HTTPMethodType method,
 			//			String name, String value, boolean reset, boolean valueObject
 			ExtractionMeta extractionMeta = new ExtractionMeta("minfo/health" , HTTPMethodType.POST,
-				"${Golden.Request: /hdrs/cookie/0 : cookie1 (?<mdgroup>[^;]+)}_value",
-				"${TestSet.Response: /hdrs/cookie/0 : cookie1 (?<mdgroup>[^;]+)}", true, false);
+				"${Golden.Request: /hdrs/cookie/0 : cookie1 ([^;]+)}_value",
+				"${TestSet.Response: /hdrs/cookie/0 : cookie1 ([^;]+)}", true, false);
 
 			ExtractionMeta extractionMeta2 = new ExtractionMeta("minfo/health" , HTTPMethodType.POST,
-				"${Golden.Request: /hdrs/cookie/0 : cookie2 (?<mdgroup>[^;\\]]+)}_value",
-				"${TestSet.Response: /hdrs/cookie/0 : cookie2 (?<mdgroup>[^;\\]]+)}", true, false);
+				"${Golden.Request: /hdrs/cookie/0 : cookie2 ([^;\\]]+)}_value",
+				"${TestSet.Response: /hdrs/cookie/0 : cookie2 ([^;\\]]+)}", true, false);
 
 			extractionMetaList.add(extractionMeta);
 			extractionMetaList.add(extractionMeta2);
@@ -129,11 +130,11 @@ public class DynamicInjectionTest {
 			//public InjectionMeta(List<String> apiPaths,String jsonPath, boolean injectAllPaths, String name) {
 
 			InjectionMeta injectionMeta1 = new InjectionMeta(Arrays.asList(""), "/hdrs/cookie/0" , true
-				, "${Golden.Request: /hdrs/cookie/0 : cookie1 (?<mdgroup>[^;]+)}_value"
+				, "${Golden.Request: /hdrs/cookie/0 : cookie1 ([^;]+)}_value"
 				, Optional.of("(?<mdgroup>cookie1 )[^;]+"));
 
 			InjectionMeta injectionMeta2 = new InjectionMeta(Arrays.asList(""), "/hdrs/cookie/0" , true
-				, "${Golden.Request: /hdrs/cookie/0 : cookie2 (?<mdgroup>[^;\\]]+)}_value"
+				, "${Golden.Request: /hdrs/cookie/0 : cookie2 ([^;\\]]+)}_value"
 				, Optional.of("(?<mdgroup>cookie2 )[^;\\]]+"));
 
 			injectionMetaList.add(injectionMeta1);
