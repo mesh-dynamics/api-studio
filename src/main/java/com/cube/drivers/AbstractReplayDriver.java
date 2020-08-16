@@ -365,8 +365,10 @@ public abstract class AbstractReplayDriver {
 						String valueString = sub.replace(sourceString);
 						value = new JsonDataObj(new TextNode(valueString), jsonMapper);
 					}
-					extractionMap
-						.put(sub.replace(extractionMeta.name), value);
+					if (value != null) {
+						extractionMap
+							.put(sub.replace(extractionMeta.name), value);
+					}
 				}
 			});
 		});

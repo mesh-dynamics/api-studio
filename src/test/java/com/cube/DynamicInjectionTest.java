@@ -58,8 +58,13 @@ public class DynamicInjectionTest {
 				"${Golden.Request: /hdrs/cookie/0 : cookie2 ([^;\\]]+)}_value",
 				"${TestSet.Response: /hdrs/cookie/0 : cookie2 ([^;\\]]+)}", true, false);
 
+			ExtractionMeta extractionMeta3 = new ExtractionMeta("minfo/health" , HTTPMethodType.POST,
+				"${Golden.Request}_value",
+				"${TestSet.Response}", true, false);
+
 			extractionMetaList.add(extractionMeta);
 			extractionMetaList.add(extractionMeta2);
+			extractionMetaList.add(extractionMeta3);
 
 			DynamicInjectionConfig dynamicInjectionConfig = new DynamicInjectionConfig("ver1",
 				"ravivj" , "RandomApp" , Optional.empty(),extractionMetaList, injectionMetaList );

@@ -37,7 +37,7 @@ public class InjectionVarResolver implements StringLookup {
 		String[] splitStrings = lookupString.split(":");
 		if (splitStrings.length < 2 || splitStrings.length > 3) {
 			LOGGER.error("Lookup String format mismatch");
-			//return null; // Null resorts to default variable in substitutor
+			return null; // Null resorts to default variable in substitutor
 		}
 		String source = splitStrings[0].trim();
 		String jsonPath = splitStrings[1].trim();
@@ -57,7 +57,7 @@ public class InjectionVarResolver implements StringLookup {
 					.getResponseEvent(goldenRequestEvent.reqId);
 				if (goldenResponseOptional.isEmpty()) {
 					LOGGER.error("Cannot fetch golden response for golden request");
-					//return null; // Null resorts to default variable in substitutor
+					return null; // Null resorts to default variable in substitutor
 				}
 				sourcePayload = goldenResponseOptional.get().payload;
 				break;
@@ -76,6 +76,7 @@ public class InjectionVarResolver implements StringLookup {
 
 	public DataObj lookupObject(String lookupString) {
 		ExtractionInfo extractionInfo = getSourcePayloadAndJsonPath(lookupString);
+		if (extractionInfo == null) return null;
 		DataObj value;
 		value = extractionInfo.source.getVal(extractionInfo.jsonPath);
 		return value;
@@ -88,6 +89,7 @@ public class InjectionVarResolver implements StringLookup {
 	public String lookup(String lookupString) {
 		String value = null;
 		ExtractionInfo extractionInfo =  getSourcePayloadAndJsonPath(lookupString);
+		if (extractionInfo == null) return null;
 		String regex = extractionInfo.regex;
 		try {
 			value = extractionInfo.source.getValAsString(extractionInfo.jsonPath);
