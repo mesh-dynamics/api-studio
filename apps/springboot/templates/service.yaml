@@ -183,7 +183,7 @@ spec:
     spec:
       containers:
       - name: transformer
-        image: cubeiocorp/sample-order-transformer:stable_1_0
+        image: cubeiocorp/sample-order-transformer:test001
         imagePullPolicy: IfNotPresent
         resources:
           requests:

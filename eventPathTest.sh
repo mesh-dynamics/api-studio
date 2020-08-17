@@ -11,10 +11,10 @@ DATA="{
 	\"configJson\" :
 	{
 			\"type\" : \"AgentConfig\",
-			\"config\": \"{\\\"io\\\": {\\\"md\\\": {\\\"service\\\": {\\\"record\\\": \\\"https://ethicalaakash.dev.cubecorp.io/api\\\",\\\"mock\\\": \\\"https://ethicalaakash.dev.cubecorp.io/api\\\"},\\\"authtoken\\\": \\\"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s\\\", \\\"read\\\": {\\\"timeout\\\": 100000},\\\"connect\\\": {\\\"timeout\\\": 100000,\\\"retries\\\": 3},\\\"intent\\\": \\\"mock\\\",\\\"samplerconfig\\\": {\\\"type\\\": \\\"simple\\\",\\\"accuracy\\\": 1000,\\\"rate\\\": 1},\\\"sampler\\\": {\\\"veto\\\": false},\\\"nodeselectionconfig\\\": {\\\"type\\\":\\\"simple\\\",\\\"accuracy\\\":1000,\\\"rate\\\":1},\\\"mock\\\":{\\\"services\\\":[\\\"transformer:8081\\\"]}}}}\"
+			\"config\": \"{\\\"io\\\": {\\\"md\\\": {\\\"service\\\": {\\\"record\\\": \\\"$CUBE_ENDPOINT/api\\\",\\\"mock\\\": \\\"$CUBE_ENDPOINT/api\\\"},\\\"authtoken\\\": \\\"Bearer $AUTH_TOKEN\\\", \\\"read\\\": {\\\"timeout\\\": 100000},\\\"connect\\\": {\\\"timeout\\\": 100000,\\\"retries\\\": 3},\\\"intent\\\": \\\"mock\\\",\\\"samplerconfig\\\": {\\\"type\\\": \\\"simple\\\",\\\"accuracy\\\": 1000,\\\"rate\\\": 1},\\\"sampler\\\": {\\\"veto\\\": false},\\\"nodeselectionconfig\\\": {\\\"type\\\":\\\"simple\\\",\\\"accuracy\\\":1000,\\\"rate\\\":1},\\\"mock\\\":{\\\"services\\\":[\\\"transformer:8081\\\"]}}}}\"
 	}
 }"
-curl --location --request POST https://ethicalaakash.dev.cubecorp.io/api/cs/storeAgentConfig --header 'Content-Type: application/json' --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s' --data-raw "$DATA"
+curl --location --request POST $CUBE_ENDPOINT/api/cs/storeAgentConfig --header 'Content-Type: application/json' --header "Authorization: Bearer $AUTH_TOKEN" --data-raw "$DATA"
 #Record configuration
 DATA="{
 	\"customerId\":\"CubeCorp\",
@@ -25,12 +25,12 @@ DATA="{
 	\"configJson\" :
 	{
 			\"type\" : \"AgentConfig\",
-			\"config\": \"{\\\"io\\\":{\\\"md\\\":{\\\"service\\\":{\\\"record\\\":\\\"https://ethicalaakash.dev.cubecorp.io/api\\\",\\\"mock\\\":\\\"https://ethicalaakash.dev.cubecorp.io/api\\\"},\\\"authtoken\\\":\\\"Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s\\\",\\\"read\\\":{\\\"timeout\\\":100000},\\\"connect\\\":{\\\"timeout\\\":100000,\\\"retries\\\":3},\\\"intent\\\":\\\"record\\\",\\\"samplerconfig\\\":{\\\"type\\\":\\\"simple\\\",\\\"accuracy\\\":1000,\\\"rate\\\":1},\\\"sampler\\\":{\\\"veto\\\":false},\\\"nodeselectionconfig\\\":{\\\"type\\\":\\\"simple\\\",\\\"accuracy\\\":1000,\\\"rate\\\":1}}}}\"
+			\"config\": \"{\\\"io\\\":{\\\"md\\\":{\\\"service\\\":{\\\"record\\\":\\\"$CUBE_ENDPOINT/api\\\",\\\"mock\\\":\\\"$CUBE_ENDPOINT/api\\\"},\\\"authtoken\\\":\\\"Bearer $AUTH_TOKEN\\\",\\\"read\\\":{\\\"timeout\\\":100000},\\\"connect\\\":{\\\"timeout\\\":100000,\\\"retries\\\":3},\\\"intent\\\":\\\"record\\\",\\\"samplerconfig\\\":{\\\"type\\\":\\\"simple\\\",\\\"accuracy\\\":1000,\\\"rate\\\":1},\\\"sampler\\\":{\\\"veto\\\":false},\\\"nodeselectionconfig\\\":{\\\"type\\\":\\\"simple\\\",\\\"accuracy\\\":1000,\\\"rate\\\":1}}}}\"
 	}
 }"
-curl --location --request POST 'https://ethicalaakash.dev.cubecorp.io/api/cs/storeAgentConfig' \
+curl --location --request POST $CUBE_ENDPOINT/api/cs/storeAgentConfig \
 --header 'Content-Type: application/json' \
---header "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s" \
+--header "Authorization: Bearer $AUTH_TOKEN" \
 --data-raw "$DATA"
 }
 
@@ -42,9 +42,9 @@ record() {
 	    \"service\":\"order\",
 	    \"tag\" : \"record-spring-order\"
 	}"
-	curl --location --request POST 'https://ethicalaakash.dev.cubecorp.io/api/cs/setCurrentAgentConfigTag/' \
+	curl --location --request POST $CUBE_ENDPOINT/api/cs/setCurrentAgentConfigTag/ \
 --header 'Content-Type: application/json' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s' \
+--header "Authorization: Bearer $AUTH_TOKEN" \
 --data-raw "$DATA"
 sleep 35
   RESPONSE=$(curl -X POST \
@@ -64,15 +64,16 @@ generate_traffic() {
     sleep 1
     curl --location --request GET "$SPRINGBOOT_HOST:8080/orders/getOrders/" --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsib3JkZXJzIl0sInVzZXJfbmFtZSI6ImFkbWluQGFkbWluLmNvbSIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJleHAiOjE1ODg4MzczMDksImF1dGhvcml0aWVzIjpbIkFETUlOIl0sImp0aSI6ImQyMGEyYWY0LTNmOTYtNDdkMS05ZTM4LTRhMWI4MmE1MjQ1YiIsImNsaWVudF9pZCI6Im9yZGVyLXJlY2VpdmVyIn0.UZIlg5nGhL5QGpHrlupTI8qGFTwIS3jnbnaYNpXeRqQ' --header 'Content-Type: application/json'
     sleep 1
-    curl --location --request POST "$SPRINGBOOT_HOST:8080/orders/postOrder/" --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsib3JkZXJzIl0sInVzZXJfbmFtZSI6ImFkbWluQGFkbWluLmNvbSIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJleHAiOjE1ODg4MzczMDksImF1dGhvcml0aWVzIjpbIkFETUlOIl0sImp0aSI6ImQyMGEyYWY0LTNmOTYtNDdkMS05ZTM4LTRhMWI4MmE1MjQ1YiIsImNsaWVudF9pZCI6Im9yZGVyLXJlY2VpdmVyIn0.UZIlg5nGhL5QGpHrlupTI8qGFTwIS3jnbnaYNpXeRqQ' --header 'Content-Type: application/json' --data-raw '{
-	"id": 5,
-    "productId": 1,
-    "customer": {
-        "firstName": "Lokesh1",
-        "lastName": "Gupta1",
-        "email": "xyz@gmail.com"
+		DATA="{
+	\"id\": $((i + 3)),
+    \"productId\": 1,
+    \"customer\": {
+        \"firstName\": \"Lokesh1\",
+        \"lastName\": \"Gupta1\",
+        \"email\": \"xyz@gmail.com\"
     }
-}'
+}"
+    curl --location --request POST "$SPRINGBOOT_HOST:8080/orders/postOrder/" --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsib3JkZXJzIl0sInVzZXJfbmFtZSI6ImFkbWluQGFkbWluLmNvbSIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJleHAiOjE1ODg4MzczMDksImF1dGhvcml0aWVzIjpbIkFETUlOIl0sImp0aSI6ImQyMGEyYWY0LTNmOTYtNDdkMS05ZTM4LTRhMWI4MmE1MjQ1YiIsImNsaWVudF9pZCI6Im9yZGVyLXJlY2VpdmVyIn0.UZIlg5nGhL5QGpHrlupTI8qGFTwIS3jnbnaYNpXeRqQ' --header 'Content-Type: application/json' --data-raw "$DATA"
 sleep 1
   done
 }
@@ -90,12 +91,12 @@ replay() {
 	    \"service\":\"order\",
 	    \"tag\" : \"replay-spring-order\"
 	}"
-	curl --location --request POST 'https://ethicalaakash.dev.cubecorp.io/api/cs/setCurrentAgentConfigTag/' \
+	curl --location --request POST $CUBE_ENDPOINT/api/cs/setCurrentAgentConfigTag/ \
 --header 'Content-Type: application/json' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s' \
+--header "Authorization: Bearer $AUTH_TOKEN" \
 --data-raw "$DATA"
 sleep 35
-  BODY="endPoint=$SPRINGBOOT_HOST&instanceId=$INSTANCE_ID&templateSetVer=$TEMPLATE&userId=$USER_ID"
+  BODY="endPoint=$SPRINGBOOT_HOST&instanceId=$INSTANCE_ID&templateSetVer=$TEMPLATE&userId=$USER_ID&service=order"
   COUNT=0
 	while [ "$http_code" != "200" ] || [ "$REPLAY_ID" = "none" ] && [ "$COUNT" != "5" ]; do
   resp=$(curl -sw "%{http_code}" -X POST \
@@ -127,12 +128,13 @@ sleep 35
 analyze() {
   ANALYZE=$(curl -X POST $CUBE_ENDPOINT/api/as/analyze/$REPLAY_ID -H 'Content-Type: application/x-www-form-urlencoded' -H "Authorization: Bearer $AUTH_TOKEN" -H 'cache-control: no-cache')
   REQCOUNT=$(echo $ANALYZE | jq .reqCnt )
-  RESPNOTMATCHED=$(echo $ANALYZE | jq .respNotMatched )
+	RESPNOTMATCHED=$(echo $ANALYZE | jq .respNotMatched)
+	REQNOTMATCHED=$(echo $ANALYZE | jq .reqNotMatched)
   REQMATCHED=$(echo $ANALYZE | jq .reqMatched)
   #Display replay ID
   echo "Replay ID:" $REPLAY_ID
   #Exit with non-zero exit code if reqstnotmatched and respnotmatchted are have nono-zero value
-  if [ "$REQCOUNT" != "0" ] && [ "$REQMATCHED" = "$REQCOUNT" ]; then
+  if [ "$REQCOUNT" != "0" ] && [ "$RESPNOTMATCHED" = "0" ] && [ "$REQNOTMATCHED" = "0" ]; then
     TEST_STATUS="test passed"
     EXIT_CODE=0
   else
