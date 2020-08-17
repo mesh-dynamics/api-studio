@@ -120,8 +120,8 @@ public class InjectionVarResolver implements StringLookup {
 			this.regex = regex;
 		}
 
-		public Payload source;
-		public String jsonPath;
-		public String regex;
+		public final Payload source;
+		public final String jsonPath;
+		public final String regex;
 	}
 }
