@@ -19,6 +19,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -185,6 +186,9 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 				.uri(uri)
 				.method(httpRequest.method,
 					HttpRequest.BodyPublishers.ofByteArray(httpRequest.getBody()));
+
+			LOGGER.debug("PATH :: " + uri.toString() + " OUTGOING REQUEST BODY :: " + new String(httpRequest.getBody(),
+				StandardCharsets.UTF_8));
 
 			headers.forEach((k, vlist) -> {
 				// some headers are restricted and cannot be set on the request
