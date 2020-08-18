@@ -214,7 +214,7 @@ public class ReplayBasicWS {
     private Response doStartReplay(Replay replay, boolean startReplay, boolean analyze) {
 
         return ReplayDriverFactory
-            .initReplay(replay, dataStore)
+            .initReplay(replay, dataStore, jsonMapper)
             .map(replayDriver -> {
                 String json;
                 Replay replayFromDriver = replayDriver.getReplay();
