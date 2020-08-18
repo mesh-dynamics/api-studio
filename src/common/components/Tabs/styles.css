@@ -60,9 +60,9 @@
   position: relative;
 }
 
-.RRT__tab--selected .RRT__removable-text {
+/* .RRT__tab--selected .RRT__removable-text {
   margin-right: 10px;
-}
+} */
 
 .RRT__tab--selected .RRT__removable-icon {
   font-size: 18px;
@@ -150,4 +150,37 @@
 
 .RRT__add-icon {
   font-size: 16px;
+}
+
+
+.RRT-icon-container {
+  display: flex;
+  width: 20px;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  min-height: 40px;
+}
+.RRT-icon-container:hover{
+  background-color: #ADADAD;
+}
+.RRT_scrollButtons{
+  position: absolute;
+  right: 0px;
+  display:flex;  
+  height: 50px;
+  background-color: #ECECE7;
+  display: flex;
+}
+
+.tabContainer{
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  display: flex;
+  margin-right: 64px;
+  scroll-behavior: smooth;
+}
+
+.RRT__accordion .tabContainer{
+  flex-direction: column;
 }

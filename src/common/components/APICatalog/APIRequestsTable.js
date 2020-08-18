@@ -244,7 +244,8 @@ class APIRequestsTable extends Component {
             style: {
               textAlign: 'center',
             },
-            id: "cbView"
+            id: "cbView",
+            resizable: false
       },
       {
         Header: <div style={{ textAlign: "left", fontWeight: "bold" }}>TIME</div>,
