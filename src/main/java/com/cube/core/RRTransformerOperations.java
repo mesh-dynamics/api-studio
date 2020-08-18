@@ -1,5 +1,6 @@
 package com.cube.core;
 
+import io.md.dao.JsonDataObj;
 import io.md.dao.RRTransformer;
 import java.util.Collections;
 import java.util.HashSet;
@@ -13,16 +14,20 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.md.dao.HTTPRequestPayload;
+
+import com.cube.utils.Constants;
 
 
 public class RRTransformerOperations {
-	
+
 	private static final Logger LOGGER = LogManager.getLogger(RRTransformerOperations.class);
-	
+
 	// match request/response for transformation
-	// Hypothesis is that most requests don't need to be transformed. Hence, separating the check from actual transformation. 
-	public static void transformRequest(HTTPRequestPayload req, RRTransformer rrTransformer) {
+	// Hypothesis is that most requests don't need to be transformed. Hence, separating the check from actual transformation.
+	public static void transformRequest(HTTPRequestPayload req, RRTransformer rrTransformer, ObjectMapper jsonMapper) {
 		// headers
 		try {
 			JSONObject hdrs_xfms = rrTransformer.transforms.getJSONObject("requestTransforms");
@@ -35,18 +40,19 @@ public class RRTransformerOperations {
 			    List<String> initialVals = req.hdrs.get(lowerCaseKey);
 			    List<String> transformedVals = transform(Optional.ofNullable(initialVals), hdrs_xfms.getJSONArray(key));
 			    if (!transformedVals.isEmpty()) {
-			        req.hdrs.put(lowerCaseKey, transformedVals);
+			        req.put(Constants.HDR_PATH + "/" + lowerCaseKey, new JsonDataObj(transformedVals, jsonMapper));
+			        //req.hdrs.put(lowerCaseKey, transformedVals);
                 }
 			}
 			// Calling reparse here so that the injected values in HttpRequestPayload fields are propagated to dataObj
-			req.reParse();
+			// req.reParse(); // not needed, directly setting the hdr using payload put api
 		} catch (Exception e) {
 			if (e != null) {
 				LOGGER.error(String.format("Error while transforming request: %s %s", req.toString(), e.toString()));
 			}
 		}
 	}
-	
+
     private static List<String> transform(Optional<List<String>> input, JSONArray xfms) {
 
         Set<String> out = new HashSet<>(input.orElse(Collections.emptyList()));
