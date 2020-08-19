@@ -770,7 +770,7 @@ class ViewSelectedTestConfig extends React.Component {
             <Fragment>
                 <div className="div-label">
                     Test Configuration
-                    <Link to="/test_config">
+                    <Link to="/configs">
                         <i className="fas fa-link pull-right link"></i>
                     </Link>
                 </div>
@@ -894,7 +894,7 @@ class ViewSelectedTestConfig extends React.Component {
         
         const panel = {
             ['/']: () => (<div />),
-            ['/test_config']: () => (<div />),
+            ['/configs']: () => (<div />),
             ['/test_config_view']: () => this.renderTestInfo(),
             ['/test_config_view/golden_visibility']: () => this.renderGoldenMeta(),
             ['/test_config_view/test_cluster']: () => this.renderTestClusterPanel()
