@@ -1063,7 +1063,8 @@ class HttpClientTabs extends Component {
         .catch((error) => {
             console.error(error);
             dispatch(httpClientActions.postErrorDriveRequest(tabId, error.message));
-            dispatch(httpClientActions.unsetReqRunning(tabId))
+            dispatch(httpClientActions.unsetReqRunning(tabId));
+            alert(`Could not get any response. There was an error connecting: ${error}`);
         });
     }
 
