@@ -1,7 +1,7 @@
 import React, { Component, Fragment, createContext } from "react";
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
-import { FormControl, FormGroup, Tabs, Tab, Panel, Label, Modal, Button, ControlLabel, Overlay, Popover } from 'react-bootstrap';
+import { FormControl, FormGroup, Tabs, Tab, Panel, Label, Modal, Button, ControlLabel, Overlay, Popover, Glyphicon } from 'react-bootstrap';
 import { Treebeard, decorators } from 'react-treebeard';
 
 import _, { head } from 'lodash';
@@ -11,6 +11,7 @@ import arrayToTree from 'array-to-tree';
 import * as moment from 'moment';
 import cryptoRandomString from 'crypto-random-string';
 import urlParser from 'url-parse';
+import * as URL from "url";
 
 import { cubeActions } from "../../actions";
 import { cubeService } from "../../services";
@@ -33,6 +34,7 @@ import Mustache from "mustache";
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
 import { generateRunId } from "../../utils/http_client/utils";
+import curlParser from '../../utils/http_client/curlparser';
 
 class HttpClientTabs extends Component {
 
@@ -79,6 +81,11 @@ class HttpClientTabs extends Component {
         this.handleAddMockReqInputChange = this.handleAddMockReqInputChange.bind(this);
         this.handleAddMockReq = this.handleAddMockReq.bind(this);
         this.showAddMockReqModal = this.showAddMockReqModal.bind(this);
+
+        this.handleImportFromCurlModalClose = this.handleImportFromCurlModalClose.bind(this);
+        this.handleImportFromCurlInputChange = this.handleImportFromCurlInputChange.bind(this);
+        this.handleImportFromCurl = this.handleImportFromCurl.bind(this);
+        this.handleImportFromCurlModalShow = this.handleImportFromCurlModalShow.bind(this);
     }
 
     createRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFromData) {
@@ -274,6 +281,131 @@ class HttpClientTabs extends Component {
         }, 0);
     }
 
+    getParameterCaseInsensitive (object, key) {
+        return object[
+            Object.keys(object)
+            .find(k => k.toLowerCase() === key.toLowerCase())
+        ];
+    }
+
+    importFromCurl(curlCommand) {
+        const { dispatch } = this.props;
+        console.log("curlCommand: ", curlCommand);
+        if(!curlCommand) return;
+        try {
+            const parsedCurl = curlParser(curlCommand);
+            console.log("parsedCurl: ", JSON.stringify(parsedCurl));
+            const { cube: {selectedApp} } = this.props;
+            let app = selectedApp;
+            if(!selectedApp) {
+                const parsedUrlObj = urlParser(window.location.href, true);
+                app = parsedUrlObj.query.app;
+            }
+            const urlWithoutQuery = unescape(parsedCurl.urlWithoutQuery).replace(/\"/g, "").replace(/\'/g, ""),
+                url = parsedCurl.url.replace(/\"/g, "").replace(/\'/g, "");
+            const parsedUrl = URL.parse(url);
+            console.log("parsedUrl: ", parsedUrl);
+            let apiPath = parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
+            let service = parsedUrl.host ? parsedUrl.host : "NA";
+            const traceId = cryptoRandomString({length: 32});
+            const user = JSON.parse(localStorage.getItem('user'));
+            const customerId = user.customer_name;
+            const eventData = this.generateEventdata(app, customerId, traceId, service, apiPath);
+            let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "", bodyType = "";
+            for (let eachHeader in parsedCurl.headers) {
+                headers.push({
+                    id: uuidv4(),
+                    name: eachHeader,
+                    value: parsedCurl.headers[eachHeader],
+                    description: "",
+                    selected: true,
+                });
+            }
+            if(parsedCurl.cookieString) {
+                headers.push({
+                    id: uuidv4(),
+                    name: "Cookie",
+                    value: parsedCurl.cookieString,
+                    description: "",
+                    selected: true,
+                });
+            }
+            for (let eachQueryParam in parsedCurl.queryParams) {
+                queryParams.push({
+                    id: uuidv4(),
+                    name: eachQueryParam,
+                    value: parsedCurl.queryParams[eachQueryParam],
+                    description: "",
+                    selected: true,
+                });
+            }
+            let contentTypeHeader = this.getParameterCaseInsensitive(parsedCurl.headers, "content-type");
+            if(contentTypeHeader.indexOf("application/json") > -1) {
+                rawData = JSON.stringify(JSON.parse(parsedCurl.data), undefined, 4);
+                rawDataType = "json";
+                bodyType = "rawData";
+            } else if(contentTypeHeader.indexOf("application/x-www-form-urlencoded") > -1) {
+                const formParams = new URLSearchParams(parsedCurl.data);
+                for (let eachFormParam of formParams) {
+                    formData.push({
+                        id: uuidv4(),
+                        name: eachFormParam,
+                        value: formParams.get(eachFormParam),
+                        description: "",
+                        selected: true,
+                    });
+                    rawDataType = "";
+                }
+                bodyType = "formData";
+            } else {
+                rawData = parsedCurl.data;
+                rawDataType = "text";
+                bodyType = "rawData";
+            }
+            let reqObj = {
+                requestId: "",
+                tabName: urlWithoutQuery,
+                httpMethod: parsedCurl.method,
+                httpURL: urlWithoutQuery,
+                httpURLShowOnly: url,
+                headers: headers,
+                queryStringParams: queryParams,
+                bodyType: bodyType,
+                formData: formData,
+                rawData: rawData,
+                rawDataType: rawDataType,
+                responseStatus: "NA",
+                responseStatusText: "",
+                responseHeaders: "",
+                responseBody: "",
+                recordedResponseHeaders: "",
+                recordedResponseBody: "",
+                recordedResponseStatus: "",
+                responseBodyType: "",
+                requestId: "",
+                outgoingRequestIds: [],
+                eventData: eventData,
+                showOutgoingRequestsBtn: false,
+                showSaveBtn: true,
+                outgoingRequests: [],
+                showCompleteDiff: false,
+                isOutgoingRequest: true,
+                service: service,
+                recordingIdAddedFromClient: "",
+                collectionIdAddedFromClient: "",
+                traceIdAddedFromClient: "",
+                recordedHistory: null,
+                clearIntervalHandle: null,
+                selectedTraceTableReqTabId: "",
+                selectedTraceTableTestReqTabId: "",
+                requestRunning: false,
+            }
+            const savedTabId = this.addTab(null, reqObj, app);
+        } catch (err) {
+            console.error("err: ", err);
+        }
+    }
+
     addMockRequest(tabId) {
         console.log("tabId:", tabId);
         const {httpClient: {tabs, mockReqServiceName, mockReqApiPath}} = this.props;
@@ -413,14 +545,14 @@ class HttpClientTabs extends Component {
         this.handleAddMockReqModalClose();
     }
 
-    generateEventdata(app, customerId, traceId) {
+    generateEventdata(app, customerId, traceId, service, apiPath) {
         const isoDate = new Date().toISOString();
         const timestamp = new Date(isoDate).getTime();
         
         let httpResponseEvent = {
             customerId: customerId,
             app: app,
-            service: "NA",
+            service: service ? service : "NA",
             instanceId: "devtool",
             collection: "NA",
             traceId: traceId,
@@ -430,7 +562,7 @@ class HttpClientTabs extends Component {
             runId: generateRunId(),
             timestamp: timestamp,
             reqId: "NA",
-            apiPath: "NA",
+            apiPath: apiPath ? apiPath : "NA",
             eventType: "HTTPResponse",
             payload: [
                 "HTTPResponsePayload",
@@ -450,7 +582,7 @@ class HttpClientTabs extends Component {
         let httpRequestEvent = {
             customerId: customerId,
             app: app,
-            service: "NA",
+            service: service ? service : "NA",
             instanceId: "devtool",
             collection: "NA",
             traceId: traceId,
@@ -460,7 +592,7 @@ class HttpClientTabs extends Component {
             runId: generateRunId(),
             timestamp: timestamp,
             reqId: "NA",
-            apiPath: "NA",
+            apiPath: apiPath ? apiPath : "NA",
             eventType: "HTTPRequest",
             payload: [
                 "HTTPRequestPayload",
@@ -532,6 +664,27 @@ class HttpClientTabs extends Component {
     showAddMockReqModal(tabId) {
         const { dispatch } = this.props;
         dispatch(httpClientActions.showAddMockReqModal(tabId, true, "", "", ""));
+    }
+
+    handleImportFromCurlModalClose() {
+        const { dispatch } = this.props;
+        dispatch(httpClientActions.closeImportFromCurlModal(false, "", ""));
+    }
+
+    handleImportFromCurlInputChange(evt) {
+        const { dispatch } = this.props;
+        dispatch(httpClientActions.updateModalCurlCommand(evt.target.name, evt.target.value));
+    }
+
+    handleImportFromCurl() {
+        const { dispatch } = this.props;
+        const {httpClient: {curlCommand}} = this.props;
+        this.importFromCurl(curlCommand);
+    }
+
+    handleImportFromCurlModalShow() {
+        const { dispatch } = this.props;
+        dispatch(httpClientActions.showImportFromCurlModal(true, "", ""));
     }
 
     onToggle(node, toggled){
@@ -910,7 +1063,8 @@ class HttpClientTabs extends Component {
         .catch((error) => {
             console.error(error);
             dispatch(httpClientActions.postErrorDriveRequest(tabId, error.message));
-            dispatch(httpClientActions.unsetReqRunning(tabId))
+            dispatch(httpClientActions.unsetReqRunning(tabId));
+            alert(`Could not get any response. There was an error connecting: ${error}`);
         });
     }
 
@@ -989,7 +1143,7 @@ class HttpClientTabs extends Component {
         if(httpRequestEvent.reqId === "NA") {
             const parsedUrl = urlParser(tabToSave.httpURL, true);
             apiPath = parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
-            let service = parsedUrl.host ? parsedUrl.host : "NA"
+            let service = parsedUrl.host ? parsedUrl.host : "NA";
             httpRequestEvent = this.updateHttpEvent(apiPath, service, httpRequestEvent);
             httpResponseEvent = this.updateHttpEvent(apiPath, service, httpResponseEvent);
         }
@@ -1093,8 +1247,11 @@ class HttpClientTabs extends Component {
                                 console.error("Error ", error);
                                 throw new Error("Error");
                             }
+                            dispatch(httpClientActions.postSuccessSaveToCollection(tabId, false, "Saved Successfully!", clearIntervalHandle));
+                        } else {
+                            this.updateTabWithNewData(tabId, serverRes, recordingId);
+                            dispatch(httpClientActions.postSuccessSaveToCollection(tabId, showSaveModal ? true : false, "Saved Successfully!"));
                         }
-                        dispatch(httpClientActions.postSuccessSaveToCollection(tabId, type === "History" ? false : showSaveModal ? true : false, "Saved Successfully! You can close this window.", clearIntervalHandle));
                         setTimeout(() => {
                             this.loadFromHistory();
                             this.loadUserCollections();
@@ -1110,10 +1267,50 @@ class HttpClientTabs extends Component {
             } 
         } catch (error) {
             console.error("Error ", error);
-            dispatch(httpClientActions.catchErrorSaveToCollection(type === "History" ? false : showSaveModal ? true : false, "Error saving: " + error));
+            dispatch(httpClientActions.catchErrorSaveToCollection(type === "History" ? false : showSaveModal ? true : false, "Error: Invalid JSON body"));
             throw new Error("Error");
         }
-        
+    }
+
+    updateEachRequest(req, data, collectionId, recordingId) {
+        req.requestId = data.newReqId;
+        req.collectionIdAddedFromClient = collectionId;
+        req.traceIdAddedFromClient = data.newTraceId;
+        req.recordingIdAddedFromClient = recordingId;
+        req.eventData[0].reqId = data.newReqId;
+        req.eventData[0].traceId = data.newTraceId;
+        req.eventData[0].collection = collectionId;
+        req.eventData[1].reqId = data.newReqId;
+        req.eventData[1].traceId = data.newTraceId;
+        req.eventData[1].collection = data.collec;
+    }
+
+    updateTabWithNewData(tabId, response, recordingId) {
+        const {httpClient: {tabs, selectedTabKey, showSaveModal, userCollections}} = this.props;
+        const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
+        const tabToProcess = tabs[tabIndex];
+        if(response.status === "success") {
+            try {
+                const parsedData = response.data.response && response.data.response.length > 0 ?  response.data.response.map((eachOne) => {
+                    return JSON.parse(eachOne);
+                }) : [];
+                const collection = userCollections.find(eachCollection => eachCollection.id === recordingId);
+                for(let eachReq of parsedData) {
+                    if(eachReq.oldReqId === tabToProcess.requestId) {
+                        this.updateEachRequest(tabToProcess, eachReq, collection.collec, collection.id);
+                    } else {
+                        tabToProcess.outgoingRequests.map((eachOutgoingReq) => {
+                            if(eachReq.oldReqId === eachOutgoingReq.requestId) {
+                                this.updateEachRequest(eachOutgoingReq, eachReq, collection.collec, collection.id);
+                            }
+                            return eachOutgoingReq;
+                        })
+                    }
+                }
+            } catch(err) {
+                console.error("Error ", error);
+            }
+        }
     }
 
     handleChange(evt) {
@@ -1180,10 +1377,10 @@ class HttpClientTabs extends Component {
     loadUserCollections() {
         const user = JSON.parse(localStorage.getItem('user'));
         const { cube: {selectedApp} } = this.props;
-        const app = selectedApp;
+        let app = selectedApp;
         if(!app) {
-            console.error("app is null in httpClientTabs");
-            return;
+            const parsedUrlObj = urlParser(window.location.href, true);
+            app = parsedUrlObj.query.app;
         }
         const { dispatch } = this.props;
         const userId = encodeURIComponent(user.username),
@@ -1208,10 +1405,10 @@ class HttpClientTabs extends Component {
         const user = JSON.parse(localStorage.getItem('user'));
         const { dispatch } = this.props;
         const { cube: {selectedApp} } = this.props;
-        const app = selectedApp;
+        let app = selectedApp;
         if(!app) {
-            console.error("app is null in httpClientTabs");
-            return;
+            const parsedUrlObj = urlParser(window.location.href, true);
+            app = parsedUrlObj.query.app;
         }
         const userId = encodeURIComponent(user.username),
             customerId = encodeURIComponent(user.customer_name);
@@ -1363,6 +1560,10 @@ class HttpClientTabs extends Component {
         const {httpClient: {tabs, userHistoryCollection}} = this.props;
         const { cube: {selectedApp} } = this.props;
         const app = selectedApp;
+        if(!app) {
+            const parsedUrlObj = urlParser(window.location.href, true);
+            app = parsedUrlObj.query.app;
+        }
         const { dispatch } = this.props;
         const user = JSON.parse(localStorage.getItem('user'));
         const historyCollectionId = userHistoryCollection.collec;
@@ -1632,6 +1833,13 @@ class HttpClientTabs extends Component {
                     }
                 }
             });
+        } else {
+            let app = selectedApp;
+            if(!app) {
+                const parsedUrlObj = urlParser(window.location.href, true);
+                app = parsedUrlObj.query.app;
+            }
+            if(tabs.length === 0)this.addTab(null, null, app);
         }
 
         dispatch(httpClientActions.fetchEnvironments())
@@ -1824,7 +2032,9 @@ class HttpClientTabs extends Component {
                         handleTestRowClick={this.handleTestRowClick}
                         setAsReference={this.setAsReference}
                         cubeRunHistory={cubeRunHistory}
-                        showAddMockReqModal={this.showAddMockReqModal} >
+                        showAddMockReqModal={this.showAddMockReqModal}
+                        handleDuplicateTab={this.handleDuplicateTab}
+                        >
                         </HttpClient>
                     </div>
                 )
@@ -1890,9 +2100,8 @@ class HttpClientTabs extends Component {
         const currentEnvironment = this.getCurrentEnvirnoment();
         const { httpClient: { selectedEnvironment } } = this.props;
         const envPopover = (<Popover
-            style={{top: "56px" }}
             title={selectedEnvironment || "No Environment Selected"}>
-            <div style={{ padding: "0 5px 0 5px",width: "100%" }}>
+            <div style={{ padding: "0 5px 0 5px",width: "400px" }}>
                 {currentEnvironment && !_.isEmpty(currentEnvironment.vars) && <table className="table table-bordered table-hover">
                     <thead>
                         <tr>
@@ -1934,13 +2143,18 @@ class HttpClientTabs extends Component {
     hideEnvModal = () => {
         this.setState({ showEnvVarModal: false })
     }
+    
+    handleDuplicateTab = (tabId) => {
+        const {dispatch} = this.props;
+        dispatch(httpClientActions.createDuplicateTab(tabId))
+    }
 
     render() {
         const { cube } = this.props;
         const { showEnvVarModal } = this.state;
         const { cube: {selectedApp} } = this.props;
         const app = selectedApp;
-        const {httpClient: {cubeRunHistory, userCollections, collectionName, collectionLabel, modalErroSaveMessage,modalErroSaveMessageIsError, modalErroCreateCollectionMessage, tabs, selectedTabKey, showSaveModal, showAddMockReqModal, mockRequestServiceName, mockRequestApiPath, modalErrorAddMockReqMessage}} = this.props;
+        const {httpClient: {cubeRunHistory, userCollections, collectionName, collectionLabel, modalErroSaveMessage,modalErroSaveMessageIsError, modalErroCreateCollectionMessage, tabs, selectedTabKey, showSaveModal, showAddMockReqModal, mockRequestServiceName, mockRequestApiPath, modalErrorAddMockReqMessage, showImportFromCurlModal, curlCommand, modalErrorImportFromCurlMessage}} = this.props;
 
         return (
 
@@ -2049,9 +2263,12 @@ class HttpClientTabs extends Component {
                     <div style={{marginRight: "7px"}}>
                         <div style={{marginBottom: "9px", display: "inline-block", width: "20%", fontSize: "11px"}}></div>
                         <div style={{display: "inline-block", width: "80%", textAlign: "right"}}>
-                                <div style={{display: "inline-block", padding: 0}} className="btn">{this.renderEnvListDD()}</div>
-                                <div style={{display: "inline-block"}}>{this.renderEnvPopoverBtn()}</div>
-                                <span className="btn btn-sm cube-btn text-center" onClick={() => {this.setState({showEnvVarModal: true})}} title="Configure environments"><i className="fas fa-cog"/> </span>
+                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleImportFromCurlModalShow}>
+                                <Glyphicon glyph="import" /> Import
+                            </div>
+                            <div style={{display: "inline-block", padding: 0}} className="btn">{this.renderEnvListDD()}</div>
+                            <div style={{display: "inline-block"}}>{this.renderEnvPopoverBtn()}</div>
+                            <span className="btn btn-sm cube-btn text-center" onClick={() => {this.setState({showEnvVarModal: true})}} title="Configure environments"><i className="fas fa-cog"/> </span>
                             {/* <div style={{display: "inline-block", margin: "10px" }}>
                             </div> */}
                         </div>
@@ -2092,7 +2309,7 @@ class HttpClientTabs extends Component {
                                 </div>
                                 <p style={{ fontWeight: 500 }}>{modalErroCreateCollectionMessage}</p>
                                 <div>
-                                    <Button onClick={this.handleCreateCollection}>Create</Button>
+                                    <div onClick={this.handleCreateCollection} className="btn btn-sm cube-btn text-center">Create</div>
                                 </div>
                                 <hr />
                                 <h5 style={{ textAlign: 'center' }}>
@@ -2115,11 +2332,11 @@ class HttpClientTabs extends Component {
                                 </p>
                             </Modal.Body>
                             <Modal.Footer>
-                                <Button onClick={this.handleSave}>Save</Button>
-                                <Button onClick={this.handleCloseModal}>Close</Button>
+                                <div onClick={this.handleSave} className="btn btn-sm cube-btn text-center">Save</div>
+                                <div onClick={this.handleCloseModal} className="btn btn-sm cube-btn text-center">Close</div>
                             </Modal.Footer>
                         </Modal>
-                        <Modal show={showEnvVarModal} onHide={this.hideEnvModal}>
+                        <Modal bsSize="large" show={showEnvVarModal} onHide={this.hideEnvModal} className="envModal">
                             <EnvVar hideModal={this.hideEnvModal} />
                         </Modal>
                     </div>
@@ -2146,6 +2363,26 @@ class HttpClientTabs extends Component {
                             <Modal.Footer>
                                 <Button onClick={this.handleAddMockReq}>Save</Button>
                                 <Button onClick={this.handleAddMockReqModalClose}>Close</Button>
+                            </Modal.Footer>
+                        </Modal>
+                    </div>
+                    <div>
+                        <Modal show={showImportFromCurlModal} onHide={this.handleImportFromCurlModalClose} bsSize="large">
+                            <Modal.Header closeButton>
+                                <Modal.Title>Import from curl</Modal.Title>
+                            </Modal.Header>
+                            <Modal.Body>
+                                <div>
+                                    <FormGroup>
+                                        <ControlLabel>Curl Command</ControlLabel>
+                                        <FormControl componentClass="textarea" rows="15" placeholder="Service Name" name="curlCommand" value={curlCommand} onChange={this.handleImportFromCurlInputChange} />
+                                    </FormGroup>
+                                </div>
+                                <p style={{ marginTop: "10px", fontWeight: 500 }}>{modalErrorImportFromCurlMessage}</p>
+                            </Modal.Body>
+                            <Modal.Footer>
+                                <Button onClick={this.handleImportFromCurl}>Import</Button>
+                                <Button onClick={this.handleImportFromCurlModalClose}>Close</Button>
                             </Modal.Footer>
                         </Modal>
                     </div>

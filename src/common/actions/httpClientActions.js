@@ -156,6 +156,18 @@ export const httpClientActions = {
         return{type: httpClientConstants.SET_SELECTED_TRACE_TABLE_TEST_REQ_TAB, data: {selectedTraceTableTestReqTabId, tabId}};
     },
 
+    showImportFromCurlModal: (showImportFromCurlModal, curlCommand, modalErrorImportFromCurlMessage) => {
+        return {type: httpClientConstants.SHOW_IMPORT_FROM_CURL_MODAL, data: {showImportFromCurlModal, curlCommand, modalErrorImportFromCurlMessage}};
+    },
+
+    closeImportFromCurlModal: (showImportFromCurlModal, curlCommand, modalErrorImportFromCurlMessage) => {
+        return {type: httpClientConstants.CLOSE_IMPORT_FROM_CURL_MODAL, data: {showImportFromCurlModal, curlCommand, modalErrorImportFromCurlMessage}};
+    },
+
+    updateModalCurlCommand: (name, value) => {
+        return {type: httpClientConstants.UPDATE_MODAL_CURL_COMMAND, data: {name, value}};
+    },
+
     setEnvironmentList: (environmentList) => ({type: httpClientConstants.SET_ENVIRONMENT_LIST, data: environmentList}),
 
     fetchEnvironments: () => async (dispatch) => {
@@ -216,5 +228,7 @@ export const httpClientActions = {
     setReqRunning: (tabId) => ({type: httpClientConstants.SET_REQUEST_RUNNING, data: {tabId}}),
 
     unsetReqRunning: (tabId) => ({type: httpClientConstants.UNSET_REQUEST_RUNNING, data: {tabId}}),
+
+    createDuplicateTab: (tabId) => ({type: httpClientConstants.CREATE_DUPPLICATE_TAB, data: {tabId}}),
 
 }

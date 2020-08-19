@@ -69,6 +69,13 @@ export const apiCatalog = (state = initialState, { type, data }) => {
             }
         }
 
+        case apiCatalogConstants.SET_RESIZED_COLUMNS: {
+            return {
+                ...state,
+                resizedColumns: data,
+            }
+        }
+        
         case apiCatalogConstants.RESET_COMPARE_REQUEST: {
             return {
                 ...state,

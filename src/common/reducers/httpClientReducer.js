@@ -3,13 +3,13 @@ import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import cryptoRandomString from 'crypto-random-string';
 
-const tabId = uuidv4();
+/* const tabId = uuidv4();
 const isoDate = new Date().toISOString();
 const timestamp = new Date(isoDate).getTime();
 const traceId = cryptoRandomString({length: 32});
-const spanId = cryptoRandomString({length: 16});
+const spanId = cryptoRandomString({length: 16}); */
 const initialState = { 
-    tabs: [{ 
+    tabs: [/* { 
         id: tabId,
         requestId: "",
         tabName: "",
@@ -106,9 +106,9 @@ const initialState = {
         selectedTraceTableReqTabId: "",
         selectedTraceTableTestReqTabId: "",
         requestRunning: false,
-    }],
+    } */],
     toggleTestAndOutgoingRequests: true,
-    selectedTabKey: tabId,
+    selectedTabKey: "",
     app: "",
     historyCursor: null,
     active: false,
@@ -134,6 +134,9 @@ const initialState = {
     mockReqApiPath: "",
     modalErrorAddMockReqMessage: "",
     selectedTabIdToAddMockReq: "",
+    showImportFromCurlModal: false,
+    curlCommand: "",
+    modalErrorImportFromCurlMessage: "",
 }
 
 const getTabIndexGivenTabId = (tabId, tabs) => {
@@ -715,6 +718,44 @@ export const httpClient = (state = initialState, { type, data }) => {
                     })
             }
         }
+
+        case httpClientConstants.SHOW_IMPORT_FROM_CURL_MODAL: {
+            return {
+                ...state,
+                showImportFromCurlModal: data.showImportFromCurlModal, 
+                curlCommand: data.curlCommand, 
+                modalErrorImportFromCurlMessage: data.modalErrorImportFromCurlMessage
+            }
+        }
+
+        case httpClientConstants.CLOSE_IMPORT_FROM_CURL_MODAL: {
+            return {
+                ...state,
+                showImportFromCurlModal: data.showImportFromCurlModal, 
+                curlCommand: data.curlCommand, 
+                modalErrorImportFromCurlMessage: data.modalErrorImportFromCurlMessage
+            }
+        }
+
+        case httpClientConstants.UPDATE_MODAL_CURL_COMMAND: {
+            return {
+                ...state,
+                [data.name]: data.value
+            }
+        }
+        
+        case httpClientConstants.CREATE_DUPPLICATE_TAB: {
+            let {tabs} = state;
+            const tabToClone = _.find(tabs, {id: data.tabId});
+            const newTab = _.cloneDeep(tabToClone);
+            newTab.id = uuidv4();
+            newTab.selectedTraceTableReqTabId = newTab.id;
+            return {
+                ...state,
+                tabs: [...tabs, newTab],
+            }
+        }
+
         default:
             return state;
     }

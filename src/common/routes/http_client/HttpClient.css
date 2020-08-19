@@ -91,3 +91,31 @@
 .add-request-options-button:hover {
     background-color: #d4d4d4;
 }
+
+.popover {
+    max-width: 800px !important;
+    top: 52px !important;
+}
+
+.popover.bottom>.arrow {
+    display: none !important;
+}
+
+.fade.envModal.in.modal {
+    text-align: center;
+    padding: 0!important;
+}
+
+.fade.envModal.in.modal:before {
+    content: '';
+    display: inline-block;
+    height: 100%;
+    vertical-align: middle;
+    margin-right: -4px;
+}
+
+.fade.envModal.in.modal .modal-dialog {
+    display: inline-block;
+    text-align: left;
+    vertical-align: middle;
+}

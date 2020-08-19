@@ -128,7 +128,7 @@ class EnvVar extends Component {
                     Configure Environments
                 </Modal.Header>
                 <Modal.Body>
-                    <div style={{height: "300px", overflowY: "scroll"}}>
+                    <div style={{height: "400px", overflowY: "scroll"}}>
                         {showEnvList && <div>
                             <label>Environments</label>
                             <table className="table table-hover">
@@ -155,7 +155,7 @@ class EnvVar extends Component {
                         {!showEnvList && 
                         <Grid>
                             <Row>
-                                <Col xs={3}>
+                                <Col xs={2}>
                                     <label style={{ marginTop: "8px" }}>Environment Name: </label>
                                 </Col>
                                 <Col xs={6}>
@@ -189,8 +189,8 @@ class EnvVar extends Component {
                                     )
                                 )}                                    
                                 <Row className="show-grid margin-top-15">
-                                    <Col xs={4} style={{width: "26%"}}>
-                                        <div onClick={this.handleAddNewEnvVariable} className="pointer cube-btn">
+                                    <Col xs={3}>
+                                        <div onClick={this.handleAddNewEnvVariable} className="pointer btn btn-sm cube-btn text-center">
                                             <i className="fas fa-plus" style={{marginRight: "5px"}}></i><span>Add new variable</span>
                                         </div>
                                     </Col>

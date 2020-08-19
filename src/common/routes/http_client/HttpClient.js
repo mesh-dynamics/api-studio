@@ -179,6 +179,11 @@ class HttpClient extends Component {
         this.props.showSaveModal(false, currentSelectedTab.id);
     }
 
+    handleDuplicateTabClick = () => {
+        const { currentSelectedTab } = this.props;
+        this.props.handleDuplicateTab(currentSelectedTab.id);
+    }
+
     handleSetAsReference(evt) {
         const { currentSelectedTab } = this.props;
         this.props.setAsReference(currentSelectedTab.id);
@@ -417,12 +422,16 @@ class HttpClient extends Component {
                 <div style={{display: "flex"}}>
                     <div style={{marginLeft: "auto", order: "2"}}>
                         <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleClick}>
-                        {currentSelectedTab.requestRunning ? <i className="fa fa-spinner fa-spin"></i> : <Glyphicon glyph="play" />} RUN
+                            {currentSelectedTab.requestRunning ? <i className="fa fa-spinner fa-spin"></i> : <Glyphicon glyph="play" />} RUN
                         </div>
                         <div disabled={currentSelectedTab.httpURL.length === 0} className={currentSelectedTab.httpURL.length === 0 ? "btn btn-sm cube-btn text-center disabled": "btn btn-sm cube-btn text-center"} style={{ padding: "2px 10px", display: currentSelectedTab.showSaveBtn ? "inline-block" : "none"}} onClick={this.handleSaveClick}>
                             <Glyphicon glyph="save" /> SAVE
                         </div>
+                        <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleDuplicateTabClick} title="Duplicate Tab">
+                            <i className="fa fa-clone"></i>
+                        </div>
                     </div>
+
                 </div>
                 <div>
                     <div style={{display: "flex", backgroundColor: "#ffffff", marginBottom: "9px"}}>
