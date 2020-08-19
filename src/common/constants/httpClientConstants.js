@@ -45,4 +45,5 @@ export const httpClientConstants = {
     RESET_RUN_STATE: "httpClient/RESET_RUN_STATE",
     SET_REQUEST_RUNNING: "httpClient/SET_REQUEST_RUNNING",
     UNSET_REQUEST_RUNNING: "httpClient/UNSET_REQUEST_RUNNING",
+    CREATE_DUPPLICATE_TAB: "httpClient/CREATE_DUPLICATE_TAB",
 }

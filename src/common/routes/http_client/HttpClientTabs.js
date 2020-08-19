@@ -1824,7 +1824,9 @@ class HttpClientTabs extends Component {
                         handleTestRowClick={this.handleTestRowClick}
                         setAsReference={this.setAsReference}
                         cubeRunHistory={cubeRunHistory}
-                        showAddMockReqModal={this.showAddMockReqModal} >
+                        showAddMockReqModal={this.showAddMockReqModal}
+                        handleDuplicateTab={this.handleDuplicateTab}
+                        >
                         </HttpClient>
                     </div>
                 )
@@ -1932,6 +1934,11 @@ class HttpClientTabs extends Component {
 
     hideEnvModal = () => {
         this.setState({ showEnvVarModal: false })
+    }
+    
+    handleDuplicateTab = (tabId) => {
+        const {dispatch} = this.props;
+        dispatch(httpClientActions.createDuplicateTab(tabId))
     }
 
     render() {

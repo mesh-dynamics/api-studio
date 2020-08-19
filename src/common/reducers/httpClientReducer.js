@@ -715,6 +715,19 @@ export const httpClient = (state = initialState, { type, data }) => {
                     })
             }
         }
+
+        case httpClientConstants.CREATE_DUPPLICATE_TAB: {
+            let {tabs} = state;
+            const tabToClone = _.find(tabs, {id: data.tabId});
+            const newTab = _.cloneDeep(tabToClone);
+            newTab.id = uuidv4();
+            newTab.selectedTraceTableReqTabId = newTab.id;
+            return {
+                ...state,
+                tabs: [...tabs, newTab],
+            }
+        }
+
         default:
             return state;
     }
