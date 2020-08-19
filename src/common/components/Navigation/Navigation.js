@@ -8,6 +8,8 @@ import {cubeConstants} from "../../constants";
 import {Link} from "react-router-dom";
 import AddTestConfig from "../AddTestConfig";
 import ViewSelectedTestConfig from "../ViewSelectedTestConfig";
+import config from '../../config';
+import { ipcRenderer } from '../../helpers/ipc-renderer';
 
 class Navigation extends Component{
     constructor (props) {
@@ -24,12 +26,40 @@ class Navigation extends Component{
         this.analysisStatusInterval;
     }
 
+    componentWillMount() {
+        const { dispatch } = this.props;
+
+        if(PLATFORM_ELECTRON) {
+            ipcRenderer.on('get_config', (event, appConfig) => {
+                ipcRenderer.removeAllListeners('get_config');
+                
+                config.apiBaseUrl= `${appConfig.domain}/api`;
+                config.recordBaseUrl= `${appConfig.domain}/api/cs`;
+                config.replayBaseUrl= `${appConfig.domain}/api/rs`;
+                config.analyzeBaseUrl= `${appConfig.domain}/api/as`;               
+                
+                dispatch(cubeActions.getApps());
+                dispatch(cubeActions.getInstances());
+            });
+        }
+    }
+
     componentDidMount() {
         const { dispatch } = this.props;
 
-        dispatch(cubeActions.getApps());
-        dispatch(cubeActions.getInstances());
+        if(PLATFORM_ELECTRON) {
+            ipcRenderer.send('get_config');
+        } else {
+            dispatch(cubeActions.getApps());
+            dispatch(cubeActions.getInstances());
+        }
     }
+
+    // componentWillUnmount() {
+    //     if(isElectron()) {
+    //         ipcRenderer.removeAllListeners('get_config');
+    //     }
+    // }
 
     handleShowHideApps() {
         const {appsVisible} = this.state;
@@ -62,7 +92,8 @@ class Navigation extends Component{
             return (
                 <div key={item.id} className="app-wrapper" onClick={() => this.handleChangeForApps(item.name)}>
                     <div className="app-img">
-                        <img src={"/assets/images/" + item.name + "-app.png"} alt=""/>
+                        <img src={"https://app.meshdynamics.io/assets/images/" + item.name + "-app.png"} alt=""/>
+                        {/* <img src={"./assets/images/" + item.name + "-app.png"} alt=""/> */}
                     </div>
                     <div className={cube.selectedApp == item.name ? "app-name selected" : "app-name"}>
                         {item.name}
@@ -116,32 +147,32 @@ class Navigation extends Component{
                 <div className="nav-cont h-100">
                     <div className="left-pane text-center">
                         <div className="company-name">
-                            <img className="inline-block" src="/assets/images/md-circle-logo.png" alt="MESH DYNAMICS"/>
+                        <img className="inline-block" src="https://app.meshdynamics.io/assets/images/md-circle-logo.png" alt="MESH DYNAMICS"/>
+                            {/* <img className="inline-block" src="./assets/images/md-circle-logo.png" alt="MESH DYNAMICS"/> */}
                         </div>
                         <div className="q-links-top">
-                            <Link to="/">
-                                <div className="link-q"><i className="fas fa-chart-bar"></i></div>
-                            </Link>
-                            <Link to={`/configs?app=${cube.selectedApp}`}>
-                                <div className="link-q"><i className="fas fa-caret-square-right"></i></div>
-                            </Link>
-                            <Link to={`/api_catalog/api?app=${cube.selectedApp}`}> 
-                                <div className="link-q"><i className="fas fa-indent"></i></div>
-                            </Link>
-
-                            <Link to={`/http_client`}>
-                                <div className="link-q">
+                            <Link to={`/http_client?app=${cube.selectedApp}`}>
+                                <div title="HTTP Client" className="link-q">
                                     <svg width="29"  viewBox="0 0 22 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M14.6523 0.402344L8.25 4.14062V11.3594L14.6523 15.0977L21.0977 11.3594V4.14062L14.6523 0.402344ZM14.6523 2.55078L18.1328 4.52734L14.6523 6.54688L11.1719 4.52734L14.6523 2.55078ZM0 3.15234V5H6.40234V3.15234H0ZM10.0977 6.03125L13.75 8.13672V12.4336L10.0977 10.3281V6.03125ZM19.25 6.03125V10.3281L15.5977 12.4336V8.13672L19.25 6.03125ZM1.84766 6.84766V8.65234H6.40234V6.84766H1.84766ZM3.65234 10.5V12.3477H6.40234V10.5H3.65234Z" fill="#CCC6B0"/>
                                     </svg>
                                 </div>
                             </Link>
+                            <Link to={`/api_catalog/api?app=${cube.selectedApp}`}> 
+                                <div title="API Catalog" className="link-q"><i className="fas fa-indent"></i></div>
+                            </Link>
+                            <Link to={`/configs?app=${cube.selectedApp}`}>
+                                <div title="Configs" className="link-q"><i className="fas fa-caret-square-right"></i></div>
+                            </Link>
+                            <Link to="/">
+                                <div title="Test Results" className="link-q"><i className="fas fa-chart-bar"></i></div>
+                            </Link>                            
                         </div>
                         <div className="q-links">
-                            <div className="link-q"><i className="fas fa-bell"></i></div>
-                            <div className="link-q"><i className="fas fa-cog"></i></div>
-                            <div className="link-q"><UserAvatar size="24" name={username} className="user-avatar" color="#CCC6B0"/></div>
-                            <div className="link-q" onClick={lo}><i title="Sign Out" className="fas fa-sign-out-alt"></i></div>
+                            <div title="Notification" className="link-q"><i className="fas fa-bell"></i></div>
+                            <div title="Settings" className="link-q"><i className="fas fa-cog"></i></div>
+                            <div title={username} className="link-q"><UserAvatar size="24" name={username} className="user-avatar" color="#CCC6B0"/></div>
+                            <div title="Sign Out" className="link-q" onClick={lo}><i className="fas fa-sign-out-alt"></i></div>
                         </div>
                     </div>
                     <div className={appsVisible ? "app-select" : "app-select disp-none"}>
@@ -206,7 +237,8 @@ class Navigation extends Component{
                                 Service Map
                             </div>
                             <div className="service-gph">
-                                <img src={"/assets/images/" + cube.selectedApp + "-app.png"} alt=""/>
+                                <img src={"https://app.meshdynamics.io/assets/images/" + cube.selectedApp + "-app.png"} alt=""/>
+                                {/* <img src={"./assets/images/" + cube.selectedApp + "-app.png"} alt=""/> */}
                             </div>
                         </div>
 

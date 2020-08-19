@@ -96,8 +96,8 @@ export const httpClientActions = {
         return {type: httpClientConstants.CLOSE_SAVE_MODAL, data: {showSaveModal}};
     },
 
-    showSaveModal: (selectedSaveableTabId, showSaveModal, collectionName, collectionLabel, modalErroSaveMessage, modalErroCreateCollectionMessage) => {
-        return {type: httpClientConstants.SHOW_SAVE_MODAL, data: {selectedSaveableTabId, showSaveModal, collectionName, collectionLabel, modalErroSaveMessage, modalErroCreateCollectionMessage}};
+    showSaveModal: (selectedSaveableTabId, showSaveModal, collectionName, collectionLabel, modalErroSaveMessage,modalErroSaveMessageIsError, modalErroCreateCollectionMessage) => {
+        return {type: httpClientConstants.SHOW_SAVE_MODAL, data: {selectedSaveableTabId, showSaveModal, collectionName, collectionLabel, modalErroSaveMessage,modalErroSaveMessageIsError, modalErroCreateCollectionMessage}};
     },
 
     setInactiveHistoryCursor: (historyCursor, active) => {
@@ -131,4 +131,104 @@ export const httpClientActions = {
     setUpdatedModalUserCollectionDetails: (name, value) => {
         return {type: httpClientConstants.SET_UPDATED_MODAL_USER_COLLECTION_DETAILS, data: {name, value}};
     },
+
+    setAsReference: (tabId, tab) => {
+        return {type: httpClientConstants.SET_AS_REFERENCE, data: {tabId, tab}};
+    },
+
+    closeAddMockReqModal: (selectedTabIdToAddMockReq, showAddMockReqModal, mockReqServiceName, mockReqApiPath, modalErrorAddMockReqMessage) => {
+        return {type: httpClientConstants.CLOSE_ADD_MOCK_REQ_MODAL, data: {selectedTabIdToAddMockReq, showAddMockReqModal, mockReqServiceName, mockReqApiPath, modalErrorAddMockReqMessage}};
+    },
+
+    setUpdatedModalMockReqDetails: (name, value) => {
+        return {type: httpClientConstants.SET_UPDATED_MODAL_MOCK_REQ_DETAILS, data: {name, value}};
+    },
+
+    showAddMockReqModal: (selectedTabIdToAddMockReq, showAddMockReqModal, mockReqServiceName, mockReqApiPath, modalErrorAddMockReqMessage) => {
+        return {type: httpClientConstants.SHOW_ADD_MOCK_REQ_MODAL, data: {selectedTabIdToAddMockReq, showAddMockReqModal, mockReqServiceName, mockReqApiPath, modalErrorAddMockReqMessage}};
+    },
+
+    setSelectedTraceTableReqTabId: (selectedTraceTableReqTabId, tabId) => {
+        return {type: httpClientConstants.SET_SELECTED_TRACE_TABLE_REQ_TAB, data: {selectedTraceTableReqTabId, tabId}};
+    },
+    
+    setSelectedTraceTableTestReqId: (selectedTraceTableTestReqTabId, tabId) => {
+        return{type: httpClientConstants.SET_SELECTED_TRACE_TABLE_TEST_REQ_TAB, data: {selectedTraceTableTestReqTabId, tabId}};
+    },
+
+    showImportFromCurlModal: (showImportFromCurlModal, curlCommand, modalErrorImportFromCurlMessage) => {
+        return {type: httpClientConstants.SHOW_IMPORT_FROM_CURL_MODAL, data: {showImportFromCurlModal, curlCommand, modalErrorImportFromCurlMessage}};
+    },
+
+    closeImportFromCurlModal: (showImportFromCurlModal, curlCommand, modalErrorImportFromCurlMessage) => {
+        return {type: httpClientConstants.CLOSE_IMPORT_FROM_CURL_MODAL, data: {showImportFromCurlModal, curlCommand, modalErrorImportFromCurlMessage}};
+    },
+
+    updateModalCurlCommand: (name, value) => {
+        return {type: httpClientConstants.UPDATE_MODAL_CURL_COMMAND, data: {name, value}};
+    },
+
+    setEnvironmentList: (environmentList) => ({type: httpClientConstants.SET_ENVIRONMENT_LIST, data: environmentList}),
+
+    fetchEnvironments: () => async (dispatch) => {
+        dispatch(httpClientActions.setEnvStatusText("Loading..."))
+        try {
+            const environmentList = await cubeService.getAllEnvironments();
+            dispatch(httpClientActions.setEnvironmentList(environmentList))
+            dispatch(httpClientActions.resetEnvStatusText())
+        } catch (e) {
+            dispatch(httpClientActions.setEnvStatusText(e.response.data.message, true))
+        }  
+    },
+
+    saveEnvironment: (environment) => async (dispatch) => {
+        dispatch(httpClientActions.setEnvStatusText("Saving..."))
+        try {
+            await cubeService.insertNewEnvironment(environment);
+            dispatch(httpClientActions.fetchEnvironments())
+            dispatch(httpClientActions.resetEnvStatusText())
+            dispatch(httpClientActions.showEnvList(true));
+        } catch (e) {
+            dispatch(httpClientActions.setEnvStatusText(e.response.data.message, true))
+        } 
+    },
+
+    updateEnvironment: (environment) => async (dispatch) => {
+        dispatch(httpClientActions.setEnvStatusText("Updating..."))
+        try {
+            await cubeService.updateEnvironment(environment);
+            dispatch(httpClientActions.fetchEnvironments())
+            dispatch(httpClientActions.resetEnvStatusText())
+            dispatch(httpClientActions.showEnvList(true));
+        } catch (e) {
+            dispatch(httpClientActions.setEnvStatusText(e.response.data.message, true))
+        } 
+    },
+
+    removeEnvironment: (id) => async (dispatch) => {
+        dispatch(httpClientActions.setEnvStatusText("Removing..."))
+        try {
+            await cubeService.deleteEnvironment(id)
+            dispatch(httpClientActions.fetchEnvironments())
+        } catch (e) {
+            dispatch(httpClientActions.setEnvStatusText(e.response.data.message, true))
+        }
+    },
+
+    setEnvStatusText: (text, isError=false) => ({type: httpClientConstants.SET_ENV_STATUS_TEXT, data: {text, isError}}),
+
+    resetEnvStatusText: () => ({type: httpClientConstants.RESET_ENV_STATUS_TEXT}),
+
+    showEnvList: (show) => ({type: httpClientConstants.SHOW_ENV_LIST, data: show}),
+
+    setSelectedEnvironment: (selectedEnvironment) => ({type: httpClientConstants.SET_SELECTED_ENVIRONMENT, data: selectedEnvironment}),
+
+    resetRunState: (tabId) => ({type: httpClientConstants.RESET_RUN_STATE, data: {tabId}}),
+
+    setReqRunning: (tabId) => ({type: httpClientConstants.SET_REQUEST_RUNNING, data: {tabId}}),
+
+    unsetReqRunning: (tabId) => ({type: httpClientConstants.UNSET_REQUEST_RUNNING, data: {tabId}}),
+
+    createDuplicateTab: (tabId) => ({type: httpClientConstants.CREATE_DUPPLICATE_TAB, data: {tabId}}),
+
 }

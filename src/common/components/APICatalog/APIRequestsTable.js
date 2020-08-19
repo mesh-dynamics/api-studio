@@ -20,12 +20,21 @@ class APIRequestsTable extends Component {
       details: [],
       tableData: [],
       selectAllChecked: false,
+      resizedColumns:props.apiCatalog.resizedColumns ||[]
     }
   }
 
   componentWillReceiveProps(nextProps) {
     const tableData = this.generateTableData(nextProps);
-    this.setState({ tableData })
+    this.setState({ tableData });
+  }
+
+  componentDidMount() {
+    const tableData = this.generateTableData(this.props);
+    this.setState({ tableData });
+  }
+  componentWillUnmount(){
+    this.props.dispatch(apiCatalogActions.setResizedColumns(this.state.resizedColumns));
   }
 
   generateTableData = (props) => {
@@ -66,7 +75,7 @@ class APIRequestsTable extends Component {
               check: <input type="checkbox" value={traceData.parentReqId} checked={traceData.checked} onChange={this.handleRowCheckChanged}/>,
               time: traceData.parentRequest.reqTimestamp,
               out: traceData.outgoingRequests.length ? traceData.outgoingRequests.map((outgoingRequest) => <div>{outgoingRequest.apiPath}</div>) : "NA", // todo stylize
-              compare: <label onClick={() => this.handleCompareSelect(traceData.parentReqId)}><i className="fas fa-1x fa-thumb-tack" style={{cursor: "pointer", color: _.find(apiCatalog.compareRequests, {parentReqId: traceData.parentReqId}) ? "#00c853": "grey", fontSize: "large",}}></i></label>,
+              compare: <label onClick={() => this.handleCompareSelect(traceData.parentReqId)}><i className="fas fa-1x fa-thumbtack" style={{cursor: "pointer", color: _.find(apiCatalog.compareRequests, {parentReqId: traceData.parentReqId}) ? "#00c853": "grey", fontSize: "large",}}></i></label>,
               service: traceData.parentRequest.service,
               method: traceData.parentRequest.method,
               request: traceData.parentRequest.apiPath + (_.isEmpty(traceData.parentRequest.queryParams) ? "" : "?" + Object.entries(traceData.parentRequest.queryParams).map(([k, v]) => k + "=" + v).join("&")),
@@ -157,9 +166,9 @@ class APIRequestsTable extends Component {
   makeTableQuery = () => {
     const { query } = this.state;
     try {
+      if (query.length > 0 && Object.keys(query).length > 0) {
       const keys = Object.keys(query[0]);
       const values = Object.values(query[0]);
-      if (keys.length > 0) {
         return (
           <table className="Rtable">
             <tr>
@@ -190,9 +199,9 @@ class APIRequestsTable extends Component {
   makeTableForm = () => {
     const { form } = this.state;
     try {
+      if (form.length > 0 && Object.keys(form[0]).length > 0) {
       const keys = Object.keys(form[0]);
       const values = Object.values(form[0]);
-      if (keys.length > 0) {
         return (
           <table className="Rtable">
             <tr>
@@ -220,6 +229,9 @@ class APIRequestsTable extends Component {
 
   }
 
+  onResizedColumns = (newResized, event) => {
+        this.setState({resizedColumns: newResized});
+  }
 
   generateTableColumns = () => {
     const { selectAllChecked } = this.state;
@@ -227,21 +239,18 @@ class APIRequestsTable extends Component {
     return [
       {
         Header: <input type="checkbox" onChange={this.selectAllCheckChanged} value={selectAllChecked}></input>,
-        columns: [
-          {
             width: 30,
             accessor: 'check',
             style: {
               textAlign: 'center',
-            }
-          }
-        ]
+            },
+            id: "cbView",
+            resizable: false
       },
       {
         Header: <div style={{ textAlign: "left", fontWeight: "bold" }}>TIME</div>,
-        columns: [
-          {
-            id: r => r.time,
+        
+            id: "time",
             accessor: r => new Date(r.time * 1000).toLocaleString(), // todo
             getProps: (state, rowInfo) => ({
               onClick: () => this.onCellClick(rowInfo)
@@ -249,60 +258,43 @@ class APIRequestsTable extends Component {
             style: {
               cursor: 'pointer',
             },
-          }
-        ]
       },
       {  
         Header: <div style={{textAlign:"left",fontWeight:"bold"}}>SERVICE</div>,
-        columns: [
-          {
             accessor: "service",
-          }
-        ]
+            id: "service"
       },
       {  
         Header: <div style={{textAlign:"left",fontWeight:"bold"}}>METHOD</div>,
-        columns: [
-          {
             accessor: "method",
-          }
-        ]
+            id: "method"
       },
       {  
         Header: <div style={{textAlign:"left",fontWeight:"bold"}}>REQUEST</div>,
-        columns: [
-          {
             accessor: "request",
+            id: "request",
             getProps: (state, rowInfo) => ({
               onClick: () => this.onCellClick(rowInfo)
             }),
             style: {
               cursor: 'pointer',
-            },
-          }
-        ]
+            }, 
       },
       {  
         Header: <div style={{textAlign:"left",fontWeight:"bold"}}>OUTGOING REQUESTS</div>,
-        columns: [
-          {
             accessor: 'out',
+            id: 'out',
 
-          }
-        ]
       },
       {
         Header: <div style={{ textAlign: "left", fontWeight: "bold" }}>COMPARE</div>,
-        columns: [
-          {
             accessor: 'compare',
+            id: 'compare',
             width: 70,
             style: {
               textAlign: 'center',
             },
-          }
-        ]
-      }
+      } 
     ]
   }
 
@@ -353,6 +345,9 @@ class APIRequestsTable extends Component {
             pageSizeOptions={[5, 10, 15, 20]}
             className="-striped -highlight"
             loading={apiTraceLoading}
+            resizable={true}
+            resized={this.state.resizedColumns}
+            onResizedChange={this.onResizedColumns}
           />
         </div>
         <div className="cube-btn api-catalog-view-btn text-center margin-top-10" onClick={this.handleViewRequests}>VIEW</div>

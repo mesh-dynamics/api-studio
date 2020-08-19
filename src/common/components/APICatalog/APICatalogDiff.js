@@ -1,12 +1,13 @@
 import React, { Component, Fragment } from 'react'
 import ReactDiffViewer from "../../utils/diff/diff-main";
 import _ from "lodash";
+import {Link} from "react-router-dom";
 import { cubeActions } from '../../actions';
 import { cubeService } from '../../services';
 import { connect } from "react-redux";
-import { Checkbox, FormGroup, Label } from "react-bootstrap";
+import { Checkbox, FormGroup, Label,Glyphicon,Button } from "react-bootstrap";
 import { apiCatalogActions } from '../../actions/api-catalog.actions';
-import {getHttpStatus} from "../../StatusCodeList.js"
+import { getHttpStatus } from "../../status-code-list";
 
 const newStyles = {
     variables: {
@@ -242,7 +243,7 @@ class APICatalogDiff extends Component {
     }
 
     render() {
-        const {apiCatalog : {diffRequestLeft, diffRequestRight, diffResponseLeft, diffResponseRight}} = this.props;
+        const {cube, apiCatalog : {diffRequestLeft, diffRequestRight, diffResponseLeft, diffResponseRight}} = this.props;
         
         const requestLeftPayload = diffRequestLeft ?  (_.isEmpty(diffRequestLeft.payload) ? {} : diffRequestLeft.payload[1]) : {};
         const requestRightPayload = diffRequestRight ? (_.isEmpty(diffRequestRight.payload) ? {} : diffRequestRight.payload[1]) : {};
@@ -252,7 +253,17 @@ class APICatalogDiff extends Component {
 
         return (
             <div className="margin-top-10">
-                <p style={{fontWeight: 300}}>COMPARE REQUESTS</p>
+                <div style={{ display: "inline-block" }}>
+                   <p style={{ fontWeight: 300 }}>COMPARE REQUESTS</p>
+                </div>
+                <div style={{ display: "inline-block" }} className="pull-right">
+                    <Link to={`/api_catalog/api?app=${cube.selectedApp}`}>
+                        <Button bsSize="small" className="cube-btn text-center">
+                            <Glyphicon style={{ visibility: "visible" }} glyph="menu-left" />
+                            <span>BACK TO API CATALOG</span>
+                        </Button>
+                    </Link>
+                </div>
                 
                 {this.renderToggleRibbon()}
 

@@ -417,7 +417,7 @@ class DiffResults extends Component {
         dispatch(cubeActions.clearGolden());
         this.setState({ showNewGolden: false });
         setTimeout(() => {
-            history.push("/test_config");
+            history.push("/configs");
         })
     }
 

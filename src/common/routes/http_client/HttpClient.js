@@ -6,11 +6,11 @@ import HttpResponseMessage from "./HttpResponseMessage";
 
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import config from "../../config";
-import statusCodeList from "../../StatusCodeList";
+import statusCodeList from "../../status-code-list";
 import {resolutionsIconMap} from '../../components/Resolutions.js';
 import { cubeService } from "../../services";
 import api from '../../api';
-
+import { getTraceTableTestReqData } from '../../utils/http_client/utils';
 import {
     validateAndCreateDiffLayoutData  
 } from "../../utils/diff/diff-process.js";
@@ -69,8 +69,6 @@ class HttpClient extends Component {
             incrementCollapseLengthForRecReqId: null,
             incrementCollapseLengthForRepReqId: null,
             incrementStartJsonPath: null,
-            selectedTab: this.props.currentSelectedTab,
-            selectedRecordedHistoryReqId: "",
             diffLayoutData: null,
             showCompleteDiff: false
         };
@@ -80,10 +78,10 @@ class HttpClient extends Component {
 
         this.handleClick = this.handleClick.bind(this);
         this.handleSaveClick = this.handleSaveClick.bind(this);
-        this.handleRowClick = this.handleRowClick.bind(this);
         this.handleShowDiff = this.handleShowDiff.bind(this);
-        this.handleTestRequestClick = this.handleTestRequestClick.bind(this);
         this.handleShowCompleteDiffClick = this.handleShowCompleteDiffClick.bind(this);
+        this.handleSetAsReference = this.handleSetAsReference.bind(this);
+        this.handleAddMockRequestClick = this.handleAddMockRequestClick.bind(this);
     }
 
     preProcessResults = (results) => {
@@ -113,21 +111,36 @@ class HttpClient extends Component {
     }
 
     handleShowDiff() {
-        const { selectedTab, selectedRecordedHistoryReqId, showCompleteDiff } = this.state;
-        const tabToProcess = selectedTab;
+        const { showCompleteDiff } = this.state;
+        const { currentSelectedTab } = this.props;
+        const selectedTraceTableReqTabId = currentSelectedTab.selectedTraceTableReqTabId;
+        const selectedTraceTableTestReqTabId = currentSelectedTab.selectedTraceTableTestReqTabId;
+        let selectedTraceTableReqTab, selectedTraceTableTestReqTab;
+
+        if(currentSelectedTab.selectedTraceTableReqTabId === currentSelectedTab.id) {
+            selectedTraceTableReqTab = currentSelectedTab;
+        } else {
+            selectedTraceTableReqTab = currentSelectedTab.outgoingRequests ? currentSelectedTab.outgoingRequests.find((eachTab) => eachTab.id === selectedTraceTableReqTabId) : {};
+        }
+        if(selectedTraceTableTestReqTabId === currentSelectedTab.recordedHistory.id) {
+            selectedTraceTableTestReqTab = currentSelectedTab.recordedHistory;
+        } else {
+            selectedTraceTableTestReqTab = currentSelectedTab.recordedHistory.outgoingRequests ? currentSelectedTab.recordedHistory.outgoingRequests.find((eachTab) => eachTab.id === selectedTraceTableTestReqTabId) : {};
+        }
+
+        const tabToProcess = selectedTraceTableReqTab;
 
         let diffLayoutData = [];
         if(tabToProcess && tabToProcess.eventData && tabToProcess.eventData[0].apiPath) {
             try {
-                api.get(`${config.apiBaseUrl}/as/getReqRespMatchResult?lhsReqId=${selectedTab.requestId}&rhsReqId=${selectedRecordedHistoryReqId}`)
+                api.get(`${config.apiBaseUrl}/as/getReqRespMatchResult?lhsReqId=${tabToProcess.requestId}&rhsReqId=${selectedTraceTableTestReqTab.requestId}`)
                     .then((serverRes) => {
                         console.log("serverRes: ", serverRes);
                         const results = serverRes.res && [serverRes.res];
                         diffLayoutData = this.preProcessResults(results);
-
                         this.setState({
                             diffLayoutData: diffLayoutData,
-                            showCompleteDiff: !showCompleteDiff
+                            showCompleteDiff: true
                         })
                     }, (error) => {
                         console.error("error: ", error);
@@ -146,39 +159,39 @@ class HttpClient extends Component {
         })
     }
 
-    handleTestRequestClick(reqId) {
-        this.setState({
-            selectedRecordedHistoryReqId: reqId
-        })
+    handleRowClick(isOutgoingRequest, selectedTraceTableReqTabId) {
+        const { currentSelectedTab } = this.props;
+        this.props.handleRowClick(isOutgoingRequest, selectedTraceTableReqTabId, currentSelectedTab.id);
     }
 
-    handleRowClick(isOutgoingRequest, tabId) {
-        const { handleRowClick, currentSelectedTab } = this.props;
-        this.props.handleRowClick(isOutgoingRequest, tabId);
-        if(isOutgoingRequest) {
-            const outgoingRequests = currentSelectedTab.outgoingRequests;
-            const selectedTab = outgoingRequests.find((eachOutgoingReq) => {
-                return eachOutgoingReq.id === tabId;
-            });
-            this.setState({
-                selectedTab: selectedTab
-            })
-        } else {
-            this.setState({
-                selectedTab: currentSelectedTab
-            })
-        }
+    handleTestRowClick(selectedTraceTableTestReqTabId) {
+        const { currentSelectedTab } = this.props;
+        this.props.handleTestRowClick(selectedTraceTableTestReqTabId, currentSelectedTab.id);
     }
 
     handleClick(evt) {
-        const { selectedTab } = this.state;
-        this.props.driveRequest(false, selectedTab.id);
+        const { currentSelectedTab } = this.props;
+        this.props.driveRequest(false, currentSelectedTab.id);
     }
 
     handleSaveClick(evt) {
-        const { selectedTab } = this.state;
         const { currentSelectedTab } = this.props;
         this.props.showSaveModal(false, currentSelectedTab.id);
+    }
+
+    handleDuplicateTabClick = () => {
+        const { currentSelectedTab } = this.props;
+        this.props.handleDuplicateTab(currentSelectedTab.id);
+    }
+
+    handleSetAsReference(evt) {
+        const { currentSelectedTab } = this.props;
+        this.props.setAsReference(currentSelectedTab.id);
+    }
+
+    handleAddMockRequestClick(evt) {
+        const { currentSelectedTab } = this.props;
+        this.props.showAddMockReqModal(currentSelectedTab.id);
     }
 
     increaseCollapseLength(e, jsonPath, recordReqId, replayReqId, typeOfChunkHandler) {
@@ -303,9 +316,31 @@ class HttpClient extends Component {
 
     render() {
         const {  currentSelectedTab } = this.props;
+        let selectedTraceTableReqTabId = currentSelectedTab.selectedTraceTableReqTabId;
+        const selectedTraceTableTestReqTabId = currentSelectedTab.selectedTraceTableTestReqTabId;
+        let selectedTraceTableReqTab, selectedTraceTableTestReqTab;
+        
+        // const selectedTraceTableTestReqTab = getTraceTableTestReqData(currentSelectedTab, currentSelectedTab.selectedTraceTableTestReqTabId);
+
+        if(!selectedTraceTableReqTabId) {
+            selectedTraceTableReqTabId = currentSelectedTab.id;
+        }
+
+        if(selectedTraceTableReqTabId === currentSelectedTab.id) {
+            selectedTraceTableReqTab = currentSelectedTab;
+        } else {
+            selectedTraceTableReqTab = currentSelectedTab.outgoingRequests ? currentSelectedTab.outgoingRequests.find((eachTab) => eachTab.id === selectedTraceTableReqTabId) : {};
+        }
+
+        if(currentSelectedTab.recordedHistory && selectedTraceTableTestReqTabId === currentSelectedTab.recordedHistory.id) {
+            selectedTraceTableTestReqTab = currentSelectedTab.recordedHistory;
+        } else if(currentSelectedTab.recordedHistory) {
+            selectedTraceTableTestReqTab = currentSelectedTab.recordedHistory.outgoingRequests ? currentSelectedTab.recordedHistory.outgoingRequests.find((eachTab) => eachTab.id === selectedTraceTableTestReqTabId) : {};
+        }
+
         const { outgoingRequests, service, httpURL, httpURLShowOnly } = currentSelectedTab;
 
-        const { selectedResolutionType, showTrace, showLogs, collapseLength, incrementCollapseLengthForRecReqId, incrementCollapseLengthForRepReqId, maxLinesLength, showResponseMessageHeaders, showResponseMessageBody, showRequestMessageHeaders, showRequestMessageQParams, showRequestMessageFParams, showRequestMessageBody, showAll, searchFilterPath,  shownResponseMessageHeaders, shownResponseMessageBody, shownRequestMessageHeaders, shownRequestMessageQParams, shownRequestMessageFParams, shownRequestMessageBody, selectedTab, selectedRecordedHistoryReqId, diffLayoutData, showCompleteDiff } = this.state;
+        const { selectedResolutionType, showTrace, showLogs, collapseLength, incrementCollapseLengthForRecReqId, incrementCollapseLengthForRepReqId, maxLinesLength, showResponseMessageHeaders, showResponseMessageBody, showRequestMessageHeaders, showRequestMessageQParams, showRequestMessageFParams, showRequestMessageBody, showAll, searchFilterPath,  shownResponseMessageHeaders, shownResponseMessageBody, shownRequestMessageHeaders, shownRequestMessageQParams, shownRequestMessageFParams, shownRequestMessageBody, diffLayoutData, showCompleteDiff } = this.state;
 
         const selectedDiffItem = diffLayoutData ? diffLayoutData[0] : null;
 
@@ -387,61 +422,73 @@ class HttpClient extends Component {
                 <div style={{display: "flex"}}>
                     <div style={{marginLeft: "auto", order: "2"}}>
                         <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleClick}>
-                            <Glyphicon glyph="play" /> RUN
+                            {currentSelectedTab.requestRunning ? <i className="fa fa-spinner fa-spin"></i> : <Glyphicon glyph="play" />} RUN
                         </div>
-                        <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: currentSelectedTab.showSaveBtn ? "inline-block" : "none"}} onClick={this.handleSaveClick}>
+                        <div disabled={currentSelectedTab.httpURL.length === 0} className={currentSelectedTab.httpURL.length === 0 ? "btn btn-sm cube-btn text-center disabled": "btn btn-sm cube-btn text-center"} style={{ padding: "2px 10px", display: currentSelectedTab.showSaveBtn ? "inline-block" : "none"}} onClick={this.handleSaveClick}>
                             <Glyphicon glyph="save" /> SAVE
                         </div>
+                        <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleDuplicateTabClick} title="Duplicate Tab">
+                            <i className="fa fa-clone"></i>
+                        </div>
                     </div>
+
                 </div>
-                {outgoingRequests && outgoingRequests.length > 0 && (
-                    <div>
-                        <div style={{display: "flex", backgroundColor: "#ffffff", marginBottom: "9px"}}>
-                            <div style={{flex: "1", padding: "0.5rem"}}>
-                                <div>Reference</div>
-                                <Table hover style={{backgroundColor: "#fff", border: "1px solid #ddd", borderSpacing: "0px", borderCollapse: "separate", marginBottom: "0px"}}>
-                                    <thead>
-                                        <tr>
-                                            <th>SERVICE BY TRACE ORDER</th>
-                                            <th>API PATH</th>
-                                            <th>REPLAY CONFIG</th>
-                                            <th></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr style={{cursor: "pointer", backgroundColor: selectedTab.requestId === currentSelectedTab.requestId ? "#ccc" : "#fff"}} onClick={() => this.handleRowClick(false, currentSelectedTab.id)}>
-                                            <td>
-                                                <span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>
-                                                <span>
-                                                    <i className="far fa-minus-square" style={{fontSize: "12px", marginRight: "12px", cursor: "pointer"}}></i>
-                                                </span>
-                                                {service}
-                                            </td>
-                                            <td>{httpURLShowOnly}</td>
-                                            <td></td>
-                                            <td></td>
-                                        </tr>
-                                        {outgoingRequests && outgoingRequests.length > 0 && outgoingRequests.map((eachReq) => {
-                                            return (
-                                                <tr key={eachReq.id} style={{cursor: "pointer", backgroundColor: selectedTab.requestId === eachReq.requestId ? "#ccc" : "#fff"}} onClick={() => this.handleRowClick(true, eachReq.id)}>
-                                                    <td>
-                                                        <span style={{marginRight: "30px", width: "25px"}}></span>
-                                                        <span>
-                                                            <i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i>
-                                                        </span>
-                                                        {eachReq.service}
-                                                    </td>
-                                                    <td>{eachReq.httpURLShowOnly}</td>
-                                                    <td></td>
-                                                    <td></td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </Table>
+                <div>
+                    <div style={{display: "flex", backgroundColor: "#ffffff", marginBottom: "9px"}}>
+                        <div style={{flex: "1", padding: "0.5rem"}}>
+                            <div>Reference</div>
+                            <Table hover style={{backgroundColor: "#fff", border: "1px solid #ddd", borderSpacing: "0px", borderCollapse: "separate", marginBottom: "0px"}}>
+                                <thead>
+                                    <tr>
+                                        <th>SERVICE BY TRACE ORDER</th>
+                                        <th>API PATH</th>
+                                        <th>REPLAY CONFIG</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style={{cursor: "pointer", backgroundColor: selectedTraceTableReqTab.id === currentSelectedTab.id ? "#ccc" : "#fff"}} onClick={() => this.handleRowClick(false, currentSelectedTab.id)}>
+                                        <td>
+                                            <span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>
+                                            <span>
+                                                <i className="far fa-minus-square" style={{fontSize: "12px", marginRight: "12px", cursor: "pointer"}}></i>
+                                            </span>
+                                            {service}
+                                        </td>
+                                        <td>{httpURLShowOnly}</td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                    {outgoingRequests && outgoingRequests.length > 0 && outgoingRequests.map((eachReq) => {
+                                        return (
+                                            <tr key={eachReq.id} style={{cursor: "pointer", backgroundColor: selectedTraceTableReqTab.id === eachReq.id ? "#ccc" : "#fff"}} onClick={() => this.handleRowClick(true, eachReq.id)}>
+                                                <td>
+                                                    <span style={{marginRight: "30px", width: "25px"}}></span>
+                                                    <span>
+                                                        <i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i>
+                                                    </span>
+                                                    {eachReq.service}
+                                                </td>
+                                                <td>{eachReq.httpURLShowOnly}</td>
+                                                <td></td>
+                                                <td></td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </Table>
+                            <div style={{ marginTop: "5px", marginRight: "7px"}}>
+                                <div style={{display: "inline-block", width: "100%"}}> 
+                                    <button className="add-request-options-button" onClick={this.handleAddMockRequestClick}>
+                                        <span style={{ fontSize: "20px" }}>+</span>
+                                        <span style={{ marginLeft: "5px", fontWeight: 400 }}>Add Mock Request</span>
+                                    </button>
+                                </div>
                             </div>
-                            {currentSelectedTab.recordedHistory && (
-                                <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0"}}>
+                        </div>
+                            <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0"}}>
+                                {currentSelectedTab.recordedHistory && (
+                                <div>
                                     <div>Test</div>
                                     <Table hover style={{backgroundColor: "#fff", border: "1px solid #ddd", borderSpacing: "0px", borderCollapse: "separate", marginBottom: "0px"}}>
                                         <thead>
@@ -453,21 +500,38 @@ class HttpClient extends Component {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr style={{cursor: "pointer", backgroundColor: selectedRecordedHistoryReqId === currentSelectedTab.recordedHistory.requestId ? "#ccc" : "#fff"}} onClick={() => this.handleTestRequestClick(currentSelectedTab.recordedHistory.requestId)}>
-                                                <td>
-                                                    <span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>
-                                                    <span>
-                                                        <i className="far fa-minus-square" style={{fontSize: "12px", marginRight: "12px", cursor: "pointer"}}></i>
-                                                    </span>
-                                                    {currentSelectedTab.recordedHistory.service}
-                                                </td>
-                                                <td>{currentSelectedTab.recordedHistory.apiPath}</td>
-                                                <td></td>
-                                                <td></td>
+                                            <tr 
+                                                style={{
+                                                    cursor: "pointer", 
+                                                    backgroundColor: 
+                                                    selectedTraceTableTestReqTab.id === currentSelectedTab.recordedHistory.id ? "#ccc" : "#fff",
+                                                    color: currentSelectedTab.recordedHistory.recordedResponseStatus==404 ? "red" : null,
+                                                }} 
+                                                onClick={() => this.handleTestRowClick(currentSelectedTab.recordedHistory.id)}
+                                            >
+                                                
+                                                    <td>
+                                                        <span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>
+                                                        <span>
+                                                            <i className="far fa-minus-square" style={{fontSize: "12px", marginRight: "12px", cursor: "pointer"}}></i>
+                                                        </span>
+                                                        {currentSelectedTab.recordedHistory.service}
+                                                    </td>
+                                                    <td>{currentSelectedTab.recordedHistory.apiPath}</td>
+                                                    <td></td>
+                                                    <td></td>
                                             </tr>
                                             {currentSelectedTab.recordedHistory.outgoingRequests && currentSelectedTab.recordedHistory.outgoingRequests.length > 0 && currentSelectedTab.recordedHistory.outgoingRequests.map((eachReq) => {
                                                 return (
-                                                    <tr key={eachReq.requestId} style={{cursor: "pointer", backgroundColor: selectedRecordedHistoryReqId === eachReq.requestId ? "#ccc" : "#fff"}} onClick={() => this.handleTestRequestClick(eachReq.requestId)} >
+                                                    <tr 
+                                                        key={eachReq.requestId} 
+                                                        style={{
+                                                            cursor: "pointer", 
+                                                            backgroundColor: selectedTraceTableTestReqTab.id === eachReq.id ? "#ccc" : "#fff",
+                                                            color: eachReq.recordedResponseStatus==404 ? "red" : null,
+                                                            }} 
+                                                        onClick={() => this.handleTestRowClick(eachReq.id)} 
+                                                    >
                                                         <td>
                                                             <span style={{marginRight: "30px", width: "25px"}}></span>
                                                             <span>
@@ -486,48 +550,54 @@ class HttpClient extends Component {
                                 </div>
                             )}
                         </div>
-                        <div style={{display: "flex"}}>
-                            <div style={{marginLeft: "auto", order: "2"}}>
-                                <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "none" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleShowDiff}>
-                                    <Glyphicon glyph="random" /> COMPARE REQUESTS
-                                </div>
-                                <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "none" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} >
-                                    <Glyphicon glyph="export" /> SET AS REFERENCE
-                                </div>
-                                <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "inline-block" : "none"}} onClick={this.handleShowCompleteDiffClick}>
-                                    <Glyphicon glyph="sort-by-attributes" /> SHOW REQUESTS
-                                </div>
+                    </div>
+                    <div style={{display: "flex"}}>
+                        <div style={{marginLeft: "auto", order: "2"}}>
+                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleShowDiff}>
+                                <Glyphicon glyph="random" /> COMPARE REQUESTS
+                            </div>
+                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "none" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleSetAsReference}>
+                                <Glyphicon glyph="export" /> SET AS REFERENCE
+                            </div>
+                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "inline-block" : "none"}} onClick={this.handleShowCompleteDiffClick}>
+                                <Glyphicon glyph="sort-by-attributes" /> SHOW REQUESTS
                             </div>
                         </div>
                     </div>
-                )}
+                </div>
                 {!showCompleteDiff && (
                     <div>
-                        <HttpRequestMessage tabId={selectedTab.id}
-                            requestId={selectedTab.requestId}
-                            httpMethod={selectedTab.httpMethod}
-                            httpURL={selectedTab.httpURL}
-                            headers={selectedTab.headers} 
-                            queryStringParams={selectedTab.queryStringParams}
-                            bodyType={selectedTab.bodyType}
-                            formData={selectedTab.formData} 
-                            rawData={selectedTab.rawData}
-                            rawDataType={selectedTab.rawDataType}
+                        <HttpRequestMessage 
+                            tabId={selectedTraceTableReqTab.id}
+                            requestId={selectedTraceTableReqTab.requestId}
+                            httpMethod={selectedTraceTableReqTab.httpMethod}
+                            httpURL={selectedTraceTableReqTab.httpURL}
+                            headers={selectedTraceTableReqTab.headers} 
+                            queryStringParams={selectedTraceTableReqTab.queryStringParams}
+                            bodyType={selectedTraceTableReqTab.bodyType}
+                            formData={selectedTraceTableReqTab.formData} 
+                            rawData={selectedTraceTableReqTab.rawData}
+                            rawDataType={selectedTraceTableReqTab.rawDataType}
                             addOrRemoveParam={this.props.addOrRemoveParam} 
                             updateParam={this.props.updateParam}
                             updateAllParams={this.props.updateAllParams}
                             updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
-                            isOutgoingRequest={selectedTab.isOutgoingRequest} >
+                            isOutgoingRequest={selectedTraceTableReqTab.isOutgoingRequest} >
                         </HttpRequestMessage>
-                        <HttpResponseMessage tabId={selectedTab.id}
-                            responseStatus={selectedTab.responseStatus}
-                            responseStatusText={selectedTab.responseStatusText}
-                            responseHeaders={selectedTab.responseHeaders}
-                            responseBody={selectedTab.responseBody}
-                            recordedResponseHeaders={selectedTab.recordedResponseHeaders}
-                            recordedResponseBody={ selectedTab.recordedResponseBody}
+                        <HttpResponseMessage 
+                            tabId={selectedTraceTableReqTab.id}
+                            /** Belongs to RHS */
+                            responseStatus={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseStatus : ""}
+                            responseStatusText={""}
+                            responseHeaders={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseHeaders : ""}
+                            responseBody={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseBody : ""}
+                            /** Belongs to LHS */
+                            recordedResponseHeaders={selectedTraceTableReqTab.recordedResponseHeaders}
+                            recordedResponseBody={ selectedTraceTableReqTab.recordedResponseBody}
+                            recordedResponseStatus={selectedTraceTableReqTab.recordedResponseStatus}
                             updateParam={this.props.updateParam}
-                            isOutgoingRequest={ selectedTab.isOutgoingRequest} >
+                            isOutgoingRequest={ selectedTraceTableReqTab.isOutgoingRequest}
+                            requestRunning={currentSelectedTab.requestRunning} >
                         </HttpResponseMessage>
                     </div>
                 )}

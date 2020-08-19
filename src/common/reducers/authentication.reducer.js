@@ -1,4 +1,5 @@
 import { authConstants } from '../constants';
+import { ipcRenderer } from '../helpers/ipc-renderer';
 
 const initialState = {
   user: {},
@@ -11,12 +12,20 @@ const initialState = {
 
 // TODO: To use redux-persist instead
 let user = JSON.parse(localStorage.getItem('user'));
-const persistedState = user 
-  ? { 
+
+const rehydrateUserInfo = () => {
+    if(PLATFORM_ELECTRON) {
+      ipcRenderer.send('set_user', user);
+    }
+
+    return {
       ...initialState, 
       loggedIn: true, 
-      user 
-    } 
+      user
+    }
+};
+const persistedState = user 
+  ? rehydrateUserInfo() 
   : initialState;
 
 const authenticationReducer = (state = persistedState, action) => {

@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
-import { Glyphicon, FormGroup, Button, FormControl, Radio, ControlLabel, Checkbox } from 'react-bootstrap';
+import { FormGroup, FormControl,Grid, Row, Col } from 'react-bootstrap';
 import { getStatusColor } from "../../utils/http_client/utils";
+import { getHttpStatus } from "../../status-code-list";
 // import "./styles_here.css";
 
 import HttpResponseHeaders from "./HttpResponseHeaders";
@@ -34,6 +35,7 @@ class HttpResponseMessage extends Component {
 
 
     render() {
+        const { recordedResponseStatus, responseStatus, responseStatusText, requestRunning } = this.props;
         return (
             <div style={{ marginTop: "18px" }}>
                 <div style={{ fontSize: "11px" }}>RESPONSE</div>
@@ -64,11 +66,20 @@ class HttpResponseMessage extends Component {
                         </FormGroup>
                     </div>
                 </div>
-                <div style={{ fontSize: "12px", marginBottom: "12px", marginLeft: "50%" }}>
-                    <div style={{ opacity: "0.7", display: "inline-block", marginRight: "5px" }}>HTTP RESPONSE STATUS:  
-                        <b style={{ color: getStatusColor(this.props.responseStatus) }}> {this.props.responseStatus + " " + this.props.responseStatusText}</b>
-                    </div>
-                </div>
+                <Grid className="margin-top-15" style={{ fontSize: "12px", marginBottom: "12px"}}>
+                    <Row className="show-grid">
+                            <Col xs={5}>
+                                <div style={{ opacity: "0.7"}}>HTTP RESPONSE STATUS: 
+                                    <b style={{ color: recordedResponseStatus && getStatusColor(recordedResponseStatus)}}> {recordedResponseStatus? getHttpStatus(recordedResponseStatus): 'NA' }</b>
+                                </div>
+                            </Col>
+                            <Col xs={5} style={{ marginLeft: "7.2%"}}>
+                                <div style={{ opacity: "0.7" }}>HTTP RESPONSE STATUS:  
+                                    <b style={{ color: responseStatus && getStatusColor(responseStatus)}}> {requestRunning ? 'WAITING...' : responseStatus? getHttpStatus(responseStatus): 'NA' }</b>
+                                </div>
+                            </Col>
+                        </Row>
+                </Grid>
                 <div>
                     <HttpResponseHeaders tabId={this.props.tabId}
                         showHeaders={this.state.showHeaders}

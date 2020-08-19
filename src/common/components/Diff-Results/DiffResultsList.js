@@ -9,7 +9,7 @@ import {
 } from "react-bootstrap";
 import ReactDiffViewer from "../../utils/diff/diff-main";
 import DiffResultsMissingItems from "./DiffResultsMissingItems";
-import statusCodeList from "../../StatusCodeList"
+import statusCodeList from "../../status-code-list";
 import _ from "lodash";
 import "../Diff.css";
 import config from "../../config.js";
