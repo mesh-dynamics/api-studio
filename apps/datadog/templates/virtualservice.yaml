@@ -1,0 +1,18 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: datadog
+  namespace: {{namespace}}
+spec:
+  hosts:
+  - "{{namespace_host}}"
+  gateways:
+  - {{namespace}}-gateway
+  http:
+  - match:
+    - port: 80
+    route:
+    - destination:
+        host: employee
+        port:
+          number: 8080

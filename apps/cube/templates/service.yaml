@@ -460,6 +460,10 @@ spec:
         env:
         - name: SPRING_PROFILES_ACTIVE
           value: "{{springboot_profile}}"
+        - name: spring.datasource.url
+          value: "jdbc:postgresql://postgresql.postgres-dev.svc.cluster.local:5432/cubedevdb?schema=qui"
+        - name: allowed.origins.path
+          value: "/usr/local/tomcat/webCorsAllowedOrigins.txt"
         resources:
           requests:
             memory: "640Mi"
@@ -489,6 +493,13 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
+        volumeMounts:
+        - mountPath: "/usr/local/tomcat/webCorsAllowedOrigins.txt"
+          name: cubeui-backend-config
+      volumes:
+      - name: cubeui-backend-config
+        configMap:
+         name: cubeui-backend-config
       imagePullSecrets:
       - name: regcred
 
