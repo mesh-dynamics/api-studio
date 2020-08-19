@@ -30,12 +30,15 @@ spec:
   selector:
     component: details
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: details-v1
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: details
   replicas: 1
   template:
     metadata:
@@ -77,12 +80,15 @@ spec:
   selector:
     component: ratings
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ratings-v1
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: ratings
   replicas: 1
   template:
     metadata:
@@ -124,12 +130,16 @@ spec:
   selector:
     component: reviews
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: reviews-v1
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: reviews
+      version: v1
   replicas: 1
   template:
     metadata:
@@ -153,12 +163,16 @@ spec:
         ports:
         - containerPort: 9080
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: reviews-v2
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: reviews
+      version: v2
   replicas: 1
   template:
     metadata:
@@ -182,12 +196,16 @@ spec:
         ports:
         - containerPort: 9080
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: reviews-v3
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: reviews
+      version: v3
   replicas: 1
   template:
     metadata:
@@ -229,12 +247,15 @@ spec:
   selector:
     component: productpage
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: productpage-v1
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: productpage
   replicas: 1
   template:
     metadata:
@@ -277,12 +298,16 @@ spec:
   selector:
     component: movieinfo
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: movieinfo-v1  #movieinfo without bugs
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: movieinfo
+      version: v1
   replicas: 1
   strategy:
     rollingUpdate:
@@ -353,12 +378,16 @@ spec:
             value: "0"
 
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: movieinfo-v2    #Movieinfo with bugs
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: movieinfo
+      version: v2
   replicas: 1
   strategy:
     rollingUpdate:
@@ -464,12 +493,15 @@ spec:
   selector:
     component: restwrapjdbc
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: restwrapjdbc-v1
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: restwrapjdbc
   replicas: 1
   template:
     metadata:
@@ -512,12 +544,15 @@ spec:
   selector:
     component: moviebookui
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: moviebookui
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: moviebookui
   replicas: 1
   strategy:
     rollingUpdate:

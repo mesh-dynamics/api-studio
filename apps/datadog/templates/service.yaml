@@ -1,0 +1,166 @@
+##################################################################################################
+# employee service
+##################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: employee
+  namespace: {{namespace}}
+  labels:
+    app: datadog
+    component: employee
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    component: employee
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: employee
+  namespace: {{namespace}}
+spec:
+  selector:
+    matchLabels:
+      component: employee
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: datadog
+        component: employee
+        version: v1
+        namespace: {{namespace}}
+    spec:
+      containers:
+      - name: employee
+        image: cubeiocorp/employee-service:0443
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "2048Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 8080
+        env:
+          - name: JAVA_OPTS
+            value: "-javaagent:/usr/local/tomcat/dd-java-agent-0.58.0.jar"
+          - name: depURL
+            value: http://department:8080
+          - name: officeURL
+            value: http://office:8080
+
+##################################################################################################
+# department service
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: department
+  namespace: {{namespace}}
+  labels:
+    app: datadog
+    component: department
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    component: department
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: department
+  namespace: {{namespace}}
+spec:
+  selector:
+    matchLabels:
+      component: department
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: datadog
+        component: department
+        version: v1
+        namespace: {{namespace}}
+    spec:
+      containers:
+      - name: department
+        image: cubeiocorp/department-service:0443
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "2048Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 8080
+        env:
+          - name: JAVA_OPTS
+            value: "-javaagent:/usr/local/tomcat/dd-java-agent-0.58.0.jar"
+          - name: officeURL
+            value: http://office:8080
+
+##################################################################################################
+# office service
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: office
+  namespace: {{namespace}}
+  labels:
+    app: datadog
+    component: office
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    component: office
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: office
+  namespace: {{namespace}}
+spec:
+  selector:
+    matchLabels:
+      component: office
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: datadog
+        component: office
+        version: v1
+        namespace: {{namespace}}
+    spec:
+      containers:
+      - name: office
+        image: cubeiocorp/office-service:0443
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "2048Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 8080
+        env:
+          - name: JAVA_OPTS
+            value: "-javaagent:/usr/local/tomcat/dd-java-agent-0.58.0.jar"

@@ -1,0 +1,37 @@
+{
+  "spec": {
+    "template": {
+      "spec": {
+        "containers": [
+          {
+            "name": "cubews",
+            "volumeMounts": [
+              {
+                "mountPath": "/etc/cube/agentconf",
+                "name": "dogfooding-agent-conf"
+              },
+              {
+                "mountPath": "/etc/cube/samplerconf",
+                "name": "dogfooding-samplerconfig"
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "dogfooding-agent-conf",
+            "configMap": {
+              "name": "cube-mock-agent"
+            }
+          },
+          {
+            "name": "dogfooding-samplerconfig",
+            "configMap": {
+              "name": "cube-samplerconfig"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

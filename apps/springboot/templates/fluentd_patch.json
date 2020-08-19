@@ -1,0 +1,21 @@
+[
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/0/volumeMounts/-",
+    "value" : {
+      "name" : "fluentd-springboot-conf-{{namespace}}",
+      "mountPath": "/fluentd/etc/conf.d/fluent-springboot-{{namespace}}.conf",
+      "subPath": "fluent-springboot-{{namespace}}.conf"
+      }
+  },
+  {
+  "op": "add",
+  "path": "/spec/template/spec/volumes/-",
+  "value" : {
+    "name" : "fluentd-springboot-conf-{{namespace}}",
+    "configMap" : {
+      "name" : "fluentd-springboot-conf-{{namespace}}"
+      }
+    }
+  }
+]

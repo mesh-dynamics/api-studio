@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: fluentd-datadog-conf-{{namespace}}
+  namespace: logging
+  labels:
+    app: datadog
+data:
+  fluent-datadog-{{namespace}}.conf: |-
+    # tail movieinfo (envoy) logs
+    <source>
+      @type tail
+      @id in_tail_cube_nginx_{{namespace}}
+      path /var/log/containers/*{{namespace}}_receiver*.log
+      pos_file /var/log/fluentd-containers-{{namespace}}-datadog_app.log.pos
+      tag cube.datadog
+      read_from_head true
+      <parse>
+        @type json
+      </parse>
+    </source>
+
+    <filter cube.datadog>
+      @type parser
+      format json
+      key_name log
+      reserve_data true
+      hash_value_field log
+    </filter>
+
+    # filter for parsing cubews agent logs
+    <filter cube.datadog>
+    @type grep
+      <regexp>
+        key log
+        pattern /CubeEvent/
+      </regexp>
+    </filter>
+
+    <filter cube.datadog>
+      @type stdout
+    </filter>
+
+    <filter cube.datadog>
+      @type record_transformer
+      enable_ruby true
+      renew_record true
+      <record>
+        cubeEvent ${record["log"]["CubeEvent"]}
+      </record>
+    </filter>
+
+    <filter cube.datadog>
+      @type stdout
+    </filter>
+
+    <match cube.datadog>
+      @type http
+      endpoint https://{{cube_host}}/api/cs/storeEventBatch
+      headers  {"Authorization":"Bearer {{auth_token}}"}
+      tls_verify_mode none
+      open_timeout 5
+      serializer json
+      bulk_request true
+      <format>
+        @type json
+      </format>
+      <buffer log>
+      @type memory
+      chunk_limit_records 50
+      flush_interval 10s
+      </buffer>
+    </match>
