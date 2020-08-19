@@ -17,6 +17,7 @@
     "axios": "^0.18.1",
     "chokidar": "^3.4.0",
     "classnames": "^2.2.6",
+    "cookie": "^0.4.1",
     "core-js": "^3.6.5",
     "crypto-random-string": "^3.2.0",
     "cytoscape": "^3.7.3",
@@ -50,6 +51,7 @@
     "plotly.js": "^1.54.7",
     "prop-types": "^15.6.2",
     "query-string": "5.1.1",
+    "querystring": "^0.2.0",
     "react": "^16.6.0",
     "react-ace": "^8.1.0",
     "react-bootstrap": "^0.32.4",
@@ -76,12 +78,14 @@
     "sort-json": "^2.0.0",
     "styled-components": "^4.3.2",
     "tippy.js": "^4.3.5",
+    "url": "^0.11.0",
     "url-parse": "^1.4.7",
     "uuid": "^8.1.0",
     "validator": "^12.1.0",
     "velocity-react": "^1.4.3",
     "wait-on": "^5.0.0",
-    "webpack": "^4.43.0"
+    "webpack": "^4.43.0",
+    "yargs-parser": "^19.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.10.4",
