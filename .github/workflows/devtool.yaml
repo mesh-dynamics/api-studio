@@ -1,0 +1,53 @@
+name: Build Devtool
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+      - staging
+
+jobs:
+  buildmacOS:
+    name: Build devTool for macOS
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Import Code-Signing Certificates
+        uses: Apple-Actions/import-codesign-certs@v1
+        with:
+          p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE }}
+          p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
+      - name: Build for macOS
+        env:
+          APPLE_ID: ${{ secrets.AC_USERNAME }}
+          APPLE_ID_PASSWORD: ${{ secrets.AC_PASSWORD }}
+        run: |
+          npm install
+          npx webpack --mode production --display minimal --config webpack.electron.config.js
+          npx electron-builder build -m --config electron-builder.develop.yml --publish always
+
+  buildlinux:
+    name: Build devTool for linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: Build for linux
+        run: |
+          npm install
+          npx webpack --mode production --display minimal --config webpack.electron.config.js
+          npx electron-builder build -l --config electron-builder.develop.yml --publish always
+
+  buildwindows:
+    name: Build devTool for windows
+    runs-on: windows-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: Build for windows
+        run: |
+          npm install
+          npx webpack --mode production --display minimal --config webpack.electron.config.js
+          npx electron-builder build -w --config electron-builder.develop.yml --publish always
