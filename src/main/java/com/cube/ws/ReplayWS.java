@@ -40,6 +40,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.md.constants.ReplayStatus;
+import io.md.dao.RecordOrReplay;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
 import io.md.dao.agent.config.AgentConfigTagInfo;
@@ -87,7 +88,25 @@ public class ReplayWS extends ReplayBasicWS {
 
         Response resp = replay.map(r -> {
             if (r.status != ReplayStatus.Running && r.status != ReplayStatus.Init) {
-                return Response.ok(String.format("Replay id state is already terminal: %s", r.status.toString())).build();
+                Optional<RecordOrReplay> fromCacheOrSolr =
+                    rrstore.getCurrentRecordOrReplay(Optional.of(r.customerId)
+                        , Optional.of(r.app), Optional.of(r.instanceId));
+                return fromCacheOrSolr.map(recordOrReplay -> {
+                    if (!recordOrReplay.isRecording()) {
+                        Replay currentReplay = recordOrReplay.replay.get();
+                        if (currentReplay.replayId.equals(r.replayId)) {
+                            if (!rrstore.forceDeleteInCache(r)) {
+                                return Response.serverError().build();
+                            }
+                            return Response.ok("Conflicting status in solr and cache"
+                                + ", evicted from cache").build();
+                        }
+                    }
+                    return null;
+                }).orElse(Response.ok(String
+                    .format("Replay id state is already terminal: %s", r.status.toString()))
+                    .build());
+
             }
             String json;
             try {
