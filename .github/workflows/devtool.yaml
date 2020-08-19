@@ -23,6 +23,9 @@ jobs:
         env:
           APPLE_ID: ${{ secrets.AC_USERNAME }}
           APPLE_ID_PASSWORD: ${{ secrets.AC_PASSWORD }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
         run: |
           npm install
           npx webpack --mode production --display minimal --config webpack.electron.config.js
@@ -35,6 +38,10 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: Build for linux
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
         run: |
           npm install
           npx webpack --mode production --display minimal --config webpack.electron.config.js
@@ -47,6 +54,10 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: Build for windows
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
         run: |
           npm install
           npx webpack --mode production --display minimal --config webpack.electron.config.js
