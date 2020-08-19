@@ -12,6 +12,8 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -363,8 +365,10 @@ public abstract class AbstractReplayDriver {
 						String valueString = sub.replace(sourceString);
 						value = new JsonDataObj(new TextNode(valueString), jsonMapper);
 					}
-					extractionMap
-						.put(sub.replace(extractionMeta.name), value);
+					if (value != null) {
+						extractionMap
+							.put(sub.replace(extractionMeta.name), value);
+					}
 				}
 			});
 		});
@@ -383,7 +387,9 @@ public abstract class AbstractReplayDriver {
 					DataObj value = extractionMap.get(key);
 					try {
 						if (value != null) {
-							request.payload.put(injectionMeta.jsonPath, value);
+							request.payload.put(injectionMeta.jsonPath,
+								injectionMeta.map(request.payload
+									.getValAsString(injectionMeta.jsonPath), value, jsonMapper));
 							LOGGER.info(new ObjectMessage(
 								Map.of(Constants.MESSAGE,
 									"Injecting value in request before replaying",

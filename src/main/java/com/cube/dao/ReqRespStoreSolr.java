@@ -738,13 +738,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private SolrQuery getAgentConfigQuery(String customerId, String app, Optional<String> service,
-        Optional<String> instanceId) {
+        Optional<String> instanceId, Optional<String> tag) {
         SolrQuery query = new SolrQuery("*:*");
         addFilter(query, TYPEF, ConfigType.AgentConfig.toString());
         addFilter(query, CUSTOMERIDF, customerId);
         addFilter(query, APPF, app);
         addFilter(query, SERVICEF, service);
-        addFilter(query,INSTANCEIDF, instanceId);
+        addFilter(query, INSTANCEIDF, instanceId);
+        addFilter(query, TAG_F, tag);
         return query;
     }
 
@@ -762,7 +763,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             .flatMap(this::extractTagFromDoc).orElse("NA");
 
         // find the latest config the current tag
-        SolrQuery query = getAgentConfigQuery(customerId, app, Optional.of(service), Optional.of(instanceId));
+        SolrQuery query = getAgentConfigQuery(customerId, app, Optional.of(service), Optional.of(instanceId), Optional.empty());
         addFilter(query,TAG_F, currentTag);
         addSort(query, INT_VERSION_F, false);
         return SolrIterator.getSingleResult(solr, query).flatMap(this::docToAgent);
@@ -770,8 +771,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public Pair<List, Stream<ConfigDAO>> getAgentConfigWithFacets(String customerId, String app, Optional<String> service,
-        Optional<String> instanceId, Optional<Integer> numOfResults, Optional<Integer> start) {
-        SolrQuery query = getAgentConfigQuery(customerId, app, service, instanceId);
+        Optional<String> instanceId, Optional<Integer> numOfResults, Optional<Integer> start, Optional<String> tag) {
+        SolrQuery query = getAgentConfigQuery(customerId, app, service, instanceId, tag);
         addFilter(query, ISLATESTF, true);
         FacetQ instanceIdFacetq = new FacetQ();
         Facet instanceIdf = Facet.createTermFacet(INSTANCEIDF, Optional.empty());
@@ -2472,6 +2473,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 + REPLAYTRACEIDF + ":" + traceId + ")"));
         addFilter(query, RECORDREQIDF, matchResQuery.recordReqId);
         addFilter(query, REPLAYREQIDF, matchResQuery.replayReqId);
+        addSort(query, IDF, true);
         query.addField(getDiffParentChildFilter());
         query.setFacetMinCount(1);
 

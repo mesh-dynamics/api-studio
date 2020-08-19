@@ -8,6 +8,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -17,6 +22,8 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -33,8 +40,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.md.constants.ReplayStatus;
+import io.md.dao.RecordOrReplay;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
+import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.injection.DynamicInjectionConfig;
 
 import com.cube.core.Utils;
@@ -49,6 +58,7 @@ import com.cube.dao.Result;
 import com.cube.drivers.AbstractReplayDriver;
 import com.cube.drivers.RealAnalyzer;
 import com.cube.utils.Constants;
+import com.cube.utils.ScheduledCompletable;
 
 /**
  * @author prasad
@@ -78,7 +88,25 @@ public class ReplayWS extends ReplayBasicWS {
 
         Response resp = replay.map(r -> {
             if (r.status != ReplayStatus.Running && r.status != ReplayStatus.Init) {
-                return Response.ok(String.format("Replay id state is already terminal: %s", r.status.toString())).build();
+                Optional<RecordOrReplay> fromCacheOrSolr =
+                    rrstore.getCurrentRecordOrReplay(Optional.of(r.customerId)
+                        , Optional.of(r.app), Optional.of(r.instanceId));
+                return fromCacheOrSolr.map(recordOrReplay -> {
+                    if (!recordOrReplay.isRecording()) {
+                        Replay currentReplay = recordOrReplay.replay.get();
+                        if (currentReplay.replayId.equals(r.replayId)) {
+                            if (!rrstore.forceDeleteInCache(r)) {
+                                return Response.serverError().build();
+                            }
+                            return Response.ok("Conflicting status in solr and cache"
+                                + ", evicted from cache").build();
+                        }
+                    }
+                    return null;
+                }).orElse(Response.ok(String
+                    .format("Replay id state is already terminal: %s", r.status.toString()))
+                    .build());
+
             }
             String json;
             try {
@@ -134,11 +162,11 @@ public class ReplayWS extends ReplayBasicWS {
     @POST
     @Path("start/byGoldenName/{customerId}/{app}/{goldenName}")
     @Consumes("application/x-www-form-urlencoded")
-    public Response startByGoldenName(@Context UriInfo ui,
-        @PathParam("app") String app,
-        @PathParam("customerId") String customerId,
-        @PathParam("goldenName") String goldenName,
-        MultivaluedMap<String, String> formParams) {
+    public void startByGoldenName(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui,
+                                      @PathParam("app") String app,
+                                      @PathParam("customerId") String customerId,
+                                      @PathParam("goldenName") String goldenName,
+                                      MultivaluedMap<String, String> formParams) {
 
         String label = formParams.getFirst("label");
 
@@ -147,11 +175,15 @@ public class ReplayWS extends ReplayBasicWS {
         if (recordingOpt.isEmpty()) {
             LOGGER.error(String
                 .format("Cannot init Replay since cannot find recording for golden  name %s", goldenName));
-            return Response.status(Status.NOT_FOUND)
-                .entity(String.format("cannot find recording for golden  name %s", goldenName)).build();
+            asyncResponse.resume(Response.status(Status.NOT_FOUND)
+                .entity(String.format("cannot find recording for golden  name %s", goldenName)).build());
         }
 
-        return startReplay(formParams, recordingOpt.get());
+        startReplay(formParams, recordingOpt.get())
+            .thenApply(response -> asyncResponse.resume(response))
+            .exceptionally(e -> asyncResponse.resume(
+                Response.status(Status.INTERNAL_SERVER_ERROR)
+                    .entity(String.format("Server error: " + e.getMessage())).build()));
     }
 
     @POST
@@ -355,7 +387,40 @@ public class ReplayWS extends ReplayBasicWS {
         return resp;
     }
 
-	/**
+    @Override
+    protected CompletableFuture<Void> beforeReplay(MultivaluedMap<String, String> formParams, Recording recording,
+                                                   Replay replay) {
+        Optional<String> tagOpt = Optional.ofNullable(formParams.getFirst(Constants.TAG_FIELD));
+
+        return tagOpt.map(tag -> setTag(recording, replay, tag))
+            .orElse(CompletableFuture.completedFuture(null));
+    }
+
+    private CompletableFuture<Void> setTag(Recording recording, Replay replay, String tag) {
+        AtomicBoolean changed = new AtomicBoolean(false);
+        Result<AgentConfigTagInfo> response = rrstore.getAgentConfigTagInfoResults(
+            recording.customerId, recording.app, Optional.empty(), replay.instanceId);
+        response.getObjects().forEach(agentconfig -> {
+            if(!agentconfig.tag.equals(tag)){
+                AgentConfigTagInfo agentConfigTagInfo = new AgentConfigTagInfo(
+                    agentconfig.customerId, agentconfig.app, agentconfig.service, agentconfig.instanceId, tag);
+                changed.set(true);
+                rrstore.updateAgentConfigTag(agentConfigTagInfo);
+            }
+        });
+        LOGGER.info("Waiting for 30s to set Tag: " + tag + ", current time" + Instant.now());
+        if(changed.get()) {
+            // waiting is done in a different thread and a future is returned
+            return ScheduledCompletable.schedule(
+                    scheduler, () -> {
+                        LOGGER.info("Finished waiting for set Tag: " + tag + ", current time" + Instant.now());
+                        return null;
+                }, tagApplyDelay, TimeUnit.SECONDS);
+        }
+        return CompletableFuture.completedFuture(null);
+    }
+
+    /**
 	 * @param config
 	 */
 	@Inject
@@ -364,10 +429,14 @@ public class ReplayWS extends ReplayBasicWS {
 		this.rrstore = config.rrstore;
 		this.jsonMapper = config.jsonMapper;
 		this.config = config;
-	}
+		// use single thread for all waiting requirements so as to not block the main threads
+        scheduler = Executors.newSingleThreadScheduledExecutor();;
+    }
 
 
 	ReqRespStore rrstore;
 	ObjectMapper jsonMapper;
     private final Config config;
+    private final ScheduledExecutorService scheduler;
+    static private final long tagApplyDelay = 30;
 }

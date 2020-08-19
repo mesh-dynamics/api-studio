@@ -1,6 +1,8 @@
 package com.cube.utils;
 
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -31,14 +33,20 @@ public class InjectionVarResolver implements StringLookup {
 		this.dataStore = dataStore;
 	}
 
-	public Pair<Payload, String> getSourcePayloadAndJsonPath(String lookupString) {
+	public ExtractionInfo getSourcePayloadAndJsonPath(String lookupString) {
 		String[] splitStrings = lookupString.split(":");
-		if (splitStrings.length != 2) {
+		if (splitStrings.length < 2 || splitStrings.length > 3) {
 			LOGGER.error("Lookup String format mismatch");
 			return null; // Null resorts to default variable in substitutor
 		}
 		String source = splitStrings[0].trim();
 		String jsonPath = splitStrings[1].trim();
+
+		String regularExpression = null;
+		if (splitStrings.length == 3) {
+			regularExpression = splitStrings[2].trim();
+		}
+
 		Payload sourcePayload;
 		switch (source) {
 			case Constants.GOLDEN_REQUEST:
@@ -62,33 +70,58 @@ public class InjectionVarResolver implements StringLookup {
 			default:
 				throw new IllegalStateException("Unexpected value: " + source);
 		}
-		return new ImmutablePair<>(sourcePayload, jsonPath);
+
+		return new ExtractionInfo(sourcePayload, jsonPath, regularExpression);
 	}
 
 	public DataObj lookupObject(String lookupString) {
-		Pair<Payload, String> pair = getSourcePayloadAndJsonPath(lookupString);
-		Payload sourcePayload = pair.getLeft();
-		String jsonPath = pair.getRight();
+		ExtractionInfo extractionInfo = getSourcePayloadAndJsonPath(lookupString);
+		if (extractionInfo == null) return null;
 		DataObj value;
-		value = sourcePayload.getVal(jsonPath);
+		value = extractionInfo.source.getVal(extractionInfo.jsonPath);
 		return value;
 	}
 
 	@Override
 	/** Lookup String will always be in format of
-	 "VariableSources: <JSONPath>
+	 "VariableSources: <JSONPath> <regular expression>
 	 **/
 	public String lookup(String lookupString) {
 		String value = null;
-		Pair<Payload, String> pair = getSourcePayloadAndJsonPath(lookupString);
-		Payload sourcePayload = pair.getLeft();
-		String jsonPath = pair.getRight();
+		ExtractionInfo extractionInfo =  getSourcePayloadAndJsonPath(lookupString);
+		if (extractionInfo == null) return null;
+		String regex = extractionInfo.regex;
 		try {
-			value = sourcePayload.getValAsString(jsonPath);
+			value = extractionInfo.source.getValAsString(extractionInfo.jsonPath);
+			if (regex != null && !regex.isEmpty()) {
+				Matcher match = Pattern.compile(regex).matcher(value);
+				if (match.find()) {
+					if (match.groupCount() == 0) value = match.group();
+					else {
+						value = "";
+						for (int i=1 ; i<= match.groupCount() ; i++) {
+							value = value.concat(match.group(i));
+						}
+					}
+				}
+			}
 		} catch (PathNotFoundException e) {
-			LOGGER.error("Cannot find JSONPath" + jsonPath + " in source", e);
+			LOGGER.error("Cannot find JSONPath" + extractionInfo.jsonPath + " in source", e);
 			return null;
 		}
 		return value;
+	}
+
+	class ExtractionInfo {
+
+		public ExtractionInfo(Payload source, String jsonPath, String regex) {
+			this.source = source;
+			this.jsonPath = jsonPath;
+			this.regex = regex;
+		}
+
+		public final Payload source;
+		public final String jsonPath;
+		public final String regex;
 	}
 }

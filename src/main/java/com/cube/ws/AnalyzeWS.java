@@ -1458,9 +1458,9 @@ public class AnalyzeWS {
         result.second().forEach(
             res -> {
               if (res.eventType == EventType.HTTPRequest) {
-                traceCollectionMap.add(res.getTraceId() + " " + res.getCollection(), res);
+                traceCollectionMap.add(getTraceKeyFromEvent(res), res);
               }
-              mapForEventsTraceIds.add(res.getTraceId() + " " + res.getCollection(), res);
+              mapForEventsTraceIds.add(getTraceKeyFromEvent(res), res);
             });
 
           traceCollectionMap.forEach((traceCollectionKey, events) -> {
@@ -1504,6 +1504,10 @@ public class AnalyzeWS {
           buildErrorResponse(Constants.ERROR, "Error while parsing the response",
               e.getMessage())).build();
     }
+  }
+
+  private String getTraceKeyFromEvent(Event event) {
+      return  event.getTraceId() + " " +  event.getCollection() + " " + event.runId.orElse("NA");
   }
 
   private ApiTraceResponse getApiTraceResponse(Event parentRequestEvent, int depth, List<Event> eventsForTraceId) {
