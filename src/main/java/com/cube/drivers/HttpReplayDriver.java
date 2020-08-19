@@ -19,6 +19,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -36,6 +37,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.jersey.uri.UriComponent;
 import org.json.JSONObject;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.UtilException;
 import io.md.dao.Event;
@@ -55,14 +58,16 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 
 	private static Logger LOGGER = LogManager.getLogger(HttpReplayDriver.class);
 
+	private final ObjectMapper jsonMapper;
 
-	HttpReplayDriver(Replay replay, DataStore dataStore) {
+	HttpReplayDriver(Replay replay, DataStore dataStore, ObjectMapper jsonMapper) {
 		super(replay, dataStore);
+		this.jsonMapper = jsonMapper;
 	}
 
 	@Override
 	public IReplayClient initClient(Replay replay) throws Exception {
-		return new HttpReplayClient(replay);
+		return new HttpReplayClient(replay, jsonMapper);
 	}
 
 
@@ -70,8 +75,9 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 
 		private HttpClient httpClient;
 		private Optional<RRTransformer> xfmer = Optional.empty();
+		private final ObjectMapper jsonMapper;
 
-		HttpReplayClient(Replay replay) throws Exception {
+		HttpReplayClient(Replay replay, ObjectMapper jsonMapper) throws Exception {
 			HttpClient.Builder clientbuilder = HttpClient.newBuilder()
 				.version(HttpClient.Version.HTTP_1_1) // need to explicitly set this
 				// if server is not supporting HTTP 2.0, getting a 403 error
@@ -85,6 +91,7 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 				JSONObject obj = new JSONObject(xfms);
 				this.xfmer = Optional.of(new RRTransformer(obj));
 			});
+			this.jsonMapper = jsonMapper;
 		}
 
 		@Override
@@ -131,7 +138,7 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 
 			// TODO: Replace transformations functionality using injection
 			// transform fields in the request before the replay.
-			xfmer.ifPresent(x -> RRTransformerOperations.transformRequest(httpRequest, x));
+			xfmer.ifPresent(x -> RRTransformerOperations.transformRequest(httpRequest, x, jsonMapper));
 
 			// Fetch headers/queryParams and path etc from here since injected value
 			// would be present in dataObj instead of payload fields
@@ -185,6 +192,9 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 				.uri(uri)
 				.method(httpRequest.method,
 					HttpRequest.BodyPublishers.ofByteArray(httpRequest.getBody()));
+
+			LOGGER.debug("PATH :: " + uri.toString() + " OUTGOING REQUEST BODY :: " + new String(httpRequest.getBody(),
+				StandardCharsets.UTF_8));
 
 			headers.forEach((k, vlist) -> {
 				// some headers are restricted and cannot be set on the request
