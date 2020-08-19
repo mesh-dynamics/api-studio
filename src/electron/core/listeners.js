@@ -8,10 +8,11 @@ const isDev = require('electron-is-dev');
 const logger = require('electron-log');
 const find = require('find-process');
 const path = require('path');
+const aws4 = require('aws4');
 const menu = require('./menu');
 const { resourceRootPath, updateApplicationConfig, getApplicationConfig } = require('./fs-utils');
 
-autoUpdater.autoDownload = true 
+autoUpdater.autoDownload = false; 
 
 let mainWindow;
 const browserWindowOptions = {
@@ -200,24 +201,3 @@ const setupListeners = (mockContext, user, replayContext) => {
 module.exports = {
     setupListeners
 };
-
-/**
- * DO NOT DELETE
- */
-// mainWindow.loadURL(
-//     isDev
-//         ? 'http://localhost:3006'
-//         : `file://${path.join(__dirname, '../../build/index.html')}`,
-//     )
-
-// mainWindow.loadFile('index.html');
-// mainWindow.maximize();
-// proxyServerOptions,
-// ipcMain.on('proxy_target_change', (event, arg) => {
-//     logger.info('Current target is :', targetServer);
-//     logger.info('Changing proxy target to : ', arg);
-
-//     proxyServerOptions.target.host = arg;
-    
-//     logger.info('Updated target server is : ', targetServer);
-// });
