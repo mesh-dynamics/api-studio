@@ -37,7 +37,7 @@ public class RRTransformerOperations {
 			for (String key : hdrs_xfms.keySet()) {
 			    // header keys stored in cube collections are lower case
 			    String lowerCaseKey = key.toLowerCase();
-			    List<String> initialVals = req.hdrs.get(lowerCaseKey);
+			    List<String> initialVals = req.getHdrs().get(lowerCaseKey);
 			    List<String> transformedVals = transform(Optional.ofNullable(initialVals), hdrs_xfms.getJSONArray(key));
 			    if (!transformedVals.isEmpty()) {
 			        req.put(Constants.HDR_PATH + "/" + lowerCaseKey, new JsonDataObj(transformedVals, jsonMapper));

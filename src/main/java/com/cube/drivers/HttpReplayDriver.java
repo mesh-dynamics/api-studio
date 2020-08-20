@@ -190,7 +190,7 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 			URI uri = uribuilder.build();
 			HttpRequest.Builder reqbuilder = HttpRequest.newBuilder()
 				.uri(uri)
-				.method(httpRequest.method,
+				.method(httpRequest.getMethod(),
 					HttpRequest.BodyPublishers.ofByteArray(httpRequest.getBody()));
 
 			LOGGER.debug("PATH :: " + uri.toString() + " OUTGOING REQUEST BODY :: " + new String(httpRequest.getBody(),

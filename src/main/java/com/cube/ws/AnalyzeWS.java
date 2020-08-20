@@ -1539,7 +1539,8 @@ public class AnalyzeWS {
 
     String status = responseEvent != null ? ((ResponsePayload) responseEvent.payload).getStatusCode() : "";
     ServiceReqRes serviceReqRes = new ServiceReqRes(e.service, e.apiPath,
-        e.reqId, e.timestamp, e.spanId, e.parentSpanId, status, payload.method, (MultivaluedHashMap<String, String>) payload.queryParams);
+        e.reqId, e.timestamp, e.spanId, e.parentSpanId, status, payload.getMethod()
+	    , (MultivaluedHashMap<String, String>) payload.getQueryParams());
     apiTraceResponse.res.add(serviceReqRes);
     List<Event> children = requestEventsByParentSpanId.get(e.spanId);
     if(children == null) return;
