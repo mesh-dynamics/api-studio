@@ -130,20 +130,21 @@ public class EventPayloadTests {
 			Assert.assertEquals(fromSerialized.payload.getClass(), HTTPRequestPayload.class);
 			HTTPRequestPayload payloadFromSerialized = (HTTPRequestPayload) fromSerialized.payload;
 			Assert.assertEquals(payloadFromSerialized.
-				hdrs.getFirst("content-type"), MediaType.APPLICATION_JSON);
+				getHdrs().getFirst("content-type"), MediaType.APPLICATION_JSON);
 			Assert.assertTrue(payloadFromSerialized.getBody() == null
 				|| payloadFromSerialized.getBody().length == 0);
-			Assert.assertTrue(payloadFromSerialized.formParams == null ||
-				 payloadFromSerialized.formParams.isEmpty());
+			Assert.assertTrue(payloadFromSerialized.getFormParams() == null ||
+				 payloadFromSerialized.getFormParams().isEmpty());
 			Assert
 				.assertEquals("Beverly%20Outlaw", payloadFromSerialized
-					.queryParams.getFirst("filmName"));
+					.getQueryParams().getFirst("filmName"));
 			payloadFromSerialized.encryptField("/method" , new JcaEncryption());
 			String postEncryption = objectMapper.writeValueAsString(fromSerialized);
 			System.out.println("POST ENCRYPTION :: " + postEncryption);
 			Event postEncryptionEvent = objectMapper.readValue(postEncryption, Event.class);
+			assert postEncryptionEvent.payload != null;
 			Assert.assertNotEquals( ((HTTPRequestPayload)postEncryptionEvent.payload)
-				.method , "GET");
+				.getMethod() , "GET");
 		}
 
 		@Test

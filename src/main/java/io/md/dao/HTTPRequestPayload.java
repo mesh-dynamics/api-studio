@@ -38,11 +38,15 @@ public class HTTPRequestPayload extends HTTPPayload implements RequestPayload {
 	private static final Logger LOGGER = LoggerFactory.getLogger(HTTPRequestPayload.class);
 
 	@JsonDeserialize(as=MultivaluedHashMap.class)
-	public MultivaluedMap<String, String> queryParams; // query params
+	@JsonProperty("queryParams")
+	private MultivaluedMap<String, String> queryParams; // query params
+	@JsonProperty("formParams")
 	@JsonDeserialize(as=MultivaluedHashMap.class)
-	public MultivaluedMap<String, String> formParams; // form params
-	public String method;
-	public String path;
+	private MultivaluedMap<String, String> formParams; // form params
+	@JsonProperty("method")
+	private String method;
+	@JsonProperty("path")
+	private String path;
 
 	static final String PATH_SEGMENTS = "pathSegments";
 
@@ -84,6 +88,48 @@ public class HTTPRequestPayload extends HTTPPayload implements RequestPayload {
 		}
 		// to unwrap the body if not already
 		postParse();
+	}
+
+	@JsonIgnore
+	public MultivaluedMap<String, String> getQueryParams() {
+		if (this.dataObj != null && !this.dataObj.isDataObjEmpty()) {
+			return this.dataObj.getValAsObject("/".concat("queryParams"),
+				MultivaluedHashMap.class).orElse(new MultivaluedHashMap<>());
+		}
+		return queryParams;
+	}
+
+	@JsonIgnore
+	public MultivaluedMap<String, String> getFormParams() {
+		if (this.dataObj != null && !this.dataObj.isDataObjEmpty()) {
+			return this.dataObj.getValAsObject("/".concat("formParams"),
+				MultivaluedHashMap.class).orElse(new MultivaluedHashMap<>());
+		}
+		return formParams;
+	}
+
+	@JsonIgnore
+	public String getMethod() {
+		if (this.dataObj != null && !this.dataObj.isDataObjEmpty()) {
+			try {
+				return this.dataObj.getValAsString("/".concat("method"));
+			} catch (PathNotFoundException e) {
+				return null;
+			}
+		}
+		return method;
+	}
+
+	@JsonIgnore
+	public String getPath() {
+		if (this.dataObj != null && !this.dataObj.isDataObjEmpty()) {
+			try {
+				return this.dataObj.getValAsString("/path");
+			} catch (PathNotFoundException e) {
+				return null;
+			}
+		}
+		return path;
 	}
 
 	@Override

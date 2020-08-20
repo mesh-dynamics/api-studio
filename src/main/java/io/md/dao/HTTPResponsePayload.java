@@ -30,7 +30,8 @@ import io.md.utils.Utils;
 @JsonDeserialize(using = HttpResponsePayloadDeserializer.class)
 public class HTTPResponsePayload extends HTTPPayload implements ResponsePayload {
 
-	public int status;
+	@JsonProperty("status")
+	private Integer status;
 
 	/**
 	 *
@@ -62,6 +63,16 @@ public class HTTPResponsePayload extends HTTPPayload implements ResponsePayload 
 	@JsonIgnore
 	public String getStatusCode() {
 		return String.valueOf(status);
+	}
+
+
+	@JsonIgnore
+	public Integer getStatus() {
+		if (this.dataObj != null && !this.dataObj.isDataObjEmpty()) {
+			return this.dataObj.getValAsObject("/".concat("status"),
+				Integer.class).orElse(-1);
+		}
+		return status;
 	}
 
 }

@@ -35,9 +35,11 @@ public class HTTPPayload extends LazyParseAbstractPayload {
 	}
 
 	@JsonDeserialize(as= MultivaluedHashMap.class)
-	public MultivaluedMap<String, String> hdrs;
+	@JsonProperty("hdrs")
+	protected MultivaluedMap<String, String> hdrs;
 	@JsonSerialize(using = ByteArraySerializer.class)
 	@JsonDeserialize(as = byte[].class)
+	@JsonProperty("body")
 	protected byte[] body;
 
 	// in case of bodies that need to be interpreted as string, there is no way to distinguish
@@ -121,6 +123,16 @@ public class HTTPPayload extends LazyParseAbstractPayload {
 			}
 		}
 		return new byte[]{};
+	}
+
+
+	@JsonIgnore
+	public MultivaluedMap<String, String> getHdrs() {
+		if (this.dataObj != null && !this.dataObj.isDataObjEmpty()) {
+			return this.dataObj.getValAsObject("/".concat("hdrs"),
+				MultivaluedHashMap.class).orElse(new MultivaluedHashMap<>());
+		}
+		return hdrs;
 	}
 
 	@Override
