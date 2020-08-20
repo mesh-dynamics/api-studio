@@ -12,7 +12,7 @@ const aws4 = require('aws4');
 const menu = require('./menu');
 const { resourceRootPath, updateApplicationConfig, getApplicationConfig } = require('./fs-utils');
 
-autoUpdater.autoDownload = false; 
+autoUpdater.autoDownload = true; 
 
 let mainWindow;
 const browserWindowOptions = {
