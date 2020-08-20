@@ -1,8 +1,8 @@
 // copied and modified a bit from https://raw.githubusercontent.com/NickCarneiro/curlconverter/master/util.js
-import cookie from "cookie"
-import yargs from "yargs-parser"
-import URL from "url"
-import querystring from "query-string"
+import * as cookie from "cookie"
+import yargsParser from "yargs-parser"
+import * as URL from "url";
+import * as querystring from "query-string"
 
 const parseCurlCommand = curlCommand => {
     // Remove newlines (and from continuations)
@@ -32,7 +32,7 @@ const parseCurlCommand = curlCommand => {
         .alias('A', 'user-agent')
         .parse(curlCommand) */
     
-    const parsedArguments = yargs(curlCommand, {
+    const parsedArguments = yargsParser(curlCommand, {
         alias:{
             "H": ["header"],
             "A": ["user-agent"]
