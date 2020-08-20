@@ -34,7 +34,7 @@ import Mustache from "mustache";
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
 import { generateRunId } from "../../utils/http_client/utils";
-import curlParser from '../../utils/http_client/curlparser';
+import { parseCurlCommand } from '../../utils/http_client/curlparser';
 
 class HttpClientTabs extends Component {
 
@@ -293,18 +293,16 @@ class HttpClientTabs extends Component {
         console.log("curlCommand: ", curlCommand);
         if(!curlCommand) return;
         try {
-            const parsedCurl = curlParser(curlCommand);
-            console.log("parsedCurl: ", JSON.stringify(parsedCurl));
+            const parsedCurl = parseCurlCommand(curlCommand);
             const { cube: {selectedApp} } = this.props;
             let app = selectedApp;
             if(!selectedApp) {
-                const parsedUrlObj = urlParser(window.location.href, true);
+                const parsedUrlObj = URL.parse(window.location.href, true);
                 app = parsedUrlObj.query.app;
             }
-            const urlWithoutQuery = unescape(parsedCurl.urlWithoutQuery).replace(/\"/g, "").replace(/\'/g, ""),
-                url = parsedCurl.url.replace(/\"/g, "").replace(/\'/g, "");
+            const urlWithoutQuery = parsedCurl.urlWithoutQuery,
+                url = parsedCurl.url;
             const parsedUrl = URL.parse(url);
-            console.log("parsedUrl: ", parsedUrl);
             let apiPath = parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
             let service = parsedUrl.host ? parsedUrl.host : "NA";
             const traceId = cryptoRandomString({length: 32});
@@ -330,21 +328,21 @@ class HttpClientTabs extends Component {
                     selected: true,
                 });
             }
-            for (let eachQueryParam in parsedCurl.queryParams) {
+            for (let eachQueryParam in parsedCurl.query) {
                 queryParams.push({
                     id: uuidv4(),
                     name: eachQueryParam,
-                    value: parsedCurl.queryParams[eachQueryParam],
+                    value: parsedCurl.query[eachQueryParam],
                     description: "",
                     selected: true,
                 });
             }
             let contentTypeHeader = this.getParameterCaseInsensitive(parsedCurl.headers, "content-type");
-            if(contentTypeHeader.indexOf("application/json") > -1) {
+            if(contentTypeHeader && contentTypeHeader.indexOf("application/json") > -1) {
                 rawData = JSON.stringify(JSON.parse(parsedCurl.data), undefined, 4);
                 rawDataType = "json";
                 bodyType = "rawData";
-            } else if(contentTypeHeader.indexOf("application/x-www-form-urlencoded") > -1) {
+            } else if(contentTypeHeader && contentTypeHeader.indexOf("application/x-www-form-urlencoded") > -1) {
                 const formParams = new URLSearchParams(parsedCurl.data);
                 for (let eachFormParam of formParams) {
                     formData.push({
@@ -401,13 +399,16 @@ class HttpClientTabs extends Component {
                 requestRunning: false,
             }
             const savedTabId = this.addTab(null, reqObj, app);
+            setTimeout(() => {
+                dispatch(httpClientActions.closeImportFromCurlModal(false, "", ""));
+            }, 1000);
         } catch (err) {
             console.error("err: ", err);
+            dispatch(httpClientActions.showImportFromCurlModal(true, curlCommand, err));
         }
     }
 
     addMockRequest(tabId) {
-        console.log("tabId:", tabId);
         const {httpClient: {tabs, mockReqServiceName, mockReqApiPath}} = this.props;
         const { dispatch } = this.props;
         const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
@@ -2375,7 +2376,7 @@ class HttpClientTabs extends Component {
                                 <div>
                                     <FormGroup>
                                         <ControlLabel>Curl Command</ControlLabel>
-                                        <FormControl componentClass="textarea" rows="15" placeholder="Service Name" name="curlCommand" value={curlCommand} onChange={this.handleImportFromCurlInputChange} />
+                                        <FormControl componentClass="textarea" rows="15" placeholder="Curl Command" name="curlCommand" value={curlCommand} onChange={this.handleImportFromCurlInputChange} />
                                     </FormGroup>
                                 </div>
                                 <p style={{ marginTop: "10px", fontWeight: 500 }}>{modalErrorImportFromCurlMessage}</p>

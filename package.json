@@ -52,7 +52,6 @@
     "plotly.js": "^1.54.7",
     "prop-types": "^15.6.2",
     "query-string": "5.1.1",
-    "querystring": "^0.2.0",
     "react": "^16.6.0",
     "react-ace": "^8.1.0",
     "react-bootstrap": "^0.32.4",
