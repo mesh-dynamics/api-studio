@@ -12,8 +12,8 @@ import static io.md.dao.Recording.RecordingStatus;
 import static io.md.services.DataStore.TemplateNotFoundException;
 
 import com.cube.dao.ApiTraceFacetQuery;
-import com.cube.dao.ApiTraceResponse;
-import com.cube.dao.ApiTraceResponse.ServiceReqRes;
+import io.md.dao.ApiTraceResponse;
+import io.md.dao.ApiTraceResponse.ServiceReqRes;
 import io.md.constants.ReplayStatus;
 import io.md.core.Comparator.Match;
 import io.md.dao.ConvertEventPayloadResponse;
@@ -1539,7 +1539,7 @@ public class AnalyzeWS {
 
     String status = responseEvent != null ? ((ResponsePayload) responseEvent.payload).getStatusCode() : "";
     ServiceReqRes serviceReqRes = new ServiceReqRes(e.service, e.apiPath,
-        e.reqId, e.timestamp, e.spanId, e.parentSpanId, status, payload.method, payload.queryParams);
+        e.reqId, e.timestamp, e.spanId, e.parentSpanId, status, payload.method, (MultivaluedHashMap<String, String>) payload.queryParams);
     apiTraceResponse.res.add(serviceReqRes);
     List<Event> children = requestEventsByParentSpanId.get(e.spanId);
     if(children == null) return;
