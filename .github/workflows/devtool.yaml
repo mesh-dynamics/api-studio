@@ -32,7 +32,8 @@ jobs:
           version=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
           TIMESTAMP=$(date "+%Y%m%d%H%M%S")
           BRANCH=${GITHUB_REF##*/}
-          NEXTVERSION="${version}-${BRANCH}.${TIMESTAMP}+${GITHUB_SHA}"
+          COMMIT=$(git rev-parse --short HEAD)
+          NEXTVERSION="${version}-${BRANCH}.${TIMESTAMP}.${COMMIT}"
           echo $NEXTVERSION
           npm install
           jq --arg version "${NEXTVERSION}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
@@ -56,7 +57,8 @@ jobs:
           version=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
           TIMESTAMP=$(date "+%Y%m%d%H%M%S")
           BRANCH=${GITHUB_REF##*/}
-          NEXTVERSION="${version}-${BRANCH}.${TIMESTAMP}+${GITHUB_SHA}"
+          COMMIT=$(git rev-parse --short HEAD)
+          NEXTVERSION="${version}-${BRANCH}.${TIMESTAMP}.${COMMIT}"
           npm install
           jq --arg version "${NEXTVERSION}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
           npx webpack --mode production --display minimal --config webpack.electron.config.js
