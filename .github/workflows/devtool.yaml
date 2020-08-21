@@ -27,7 +27,12 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
         run: |
+          version=$(git describe --abbrev=0 --tags)
+          version=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
+          TIMESTAMP=$(date "+%Y%m%d%H%M%S")
+          NEXTVERSION="${version}-${BRANCH}.${TIMESTAMP}+${GITHUB_SHA}"
           npm install
+          jq --arg version "${NEXTVERSION}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.develop.yml --publish always
 
@@ -43,7 +48,12 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
         run: |
+          version=$(git describe --abbrev=0 --tags)
+          version=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
+          TIMESTAMP=$(date "+%Y%m%d%H%M%S")
+          NEXTVERSION="${version}-${BRANCH}.${TIMESTAMP}+${GITHUB_SHA}"
           npm install
+          jq --arg version "${NEXTVERSION}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -l --config electron-builder.develop.yml --publish always
 
