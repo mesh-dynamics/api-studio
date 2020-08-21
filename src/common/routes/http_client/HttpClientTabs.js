@@ -337,7 +337,7 @@ class HttpClientTabs extends Component {
                     selected: true,
                 });
             }
-            let contentTypeHeader = this.getParameterCaseInsensitive(parsedCurl.headers, "content-type");
+            let contentTypeHeader = _.isObject(parsedCurl.headers) ? this.getParameterCaseInsensitive(parsedCurl.headers, "content-type") : "";
             if(contentTypeHeader && contentTypeHeader.indexOf("application/json") > -1) {
                 rawData = JSON.stringify(JSON.parse(parsedCurl.data), undefined, 4);
                 rawDataType = "json";
