@@ -23,7 +23,7 @@ def generate_filters(template_dir):
     dataMap = yaml.safe_load(data_stream)
     with open(outfile, "w") as out:
         for service in dataMap['services']:
-            output_from_template = template.render(service_name=service,namespace=namespace, app=app, auth_token=auth_token, customer=customer, cube_application=cube_application, cube_instanceid=cube_instanceid, run_type=run_type, recording_type=recording_type)
+            output_from_template = template.render(service_name=service,namespace=namespace, app=app, auth_token=auth_token, customer=customer, cube_application=cube_application, cube_instanceid=cube_instanceid, run_type=run_type, recording_type=recording_type, cube_host=cube_host)
             out.write("---\n")
             out.write(output_from_template + "\n" * 2)
     out.close()
