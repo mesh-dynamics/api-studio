@@ -2,7 +2,7 @@ apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
   name: {{service_name}}-lua
-  namespace: datadog
+  namespace: {{namespace}}
   labels:
     app: {{app}}
 spec:
@@ -12,7 +12,7 @@ spec:
   filters:
   - listenerMatch:
       #portNumber: 8080
-      listenerType: SIDECAR_INBOUND #will match with the inbound listener for movieinfo:8080
+      listenerType: SIDECAR_INBOUND #will match with the inbound listener for {{service_name}}:8080
     insertPosition:
       index: FIRST
     filterName: envoy.lua
