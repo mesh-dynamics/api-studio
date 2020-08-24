@@ -82,6 +82,7 @@ jobs:
           ([int]$versionParts[1])++
           $VERSION_INC = $versionParts -join('.')
           $TIMESTAMP = [long] (Get-Date -Date ((Get-Date).ToUniversalTime()) -UFormat %s)
+          echo "Git reference at $GITHUB_REF"
           $REF_SPLIT =  $GITHUB_REF.split("/")
           $BRANCH =  $REF_SPLIT[2..$REF_SPLIT.Length] -join("/")
           $NEXT_VERSION="$VERSION_INC-$BRANCH.$TIMESTAMP.$GITHUB_SHA"
