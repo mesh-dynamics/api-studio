@@ -70,6 +70,7 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
+      - run: git fetch --prune --unshallow --tags
       - name: Build for windows
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
