@@ -107,7 +107,7 @@ spec:
             end
             function callStoreEvent(handle, data)
               local hhdr, hbody = handle:httpCall(
-              "outbound|8080||{{cube_cluster}}.cube.svc.cluster.local",
+              "{{cube_host}}",
                {
                   [":method"] = "POST",
                   [":path"] = "/api/cs/storeEvent",
