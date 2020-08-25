@@ -88,6 +88,8 @@ jobs:
           $COMMIT = $(git rev-parse --short HEAD)
           $NEXT_VERSION = "$NEW_VERSION_NUMBER-$BRANCH.$TIMESTAMP.$COMMIT"
           echo $NEXT_VERSION
+          $BRANCH = $(git branch --show-current)
+          echo $BRANCH
 
 # npm install
 # npx webpack --mode production --display minimal --config webpack.electron.config.js
