@@ -89,7 +89,7 @@ jobs:
           $BRANCH = $(git branch --show-current).split("/")[-1]
           $NEXT_VERSION = "$NEW_VERSION_NUMBER-$BRANCH.$TIMESTAMP.$COMMIT"
           echo $NEXT_VERSION          
-          npm install
+
           jq --arg version $NEXT_VERSION '.version = $version' package.json > .\tmp.txt
           $CONTENT = Get-Content -Path .\tmp.txt
           Remove-Item -path .\package.json
