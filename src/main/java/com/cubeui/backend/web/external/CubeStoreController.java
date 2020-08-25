@@ -1,5 +1,7 @@
 package com.cubeui.backend.web.external;
 
+import com.cubeui.backend.domain.Customer;
+import com.cubeui.backend.security.Constants;
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.security.jwt.JwtTokenProvider;
 import com.cubeui.backend.service.CubeServerService;
@@ -14,7 +16,9 @@ import io.md.dao.agent.config.ConfigDAO;
 import io.md.dao.DefaultEvent;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
-import java.util.List;
+
+import java.util.*;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,8 +26,6 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/cs")
@@ -93,6 +95,28 @@ public class CubeStoreController {
         validation.validateCustomerName(request, postBody.customerId);
         return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
+
+    @PostMapping("/deleteEvent/{reqId}")
+    public ResponseEntity deleteEvent(HttpServletRequest request, @RequestBody Event postBody , @PathVariable String reqId){
+
+        validation.validateCustomerName(request, postBody.customerId);
+
+        /*
+            Any validation regarding the the ownership of event by that customer is done at datastore level (solr).
+            delete query will have the customerid to ensure that only event belonging to that customer is deleted.
+         */
+
+
+        /*
+        String customerId =  jwtTokenProvider.getCustomer(request).getName();
+        postBody = postBody.or(()->Optional.of(new HashMap<>(1)));
+        postBody.get().put("customerId" , customerId);
+        */
+
+        return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
+    }
+
+
 
     @PostMapping("/frbatch")
     public ResponseEntity storeFuncBatch(HttpServletRequest request, @RequestBody Optional<String> postBody) {
