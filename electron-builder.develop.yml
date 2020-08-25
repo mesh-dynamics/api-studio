@@ -16,6 +16,7 @@ extraMetadata:
 publish:
   provider: s3
   bucket: meshdynamics-devtool
+  channel: latest
   path: /develop
   acl: private
 
