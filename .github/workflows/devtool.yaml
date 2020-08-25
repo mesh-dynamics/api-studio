@@ -92,6 +92,7 @@ jobs:
           npm install
           jq --arg version $NEXT_VERSION '.version = $version' package.json > .\tmp.txt
           $CONTENT = Get-Content -Path .\tmp.txt
+          Remove-Item -path .\package.json
           Add-Content -Path .\package.json -Value $CONTENT
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -w --config electron-builder.develop.yml --publish always
