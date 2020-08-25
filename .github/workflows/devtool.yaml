@@ -80,6 +80,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
         run: |
+          npm install
           $version = $(git describe --abbrev=0 --tags)
           $versionParts = $version.split('.')
           ([int]$versionParts[2])++
@@ -88,8 +89,7 @@ jobs:
           $COMMIT = $(git rev-parse --short HEAD)
           $BRANCH = $(git branch --show-current).split("/")[-1]
           $NEXT_VERSION = "$NEW_VERSION_NUMBER-$BRANCH.$TIMESTAMP.$COMMIT"
-          echo $NEXT_VERSION          
-
+          echo $NEXT_VERSION
           jq --arg version $NEXT_VERSION '.version = $version' package.json > .\tmp.txt
           $CONTENT = Get-Content -Path .\tmp.txt
           Remove-Item -path .\package.json
