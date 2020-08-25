@@ -85,7 +85,8 @@ jobs:
           ([int]$versionParts[2])++
           $VERSION_INC = $versionParts -join('.')
           $TIMESTAMP = [long] (Get-Date -Date ((Get-Date).ToUniversalTime()) -UFormat %s)
-          echo $TIMESTAMP
+          $NEXT_VERSION = "$VERSION_INC-$BRANCH.$TIMESTAMP
+          echo $NEXT_VERSION
 
 # npm install
 # npx webpack --mode production --display minimal --config webpack.electron.config.js
