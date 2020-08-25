@@ -86,10 +86,13 @@ jobs:
           $NEW_VERSION_NUMBER = $versionParts -join('.')
           $TIMESTAMP = [long] (Get-Date -Date ((Get-Date).ToUniversalTime()) -UFormat %s)
           $COMMIT = $(git rev-parse --short HEAD)
-          $NEXT_VERSION = "$NEW_VERSION_NUMBER-$BRANCH.$TIMESTAMP.$COMMIT"
-          echo $NEXT_VERSION
           $BRANCH = $(git branch --show-current).split("/")[-1]
-          echo $BRANCH
+          $NEXT_VERSION = "$NEW_VERSION_NUMBER-$BRANCH.$TIMESTAMP.$COMMIT"
+          echo $NEXT_VERSION          
+          jq --arg version $NEXT_VERSION '.version = $version' package.json > .\tmp
+          Copy-Item '.\tmp' '.\package.json'
+          npx webpack --mode production --display minimal --config webpack.electron.config.js
+          npx electron-builder build -w --config electron-builder.develop.yml --publish always
 
 # npm install
 # npx webpack --mode production --display minimal --config webpack.electron.config.js
