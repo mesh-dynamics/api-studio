@@ -85,7 +85,7 @@ jobs:
           ([int]$versionParts[2])++
           $NEW_VERSION_NUMBER = $versionParts -join('.')
           $TIMESTAMP = [long] (Get-Date -Date ((Get-Date).ToUniversalTime()) -UFormat %s)
-          $NEXT_VERSION = $NEW_VERSION_NUMBER-$BRANCH.$TIMESTAMP
+          $NEXT_VERSION = "$NEW_VERSION_NUMBER-$BRANCH.$TIMESTAMP"
           echo $NEXT_VERSION
 
 # npm install
