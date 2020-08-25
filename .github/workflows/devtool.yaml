@@ -37,9 +37,11 @@ jobs:
           NEXTVERSION="${version}-${BRANCH}.${TIMESTAMP}.${COMMIT}"
           echo $NEXTVERSION
           npm install
-          jq --arg version "${NEXTVERSION}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
+
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.develop.yml --publish always
+
+# jq --arg version "${NEXTVERSION}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
   # buildlinux:
   #   name: Build devTool for linux
   #   runs-on: ubuntu-latest
