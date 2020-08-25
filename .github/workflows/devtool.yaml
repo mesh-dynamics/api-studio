@@ -91,6 +91,7 @@ jobs:
           echo $NEXT_VERSION          
           jq --arg version $NEXT_VERSION '.version = $version' package.json > .\tmp
           Copy-Item '.\tmp' '.\package.json'
+          npm install
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -w --config electron-builder.develop.yml --publish always
 
