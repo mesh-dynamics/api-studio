@@ -83,9 +83,9 @@ jobs:
           $version = $(git describe --abbrev=0 --tags)
           $versionParts = $version.split('.')
           ([int]$versionParts[2])++
-          $VERSION_INC = $versionParts -join('.')
+          $NEW_VERSION_NUMBER = $versionParts -join('.')
           $TIMESTAMP = [long] (Get-Date -Date ((Get-Date).ToUniversalTime()) -UFormat %s)
-          $NEXT_VERSION = "$VERSION_INC-$BRANCH.$TIMESTAMP
+          $NEXT_VERSION = $NEW_VERSION_NUMBER-$BRANCH.$TIMESTAMP
           echo $NEXT_VERSION
 
 # npm install
