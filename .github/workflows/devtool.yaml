@@ -90,8 +90,9 @@ jobs:
           $NEXT_VERSION = "$NEW_VERSION_NUMBER-$BRANCH.$TIMESTAMP.$COMMIT"
           echo $NEXT_VERSION          
           npm install
-          jq --arg version $NEXT_VERSION '.version = $version' package.json > .\tmp
-          Copy-Item '.\tmp' '.\package.json'
+          jq --arg version $NEXT_VERSION '.version = $version' package.json > .\tmp.json
+          Remove-Item -path .\package.json
+          Rename-Item -path .\tmp.json -NewName .\package.json
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -w --config electron-builder.develop.yml --publish always
 
