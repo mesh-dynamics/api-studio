@@ -9,39 +9,38 @@ on:
       - fix/build-pipeline
 
 jobs:
-  buildmacOS:
-    name: Build devTool for macOS
-    runs-on: macos-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - run: git fetch --prune --unshallow --tags
-      - name: Import Code-Signing Certificates
-        uses: Apple-Actions/import-codesign-certs@v1
-        with:
-          p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE }}
-          p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
-      - name: Build for macOS
-        env:
-          APPLE_ID: ${{ secrets.AC_USERNAME }}
-          APPLE_ID_PASSWORD: ${{ secrets.AC_PASSWORD }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
-        run: |
-          version=$(git describe --abbrev=0 --tags)
-          version=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
-          TIMESTAMP=$(date "+%Y%m%d%H%M%S")
-          BRANCH=${GITHUB_REF##*/}
-          COMMIT=$(git rev-parse --short HEAD)
-          NEXTVERSION="${version}-${BRANCH}.${TIMESTAMP}.${COMMIT}"
-          echo $NEXTVERSION
-          npm install
+  # buildmacOS:
+  #   name: Build devTool for macOS
+  #   runs-on: macos-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+  #     - run: git fetch --prune --unshallow --tags
+  #     - name: Import Code-Signing Certificates
+  #       uses: Apple-Actions/import-codesign-certs@v1
+  #       with:
+  #         p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE }}
+  #         p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
+  #     - name: Build for macOS
+  #       env:
+  #         APPLE_ID: ${{ secrets.AC_USERNAME }}
+  #         APPLE_ID_PASSWORD: ${{ secrets.AC_PASSWORD }}
+  #         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
+  #       run: |
+  #         version=$(git describe --abbrev=0 --tags)
+  #         version=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
+  #         TIMESTAMP=$(date "+%Y%m%d%H%M%S")
+  #         BRANCH=${GITHUB_REF##*/}
+  #         COMMIT=$(git rev-parse --short HEAD)
+  #         NEXTVERSION="${version}-${BRANCH}.${TIMESTAMP}.${COMMIT}"
+  #         echo $NEXTVERSION
+  #         npm install
+  #         jq --arg version "${NEXTVERSION}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
+  #         npx webpack --mode production --display minimal --config webpack.electron.config.js
+  #         npx electron-builder build -m --config electron-builder.develop.yml --publish always
 
-          npx webpack --mode production --display minimal --config webpack.electron.config.js
-          npx electron-builder build -m --config electron-builder.develop.yml --publish always
-
-# jq --arg version "${NEXTVERSION}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
   # buildlinux:
   #   name: Build devTool for linux
   #   runs-on: ubuntu-latest
@@ -66,30 +65,31 @@ jobs:
   #         npm install
   #         jq --arg version "${NEXTVERSION}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
   #         npx webpack --mode production --display minimal --config webpack.electron.config.js
-  #         npx electron-builder build -lw --config electron-builder.develop.yml --publish always
-  # buildwindows:
-  #   name: Build devTool for windows
-  #   runs-on: windows-latest
-  #   steps:
-  #     - name: checkout
-  #       uses: actions/checkout@v2
-  #     - run: git fetch --prune --unshallow --tags
-  #     - name: Build for windows
-  #       env:
-  #         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #         AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
-  #       run: |
-  #         $version = $(git describe --abbrev=0 --tags)
-  #         $versionParts = $version.split('.')
-  #         ([int]$versionParts[2])++
-  #         $VERSION_INC = $versionParts -join('.')
-  #         $TIMESTAMP = [long] (Get-Date -Date ((Get-Date).ToUniversalTime()) -UFormat %s)
-  #         echo $GITHUB_REF
-  #
-  #         npm install
-  #         npx webpack --mode production --display minimal --config webpack.electron.config.js
-  #         npx electron-builder build -w --config electron-builder.develop.yml --publish always
+  #         npx electron-builder build -l --config electron-builder.develop.yml --publish always
+
+  buildwindows:
+    name: Build devTool for windows
+    runs-on: windows-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - run: git fetch --prune --unshallow --tags
+      - name: Build for windows
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
+        run: |
+          $version = $(git describe --abbrev=0 --tags)
+          $versionParts = $version.split('.')
+          ([int]$versionParts[2])++
+          $VERSION_INC = $versionParts -join('.')
+          $TIMESTAMP = [long] (Get-Date -Date ((Get-Date).ToUniversalTime()) -UFormat %s)
+          echo $TIMESTAMP
+
+# npm install
+# npx webpack --mode production --display minimal --config webpack.electron.config.js
+# npx electron-builder build -w --config electron-builder.develop.yml --publish always
 
 # $REF_SPLIT =  $GITHUB_REF.split("/")
 # $BRANCH =  $REF_SPLIT[2..$REF_SPLIT.Length] -join("/")
