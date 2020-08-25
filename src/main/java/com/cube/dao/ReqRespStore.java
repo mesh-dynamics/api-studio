@@ -569,6 +569,8 @@ public interface ReqRespStore extends DataStore {
      */
     boolean deleteReqResByTraceId(String traceId, String collectionName);
 
+    boolean deleteReqResByReqId(String reqId , String customerId, Optional<EventType> eventType);
+
 
     /**
 	 * Given a request Id , find all the ReqRespMatchResults for Requests having the same traceId

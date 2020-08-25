@@ -36,6 +36,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import com.cube.exception.ParameterException;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -369,6 +370,19 @@ public class CubeStore {
 	    */
         logStoreInfo("Enqueued Event", new CubeEventMetaInfo(event), true);
             return Response.ok().build();
+    }
+
+    @POST
+    @Path("/deleteEvent/{reqId}")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response deleteEventByReqId(Event event , @PathParam("reqId") String reqId) throws ParameterException {
+
+	    if(event.customerId == null) throw new ParameterException("customerId is not present in the request");
+
+	    boolean deletionSuccess = rrstore.deleteReqResByReqId(reqId , event.customerId , Optional.ofNullable(event.eventType));
+	    return Response.ok().type(MediaType.APPLICATION_JSON).
+            entity(buildSuccessResponse(Constants.SUCCESS , new JSONObject(Map.of("deletion_success" , deletionSuccess)) )).build();
     }
 
     // converts event from json to Event, stores it,

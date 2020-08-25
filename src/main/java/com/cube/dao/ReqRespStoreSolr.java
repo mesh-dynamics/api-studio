@@ -123,7 +123,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 */
-    
+
     @Override
     public void invalidateCache() {
         comparatorCache.invalidateAll();
@@ -1382,58 +1382,58 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 
     // for predicates in the solr q param. Assumes *:* is already there in the buffer
-    private static void addToQryStr(StringBuffer qstr, String fieldname, String fval, boolean quote) {
+    private static void addToQryStr(StringBuffer qstr, String fieldname, String fval, boolean quote , boolean isOr) {
         // String newfval = quote ? String.format("\"%s\"", StringEscapeUtils.escapeJava(fval)) : fval;
         String newfval = quote ? SolrIterator.escapeQueryChars(fval) : fval;
-        qstr.append(String.format(" OR %s:%s", fieldname, newfval));
+        qstr.append(qstr.length()==0 ? String.format("%s:%s" , fieldname, newfval) :  String.format(isOr ? " OR %s:%s" : " AND %s:%s", fieldname, newfval));
     }
 
 
-    private static void addToQryStr(StringBuffer qstr, String fieldname, String fval) {
+    private static void addToQryStr(StringBuffer qstr, String fieldname, String fval , boolean isOr) {
         // add quotes to field vals by default
-        addToQryStr(qstr, fieldname, fval, true);
+        addToQryStr(qstr, fieldname, fval, true, isOr);
     }
 
-    private static void addToQryStr(StringBuffer qstr, String fieldname, Optional<String> fval) {
-        fval.ifPresent(val -> addToQryStr(qstr, fieldname, val));
+    private static void addToQryStr(StringBuffer qstr, String fieldname, Optional<String> fval , boolean isOr) {
+        fval.ifPresent(val -> addToQryStr(qstr, fieldname, val , isOr ));
     }
 
-    private static void addToQryStr(StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, String key) {
+    private static void addToQryStr(StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, String key , boolean isOr) {
         String f = getSolrFieldName(fieldname, key);
         Optional.ofNullable(fvalmap.get(key)).ifPresent(vals -> vals.forEach(v -> {
-            addToQryStr(qstr, f, v);
+            addToQryStr(qstr, f, v , isOr);
         }));
     }
 
-    private static void addToQryStr(StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, List<String> keys) {
+    private static void addToQryStr(StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, List<String> keys , boolean isOr) {
         // Empty list of selected keys is treated as if all keys are to be added
         Collection<String> ftoadd = (keys.isEmpty()) ? fvalmap.keySet() : keys;
         ftoadd.forEach(k -> {
-            addToQryStr(qstr, fieldname, fvalmap, k);
+            addToQryStr(qstr, fieldname, fvalmap, k , isOr);
         });
     }
 
-    private static void addMatch(ComparisonType mt, SolrQuery query, StringBuffer qparam, String fieldname, String fval) {
+    private static void addMatch(ComparisonType mt, SolrQuery query, StringBuffer qparam, String fieldname, String fval ,boolean isOr) {
         switch (mt) {
             case Equal: addFilter(query, fieldname, fval); break;
-            case EqualOptional: addToQryStr(qparam, fieldname, fval); break;
+            case EqualOptional: addToQryStr(qparam, fieldname, fval , isOr); break;
             default:
         }
     }
 
-    private static void addMatch(ComparisonType mt, SolrQuery query, StringBuffer qstr, String fieldname, Optional<String> fval) {
+    private static void addMatch(ComparisonType mt, SolrQuery query, StringBuffer qstr, String fieldname, Optional<String> fval , boolean isOr) {
         switch (mt) {
             case Equal: addFilter(query, fieldname, fval); break;
-            case EqualOptional: addToQryStr(qstr, fieldname, fval); break;
+            case EqualOptional: addToQryStr(qstr, fieldname, fval , isOr); break;
             default:
         }
     }
 
-    private static void addToQuery(SolrQuery query, StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, ComparisonType ct, String path) {
+    private static void addToQuery(SolrQuery query, StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, ComparisonType ct, String path , boolean isOr) {
         if (ct == ComparisonType.Equal) {
             addFilter(query, fieldname, fvalmap, path);
         } else if (ct == ComparisonType.EqualOptional) {
-            addToQryStr(qstr, fieldname, fvalmap, path);
+            addToQryStr(qstr, fieldname, fvalmap, path , isOr);
         }
     }
 
@@ -1729,7 +1729,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         boolean toReturn = false;
         try {
             fromSolr = solr.deleteByQuery(query);
-            toReturn = true;
+            toReturn = softcommit();
 
         } catch (Exception e) {
             LOGGER.error("Error in deleting documents from solr using query " +
@@ -2604,8 +2604,28 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public boolean deleteReqResByTraceId(String traceId, String collectionName) {
-        String queryString = TRACEIDF + ":" + traceId + " AND " + COLLECTIONF +":" + collectionName + " AND " + TYPEF +":Event";
-        return deleteDocsByQuery(queryString);
+        StringBuffer queryBuff = new StringBuffer();
+        addToQryStr(queryBuff , TRACEIDF , traceId , false);
+        addToQryStr(queryBuff , COLLECTIONF , collectionName , false);
+        addToQryStr(queryBuff , TYPEF , Types.Event.name() , false);
+
+        return deleteDocsByQuery(queryBuff.toString());
+    }
+
+    @Override
+    public boolean deleteReqResByReqId(String reqId, String customerId, Optional<EventType> eventType) {
+
+        StringBuffer queryBuff = new StringBuffer();
+        addToQryStr(queryBuff , REQIDF , reqId , false);
+        addToQryStr(queryBuff , TYPEF , Types.Event.name() , false);
+        addToQryStr(queryBuff , CUSTOMERIDF , customerId , false);
+
+
+        if (eventType.isPresent()) {
+            addToQryStr(queryBuff , EVENTTYPEF , eventType.get().name() , false);
+        }
+
+        return deleteDocsByQuery(queryBuff.toString());
     }
 
 
