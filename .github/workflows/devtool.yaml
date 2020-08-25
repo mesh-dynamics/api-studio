@@ -6,7 +6,6 @@ on:
       - develop
       - master
       - staging
-      - fix/build-pipeline
 
 jobs:
   buildmacOS:
