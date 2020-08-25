@@ -94,9 +94,11 @@ jobs:
           $CONTENT = Get-Content -Path .\tmp.txt
           Remove-Item -path .\package.json
           Add-Content -Path .\package.json -Value $CONTENT
-          npx webpack --mode production --display minimal --config webpack.electron.config.js
-          npx electron-builder build -w --config electron-builder.develop.yml --publish always
+          $CONTENT = Get-Content -Path .\package.json
+          echo $CONTENT
 
+# npx webpack --mode production --display minimal --config webpack.electron.config.js
+# npx electron-builder build -w --config electron-builder.develop.yml --publish always
 # Remove-Item -path .\package.json
 # Rename-Item -path .\tmp.json -NewName .\package.json
 # npm install
