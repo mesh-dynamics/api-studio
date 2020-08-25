@@ -59,35 +59,45 @@ jobs:
           BRANCH=${GITHUB_REF##*/}
           COMMIT=$(git rev-parse --short HEAD)
           NEXTVERSION="${version}-${BRANCH}.${TIMESTAMP}.${COMMIT}"
+          sudo apt-get update -y
+          sudo apt-get install wine64 -y
           npm install
           jq --arg version "${NEXTVERSION}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
           npx webpack --mode production --display minimal --config webpack.electron.config.js
-          npx electron-builder build -l --config electron-builder.develop.yml --publish always
+          npx electron-builder build -lw --config electron-builder.develop.yml --publish always
+  # buildwindows:
+  #   name: Build devTool for windows
+  #   runs-on: windows-latest
+  #   steps:
+  #     - name: checkout
+  #       uses: actions/checkout@v2
+  #     - run: git fetch --prune --unshallow --tags
+  #     - name: Build for windows
+  #       env:
+  #         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #         AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
+  #       run: |
+  #         $version = $(git describe --abbrev=0 --tags)
+  #         $versionParts = $version.split('.')
+  #         ([int]$versionParts[2])++
+  #         $VERSION_INC = $versionParts -join('.')
+  #         $TIMESTAMP = [long] (Get-Date -Date ((Get-Date).ToUniversalTime()) -UFormat %s)
+  #         echo $GITHUB_REF
+  #
+  #         npm install
+  #         npx webpack --mode production --display minimal --config webpack.electron.config.js
+  #         npx electron-builder build -w --config electron-builder.develop.yml --publish always
 
-  buildwindows:
-    name: Build devTool for windows
-    runs-on: windows-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v2
-      - run: git fetch --prune --unshallow --tags
-      - name: Build for windows
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
-        run: |
-          $version = $(git describe --abbrev=0 --tags)
-          $versionParts = $version.split('.')
-          ([int]$versionParts[1])++
-          $VERSION_INC = $versionParts -join('.')
-          $TIMESTAMP = [long] (Get-Date -Date ((Get-Date).ToUniversalTime()) -UFormat %s)
-          echo "Git reference at $GITHUB_REF"
-          $REF_SPLIT =  $GITHUB_REF.split("/")
-          $BRANCH =  $REF_SPLIT[2..$REF_SPLIT.Length] -join("/")
-          $NEXT_VERSION="$VERSION_INC-$BRANCH.$TIMESTAMP.$GITHUB_SHA"
-          npm install
-          jq --arg version $NEXT_VERSION '.version = $version' package.json > .\tmp
-          Copy-Item '.\tmp' '.\package.json'
-          npx webpack --mode production --display minimal --config webpack.electron.config.js
-          npx electron-builder build -w --config electron-builder.develop.yml --publish always
+# $REF_SPLIT =  $GITHUB_REF.split("/")
+# $BRANCH =  $REF_SPLIT[2..$REF_SPLIT.Length] -join("/")
+
+# $BRANCH = $(git branch --show-current).split("/")[-1]
+# $COMMIT = $(git rev-parse --short HEAD)
+# $NEXT_VERSION = "$VERSION_INC-$BRANCH.$TIMESTAMP.$COMMIT"
+
+# npm install
+# jq --arg version $NEXT_VERSION '.version = $version' package.json > .\tmp
+# Copy-Item '.\tmp' '.\package.json'
+# npx webpack --mode production --display minimal --config webpack.electron.config.js
+# npx electron-builder build -w --config electron-builder.develop.yml --publish always
