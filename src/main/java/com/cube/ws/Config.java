@@ -11,7 +11,7 @@ import javax.inject.Singleton;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
-import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.client.solrj.impl.MDHttpSolrClient;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 
@@ -102,7 +102,7 @@ public class Config {
             LOGGER.info(String.format("Using default solrurl IP %s", solrurl));
         }
         if (solrurl != null) {
-            solr = new HttpSolrClient.Builder(solrurl).build();
+            solr =  new MDHttpSolrClient.Builder(solrurl).build();
             rrstore = new ReqRespStoreSolr(solr, this);
             templateCache = new TemplateCacheRedis(rrstore , this);
         } else {
