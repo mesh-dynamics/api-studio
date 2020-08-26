@@ -712,7 +712,8 @@ export const httpClient = (state = initialState, { type, data }) => {
                 ...state,
                 tabs: tabs.map(eachTab => {
                         if (eachTab.id === data.tabId) {
-                            eachTab["requestRunning"] = false
+                            eachTab["requestRunning"] = false;
+                            eachTab["abortRequest"] = null;
                         }
                         return eachTab;
                     })

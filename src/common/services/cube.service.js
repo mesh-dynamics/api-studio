@@ -370,11 +370,11 @@ const fetchAPITraceData = async (app, startTime, endTime, service, apiPath, inst
     }
 }
 
-const fetchAPIEventData = async (app, reqIds, eventTypes=[]) => {
+const fetchAPIEventData = async (app, reqIds, eventTypes=[], apiConfig={}) => {
     const user = JSON.parse(localStorage.getItem('user'));
 
     let apiEventURL = `${config.recordBaseUrl}/getEvents`;
-
+    
     let body = {
         "customerId":user.customer_name,
         "app": app,
@@ -387,7 +387,7 @@ const fetchAPIEventData = async (app, reqIds, eventTypes=[]) => {
     }
 
     try {
-        return api.post(apiEventURL,body);
+        return api.post(apiEventURL,body, apiConfig);
     } catch (e) {
         console.error("Error fetching API Event data");
         throw e;

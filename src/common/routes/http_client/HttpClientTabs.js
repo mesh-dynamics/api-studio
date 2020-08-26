@@ -35,6 +35,7 @@ import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
 import { generateRunId } from "../../utils/http_client/utils";
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
+import CommonConstants from '../../utils/commonConstants';
 
 class HttpClientTabs extends Component {
 
@@ -1042,6 +1043,7 @@ class HttpClientTabs extends Component {
         // https://www.mocky.io/v2/5185415ba171ea3a00704eed
         let fetchedResponseHeaders = {}, responseStatus = "", responseStatusText = "";
         const startDate = new Date(Date.now() - 2 * 1000).toISOString();
+        fetchConfigRendered.signal = tabToProcess.abortRequest.signal;
         return fetch(fetchUrlRendered, fetchConfigRendered).then((response) => {
             responseStatus = response.status;
             responseStatusText = response.statusText;
@@ -1065,7 +1067,9 @@ class HttpClientTabs extends Component {
             console.error(error);
             dispatch(httpClientActions.postErrorDriveRequest(tabId, error.message));
             dispatch(httpClientActions.unsetReqRunning(tabId));
-            alert(`Could not get any response. There was an error connecting: ${error}`);
+            if(error.message !== CommonConstants.USER_ABORT_MESSAGE){                
+                alert(`Could not get any response. There was an error connecting: ${error}`);
+            }
         });
     }
 
@@ -1227,19 +1231,29 @@ class HttpClientTabs extends Component {
                         }
                     });
                 }
-                api.post(`${config.apiBaseUrl}/cs/storeUserReqResp/${recordingId}`, data)
+                const urlToPost = `${config.apiBaseUrl}/cs/storeUserReqResp/${recordingId}`;
+                const apiConfig = type == "History" ? {cancelToken: tabToProcess.abortRequest.cancelToken}:{};
+                const abortRequest = tabToProcess.abortRequest; //After first successful data from getApiTrace, tabToProcess.abortRequest is set to null without cancelling
+                api.post(urlToPost, data, apiConfig)
                     .then((serverRes) => {
                         let clearIntervalHandle;
                         if (type === "History") {
                             const jsonTraceReqData = serverRes.data.response && serverRes.data.response.length > 0 ? serverRes.data.response[0] : "";
                             try {
                                 const parsedTraceReqData = JSON.parse(jsonTraceReqData);
-                                const httpRequestEventTypeIndex = reqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
-                                const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
-                                const apiPath = httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : "";
-                                this.loadRecordedHistory(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath);
+                                const apiPath = _.trimStart(data[0].request.apiPath, '/');
+                                this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
                                 clearIntervalHandle = setInterval(() => {
-                                    this.loadRecordedHistory(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath);
+                                    if(abortRequest){
+                                        if(!abortRequest.isCancelled){
+                                            this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
+                                        }                                        
+                                        else if (clearIntervalHandle) {
+                                            clearInterval(clearIntervalHandle);
+                                        }
+                                    }else{
+                                        this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
+                                    }
                                 }, 5000);
                                 setTimeout(() => {
                                     if (clearIntervalHandle) clearInterval(clearIntervalHandle);
@@ -1262,12 +1276,14 @@ class HttpClientTabs extends Component {
 
                         }, 2000);
                     }, (error) => {
+                        dispatch(httpClientActions.unsetReqRunning(tabId));
                         dispatch(httpClientActions.postErrorSaveToCollection(type === "History" ? false : showSaveModal ? true : false, "Error saving: " + error));
                         console.error("error: ", error);
                     })
             } 
         } catch (error) {
             console.error("Error ", error);
+            dispatch(httpClientActions.unsetReqRunning(tabId));
             dispatch(httpClientActions.catchErrorSaveToCollection(type === "History" ? false : showSaveModal ? true : false, "Error: Invalid JSON body"));
             throw new Error("Error");
         }
@@ -1372,6 +1388,7 @@ class HttpClientTabs extends Component {
         const selectedCollection = userCollections.find((eachCollection) => {
             return eachCollection.id === userCollectionId;
         });
+        tabs[indexToFind].abortRequest = null;
         this.saveToCollection(isOutgoingRequest, selectedSaveableTabId, selectedCollection.id, "UserGolden");
     }
 
@@ -1557,7 +1574,7 @@ class HttpClientTabs extends Component {
         return reqObject;
     }
 
-    loadRecordedHistory(tabId, traceId, reqId, runId, apiPath) {
+    loadSavedTrace(tabId, traceId, reqId, runId, apiPath, apiConfig) {
         const {httpClient: {tabs, userHistoryCollection}} = this.props;
         const { cube: {selectedApp} } = this.props;
         const app = selectedApp;
@@ -1568,7 +1585,8 @@ class HttpClientTabs extends Component {
         const { dispatch } = this.props;
         const user = JSON.parse(localStorage.getItem('user'));
         const historyCollectionId = userHistoryCollection.collec;
-        api.get(`${config.apiBaseUrl}/as/getApiTrace/${user.customer_name}/${app}?depth=100&collection=${historyCollectionId}&apiPath=${apiPath}&runId=${runId}`)
+        const apiTraceUrl = `${config.apiBaseUrl}/as/getApiTrace/${user.customer_name}/${app}?depth=100&collection=${historyCollectionId}&apiPath=${apiPath}&runId=${runId}`;
+        api.get(apiTraceUrl, apiConfig)
             .then((res) => {
                 res.response.sort((a, b) => {
                     return b.res.length - a.res.length;
@@ -1581,7 +1599,7 @@ class HttpClientTabs extends Component {
 
                 if (reqIdArray && reqIdArray.length > 0) {
                     const eventTypes = [];
-                    cubeService.fetchAPIEventData(app, reqIdArray, eventTypes).then((result) => {
+                    cubeService.fetchAPIEventData(app, reqIdArray, eventTypes, apiConfig).then((result) => {
                         if(result && result.numResults > 0) {
                             const ingressReqResPair = result.objects.filter(eachReq => eachReq.apiPath === apiPath);
                             let ingressReqObj;
@@ -1611,6 +1629,7 @@ class HttpClientTabs extends Component {
                 }
             }, (err) => {
                 console.error("err: ", err);
+                dispatch(httpClientActions.unsetReqRunning(tabId));
             })
     }
 
