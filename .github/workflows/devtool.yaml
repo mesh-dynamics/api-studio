@@ -35,6 +35,7 @@ jobs:
           version=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
           TIMESTAMP=$(date "+%Y%m%d%H%M%S")
           BRANCH=${GITHUB_REF##*/}
+          RELEASE_TYPE=$BRANCH
           COMMIT=$(git rev-parse --short HEAD)
           NEXTVERSION="${version}-${BRANCH}.${TIMESTAMP}.${COMMIT}"
           echo $NEXTVERSION
@@ -54,6 +55,7 @@ jobs:
           version=$(git describe --tags `git rev-list --tags --max-count=1`)
           echo $version
           npm install
+          RELEASE_TYPE=customer
           jq --arg version "${version}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.yml --publish always
@@ -76,6 +78,7 @@ jobs:
           version=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
           TIMESTAMP=$(date "+%Y%m%d%H%M%S")
           BRANCH=${GITHUB_REF##*/}
+          RELEASE_TYPE=$BRANCH
           COMMIT=$(git rev-parse --short HEAD)
           NEXTVERSION="${version}-${BRANCH}.${TIMESTAMP}.${COMMIT}"
           sudo apt-get update -y
@@ -94,6 +97,7 @@ jobs:
         run: |
           version=$(git describe --tags `git rev-list --tags --max-count=1`)
           npm install
+          RELEASE_TYPE=customer
           jq --arg version "${version}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -l --config electron-builder.yml --publish always
@@ -121,6 +125,7 @@ jobs:
           $TIMESTAMP = [long] (Get-Date -Date ((Get-Date).ToUniversalTime()) -UFormat %s)
           $COMMIT = $(git rev-parse --short HEAD)
           $BRANCH = $(git branch --show-current).split("/")[-1]
+          $RELEASE_TYPE = $BRANCH
           $NEXT_VERSION = "$NEW_VERSION_NUMBER-$BRANCH.$TIMESTAMP.$COMMIT"
           echo $NEXT_VERSION
           jq --arg version $NEXT_VERSION '.version = $version' package.json > .\tmp.txt
@@ -136,12 +141,13 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
         run: |
-          npm install 
+          npm install
           $revision = $(git rev-list --tags --max-count=1)
           $version = $(git describe --tags $revision)
           jq --arg version $version '.version = $version' package.json > .\tmp.txt
           $CONTENT = Get-Content -Path .\tmp.txt
           Remove-Item -path .\package.json
           Add-Content -Path .\package.json -Value $CONTENT
+          $RELEASE_TYPE = "customer"
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -w --config electron-builder.yml --publish always
