@@ -125,7 +125,10 @@ public class Config {
             int redisPort = Integer.valueOf(fromEnvOrProperties("redis_port"
                 , "6379"));
             String redisPassword = fromEnvOrProperties("redis_password" , null);
-            jedisPool = new JedisPool(new JedisPoolConfig() , redisHost, redisPort , 2000,  redisPassword);
+            JedisPoolConfig poolConfig = new JedisPoolConfig();
+            poolConfig.setTestOnBorrow(true);
+            //poolConfig.setTestOnReturn(true);
+            jedisPool = new JedisPool(poolConfig , redisHost, redisPort , 2000,  redisPassword);
             REDIS_DELETE_TTL = Integer.parseInt(fromEnvOrProperties("redis_delete_ttl"
                 , "15"));
 	        Runnable subscribeThread = new Runnable() {
