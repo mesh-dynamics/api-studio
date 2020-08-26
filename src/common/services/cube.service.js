@@ -314,6 +314,32 @@ const deleteGolden = async (recordingId) => {
         throw error;
     }
 };
+const deleteEventByRequestId = async (requestId) => {
+    try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        let body = {
+            "customerId":user.customer_name
+        }
+        return await api.post(`${config.recordBaseUrl}/deleteEventByReqId/${requestId}`, body);
+    } catch (error) {
+        console.log("Error deleting Collection request \n", error);
+        throw error;
+    }
+};
+
+const deleteEventByTraceId = async (traceId, collectionId) => {
+    try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        let body = {
+            "customerId":user.customer_name,
+            "collection": collectionId
+        }
+        return await api.post(`${config.recordBaseUrl}/deleteEventByTraceId/${traceId}`, body);
+    } catch (error) {
+        console.log("Error deleting Collection request \n", error);
+        throw error;
+    }
+};
 
 const fetchClusterList = async () => {
     try {
@@ -487,5 +513,6 @@ export const cubeService = {
     insertNewEnvironment,
     updateEnvironment,
     deleteEnvironment,
-
+    deleteEventByRequestId, 
+    deleteEventByTraceId
 };

@@ -446,6 +446,13 @@ export const httpClient = (state = initialState, { type, data }) => {
                 userCollections: data.userCollections
             }
         }
+        case httpClientConstants.DELETE_USER_COLLECTION: {
+            const userCollections = state.userCollections.filter( u=> u.rootRcrdngId !== data);
+            return {
+                ...state,
+                userCollections
+            }
+        }
 
         case httpClientConstants.POST_SUCCESS_SAVE_TO_COLLECTION: {
             let {tabs} = state;
