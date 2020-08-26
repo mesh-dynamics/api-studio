@@ -29,7 +29,7 @@ public class OfficeRouter {
 		System.out.println("ParentSpanId: " + headers.getRequestHeader("x-datadog-parent-id"));
 		System.out.println("SpanId: " + span.context().toSpanId());
 
-		String json = "{" + "\"Key\" : " + "HI from depth2" + "}";
+		String json = "{" + "\"Key\" : " + "\"HI from depth2\"" + "}";
 //		String json = "HI from depth2";
 		return Response.ok().type(MediaType.APPLICATION_JSON).entity(json).build();
 	}
@@ -46,7 +46,7 @@ public class OfficeRouter {
 		System.out.println("ParentSpanId: " + headers.getRequestHeader("x-datadog-parent-id"));
 		System.out.println("SpanId: " + span.context().toSpanId());
 
-		String json = "{" + "\"Key\" : " + "HI from postDepth2" + "}";
+		String json = "{" + "\"Key\" : " + "\"HI from depth2\"" + "}";
 //		String json = "HI from depth2";
 		return Response.ok().type(MediaType.APPLICATION_JSON).entity(json).build();
 	}
