@@ -96,8 +96,8 @@ public class CubeStoreController {
         return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 
-    @PostMapping("/deleteEvent/{reqId}")
-    public ResponseEntity deleteEvent(HttpServletRequest request, @RequestBody Event postBody , @PathVariable String reqId){
+    @PostMapping("/deleteEventByReqId/{reqId}")
+    public ResponseEntity deleteEventByReqId(HttpServletRequest request, @RequestBody Event postBody , @PathVariable String reqId){
 
         validation.validateCustomerName(request, postBody.customerId);
 
@@ -106,12 +106,18 @@ public class CubeStoreController {
             delete query will have the customerid to ensure that only event belonging to that customer is deleted.
          */
 
+        return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
+    }
+
+    @PostMapping("/deleteEventByTraceId/{traceId}")
+    public ResponseEntity deleteEventByTraceId(HttpServletRequest request, @RequestBody Event postBody , @PathVariable String traceId){
+
+        validation.validateCustomerName(request, postBody.customerId);
 
         /*
-        String customerId =  jwtTokenProvider.getCustomer(request).getName();
-        postBody = postBody.or(()->Optional.of(new HashMap<>(1)));
-        postBody.get().put("customerId" , customerId);
-        */
+            Any validation regarding the the ownership of event by that customer is done at datastore level (solr).
+            delete query will have the customerid to ensure that only event belonging to that customer is deleted.
+         */
 
         return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
