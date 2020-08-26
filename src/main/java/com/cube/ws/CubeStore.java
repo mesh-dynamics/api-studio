@@ -373,15 +373,30 @@ public class CubeStore {
     }
 
     @POST
-    @Path("/deleteEvent/{reqId}")
+    @Path("/deleteEventByReqId/{reqId}")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public Response deleteEventByReqId(Event event , @PathParam("reqId") String reqId) throws ParameterException {
 
 	    if(event.customerId == null) throw new ParameterException("customerId is not present in the request");
 
+
 	    boolean deletionSuccess = rrstore.deleteReqResByReqId(reqId , event.customerId , Optional.ofNullable(event.eventType));
 	    return Response.ok().type(MediaType.APPLICATION_JSON).
+            entity(buildSuccessResponse(Constants.SUCCESS , new JSONObject(Map.of("deletion_success" , deletionSuccess)) )).build();
+    }
+
+    @POST
+    @Path("/deleteEventByTraceId/{traceId}")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response deleteEventByTraceId(Event event , @PathParam("traceId") String traceId) throws ParameterException {
+
+        if(event.customerId == null) throw new ParameterException("customerId is not present in the request");
+        if(event.getCollection() == null) throw new ParameterException("collection is not present in the request");
+
+        boolean deletionSuccess = rrstore.deleteReqResByTraceId(traceId , event.customerId , event.getCollection(), Optional.ofNullable(event.eventType));
+        return Response.ok().type(MediaType.APPLICATION_JSON).
             entity(buildSuccessResponse(Constants.SUCCESS , new JSONObject(Map.of("deletion_success" , deletionSuccess)) )).build();
     }
 

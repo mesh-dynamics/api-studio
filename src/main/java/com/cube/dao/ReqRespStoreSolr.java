@@ -1394,6 +1394,19 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addToQryStr(qstr, fieldname, fval, true, isOr);
     }
 
+    private static void addToQryStr(StringBuffer qstr, String fieldname, List<String> fvals , boolean isOr) {
+        if(fvals.isEmpty()) return;
+
+        if(fvals.size() ==1){
+            addToQryStr(qstr , fieldname , fvals.get(0) , isOr );
+            return;
+        }
+
+        String orValues = fvals.stream().collect(Collectors.joining(" OR "));
+        addToQryStr(qstr, fieldname, "("+orValues+")", true, isOr);
+    }
+
+
     private static void addToQryStr(StringBuffer qstr, String fieldname, Optional<String> fval , boolean isOr) {
         fval.ifPresent(val -> addToQryStr(qstr, fieldname, val , isOr ));
     }
@@ -2627,6 +2640,41 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         return deleteDocsByQuery(queryBuff.toString());
     }
+
+    @Override
+    public boolean deleteReqResByTraceId(String traceId , String customerId, String collectionName , Optional<EventType> eventType){
+        StringBuffer queryBuff = new StringBuffer();
+        addToQryStr(queryBuff , TRACEIDF , traceId , false);
+        addToQryStr(queryBuff , TYPEF , Types.Event.name() , false);
+        addToQryStr(queryBuff , CUSTOMERIDF , customerId , false);
+        addToQryStr(queryBuff , COLLECTIONF , collectionName , false);
+
+        if (eventType.isPresent()) {
+            addToQryStr(queryBuff , EVENTTYPEF , eventType.get().name() , false);
+        }
+
+        return deleteDocsByQuery(queryBuff.toString());
+    }
+
+    /*
+    @Override
+    public boolean deleteReqResp(EventQuery query) {
+
+        StringBuffer queryBuff = new StringBuffer();
+        addToQryStr(queryBuff , TYPEF , Types.Event.name() , false);
+        if(query.getCustomerId()!=null){
+            addToQryStr(queryBuff , CUSTOMERIDF , query.getCustomerId() , false);
+        }
+        addToQryStr(queryBuff , REQIDF , query.getReqIds() , false);
+        addToQryStr(queryBuff , EVENTTYPEF , query.getEventTypes().stream().map(null).collect(Collectors.toList()) , false);
+
+        if (eventType.isPresent()) {
+            addToQryStr(queryBuff , EVENTTYPEF , eventType.get().name() , false);
+        }
+
+        return deleteDocsByQuery(queryBuff.toString());
+    }
+    */
 
 
     /**
