@@ -314,6 +314,32 @@ const deleteGolden = async (recordingId) => {
         throw error;
     }
 };
+const deleteEventByRequestId = async (requestId) => {
+    try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        let body = {
+            "customerId":user.customer_name
+        }
+        return await api.post(`${config.recordBaseUrl}/deleteEventByReqId/${requestId}`, body);
+    } catch (error) {
+        console.log("Error deleting Collection request \n", error);
+        throw error;
+    }
+};
+
+const deleteEventByTraceId = async (traceId, collectionId) => {
+    try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        let body = {
+            "customerId":user.customer_name,
+            "collection": collectionId
+        }
+        return await api.post(`${config.recordBaseUrl}/deleteEventByTraceId/${traceId}`, body);
+    } catch (error) {
+        console.log("Error deleting Collection request \n", error);
+        throw error;
+    }
+};
 
 const fetchClusterList = async () => {
     try {
@@ -370,11 +396,11 @@ const fetchAPITraceData = async (app, startTime, endTime, service, apiPath, inst
     }
 }
 
-const fetchAPIEventData = async (app, reqIds, eventTypes=[]) => {
+const fetchAPIEventData = async (app, reqIds, eventTypes=[], apiConfig={}) => {
     const user = JSON.parse(localStorage.getItem('user'));
 
     let apiEventURL = `${config.recordBaseUrl}/getEvents`;
-
+    
     let body = {
         "customerId":user.customer_name,
         "app": app,
@@ -387,7 +413,7 @@ const fetchAPIEventData = async (app, reqIds, eventTypes=[]) => {
     }
 
     try {
-        return api.post(apiEventURL,body);
+        return api.post(apiEventURL,body, apiConfig);
     } catch (e) {
         console.error("Error fetching API Event data");
         throw e;
@@ -487,5 +513,6 @@ export const cubeService = {
     insertNewEnvironment,
     updateEnvironment,
     deleteEnvironment,
-
+    deleteEventByRequestId, 
+    deleteEventByTraceId
 };

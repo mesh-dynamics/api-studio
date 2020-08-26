@@ -16,6 +16,8 @@ afterSign: "scripts/notarize.js"
 publish:
   provider: s3
   bucket: meshdynamics-devtool
+  channel: latest
+  path: /staging
   acl: private
 
 # files:

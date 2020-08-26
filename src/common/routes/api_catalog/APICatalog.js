@@ -15,6 +15,7 @@ import { connect } from "react-redux";
 import { cubeActions } from "../../actions";
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { FormControl, FormGroup } from "react-bootstrap";
+import SplitSlider from "../../components/SplitSlider";
 
 class APICatalog extends Component {
   constructor(props) {
@@ -73,12 +74,13 @@ class APICatalog extends Component {
     const { cube } = this.props;
     return (
       <div className="h-100" style={{ display: "flex" }}>
-        <div className="info-wrapper">
+        <div className="info-wrapper" ref={e=> (this.sliderTarget = e)}>
           <APICatalogFilter
             currentPage={currentPage}
           />
         </div>
-        <div className="content-wrapper" style={{ width: "100%", overflow: "scroll" }}>
+        <SplitSlider slidingElement={this.sliderTarget}/>
+        <div className="content-wrapper" style={{ flex: "1 1 0%", overflow: "scroll" }}>
           {/* <div>
           <div className="api-catalog-title-container">
             <div className="vertical-middle inline-block">

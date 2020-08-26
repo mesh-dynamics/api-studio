@@ -15,7 +15,9 @@ afterSign: "scripts/notarize.js"
 
 publish:
   provider: s3
+  region: us-east-2
   bucket: meshdynamics-devtool
+  path: /customer
   acl: private
 
 # files:

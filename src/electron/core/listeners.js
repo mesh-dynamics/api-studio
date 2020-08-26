@@ -9,12 +9,17 @@ const logger = require('electron-log');
 const find = require('find-process');
 const path = require('path');
 const aws4 = require('aws4');
+const os = require('os');
 const menu = require('./menu');
 const { resourceRootPath, updateApplicationConfig, getApplicationConfig } = require('./fs-utils');
+const { useGetLatest } = require('react-table');
 
 autoUpdater.autoDownload = false; 
+autoUpdater.channel = 'latest';
 
 let mainWindow;
+let releaseDirectory = '/'; // Default is root of bucket
+
 const browserWindowOptions = {
     width: 1280,
     height: 720,
@@ -23,13 +28,41 @@ const browserWindowOptions = {
     },
 };
 
+const releaseMetaDataFile = (releaseType) => {
+    const platform = os.platform();
+
+    const filePath = {
+        win32: 'latest.yml',
+        darwin:  'latest-mac.yml',
+        linux: 'latest-linux.yml'
+        // In Case this is required.
+        // win32: `${releaseType}.yml`,
+        // darwin: `${releaseType}-mac.yml`,
+        // linux: `${releaseType}-linux.yml`
+    };
+
+    return filePath[platform];
+};
+
+const awsSigingOptions = {
+    service: 's3',
+    region: 'us-east-2',
+    method: 'GET',
+    host:  'meshdynamics-devtool.s3.amazonaws.com',
+    path: ''
+};
+
+const awsSigningCredentials = {
+    accessKeyId: '',
+    secretAccessKey: ''
+};
+
 const mainWindowIndex = `file://${path.join(__dirname, `../../../dist/index.html`)}`;
 
 const setupListeners = (mockContext, user, replayContext) => {
     logger.info('Setup listeners');
 
     // Loading config
-    // const config = utils.readConfig();
     const config = getApplicationConfig();
 
     logger.info('Config loaded :', config);
@@ -61,7 +94,8 @@ const setupListeners = (mockContext, user, replayContext) => {
 
         logger.info('Window created... Checking for updates...')
 
-        autoUpdater.checkForUpdatesAndNotify();
+        // autoUpdater.checkForUpdatesAndNotify();
+        // autoUpdater.checkForUpdates();
     });
 
     app.on('window-all-closed', async function () {
@@ -100,6 +134,29 @@ const setupListeners = (mockContext, user, replayContext) => {
     ipcMain.on('app_version', (event) => {
         logger.info('Sending App version to IPC Renderer');
         event.sender.send('app_version', { version: app.getVersion() });
+    });
+
+    ipcMain.on('set_updater_config', (event, updaterConfig) => {
+        logger.info('Received Updater Config', );
+
+        const { releaseType, accessKeyId, secretAccessKey } = updaterConfig; // (develop, staging, master, customer)
+
+        releaseDirectory = `/${releaseType}`;
+
+        const metaFilePath = `/${releaseType}/${releaseMetaDataFile(releaseType)}`;
+
+        awsSigingOptions.path = metaFilePath;
+
+        awsSigningCredentials.accessKeyId = accessKeyId;
+
+        awsSigningCredentials.secretAccessKey = secretAccessKey;
+
+        logger.info('Current release directory is set to :', releaseDirectory);
+
+        logger.info('Updated AWS Signing Options \n', awsSigingOptions);
+
+        // Check for updates once the configs are set
+        autoUpdater.checkForUpdates();
     });
 
     ipcMain.on('set_user', (event, arg) => {
@@ -165,8 +222,39 @@ const setupListeners = (mockContext, user, replayContext) => {
     /**
      * AUTO Updater events
      */
-    autoUpdater.on('update-available', () => {
-        logger.info('Update available')
+    autoUpdater.on('checking-for-update', () => {
+        logger.info('Update checking triggered');
+        
+        aws4.sign(awsSigingOptions, awsSigningCredentials);
+
+        logger.info("AWS Header Options", awsSigingOptions);
+
+        autoUpdater.requestHeaders = awsSigingOptions.headers;
+
+        logger.info('Update Check Complete');
+    });
+
+    autoUpdater.on('update-available', (info) => {
+        logger.info('Update available');
+        
+        logger.info("\n\n", info);
+
+        const filePath =  `${releaseDirectory}/${info.path}`;
+
+        awsSigingOptions.path = filePath;
+
+        // Sign the headers
+        aws4.sign(awsSigingOptions, awsSigningCredentials);
+
+        logger.info("Updater Signing Options \n", awsSigingOptions);
+
+        // Update the headers
+        autoUpdater.requestHeaders = awsSigingOptions.headers;
+        
+        // Trigger Download
+        autoUpdater.downloadUpdate();
+
+        // Notify Renderer Process
         mainWindow.webContents.send('update_available');
     });
 

@@ -559,16 +559,7 @@ class TestResults extends Component {
                             // return (<div><br/><br/></div>);
                         }
                         if (!row.value) {
-                            return (<div
-                                style={{
-                                    width: '100%',
-                                    height: '50%',
-                                    borderRadius: '2px',
-                                    textAlign: "center"
-                                }}
-                            >
-                                <div>NA</div>
-                            </div>)
+                            return (<div></div>)
                         }
                         if (row.row.serviceRowKey && row.row.serviceRowKey.indexOf("--") > 0) {
                             return (

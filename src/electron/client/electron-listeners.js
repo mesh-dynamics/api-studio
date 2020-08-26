@@ -8,8 +8,15 @@ const setupElectronListeners = () => {
         const message = document.getElementById('message');
         const closeButton = document.getElementById('close-button');
         const restartButton = document.getElementById('restart-button');
+
+        const updaterConfig = {
+          releaseType: RELEASE_TYPE, // (develop, staging, master, customer)
+          accessKeyId: AWS_ACCESS_KEY_ID,
+          secretAccessKey: AWS_SECRET_ACCESS_KEY
+        };
     
         ipcRenderer.send('get_config');
+        ipcRenderer.send('set_updater_config', updaterConfig);
     
         ipcRenderer.on('update_available', () => {
           ipcRenderer.removeAllListeners('update_available');

@@ -154,6 +154,9 @@ const config = {
         new CleanWebpackPlugin(),
         new DefinePlugin({
             PLATFORM_ELECTRON: true,
+            RELEASE_TYPE: JSON.stringify(process.env.RELEASE_TYPE), // (develop, staging, master, customer)
+            AWS_ACCESS_KEY_ID: JSON.stringify(process.env.AWS_ACCESS_KEY_ID),
+            AWS_SECRET_ACCESS_KEY: JSON.stringify(process.env.AWS_SECRET_ACCESS_KEY)
         }),
         new CopyPlugin({
             patterns: [

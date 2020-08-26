@@ -14,6 +14,7 @@ import { getTraceTableTestReqData } from '../../utils/http_client/utils';
 import {
     validateAndCreateDiffLayoutData  
 } from "../../utils/diff/diff-process.js";
+import { AbortRequest } from "./abortRequest";
 
 const newStyles = {
     variables: {
@@ -171,7 +172,12 @@ class HttpClient extends Component {
 
     handleClick(evt) {
         const { currentSelectedTab } = this.props;
-        this.props.driveRequest(false, currentSelectedTab.id);
+        if(currentSelectedTab.requestRunning){
+            currentSelectedTab.abortRequest?.stopRequest();
+        }else{
+            currentSelectedTab.abortRequest = new AbortRequest();
+            this.props.driveRequest(false, currentSelectedTab.id);
+        }
     }
 
     handleSaveClick(evt) {
@@ -422,7 +428,7 @@ class HttpClient extends Component {
                 <div style={{display: "flex"}}>
                     <div style={{marginLeft: "auto", order: "2"}}>
                         <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleClick}>
-                            {currentSelectedTab.requestRunning ? <i className="fa fa-spinner fa-spin"></i> : <Glyphicon glyph="play" />} RUN
+                            {currentSelectedTab.requestRunning ? <><i className="fa fa-spinner fa-spin"></i> STOP</>: <><Glyphicon glyph="play" /> RUN</>} 
                         </div>
                         <div disabled={currentSelectedTab.httpURL.length === 0} className={currentSelectedTab.httpURL.length === 0 ? "btn btn-sm cube-btn text-center disabled": "btn btn-sm cube-btn text-center"} style={{ padding: "2px 10px", display: currentSelectedTab.showSaveBtn ? "inline-block" : "none"}} onClick={this.handleSaveClick}>
                             <Glyphicon glyph="save" /> SAVE
