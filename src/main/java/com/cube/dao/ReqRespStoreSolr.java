@@ -1343,7 +1343,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private static void addWeightedPathFilter(SolrQuery query , String fieldName , String originalPath) {
-        String[] pathElements = originalPath.split("/");
+        String[] pathElements = originalPath.split("/",-1);
         StringBuffer pathBuffer = new StringBuffer();
         StringBuffer queryBuffer = new StringBuffer();
         var countWrapper = new Object() {int count = 0;};
