@@ -17,7 +17,7 @@ publish:
   provider: s3
   bucket: meshdynamics-devtool
   channel: latest
-  master: /master
+  path: /master
   acl: private
 
 # files:
