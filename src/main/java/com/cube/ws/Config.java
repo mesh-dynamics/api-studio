@@ -11,7 +11,7 @@ import javax.inject.Singleton;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
-import org.apache.solr.client.solrj.impl.HttpSolrClient;
+import org.apache.solr.client.solrj.impl.MDHttpSolrClient;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 
@@ -102,7 +102,7 @@ public class Config {
             LOGGER.info(String.format("Using default solrurl IP %s", solrurl));
         }
         if (solrurl != null) {
-            solr = new HttpSolrClient.Builder(solrurl).build();
+            solr =  new MDHttpSolrClient.Builder(solrurl).build();
             rrstore = new ReqRespStoreSolr(solr, this);
             templateCache = new TemplateCacheRedis(rrstore , this);
         } else {
@@ -125,7 +125,10 @@ public class Config {
             int redisPort = Integer.valueOf(fromEnvOrProperties("redis_port"
                 , "6379"));
             String redisPassword = fromEnvOrProperties("redis_password" , null);
-            jedisPool = new JedisPool(new JedisPoolConfig() , redisHost, redisPort , 2000,  redisPassword);
+            JedisPoolConfig poolConfig = new JedisPoolConfig();
+            poolConfig.setTestOnBorrow(true);
+            //poolConfig.setTestOnReturn(true);
+            jedisPool = new JedisPool(poolConfig , redisHost, redisPort , 2000,  redisPassword);
             REDIS_DELETE_TTL = Integer.parseInt(fromEnvOrProperties("redis_delete_ttl"
                 , "15"));
 	        Runnable subscribeThread = new Runnable() {

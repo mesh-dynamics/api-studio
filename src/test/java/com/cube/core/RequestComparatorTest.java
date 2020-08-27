@@ -264,7 +264,7 @@ public class RequestComparatorTest {
 
     private Event updateRequestEventHdr(Event event, String hdrField, String val) throws IOException, InvalidEventException {
         HTTPRequestPayload requestPayload =  (HTTPRequestPayload) event.payload;
-        requestPayload.hdrs.putSingle(hdrField, val);
+        requestPayload.getHdrs().putSingle(hdrField, val);
 
         return cloneWithPayload(event, requestPayload);
 
@@ -273,7 +273,7 @@ public class RequestComparatorTest {
     private Event updateRequestEventFormParams(Event event, String param, String val) throws IOException,
         InvalidEventException {
         HTTPRequestPayload requestPayload = (HTTPRequestPayload) event.payload;
-        requestPayload.formParams.putSingle(param, val);
+        requestPayload.getFormParams().putSingle(param, val);
 
         return cloneWithPayload(event, requestPayload);
 

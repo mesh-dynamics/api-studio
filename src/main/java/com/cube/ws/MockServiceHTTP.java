@@ -357,8 +357,8 @@ public class MockServiceHTTP {
             return Optional.empty();
         }
 
-        ResponseBuilder builder = Response.status(responsePayload.status);
-        responsePayload.hdrs.forEach((fieldName, fieldValList) -> fieldValList.forEach((val) -> {
+        ResponseBuilder builder = Response.status(responsePayload.getStatus());
+        responsePayload.getHdrs().forEach((fieldName, fieldValList) -> fieldValList.forEach((val) -> {
             // System.out.println(String.format("key=%s, val=%s", fieldName, val));
             // looks like setting some headers causes a problem, so skip them
             // TODO: check if this is a comprehensive list

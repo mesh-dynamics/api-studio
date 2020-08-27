@@ -567,7 +567,15 @@ public interface ReqRespStore extends DataStore {
      * @param collectionName
      * @return
      */
+    //Todo: Merge all these 3 delete apis in a single one which takes EventQuery
+    //boolean deleteReqRes(EventQuery query);
+
     boolean deleteReqResByTraceId(String traceId, String collectionName);
+
+    boolean deleteReqResByReqId(String reqId , String customerId, Optional<EventType> eventType);
+
+    boolean deleteReqResByTraceId(String traceId , String customerId, String collection , Optional<EventType> eventType);
+
 
 
     /**
