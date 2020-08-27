@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Glyphicon } from 'react-bootstrap';
 import ResizeDetector from 'react-resize-detector';
 import cs from 'classnames';
 import throttle from 'lodash.throttle';
@@ -12,6 +13,7 @@ const tabPrefix = 'tab-';
 const panelPrefix = 'panel-';
 
 export default class Tabs extends Component {
+  
   constructor(props) {
     super(props);
 
@@ -31,7 +33,7 @@ export default class Tabs extends Component {
   }
 
   componentDidMount() {
-    this.setTabsDimensions();
+    this.setScrollPosition();
   }
 
   shouldComponentUpdate(nextProps, nextState) {
@@ -61,7 +63,7 @@ export default class Tabs extends Component {
     }
 
     if (items !== prevProps.items) {
-      this.setTabsDimensions();
+      this.setScrollPosition();
     }
 
     this.selectedTabKeyProp = selectedTabKey;
@@ -110,30 +112,27 @@ export default class Tabs extends Component {
     }
   };
 
-  setTabsDimensions = () => {
-    if (!this.tabsWrapper) {
-      // it shouldn't happens evern. Just paranoic check
-      return;
-    }
+  setScrollPosition =()=>{
+    if(this.tabScrollRef){
+      const refEle = this.tabScrollRef;
+      if(refEle.offsetWidth < refEle.scrollWidth){
+        this.scrollBtnRef.classList.remove('hide');
+        this.addBtnRef.classList.add('hide');
 
-    // initial wrapper width calculation
-    const blockWidth = this.tabsWrapper.offsetWidth;
-
-    // calculate width and offset for each tab
-    let tabsTotalWidth = 0;
-    const tabDimensions = {};
-    Object.keys(this.tabRefs).forEach(key => {
-      if (this.tabRefs[key]) {
-        const width = this.tabRefs[key].tab.offsetWidth;
-        tabDimensions[key.replace(tabPrefix, '')] = { width, offset: tabsTotalWidth };
-        tabsTotalWidth += width;
+        //Set current Tab in Visible View Part
+        const selectedTab = this.tabScrollRef.querySelector('.RRT__tab--selected');
+        if(selectedTab && selectedTab.offsetLeft + selectedTab.offsetWidth > refEle.scrollLeft + refEle.offsetWidth){
+          refEle.scroll(selectedTab.offsetLeft + selectedTab.offsetWidth-  refEle.offsetWidth, 0);
+        }
+      }else if( !this.scrollBtnRef.classList.contains('hide')){
+        this.scrollBtnRef.classList.add('hide');
+        this.addBtnRef.classList.remove('hide');
       }
-    });
-
-    this.setState({ tabDimensions, tabsTotalWidth, blockWidth });
-  };
+    }
+  }
 
   getTabs = () => {
+    //TODO: Need more cleanup here as we will not need to hide tabs.
     const { showMore, transform, transformWidth, items, allowRemove, removeActiveOnly, onRemove } = this.props;
     const { blockWidth, tabsTotalWidth, tabDimensions, showMoreWidth } = this.state;
     const selectedTabKey = this.getSelectedTabKey();
@@ -170,25 +169,9 @@ export default class Tabs extends Component {
         const tabWidth = tabDimensions[key] ? tabDimensions[key].width : 0;
 
         tabIndex += 1;
-
+        result.tabsVisible.push(tabPayload);
         /* eslint-disable no-param-reassign */
-        if (
-          // don't need to `Show more` button
-          !showMore ||
-          // initial call
-          !blockWidth ||
-          // collapsed mode
-          collapsed ||
-          // all tabs are fit into the block
-          blockWidth > tabsTotalWidth ||
-          // current tab fit into the block
-          availableWidth - tabWidth > 0
-        ) {
-          result.tabsVisible.push(tabPayload);
-        } else {
-          result.tabsHidden.push(tabPayload);
-          if (selected) result.isSelectedTabHidden = true;
-        }
+        
         /* eslint-enable no-param-reassign */
 
         result.panels[key] = panelPayload; // eslint-disable-line no-param-reassign
@@ -291,9 +274,37 @@ export default class Tabs extends Component {
       showMoreWidth: offsetWidth
     });
   };
+  
+  onScrollLeft = ()=>{
+    const refEle = this.tabScrollRef;
+    let leftScroll = refEle.scrollLeft;
+    leftScroll = Math.max(leftScroll -50, 0);
+    refEle.scroll(leftScroll, 0);
+    this.scrollTimeout = setInterval(()=>{
+      leftScroll = Math.max(leftScroll -50, 0);
+      refEle.scroll(leftScroll, 0);
+    }, 100);
+  };
+
+  onScrollRight =()=>{
+    const refEle = this.tabScrollRef;
+    let leftScroll = refEle.scrollLeft;
+    let maxScroll = refEle.scrollWidth - refEle.offsetWidth;
+    leftScroll = Math.min(leftScroll + 50, maxScroll);
+    refEle.scroll(leftScroll, 0);
+    this.scrollTimeout = setInterval(()=>{
+      leftScroll = Math.min(leftScroll + 50, maxScroll);
+      refEle.scroll(leftScroll, 0);
+    }, 100);
+  };
+  onScrollFinished = ()=>{
+    if(this.scrollTimeout){
+      clearInterval(this.scrollTimeout);
+    }
+  };
 
   render() {
-    const { showInkBar, containerClass, tabsWrapperClass, showMore, transform, showMoreLabel } = this.props;
+    const { showInkBar, containerClass, tabsWrapperClass, showMore, transform, showMoreLabel, onAddClick } = this.props;
     const { tabDimensions } = this.state;
     const { tabsVisible, tabsHidden, panels, isSelectedTabHidden } = this.getTabs();
     const isCollapsed = this.getIsCollapsed();
@@ -305,7 +316,8 @@ export default class Tabs extends Component {
 
     return (
       <div className={containerClasses} ref={e => (this.tabsWrapper = e)} onKeyDown={this.onKeyDown}>
-        <div className={tabsClasses}>
+        <div  className={tabsClasses} >
+        <div className="tabContainer" ref={e=> (this.tabScrollRef=  e)}>        
           {tabsVisible.reduce((result, tab) => {
             result.push(<Tab {...this.getTabProps(tab)} />);
 
@@ -315,15 +327,26 @@ export default class Tabs extends Component {
             return result;
           }, [])}
 
-          {!isCollapsed && (
-            <ShowMore {...this.getShowMoreProps(showMore, isSelectedTabHidden, showMoreLabel)}>
-              {tabsHidden.map(tab => (
-                <Tab {...this.getTabProps(tab)} />
-              ))}
-            </ShowMore>
-          )}
-        </div>
+         
+          <div className="RRT_add-icon-container"  ref={e=> (this.addBtnRef = e)} onClick={onAddClick}>
+            <Glyphicon className="RRT__add-icon" className="" glyph="plus" />
+          </div>
+          </div>
+          <div className="RRT_scrollButtons" ref={e=> (this.scrollBtnRef = e)}>
+            
 
+            <div className="RRT-icon-container" onClick={onAddClick}>
+                <Glyphicon className="RRT__add-icon" className="" glyph="plus" />
+              </div>
+              <div className="RRT-icon-container"  onMouseDown={this.onScrollLeft} onMouseUp={this.onScrollFinished}>
+                <Glyphicon className="RRT__left-icon" className="" glyph="chevron-left" />
+              </div>
+              <div className="RRT-icon-container" onMouseDown={this.onScrollRight} onMouseUp={this.onScrollFinished}>
+                <Glyphicon className="RRT__right-icon" className="" glyph="chevron-right" />
+              </div>
+          </div>
+        </div>
+        
         {showInkBar && !isCollapsed && !isSelectedTabHidden && (
           <InkBar left={selectedTabDimensions.offset || 0} width={selectedTabDimensions.width || 0} />
         )}
@@ -355,6 +378,8 @@ Tabs.propTypes = {
   transform: PropTypes.bool,
   // tabs will be transformed to accodrion for screen sizes below `transformWidth`px
   transformWidth: PropTypes.number,
+  // addTab callback,
+  onAddClick: PropTypes.func,
   // onChange active tab callback
   onChange: PropTypes.func,
   // onRemove callback

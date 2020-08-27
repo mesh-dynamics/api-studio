@@ -50,10 +50,18 @@ const getTestConfigByAppId = async (appId) => {
     }
 };
 
-const fetchCollectionList = async (app) => {
+const fetchCollectionList = async (app, recordingType="") => {
     const user = JSON.parse(localStorage.getItem('user')); // TODO: Change this to be passed from auth tree
     try {
-        return await api.get(`${config.recordBaseUrl}/searchRecording?customerId=${user.customer_name}&app=${app}`);
+        let url = `${config.recordBaseUrl}/searchRecording`;
+        const params = new URLSearchParams();
+        params.set("customerId", user.customer_name);
+        params.set("app", app);
+        params.set("archived", false);
+        
+        recordingType && params.set("recordingType", recordingType); // todo
+
+        return await api.get(url + "?" + params.toString());
     } catch(error) {
         console.log("Error fetching test config \n", error);
         throw new Error("Error fetching test config");
@@ -253,7 +261,7 @@ const createJiraIssue = async (summary, description, issueTypeId, projectId, rep
 const getResponseTemplate = async (selectedApp, pathResultsParams, reqOrRespCompare, jsonPath) => {
     const user = JSON.parse(localStorage.getItem('user')); // TODO: Take this from auth reducer
     const { currentTemplateVer, service, path } = pathResultsParams;
-    const url = `${config.analyzeBaseUrl}/getRespTemplate/${user.customer_name}/${selectedApp}/${currentTemplateVer}/${service}/${reqOrRespCompare}?apiPath=${path}&jsonPath=${jsonPath}`;
+    const url = `${config.analyzeBaseUrl}/getTemplate/${user.customer_name}/${selectedApp}/${currentTemplateVer}/${service}/${reqOrRespCompare}?apiPath=${path}&jsonPath=${jsonPath}`;
 
     const requestOptions = {
         headers: {
@@ -306,6 +314,32 @@ const deleteGolden = async (recordingId) => {
         throw error;
     }
 };
+const deleteEventByRequestId = async (requestId) => {
+    try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        let body = {
+            "customerId":user.customer_name
+        }
+        return await api.post(`${config.recordBaseUrl}/deleteEventByReqId/${requestId}`, body);
+    } catch (error) {
+        console.log("Error deleting Collection request \n", error);
+        throw error;
+    }
+};
+
+const deleteEventByTraceId = async (traceId, collectionId) => {
+    try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        let body = {
+            "customerId":user.customer_name,
+            "collection": collectionId
+        }
+        return await api.post(`${config.recordBaseUrl}/deleteEventByTraceId/${traceId}`, body);
+    } catch (error) {
+        console.log("Error deleting Collection request \n", error);
+        throw error;
+    }
+};
 
 const fetchClusterList = async () => {
     try {
@@ -316,15 +350,16 @@ const fetchClusterList = async () => {
     }
 };
 
-// TODO: Refactor the calls below
-const fetchAPIFacetData = async (app, startTime, endTime) => {
+const fetchAPIFacetData = async (app, recordingType, collectionName, startTime=null, endTime=null) => {
     const user = JSON.parse(localStorage.getItem('user'));
 
     let apiFacetURL = `${config.analyzeBaseUrl}/getApiFacets/${user.customer_name}/${app}`;
     
     let searchParams = new URLSearchParams();
-    searchParams.set("startDate", startTime);
-    searchParams.set("endDate", endTime);
+    startTime && searchParams.set("startDate", startTime);
+    endTime && searchParams.set("endDate", endTime);
+    recordingType && searchParams.set("recordingType", recordingType); // todo
+    collectionName && searchParams.set("collection", collectionName);
 
     let url = apiFacetURL + "?" + searchParams.toString();
 
@@ -336,19 +371,21 @@ const fetchAPIFacetData = async (app, startTime, endTime) => {
     }
 }
 
-const fetchAPITraceData = async (app, startTime, endTime, selectedService, selectedApiPath, selectedInstance) => {
+const fetchAPITraceData = async (app, startTime, endTime, service, apiPath, instance, recordingType, collectionName) => {
     const user = JSON.parse(localStorage.getItem('user'));
 
     let apiTraceURL = `${config.analyzeBaseUrl}/getApiTrace/${user.customer_name}/${app}`;
     
     let searchParams = new URLSearchParams();
-    searchParams.set("startDate", startTime);
-    searchParams.set("endDate", endTime);
+    startTime && searchParams.set("startDate", startTime);
+    endTime && searchParams.set("endDate", endTime);
     searchParams.set("depth", 2);
-    searchParams.set("service", selectedService);
-    searchParams.set("apiPath", selectedApiPath);
-    searchParams.set("instanceId",selectedInstance);
-
+    searchParams.set("service", service);
+    searchParams.set("apiPath", apiPath);
+    instance && searchParams.set("instanceId", instance);
+    recordingType && searchParams.set("recordingType", recordingType); // todo
+    collectionName && searchParams.set("collection", collectionName);
+    
     let url = apiTraceURL + "?" + searchParams.toString();
 
     try {
@@ -359,11 +396,11 @@ const fetchAPITraceData = async (app, startTime, endTime, selectedService, selec
     }
 }
 
-const fetchAPIEventData = async (app, reqIds, eventTypes=[]) => {
+const fetchAPIEventData = async (app, reqIds, eventTypes=[], apiConfig={}) => {
     const user = JSON.parse(localStorage.getItem('user'));
 
     let apiEventURL = `${config.recordBaseUrl}/getEvents`;
-
+    
     let body = {
         "customerId":user.customer_name,
         "app": app,
@@ -376,12 +413,72 @@ const fetchAPIEventData = async (app, reqIds, eventTypes=[]) => {
     }
 
     try {
-        return api.post(apiEventURL,body);
+        return api.post(apiEventURL,body, apiConfig);
     } catch (e) {
         console.error("Error fetching API Event data");
         throw e;
     }
 }
+
+const fetchAgentConfigs = async (app) => {
+    const user = JSON.parse(localStorage.getItem('user')); 
+    try {
+        return await api.get(`${config.recordBaseUrl}/fetchAgentConfigWithFacets/${user.customer_name}/${app}`);
+    } catch(error) {
+        console.log("Error Fetching agent configs \n", error);
+        throw new Error("Error Fetching agent configs");
+    }
+}
+
+const updateAgentConfig = async (updatedConfig) => {
+    try {
+        return await api.post(`${config.recordBaseUrl}/storeAgentConfig`, updatedConfig);
+    } catch (error) {
+        console.log("Error updating config\n", error);
+        throw error;
+    }
+};
+
+const getAllEnvironments = async () => {
+    try {
+        return await api.get(`${config.apiBaseUrl}/dtEnvironment/getAll`);
+    } catch (e) {
+        console.error("Error fetching environments")
+        throw e;
+    }
+}
+
+const insertNewEnvironment = async (environment) => {
+    try {
+        let url = `${config.apiBaseUrl}/dtEnvironment/insert`
+        return await api.post(url, environment);
+    } catch (e) {
+        console.error("Error inserting environment")
+        throw e;
+    }
+}
+
+const updateEnvironment = async (environment) => {
+    try {
+        let url = `${config.apiBaseUrl}/dtEnvironment/update/${environment.id}`
+        return await api.post(url, environment);
+    } catch (e) {
+        console.error("Error updating environment")
+        throw e;
+    }
+}
+
+const deleteEnvironment = async (id) => {
+    try {
+        let url = `${config.apiBaseUrl}/dtEnvironment/delete/${id}`
+        return await api.post(url);
+    } catch (e) {
+        console.error("Error deleting environment")
+        throw e;
+    }
+}
+
+
 
 export const cubeService = {
     fetchAppsList,
@@ -409,5 +506,13 @@ export const cubeService = {
     fetchAPIFacetData,
     fetchAPITraceData,
     fetchAPIEventData,
-    fetchClusterList
+    fetchClusterList,
+    fetchAgentConfigs,
+    updateAgentConfig,
+    getAllEnvironments,
+    insertNewEnvironment,
+    updateEnvironment,
+    deleteEnvironment,
+    deleteEventByRequestId, 
+    deleteEventByTraceId
 };

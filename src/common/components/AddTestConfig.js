@@ -7,7 +7,7 @@ class AddTestConfig extends React.Component {
             <div>
                 <div className="div-label">
                     Test Configuration
-                    <Link to="/test_config">
+                    <Link to="/configs">
                         <i className="fas fa-link pull-right link"></i>
                     </Link>
                 </div>

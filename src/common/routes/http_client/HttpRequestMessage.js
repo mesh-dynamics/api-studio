@@ -14,33 +14,20 @@ class HttpRequestMessage extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            showHeaders: true,
-            showQueryParams: false,
+            showHeaders: false,
+            showQueryParams: true,
             showBody: false,
             showFormData: this.props.bodyType === "formData",
             showRawData: this.props.bodyType === "rawData"
         };
         this.onChangeValue = this.onChangeValue.bind(this);
         this.handleChange = this.handleChange.bind(this);
-        this.handleClick = this.handleClick.bind(this);
         this.handleBodyOrRawDataType = this.handleBodyOrRawDataType.bind(this);
-
-        this.handleShowOutgoingRequests = this.handleShowOutgoingRequests.bind(this);
     }
 
     handleChange(evt) {
-        const { tabId } = this.props;
-        this.props.updateParam(tabId, evt.target.name, evt.target.name, evt.target.value);
-    }
-    
-    handleClick(evt) {
-        const { tabId } = this.props;
-        this.props.driveRequest(tabId);
-    }
-
-    handleShowOutgoingRequests() {
-        const { tabId, requestId } = this.props;
-        this.props.showOutgoingRequests(tabId, requestId);
+        const { tabId, isOutgoingRequest } = this.props;
+        this.props.updateParam(isOutgoingRequest, tabId, evt.target.name, evt.target.name, evt.target.value);
     }
 
     onChangeValue(event) {
@@ -52,9 +39,9 @@ class HttpRequestMessage extends Component {
     }
 
     handleBodyOrRawDataType(event) {
-        const { tabId } = this.props;
+        const { tabId, isOutgoingRequest } = this.props;
         const typeToUpdate = event.target.name === "bodyType" ? "bodyType" : "rawDataType";
-        this.props.updateBodyOrRawDataType(tabId, typeToUpdate === "bodyType" ? "bodyType" : "rawDataType", event.target.value);
+        this.props.updateBodyOrRawDataType(isOutgoingRequest, tabId, typeToUpdate === "bodyType" ? "bodyType" : "rawDataType", event.target.value);
         if(typeToUpdate === "bodyType") {
             this.setState({
                 showFormData: event.target.value === "formData",
@@ -69,16 +56,6 @@ class HttpRequestMessage extends Component {
             <div>
                 <div style={{marginRight: "7px"}}>
                     <div style={{marginBottom: "9px", display: "inline-block", width: "20%", fontSize: "11px"}}>REQUEST</div>
-                    <div style={{display: "inline-block", width: "80%", textAlign: "right"}}>
-                        {this.props.requestId && (
-                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleShowOutgoingRequests}>
-                                <Glyphicon glyph="transfer" /> SHOW OUTGOING REQUESTS
-                            </div>
-                        )}
-                        <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleClick}>
-                            <Glyphicon glyph="play" /> RUN
-                        </div>
-                    </div>
                 </div>
                 
                 <div style={{marginBottom: "0px"}}>
@@ -163,14 +140,18 @@ class HttpRequestMessage extends Component {
                     showHeaders={this.state.showHeaders} 
                     headers={this.props.headers} 
                     addOrRemoveParam={this.props.addOrRemoveParam} 
-                    updateParam={this.props.updateParam} >
+                    updateParam={this.props.updateParam}
+                    updateAllParams={this.props.updateAllParams}
+                    isOutgoingRequest={this.props.isOutgoingRequest} >
 
                 </HttpRequestHeaders>
                 <HttpRequestQueryString tabId={this.props.tabId}
                     showQueryParams={this.state.showQueryParams} 
                     queryStringParams={this.props.queryStringParams} 
                     addOrRemoveParam={this.props.addOrRemoveParam} 
-                    updateParam={this.props.updateParam} >
+                    updateParam={this.props.updateParam}
+                    updateAllParams={this.props.updateAllParams}
+                    isOutgoingRequest={this.props.isOutgoingRequest} >
 
                 </HttpRequestQueryString>
                 <HttpRequestBody tabId={this.props.tabId}
@@ -180,7 +161,9 @@ class HttpRequestMessage extends Component {
                     formData={this.props.formData} 
                     addOrRemoveParam={this.props.addOrRemoveParam} 
                     updateParam={this.props.updateParam}
-                    rawData={this.props.rawData} >
+                    updateAllParams={this.props.updateAllParams}
+                    rawData={this.props.rawData}
+                    isOutgoingRequest={this.props.isOutgoingRequest} >
 
                 </HttpRequestBody>
             </div>

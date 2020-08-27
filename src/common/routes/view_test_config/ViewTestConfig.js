@@ -36,7 +36,7 @@ class ViewTestConfig extends Component {
             <React.Fragment>
                 {
                     cube.testConfig && cube.selectedApp != cube.testConfig.appName 
-                    ? <Redirect to="/test_config" /> 
+                    ? <Redirect to="/configs" /> 
                     : this.renderSubRoutes()
                 }
             </React.Fragment>

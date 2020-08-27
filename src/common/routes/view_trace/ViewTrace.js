@@ -13,12 +13,13 @@ import ReduceDiff from '../../utils/ReduceDiff';
 import config from "../../config";
 import generator from '../../utils/generator/json-path-generator';
 import api from "../../api";
+import { history } from '../../helpers';
 
 import {connect} from "react-redux";
 import {cubeActions} from "../../actions";
 import {Link} from "react-router-dom";
 import {getSearchHistoryParams, updateSearchHistoryParams} from "../../utils/lib/url-utils";
-import statusCodeList from "../../StatusCodeList";
+import statusCodeList from "../../status-code-list";
 import {resolutionsIconMap} from '../../components/Resolutions.js';
 import { cubeService } from '../../services';
 
@@ -247,6 +248,13 @@ class ViewTrace extends Component {
             showAll : (value ===  "All")
         });
     }
+
+    handleBackToDiffClick = () => {
+        history.push({
+            pathname: "/diff_results",
+            search: `${removeURLParameter(window.location.search, "traceId")}`
+        })
+    };
 
     toggleMessageContents(e) {
         const { history } = this.props;
@@ -606,6 +614,13 @@ class ViewTrace extends Component {
         return diffData;
     }
 
+    getParameterCaseInsensitive (object, key) {
+        return object[
+            Object.keys(object)
+            .find(k => k.toLowerCase() === key.toLowerCase())
+        ];
+    }
+
     validateAndCreateDiffLayoutData(replayList) {
         let loggingURL = this.loggingURL;
         let diffLayoutData = replayList.map((item, index) => {
@@ -617,7 +632,8 @@ class ViewTrace extends Component {
             if (item.recordResponse) {
                 recordedResponseHeaders = item.recordResponse.hdrs ? item.recordResponse.hdrs : [];
                 // check if the content type is JSON and attempt to parse it
-                let recordedResponseMime = recordedResponseHeaders["content-type"] ? recordedResponseHeaders["content-type"][0] : "" ;
+                let recordedResponseContentType = this.getParameterCaseInsensitive(recordedResponseHeaders, "content-type");
+                let recordedResponseMime = recordedResponseContentType ? (_.isArray(recordedResponseContentType) ? recordedResponseContentType[0] : recordedResponseContentType) : "";
                 isJson = recordedResponseMime.toLowerCase().indexOf("json") > -1;
                 if (item.recordResponse.body && isJson) {
                     try {
@@ -639,7 +655,8 @@ class ViewTrace extends Component {
             if (item.replayResponse) {
                 replayedResponseHeaders = item.replayResponse.hdrs ? item.replayResponse.hdrs : [];
                 // check if the content type is JSON and attempt to parse it
-                let replayedResponseMime = replayedResponseHeaders["content-type"] ? replayedResponseHeaders["content-type"][0] : "";
+                let replayedResponseContentType = this.getParameterCaseInsensitive(replayedResponseHeaders, "content-type");
+                let replayedResponseMime = replayedResponseContentType ? (_.isArray(replayedResponseContentType) ? replayedResponseContentType[0] : replayedResponseContentType) : "";
                 isJson = replayedResponseMime.toLowerCase().indexOf("json") > -1;
                 if (item.replayResponse.body && isJson) {
                     try {
@@ -911,7 +928,14 @@ class ViewTrace extends Component {
                     <div style={{display: "inline-block"}} className="pull-right">
                         <Button bsSize="small" bsStyle={"primary"} href={"/test_config_view"} style={{}}>VIEW SERVICE MESH</Button>
                         <span style={{borderRight: "1px solid #ccc", paddingLeft: "5px", marginRight: "9px"}}></span>
-                        <Button bsSize="small" bsStyle={"primary"} href={"/diff_results" + removeURLParameter(window.location.search, "traceId")} style={{}}><Glyphicon style={{ visibility:  "visible" }} glyph="menu-left" /> <span>BACK TO DIFF</span></Button>
+                        <Button 
+                            bsSize="small" 
+                            bsStyle={"primary"}
+                            onClick={this.handleBackToDiffClick}
+                            >
+                                <Glyphicon style={{ visibility:  "visible" }} glyph="menu-left" /> 
+                                <span>BACK TO DIFF</span>
+                        </Button>
                     </div>
                 </div>
                 

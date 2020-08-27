@@ -1,3 +1,4 @@
+// import sortJson from 'sort-json';
 import ReduceDiff from '../ReduceDiff';
 import generator from '../generator/json-path-generator';
 import sortJson from "../sort-json";
@@ -38,8 +39,8 @@ const validateAndCleanHTTPMessageParts = (messagePart) => {
 
 const getDiffForMessagePart = (replayedPart, recordedPart, serverSideDiff, prefix, service, path, app, replayId, recordingId, templateVersion, eventType) => {
     if (!serverSideDiff) return null; 
-    let actpart = JSON.stringify(replayedPart, undefined, 4);
-    let expPart = JSON.stringify(recordedPart, undefined, 4);
+    let actpart = JSON.stringify(sortJson(replayedPart), undefined, 4);
+    let expPart = JSON.stringify(sortJson(recordedPart), undefined, 4);
     let reducedDiffArrayMsgPart = new ReduceDiff(prefix, actpart, expPart, serverSideDiff);
     let reductedDiffArrayMsgPart = reducedDiffArrayMsgPart.computeDiffArray()
     let updatedReductedDiffArrayMsgPart = reductedDiffArrayMsgPart && reductedDiffArrayMsgPart.map((eachItem) => {
@@ -57,6 +58,13 @@ const getDiffForMessagePart = (replayedPart, recordedPart, serverSideDiff, prefi
     return updatedReductedDiffArrayMsgPart;
 }
 
+const getParameterCaseInsensitive = (object, key) => {
+    return object[
+        Object.keys(object)
+        .find(k => k.toLowerCase() === key.toLowerCase())
+    ];
+}
+
 const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId, templateVersion, collapseLength, maxLinesLength) => {
     let diffLayoutData = replayList.map((item) => {
         let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body",
@@ -68,9 +76,10 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
         if (item.recordResponse) {
             recordedResponseHeaders = item.recordResponse.hdrs ? item.recordResponse.hdrs : [];
             // check if the content type is JSON and attempt to parse it
-            let recordedResponseMime = recordedResponseHeaders["content-type"] ? recordedResponseHeaders["content-type"][0] : "";
+            let recordedResponseContentType = getParameterCaseInsensitive(recordedResponseHeaders, "content-type");
+            let recordedResponseMime = recordedResponseContentType ? (_.isArray(recordedResponseContentType) ? recordedResponseContentType[0] : recordedResponseContentType) : "";
             isJson = recordedResponseMime.toLowerCase().indexOf("json") > -1;
-            if (item.recordResponse.body && isJson) {
+            if (_.isString(item.recordResponse.body) && item.recordResponse.body && isJson) {
                 try {
                     recordedData = JSON.parse(item.recordResponse.body);
                 } catch (e) {
@@ -90,9 +99,10 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
         if (item.replayResponse) {
             replayedResponseHeaders = item.replayResponse.hdrs ? item.replayResponse.hdrs : [];
             // check if the content type is JSON and attempt to parse it
-            let replayedResponseMime = replayedResponseHeaders["content-type"] ? replayedResponseHeaders["content-type"][0] : "";
+            let replayedResponseContentType = getParameterCaseInsensitive(replayedResponseHeaders, "content-type");
+            let replayedResponseMime = replayedResponseContentType ? (_.isArray(replayedResponseContentType) ? replayedResponseContentType[0] : replayedResponseContentType) : "";
             isJson = replayedResponseMime.toLowerCase().indexOf("json") > -1;
-            if (item.replayResponse.body && isJson) {
+            if (_.isString(item.replayResponse.body) && item.replayResponse.body && isJson) {
                 try {
                     replayedData = JSON.parse(item.replayResponse.body);
                 } catch (e) {
@@ -118,8 +128,8 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
             expJSON = JSON.stringify(sortJson(recordedData), undefined, 4);
         let reductedDiffArray = null, missedRequiredFields = [], reducedDiffArrayRespHdr = null;
 
-        let actRespHdrJSON = JSON.stringify(replayedResponseHeaders, undefined, 4);
-        let expRespHdrJSON = JSON.stringify(recordedResponseHeaders, undefined, 4);
+        let actRespHdrJSON = JSON.stringify(sortJson(replayedResponseHeaders), undefined, 4);
+        let expRespHdrJSON = JSON.stringify(sortJson(recordedResponseHeaders), undefined, 4);
         
 
         // use the backend diff and the two JSONs to generate diff array that will be passed to the diff renderer

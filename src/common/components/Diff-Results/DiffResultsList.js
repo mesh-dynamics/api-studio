@@ -9,11 +9,12 @@ import {
 } from "react-bootstrap";
 import ReactDiffViewer from "../../utils/diff/diff-main";
 import DiffResultsMissingItems from "./DiffResultsMissingItems";
-import statusCodeList from "../../StatusCodeList"
+import statusCodeList from "../../status-code-list";
 import _ from "lodash";
 import "../Diff.css";
 import config from "../../config.js";
-import {addCompressToggleData} from "../../utils/diff/diff-process"
+import { history } from '../../helpers';
+import { addCompressToggleData } from "../../utils/diff/diff-process";
 
 export default class DiffResultsList extends Component {
     constructor(props) {
@@ -170,6 +171,13 @@ export default class DiffResultsList extends Component {
         this.props.handlePageNav(true, value);
     }
 
+    handleViewTraceClick = (recordTraceId) => {
+        history.push({
+            pathname: '/view_trace',
+            search: `${window.location.search}&traceId=${recordTraceId}`,
+        })
+    };
+
     increaseCollapseLength = (e, jsonPath, recordReqId, replayReqId, typeOfChunkHandler) => {
         const { collapseLength, collapseLengthIncrement, diffLayoutData, maxLinesLength, maxLinesLengthIncrement } = this.state;
         let newCollapseLength = collapseLength, newMaxLinesLength = maxLinesLength;
@@ -306,7 +314,12 @@ export default class DiffResultsList extends Component {
                 <div style={{ backgroundColor: "#EAEAEA", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px" }}>
                     <div style={{display: "inline-block"}}>{item.path}</div>
                     <div style={{ marginTop: "5px" }}>
-                        <Button bsSize="small" bsStyle={"primary"} href={"/view_trace" + window.location.search + "&traceId=" + item.recordTraceId} syle={{color: "#fff"}}>
+                        <Button 
+                            bsSize="small" 
+                            bsStyle={"primary"} 
+                            style={{color: "#fff"}}
+                            onClick={() => this.handleViewTraceClick(item.recordTraceId)}
+                        >
                             <span><Glyphicon className="font-15" glyph="search" /> VIEW TRACE</span>
                         </Button>
                     </div>

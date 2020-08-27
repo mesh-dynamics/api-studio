@@ -1,0 +1,76 @@
+appId: com.meshdynamics.cubeui
+
+extends: null
+
+productName: Mesh Dynamics
+
+asar: true
+
+copyright: Copyright © 2020 Mesh Dynamics
+
+extraMetadata:
+  main: "dist/electron/electron-main.js"
+
+afterSign: "scripts/notarize.js"
+
+publish:
+  provider: s3
+  bucket: meshdynamics-devtool
+  channel: latest
+  path: /staging
+  acl: private
+
+# files:
+#   - "build/"
+#   - "package.json"
+#   - "dev-app-update.yml"
+#   - "!node_modules/jschardet/"
+
+extraResources:
+  - "./bin/demo-0.0.1-SNAPSHOT.war"
+  - "./config/mesh-dynamics.yml"
+  - "./public/assets/**"
+
+# Mac OS configuration
+mac:
+  icon: "public/mesh-favicon.icns"
+  category: "public.app-category.developer-tools"
+  # hardenedRuntime: true
+  entitlements: "macOS/entitlements.mac.inherit.plist"
+  entitlementsInherit: "macOS/entitlements.mac.inherit.plist"
+  # type: distribution
+  # gatekeeperAssess: true
+  target:
+    - "dmg"
+    - "zip"
+
+# Windows configuration
+win:
+  icon: "public/mesh-favicon.ico"
+  legalTrademarks: "2020-21 meshdynamics.io"
+  target:
+    - "nsis"
+    # - "appx"
+
+nsis:
+  oneClick: true
+  perMachine: true
+  allowElevation: true
+  createDesktopShortcut: true
+  # allowToChangeInstallationDirectory: true
+  # include: dist/scripts/installer.nsh
+
+# Linux configuration
+linux:
+  # category: Development
+  executableName: "Mesh Dynamics"
+  icon: "public/mesh-favicon.png"
+  maintainer: "Mesh Dynamics"
+  target:
+    - "AppImage"
+    - "deb"
+    - "rpm"
+
+directories:
+  #   buildResources: "resources"
+  output: "release"

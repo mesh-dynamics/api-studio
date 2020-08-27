@@ -12,6 +12,7 @@ import {goldenActions} from '../actions/golden.actions'
 import {validateGoldenName} from "../utils/lib/golden-utils";
 import classNames from "classnames";
 import { cubeService } from '../services';
+import { apiCatalogActions } from '../actions/api-catalog.actions';
 // import { history } from "../helpers";
 // import { Glyphicon } from 'react-bootstrap';
 
@@ -45,6 +46,7 @@ class ViewSelectedTestConfig extends React.Component {
             recLabel:"",
             recId: null,
             stopDisabled: true,
+            stoppingStatus: false,
             goldenNameErrorMessage: "",
             recordingMode: "new", //allowed values ["new", "resume"]
             userAlertMessage: {
@@ -521,11 +523,21 @@ class ViewSelectedTestConfig extends React.Component {
         };
         // axios.post(stopUrl, {}, configForHTTP)
         api.post(stopUrl, {}, configForHTTP).then(() => {
-            this.setState({ stopDisabled: true, recId: null });
-            this.checkStatus(statusUrl, configForHTTP);
+            this.setState({ recId: null, stoppingStatus: true});
+            this.stopStatusInterval = setInterval(
+                () => { 
+                    if(this.state.recStatus.status === "Completed") {
+                        this.setState({stopDisabled: true, stoppingStatus: false});
+                        clearInterval(this.stopStatusInterval);
+                        dispatch(cubeActions.getTestIds(selectedApp));
+                        dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "Golden"));
+                    } else {
+                        this.checkStatus(statusUrl, configForHTTP);
+                    }
+                }, 
+                1000);
         });
 
-        dispatch(cubeActions.getTestIds(selectedApp));
     };
 
     replay = async (instancesForSelectedApp) => {
@@ -758,7 +770,7 @@ class ViewSelectedTestConfig extends React.Component {
             <Fragment>
                 <div className="div-label">
                     Test Configuration
-                    <Link to="/test_config">
+                    <Link to="/configs">
                         <i className="fas fa-link pull-right link"></i>
                     </Link>
                 </div>
@@ -882,6 +894,7 @@ class ViewSelectedTestConfig extends React.Component {
         
         const panel = {
             ['/']: () => (<div />),
+            ['/configs']: () => (<div />),
             ['/test_config_view']: () => this.renderTestInfo(),
             ['/test_config_view/golden_visibility']: () => this.renderGoldenMeta(),
             ['/test_config_view/test_cluster']: () => this.renderTestClusterPanel()
@@ -895,7 +908,7 @@ class ViewSelectedTestConfig extends React.Component {
         const { 
             customHeaders, recordModalVisible, showReplayModal, 
             fcId, showGoldenFilter, selectedGoldenFromFilter,
-            recName, stopDisabled, recStatus, showAddCustomHeader,
+            recName, stopDisabled,stoppingStatus, recStatus, showAddCustomHeader,
             goldenNameErrorMessage, fcEnabled, resumeModalVisible,
             dbWarningModalVisible, instanceWarningModalVisible, 
             goldenSelectWarningModalVisible, showDeleteGoldenConfirmation
@@ -926,16 +939,25 @@ class ViewSelectedTestConfig extends React.Component {
                             </div>
                             <div style={{ display: "flex", alignItems: "flex-start" }}>
                                 <span onClick={this.showDBWarningModal} className={stopDisabled ? "cube-btn margin-right-10" : "cube-btn disabled margin-right-10"}>START</span>
-                                <span onClick={this.stopRecord} className={stopDisabled ? "cube-btn disabled" : "cube-btn"}>STOP</span>
+                                <span onClick={this.stopRecord} className={stopDisabled || stoppingStatus ? "cube-btn disabled" : "cube-btn"}>STOP</span>
                             </div>
                             
                         </div>
                         <div style={{ display: "flex", justifyContent: "center", marginTop: "10px" }}>
                             <span style={{ color: "#c24b4b"}}>{goldenNameErrorMessage}</span>
                         </div>
+                        
+                        {
+                            stoppingStatus &&
+                            <div>
+                                <img src="/assets/images/md-loading.gif" alt="Loading..."/>   
+                                <br />
+                                <span>Please wait for 15 seconds to complete recording.</span>
+                            </div>
+                        }
                         <div className={"padding-15 bold"}>
                             <span className={!recStatus ? "hidden" : ""}>Recording Id: {recStatus ? recStatus.id : ""}</span>&nbsp;&nbsp;&nbsp;&nbsp;
-                            Status: {recStatus ? recStatus.status : "Initialize"}
+                            Status: {recStatus ? (stoppingStatus ? "Stopping": recStatus.status) : "Initialize"}
                         </div>
                     </Modal.Body>
 
@@ -985,7 +1007,7 @@ class ViewSelectedTestConfig extends React.Component {
                                 !analysisDone ? "Analyzing" : "Test Completed"
                             }
                         </div>
-                        <h4 style={{color: replayDone ? "green" : "#aab614", fontSize: "medium"}}><strong>Replay:</strong> {cube.replayStatus} {!replayDone && (cube.replayStatusObj ? (<small>{ cube.replayStatusObj.reqsent + '/' + cube.replayStatusObj.reqcnt}</small>) : null)}</h4>
+                        <h4 style={{color: replayDone ? "green" : "#aab614", fontSize: "medium"}}><strong>Replay:</strong> {replayDone? 'Complete' : cube.replayStatus} {!replayDone && (cube.replayStatusObj ? (<small>{ cube.replayStatusObj.reqsent + '/' + cube.replayStatusObj.reqcnt}</small>) : null)}</h4>
                         <h4 style={{color: replayDone ? (analysisDone ? "green" : "#aab614") : "grey", fontSize: "medium"}}><strong>Analysis:</strong> {cube.analysisStatus}</h4>
                         
                         {cube.replayStatusObj && <p>
