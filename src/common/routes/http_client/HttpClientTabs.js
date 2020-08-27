@@ -1058,7 +1058,7 @@ class HttpClientTabs extends Component {
             }
             if(response.headers.get("content-type").indexOf("text/html") !== -1) {
                 return response.text();
-            } else if (response.headers.get("content-type").indexOf("application/json") !== -1 && ) {// checking response header
+            } else if (response.headers.get("content-type").indexOf("application/json") !== -1 ) {// checking response header
                 return response.json();
             } else {
                 return response.text();
