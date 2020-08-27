@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Switch } from 'react-router-dom';
+import { Switch, Route, Redirect } from 'react-router-dom';
 import TestResults from "./test_results";
 import DiffResults from "./diff_results";
 import Configs from "./configs";
@@ -14,6 +14,14 @@ class PageContent extends Component {
     super(props)
   }
 
+  getPlatformSpecificRoutes(){
+    if(PLATFORM_ELECTRON) {
+      return [<Route key="RootRedirect" path="/*"><Redirect to="/http_client" /></Route>]
+    }else{
+      return[<Route key="RootRedirect" path="/*"><Redirect to="/test_results" /></Route>]
+    } 
+  }
+
   render() {
     return (
       <div role="main" className='main'>
@@ -23,11 +31,12 @@ class PageContent extends Component {
           {ViewTrace}
           {TestReport}
           {ViewTestConfig}
+          {TestResults}
           {APICatalog}
           {HttpClientTabs}
           {/* This has to be at the bottom since it has default routing handler */}
-          {TestResults}
-        </Switch>
+          {this.getPlatformSpecificRoutes()}
+           </Switch>
       </div>
     )
   }
