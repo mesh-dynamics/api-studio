@@ -3,6 +3,7 @@ package com.meshd.cxf.jaxrs.implementation;
 import static io.cube.apachecxf.egress.Utils.getMockingURI;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -18,8 +20,12 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.transport.http.HTTPConduit;
@@ -29,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.CommonConfig;
@@ -224,6 +231,29 @@ public class CourseRepository {
 		} else {
 			throw new IllegalArgumentException(
 				"HTTP error response returned by Transformer service " + responseCode);
+		}
+	}
+
+	@GET
+	@Path("/echo")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response echo(JsonNode body, @Context UriInfo uriInfo, @Context HttpHeaders httpHeaders) {
+		try {
+			MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+			MultivaluedMap<String, String> headers = httpHeaders.getRequestHeaders();
+			URI url = uriInfo.getRequestUri();
+
+//       ((ObjectNode)body).put("Kuch kuch", "NAHI hota hai");
+			Map jsonMap = new HashMap();
+			jsonMap.put("queryParams", queryParams);
+			jsonMap.put("headers", headers);
+			jsonMap.put("url", url);
+			jsonMap.put("body", body);
+			return Response.ok().entity(objectMapper.writeValueAsString(jsonMap)).build();
+		} catch (Exception e) {
+			return Response.serverError().entity("Error while returning echo info" + e.getMessage())
+				.build();
 		}
 	}
 }
