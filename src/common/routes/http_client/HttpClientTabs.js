@@ -1394,7 +1394,7 @@ class HttpClientTabs extends Component {
         const selectedCollection = userCollections.find((eachCollection) => {
             return eachCollection.id === userCollectionId;
         });
-        tabs[indexToFind].abortRequest = null;
+        tabs[tabIndex].abortRequest = null;
         this.saveToCollection(isOutgoingRequest, selectedSaveableTabId, selectedCollection.id, "UserGolden");
     }
 
