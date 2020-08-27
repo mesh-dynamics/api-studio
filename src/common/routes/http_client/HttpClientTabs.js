@@ -33,8 +33,13 @@ import EnvVar from "./EnvVar";
 import Mustache from "mustache";
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
-import { generateRunId } from "../../utils/http_client/utils";
-import curlParser from '../../utils/http_client/curlparser';
+import { generateRunId } from "../../utils/http_client/utils"; 
+import { parseCurlCommand } from '../../utils/http_client/curlparser';
+
+import SplitSlider  from '../../components/SplitSlider.js';
+
+import CommonConstants from '../../utils/commonConstants';
+
 
 class HttpClientTabs extends Component {
 
@@ -46,6 +51,8 @@ class HttpClientTabs extends Component {
         };
         this.state = { 
             showEnvVarModal: false,
+            showDeleteGoldenConfirmation:false,
+            itemToDelete:{}
         };
         this.addTab = this.addTab.bind(this);
         this.handleTabChange = this.handleTabChange.bind(this);
@@ -293,18 +300,16 @@ class HttpClientTabs extends Component {
         console.log("curlCommand: ", curlCommand);
         if(!curlCommand) return;
         try {
-            const parsedCurl = curlParser(curlCommand);
-            console.log("parsedCurl: ", JSON.stringify(parsedCurl));
+            const parsedCurl = parseCurlCommand(curlCommand);
             const { cube: {selectedApp} } = this.props;
             let app = selectedApp;
             if(!selectedApp) {
-                const parsedUrlObj = urlParser(window.location.href, true);
+                const parsedUrlObj = URL.parse(window.location.href, true);
                 app = parsedUrlObj.query.app;
             }
-            const urlWithoutQuery = unescape(parsedCurl.urlWithoutQuery).replace(/\"/g, "").replace(/\'/g, ""),
-                url = parsedCurl.url.replace(/\"/g, "").replace(/\'/g, "");
+            const urlWithoutQuery = parsedCurl.urlWithoutQuery,
+                url = parsedCurl.url;
             const parsedUrl = URL.parse(url);
-            console.log("parsedUrl: ", parsedUrl);
             let apiPath = parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
             let service = parsedUrl.host ? parsedUrl.host : "NA";
             const traceId = cryptoRandomString({length: 32});
@@ -330,21 +335,21 @@ class HttpClientTabs extends Component {
                     selected: true,
                 });
             }
-            for (let eachQueryParam in parsedCurl.queryParams) {
+            for (let eachQueryParam in parsedCurl.query) {
                 queryParams.push({
                     id: uuidv4(),
                     name: eachQueryParam,
-                    value: parsedCurl.queryParams[eachQueryParam],
+                    value: parsedCurl.query[eachQueryParam],
                     description: "",
                     selected: true,
                 });
             }
-            let contentTypeHeader = this.getParameterCaseInsensitive(parsedCurl.headers, "content-type");
-            if(contentTypeHeader.indexOf("application/json") > -1) {
+            let contentTypeHeader = _.isObject(parsedCurl.headers) ? this.getParameterCaseInsensitive(parsedCurl.headers, "content-type") : "";
+            if(contentTypeHeader && contentTypeHeader.indexOf("application/json") > -1) {
                 rawData = JSON.stringify(JSON.parse(parsedCurl.data), undefined, 4);
                 rawDataType = "json";
                 bodyType = "rawData";
-            } else if(contentTypeHeader.indexOf("application/x-www-form-urlencoded") > -1) {
+            } else if(contentTypeHeader && contentTypeHeader.indexOf("application/x-www-form-urlencoded") > -1) {
                 const formParams = new URLSearchParams(parsedCurl.data);
                 for (let eachFormParam of formParams) {
                     formData.push({
@@ -401,13 +406,16 @@ class HttpClientTabs extends Component {
                 requestRunning: false,
             }
             const savedTabId = this.addTab(null, reqObj, app);
+            setTimeout(() => {
+                dispatch(httpClientActions.closeImportFromCurlModal(false, "", ""));
+            }, 1000);
         } catch (err) {
             console.error("err: ", err);
+            dispatch(httpClientActions.showImportFromCurlModal(true, curlCommand, err));
         }
     }
 
     addMockRequest(tabId) {
-        console.log("tabId:", tabId);
         const {httpClient: {tabs, mockReqServiceName, mockReqApiPath}} = this.props;
         const { dispatch } = this.props;
         const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
@@ -1041,6 +1049,7 @@ class HttpClientTabs extends Component {
         // https://www.mocky.io/v2/5185415ba171ea3a00704eed
         let fetchedResponseHeaders = {}, responseStatus = "", responseStatusText = "";
         const startDate = new Date(Date.now() - 2 * 1000).toISOString();
+        fetchConfigRendered.signal = tabToProcess.abortRequest.signal;
         return fetch(fetchUrlRendered, fetchConfigRendered).then((response) => {
             responseStatus = response.status;
             responseStatusText = response.statusText;
@@ -1064,7 +1073,9 @@ class HttpClientTabs extends Component {
             console.error(error);
             dispatch(httpClientActions.postErrorDriveRequest(tabId, error.message));
             dispatch(httpClientActions.unsetReqRunning(tabId));
-            alert(`Could not get any response. There was an error connecting: ${error}`);
+            if(error.message !== CommonConstants.USER_ABORT_MESSAGE){                
+                alert(`Could not get any response. There was an error connecting: ${error}`);
+            }
         });
     }
 
@@ -1226,19 +1237,29 @@ class HttpClientTabs extends Component {
                         }
                     });
                 }
-                api.post(`${config.apiBaseUrl}/cs/storeUserReqResp/${recordingId}`, data)
+                const urlToPost = `${config.apiBaseUrl}/cs/storeUserReqResp/${recordingId}`;
+                const apiConfig = type == "History" ? {cancelToken: tabToProcess.abortRequest.cancelToken}:{};
+                const abortRequest = tabToProcess.abortRequest; //After first successful data from getApiTrace, tabToProcess.abortRequest is set to null without cancelling
+                api.post(urlToPost, data, apiConfig)
                     .then((serverRes) => {
                         let clearIntervalHandle;
                         if (type === "History") {
                             const jsonTraceReqData = serverRes.data.response && serverRes.data.response.length > 0 ? serverRes.data.response[0] : "";
                             try {
                                 const parsedTraceReqData = JSON.parse(jsonTraceReqData);
-                                const httpRequestEventTypeIndex = reqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
-                                const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
-                                const apiPath = httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : "";
-                                this.loadRecordedHistory(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath);
+                                const apiPath = _.trimStart(data[0].request.apiPath, '/');
+                                this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
                                 clearIntervalHandle = setInterval(() => {
-                                    this.loadRecordedHistory(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath);
+                                    if(abortRequest){
+                                        if(!abortRequest.isCancelled){
+                                            this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
+                                        }                                        
+                                        else if (clearIntervalHandle) {
+                                            clearInterval(clearIntervalHandle);
+                                        }
+                                    }else{
+                                        this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
+                                    }
                                 }, 5000);
                                 setTimeout(() => {
                                     if (clearIntervalHandle) clearInterval(clearIntervalHandle);
@@ -1261,17 +1282,19 @@ class HttpClientTabs extends Component {
 
                         }, 2000);
                     }, (error) => {
+                        dispatch(httpClientActions.unsetReqRunning(tabId));
                         dispatch(httpClientActions.postErrorSaveToCollection(type === "History" ? false : showSaveModal ? true : false, "Error saving: " + error));
                         console.error("error: ", error);
                     })
             } 
         } catch (error) {
             console.error("Error ", error);
+            dispatch(httpClientActions.unsetReqRunning(tabId));
             dispatch(httpClientActions.catchErrorSaveToCollection(type === "History" ? false : showSaveModal ? true : false, "Error: Invalid JSON body"));
             throw new Error("Error");
-        }
+        }        
     }
-
+    
     updateEachRequest(req, data, collectionId, recordingId) {
         req.requestId = data.newReqId;
         req.collectionIdAddedFromClient = collectionId;
@@ -1371,6 +1394,7 @@ class HttpClientTabs extends Component {
         const selectedCollection = userCollections.find((eachCollection) => {
             return eachCollection.id === userCollectionId;
         });
+        tabs[tabIndex].abortRequest = null;
         this.saveToCollection(isOutgoingRequest, selectedSaveableTabId, selectedCollection.id, "UserGolden");
     }
 
@@ -1556,7 +1580,7 @@ class HttpClientTabs extends Component {
         return reqObject;
     }
 
-    loadRecordedHistory(tabId, traceId, reqId, runId, apiPath) {
+    loadSavedTrace(tabId, traceId, reqId, runId, apiPath, apiConfig) {
         const {httpClient: {tabs, userHistoryCollection}} = this.props;
         const { cube: {selectedApp} } = this.props;
         const app = selectedApp;
@@ -1567,7 +1591,8 @@ class HttpClientTabs extends Component {
         const { dispatch } = this.props;
         const user = JSON.parse(localStorage.getItem('user'));
         const historyCollectionId = userHistoryCollection.collec;
-        api.get(`${config.apiBaseUrl}/as/getApiTrace/${user.customer_name}/${app}?depth=100&collection=${historyCollectionId}&apiPath=${apiPath}&runId=${runId}`)
+        const apiTraceUrl = `${config.apiBaseUrl}/as/getApiTrace/${user.customer_name}/${app}?depth=100&collection=${historyCollectionId}&apiPath=${apiPath}&runId=${runId}`;
+        api.get(apiTraceUrl, apiConfig)
             .then((res) => {
                 res.response.sort((a, b) => {
                     return b.res.length - a.res.length;
@@ -1580,7 +1605,7 @@ class HttpClientTabs extends Component {
 
                 if (reqIdArray && reqIdArray.length > 0) {
                     const eventTypes = [];
-                    cubeService.fetchAPIEventData(app, reqIdArray, eventTypes).then((result) => {
+                    cubeService.fetchAPIEventData(app, reqIdArray, eventTypes, apiConfig).then((result) => {
                         if(result && result.numResults > 0) {
                             const ingressReqResPair = result.objects.filter(eachReq => eachReq.apiPath === apiPath);
                             let ingressReqObj;
@@ -1610,10 +1635,11 @@ class HttpClientTabs extends Component {
                 }
             }, (err) => {
                 console.error("err: ", err);
+                dispatch(httpClientActions.unsetReqRunning(tabId));
             })
     }
 
-    handlePanelClick(selectedCollectionId) {
+    handlePanelClick(selectedCollectionId, forceLoad) {
         if (!selectedCollectionId) return;
         const user = JSON.parse(localStorage.getItem('user'));
         const {httpClient: {userCollections}} = this.props;
@@ -1624,7 +1650,7 @@ class HttpClientTabs extends Component {
         const selectedCollection = userCollections.find(eachCollection => eachCollection.collec === selectedCollectionId);
         const apiTracesForACollection = selectedCollection.apiTraces;
         try {
-            if (!apiTracesForACollection) {
+            if (!apiTracesForACollection || forceLoad) {
                 api.get(`${config.apiBaseUrl}/as/getApiTrace/${customerId}/${app}?depth=100&collection=${selectedCollectionId}`)
                     .then((res) => {
                         const apiTraces = [];
@@ -2048,15 +2074,24 @@ class HttpClientTabs extends Component {
 
     renderTreeNodeHeader(props) {
         return (
-            <div style={props.style.base}>
+            <div style={props.style.base} className="treeNodeItem">
                 <div style={props.style.title}>
-                    <div style={{ paddingLeft: "9px", backgroundColor: "", display: "flex", width: "450px" }}>
+                    <div style={{ paddingLeft: "9px", backgroundColor: "", display: "flex" }}>
                         <div style={{ flexDirection: "column", width: "36px", verticalAlign: "top", }}>
                             <Label bsStyle="default" style={{ fontWeight: "600", fontSize: "9px" }}>{props.node.method}</Label>
                         </div>
                         <div style={{ flex: "1", wordBreak: "break-word", verticalAlign: "top", fontSize: "12px" }} onClick={() => this.handleTreeNodeClick(props.node)}>
-                            <span style={{ paddingLeft: "5px", marginLeft: "5px", borderLeft: "2px solid #fc6c0a" }} >{props.node.name + " " + moment(props.node.reqTimestamp * 1000).format("hh:mm:ss")}</span>
+                            <span style={{ paddingLeft: "5px", marginLeft: "5px", borderLeft: "2px solid #fc6c0a", whiteSpace : 'nowrap',
+    textOverflow: 'ellipsis',
+    overflow: 'hidden' }} >{props.node.name + " " + moment(props.node.reqTimestamp * 1000).format("hh:mm:ss")}</span>
                         </div>
+                        <div className="collection-options"><i className="fas fa-trash pointer" 
+                            data-id={props.node.parentSpanId == "NA"? props.node.traceIdAddedFromClient : props.node.requestEventId} 
+                            data-isparent = {props.node.parentSpanId == "NA"}
+                            data-name={props.node.name}  title="Delete"
+                            data-collection-id={props.node.collectionIdAddedFromClient}
+                            data-type="request" onClick={this.onDeleteBtnClick}/>
+                            </div>
                     </div>
                 </div>
             </div>
@@ -2143,23 +2178,62 @@ class HttpClientTabs extends Component {
     hideEnvModal = () => {
         this.setState({ showEnvVarModal: false })
     }
-    
+     
     handleDuplicateTab = (tabId) => {
         const {dispatch} = this.props;
         dispatch(httpClientActions.createDuplicateTab(tabId))
     }
 
+    deleteItem = async ()  => {
+        const {  dispatch, httpClient:{userCollections}} = this.props;
+        const {itemToDelete} = this.state;
+        try {
+            if(itemToDelete.requestType == "collection"){
+                await cubeService.deleteGolden(itemToDelete.id);
+                dispatch(httpClientActions.deleteUserCollection(itemToDelete.id));
+            }else if(itemToDelete.requestType ==  "request"){
+                if(itemToDelete.isParent){
+                    await cubeService.deleteEventByTraceId(itemToDelete.id, itemToDelete.collectionId);
+                }else{
+                    await cubeService.deleteEventByRequestId(itemToDelete.id);
+                }
+                this.handlePanelClick(itemToDelete.collectionId, true);                
+            }
+        } catch (error) {
+            console.error("Error caught in softDelete Golden: " + error);
+        }
+        this.setState({
+            showDeleteGoldenConfirmation: false
+        });
+    }
+
+    onDeleteBtnClick = (event) => {
+        event.stopPropagation();
+        const requestType = event.target.getAttribute('data-type');
+        const id = event.target.getAttribute('data-id');
+        const name = event.target.getAttribute('data-name');       
+        const collectionId = event.target.getAttribute('data-collection-id');
+        const isParent = event.target.getAttribute('data-isparent') == 'true';
+        
+        this.setState({showDeleteGoldenConfirmation: true, 
+            itemToDelete: {
+                requestType, id, name, collectionId, isParent
+            }});
+        console.log("Delete called", event);
+    };
+
     render() {
         const { cube } = this.props;
-        const { showEnvVarModal } = this.state;
+        const { showEnvVarModal, showDeleteGoldenConfirmation } = this.state;
         const { cube: {selectedApp} } = this.props;
         const app = selectedApp;
         const {httpClient: {cubeRunHistory, userCollections, collectionName, collectionLabel, modalErroSaveMessage,modalErroSaveMessageIsError, modalErroCreateCollectionMessage, tabs, selectedTabKey, showSaveModal, showAddMockReqModal, mockRequestServiceName, mockRequestApiPath, modalErrorAddMockReqMessage, showImportFromCurlModal, curlCommand, modalErrorImportFromCurlMessage}} = this.props;
-
+        
         return (
 
             <div className="" style={{ display: "flex", height: "100%" }}>
-                <aside className="" style={{ "width": "250px", "height": "100%", "background": "#EAEAEA", "padding": "10px", "display": "flex", "flexDirection": "column", overflow: "auto" }}>
+                <aside className="" ref={e=> (this.sliderRef = e)}
+                style={{ "width": "250px", "height": "100%", "background": "#EAEAEA", "padding": "10px", "display": "flex", "flexDirection": "column", overflow: "auto" }}>
                     <div style={{ marginTop: "10px", marginBottom: "10px" }}>
                         <div className="label-n">APPLICATION</div>
                         <div className="application-name">{app}</div>
@@ -2214,11 +2288,14 @@ class HttpClientTabs extends Component {
                             <div className="margin-top-10">
                                 {userCollections && userCollections.map(eachCollec => {
                                     return (
-                                        <Panel id="collapsible-panel-example-2" key={eachCollec.collec} value={eachCollec.collec} onClick={() => this.handlePanelClick(eachCollec.collec)}>
-                                            <Panel.Heading style={{ paddingLeft: "9px" }}>
+                                        <Panel id="collapsible-panel-example-2" className="collection-panel-div" key={eachCollec.collec} value={eachCollec.collec} onClick={() => this.handlePanelClick(eachCollec.collec)}>
+                                            <Panel.Heading style={{ paddingLeft: "9px", position: 'relative' }}>
                                                 <Panel.Title toggle style={{ fontSize: "13px" }}>
                                                     {eachCollec.name}
                                                 </Panel.Title>
+                                                <div className="collection-options"><i className="fas fa-trash pointer" data-id={eachCollec.rootRcrdngId} 
+                                                data-name={eachCollec.name} title="Delete"
+                                                data-type="collection" onClick={this.onDeleteBtnClick}/></div>
                                             </Panel.Heading>
                                             <Panel.Collapse>
                                                 <Panel.Body style={{ padding: "3px", width: "100%", overflow: "scroll" }}>
@@ -2242,6 +2319,7 @@ class HttpClientTabs extends Component {
                         </Tab>
                     </Tabs>
                 </aside>
+               <SplitSlider slidingElement={this.sliderRef}/>
                 <main className="content-wrapper" style={{ flex: "1", overflow: "auto", padding: "25px", margin: "0" }}>
                     {/* <div>
                         <div className="vertical-middle inline-block">
@@ -2266,9 +2344,9 @@ class HttpClientTabs extends Component {
                             <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleImportFromCurlModalShow}>
                                 <Glyphicon glyph="import" /> Import
                             </div>
-                            <div style={{display: "inline-block", padding: 0}} className="btn">{this.renderEnvListDD()}</div>
-                            <div style={{display: "inline-block"}}>{this.renderEnvPopoverBtn()}</div>
-                            <span className="btn btn-sm cube-btn text-center" onClick={() => {this.setState({showEnvVarModal: true})}} title="Configure environments"><i className="fas fa-cog"/> </span>
+                                <div style={{display: "inline-block", padding: 0}} className="btn">{this.renderEnvListDD()}</div>
+                                <div style={{display: "inline-block"}}>{this.renderEnvPopoverBtn()}</div>
+                                <span className="btn btn-sm cube-btn text-center" onClick={() => {this.setState({showEnvVarModal: true})}} title="Configure environments"><i className="fas fa-cog"/> </span>
                             {/* <div style={{display: "inline-block", margin: "10px" }}>
                             </div> */}
                         </div>
@@ -2367,7 +2445,7 @@ class HttpClientTabs extends Component {
                         </Modal>
                     </div>
                     <div>
-                        <Modal show={showImportFromCurlModal} onHide={this.handleImportFromCurlModalClose} bsSize="large">
+                    <Modal show={showImportFromCurlModal} onHide={this.handleImportFromCurlModalClose} bsSize="large">
                             <Modal.Header closeButton>
                                 <Modal.Title>Import from curl</Modal.Title>
                             </Modal.Header>
@@ -2375,7 +2453,7 @@ class HttpClientTabs extends Component {
                                 <div>
                                     <FormGroup>
                                         <ControlLabel>Curl Command</ControlLabel>
-                                        <FormControl componentClass="textarea" rows="15" placeholder="Service Name" name="curlCommand" value={curlCommand} onChange={this.handleImportFromCurlInputChange} />
+                                        <FormControl componentClass="textarea" rows="15" placeholder="Curl Command" name="curlCommand" value={curlCommand} onChange={this.handleImportFromCurlInputChange} />
                                     </FormGroup>
                                 </div>
                                 <p style={{ marginTop: "10px", fontWeight: 500 }}>{modalErrorImportFromCurlMessage}</p>
@@ -2384,6 +2462,22 @@ class HttpClientTabs extends Component {
                                 <Button onClick={this.handleImportFromCurl}>Import</Button>
                                 <Button onClick={this.handleImportFromCurlModalClose}>Close</Button>
                             </Modal.Footer>
+                        </Modal>
+                        <Modal show={showDeleteGoldenConfirmation}>
+                            <Modal.Body>
+                                <div style={{ display: "flex", flex: 1, justifyContent: "center"}}>
+                                    <div className="margin-right-10" style={{ display: "flex", flexDirection: "column", fontSize:20 }}>
+                                        This will delete the {this.state.itemToDelete.name}. Please confirm.
+                                    </div>
+                                    <div style={{ display: "flex", alignItems: "flex-start" }}>
+                                            <span className="cube-btn margin-right-10" onClick={() => this.deleteItem()}>Confirm</span>
+                                            <span className="cube-btn" onClick={() => (this.setState({
+                                                showDeleteGoldenConfirmation: false,
+                                                itemToDelete:{}
+                                            }))}>No</span>
+                                    </div>
+                                </div>
+                            </Modal.Body>
                         </Modal>
                     </div>
                 </main>

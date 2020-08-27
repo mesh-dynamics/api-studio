@@ -36,16 +36,6 @@
     background-color: #ECECE7;
     position: relative;
 }
-.md-hc-tab.RRT__tab--selected:after {
-    content: ' ';
-    height: 7px;
-    background: #ECECE7;
-    position: absolute;
-    left: 0px;
-    bottom: -7px;
-    width: 100%;
-}
-
 .md-hc-tab.RRT__tab--selected:focus {
     background-color: #ECECE7;
 }

@@ -75,7 +75,9 @@ export const httpClientActions = {
     addUserCollections: (userCollections) => {
         return {type: httpClientConstants.ADD_USER_COLLECTIONS, data: {userCollections}};
     },
-
+    deleteUserCollection: (userCollectionId) => {
+        return {type: httpClientConstants.DELETE_USER_COLLECTION, data: userCollectionId};
+    },
     postSuccessSaveToCollection: (tabId, showSaveModal, modalErroSaveMessage, clearIntervalHandle) => {
         return {type: httpClientConstants.POST_SUCCESS_SAVE_TO_COLLECTION, data: {tabId, showSaveModal, modalErroSaveMessage, clearIntervalHandle}};
     },

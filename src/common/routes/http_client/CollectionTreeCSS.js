@@ -18,7 +18,7 @@ export default {
                 position: 'relative',
                 padding: '0px 9px',
                 display: 'flex',
-                width: "260px"
+                width: '100%'
             },
             activeLink: {
                 background: 'none'
@@ -29,8 +29,6 @@ export default {
                     display: 'flex',
                     verticalAlign: 'middle',
                     marginLeft: '-2px',
-                    height: '24px',
-                    width: '24px',
                     flexDirection: "column"
                 },
                 wrapper: {

@@ -1,87 +1,88 @@
+// copied and modified a bit from https://raw.githubusercontent.com/NickCarneiro/curlconverter/master/util.js
 import * as cookie from "cookie"
-import * as URL from "url"
-import * as querystring from "querystring"
-import parser from 'yargs-parser'
+import yargsParser from "yargs-parser"
+import * as URL from "url";
+import * as querystring from "query-string"
 
-/**
- * given this: [ 'msg1=value1', 'msg2=value2' ]
- * output this: 'msg1=value1&msg2=value2'
- * @param dataArguments
- */
-const joinDataArguments = (dataArguments) => {
-    let data = ""
-    dataArguments.forEach((argument, i) => {
-        if (i === 0) {
-            data += argument
-        } else {
-            data += `&${argument}`
-        }
-    })
-    return data
-}
+const parseCurlCommand = curlCommand => {
+    // Remove newlines (and from continuations)
+    curlCommand = curlCommand.replace(/\\\r|\\\n/g, '')
 
-const parseCurlCommand = (curlCommand) => {
-    let newlineFound = /\r|\n/.exec(curlCommand)
-    if (newlineFound) {
-        // remove newlines
-        curlCommand = curlCommand.replace(/\r|\n/g, "")
-    }
+    // Remove extra whitespace
+    curlCommand = curlCommand.replace(/\s+/g, ' ')
+
     // yargs parses -XPOST as separate arguments. just prescreen for it.
-    curlCommand = curlCommand.replace(/ -XPOST/, " -X POST")
-    curlCommand = curlCommand.replace(/ -XGET/, " -X GET")
-    curlCommand = curlCommand.replace(/ -XPUT/, " -X PUT")
-    curlCommand = curlCommand.replace(/ -XPATCH/, " -X PATCH")
-    curlCommand = curlCommand.replace(/ -XDELETE/, " -X DELETE")
+    curlCommand = curlCommand.replace(/ -XPOST/, ' -X POST')
+    curlCommand = curlCommand.replace(/ -XGET/, ' -X GET')
+    curlCommand = curlCommand.replace(/ -XPUT/, ' -X PUT')
+    curlCommand = curlCommand.replace(/ -XPATCH/, ' -X PATCH')
+    curlCommand = curlCommand.replace(/ -XDELETE/, ' -X DELETE')
+    // Safari adds `-Xnull` if is unable to determine the request type, it can be ignored
+    curlCommand = curlCommand.replace(/ -Xnull/, ' ')
     curlCommand = curlCommand.trim()
-    let parsedArguments = parser(curlCommand)
+
+    // Parse with some understanding of the meanings of flags.  In particular,
+    // boolean flags can be trouble if the URL to fetch follows immediately
+    // after, since it will be taken as an argument to the flag rather than
+    // interpreted as a positional argument.  Someone should add all the flags
+    // likely to cause trouble here.
+    /* const parsedArguments = yargs
+        .boolean(['I', 'head', 'compressed', 'L', 'k', 'silent', 's'])
+        .alias('H', 'header')
+        .alias('A', 'user-agent')
+        .parse(curlCommand) */
+    
+    const parsedArguments = yargsParser(curlCommand, {
+        alias:{
+            "H": ["header"],
+            "A": ["user-agent"]
+        },
+        boolean: ['I', 'head', 'compressed', 'L', 'k', 'silent', 's']
+    })
+
     let cookieString
     let cookies
     let url = parsedArguments._[1]
+
+    // if url argument wasn't where we expected it, try to find it in the other arguments
     if (!url) {
-        for (let argName in parsedArguments) {
-            if (typeof parsedArguments[argName] === "string") {
-                if (["http", "www."].includes(parsedArguments[argName])) {
+        for (const argName in parsedArguments) {
+            if (typeof parsedArguments[argName] === 'string') {
+                if (parsedArguments[argName].indexOf('http') === 0 || parsedArguments[argName].indexOf('www.') === 0) {
                     url = parsedArguments[argName]
                 }
             }
         }
     }
+
+    if(url) url = url.replace(/\'/g, "")
+
     let headers
 
-    const parseHeaders = (headerFieldName) => {
-        if (parsedArguments[headerFieldName]) {
-            if (!headers) {
-                headers = {}
-            }
-            if (!Array.isArray(parsedArguments[headerFieldName])) {
-                parsedArguments[headerFieldName] = [parsedArguments[headerFieldName]]
-            }
-            parsedArguments[headerFieldName].forEach((header) => {
-                if (header.includes("Cookie")) {
-                    // stupid javascript tricks: closure
-                    cookieString = header
-                } else {
-                    let colonIndex = header.indexOf(":")
-                    let headerName = header.substring(0, colonIndex)
-                    let headerValue = header.substring(colonIndex + 1).trim()
-                    headers[headerName] = headerValue
-                }
-            })
+    if (parsedArguments.header) {
+        if (!headers) {
+            headers = {}
         }
+        if (!Array.isArray(parsedArguments.header)) {
+            parsedArguments.header = [parsedArguments.header]
+        }
+        parsedArguments.header.forEach(header => {
+            if (header.indexOf('Cookie') !== -1) {
+                cookieString = header
+            } else {
+                const components = header.split(/:(.*)/)
+                if (components[1]) {
+                    headers[components[0]] = components[1].trim()
+                }
+            }
+        })
     }
 
-    parseHeaders("H")
-    parseHeaders("header")
-    if (parsedArguments.A) {
+    if (parsedArguments['user-agent']) {
         if (!headers) {
-            headers = []
+            headers = {}
         }
-        headers["User-Agent"] = parsedArguments.A
-    } else if (parsedArguments["user-agent"]) {
-        if (!headers) {
-            headers = []
-        }
-        headers["User-Agent"] = parsedArguments["user-agent"]
+        headers['User-Agent'] = parsedArguments['user-agent']
     }
 
     if (parsedArguments.b) {
@@ -96,66 +97,68 @@ const parseCurlCommand = (curlCommand) => {
         if (!Array.isArray(parsedArguments.F)) {
             parsedArguments.F = [parsedArguments.F]
         }
-        parsedArguments.F.forEach((multipartArgument) => {
+        parsedArguments.F.forEach(multipartArgument => {
             // input looks like key=value. value could be json or a file path prepended with an @
-            const [key, value] = multipartArgument.split("=", 2)
+            const splitArguments = multipartArgument.split('=', 2)
+            const key = splitArguments[0]
+            const value = splitArguments[1]
             multipartUploads[key] = value
         })
     }
     if (cookieString) {
         const cookieParseOptions = {
-            decode: (s) => s,
+            decode: function (s) { return s }
         }
         // separate out cookie headers into separate data structure
         // note: cookie is case insensitive
-        cookies = cookie.parse(cookieString.replace(/^Cookie: /gi, ""), cookieParseOptions)
+        cookies = cookie.parse(cookieString.replace(/^Cookie: /gi, ''), cookieParseOptions)
     }
     let method
-    if (parsedArguments.X === "POST") {
-        method = "post"
-    } else if (parsedArguments.X === "PUT" || parsedArguments["T"]) {
-        method = "put"
-    } else if (parsedArguments.X === "PATCH") {
-        method = "patch"
-    } else if (parsedArguments.X === "DELETE") {
-        method = "delete"
-    } else if (parsedArguments.X === "OPTIONS") {
-        method = "options"
-    } else if (
-        (parsedArguments["d"] ||
-            parsedArguments["data"] ||
-            parsedArguments["data-ascii"] ||
-            parsedArguments["data-binary"] ||
-            parsedArguments["F"] ||
-            parsedArguments["form"]) &&
-        !(parsedArguments["G"] || parsedArguments["get"])
-    ) {
-        method = "post"
-    } else if (parsedArguments["I"] || parsedArguments["head"]) {
-        method = "head"
+    if (parsedArguments.X === 'POST') {
+        method = 'post'
+    } else if (parsedArguments.X === 'PUT' ||
+        parsedArguments.T) {
+        method = 'put'
+    } else if (parsedArguments.X === 'PATCH') {
+        method = 'patch'
+    } else if (parsedArguments.X === 'DELETE') {
+        method = 'delete'
+    } else if (parsedArguments.X === 'OPTIONS') {
+        method = 'options'
+    } else if ((parsedArguments.d ||
+        parsedArguments.data ||
+        parsedArguments['data-ascii'] ||
+        parsedArguments['data-binary'] ||
+        parsedArguments['data-raw'] ||
+        parsedArguments.F ||
+        parsedArguments.form) && !((parsedArguments.G || parsedArguments.get))) {
+        method = 'post'
+    } else if (parsedArguments.I ||
+        parsedArguments.head) {
+        method = 'head'
     } else {
-        method = "get"
+        method = 'get'
     }
 
-    let compressed = !!parsedArguments.compressed
-    let urlObject = URL.parse(url) // eslint-disable-line
+    const compressed = !!parsedArguments.compressed
+    const urlObject = URL.parse(url) // eslint-disable-line
 
     // if GET request with data, convert data to query string
     // NB: the -G flag does not change the http verb. It just moves the data into the url.
-    if (parsedArguments["G"] || parsedArguments["get"]) {
-        urlObject.query = urlObject.query ? urlObject.query : ""
-        let option = "d" in parsedArguments ? "d" : "data" in parsedArguments ? "data" : null
+    if (parsedArguments.G || parsedArguments.get) {
+        urlObject.query = urlObject.query ? urlObject.query : ''
+        const option = 'd' in parsedArguments ? 'd' : 'data' in parsedArguments ? 'data' : null
         if (option) {
-            let urlQueryString = ""
+            let urlQueryString = ''
 
-            if (!url.includes("?")) {
-                url += "?"
+            if (url.indexOf('?') < 0) {
+                url += '?'
             } else {
-                urlQueryString += "&"
+                urlQueryString += '&'
             }
 
-            if (typeof parsedArguments[option] === "object") {
-                urlQueryString += parsedArguments[option].join("&")
+            if (typeof (parsedArguments[option]) === 'object') {
+                urlQueryString += parsedArguments[option].join('&')
             } else {
                 urlQueryString += parsedArguments[option]
             }
@@ -164,17 +167,23 @@ const parseCurlCommand = (curlCommand) => {
             delete parsedArguments[option]
         }
     }
-    let query = querystring.parse(urlObject.query, null, null, {
-        maxKeys: 10000,
-    })
+    if (urlObject.query && urlObject.query.endsWith('&')) {
+        urlObject.query = urlObject.query.slice(0, -1)
+    }
+    const query = querystring.parse(urlObject.query, { sort: false })
+    for (const param in query) {
+        if (query[param] === null) {
+            query[param] = ''
+        }
+    }
 
     urlObject.search = null // Clean out the search/query portion.
     const request = {
-        url,
-        urlWithoutQuery: URL.format(urlObject),
+        url: url,
+        urlWithoutQuery: URL.format(urlObject)
     }
     if (compressed) {
-        request["compressed"] = true
+        request.compressed = true
     }
 
     if (Object.keys(query).length > 0) {
@@ -183,41 +192,62 @@ const parseCurlCommand = (curlCommand) => {
     if (headers) {
         request.headers = headers
     }
-    request["method"] = method
+    request.method = method
 
     if (cookies) {
         request.cookies = cookies
-        request.cookieString = cookieString.replace("Cookie: ", "")
+        request.cookieString = cookieString.replace('Cookie: ', '')
     }
     if (multipartUploads) {
         request.multipartUploads = multipartUploads
     }
     if (parsedArguments.data) {
         request.data = parsedArguments.data
-    } else if (parsedArguments["data-binary"]) {
-        request.data = parsedArguments["data-binary"]
+    } else if (parsedArguments['data-binary']) {
+        request.data = parsedArguments['data-binary']
         request.isDataBinary = true
-    } else if (parsedArguments["d"]) {
-        request.data = parsedArguments["d"]
-    } else if (parsedArguments["data-ascii"]) {
-        request.data = parsedArguments["data-ascii"]
+    } else if (parsedArguments.d) {
+        request.data = parsedArguments.d
+    } else if (parsedArguments['data-ascii']) {
+        request.data = parsedArguments['data-ascii']
+    } else if (parsedArguments['data-raw']) {
+        request.data = parsedArguments['data-raw']
+        request.isDataRaw = true
     }
 
-    if (parsedArguments["u"]) {
-        request.auth = parsedArguments["u"]
+    if (parsedArguments.u) {
+        request.auth = parsedArguments.u
     }
-    if (parsedArguments["user"]) {
-        request.auth = parsedArguments["user"]
+    if (parsedArguments.user) {
+        request.auth = parsedArguments.user
     }
     if (Array.isArray(request.data)) {
         request.dataArray = request.data
-        request.data = joinDataArguments(request.data)
+        request.data = request.data.join('&')
     }
 
-    if (parsedArguments["k"] || parsedArguments["insecure"]) {
+    if (parsedArguments.k || parsedArguments.insecure) {
         request.insecure = true
     }
     return request
 }
 
-export default parseCurlCommand
+const serializeCookies = cookieDict => {
+    let cookieString = ''
+    let i = 0
+    const cookieCount = Object.keys(cookieDict).length
+    for (const cookieName in cookieDict) {
+        const cookieValue = cookieDict[cookieName]
+        cookieString += cookieName + '=' + cookieValue
+        if (i < cookieCount - 1) {
+            cookieString += '; '
+        }
+        i++
+    }
+    return cookieString
+}
+
+export { 
+    parseCurlCommand,
+    serializeCookies
+}
