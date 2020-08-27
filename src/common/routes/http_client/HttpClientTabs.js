@@ -394,7 +394,7 @@ class HttpClientTabs extends Component {
                 showSaveBtn: true,
                 outgoingRequests: [],
                 showCompleteDiff: false,
-                isOutgoingRequest: true,
+                isOutgoingRequest: false,
                 service: service,
                 recordingIdAddedFromClient: "",
                 collectionIdAddedFromClient: "",
@@ -1056,7 +1056,9 @@ class HttpClientTabs extends Component {
             for (const header of response.headers) {
                 fetchedResponseHeaders[header[0]] = header[1];
             }
-            if (response.headers.get("content-type").indexOf("application/json") !== -1) {// checking response header
+            if(response.headers.get("content-type").indexOf("text/html") !== -1) {
+                return response.text();
+            } else if (response.headers.get("content-type").indexOf("application/json") !== -1 && ) {// checking response header
                 return response.json();
             } else {
                 return response.text();
@@ -1157,6 +1159,14 @@ class HttpClientTabs extends Component {
             let service = parsedUrl.host ? parsedUrl.host : "NA";
             httpRequestEvent = this.updateHttpEvent(apiPath, service, httpRequestEvent);
             httpResponseEvent = this.updateHttpEvent(apiPath, service, httpResponseEvent);
+        }
+
+        if(httpRequestEvent.parentSpanId === null) {
+            httpRequestEvent.parentSpanId = "NA"
+        }
+
+        if(httpRequestEvent.spanId === null) {
+            httpRequestEvent.spanId = "NA"
         }
 
         const { headers, queryStringParams, bodyType, rawDataType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus } = tabToSave;
