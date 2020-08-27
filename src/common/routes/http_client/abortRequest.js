@@ -1,5 +1,5 @@
 import axios from 'axios';
-import CommonConstants from '../../utils/commonConstants';
+import commonConstants from '../../utils/commonConstants';
 
 export function AbortRequest(){
     var controller = new AbortController();
@@ -12,7 +12,7 @@ export function AbortRequest(){
     this.stopRequest = function(){
         this.isCancelled = true;
         controller.abort();
-        source.cancel(CommonConstants.USER_ABORT_MESSAGE);
+        source.cancel(commonConstants.USER_ABORT_MESSAGE);
     }
     this.isCancelled = false;
 } 

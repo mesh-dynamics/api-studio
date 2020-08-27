@@ -38,7 +38,7 @@ import { parseCurlCommand } from '../../utils/http_client/curlparser';
 
 import SplitSlider  from '../../components/SplitSlider.js';
 
-import CommonConstants from '../../utils/commonConstants';
+import commonConstants from '../../utils/commonConstants';
 
 
 class HttpClientTabs extends Component {
@@ -1075,7 +1075,7 @@ class HttpClientTabs extends Component {
             console.error(error);
             dispatch(httpClientActions.postErrorDriveRequest(tabId, error.message));
             dispatch(httpClientActions.unsetReqRunning(tabId));
-            if(error.message !== CommonConstants.USER_ABORT_MESSAGE){                
+            if(error.message !== commonConstants.USER_ABORT_MESSAGE){                
                 alert(`Could not get any response. There was an error connecting: ${error}`);
             }
         });
