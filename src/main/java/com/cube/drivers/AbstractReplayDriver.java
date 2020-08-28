@@ -350,8 +350,10 @@ public abstract class AbstractReplayDriver {
 					goldenRequestEvent.payload, dataStore);
 				StringSubstitutor sub = new StringSubstitutor(varResolver);
 				DataObj value;
-				if (extractionMeta.apiPath.equalsIgnoreCase(goldenRequestEvent.apiPath)) {
-					//  TODO ADD checks for method type GET/POST & also on reset field
+				String requestHttpMethod = getHttpMethod(goldenRequestEvent);
+				if (extractionMeta.apiPath.equalsIgnoreCase(goldenRequestEvent.apiPath)
+					&& extractionMeta.method.toString().equalsIgnoreCase(requestHttpMethod)) {
+					//  TODO ADD checks on reset field
 					String sourceString = extractionMeta.value;
 					// Boolean placeholder to specify if the value to be extracted
 					// is an Object and not a string.
@@ -374,6 +376,8 @@ public abstract class AbstractReplayDriver {
 		});
 	}
 
+
+
 	public void inject(Event request) {
 
 		dynamicInjectionConfig.ifPresent(dic -> {
@@ -381,8 +385,10 @@ public abstract class AbstractReplayDriver {
 				StringSubstitutor sub = new StringSubstitutor(
 					new InjectionVarResolver(request, null, request.payload, dataStore));
 
-				if (injectionMeta.injectAllPaths || injectionMeta.apiPaths
-					.contains(request.apiPath)) {
+				String requestHttpMethod = getHttpMethod(request);
+				boolean apiPathMatch = apiPathMatch(injectionMeta.apiPaths, request.apiPath);
+				if ((injectionMeta.injectAllPaths || apiPathMatch) && injectionMeta.method
+					.toString().equalsIgnoreCase(requestHttpMethod)) {
 					String key = sub.replace(injectionMeta.name);
 					DataObj value = extractionMap.get(key);
 					try {
@@ -423,6 +429,25 @@ public abstract class AbstractReplayDriver {
 
 				}
 			});
+		});
+	}
+
+	static public String getHttpMethod(Event event) {
+		String requestHttpMethod;
+		try {
+			requestHttpMethod= event.payload.getValAsString("/method");
+		} catch (PathNotFoundException e) {
+			LOGGER
+				.error("Cannot find /method in request" + event.reqId + " No extraction", e);
+			requestHttpMethod = "";
+		}
+		return requestHttpMethod;
+	}
+
+	static public boolean apiPathMatch(List<String> apiPathRegexes, String apiPathToMatch) {
+		return apiPathRegexes.stream().anyMatch(regex -> {
+			Pattern p = Pattern.compile(regex);
+			return p.matcher(apiPathToMatch).matches();
 		});
 	}
 
