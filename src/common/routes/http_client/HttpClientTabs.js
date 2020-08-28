@@ -51,6 +51,8 @@ class HttpClientTabs extends Component {
         };
         this.state = { 
             showEnvVarModal: false,
+            showErrorModal: false,
+            errorMsg: "",
             showDeleteGoldenConfirmation:false,
             itemToDelete:{}
         };
@@ -1033,7 +1035,7 @@ class HttpClientTabs extends Component {
             [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] 
                         = this.applyEnvVars(httpRequestURL, httpRequestQueryStringParams, fetchConfig);
         } catch (e) {
-            alert(e) // prompt user for error in env vars
+            this.showErrorAlert(`${e}`); // prompt user for error in env vars
             return
         }
         const fetchUrlRendered = httpRequestURLRendered + (httpRequestQueryStringParamsRendered ? "?" + stringify(httpRequestQueryStringParamsRendered) : "");
@@ -1075,8 +1077,8 @@ class HttpClientTabs extends Component {
             console.error(error);
             dispatch(httpClientActions.postErrorDriveRequest(tabId, error.message));
             dispatch(httpClientActions.unsetReqRunning(tabId));
-            if(error.message !== commonConstants.USER_ABORT_MESSAGE){                
-                alert(`Could not get any response. There was an error connecting: ${error}`);
+            if(error.message !== commonConstants.USER_ABORT_MESSAGE){
+                this.showErrorAlert(`Could not get any response. There was an error connecting: ${error}`);
             }
         });
     }
@@ -2232,13 +2234,21 @@ class HttpClientTabs extends Component {
         console.log("Delete called", event);
     };
 
+    showErrorAlert = (message) => {
+        this.setState({ showErrorModal: true, errorMsg: message});
+    };
+
+    onCloseErrorModal = () => {
+        this.setState({ showErrorModal: false});
+    };
+
     render() {
         const { cube } = this.props;
-        const { showEnvVarModal, showDeleteGoldenConfirmation } = this.state;
+        const { showEnvVarModal, showDeleteGoldenConfirmation, showErrorModal, errorMsg } = this.state;
         const { cube: {selectedApp} } = this.props;
         const app = selectedApp;
         const {httpClient: {cubeRunHistory, userCollections, collectionName, collectionLabel, modalErroSaveMessage,modalErroSaveMessageIsError, modalErroCreateCollectionMessage, tabs, selectedTabKey, showSaveModal, showAddMockReqModal, mockRequestServiceName, mockRequestApiPath, modalErrorAddMockReqMessage, showImportFromCurlModal, curlCommand, modalErrorImportFromCurlMessage}} = this.props;
-        
+
         return (
 
             <div className="" style={{ display: "flex", height: "100%" }}>
@@ -2488,6 +2498,18 @@ class HttpClientTabs extends Component {
                                     </div>
                                 </div>
                             </Modal.Body>
+                        </Modal>
+
+                        <Modal show={showErrorModal} onHide={this.onCloseErrorModal}>
+                            <Modal.Header closeButton>
+                                <Modal.Title>Error</Modal.Title>
+                            </Modal.Header>
+                            <Modal.Body>
+                                    <p>{errorMsg}</p>
+                            </Modal.Body>
+                            <Modal.Footer>
+                                <div onClick={this.onCloseErrorModal} className="btn btn-sm cube-btn text-center">Close</div>
+                            </Modal.Footer>
                         </Modal>
                     </div>
                 </main>
