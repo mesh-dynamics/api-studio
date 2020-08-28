@@ -9,6 +9,7 @@ import {
     validateEmail, 
     validatePassword
 } from '../../utils/lib/validation';
+import { isAllowedDomain } from '../../utils/lib/common-utils';
 import "./SignUp.css";
 
 const MESSAGE = {
@@ -49,13 +50,29 @@ const SignUp = (props) => {
     const passwordValidation = validatePassword(password);
 
     const isValid = () => {
+        if(PLATFORM_ELECTRON) {
+            return reCaptchaIsValid
+                && firstNameValidation.isValid
+                && lastNameValidation.isValid
+                && emailValidation.isValid
+                && passwordValidation.isValid
+        }
+
+        if(isAllowedDomain()) {
+            return reCaptchaIsValid
+                && firstNameValidation.isValid
+                && lastNameValidation.isValid
+                && emailValidation.isValid
+                && passwordValidation.isValid
+                && reCaptchaToken !== null
+                && reCaptchaToken !== ''            
+        }
+
         return reCaptchaIsValid
             && firstNameValidation.isValid
             && lastNameValidation.isValid
             && emailValidation.isValid
             && passwordValidation.isValid
-            && reCaptchaToken !== null
-            && reCaptchaToken !== ''
     };
     
     const handleSubmit = async (event) => {
@@ -206,17 +223,30 @@ const SignUp = (props) => {
                     </div>
                 }
             </div>
-            <div className="custom-fg form-group recaptcha-container">
-                <ReCaptcha 
-                    sitekey="6Lf4x84UAAAAAE1eQicOrCrxVreqAWhpyV3KERpo" 
-                    onChange={handleReCaptchaChange} 
-                />
-                {!reCaptchaIsValid ? renderReCaptchaError() : null}
+            {
+                
+                <div className="custom-fg form-group recaptcha-container">
+                {
+                    (!PLATFORM_ELECTRON && isAllowedDomain())
+                    &&
+                    (
+                        <Fragment>
+                            <ReCaptcha 
+                                sitekey="6Lf4x84UAAAAAE1eQicOrCrxVreqAWhpyV3KERpo" 
+                                onChange={handleReCaptchaChange} 
+                            />
+                        
+                            {!reCaptchaIsValid ? renderReCaptchaError() : null}
 
-                {submitted && reCaptchaToken === '' && renderReCaptchaError()}
-
+                            {submitted && reCaptchaToken === '' && renderReCaptchaError()}
+                        </Fragment>
+                    )
+                }
+                        
                 {!accountCreatedSuccessfully && submitted && hasServerValidated ? renderFormErrorMessage(): null}
-            </div>
+
+                </div>
+            }
             <div className="custom-fg form-group">
                 <button className="btn btn-custom-auth width-100">Create Account</button>
             </div>
