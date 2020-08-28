@@ -49,6 +49,10 @@ public class CustomerController {
             return ok(customer);
         }
         if (customer.isEmpty()) {
+            Optional<EmailDomain> existingDomain = this.emailDomainRepository.findByDomain(customerDTO.getDomainURL());
+            if(existingDomain.isPresent()) {
+                return status(FORBIDDEN).body(new ErrorResponse("Customer with domain '" + customer.get().getDomainURL()+ "' already exists."));
+            }
             Customer saved = this.customerService.save(customerDTO);
 
             EmailDomain domain = new EmailDomain();
