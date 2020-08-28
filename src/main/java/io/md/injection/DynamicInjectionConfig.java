@@ -113,7 +113,7 @@ public class DynamicInjectionConfig {
 
 		private static final Logger LOGGER = LoggerFactory.getLogger(InjectionMeta.class);
 
-		@JsonProperty("apiPath")
+		@JsonProperty("apiPaths")
 		public final List<String> apiPaths;
 
 		@JsonProperty("jsonPath")
@@ -129,22 +129,27 @@ public class DynamicInjectionConfig {
 		@JsonProperty("regex")
 		public final Optional<String> regex;
 
+		@JsonProperty("method")
+		public final HTTPMethodType method;
+
 		public InjectionMeta() {
 			this.apiPaths = Collections.EMPTY_LIST;
 			this.jsonPath = "";
 			this.injectAllPaths = false;
 			this.name = "";
 			this.regex = Optional.empty();
+			this.method = HTTPMethodType.POST;
 		}
 
 
 		public InjectionMeta(List<String> apiPaths, String jsonPath, boolean injectAllPaths
-			, String name, Optional<String> regex) {
+			, String name, Optional<String> regex, HTTPMethodType method) {
 			this.apiPaths = apiPaths;
 			this.jsonPath = jsonPath;
 			this.injectAllPaths = injectAllPaths;
 			this.name = name;
 			this.regex = regex;
+			this.method = method;
 		}
 
 		public String map(String original, String replacement) {
@@ -169,7 +174,7 @@ public class DynamicInjectionConfig {
 				}
 				builder.append(original.substring(lastIndex));
 				return builder.toString();
-			}).orElse(original);
+			}).orElse(replacement);
 		}
 
 
@@ -184,7 +189,9 @@ public class DynamicInjectionConfig {
 
 		public enum HTTPMethodType {
 			GET,
-			POST
+			POST,
+			PUT,
+			DELETE
 		}
 
 	}
