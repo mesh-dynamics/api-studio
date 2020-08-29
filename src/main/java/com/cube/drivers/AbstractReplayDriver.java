@@ -351,8 +351,9 @@ public abstract class AbstractReplayDriver {
 				StringSubstitutor sub = new StringSubstitutor(varResolver);
 				DataObj value;
 				String requestHttpMethod = getHttpMethod(goldenRequestEvent);
-				if (extractionMeta.apiPath.equalsIgnoreCase(goldenRequestEvent.apiPath)
-					&& extractionMeta.method.toString().equalsIgnoreCase(requestHttpMethod)) {
+				boolean apiPathMatch = apiPathMatch(Collections.singletonList(extractionMeta.apiPath), goldenRequestEvent.apiPath);
+				if (apiPathMatch && extractionMeta.method.toString()
+					.equalsIgnoreCase(requestHttpMethod)) {
 					//  TODO ADD checks on reset field
 					String sourceString = extractionMeta.value;
 					// Boolean placeholder to specify if the value to be extracted
