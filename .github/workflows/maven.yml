@@ -15,7 +15,6 @@ on:
       - 'spring-egress-resttemplate-interceptor/*'
       - 'unified_pom_springboot_resttemplate.xml'
 
-
 jobs:
   build:
     runs-on: ubuntu-latest

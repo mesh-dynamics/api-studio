@@ -43,11 +43,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LoggingFilter.class);
 
-	private static final Config config;
-
-	static {
-		config = new Config();
-	}
+	private static final Config config = new Config();
 
 	@Override
 	public void filter(ContainerRequestContext reqContext) throws IOException {
@@ -79,7 +75,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 
 					String xRequestId = requestHeaders.getFirst(Constants.X_REQUEST_ID);
 					MultivaluedMap<String, String> traceMetaMap = CommonUtils
-						.buildTraceInfoMap(CommonConfig.getInstance().serviceName, mdTraceInfo,
+						.buildTraceInfoMap(CommonConfig.serviceName, mdTraceInfo,
 							xRequestId);
 
 					reqContext.setProperty(Constants.MD_SAMPLE_REQUEST, true);
@@ -107,6 +103,10 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 					containerResponseContext.getStringHeaders());
 			containerRequestContext
 				.setProperty(Constants.MD_STATUS_PROP, containerResponseContext.getStatus());
+			// aroundWriteTo will not be called for empty body
+			if(containerResponseContext.getEntity() == null) {
+				logResponse(null, containerRequestContext);
+			}
 		}
 	}
 
@@ -114,7 +114,7 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 	public void aroundWriteTo(WriterInterceptorContext context)
 		throws IOException, WebApplicationException {
 		if (context.getProperty(Constants.MD_SAMPLE_REQUEST) != null) {
-			logResponse(context);
+			logResponse(context, null);
 		} else {
 			context.proceed();
 		}
@@ -140,9 +140,15 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 		}
 	}
 
-	private void logResponse(WriterInterceptorContext context)
+	private void logResponse(WriterInterceptorContext context , ContainerRequestContext reqContext)
 		throws IOException {
-		Object parentSpanObj = context.getProperty(TracingFilter.spanKey);
+		Object parentSpanObj = null;
+		if (context != null) {
+			parentSpanObj = context.getProperty(TracingFilter.spanKey);
+		} else {
+			parentSpanObj = reqContext.getProperty(TracingFilter.spanKey);
+		}
+
 		Span span = null;
 		if (parentSpanObj != null) {
 			span = io.cube.agent.Utils.createPerformanceSpan("respProcess",
@@ -156,12 +162,21 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 			MultivaluedMap<String, String> meta;
 			MultivaluedMap<String, String> responseHeaders;
 			MDTraceInfo mdTraceInfo;
+			Object apiPathObj, traceMetaMapObj, respHeadersObj, statusObj, traceInfo;
 			try {
-				Object apiPathObj = context.getProperty(Constants.MD_API_PATH_PROP);
-				Object traceMetaMapObj = context.getProperty(Constants.MD_TRACE_META_MAP_PROP);
-				Object respHeadersObj = context.getProperty(Constants.MD_RESPONSE_HEADERS_PROP);
-				Object statusObj = context.getProperty(Constants.MD_STATUS_PROP);
-				Object traceInfo = context.getProperty(Constants.MD_TRACE_INFO);
+				if (context != null) {
+					apiPathObj = context.getProperty(Constants.MD_API_PATH_PROP);
+					traceMetaMapObj = context.getProperty(Constants.MD_TRACE_META_MAP_PROP);
+					respHeadersObj = context.getProperty(Constants.MD_RESPONSE_HEADERS_PROP);
+					statusObj = context.getProperty(Constants.MD_STATUS_PROP);
+					traceInfo = context.getProperty(Constants.MD_TRACE_INFO);
+				} else {
+					apiPathObj = reqContext.getProperty(Constants.MD_API_PATH_PROP);
+					traceMetaMapObj = reqContext.getProperty(Constants.MD_TRACE_META_MAP_PROP);
+					respHeadersObj = reqContext.getProperty(Constants.MD_RESPONSE_HEADERS_PROP);
+					statusObj = reqContext.getProperty(Constants.MD_STATUS_PROP);
+					traceInfo = reqContext.getProperty(Constants.MD_TRACE_INFO);
+				}
 
 				ObjectMapper mapper = new ObjectMapper();
 				//hdrs
@@ -186,22 +201,41 @@ public class LoggingFilter implements ContainerRequestFilter, ContainerResponseF
 				LOGGER.error(
 					"Exception occured during logging response, proceeding to the application!",
 					ex);
-				context.proceed();
+				if (context != null) {
+					context.proceed();
+				}
 				return;
 			}
 
-			//body
-			byte[] responseBody = getResponseBody(context);
+			byte[] responseBody = new byte[0];
+
+			//we pass context as null for empty body
+			if (context != null) {
+				responseBody = getResponseBody(context);
+			}
 
 			Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, mdTraceInfo, responseBody);
 
-			removeSetContextProperty(context);
+			if (context != null) {
+				removeSetContextProperty(context);
+			} else {
+				removeSetContextProperty(reqContext);
+			}
 		} finally {
 			span.finish();
 		}
 	}
 
 	private void removeSetContextProperty(WriterInterceptorContext context) {
+		context.removeProperty(Constants.MD_API_PATH_PROP);
+		context.removeProperty(Constants.MD_TRACE_META_MAP_PROP);
+		context.removeProperty(Constants.MD_RESPONSE_HEADERS_PROP);
+		context.removeProperty(Constants.MD_STATUS_PROP);
+		context.removeProperty(Constants.MD_SAMPLE_REQUEST);
+		context.removeProperty(Constants.MD_TRACE_INFO);
+	}
+
+	private void removeSetContextProperty(ContainerRequestContext context) {
 		context.removeProperty(Constants.MD_API_PATH_PROP);
 		context.removeProperty(Constants.MD_TRACE_META_MAP_PROP);
 		context.removeProperty(Constants.MD_RESPONSE_HEADERS_PROP);

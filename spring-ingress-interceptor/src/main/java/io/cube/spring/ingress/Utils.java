@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.slf4j.Logger;
@@ -32,11 +33,7 @@ public class Utils {
 
 	public static final long PAYLOAD_MAX_LIMIT = 25000000; //25 MB
 
-	private static final Config config;
-
-	static {
-		config = new Config();
-	}
+	private static final Config config = new Config();
 
 	public static boolean isSampled(MultivaluedMap<String, String> requestHeaders) {
 		return ((config.intentResolver.isIntentToRecord()
@@ -87,7 +84,7 @@ public class Utils {
 				.createHTTPRequestEvent(apiPath, queryParams, new MultivaluedHashMap<>(),
 					 meta, requestHeaders, mdTraceInfo,
 					requestBody, Optional.empty(), config.jsonMapper, true);
-			config.recorder.record(requestEvent);
+			CommonConfig.getInstance().getRecorder().record(requestEvent);
 		} catch (InvalidEventException e) {
 			LOGGER.error("Invalid Event for apiPath : " + apiPath, e);
 		} catch (JsonProcessingException e) {
@@ -104,7 +101,7 @@ public class Utils {
 				.createHTTPResponseEvent(apiPath, meta,
 					responseHeaders, mdTraceInfo, responseBody, Optional.empty(), config.jsonMapper,
 					true);
-			config.recorder.record(responseEvent);
+			CommonConfig.getInstance().getRecorder().record(responseEvent);
 		} catch (InvalidEventException e) {
 			LOGGER.error("Invalid Event for apiPath " + apiPath, e);
 		} catch (JsonProcessingException e) {
@@ -135,6 +132,26 @@ public class Utils {
 			});
 
 		return headerMap;
+	}
+
+	public static MultivaluedMap<String, String> getQueryParameters(String queryString) {
+		MultivaluedMap<String, String> queryParameters = new MultivaluedHashMap<>();
+
+		if (StringUtils.isEmpty(queryString)) {
+			return queryParameters;
+		}
+
+		String[] parameters = queryString.split("&");
+
+		for (String parameter : parameters) {
+			String[] keyValuePair = parameter.split("=");
+			if (keyValuePair.length == 1) {
+				queryParameters.add(keyValuePair[0], "");
+			} else {
+				queryParameters.add(keyValuePair[0], keyValuePair[1]);
+			}
+		}
+		return queryParameters;
 	}
 
 }
