@@ -256,4 +256,31 @@ public class CourseRepository {
 				.build();
 		}
 	}
+
+	
+	@GET
+	@Path("/echoPathParam/{pp1}/dummy1/{pp2}/dummy2/{pp3}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response echo(JsonNode body, @Context UriInfo uriInfo, @Context HttpHeaders httpHeaders,
+		@PathParam("pp1") int id, @PathParam("pp2") String pp2, @PathParam("pp2") String pp3) {
+		try {
+			MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+			MultivaluedMap<String, String> headers = httpHeaders.getRequestHeaders();
+			MultivaluedMap<String, String> pathParams = uriInfo.getPathParameters();
+			URI url = uriInfo.getRequestUri();
+
+//       ((ObjectNode)body).put("Kuch kuch", "NAHI hota hai");
+			Map jsonMap = new HashMap();
+			jsonMap.put("queryParams", queryParams);
+			jsonMap.put("headers", headers);
+			jsonMap.put("url", url);
+			jsonMap.put("body", body);
+			jsonMap.put("pathParams", pathParams);
+			return Response.ok().entity(objectMapper.writeValueAsString(jsonMap)).build();
+		} catch (Exception e) {
+			return Response.serverError().entity("Error while returning echo info" + e.getMessage())
+				.build();
+		}
+	}
 }
