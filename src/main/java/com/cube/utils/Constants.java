@@ -212,7 +212,4 @@ public class Constants {
     public static final String CONFIG_ACK_DATA_KEY_FIELD = "configAckDataKey";
     public static final int AGENT_ACK_DEFAULT_DELAY_SEC = 30;
 
-    // limits
-    public static final Integer MAX_TRACE_DEPTH = 10; // assumption about max depth of a trace. If trace has more
-    // depth, then getApiTrace will return lesser results
 }

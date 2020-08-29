@@ -1451,7 +1451,7 @@ public class AnalyzeWS {
          */
         Pair<List, Stream<Event>> result = rrstore
             .getApiTrace(apiTraceFacetQuery, Optional.of(numResults), start,
-                Optional.of(Constants.MAX_TRACE_DEPTH*numResults),
+                Optional.empty(),
                 Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse), false);
 
         MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
