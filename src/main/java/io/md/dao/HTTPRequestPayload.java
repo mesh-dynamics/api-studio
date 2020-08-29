@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
+import io.md.core.CompareTemplate;
 import io.md.utils.HttpRequestPayloadDeserializer;
 import io.md.utils.Utils;
 
@@ -69,7 +70,7 @@ public class HTTPRequestPayload extends HTTPPayload implements RequestPayload {
 	    this.queryParams = queryParams;
 	    this.formParams = formParams;
 	    this.method = method;
-	    this.path = path;
+	    this.path = CompareTemplate.normaliseAPIPath(path);
     }
 
 
