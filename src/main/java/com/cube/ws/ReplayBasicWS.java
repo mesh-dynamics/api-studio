@@ -129,7 +129,11 @@ public class ReplayBasicWS {
                 return CompletableFuture.completedFuture(errResp.get());
             }
             return beforeReplay(formParams, recording, replay)
-                .thenApply(v -> doStartReplay(replay, startReplay, analyze));
+                .thenApply(v -> doStartReplay(replay, startReplay))
+                .thenCompose(response ->
+                     afterReplay(formParams, recording, replay,
+                            analyze ? Optional.ofNullable(analyzer) : Optional.empty())
+                        .thenApply(v ->  response));
         } catch (ParameterException e) {
             return CompletableFuture.completedFuture(Response.status(Status.BAD_REQUEST)
                 .entity((new JSONObject(Map.of("Message", e.getMessage()))).toString())
@@ -211,7 +215,7 @@ public class ReplayBasicWS {
         return replayBuilder.build();
     }
 
-    private Response doStartReplay(Replay replay, boolean startReplay, boolean analyze) {
+    private Response doStartReplay(Replay replay, boolean startReplay) {
 
         return ReplayDriverFactory
             .initReplay(replay, dataStore, jsonMapper)
@@ -221,7 +225,7 @@ public class ReplayBasicWS {
                 try {
                     json = jsonMapper.writeValueAsString(replayFromDriver);
                     if (startReplay) {
-                        boolean status = replayDriver.start(analyze ? Optional.ofNullable(analyzer) : Optional.empty());
+                        boolean status = replayDriver.start();
                         if (status) {
                             return Response.ok(json, MediaType.APPLICATION_JSON).build();
                         }
@@ -244,6 +248,12 @@ public class ReplayBasicWS {
                                                    Replay replay) {
         // nothing to do
 	    return CompletableFuture.completedFuture(null);
+    }
+
+    protected CompletableFuture<Void> afterReplay(MultivaluedMap<String, String> formParams, Recording recording,
+        Replay replay, Optional<Analyzer> analyzer) {
+        // nothing to do
+        return CompletableFuture.completedFuture(null);
     }
 
 
