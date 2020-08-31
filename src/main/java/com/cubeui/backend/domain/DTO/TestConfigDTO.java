@@ -31,4 +31,5 @@ public class TestConfigDTO {
 
     private String tag;
 
+    private String dynamicInjectionConfigVersion;
 }
