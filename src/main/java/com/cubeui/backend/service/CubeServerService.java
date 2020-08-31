@@ -1,12 +1,19 @@
 package com.cubeui.backend.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectReader;
+import io.md.dao.ApiTraceResponse;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
 import com.cubeui.backend.web.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
 import java.util.List;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -151,6 +158,31 @@ public class CubeServerService {
             "/cs/start/" + customerId+ "/" + app + "/" + instance + "/" + "Default" + app;
         return fetchPostResponse(request, formParams, userHistoryUrl,
                 MediaType.APPLICATION_FORM_URLENCODED);
+    }
+
+    public Optional<List<ApiTraceResponse>> getApiTrace(HttpServletRequest request, String customerId, String app) {
+        String path = cubeServerBaseUrlReplay + String.format("/as/getApiTrace/%s/%s", customerId, app);
+        ResponseEntity response = fetchGetResponse(path, request.getQueryString());
+        if (response.getStatusCode() == HttpStatus.OK) {
+            try {
+                final String body = response.getBody().toString();
+                JsonNode json = jsonMapper.readTree(body);
+                JsonNode responseBody = json.get("response");
+                ObjectReader reader = jsonMapper.readerFor(new TypeReference<List<ApiTraceResponse>>() {
+                });
+                final List<ApiTraceResponse> apiTraceResponses = reader.readValue(responseBody);
+                return Optional.of(apiTraceResponses);
+            } catch (Exception e) {
+                log.info(String.format("Error in converting Json to ApiTraceResponse for customerId=%s, app=%s, message= %s",
+                    customerId, app, e.getMessage()));
+                return Optional.empty();
+            }
+        }
+        else {
+            log.error(String.format("Error while retrieving the data from path=%s , statusCode=%s, message=%s",
+                path, response.getStatusCode(), response.getBody()));
+            return Optional.empty();
+        }
     }
 
     public <T> ResponseEntity fetchGetResponse(HttpServletRequest request, Optional<T> requestBody, String... path) {
