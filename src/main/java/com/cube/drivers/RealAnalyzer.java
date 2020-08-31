@@ -84,23 +84,24 @@ public class RealAnalyzer implements Analyzer {
         reqs.forEach(UtilException.rethrowConsumer(requestList -> {
             // for each batch of requests, expand on trace id for the given list of intermediate services
             // (a property of replay)
-            List<Event> filteredList = requestList.stream().filter(request ->
+            Map<String, Event> filteredList = requestList.stream().filter(request ->
                 replay.sampleRate.map(sr -> random.nextDouble() <= sr).orElse(true))
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(event -> event.reqId, event->event));
 
-            Stream<Event> enhancedRequests = expandOnTraceId(filteredList, replay.customerId,
+            Stream<Event> enhancedRequests = expandOnTraceId(filteredList.values(), replay.customerId,
                 replay.app, replay.collection, rrstore);
 
             enhancedRequests.forEach(UtilException.rethrowConsumer(r -> {
-                analyzeRequestEvent(rrstore, replay, r, templateVersion, analysis);
+                analyzeRequestEvent(rrstore, replay, r, templateVersion, analysis, filteredList);
             }));
         }));
         analysis.status = Analysis.Status.MatchingCompleted;
     }
 
-    private void analyzeRequestEvent(ReqRespStore rrstore, Replay replay, Event recordReq, String templateVersion, Analysis analysis) {
+    private void analyzeRequestEvent(ReqRespStore rrstore, Replay replay, Event recordReq, String templateVersion,
+                                     Analysis analysis, Map<String, Event> replayedReqs) {
         // find matching request in replay
-        EventQuery eventQuery = reqEventToEventQuery(recordReq, analysis.replayId, 10);
+        EventQuery eventQuery = reqEventToEventQuery(recordReq, analysis.replayId, 10, replayedReqs);
 
         Result<Event> matches = rrstore.getEvents(eventQuery);
         // TODO: add toString override for the Request object to debug log
@@ -286,7 +287,7 @@ public class RealAnalyzer implements Analyzer {
         return false;
      }
 
-    Stream<Event> expandOnTraceId(List<Event> requestList, String customerId,
+    Stream<Event> expandOnTraceId(Collection<Event> requestList, String customerId,
                                   String app, String collectionId, ReqRespStore rrstore) {
         List<String> traceIds =
             requestList.stream().map(Event::getTraceId).collect(Collectors.toList());
@@ -302,12 +303,17 @@ public class RealAnalyzer implements Analyzer {
         return rrstore.getEvents(eventQuery).getObjects();
     }
 
-    EventQuery reqEventToEventQuery(Event reqEvent, String replayId, int limit) {
+    EventQuery reqEventToEventQuery(Event reqEvent, String replayId, int limit, Map<String, Event> replayedReqs) {
 
         EventQuery.Builder builder = new EventQuery.Builder(reqEvent.customerId, reqEvent.app, reqEvent.eventType);
 
-        return builder.withPath(reqEvent.apiPath)
-            .withService(reqEvent.service)
+        // For gateway replay requests, don't match apiPaths, since the dynamic injection could change the
+        // path leading to mismatch
+        if (!replayedReqs.containsKey(reqEvent.reqId)) {
+            builder.withPath(reqEvent.apiPath);
+        }
+
+        return builder.withService(reqEvent.service)
             .withCollection(replayId)
             .withRunType(Event.RunType.Replay)
             .withTraceId(reqEvent.getTraceId())
