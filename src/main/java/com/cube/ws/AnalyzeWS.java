@@ -1421,6 +1421,7 @@ public class AnalyzeWS {
   public Response getApiTrace(@Context UriInfo uriInfo,
       @PathParam("customerId") String customerId,
       @PathParam("appId") String appId) {
+
 	  MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 	  ApiTraceFacetQuery apiTraceFacetQuery = new ApiTraceFacetQuery(customerId, appId, queryParams);
 	  Integer depth = Optional.ofNullable(uriInfo.getQueryParameters().getFirst("depth"))
@@ -1442,7 +1443,7 @@ public class AnalyzeWS {
        * we need to change the logic to support other eventTypes
        */
 	    Pair<List, Stream<Event>> result = rrstore
-          .getApiTrace(apiTraceFacetQuery, Optional.of(numResults), start, Optional.of(depth*numResults),
+          .getApiTrace(apiTraceFacetQuery, Optional.of(numResults), start, Optional.empty(),
               Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse), false);
 
 	    MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
