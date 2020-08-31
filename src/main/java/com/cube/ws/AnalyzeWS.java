@@ -1404,106 +1404,90 @@ public class AnalyzeWS {
 
 	@GET
   @Path("getApiFacets/{customerId}/{appId}")
+  @Produces(MediaType.APPLICATION_JSON)
   public Response getApiFacets(@Context UriInfo uriInfo,
       @PathParam("customerId") String customerId,
       @PathParam("appId") String appId) {
-    try {
-      ApiTraceFacetQuery apiTraceFacetQuery = new ApiTraceFacetQuery(customerId, appId, uriInfo.getQueryParameters());
-      ArrayList servicePathFacets =  rrstore.getApiFacets(apiTraceFacetQuery);
-      Map jsonMap = new HashMap();
-      jsonMap.put(Constants.SERVICE_FACET, servicePathFacets);
-      return Response.ok().entity(jsonMapper.writeValueAsString(jsonMap)).build();
-    } catch (JsonProcessingException e) {
-      LOGGER.error(
-          new ObjectMessage(Map.of(Constants.MESSAGE, "Error while parsing the servicePathFacets",
-              Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, appId)), e);
-      return Response.serverError().entity(
-          buildErrorResponse(Constants.ERROR, "Error while parsing the servicePathFacets",
-              e.getMessage())).build();
-    }
+	  ApiTraceFacetQuery apiTraceFacetQuery = new ApiTraceFacetQuery(customerId, appId, uriInfo.getQueryParameters());
+	  ArrayList servicePathFacets =  rrstore.getApiFacets(apiTraceFacetQuery);
+	  Map jsonMap = new HashMap();
+	  jsonMap.put(Constants.SERVICE_FACET, servicePathFacets);
+	  return Response.ok().entity(jsonMap).build();
   }
 
   @GET
   @Path("getApiTrace/{customerId}/{appId}")
+  @Produces(MediaType.APPLICATION_JSON)
   public Response getApiTrace(@Context UriInfo uriInfo,
       @PathParam("customerId") String customerId,
       @PathParam("appId") String appId) {
-    try {
-      MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-      ApiTraceFacetQuery apiTraceFacetQuery = new ApiTraceFacetQuery(customerId, appId, queryParams);
-      Integer depth = Optional.ofNullable(uriInfo.getQueryParameters().getFirst("depth"))
-            .flatMap(val -> Utils.strToInt(val).filter(v -> v >0)).orElse(1);
-      Integer numResults =
-          Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).orElse(20);
-      Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
-      if(apiTraceFacetQuery.traceIds.isEmpty()) {
-        Pair<List, Stream<Event>> result = rrstore.getApiTrace(apiTraceFacetQuery, Optional.of(numResults), start,
-            Optional.of(0),
-            Arrays.asList(EventType.HTTPRequest), true);
-        List<String> traceIds = result.first();
-        apiTraceFacetQuery.withTraceIds(traceIds);
-      }
-      ArrayList<ApiTraceResponse> response = new ArrayList<>();
-      if(!apiTraceFacetQuery.traceIds.isEmpty()) {
-        /**TODO: we need to update the trace for other event types
-         *currently we are supporting only HTTPRequest and HTTPResponse
-         * we need to change the logic to support other eventTypes
-         */
-        Pair<List, Stream<Event>> result = rrstore
-            .getApiTrace(apiTraceFacetQuery, Optional.of(numResults), start, Optional.of(depth*numResults),
-                Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse), false);
+	  MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+	  ApiTraceFacetQuery apiTraceFacetQuery = new ApiTraceFacetQuery(customerId, appId, queryParams);
+	  Integer depth = Optional.ofNullable(uriInfo.getQueryParameters().getFirst("depth"))
+        .flatMap(val -> Utils.strToInt(val).filter(v -> v >0)).orElse(1);
+	  Integer numResults =
+        Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).orElse(20);
+	  Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
+	  if(apiTraceFacetQuery.traceIds.isEmpty()) {
+	    Pair<List, Stream<Event>> result = rrstore.getApiTrace(apiTraceFacetQuery, Optional.of(numResults), start,
+          Optional.of(0),
+          Arrays.asList(EventType.HTTPRequest), true);
+	    List<String> traceIds = result.first();
+	    apiTraceFacetQuery.withTraceIds(traceIds);
+	  }
+	  ArrayList<ApiTraceResponse> response = new ArrayList<>();
+	  if(!apiTraceFacetQuery.traceIds.isEmpty()) {
+	    /**TODO: we need to update the trace for other event types
+       *currently we are supporting only HTTPRequest and HTTPResponse
+       * we need to change the logic to support other eventTypes
+       */
+	    Pair<List, Stream<Event>> result = rrstore
+          .getApiTrace(apiTraceFacetQuery, Optional.of(numResults), start, Optional.of(depth*numResults),
+              Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse), false);
 
-        MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
-        MultivaluedMap<String, Event> traceCollectionMap = new MultivaluedHashMap<>();
-        result.second().forEach(
-            res -> {
-              if (res.eventType == EventType.HTTPRequest) {
-                traceCollectionMap.add(getTraceKeyFromEvent(res), res);
-              }
-              mapForEventsTraceIds.add(getTraceKeyFromEvent(res), res);
-            });
+	    MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
+	    MultivaluedMap<String, Event> traceCollectionMap = new MultivaluedHashMap<>();
+	    result.second().forEach(
+	        res -> {
+	          if (res.eventType == EventType.HTTPRequest) {
+	            traceCollectionMap.add(getTraceKeyFromEvent(res), res);
+	          }
+	          mapForEventsTraceIds.add(getTraceKeyFromEvent(res), res);
+	        });
 
-          traceCollectionMap.forEach((traceCollectionKey, events) -> {
-            List<Event> parentRequestEvents = apiTraceFacetQuery.apiPath.map(path -> {
-                return events.stream()
-                    .filter(e -> e.apiPath.equals(path))
-                    .limit(numResults)
-                    .collect(Collectors.toList());
-            }).orElseGet(() -> {
-                // find event such that there is no event having span id equal to its parent span id
-                Map<String, Event> requestEventsBySpanId = new HashMap<>();
-                events.forEach(e -> requestEventsBySpanId.put(e.spanId, e));
-                return events.stream()
-                    .filter(e -> requestEventsBySpanId.get(e.parentSpanId) == null)
-                    .limit(numResults)
-                    .collect(Collectors.toList());
-            });
-            if (parentRequestEvents.isEmpty()) {
-              LOGGER.error(
-                  new ObjectMessage(Map.of(Constants.MESSAGE, "No request events found",
-                      Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, appId,
-                      Constants.TRACE_ID_FIELD + " " + Constants.COLLECTION_FIELD,
-                      traceCollectionKey)));
-              return;
-            }
-            for (Event parent : parentRequestEvents) {
-              response.add(getApiTraceResponse(parent, depth,
-                  Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey)));
-            }
-          });
-      }
-      Map jsonMap = new HashMap();
+	    traceCollectionMap.forEach((traceCollectionKey, events) -> {
+	      List<Event> parentRequestEvents = apiTraceFacetQuery.apiPath.map(path -> {
+	        return events.stream()
+              .filter(e -> e.apiPath.equals(path))
+              .limit(numResults)
+              .collect(Collectors.toList());
+	      }).orElseGet(() -> {
+	        // find event such that there is no event having span id equal to its parent span id
+          Map<String, Event> requestEventsBySpanId = new HashMap<>();
+          events.forEach(e -> requestEventsBySpanId.put(e.spanId, e));
+          return events.stream()
+              .filter(e -> requestEventsBySpanId.get(e.parentSpanId) == null)
+              .limit(numResults)
+              .collect(Collectors.toList());
+	      });
+	      if (parentRequestEvents.isEmpty()) {
+	        LOGGER.error(
+	            new ObjectMessage(Map.of(Constants.MESSAGE, "No request events found",
+                  Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, appId,
+                  Constants.TRACE_ID_FIELD + " " + Constants.COLLECTION_FIELD,
+                  traceCollectionKey)));
+	        return;
+	      }
+	      for (Event parent : parentRequestEvents) {
+	        response.add(getApiTraceResponse(parent, depth,
+              Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey)));
+	      }
+	    });
+	  }
+	  Map jsonMap = new HashMap();
 
-      jsonMap.put("response", response);
-      return Response.ok().entity(jsonMapper.writeValueAsString(jsonMap)).build();
-    } catch (JsonProcessingException e) {
-      LOGGER.error(
-          new ObjectMessage(Map.of(Constants.MESSAGE, "Error while parsing the response",
-              Constants.CUSTOMER_ID_FIELD, customerId, Constants.APP_FIELD, appId)), e);
-      return Response.serverError().entity(
-          buildErrorResponse(Constants.ERROR, "Error while parsing the response",
-              e.getMessage())).build();
-    }
+	  jsonMap.put("response", response);
+	  return Response.ok().entity(jsonMap).build();
   }
 
   private String getTraceKeyFromEvent(Event event) {
@@ -1526,7 +1510,12 @@ public class AnalyzeWS {
 
     levelOrderTraversal(parentRequestEvent,  depth, apiTraceResponse, responseEventsByReqId,
         requestEventsByParentSpanId);
-
+    apiTraceResponse.res.sort(new java.util.Comparator<ServiceReqRes>() {
+      @Override
+      public int compare(ServiceReqRes o1, ServiceReqRes o2) {
+        return o1.reqTimestamp.compareTo(o2.reqTimestamp);
+      }
+    });
     return apiTraceResponse;
   }
 
