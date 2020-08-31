@@ -134,9 +134,6 @@ const initialState = {
     mockReqApiPath: "",
     modalErrorAddMockReqMessage: "",
     selectedTabIdToAddMockReq: "",
-    showImportFromCurlModal: false,
-    curlCommand: "",
-    modalErrorImportFromCurlMessage: "",
 }
 
 const getTabIndexGivenTabId = (tabId, tabs) => {
@@ -724,31 +721,6 @@ export const httpClient = (state = initialState, { type, data }) => {
                         }
                         return eachTab;
                     })
-            }
-        }
-
-        case httpClientConstants.SHOW_IMPORT_FROM_CURL_MODAL: {
-            return {
-                ...state,
-                showImportFromCurlModal: data.showImportFromCurlModal, 
-                curlCommand: data.curlCommand, 
-                modalErrorImportFromCurlMessage: data.modalErrorImportFromCurlMessage
-            }
-        }
-
-        case httpClientConstants.CLOSE_IMPORT_FROM_CURL_MODAL: {
-            return {
-                ...state,
-                showImportFromCurlModal: data.showImportFromCurlModal, 
-                curlCommand: data.curlCommand, 
-                modalErrorImportFromCurlMessage: data.modalErrorImportFromCurlMessage
-            }
-        }
-
-        case httpClientConstants.UPDATE_MODAL_CURL_COMMAND: {
-            return {
-                ...state,
-                [data.name]: data.value
             }
         }
         
