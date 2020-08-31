@@ -1,3 +1,5 @@
+import { allowedCaptchaDomains } from '../enums/app-config';
+
 const processInstanceList = (instanceList) => {
     // TODO: Plucked from services. Refactoring this function    
     // Below code not to be removed now. 
@@ -32,7 +34,10 @@ const processInstanceList = (instanceList) => {
 
 const getAccesToken = (state) => (state.authentication.user.access_token);
 
+const isAllowedDomain = () => allowedCaptchaDomains.includes(window.location.hostname);
+
 export { 
     processInstanceList, 
-    getAccesToken
+    getAccesToken,
+    isAllowedDomain
 };
