@@ -3,6 +3,8 @@
  */
 package com.cube.ws;
 
+import com.cube.core.TagConfig;
+import io.md.services.Analyzer;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -392,32 +394,39 @@ public class ReplayWS extends ReplayBasicWS {
                                                    Replay replay) {
         Optional<String> tagOpt = Optional.ofNullable(formParams.getFirst(Constants.TAG_FIELD));
 
-        return tagOpt.map(tag -> setTag(recording, replay, tag))
+        return tagOpt.map(tag -> this.tagConfig.setTag(recording, replay.instanceId, tag))
             .orElse(CompletableFuture.completedFuture(null));
     }
 
-    private CompletableFuture<Void> setTag(Recording recording, Replay replay, String tag) {
-        AtomicBoolean changed = new AtomicBoolean(false);
-        Result<AgentConfigTagInfo> response = rrstore.getAgentConfigTagInfoResults(
-            recording.customerId, recording.app, Optional.empty(), replay.instanceId);
-        response.getObjects().forEach(agentconfig -> {
-            if(!agentconfig.tag.equals(tag)){
-                AgentConfigTagInfo agentConfigTagInfo = new AgentConfigTagInfo(
-                    agentconfig.customerId, agentconfig.app, agentconfig.service, agentconfig.instanceId, tag);
-                changed.set(true);
-                rrstore.updateAgentConfigTag(agentConfigTagInfo);
+    @Override
+    protected CompletableFuture<Void> afterReplay(MultivaluedMap<String, String> formParams, Recording recording,
+        Replay replay, Optional<Analyzer> analyzerOpt) {
+        Optional<String> resetTagOpt = Optional.ofNullable(formParams.getFirst(Constants.RESET_TAG_FIELD));
+
+         return CompletableFuture.runAsync(() -> analyze(replay, analyzerOpt))
+            .thenCompose(v ->
+                 resetTagOpt.map(tag -> this.tagConfig.setTag(recording, replay.instanceId, tag))
+                    .orElse(CompletableFuture.completedFuture(null)));
+    }
+
+    private void analyze(Replay replay, Optional<Analyzer> analyzerOpt) {
+        ReplayStatus status = ReplayStatus.Running;
+        while (status == ReplayStatus.Running) {
+            try {
+                Thread.sleep(5000);
+                Optional<Replay> currentRunningReplay = dataStore
+                    .getCurrentRecordOrReplay(replay.customerId,
+                        replay.app, replay.instanceId)
+                    .flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
+                status = currentRunningReplay.filter(runningReplay -> runningReplay.
+                    replayId.equals(replay.replayId)).map(r -> r.status).orElse(replay.status);
+            } catch (InterruptedException e) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Exception while sleeping  the thread", Constants.REPLAY_ID_FIELD
+                    , replay.replayId)));
             }
-        });
-        LOGGER.info("Waiting for 30s to set Tag: " + tag + ", current time" + Instant.now());
-        if(changed.get()) {
-            // waiting is done in a different thread and a future is returned
-            return ScheduledCompletable.schedule(
-                    scheduler, () -> {
-                        LOGGER.info("Finished waiting for set Tag: " + tag + ", current time" + Instant.now());
-                        return null;
-                }, tagApplyDelay, TimeUnit.SECONDS);
         }
-        return CompletableFuture.completedFuture(null);
+        analyzerOpt.ifPresent(analyzer -> analyzer.analyze(replay.replayId));
     }
 
     /**
@@ -429,14 +438,12 @@ public class ReplayWS extends ReplayBasicWS {
 		this.rrstore = config.rrstore;
 		this.jsonMapper = config.jsonMapper;
 		this.config = config;
-		// use single thread for all waiting requirements so as to not block the main threads
-        scheduler = Executors.newSingleThreadScheduledExecutor();;
+		this.tagConfig = new TagConfig(config.rrstore);
     }
 
 
 	ReqRespStore rrstore;
 	ObjectMapper jsonMapper;
+	TagConfig tagConfig;
     private final Config config;
-    private final ScheduledExecutorService scheduler;
-    static private final long tagApplyDelay = 30;
 }

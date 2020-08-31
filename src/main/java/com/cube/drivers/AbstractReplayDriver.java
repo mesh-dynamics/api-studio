@@ -71,7 +71,7 @@ public abstract class AbstractReplayDriver {
 
 	public abstract IReplayClient initClient(Replay replay) throws Exception;
 
-	public boolean start(Optional<Analyzer> analyzer) {
+	public boolean start() {
 
 		if (replay.status != ReplayStatus.Init) {
 			LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
@@ -97,7 +97,7 @@ public abstract class AbstractReplayDriver {
 			populateStaticExtactionMap();
 		}
 
-		CompletableFuture.runAsync(() -> replay(analyzer)).handle((ret, e) -> {
+		CompletableFuture.runAsync(() -> replay()).handle((ret, e) -> {
 			if (e != null) {
 				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 					"Exception in replaying requests", Constants.REPLAY_ID_FIELD, replay.replayId)),
@@ -130,7 +130,7 @@ public abstract class AbstractReplayDriver {
 
 	private IReplayClient client;
 
-	protected void replay(Optional<Analyzer> analyzer) {
+	protected void replay() {
 
 		//List<Request> requests = getRequests();
 
@@ -215,7 +215,6 @@ public abstract class AbstractReplayDriver {
 
 		//rrstore.saveReplay(replay);
 		dataStore.deferredDelete(replay);
-		analyzer.ifPresent(this::analyze);
 		this.client.tearDown();
 	}
 
@@ -294,26 +293,6 @@ public abstract class AbstractReplayDriver {
 			}
 		}).collect(Collectors.toList());
 	}
-
-	public void analyze(Analyzer analyzer) {
-		ReplayStatus status = ReplayStatus.Running;
-		while (status == ReplayStatus.Running) {
-			try {
-				Thread.sleep(5000);
-				Optional<Replay> currentRunningReplay = dataStore
-					.getCurrentRecordOrReplay(replay.customerId,
-						replay.app, replay.instanceId)
-					.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
-				status = currentRunningReplay.filter(runningReplay -> runningReplay.
-					replayId.equals(replay.replayId)).map(r -> r.status).orElse(replay.status);
-			} catch (InterruptedException e) {
-				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-					"Exception while sleeping  the thread", Constants.REPLAY_ID_FIELD
-					, replay.replayId)));
-			}
-		}
-        analyzer.analyze(replay.replayId);
-    }
 
 	public Replay getReplay() {
 		return replay;
