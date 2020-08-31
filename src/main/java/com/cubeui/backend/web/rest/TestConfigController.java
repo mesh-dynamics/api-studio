@@ -88,6 +88,7 @@ public class TestConfigController {
                             .emailId(testConfigDTO.getEmailId())
                             .slackId(testConfigDTO.getSlackId())
                             .tag(testConfigDTO.getTag())
+                            .dynamicInjectionConfigVersion(testConfigDTO.getDynamicInjectionConfigVersion())
                             .build());
             return created(
                     ServletUriComponentsBuilder
@@ -121,6 +122,7 @@ public class TestConfigController {
                 testConfig.setSlackId(testConfigDTO.getSlackId());
                 testConfig.setMaxRunTimeMin(testConfigDTO.getMaxRunTimeMin());
                 testConfig.setTag(testConfigDTO.getTag());
+                testConfig.setDynamicInjectionConfigVersion(testConfigDTO.getDynamicInjectionConfigVersion());
             });
             this.testConfigRepository.save(existing.get());
             return created(
