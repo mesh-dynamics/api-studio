@@ -549,7 +549,8 @@ class ViewSelectedTestConfig extends React.Component {
                 testConfig: { 
                     testPaths, 
                     testMockServices, 
-                    testConfigName 
+                    testConfigName,
+                    dynamicInjectionConfigVersion
                 }
             }, 
             authentication: { 
@@ -572,6 +573,9 @@ class ViewSelectedTestConfig extends React.Component {
         searchParams.set('transforms', transforms);
         searchParams.set('testConfigName', testConfigName);
         searchParams.set('analyze', true);
+
+        // Append dynamic injection configuration if available
+        dynamicInjectionConfigVersion && searchParams.set('dynamicInjectionConfigVersion', dynamicInjectionConfigVersion);
         // Append mock services
         testMockServices && testMockServices.length != 0 &&
             testMockServices.map(testMockService => searchParams.append('mockServices',testMockService))
