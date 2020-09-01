@@ -1559,13 +1559,7 @@ public class CubeStore {
     @POST
     @Path("cache/flushall")
     public Response cacheFlushAll() {
-        rrstore.invalidateCache();
-        try (Jedis jedis = config.jedisPool.getResource()) {
-            jedis.flushAll();
-            return Response.ok().build();
-        } catch (Exception e) {
-            return Response.serverError().entity("Exception occured while flushing :: " + e.getMessage()).build();
-        }
+        return Utils.flushAll(config);
     }
 
     private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId)
