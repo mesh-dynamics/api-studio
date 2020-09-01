@@ -2,6 +2,7 @@
  * PROXY SERVER CODE
  */
 const httpProxy = require('http-proxy');
+const find = require('find-process');
 const logger = require('electron-log');
 const { getApplicationConfig } = require('./fs-utils');
 
@@ -43,7 +44,7 @@ const setupProxy = (mockContext, user) => {
 
     const proxyServerOptions = {
         target: {
-            protocol: `${mock.protocol}:`, // Do not forget the darn colon
+            protocol: mock.protocol, //`${mock.protocol}:`, // Do not forget the darn colon
             host: mock.host,
             port: mock.port,
         },
@@ -114,9 +115,17 @@ const setupProxy = (mockContext, user) => {
     // proxy.on('proxyReq', proxyResponseInterceptor);
 
     /**
-     * Setup Proxy Listening
+     * Cleanup and Setup Proxy Listening
      */
-    proxy.listen(mock.proxyPort);
+    find('port', mock.proxyPort)
+        .then((pList) => {
+            pList.map((item) => {
+                logger.info('Killing Process...', item.pid);
+                process.kill(item.pid);
+                logger.info('Killed process...', item.pid);
+            });
+            setTimeout(() => proxy.listen(mock.proxyPort), 3000);
+        })
 };
 
 module.exports = {

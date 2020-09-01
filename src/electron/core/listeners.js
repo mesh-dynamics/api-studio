@@ -156,7 +156,9 @@ const setupListeners = (mockContext, user, replayContext) => {
         logger.info('Updated AWS Signing Options \n', awsSigingOptions);
 
         // Check for updates once the configs are set
-        autoUpdater.checkForUpdates();
+        if(!isDev) {
+            autoUpdater.checkForUpdates();
+        }
     });
 
     ipcMain.on('set_user', (event, arg) => {
