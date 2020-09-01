@@ -45,10 +45,12 @@ public class InstanceController {
         if(appList.isPresent() && instanceUserList.isPresent()) {
             List<Instance> instancesList = new ArrayList<Instance>();
             for( App app : appList.get()) {
-                List<Instance> instances = this.instanceRepository.findByAppId(app.getId()).get();
-                instances.forEach(instance -> {
-                    instanceUserList.get().forEach(instanceUser -> {
-                        if(instanceUser.getInstance().getId().equals(instance.getId())) instancesList.add(instance);
+                Optional<List<Instance>> optionalInstances = this.instanceRepository.findByAppId(app.getId());
+                optionalInstances.ifPresent(instances -> {
+                    instances.forEach(instance -> {
+                        instanceUserList.get().forEach(instanceUser -> {
+                            if(instanceUser.getInstance().getId().equals(instance.getId())) instancesList.add(instance);
+                        });
                     });
                 });
             }
