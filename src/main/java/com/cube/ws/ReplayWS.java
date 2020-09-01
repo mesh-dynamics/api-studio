@@ -61,6 +61,7 @@ import com.cube.drivers.AbstractReplayDriver;
 import com.cube.drivers.RealAnalyzer;
 import com.cube.utils.Constants;
 import com.cube.utils.ScheduledCompletable;
+import redis.clients.jedis.Jedis;
 
 /**
  * @author prasad
@@ -387,6 +388,18 @@ public class ReplayWS extends ReplayBasicWS {
             .entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
                 "Replay object not found")).build());
         return resp;
+    }
+
+    @POST
+    @Path("cache/flushall")
+    public Response cacheFlushAll() {
+        rrstore.invalidateCache();
+        try (Jedis jedis = config.jedisPool.getResource()) {
+            jedis.flushAll();
+            return Response.ok().build();
+        } catch (Exception e) {
+            return Response.serverError().entity("Exception occured while flushing :: " + e.getMessage()).build();
+        }
     }
 
     @Override
