@@ -344,9 +344,12 @@ class HttpClient extends Component {
             selectedTraceTableTestReqTab = currentSelectedTab.recordedHistory.outgoingRequests ? currentSelectedTab.recordedHistory.outgoingRequests.find((eachTab) => eachTab.id === selectedTraceTableTestReqTabId) : {};
         }
 
-        const { outgoingRequests, service, httpURL, httpURLShowOnly } = currentSelectedTab;
+        const { outgoingRequests, service, httpURL, httpURLShowOnly, showTrace } = currentSelectedTab;
 
-        const { selectedResolutionType, showTrace, showLogs, collapseLength, incrementCollapseLengthForRecReqId, incrementCollapseLengthForRepReqId, maxLinesLength, showResponseMessageHeaders, showResponseMessageBody, showRequestMessageHeaders, showRequestMessageQParams, showRequestMessageFParams, showRequestMessageBody, showAll, searchFilterPath,  shownResponseMessageHeaders, shownResponseMessageBody, shownRequestMessageHeaders, shownRequestMessageQParams, shownRequestMessageFParams, shownRequestMessageBody, diffLayoutData, showCompleteDiff } = this.state;
+        const { selectedResolutionType, showLogs, collapseLength, incrementCollapseLengthForRecReqId, incrementCollapseLengthForRepReqId, maxLinesLength, showResponseMessageHeaders, showResponseMessageBody, showRequestMessageHeaders, showRequestMessageQParams, showRequestMessageFParams, showRequestMessageBody, showAll, searchFilterPath,  shownResponseMessageHeaders, shownResponseMessageBody, shownRequestMessageHeaders, shownRequestMessageQParams, shownRequestMessageFParams, shownRequestMessageBody, diffLayoutData, showCompleteDiff } = this.state;
+
+        // if showTrace isn't set, show based on outgoing requests being non empty
+        const showTraceV = showTrace == null ? (outgoingRequests?.length != 0) : showTrace;
 
         const selectedDiffItem = diffLayoutData ? diffLayoutData[0] : null;
 
@@ -440,7 +443,13 @@ class HttpClient extends Component {
 
                 </div>
                 <div>
-                    <div style={{display: "flex", backgroundColor: "#ffffff", marginBottom: "9px"}}>
+                <div style={{marginRight: "7px"}}>
+                    <div className="pointer" style={{display: "inline-block", width: "20%", fontSize: "11px"}} onClick={() => this.props.toggleShowTrace(currentSelectedTab.id)}>
+                        TRACE
+                        <i className={showTraceV ? "fas fa-chevron-circle-up" : "fas fa-chevron-circle-down"} style={{marginLeft: "2px"}}></i>
+                    </div>
+                </div>
+                    <div style={{display: showTraceV ? "flex" : "none", backgroundColor: "#ffffff", marginBottom: "9px"}}>
                         <div style={{flex: "1", padding: "0.5rem"}}>
                             <div>Reference</div>
                             <Table hover style={{backgroundColor: "#fff", border: "1px solid #ddd", borderSpacing: "0px", borderCollapse: "separate", marginBottom: "0px"}}>
@@ -641,11 +650,6 @@ class HttpClient extends Component {
                                     </DropdownButton>
                                 </div>
                             </div>
-                            {/* <div style={{display: "inline-block"}} className="pull-right">
-                                <Button bsSize="small" bsStyle={"primary"} style={{}} onClick={this.toggleBetweenTraceAndLogs}>
-                                    {showTrace ? "VIEW LOGS" : "VIEW TRACE"}
-                                </Button>
-                            </div> */}
                             <FormControl style={{marginBottom: "12px", marginTop: "10px"}}
                                 ref={this.inputElementRef}
                                 type="text"
@@ -656,18 +660,6 @@ class HttpClient extends Component {
                                 onChange={this.handleSearchFilterChange}
                             />
                         </FormGroup>
-                        {/* <div style={{marginTop: "9px", display: showTrace ? "none": ""}}>
-                            <Iframe url={selectedDiffItem.loggingURL}
-                                width="100%"
-                                height="720px"
-                                id="myId"
-                                className="myClassname"
-                                display="initial"
-                                position="relative"
-                                frameBorder="1"
-                                styles={{ border: "1px solid" }}
-                            />
-                        </div> */}
                         <div style={{marginTop: "9px", display: showLogs ? "none": ""}}>
                             {(showRequestMessageHeaders || shownRequestMessageHeaders) && (
                                 <div style={{ display: showRequestMessageHeaders ? "" : "none" }}>

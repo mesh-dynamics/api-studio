@@ -106,6 +106,7 @@ const initialState = {
         selectedTraceTableReqTabId: "",
         selectedTraceTableTestReqTabId: "",
         requestRunning: false,
+        showTrace: null,
     } */],
     toggleTestAndOutgoingRequests: true,
     selectedTabKey: "",
@@ -724,7 +725,7 @@ export const httpClient = (state = initialState, { type, data }) => {
             }
         }
         
-        case httpClientConstants.CREATE_DUPPLICATE_TAB: {
+        case httpClientConstants.CREATE_DUPLICATE_TAB: {
             let {tabs} = state;
             const tabToClone = _.find(tabs, {id: data.tabId});
             const newTab = _.cloneDeep(tabToClone);
@@ -733,6 +734,19 @@ export const httpClient = (state = initialState, { type, data }) => {
             return {
                 ...state,
                 tabs: [...tabs, newTab],
+            }
+        }
+
+        case httpClientConstants.TOGGLE_SHOW_TRACE: {            
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab.showTrace = !eachTab.showTrace
+                    }
+                    return eachTab;
+                })
             }
         }
 

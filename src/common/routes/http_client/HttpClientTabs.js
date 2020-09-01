@@ -1010,6 +1010,7 @@ class HttpClientTabs extends Component {
                                 collectionIdAddedFromClient: collectionId,
                                 traceIdAddedFromClient: traceId,
                                 requestRunning: false,
+                                showTrace: null,
                             };
                             const tabId = uuidv4();
                             outgoingRequests.push({
@@ -1742,6 +1743,7 @@ class HttpClientTabs extends Component {
             traceIdAddedFromClient: httpRequestEvent.traceId,
             apiPath: httpRequestEvent.apiPath,
             requestRunning: false,
+            showTrace: null,
         };
         return reqObject;
     }
@@ -1986,6 +1988,7 @@ class HttpClientTabs extends Component {
             collectionIdAddedFromClient: httpRequestEvent.collection,
             traceIdAddedFromClient: httpRequestEvent.traceId,
             requestRunning: false,
+            showTrace: null,
         };
         return reqObject;
     }
@@ -2157,6 +2160,7 @@ class HttpClientTabs extends Component {
                                 isOutgoingRequest: false,
                                 service: httpRequestEvent.service,
                                 requestRunning: false,
+                                showTrace: null,
                             };
                             const savedTabId = this.addTab(null, reqObject, selectedApp);
                             this.showOutgoingRequests(savedTabId, node.traceIdAddedFromClient, node.collectionIdAddedFromClient, node.recordingIdAddedFromClient);
@@ -2165,6 +2169,11 @@ class HttpClientTabs extends Component {
                 }
             });
         }
+    }
+
+    toggleShowTrace = (tabId) => {
+        const {dispatch} = this.props;
+        dispatch(httpClientActions.toggleShowTrace(tabId))
     }
 
     getSelectedTabKey(givenTabs, type) {
@@ -2226,6 +2235,7 @@ class HttpClientTabs extends Component {
                         cubeRunHistory={cubeRunHistory}
                         showAddMockReqModal={this.showAddMockReqModal}
                         handleDuplicateTab={this.handleDuplicateTab}
+                        toggleShowTrace={this.toggleShowTrace}
                         >
                         </HttpClient>
                     </div>

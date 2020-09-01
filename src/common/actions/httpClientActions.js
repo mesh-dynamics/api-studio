@@ -219,6 +219,8 @@ export const httpClientActions = {
 
     unsetReqRunning: (tabId) => ({type: httpClientConstants.UNSET_REQUEST_RUNNING, data: {tabId}}),
 
-    createDuplicateTab: (tabId) => ({type: httpClientConstants.CREATE_DUPPLICATE_TAB, data: {tabId}}),
+    createDuplicateTab: (tabId) => ({type: httpClientConstants.CREATE_DUPLICATE_TAB, data: {tabId}}),
+
+    toggleShowTrace: (tabId) => ({type: httpClientConstants.TOGGLE_SHOW_TRACE, data: {tabId}})
 
 }
