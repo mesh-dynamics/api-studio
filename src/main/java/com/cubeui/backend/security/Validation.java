@@ -19,7 +19,7 @@ public class Validation {
     //validates the customerId from URI and token
     public void validateCustomerName(HttpServletRequest request, String customerId) {
         final Customer customer = jwtTokenProvider.getCustomer(request);
-        if(!customerId.equalsIgnoreCase(customer.getName())) {
+        if(customerId == null || !customerId.equalsIgnoreCase(customer.getName())) {
             log.error("Invalid Customer Id");
             throw new CustomerIdException("CustomerId=" + customerId + " not matching to Token customerId=" + customer.getName());
         }
