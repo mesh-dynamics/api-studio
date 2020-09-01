@@ -1,7 +1,7 @@
 import React, { Component, Fragment, createContext } from "react";
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
-import { FormControl, FormGroup, Tabs, Tab, Panel, Label, Modal, Button, ControlLabel, Overlay, Popover, Glyphicon } from 'react-bootstrap';
+import { FormControl, FormGroup, Tabs, Tab, Panel, Label, Modal, Button, ControlLabel, Glyphicon } from 'react-bootstrap';
 import { Treebeard, decorators } from 'react-treebeard';
 
 import _, { head } from 'lodash';
@@ -47,11 +47,9 @@ class HttpClientTabs extends Component {
     constructor(props, context) {
         super(props, context);
 
-        this.handleEnvPopoverClick = e => {
-            this.setState({ envPopoverOverlayTarget: e.target, showEnvPopoverOverlay: !this.state.showEnvPopoverOverlay });
-        };
         this.state = { 
             showEnvVarModal: false,
+            showSelectedEnvModal: false,
             showErrorModal: false,
             errorMsg: "",
             showDeleteGoldenConfirmation:false,
@@ -2299,48 +2297,52 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.setSelectedEnvironment(e.target.value))
     }
 
-    renderEnvPopoverBtn = () => {
+    renderSelectedEnvModal = () => {
         const currentEnvironment = this.getCurrentEnvirnoment();
         const { httpClient: { selectedEnvironment } } = this.props;
-        const envPopover = (<Popover
-            title={selectedEnvironment || "No Environment Selected"}>
-            <div style={{ padding: "0 5px 0 5px",width: "400px" }}>
-                {currentEnvironment && !_.isEmpty(currentEnvironment.vars) && <table className="table table-bordered table-hover">
-                    <thead>
-                        <tr>
-                            <th style={{ width: "20%" }}>Variable</th>
-                            <th>Value</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {
-                            currentEnvironment.vars.map((varEntry) => (
-                            <tr>
-                                <td>{varEntry.key}</td>
-                                <td style={{wordBreak: "break-all"}}>{varEntry.value}</td>
-                            </tr>
-                            ))
-                        }
-                    </tbody>
-                </table>}
-            </div>
-        </Popover>)
         return (
             <Fragment>
-                <span title="Environment quick look" className="btn btn-sm cube-btn text-center" onClick={this.handleEnvPopoverClick}>
+                <span title="Environment quick look" className="btn btn-sm cube-btn text-center" onClick={this.openSelectedEnvModal}>
                     <i className="fas fa-eye" />
                 </span>
-                <Overlay  show={this.state.showEnvPopoverOverlay}
-                    target={this.state.envPopoverOverlayTarget}
-                    placement="bottom"
-                    container={this}
-                    onHide={()=>{this.setState({showEnvPopoverOverlay: false})}}
-                    rootClose 
-                >
-                {envPopover}
-                </Overlay>
+                <Modal show={this.state.showSelectedEnvModal} onHide={this.closeSelectedEnvModal}>
+                    <Modal.Header closeButton>
+                        <Modal.Title>{selectedEnvironment || "No Environment Selected"}</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <div>
+                            {currentEnvironment && !_.isEmpty(currentEnvironment.vars) && <table className="table table-bordered table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style={{ width: "20%" }}>Variable</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {currentEnvironment.vars.map((varEntry) => (
+                                    <tr>
+                                        <td>{varEntry.key}</td>
+                                        <td style={{wordBreak: "break-all"}}>{varEntry.value}</td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>}
+                        </div>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <div onClick={this.closeSelectedEnvModal} className="btn btn-sm cube-btn text-center">Close</div>
+                    </Modal.Footer>
+                </Modal>
             </Fragment>
         )
+    }
+
+    openSelectedEnvModal = () => {
+        this.setState({showSelectedEnvModal: true});
+    }
+
+    closeSelectedEnvModal = () => {
+        this.setState({showSelectedEnvModal: false})
     }
 
     hideEnvModal = () => {
@@ -2521,7 +2523,7 @@ class HttpClientTabs extends Component {
                                 <Glyphicon glyph="import" /> Import
                             </div>
                                 <div style={{display: "inline-block", padding: 0}} className="btn">{this.renderEnvListDD()}</div>
-                                <div style={{display: "inline-block"}}>{this.renderEnvPopoverBtn()}</div>
+                                <div style={{display: "inline-block"}}>{this.renderSelectedEnvModal()}</div>
                                 <span className="btn btn-sm cube-btn text-center" onClick={() => {this.setState({showEnvVarModal: true})}} title="Configure environments"><i className="fas fa-cog"/> </span>
                             {/* <div style={{display: "inline-block", margin: "10px" }}>
                             </div> */}
