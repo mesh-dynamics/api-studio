@@ -2409,7 +2409,7 @@ class HttpClientTabs extends Component {
 
         return (
 
-            <div className="" style={{ display: "flex", height: "100%" }}>
+            <div className="http-client" style={{ display: "flex", height: "100%" }}>
                 <aside className="" ref={e=> (this.sliderRef = e)}
                 style={{ "width": "250px", "height": "100%", "background": "#EAEAEA", "padding": "10px", "display": "flex", "flexDirection": "column", overflow: "auto" }}>
                     <div style={{ marginTop: "10px", marginBottom: "10px" }}>

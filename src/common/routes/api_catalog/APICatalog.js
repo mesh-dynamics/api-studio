@@ -4,7 +4,7 @@ import {
   APICatalogAPIView,
   APICatalogLanding,
   APICatalogSearchResults,
-  APICatalogServiceGraph,
+  CollapsibleTabs,
   APICatalogDiff,
 } from "../../components/APICatalog/"
 import {
@@ -100,7 +100,8 @@ class APICatalog extends Component {
             </FormGroup>
           </div> */}
 
-          <APICatalogServiceGraph />
+          <CollapsibleTabs currentPage={this.state.currentPage} />
+        
           <Route exact path="/api_catalog"
             render={() => <APICatalogLanding
               setCurrentPage={this.setCurrentPage}

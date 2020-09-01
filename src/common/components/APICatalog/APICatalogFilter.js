@@ -263,7 +263,7 @@ class APICatalogFilter extends Component {
 
     render() {
         const {currentPage, cube, apiCatalog} = this.props;
-        const {diffRequestLeft, diffRequestRight, compareRequests, selectedSource} = apiCatalog;
+        const {diffRequestLeft, diffRequestRight, compareRequests, selectedSource, selectedService, selectedApiPath} = apiCatalog;
         
         return (
             <div>
@@ -273,8 +273,8 @@ class APICatalogFilter extends Component {
                 </div>
                 {
                     currentPage==="api" && 
-                    <div>
-                        <div className="margin-top-10" style={{borderBottom: "1px solid grey", paddingBottom: "10px"}}>
+                    <div className="filters">
+                        <div><div className="margin-top-10" style={{borderBottom: "1px solid grey", paddingBottom: "10px"}}>
                             <div className="label-n">SOURCE</div>
                             {this.renderSourceDropdown()}
                         </div>
@@ -296,16 +296,6 @@ class APICatalogFilter extends Component {
                                 </div>
                                 {this.renderGoldenDropdown()}
                             </div>}
-                            
-                            <div className="margin-top-10">
-                                <div className="label-n">SERVICE</div>
-                                {this.renderServiceDropdown()}
-                            </div>
-                    
-                            <div className="margin-top-10">
-                                <div className="label-n">API</div>
-                                {this.renderAPIPathDropdown()}
-                            </div>
 
                             {selectedSource=="Capture" && <div>
                                 <div className="margin-top-10">
@@ -323,10 +313,24 @@ class APICatalogFilter extends Component {
                                 <div className="label-n">SOURCE INSTANCE</div>
                                 {this.renderInstanceDropdown()}
                             </div>}
-
+                            
+                            { selectedService && <>
+                                <div className="selected-items margin-top-10">
+                                    <div>
+                                        <span style={{ fontWeight: 300 }}>Service</span>
+                                        <p><b>{selectedService}</b></p>
+                                    </div>
+                                        
+                                    <div>
+                                        <span style={{ fontWeight: 300 }}>API</span>
+                                        <p><b>{selectedApiPath}</b></p>
+                                    </div>                    
+                                </div>
+                                </>}
                         </div>}
+                        </div>
                         
-                        <div className="margin-top-10" style={{borderTop: "1px solid grey", position: "absolute", bottom: 0, minHeight: "20%"}}>
+                        <div className="margin-top-10" style={{borderTop: "1px solid grey", minHeight: "20%"}}>
                             <div className="label-n">COMPARE REQUESTS (any two):</div>
                                 {this.renderCompareData()}
                                 {compareRequests.length==2 &&
