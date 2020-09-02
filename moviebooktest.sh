@@ -104,6 +104,12 @@ call_replay() {
 }
 
 analyze() {
+	# Stop replay before analyze
+	curl --location --request POST $CUBE_ENDPOINT/api/rs/forcecomplete/$REPLAY_ID \
+	-H "Authorization: Bearer $AUTH_TOKEN"
+
+	sleep 30
+
 	ANALYZE=$(curl -X POST $CUBE_ENDPOINT/api/as/analyze/$REPLAY_ID -H 'Content-Type: application/x-www-form-urlencoded' -H "Authorization: Bearer $AUTH_TOKEN" -H 'cache-control: no-cache')
 	REQNOTMATCHED=$(echo $ANALYZE | sed 's/^.*"reqNotMatched":\([^"]*\).*/\1/' | cut -d ',' -f 1)
 	RESPNOTMATCHED=$(echo $ANALYZE | sed 's/^.*"respNotMatched":\([^"]*\).*/\1/' | cut -d ',' -f 1)
