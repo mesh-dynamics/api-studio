@@ -2,6 +2,8 @@ package com.cubeui.backend.web.external;
 
 import io.md.dao.Recording;
 import io.md.dao.Replay;
+import io.md.injection.DynamicInjectionConfig;
+
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.service.CubeServerService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,12 +117,20 @@ public class ReplayWSController {
         validation.validateCustomerName(request, replay.customerId);
         return cubeServerService.fetchPostResponse(request, Optional.of(replay));
     }
+
     @GetMapping("/getDynamicInjectionConfig/{customerId}/{app}/{version}")
     public ResponseEntity getDynamicInjectionConfig(HttpServletRequest request,
         @RequestBody Optional<String> getBody, @PathVariable String customerId,
         @PathVariable String app, @PathVariable String version) {
         validation.validateCustomerName(request,customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
+    }
+
+    @PostMapping("/saveDynamicInjectionConfig")
+    public ResponseEntity getDynamicInjectionConfig(HttpServletRequest request,
+        @RequestBody DynamicInjectionConfig dynamicInjectionConfig) {
+        validation.validateCustomerName(request, dynamicInjectionConfig.customerId);
+        return cubeServerService.fetchPostResponse(request, Optional.of(dynamicInjectionConfig));
     }
 
     @PostMapping("/deferredDeleteReplay/{replayId}")
