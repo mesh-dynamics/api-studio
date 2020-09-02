@@ -113,6 +113,8 @@ public class EmpRouter {
 			span.setBaggageItem("RAHS", "asdasd ");
 		}
 
+		System.out.println("Headers " + headers.getRequestHeaders());
+
 		System.out.println("TraceId: " + span.context().toTraceId());
 		System.out.println("SpanId: " + span.context().toSpanId());
 
