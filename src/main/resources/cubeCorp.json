@@ -17,28 +17,28 @@
               "name": "GLOBAL",
               "services": [
                 {
-                  "name": "Reviews",
+                  "name": "reviews",
                   "paths": [
                     "/health",
                     "/reviews/*"
                   ]
                 },
                 {
-                  "name": "Ratings",
+                  "name": "ratings",
                   "paths": [
                     "/health",
                     "/ratings/*"
                   ]
                 },
                 {
-                  "name": "Details",
+                  "name": "details",
                   "paths": [
                     "/health",
                     "/details/*"
                   ]
                 },
                 {
-                  "name": "RestWrapJDBC",
+                  "name": "restwrapjdbc",
                   "paths": [
                     "/health",
                     "/initialize",
@@ -47,7 +47,7 @@
                   ]
                 },
                 {
-                  "name": "MovieInfo",
+                  "name": "movieinfo",
                   "paths": [
                     "minfo/rentmovie",
                     "minfo/returnmovie",
@@ -56,19 +56,19 @@
                   ]
                 },
                 {
-                  "name": "Postgres",
+                  "name": "postgres",
                   "paths": null
                 },
                 {
-                  "name": "Mysql",
+                  "name": "mysql",
                   "paths": null
                 },
                 {
-                  "name": "MongoDB",
+                  "name": "mongodb",
                   "paths": null
                 },
                 {
-                  "name": "Google API",
+                  "name": "google api",
                   "paths": null
                 }
               ]
@@ -78,7 +78,7 @@
             {
               "testConfigName": "MovieInfo-List",
               "services": [
-                "MovieInfo"
+                "movieinfo"
               ],
               "paths": [
                 "minfo/rentmovie",
@@ -87,45 +87,45 @@
                 "minfo/liststores"
               ],
               "test_virtualized_services": [
-                "RestWrapJDBC",
-                "Reviews",
-                "Ratings"
+                "restwrapjdbc",
+                "reviews",
+                "ratings"
               ],
               "test_intermediate_services": []
             }
           ],
           "serviceGraphs": [
             {
-              "from": "MovieInfo",
-              "to": "RestWrapJDBC"
+              "from": "movieinfo",
+              "to": "restwrapjdbc"
             },
             {
-              "from": "RestWrapJDBC",
-              "to": "Postgres"
+              "from": "restwrapjdbc",
+              "to": "postgres"
             },
             {
-              "from": "MovieInfo",
-              "to": "Reviews"
+              "from": "movieinfo",
+              "to": "reviews"
             },
             {
-              "from": "MovieInfo",
-              "to": "Ratings"
+              "from": "movieinfo",
+              "to": "ratings"
             },
             {
-              "from": "MovieInfo",
-              "to": "Details"
+              "from": "movieinfo",
+              "to": "details"
             },
             {
-              "from": "Details",
-              "to": "Google API"
+              "from": "details",
+              "to": "google api"
             },
             {
-              "from": "Ratings",
-              "to": "Mysql"
+              "from": "ratings",
+              "to": "mysql"
             },
             {
-              "from": "Ratings",
-              "to": "MongoDB"
+              "from": "ratings",
+              "to": "mongodb"
             }
           ]
         },

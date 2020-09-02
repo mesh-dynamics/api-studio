@@ -2,9 +2,11 @@ package com.cubeui.backend.web.rest;
 
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.security.jwt.JwtTokenProvider;
+import com.cubeui.backend.service.TokenResponseService;
 import com.cubeui.backend.service.UserService;
 import com.cubeui.backend.web.AuthenticationRequest;
 import com.cubeui.backend.web.ErrorResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,15 +30,14 @@ import static org.springframework.http.ResponseEntity.status;
 @RequestMapping("/api/login")
 public class LoginController {
 
+    @Autowired
     private AuthenticationManager authenticationManager;
+    @Autowired
     private JwtTokenProvider jwtTokenProvider;
+    @Autowired
     private UserService userService;
-
-    public LoginController(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider, UserService userService) {
-        this.authenticationManager = authenticationManager;
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.userService = userService;
-    }
+    @Autowired
+    private TokenResponseService tokenResponseService;
 
     @PostMapping("")
     public ResponseEntity login(@RequestBody AuthenticationRequest data) {
@@ -49,16 +50,7 @@ public class LoginController {
                         .body(new ErrorResponse("Authentication Failed", "User not activated yet. Please check your email", UNAUTHORIZED.value()));
 
             }
-            String token = jwtTokenProvider.createToken(username, new ArrayList<>(user.getRoles()));
-
-            Map<Object, Object> model = new HashMap<>();
-            model.put("username", username);
-            model.put("roles", user.getRoles());
-            model.put("access_token", token);
-            model.put("expires_in", jwtTokenProvider.getValidity());
-            model.put("token_type", "Bearer");
-            model.put("customer_name", user.getCustomer().getName());
-            return ok(model);
+            return ok(tokenResponseService.getTokenResponse(user));
         } catch (AuthenticationException ex) {
             return status(UNAUTHORIZED)
                     .body(new ErrorResponse(ex.getMessage(), "Invalid username/password supplied", UNAUTHORIZED.value()));
