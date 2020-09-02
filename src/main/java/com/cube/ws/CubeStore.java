@@ -1017,14 +1017,16 @@ public class CubeStore {
     }
 
     protected CompletableFuture<Void> beforeRecording(MultivaluedMap<String, String> formParams, Recording recording) {
-        Optional<String> tagOpt = Optional.ofNullable(formParams.getFirst(Constants.TAG_FIELD));
+        Optional<String> tagOpt = formParams == null ? Optional.empty()
+                                    : Optional.ofNullable(formParams.getFirst(Constants.TAG_FIELD));
 
         return tagOpt.map(tag -> this.tagConfig.setTag(recording, recording.instanceId, tag))
             .orElse(CompletableFuture.completedFuture(null));
     }
 
     protected CompletableFuture<Void> afterRecording(MultivaluedMap<String, String> params, Recording recording) {
-        Optional<String> tagOpt = Optional.ofNullable(params.getFirst(Constants.RESET_TAG_FIELD));
+        Optional<String> tagOpt = params == null ? Optional.empty()
+                                    :Optional.ofNullable(params.getFirst(Constants.RESET_TAG_FIELD));
 
         return tagOpt.map(tag -> this.tagConfig.setTag(recording, recording.instanceId, tag))
             .orElse(CompletableFuture.completedFuture(null));
@@ -1175,6 +1177,7 @@ public class CubeStore {
 
     @POST
     @Path("stop/{recordingid}")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public void stop(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui,
                          @PathParam("recordingid") String recordingid,
             MultivaluedMap<String, String> formParams) {

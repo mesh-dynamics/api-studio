@@ -392,7 +392,8 @@ public class ReplayWS extends ReplayBasicWS {
     @Override
     protected CompletableFuture<Void> beforeReplay(MultivaluedMap<String, String> formParams, Recording recording,
                                                    Replay replay) {
-        Optional<String> tagOpt = Optional.ofNullable(formParams.getFirst(Constants.TAG_FIELD));
+        Optional<String> tagOpt = formParams == null ? Optional.empty()
+            : Optional.ofNullable(formParams.getFirst(Constants.TAG_FIELD));
 
         return tagOpt.map(tag -> this.tagConfig.setTag(recording, replay.instanceId, tag))
             .orElse(CompletableFuture.completedFuture(null));
@@ -401,7 +402,8 @@ public class ReplayWS extends ReplayBasicWS {
     @Override
     protected CompletableFuture<Void> afterReplay(MultivaluedMap<String, String> formParams, Recording recording,
         Replay replay, Optional<Analyzer> analyzerOpt) {
-        Optional<String> resetTagOpt = Optional.ofNullable(formParams.getFirst(Constants.RESET_TAG_FIELD));
+        Optional<String> resetTagOpt = formParams == null ? Optional.empty()
+            : Optional.ofNullable(formParams.getFirst(Constants.RESET_TAG_FIELD));
 
          return CompletableFuture.runAsync(() -> analyze(replay, analyzerOpt))
             .thenCompose(v ->
