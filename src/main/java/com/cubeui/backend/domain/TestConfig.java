@@ -67,4 +67,6 @@ public class TestConfig {
     LocalDateTime updatedAt;
 
     String tag;
+
+    String dynamicInjectionConfigVersion;
 }
