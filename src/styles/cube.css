@@ -4691,10 +4691,6 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 }
 
 /* overridding react table styles */
-.rt-thead.-header {
-    display: none;
-}
-
 .ReactTable.rt-thead.rt-tr {
     height: 0;
 }
