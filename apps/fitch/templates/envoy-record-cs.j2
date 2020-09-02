@@ -166,7 +166,7 @@ spec:
               cubeResp["service"] = "{{service_name}}"
               cubeResp["run_type"] = "{{run_type}}"
               -- "Record"
-              cubeResp["recordingType"] = "{{run_type}}"
+              cubeResp["recordingType"] = "{{recording_type}}"
                -- "{{run_type}}"
               cubeResp["eventType"] = "HTTPResponse"
               cubeResp["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
@@ -183,7 +183,7 @@ spec:
               response_handle:logErr('envoy_on_response time ' .. (endtime - starttime))
             end
             function envoy_on_request(request_handle)
-              local service = "movieinfo"
+              local service = "{{service_name}}"
               local cubeReq = {}
               xrequestid = request_handle:headers():get("x-request-id")
               traceId = request_handle:headers():get("x-datadog-trace-id")
@@ -207,7 +207,7 @@ spec:
               cubeReq["instanceId"] = "{{cube_instanceid}}"
               cubeReq["service"] = "{{service_name}}"
               cubeReq["run_type"] = "{{run_type}}"
-              cubeReq["recordingType"] = "{{run_type}}"
+              cubeReq["recordingType"] = "{{recording_type}}"
               cubeReq["apiPath"] = apiPath
               cubeReq["traceId"] = traceId
               cubeReq["spanId"] = spanId
