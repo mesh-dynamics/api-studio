@@ -105,6 +105,7 @@ class HttpClientTabs extends Component {
         this.handleImportCollectionInputChange = this.handleImportCollectionInputChange.bind(this);
         this.handleImportCollection = this.handleImportCollection.bind(this);
         this.handleImportedToCollectionIdChange = this.handleImportedToCollectionIdChange.bind(this);
+        this.persistPanelState = [];
     }
 
     createRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFromData) {
@@ -865,6 +866,9 @@ class HttpClientTabs extends Component {
         if (node.children) {
             node.toggled = toggled;
         }
+        if(node.requestEventId){
+            this.persistPanelState[node.requestEventId] = toggled;
+        }
         dispatch(httpClientActions.setActiveHistoryCursor(node));
     }
 
@@ -1232,7 +1236,7 @@ class HttpClientTabs extends Component {
             console.error(error);
             dispatch(httpClientActions.postErrorDriveRequest(tabId, error.message));
             dispatch(httpClientActions.unsetReqRunning(tabId));
-            if(error.message !== commonConstants.USER_ABORT_MESSAGE){
+            if(error.message !== commonConstants.USER_ABORT_MESSAGE){                
                 this.showErrorAlert(`Could not get any response. There was an error connecting: ${error}`);
             }
         });
@@ -1613,7 +1617,7 @@ class HttpClientTabs extends Component {
                     if(!userHistoryCollection && fetchedUserHistoryCollection) {
                         dispatch(httpClientActions.addUserHistoryCollection(fetchedUserHistoryCollection));
                     }
-                    const startTime = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+                    const startTime = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
                     api.get(`${config.apiBaseUrl}/as/getApiTrace/${customerId}/${app}?depth=100&collection=${fetchedUserHistoryCollection.collec}&startDate=${startTime}`)
                         .then((res) => {
                             const apiTraces = res.response;
@@ -2399,7 +2403,6 @@ class HttpClientTabs extends Component {
             itemToDelete: {
                 requestType, id, name, collectionId, isParent
             }});
-        console.log("Delete called", event);
     };
 
     showErrorAlert = (message) => {
@@ -2409,6 +2412,18 @@ class HttpClientTabs extends Component {
     onCloseErrorModal = () => {
         this.setState({ showErrorModal: false});
     };
+
+    getExpendedState = (uniqueid)=>{
+        const isExpanded = this.persistPanelState[uniqueid];
+        if(isExpanded){
+            this.handlePanelClick(uniqueid);
+        }
+        return isExpanded;
+    }
+
+    onPanelToggle = (isToggled, event)=> {
+        this.persistPanelState[event.target.parentElement.getAttribute('data-unique-id')] = isToggled;
+    }
 
     render() {
         const { cube } = this.props;
@@ -2476,9 +2491,11 @@ class HttpClientTabs extends Component {
                             <div className="margin-top-10">
                                 {userCollections && userCollections.map(eachCollec => {
                                     return (
-                                        <Panel id="collapsible-panel-example-2" className="collection-panel-div" key={eachCollec.collec} value={eachCollec.collec} onClick={() => this.handlePanelClick(eachCollec.collec)}>
+                                        <Panel id="collapsible-panel-example-2" className="collection-panel-div" key={eachCollec.collec} value={eachCollec.collec} onClick={() => this.handlePanelClick(eachCollec.collec)} 
+                                            defaultExpanded = {this.getExpendedState(eachCollec.collec)}
+                                            onToggle={this.onPanelToggle}>
                                             <Panel.Heading style={{ paddingLeft: "9px", position: 'relative' }}>
-                                                <Panel.Title toggle style={{ fontSize: "13px" }}>
+                                                <Panel.Title toggle style={{ fontSize: "13px" }} data-unique-id={eachCollec.collec}>
                                                     {eachCollec.name}
                                                 </Panel.Title>
                                                 <div className="collection-options"><i className="fas fa-trash pointer" data-id={eachCollec.rootRcrdngId} 
@@ -2486,8 +2503,11 @@ class HttpClientTabs extends Component {
                                                 data-type="collection" onClick={this.onDeleteBtnClick}/></div>
                                             </Panel.Heading>
                                             <Panel.Collapse>
-                                                <Panel.Body style={{ padding: "3px", width: "100%", overflow: "scroll" }}>
+                                                <Panel.Body style={{ padding: "3px", width: "100%", overflow: "auto" }}>
                                                     {eachCollec.apiTraces && eachCollec.apiTraces.map((eachApiTrace) => {
+                                                        if(this.persistPanelState[eachApiTrace.requestEventId]){
+                                                            eachApiTrace.toggled = true;
+                                                        }
                                                         return (
                                                             <Treebeard key={eachApiTrace.id}
                                                                 data={eachApiTrace}
@@ -2633,7 +2653,7 @@ class HttpClientTabs extends Component {
                         </Modal>
                     </div>
                     <div>
-                        <Modal show={showImportModal} onHide={this.handleImportModalClose} bsSize="large">
+                    <Modal show={showImportModal} onHide={this.handleImportModalClose} bsSize="large">
                             <Modal.Header closeButton>
                                 <Modal.Title>Import</Modal.Title>
                             </Modal.Header>

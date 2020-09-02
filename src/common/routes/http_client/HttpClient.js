@@ -177,6 +177,9 @@ class HttpClient extends Component {
         }else{
             currentSelectedTab.abortRequest = new AbortRequest();
             this.props.driveRequest(false, currentSelectedTab.id);
+            this.setState({
+                showCompleteDiff: false
+            })
         }
     }
 

@@ -1,6 +1,7 @@
 import React, { Component, useEffect, useState } from 'react'
 
 import { ListGroup, Item, ListGroupItem } from 'react-bootstrap';
+import classNames from 'classnames';
 
 export default function (props) {
 
@@ -27,8 +28,12 @@ export default function (props) {
         setFilterText(event.currentTarget.value);
         setOptions(props.options.filter(u => u.val.toLowerCase().indexOf(event.currentTarget.value) != -1));
     }
+    const mutliSelectClass = classNames({
+        'multi-select api-catalog-bordered-box': true,
+        'select-indicator': props.options.length > 0 && !value
+      });
 
-    return (<div className="multi-select api-catalog-bordered-box">
+    return (<div className={mutliSelectClass}>
 
         <p className="api-catalog-box-title">{props.title}</p>
         <div className="input-group">

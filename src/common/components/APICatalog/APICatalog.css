@@ -31,7 +31,9 @@
 .top-api-nav .nav-item.selected{
   font-weight: 600;
 }
-
+.select-indicator{
+  border: 1px solid #ff7878 !important;
+}
 /* 
 .api-catalog-bordered-bottom {
   border-bottom-style: solid;

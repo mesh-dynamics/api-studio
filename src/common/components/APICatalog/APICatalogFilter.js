@@ -6,6 +6,7 @@ import { history } from '../../helpers';
 import { connect } from "react-redux";
 import _ from "lodash";
 import { apiCatalogActions } from '../../actions/api-catalog.actions';
+import classNames from 'classnames';
 
 class APICatalogFilter extends Component {
 
@@ -30,9 +31,13 @@ class APICatalogFilter extends Component {
             {value: "UserGolden", text: "Collection"}, 
             {value: "Golden", text: "Golden"}, 
         ]
+        const ddlClass = classNames({
+            "r-att form-control": true,
+            'select-indicator': !selectedSource
+        });
         return (
         <div>
-            <select className="r-att form-control" placeholder="Select Source" value={selectedSource || "DEFAULT"} onChange={handleSourceDropDownChange}>   
+            <select className={ddlClass} placeholder="Select Source" value={selectedSource || "DEFAULT"} onChange={handleSourceDropDownChange}>   
                 <option value="DEFAULT" disabled>Select Source</option>
                 {sources.map(source => 
                     <option key={source.value} value={source.value}>
@@ -46,9 +51,14 @@ class APICatalogFilter extends Component {
     renderCollectionDropdown = () => {
         const {apiCatalog: {collectionList, selectedCollection}} = this.props;
         const handleCollectionDropDownChange = (event) => this.handleFilterChange("selectedCollection", event.target.value);
+
+        const ddlClass = classNames({
+            "r-att form-control": true,
+            'select-indicator': !selectedCollection
+        });
         return (
         <div>
-            <select className="r-att form-control" placeholder="Select Collection" value={selectedCollection || "DEFAULT"} onChange={handleCollectionDropDownChange}>   
+            <select className={ddlClass} placeholder="Select Collection" value={selectedCollection || "DEFAULT"} onChange={handleCollectionDropDownChange}>    
                 <option value="DEFAULT" disabled>Select Collection</option>
                 {
                     collectionList.map((item, index) => 
@@ -62,9 +72,14 @@ class APICatalogFilter extends Component {
     renderGoldenDropdown = () => {
         const {apiCatalog: {goldenList, selectedGolden}} = this.props;
         const handleGoldenDropDownChange = (event) => this.handleFilterChange("selectedGolden", event.target.value);
+
+        const ddlClass = classNames({
+            "r-att form-control": true,
+            'select-indicator': !selectedGolden
+        });
         return (
         <div>
-            <select className="r-att form-control" placeholder="Select Golden" value={selectedGolden || "DEFAULT"} onChange={handleGoldenDropDownChange}>   
+            <select className={ddlClass} placeholder="Select Golden" value={selectedGolden || "DEFAULT"} onChange={handleGoldenDropDownChange}>   
                 <option value="DEFAULT" disabled>Select Golden</option>
                 {
                     goldenList.map((item, index) => 
