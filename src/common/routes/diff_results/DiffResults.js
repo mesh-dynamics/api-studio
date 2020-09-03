@@ -206,14 +206,23 @@ class DiffResults extends Component {
     // update the filter, which will update the values in the DiffResultsFilter component,
     // and then fetch the new set of results    
     handleFilterChange = (metaData, value) => {
-        let { filter: newFilter } = this.state;
-        
+        let { filter: newFilter, replayId, recordingId, currentTemplateVer } = this.state;
+        const {dispatch} = this.props;
         // utilize the fallthrough mechanism to set hierarchical defaults for filters
         switch(metaData){
             case "selectedService":
                 newFilter["selectedService"] = "All";
             case "selectedAPI":
                 newFilter["selectedAPI"] = "All";
+                setTimeout(() => {
+                    dispatch(cubeActions.setPathResultsParams({
+                        path: value,
+                        service: newFilter.selectedService,
+                        replayId: replayId,
+                        recordingId: recordingId,
+                        currentTemplateVer: currentTemplateVer,
+                    }));
+                });
             case "selectedReqMatchType":
                 newFilter["selectedReqMatchType"] = "match";
             case "selectedDiffType":
@@ -573,7 +582,7 @@ class DiffResults extends Component {
                 <div className="content-wrapper">
                     
                     <div className="back" style={{ marginBottom: "10px", padding: "5px", background: "#454545" }}>
-                        <Link to={"/"} onClick={this.handleBackToDashboardClick}><span className="link-alt"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
+                        <Link to={"/test_results"} onClick={this.handleBackToDashboardClick}><span className="link-alt"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
                         <span className="link-alt pull-right" onClick={this.showSaveGoldenModal}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-save font-15"></i>&nbsp;Save Golden</span>
                         <Link to="/review_golden_updates" className="hidden">
                             <span className="link pull-right"><i className="fas fa-pen-square font-15"></i>&nbsp;REVIEW GOLDEN UPDATES</span>

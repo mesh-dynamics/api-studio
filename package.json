@@ -50,6 +50,7 @@
         "moment": "^2.24.0",
         "mustache": "^4.0.1",
         "plotly.js": "^1.54.7",
+        "postman-collection": "^3.6.5",
         "prop-types": "^15.6.2",
         "query-string": "5.1.1",
         "react": "^16.6.0",

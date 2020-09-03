@@ -164,7 +164,7 @@ class Navigation extends Component{
                             <Link to={`/configs?app=${cube.selectedApp}`}>
                                 <div title="Configs" className="link-q"><i className="fas fa-caret-square-right"></i></div>
                             </Link>
-                            <Link to="/">
+                            <Link to="/test_results">
                                 <div title="Test Results" className="link-q"><i className="fas fa-chart-bar"></i></div>
                             </Link>                            
                         </div>

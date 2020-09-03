@@ -106,6 +106,7 @@ const initialState = {
         selectedTraceTableReqTabId: "",
         selectedTraceTableTestReqTabId: "",
         requestRunning: false,
+        showTrace: null,
     } */],
     toggleTestAndOutgoingRequests: true,
     selectedTabKey: "",
@@ -134,9 +135,6 @@ const initialState = {
     mockReqApiPath: "",
     modalErrorAddMockReqMessage: "",
     selectedTabIdToAddMockReq: "",
-    showImportFromCurlModal: false,
-    curlCommand: "",
-    modalErrorImportFromCurlMessage: "",
 }
 
 const getTabIndexGivenTabId = (tabId, tabs) => {
@@ -726,33 +724,8 @@ export const httpClient = (state = initialState, { type, data }) => {
                     })
             }
         }
-
-        case httpClientConstants.SHOW_IMPORT_FROM_CURL_MODAL: {
-            return {
-                ...state,
-                showImportFromCurlModal: data.showImportFromCurlModal, 
-                curlCommand: data.curlCommand, 
-                modalErrorImportFromCurlMessage: data.modalErrorImportFromCurlMessage
-            }
-        }
-
-        case httpClientConstants.CLOSE_IMPORT_FROM_CURL_MODAL: {
-            return {
-                ...state,
-                showImportFromCurlModal: data.showImportFromCurlModal, 
-                curlCommand: data.curlCommand, 
-                modalErrorImportFromCurlMessage: data.modalErrorImportFromCurlMessage
-            }
-        }
-
-        case httpClientConstants.UPDATE_MODAL_CURL_COMMAND: {
-            return {
-                ...state,
-                [data.name]: data.value
-            }
-        }
         
-        case httpClientConstants.CREATE_DUPPLICATE_TAB: {
+        case httpClientConstants.CREATE_DUPLICATE_TAB: {
             let {tabs} = state;
             const tabToClone = _.find(tabs, {id: data.tabId});
             const newTab = _.cloneDeep(tabToClone);
@@ -761,6 +734,19 @@ export const httpClient = (state = initialState, { type, data }) => {
             return {
                 ...state,
                 tabs: [...tabs, newTab],
+            }
+        }
+
+        case httpClientConstants.TOGGLE_SHOW_TRACE: {            
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab.showTrace = !eachTab.showTrace
+                    }
+                    return eachTab;
+                })
             }
         }
 

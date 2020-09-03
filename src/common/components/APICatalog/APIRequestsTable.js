@@ -8,6 +8,8 @@ import _ from "lodash";
 import { apiCatalogActions } from '../../actions/api-catalog.actions';
 import { connect } from "react-redux";
 
+import { getAPICount } from '../../utils/api-catalog/api-catalog-utils';
+
 class APIRequestsTable extends Component {
 
   constructor(props) {
@@ -328,20 +330,23 @@ class APIRequestsTable extends Component {
   }
 
   render() {
-    const { apiCatalog: {apiTraceLoading} } = this.props;
-
+    const { apiCatalog: {apiTraceLoading, apiFacets, selectedService, selectedApiPath, selectedInstance} } = this.props;
+    const apiCount = getAPICount(apiFacets, selectedService, selectedApiPath, selectedInstance);
     return (
       <div>
         <div className="header-container">
           <p className="api-catalog-box-title">REQUESTS</p>
-          <div className="cube-btn api-catalog-view-btn text-center margin-bottom-10" onClick={this.handleViewRequests}>VIEW</div>
+          <div className="right-btns  margin-bottom-10">
+          <div className="count-block">Count : {apiCount}</div>
+          <div className="cube-btn api-catalog-view-btn text-center" onClick={this.handleViewRequests}>VIEW</div>
+          </div>
         </div>
         <div>
           <ReactTable
             data={this.generateTableRows()}
             columns={this.generateTableColumns()}
             style={{ height: "500px" }}
-            defaultPageSize={5}
+            defaultPageSize={10}
             pageSizeOptions={[5, 10, 15, 20]}
             className="-striped -highlight"
             loading={apiTraceLoading}

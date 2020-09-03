@@ -6,6 +6,7 @@ import { history } from '../../helpers';
 import { connect } from "react-redux";
 import _ from "lodash";
 import { apiCatalogActions } from '../../actions/api-catalog.actions';
+import classNames from 'classnames';
 
 class APICatalogFilter extends Component {
 
@@ -30,9 +31,13 @@ class APICatalogFilter extends Component {
             {value: "UserGolden", text: "Collection"}, 
             {value: "Golden", text: "Golden"}, 
         ]
+        const ddlClass = classNames({
+            "r-att form-control": true,
+            'select-indicator': !selectedSource
+        });
         return (
         <div>
-            <select className="r-att form-control" placeholder="Select Source" value={selectedSource || "DEFAULT"} onChange={handleSourceDropDownChange}>   
+            <select className={ddlClass} placeholder="Select Source" value={selectedSource || "DEFAULT"} onChange={handleSourceDropDownChange}>   
                 <option value="DEFAULT" disabled>Select Source</option>
                 {sources.map(source => 
                     <option key={source.value} value={source.value}>
@@ -46,9 +51,14 @@ class APICatalogFilter extends Component {
     renderCollectionDropdown = () => {
         const {apiCatalog: {collectionList, selectedCollection}} = this.props;
         const handleCollectionDropDownChange = (event) => this.handleFilterChange("selectedCollection", event.target.value);
+
+        const ddlClass = classNames({
+            "r-att form-control": true,
+            'select-indicator': !selectedCollection
+        });
         return (
         <div>
-            <select className="r-att form-control" placeholder="Select Collection" value={selectedCollection || "DEFAULT"} onChange={handleCollectionDropDownChange}>   
+            <select className={ddlClass} placeholder="Select Collection" value={selectedCollection || "DEFAULT"} onChange={handleCollectionDropDownChange}>    
                 <option value="DEFAULT" disabled>Select Collection</option>
                 {
                     collectionList.map((item, index) => 
@@ -62,9 +72,14 @@ class APICatalogFilter extends Component {
     renderGoldenDropdown = () => {
         const {apiCatalog: {goldenList, selectedGolden}} = this.props;
         const handleGoldenDropDownChange = (event) => this.handleFilterChange("selectedGolden", event.target.value);
+
+        const ddlClass = classNames({
+            "r-att form-control": true,
+            'select-indicator': !selectedGolden
+        });
         return (
         <div>
-            <select className="r-att form-control" placeholder="Select Golden" value={selectedGolden || "DEFAULT"} onChange={handleGoldenDropDownChange}>   
+            <select className={ddlClass} placeholder="Select Golden" value={selectedGolden || "DEFAULT"} onChange={handleGoldenDropDownChange}>   
                 <option value="DEFAULT" disabled>Select Golden</option>
                 {
                     goldenList.map((item, index) => 
@@ -263,7 +278,7 @@ class APICatalogFilter extends Component {
 
     render() {
         const {currentPage, cube, apiCatalog} = this.props;
-        const {diffRequestLeft, diffRequestRight, compareRequests, selectedSource} = apiCatalog;
+        const {diffRequestLeft, diffRequestRight, compareRequests, selectedSource, selectedService, selectedApiPath} = apiCatalog;
         
         return (
             <div>
@@ -273,8 +288,8 @@ class APICatalogFilter extends Component {
                 </div>
                 {
                     currentPage==="api" && 
-                    <div>
-                        <div className="margin-top-10" style={{borderBottom: "1px solid grey", paddingBottom: "10px"}}>
+                    <div className="filters">
+                        <div><div className="margin-top-10" style={{borderBottom: "1px solid grey", paddingBottom: "10px"}}>
                             <div className="label-n">SOURCE</div>
                             {this.renderSourceDropdown()}
                         </div>
@@ -296,16 +311,6 @@ class APICatalogFilter extends Component {
                                 </div>
                                 {this.renderGoldenDropdown()}
                             </div>}
-                            
-                            <div className="margin-top-10">
-                                <div className="label-n">SERVICE</div>
-                                {this.renderServiceDropdown()}
-                            </div>
-                    
-                            <div className="margin-top-10">
-                                <div className="label-n">API</div>
-                                {this.renderAPIPathDropdown()}
-                            </div>
 
                             {selectedSource=="Capture" && <div>
                                 <div className="margin-top-10">
@@ -323,10 +328,24 @@ class APICatalogFilter extends Component {
                                 <div className="label-n">SOURCE INSTANCE</div>
                                 {this.renderInstanceDropdown()}
                             </div>}
-
+                            
+                            { selectedService && <>
+                                <div className="selected-items margin-top-10">
+                                    <div>
+                                        <span style={{ fontWeight: 300 }}>Service</span>
+                                        <p><b>{selectedService}</b></p>
+                                    </div>
+                                        
+                                    <div>
+                                        <span style={{ fontWeight: 300 }}>API</span>
+                                        <p><b>{selectedApiPath}</b></p>
+                                    </div>                    
+                                </div>
+                                </>}
                         </div>}
+                        </div>
                         
-                        <div className="margin-top-10" style={{borderTop: "1px solid grey", position: "absolute", bottom: 0, minHeight: "20%"}}>
+                        <div className="margin-top-10" style={{borderTop: "1px solid grey", minHeight: "20%"}}>
                             <div className="label-n">COMPARE REQUESTS (any two):</div>
                                 {this.renderCompareData()}
                                 {compareRequests.length==2 &&

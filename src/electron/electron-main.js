@@ -3,7 +3,7 @@
 const { setupProxy } = require('./core/proxy');
 const { setupListeners } = require('./core/listeners');
 // const replayDriver = require('./electron/replay-driver');
-const { getApplicationConfig, setupApplicationConfig } = require('./core/fs-utils');
+const { setupApplicationConfig } = require('./core/fs-utils');
 
 /**
  * This will setup the application config into
@@ -37,7 +37,7 @@ setupListeners(mockContext, user);
 /**
  * Setup server proxy
  */
-setupProxy(mockContext, user)
+setupProxy(mockContext, user);
 
 // DO NOT DELETE
 // const replayContext = {

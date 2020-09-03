@@ -1,8 +1,8 @@
-appId: com.meshdynamics.cubeui
+appId: com.meshdynamics.cubeui.master
 
 extends: null
 
-productName: Mesh Dynamics
+productName: Mesh Dynamics - Master
 
 asar: true
 

@@ -4,6 +4,7 @@ const yaml = require("js-yaml");
 const logger = require("electron-log");
 const isDev = require("electron-is-dev");
 const Store = require("electron-store");
+const url = require("url");
 
 const store = new Store();
 
@@ -86,8 +87,11 @@ const getApplicationConfig = () => {
     logger.info("Reading application config from store");
 
     const appDomain = store.get("domain");
-    const mockProtocol = store.get("mockProtocol");
-    const mockHost = store.get("mockHost");
+    const parsedUrl = url.parse(appDomain);
+    // const mockProtocol = store.get("mockProtocol");
+    // const mockHost = store.get("mockHost");
+    const mockProtocol = parsedUrl.protocol;
+    const mockHost = parsedUrl.hostname;
     const mockPort = store.get("mockPort");
     const proxyPort = store.get("proxyPort");
 
@@ -107,16 +111,23 @@ const getApplicationConfig = () => {
 };
 
 const updateApplicationConfig = (config) => {
-    const {
-      domain,
-      mock: { protocol, host, port, proxyPort },
+    // protocol, 
+    // host, 
+    const { 
+      domain, 
+      mock: { 
+        port, 
+        proxyPort 
+      } 
     } = config;
+    
 
-    logger.info("Updating application config to store", config);
+    logger.info("Updating application config to store", domain);
 
     store.set("domain", domain);
-    store.set("mockProtocol", protocol);
-    store.set("mockHost", host);
+    const parsedUrl = url.parse(domain);
+    store.set("mockProtocol", parsedUrl.protocol);
+    store.set("mockHost", parsedUrl.hostname);
     store.set("mockPort", port);
     store.set("proxyPort", proxyPort);
 
