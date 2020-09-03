@@ -1239,7 +1239,7 @@ class ViewTrace extends Component {
                                             showAll={this.state.showAll}
                                             searchFilterPath={this.state.searchFilterPath}
                                             disableOperationSet={true}
-                                            enableClientSideDiff={this.state.enableClientSideDiff}
+                                            enableClientSideDiff={true}
                                         />
                                     </div>
                                 </div>

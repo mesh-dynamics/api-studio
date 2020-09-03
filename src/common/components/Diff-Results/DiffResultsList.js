@@ -456,7 +456,7 @@ export default class DiffResultsList extends Component {
                                 searchFilterPath={this.state.searchFilterPath}
                                 filterPaths={item.filterPaths}
                                 inputElementRef={this.inputElementRef}
-                                enableClientSideDiff={this.state.enableClientSideDiff}
+                                enableClientSideDiff={true}
                             />
                         </div>
                     </div>
