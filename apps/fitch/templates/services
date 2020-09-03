@@ -1,4 +1,4 @@
 services:
-  - ServiceA
-  - ServiceB
-  - ServiceC
+  - employee
+  - department
+  - office
