@@ -80,6 +80,11 @@ public class RedisPubSub extends JedisPubSub {
 						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 							"No status key in redis, probably deleted by someone else"
 							, Constants.REPLAY_ID_FIELD, replay.replayId)));
+						// just to be safe check that status in Solr is not Running
+						if (replay.status == ReplayStatus.Running) {
+                            replay.status = ReplayStatus.Completed;
+                            rrStore.saveReplay(replay);
+                        }
 					}
 				}
 				// delete this only after solr is updated above
