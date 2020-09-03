@@ -99,6 +99,7 @@ import com.cube.queue.DisruptorEventQueue;
 import com.cube.queue.RREvent;
 import com.cube.utils.Constants;
 import com.cube.ws.WSUtils.BadValueException;
+import redis.clients.jedis.Jedis;
 
 //import com.cube.queue.StoreUtils;
 
@@ -1556,6 +1557,12 @@ public class CubeStore {
             }
         }).orElse(Response.status(Response.Status.NOT_FOUND).entity(String.format("Status not found for for recordingId %s", recordingId)).build());
         return resp;
+    }
+
+    @POST
+    @Path("cache/flushall")
+    public Response cacheFlushAll() {
+        return Utils.flushAll(config);
     }
 
     private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId)
