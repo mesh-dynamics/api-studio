@@ -183,6 +183,15 @@ stop_record() {
 	-H "Authorization: Bearer $AUTH_TOKEN" \
 	-H "Host:$CUBE_HOST" \
   -H 'cache-control: no-cache'
+
+  sleep 20
+
+  curl -X POST $CUBE_ENDPOINT/api/cs/forcestop/$RECORDING_ID \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+	-H "Authorization: Bearer $AUTH_TOKEN" \
+	-H "Host:$CUBE_HOST" \
+  -H 'cache-control: no-cache'
+
 	kubectl delete -f $APP_DIR/kubernetes/envoy-record-cs.yaml
 }
 
