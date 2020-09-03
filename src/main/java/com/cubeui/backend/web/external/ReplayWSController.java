@@ -143,4 +143,9 @@ public class ReplayWSController {
         validation.validateCustomerName(request,replay.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
+
+    @PostMapping("/cache/flushall")
+    public ResponseEntity cacheFlushAll(HttpServletRequest request, @RequestBody Optional<String> postBody) {
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
 }

@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface ServiceGraphRepository extends JpaRepository<ServiceGraph, Long> {
     Optional<List<ServiceGraph>> findByAppId(Long appId);
     Optional<ServiceGraph> findByAppIdAndFromServiceIdAndToServiceId(Long appId, Long fromServiceId, Long toServiceId);
+    List<ServiceGraph> deleteAllByAppId(Long appId);
 }

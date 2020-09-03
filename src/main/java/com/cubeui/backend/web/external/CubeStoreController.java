@@ -297,4 +297,9 @@ public class CubeStoreController {
         validation.validateCustomerName(request, customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
+
+    @PostMapping("/cache/flushall")
+    public ResponseEntity cacheFlushAll(HttpServletRequest request, @RequestBody Optional<String> postBody) {
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
 }
