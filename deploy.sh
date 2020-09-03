@@ -186,7 +186,7 @@ stop_record() {
 
   sleep 20
 
-  curl -X POST $CUBE_ENDPOINT/api/cs/forcestop/$RECORDING_ID \
+  curl -X POST https://$CUBE_HOST/api/cs/forcestop/$RECORDING_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
 	-H "Authorization: Bearer $AUTH_TOKEN" \
 	-H "Host:$CUBE_HOST" \
