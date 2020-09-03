@@ -2038,6 +2038,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if(!success) {
             throw new CompareTemplate.CompareTemplateStoreException("Error saving Compare Template in Solr");
         }
+        comparatorCache.invalidateKey(key);
         return solrDoc.getFieldValue(IDF).toString();
     }
 

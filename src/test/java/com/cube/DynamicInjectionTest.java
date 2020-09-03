@@ -37,6 +37,7 @@ import io.md.injection.DynamicInjectionConfig.ExtractionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta.HTTPMethodType;
 
+import com.cube.drivers.AbstractReplayDriver;
 import com.cube.utils.Constants;
 import com.cube.utils.InjectionVarResolver;
 import com.cube.ws.Config;
@@ -112,7 +113,9 @@ public class DynamicInjectionTest {
 					goldenRequestEvent.payload, config.rrstore);
 				StringSubstitutor sub = new StringSubstitutor(varResolver);
 				DataObj value;
-				if (extMeta.apiPath.equalsIgnoreCase(goldenRequestEvent.apiPath)) {
+				String requestHttpMethod = AbstractReplayDriver.getHttpMethod(goldenRequestEvent);
+				if (extMeta.apiPath.equalsIgnoreCase(goldenRequestEvent.apiPath)
+					&& extractionMeta.method.toString().equalsIgnoreCase(requestHttpMethod)) {
 					//  TODO ADD checks for method type GET/POST & also on reset field
 					String sourceString = extMeta.value;
 					// Boolean placeholder to specify if the value to be extracted
@@ -138,12 +141,12 @@ public class DynamicInjectionTest {
 			InjectionMeta injectionMeta1 = new InjectionMeta(Arrays.asList(""), "/hdrs/cookie/0",
 				true
 				, "${Golden.Request: /hdrs/cookie/0 : cookie1 ([^;]+)}_value"
-				, Optional.of("cookie1 ([^;]+)"));
+				, Optional.of("cookie1 ([^;]+)"), HTTPMethodType.POST);
 
 			InjectionMeta injectionMeta2 = new InjectionMeta(Arrays.asList(""), "/hdrs/cookie/0",
 				true
 				, "${Golden.Request: /hdrs/cookie/0 : cookie2 ([^;\\]]+)}_value"
-				, Optional.of("cookie2 ([^;\\]]+)"));
+				, Optional.of("cookie2 ([^;\\]]+)"), HTTPMethodType.POST);
 
 			injectionMetaList.add(injectionMeta1);
 			injectionMetaList.add(injectionMeta2);
