@@ -15,6 +15,7 @@ import io.md.dao.RecordOrReplay;
 import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Replay;
+import io.md.utils.Utils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPubSub;
@@ -73,6 +74,9 @@ public class RedisPubSub extends JedisPubSub {
                             replay.status = ReplayStatus.Completed;
                         } else if (currentStatus.equals(ReplayStatus.Error.toString())) {
                             replay.status = ReplayStatus.Error;
+                        } else {
+                            LOGGER.error("Got replay status of " + currentStatus + ", setting to Completed");
+                            replay.status = ReplayStatus.Completed;
                         }
                         jedis.del(statusKey);
                         rrStore.saveReplay(replay);
@@ -80,6 +84,14 @@ public class RedisPubSub extends JedisPubSub {
 						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 							"No status key in redis, probably deleted by someone else"
 							, Constants.REPLAY_ID_FIELD, replay.replayId)));
+						// just to be safe check that status in Solr is not Running
+						if (replay.status == ReplayStatus.Running) {
+						    LOGGER.error(Utils.createLogMessasge(
+						        Constants.MESSAGE, "Status in solr is still Running for replay, setting to completed",
+                                Constants.REPLAY_ID_FIELD, replay.replayId));
+                            replay.status = ReplayStatus.Completed;
+                            rrStore.saveReplay(replay);
+                        }
 					}
 				}
 				// delete this only after solr is updated above
