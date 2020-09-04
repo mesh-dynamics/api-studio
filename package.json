@@ -16,6 +16,7 @@
         "array-to-tree": "^3.3.2",
         "aws4": "^1.10.1",
         "axios": "^0.18.1",
+        "axios-auth-refresh": "^3.0.0",
         "chokidar": "^3.4.0",
         "classnames": "^2.2.6",
         "cookie": "^0.4.1",

@@ -1,4 +1,7 @@
 import config from '../config';
+import { getAccesToken, getRefreshToken } from "../utils/lib/common-utils";
+import { store } from "../helpers";
+import authActions from '../actions/auth.actions'
 
 const handleResponseLogin = (response) => {
     return response.json().then(json => {
@@ -38,13 +41,41 @@ const logout = () => {
 const createUser = (user) => {
     const requestOptions = {
         method: 'POST',
-        headers: { 
+        headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(user)
     };
-    
+
     return fetch(`${config.apiBaseUrl}/account/create-user`, requestOptions);
+}
+
+const refreshAuthLogic = (failedRequest) => {
+    const dataToPost = JSON.stringify({ refreshToken: getRefreshToken(store.getState()), grantType: "refreshToken" });
+    return new Promise((resolve, reject) => {
+
+        fetch(`${config.apiBaseUrl}/token`, {
+            body: dataToPost,
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            mode: 'cors'
+        }).then(async (response) => {
+            const data = await response.json();
+            store.dispatch(authActions.setUser(data));
+
+            if (PLATFORM_ELECTRON) {
+                ipcRenderer.send('set_user', data);
+            }
+            failedRequest.response.config.headers['Authorization'] = 'Bearer ' + data.access_token;
+            resolve();
+        }).catch(error => {
+            store.dispatch(authActions.accessViolationDetected());
+            reject(error);
+        });
+
+    });
 }
 
 /**
@@ -80,7 +111,7 @@ const resendActivationToken = (email) => {
             'Content-Type': 'application/json'
         }
     };
-    
+
     return fetch(`${config.apiBaseUrl}/account/resend-activation-mail?email=${email}`, requestOptions);
 };
 
@@ -116,4 +147,5 @@ export {
     validateCredentials,
     resendActivationToken,
     verifyActivationToken,
+    refreshAuthLogic
 };
