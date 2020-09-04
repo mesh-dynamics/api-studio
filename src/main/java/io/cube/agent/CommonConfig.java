@@ -2,6 +2,7 @@ package io.cube.agent;
 
 import static io.cube.agent.Utils.appendTrailingSlash;
 import static io.cube.agent.Utils.compAndInitRecorder;
+import static io.cube.agent.Utils.initRecorder;
 import static io.cube.agent.Utils.savePrevDisruptorData;
 
 import java.io.File;
@@ -106,6 +107,9 @@ public class CommonConfig {
 	//Node selection info to record
 	public final Sampler nodeSelector;
 
+	public String recorderValue;
+	public Recorder recorder;
+
 	/******* OTHER OBJECTS ******/
 	// Lightbend Config library by default throws exception on property not found
 	// We need to ensure that at least NOOP properties are always defined in staticConfFile
@@ -153,9 +157,9 @@ public class CommonConfig {
 		}
 		singleInstance = new AtomicReference<>();
 		singleInstance.set(config);
-		//toggle on ProxyBatchRecorder and off COnsoleRecorder if needed.
-//		ConsoleRecorder.init();
-		ProxyBatchRecorder.init();
+		if (config != null) {
+			config.recorder = initRecorder();
+		}
 
 		boolean isServerPolling = envSysStaticConf
 			.getBoolean(io.cube.agent.Constants.MD_POLLINGCONFIG_POLLSERVER);
@@ -408,6 +412,8 @@ public class CommonConfig {
 		sampler = getSamplerDetails(dynamicConfig, options);
 		samplerVeto = dynamicConfig.getBoolean(Constants.MD_SAMPLER_VETO);
 
+		recorderValue = dynamicConfig.getString(io.cube.agent.Constants.RECORDER_PROP);
+
 		getEncryptionDetails(dynamicConfig, options);
 
 		authToken = Optional.of(dynamicConfig.getString(io.cube.agent.Constants.AUTH_TOKEN_PROP));
@@ -564,7 +570,7 @@ public class CommonConfig {
 	}
 
 	public Recorder getRecorder() {
-		return ProxyBatchRecorder.getInstance();
+		return this.recorder;
 	}
 
 }

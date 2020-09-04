@@ -244,7 +244,8 @@ public class Utils {
 		if (configInstance != null) { //in init phase it will be null
 			prevDisruptorData = new DisruptorData(configInstance.disruptorOutputLocation,
 				configInstance.disruptorFileOutName, configInstance.disruptorLogFileMaxSize,
-				configInstance.disruptorLogMaxBackup, configInstance.ringBufferSize);
+				configInstance.disruptorLogMaxBackup, configInstance.ringBufferSize,
+				configInstance.recorderValue);
 		}
 		return prevDisruptorData;
 	}
@@ -258,22 +259,27 @@ public class Utils {
 	}
 
 	public static void compAndInitRecorder(DisruptorData prevDisruptorData) {
-		CommonConfig configInstance;
+		CommonConfig configInstance = CommonConfig.getInstance();
 		if (prevDisruptorData != null) {
-			configInstance = CommonConfig.getInstance();
 			if (prevDisruptorData.compare(configInstance.disruptorOutputLocation,
 				configInstance.disruptorFileOutName, configInstance.disruptorLogFileMaxSize,
-				configInstance.disruptorLogMaxBackup, configInstance.ringBufferSize)) {
-				//toggle on and off ProxyBatchRecorder and COnsoleRecorder as needed.
-//				ConsoleRecorder.init();
-				ProxyBatchRecorder.init();
+				configInstance.disruptorLogMaxBackup, configInstance.ringBufferSize,
+				configInstance.recorderValue)) {
+				configInstance.recorder = initRecorder();
 			}
 		} else {
-			//toggle on and off ProxyBatchRecorder and COnsoleRecorder as needed.
-//			ConsoleRecorder.init();
-			ProxyBatchRecorder.init();
+			configInstance.recorder = initRecorder();
 		}
 	}
 
+	public static AbstractGsonSerializeRecorder initRecorder() {
+		if ("ConsoleRecorder".equalsIgnoreCase(CommonConfig.getInstance().recorderValue)) {
+			ConsoleRecorder.init();
+			return ConsoleRecorder.getInstance();
+		} else {
+			ProxyBatchRecorder.init();
+			return ProxyBatchRecorder.getInstance();
+		}
+	}
 }
 

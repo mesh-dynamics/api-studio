@@ -28,6 +28,8 @@ public class Constants {
 	public static final String DISRUPTOR_LOG_FILE_MAX_BACKUPS_PROP = "io.md.disruptor.output.file.backupnumber";
 	public static final String DISRUPTOR_CONSUMER_MEMORY_BUFFER_SIZE = "io.md.disruptor.event.memory.buffer.size";
 
+	public static final String RECORDER_PROP = "io.md.recorder";
+
 	//Node Selection
 	public static final String MD_NODE_SELECTION_CONFIG = "io.md.nodeselectionconfig";
 
