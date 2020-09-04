@@ -17,12 +17,29 @@
   margin-top: 5px;
   margin-bottom: 5px;
 }
-
+.top-api-nav{
+  font-weight: 300; 
+  margin-bottom: 5px;
+}
+.top-api-nav>div{ 
+  display: flex;
+}
+.top-api-nav .nav-item{
+  cursor: pointer; 
+  margin-right: 30px;
+}
+.top-api-nav .nav-item.selected{
+  font-weight: 600;
+}
+.select-indicator{
+  border: 1px solid #ff7878 !important;
+}
+/* 
 .api-catalog-bordered-bottom {
   border-bottom-style: solid;
   border-bottom-width: 0.5px;
   border-color: #eaeaea !important;
-}
+}*/
 
 .api-catalog-box-title {
   font-weight: bold;
@@ -35,7 +52,8 @@
 
 .api-catalog-view-btn {
   width: 10%;
-}
+  min-width: 90px;
+} 
 
 .header-container {
   display: flex;
@@ -44,4 +62,79 @@
 
 .api-catalog-title-container {
   padding-bottom: 20px;
+}
+
+
+.topFilters .multi-select{
+   width: calc(100% - 80px);
+    max-height: 220px;
+    min-width: 120px;
+}
+.topFilters{
+  display:flex;
+}
+
+.header-container .right-btns{
+  display:inline-flex;
+  
+}
+
+.header-container .right-btns .count-block{
+  margin-right: 10px;
+  align-self: center;
+}
+
+.info-wrapper .filters{
+    height: calc(100vh - 70px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.http-client .panel-title{
+  word-break: break-all;
+}
+.selected-items{
+  display: flex;
+  flex-flow: column;
+}
+.selected-items div{
+   margin-right: 100px;
+}
+
+/** Multiselect CSS **/
+
+.multi-select ul{ 
+  overflow-x: hidden;
+}
+.multi-select .list-group{
+  margin-bottom: 5px;
+  max-height: calc(100% - 75px);
+}
+
+.multi-select .list-group li:nth-child(odd){
+  background-color: #eaeaea;
+}
+
+.multi-select .list-group li:hover{
+  background-color: #d4d4d4;
+}
+.multi-select .list-group-item{
+  padding: 3px 5px;
+}
+.multi-select input.filter, .multi-select div.input-group{
+  width:100%
+}
+
+.left-arrow-glyph{
+  align-self: center;
+}
+.left-arrow-glyph span{
+  color: #615f5f;
+  padding: 0px 20px;
+  align-self: center;
+  font-size: 48px;
+}
+.list-group-item.active{
+  background-color: #7e8992 !important;
+  border-color: #7e8992 !important;
 }

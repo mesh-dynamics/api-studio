@@ -164,11 +164,11 @@ export const apiCatalogActions = {
             case "selectedApiPath":
                 selectedApiPath = value;
                 if (selectedSource==="Golden") {
-                    selectedGoldenApi = selectedService;
+                    selectedGoldenApi = selectedApiPath;
                 } else if (selectedSource==="UserGolden") {
-                    selectedCollectionApi = selectedService;
+                    selectedCollectionApi = selectedApiPath;
                 } else if (selectedSource==="Capture") {
-                    selectedCaptureApi = selectedService;
+                    selectedCaptureApi = selectedApiPath;
                 }
                 break;
 

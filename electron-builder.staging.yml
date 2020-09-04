@@ -1,8 +1,8 @@
-appId: com.meshdynamics.cubeui
+appId: com.meshdynamics.cubeui.staging
 
 extends: null
 
-productName: Mesh Dynamics
+productName: Mesh Dynamics - Staging
 
 asar: true
 

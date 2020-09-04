@@ -3,14 +3,8 @@ import CytoscapeReactWrapper from '../Cytoscape/CytoscapeReactWrapper';
 import { connect } from "react-redux";
 import './APICatalog.css';
 
-class APICatalogServiceGraph extends Component {
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            showGraph: false,
-        }
-    }
+class APICatalogServiceGraph extends Component {
 
     findInNodes(nodeList, id) {
         for (const node of nodeList) {
@@ -96,32 +90,13 @@ class APICatalogServiceGraph extends Component {
         }
     }
 
-    showHideGraph = () => {
-        const { showGraph } = this.state;
-        this.setState({showGraph : !showGraph})
-    }
-
     render() {
         const { cube } = this.props;
         const graphData = this.getGD(cube);
-        const { showGraph } = this.state;
 
-        return (
-            <div className="api-catalog-bordered-bottom" style={{}}>
-                <p style={{fontWeight: 300}}>SERVICE GRAPH&nbsp;
-                    <span onClick={this.showHideGraph} className="text-center"  style={{width:"fit-content", borderRadius: "50%", cursor: "pointer" }}>
-                        {showGraph ? 
-                        (<i class="fa fa-chevron-circle-up"/> )
-                        :
-                        (<i class="fa fa-chevron-circle-down"/>)
-                        }
-                        
-                    </span>
-                </p>
-                {showGraph && <div style={{display:"flex", flexDirection: "column", margin: "10px"}}>
-                    <CytoscapeReactWrapper graphData={graphData}/>
-                </div>}
-                
+        return (            
+            <div style={{display:"flex", flexDirection: "column", margin: "10px"}}>
+                <CytoscapeReactWrapper graphData={graphData}/>
             </div>
         )
     }

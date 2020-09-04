@@ -1,5 +1,4 @@
-const USER_ABORT_MESSAGE = 'The user aborted a request.';
-const CommonConstants = {
-    USER_ABORT_MESSAGE
+const commonConstants = {
+    USER_ABORT_MESSAGE: 'Request aborted by the user.',
 }
-export default CommonConstants;
+export default commonConstants;

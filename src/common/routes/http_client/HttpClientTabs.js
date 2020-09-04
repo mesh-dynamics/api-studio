@@ -1,17 +1,18 @@
 import React, { Component, Fragment, createContext } from "react";
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
-import { FormControl, FormGroup, Tabs, Tab, Panel, Label, Modal, Button, ControlLabel, Overlay, Popover, Glyphicon } from 'react-bootstrap';
+import { FormControl, FormGroup, Tabs, Tab, Panel, Label, Modal, Button, ControlLabel, Glyphicon } from 'react-bootstrap';
 import { Treebeard, decorators } from 'react-treebeard';
 
 import _, { head } from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
-import { stringify } from 'query-string';
+import { stringify, parse } from 'query-string';
 import arrayToTree from 'array-to-tree';
 import * as moment from 'moment';
 import cryptoRandomString from 'crypto-random-string';
 import urlParser from 'url-parse';
 import * as URL from "url";
+import { Collection } from 'postman-collection';
 
 import { cubeActions } from "../../actions";
 import { cubeService } from "../../services";
@@ -38,7 +39,7 @@ import { parseCurlCommand } from '../../utils/http_client/curlparser';
 
 import SplitSlider  from '../../components/SplitSlider.js';
 
-import CommonConstants from '../../utils/commonConstants';
+import commonConstants from '../../utils/commonConstants';
 
 
 class HttpClientTabs extends Component {
@@ -46,13 +47,19 @@ class HttpClientTabs extends Component {
     constructor(props, context) {
         super(props, context);
 
-        this.handleEnvPopoverClick = e => {
-            this.setState({ envPopoverOverlayTarget: e.target, showEnvPopoverOverlay: !this.state.showEnvPopoverOverlay });
-        };
         this.state = { 
             showEnvVarModal: false,
+            showSelectedEnvModal: false,
+            showErrorModal: false,
+            errorMsg: "",
             showDeleteGoldenConfirmation:false,
-            itemToDelete:{}
+            itemToDelete: {},
+            importedToCollectionId: "",
+            serializedCollection: "",
+            modalErrorImportCollectionMessage: "",
+            showImportModal: false,
+            curlCommand: "",
+            modalErrorImportFromCurlMessage: "",
         };
         this.addTab = this.addTab.bind(this);
         this.handleTabChange = this.handleTabChange.bind(this);
@@ -89,10 +96,16 @@ class HttpClientTabs extends Component {
         this.handleAddMockReq = this.handleAddMockReq.bind(this);
         this.showAddMockReqModal = this.showAddMockReqModal.bind(this);
 
-        this.handleImportFromCurlModalClose = this.handleImportFromCurlModalClose.bind(this);
+        this.handleImportModalClose = this.handleImportModalClose.bind(this);
         this.handleImportFromCurlInputChange = this.handleImportFromCurlInputChange.bind(this);
         this.handleImportFromCurl = this.handleImportFromCurl.bind(this);
-        this.handleImportFromCurlModalShow = this.handleImportFromCurlModalShow.bind(this);
+        this.handleImportModalShow = this.handleImportModalShow.bind(this);
+
+
+        this.handleImportCollectionInputChange = this.handleImportCollectionInputChange.bind(this);
+        this.handleImportCollection = this.handleImportCollection.bind(this);
+        this.handleImportedToCollectionIdChange = this.handleImportedToCollectionIdChange.bind(this);
+        this.persistPanelState = [];
     }
 
     createRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFromData) {
@@ -297,7 +310,6 @@ class HttpClientTabs extends Component {
 
     importFromCurl(curlCommand) {
         const { dispatch } = this.props;
-        console.log("curlCommand: ", curlCommand);
         if(!curlCommand) return;
         try {
             const parsedCurl = parseCurlCommand(curlCommand);
@@ -394,7 +406,7 @@ class HttpClientTabs extends Component {
                 showSaveBtn: true,
                 outgoingRequests: [],
                 showCompleteDiff: false,
-                isOutgoingRequest: true,
+                isOutgoingRequest: false,
                 service: service,
                 recordingIdAddedFromClient: "",
                 collectionIdAddedFromClient: "",
@@ -407,11 +419,19 @@ class HttpClientTabs extends Component {
             }
             const savedTabId = this.addTab(null, reqObj, app);
             setTimeout(() => {
-                dispatch(httpClientActions.closeImportFromCurlModal(false, "", ""));
+                this.setState({
+                    showImportModal: false,
+                    curlCommand: "",
+                    modalErrorImportFromCurlMessage: ""
+                });
             }, 1000);
         } catch (err) {
             console.error("err: ", err);
-            dispatch(httpClientActions.showImportFromCurlModal(true, curlCommand, err));
+            this.setState({
+                showImportModal: true,
+                curlCommand: curlCommand,
+                modalErrorImportFromCurlMessage: err
+            });
         }
     }
 
@@ -553,9 +573,10 @@ class HttpClientTabs extends Component {
         this.handleAddMockReqModalClose();
     }
 
-    generateEventdata(app, customerId, traceId, service, apiPath) {
+    generateEventdata(app, customerId, traceId, service, apiPath, method, requestHeaders, requestQueryParams, requestFormParams, rawData) {
         const isoDate = new Date().toISOString();
         const timestamp = new Date(isoDate).getTime();
+        let path = apiPath ? apiPath.replace(/^\/|\/$/g, '') : "";
         
         let httpResponseEvent = {
             customerId: customerId,
@@ -570,7 +591,7 @@ class HttpClientTabs extends Component {
             runId: generateRunId(),
             timestamp: timestamp,
             reqId: "NA",
-            apiPath: apiPath ? apiPath : "NA",
+            apiPath: path ? path : "NA",
             eventType: "HTTPResponse",
             payload: [
                 "HTTPResponsePayload",
@@ -600,17 +621,18 @@ class HttpClientTabs extends Component {
             runId: generateRunId(),
             timestamp: timestamp,
             reqId: "NA",
-            apiPath: apiPath ? apiPath : "NA",
+            apiPath: path ? path : "NA",
             eventType: "HTTPRequest",
             payload: [
                 "HTTPRequestPayload",
                 {
-                    hdrs: {},
-                    queryParams: {},
-                    formParams: {},
-                    method: "",
-                    path: "",
-                    pathSegments: []
+                    hdrs: requestHeaders ? requestHeaders : {},
+                    queryParams: requestQueryParams ? requestQueryParams : {},
+                    formParams: requestFormParams ? requestFormParams : {},
+                    method: method ? method : "",
+                    path: path ? path : "",
+                    pathSegments: path ? path.split(/\//) : [],
+                    ...(rawData && {body: rawData})
                 }
             ],
             recordingType: "UserGolden",
@@ -674,25 +696,160 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.showAddMockReqModal(tabId, true, "", "", ""));
     }
 
-    handleImportFromCurlModalClose() {
-        const { dispatch } = this.props;
-        dispatch(httpClientActions.closeImportFromCurlModal(false, "", ""));
+    handleImportModalClose() {
+        this.setState({
+            showImportModal: false,
+            curlCommand: "",
+            modalErrorImportFromCurlMessage: "",
+            importedToCollectionId: "",
+            serializedCollection: "",
+            modalErrorImportCollectionMessage: ""
+        });
     }
 
     handleImportFromCurlInputChange(evt) {
-        const { dispatch } = this.props;
-        dispatch(httpClientActions.updateModalCurlCommand(evt.target.name, evt.target.value));
+        this.setState({
+            curlCommand: evt.target.value
+        });
     }
 
     handleImportFromCurl() {
-        const { dispatch } = this.props;
-        const {httpClient: {curlCommand}} = this.props;
+        const { curlCommand } = this.state;
         this.importFromCurl(curlCommand);
     }
 
-    handleImportFromCurlModalShow() {
-        const { dispatch } = this.props;
-        dispatch(httpClientActions.showImportFromCurlModal(true, "", ""));
+    handleImportModalShow() {
+        this.setState({
+            showImportModal: true,
+            curlCommand: "",
+            modalErrorImportFromCurlMessage: "",
+            importedToCollectionId: "",
+            serializedCollection: "",
+            modalErrorImportCollectionMessage: ""
+        });
+    }
+
+    handleImportCollectionInputChange(evt) {
+        this.setState({
+            serializedCollection: evt.target.value
+        });
+    }
+
+    handleImportedToCollectionIdChange(evt) {
+        this.setState({
+            importedToCollectionId: evt.target.value
+        });
+    }
+
+    flattenCollection(collectionToImport) {
+        let result = [], queue = [];
+        if(!collectionToImport || !collectionToImport.items || !collectionToImport.items.count() || !collectionToImport.items.members || !collectionToImport.items.members.length) {
+            return result;
+        }
+        for(let eachItem of collectionToImport.items.members) {
+            queue.push({
+                ...eachItem
+            });
+        }
+        while (queue.length > 0) {
+            let current = queue.shift();
+            if(current.items && current.items.members && current.items.members.length) {
+                for(let eachItemNode of current.items.members) {
+                    queue.unshift({
+                        ...eachItemNode
+                    });
+                }
+            } else if(current.items && current.items.count() === 0) {
+                
+            } else {
+                result.push({
+                    ...current
+                });
+            }
+        }
+        return result;
+    }
+
+    handleImportCollection() {
+        const {importedToCollectionId, serializedCollection } = this.state;
+        if(!serializedCollection || !importedToCollectionId) return;
+        this.setState({
+            showImportModal: true,
+            modalErrorImportCollectionMessage: "Saving..."
+        });
+        const httpEventPairs = [];
+        try {
+            const collectionToImport = new Collection(JSON.parse(serializedCollection));
+            const flattenedCollection = this.flattenCollection(collectionToImport);
+            flattenedCollection.map((eachMember) => {
+                const { cube: {selectedApp} } = this.props;
+                const url = eachMember.request.url.getRaw(),
+                    method = eachMember.request.method,
+                    requestHeaders = eachMember.request.getHeaders(),
+                    requestBody = eachMember.request.body,
+                    requestBodyUrlEncodedParams = requestBody && requestBody.mode === "urlencoded" ? requestBody.urlencoded.all() : {};
+                if(!url) return;
+                
+                let app = selectedApp;
+                if(!selectedApp) {
+                    const parsedUrlObj = URL.parse(window.location.href, true);
+                    app = parsedUrlObj.query.app;
+                }
+                const parsedUrl = URL.parse(url),
+                    parsedQueryParams = parse(parsedUrl.search);
+                let apiPath = parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
+                let service = parsedUrl.host ? parsedUrl.host : "NA";
+                const traceId = cryptoRandomString({length: 32});
+                const user = JSON.parse(localStorage.getItem('user'));
+                const customerId = user.customer_name;
+                
+                let headers = {}, queryParams = {}, formData = {}, rawData = "";
+                for (let eachHeader in requestHeaders) {
+                    headers[eachHeader] = [requestHeaders[eachHeader]];
+                }
+                for (let eachQueryParam in parsedQueryParams) {
+                    queryParams[eachQueryParam] = _.isArray(parsedQueryParams[eachQueryParam]) ? parsedQueryParams[eachQueryParam] : [parsedQueryParams[eachQueryParam]] ;
+                }
+                if(requestBody && requestBody.mode) {
+                    let contentTypeHeader = _.isObject(requestHeaders) ? this.getParameterCaseInsensitive(requestHeaders, "content-type") : "";
+                    if(contentTypeHeader && contentTypeHeader.indexOf("application/json") > -1 && requestBody.mode === "raw" && requestBody.raw) {
+                        rawData = JSON.parse(requestBody.raw);
+                    } else if(requestBody.mode === "urlencoded") {
+                        for (let eachFormParam of requestBodyUrlEncodedParams) {
+                            formData[eachFormParam.key] = [eachFormParam.value];
+                        }
+                    } else if(requestBody.mode === "raw") {
+                        rawData = requestBody.raw;
+                    }
+                }
+                const eventData = this.generateEventdata(app, customerId, traceId, service, unescape(apiPath), method, headers, queryParams, formData, rawData);
+                httpEventPairs.push({
+                    request: eventData[0],
+                    response: eventData[1]
+                });
+                return eachMember;
+            })
+        } catch (err) {
+            console.error("err: ", err);
+        }
+        const urlToPost = `${config.apiBaseUrl}/cs/storeUserReqResp/${importedToCollectionId}`;
+        const apiConfig = {};
+        api.post(urlToPost, httpEventPairs, apiConfig)
+            .then((serverRes) => {
+                this.setState({
+                    showImportModal: false,
+                    serializedCollection: "",
+                    importedToCollectionId: "",
+                    modalErrorImportCollectionMessage: "Saved."
+                });
+            }, (error) => {
+                console.error("error: ", error);
+                this.setState({
+                    showImportModal: true,
+                    modalErrorImportCollectionMessage: error
+                });
+            })
+        return httpEventPairs;
     }
 
     onToggle(node, toggled){
@@ -708,6 +865,9 @@ class HttpClientTabs extends Component {
         node.active = true;
         if (node.children) {
             node.toggled = toggled;
+        }
+        if(node.requestEventId){
+            this.persistPanelState[node.requestEventId] = toggled;
         }
         dispatch(httpClientActions.setActiveHistoryCursor(node));
     }
@@ -854,6 +1014,7 @@ class HttpClientTabs extends Component {
                                 collectionIdAddedFromClient: collectionId,
                                 traceIdAddedFromClient: traceId,
                                 requestRunning: false,
+                                showTrace: null,
                             };
                             const tabId = uuidv4();
                             outgoingRequests.push({
@@ -1033,7 +1194,7 @@ class HttpClientTabs extends Component {
             [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] 
                         = this.applyEnvVars(httpRequestURL, httpRequestQueryStringParams, fetchConfig);
         } catch (e) {
-            alert(e) // prompt user for error in env vars
+            this.showErrorAlert(`${e}`); // prompt user for error in env vars
             return
         }
         const fetchUrlRendered = httpRequestURLRendered + (httpRequestQueryStringParamsRendered ? "?" + stringify(httpRequestQueryStringParamsRendered) : "");
@@ -1056,7 +1217,9 @@ class HttpClientTabs extends Component {
             for (const header of response.headers) {
                 fetchedResponseHeaders[header[0]] = header[1];
             }
-            if (response.headers.get("content-type").indexOf("application/json") !== -1) {// checking response header
+            if(response.headers.get("content-type").indexOf("text/html") !== -1) {
+                return response.text();
+            } else if (response.headers.get("content-type").indexOf("application/json") !== -1 ) {// checking response header
                 return response.json();
             } else {
                 return response.text();
@@ -1073,8 +1236,8 @@ class HttpClientTabs extends Component {
             console.error(error);
             dispatch(httpClientActions.postErrorDriveRequest(tabId, error.message));
             dispatch(httpClientActions.unsetReqRunning(tabId));
-            if(error.message !== CommonConstants.USER_ABORT_MESSAGE){                
-                alert(`Could not get any response. There was an error connecting: ${error}`);
+            if(error.message !== commonConstants.USER_ABORT_MESSAGE){                
+                this.showErrorAlert(`Could not get any response. There was an error connecting: ${error}`);
             }
         });
     }
@@ -1157,6 +1320,14 @@ class HttpClientTabs extends Component {
             let service = parsedUrl.host ? parsedUrl.host : "NA";
             httpRequestEvent = this.updateHttpEvent(apiPath, service, httpRequestEvent);
             httpResponseEvent = this.updateHttpEvent(apiPath, service, httpResponseEvent);
+        }
+
+        if(httpRequestEvent.parentSpanId === null) {
+            httpRequestEvent.parentSpanId = "NA"
+        }
+
+        if(httpRequestEvent.spanId === null) {
+            httpRequestEvent.spanId = "NA"
         }
 
         const { headers, queryStringParams, bodyType, rawDataType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus } = tabToSave;
@@ -1446,7 +1617,7 @@ class HttpClientTabs extends Component {
                     if(!userHistoryCollection && fetchedUserHistoryCollection) {
                         dispatch(httpClientActions.addUserHistoryCollection(fetchedUserHistoryCollection));
                     }
-                    const startTime = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+                    const startTime = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
                     api.get(`${config.apiBaseUrl}/as/getApiTrace/${customerId}/${app}?depth=100&collection=${fetchedUserHistoryCollection.collec}&startDate=${startTime}`)
                         .then((res) => {
                             const apiTraces = res.response;
@@ -1576,6 +1747,7 @@ class HttpClientTabs extends Component {
             traceIdAddedFromClient: httpRequestEvent.traceId,
             apiPath: httpRequestEvent.apiPath,
             requestRunning: false,
+            showTrace: null,
         };
         return reqObject;
     }
@@ -1820,6 +1992,7 @@ class HttpClientTabs extends Component {
             collectionIdAddedFromClient: httpRequestEvent.collection,
             traceIdAddedFromClient: httpRequestEvent.traceId,
             requestRunning: false,
+            showTrace: null,
         };
         return reqObject;
     }
@@ -1991,6 +2164,7 @@ class HttpClientTabs extends Component {
                                 isOutgoingRequest: false,
                                 service: httpRequestEvent.service,
                                 requestRunning: false,
+                                showTrace: null,
                             };
                             const savedTabId = this.addTab(null, reqObject, selectedApp);
                             this.showOutgoingRequests(savedTabId, node.traceIdAddedFromClient, node.collectionIdAddedFromClient, node.recordingIdAddedFromClient);
@@ -1999,6 +2173,11 @@ class HttpClientTabs extends Component {
                 }
             });
         }
+    }
+
+    toggleShowTrace = (tabId) => {
+        const {dispatch} = this.props;
+        dispatch(httpClientActions.toggleShowTrace(tabId))
     }
 
     getSelectedTabKey(givenTabs, type) {
@@ -2060,6 +2239,7 @@ class HttpClientTabs extends Component {
                         cubeRunHistory={cubeRunHistory}
                         showAddMockReqModal={this.showAddMockReqModal}
                         handleDuplicateTab={this.handleDuplicateTab}
+                        toggleShowTrace={this.toggleShowTrace}
                         >
                         </HttpClient>
                     </div>
@@ -2131,48 +2311,52 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.setSelectedEnvironment(e.target.value))
     }
 
-    renderEnvPopoverBtn = () => {
+    renderSelectedEnvModal = () => {
         const currentEnvironment = this.getCurrentEnvirnoment();
         const { httpClient: { selectedEnvironment } } = this.props;
-        const envPopover = (<Popover
-            title={selectedEnvironment || "No Environment Selected"}>
-            <div style={{ padding: "0 5px 0 5px",width: "400px" }}>
-                {currentEnvironment && !_.isEmpty(currentEnvironment.vars) && <table className="table table-bordered table-hover">
-                    <thead>
-                        <tr>
-                            <th style={{ width: "20%" }}>Variable</th>
-                            <th>Value</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {
-                            currentEnvironment.vars.map((varEntry) => (
-                            <tr>
-                                <td>{varEntry.key}</td>
-                                <td style={{wordBreak: "break-all"}}>{varEntry.value}</td>
-                            </tr>
-                            ))
-                        }
-                    </tbody>
-                </table>}
-            </div>
-        </Popover>)
         return (
             <Fragment>
-                <span title="Environment quick look" className="btn btn-sm cube-btn text-center" onClick={this.handleEnvPopoverClick}>
+                <span title="Environment quick look" className="btn btn-sm cube-btn text-center" onClick={this.openSelectedEnvModal}>
                     <i className="fas fa-eye" />
                 </span>
-                <Overlay  show={this.state.showEnvPopoverOverlay}
-                    target={this.state.envPopoverOverlayTarget}
-                    placement="bottom"
-                    container={this}
-                    onHide={()=>{this.setState({showEnvPopoverOverlay: false})}}
-                    rootClose 
-                >
-                {envPopover}
-                </Overlay>
+                <Modal show={this.state.showSelectedEnvModal} onHide={this.closeSelectedEnvModal}>
+                    <Modal.Header closeButton>
+                        <Modal.Title>{selectedEnvironment || "No Environment Selected"}</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <div>
+                            {currentEnvironment && !_.isEmpty(currentEnvironment.vars) && <table className="table table-bordered table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style={{ width: "20%" }}>Variable</th>
+                                        <th>Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {currentEnvironment.vars.map((varEntry) => (
+                                    <tr>
+                                        <td>{varEntry.key}</td>
+                                        <td style={{wordBreak: "break-all"}}>{varEntry.value}</td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>}
+                        </div>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <div onClick={this.closeSelectedEnvModal} className="btn btn-sm cube-btn text-center">Close</div>
+                    </Modal.Footer>
+                </Modal>
             </Fragment>
         )
+    }
+
+    openSelectedEnvModal = () => {
+        this.setState({showSelectedEnvModal: true});
+    }
+
+    closeSelectedEnvModal = () => {
+        this.setState({showSelectedEnvModal: false})
     }
 
     hideEnvModal = () => {
@@ -2219,19 +2403,38 @@ class HttpClientTabs extends Component {
             itemToDelete: {
                 requestType, id, name, collectionId, isParent
             }});
-        console.log("Delete called", event);
     };
+
+    showErrorAlert = (message) => {
+        this.setState({ showErrorModal: true, errorMsg: message});
+    };
+
+    onCloseErrorModal = () => {
+        this.setState({ showErrorModal: false});
+    };
+
+    getExpendedState = (uniqueid)=>{
+        const isExpanded = this.persistPanelState[uniqueid];
+        if(isExpanded){
+            this.handlePanelClick(uniqueid);
+        }
+        return isExpanded;
+    }
+
+    onPanelToggle = (isToggled, event)=> {
+        this.persistPanelState[event.target.parentElement.getAttribute('data-unique-id')] = isToggled;
+    }
 
     render() {
         const { cube } = this.props;
-        const { showEnvVarModal, showDeleteGoldenConfirmation } = this.state;
+        const { showEnvVarModal, showDeleteGoldenConfirmation, showErrorModal, errorMsg, importedToCollectionId, serializedCollection, modalErrorImportCollectionMessage, showImportModal, curlCommand, modalErrorImportFromCurlMessage} = this.state;
         const { cube: {selectedApp} } = this.props;
         const app = selectedApp;
-        const {httpClient: {cubeRunHistory, userCollections, collectionName, collectionLabel, modalErroSaveMessage,modalErroSaveMessageIsError, modalErroCreateCollectionMessage, tabs, selectedTabKey, showSaveModal, showAddMockReqModal, mockRequestServiceName, mockRequestApiPath, modalErrorAddMockReqMessage, showImportFromCurlModal, curlCommand, modalErrorImportFromCurlMessage}} = this.props;
-        
+        const {httpClient: {cubeRunHistory, userCollections, collectionName, collectionLabel, modalErroSaveMessage,modalErroSaveMessageIsError, modalErroCreateCollectionMessage, tabs, selectedTabKey, showSaveModal, showAddMockReqModal, mockRequestServiceName, mockRequestApiPath, modalErrorAddMockReqMessage}} = this.props;
+
         return (
 
-            <div className="" style={{ display: "flex", height: "100%" }}>
+            <div className="http-client" style={{ display: "flex", height: "100%" }}>
                 <aside className="" ref={e=> (this.sliderRef = e)}
                 style={{ "width": "250px", "height": "100%", "background": "#EAEAEA", "padding": "10px", "display": "flex", "flexDirection": "column", overflow: "auto" }}>
                     <div style={{ marginTop: "10px", marginBottom: "10px" }}>
@@ -2288,9 +2491,11 @@ class HttpClientTabs extends Component {
                             <div className="margin-top-10">
                                 {userCollections && userCollections.map(eachCollec => {
                                     return (
-                                        <Panel id="collapsible-panel-example-2" className="collection-panel-div" key={eachCollec.collec} value={eachCollec.collec} onClick={() => this.handlePanelClick(eachCollec.collec)}>
+                                        <Panel id="collapsible-panel-example-2" className="collection-panel-div" key={eachCollec.collec} value={eachCollec.collec} onClick={() => this.handlePanelClick(eachCollec.collec)} 
+                                            defaultExpanded = {this.getExpendedState(eachCollec.collec)}
+                                            onToggle={this.onPanelToggle}>
                                             <Panel.Heading style={{ paddingLeft: "9px", position: 'relative' }}>
-                                                <Panel.Title toggle style={{ fontSize: "13px" }}>
+                                                <Panel.Title toggle style={{ fontSize: "13px" }} data-unique-id={eachCollec.collec}>
                                                     {eachCollec.name}
                                                 </Panel.Title>
                                                 <div className="collection-options"><i className="fas fa-trash pointer" data-id={eachCollec.rootRcrdngId} 
@@ -2298,8 +2503,11 @@ class HttpClientTabs extends Component {
                                                 data-type="collection" onClick={this.onDeleteBtnClick}/></div>
                                             </Panel.Heading>
                                             <Panel.Collapse>
-                                                <Panel.Body style={{ padding: "3px", width: "100%", overflow: "scroll" }}>
+                                                <Panel.Body style={{ padding: "3px", width: "100%", overflow: "auto" }}>
                                                     {eachCollec.apiTraces && eachCollec.apiTraces.map((eachApiTrace) => {
+                                                        if(this.persistPanelState[eachApiTrace.requestEventId]){
+                                                            eachApiTrace.toggled = true;
+                                                        }
                                                         return (
                                                             <Treebeard key={eachApiTrace.id}
                                                                 data={eachApiTrace}
@@ -2341,11 +2549,11 @@ class HttpClientTabs extends Component {
                     <div style={{marginRight: "7px"}}>
                         <div style={{marginBottom: "9px", display: "inline-block", width: "20%", fontSize: "11px"}}></div>
                         <div style={{display: "inline-block", width: "80%", textAlign: "right"}}>
-                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleImportFromCurlModalShow}>
+                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleImportModalShow}>
                                 <Glyphicon glyph="import" /> Import
                             </div>
                                 <div style={{display: "inline-block", padding: 0}} className="btn">{this.renderEnvListDD()}</div>
-                                <div style={{display: "inline-block"}}>{this.renderEnvPopoverBtn()}</div>
+                                <div style={{display: "inline-block"}}>{this.renderSelectedEnvModal()}</div>
                                 <span className="btn btn-sm cube-btn text-center" onClick={() => {this.setState({showEnvVarModal: true})}} title="Configure environments"><i className="fas fa-cog"/> </span>
                             {/* <div style={{display: "inline-block", margin: "10px" }}>
                             </div> */}
@@ -2445,22 +2653,50 @@ class HttpClientTabs extends Component {
                         </Modal>
                     </div>
                     <div>
-                    <Modal show={showImportFromCurlModal} onHide={this.handleImportFromCurlModalClose} bsSize="large">
+                    <Modal show={showImportModal} onHide={this.handleImportModalClose} bsSize="large">
                             <Modal.Header closeButton>
-                                <Modal.Title>Import from curl</Modal.Title>
+                                <Modal.Title>Import</Modal.Title>
                             </Modal.Header>
                             <Modal.Body>
-                                <div>
-                                    <FormGroup>
-                                        <ControlLabel>Curl Command</ControlLabel>
-                                        <FormControl componentClass="textarea" rows="15" placeholder="Curl Command" name="curlCommand" value={curlCommand} onChange={this.handleImportFromCurlInputChange} />
-                                    </FormGroup>
-                                </div>
-                                <p style={{ marginTop: "10px", fontWeight: 500 }}>{modalErrorImportFromCurlMessage}</p>
+                                <Tabs defaultActiveKey={1}>
+                                    <Tab eventKey={1} title="Import from curl">
+                                        <div>
+                                            <FormGroup>
+                                                <ControlLabel>Curl Command</ControlLabel>
+                                                <FormControl componentClass="textarea" rows="15" placeholder="Curl Command" name="curlCommand" value={curlCommand} onChange={this.handleImportFromCurlInputChange} />
+                                            </FormGroup>
+                                        </div>
+                                        <p style={{ marginTop: "10px", fontWeight: 500 }}>{modalErrorImportFromCurlMessage}</p>
+                                        <Button onClick={this.handleImportFromCurl}>Import</Button>
+                                    </Tab>
+                                    <Tab eventKey={2} title="Import Collection">
+                                        <div>
+                                            <FormGroup style={{ marginBottom: "0px" }}>
+                                                <ControlLabel>Collection</ControlLabel>
+                                                <FormControl componentClass="select" placeholder="Select" name="importedToCollectionId" value={importedToCollectionId} onChange={this.handleImportedToCollectionIdChange}>
+                                                    <option value=""></option>
+                                                    {userCollections && userCollections.map((eachUserCollection) => {
+                                                        return (
+                                                            <option key={eachUserCollection.id} value={eachUserCollection.id}>{eachUserCollection.name}</option>
+                                                        );
+                                                    })}
+                                                </FormControl>
+                                            </FormGroup>
+                                        </div>
+                                        <hr />
+                                        <div>
+                                            <FormGroup>
+                                                <ControlLabel>Collection</ControlLabel>
+                                                <FormControl componentClass="textarea" rows="15" placeholder="Collection" name="serializedCollection" value={serializedCollection} onChange={this.handleImportCollectionInputChange} />
+                                            </FormGroup>
+                                        </div>
+                                        <p style={{ marginTop: "10px", fontWeight: 500 }}>{modalErrorImportCollectionMessage}</p>
+                                        <Button onClick={this.handleImportCollection}>Import</Button>
+                                    </Tab>
+                                </Tabs>
                             </Modal.Body>
                             <Modal.Footer>
-                                <Button onClick={this.handleImportFromCurl}>Import</Button>
-                                <Button onClick={this.handleImportFromCurlModalClose}>Close</Button>
+                                <Button onClick={this.handleImportModalClose}>Close</Button>
                             </Modal.Footer>
                         </Modal>
                         <Modal show={showDeleteGoldenConfirmation}>
@@ -2478,6 +2714,18 @@ class HttpClientTabs extends Component {
                                     </div>
                                 </div>
                             </Modal.Body>
+                        </Modal>
+
+                        <Modal show={showErrorModal} onHide={this.onCloseErrorModal}>
+                            <Modal.Header closeButton>
+                                <Modal.Title>Error</Modal.Title>
+                            </Modal.Header>
+                            <Modal.Body>
+                                    <p>{errorMsg}</p>
+                            </Modal.Body>
+                            <Modal.Footer>
+                                <div onClick={this.onCloseErrorModal} className="btn btn-sm cube-btn text-center">Close</div>
+                            </Modal.Footer>
                         </Modal>
                     </div>
                 </main>

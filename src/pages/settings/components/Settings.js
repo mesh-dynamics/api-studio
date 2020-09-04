@@ -114,14 +114,14 @@ class Settings extends Component {
                         handleDomainInputChange={this.handleDomainInputChange}
                         handleSaveDomainClick={this.handleSaveDomainClick}
                     />
-                    <MockSettings
+                    {/* <MockSettings
                         port={port}
                         proxyPort={proxyPort}
                         protocol={protocol}
                         host={host}
                         handleMockSettingsChange={this.handleMockSettingsChange}
                         handleSaveMockSettingsClick={this.handleSaveMockSettingsClick}
-                    />
+                    /> */}
                     <Modal
                         show={domainSettingsModalVisible}
                         onHide={this.handleHideDomainSettingsModal}

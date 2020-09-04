@@ -4,4 +4,5 @@ import HttpClientTabs from "./HttpClientTabs";
 
 export default [
     <Route exact key="HttpClientTabs" path="/http_client" component={HttpClientTabs} />,
+    
 ]

@@ -41,7 +41,7 @@ const authActions = {
 
             history.push("/")
         } catch(e) {
-            dispatch(authActions.fetchFailure("Invalid Username or Password"));
+            dispatch(authActions.fetchFailure(e));
         }
 
     },
