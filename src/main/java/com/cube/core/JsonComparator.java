@@ -96,8 +96,8 @@ public class JsonComparator implements Comparator {
         validate(rhsRoot, result);
 
         //convert arrays to objects
-        JsonNode lhsConverted = Utils.convertArrayToObject(lhsRoot);
-        JsonNode rhsConverted = Utils.convertArrayToObject(rhsRoot);
+        JsonNode lhsConverted = Utils.convertArrayToObject(lhsRoot, template, "");
+        JsonNode rhsConverted = Utils.convertArrayToObject(rhsRoot, template, "");
 
         // Now diff new (rhs) with the old (lhs)
         EnumSet<DiffFlags> flags = EnumSet.of(DiffFlags.OMIT_COPY_OPERATION,

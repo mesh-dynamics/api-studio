@@ -4,6 +4,8 @@
 package com.cube.core;
 
 
+import io.md.apache.commons.lang3.tuple.Pair;
+import io.md.core.CompareTemplate.DataType;
 import io.md.dao.Recording.RecordingType;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -30,6 +32,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
+import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -212,25 +215,43 @@ public class Utils {
         }
     }
 
-    public static JsonNode convertArrayToObject(JsonNode node){
+    public static Pair<JsonNode, Map<Integer, String>>
+        convertArrayToObject(JsonNode node, CompareTemplate template, String path
+	    , Map<String, Map<Integer, String>> pathVsKeyIndexMap){
         if (node.isArray()) {
-            ArrayNode nodeAsArray = (ArrayNode) node;
-            ObjectNode equivalentObjNode = JsonNodeFactory.instance.objectNode();
-            for (int i = 0 ; i < nodeAsArray.size() ; i++){
-                equivalentObjNode.set(String.valueOf(i), convertArrayToObject(nodeAsArray.get(i)));
-            }
-            return equivalentObjNode;
+        	TemplateEntry arrayRule = template.getRule(path);
+        	ArrayNode nodeAsArray = (ArrayNode) node;
+	        ObjectNode equivalentObjNode = JsonNodeFactory.instance.objectNode();
+
+
+        	if (arrayRule.dt == DataType.Set) {
+		        for (int i = 0 ; i < nodeAsArray.size() ; i++) {
+			        equivalentObjNode.set(arrayRule.arrayComparisionKeyPath.map(keyPath -> node.at(
+				        JsonPointer.compile(keyPath)).toString()).orElse(nodeAsArray.get(i).toString())
+				        , convertArrayToObject(nodeAsArray.get(i)
+				        , template, path.concat("/").concat(String.valueOf(i))));
+		        }
+	        } else {
+		        for (int i = 0 ; i < nodeAsArray.size() ; i++){
+			        equivalentObjNode.set(String.valueOf(i), convertArrayToObject(nodeAsArray.get(i)
+				        , template, path.concat("/").concat(String.valueOf(i))));
+		        }
+	        }
+
+
+            return Pair.of(equivalentObjNode, new HashMap<>());
         } else if (node.isObject()) {
             ObjectNode nodeAsObject = (ObjectNode) node;
             ObjectNode equivalentObjNode = JsonNodeFactory.instance.objectNode();
             Iterator<String> fieldNames = nodeAsObject.fieldNames();
             while(fieldNames.hasNext()) {
                 String fieldName = fieldNames.next();
-                equivalentObjNode.set(fieldName, convertArrayToObject(nodeAsObject.get(fieldName)));
+                equivalentObjNode.set(fieldName, convertArrayToObject(nodeAsObject.get(fieldName)
+	                ,template , path.concat("/").concat(fieldName)));
             }
-            return equivalentObjNode;
+            return Pair.of(equivalentObjNode, new HashMap<>());
         }
-        return node;
+        return Pair.of(node, new HashMap<>());
     }
 
 
