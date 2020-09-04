@@ -83,21 +83,40 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
     }
 
     @Override
-    public Optional<DynamicInjectionConfig> getDynamicInjectionConfig(String s, String s1,
-        String s2) {
-        //TODO: Needs to be handled properly
+    public Optional<DynamicInjectionConfig> getDynamicInjectionConfig(String customerId,
+                                                                      String app,
+                                                                      String version) {
+        try {
+            return cubeClient.getDynamicInjectionConfig(customerId, app, version)
+                    .map(UtilException.rethrowFunction(config -> jsonMapper.readValue(config,
+                            DynamicInjectionConfig.class)));
+        } catch (IOException e) {
+            LOGGER.error("Exception occurred while getting dynamic injection config : " + version, e);
+        }
         return Optional.empty();
     }
 
     @Override
-    public Optional<Replay> getReplay(String s) {
-        //TODO: Needs to be handled properly
+    public Optional<Replay> getReplay(String replayId) {
+        try {
+            return cubeClient.getReplay(replayId)
+                    .map(UtilException.rethrowFunction(config -> jsonMapper.readValue(config,
+                            Replay.class)));
+        } catch (IOException e) {
+            LOGGER.error("Exception occurred while getting replay : " + replayId, e);
+        }
         return Optional.empty();
     }
 
     @Override
-    public Optional<Recording> getRecording(String s) {
-        //TODO: Needs to be handled properly
+    public Optional<Recording> getRecording(String recordingId) {
+        try {
+            return cubeClient.getRecording(recordingId)
+                    .map(UtilException.rethrowFunction(config -> jsonMapper.readValue(config,
+                            Recording.class)));
+        } catch (IOException e) {
+            LOGGER.error("Exception occurred while getting replay : " + recordingId, e);
+        }
         return Optional.empty();
     }
 
@@ -113,13 +132,11 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
 
     @Override
     public boolean saveReplay(Replay replay) {
-        //TODO: Needs to be handled properly
-        return true;
+        return cubeClient.saveReplay(replay).isPresent();
     }
 
     @Override
     public boolean deferredDelete(Replay replay) {
-        //TODO: Needs to be handled properly
-        return true;
+        return cubeClient.deferredDelete(replay).isPresent();
     }
 }
