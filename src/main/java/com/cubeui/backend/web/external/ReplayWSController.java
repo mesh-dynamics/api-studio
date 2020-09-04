@@ -133,7 +133,7 @@ public class ReplayWSController {
         return cubeServerService.fetchPostResponse(request, Optional.of(dynamicInjectionConfig));
     }
 
-    @PostMapping("/deferredDeleteReplay/{replayId}")
+    @PostMapping("/deferredDeleteReplay/{replayId}/{status}")
     public ResponseEntity deferredDeleteReplay(HttpServletRequest request,
         @RequestBody Optional<String> postBody, @PathVariable String replayId) {
         final Optional<Replay> replay =cubeServerService.getReplay(replayId);
