@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 
@@ -36,8 +37,14 @@ public class JwtTokenProvider {
     @Value("${security.jwt.token.secret-key}")
     private String secretKey = "secret";
 
+    @Value("${security.jwt.refresh.token.secret-key}")
+    private String refreshSecretKey = "refresh-secret";
+
     @Value("${security.jwt.token.expire-length}")
-    private long validityInSeconds = 60 * 60 * 24 * 14; // 2 weeks
+    private long validityInSeconds = 60 * 60 * 24; // 24 hours
+
+    @Value("${security.jwt.refresh.token.expire-length}")
+    private long validityInSecondsForRefresh = 60 * 60 * 24 * 14; // 2 weeks
 
     private UserDetailsService userDetailsService;
 
@@ -72,12 +79,25 @@ public class JwtTokenProvider {
             .compact();
     }
 
+    public String createRefreshToken(User user){
+        Claims claims = Jwts.claims().setSubject(user.getUsername());
+        claims.put("scopes", user.getAuthorities().stream().map(s -> s.toString()).collect(
+            Collectors.toList()));
+        Date now = new Date();
+        return Jwts.builder()
+            .setClaims(claims)
+            .setIssuedAt(now)
+            .setExpiration(new Date(now.getTime() + validityInSecondsForRefresh * 1000))
+            .signWith(SignatureAlgorithm.HS256, refreshSecretKey)
+            .compact();
+    }
+
     Authentication getAuthentication(String token) {
-        UserDetails userDetails = this.userDetailsService.loadUserByUsername(getUsername(token));
+        UserDetails userDetails = this.userDetailsService.loadUserByUsername(getUsername(token, secretKey));
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
 
-    String getUsername(String token) {
+    String getUsername(String token, String secretKey) {
         return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().getSubject();
     }
 
@@ -96,10 +116,22 @@ public class JwtTokenProvider {
 
     public UserDetails getUser(HttpServletRequest request) {
         final String token = resolveToken((HttpServletRequest) request);
-        return this.userDetailsService.loadUserByUsername(getUsername(token));
+        return this.userDetailsService.loadUserByUsername(getUsername(token, secretKey));
+    }
+
+    public UserDetails getUserFromRefreshToken(String token) {
+        return this.userDetailsService.loadUserByUsername(getUsername(token, refreshSecretKey));
     }
 
     boolean validateToken(String token) {
+        return  validate(token, secretKey);
+    }
+
+    public boolean validateRefreshToken(String token) {
+        return validate(token, refreshSecretKey);
+    }
+
+     boolean validate(String token, String secretKey) {
         try {
             Jws<Claims> claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
             log.trace("validate token is called ");
@@ -107,7 +139,7 @@ public class JwtTokenProvider {
                 log.trace("Found that the token is of type API token");
                 long customerId = claims.getBody().get("customer_id", Long.class);
                 //The token is of type personal access token, so check the DB to confirm that it is not revoked
-                Optional<List<ApiAccessToken>> accessToken = userRepository.findByUsernameAndCustomerId(getUsername(token), customerId)
+                Optional<List<ApiAccessToken>> accessToken = userRepository.findByUsernameAndCustomerId(getUsername(token, secretKey), customerId)
                     .map(User::getId).flatMap(apiAccessTokenRepository::findByUserId);
                 return accessToken.flatMap(list -> list.stream().findFirst())
                     .map(ApiAccessToken::getToken)
