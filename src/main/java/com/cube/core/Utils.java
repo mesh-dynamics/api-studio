@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -54,6 +55,7 @@ import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
 import com.cube.utils.Constants;
 import com.cube.ws.Config;
+import redis.clients.jedis.Jedis;
 
 
 /**
@@ -368,5 +370,15 @@ public class Utils {
 
    public static <K,T> List<T> getFromMVMapAsOptional(MultivaluedMap<K, T> map,  K key) {
 	  return Optional.ofNullable(map.get(key)).orElse(Collections.emptyList());
+  }
+
+  public static Response flushAll(Config config) {
+    config.rrstore.invalidateCache();
+    try (Jedis jedis = config.jedisPool.getResource()) {
+      jedis.flushAll();
+      return Response.ok().build();
+    } catch (Exception e) {
+      return Response.serverError().entity("Exception occured while flushing :: " + e.getMessage()).build();
+    }
   }
 }

@@ -7,6 +7,7 @@ import static com.cube.core.Utils.buildErrorResponse;
 import static com.cube.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
+import com.cube.core.TagConfig;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Instant;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import java.util.stream.Stream;
@@ -27,6 +29,8 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -95,6 +99,7 @@ import com.cube.queue.DisruptorEventQueue;
 import com.cube.queue.RREvent;
 import com.cube.utils.Constants;
 import com.cube.ws.WSUtils.BadValueException;
+import redis.clients.jedis.Jedis;
 
 //import com.cube.queue.StoreUtils;
 
@@ -880,7 +885,7 @@ public class CubeStore {
 	@POST
 	@Path("start/{customerId}/{app}/{instanceId}/{templateSetVersion}")
 	@Consumes("application/x-www-form-urlencoded")
-    public Response start(@Context UriInfo ui,
+    public void start(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui,
                           MultivaluedMap<String, String> formParams,
                           @PathParam("app") String app,
                           @PathParam("customerId") String customerId,
@@ -900,7 +905,7 @@ public class CubeStore {
           }
       });
         if (errResp.isPresent()) {
-            return errResp.get();
+            asyncResponse.resume(errResp.get());
         }
 
         String name = formParams.getFirst("name");
@@ -910,21 +915,21 @@ public class CubeStore {
         Optional<String> jarPath = Optional.ofNullable(formParams.getFirst("jarPath"));
 
         if (name==null) {
-            return Response.status(Status.BAD_REQUEST)
+            asyncResponse.resume(Response.status(Status.BAD_REQUEST)
                 .entity("Name needs to be given for a golden")
-                .build();
+                .build());
         }
 
         if (userId==null) {
-            return Response.status(Status.BAD_REQUEST)
+            asyncResponse.resume(Response.status(Status.BAD_REQUEST)
                 .entity("userId should be specified for a golden")
-                .build();
+                .build());
         }
 
         if (label==null) {
-            return Response.status(Status.BAD_REQUEST)
+            asyncResponse.resume(Response.status(Status.BAD_REQUEST)
                 .entity("label should be specified for a golden")
-                .build();
+                .build());
         }
 
         String collection = UUID.randomUUID().toString();;
@@ -938,7 +943,7 @@ public class CubeStore {
                     collection, customerId, app, recordingv.instanceId))
                 .build());
         if (errResp.isPresent()) {
-            return errResp.get();
+            asyncResponse.resume(errResp.get());
         }
 
         // NOTE that if the recording is not active, it will be activated again. This allows the same collection recording to be
@@ -950,9 +955,9 @@ public class CubeStore {
         // Ensure name is unique for a customer and app
         Optional<Recording> recWithSameName = rrstore.getRecordingByName(customerId, app, name, Optional.ofNullable(label));
         if (recWithSameName.isPresent()) {
-            return Response.status(Response.Status.CONFLICT)
+            asyncResponse.resume(Response.status(Response.Status.CONFLICT)
             .entity("Golden already present for name/label - " + name + "/" + label + ". Specify unique name/label combination")
-            .build();
+            .build());
         }
 
         Optional<String> codeVersion = Optional.ofNullable(formParams.getFirst("codeVersion"));
@@ -972,39 +977,60 @@ public class CubeStore {
         try {
             jarPath.ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
         } catch (Exception e) {
-            return Response.serverError().entity((new JSONObject(Map.of(Constants.ERROR
-                , e.getMessage()))).toString()).build();
+            asyncResponse.resume(Response.serverError().entity((new JSONObject(Map.of(Constants.ERROR
+                , e.getMessage()))).toString()).build());
         }
 
-        Optional<Response> resp = ReqRespStore
-            .startRecording(recordingBuilder.build() ,rrstore)
-            .map(newr -> {
-                if (newr.recordingType == RecordingType.History) {
-                    ReplayBuilder replayBuilder = new ReplayBuilder(ui.getBaseUri().toString(),
-                        new CubeMetaInfo(newr.customerId,
-                            newr.app, userId), newr.collection, userId)
-                        .withTemplateSetVersion(newr.templateVersion)
-                        .withRecordingId(newr.id)
-                        .withGoldenName(newr.name)
-                        .withReplayStatus(ReplayStatus.Running)
-                        .withReplayId(newr.collection)
-                        .withRunId(Optional.of(newr.collection + " " + Instant.now().toString()));
-                    Replay replay = replayBuilder.build();
-                    rrstore.saveReplay(replay);
-                }
-                String json;
-                try {
-                    json = jsonMapper.writeValueAsString(newr);
-                    return Response.ok(json, MediaType.APPLICATION_JSON).build();
-                } catch (JsonProcessingException ex) {
-                    LOGGER.error(String.format(
-                        "Error in converting Recording object to Json for customer %s, app %s, collection %s",
-                        customerId, app, collection), ex);
-                    return Response.serverError().build();
-                }
+      CompletableFuture<Response> resp =  beforeRecording(formParams, recordingBuilder.build())
+            .thenApply(v -> {
+                Response response = ReqRespStore.startRecording(recordingBuilder.build() ,rrstore)
+                    .map(newr -> {
+                        if (newr.recordingType == RecordingType.History) {
+                            ReplayBuilder replayBuilder = new ReplayBuilder(ui.getBaseUri().toString(),
+                                new CubeMetaInfo(newr.customerId,
+                                    newr.app, userId), newr.collection, userId)
+                                .withTemplateSetVersion(newr.templateVersion)
+                                .withRecordingId(newr.id)
+                                .withGoldenName(newr.name)
+                                .withReplayStatus(ReplayStatus.Running)
+                                .withReplayId(newr.collection)
+                                .withRunId(Optional.of(newr.collection + " " + Instant.now().toString()));
+                            Replay replay = replayBuilder.build();
+                            rrstore.saveReplay(replay);
+                        }
+                        String json;
+                        try {
+                            json = jsonMapper.writeValueAsString(newr);
+                            return Response.ok(json, MediaType.APPLICATION_JSON).build();
+                        } catch (JsonProcessingException ex) {
+                            LOGGER.error(String.format(
+                                "Error in converting Recording object to Json for customer %s, app %s, collection %s",
+                                customerId, app, collection), ex);
+                            return Response.serverError().build();
+                        }
+                    }).orElse(Response.serverError().build());
+                return response;
             });
+        resp.thenApply(response -> asyncResponse.resume(response))
+        .exceptionally(e -> asyncResponse.resume(
+            Response.status(Status.INTERNAL_SERVER_ERROR)
+                .entity(String.format("Server error: " + e.getMessage())).build()));;
+    }
 
-        return resp.orElse(Response.serverError().build());
+    protected CompletableFuture<Void> beforeRecording(MultivaluedMap<String, String> formParams, Recording recording) {
+        Optional<String> tagOpt = formParams == null ? Optional.empty()
+                                    : Optional.ofNullable(formParams.getFirst(Constants.TAG_FIELD));
+
+        return tagOpt.map(tag -> this.tagConfig.setTag(recording, recording.instanceId, tag))
+            .orElse(CompletableFuture.completedFuture(null));
+    }
+
+    protected CompletableFuture<Void> afterRecording(MultivaluedMap<String, String> params, Recording recording) {
+        Optional<String> tagOpt = params == null ? Optional.empty()
+                                    :Optional.ofNullable(params.getFirst(Constants.RESET_TAG_FIELD));
+
+        return tagOpt.map(tag -> this.tagConfig.setTag(recording, recording.instanceId, tag))
+            .orElse(CompletableFuture.completedFuture(null));
     }
 
     @POST
@@ -1152,11 +1178,17 @@ public class CubeStore {
 
     @POST
     @Path("stop/{recordingid}")
-    public Response stop(@Context UriInfo ui,
-                         @PathParam("recordingid") String recordingid) {
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public void stop(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui,
+                         @PathParam("recordingid") String recordingid,
+            MultivaluedMap<String, String> formParams) {
         Optional<Recording> recording = rrstore.getRecording(recordingid);
         Response resp = stopRecording(recording);
-        return resp;
+        if(recording.isPresent()) {
+            afterRecording(formParams, recording.get()).thenApply(v -> asyncResponse.resume(resp));
+        } else {
+            asyncResponse.resume(resp);
+        }
     }
 
     @POST
@@ -1183,20 +1215,25 @@ public class CubeStore {
 
     @POST
     @Path("stopRecordingByNameLabel/")
-    public Response stopRecordingByNameLabel(@Context UriInfo ui) {
+    public void stopRecordingByNameLabel(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
         String customerId = queryParams.getFirst(Constants.CUSTOMER_ID_FIELD);
         String app = queryParams.getFirst(Constants.APP_FIELD);
         String name = queryParams.getFirst(Constants.GOLDEN_NAME_FIELD);
         if(customerId ==null || app ==null || name == null) {
-            return Response.status(Status.BAD_REQUEST)
+             asyncResponse.resume(Response.status(Status.BAD_REQUEST)
                 .entity("CustomerId/app/name needs to be given for a golden")
-                .build();
+                .build());
         }
         Optional<String> label = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_LABEL_FIELD));
         Optional<Recording> recording = rrstore.getRecordingByName(customerId, app, name, label);
         Response resp = stopRecording(recording);
-        return resp;
+        if(recording.isPresent()) {
+            afterRecording(queryParams, recording.get()).thenApply(v -> asyncResponse.resume(resp));
+        } else {
+            asyncResponse.resume(resp);
+        }
+
     }
 
     public Response stopRecording(Optional<Recording> recording) {
@@ -1522,6 +1559,12 @@ public class CubeStore {
         return resp;
     }
 
+    @POST
+    @Path("cache/flushall")
+    public Response cacheFlushAll() {
+        return Utils.flushAll(config);
+    }
+
     private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId)
         throws InvalidEventException {
         EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
@@ -1546,12 +1589,14 @@ public class CubeStore {
 		this.jsonMapper = config.jsonMapper;
 		this.config = config;
 		this.eventQueue = config.disruptorEventQueue;
+		this.tagConfig = new TagConfig(config.rrstore);
 	}
 
 
 	ReqRespStore rrstore;
 	ObjectMapper jsonMapper;
 	Config config;
+	TagConfig tagConfig;
     DisruptorEventQueue eventQueue;
 
 	private Optional<String> getCurrentCollectionIfEmpty(Optional<String> collection,

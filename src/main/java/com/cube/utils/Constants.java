@@ -205,6 +205,7 @@ public class Constants {
     public static final String REDIS_STATUS_KEY_PREFIX = "statusKey:";
     public static final String CONFIG_JSON = "config_json";
 	public static final String TAG_FIELD = "tag";
+	public static final String RESET_TAG_FIELD = "resettag";
 	public static final String AGENT_ID = "agentId" ;
     public static final String INFO = "info";
     public static final String EVENT_META_DATA = "eventMetaData";
