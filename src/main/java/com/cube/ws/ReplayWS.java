@@ -370,11 +370,13 @@ public class ReplayWS extends ReplayBasicWS {
     }
 
     @POST
-    @Path("deferredDeleteReplay/{replayId}")
+    @Path("deferredDeleteReplay/{replayId}/{status}")
     public Response deferredDeleteReplay(@Context UriInfo uriInfo,
-        @PathParam("replayId") String replayId) {
+        @PathParam("replayId") String replayId, @PathParam("status") String status) {
         Optional<Replay> optionalReplay = rrstore.getReplay(replayId);
         Response resp = optionalReplay.map(replay -> {
+            ReplayStatus statusToSet = Utils.valueOf(ReplayStatus.class, status).orElse(ReplayStatus.Completed);
+            replay.status = statusToSet;
             boolean expireReplayInCache = rrstore.deferredDelete(replay);
             if(expireReplayInCache) {
                 return Response.ok().entity(replay).build();
