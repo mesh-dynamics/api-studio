@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
@@ -34,6 +35,7 @@ import io.md.constants.Constants;
 import io.md.core.TemplateKey;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
+import io.md.dao.Replay;
 import io.md.dao.ReqRespMatchResult;
 import io.md.services.MockResponse;
 import io.md.utils.CommonUtils;
@@ -80,16 +82,17 @@ public class CubeClient {
 		return Optional.empty();
 	}
 
-	private Optional<String> getResponse(HttpPost requestBuilder, Object reqBody,
+	private Optional<String> getResponse(URI uri, Object reqBody,
 		String contentType) {
 		try {
+			HttpPost httpPost = new HttpPost(uri);
 			String requestBody = jsonMapper.writeValueAsString(reqBody);
-			CommonUtils.addTraceHeaders(requestBuilder, "POST");
+			CommonUtils.addTraceHeaders(httpPost, "POST");
 			StringEntity requestEntity = new StringEntity(requestBody, Consts.UTF_8);
 			requestEntity.setContentType(contentType);
-			requestBuilder.setEntity(requestEntity);
-			requestBuilder.setHeader("Content-Type", contentType);
-			return getResponse(requestBuilder);
+			httpPost.setEntity(requestEntity);
+			//httpPost.setHeader("Content-Type", contentType);
+			return getResponse(httpPost);
 		} catch (JsonProcessingException ex) {
 			LOGGER.error("Error while serializing request body", ex);
 		} catch (UnsupportedCharsetException ex2) {
@@ -104,8 +107,7 @@ public class CubeClient {
 				.segment("cs", "fr");
 
 		URI recordURI = uriBuilder.build();
-		HttpPost recordReqbuilder = new HttpPost(recordURI);
-		return getResponse(recordReqbuilder, fnReqResponse, TEXT_PLAIN);
+		return getResponse(recordURI, fnReqResponse, TEXT_PLAIN);
 	}
 
 	//TODO: Cleanup - phase this out
@@ -114,8 +116,7 @@ public class CubeClient {
 				.segment("cs", "rr");
 
 		URI recordURI = uriBuilder.build();
-		HttpPost recordReqbuilder = new HttpPost(recordURI);
-		return getResponse(recordReqbuilder, reqResp, TEXT_PLAIN);
+		return getResponse(recordURI, reqResp, TEXT_PLAIN);
 	}
 
 
@@ -123,10 +124,7 @@ public class CubeClient {
 		UriBuilder uriBuilder = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_MOCK_SERVICE_URI)
 				.segment("ms", "mockEvent");
 		lowerBoundForMatching.ifPresent(lb -> uriBuilder.queryParam(Constants.LOWER_BOUND, lb.toEpochMilli()));
-		HttpPost mockReqbuilder = new HttpPost(uriBuilder.build());
-		CommonConfig.getInstance().authToken.ifPresent(
-				val -> mockReqbuilder.setHeader(io.cube.agent.Constants.AUTHORIZATION_HEADER, val));
-		return getResponse(mockReqbuilder, event, APPLICATION_JSON).flatMap(response -> {
+		return getResponse(uriBuilder.build(), event, APPLICATION_JSON).flatMap(response -> {
 			try {
 				LOGGER.debug("Response : ".concat(response));
 				return Optional.of(jsonMapper.readValue(response, MockResponse.class));
@@ -211,42 +209,15 @@ public class CubeClient {
 		URI recordURI = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
 				.segment("cs").segment("storeEvent")
 				.build();
-		HttpPost recordReqbuilder = new HttpPost(recordURI);
-		recordReqbuilder.setHeader(Constants.CONTENT_TYPE, APPLICATION_JSON);
 
-		try {
-			String requestBody = jsonMapper.writeValueAsString(event);
-			LOGGER.debug("event : ".concat(requestBody));
-			CommonUtils.addTraceHeaders(recordReqbuilder, "POST");
-			StringEntity requestEntity = new StringEntity(requestBody, Consts.UTF_8);
-			requestEntity.setContentType(APPLICATION_JSON);
-			recordReqbuilder.setEntity(requestEntity);
-			return getResponse(recordReqbuilder);
-		} catch (JsonProcessingException e) {
-			LOGGER.error("Store event result in exception", e);
-		}
-		return Optional.empty();
+		return getResponse(recordURI, event, MediaType.APPLICATION_JSON);
 	}
 
 	public Optional<String> getEvents(EventQuery eventQuery) {
 		URI recordURI = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
 				.segment("cs").segment("getEvents")
 				.build();
-		HttpPost recordReqbuilder = new HttpPost(recordURI);
-		recordReqbuilder.setHeader(Constants.CONTENT_TYPE, APPLICATION_JSON);
-
-		try {
-			String requestBody = jsonMapper.writeValueAsString(eventQuery);
-			LOGGER.debug("event : ".concat(requestBody));
-			CommonUtils.addTraceHeaders(recordReqbuilder, "POST");
-			StringEntity requestEntity = new StringEntity(requestBody, Consts.UTF_8);
-			requestEntity.setContentType(APPLICATION_JSON);
-			recordReqbuilder.setEntity(requestEntity);
-			return getResponse(recordReqbuilder);
-		} catch (JsonProcessingException e) {
-			LOGGER.error("Get events result in exception", e);
-		}
-		return Optional.empty();
+		return getResponse(recordURI, eventQuery, MediaType.APPLICATION_JSON);
 	}
 
 	public Optional<String> getTemplate(String customerId, String app, String service, String apiPath,
@@ -267,20 +238,7 @@ public class CubeClient {
 				.segment("cs", "saveResult")
 				.build();
 
-		try {
-			HttpPost recordReqbuilder = new HttpPost(uri);
-			recordReqbuilder.setHeader(Constants.CONTENT_TYPE, APPLICATION_JSON);
-			String requestBody = jsonMapper.writeValueAsString(result);
-			LOGGER.debug("result : ".concat(requestBody));
-			CommonUtils.addTraceHeaders(recordReqbuilder, "POST");
-			StringEntity requestEntity = new StringEntity(requestBody, Consts.UTF_8);
-			requestEntity.setContentType(APPLICATION_JSON);
-			recordReqbuilder.setEntity(requestEntity);
-			return getResponse(recordReqbuilder);
-		} catch (JsonProcessingException e) {
-			LOGGER.error("Save results caused exception", e);
-		}
-		return Optional.empty();
+		return getResponse(uri, result, MediaType.APPLICATION_JSON);
 	}
 
 	public Optional<String> getCurrentRecordOrReplay(String customerId, String app, String instanceId) {
@@ -291,6 +249,55 @@ public class CubeClient {
 		return getGetResponse(uri);
 	}
 
+	public Optional<String> getDynamicInjectionConfig(String customerId, String app, String version) {
+		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_REPLAY_SERVICE_URI)
+				.segment("rs", "getDynamicInjectionConfig", customerId, app, version)
+				.build();
+
+		return getGetResponse(uri);
+	}
+
+	public Optional<String> getReplay(String replayId) {
+		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_REPLAY_SERVICE_URI)
+				.segment("rs", "status", replayId)
+				.build();
+
+		return getGetResponse(uri);
+	}
+
+	public Optional<String> getRecording(String recordingId) {
+		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+				.segment("cs", "status", recordingId)
+				.build();
+
+		return getGetResponse(uri);
+	}
+
+	public Optional<String> saveReplay(Replay replay) {
+		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_REPLAY_SERVICE_URI)
+				.segment("rs", "saveReplay")
+				.build();
+
+		return getResponse(uri, replay, MediaType.APPLICATION_JSON);
+	}
+
+	public Optional<String> deferredDelete(Replay replay) {
+		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_REPLAY_SERVICE_URI)
+				.segment("rs", "deferredDeleteReplay", replay.replayId, replay.status.toString())
+				.build();
+
+		HttpPost reqBuilder = createPostRequest(uri);
+		return getResponse(reqBuilder);
+	}
+
+	public Optional<String> analyze(String replayId) {
+		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_REPLAY_SERVICE_URI)
+				.segment("as", "analyze", replayId)
+				.build();
+
+		HttpPost reqBuilder = createPostRequest(uri);
+		return getResponse(reqBuilder);
+	}
 
 	private Optional<String> getPostResponse(URI uri) {
 		HttpPost httpPost = new HttpPost(uri);

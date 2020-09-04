@@ -82,6 +82,7 @@ public class CommonConfig {
 	// Cube Connection
 	public final String CUBE_RECORD_SERVICE_URI;
 	public final String CUBE_MOCK_SERVICE_URI;
+	public final String CUBE_REPLAY_SERVICE_URI;
 	public final int READ_TIMEOUT;
 	public final int CONNECT_TIMEOUT;
 	public final int RETRIES;
@@ -360,6 +361,7 @@ public class CommonConfig {
 		return "CommonConfig{" +
 			"CUBE_RECORD_SERVICE_URI='" + CUBE_RECORD_SERVICE_URI + '\'' +
 			", CUBE_MOCK_SERVICE_URI='" + CUBE_MOCK_SERVICE_URI + '\'' +
+			", CUBE_REPLAY_SERVICE_URI='" + CUBE_REPLAY_SERVICE_URI + '\'' +
 			", intent=" + intent +
 			", customerId='" + customerId + '\'' +
 			", app='" + app + '\'' +
@@ -396,6 +398,8 @@ public class CommonConfig {
 			Constants.MD_SERVICE_ENDPOINT_PROP);
 		CUBE_MOCK_SERVICE_URI = dynamicConfig.getString(
 			Constants.MD_SERVICE_ENDPOINT_PROP);
+		CUBE_REPLAY_SERVICE_URI = dynamicConfig.getString(
+				Constants.MD_SERVICE_ENDPOINT_PROP);
 		READ_TIMEOUT = dynamicConfig.getInt(
 			Constants.MD_READ_TIMEOUT_PROP);
 		CONNECT_TIMEOUT = dynamicConfig.getInt(
@@ -418,7 +422,8 @@ public class CommonConfig {
 
 		authToken = Optional.of(dynamicConfig.getString(io.cube.agent.Constants.AUTH_TOKEN_PROP));
 
-		if (CUBE_RECORD_SERVICE_URI.endsWith("/api/") || CUBE_MOCK_SERVICE_URI.endsWith("/api/")) {
+		if (CUBE_RECORD_SERVICE_URI.endsWith("/api/") || CUBE_MOCK_SERVICE_URI.endsWith("/api/")
+				|| CUBE_REPLAY_SERVICE_URI.endsWith("/api/")) {
 			authToken.orElseThrow(
 				() -> new Exception("Auth token not specified when /api present"));
 		}
