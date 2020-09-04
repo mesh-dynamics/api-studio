@@ -81,7 +81,6 @@ sleep 1
 stop_recording() {
   curl -X POST $CUBE_ENDPOINT/api/cs/stop/$RECORDING_ID \
   -H "Authorization: Bearer $AUTH_TOKEN"
-
   sleep 20
 
   curl -X POST $CUBE_ENDPOINT/api/cs/forcestop/$RECORDING_ID \
