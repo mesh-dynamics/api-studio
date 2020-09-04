@@ -169,9 +169,13 @@ class Navigation extends Component{
                             </Link>                            
                         </div>
                         <div className="q-links">
-                            <div title="Notification" className="link-q"><i className="fas fa-bell"></i></div>
-                            <div title="Settings" className="link-q"><i className="fas fa-cog"></i></div>
-                            <div title={username} className="link-q"><UserAvatar size="24" name={username} className="user-avatar" color="#CCC6B0"/></div>
+                            {/* <div title="Notification" className="link-q"><i className="fas fa-bell"></i></div>
+                            <div title="Settings" className="link-q"><i className="fas fa-cog"></i></div> */}
+                            <div title={username} className="link-q">
+                                <Link to="/account">
+                                    <UserAvatar size="24" name={username} className="user-avatar" color="#CCC6B0"/>
+                                </Link>
+                                </div>
                             <div title="Sign Out" className="link-q" onClick={lo}><i className="fas fa-sign-out-alt"></i></div>
                         </div>
                     </div>
@@ -187,7 +191,8 @@ class Navigation extends Component{
                         </div>
                     </div>
                     
-                    {!window.location.pathname.includes("http_client") && !window.location.pathname.includes("api_catalog") && 
+                    {!window.location.pathname.includes("http_client") && !window.location.pathname.includes("api_catalog")
+                     && !window.location.pathname.includes("/account") && 
                     <div className="info-wrapper">
                         <div>
                             <div className="label-n">APPLICATION</div>
