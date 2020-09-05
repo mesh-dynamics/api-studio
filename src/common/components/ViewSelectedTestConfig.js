@@ -13,6 +13,7 @@ import {validateGoldenName} from "../utils/lib/golden-utils";
 import classNames from "classnames";
 import { cubeService } from '../services';
 import { apiCatalogActions } from '../actions/api-catalog.actions';
+import MDLoading from '../../../public/assets/images/md-loading.gif';
 // import { history } from "../helpers";
 // import { Glyphicon } from 'react-bootstrap';
 
@@ -954,7 +955,7 @@ class ViewSelectedTestConfig extends React.Component {
                         {
                             stoppingStatus &&
                             <div>
-                                <img src="/assets/images/md-loading.gif" alt="Loading..."/>   
+                                <img src={MDLoading} alt="Loading..."/>   
                                 <br />
                                 <span>Please wait for 15 seconds to complete recording.</span>
                             </div>

@@ -175,7 +175,7 @@ const setupListeners = (mockContext, user, replayContext) => {
     });
 
     ipcMain.on('mock_context_change', (event, arg) => {
-        const { collectionId, traceId, selectedApp, customerName, recordingCollectionId, runId } = arg;
+        const { collectionId, traceId, selectedApp, customerName, recordingCollectionId, runId, spanId } = arg;
 
         logger.info('Current mock context :', mockContext);
         logger.info('Changing mock context to : ', arg);
@@ -185,7 +185,8 @@ const setupListeners = (mockContext, user, replayContext) => {
         mockContext.customerName = customerName;
         mockContext.collectionId = collectionId;
         mockContext.recordingCollectionId = recordingCollectionId;        
-        mockContext.runId = runId   
+        mockContext.runId = runId;
+        mockContext.spanId = spanId;
         
         logger.info('Updated context is : ', mockContext);
     });
