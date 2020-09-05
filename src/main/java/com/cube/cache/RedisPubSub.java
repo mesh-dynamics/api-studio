@@ -84,8 +84,9 @@ public class RedisPubSub extends JedisPubSub {
 				}
 				// delete this only after solr is updated above
                 jedis.del(actualKey);
-            } catch (Exception e) {
-				e.printStackTrace();
+            } catch (Throwable e) {
+				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+					"Quitting subscriber thread")) ,e);
 			}
 			//ReqRespStore.deleteRecording()
 		}
