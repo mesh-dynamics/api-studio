@@ -19,6 +19,7 @@ const user = {
 };
 
 const mockContext = {
+    spanId: 'sample-span-id',
     traceId: 'sample-trace-id',
     selectedApp: 'sample-selected-app',
     customerName: 'sample-customer-name',
