@@ -164,8 +164,11 @@ public class TemplateSetTransformer {
                 TemplateEntry newRule = updateOperation.getNewRule().get();
                 // normalisedPath can also be directly used while creating new rule but getNormalisedPath is called again to be safe
                 // in case the updateOperation's path  and rule's path are different
-                TemplateEntry newRuleNormalised = new TemplateEntry(sourceTemplate.getNormalisedPath(newRule.getPath()).toString(), newRule.getDataType(),
-                    newRule.getPresenceType(), newRule.getCompareType(), newRule.getExtractionMethod(), newRule.getCustomization());
+                TemplateEntry newRuleNormalised = new TemplateEntry
+                    (sourceTemplate.getNormalisedPath(newRule.getPath()).toString()
+                        , newRule.getDataType(), newRule.getPresenceType()
+                        , newRule.getCompareType(), newRule.getExtractionMethod()
+                        , newRule.getCustomization(), newRule.arrayComparisionKeyPath);
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Replacing with new rule",
                     Constants.JSON_PATH_FIELD , normalisedPath, Constants.SERVICE_FIELD, sourceTemplate.service,
                     Constants.API_PATH_FIELD , sourceTemplate.requestPath)));

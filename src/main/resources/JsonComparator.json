@@ -488,5 +488,28 @@
                 {"op":"replace","path":"/display_actors/2","value":"BERRY, KARL","fromValue":"ZELLWEGER, MINNIE","resolution":"OK_DefaultCT"}
             ]
         }
+    },
+
+    "unorderedArrayDiff" : {
+        "json1" : {
+            "unordered" : [{"a" : "1" , "b" :  "2" , "c" :  "3"}
+            , {"a" : "4" , "b" :  "5" , "c" :  "6"} , {"a" : "7" , "b" :  "8" , "c" :  "9"}]
+        },
+
+        "json2" : {
+            "unordered" : [{"a" : "7" , "b" :  "8" , "c" :  "9"}
+            , {"a" : "1" , "b" :  "2" , "c" :  "4"} , {"a" : "4" , "b" :  "5" , "c" :  "6"}]
+        },
+
+        "rules" : [
+            { "path": "/unordered",   "dataType": "Set",     "presenceType": "Required",
+                "comparisonType": "Equal",  "customization": "" , "arrayCompKeyPath" :  "/a"}
+        ],
+
+        "output" :
+        {
+            "mt":"ExactMatch",
+            "matchmeta":"JsonDiff"
+        }
     }
 }

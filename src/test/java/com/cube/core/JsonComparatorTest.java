@@ -107,7 +107,10 @@ class JsonComparatorTest  {
                 extractionMethod = ExtractionMethod.valueOf(ruleObj.getString("extractionMethod"));
             }
             String customization = ruleObj.getString("customization");
-            TemplateEntry rule = new TemplateEntry(path, dataType, presenceType, comparisonType, extractionMethod, Optional.of(customization));
+            String arrayElementKeyPath = ruleObj.getString("arrayCompKeyPath");
+            TemplateEntry rule = new TemplateEntry(path, dataType, presenceType
+	            , comparisonType, extractionMethod, Optional.of(customization)
+	            , Optional.ofNullable(arrayElementKeyPath));
             template.addRule(rule);
         }
 
@@ -303,5 +306,17 @@ class JsonComparatorTest  {
         JSONObject testData = object.getJSONObject("arrayDiff");
         compareTest(testData);
     }
+
+	/**
+	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+	 * @throws JsonProcessingException
+	 * @throws JSONException
+	 */
+	@Test
+	@DisplayName("Unordered Array test")
+	final void unorderedArrayTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("unorderedArrayDiff");
+		compareTest(testData);
+	}
 
 }

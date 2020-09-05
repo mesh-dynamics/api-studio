@@ -52,6 +52,7 @@ import io.md.dao.Event.EventBuilder;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Recording;
+import io.md.injection.DynamicInjectionConfig.InjectionMeta;
 
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
@@ -215,31 +216,29 @@ public class Utils {
         }
     }
 
-    public static Pair<JsonNode, Map<Integer, String>>
+    public static JsonNode
         convertArrayToObject(JsonNode node, CompareTemplate template, String path
-	    , Map<String, Map<Integer, String>> pathVsKeyIndexMap){
+	    /*, Map<String, Map<Integer, String>> pathVsKeyIndexMap*/){
         if (node.isArray()) {
         	TemplateEntry arrayRule = template.getRule(path);
         	ArrayNode nodeAsArray = (ArrayNode) node;
 	        ObjectNode equivalentObjNode = JsonNodeFactory.instance.objectNode();
 
-
         	if (arrayRule.dt == DataType.Set) {
-		        for (int i = 0 ; i < nodeAsArray.size() ; i++) {
-			        equivalentObjNode.set(arrayRule.arrayComparisionKeyPath.map(keyPath -> node.at(
-				        JsonPointer.compile(keyPath)).toString()).orElse(nodeAsArray.get(i).toString())
-				        , convertArrayToObject(nodeAsArray.get(i)
-				        , template, path.concat("/").concat(String.valueOf(i))));
+        		for (int i = 0 ; i < nodeAsArray.size() ; i++) {
+        			JsonNode elem = nodeAsArray.get(i);
+			        equivalentObjNode.set(arrayRule.arrayComparisionKeyPath.map(keyPath ->
+					        elem.at(JsonPointer.compile(keyPath)).toString()).orElse(elem.toString())
+				        , convertArrayToObject(elem, template, path.concat("/").concat(String.valueOf(i))/*, pathVsKeyIndexMap*/));
 		        }
 	        } else {
 		        for (int i = 0 ; i < nodeAsArray.size() ; i++){
 			        equivalentObjNode.set(String.valueOf(i), convertArrayToObject(nodeAsArray.get(i)
-				        , template, path.concat("/").concat(String.valueOf(i))));
+				        , template, path.concat("/").concat(String.valueOf(i))/*, pathVsKeyIndexMap*/ ));
 		        }
 	        }
 
-
-            return Pair.of(equivalentObjNode, new HashMap<>());
+            return equivalentObjNode;
         } else if (node.isObject()) {
             ObjectNode nodeAsObject = (ObjectNode) node;
             ObjectNode equivalentObjNode = JsonNodeFactory.instance.objectNode();
@@ -247,11 +246,11 @@ public class Utils {
             while(fieldNames.hasNext()) {
                 String fieldName = fieldNames.next();
                 equivalentObjNode.set(fieldName, convertArrayToObject(nodeAsObject.get(fieldName)
-	                ,template , path.concat("/").concat(fieldName)));
+	                ,template , path.concat("/").concat(fieldName) /*, pathVsKeyIndexMap*/));
             }
-            return Pair.of(equivalentObjNode, new HashMap<>());
+            return equivalentObjNode;
         }
-        return Pair.of(node, new HashMap<>());
+        return node;
     }
 
 
