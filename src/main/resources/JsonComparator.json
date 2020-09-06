@@ -497,19 +497,24 @@
         },
 
         "json2" : {
-            "unordered" : [{"a" : "7" , "b" :  "8" , "c" :  "9"}
+            "unordered" : [{"a" : "11" , "b" :  "8" , "c" :  "9"}
             , {"a" : "1" , "b" :  "2" , "c" :  "4"} , {"a" : "4" , "b" :  "5" , "c" :  "6"}]
         },
 
         "rules" : [
             { "path": "/unordered",   "dataType": "Set",     "presenceType": "Required",
-                "comparisonType": "Equal",  "customization": "" , "arrayCompKeyPath" :  "/a"}
+                "comparisonType": "Equal",  "customization": "", "arrayCompKeyPath" :  "/a" }
         ],
 
         "output" :
         {
-            "mt":"ExactMatch",
-            "matchmeta":"JsonDiff"
+            "mt":"NoMatch",
+            "matchmeta":"JsonDiff",
+            "diffs": [
+                {"op":"replace","path":"/unordered/1/c","value":"4","fromValue":"3","resolution":"ERR_ValMismatch"},
+                {"op":"remove","path":"/unordered/2","value":{"a":"7","b":"8","c":"9"},"resolution":"ERR_Required"},
+                {"op":"add","path":"/unordered/2","value":{"a":"11","b":"8","c":"9"},"resolution":"OK_OtherValInvalid"}
+            ]
         }
     }
 }

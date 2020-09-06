@@ -107,7 +107,12 @@ class JsonComparatorTest  {
                 extractionMethod = ExtractionMethod.valueOf(ruleObj.getString("extractionMethod"));
             }
             String customization = ruleObj.getString("customization");
-            String arrayElementKeyPath = ruleObj.getString("arrayCompKeyPath");
+			String arrayElementKeyPath = null;
+			try {
+				arrayElementKeyPath = ruleObj.getString("arrayCompKeyPath");
+			} catch (Exception e) {
+
+			}
             TemplateEntry rule = new TemplateEntry(path, dataType, presenceType
 	            , comparisonType, extractionMethod, Optional.of(customization)
 	            , Optional.ofNullable(arrayElementKeyPath));
