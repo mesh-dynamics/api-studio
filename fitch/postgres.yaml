@@ -1,0 +1,1485 @@
+---
+# Source: postgresql/templates/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: postgres
+---
+# Source: postgresql/templates/secrets.yaml
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgresql
+  namespace: postgres
+  labels:
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-9.1.1
+    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/managed-by: Tiller
+type: Opaque
+data:
+  postgresql-password: "c3ByaW5nMTI1NmN1YmU="
+---
+# Source: postgresql/templates/metrics-svc.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-metrics
+  namespace: postgres
+  labels:
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-9.1.1
+    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/managed-by: Tiller
+  annotations:
+    prometheus.io/port: "9187"
+    prometheus.io/scrape: "true"
+
+spec:
+  type: ClusterIP
+  ports:
+    - name: http-metrics
+      port: 9187
+      targetPort: http-metrics
+  selector:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: postgres
+    role: master
+
+---
+# Source: postgresql/templates/svc-headless.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-headless
+  namespace: postgres
+  labels:
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-9.1.1
+    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/managed-by: Tiller
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: tcp-postgresql
+      port: 5432
+      targetPort: tcp-postgresql
+  selector:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: postgres
+
+---
+# Source: postgresql/templates/svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql
+  namespace: postgres
+  labels:
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-9.1.1
+    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/managed-by: Tiller
+  annotations:
+spec:
+  type: ClusterIP
+  ports:
+    - name: tcp-postgresql
+      port: 5432
+      targetPort: tcp-postgresql
+  selector:
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: postgres
+    role: master
+
+---
+# Source: postgresql/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql
+  namespace: postgres
+  labels:
+    app.kubernetes.io/name: postgresql
+    helm.sh/chart: postgresql-9.1.1
+    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/managed-by: Tiller
+  annotations:
+spec:
+  serviceName: postgresql-headless
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/instance: postgres
+      role: master
+  template:
+    metadata:
+      name: postgresql
+      labels:
+        app.kubernetes.io/name: postgresql
+        helm.sh/chart: postgresql-9.1.1
+        app.kubernetes.io/instance: postgres
+        app.kubernetes.io/managed-by: Tiller
+        role: master
+    spec:
+      securityContext:
+        fsGroup: 1001
+      initContainers:
+      - name: init-chmod-data
+        image: docker.io/bitnami/minideb:latest
+        imagePullPolicy: Always
+        command: ['sh' , '-c' , 'if [ -d /bitnami/postgresql/data ]; then chmod -R 0700 /bitnami/postgresql/data; fi']
+        securityContext:
+          runAsUser: 1001
+        volumeMounts:
+        - name: data
+          mountPath: /bitnami/postgresql
+      containers:
+        - name: postgresql
+          image: docker.io/bitnami/postgresql:10.6.0
+          imagePullPolicy: "IfNotPresent"
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 2048Mi
+            requests:
+              cpu: 250m
+              memory: 512Mi
+
+          securityContext:
+            runAsUser: 1001
+          env:
+            - name: BITNAMI_DEBUG
+              value: "false"
+            - name: POSTGRESQL_PORT_NUMBER
+              value: "5432"
+            - name: POSTGRESQL_VOLUME_DIR
+              value: "/bitnami/postgresql"
+            - name: PGDATA
+              value: "/bitnami/postgresql/data"
+            - name: POSTGRES_USER
+              value: "springboot"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql
+                  key: postgresql-password
+            - name: POSTGRES_DB
+              value: "cubedb"
+            - name: POSTGRESQL_ENABLE_LDAP
+              value: "no"
+            - name: POSTGRESQL_ENABLE_TLS
+              value: "no"
+          ports:
+            - name: tcp-postgresql
+              containerPort: 5432
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - exec pg_isready -U "springboot" -d "dbname=cubedb" -h 127.0.0.1 -p 5432
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - -e
+                - |
+                  exec pg_isready -U "springboot" -d "dbname=cubedb" -h 127.0.0.1 -p 5432
+                  [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f /bitnami/postgresql/.initialized ]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          volumeMounts:
+            - name: dshm
+              mountPath: /dev/shm
+            - name: data
+              mountPath: /bitnami/postgresql
+              subPath:
+        - name: metrics
+          image: docker.io/bitnami/postgres-exporter:0.8.0-debian-10-r166
+          imagePullPolicy: "IfNotPresent"
+          env:
+            - name: DATA_SOURCE_URI
+              value: 127.0.0.1:5432/cubedb?sslmode=disable
+            - name: DATA_SOURCE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql
+                  key: postgresql-password
+            - name: DATA_SOURCE_USER
+              value: springboot
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http-metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http-metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          volumeMounts:
+          ports:
+            - name: http-metrics
+              containerPort: 9187
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - "ReadWriteOnce"
+        resources:
+          requests:
+            storage: "20Gi"
+
+
+---
+# Source: postgresql/templates/initialsetup.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: onetimesetup
+  namespace: postgres
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: postgres-wait
+          image: busybox:latest
+          command:
+            - 'sh'
+            - '-c'
+            - 'sleep 60'
+      containers:
+      - name: setup
+        image: postgres:10.6
+        command: [ "psql", "-f" ]
+        args: [ "/etc/config/cube_pg_ddl.sql", "cubedb" ]
+        volumeMounts:
+          - name: data
+            mountPath: /etc/config
+        env:
+          - name: PGPORT
+            value: "5432"
+          - name: PGHOST
+            value: postgresql
+          - name: PGUSER
+            value: springboot
+          - name: PGPASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: postgresql
+                key: postgresql-password
+          - name: PGDATABASE
+            value: "cubedb"
+      volumes:
+        - name: data
+          configMap:
+            name: postgres-data
+      restartPolicy: Never
+  backoffLimit: 4
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-data
+  namespace: postgres
+data:
+  cube_pg_ddl.sql: |+
+    --
+    -- PostgreSQL database dump
+    --
+
+    -- Dumped from database version 10.6
+    -- Dumped by pg_dump version 12.1
+
+    SET statement_timeout = 0;
+    SET lock_timeout = 0;
+    SET idle_in_transaction_session_timeout = 0;
+    SET client_encoding = 'UTF8';
+    SET standard_conforming_strings = on;
+    SELECT pg_catalog.set_config('search_path', '', false);
+    SET check_function_bodies = false;
+    SET xmloption = content;
+    SET client_min_messages = warning;
+    SET row_security = off;
+
+    --
+    -- Name: api_access_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: springboot
+    --
+
+    CREATE SEQUENCE public.api_access_tokens_id_seq
+        START WITH 1
+        INCREMENT BY 1
+        NO MINVALUE
+        NO MAXVALUE
+        CACHE 1;
+
+
+    ALTER TABLE public.api_access_tokens_id_seq OWNER TO springboot;
+
+    SET default_tablespace = '';
+
+    --
+    -- Name: api_access_tokens; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.api_access_tokens (
+        id integer DEFAULT nextval('public.api_access_tokens_id_seq'::regclass) NOT NULL,
+        token character varying NOT NULL,
+        user_id bigint NOT NULL
+    );
+
+
+    ALTER TABLE public.api_access_tokens OWNER TO springboot;
+
+    --
+    -- Name: api_access_tockens_id_seq; Type: SEQUENCE; Schema: public; Owner: springboot
+    --
+
+    CREATE SEQUENCE public.api_access_tockens_id_seq
+        AS integer
+        START WITH 1
+        INCREMENT BY 1
+        NO MINVALUE
+        NO MAXVALUE
+        CACHE 1;
+
+
+    ALTER TABLE public.api_access_tockens_id_seq OWNER TO springboot;
+
+    --
+    -- Name: api_access_tockens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: springboot
+    --
+
+    ALTER SEQUENCE public.api_access_tockens_id_seq OWNED BY public.api_access_tokens.id;
+
+
+    --
+    -- Name: app_users; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.app_users (
+        id bigint NOT NULL,
+        app_id bigint NOT NULL,
+        user_id bigint NOT NULL
+    );
+
+
+    ALTER TABLE public.app_users OWNER TO springboot;
+
+    --
+    -- Name: apps; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.apps (
+        id bigint NOT NULL,
+        created_at timestamp without time zone,
+        name character varying(200) NOT NULL,
+        updated_at timestamp without time zone,
+        customer_id bigint
+    );
+
+
+    ALTER TABLE public.apps OWNER TO springboot;
+
+    --
+    -- Name: compare_template; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.compare_template (
+        id bigint NOT NULL,
+        created_at timestamp without time zone,
+        path character varying(255) NOT NULL,
+        template jsonb NOT NULL,
+        type character varying(255) NOT NULL,
+        updated_at timestamp without time zone,
+        app_id bigint,
+        service_id bigint
+    );
+
+
+    ALTER TABLE public.compare_template OWNER TO springboot;
+
+    --
+    -- Name: customers; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.customers (
+        id bigint NOT NULL,
+        created_at timestamp without time zone,
+        domain_url character varying(255),
+        email character varying(255),
+        name character varying(255),
+        updated_at timestamp without time zone
+    );
+
+
+    ALTER TABLE public.customers OWNER TO springboot;
+
+    --
+    -- Name: email_domains; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.email_domains (
+        id bigint NOT NULL,
+        created_at timestamp without time zone,
+        domain character varying(255),
+        updated_at timestamp without time zone,
+        customer_id bigint
+    );
+
+
+    ALTER TABLE public.email_domains OWNER TO springboot;
+
+    --
+    -- Name: hibernate_sequence; Type: SEQUENCE; Schema: public; Owner: springboot
+    --
+
+    CREATE SEQUENCE public.hibernate_sequence
+        START WITH 1
+        INCREMENT BY 1
+        NO MINVALUE
+        NO MAXVALUE
+        CACHE 1;
+
+
+    ALTER TABLE public.hibernate_sequence OWNER TO springboot;
+
+    --
+    -- Name: id_seq; Type: SEQUENCE; Schema: public; Owner: springboot
+    --
+
+    CREATE SEQUENCE public.id_seq
+        START WITH 1
+        INCREMENT BY 1
+        NO MINVALUE
+        NO MAXVALUE
+        CACHE 1;
+
+
+    ALTER TABLE public.id_seq OWNER TO springboot;
+
+    --
+    -- Name: instance_users; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.instance_users (
+        id bigint NOT NULL,
+        instance_id bigint NOT NULL,
+        user_id bigint NOT NULL
+    );
+
+
+    ALTER TABLE public.instance_users OWNER TO springboot;
+
+    --
+    -- Name: instances; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.instances (
+        id bigint NOT NULL,
+        created_at timestamp without time zone,
+        gateway_endpoint character varying(255) NOT NULL,
+        name character varying(255) NOT NULL,
+        app_id bigint
+    );
+
+
+    ALTER TABLE public.instances OWNER TO springboot;
+
+    --
+    -- Name: jira_issue_details; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.jira_issue_details (
+        id bigint NOT NULL,
+        api_path character varying(255) NOT NULL,
+        issue_id character varying(255) NOT NULL,
+        issue_key character varying(255) NOT NULL,
+        issue_url character varying(255) NOT NULL,
+        json_path character varying(255) NOT NULL,
+        replay_id character varying(255) NOT NULL,
+        request_id character varying(255) NOT NULL,
+        user_id bigint NOT NULL
+    );
+
+
+    ALTER TABLE public.jira_issue_details OWNER TO springboot;
+
+    --
+    -- Name: jira_user_credentials; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.jira_user_credentials (
+        id bigint NOT NULL,
+        apikey character varying(255) NOT NULL,
+        jira_baseurl character varying(255) NOT NULL,
+        user_name character varying(255) NOT NULL,
+        user_id bigint NOT NULL
+    );
+
+
+    ALTER TABLE public.jira_user_credentials OWNER TO springboot;
+
+    --
+    -- Name: paths; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.paths (
+        id bigint NOT NULL,
+        created_at timestamp without time zone,
+        path text NOT NULL,
+        updated_at timestamp without time zone,
+        service_id bigint
+    );
+
+
+    ALTER TABLE public.paths OWNER TO springboot;
+
+    --
+    -- Name: recording; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.recording (
+        id bigint NOT NULL,
+        collection_name character varying(200) NOT NULL,
+        completed_at timestamp without time zone,
+        created_at timestamp without time zone,
+        status character varying(255) NOT NULL,
+        updated_at timestamp without time zone,
+        app_id bigint,
+        instance_id bigint
+    );
+
+
+    ALTER TABLE public.recording OWNER TO springboot;
+
+    --
+    -- Name: replay; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.replay (
+        id bigint NOT NULL,
+        analysis jsonb NOT NULL,
+        completed_at timestamp without time zone,
+        created_at timestamp without time zone,
+        replay_name character varying(200) NOT NULL,
+        req_count integer,
+        req_failed integer,
+        req_sent integer,
+        sample_rate double precision,
+        status character varying(255) NOT NULL,
+        updated_at timestamp without time zone,
+        collection_id bigint,
+        test_id bigint
+    );
+
+
+    ALTER TABLE public.replay OWNER TO springboot;
+
+    --
+    -- Name: service_graph; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.service_graph (
+        id bigint NOT NULL,
+        app_id bigint,
+        from_service_id bigint,
+        to_service_id bigint
+    );
+
+
+    ALTER TABLE public.service_graph OWNER TO springboot;
+
+    --
+    -- Name: service_groups; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.service_groups (
+        id bigint NOT NULL,
+        created_at timestamp without time zone,
+        name character varying(200) NOT NULL,
+        updated_at timestamp without time zone,
+        app_id bigint
+    );
+
+
+    ALTER TABLE public.service_groups OWNER TO springboot;
+
+    --
+    -- Name: services; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.services (
+        id bigint NOT NULL,
+        created_at timestamp without time zone,
+        name character varying(200) NOT NULL,
+        updated_at timestamp without time zone,
+        app_id bigint,
+        service_group_id bigint
+    );
+
+
+    ALTER TABLE public.services OWNER TO springboot;
+
+    --
+    -- Name: test_config; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.test_config (
+        id bigint NOT NULL,
+        created_at timestamp without time zone,
+        description character varying(255),
+        email_id character varying(255),
+        gateway_req_selection jsonb,
+        max_run_time_min integer,
+        slack_id character varying(255),
+        test_config_name character varying(255) NOT NULL,
+        updated_at timestamp without time zone,
+        app_id bigint,
+        gateway_service_id bigint
+    );
+
+
+    ALTER TABLE public.test_config OWNER TO springboot;
+
+    --
+    -- Name: test_intermediate_services; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.test_intermediate_services (
+        id bigint NOT NULL,
+        service_id bigint,
+        test_id bigint
+    );
+
+
+    ALTER TABLE public.test_intermediate_services OWNER TO springboot;
+
+    --
+    -- Name: test_paths; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.test_paths (
+        id bigint NOT NULL,
+        path_id bigint NOT NULL,
+        test_id bigint NOT NULL
+    );
+
+
+    ALTER TABLE public.test_paths OWNER TO springboot;
+
+    --
+    -- Name: test_virtualized_services; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.test_virtualized_services (
+        id bigint NOT NULL,
+        service_id bigint,
+        test_id bigint
+    );
+
+
+    ALTER TABLE public.test_virtualized_services OWNER TO springboot;
+
+    --
+    -- Name: user_roles; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.user_roles (
+        user_id bigint NOT NULL,
+        roles character varying(255)
+    );
+
+
+    ALTER TABLE public.user_roles OWNER TO springboot;
+
+    --
+    -- Name: users; Type: TABLE; Schema: public; Owner: springboot
+    --
+
+    CREATE TABLE public.users (
+        id bigint DEFAULT nextval('public.id_seq'::regclass) NOT NULL,
+        activated boolean NOT NULL,
+        activation_key character varying,
+        created_at timestamp without time zone,
+        name character varying(255),
+        password character varying(255),
+        reset_date timestamp without time zone,
+        reset_key character varying(20),
+        updated_at timestamp without time zone,
+        username character varying(255),
+        customer_id bigint
+    );
+
+
+    ALTER TABLE public.users OWNER TO springboot;
+
+    --
+    -- Name: api_access_tokens api_access_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.api_access_tokens
+        ADD CONSTRAINT api_access_tokens_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: app_users app_users_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.app_users
+        ADD CONSTRAINT app_users_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: apps apps_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.apps
+        ADD CONSTRAINT apps_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: compare_template compare_template_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.compare_template
+        ADD CONSTRAINT compare_template_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: customers customers_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.customers
+        ADD CONSTRAINT customers_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: email_domains email_domains_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.email_domains
+        ADD CONSTRAINT email_domains_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: instance_users instance_users_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.instance_users
+        ADD CONSTRAINT instance_users_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: instances instances_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.instances
+        ADD CONSTRAINT instances_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: jira_issue_details jira_issue_details_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.jira_issue_details
+        ADD CONSTRAINT jira_issue_details_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: jira_user_credentials jira_user_credentials_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.jira_user_credentials
+        ADD CONSTRAINT jira_user_credentials_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: paths paths_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.paths
+        ADD CONSTRAINT paths_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: recording recording_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.recording
+        ADD CONSTRAINT recording_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: replay replay_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.replay
+        ADD CONSTRAINT replay_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: service_graph service_graph_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.service_graph
+        ADD CONSTRAINT service_graph_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: service_groups service_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.service_groups
+        ADD CONSTRAINT service_groups_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: services services_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.services
+        ADD CONSTRAINT services_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: test_config test_config_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.test_config
+        ADD CONSTRAINT test_config_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: test_intermediate_services test_intermediate_services_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.test_intermediate_services
+        ADD CONSTRAINT test_intermediate_services_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: test_paths test_paths_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.test_paths
+        ADD CONSTRAINT test_paths_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: test_virtualized_services test_virtualized_services_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.test_virtualized_services
+        ADD CONSTRAINT test_virtualized_services_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: test_paths uk27p0t97wkqv4lvv5ayofmjeto; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.test_paths
+        ADD CONSTRAINT uk27p0t97wkqv4lvv5ayofmjeto UNIQUE (test_id, path_id);
+
+
+    --
+    -- Name: service_groups uk3072exerk1x7xjcyvdvf5rmqp; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.service_groups
+        ADD CONSTRAINT uk3072exerk1x7xjcyvdvf5rmqp UNIQUE (name, app_id);
+
+
+    --
+    -- Name: services uk40m9lmcxeuhd0aibtftpsqs92; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.services
+        ADD CONSTRAINT uk40m9lmcxeuhd0aibtftpsqs92 UNIQUE (name, service_group_id, app_id);
+
+
+    --
+    -- Name: replay uk51qf081om2lbgo4477txkxakc; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.replay
+        ADD CONSTRAINT uk51qf081om2lbgo4477txkxakc UNIQUE (test_id, collection_id, replay_name);
+
+
+    --
+    -- Name: test_virtualized_services ukd9frjhwy02dc3lgla6q3ykbfs; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.test_virtualized_services
+        ADD CONSTRAINT ukd9frjhwy02dc3lgla6q3ykbfs UNIQUE (test_id, service_id);
+
+
+    --
+    -- Name: test_intermediate_services uke42ehjo6moiira66jhog6v3ga; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.test_intermediate_services
+        ADD CONSTRAINT uke42ehjo6moiira66jhog6v3ga UNIQUE (test_id, service_id);
+
+
+    --
+    -- Name: test_config ukia5b7xx7lnckc0qoad2bocbt8; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.test_config
+        ADD CONSTRAINT ukia5b7xx7lnckc0qoad2bocbt8 UNIQUE (app_id, test_config_name);
+
+
+    --
+    -- Name: instance_users ukiw0t4kt93b5uvv0k3vai8xsfr; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.instance_users
+        ADD CONSTRAINT ukiw0t4kt93b5uvv0k3vai8xsfr UNIQUE (user_id, instance_id);
+
+
+    --
+    -- Name: app_users uklcy3d846oyp8rwfxil91bxuio; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.app_users
+        ADD CONSTRAINT uklcy3d846oyp8rwfxil91bxuio UNIQUE (user_id, app_id);
+
+
+    --
+    -- Name: recording ukljqi0mpb3tsf6lcpgt83q3iar; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.recording
+        ADD CONSTRAINT ukljqi0mpb3tsf6lcpgt83q3iar UNIQUE (app_id, instance_id, collection_name);
+
+
+    --
+    -- Name: apps ukmdvwaltcqm2pbobf8r2x16xes; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.apps
+        ADD CONSTRAINT ukmdvwaltcqm2pbobf8r2x16xes UNIQUE (customer_id, name);
+
+
+    --
+    -- Name: compare_template ukmy9cftinipr94y0lq232yhtu6; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.compare_template
+        ADD CONSTRAINT ukmy9cftinipr94y0lq232yhtu6 UNIQUE (app_id, service_id, type, path);
+
+
+    --
+    -- Name: paths uky07ocr9wa9vth79ph5wp4hi8; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.paths
+        ADD CONSTRAINT uky07ocr9wa9vth79ph5wp4hi8 UNIQUE (path, service_id);
+
+
+    --
+    -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.users
+        ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+    --
+    -- Name: app_index; Type: INDEX; Schema: public; Owner: springboot
+    --
+
+    CREATE INDEX app_index ON public.apps USING btree (customer_id);
+
+
+    --
+    -- Name: app_user_index; Type: INDEX; Schema: public; Owner: springboot
+    --
+
+    CREATE INDEX app_user_index ON public.app_users USING btree (app_id);
+
+
+    --
+    -- Name: compare_template_index; Type: INDEX; Schema: public; Owner: springboot
+    --
+
+    CREATE INDEX compare_template_index ON public.compare_template USING btree (app_id, service_id, type, path);
+
+
+    --
+    -- Name: instance_user_index; Type: INDEX; Schema: public; Owner: springboot
+    --
+
+    CREATE INDEX instance_user_index ON public.instance_users USING btree (user_id);
+
+
+    --
+    -- Name: intermediate_service_index; Type: INDEX; Schema: public; Owner: springboot
+    --
+
+    CREATE INDEX intermediate_service_index ON public.test_intermediate_services USING btree (test_id);
+
+
+    --
+    -- Name: path_index; Type: INDEX; Schema: public; Owner: springboot
+    --
+
+    CREATE INDEX path_index ON public.paths USING btree (service_id);
+
+
+    --
+    -- Name: recording_index; Type: INDEX; Schema: public; Owner: springboot
+    --
+
+    CREATE INDEX recording_index ON public.recording USING btree (app_id, instance_id, status);
+
+
+    --
+    -- Name: replay_index; Type: INDEX; Schema: public; Owner: springboot
+    --
+
+    CREATE INDEX replay_index ON public.replay USING btree (test_id, collection_id, status);
+
+
+    --
+    -- Name: service_graph_index; Type: INDEX; Schema: public; Owner: springboot
+    --
+
+    CREATE INDEX service_graph_index ON public.service_graph USING btree (app_id);
+
+
+    --
+    -- Name: service_group_index; Type: INDEX; Schema: public; Owner: springboot
+    --
+
+    CREATE INDEX service_group_index ON public.service_groups USING btree (app_id);
+
+
+    --
+    -- Name: service_index; Type: INDEX; Schema: public; Owner: springboot
+    --
+
+    CREATE INDEX service_index ON public.services USING btree (service_group_id, app_id);
+
+
+    --
+    -- Name: test_index; Type: INDEX; Schema: public; Owner: springboot
+    --
+
+    CREATE INDEX test_index ON public.test_config USING btree (app_id);
+
+
+    --
+    -- Name: test_path_index; Type: INDEX; Schema: public; Owner: springboot
+    --
+
+    CREATE INDEX test_path_index ON public.test_paths USING btree (test_id);
+
+
+    --
+    -- Name: virtualized_service_index; Type: INDEX; Schema: public; Owner: springboot
+    --
+
+    CREATE INDEX virtualized_service_index ON public.test_virtualized_services USING btree (test_id);
+
+
+    --
+    -- Name: api_access_tokens api_access_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.api_access_tokens
+        ADD CONSTRAINT api_access_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE RESTRICT ON DELETE RESTRICT;
+
+
+    --
+    -- Name: jira_issue_details fk1qpfswifmaysf311vid60pq0j; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.jira_issue_details
+        ADD CONSTRAINT fk1qpfswifmaysf311vid60pq0j FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: jira_user_credentials fk2500vsin58caa8bev3rw7c3ki; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.jira_user_credentials
+        ADD CONSTRAINT fk2500vsin58caa8bev3rw7c3ki FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: email_domains fk27pc7ijr6aegyw7ic0dw1mlg0; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.email_domains
+        ADD CONSTRAINT fk27pc7ijr6aegyw7ic0dw1mlg0 FOREIGN KEY (customer_id) REFERENCES public.customers(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: service_graph fk2uvlb459u7nne8072u3fpf3wk; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.service_graph
+        ADD CONSTRAINT fk2uvlb459u7nne8072u3fpf3wk FOREIGN KEY (app_id) REFERENCES public.apps(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: service_graph fk5jlrnb3ricfh1kytnsy1ku2wc; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.service_graph
+        ADD CONSTRAINT fk5jlrnb3ricfh1kytnsy1ku2wc FOREIGN KEY (from_service_id) REFERENCES public.services(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: test_virtualized_services fk5l5ieu8ejdusldsq4eolp22u2; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.test_virtualized_services
+        ADD CONSTRAINT fk5l5ieu8ejdusldsq4eolp22u2 FOREIGN KEY (test_id) REFERENCES public.test_config(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: services fk6w422pbua974eiuf8v09m88bo; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.services
+        ADD CONSTRAINT fk6w422pbua974eiuf8v09m88bo FOREIGN KEY (app_id) REFERENCES public.apps(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: test_config fk7m27kuakt54ke3qrkritmoq86; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.test_config
+        ADD CONSTRAINT fk7m27kuakt54ke3qrkritmoq86 FOREIGN KEY (app_id) REFERENCES public.apps(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: replay fk86snn32megry6leu9glesuuk5; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.replay
+        ADD CONSTRAINT fk86snn32megry6leu9glesuuk5 FOREIGN KEY (collection_id) REFERENCES public.recording(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: service_groups fk8dlppvxwwwvh8qieuxelng1tk; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.service_groups
+        ADD CONSTRAINT fk8dlppvxwwwvh8qieuxelng1tk FOREIGN KEY (app_id) REFERENCES public.apps(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: instance_users fk8w36n6lpw60rkedjfhbvbycur; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.instance_users
+        ADD CONSTRAINT fk8w36n6lpw60rkedjfhbvbycur FOREIGN KEY (instance_id) REFERENCES public.instances(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: test_paths fkb20ep4sold1yt9cu6w7l1vxcc; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.test_paths
+        ADD CONSTRAINT fkb20ep4sold1yt9cu6w7l1vxcc FOREIGN KEY (test_id) REFERENCES public.test_config(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: test_config fkb8ke53lmwd51w81v4lfs98h1e; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.test_config
+        ADD CONSTRAINT fkb8ke53lmwd51w81v4lfs98h1e FOREIGN KEY (gateway_service_id) REFERENCES public.services(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: test_intermediate_services fkbqs1fvip12p0apms4rlpn5l3g; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.test_intermediate_services
+        ADD CONSTRAINT fkbqs1fvip12p0apms4rlpn5l3g FOREIGN KEY (test_id) REFERENCES public.test_config(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: compare_template fkbrpq6u7178slefak7ytj3hsg2; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.compare_template
+        ADD CONSTRAINT fkbrpq6u7178slefak7ytj3hsg2 FOREIGN KEY (service_id) REFERENCES public.services(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: users fkchxdoybbydcaj5smgxe0qq5mk; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.users
+        ADD CONSTRAINT fkchxdoybbydcaj5smgxe0qq5mk FOREIGN KEY (customer_id) REFERENCES public.customers(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: app_users fkcntfs8pirqxkd084sp4m4trfl; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.app_users
+        ADD CONSTRAINT fkcntfs8pirqxkd084sp4m4trfl FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: compare_template fke4yk0kx52ut4xs01qkp7kyoc5; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.compare_template
+        ADD CONSTRAINT fke4yk0kx52ut4xs01qkp7kyoc5 FOREIGN KEY (app_id) REFERENCES public.apps(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: recording fkexh59wj32qpbmcgkbt40l3fju; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.recording
+        ADD CONSTRAINT fkexh59wj32qpbmcgkbt40l3fju FOREIGN KEY (app_id) REFERENCES public.apps(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: apps fkfvqwd4ksdsda4n39u2kuolhgt; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.apps
+        ADD CONSTRAINT fkfvqwd4ksdsda4n39u2kuolhgt FOREIGN KEY (customer_id) REFERENCES public.customers(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: test_paths fkgwahayphdy20s89d5d4p8ecs4; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.test_paths
+        ADD CONSTRAINT fkgwahayphdy20s89d5d4p8ecs4 FOREIGN KEY (path_id) REFERENCES public.paths(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: user_roles fkhfh9dx7w3ubf1co1vdev94g3f; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.user_roles
+        ADD CONSTRAINT fkhfh9dx7w3ubf1co1vdev94g3f FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+    --
+    -- Name: services fkjl3x5dre97vd530e6nn4q836j; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.services
+        ADD CONSTRAINT fkjl3x5dre97vd530e6nn4q836j FOREIGN KEY (service_group_id) REFERENCES public.service_groups(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: replay fkkn94muq51wy1js429xpr4iyh1; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.replay
+        ADD CONSTRAINT fkkn94muq51wy1js429xpr4iyh1 FOREIGN KEY (test_id) REFERENCES public.test_config(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: paths fkko0ii6nxeluh2etgqom5owp6d; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.paths
+        ADD CONSTRAINT fkko0ii6nxeluh2etgqom5owp6d FOREIGN KEY (service_id) REFERENCES public.services(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: test_intermediate_services fkkwome3nh7jr24gkuklc4hp24k; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.test_intermediate_services
+        ADD CONSTRAINT fkkwome3nh7jr24gkuklc4hp24k FOREIGN KEY (service_id) REFERENCES public.services(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: service_graph fknph4e5uyn0p300arj6rj9ybyb; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.service_graph
+        ADD CONSTRAINT fknph4e5uyn0p300arj6rj9ybyb FOREIGN KEY (to_service_id) REFERENCES public.services(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: app_users fko72cexbwaux5py48ss1av4fs0; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.app_users
+        ADD CONSTRAINT fko72cexbwaux5py48ss1av4fs0 FOREIGN KEY (app_id) REFERENCES public.apps(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: recording fkob2556vcudepggo2800f1b2oh; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.recording
+        ADD CONSTRAINT fkob2556vcudepggo2800f1b2oh FOREIGN KEY (instance_id) REFERENCES public.instances(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: instances fkowkrsau0owxeflyqtf2wjtho0; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.instances
+        ADD CONSTRAINT fkowkrsau0owxeflyqtf2wjtho0 FOREIGN KEY (app_id) REFERENCES public.apps(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: instance_users fkrgfh4gmgkkjathhb379lm67qh; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.instance_users
+        ADD CONSTRAINT fkrgfh4gmgkkjathhb379lm67qh FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: test_virtualized_services fkrr3qlrpby4qf9fimjs58pnhdm; Type: FK CONSTRAINT; Schema: public; Owner: springboot
+    --
+
+    ALTER TABLE ONLY public.test_virtualized_services
+        ADD CONSTRAINT fkrr3qlrpby4qf9fimjs58pnhdm FOREIGN KEY (service_id) REFERENCES public.services(id) ON DELETE CASCADE;
+
+
+    --
+    -- Name: SCHEMA public; Type: ACL; Schema: -; Owner: cubedb
+    --
+
+    GRANT ALL ON SCHEMA public TO springboot;
+    GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+    --
+    -- PostgreSQL database dump complete
+    --
+
+
+---
+# Source: postgresql/templates/backup.yaml
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: backup
+  namespace: postgres
+spec:
+  schedule: "0 6 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: setup
+            image: postgres:10.6
+            command: [ "/etc/config/backup.sh" ]
+            volumeMounts:
+              - name: script
+                mountPath: /etc/config
+              - name: postgres-backup
+                mountPath: /backup
+            env:
+              - name: PGPORT
+                value: "5432"
+              - name: PGHOST
+                value: postgresql
+              - name: PGUSER
+                value: springboot
+              - name: PGPASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: postgresql
+                    key: postgresql-password
+              - name: PGDATABASE
+                value: "cubedb"
+          restartPolicy: OnFailure
+          volumes:
+            - name: postgres-backup
+              persistentVolumeClaim:
+                claimName: postgres-backup
+            - name: script
+              configMap:
+                defaultMode: 0755
+                name: backup-script
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-backup
+  namespace: postgres
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-script
+  namespace: postgres
+data:
+  backup.sh: |-
+    #!/usr/bin/env bash
+
+    FILENAME="$(date +%Y-%m-%d).gz"
+
+    echo "Taking backup.."
+    cd /backup
+
+    pg_dump cubedb | gzip > "${FILENAME}"
+
+    if [ $? -ne 0 ]; then
+      rm $DUMP_FILE_NAME
+      echo "Back up not created, check db connection settings"
+      exit 1
+    fi
+    echo 'Successfully Backed Up'
+    echo 'deleting backups older than 10days..'
+    ls -t | tail -n +10 | xargs rm -rf
+    exit 0
+
+
+
+
+
+
