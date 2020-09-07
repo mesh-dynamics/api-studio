@@ -193,7 +193,7 @@ public class CubeServerService {
         return fetchResponse(request, requestBody, HttpMethod.POST, path);
     }
 
-    private <T> ResponseEntity fetchResponse(HttpServletRequest request, Optional<T> requestBody, HttpMethod method, String... pathValue){
+    public <T> ResponseEntity fetchResponse(HttpServletRequest request, Optional<T> requestBody, HttpMethod method, String... pathValue){
         String requestURI = pathValue.length> 0 ? pathValue[0] : request.getRequestURI().replace("/api", "");
         String path = getCubeServerUrl(requestURI);
         if (request.getQueryString() != null) {
