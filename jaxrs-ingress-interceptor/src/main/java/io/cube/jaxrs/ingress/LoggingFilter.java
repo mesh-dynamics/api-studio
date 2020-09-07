@@ -14,6 +14,7 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
+import javax.ws.rs.container.PreMatching;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
@@ -37,7 +38,8 @@ import io.opentracing.Span;
 
 
 @Provider
-@Priority(3000)
+@PreMatching
+@Priority(3001)
 public class LoggingFilter implements ContainerRequestFilter, ContainerResponseFilter,
 	WriterInterceptor {
 
