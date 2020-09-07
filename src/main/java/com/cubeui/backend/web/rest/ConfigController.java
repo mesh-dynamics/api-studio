@@ -144,7 +144,7 @@ public class ConfigController {
     }
     Optional<Config> configCheck = this.configRepository.findByKeyAndCustomerAndAppAndConfigTypeAndUserId(configDTO.getKey(), configDTO.getCustomer(),
         configDTO.getApp(), configDTO.getConfigType(), userId);
-    if(configCheck.isPresent()) {
+    if(configCheck.isPresent() && !configCheck.get().getId().equals(id)) {
       throw new ConfigExistsException(String.format(" key=%s, customer=%s, app=%s, configType=%s",
           configDTO.getKey(), configDTO.getCustomer(), configDTO.getApp(), configDTO.getConfigType()));
     }
