@@ -2787,13 +2787,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, COLLECTIONF,apiTraceFacetQuery.collection);
         //addFilter(query, PATHF, apiTraceFacetQuery.apiPath);
         addFilter(query, RUNIDF, apiTraceFacetQuery.runId);
+        addFilter(query, SERVICEF,apiTraceFacetQuery.service);
         return query;
     }
 
     @Override
     public ArrayList getApiFacets(ApiTraceFacetQuery apiTraceFacetQuery) {
         final SolrQuery query = getEventQuery(apiTraceFacetQuery);
-        addFilter(query, SERVICEF,apiTraceFacetQuery.service);
         addFilter(query,PATHF, apiTraceFacetQuery.apiPath);
         addFilter(query, EVENTTYPEF, EventType.HTTPRequest.toString());
         FacetQ serviceFacetq = new FacetQ();
