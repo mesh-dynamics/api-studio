@@ -53,7 +53,8 @@ public class TemplateEntry {
 		@JsonProperty("pt") CompareTemplate.PresenceType pt,
 		@JsonProperty("ct") CompareTemplate.ComparisonType ct,
 		@JsonProperty("em") CompareTemplate.ExtractionMethod em,
-		@JsonProperty("customization") Optional<String> customization) {
+		@JsonProperty("customization") Optional<String> customization,
+		@JsonProperty("arrayCompKeyPath") Optional<String> arrayComparisionKeyPath) {
 		super();
 		this.path = path;
 		this.dt = (dt != null) ? dt : Default;
@@ -68,6 +69,7 @@ public class TemplateEntry {
 		} else {
 			regex = Optional.empty();
 		}
+		this.arrayComparisionKeyPath = arrayComparisionKeyPath;
 	}
 
 	/**
@@ -78,7 +80,7 @@ public class TemplateEntry {
 	 * @param em
 	 */
 	public TemplateEntry(String path, CompareTemplate.DataType dt, CompareTemplate.PresenceType pt, CompareTemplate.ComparisonType ct, CompareTemplate.ExtractionMethod em) {
-		this(path, dt, pt, ct, em, Optional.empty());
+		this(path, dt, pt, ct, em, Optional.empty(), Optional.empty());
 	}
 
 	/**
@@ -88,9 +90,8 @@ public class TemplateEntry {
 	 * @param ct
 	 */
 	public TemplateEntry(String path, CompareTemplate.DataType dt, CompareTemplate.PresenceType pt, CompareTemplate.ComparisonType ct) {
-		this(path, dt, pt, ct, CompareTemplate.ExtractionMethod.Default, Optional.empty());
+		this(path, dt, pt, ct, CompareTemplate.ExtractionMethod.Default, Optional.empty(), Optional.empty());
 	}
-
 
 	@JsonProperty("path")
 	public String path;
@@ -104,6 +105,8 @@ public class TemplateEntry {
 	public CompareTemplate.ExtractionMethod em;
 	@JsonProperty("customization")
 	public Optional<String> customization; // metadata for fuzzy match. For e.g. this could be the regex
+	@JsonProperty("arrayCompKeyPath")
+	public Optional<String> arrayComparisionKeyPath;
 	@JsonIgnore
 	public JsonPointer pathptr; // compiled form of path
 	@JsonIgnore

@@ -67,11 +67,12 @@ public class CompareTemplate {
 		Float,
 		RptArray, // array having same structure for all its elements
 		NrptArray, // array with different types for each element
+		Set , // Repeating Array where elements have to compared irrespective of order
 		Obj, // object type
 		Default; // not specified
 
 		public boolean isObj() {
-			return this == RptArray || this == NrptArray || this == Obj;
+			return this == RptArray || this == NrptArray || this == Set || this == Obj;
 		}
 	}
 
@@ -137,7 +138,8 @@ public class CompareTemplate {
 		if (index != -1) {
 			String subPath = path.substring(0, index);
 			toReturn = get(JsonPointer.valueOf(subPath)).
-				map(entry -> entry.dt == DataType.RptArray || entry.dt == DataType.NrptArray).orElse(false);
+				map(entry -> entry.dt == DataType.RptArray || entry.dt == DataType.NrptArray
+					|| entry.dt == DataType.Set).orElse(false);
 		}
 		return toReturn;
 	}
@@ -180,7 +182,9 @@ public class CompareTemplate {
 			if (rule.path.startsWith(prefix)) {
 				// strip the prefix from the path, this is needed other paths will not match while doing json comparison
 				LOGGER.debug("Found a rule for " + prefix +  "::  " + rule.path + " " + rule.dt + " " + rule.pt + " " + rule.ct + " " + rule.em);
-				TemplateEntry newrule = new TemplateEntry(rule.path.substring(prefix.length()), rule.dt, rule.pt, rule.ct, rule.em, rule.customization);
+				TemplateEntry newrule = new
+					TemplateEntry(rule.path.substring(prefix.length())
+					, rule.dt, rule.pt, rule.ct, rule.em, rule.customization, rule.arrayComparisionKeyPath);
 				ret.addRule(newrule);
 			}
 		});
@@ -200,7 +204,7 @@ public class CompareTemplate {
 			String currentProperty = pointer.getMatchingProperty();
 
 			returnPointer[0] = get(returnPointer[0]).map(rule -> {
-					if (rule.dt == DataType.RptArray) {
+					if (rule.dt == DataType.RptArray || rule.dt == DataType.Set) {
 						return returnPointer[0].append(JsonPointer.valueOf("/*"));
 					} else {
 						return returnPointer[0].append(JsonPointer.valueOf("/" + currentProperty));
@@ -311,7 +315,7 @@ public class CompareTemplate {
 	 */
 	public void addRule(TemplateEntry rule) {
 		TemplateEntry normalisedRule = new TemplateEntry(getNormalisedPath(rule.path).toString(),
-			rule.dt, rule.pt, rule.ct, rule.em, rule.customization);
+			rule.dt, rule.pt, rule.ct, rule.em, rule.customization, rule.arrayComparisionKeyPath);
 		rules.put(normalisedRule.path, normalisedRule);
 	}
 

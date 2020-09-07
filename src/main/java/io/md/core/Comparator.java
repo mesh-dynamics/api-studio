@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -158,10 +157,17 @@ public interface Comparator {
 		 * @param diffs
 		 */
 		public Match(MatchType mt, String matchmeta, List<Diff> diffs) {
+			this(mt, matchmeta, diffs, Optional.empty(), Optional.empty());
+		}
+
+		public Match(MatchType mt, String matchmeta, List<Diff> diffs
+			, Optional<JsonNode> recordedResponse , Optional<JsonNode> replayedResponse) {
 			super();
 			this.mt = mt;
 			this.matchmeta = matchmeta;
 			this.diffs = diffs;
+			this.recordedResponse = recordedResponse;
+			this.replayedResponse = replayedResponse;
 		}
 
 		// for Jackson serialization
@@ -169,11 +175,16 @@ public interface Comparator {
 			this.mt = MatchType.Default;
 			this.matchmeta = "";
 			this.diffs = Collections.EMPTY_LIST;
+			this.recordedResponse = Optional.empty();
+			this.replayedResponse = Optional.empty();
 		}
 
 		public MatchType mt;
 		final public String matchmeta;
 		final public List<Diff> diffs;
+		final public Optional<JsonNode> recordedResponse;
+		final public Optional<JsonNode> replayedResponse;
+
 
 		public void merge(Match other, boolean needDiff, String prefixpath) {
 			mt = mt.And(other.mt);
@@ -298,7 +309,7 @@ public interface Comparator {
 
 
 		public final String op;
-		public final String path;
+		public String path;
 		public final Optional<JsonNode> value;
 		public final Optional<String> from; //only to be used in move operation
 		public final Optional<JsonNode> fromValue; // only used in replace operation
