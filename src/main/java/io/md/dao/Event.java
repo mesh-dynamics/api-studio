@@ -140,7 +140,8 @@ public class Event implements MDStorable {
 			Validate.notNull(traceId);
 		}
 		Validate.notNull(payload);
-		Validate.isTrue(payload.isRawPayloadEmpty());
+		Validate.isTrue(!payload.isRawPayloadEmpty());
+
 	}
 
 	@JsonIgnore
