@@ -35,7 +35,6 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
-import io.cube.agent.FnReqResponse;
 import io.md.utils.Constants;
 
 
@@ -160,32 +159,6 @@ public class Utils {
     public static String removePatternFromString(String val, Pattern pattern) {
 	    Matcher matcher = pattern.matcher(val);
 	    return matcher.replaceAll("");
-    }
-
-    public static void preProcess(FnReqResponse fnReqResponse) {
-	    try {
-            if (fnReqResponse.name.equals("add")
-                && fnReqResponse.argVals.length > 0) {
-                if (fnReqResponse.argVals[0].contains("\"type_s\":{\"name\":\"type_s\",\"value\":\"Analysis\"}")) {
-                    String newVal = removePatternFromString(fnReqResponse.argVals[0], analysisTimestampPattern);
-                    fnReqResponse.argVals[0] = newVal;
-                    fnReqResponse.argsHash[0] = newVal.hashCode();
-                } else if (fnReqResponse.argVals[0].contains("{\"type_s\":{\"name\":\"type_s\",\"value\":\"Recording\"}")) {
-                    String newVal = removePatternFromString(fnReqResponse.argVals[0], recordingTimestampPattern);
-                    fnReqResponse.argVals[0] = newVal;
-                    fnReqResponse.argsHash[0] = newVal.hashCode();
-                } else if (fnReqResponse.argVals[0].startsWith("{\"id\":{\"name\":\"id\",\"value\":\"ReplayMeta-")) {
-                    String newVal = removePatternFromString(fnReqResponse.argVals[0], replayMetaIdPattern);
-                    newVal = removePatternFromString(newVal, replayIdPattern);
-                    newVal = removePatternFromString(newVal, timestampIdPattern);
-                    newVal = removePatternFromString(newVal, versionPattern);
-                    fnReqResponse.argVals[0] = newVal;
-                    fnReqResponse.argsHash[0] = newVal.hashCode();
-                }
-            }
-        } catch (Exception e) {
-            LOGGER.error("Error while preprocessing fn req resp object :: " + e.getMessage());
-        }
     }
 
     public static JsonNode convertArrayToObject(JsonNode node){
