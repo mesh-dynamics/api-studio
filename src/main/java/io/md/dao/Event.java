@@ -6,6 +6,8 @@ package io.md.dao;
  *
  */
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.md.dao.DataObj.PathNotFoundException;
 import java.net.URLClassLoader;
 import java.time.Instant;
@@ -19,6 +21,7 @@ import java.util.Optional;
 import java.util.Collections;
 import io.md.dao.Recording.RecordingType;
 
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,10 +49,16 @@ public class Event implements MDStorable {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(Event.class);
 
-	private Event(String customerId, String app, String service, String instanceId,
-		String collection, String traceId, String spanId, String parentSpanId,
-		RunType runType, Instant timestamp, String reqId, String apiPath, EventType eventType,
-		Payload payload, int payloadKey, RecordingType recordingType, Map<String, String> metaData, Optional<String> runId) {
+	@JsonCreator
+	private Event(@JsonProperty("customerId") String customerId, @JsonProperty("app") String app,
+			@JsonProperty("service") String service, @JsonProperty("instanceId") String instanceId,
+			@JsonProperty("collection") String collection, @JsonProperty("traceId") String traceId,
+			@JsonProperty("spanId") String spanId, @JsonProperty("parentSpanId") String parentSpanId,
+			@JsonProperty("runType") RunType runType, @JsonProperty("timestamp") Instant timestamp,
+			@JsonProperty("reqId") String reqId, @JsonProperty("apiPath") String apiPath,
+			@JsonProperty("eventType") EventType eventType, @JsonProperty("payload") Payload payload,
+			@JsonProperty("payloadKey") int payloadKey, @JsonProperty("recordingType") RecordingType recordingType,
+			@JsonProperty("metaData") Map<String, String> metaData, @JsonProperty("runId") Optional<String> runId) {
 		this.customerId = customerId;
 		this.app = app;
 		this.service = service;
@@ -57,7 +66,7 @@ public class Event implements MDStorable {
 		this.collection = collection;
 		this.traceId = traceId;
 		this.spanId = spanId;
-		this.parentSpanId = parentSpanId;
+		this.parentSpanId = parentSpanId != null ? parentSpanId : "NA";
 		this.runType = runType;
 		this.timestamp = timestamp;
 		this.reqId = reqId;
@@ -68,6 +77,7 @@ public class Event implements MDStorable {
 		this.recordingType = recordingType;
 		this.metaData = metaData;
 		this.runId = runId;
+		validateEvent();
 	}
 
 	/**
@@ -107,16 +117,30 @@ public class Event implements MDStorable {
 	}
 
 	public boolean validate() {
-
-		if ((customerId == null) || (app == null) || (service == null) || (instanceId == null) || (
-			collection == null)
-			|| (traceId == null && eventType != EventType.ThriftResponse
-			&& eventType != EventType.ThriftRequest) || (runType == null) ||
-			(timestamp == null) || (reqId == null) || (apiPath == null) || (eventType == null)
-			|| (payload == null || payload.isRawPayloadEmpty())) {
+		try {
+			validateEvent();
+			return true;
+		} catch (Exception exception) {
 			return false;
 		}
-		return true;
+	}
+
+	public void validateEvent() {
+		Validate.notNull(customerId);
+		Validate.notNull(app);
+		Validate.notNull(service);
+		Validate.notNull(instanceId);
+		Validate.notNull(collection);
+		Validate.notNull(runType);
+		Validate.notNull(timestamp);
+		Validate.notNull(reqId);
+		Validate.notNull(apiPath);
+		Validate.notNull(eventType);
+		if(eventType != EventType.ThriftResponse && eventType != EventType.ThriftRequest ) {
+			Validate.notNull(traceId);
+		}
+		Validate.notNull(payload);
+		Validate.isTrue(payload.isRawPayloadEmpty());
 	}
 
 	@JsonIgnore
