@@ -5,6 +5,7 @@ const httpProxy = require('http-proxy');
 const find = require('find-process');
 const logger = require('electron-log');
 const { getApplicationConfig } = require('./fs-utils');
+const cryptoRandomString = require('crypto-random-string');
 
 // Alt Mock With Collection API: /api/ms/mockWithCollection??
 const mockApiPrefix = '/api/msc/mockWithRunId';
@@ -66,6 +67,8 @@ const setupProxy = (mockContext, user) => {
      */
     const proxyRequestInterceptor = (proxyReq) => {
         const { accessToken, tokenType } = user;
+        const { spanId, traceId } = mockContext;
+        const randomSpanId = cryptoRandomString({length: 16});
         const token = `${tokenType} ${accessToken}`;
 
         logger.info('Request Intercepted. Removing Header <Origin>');
@@ -73,6 +76,18 @@ const setupProxy = (mockContext, user) => {
 
         logger.info('Setting authorization header authorization:', token);
         proxyReq.setHeader('authorization', token);
+
+        logger.info('Setting x-b3-spanid: ', randomSpanId);
+        proxyReq.setHeader('x-b3-spanid', randomSpanId);
+
+        logger.info('Setting x-b3-parentspanid: ', spanId);
+        proxyReq.setHeader('x-b3-parentspanid', spanId);
+
+        logger.info('Setting baggage-parent-span-id: ', spanId);
+        proxyReq.setHeader('baggage-parent-span-id', spanId);
+
+        logger.info('Setting x-b3-traceid: ', traceId);
+        proxyReq.setHeader('x-b3-traceid', traceId);
 
         // rewrite request url
         logger.info('Rewriting url...');

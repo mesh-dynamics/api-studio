@@ -1151,6 +1151,8 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.resetRunState(tabId))
         // generate a new run id every time a request is run
         const runId = generateRunId();
+        const spanId = tabToProcess.eventData[0].spanId;
+
         if(PLATFORM_ELECTRON) {
             const mockContext = {
                 collectionId: userHistoryCollection.collec,
@@ -1160,6 +1162,7 @@ class HttpClientTabs extends Component {
                 selectedApp,
                 customerName: customerId,
                 runId: runId,
+                spanId: spanId
             }
 
             ipcRenderer.send('mock_context_change', mockContext);
