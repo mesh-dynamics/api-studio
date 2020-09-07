@@ -9,6 +9,8 @@ import io.md.constants.ReplayStatus;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.TemplateKey;
 import io.md.core.ValidateAgentStore;
+import io.md.dao.HTTPResponsePayload;
+import io.md.dao.ResponsePayload;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
 import io.md.dao.agent.config.ConfigType;
@@ -2288,6 +2290,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String NUMMATCHF = CPREFIX + "numMatch" + INT_SUFFIX;
     private static final String RESP_COMP_RES_TYPE_F = CPREFIX + Constants.RESP_MATCH_TYPE + STRING_SUFFIX; // match type
     private static final String RESP_COMP_RES_META_F = CPREFIX + "respMatchMetadata" + STRING_SUFFIX;
+    private static final String MODIFIED_REC_RESP_PAYLOAD_F = CPREFIX + "recRespPayload" + STRING_SUFFIX;
+    private static final String MODIFIED_REPLAY_RESP_PAYLOAD_F = CPREFIX + "replayRespPayload"  + STRING_SUFFIX;
     private static final String REQ_COMP_RES_TYPE_F = CPREFIX + Constants.REQ_COMP_RES_TYPE + STRING_SUFFIX;
     private static final String REQ_COMP_RES_META_F = CPREFIX + Constants.REQ_COMP_RES_META + STRING_SUFFIX;
     private static final String DIFFF = CPREFIX + "diff" + NOTINDEXED_SUFFIX;
@@ -2343,6 +2347,25 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(NUMMATCHF, res.numMatch);
         doc.setField(RESP_COMP_RES_TYPE_F, res.respCompareRes.mt.toString());
         doc.setField(RESP_COMP_RES_META_F, res.respCompareRes.matchmeta);
+        res.respCompareRes.recordedResponse.ifPresent(modifiedRecResponse -> {
+            try {
+                doc.setField(MODIFIED_REC_RESP_PAYLOAD_F
+                    , config.jsonMapper.writeValueAsString(modifiedRecResponse));
+            } catch(Exception e) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Conversion of Modified Recorded Response Payload to String failed")), e);
+            }
+        });
+
+        res.respCompareRes.replayedResponse.ifPresent(modifiedReplayResponse -> {
+            try {
+                doc.setField(MODIFIED_REPLAY_RESP_PAYLOAD_F
+                    , config.jsonMapper.writeValueAsString(modifiedReplayResponse));
+            } catch(Exception e) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Conversion of Modified Replayed Response Payload to String failed")), e);
+            }
+        });
         AtomicInteger counter = new AtomicInteger(0);
         doc.addChildDocuments(res.respCompareRes.diffs.stream().map(diff ->
                 diffToSolrDoc(diff, DiffType.Response, recReplayReqIdCombined
@@ -2698,7 +2721,34 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
             List<Diff> respMatchDiffList =  getDiffFromChildDocs(doc, DiffType.Response);
 
-            Match respMatch = new Match(respMatchType, respMatchMetaData, respMatchDiffList);
+            Optional<JsonNode> modifiedRecRespPayload =
+                getStrField(doc, MODIFIED_REC_RESP_PAYLOAD_F).map(modifiedRespPayloadStr ->
+                {
+                    try {
+                        return config.jsonMapper.readValue(modifiedRespPayloadStr
+                            , JsonNode.class);
+                    } catch (IOException e) {
+                        LOGGER.error("Error while reading modified recorded resp "
+                            + "payload from solr ", e);
+                        return null;
+                    }
+                });
+
+            Optional<JsonNode> modifiedReplayRespPayload =
+                getStrField(doc, MODIFIED_REPLAY_RESP_PAYLOAD_F).map(modifiedRespPayloadStr ->
+                {
+                    try {
+                        return config.jsonMapper.readValue(modifiedRespPayloadStr
+                            , JsonNode.class);
+                    } catch (IOException e) {
+                        LOGGER.error("Error while reading modified recorded resp "
+                            + "payload from solr ", e);
+                        return null;
+                    }
+                });
+
+            Match respMatch = new Match(respMatchType, respMatchMetaData, respMatchDiffList
+                , modifiedRecRespPayload , modifiedReplayRespPayload);
 
             Optional<Match> reqCompResOptional = getStrField(doc, REQ_COMP_RES_TYPE_F)
                 .map(Comparator.MatchType::valueOf).map(UtilException.rethrowFunction(

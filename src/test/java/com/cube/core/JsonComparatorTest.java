@@ -121,6 +121,7 @@ class JsonComparatorTest  {
 
 		JsonComparator comparator = new JsonComparator(template, config.jsonMapper);
 		Match m = comparator.compare(json1, json2);
+		m = new Match(m.mt, m.matchmeta, m.diffs);
 		String mjson = config.jsonMapper.writeValueAsString(m);
 		JSONAssert.assertEquals(expected, mjson, JSONCompareMode.NON_EXTENSIBLE);
 	}

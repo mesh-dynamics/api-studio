@@ -179,7 +179,8 @@ public class JsonComparator implements Comparator {
 
         MatchType mt = (numerrs > 0) ? MatchType.NoMatch :
             (diffs.length > 0) ? MatchType.FuzzyMatch : MatchType.ExactMatch;
-        return new Match(mt, matchmeta, result);
+        return new Match(mt, matchmeta, result, Optional.of(lhsConverted) ,
+	        Optional.of(rhsConverted));
     }
 
     @Override
