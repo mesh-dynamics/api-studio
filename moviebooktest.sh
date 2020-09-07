@@ -70,7 +70,7 @@ call_replay() {
 	done
 
 	REPLAY_PATHS=${TEMP_PATH::${#TEMP_PATH}-1}
-	BODY="$REPLAY_PATHS&endPoint=$REPLAY_ENDPOINT&instanceId=$INSTANCE_ID&templateSetVer=DEFAULT&userId=$USER_ID"
+	BODY="$REPLAY_PATHS&endPoint=$REPLAY_ENDPOINT&instanceId=$INSTANCE_ID&templateSetVer=DEFAULT&userId=$USER_ID&transforms=$TRANSFORMS"
 
 	COUNT=0
 	while [ "$http_code" != "200" ] || [ "$REPLAY_ID" = "none" ] && [ "$COUNT" != "5" ]; do
@@ -129,6 +129,7 @@ analyze() {
 generate_traffic() {
 	for ((i=1;i<=$1;i++)); do
 		curl -X GET "https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io/minfo/listmovies?filmName=BEVERLY%20OUTLAW" -H 'Content-Type: application/x-www-form-urlencoded' -H 'cache-control: no-cache';
+		curl "https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io/minfo/rentmovie" -H 'Content-Type: application/json;charset=UTF-8' --data-binary '{"filmId":4,"storeId":1,"duration":2,"customerId":200,"staffId":1}'
 	done
 }
 
@@ -168,6 +169,7 @@ main() {
 	CONFIG_FILE="temp"
 	NO_OF_REQUEST=5
 	VERSION="v1"
+	TRANSFORMS="%7B%22requestTransforms%22%3A%7B%22Test%22%3A%5B%7B%22source%22%3A%22*%22%2C%22target%22%3A%22test123%22%7D%5D%7D%7D"
 	call_deploy_script cube init $CONFIG_FILE
 	kubectl get deploy -o name -l app=cube -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout status -n $DRONE_COMMIT_AUTHOR
 	call_deploy_script moviebook init $CONFIG_FILE
