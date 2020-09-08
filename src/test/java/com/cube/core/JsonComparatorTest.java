@@ -325,4 +325,18 @@ class JsonComparatorTest  {
 		compareTest(testData);
 	}
 
+    @Test
+    @DisplayName("Unordered Array Object test")
+    final void unorderedMixedArrayObjectTest() throws JsonProcessingException, JSONException {
+        JSONObject testData = object.getJSONObject("unorderedMixedArrayObjectDiff");
+        compareTest(testData);
+    }
+
+    @Test
+    @DisplayName("Unordered Array Element Missing test")
+    final void unorderedArrayDiffElemMissing() throws JsonProcessingException, JSONException {
+        JSONObject testData = object.getJSONObject("unorderedArrayDiffElemMissing");
+        compareTest(testData);
+    }
+
 }

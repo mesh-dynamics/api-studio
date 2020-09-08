@@ -104,9 +104,9 @@ public class JsonComparator implements Comparator {
 		Set<String> arrayPathsToReconstructRHS = new HashSet<>();
 
         //convert arrays to objects
-        JsonNode lhsConverted = Utils.convertArrayToObject(lhsRoot, template, ""
+        JsonNode lhsConverted = Utils.convertArrayToObject(lhsRoot, template, "", ""
 	        , arrayPathsToReconstructLHS);
-        JsonNode rhsConverted = Utils.convertArrayToObject(rhsRoot, template, ""
+        JsonNode rhsConverted = Utils.convertArrayToObject(rhsRoot, template, "", ""
 	        ,arrayPathsToReconstructRHS);
 
         // Now diff new (rhs) with the old (lhs)
@@ -155,27 +155,29 @@ public class JsonComparator implements Comparator {
 
         String matchmeta = "JsonDiff";
 
-        Set<String> pathsToReconstructInteresection = new HashSet<>(arrayPathsToReconstructLHS);
-		pathsToReconstructInteresection.retainAll(arrayPathsToReconstructRHS);
-		arrayPathsToReconstructLHS.removeAll(pathsToReconstructInteresection);
-		arrayPathsToReconstructRHS.removeAll(pathsToReconstructInteresection);
+        Set<String> pathsToReconstructUnion = new HashSet<>(arrayPathsToReconstructLHS);
+        pathsToReconstructUnion.addAll(arrayPathsToReconstructRHS);
 
 		TreeMap<String, Diff> diffTreeMap = new TreeMap<>();
-
 		result.forEach(diffEntry -> diffTreeMap.put(diffEntry.path , diffEntry));
 
-		pathsToReconstructInteresection.forEach(path -> {
-        	Utils.reconstructArray(lhsConverted , rhsConverted, path,  diffTreeMap);
+        List<String> pathList = new ArrayList<>(pathsToReconstructUnion);
+        pathList.sort(new java.util.Comparator<String>() {
+
+            private int pathLength(String path) {
+                return path.split("/").length;
+            }
+
+            @Override
+            public int compare(String o1, String o2) {
+                return Integer.compare(pathLength(o2), pathLength(o1));
+            }
         });
 
-		arrayPathsToReconstructLHS.forEach(path -> {
-			Utils.reconstructArray(lhsConverted , MissingNode.getInstance(), path,  diffTreeMap);
-		});
 
-		arrayPathsToReconstructRHS.forEach(path -> {
-			Utils.reconstructArray(MissingNode.getInstance() , rhsConverted, path,  diffTreeMap);
-		});
-
+        pathList.forEach(path -> {
+        	Utils.reconstructArray(lhsConverted , rhsConverted, path,  diffTreeMap, jsonMapper);
+        });
 
         MatchType mt = (numerrs > 0) ? MatchType.NoMatch :
             (diffs.length > 0) ? MatchType.FuzzyMatch : MatchType.ExactMatch;

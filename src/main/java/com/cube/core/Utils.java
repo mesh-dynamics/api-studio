@@ -3,6 +3,8 @@
  */
 package com.cube.core;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.md.core.Comparator.Diff;
 import io.md.core.CompareTemplate.DataType;
 import io.md.dao.Recording.RecordingType;
@@ -220,25 +222,29 @@ public class Utils {
     }
 
     public static JsonNode
-        convertArrayToObject(JsonNode node, CompareTemplate template, String path,
+        convertArrayToObject(JsonNode node, CompareTemplate template, String path, String newPath,
 	    Set<String> pathsToBeReconstructed){
         if (node.isArray()) {
         	TemplateEntry arrayRule = template.getRule(path);
         	ArrayNode nodeAsArray = (ArrayNode) node;
 	        ObjectNode equivalentObjNode = JsonNodeFactory.instance.objectNode();
-	        pathsToBeReconstructed.add(path);
+	        pathsToBeReconstructed.add(newPath);
         	if (arrayRule.dt == DataType.Set) {
+        	    Optional<JsonPointer> pathPointer =
+                    arrayRule.arrayComparisionKeyPath.map(JsonPointer::compile);
         		for (int i = 0 ; i < nodeAsArray.size() ; i++) {
         			JsonNode elem = nodeAsArray.get(i);
-			        equivalentObjNode.set(arrayRule.arrayComparisionKeyPath.map(keyPath ->
-					        elem.at(JsonPointer.compile(keyPath)).toString()).orElse(elem.toString())
-				        , convertArrayToObject(elem, template, path.concat("/").concat(String.valueOf(i))
-					        , pathsToBeReconstructed));
+        			String key = pathPointer.map(pathPtr ->
+                        elem.at(pathPtr).toString()).orElse(elem.toString());
+			        equivalentObjNode.set(key
+				        , convertArrayToObject(elem, template, path.concat("/").concat(String.valueOf(i)),
+                            newPath.concat("/").concat(key)  , pathsToBeReconstructed));
 		        }
 	        } else {
         		for (int i = 0 ; i < nodeAsArray.size() ; i++){
 			        equivalentObjNode.set(String.valueOf(i), convertArrayToObject(nodeAsArray.get(i)
-				        , template, path.concat("/").concat(String.valueOf(i)) , pathsToBeReconstructed));
+				        , template, path.concat("/").concat(String.valueOf(i))
+                        , newPath.concat("/").concat(String.valueOf(i)) , pathsToBeReconstructed));
 		        }
 	        }
             return equivalentObjNode;
@@ -249,34 +255,27 @@ public class Utils {
             while(fieldNames.hasNext()) {
                 String fieldName = fieldNames.next();
                 equivalentObjNode.set(fieldName, convertArrayToObject(nodeAsObject.get(fieldName)
-	                ,template , path.concat("/").concat(fieldName) , pathsToBeReconstructed));
+	                ,template , path.concat("/").concat(fieldName) , newPath.concat("/").concat(fieldName) , pathsToBeReconstructed));
             }
             return equivalentObjNode;
         }
         return node;
     }
 
-	/**
-	 * 	https://stackoverflow.com/questions/13530999/fastest-way-to-get-all-values-from-a-map-where-the-key-starts-with-a-certain-exp#13531376
-	 */
-	private static SortedMap<String, Diff> getByPrefix(
-		NavigableMap<String, Diff> myMap,
-		String prefix ) {
-		return myMap.subMap( prefix, prefix + Character.MAX_VALUE );
-	}
-
-    private static Map<String, JsonNode> convertObjectToMap(ObjectNode node) {
-	    Iterator<String> fieldNames = node.fieldNames();
-	    Map<String, JsonNode> toReturn = new HashMap<>();
-	    while(fieldNames.hasNext()) {
-		    String fieldName = fieldNames.next();
-			toReturn.put(fieldName , node.get(fieldName));
-	    }
-	    return toReturn;
+    /**
+     * 	https://stackoverflow.com/questions/13530999/fastest-way-to-get-all-values-from-a-map-where-the-key-starts-with-a-certain-exp#13531376
+     */
+    private static SortedMap<String, Diff> getByPrefix(
+        NavigableMap<String, Diff> myMap, String prefix ) {
+        return myMap.subMap( prefix, prefix + Character.MAX_VALUE );
     }
 
-	private static  void transformIndexInDiff(TreeMap<String, Diff> diffMap
-		, String arrayPath, String oldIndex, String newIndex) {
+    private static Map<String, JsonNode> convertObjectToMap(ObjectNode node, ObjectMapper jsonMapper) {
+        return  jsonMapper.convertValue(node, new TypeReference<Map<String, JsonNode>>(){});
+    }
+
+	private static  void transformIndexInDiff(TreeMap<String, Diff> diffMap,
+                                              String arrayPath, String oldIndex, String newIndex) {
 		String oldPrefix = arrayPath.concat("/").concat(oldIndex);
 		SortedMap<String , Diff> diffByPrefix =
 			getByPrefix(diffMap, oldPrefix);
@@ -289,19 +288,19 @@ public class Utils {
 
 
     public static void reconstructArray(JsonNode leftRoot, JsonNode rightRoot
-	    , String arrayPath, TreeMap<String, Diff> diffMap) {
+	    , String arrayPath, TreeMap<String, Diff> diffMap, ObjectMapper jsonMapper) {
 
 	    JsonPointer jsonPointer = JsonPointer.compile(arrayPath);
     	JsonNode leftNode =  leftRoot.at(jsonPointer);
     	Map<String, JsonNode> leftArrayMap = new HashMap<>();
-    	if (leftNode != null && ! leftNode.isMissingNode()) {
-    		leftArrayMap = convertObjectToMap((ObjectNode) leftNode);
+    	if (leftNode != null && ! leftNode.isMissingNode() && leftNode.isObject()) {
+    		leftArrayMap = convertObjectToMap((ObjectNode) leftNode, jsonMapper);
 	    }
 
     	JsonNode rightNode = rightRoot.at(jsonPointer);
     	Map<String, JsonNode> rightArrayMap = new HashMap<>();
-	    if (rightNode != null && ! rightNode.isMissingNode()) {
-		    rightArrayMap = convertObjectToMap((ObjectNode) rightNode);
+	    if (rightNode != null && ! rightNode.isMissingNode() && rightNode.isObject()) {
+		    rightArrayMap = convertObjectToMap((ObjectNode) rightNode, jsonMapper);
 	    }
 
 	    Set<String> leftKeys =  new HashSet<>(leftArrayMap.keySet());

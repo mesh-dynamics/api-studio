@@ -516,5 +516,71 @@
                 {"op":"add","path":"/unordered/2","value":{"a":"11","b":"8","c":"9"},"resolution":"OK_OtherValInvalid"}
             ],"recordedResponse":null,"replayedResponse":null
         }
+    },
+
+    "unorderedMixedArrayObjectDiff" : {
+        "json1" : {
+            "unordered" : [{"a" : "1" , "b" :  ["b1" , "b2" , "b3"] , "c" :  "3"}
+            , {"a" : "4" , "b" :  ["b7" , "b8" , "b9"] , "c" :  "6"} , {"a" : "7" , "b" : ["b1" , "b2" , "b3"] , "c" :  "9"}]
+        },
+
+        "json2" : {
+            "unordered" : [{"a" : "11" , "b" :  ["b7" , "b8" , "b9"], "c" :  "9"}
+            , {"a" : "1" , "b" :  ["b2" , "b1" , "b3"] , "c" :  "4"} , {"a" : "4" , "b" : ["b4" , "b5" , "b7"] , "c" :  "6"}]
+        },
+
+        "rules" : [
+            { "path": "/unordered",   "dataType": "Set",     "presenceType": "Required",
+                "comparisonType": "Equal",  "customization": "", "arrayCompKeyPath" :  "/a" } ,
+            { "path": "/unordered/0/b",   "dataType": "Set",     "presenceType": "Optional",
+                "comparisonType": "Equal",  "customization": ""},
+            { "path": "/unordered/1/b",   "dataType": "Set",     "presenceType": "Optional",
+                "comparisonType": "Equal",  "customization": ""},
+            { "path": "/unordered/2/b",   "dataType": "Set",     "presenceType": "Optional",
+                "comparisonType": "Equal",  "customization": ""}
+        ],
+
+        "output" :
+        {
+            "mt":"NoMatch",
+            "matchmeta":"JsonDiff",
+            "diffs": [
+                {"op":"replace","path":"/unordered/1/c","value":"4","fromValue":"3","resolution":"ERR_ValMismatch"},
+                {"op":"remove","path":"/unordered/0/b/2","value":"b8","resolution":"OK_Optional"},
+                {"op":"remove","path":"/unordered/0/b/1","value":"b9","resolution":"OK_Optional"},
+                {"op":"add","path":"/unordered/0/b/2","value":"b4","resolution":"OK_OtherValInvalid"},
+                {"op":"add","path":"/unordered/0/b/1","value":"b5","resolution":"OK_OtherValInvalid"},
+                {"op":"remove","path":"/unordered/2","value":{"a":"7","b":{"\"b1\"":"b1","\"b2\"":"b2","\"b3\"":"b3"},"c":"9"},"resolution":"ERR_Required"},
+                {"op":"add","path":"/unordered/2","value":{"a":"11","b":{"\"b7\"":"b7","\"b8\"":"b8","\"b9\"":"b9"},"c":"9"},"resolution":"OK_OtherValInvalid"}
+            ],"recordedResponse":null,"replayedResponse":null
+        }
+    },
+
+
+    "unorderedArrayDiffElemMissing" : {
+        "json1" : {
+            "unordered" : [{"a" : "1" , "b" :  "2" , "c" :  "3"}
+            , {"a" : "4" , "b" :  "5" , "c" :  "6"} , {"a" : "7" , "b" :  "8" , "c" :  "9"}]
+        },
+
+        "json2" : {
+            "unordered1" :{"a" : "11" , "b" :  "8" , "c" :  "9"}
+        },
+
+        "rules" : [
+            { "path": "/unordered",   "dataType": "Set",     "presenceType": "Required",
+                "comparisonType": "Equal",  "customization": "", "arrayCompKeyPath" :  "/a" }
+        ],
+
+        "output" :
+        {
+            "mt":"NoMatch",
+            "matchmeta":"JsonDiff",
+            "diffs": [
+                {"op":"remove","path":"/unordered","value":{"\"1\"":{"a":"1","b":"2","c":"3"},
+                    "\"4\"":{"a":"4","b":"5","c":"6"},"\"7\"":{"a":"7","b":"8","c":"9"}},"resolution":"ERR_Required"},
+                {"op":"add","path":"/unordered1","value":{"a":"11","b":"8","c":"9"},"resolution":"ERR_NewField"}
+            ],"recordedResponse":null,"replayedResponse":null
+        }
     }
 }
