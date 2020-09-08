@@ -18,7 +18,9 @@
                 {"op":"replace","path":"/body/b2/1","value":2,"fromValue":3,"resolution":"OK_DefaultCT"},
                 {"op":"replace","path":"/body/b1","value":"test456","fromValue":"test123","resolution":"OK_DefaultCT"},
                 {"op":"add","path":"/b3","value":{"a1":"a1v1","a2":15},"resolution":"ERR_NewField"}
-            ]
+            ],
+            "recordedResponse":null,
+            "replayedResponse":null
         }
     },
 
@@ -33,8 +35,8 @@
             "b3":   { "a1": "a1v1",      "a2": 15 }
         },
         "rules": [
-            { "path": "", "dataType": "Obj",  "presenceType": "Required", "comparisonType": "Equal", "customization": "" },
-            { "path": "/body/b2", "dataType": "RptArray",  "presenceType": "Required", "comparisonType": "Equal", "customization": "" }
+            { "path": "", "dataType": "Obj",  "presenceType": "Required", "comparisonType": "Equal", "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/body/b2", "dataType": "RptArray",  "presenceType": "Required", "comparisonType": "Equal", "customization": "", "arrayCompKeyPath": "" }
         ],
         "output": {
             "mt":           "NoMatch",
@@ -44,7 +46,9 @@
                 {"op":"replace","path":"/body/b2/1","value":2,"fromValue":3,"resolution":"ERR_ValMismatch"},
                 {"op":"replace","path":"/body/b1","value":"test456","fromValue":"test123","resolution":"ERR_ValMismatch"},
                 {"op":"add","path":"/b3","value":{"a1":"a1v1","a2":15},"resolution":"ERR_RequiredGolden"}
-            ]
+            ],
+            "recordedResponse":null,
+            "replayedResponse":null
         }
     },
 
@@ -58,12 +62,14 @@
             "body": { "b1": "test123",   "b2": [ 1, 3, 3] }
         },
         "rules": [
-            { "path": "", "dataType": "Obj",  "presenceType": "Required", "comparisonType": "Equal", "customization": "" }
+            { "path": "", "dataType": "Obj",  "presenceType": "Required", "comparisonType": "Equal", "customization": "", "arrayCompKeyPath": "" }
         ],
         "output": {
             "mt":           "ExactMatch",
             "matchmeta":    "JsonDiff",
-            "diffs": []
+            "diffs": [],
+            "recordedResponse":null,
+            "replayedResponse":null
         }
     },
 
@@ -78,8 +84,8 @@
             "b3":   { "a1": "a1v1",      "a2": 15 }
         },
         "rules": [
-            { "path": "", "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional", "customization": "" },
-            { "path": "/body/b2", "dataType": "RptArray",  "presenceType": "Optional", "comparisonType": "Ignore", "customization": "" }
+            { "path": "", "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional", "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/body/b2", "dataType": "RptArray",  "presenceType": "Optional", "comparisonType": "Ignore", "customization": "", "arrayCompKeyPath": "" }
         ],
         "output": {
             "mt":           "NoMatch",
@@ -89,7 +95,9 @@
                 {"op":"replace","path":"/body/b2/1","value":2,"fromValue":3,"resolution":"OK_Ignore"},
                 {"op":"replace","path":"/body/b1","value":"test456","fromValue":"test123","resolution":"OK_OptionalMismatch"},
                 {"op":"add","path":"/b3","value":{"a1":"a1v1","a2":15},"resolution":"ERR_RequiredGolden"}
-            ]
+            ],
+            "recordedResponse":null,
+            "replayedResponse":null
         }
     },
 
@@ -104,14 +112,16 @@
       "b3":   { "a1": "a1v1",      "a2": 15 }
     },
     "rules": [
-      { "path": "", "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional", "customization": "" }
+      { "path": "", "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional", "customization": "", "arrayCompKeyPath": "" }
     ],
     "output": {
       "mt":           "NoMatch",
       "matchmeta":    "JsonDiff",
       "diffs":[
         {"op": "add",       "path": "/b3",          "value": { "a1": "a1v1", "a2": 15},         "resolution":"ERR_RequiredGolden"   }
-      ]
+      ],
+        "recordedResponse":null,
+        "replayedResponse":null
     }
   },
 
@@ -129,10 +139,10 @@
             "floor": 4.469
         },
         "rules": [
-            { "path": "/email",     "dataType": "Str",    "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Regex" ,"customization": ".+\\@.+\\..+"},
-            { "path": "/round",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Round", "customization": "2"},
-            { "path": "/ceiling",   "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal",  "extractionMethod": "Ceil", "customization": "2"},
-            { "path": "/floor",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Floor", "customization": "2"}
+            { "path": "/email",     "dataType": "Str",    "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Regex" ,"customization": ".+\\@.+\\..+", "arrayCompKeyPath": ""},
+            { "path": "/round",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Round", "customization": "2", "arrayCompKeyPath": ""},
+            { "path": "/ceiling",   "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal",  "extractionMethod": "Ceil", "customization": "2", "arrayCompKeyPath": ""},
+            { "path": "/floor",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Floor", "customization": "2", "arrayCompKeyPath": ""}
         ],
         "output": {
             "mt":           "FuzzyMatch",
@@ -142,7 +152,9 @@
                 { "op": "replace",  "path": "/round",   "value": 4.469,                 "fromValue": 4.468,                 "resolution": "OK_CustomMatch" },
                 { "op": "replace",  "path": "/floor",   "value": 4.469,                 "fromValue": 4.468,                 "resolution": "OK_CustomMatch" },
                 { "op": "replace",  "path": "/email",   "value": "vineetks@yahoo.com",  "fromValue": "vineet@beehyv.com",   "resolution": "OK_CustomMatch" }
-            ]
+            ],
+            "recordedResponse":null,
+            "replayedResponse":null
         }
     },
 
@@ -160,10 +172,10 @@
             "floor": 4.459
         },
         "rules": [
-            { "path": "/email",     "dataType": "Str",    "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Regex",  "customization": ".+\\@.+\\..+"},
-            { "path": "/round",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Round", "customization": "2"},
-            { "path": "/ceiling",   "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal",  "extractionMethod": "Ceil", "customization": "2"},
-            { "path": "/floor",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Floor", "customization": "2"}
+            { "path": "/email",     "dataType": "Str",    "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Regex",  "customization": ".+\\@.+\\..+", "arrayCompKeyPath": ""},
+            { "path": "/round",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Round", "customization": "2", "arrayCompKeyPath": ""},
+            { "path": "/ceiling",   "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal",  "extractionMethod": "Ceil", "customization": "2", "arrayCompKeyPath": ""},
+            { "path": "/floor",     "dataType": "Float",  "presenceType": "Required", "comparisonType": "Equal", "extractionMethod": "Floor", "customization": "2", "arrayCompKeyPath": ""}
         ],
         "output": {
             "mt":           "NoMatch",
@@ -173,7 +185,9 @@
                 { "op": "replace",  "path": "/round",   "value": 4.464,                 "fromValue": 4.468,                 "resolution": "ERR_ValMismatch" },
                 { "op": "replace",  "path": "/floor",   "value": 4.459,                 "fromValue": 4.468,                 "resolution": "ERR_ValMismatch" },
                 { "op": "replace",  "path": "/email",   "value": "www.vineetks.in",     "fromValue": "vineet@beehyv.com",   "resolution": "ERR_ValFormatMismatch" }
-            ]
+            ],
+            "recordedResponse":null,
+            "replayedResponse":null
         }
     },
 
@@ -194,7 +208,9 @@
             "diffs": [
                 {"op":"remove","path":"/body/b2","value":{"0":1,"1":3,"2":3},"resolution":"OK_DefaultPT"},
                 {"op":"add","path":"/b3","value":{"a1":"a1v1","a2":15},"resolution":"ERR_NewField"}
-            ]
+            ],
+            "recordedResponse":null,
+            "replayedResponse":null
         }
     },
 
@@ -208,14 +224,16 @@
             "body": { "b1": "test123" }
         },
         "rules": [
-            { "path": "/body/b2",   "dataType": "RptArray", "presenceType": "Optional", "comparisonType": "Equal", "customization": "" }
+            { "path": "/body/b2",   "dataType": "RptArray", "presenceType": "Optional", "comparisonType": "Equal", "customization": "", "arrayCompKeyPath": "" }
         ],
         "output": {
             "mt":           "FuzzyMatch",
             "matchmeta":    "JsonDiff",
             "diffs":[
                 {"op":"remove","path":"/body/b2","value":{"0":1,"1":3,"2":3},"resolution":"OK_Optional"}
-            ]
+            ],
+            "recordedResponse":null,
+            "replayedResponse":null
         }
     },
 
@@ -229,14 +247,16 @@
             "body": { "b1": "test123" }
         },
         "rules": [
-            { "path": "/body/b2",   "dataType": "RptArray", "presenceType": "Required", "comparisonType": "Equal", "customization": "" }
+            { "path": "/body/b2",   "dataType": "RptArray", "presenceType": "Required", "comparisonType": "Equal", "customization": "", "arrayCompKeyPath": "" }
         ],
         "output": {
             "mt":           "NoMatch",
             "matchmeta":    "JsonDiff",
             "diffs": [
                 { "op": "remove",   "path": "/body/b2",  "value": {"0":1,"1":3,"2":3},   "resolution": "ERR_Required" }
-            ]
+            ],
+            "recordedResponse":null,
+            "replayedResponse":null
         }
     },
 
@@ -256,17 +276,17 @@
             "str6": "Monica"
         },
         "rules": [
-            { "path": "/int1",  "dataType": "Str", "presenceType": "Required", "comparisonType": "Equal",           "customization": "" },
-            { "path": "/int2",  "dataType": "Int", "presenceType": "Required", "comparisonType": "Equal",           "customization": "" },
-            { "path": "/int3",  "dataType": "Int", "presenceType": "Optional", "comparisonType": "Equal",           "customization": "" },
-            { "path": "/int4",  "dataType": "Int", "presenceType": "Optional", "comparisonType": "Ignore",          "customization": "" },
-            { "path": "/int5",  "dataType": "Int", "presenceType": "Required", "comparisonType": "Equal",           "customization": "" },
-            { "path": "/str1",  "dataType": "Str", "presenceType": "Required", "comparisonType": "EqualOptional",   "customization": "" },
-            { "path": "/str2",  "dataType": "Str", "presenceType": "Required", "comparisonType": "Ignore",          "customization": "" },
-            { "path": "/str3",  "dataType": "Str", "presenceType": "Optional", "comparisonType": "EqualOptional",         "customization": "" },
-            { "path": "/str4",  "dataType": "Str", "presenceType": "Optional", "comparisonType": "Equal",           "customization": "" },
-            { "path": "/str5",  "dataType": "Str", "presenceType": "Optional", "comparisonType": "EqualOptional",   "customization": "" },
-            { "path": "/str6",  "dataType": "Str", "presenceType": "Optional", "comparisonType": "Ignore",          "customization": "" }
+            { "path": "/int1",  "dataType": "Str", "presenceType": "Required", "comparisonType": "Equal",           "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/int2",  "dataType": "Int", "presenceType": "Required", "comparisonType": "Equal",           "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/int3",  "dataType": "Int", "presenceType": "Optional", "comparisonType": "Equal",           "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/int4",  "dataType": "Int", "presenceType": "Optional", "comparisonType": "Ignore",          "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/int5",  "dataType": "Int", "presenceType": "Required", "comparisonType": "Equal",           "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/str1",  "dataType": "Str", "presenceType": "Required", "comparisonType": "EqualOptional",   "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/str2",  "dataType": "Str", "presenceType": "Required", "comparisonType": "Ignore",          "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/str3",  "dataType": "Str", "presenceType": "Optional", "comparisonType": "EqualOptional",         "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/str4",  "dataType": "Str", "presenceType": "Optional", "comparisonType": "Equal",           "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/str5",  "dataType": "Str", "presenceType": "Optional", "comparisonType": "EqualOptional",   "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/str6",  "dataType": "Str", "presenceType": "Optional", "comparisonType": "Ignore",          "customization": "", "arrayCompKeyPath": "" }
         ],
         "output": {
             "mt":           "NoMatch",
@@ -283,7 +303,9 @@
                 { "op": "add", "path": "/str4", "value": "Monica",  "resolution": "OK_OtherValInvalid"  },
                 { "op": "add", "path": "/str5", "value": "Monica",  "resolution": "OK_OtherValInvalid"  },
                 { "op": "add", "path": "/str6", "value": "Monica",  "resolution": "OK_Ignore"           }
-            ]
+            ],
+            "recordedResponse":null,
+            "replayedResponse":null
         }
     },
 
@@ -308,13 +330,13 @@
             "nrptArr":  [ "string", 123 ]
         },
         "rules": [
-            { "path": "",           "dataType": "Obj",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
-            { "path": "/string",    "dataType": "Str",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
-            { "path": "/int",       "dataType": "Int",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
-            { "path": "/float",     "dataType": "Float",        "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
-            { "path": "/obj",       "dataType": "Obj",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
-            { "path": "/rptArr",    "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
-            { "path": "/nrptArr",   "dataType": "NrptArray",    "presenceType": "Required", "comparisonType": "Ignore", "customization": "" }
+            { "path": "",           "dataType": "Obj",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/string",    "dataType": "Str",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/int",       "dataType": "Int",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/float",     "dataType": "Float",        "presenceType": "Required", "comparisonType": "Ignore", "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/obj",       "dataType": "Obj",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/rptArr",    "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore", "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/nrptArr",   "dataType": "NrptArray",    "presenceType": "Required", "comparisonType": "Ignore", "customization": "", "arrayCompKeyPath": "" }
         ],
         "output" : {
             "mt":           "NoMatch",
@@ -327,7 +349,9 @@
                 { "op": "replace",  "path": "/rptArr",      "value": 123,               "fromValue": {"0" : "dolore","1" : "irure" },             "resolution":"ERR_ValTypeMismatch" },
                 { "op": "replace",  "path": "/nrptArr/0",   "value": "string",          "fromValue": { "id": 0 },                       "resolution":"OK_Ignore" },
                 { "op": "replace",  "path": "/nrptArr/1",   "value": 123,               "fromValue": { "name": "Steele Dominguez" },    "resolution":"OK_Ignore" }
-            ]
+            ],
+            "recordedResponse":null,
+            "replayedResponse":null
         }
     },
 
@@ -357,18 +381,20 @@
             ]
         },
         "rules": [
-            { "path": "",           "dataType": "Obj",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
-            { "path": "/string",    "dataType": "Str",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
-            { "path": "/int",       "dataType": "Int",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
-            { "path": "/float",     "dataType": "Float",        "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
-            { "path": "/obj",       "dataType": "Obj",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
-            { "path": "/rptArr",    "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore", "customization": "" },
-            { "path": "/nrptArr",   "dataType": "NrptArray",    "presenceType": "Required", "comparisonType": "Ignore", "customization": "" }
+            { "path": "",           "dataType": "Obj",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/string",    "dataType": "Str",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/int",       "dataType": "Int",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/float",     "dataType": "Float",        "presenceType": "Required", "comparisonType": "Ignore", "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/obj",       "dataType": "Obj",          "presenceType": "Required", "comparisonType": "Ignore", "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/rptArr",    "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore", "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/nrptArr",   "dataType": "NrptArray",    "presenceType": "Required", "comparisonType": "Ignore", "customization": "", "arrayCompKeyPath": "" }
         ],
         "output": {
             "mt":           "ExactMatch",
             "matchmeta":    "JsonDiff",
-            "diffs":[]
+            "diffs":[],
+            "recordedResponse":null,
+            "replayedResponse":null
         }
     },
 
@@ -404,9 +430,9 @@
             }
         },
         "rules": [
-            { "path": "",               "dataType": "Obj",  "presenceType": "Required", "comparisonType": "Equal",          "customization": "" },
-            { "path": "/obj-1",         "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/obj-1/obj-2",   "dataType": "Obj",  "presenceType": "Required", "comparisonType": "Ignore",         "customization": "" }
+            { "path": "",               "dataType": "Obj",  "presenceType": "Required", "comparisonType": "Equal",          "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/obj-1",         "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/obj-1/obj-2",   "dataType": "Obj",  "presenceType": "Required", "comparisonType": "Ignore",         "customization": "", "arrayCompKeyPath": "" }
         ],
         "output": {
             "mt":           "NoMatch",
@@ -421,7 +447,9 @@
                 { "op": "replace",  "path": "/obj-1/obj-2/string",  "value": "ice cube",    "fromValue": "cube",    "resolution": "OK_Ignore"           },
                 { "op": "replace",  "path": "/obj-1/obj-2/int",     "value": 34,            "fromValue": 35,        "resolution": "OK_Ignore"           },
                 { "op": "replace",  "path": "/obj-1/obj-2/float",   "value": 41.4,          "fromValue": 41.1,      "resolution": "OK_Ignore"           }
-            ]
+            ],
+            "recordedResponse":null,
+            "replayedResponse":null
         }
     },
 
@@ -439,14 +467,14 @@
             "rptArr3":   [ 2.5, "Monica", 5.4]
         },
         "rules": [
-            { "path": "/rptArr0",   "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore",  "customization": "" },
-            { "path": "/rptArr1",   "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore",  "customization": "" },
-            { "path": "/rptArr2",   "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore",  "customization": "" },
-            { "path": "/rptArr3",   "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore",  "customization": "" },
-            { "path": "/rptArr0/*", "dataType": "Int",          "presenceType": "Required", "comparisonType": "Equal",   "customization": "" },
-            { "path": "/rptArr1/*", "dataType": "Int",          "presenceType": "Required", "comparisonType": "Equal",   "customization": "" },
-            { "path": "/rptArr2/*", "dataType": "Str",          "presenceType": "Required", "comparisonType": "Equal",   "customization": "" },
-            { "path": "/rptArr3/*", "dataType": "Float",        "presenceType": "Required", "comparisonType": "Equal",   "customization": "" }
+            { "path": "/rptArr0",   "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore",  "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/rptArr1",   "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore",  "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/rptArr2",   "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore",  "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/rptArr3",   "dataType": "RptArray",     "presenceType": "Required", "comparisonType": "Ignore",  "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/rptArr0/*", "dataType": "Int",          "presenceType": "Required", "comparisonType": "Equal",   "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/rptArr1/*", "dataType": "Int",          "presenceType": "Required", "comparisonType": "Equal",   "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/rptArr2/*", "dataType": "Str",          "presenceType": "Required", "comparisonType": "Equal",   "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/rptArr3/*", "dataType": "Float",        "presenceType": "Required", "comparisonType": "Equal",   "customization": "", "arrayCompKeyPath": "" }
         ],
         "output": {
             "mt":           "NoMatch",
@@ -455,7 +483,9 @@
                 { "op": "replace",  "path": "/rptArr2/2",   "value": 5,         "fromValue":"Joey", "resolution": "ERR_ValTypeMismatch" },
                 { "op": "replace",  "path": "/rptArr1/2",   "value": 4,         "fromValue":3,      "resolution": "ERR_ValMismatch"     },
                 { "op": "replace",  "path": "/rptArr3/1",   "value": "Monica",  "fromValue":6.5,    "resolution": "ERR_ValTypeMismatch" }
-            ]
+            ],
+            "recordedResponse":null,
+            "replayedResponse":null
         }
     },
 
@@ -486,7 +516,9 @@
             "diffs":[
                 {"op":"replace","path":"/display_actors/0","value":"ZELLWEGER, MINNIE","fromValue":"BERRY, KARL","resolution":"OK_DefaultCT"},
                 {"op":"replace","path":"/display_actors/2","value":"BERRY, KARL","fromValue":"ZELLWEGER, MINNIE","resolution":"OK_DefaultCT"}
-            ]
+            ],
+            "recordedResponse":null,
+            "replayedResponse":null
         }
     }
 }
