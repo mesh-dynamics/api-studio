@@ -130,7 +130,7 @@ public class Event implements MDStorable {
 		Validate.notNull(app);
 		Validate.notNull(service);
 		Validate.notNull(instanceId);
-		Validate.notNull(collection);
+		// Validate.notNull(collection); // Disabling for now
 		Validate.notNull(runType);
 		Validate.notNull(timestamp);
 		Validate.notNull(reqId);
