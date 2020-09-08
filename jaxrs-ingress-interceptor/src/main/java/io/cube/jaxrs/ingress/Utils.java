@@ -62,6 +62,8 @@ public class Utils {
 			metaMap.add(Constants.RUN_TYPE_FIELD, Constants.INTENT_RECORD);
 		} else if (config.intentResolver.isIntentToMock()) {
 			metaMap.add(Constants.RUN_TYPE_FIELD, Constants.REPLAY);
+		} else {
+			metaMap.add(Constants.RUN_TYPE_FIELD, Constants.NO_INTENT);
 		}
 		metaMap.add(Constants.CUSTOMER_ID_FIELD, CommonConfig.customerId);
 		metaMap.add(Constants.APP_FIELD, CommonConfig.app);
