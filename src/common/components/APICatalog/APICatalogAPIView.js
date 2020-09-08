@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { connect } from "react-redux";
 import { APICountTable } from './APICountTable'
 import { APIRequestsTable } from './APIRequestsTable'
-import './APICatalog.css';
+import './APICatalog.scss';
 import { getAPICount } from '../../utils/api-catalog/api-catalog-utils';
 
 class APICatalogAPIView extends Component {

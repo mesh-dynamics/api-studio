@@ -3,7 +3,7 @@ import { history } from '../../helpers';
 import ReactTable from "react-table";
 import Modal from "react-bootstrap/lib/Modal";
 import { cubeService } from "../../services";
-import './APICatalog.css';
+import './APICatalog.scss';
 import _ from "lodash";
 import { apiCatalogActions } from '../../actions/api-catalog.actions';
 import { connect } from "react-redux";

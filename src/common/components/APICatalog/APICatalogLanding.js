@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import './APICatalog.css';
+import './APICatalog.scss';
 
 export default class APICatalogLanding extends Component {
 

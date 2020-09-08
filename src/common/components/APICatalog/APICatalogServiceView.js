@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { APIListTable } from './APIListTable'
-import './APICatalog.css';
+import './APICatalog.scss';
 
 class APICatalogServiceView extends Component {
     componentDidMount() {

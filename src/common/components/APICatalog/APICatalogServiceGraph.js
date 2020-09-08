@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import CytoscapeReactWrapper from '../Cytoscape/CytoscapeReactWrapper';
 import { connect } from "react-redux";
-import './APICatalog.css';
+import './APICatalog.scss';
 
 
 class APICatalogServiceGraph extends Component {
