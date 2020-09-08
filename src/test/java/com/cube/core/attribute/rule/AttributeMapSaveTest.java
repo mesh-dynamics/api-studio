@@ -25,7 +25,7 @@ public class AttributeMapSaveTest {
             //
             ruleMap.put("/timestamp" , new TemplateEntry("/timestamp", CompareTemplate.DataType.Default,
                 CompareTemplate.PresenceType.Default, CompareTemplate.ComparisonType.Ignore
-                , CompareTemplate.ExtractionMethod.Default, Optional.empty()));
+                , CompareTemplate.ExtractionMethod.Default, Optional.empty(), Optional.empty()));
 
             AttributeRuleMap attributeRuleMap = new AttributeRuleMap(ruleMap);
 
