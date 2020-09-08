@@ -220,7 +220,7 @@ public class JsonDataObj implements DataObj {
 			if (val != null && (val.isTextual() || val.isBinary())) {
 				// parse it as per mime type
 				// currently handling only json type
-				if (mimetype.startsWith(MediaType.APPLICATION_JSON)) {
+				if (mimetype.startsWith(MediaType.APPLICATION_JSON) || mimetype.startsWith("application/vnd.api+json")) {
 					try {
 						// This will work irrespective if the val is a TextNode (if unwrapped in
 						// collector or CubeServer after serialization by agent)
@@ -332,7 +332,7 @@ public class JsonDataObj implements DataObj {
 			if (val != null && !val.isValueNode()) {
 				// convert to string
 				// currently handling only json type
-				if (mimetype.startsWith(MediaType.APPLICATION_JSON)) {
+				if (mimetype.startsWith(MediaType.APPLICATION_JSON) || mimetype.startsWith("application/vnd.api+json")) {
 					if (asByteArray) {
 						valParentObj.set(fieldName, new BinaryNode(val.toString()
 							.getBytes(StandardCharsets.UTF_8)));
