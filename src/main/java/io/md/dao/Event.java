@@ -77,7 +77,7 @@ public class Event implements MDStorable {
 		this.recordingType = recordingType;
 		this.metaData = metaData;
 		this.runId = runId;
-		validateEvent();
+		//validateEvent();
 	}
 
 	/**
