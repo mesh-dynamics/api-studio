@@ -53,51 +53,43 @@ public class RedisPubSub extends JedisPubSub {
 			String actualKey = message.split(":")[1];
 			try (Jedis jedis = jedisPool.getResource()) {
 				String existingRecordOrReplay = jedis.get(actualKey);
-				RecordOrReplay recordOrReplay = jsonMapper.readValue(existingRecordOrReplay,
-					RecordOrReplay.class);
-				if (recordOrReplay.isRecording()) {
-					Recording recording = recordOrReplay.recording.get();
-					if (recording.status == RecordingStatus.Running) {
-						recording.status = RecordingStatus.Completed;
-						recording.updateTimestamp = Optional.of(Instant.now());
-						LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,
-							"Marking Recording Completed in Solr", Constants.RECORDING_ID,
-							recording.id)));
-						rrStore.saveRecording(recording);
-					}
-				} else {
-					Replay replay = recordOrReplay.replay.get();
-					String statusKey = Constants.REDIS_STATUS_KEY_PREFIX + actualKey;
-					String currentStatus = jedis.get(statusKey);
-					if (currentStatus != null && !currentStatus.equals("nil")) {
-                        if (currentStatus.equals(ReplayStatus.Completed.toString())) {
-                            replay.status = ReplayStatus.Completed;
-                        } else if (currentStatus.equals(ReplayStatus.Error.toString())) {
-                            replay.status = ReplayStatus.Error;
-                        } else {
-                            LOGGER.error("Got replay status of " + currentStatus + ", setting to Completed");
-                            replay.status = ReplayStatus.Completed;
-                        }
-                        jedis.del(statusKey);
-                        rrStore.saveReplay(replay);
+				if (existingRecordOrReplay != null  && !existingRecordOrReplay.equals("nil")) {
+					RecordOrReplay recordOrReplay = jsonMapper.readValue(existingRecordOrReplay,
+						RecordOrReplay.class);
+					if (recordOrReplay.isRecording()) {
+						Recording recording = recordOrReplay.recording.get();
+						if (recording.status == RecordingStatus.Running) {
+							recording.status = RecordingStatus.Completed;
+							recording.updateTimestamp = Optional.of(Instant.now());
+							LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE,
+								"Marking Recording Completed in Solr", Constants.RECORDING_ID,
+								recording.id)));
+							rrStore.saveRecording(recording);
+						}
 					} else {
-						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-							"No status key in redis, probably deleted by someone else"
-							, Constants.REPLAY_ID_FIELD, replay.replayId)));
-						// just to be safe check that status in Solr is not Running
-						if (replay.status == ReplayStatus.Running) {
-						    LOGGER.error(Utils.createLogMessasge(
-						        Constants.MESSAGE, "Status in solr is still Running for replay, setting to completed",
-                                Constants.REPLAY_ID_FIELD, replay.replayId));
-                            replay.status = ReplayStatus.Completed;
-                            rrStore.saveReplay(replay);
-                        }
+						Replay replay = recordOrReplay.replay.get();
+						String statusKey = Constants.REDIS_STATUS_KEY_PREFIX + actualKey;
+						String currentStatus = jedis.get(statusKey);
+						if (currentStatus != null && !currentStatus.equals("nil")) {
+							if (currentStatus.equals(ReplayStatus.Completed.toString())) {
+								replay.status = ReplayStatus.Completed;
+							} else if (currentStatus.equals(ReplayStatus.Error.toString())) {
+								replay.status = ReplayStatus.Error;
+							}
+							jedis.del(statusKey);
+							rrStore.saveReplay(replay);
+						} else {
+							LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+								"No status key in redis, probably deleted by someone else"
+								, Constants.REPLAY_ID_FIELD, replay.replayId)));
+						}
 					}
+					// delete this only after solr is updated above
+					jedis.del(actualKey);
 				}
-				// delete this only after solr is updated above
-                jedis.del(actualKey);
-            } catch (Exception e) {
-				e.printStackTrace();
+            } catch (Throwable e) {
+				LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+					"Quitting subscriber thread")) ,e);
 			}
 			//ReqRespStore.deleteRecording()
 		}

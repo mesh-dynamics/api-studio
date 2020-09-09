@@ -41,7 +41,7 @@ public class TemplateSerializationTest {
                 CompareTemplate.PresenceType.Required,
                 CompareTemplate.ComparisonType.EqualOptional,
                 CompareTemplate.ExtractionMethod.Default,
-                Optional.empty());
+                Optional.empty(), Optional.empty());
         try {
             String json = mapper.writeValueAsString(te);
             System.out.println(json);
