@@ -63,6 +63,7 @@ const refreshAuthLogic = (failedRequest) => {
             mode: 'cors'
         }).then(async (response) => {
             const data = await response.json();
+            localStorage.setItem('user', JSON.stringify(data));
             store.dispatch(authActions.setUser(data));
 
             if (PLATFORM_ELECTRON) {
