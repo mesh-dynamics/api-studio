@@ -40,7 +40,7 @@ public class MockServiceCollectionController {
     validation.validateCustomerName(request,recording.get().customerId);
 
     String path = getPath(request.getRequestURI(), replayCollection, recordCollection, customerId, app, recording.get().id);
-    path = getPathForHttpMethod(path , request.getMethod()  , traceId, service);
+    path = cubeServerService.getPathForHttpMethod(path , request.getMethod()  , traceId, service);
 
     return cubeServerService.fetchResponse(request, body, HttpMethod.POST , path);
   }
@@ -60,7 +60,7 @@ public class MockServiceCollectionController {
     validation.validateCustomerName(request,recording.get().customerId);
 
     String path = getPathForMockWithRunId(request.getRequestURI(), replayCollection, recordCollection, customerId, app, recording.get().id);
-    path = getPathForHttpMethod(path , request.getMethod() , traceId, service );
+    path = cubeServerService.getPathForHttpMethod(path , request.getMethod() , traceId, service );
 
     return cubeServerService.fetchResponse(request, body, HttpMethod.POST , path);
   }
@@ -77,10 +77,5 @@ public class MockServiceCollectionController {
     return uri.replace(String.format("/api/msc/mockWithRunId/%s/%s/%s/%s",
         replayCollection, recordCollection, customerId, app),
         String.format("/ms/mockWithRunId/%s/%s", replayCollection, recordingId));
-  }
-
-  private String getPathForHttpMethod(String uri , String method , String... lastParams){
-    String path = String.join("/" , lastParams);
-    return uri.replace(path , path + "/" + method);
   }
 }

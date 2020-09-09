@@ -1,41 +1,22 @@
 package com.cubeui.backend.web.external;
 
-import static org.springframework.http.ResponseEntity.status;
-
+import com.cubeui.backend.domain.FnReqResponse;
+import com.cubeui.backend.security.Validation;
+import com.cubeui.backend.service.CubeServerService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.md.dao.Event;
 import io.md.dao.Recording;
-
-import java.io.IOException;
-import java.util.Optional;
-
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.cubeui.backend.domain.FnReqResponse;
-import com.cubeui.backend.security.Validation;
-import com.cubeui.backend.service.CubeServerService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.servlet.http.HttpServletRequest;
+import java.util.Optional;
 
-import io.md.dao.Event;
-
-/*
-@Bean
-public FilterRegistrationBean<GkFilter> loggingFilter(){
-    FilterRegistrationBean<GkFilter> registrationBean
-            = new FilterRegistrationBean<>();
-
-    registrationBean.setFilter(new RequestResponseLoggingFilter());
-    registrationBean.addUrlPatterns("/users/*");
-
-    return registrationBean;
-}*/
+import static org.springframework.http.ResponseEntity.status;
 
 @RestController
 @RequestMapping("/api/ms")
@@ -53,7 +34,7 @@ public class MockServiceController {
                               @PathVariable String app, @PathVariable String instanceId, @PathVariable String service) {
         validation.validateCustomerName(request,customerId);
 
-        String path = getPathForHttpMethod(request.getRequestURI() , request.getMethod() , app, instanceId , service);
+        String path = cubeServerService.getPathForHttpMethod(request.getRequestURI() , request.getMethod() , app, instanceId , service);
         return cubeServerService.fetchResponse(request, body ,HttpMethod.POST , path );
     }
 
@@ -98,13 +79,7 @@ public class MockServiceController {
                 .body("Error while retrieving Recording Object for recordingId=" + recordingId);
         validation.validateCustomerName(request,recording.get().customerId);
 
-        String path = getPathForHttpMethod(request.getRequestURI() , request.getMethod() , recordingId , traceId , service);
+        String path = cubeServerService.getPathForHttpMethod(request.getRequestURI() , request.getMethod() , recordingId , traceId , service);
         return cubeServerService.fetchResponse(request, body , HttpMethod.POST , path);
     }
-
-    private String getPathForHttpMethod(String uri , String method , String... lastParams){
-        String path = String.join("/" ,  lastParams);
-        return uri.replace(path , path + "/" + method).replace("/api" , "");
-    }
-
 }
