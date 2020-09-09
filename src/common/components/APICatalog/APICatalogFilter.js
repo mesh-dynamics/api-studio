@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import DatePicker from 'react-datepicker';
 import Modal from "react-bootstrap/es/Modal";
-import './APICatalog.css';
+import './APICatalog.scss';
 import { history } from '../../helpers';
 import { connect } from "react-redux";
 import _ from "lodash";
