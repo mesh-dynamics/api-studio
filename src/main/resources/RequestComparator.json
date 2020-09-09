@@ -3,9 +3,9 @@
         "req1": "testRequest1",
         "req2": "testRequest1",
         "rules": [
-            { "path": "/body",          "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/body/query",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
-            { "path": "/method",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" },
+            { "path": "/body",          "dataType": "Obj",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/body/query",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "", "arrayCompKeyPath": "" },
+            { "path": "/method",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "", "arrayCompKeyPath": "" },
         ],
         "output": "ExactMatch"
     },
@@ -15,7 +15,7 @@
         "req1": "testRequest1",
         "req2": "testRequestMethodChanged",
         "rules": [
-            { "path": "/method",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "" },
+            { "path": "/method",        "dataType": "Str",  "presenceType": "Required", "comparisonType": "Equal",  "customization": "", "arrayCompKeyPath": "" },
         ],
         "output": "NoMatch"
     },
@@ -24,7 +24,7 @@
         "req1": "testRequest1",
         "req2": "testRequest1",
         "rules": [
-            { "path": "/body/query",    "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
+            { "path": "/body/query",    "dataType": "Int",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "", "arrayCompKeyPath": "" }
         ],
         "output": "NoMatch"
     },
@@ -33,7 +33,7 @@
         "req1": "testRequest1",
         "req2": "testRequest1",
         "rules": [
-            { "path": "/body/param",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "" }
+            { "path": "/body/param",    "dataType": "Str",  "presenceType": "Required", "comparisonType": "EqualOptional",  "customization": "", "arrayCompKeyPath": "" }
         ],
         "output": "NoMatch"
     },
@@ -42,11 +42,11 @@
         "req1": "testRequest1",
         "req2": "testRequest1",
         "rules": [
-            { "path": "/hdrs/accept",        "dataType": "RptArray",  "presenceType": "Required", "comparisonType": "Ignore",  "customization": "" },
+            { "path": "/hdrs/accept",        "dataType": "RptArray",  "presenceType": "Required", "comparisonType": "Ignore",  "customization": "", "arrayCompKeyPath": "" },
             { "path": "/queryParams/filmId",    "dataType": "RptArray",  "presenceType": "Required", "comparisonType":
-            "Ignore",  "customization": "" },
+            "Ignore",  "customization": "", "arrayCompKeyPath": "" },
             { "path": "/formParams/filmName",  "dataType": "RptArray",  "presenceType": "Required", "comparisonType":
-            "Ignore",  "customization": "" }
+            "Ignore",  "customization": "", "arrayCompKeyPath": "" }
         ],
         "output": "FuzzyMatch"
     },
@@ -56,11 +56,11 @@
         "req2": "testRequest1",
         "rules": [
             { "path": "/hdrs/accept",        "dataType": "RptArray",  "presenceType": "Required", "comparisonType": "Equal",
-            "customization": ""},
+            "customization": "", "arrayCompKeyPath": ""},
             { "path": "/queryParams/filmId",    "dataType": "RptArray",  "presenceType": "Required", "comparisonType":
-            "Equal", "customization": "" },
+            "Equal", "customization": "", "arrayCompKeyPath": "" },
             { "path": "/formParams/filmName",  "dataType": "RptArray",  "presenceType": "Required", "comparisonType":
-            "Equal",  "customization": "" }
+            "Equal",  "customization": "", "arrayCompKeyPath": "" }
         ],
         "output":  "NoMatch"
     },

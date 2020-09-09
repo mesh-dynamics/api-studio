@@ -52,7 +52,7 @@ public class AttributeMapTest {
 		//
 		ruleMap.put("/timestamp" , new TemplateEntry("/timestamp", CompareTemplate.DataType.Default,
 			CompareTemplate.PresenceType.Default, CompareTemplate.ComparisonType.Ignore
-			, CompareTemplate.ExtractionMethod.Default, Optional.empty()));
+			, CompareTemplate.ExtractionMethod.Default, Optional.empty(), Optional.empty()));
 
 		AttributeRuleMap attributeRuleMap = new AttributeRuleMap(ruleMap);
 
@@ -106,7 +106,7 @@ public class AttributeMapTest {
 			OperationType.REPLACE, "/timestamp",
 			Optional.of(new TemplateEntry("/timestamp", CompareTemplate.DataType.Default,
 				CompareTemplate.PresenceType.Default, ComparisonType.Equal
-				, CompareTemplate.ExtractionMethod.Default, Optional.empty())), RuleType.ATTRIBUTERULE
+				, CompareTemplate.ExtractionMethod.Default, Optional.empty(), Optional.empty())), RuleType.ATTRIBUTERULE
 		);
 
 		SingleTemplateUpdateOperation singleTemplateUpdateOperation = new SingleTemplateUpdateOperation(
