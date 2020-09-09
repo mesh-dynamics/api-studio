@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -161,22 +162,14 @@ public class JsonComparator implements Comparator {
 		TreeMap<String, Diff> diffTreeMap = new TreeMap<>();
 		result.forEach(diffEntry -> diffTreeMap.put(diffEntry.path , diffEntry));
 
-        List<String> pathList = new ArrayList<>(pathsToReconstructUnion);
-        pathList.sort(new java.util.Comparator<String>() {
+		List<Pair<String, Integer>> pathVsPathLength = new ArrayList<>();
 
-            private int pathLength(String path) {
-                return path.split("/").length;
-            }
+		pathsToReconstructUnion.forEach(path -> pathVsPathLength.add(Pair.of(path , path.split("/").length)));
 
-            @Override
-            public int compare(String o1, String o2) {
-                return Integer.compare(pathLength(o2), pathLength(o1));
-            }
-        });
+		pathVsPathLength.sort((o1, o2) -> Integer.compare(o2.getRight(), o1.getRight()));
 
-
-        pathList.forEach(path -> {
-        	Utils.reconstructArray(lhsConverted , rhsConverted, path,  diffTreeMap, jsonMapper);
+        pathVsPathLength.forEach(path -> {
+        	Utils.reconstructArray(lhsConverted , rhsConverted, path.getLeft(),  diffTreeMap, jsonMapper);
         });
 
         MatchType mt = (numerrs > 0) ? MatchType.NoMatch :
