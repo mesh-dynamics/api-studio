@@ -67,25 +67,12 @@ public class MockServiceHTTP {
         return Response.ok().type(MediaType.APPLICATION_JSON).entity((new JSONObject(respMap)).toString()).build();
     }
 
-	@GET
-    @Path("{customerId}/{app}/{instanceId}/{service}/{var:.+}")
-    public Response get(@Context UriInfo ui, @PathParam("var") String path,
-                        @Context HttpHeaders headers,
-                        @PathParam("customerId") String customerId,
-                        @PathParam("app") String app,
-                        @PathParam("instanceId") String instanceId,
-                        @PathParam("service") String service,
-                        String body) {
-        LOGGER.debug(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s", customerId, app, path, ui.toString()));
-        return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service,
-            HttpMethod.GET, body, headers, Optional.empty(), Optional.empty());
-    }
-
 	// TODO: unify the following two methods and extend them to support all @Consumes types -- not just two.
 	// An example here: https://stackoverflow.com/questions/27707724/consume-multiple-resources-in-a-restful-web-service
 
-	@POST
-    @Path("{customerId}/{app}/{instanceId}/{service}/{var:.+}")
+    @POST
+    @Path("{customerId}/{app}/{instanceId}/{service}/{method}/{var:.+}")
+    @Consumes(MediaType.WILDCARD)
     public Response postForms(@Context UriInfo ui,
                               @Context HttpHeaders headers,
                               @PathParam("var") String path,
@@ -93,10 +80,11 @@ public class MockServiceHTTP {
                               @PathParam("app") String app,
                               @PathParam("instanceId") String instanceId,
                               @PathParam("service") String service,
+                              @PathParam("method") String httpMethod,
                               String body) {
         LOGGER.info(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s, body: %s", customerId, app, path,
             ui.toString(), body));
-        return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service, HttpMethod.POST, body, headers, Optional.empty(), Optional.empty());
+        return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service, httpMethod , body, headers, Optional.empty(), Optional.empty());
     }
 
 
@@ -203,41 +191,15 @@ public class MockServiceHTTP {
         }
     }
 
-    @GET
-    @Path("mockWithCollection/{replayCollection}/{recordingId}/{traceId}/{service}/{var:.+}")
-    public Response getmockWithCollection(@Context UriInfo ui, @PathParam("var") String path,
-        @Context HttpHeaders headers,
-        @PathParam("replayCollection") String replayCollection,
-        @PathParam("recordingId") String recordingId,
-        @PathParam("traceId") String traceId,
-        @PathParam("service") String service,
-        String body) {
-	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-	    Optional<String> runId = Optional.ofNullable(queryParams.getFirst(Constants.RUN_ID_FIELD));
-
-	    LOGGER.info(String.format(" path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordingId: %s", path,
-            ui.toString(), body, replayCollection, recordingId));
-        Optional<Recording> optionalRecording = rrstore.getRecording(recordingId);
-        if(optionalRecording.isEmpty()) {
-            LOGGER.error(new ObjectMessage(
-                Map.of(
-                    Constants.RECORDING_ID, recordingId,
-                    Constants.SERVICE_FIELD, service)));
-            return notFound();
-        }
-        Recording recording = optionalRecording.get();
-        return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            HttpMethod.GET, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId)), Optional.of(traceId));
-    }
-
     @POST
-    @Path("mockWithCollection/{replayCollection}/{recordingId}/{traceId}/{service}/{var:.+}")
+    @Path("mockWithCollection/{replayCollection}/{recordingId}/{traceId}/{service}/{method}/{var:.+}")
+    @Consumes(MediaType.WILDCARD)
     public Response postMockWithCollection(@Context UriInfo ui, @PathParam("var") String path,
         @Context HttpHeaders headers,
         @PathParam("replayCollection") String replayCollection,
         @PathParam("recordingId") String recordingId,
         @PathParam("traceId") String traceId,
-        @PathParam("service") String service,
+        @PathParam("service") String service, @PathParam("method") String httpMethod,
         String body) {
 	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
 	    Optional<String> runId = Optional.ofNullable(queryParams.getFirst(Constants.RUN_ID_FIELD));
@@ -254,45 +216,19 @@ public class MockServiceHTTP {
         }
         Recording recording = optionalRecording.get();
         return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            HttpMethod.POST, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId)), Optional.of(traceId));
-    }
-
-    @GET
-    @Path("mockWithRunId/{replayCollection}/{recordingId}/{traceId}/{runId}/{service}/{var:.+}")
-    public Response getMockWithRunId(@Context UriInfo ui, @PathParam("var") String path,
-        @Context HttpHeaders headers,
-        @PathParam("replayCollection") String replayCollection,
-        @PathParam("recordingId") String recordingId,
-        @PathParam("traceId") String traceId,
-        @PathParam("service") String service,
-        @PathParam("runId") String runId,
-        String body) {
-        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-
-        LOGGER.info(String.format(" path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordingId: %s", path,
-            ui.toString(), body, replayCollection, recordingId));
-        Optional<Recording> optionalRecording = rrstore.getRecording(recordingId);
-        if(optionalRecording.isEmpty()) {
-            LOGGER.error(new ObjectMessage(
-                Map.of(
-                    Constants.RECORDING_ID, recordingId,
-                    Constants.SERVICE_FIELD, service)));
-            return notFound();
-        }
-        Recording recording = optionalRecording.get();
-        return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            HttpMethod.GET, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, Optional.of(runId))), Optional.of(traceId));
+            httpMethod , body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId)), Optional.of(traceId));
     }
 
     @POST
-    @Path("mockWithRunId/{replayCollection}/{recordingId}/{traceId}/{runId}/{service}/{var:.+}")
+    @Path("mockWithRunId/{replayCollection}/{recordingId}/{traceId}/{runId}/{service}/{method}/{var:.+}")
+    @Consumes(MediaType.WILDCARD)
     public Response postMockWithRunId(@Context UriInfo ui, @PathParam("var") String path,
         @Context HttpHeaders headers,
         @PathParam("replayCollection") String replayCollection,
         @PathParam("recordingId") String recordingId,
         @PathParam("traceId") String traceId,
         @PathParam("service") String service,
-        @PathParam("runId") String runId,
+        @PathParam("runId") String runId , @PathParam("method") String httpMethod,
         String body) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
 
@@ -308,7 +244,7 @@ public class MockServiceHTTP {
         }
         Recording recording = optionalRecording.get();
         return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            HttpMethod.POST, body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, Optional.of(runId))), Optional.of(traceId));
+            httpMethod , body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, Optional.of(runId))), Optional.of(traceId));
     }
 
 
