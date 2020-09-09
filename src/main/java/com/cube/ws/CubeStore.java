@@ -364,6 +364,14 @@ public class CubeStore {
     @Path("/storeEvent")
     @Consumes({MediaType.APPLICATION_JSON})
     public Response storeEvent(Event event) {
+	    try {
+	        event.validateEvent();
+      } catch (InvalidEventException e) {
+          LOGGER.error(new ObjectMessage(
+              Map.of(Constants.MESSAGE, "Invalid Event")), e);
+          return Response.status(Status.BAD_REQUEST).entity(Utils.buildErrorResponse(
+              Status.BAD_REQUEST.toString(),Constants.ERROR,  e.getMessage())).build();
+      }
 	    eventQueue.enqueue(event);
 	    /*
         try {
@@ -417,9 +425,14 @@ public class CubeStore {
                 return 0;
             }
             event = wrapperEvent.cubeEvent;
+            event.validateEvent();
         } catch (IOException e) {
             LOGGER.error(new ObjectMessage(
                 Map.of(Constants.MESSAGE, "Error parsing Event JSON")),e);
+            return 0;
+        }catch (InvalidEventException e) {
+            LOGGER.error(new ObjectMessage(
+                Map.of(Constants.MESSAGE, "Invalid Event")), e);
             return 0;
         }
 
@@ -1435,17 +1448,19 @@ public class CubeStore {
                 for (UserReqRespContainer userReqRespContainer : userReqRespContainers) {
                     Event response = userReqRespContainer.response;
                     Event request = userReqRespContainer.request;
-                    String traceId = request.getTraceId();
-                    if (rec.recordingType == RecordingType.UserGolden) {
-                        String oldTraceId = request.getTraceId();
-                        rrstore.deleteReqResByTraceId(oldTraceId, rec.collection);
-                        rrstore.commit();
-                        traceId = generatedTraceId;
-                    }
-
-                    TemplateKey tkey = new TemplateKey(rec.templateVersion, request.customerId,
-                        request.app, request.service, request.apiPath, Type.RequestMatch);
                     try {
+                        request.validateEvent();
+                        response.validateEvent();
+                        String traceId = request.getTraceId();
+                        if (rec.recordingType == RecordingType.UserGolden) {
+                            String oldTraceId = request.getTraceId();
+                            rrstore.deleteReqResByTraceId(oldTraceId, rec.collection);
+                            rrstore.commit();
+                            traceId = generatedTraceId;
+                        }
+
+                        TemplateKey tkey = new TemplateKey(rec.templateVersion, request.customerId,
+                            request.app, request.service, request.apiPath, Type.RequestMatch);
                         Comparator comparator = rrstore
                             .getComparator(tkey, request.eventType);
                         final String reqId = io.md.utils.Utils.generateRequestId(
@@ -1511,8 +1526,8 @@ public class CubeStore {
                         LOGGER.error(new ObjectMessage(
                             Map.of(Constants.MESSAGE, "Invalid Event",
                                 Constants.RECORDING_ID, recordingId)), e);
-                        return Response.serverError().entity("Invalid Event :: "
-                            + e.getMessage()).build();
+                        return Response.status(Status.BAD_REQUEST).entity(Utils.buildErrorResponse(
+                            Status.BAD_REQUEST.toString(),Constants.ERROR,  e.getMessage())).build();
                     } catch (JsonProcessingException e) {
                         LOGGER.error(new ObjectMessage(
                             Map.of(Constants.MESSAGE, "Error while creating response",
