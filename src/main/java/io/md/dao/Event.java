@@ -77,7 +77,6 @@ public class Event implements MDStorable {
 		this.recordingType = recordingType;
 		this.metaData = metaData;
 		this.runId = runId;
-		//validateEvent();
 	}
 
 	/**
@@ -125,22 +124,26 @@ public class Event implements MDStorable {
 		}
 	}
 
-	public void validateEvent() {
-		Validate.notNull(customerId);
-		Validate.notNull(app);
-		Validate.notNull(service);
-		Validate.notNull(instanceId);
-		// Validate.notNull(collection); // Disabling for now
-		Validate.notNull(runType);
-		Validate.notNull(timestamp);
-		Validate.notNull(reqId);
-		Validate.notNull(apiPath);
-		Validate.notNull(eventType);
-		if(eventType != EventType.ThriftResponse && eventType != EventType.ThriftRequest ) {
-			Validate.notNull(traceId);
+	public void validateEvent() throws InvalidEventException{
+		try {
+			Validate.notNull(customerId);
+			Validate.notNull(app);
+			Validate.notNull(service);
+			Validate.notNull(instanceId);
+			Validate.notNull(collection);
+			Validate.notNull(runType);
+			Validate.notNull(timestamp);
+			Validate.notNull(reqId);
+			Validate.notNull(apiPath);
+			Validate.notNull(eventType);
+			if (eventType != EventType.ThriftResponse && eventType != EventType.ThriftRequest) {
+				Validate.notNull(traceId);
+			}
+			Validate.notNull(payload);
+			Validate.isTrue(!payload.isRawPayloadEmpty());
+		} catch (Exception ex) {
+			throw new InvalidEventException("Invalid Event Object " + ex.getMessage(), ex);
 		}
-		Validate.notNull(payload);
-		Validate.isTrue(!payload.isRawPayloadEmpty());
 
 	}
 
@@ -473,6 +476,14 @@ public class Event implements MDStorable {
 
 
 		public static class InvalidEventException extends Exception {
+
+			public InvalidEventException() {}
+			public InvalidEventException(String message) {
+				super(message);
+			}
+			public InvalidEventException(String message, Exception ex) {
+				super(message, ex);
+			}
 
 		}
 	}
