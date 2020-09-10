@@ -23,16 +23,14 @@ import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
 import io.md.core.TemplateKey;
 import io.md.dao.ReqRespUpdateOperation.OperationType;
-import io.md.services.DataStore;
+import io.md.utils.Constants;
 
-import com.cube.cache.ComparatorCache;
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateEntryOperation;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
-import com.cube.utils.Constants;
 
 public class TemplateSetTransformer {
 

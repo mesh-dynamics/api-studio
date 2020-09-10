@@ -7,9 +7,8 @@ import java.util.Optional;
 import javax.ws.rs.core.MultivaluedMap;
 
 import io.md.core.Comparator;
-
-import com.cube.core.Utils;
-import com.cube.utils.Constants;
+import io.md.core.Utils;
+import io.md.utils.Constants;
 
 public class AnalysisMatchResultQuery {
 

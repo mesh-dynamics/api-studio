@@ -10,10 +10,9 @@ import com.lmax.disruptor.EventHandler;
 
 import io.md.dao.Event;
 import io.md.dao.MDStorable;
+import io.md.utils.Constants;
 
 import com.cube.dao.ReqRespStore;
-import com.cube.dao.ReqRespStore.ReqResp;
-import com.cube.utils.Constants;
 
 public class StoreConsumer {
 	private static final Logger LOGGER = LogManager.getLogger(StoreConsumer.class);

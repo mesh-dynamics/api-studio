@@ -1,7 +1,7 @@
 package com.cube.core;
 
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
-import static io.md.core.TemplateKey.*;
+import static io.md.core.TemplateKey.Type;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,7 +23,6 @@ import io.md.core.TemplateEntry;
 import io.md.core.TemplateKey;
 
 import com.cube.dao.ReqRespStore;
-import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
 public class TestPrefixPathQuerySolr {

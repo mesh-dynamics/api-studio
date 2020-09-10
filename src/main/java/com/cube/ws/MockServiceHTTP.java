@@ -1,9 +1,8 @@
 package com.cube.ws;
 
-import static com.cube.core.Utils.buildErrorResponse;
+import static io.md.core.Utils.buildErrorResponse;
 
 import io.md.dao.MockWithCollection;
-import io.md.dao.RecordOrReplay;
 import io.md.dao.Recording;
 import java.time.Instant;
 import java.util.Arrays;
@@ -43,10 +42,11 @@ import io.md.services.FnResponse;
 import io.md.services.MockResponse;
 import io.md.services.Mocker;
 import io.md.services.RealMocker;
+import io.md.utils.Constants;
+import io.md.core.Utils;
 
-import com.cube.core.Utils;
+import com.cube.core.ServerUtils;
 import com.cube.dao.ReqRespStore;
-import com.cube.utils.Constants;
 
 /**
  * @author prasad
@@ -61,7 +61,7 @@ public class MockServiceHTTP {
 	@GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response health() {
-        Map solrHealth = WSUtils.solrHealthCheck(config.solr);
+        Map solrHealth = ServerUtils.solrHealthCheck(config.solr);
         Map respMap = new HashMap(solrHealth);
         respMap.put(Constants.SERVICE_HEALTH_STATUS, "MS is healthy");
         return Response.ok().type(MediaType.APPLICATION_JSON).entity((new JSONObject(respMap)).toString()).build();
@@ -157,7 +157,7 @@ public class MockServiceHTTP {
                     LOGGER.info(new ObjectMessage(Map.of("state" , "Before Mock", "func_name" ,  fnReqResponse.name ,
                         "trace_id" , traceIdString , "arg_hash" , fnReqResponse.argsHash[counter.x] , "arg_val_" + counter.x++ , argVal))));
             }
-            Utils.preProcess(fnReqResponse);
+            ServerUtils.preProcess(fnReqResponse);
             Optional<String> collection = rrstore.getCurrentRecordingCollection(Optional.of(fnReqResponse.customerId),
                 Optional.of(fnReqResponse.app), Optional.of(fnReqResponse.instanceId));
             return collection.map(collec ->
