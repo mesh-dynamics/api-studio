@@ -37,9 +37,8 @@ import io.md.injection.DynamicInjectionConfig.ExtractionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta.HTTPMethodType;
 
-import com.cube.drivers.AbstractReplayDriver;
-import com.cube.utils.Constants;
-import com.cube.utils.InjectionVarResolver;
+import io.md.drivers.AbstractReplayDriver;
+import io.md.utils.InjectionVarResolver;
 import com.cube.ws.Config;
 
 public class DynamicInjectionTest {

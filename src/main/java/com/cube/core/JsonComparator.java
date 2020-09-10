@@ -42,6 +42,7 @@ import io.md.core.TemplateEntry;
 import io.md.dao.DataObj;
 import io.md.dao.JsonDataObj;
 import io.md.dao.LazyParseAbstractPayload;
+import io.md.core.Utils;
 
 import com.cube.ws.Config;
 
@@ -105,9 +106,9 @@ public class JsonComparator implements Comparator {
 		Set<String> arrayPathsToReconstructRHS = new HashSet<>();
 
         //convert arrays to objects
-        JsonNode lhsConverted = Utils.convertArrayToObject(lhsRoot, template, "", ""
+        JsonNode lhsConverted = ServerUtils.convertArrayToObject(lhsRoot, template, "", ""
 	        , arrayPathsToReconstructLHS);
-        JsonNode rhsConverted = Utils.convertArrayToObject(rhsRoot, template, "", ""
+        JsonNode rhsConverted = ServerUtils.convertArrayToObject(rhsRoot, template, "", ""
 	        ,arrayPathsToReconstructRHS);
 
         // Now diff new (rhs) with the old (lhs)
@@ -169,7 +170,7 @@ public class JsonComparator implements Comparator {
 		pathVsPathLength.sort((o1, o2) -> Integer.compare(o2.getRight(), o1.getRight()));
 
         pathVsPathLength.forEach(path -> {
-        	Utils.reconstructArray(lhsConverted , rhsConverted, path.getLeft(),  diffTreeMap, jsonMapper);
+        	ServerUtils.reconstructArray(lhsConverted , rhsConverted, path.getLeft(),  diffTreeMap, jsonMapper);
         });
 
         MatchType mt = (numerrs > 0) ? MatchType.NoMatch :
