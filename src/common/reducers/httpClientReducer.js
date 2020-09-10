@@ -437,6 +437,18 @@ export const httpClient = (state = initialState, { type, data }) => {
                 cubeRunHistory: data.cubeRunHistory
             }
         }
+        case httpClientConstants.DELETE_CUBE_RUN_HISTORY: {
+            //May need a different data to uniquely define this.
+            let cubeRunHistory ={};
+            Object.keys(state.cubeRunHistory).forEach((k, i) => {
+                cubeRunHistory[k] = state.cubeRunHistory[k].filter( u=> u.parentSpanId == "NA"? u.traceIdAddedFromClient != data : u.requestEventId != data);
+            });
+            // const cubeRunHistory = state.cubeRunHistory.filter( u=> u.rootRcrdngId !== data);
+            return {
+                ...state,
+                cubeRunHistory: cubeRunHistory
+            }
+        }
 
         case httpClientConstants.ADD_USER_COLLECTIONS: {
             return {
