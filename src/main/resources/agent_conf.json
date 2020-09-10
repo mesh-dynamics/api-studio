@@ -6,10 +6,9 @@
 			"instance": "prod",
 			"servicename": "wrapper",
 			"service": {
-				"record": "https://demo.prod.cubecorp.io/api",
-				"mock": "https://demo.prod.cubecorp.io/api"
+				"endpoint": "https://demo.prod.cubecorp.io/api"
 			},
-			"authtoken": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s",
+			"authtoken": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkZW1vQGN1YmVjb3JwLmlvIiwicm9sZXMiOlsiUk9MRV9VU0VSIl0sImlhdCI6MTU5OTEyODU1NywiZXhwIjoxNTk5MjE0OTU3fQ.VJaYpKInClxMwcZwbYUVkxPrY_S0ldcqcbV3OQweBBk",
 			"read": {
 				"timeout": 100000
 			},

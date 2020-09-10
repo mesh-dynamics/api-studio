@@ -169,6 +169,7 @@ public class TemplateSetTransformer {
                         , newRule.getDataType(), newRule.getPresenceType()
                         , newRule.getCompareType(), newRule.getExtractionMethod()
                         , newRule.getCustomization(), newRule.arrayComparisionKeyPath);
+
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Replacing with new rule",
                     Constants.JSON_PATH_FIELD , normalisedPath, Constants.SERVICE_FIELD, sourceTemplate.service,
                     Constants.API_PATH_FIELD , sourceTemplate.requestPath)));

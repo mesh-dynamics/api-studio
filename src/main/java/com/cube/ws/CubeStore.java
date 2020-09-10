@@ -99,6 +99,7 @@ import com.cube.queue.DisruptorEventQueue;
 import com.cube.queue.RREvent;
 import com.cube.utils.Constants;
 import com.cube.ws.WSUtils.BadValueException;
+import redis.clients.jedis.Jedis;
 
 //import com.cube.queue.StoreUtils;
 
@@ -1017,14 +1018,16 @@ public class CubeStore {
     }
 
     protected CompletableFuture<Void> beforeRecording(MultivaluedMap<String, String> formParams, Recording recording) {
-        Optional<String> tagOpt = Optional.ofNullable(formParams.getFirst(Constants.TAG_FIELD));
+        Optional<String> tagOpt = formParams == null ? Optional.empty()
+                                    : Optional.ofNullable(formParams.getFirst(Constants.TAG_FIELD));
 
         return tagOpt.map(tag -> this.tagConfig.setTag(recording, recording.instanceId, tag))
             .orElse(CompletableFuture.completedFuture(null));
     }
 
     protected CompletableFuture<Void> afterRecording(MultivaluedMap<String, String> params, Recording recording) {
-        Optional<String> tagOpt = Optional.ofNullable(params.getFirst(Constants.RESET_TAG_FIELD));
+        Optional<String> tagOpt = params == null ? Optional.empty()
+                                    :Optional.ofNullable(params.getFirst(Constants.RESET_TAG_FIELD));
 
         return tagOpt.map(tag -> this.tagConfig.setTag(recording, recording.instanceId, tag))
             .orElse(CompletableFuture.completedFuture(null));
@@ -1175,6 +1178,7 @@ public class CubeStore {
 
     @POST
     @Path("stop/{recordingid}")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public void stop(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui,
                          @PathParam("recordingid") String recordingid,
             MultivaluedMap<String, String> formParams) {
@@ -1553,6 +1557,12 @@ public class CubeStore {
             }
         }).orElse(Response.status(Response.Status.NOT_FOUND).entity(String.format("Status not found for for recordingId %s", recordingId)).build());
         return resp;
+    }
+
+    @POST
+    @Path("cache/flushall")
+    public Response cacheFlushAll() {
+        return Utils.flushAll(config);
     }
 
     private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId)

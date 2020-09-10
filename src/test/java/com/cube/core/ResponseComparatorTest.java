@@ -221,8 +221,10 @@ public class ResponseComparatorTest {
             if (ruleObj.has("extractionMethod")) {
                 extractionMethod = ExtractionMethod.valueOf(ruleObj.getString("extractionMethod"));
             }            String customization = ruleObj.getString("customization");
-            TemplateEntry rule = new TemplateEntry(path, dataType, presenceType,
-                comparisonType, extractionMethod, Optional.of(customization), Optional.empty());
+
+            String  arrayCompKeyPath =  ruleObj.getString("arrayCompKeyPath");
+            TemplateEntry rule = new TemplateEntry(path, dataType, presenceType
+                , comparisonType, extractionMethod, Optional.of(customization), Optional.of(arrayCompKeyPath));
             template.addRule(rule);
         }
 

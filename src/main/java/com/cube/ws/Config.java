@@ -118,7 +118,7 @@ public class Config {
             .create();
         MeshDGsonProvider.setInstance(gson);
         recorder = commonConfig.getRecorder();
-        mocker = new ProxyMocker(gson);
+        mocker = new ProxyMocker();
 
         try {
             String redisHost = fromEnvOrProperties("redis_host", "localhost");

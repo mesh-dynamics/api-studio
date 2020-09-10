@@ -2889,13 +2889,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Pair<List, Stream<Event>> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfFacets, Optional<Integer> start, Optional<Integer> numberOfResults, List<EventType> eventTypes, boolean addPathFilter) {
+    public Pair<List, Stream<Event>> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfFacets, Optional<Integer> start, Optional<Integer> numberOfResults, List<EventType> eventTypes, boolean addPathServiceFilter) {
 
         final SolrQuery query = getEventQuery(apiTraceFacetQuery);
         addFilter(query, EVENTTYPEF, eventTypes.stream().map(type -> type.toString()).collect(Collectors.toList()));
         addFilter(query, TRACEIDF, apiTraceFacetQuery.traceIds);
-        if (addPathFilter) {
+        if (addPathServiceFilter) {
             addFilter(query, PATHF, apiTraceFacetQuery.apiPath);
+            addFilter(query, SERVICEF, apiTraceFacetQuery.service);
         }
         addSort(query, TIMESTAMPF, false /* desc */);
         FacetQ traceIdFacetq = new FacetQ();

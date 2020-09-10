@@ -3,18 +3,12 @@
  */
 package com.cube.ws;
 
-import com.cube.core.TagConfig;
-import io.md.services.Analyzer;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -41,13 +35,15 @@ import org.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.cube.agent.ProxyAnalyzer;
 import io.md.constants.ReplayStatus;
 import io.md.dao.RecordOrReplay;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
-import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.injection.DynamicInjectionConfig;
+import io.md.services.Analyzer;
 
+import com.cube.core.TagConfig;
 import com.cube.core.Utils;
 import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.ReplayBuilder;
@@ -60,7 +56,6 @@ import com.cube.dao.Result;
 import com.cube.drivers.AbstractReplayDriver;
 import com.cube.drivers.RealAnalyzer;
 import com.cube.utils.Constants;
-import com.cube.utils.ScheduledCompletable;
 
 /**
  * @author prasad
@@ -369,11 +364,13 @@ public class ReplayWS extends ReplayBasicWS {
     }
 
     @POST
-    @Path("deferredDeleteReplay/{replayId}")
+    @Path("deferredDeleteReplay/{replayId}/{status}")
     public Response deferredDeleteReplay(@Context UriInfo uriInfo,
-        @PathParam("replayId") String replayId) {
+        @PathParam("replayId") String replayId, @PathParam("status") String status) {
         Optional<Replay> optionalReplay = rrstore.getReplay(replayId);
         Response resp = optionalReplay.map(replay -> {
+            ReplayStatus statusToSet = Utils.valueOf(ReplayStatus.class, status).orElse(ReplayStatus.Completed);
+            replay.status = statusToSet;
             boolean expireReplayInCache = rrstore.deferredDelete(replay);
             if(expireReplayInCache) {
                 return Response.ok().entity(replay).build();
@@ -389,10 +386,17 @@ public class ReplayWS extends ReplayBasicWS {
         return resp;
     }
 
+    @POST
+    @Path("cache/flushall")
+    public Response cacheFlushAll() {
+        return Utils.flushAll(config);
+    }
+
     @Override
     protected CompletableFuture<Void> beforeReplay(MultivaluedMap<String, String> formParams, Recording recording,
                                                    Replay replay) {
-        Optional<String> tagOpt = Optional.ofNullable(formParams.getFirst(Constants.TAG_FIELD));
+        Optional<String> tagOpt = formParams == null ? Optional.empty()
+            : Optional.ofNullable(formParams.getFirst(Constants.TAG_FIELD));
 
         return tagOpt.map(tag -> this.tagConfig.setTag(recording, replay.instanceId, tag))
             .orElse(CompletableFuture.completedFuture(null));
@@ -401,7 +405,8 @@ public class ReplayWS extends ReplayBasicWS {
     @Override
     protected CompletableFuture<Void> afterReplay(MultivaluedMap<String, String> formParams, Recording recording,
         Replay replay, Optional<Analyzer> analyzerOpt) {
-        Optional<String> resetTagOpt = Optional.ofNullable(formParams.getFirst(Constants.RESET_TAG_FIELD));
+        Optional<String> resetTagOpt = formParams == null ? Optional.empty()
+            : Optional.ofNullable(formParams.getFirst(Constants.RESET_TAG_FIELD));
 
          return CompletableFuture.runAsync(() -> analyze(replay, analyzerOpt))
             .thenCompose(v ->
@@ -434,6 +439,7 @@ public class ReplayWS extends ReplayBasicWS {
 	 */
 	@Inject
 	public ReplayWS(Config config) {
+        // super(new io.cube.agent.ProxyDataStore(), new ProxyAnalyzer());
 		super(config.rrstore, new RealAnalyzer(config.rrstore));
 		this.rrstore = config.rrstore;
 		this.jsonMapper = config.jsonMapper;
