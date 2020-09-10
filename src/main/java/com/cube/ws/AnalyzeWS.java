@@ -1527,7 +1527,7 @@ public class AnalyzeWS {
 	    , (MultivaluedHashMap<String, String>) payload.getQueryParams());
     apiTraceResponse.res.add(serviceReqRes);
     List<Event> children = requestEventsByParentSpanId.get(e.spanId).stream()
-        .filter(child -> !child.reqId.equals(e.reqId)).collect(Collectors.toList());
+        .filter(child -> child.reqId != null && !child.reqId.equals(e.reqId)).collect(Collectors.toList());
     if(children == null) return;
     for(Event child: children) {
       levelOrderTraversal(child, level-1, apiTraceResponse, responseEventsByReqId,
