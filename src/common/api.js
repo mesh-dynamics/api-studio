@@ -5,6 +5,7 @@
 
 import axios from "axios";
 import { store } from "./helpers";
+import auth from "./actions/auth.actions";
 import { getAccesToken } from "./utils/lib/common-utils";
 import createAuthRefreshInterceptor from 'axios-auth-refresh';
 import { refreshAuthLogic } from './services/auth.service';
@@ -36,11 +37,16 @@ api.interceptors.request.use(
 );
 
 
-createAuthRefreshInterceptor(api, refreshAuthLogic, { skipAuthRefresh: true, pauseInstanceWhileRefreshing: true });
+// createAuthRefreshInterceptor(api, refreshAuthLogic, { skipAuthRefresh: true, pauseInstanceWhileRefreshing: false });
 
 api.interceptors.response.use(
     response => response.data,
-    error => error
+    error => {
+        if(error.response && (error.response.status === 403 || error.response.status === 401)) {
+            store.dispatch(auth.accessViolationDetected());
+        }
+        return Promise.reject(error);
+    }
 );
 
 
