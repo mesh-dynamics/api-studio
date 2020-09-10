@@ -177,6 +177,7 @@ class HttpClientTabs extends Component {
                 formData: toBeCopiedFromData.formData,
                 rawData: toBeCopiedFromData.rawData,
                 rawDataType: toBeCopiedFromData.rawDataType,
+                paramsType: "showQueryParams",
                 responseStatus: toBeCopiedFromData.responseStatus,
                 responseStatusText: toBeCopiedFromData.responseStatusText,
                 responseHeaders: toBeCopiedFromData.responseHeaders,
@@ -233,6 +234,7 @@ class HttpClientTabs extends Component {
                 formData: toBeCopiedFromData.formData,
                 rawData: toBeCopiedFromData.rawData,
                 rawDataType: toBeCopiedFromData.rawDataType,
+                paramsType: "showQueryParams",
                 responseStatus: toBeCopiedFromData.responseStatus,
                 responseStatusText: toBeCopiedFromData.responseStatusText,
                 responseHeaders: toBeCopiedFromData.responseHeaders,
@@ -357,7 +359,7 @@ class HttpClientTabs extends Component {
                 });
             }
             let contentTypeHeader = _.isObject(parsedCurl.headers) ? this.getParameterCaseInsensitive(parsedCurl.headers, "content-type") : "";
-            if(contentTypeHeader && contentTypeHeader.indexOf("application/json") > -1) {
+            if(contentTypeHeader && contentTypeHeader.indexOf("json") > -1) {
                 rawData = JSON.stringify(JSON.parse(parsedCurl.data), undefined, 4);
                 rawDataType = "json";
                 bodyType = "rawData";
@@ -391,6 +393,7 @@ class HttpClientTabs extends Component {
                 formData: formData,
                 rawData: rawData,
                 rawDataType: rawDataType,
+                paramsType: "showQueryParams",
                 responseStatus: "NA",
                 responseStatusText: "",
                 responseHeaders: "",
@@ -538,6 +541,7 @@ class HttpClientTabs extends Component {
                 formData: [],
                 rawData: "",
                 rawDataType: "json",
+                paramsType: "showQueryParams",
                 responseStatus: "NA",
                 responseStatusText: "",
                 responseHeaders: "",
@@ -997,6 +1001,7 @@ class HttpClientTabs extends Component {
                                 formData: formData,
                                 rawData: rawData,
                                 rawDataType: rawDataType,
+                                paramsType: "showQueryParams",
                                 responseStatus: "NA",
                                 responseStatusText: "",
                                 responseHeaders: "",
@@ -1630,6 +1635,7 @@ class HttpClientTabs extends Component {
             formData: formData,
             rawData: rawData,
             rawDataType: rawDataType,
+            paramsType: "showQueryParams",
             responseStatus: "NA",
             responseStatusText: "",
             responseHeaders: "",
@@ -1786,6 +1792,7 @@ class HttpClientTabs extends Component {
                 formData: [],
                 rawData: "",
                 rawDataType: "json",
+                paramsType: "showQueryParams",
                 responseStatus: "NA",
                 responseStatusText: "",
                 responseHeaders: "",
@@ -1876,6 +1883,7 @@ class HttpClientTabs extends Component {
             formData: formData,
             rawData: rawData,
             rawDataType: rawDataType,
+            paramsType: "showQueryParams",
             responseStatus: "NA",
             responseStatusText: "",
             responseHeaders: "",
@@ -2049,6 +2057,7 @@ class HttpClientTabs extends Component {
                                 formData: formData,
                                 rawData: rawData,
                                 rawDataType: rawDataType,
+                                paramsType: "showQueryParams",
                                 responseStatus: "NA",
                                 responseStatusText: "",
                                 responseHeaders: "",
