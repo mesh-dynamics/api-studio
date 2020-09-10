@@ -20,7 +20,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.http.client.utils.URIBuilder;
@@ -35,6 +37,8 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import io.md.dao.RecordOrReplay;
+import io.md.services.DataStore;
 import io.md.utils.Constants;
 
 
@@ -161,27 +165,6 @@ public class Utils {
 	    return matcher.replaceAll("");
     }
 
-    public static JsonNode convertArrayToObject(JsonNode node){
-        if (node.isArray()) {
-            ArrayNode nodeAsArray = (ArrayNode) node;
-            ObjectNode equivalentObjNode = JsonNodeFactory.instance.objectNode();
-            for (int i = 0 ; i < nodeAsArray.size() ; i++){
-                equivalentObjNode.set(String.valueOf(i), convertArrayToObject(nodeAsArray.get(i)));
-            }
-            return equivalentObjNode;
-        } else if (node.isObject()) {
-            ObjectNode nodeAsObject = (ObjectNode) node;
-            ObjectNode equivalentObjNode = JsonNodeFactory.instance.objectNode();
-            Iterator<String> fieldNames = nodeAsObject.fieldNames();
-            while(fieldNames.hasNext()) {
-                String fieldName = fieldNames.next();
-                equivalentObjNode.set(fieldName, convertArrayToObject(nodeAsObject.get(fieldName)));
-            }
-            return equivalentObjNode;
-        }
-        return node;
-    }
-
     static Pattern templateKeyPattern = Pattern.compile("TemplateKey\\{customerId=(.+?),"
 	    + " appId=(.+?), serviceId=(.+?), path=(.+?), version=(.+?), type=(.+?)}");
 
@@ -240,4 +223,36 @@ public class Utils {
 	  return Optional.ofNullable(map.get(key)).orElse(Collections.emptyList());
   }
 
+    static public Optional<Response> checkActiveCollection(DataStore dataStore, String customerId,
+                                                           String app, String instanceId,
+                                                           Optional<String> userId) {
+        Optional<RecordOrReplay> recordOrReplay = dataStore.getCurrentRecordOrReplay(customerId, app,
+            instanceId);
+        Optional<String> rrcollection = recordOrReplay.flatMap(rr -> rr.getRecordingCollection());
+        Optional<String> replayId = recordOrReplay.flatMap(rr -> rr.getReplayId());
+        Optional<String> recordingId = recordOrReplay.flatMap(rr -> rr.getRecordingId());
+        String runType = recordOrReplay.map(rr -> rr.isRecording() ? "Recording" : "Replay").orElse("None");
+
+        return rrcollection.map(collection -> {
+            // TODO: use constant strings from Ashok's PR once its merged
+            Map<String, String> respObj = Map.of("message", runType + " ongoing",
+                "customerId", customerId,
+                "app", app,
+                "instance", instanceId,
+                "collection", collection,
+                "replayId", replayId.orElse("None"),
+	            "recordingId", recordingId.orElse("None"),
+                "userId", userId.orElse("None"));
+            return Response.status(Response.Status.CONFLICT)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(respObj)
+                .build();
+        });
+    }
+
+    public static class BadValueException extends Exception {
+        public BadValueException(String message) {
+            super(message);
+        }
+    }
 }

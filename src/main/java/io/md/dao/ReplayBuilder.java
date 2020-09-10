@@ -61,12 +61,12 @@ public class ReplayBuilder {
 	public Instant analysisCompleteTimestamp;
 	public Optional<String> runId;
 
-	public ReplayBuilder(String endpoint, CubeMetaInfo metaInfo,
+	public ReplayBuilder(String endpoint, String customerId, String app, String instanceId,
                          String collection, String userId) {
 		this.replayEndpoint = endpoint;
-		this.customerId = metaInfo.customerId;
-		this.app = metaInfo.app;
-		this.instanceId = metaInfo.instance;
+		this.customerId = customerId;
+		this.app = app;
+		this.instanceId = instanceId;
 		this.collection = collection;
 		this.userId = userId;
 		this.templateSetVersion = DEFAULT_TEMPLATE_VER;

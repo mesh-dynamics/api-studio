@@ -58,7 +58,7 @@ public abstract class AbstractReplayDriver {
 	static int BATCHSIZE = 40; // this controls the number of requests in a batch that
 	// could be sent in async fashion
 
-	AbstractReplayDriver(Replay replay, DataStore dataStore) {
+	protected AbstractReplayDriver(Replay replay, DataStore dataStore) {
 		super();
 		this.replay = replay;
 		this.dataStore = dataStore;
@@ -106,7 +106,7 @@ public abstract class AbstractReplayDriver {
 		return true;
 	}
 
-	interface IReplayClient {
+	public interface IReplayClient {
 
 		ResponsePayload send(Event requestEvent, Replay replay)
 			throws IOException, InterruptedException;
@@ -122,7 +122,7 @@ public abstract class AbstractReplayDriver {
 	}
 
 	// this is just a marker interface
-	interface IReplayRequest {
+	public interface IReplayRequest {
 
 	}
 
