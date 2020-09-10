@@ -36,7 +36,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.md.utils.UtilException;
 import io.md.core.ReplayTypeEnum;
 import io.md.core.Utils;
-import io.md.dao.CubeMetaInfo;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
 import io.md.dao.ReplayBuilder;
@@ -118,7 +117,7 @@ public class ReplayBasicWS {
 
             Replay replay = createReplayObject(formParams, recording);
             // check if recording or replay is ongoing for (customer, app, instanceid)
-            Optional<Response> errResp = WSUtils
+            Optional<Response> errResp = Utils
                 .checkActiveCollection(dataStore, recording.customerId,
                     recording.app, replay.instanceId,
                     Optional.ofNullable(replay.userId));
@@ -180,8 +179,8 @@ public class ReplayBasicWS {
         }
 
         ReplayBuilder replayBuilder = new ReplayBuilder(endpoint,
-            new CubeMetaInfo(recording.customerId,
-                recording.app, instanceId), recording.collection, userId)
+            recording.customerId,
+                recording.app, instanceId, recording.collection, userId)
             .withTemplateSetVersion(recording.templateVersion)
             .withReqIds(reqIds).withAsync(async).withPaths(paths)
             .withExcludePaths(excludePaths)
@@ -264,6 +263,6 @@ public class ReplayBasicWS {
         this.analyzer = analyzer;
     }
 
-	DataStore dataStore;
+	protected DataStore dataStore;
 	ObjectMapper jsonMapper;
 }
