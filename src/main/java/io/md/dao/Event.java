@@ -70,7 +70,7 @@ public class Event implements MDStorable {
 		this.runType = runType;
 		this.timestamp = timestamp;
 		this.reqId = reqId;
-		this.apiPath = CompareTemplate.normaliseAPIPath(apiPath);
+		this.apiPath = apiPath != null ? CompareTemplate.normaliseAPIPath(apiPath) : apiPath;
 		this.eventType = eventType;
 		this.payload = payload;
 		this.payloadKey = payloadKey;
