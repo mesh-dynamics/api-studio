@@ -1287,7 +1287,10 @@ class HttpClientTabs extends Component {
             });
         } else if (_.isObject(headersReceived)) {
             Object.keys(headersReceived).map((eachHeader) => {
-                if (eachHeader && headersReceived[eachHeader]) headers[eachHeader] = headersReceived[eachHeader];
+                if (eachHeader && headersReceived[eachHeader]) {
+                    if(_.isArray(headersReceived[eachHeader])) headers[eachHeader] = headersReceived[eachHeader];
+                    if(_.isString(headersReceived[eachHeader])) headers[eachHeader] = [headersReceived[eachHeader]];
+                }
             })
         }
 
