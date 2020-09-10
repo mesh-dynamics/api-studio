@@ -3,18 +3,25 @@
  */
 package com.cube.core;
 
-
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.md.core.Comparator.Diff;
+import io.md.core.CompareTemplate.DataType;
 import io.md.dao.Recording.RecordingType;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
@@ -31,6 +38,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
+import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -50,6 +58,7 @@ import io.md.dao.Event.EventBuilder;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Recording;
+import io.md.injection.DynamicInjectionConfig.InjectionMeta;
 
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
@@ -214,13 +223,32 @@ public class Utils {
         }
     }
 
-    public static JsonNode convertArrayToObject(JsonNode node){
+    public static JsonNode
+        convertArrayToObject(JsonNode node, CompareTemplate template, String path, String newPath,
+	    Set<String> pathsToBeReconstructed){
         if (node.isArray()) {
-            ArrayNode nodeAsArray = (ArrayNode) node;
-            ObjectNode equivalentObjNode = JsonNodeFactory.instance.objectNode();
-            for (int i = 0 ; i < nodeAsArray.size() ; i++){
-                equivalentObjNode.set(String.valueOf(i), convertArrayToObject(nodeAsArray.get(i)));
-            }
+        	TemplateEntry arrayRule = template.getRule(path);
+        	ArrayNode nodeAsArray = (ArrayNode) node;
+	        ObjectNode equivalentObjNode = JsonNodeFactory.instance.objectNode();
+	        pathsToBeReconstructed.add(newPath);
+        	if (arrayRule.dt == DataType.Set) {
+        	    Optional<JsonPointer> pathPointer =
+                    arrayRule.arrayComparisionKeyPath.map(JsonPointer::compile);
+        		for (int i = 0 ; i < nodeAsArray.size() ; i++) {
+        			JsonNode elem = nodeAsArray.get(i);
+        			String key = pathPointer.map(pathPtr ->
+                        elem.at(pathPtr).toString()).orElse(elem.toString());
+			        equivalentObjNode.set(key
+				        , convertArrayToObject(elem, template, path.concat("/").concat(String.valueOf(i)),
+                            newPath.concat("/").concat(key)  , pathsToBeReconstructed));
+		        }
+	        } else {
+        		for (int i = 0 ; i < nodeAsArray.size() ; i++){
+			        equivalentObjNode.set(String.valueOf(i), convertArrayToObject(nodeAsArray.get(i)
+				        , template, path.concat("/").concat(String.valueOf(i))
+                        , newPath.concat("/").concat(String.valueOf(i)) , pathsToBeReconstructed));
+		        }
+	        }
             return equivalentObjNode;
         } else if (node.isObject()) {
             ObjectNode nodeAsObject = (ObjectNode) node;
@@ -228,12 +256,102 @@ public class Utils {
             Iterator<String> fieldNames = nodeAsObject.fieldNames();
             while(fieldNames.hasNext()) {
                 String fieldName = fieldNames.next();
-                equivalentObjNode.set(fieldName, convertArrayToObject(nodeAsObject.get(fieldName)));
+                equivalentObjNode.set(fieldName, convertArrayToObject(nodeAsObject.get(fieldName)
+	                ,template , path.concat("/").concat(fieldName) , newPath.concat("/").concat(fieldName) , pathsToBeReconstructed));
             }
             return equivalentObjNode;
         }
         return node;
     }
+
+    /**
+     * 	https://stackoverflow.com/questions/13530999/fastest-way-to-get-all-values-from-a-map-where-the-key-starts-with-a-certain-exp#13531376
+     */
+    private static SortedMap<String, Diff> getByPrefix(
+        NavigableMap<String, Diff> myMap, String prefix ) {
+        return myMap.subMap( prefix, prefix + Character.MAX_VALUE );
+    }
+
+    private static Map<String, JsonNode> convertObjectToMap(ObjectNode node, ObjectMapper jsonMapper) {
+        return  jsonMapper.convertValue(node, new TypeReference<Map<String, JsonNode>>(){});
+    }
+
+	private static  void transformIndexInDiff(TreeMap<String, Diff> diffMap,
+                                              String arrayPath, String oldIndex, String newIndex) {
+		String oldPrefix = arrayPath.concat("/").concat(oldIndex);
+		SortedMap<String , Diff> diffByPrefix =
+			getByPrefix(diffMap, oldPrefix);
+		diffByPrefix.values().forEach(diff -> {
+			String oldPath = diff.path;
+			diff.path = oldPath.replace(oldPrefix, arrayPath.concat("/").concat(newIndex));
+		});
+	}
+
+
+
+    public static void reconstructArray(JsonNode leftRoot, JsonNode rightRoot
+	    , String arrayPath, TreeMap<String, Diff> diffMap, ObjectMapper jsonMapper) {
+
+	    JsonPointer jsonPointer = JsonPointer.compile(arrayPath);
+    	JsonNode leftNode =  leftRoot.at(jsonPointer);
+    	Map<String, JsonNode> leftArrayMap = new HashMap<>();
+    	if (leftNode != null && ! leftNode.isMissingNode() && leftNode.isObject()) {
+    		leftArrayMap = convertObjectToMap((ObjectNode) leftNode, jsonMapper);
+	    }
+
+    	JsonNode rightNode = rightRoot.at(jsonPointer);
+    	Map<String, JsonNode> rightArrayMap = new HashMap<>();
+	    if (rightNode != null && ! rightNode.isMissingNode() && rightNode.isObject()) {
+		    rightArrayMap = convertObjectToMap((ObjectNode) rightNode, jsonMapper);
+	    }
+
+	    Set<String> leftKeys =  new HashSet<>(leftArrayMap.keySet());
+	    Set<String> rightKeys = new HashSet<>(rightArrayMap.keySet());
+
+	    Set<String> intersection  = new HashSet<>(leftKeys);
+	    intersection.retainAll(rightKeys);
+	    leftKeys.removeAll(intersection);
+	    rightKeys.removeAll(intersection);
+
+	    ArrayNode leftArrayNode = JsonNodeFactory.instance.arrayNode();
+	    ArrayNode rightArrayNode = JsonNodeFactory.instance.arrayNode();
+
+	    int index = 0;
+	    for (String key : intersection) {
+	    	leftArrayNode.add(leftArrayMap.get(key));
+	    	rightArrayNode.add(rightArrayMap.get(key));
+			transformIndexInDiff(diffMap, arrayPath,  key , String.valueOf(index));
+	    	index++;
+	    }
+
+	    int leftIndex = index;
+	    for (String key : leftKeys) {
+	    	leftArrayNode.add(leftArrayMap.get(key));
+		    transformIndexInDiff(diffMap, arrayPath,  key , String.valueOf(leftIndex));
+	    	leftIndex++;
+	    }
+
+	    int rightIndex = index;
+	    for (String key : rightKeys) {
+		    rightArrayNode.add(rightArrayMap.get(key));
+		    transformIndexInDiff(diffMap, arrayPath,  key , String.valueOf(rightIndex));
+		    rightIndex++;
+	    }
+
+	    if (leftNode != null && ! leftNode.isMissingNode()) {
+		    JsonNode leftNodeParent = leftRoot.at(jsonPointer.head());
+		    ((ObjectNode) leftNodeParent).set(jsonPointer.last().getMatchingProperty()
+			    , leftArrayNode);
+	    }
+
+	    if (rightNode != null && ! rightNode.isMissingNode()) {
+		    JsonNode rightNodeParent = rightRoot.at(jsonPointer.head());
+		    ((ObjectNode) rightNodeParent).set(jsonPointer.last().getMatchingProperty()
+			    , rightArrayNode);
+	    }
+
+    }
+
 
 
     static public TemplateSet templateRegistriesToTemplateSet(TemplateRegistries registries,
@@ -249,8 +367,8 @@ public class Utils {
                 .collect(Collectors.toList());
 
         // pass null for version if version is empty and timestamp so that new version number is created automatically
-        TemplateSet templateSet = new TemplateSet(templateVersion.orElse(null), customerId, appId, null,
-            compareTemplateVersionedList , Optional.empty());
+        TemplateSet templateSet = new TemplateSet(templateVersion.orElse(null)
+	        , customerId, appId, null, compareTemplateVersionedList , Optional.empty());
 
         return templateSet;
 

@@ -10,10 +10,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -23,6 +28,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.flipkart.zjsonpatch.DiffFlags;
 import com.flipkart.zjsonpatch.JsonDiff;
@@ -95,9 +101,14 @@ public class JsonComparator implements Comparator {
         // first validate the rhs (new json)
         validate(rhsRoot, result);
 
+        Set<String> arrayPathsToReconstructLHS = new HashSet<>();
+		Set<String> arrayPathsToReconstructRHS = new HashSet<>();
+
         //convert arrays to objects
-        JsonNode lhsConverted = Utils.convertArrayToObject(lhsRoot);
-        JsonNode rhsConverted = Utils.convertArrayToObject(rhsRoot);
+        JsonNode lhsConverted = Utils.convertArrayToObject(lhsRoot, template, "", ""
+	        , arrayPathsToReconstructLHS);
+        JsonNode rhsConverted = Utils.convertArrayToObject(rhsRoot, template, "", ""
+	        ,arrayPathsToReconstructRHS);
 
         // Now diff new (rhs) with the old (lhs)
         EnumSet<DiffFlags> flags = EnumSet.of(DiffFlags.OMIT_COPY_OPERATION,
@@ -144,9 +155,27 @@ public class JsonComparator implements Comparator {
         }
 
         String matchmeta = "JsonDiff";
+
+        Set<String> pathsToReconstructUnion = new HashSet<>(arrayPathsToReconstructLHS);
+        pathsToReconstructUnion.addAll(arrayPathsToReconstructRHS);
+
+		TreeMap<String, Diff> diffTreeMap = new TreeMap<>();
+		result.forEach(diffEntry -> diffTreeMap.put(diffEntry.path , diffEntry));
+
+		List<Pair<String, Integer>> pathVsPathLength = new ArrayList<>();
+
+		pathsToReconstructUnion.forEach(path -> pathVsPathLength.add(Pair.of(path , path.split("/").length)));
+
+		pathVsPathLength.sort((o1, o2) -> Integer.compare(o2.getRight(), o1.getRight()));
+
+        pathVsPathLength.forEach(path -> {
+        	Utils.reconstructArray(lhsConverted , rhsConverted, path.getLeft(),  diffTreeMap, jsonMapper);
+        });
+
         MatchType mt = (numerrs > 0) ? MatchType.NoMatch :
             (diffs.length > 0) ? MatchType.FuzzyMatch : MatchType.ExactMatch;
-        return new Match(mt, matchmeta, result);
+        return new Match(mt, matchmeta, result, Optional.of(lhsConverted) ,
+	        Optional.of(rhsConverted));
     }
 
     @Override
