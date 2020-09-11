@@ -228,7 +228,7 @@ export const httpClientActions = {
         try {
             const serverRes = await cubeService.fetchCollectionList(app, "History", true)
             const {httpClient: {userHistoryCollection}} = getState();
-            const fetchedUserHistoryCollection = serverRes.filter((eachCollection) => (eachCollection.recordingType === "History"))
+            const fetchedUserHistoryCollection = serverRes.find((eachCollection) => (eachCollection.recordingType === "History"))
 
             if(!userHistoryCollection && fetchedUserHistoryCollection) {
                 dispatch(httpClientActions.addUserHistoryCollection(fetchedUserHistoryCollection));
