@@ -185,6 +185,11 @@ public class CubeServerService {
         }
     }
 
+    public String getPathForHttpMethod(String uri , String method , String... lastParams){
+        String path = String.join("/" ,  lastParams);
+        return uri.replace(path , path + "/" + method).replace("/api" , "");
+    }
+
     public <T> ResponseEntity fetchGetResponse(HttpServletRequest request, Optional<T> requestBody, String... path) {
         return fetchResponse(request, requestBody, HttpMethod.GET, path);
     }
@@ -193,7 +198,7 @@ public class CubeServerService {
         return fetchResponse(request, requestBody, HttpMethod.POST, path);
     }
 
-    private <T> ResponseEntity fetchResponse(HttpServletRequest request, Optional<T> requestBody, HttpMethod method, String... pathValue){
+    public <T> ResponseEntity fetchResponse(HttpServletRequest request, Optional<T> requestBody, HttpMethod method, String... pathValue){
         String requestURI = pathValue.length> 0 ? pathValue[0] : request.getRequestURI().replace("/api", "");
         String path = getCubeServerUrl(requestURI);
         if (request.getQueryString() != null) {
