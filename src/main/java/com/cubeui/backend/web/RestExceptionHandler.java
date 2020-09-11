@@ -1,6 +1,7 @@
 package com.cubeui.backend.web;
 
 import com.cubeui.backend.security.jwt.InvalidJwtAuthenticationException;
+import com.cubeui.backend.web.exception.ConfigExistsException;
 import com.cubeui.backend.web.exception.CustomerIdException;
 import com.cubeui.backend.web.exception.DuplicateRecordException;
 import com.cubeui.backend.web.exception.EnvironmentNameExitsException;
@@ -61,5 +62,11 @@ public class RestExceptionHandler {
     public ResponseEntity invalidData(EnvironmentNotFoundException ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse<String>("Environment not found", ex.getMessage(), NOT_FOUND.value());
         return status(NOT_FOUND).body(errorResponse);
+    }
+
+    @ExceptionHandler(value = {ConfigExistsException.class})
+    public ResponseEntity invalidData(ConfigExistsException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse<String>("Config already exists", ex.getMessage(), CONFLICT.value());
+        return status(CONFLICT).body(errorResponse);
     }
 }
