@@ -104,6 +104,11 @@ public class Constants {
 	public static final String REPLAY_ID_FIELD = "replayId";
 	public static final String TIMESTAMP_FIELD = "timestamp";
 	public static final String TRACE_ID_FIELD = "traceId";
+	public static final String PAYLOAD_KEY_FIELD = "payloadKey";
+	public static final String SPAN_ID_FIELD = "spanId";
+	public static final String PARENT_SPAN_ID_FIELD = "parentSpanId";
+	public static final String EXCLUDE_PATH_FIELD = "excludePath";
+
 	public static final String EVENT_TYPE_FIELD = "eventType";
 	public static final String JSON_PATH_FIELD = "jsonPath";
 	public static final String USER_ID_FIELD = "userId";
@@ -235,6 +240,12 @@ public class Constants {
 
 	public static final String LOG4J_LOG = "log4jLog";
 	public static final String ENCRYPT_PAYLOAD = "encryptPayload";
+
+	//Mocking Optional Query Weight related Constants
+    // should ideally be in a different file
+	public static final float COLLECTION_WEIGHT = 1.0f;
+	public static final float TRACEID_WEIGHT = 1.5f;
+	public static final float PAYLOAD_KEY_WEIGHT = 3.0f;
 
 
 

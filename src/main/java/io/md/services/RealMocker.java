@@ -97,11 +97,11 @@ public class RealMocker implements Mocker {
         EventQuery.Builder builder =
             new EventQuery.Builder(event.customerId, event.app, event.eventType)
                 .withService(event.service)
-                .withCollection(collection)
+                .withCollection(collection , Constants.COLLECTION_WEIGHT)
                 //.withInstanceId(event.instanceId)
                 .withPaths(Arrays.asList(event.apiPath))
-                .withTraceId(event.getTraceId())
-                .withPayloadKey(event.payloadKey)
+                .withTraceId(event.getTraceId() , Constants.TRACEID_WEIGHT)
+                .withPayloadKey(event.payloadKey , Constants.PAYLOAD_KEY_WEIGHT)
                 .withOffset(offset)
                 .withLimit(limit)
                 .withSortOrderAsc(isSortOrderAsc);

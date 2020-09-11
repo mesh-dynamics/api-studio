@@ -18,6 +18,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.entity.ContentType;
 import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -220,7 +221,7 @@ public class JsonDataObj implements DataObj {
 			if (val != null && (val.isTextual() || val.isBinary())) {
 				// parse it as per mime type
 				// currently handling only json type
-				if (mimetype.startsWith(MediaType.APPLICATION_JSON) || mimetype.startsWith("application/vnd.api+json")) {
+				if ( isJson(mimetype) ) {
 					try {
 						// This will work irrespective if the val is a TextNode (if unwrapped in
 						// collector or CubeServer after serialization by agent)
@@ -676,6 +677,12 @@ public class JsonDataObj implements DataObj {
 	private boolean isBinary(String mimeType) {
 		return binaryMimeTypes.stream().filter(type -> mimeType.startsWith(type))
 			.findAny().isPresent();
+	}
+
+	private boolean isJson(String mimeType) {
+		//mime type given may contain the charset and other attributes
+		ContentType ct = ContentType.parse(mimeType);
+		return ct.getMimeType().endsWith("json");
 	}
 
 	@JsonIgnore
