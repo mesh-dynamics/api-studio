@@ -1,6 +1,7 @@
 import { cubeConstants } from "../constants";
 import { cubeService } from "../services";
 import { processInstanceList } from "../utils/lib/common-utils";
+import { httpClientActions } from "./httpClientActions";
 
 export const cubeActions = {
     getApps,
@@ -252,9 +253,18 @@ function setTestConfig(tc) {
     return {type: cubeConstants.SET_TEST_CONFIG, data: tc};
 }
 
-function setSelectedApp ( appLabel ) {
-    return {type: cubeConstants.SET_SELECTED_APP, data: appLabel}
+function setSelectedApp (app) {
+    return (dispatch) => {
+        dispatch({type: cubeConstants.SET_SELECTED_APP, data: app})
+        
+        // now fetch things that depend upon the app
+        setTimeout(() => {
+            dispatch(httpClientActions.loadFromHistory());
+            dispatch(httpClientActions.loadUserCollections());
+        });
+    }
 }
+
 
 function setSelectedInstance ( instance ) {
     return {type: cubeConstants.SET_SELECTED_INSTANCE, data: instance}

@@ -7,6 +7,8 @@ import axios from "axios";
 import { store } from "./helpers";
 import auth from "./actions/auth.actions";
 import { getAccesToken } from "./utils/lib/common-utils";
+import createAuthRefreshInterceptor from 'axios-auth-refresh';
+import { refreshAuthLogic } from './services/auth.service';
 
 const api = axios.create();
 
@@ -34,6 +36,9 @@ api.interceptors.request.use(
     error => Promise.reject(error),
 );
 
+
+// createAuthRefreshInterceptor(api, refreshAuthLogic, { skipAuthRefresh: true, pauseInstanceWhileRefreshing: false });
+
 api.interceptors.response.use(
     response => response.data,
     error => {
@@ -43,5 +48,6 @@ api.interceptors.response.use(
         return Promise.reject(error);
     }
 );
+
 
 export default api;

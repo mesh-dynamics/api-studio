@@ -33,11 +33,13 @@ const processInstanceList = (instanceList) => {
 };
 
 const getAccesToken = (state) => (state.authentication.user.access_token);
+const getRefreshToken = (state) => (state.authentication.user.refresh_token);
 
 const isAllowedDomain = () => allowedCaptchaDomains.includes(window.location.hostname);
 
 export { 
     processInstanceList, 
     getAccesToken,
-    isAllowedDomain
+    isAllowedDomain,
+    getRefreshToken
 };
