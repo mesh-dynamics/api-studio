@@ -1526,9 +1526,10 @@ public class AnalyzeWS {
         e.reqId, e.timestamp, e.spanId, e.parentSpanId, status, payload.getMethod()
 	    , (MultivaluedHashMap<String, String>) payload.getQueryParams());
     apiTraceResponse.res.add(serviceReqRes);
-    List<Event> children = requestEventsByParentSpanId.get(e.spanId).stream()
-        .filter(child -> !child.reqId.equals(e.reqId)).collect(Collectors.toList());
-    if(children == null) return;
+    List<Event> eventList = requestEventsByParentSpanId.get(e.spanId);
+    if (eventList == null) return;
+    List<Event> children = eventList.stream()
+        .filter(child -> child.reqId != null && !child.reqId.equals(e.reqId)).collect(Collectors.toList());
     for(Event child: children) {
       levelOrderTraversal(child, level-1, apiTraceResponse, responseEventsByReqId,
           requestEventsByParentSpanId);
