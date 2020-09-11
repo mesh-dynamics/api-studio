@@ -1,8 +1,7 @@
 import { cubeService } from "../services";
 import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from "lodash";
-
-
+import arrayToTree from 'array-to-tree';
 export const httpClientActions = {
     deleteParamInSelectedOutgoingTab: (tabId, type, id) => {
         return {type: httpClientConstants.DELETE_PARAM_IN_OUTGOING_TAB, data: {tabId, type, id}};
@@ -221,6 +220,74 @@ export const httpClientActions = {
 
     createDuplicateTab: (tabId) => ({type: httpClientConstants.CREATE_DUPLICATE_TAB, data: {tabId}}),
 
-    toggleShowTrace: (tabId) => ({type: httpClientConstants.TOGGLE_SHOW_TRACE, data: {tabId}})
+    toggleShowTrace: (tabId) => ({type: httpClientConstants.TOGGLE_SHOW_TRACE, data: {tabId}}),
+
+    loadFromHistory: () => async (dispatch, getState) => {
+        const { cube: {selectedApp} } = getState();
+        let app = selectedApp;
+        try {
+            const serverRes = await cubeService.fetchCollectionList(app, "History", true)
+            const {httpClient: {userHistoryCollection}} = getState();
+            const fetchedUserHistoryCollection = serverRes.filter((eachCollection) => (eachCollection.recordingType === "History"))
+
+            if(!userHistoryCollection && fetchedUserHistoryCollection) {
+                dispatch(httpClientActions.addUserHistoryCollection(fetchedUserHistoryCollection));
+            }
+
+            const startTime = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+            const res = await cubeService.fetchAPITraceData(app, startTime, null, null, null, null, null, fetchedUserHistoryCollection.collec, 100)
+            const apiTraces = res.response;
+            const cubeRunHistory = {};
+            apiTraces.sort((a, b) => {
+                return b.res[0].reqTimestamp - a.res[0].reqTimestamp;
+            });
+            apiTraces.forEach((eachApiTrace) => {
+                const timeStamp = eachApiTrace.res[0].reqTimestamp,
+                    objectKey = new Date(timeStamp * 1000).toDateString();
+                eachApiTrace.res.map((eachApiTraceEvent) => {
+                    eachApiTraceEvent["name"] = eachApiTraceEvent["apiPath"];
+                    eachApiTraceEvent["id"] = eachApiTraceEvent["requestEventId"];
+                    eachApiTraceEvent["toggled"] = false;
+                    eachApiTraceEvent["recordingIdAddedFromClient"] = fetchedUserHistoryCollection.id;
+                    eachApiTraceEvent["traceIdAddedFromClient"] = eachApiTrace.traceId;
+                    eachApiTraceEvent["collectionIdAddedFromClient"] = eachApiTrace.collection;
+                });
+
+                if (objectKey in cubeRunHistory) {
+                    const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
+                        customID: "spanId", parentProperty: "parentSpanId"
+                    });
+                    cubeRunHistory[objectKey].push({
+                        ...apiFlatArrayToTree[0]
+                    });
+                } else {
+                    cubeRunHistory[objectKey] = [];
+                    const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
+                        customID: "spanId", parentProperty: "parentSpanId"
+                    });
+                    cubeRunHistory[objectKey].push({
+                        ...apiFlatArrayToTree[0]
+                    });
+                }
+            });
+            dispatch(httpClientActions.addCubeRunHistory(apiTraces, cubeRunHistory));
+        } catch (error) {
+            console.error("Error ", error);
+            throw new Error("Error");
+        }
+    },
+
+    loadUserCollections: () => async (dispatch, getState) => {
+        const { cube: {selectedApp} } = getState();
+        let app = selectedApp;
+        try {
+            const serverRes = await cubeService.fetchCollectionList(app, "UserGolden", true)
+            const userCollections = serverRes.filter((eachCollection) => (eachCollection.recordingType !== "History"))
+            dispatch(httpClientActions.addUserCollections(userCollections));
+        } catch (error) {
+            console.error("Error ", error);
+            throw new Error("Error");
+        }
+    }
 
 }

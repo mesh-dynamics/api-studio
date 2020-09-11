@@ -596,6 +596,7 @@ class HttpClient extends Component {
                             formData={selectedTraceTableReqTab.formData} 
                             rawData={selectedTraceTableReqTab.rawData}
                             rawDataType={selectedTraceTableReqTab.rawDataType}
+                            paramsType={selectedTraceTableReqTab.paramsType}
                             addOrRemoveParam={this.props.addOrRemoveParam} 
                             updateParam={this.props.updateParam}
                             updateAllParams={this.props.updateAllParams}

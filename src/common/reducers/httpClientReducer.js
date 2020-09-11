@@ -29,6 +29,7 @@ const initialState = {
         recordedResponseBody: "",
         responseBodyType: "json",
         outgoingRequestIds: [],
+        paramsType: "showQueryParams",
         eventData: [
             {
                 customerId: "",

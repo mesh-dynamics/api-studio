@@ -50,7 +50,7 @@ const getTestConfigByAppId = async (appId) => {
     }
 };
 
-const fetchCollectionList = async (app, recordingType="") => {
+const fetchCollectionList = async (app, recordingType="", forCurrentUser=false) => {
     const user = JSON.parse(localStorage.getItem('user')); // TODO: Change this to be passed from auth tree
     try {
         let url = `${config.recordBaseUrl}/searchRecording`;
@@ -60,6 +60,7 @@ const fetchCollectionList = async (app, recordingType="") => {
         params.set("archived", false);
         
         recordingType && params.set("recordingType", recordingType); // todo
+        forCurrentUser && params.set("userId", user.username)
 
         return await api.get(url + "?" + params.toString());
     } catch(error) {
@@ -371,7 +372,7 @@ const fetchAPIFacetData = async (app, recordingType, collectionName, startTime=n
     }
 }
 
-const fetchAPITraceData = async (app, startTime, endTime, service, apiPath, instance, recordingType, collectionName) => {
+const fetchAPITraceData = async (app, startTime, endTime, service, apiPath, instance, recordingType, collectionName, depth=2) => {
     const user = JSON.parse(localStorage.getItem('user'));
 
     let apiTraceURL = `${config.analyzeBaseUrl}/getApiTrace/${user.customer_name}/${app}`;
@@ -379,9 +380,9 @@ const fetchAPITraceData = async (app, startTime, endTime, service, apiPath, inst
     let searchParams = new URLSearchParams();
     startTime && searchParams.set("startDate", startTime);
     endTime && searchParams.set("endDate", endTime);
-    searchParams.set("depth", 2);
-    searchParams.set("service", service);
-    searchParams.set("apiPath", apiPath);
+    searchParams.set("depth", depth);
+    service && searchParams.set("service", service);
+    apiPath && searchParams.set("apiPath", apiPath);
     instance && searchParams.set("instanceId", instance);
     recordingType && searchParams.set("recordingType", recordingType); // todo
     collectionName && searchParams.set("collection", collectionName);

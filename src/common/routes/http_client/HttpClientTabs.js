@@ -177,6 +177,7 @@ class HttpClientTabs extends Component {
                 formData: toBeCopiedFromData.formData,
                 rawData: toBeCopiedFromData.rawData,
                 rawDataType: toBeCopiedFromData.rawDataType,
+                paramsType: "showQueryParams",
                 responseStatus: toBeCopiedFromData.responseStatus,
                 responseStatusText: toBeCopiedFromData.responseStatusText,
                 responseHeaders: toBeCopiedFromData.responseHeaders,
@@ -233,6 +234,7 @@ class HttpClientTabs extends Component {
                 formData: toBeCopiedFromData.formData,
                 rawData: toBeCopiedFromData.rawData,
                 rawDataType: toBeCopiedFromData.rawDataType,
+                paramsType: "showQueryParams",
                 responseStatus: toBeCopiedFromData.responseStatus,
                 responseStatusText: toBeCopiedFromData.responseStatusText,
                 responseHeaders: toBeCopiedFromData.responseHeaders,
@@ -357,7 +359,7 @@ class HttpClientTabs extends Component {
                 });
             }
             let contentTypeHeader = _.isObject(parsedCurl.headers) ? this.getParameterCaseInsensitive(parsedCurl.headers, "content-type") : "";
-            if(contentTypeHeader && contentTypeHeader.indexOf("application/json") > -1) {
+            if(contentTypeHeader && contentTypeHeader.indexOf("json") > -1) {
                 rawData = JSON.stringify(JSON.parse(parsedCurl.data), undefined, 4);
                 rawDataType = "json";
                 bodyType = "rawData";
@@ -391,6 +393,7 @@ class HttpClientTabs extends Component {
                 formData: formData,
                 rawData: rawData,
                 rawDataType: rawDataType,
+                paramsType: "showQueryParams",
                 responseStatus: "NA",
                 responseStatusText: "",
                 responseHeaders: "",
@@ -538,6 +541,7 @@ class HttpClientTabs extends Component {
                 formData: [],
                 rawData: "",
                 rawDataType: "json",
+                paramsType: "showQueryParams",
                 responseStatus: "NA",
                 responseStatusText: "",
                 responseHeaders: "",
@@ -997,6 +1001,7 @@ class HttpClientTabs extends Component {
                                 formData: formData,
                                 rawData: rawData,
                                 rawDataType: rawDataType,
+                                paramsType: "showQueryParams",
                                 responseStatus: "NA",
                                 responseStatusText: "",
                                 responseHeaders: "",
@@ -1451,8 +1456,8 @@ class HttpClientTabs extends Component {
                             dispatch(httpClientActions.postSuccessSaveToCollection(tabId, showSaveModal ? true : false, "Saved Successfully!"));
                         }
                         setTimeout(() => {
-                            this.loadFromHistory();
-                            this.loadUserCollections();
+                            dispatch(httpClientActions.loadFromHistory());
+                            dispatch(httpClientActions.loadUserCollections());
                             // update api catalog golden and collection lists
                             dispatch(apiCatalogActions.fetchGoldenCollectionList(app, "Golden"))
                             dispatch(apiCatalogActions.fetchGoldenCollectionList(app, "UserGolden"))
@@ -1542,7 +1547,7 @@ class HttpClientTabs extends Component {
         try {
             api.post(`${config.apiBaseUrl}/cs/start/${user.customer_name}/${app}/dev/Default${app}`, searchParams, configForHTTP)
                 .then((serverRes) => {
-                    this.loadUserCollections();
+                    dispatch(httpClientActions.loadUserCollections());
                     dispatch(httpClientActions.postSuccessCreateCollection(true, "Created Successfully! Please select this newly created collection from below dropdown and click save."));
                 }, (error) => {
                     dispatch(httpClientActions.postErrorCreateCollection(true, "Error saving: " + error));
@@ -1573,104 +1578,6 @@ class HttpClientTabs extends Component {
         });
         tabs[tabIndex].abortRequest = null;
         this.saveToCollection(isOutgoingRequest, selectedSaveableTabId, selectedCollection.id, "UserGolden");
-    }
-
-    loadUserCollections() {
-        const user = JSON.parse(localStorage.getItem('user'));
-        const { cube: {selectedApp} } = this.props;
-        let app = selectedApp;
-        if(!app) {
-            const parsedUrlObj = urlParser(window.location.href, true);
-            app = parsedUrlObj.query.app;
-        }
-        const { dispatch } = this.props;
-        const userId = encodeURIComponent(user.username),
-            customerId = encodeURIComponent(user.customer_name);
-        try {
-            api.get(`${config.apiBaseUrl}/cs/searchRecording?customerId=${user.customer_name}&app=${app}&userId=${userId}&recordingType=UserGolden&archived=false`)
-                .then((serverRes) => {
-                    const userCollections = serverRes.filter((eachCollection) => {
-                        return eachCollection.recordingType !== "History"
-                    });
-                    dispatch(httpClientActions.addUserCollections(userCollections));
-                }, (error) => {
-                    console.error("error: ", error);
-                })
-        } catch (error) {
-            console.error("Error ", error);
-            throw new Error("Error");
-        }
-    }
-
-    loadFromHistory() {
-        const user = JSON.parse(localStorage.getItem('user'));
-        const { dispatch } = this.props;
-        const { cube: {selectedApp} } = this.props;
-        let app = selectedApp;
-        if(!app) {
-            const parsedUrlObj = urlParser(window.location.href, true);
-            app = parsedUrlObj.query.app;
-        }
-        const userId = encodeURIComponent(user.username),
-            customerId = encodeURIComponent(user.customer_name);
-        try {
-            api.get(`${config.apiBaseUrl}/cs/searchRecording?customerId=${user.customer_name}&app=${app}&userId=${userId}&recordingType=History&archived=false`)
-                .then((serverRes) => {
-                    const {httpClient: {userHistoryCollection}} = this.props;
-                    const fetchedUserHistoryCollection = serverRes.find((eachCollection) => {
-                        return eachCollection.recordingType === "History";
-                    });
-                    if(!userHistoryCollection && fetchedUserHistoryCollection) {
-                        dispatch(httpClientActions.addUserHistoryCollection(fetchedUserHistoryCollection));
-                    }
-                    const startTime = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-                    api.get(`${config.apiBaseUrl}/as/getApiTrace/${customerId}/${app}?depth=100&collection=${fetchedUserHistoryCollection.collec}&startDate=${startTime}`)
-                        .then((res) => {
-                            const apiTraces = res.response;
-                            const cubeRunHistory = {};
-                            apiTraces.sort((a, b) => {
-                                return b.res[0].reqTimestamp - a.res[0].reqTimestamp;
-                            });
-                            apiTraces.forEach((eachApiTrace) => {
-                                const timeStamp = eachApiTrace.res[0].reqTimestamp,
-                                    objectKey = new Date(timeStamp * 1000).toDateString();
-                                eachApiTrace.res.map((eachApiTraceEvent) => {
-                                    eachApiTraceEvent["name"] = eachApiTraceEvent["apiPath"];
-                                    eachApiTraceEvent["id"] = eachApiTraceEvent["requestEventId"];
-                                    eachApiTraceEvent["toggled"] = false;
-                                    eachApiTraceEvent["recordingIdAddedFromClient"] = fetchedUserHistoryCollection.id;
-                                    eachApiTraceEvent["traceIdAddedFromClient"] = eachApiTrace.traceId;
-                                    eachApiTraceEvent["collectionIdAddedFromClient"] = eachApiTrace.collection;
-                                });
-
-                                if (objectKey in cubeRunHistory) {
-                                    const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
-                                        customID: "spanId", parentProperty: "parentSpanId"
-                                    });
-                                    cubeRunHistory[objectKey].push({
-                                        ...apiFlatArrayToTree[0]
-                                    });
-                                } else {
-                                    cubeRunHistory[objectKey] = [];
-                                    const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
-                                        customID: "spanId", parentProperty: "parentSpanId"
-                                    });
-                                    cubeRunHistory[objectKey].push({
-                                        ...apiFlatArrayToTree[0]
-                                    });
-                                }
-                            });
-                            dispatch(httpClientActions.addCubeRunHistory(apiTraces, cubeRunHistory));
-                        }, (err) => {
-                            console.error("err: ", err);
-                        })
-                }, (error) => {
-                    console.error("error: ", error);
-                })
-        } catch (error) {
-            console.error("Error ", error);
-            throw new Error("Error");
-        }
     }
 
     formatHttpEventToReqResObject(reqId, httpEventReqResPair) {
@@ -1731,6 +1638,7 @@ class HttpClientTabs extends Component {
             formData: formData,
             rawData: rawData,
             rawDataType: rawDataType,
+            paramsType: "showQueryParams",
             responseStatus: "NA",
             responseStatusText: "",
             responseHeaders: "",
@@ -1887,6 +1795,7 @@ class HttpClientTabs extends Component {
                 formData: [],
                 rawData: "",
                 rawDataType: "json",
+                paramsType: "showQueryParams",
                 responseStatus: "NA",
                 responseStatusText: "",
                 responseHeaders: "",
@@ -1977,6 +1886,7 @@ class HttpClientTabs extends Component {
             formData: formData,
             rawData: rawData,
             rawDataType: rawDataType,
+            paramsType: "showQueryParams",
             responseStatus: "NA",
             responseStatusText: "",
             responseHeaders: "",
@@ -2015,8 +1925,9 @@ class HttpClientTabs extends Component {
         dispatch(cubeActions.hideTestConfig(true));
         dispatch(cubeActions.hideServiceGraph(true));
         dispatch(cubeActions.hideHttpClient(false));
-        this.loadFromHistory();
-        this.loadUserCollections();
+        
+        dispatch(httpClientActions.loadFromHistory());
+        dispatch(httpClientActions.loadUserCollections());
         
         const requestIds = this.getRequestIds(), reqIdArray = Object.keys(requestIds);
         tabs.map(eachTab => {
@@ -2149,6 +2060,7 @@ class HttpClientTabs extends Component {
                                 formData: formData,
                                 rawData: rawData,
                                 rawDataType: rawDataType,
+                                paramsType: "showQueryParams",
                                 responseStatus: "NA",
                                 responseStatusText: "",
                                 responseHeaders: "",

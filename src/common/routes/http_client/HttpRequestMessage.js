@@ -14,9 +14,6 @@ class HttpRequestMessage extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            showHeaders: false,
-            showQueryParams: true,
-            showBody: false,
             showFormData: this.props.bodyType === "formData",
             showRawData: this.props.bodyType === "rawData"
         };
@@ -30,12 +27,9 @@ class HttpRequestMessage extends Component {
         this.props.updateParam(isOutgoingRequest, tabId, evt.target.name, evt.target.name, evt.target.value);
     }
 
-    onChangeValue(event) {
-        this.setState({
-            showHeaders: event.target.value === "showHeaders",
-            showQueryParams: event.target.value === "showQueryParams",
-            showBody: event.target.value === "showBody"
-        });
+    onChangeValue(evt) {
+        const { tabId, isOutgoingRequest } = this.props;
+        this.props.updateParam(isOutgoingRequest, tabId, evt.target.name, evt.target.name, evt.target.value);
     }
 
     handleBodyOrRawDataType(event) {
@@ -92,17 +86,17 @@ class HttpRequestMessage extends Component {
                     </div>
                     <div className="" style={{display: "inline-block", paddingRight: "25px", fontSize: "12px"}}>
                         <input type="radio" style={{marginTop: "0px", marginRight: "7px"}} 
-                            value="showHeaders" name="paramsType" checked={this.state.showHeaders} onChange={this.onChangeValue}/>
+                            value="showHeaders" name="paramsType" checked={this.props.paramsType === "showHeaders"} onChange={this.onChangeValue}/>
                             Headers
                     </div>
                     <div className="" style={{display: "inline-block", paddingRight: "25px", fontSize: "12px"}}>
                         <input type="radio" checked style={{marginTop: "0px", marginRight: "7px"}} 
-                            value="showQueryParams" name="paramsType" checked={this.state.showQueryParams} onChange={this.onChangeValue}/>
+                            value="showQueryParams" name="paramsType" checked={this.props.paramsType === "showQueryParams"} onChange={this.onChangeValue}/>
                             Query Params
                     </div>
                     <div className="" style={{display: "inline-block", paddingRight: "25px", fontSize: "12px"}}>
                         <input type="radio" checked style={{marginTop: "0px", marginRight: "7px"}} 
-                            value="showBody" name="paramsType" checked={this.state.showBody} onChange={this.onChangeValue}/>
+                            value="showBody" name="paramsType" checked={this.props.paramsType === "showBody"} onChange={this.onChangeValue}/>
                             Body
                     </div>
                     
@@ -110,7 +104,7 @@ class HttpRequestMessage extends Component {
                         <input type="radio" style={{marginTop: "0px", marginRight: "7px"}} />Binary Data
                     </div> */}
                 </div>
-                <div className="" style={{marginTop: "18px", marginBottom: "12px", display: this.state.showBody ? "" : "none"}}>
+                <div className="" style={{marginTop: "18px", marginBottom: "12px", display: this.props.paramsType === "showBody" ? "" : "none"}}>
                     <div className="" style={{display: "inline-block", paddingRight: "18px", opacity: "0.7", fontSize: "12px", width: "50px"}}>
                         BODY
                     </div>
@@ -137,7 +131,7 @@ class HttpRequestMessage extends Component {
                     </div>
                 </div>
                 <HttpRequestHeaders tabId={this.props.tabId}
-                    showHeaders={this.state.showHeaders} 
+                    showHeaders={this.props.paramsType === "showHeaders"} 
                     headers={this.props.headers} 
                     addOrRemoveParam={this.props.addOrRemoveParam} 
                     updateParam={this.props.updateParam}
@@ -146,7 +140,7 @@ class HttpRequestMessage extends Component {
 
                 </HttpRequestHeaders>
                 <HttpRequestQueryString tabId={this.props.tabId}
-                    showQueryParams={this.state.showQueryParams} 
+                    showQueryParams={this.props.paramsType === "showQueryParams"} 
                     queryStringParams={this.props.queryStringParams} 
                     addOrRemoveParam={this.props.addOrRemoveParam} 
                     updateParam={this.props.updateParam}
@@ -155,7 +149,7 @@ class HttpRequestMessage extends Component {
 
                 </HttpRequestQueryString>
                 <HttpRequestBody tabId={this.props.tabId}
-                    showBody={this.state.showBody}
+                    showBody={this.props.paramsType === "showBody"}
                     showFormData={this.state.showFormData}
                     showRawData={this.state.showRawData}
                     formData={this.props.formData} 
