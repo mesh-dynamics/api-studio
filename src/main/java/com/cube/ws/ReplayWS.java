@@ -159,7 +159,7 @@ public class ReplayWS extends ReplayBasicWS {
     @POST
     @Path("start/byGoldenName/{customerId}/{app}/{goldenName}")
     @Consumes("application/x-www-form-urlencoded")
-    public void startByGoldenName(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui,
+    public Response startByGoldenName(@Context UriInfo ui,
                                       @PathParam("app") String app,
                                       @PathParam("customerId") String customerId,
                                       @PathParam("goldenName") String goldenName,
@@ -172,15 +172,11 @@ public class ReplayWS extends ReplayBasicWS {
         if (recordingOpt.isEmpty()) {
             LOGGER.error(String
                 .format("Cannot init Replay since cannot find recording for golden  name %s", goldenName));
-            asyncResponse.resume(Response.status(Status.NOT_FOUND)
-                .entity(String.format("cannot find recording for golden  name %s", goldenName)).build());
+            return Response.status(Status.NOT_FOUND)
+                .entity(String.format("cannot find recording for golden  name %s", goldenName)).build();
         }
 
-        startReplay(formParams, recordingOpt.get())
-            .thenApply(response -> asyncResponse.resume(response))
-            .exceptionally(e -> asyncResponse.resume(
-                Response.status(Status.INTERNAL_SERVER_ERROR)
-                    .entity(String.format("Server error: " + e.getMessage())).build()));
+        return startReplay(formParams, recordingOpt.get());
     }
 
     @POST
