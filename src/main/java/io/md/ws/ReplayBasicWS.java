@@ -86,56 +86,57 @@ public class ReplayBasicWS {
         return resp;
     }
 
-
     @POST
     @Path("start/{recordingId}")
     @Consumes("application/x-www-form-urlencoded")
-    public void start(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui,
-                      @PathParam("recordingId") String recordingId,
-                      MultivaluedMap<String, String> formParams) {
+    public Response start(@Context UriInfo ui,
+                          @PathParam("recordingId") String recordingId,
+                          MultivaluedMap<String, String> formParams) {
         Optional<Recording> recordingOpt = dataStore.getRecording(recordingId);
 
 
         if (recordingOpt.isEmpty()) {
             LOGGER.error(String
-                .format("Cannot init Replay since cannot find recording for id %s", recordingId));
-            asyncResponse.resume(Response.status(Status.NOT_FOUND)
-                .entity(String.format("cannot find recording for id %s", recordingId)).build());
+                    .format("Cannot init Replay since cannot find recording for id %s", recordingId));
+            Response.status(Status.NOT_FOUND)
+                    .entity(String.format("cannot find recording for id %s", recordingId)).build();
         }
 
-        startReplay(formParams, recordingOpt.get())
-        .thenApply(response -> asyncResponse.resume(response))
-        .exceptionally(e -> asyncResponse.resume(
-            Response.status(Status.INTERNAL_SERVER_ERROR)
-                .entity(String.format("Server error: " + e.getMessage())).build()));
+        return startReplay(formParams, recordingOpt.get());
     }
 
-    protected CompletableFuture<Response> startReplay(MultivaluedMap<String, String> formParams, Recording recording) {
+    protected Response startReplay(MultivaluedMap<String, String> formParams, Recording recording) {
+        String replayId = "NotInited";
         try {
-            boolean startReplay = Utils.strToBool(formParams.getFirst("startReplay")).orElse(true);
+            // boolean startReplay = Utils.strToBool(formParams.getFirst("startReplay")).orElse(true);
             boolean analyze = Utils.strToBool(formParams.getFirst("analyze")).orElse(true);
 
             Replay replay = createReplayObject(formParams, recording);
+            replayId = replay.replayId;
             // check if recording or replay is ongoing for (customer, app, instanceid)
             Optional<Response> errResp = Utils
-                .checkActiveCollection(dataStore, recording.customerId,
-                    recording.app, replay.instanceId,
-                    Optional.ofNullable(replay.userId));
+                    .checkActiveCollection(dataStore, recording.customerId,
+                            recording.app, replay.instanceId,
+                            Optional.ofNullable(replay.userId));
             if (errResp.isPresent()) {
-                return CompletableFuture.completedFuture(errResp.get());
+                return errResp.get();
             }
-            return beforeReplay(formParams, recording, replay)
-                .thenApply(v -> doStartReplay(replay, startReplay))
-                .thenCompose(response ->
-                     afterReplay(formParams, recording, replay,
-                            analyze ? Optional.ofNullable(analyzer) : Optional.empty())
-                        .thenApply(v ->  response));
+            beforeReplay(formParams, recording, replay)
+                    .thenApply(v -> doStartReplay(replay))
+                    .thenCompose(v -> afterReplay(formParams, recording, replay,
+                            analyze ? Optional.ofNullable(analyzer) : Optional.empty()));
+            String json = jsonMapper.writeValueAsString(replay);
+            return Response.ok(json, MediaType.APPLICATION_JSON).build();
         } catch (ParameterException e) {
-            return CompletableFuture.completedFuture(Response.status(Status.BAD_REQUEST)
-                .entity((new JSONObject(Map.of("Message", e.getMessage()))).toString())
-                .build());
+            return Response.status(Status.BAD_REQUEST)
+                    .entity((new JSONObject(Map.of("Message", e.getMessage()))).toString())
+                    .build();
+        } catch (JsonProcessingException ex) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Error in converting Replay object to Json)) String",
+                    Constants.REPLAY_ID_FIELD, replayId)), ex);
+            return Response.serverError().build();
         }
-
     }
 
     private Replay createReplayObject(MultivaluedMap<String, String> formParams, Recording recording) throws ParameterException {
@@ -211,33 +212,24 @@ public class ReplayBasicWS {
         return replayBuilder.build();
     }
 
-    private Response doStartReplay(Replay replay, boolean startReplay) {
+    private boolean doStartReplay(Replay replay) {
 
         return ReplayDriverFactory
-            .initReplay(replay, dataStore, jsonMapper)
-            .map(replayDriver -> {
-                String json;
-                Replay replayFromDriver = replayDriver.getReplay();
-                try {
-                    json = jsonMapper.writeValueAsString(replayFromDriver);
-                    if (startReplay) {
-                        boolean status = replayDriver.start();
-                        if (status) {
-                            return Response.ok(json, MediaType.APPLICATION_JSON).build();
-                        }
-                        return Response.status(Status.CONFLICT).entity(
-                            "Not able to start replay. It may be already running or completed")
-                            .build();
-                    } else {
-                        return Response.ok(json, MediaType.APPLICATION_JSON).build();
+                .initReplay(replay, dataStore, jsonMapper)
+                .map(replayDriver -> {
+                    boolean status = replayDriver.start();
+                    if (!status) {
+                        LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                                "Not able to start replay. It may be already running or completed", Constants.REPLAY_ID_FIELD
+                                , replay.replayId)));
                     }
-                } catch (JsonProcessingException ex) {
+                    return status;
+                }).orElseGet(() -> {
                     LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                        "Error in converting Replay object to Json)) String",
-                        Constants.REPLAY_ID_FIELD, replay.replayId)), ex);
-                    return Response.serverError().build();
-                }
-            }).orElse(Response.serverError().build());
+                            "Not able to create replay driver", Constants.REPLAY_ID_FIELD
+                            , replay.replayId)));
+                    return false;
+                });
     }
 
     protected CompletableFuture<Void> beforeReplay(MultivaluedMap<String, String> formParams, Recording recording,
