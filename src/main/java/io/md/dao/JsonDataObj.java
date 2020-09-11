@@ -236,6 +236,14 @@ public class JsonDataObj implements DataObj {
 						} catch (IOException ex) {
 							LOGGER.error("Exception in parsing json string, path : "
 									.concat(path).concat(" , value : ").concat(val.toString()), e);
+							try {
+								String strVal = getValAsString(val);
+								valParentObj.set(fieldName, new TextNode(strVal));
+								return true;
+							} catch (IOException ex1) {
+								LOGGER.error("Exception in parsing json string, path : "
+										.concat(path).concat(" , value : ").concat(val.toString()), ex1);
+							}
 						}
 					}
 				} else if (mimetype.startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
