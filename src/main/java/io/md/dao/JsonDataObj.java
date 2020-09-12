@@ -117,7 +117,15 @@ public class JsonDataObj implements DataObj {
 				return ((BinaryNode) node).binaryValue();
 			}
 			if (node.isTextual()) {
-				return node.asText().getBytes();
+				// While loading from solr again the binaryNode could be treated as a textnode and
+				// doing node.asText().getBytes converts the bin data to string and then again to binary
+				// which causes issues with the actual binary data, hence try node.binaryValue() first
+				try {
+					return node.binaryValue();
+				} catch (Exception e) {
+					LOGGER.info("Could not succed with node.binaryValue() for node ");
+					return node.asText().getBytes();
+				}
 			}
 			return jsonMapper.writeValueAsString(node).getBytes();
 		} catch (JsonProcessingException e) {
@@ -690,7 +698,9 @@ public class JsonDataObj implements DataObj {
 	@JsonIgnore
 	protected final ObjectMapper jsonMapper;
 
-	public static final List<String> binaryMimeTypes = Arrays.asList(MediaType.APPLICATION_OCTET_STREAM);
+	// TODO : Adding Multipart form data as a binary type now.
+	//  Change this to deal with separate part of multipart data as needed.
+	public static final List<String> binaryMimeTypes = Arrays.asList(MediaType.APPLICATION_OCTET_STREAM, MediaType.MULTIPART_FORM_DATA);
 
 	public JsonNode getRoot() {
 		return objRoot;
