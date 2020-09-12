@@ -326,20 +326,38 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Result<Event> getEvents(EventQuery eventQuery) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
+
+        StringBuffer queryBuff = new StringBuffer();
+
         addFilter(query, TYPEF, Types.Event.toString());
         addFilter(query, CUSTOMERIDF, eventQuery.getCustomerId());
         addFilter(query, APPF, eventQuery.getApp());
-        addFilter(query, SERVICEF, eventQuery.getServices());
-        addFilter(query, COLLECTIONF, eventQuery.getCollection());
-        addFilter(query, TRACEIDF, eventQuery.getTraceIds());
-        addFilter(query, RRTYPEF, eventQuery.getRunType().map(Object::toString));
-        addFilter(query, REQIDF, eventQuery.getReqIds());
-        addFilter(query, PATHF, eventQuery.getPaths(), eventQuery.excludePaths());
+
+        addToFilterOrQuery(query , queryBuff , SERVICEF , eventQuery.getServices() , true , eventQuery.getServicesWeight());
+
+        addToFilterOrQuery(query , queryBuff , COLLECTIONF , eventQuery.getCollection() , true , eventQuery.getCollectionWeight());
+
+        addToFilterOrQuery(query , queryBuff , TRACEIDF , eventQuery.getTraceIds() , true , eventQuery.getTraceIdsWeight());
+
+        addToFilterOrQuery(query , queryBuff , RRTYPEF , eventQuery.getRunType().map(Object::toString) , true , eventQuery.getRunTypeWeight());
+
+        addToFilterOrQuery(query , queryBuff , REQIDF , eventQuery.getReqIds(), true , eventQuery.getReqIdsWeight());
+
+        addToFilterOrQuery(query , queryBuff , PATHF , eventQuery.getPaths(), eventQuery.excludePaths() , true , eventQuery.getPathsWeight());
+
         addFilter(query, EVENTTYPEF, eventQuery.getEventTypes().stream().map(type -> type.toString()).collect(Collectors.toList()));
-        addFilterInt(query, PAYLOADKEYF, eventQuery.getPayloadKey());
+
+        addToFilterIntOrQuery(query , queryBuff , PAYLOADKEYF , eventQuery.getPayloadKey(), true , eventQuery.getPayloadKeyWeight());
+
         // starting from timestamp, non inclusive
         addRangeFilter(query, TIMESTAMPF, eventQuery.getTimestamp(), Optional.empty(), false, true);
+
+        addSort(query , SCOREF , false);
         addSort(query, TIMESTAMPF, eventQuery.isSortOrderAsc());
+
+        if(queryBuff.length()!=0){
+            query.setQuery(queryBuff.toString());
+        }
 
         return SolrIterator.getResults(solr, query, eventQuery.getLimit(),
             this::docToEvent, eventQuery.getOffset());
@@ -362,6 +380,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private static final String CPREFIX = "";
+    private static final String CSUFFIX = "";
     private static final String STRINGSET_SUFFIX = "_ss"; // set of strings in Solr
     private static final String STRING_SUFFIX = "_s";
     private static final String INT_SUFFIX = "_i";
@@ -1189,6 +1208,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String SPAN_ID_F = CPREFIX  + Constants.SPAN_ID_FIELD + STRING_SUFFIX ;
     private static final String PARENT_SPAN_ID_F = CPREFIX  + Constants.PARENT_SPAN_ID_FIELD + STRING_SUFFIX;
     private static final String CONFIG_JSON_F = CPREFIX + Constants.CONFIG_JSON + STRING_SUFFIX;
+    private static final String SCOREF = CPREFIX + "score" + CSUFFIX;
 
 
     private static String getFieldName(String fname, String fkey) {
@@ -1242,6 +1262,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static void addFilter(SolrQuery query, String fieldname, String fval) {
         // add quotes by default in case the strings have spaces in them
         addFilter(query, fieldname, fval, true);
+    }
+
+    private static void addToFilterOrQuery(SolrQuery query, StringBuffer queryBuff , String fieldname, Optional<String> fval , boolean isOr, Optional<Float> weight) {
+        if(weight.isEmpty()) addFilter(query, fieldname, fval, false);
+        else addToQryStr(queryBuff , fieldname , fval , isOr , weight );
     }
 
     private static void addFilter(SolrQuery query, String fieldname, Optional<String> fval) {
@@ -1299,14 +1324,37 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, fieldname, String.valueOf(fval));
     }
 
+    private static void addToFilterIntOrQuery(SolrQuery query, StringBuffer queryBuff , String fieldname, Optional<Integer> fvalOpt , boolean isOr, Optional<Float> weight) {
+        if(weight.isEmpty()){
+            fvalOpt.ifPresent(fval -> {
+                addFilter(query, fieldname, fval);
+            });
+        }
+        else {
+            fvalOpt.ifPresent(fval -> {
+                addToQryStr(queryBuff , fieldname , fval.toString() , isOr , weight );
+            });
+        }
+    }
+
     private static void addFilterInt(SolrQuery query, String fieldname, Optional<Integer> fvalOpt) {
         fvalOpt.ifPresent(fval -> {
             addFilter(query, fieldname, fval);
         });
     }
 
+    private static void addToFilterOrQuery(SolrQuery query, StringBuffer queryBuff , String fieldname, List<String> orValues , boolean isOr, Optional<Float> weight) {
+        if(weight.isEmpty()) addFilter(query, fieldname, orValues, false);
+        else addToQryStr(queryBuff , fieldname , orValues , isOr , weight );
+    }
+
     private static void addFilter(SolrQuery query, String fieldname, List<String> orValues) {
         addFilter(query, fieldname, orValues, false);
+    }
+
+    private static void addToFilterOrQuery(SolrQuery query, StringBuffer queryBuff , String fieldname, List<String> orValues , boolean negate , boolean isOr, Optional<Float> weight) {
+        if(weight.isEmpty()) addFilter(query, fieldname, orValues, negate);
+        else addToQryStr(queryBuff , fieldname , orValues , isOr , weight );
     }
 
     private static void addFilter(SolrQuery query, String fieldname, List<String> orValues, boolean negate) {
@@ -1385,71 +1433,86 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 
     // for predicates in the solr q param. Assumes *:* is already there in the buffer
-    private static void addToQryStr(StringBuffer qstr, String fieldname, String fval, boolean quote , boolean isOr) {
+    private static void addToQryStr(StringBuffer qstr, String fieldname, String fval, boolean quote , boolean isOr , Optional<Float> weight) {
         // String newfval = quote ? String.format("\"%s\"", StringEscapeUtils.escapeJava(fval)) : fval;
         String newfval = quote ? SolrIterator.escapeQueryChars(fval) : fval;
-        qstr.append(qstr.length()==0 ? String.format("%s:%s" , fieldname, newfval) :  String.format(isOr ? " OR %s:%s" : " AND %s:%s", fieldname, newfval));
+        String prefix = qstr.length()==0 ? "" : isOr ? " OR " : " AND ";
+        Float wt = weight.orElse(1.0F);
+        qstr.append(String.format("%s%s:%s^=%.2f" , prefix , fieldname, newfval , wt ) );
     }
 
 
-    private static void addToQryStr(StringBuffer qstr, String fieldname, String fval , boolean isOr) {
+    private static void addToQryStr(StringBuffer qstr, String fieldname, String fval, boolean isOr) {
         // add quotes to field vals by default
-        addToQryStr(qstr, fieldname, fval, true, isOr);
+        addToQryStr(qstr, fieldname, fval, true, isOr, Optional.empty());
     }
 
-    private static void addToQryStr(StringBuffer qstr, String fieldname, List<String> fvals , boolean isOr) {
+    private static void addToQryStr(StringBuffer qstr, String fieldname, String fval, boolean isOr, Optional<Float> weight) {
+        // add quotes to field vals by default
+        addToQryStr(qstr, fieldname, fval, true, isOr, weight);
+    }
+    /*
+    private static void addToQryStr(StringBuffer qstr, String fieldname, List<String> fvals , boolean isOr , Optional<Float> weight) {
+        // add quotes to field vals by default
+        for (String fval : fvals) {
+            addToQryStr(qstr, fieldname, fval, true, isOr  , weight);
+        }
+    }
+    */
+
+    private static void addToQryStr(StringBuffer qstr, String fieldname, List<String> fvals, boolean isOr, Optional<Float>  weight) {
         if(fvals.isEmpty()) return;
 
         if(fvals.size() ==1){
-            addToQryStr(qstr , fieldname , fvals.get(0) , isOr );
+            addToQryStr(qstr , fieldname , fvals.get(0) , isOr , weight);
             return;
         }
 
         String orValues = fvals.stream().collect(Collectors.joining(" OR "));
-        addToQryStr(qstr, fieldname, "("+orValues+")", true, isOr);
+        addToQryStr(qstr, fieldname, "("+orValues+")", true, isOr , weight);
     }
 
 
-    private static void addToQryStr(StringBuffer qstr, String fieldname, Optional<String> fval , boolean isOr) {
-        fval.ifPresent(val -> addToQryStr(qstr, fieldname, val , isOr ));
+    private static void addToQryStr(StringBuffer qstr, String fieldname, Optional<String> fval , boolean isOr, Optional<Float>  weight) {
+        fval.ifPresent(val -> addToQryStr(qstr, fieldname, val , isOr , weight ));
     }
 
-    private static void addToQryStr(StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, String key , boolean isOr) {
+    private static void addToQryStr(StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, String key, boolean isOr, Optional<Float> weight) {
         String f = getSolrFieldName(fieldname, key);
         Optional.ofNullable(fvalmap.get(key)).ifPresent(vals -> vals.forEach(v -> {
-            addToQryStr(qstr, f, v , isOr);
+            addToQryStr(qstr, f, v , isOr, weight);
         }));
     }
 
-    private static void addToQryStr(StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, List<String> keys , boolean isOr) {
+    private static void addToQryStr(StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, List<String> keys , boolean isOr , Optional<Float> weight) {
         // Empty list of selected keys is treated as if all keys are to be added
         Collection<String> ftoadd = (keys.isEmpty()) ? fvalmap.keySet() : keys;
         ftoadd.forEach(k -> {
-            addToQryStr(qstr, fieldname, fvalmap, k , isOr);
+            addToQryStr(qstr, fieldname, fvalmap, k , isOr , weight);
         });
     }
 
-    private static void addMatch(ComparisonType mt, SolrQuery query, StringBuffer qparam, String fieldname, String fval ,boolean isOr) {
+    private static void addMatch(ComparisonType mt, SolrQuery query, StringBuffer qparam, String fieldname, String fval, boolean isOr, Optional<Float> weight) {
         switch (mt) {
             case Equal: addFilter(query, fieldname, fval); break;
-            case EqualOptional: addToQryStr(qparam, fieldname, fval , isOr); break;
+            case EqualOptional: addToQryStr(qparam, fieldname, fval , isOr , weight); break;
             default:
         }
     }
 
-    private static void addMatch(ComparisonType mt, SolrQuery query, StringBuffer qstr, String fieldname, Optional<String> fval , boolean isOr) {
+    private static void addMatch(ComparisonType mt, SolrQuery query, StringBuffer qstr, String fieldname, Optional<String> fval, boolean isOr, Optional<Float> weight) {
         switch (mt) {
             case Equal: addFilter(query, fieldname, fval); break;
-            case EqualOptional: addToQryStr(qstr, fieldname, fval , isOr); break;
+            case EqualOptional: addToQryStr(qstr, fieldname, fval , isOr , weight); break;
             default:
         }
     }
 
-    private static void addToQuery(SolrQuery query, StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, ComparisonType ct, String path , boolean isOr) {
+    private static void addToQuery(SolrQuery query, StringBuffer qstr, String fieldname, MultivaluedMap<String, String> fvalmap, ComparisonType ct, String path, boolean isOr, Optional<Float> weight) {
         if (ct == ComparisonType.Equal) {
             addFilter(query, fieldname, fvalmap, path);
         } else if (ct == ComparisonType.EqualOptional) {
-            addToQryStr(qstr, fieldname, fvalmap, path , isOr);
+            addToQryStr(qstr, fieldname, fvalmap, path , isOr , weight);
         }
     }
 
@@ -2642,9 +2705,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     @Override
     public boolean deleteReqResByTraceId(String traceId, String collectionName) {
         StringBuffer queryBuff = new StringBuffer();
-        addToQryStr(queryBuff , TRACEIDF , traceId , false);
-        addToQryStr(queryBuff , COLLECTIONF , collectionName , false);
-        addToQryStr(queryBuff , TYPEF , Types.Event.name() , false);
+        addToQryStr(queryBuff , TRACEIDF , traceId , false );
+        addToQryStr(queryBuff , COLLECTIONF , collectionName ,false);
+        addToQryStr(queryBuff , TYPEF , Types.Event.name() ,false);
 
         return deleteDocsByQuery(queryBuff.toString());
     }
@@ -2653,9 +2716,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public boolean deleteReqResByReqId(String reqId, String customerId, Optional<EventType> eventType) {
 
         StringBuffer queryBuff = new StringBuffer();
-        addToQryStr(queryBuff , REQIDF , reqId , false);
-        addToQryStr(queryBuff , TYPEF , Types.Event.name() , false);
-        addToQryStr(queryBuff , CUSTOMERIDF , customerId , false);
+        addToQryStr(queryBuff , REQIDF , reqId , false );
+        addToQryStr(queryBuff , TYPEF , Types.Event.name() , false );
+        addToQryStr(queryBuff , CUSTOMERIDF , customerId , false );
 
 
         if (eventType.isPresent()) {
