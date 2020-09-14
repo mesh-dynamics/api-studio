@@ -1464,7 +1464,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if(fvals.isEmpty()) return;
 
         if(fvals.size() ==1){
-            addToQryStr(qstr , fieldname , fvals.get(0) , isOr , weight);
+            addToQryStr(qstr , fieldname , fvals.get(0) , isOr , weight );
             return;
         }
 
