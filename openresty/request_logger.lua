@@ -3,7 +3,7 @@
 -- local app = 'ProntoApp'
 -- local instanceId = 'test-md'
 -- local service = ngx.var.host
--- local run_type = 'Record'
+-- local runType = 'Record'
 -- local recordingType = "Golden"
 
  
@@ -72,7 +72,7 @@ cube_request["customerId"] = customerId
 cube_request["app"] = app
 cube_request["instanceId"] = instanceId
 cube_request["service"] = service
-cube_request["run_type"] = run_type
+cube_request["runType"] = runType
 cube_request["recordingType"] = recordingType
 
  
@@ -127,9 +127,9 @@ end
  
 
 
-if ends_with(apiPathToSet, "/") and apiPathToSet ~= "/" then
-    apiPathToSet = apiPathToSet:sub(1,#apiPathToSet-1)
-end
+-- if ends_with(apiPathToSet, "/") and apiPathToSet ~= "/" then
+    -- apiPathToSet = apiPathToSet:sub(1,#apiPathToSet-1)
+-- end
 
  
 
@@ -211,6 +211,12 @@ if (subReqMethod == "POST") then
     subReqMethod = ngx.HTTP_POST
 elseif (subReqMethod == "GET") then
     subReqMethod = ngx.HTTP_GET
+elseif (subReqMethod == "DELETE") then
+    subReqMethod = ngx.HTTP_DELETE
+elseif (subReqMethod == "PUT") then
+    subReqMethod = ngx.HTTP_PUT
+elseif (subReqMethod == "PATCH") then
+    subReqMethod = ngx.HTTP_PATCH
 end
 
 local uri=""
@@ -235,7 +241,7 @@ cube_response["customerId"] = customerId
 cube_response["app"] = app
 cube_response["instanceId"] = instanceId
 cube_response["service"] = service
-cube_response["run_type"] = run_type
+cube_response["runType"] = runType
 cube_response["recordingType"] = recordingType
 
  
@@ -245,7 +251,7 @@ cube_response["recordingType"] = recordingType
 resp_headers = upstream_response.header
 resp_headers_multimap = {}
 for k, v in pairs(resp_headers) do
-    resp_headers_multimap[k] = {v}
+    resp_headers_multimap[string.lower(k)] = {v}
 end
 
  
@@ -298,23 +304,66 @@ local httpc = http.new()
 ngx.log(ngx.CRIT, "response from cube");
 ngx.log(ngx.CRIT, err); 
 
+local forbiddenHeaders = {
+"accept-aharset",
+"accept-encoding",
+"access-control-request-headers",
+"access-control-request-method",
+"connection",
+"content-length",
+"cookie",
+"cookie2",
+"date",
+"dnt",
+"expect",
+"feature-policy",
+"host",
+"keep-alive",
+"origin",
+"proxy-",
+"sec-",
+"referer",
+"te",
+"trailer",
+"transfer-encoding",
+"upgrade",
+"via"
+}
+
+local function has_value (tab, val)
+    for index, value in ipairs(tab) do
+        -- We grab the first index of our sub-table instead
+        if value == string.lower(val) then
+            return true
+        end
+    end
+
+    return false
+end
 
 if upstream_response~=nil then
     ngx.status = upstream_response.status
     local resp_headers = upstream_response.header
      for k, v in pairs(resp_headers) do
-         ngx.log(ngx.CRIT, k)
-         -- ngx.log(ngx.CRIT, v)
-         ngx.header[k] = v
+         if not has_value(forbiddenHeaders, k) then
+              ngx.header[k] = v
+         end
      end
 
  
 
     -- ngx.header.content_encoding = gzip
-    ngx.say(upstream_response.body)
-    ngx.eof()
+    ngx.log(ngx.CRIT, "printing response body");
+    ngx.log(ngx.CRIT, upstream_response.body);
+    ngx.say(upstream_response.body);
+    local eofrsp = ngx.eof();
+    ngx.flush(true);
+    --ngx.log(ngx.CRIT, "printing eof response");
+    --ngx.log(ngx.CRIT, eofrsp);
 else 
-    ngx.say("No response from upstram")
+    ngx.say("No response from upstream");
+    ngx.eof();
+    ngx.flush(true);
 end
 
  
