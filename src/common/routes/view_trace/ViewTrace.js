@@ -508,7 +508,15 @@ class ViewTrace extends Component {
         }
     }
 
-    validateAndCleanHTTPMessageParts (messagePart) {
+    validateAndCleanHTTPMessageParts (messagePart, headers) {
+        if(headers) {
+            let contentType = this.getParameterCaseInsensitive(headers, "content-type");
+            let contentTypeString = contentType ? (_.isArray(contentType) ? contentType[0] : contentType) : "",
+                isMultipart = contentTypeString.toLowerCase().indexOf("multipart") > -1;
+            if(isMultipart) {
+                return messagePart;
+            }
+        }
         let cleanedMessagepart = "";
         if (messagePart &&_.isObject(messagePart)) {
             cleanedMessagepart = messagePart;
@@ -745,7 +753,7 @@ class ViewTrace extends Component {
             // parse and clean up body string
             if (item.recordRequest) {
                 recordedRequestHeaders = this.validateAndCleanHTTPMessageParts(item.recordRequest.hdrs);
-                recordedRequestBody = this.validateAndCleanHTTPMessageParts(item.recordRequest.body);
+                recordedRequestBody = this.validateAndCleanHTTPMessageParts(item.recordRequest.body, item.recordRequest.hdrs);
                 recordedRequestQParams = this.validateAndCleanHTTPMessageParts(item.recordRequest.queryParams);
                 recordedRequestFParams = this.validateAndCleanHTTPMessageParts(item.recordRequest.formParams);
             } else {
@@ -759,7 +767,7 @@ class ViewTrace extends Component {
             // same as above
             if (item.replayRequest) {
                 replayedRequestHeaders = this.validateAndCleanHTTPMessageParts(item.replayRequest.hdrs);
-                replayedRequestBody = this.validateAndCleanHTTPMessageParts(item.replayRequest.body);
+                replayedRequestBody = this.validateAndCleanHTTPMessageParts(item.replayRequest.body, item.replayRequest.hdrs);
                 replayedRequestQParams = this.validateAndCleanHTTPMessageParts(item.replayRequest.queryParams);
                 replayedRequestFParams = this.validateAndCleanHTTPMessageParts(item.replayRequest.formParams);
             } else {
