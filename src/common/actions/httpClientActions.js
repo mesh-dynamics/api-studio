@@ -2,6 +2,7 @@ import { cubeService } from "../services";
 import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from "lodash";
 import arrayToTree from 'array-to-tree';
+
 export const httpClientActions = {
     deleteParamInSelectedOutgoingTab: (tabId, type, id) => {
         return {type: httpClientConstants.DELETE_PARAM_IN_OUTGOING_TAB, data: {tabId, type, id}};
@@ -288,6 +289,68 @@ export const httpClientActions = {
             console.error("Error ", error);
             throw new Error("Error");
         }
-    }
+    },
 
+    // mock config
+
+    setMockConfigList: (mockConfigList) => ({type: httpClientConstants.SET_MOCK_CONFIG_LIST, data: mockConfigList}),
+
+    setMockConfigStatusText: (text, isError=false) => ({type: httpClientConstants.SET_MOCK_CONFIG_STATUS_TEXT, data: {text, isError}}),
+
+    resetMockConfigStatusText: () => ({type: httpClientConstants.RESET_MOCK_CONFIG_STATUS_TEXT}),
+
+    showMockConfigList: (show) => ({type: httpClientConstants.SHOW_MOCK_CONFIG_LIST, data: show}),
+
+    setSelectedMockConfig: (selectedMockConfig) => ({type: httpClientConstants.SET_SELECTED_MOCK_CONFIG, data: selectedMockConfig}),
+
+    fetchMockConfigs: () => async (dispatch, getState) => {
+        dispatch(httpClientActions.setMockConfigStatusText("Loading..."))
+        const state = getState();
+        const { selectedApp } = state.cube;
+        try {
+            const mockConfigList = await cubeService.getAllMockConfigs(selectedApp);
+            dispatch(httpClientActions.setMockConfigList(mockConfigList))
+            dispatch(httpClientActions.resetMockConfigStatusText())
+        } catch (e) {
+            dispatch(httpClientActions.setMockConfigStatusText(e.response?.data.message, true))
+        }  
+    },
+
+    saveMockConfig: (mockConfig) => async (dispatch, getState) => {
+        dispatch(httpClientActions.setMockConfigStatusText("Saving..."))
+        const state = getState();
+        const { selectedApp } = state.cube;
+        try {
+            await cubeService.insertNewMockConfig(selectedApp, mockConfig);
+            dispatch(httpClientActions.fetchMockConfigs())
+            dispatch(httpClientActions.resetMockConfigStatusText())
+            dispatch(httpClientActions.showMockConfigList(true));
+        } catch (e) {
+            dispatch(httpClientActions.setMockConfigStatusText(e.response.data.message, true))
+        } 
+    },
+
+    updateMockConfig: (id, mockConfig) => async (dispatch, getState) => {
+        dispatch(httpClientActions.setMockConfigStatusText("Updating..."))
+        const state = getState();
+        const { selectedApp } = state.cube;
+        try {
+            await cubeService.updateMockConfig(selectedApp, id, mockConfig);
+            dispatch(httpClientActions.fetchMockConfigs())
+            dispatch(httpClientActions.resetMockConfigStatusText())
+            dispatch(httpClientActions.showMockConfigList(true));
+        } catch (e) {
+            dispatch(httpClientActions.setMockConfigStatusText(e.response.data.message, true))
+        } 
+    },
+
+    removeMockConfig: (id) => async (dispatch) => {
+        dispatch(httpClientActions.setMockConfigStatusText("Removing..."))
+        try {
+            await cubeService.deleteMockConfig(id)
+            dispatch(httpClientActions.fetchMockConfigs())
+        } catch (e) {
+            dispatch(httpClientActions.setMockConfigStatusText(e.response.data.message, true))
+        }
+    },
 }

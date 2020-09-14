@@ -136,6 +136,12 @@ const initialState = {
     mockReqApiPath: "",
     modalErrorAddMockReqMessage: "",
     selectedTabIdToAddMockReq: "",
+
+    mockConfigList: [],
+    mockConfigStatusText: "",
+    mockConfigStatusIsError: false,
+    showMockConfigList: true,
+    selectedMockConfig: "",
 }
 
 const getTabIndexGivenTabId = (tabId, tabs) => {
@@ -618,6 +624,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                 selectedEnvironment: data,
             }
         }
+
         case httpClientConstants.RESET_RUN_STATE: {
             let {tabs} = state;
             return {
@@ -748,6 +755,43 @@ export const httpClient = (state = initialState, { type, data }) => {
                     }
                     return eachTab;
                 })
+            }
+        }
+
+        // mock configs
+        case httpClientConstants.SET_MOCK_CONFIG_LIST: {
+            return {
+                ...state,
+                mockConfigList: data,
+            }
+        }
+
+        case httpClientConstants.SET_MOCK_CONFIG_STATUS_TEXT: {
+            return {
+                ...state,
+                mockConfigStatusText: data.text,
+                mockConfigStatusIsError: data.isError,
+            }
+        }
+
+        case httpClientConstants.RESET_MOCK_CONFIG_STATUS_TEXT: {
+            return {
+                ...state,
+                mockConfigStatusText: "",
+            }
+        }
+        
+        case httpClientConstants.SHOW_MOCK_CONFIG_LIST: {
+            return {
+                ...state,
+                showMockConfigList: data,
+            }
+        }
+
+        case httpClientConstants.SET_SELECTED_MOCK_CONFIG: {
+            return {
+                ...state,
+                selectedMockConfig: data,
             }
         }
 

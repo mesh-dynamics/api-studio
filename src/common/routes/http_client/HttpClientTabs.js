@@ -40,6 +40,7 @@ import { parseCurlCommand } from '../../utils/http_client/curlparser';
 import SplitSlider  from '../../components/SplitSlider.js';
 
 import commonConstants from '../../utils/commonConstants';
+import MockConfigs from "./MockConfigs";
 
 
 class HttpClientTabs extends Component {
@@ -50,6 +51,8 @@ class HttpClientTabs extends Component {
         this.state = { 
             showEnvVarModal: false,
             showSelectedEnvModal: false,
+            showMockConfigModal: false,
+            showSelectedMockConfigModal: false,
             showErrorModal: false,
             errorMsg: "",
             showDeleteGoldenConfirmation:false,
@@ -1143,7 +1146,7 @@ class HttpClientTabs extends Component {
     }
 
     driveRequest(isOutgoingRequest, tabId) {
-        const {httpClient: {tabs, selectedTabKey, userHistoryCollection}} = this.props;
+        const {httpClient: {tabs, selectedTabKey, userHistoryCollection, selectedMockConfig}} = this.props;
         const { cube: { selectedApp } } = this.props;
         const { dispatch } = this.props;
         const user = JSON.parse(localStorage.getItem('user'));
@@ -1156,6 +1159,7 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.resetRunState(tabId))
         // generate a new run id every time a request is run
         const runId = generateRunId();
+        const mockConfig = this.getCurrentMockConfig();
         const spanId = tabToProcess.eventData[0].spanId;
 
         if(PLATFORM_ELECTRON) {
@@ -1167,6 +1171,7 @@ class HttpClientTabs extends Component {
                 selectedApp,
                 customerName: customerId,
                 runId: runId,
+                config: mockConfig,
                 spanId: spanId
             }
 
@@ -1959,6 +1964,7 @@ class HttpClientTabs extends Component {
         }
 
         dispatch(httpClientActions.fetchEnvironments())
+        //dispatch(httpClientActions.fetchMockConfigs())
     }
 
     componentWillUnmount() {
@@ -2219,7 +2225,7 @@ class HttpClientTabs extends Component {
             <FormGroup bsSize="small" style={{ marginBottom: "0px" }}>
                 <FormControl componentClass="select" placeholder="Environment" style={{ fontSize: "12px" }} value={selectedEnvironment} onChange={this.handleEnvChange} className="btn-sm">
                     <option value="">No Environment</option>
-                    {environmentList.map((env) => (<option key={env.name} value={env.name}>{env.name}</option>))}
+                    {environmentList.length && environmentList.map((env) => (<option key={env.name} value={env.name}>{env.name}</option>))}
                 </FormControl>
             </FormGroup>)
     }
@@ -2261,13 +2267,11 @@ class HttpClientTabs extends Component {
                             </table>}
                         </div>
                     </Modal.Body>
-                    <Modal.Footer>
-                        <div onClick={this.closeSelectedEnvModal} className="btn btn-sm cube-btn text-center">Close</div>
-                    </Modal.Footer>
                 </Modal>
             </Fragment>
         )
     }
+
 
     openSelectedEnvModal = () => {
         this.setState({showSelectedEnvModal: true});
@@ -2279,6 +2283,80 @@ class HttpClientTabs extends Component {
 
     hideEnvModal = () => {
         this.setState({ showEnvVarModal: false })
+    }
+    
+    // mock config
+    
+    getCurrentMockConfig = () => {
+        const { httpClient: { mockConfigList, selectedMockConfig } } = this.props;
+        const foundMockConfig = _.find(mockConfigList, { key: selectedMockConfig })
+        return foundMockConfig ? JSON.parse(foundMockConfig.value) : {};    
+    }
+
+    renderMockConfigListDD = () => {
+        const { httpClient: { mockConfigList, selectedMockConfig } } = this.props;
+        return (
+            <FormGroup bsSize="small" style={{ marginBottom: "0px" }}>
+                <FormControl componentClass="select" placeholder="Environment" style={{ fontSize: "12px" }} value={selectedMockConfig} onChange={this.handleMockConfigChange} className="btn-sm">
+                    <option value="">No Mock Configuration</option>
+                    {mockConfigList.length && mockConfigList.map((mockConfig) => (<option key={mockConfig.key} value={mockConfig.key}>{mockConfig.key}</option>))}
+                </FormControl>
+            </FormGroup>)
+    }
+
+    handleMockConfigChange = (e) => {
+        const {dispatch} = this.props;
+        dispatch(httpClientActions.setSelectedMockConfig(e.target.value))
+    }
+
+    renderSelectedMockConfigModal = () => {
+        const currentMockConfig = this.getCurrentMockConfig();
+        const { httpClient: { selectedMockConfig } } = this.props;
+        return (
+            <Fragment>
+                <span title="Current mock configuration quick look" className="btn btn-sm cube-btn text-center" onClick={this.openSelectedMockConfigModal}>
+                    <i className="fas fa-eye" />
+                </span>
+                <Modal show={this.state.showSelectedMockConfigModal} onHide={this.closeSelectedMockConfigModal}>
+                    <Modal.Header closeButton>
+                        <Modal.Title>{selectedMockConfig || "No Mock Configuration Selected"}</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <div>
+                            {currentMockConfig && !_.isEmpty(currentMockConfig.serviceConfigs) && <table className="table table-bordered table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style={{ width: "20%" }}>Service</th>
+                                        <th>Target URL</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {currentMockConfig.serviceConfigs.map(({service, url, isMocked}) => (
+                                    <tr>
+                                        <td>{service}</td>
+                                        <td style={{wordBreak: "break-all"}}>{isMocked ? "MOCKED" : url}</td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>}
+                        </div>
+                    </Modal.Body>
+                </Modal>
+            </Fragment>
+        )
+    }
+
+
+    openSelectedMockConfigModal = () => {
+        this.setState({showSelectedMockConfigModal: true});
+    }
+
+    closeSelectedMockConfigModal = () => {
+        this.setState({showSelectedMockConfigModal: false})
+    }
+
+    hideMockConfigModal = () => {
+        this.setState({ showMockConfigModal: false })
     }
      
     handleDuplicateTab = (tabId) => {
@@ -2345,7 +2423,7 @@ class HttpClientTabs extends Component {
 
     render() {
         const { cube } = this.props;
-        const { showEnvVarModal, showDeleteGoldenConfirmation, showErrorModal, errorMsg, importedToCollectionId, serializedCollection, modalErrorImportCollectionMessage, showImportModal, curlCommand, modalErrorImportFromCurlMessage} = this.state;
+        const { showEnvVarModal, showDeleteGoldenConfirmation, showErrorModal, errorMsg, importedToCollectionId, serializedCollection, modalErrorImportCollectionMessage, showImportModal, curlCommand, modalErrorImportFromCurlMessage, showMockConfigModal} = this.state;
         const { cube: {selectedApp} } = this.props;
         const app = selectedApp;
         const {httpClient: {cubeRunHistory, userCollections, collectionName, collectionLabel, modalErroSaveMessage,modalErroSaveMessageIsError, modalErroCreateCollectionMessage, tabs, selectedTabKey, showSaveModal, showAddMockReqModal, mockRequestServiceName, mockRequestApiPath, modalErrorAddMockReqMessage}} = this.props;
@@ -2470,11 +2548,14 @@ class HttpClientTabs extends Component {
                             <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleImportModalShow}>
                                 <Glyphicon glyph="import" /> Import
                             </div>
-                                <div style={{display: "inline-block", padding: 0}} className="btn">{this.renderEnvListDD()}</div>
-                                <div style={{display: "inline-block"}}>{this.renderSelectedEnvModal()}</div>
-                                <span className="btn btn-sm cube-btn text-center" onClick={() => {this.setState({showEnvVarModal: true})}} title="Configure environments"><i className="fas fa-cog"/> </span>
-                            {/* <div style={{display: "inline-block", margin: "10px" }}>
-                            </div> */}
+                            {/* mock configs */}
+                            <div style={{display: "inline-block", padding: 0}} className="btn">{this.renderMockConfigListDD()}</div>
+                            <div style={{display: "inline-block"}}>{this.renderSelectedMockConfigModal()}</div>
+                            <span className="btn btn-sm cube-btn text-center" onClick={() => {this.setState({showMockConfigModal: true})}} title="Service mock configurations"><i className="fas fa-cog"/> </span>
+
+                            <div style={{display: "inline-block", padding: 0}} className="btn">{this.renderEnvListDD()}</div>
+                            <div style={{display: "inline-block"}}>{this.renderSelectedEnvModal()}</div>
+                            <span className="btn btn-sm cube-btn text-center" onClick={() => {this.setState({showEnvVarModal: true})}} title="Configure environments"><i className="fas fa-cog"/> </span>                            
                         </div>
                     </div>
                     <div style={{marginTop: "10px", display: ""}}>
@@ -2542,6 +2623,9 @@ class HttpClientTabs extends Component {
                         </Modal>
                         <Modal bsSize="large" show={showEnvVarModal} onHide={this.hideEnvModal} className="envModal">
                             <EnvVar hideModal={this.hideEnvModal} />
+                        </Modal>
+                        <Modal bsSize="large" show={showMockConfigModal} onHide={this.hideMockConfigModal} className="envModal">
+                            <MockConfigs hideModal={this.hideMockConfigModal} />
                         </Modal>
                     </div>
                     <div>
