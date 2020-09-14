@@ -28,7 +28,7 @@ public class FnReqResponsePreProcessTest {
             RetStatus.Success, Optional.empty());
 
 
-        Utils.preProcess(fnReqResponse);
+        ServerUtils.preProcess(fnReqResponse);
         System.out.println(fnReqResponse.argVals[0]);
         System.out.println(fnReqResponse.argsHash[0]);
 
@@ -45,7 +45,7 @@ public class FnReqResponsePreProcessTest {
             Optional.empty(), new Integer[]{argHash}, new String[]{argVal} , "random",
             RetStatus.Success, Optional.empty());
 
-        Utils.preProcess(fnReqResponse);
+        ServerUtils.preProcess(fnReqResponse);
         System.out.println(fnReqResponse.argVals[0]);
         System.out.println(fnReqResponse.argsHash[0]);
 

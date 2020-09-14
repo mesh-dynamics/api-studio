@@ -9,6 +9,8 @@ import io.md.constants.ReplayStatus;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.TemplateKey;
 import io.md.core.ValidateAgentStore;
+import io.md.dao.HTTPResponsePayload;
+import io.md.dao.ResponsePayload;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
 import io.md.dao.agent.config.ConfigType;
@@ -19,6 +21,7 @@ import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.Replay;
+import io.md.dao.ReplayBuilder;
 import io.md.dao.Analysis;
 import io.md.dao.Config;
 import java.io.IOException;
@@ -87,6 +90,8 @@ import io.md.utils.FnKey;
 import io.md.injection.DynamicInjectionConfig;
 import io.md.injection.DynamicInjectionConfig.ExtractionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta;
+import io.md.core.Utils;
+import io.md.utils.Constants;
 
 import redis.clients.jedis.Jedis;
 
@@ -95,11 +100,9 @@ import com.cube.cache.TemplateCache;
 import com.cube.cache.TemplateCacheRedis;
 import com.cube.cache.TemplateCacheWithoutCaching;
 import com.cube.core.CompareTemplateVersioned;
-import com.cube.core.Utils;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
-import com.cube.utils.Constants;
 
 /**
  * @author prasad
@@ -1982,8 +1985,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             && templateVersion.isPresent()) {
             try {
                 ReplayBuilder builder = new ReplayBuilder(endpoint.get(),
-                    new CubeMetaInfo(customerId.get(), app.get(), instanceId.get())
-                    , collection.get(), userId.get()).withReqIds(reqIds)
+                    customerId.get(), app.get(), instanceId.get(), collection.get(), userId.get()).withReqIds(reqIds)
                     .withReplayId(replayId.get())
                     .withAsync(async.get()).withTemplateSetVersion(templateVersion.get())
                     .withReplayStatus(status.get()).withPaths(paths)
@@ -2351,6 +2353,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String NUMMATCHF = CPREFIX + "numMatch" + INT_SUFFIX;
     private static final String RESP_COMP_RES_TYPE_F = CPREFIX + Constants.RESP_MATCH_TYPE + STRING_SUFFIX; // match type
     private static final String RESP_COMP_RES_META_F = CPREFIX + "respMatchMetadata" + STRING_SUFFIX;
+    private static final String MODIFIED_REC_RESP_PAYLOAD_F = CPREFIX + "recRespPayload" + STRING_SUFFIX;
+    private static final String MODIFIED_REPLAY_RESP_PAYLOAD_F = CPREFIX + "replayRespPayload"  + STRING_SUFFIX;
     private static final String REQ_COMP_RES_TYPE_F = CPREFIX + Constants.REQ_COMP_RES_TYPE + STRING_SUFFIX;
     private static final String REQ_COMP_RES_META_F = CPREFIX + Constants.REQ_COMP_RES_META + STRING_SUFFIX;
     private static final String DIFFF = CPREFIX + "diff" + NOTINDEXED_SUFFIX;
@@ -2406,6 +2410,25 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(NUMMATCHF, res.numMatch);
         doc.setField(RESP_COMP_RES_TYPE_F, res.respCompareRes.mt.toString());
         doc.setField(RESP_COMP_RES_META_F, res.respCompareRes.matchmeta);
+        res.respCompareRes.recordedResponse.ifPresent(modifiedRecResponse -> {
+            try {
+                doc.setField(MODIFIED_REC_RESP_PAYLOAD_F
+                    , config.jsonMapper.writeValueAsString(modifiedRecResponse));
+            } catch(Exception e) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Conversion of Modified Recorded Response Payload to String failed")), e);
+            }
+        });
+
+        res.respCompareRes.replayedResponse.ifPresent(modifiedReplayResponse -> {
+            try {
+                doc.setField(MODIFIED_REPLAY_RESP_PAYLOAD_F
+                    , config.jsonMapper.writeValueAsString(modifiedReplayResponse));
+            } catch(Exception e) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Conversion of Modified Replayed Response Payload to String failed")), e);
+            }
+        });
         AtomicInteger counter = new AtomicInteger(0);
         doc.addChildDocuments(res.respCompareRes.diffs.stream().map(diff ->
                 diffToSolrDoc(diff, DiffType.Response, recReplayReqIdCombined
@@ -2761,7 +2784,34 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
             List<Diff> respMatchDiffList =  getDiffFromChildDocs(doc, DiffType.Response);
 
-            Match respMatch = new Match(respMatchType, respMatchMetaData, respMatchDiffList);
+            Optional<JsonNode> modifiedRecRespPayload =
+                getStrField(doc, MODIFIED_REC_RESP_PAYLOAD_F).map(modifiedRespPayloadStr ->
+                {
+                    try {
+                        return config.jsonMapper.readValue(modifiedRespPayloadStr
+                            , JsonNode.class);
+                    } catch (IOException e) {
+                        LOGGER.error("Error while reading modified recorded resp "
+                            + "payload from solr ", e);
+                        return null;
+                    }
+                });
+
+            Optional<JsonNode> modifiedReplayRespPayload =
+                getStrField(doc, MODIFIED_REPLAY_RESP_PAYLOAD_F).map(modifiedRespPayloadStr ->
+                {
+                    try {
+                        return config.jsonMapper.readValue(modifiedRespPayloadStr
+                            , JsonNode.class);
+                    } catch (IOException e) {
+                        LOGGER.error("Error while reading modified recorded resp "
+                            + "payload from solr ", e);
+                        return null;
+                    }
+                });
+
+            Match respMatch = new Match(respMatchType, respMatchMetaData, respMatchDiffList
+                , modifiedRecRespPayload , modifiedReplayRespPayload);
 
             Optional<Match> reqCompResOptional = getStrField(doc, REQ_COMP_RES_TYPE_F)
                 .map(Comparator.MatchType::valueOf).map(UtilException.rethrowFunction(
@@ -2985,8 +3035,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             .isPresent() &&
             status.isPresent() && templateVersion.isPresent() && archived.isPresent() && name
             .isPresent() && userId.isPresent()) {
-            RecordingBuilder recordingBuilder = new RecordingBuilder(new CubeMetaInfo(
-                customerId.get(), app.get(), instanceId.get()), collection.get())
+            RecordingBuilder recordingBuilder = new RecordingBuilder(
+                customerId.get(), app.get(), instanceId.get(), collection.get())
                 .withStatus(status.get()).withTemplateSetVersion(templateVersion.get())
                 .withName(name.get()).withArchived(archived.get()).withUserId(userId.get())
                 .withTags(tags)

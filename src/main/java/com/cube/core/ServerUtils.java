@@ -4,20 +4,23 @@
 package com.cube.core;
 
 
+import io.md.core.Comparator.Diff;
+import io.md.core.CompareTemplate.DataType;
 import io.md.dao.Recording.RecordingType;
+
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Predicate;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -25,19 +28,21 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.MultivaluedMap;
 
 import javax.ws.rs.core.Response;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.http.client.utils.URIBuilder;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONObject;
+import org.apache.solr.client.solrj.SolrClient;
+import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.request.SolrPing;
+import org.apache.solr.client.solrj.response.SolrPingResponse;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.JsonPointer;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.UtilException;
@@ -50,10 +55,11 @@ import io.md.dao.Event.EventBuilder;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Recording;
+import io.md.utils.Constants;
+import io.md.utils.Utils;
 
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
-import com.cube.utils.Constants;
 import com.cube.ws.Config;
 import redis.clients.jedis.Jedis;
 
@@ -62,118 +68,18 @@ import redis.clients.jedis.Jedis;
  * @author prasad
  *
  */
-public class Utils {
+public class ServerUtils {
 
-    private static final Logger LOGGER = LogManager.getLogger(Utils.class);
+    private static final Logger LOGGER = LogManager.getLogger(ServerUtils.class);
 
-
-    // Assumes name is not null
-	public static <T extends Enum<T>> Optional<T> valueOf(Class<T> clazz, String name) {
-	    return EnumSet.allOf(clazz).stream()
-		    .filter(v -> v.name().toLowerCase().equals(name.toLowerCase()))
-	        .findAny();
-	}
-
-	// copied from jdk.internal.net.http.common.Utils, since it is private there and we
-	// need this list
-	// TODO: Always keep this in sync
-    private static final Set<String> DISALLOWED_HEADERS_SET;
-
-    static {
-        // A case insensitive TreeSet of strings.
-        TreeSet<String> treeSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        treeSet.addAll(Set.of("connection", "content-length",
-                "date", "expect", "from", "host", "origin",
-                "referer", "upgrade",
-                "via", "warning", "transfer-encoding"));
-        DISALLOWED_HEADERS_SET = Collections.unmodifiableSet(treeSet);
-    }
-
-    public static final Predicate<String>
-            ALLOWED_HEADERS = (header) -> !DISALLOWED_HEADERS_SET.contains(header);
-
-	/**
-	 * @param intStr
-	 * @return
-	 */
-	public static Optional<Integer> strToInt(String intStr) {
-		try {
-			return Optional.ofNullable(intStr).map(Integer::valueOf);
-		} catch (Exception e) {
-			LOGGER.error("Error while parsing int",e);
-			return Optional.empty();
-		}
-	}
-
-
-	public static Optional<Double> strToDouble(String dblStr) {
-		try {
-			return Optional.ofNullable(dblStr).map(Double::valueOf);
-		} catch (Exception e) {
-			return Optional.empty();
-		}
-	}
-
-
-    public static Optional<Long> strToLong(String longStr) {
-        try {
-            return Optional.ofNullable(longStr).map(Long::valueOf);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
-    }
-
-    public static Optional<Instant> strToTimeStamp(String val) {
-        try {
-            return Optional.of(Instant.parse(val)); // parse cannot return null
-        } catch (Exception e) {
-            return Optional.empty();
-        }
-    }
-
-
-    public static Optional<Instant> msStrToTimeStamp(String val) {
-	    try {
-	        return strToLong(val).map(Instant::ofEpochMilli);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
-    }
-
-
-    public static Optional<Boolean> strToBool(String boolStr) {
-        try {
-            return Optional.ofNullable(boolStr).map(BooleanUtils::toBoolean);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
-    }
-
-	public static <T> CompletableFuture<List<T>> sequence(List<CompletableFuture<T>> futures) {
-		CompletableFuture<Void> allDoneFuture =
-				CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
-		return allDoneFuture.thenApply(v ->
-				futures.stream().
-						map(future -> future.join()).
-						collect(Collectors.<T>toList())
-		);
-	}
-
-	public static ValidateCompareTemplate validateTemplateSet(TemplateSet templateSet) {
+    // TODO: Keep in refactoring
+    public static ValidateCompareTemplate validateTemplateSet(TemplateSet templateSet) {
         return templateSet.templates.stream().map(CompareTemplateVersioned::validate)
             .filter(v -> !v.isValid())
             .findFirst()
             .orElseGet(() -> new ValidateCompareTemplate(true, Optional.of("")));
 	}
 
-
-    public static IntNode intToJson(Integer val) {
-		return IntNode.valueOf(val);
-    }
-
-	public static TextNode strToJson(String val) {
-		return TextNode.valueOf(val);
-	}
 
     public static Pattern analysisTimestampPattern = Pattern.compile("\\\\\"timestamp\\\\\":\\d{13},");
 	public static Pattern recordingTimestampPattern = Pattern.compile(",\"timestamp_dt\":\\{\"name\":\"timestamp_dt\",\"value\":\".+\"\\}");
@@ -214,12 +120,31 @@ public class Utils {
         }
     }
 
-    public static JsonNode convertArrayToObject(JsonNode node){
+    public static JsonNode
+    convertArrayToObject(JsonNode node, CompareTemplate template, String path, String newPath,
+                         Set<String> pathsToBeReconstructed){
         if (node.isArray()) {
+            TemplateEntry arrayRule = template.getRule(path);
             ArrayNode nodeAsArray = (ArrayNode) node;
             ObjectNode equivalentObjNode = JsonNodeFactory.instance.objectNode();
-            for (int i = 0 ; i < nodeAsArray.size() ; i++){
-                equivalentObjNode.set(String.valueOf(i), convertArrayToObject(nodeAsArray.get(i)));
+            pathsToBeReconstructed.add(newPath);
+            if (arrayRule.dt == DataType.Set) {
+                Optional<JsonPointer> pathPointer =
+                    arrayRule.arrayComparisionKeyPath.map(JsonPointer::compile);
+                for (int i = 0 ; i < nodeAsArray.size() ; i++) {
+                    JsonNode elem = nodeAsArray.get(i);
+                    String key = pathPointer.map(pathPtr ->
+                        elem.at(pathPtr).toString()).orElse(elem.toString());
+                    equivalentObjNode.set(key
+                        , convertArrayToObject(elem, template, path.concat("/").concat(String.valueOf(i)),
+                            newPath.concat("/").concat(key)  , pathsToBeReconstructed));
+                }
+            } else {
+                for (int i = 0 ; i < nodeAsArray.size() ; i++){
+                    equivalentObjNode.set(String.valueOf(i), convertArrayToObject(nodeAsArray.get(i)
+                        , template, path.concat("/").concat(String.valueOf(i))
+                        , newPath.concat("/").concat(String.valueOf(i)) , pathsToBeReconstructed));
+                }
             }
             return equivalentObjNode;
         } else if (node.isObject()) {
@@ -228,13 +153,101 @@ public class Utils {
             Iterator<String> fieldNames = nodeAsObject.fieldNames();
             while(fieldNames.hasNext()) {
                 String fieldName = fieldNames.next();
-                equivalentObjNode.set(fieldName, convertArrayToObject(nodeAsObject.get(fieldName)));
+                equivalentObjNode.set(fieldName, convertArrayToObject(nodeAsObject.get(fieldName)
+                    ,template , path.concat("/").concat(fieldName) , newPath.concat("/").concat(fieldName) , pathsToBeReconstructed));
             }
             return equivalentObjNode;
         }
         return node;
     }
 
+    /**
+     * 	https://stackoverflow.com/questions/13530999/fastest-way-to-get-all-values-from-a-map-where-the-key-starts-with-a-certain-exp#13531376
+     */
+    private static SortedMap<String, Diff> getByPrefix(
+        NavigableMap<String, Diff> myMap, String prefix ) {
+        return myMap.subMap( prefix, prefix + Character.MAX_VALUE );
+    }
+
+    private static Map<String, JsonNode> convertObjectToMap(ObjectNode node, ObjectMapper jsonMapper) {
+        return  jsonMapper.convertValue(node, new TypeReference<Map<String, JsonNode>>(){});
+    }
+
+    private static  void transformIndexInDiff(TreeMap<String, Diff> diffMap,
+                                              String arrayPath, String oldIndex, String newIndex) {
+        String oldPrefix = arrayPath.concat("/").concat(oldIndex);
+        SortedMap<String , Diff> diffByPrefix =
+            getByPrefix(diffMap, oldPrefix);
+        diffByPrefix.values().forEach(diff -> {
+            String oldPath = diff.path;
+            diff.path = oldPath.replace(oldPrefix, arrayPath.concat("/").concat(newIndex));
+        });
+    }
+
+
+
+    public static void reconstructArray(JsonNode leftRoot, JsonNode rightRoot
+        , String arrayPath, TreeMap<String, Diff> diffMap, ObjectMapper jsonMapper) {
+
+        JsonPointer jsonPointer = JsonPointer.compile(arrayPath);
+        JsonNode leftNode =  leftRoot.at(jsonPointer);
+        Map<String, JsonNode> leftArrayMap = new HashMap<>();
+        if (leftNode != null && ! leftNode.isMissingNode() && leftNode.isObject()) {
+            leftArrayMap = convertObjectToMap((ObjectNode) leftNode, jsonMapper);
+        }
+
+        JsonNode rightNode = rightRoot.at(jsonPointer);
+        Map<String, JsonNode> rightArrayMap = new HashMap<>();
+        if (rightNode != null && ! rightNode.isMissingNode() && rightNode.isObject()) {
+            rightArrayMap = convertObjectToMap((ObjectNode) rightNode, jsonMapper);
+        }
+
+        Set<String> leftKeys =  new HashSet<>(leftArrayMap.keySet());
+        Set<String> rightKeys = new HashSet<>(rightArrayMap.keySet());
+
+        Set<String> intersection  = new HashSet<>(leftKeys);
+        intersection.retainAll(rightKeys);
+        leftKeys.removeAll(intersection);
+        rightKeys.removeAll(intersection);
+
+        ArrayNode leftArrayNode = JsonNodeFactory.instance.arrayNode();
+        ArrayNode rightArrayNode = JsonNodeFactory.instance.arrayNode();
+
+        int index = 0;
+        for (String key : intersection) {
+            leftArrayNode.add(leftArrayMap.get(key));
+            rightArrayNode.add(rightArrayMap.get(key));
+            transformIndexInDiff(diffMap, arrayPath,  key , String.valueOf(index));
+            index++;
+        }
+
+        int leftIndex = index;
+        for (String key : leftKeys) {
+            leftArrayNode.add(leftArrayMap.get(key));
+            transformIndexInDiff(diffMap, arrayPath,  key , String.valueOf(leftIndex));
+            leftIndex++;
+        }
+
+        int rightIndex = index;
+        for (String key : rightKeys) {
+            rightArrayNode.add(rightArrayMap.get(key));
+            transformIndexInDiff(diffMap, arrayPath,  key , String.valueOf(rightIndex));
+            rightIndex++;
+        }
+
+        if (leftNode != null && ! leftNode.isMissingNode()) {
+            JsonNode leftNodeParent = leftRoot.at(jsonPointer.head());
+            ((ObjectNode) leftNodeParent).set(jsonPointer.last().getMatchingProperty()
+                , leftArrayNode);
+        }
+
+        if (rightNode != null && ! rightNode.isMissingNode()) {
+            JsonNode rightNodeParent = rightRoot.at(jsonPointer.head());
+            ((ObjectNode) rightNodeParent).set(jsonPointer.last().getMatchingProperty()
+                , rightArrayNode);
+        }
+
+    }
 
     static public TemplateSet templateRegistriesToTemplateSet(TemplateRegistries registries,
                                                               String customerId, String appId,
@@ -256,59 +269,6 @@ public class Utils {
 
     }
 
-    static Pattern templateKeyPattern = Pattern.compile("TemplateKey\\{customerId=(.+?),"
-	    + " appId=(.+?), serviceId=(.+?), path=(.+?), version=(.+?), type=(.+?)}");
-
-    /**
-     * https://stackoverflow.com/questions/7498030/append-relative-url-to-java-net-url
-     * @param baseUrl Base Url
-     * @param suffix Relative path to append to the base url
-     * @return Concatenated Normalized Path (// are converted to /)
-     * @throws Exception Exception if Any
-     */
-    static public String appendUrlPath(String baseUrl, String suffix) throws Exception {
-        URIBuilder uriBuilder = new URIBuilder(baseUrl);
-        return uriBuilder.setPath(uriBuilder.getPath() + "/" + suffix)
-            .build().normalize().toString();
-    }
-
-    public static String buildSuccessResponse(String status, JSONObject data) {
-        JSONObject successResponse = new JSONObject();
-        successResponse.put(Constants.STATUS, status);
-        successResponse.put(Constants.DATA, data);
-
-        return successResponse.toString();
-    }
-
-    public static String buildErrorResponse(String status, String msgId, String msg) {
-        JSONObject errorResponse = new JSONObject();
-        errorResponse.put(Constants.STATUS, status);
-
-        JSONObject data = new JSONObject();
-        data.put(Constants.MESSAGE_ID, msgId);
-        data.put(Constants.MESSAGE, msg);
-
-        errorResponse.put(Constants.DATA, data);
-
-        return errorResponse.toString();
-    }
-
-    public static Map<String,Object> extractThriftParams(String thriftApiPath) {
-        Map<String, Object> params = new HashMap<>();
-        if (thriftApiPath != null) {
-            String[] splitResult = thriftApiPath.split("::");
-            String methodName = splitResult[0];
-            String argsClassName = splitResult[1];
-            params.put(Constants.THRIFT_METHOD_NAME, methodName);
-            params.put(Constants.THRIFT_CLASS_NAME, argsClassName);
-        }
-        return params;
-    }
-
-    public static Optional<String> getFirst(MultivaluedMap<String, String> fieldMap, String fieldname) {
-        return Optional.ofNullable(fieldMap.getFirst(fieldname));
-    }
-
 
     public static Event createHTTPResponseEvent(String apiPath, Optional<String> reqId,
                                                 Integer status,
@@ -327,9 +287,9 @@ public class Utils {
 		    httpResponsePayload = new HTTPResponsePayload(hdrs, status, null);
 	    }
 
-	    Optional<String> service = getFirst(meta, Constants.SERVICE_FIELD);
-        Optional<String> instance = getFirst(meta, Constants.INSTANCE_ID_FIELD);
-        Optional<String> traceId = getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
+	    Optional<String> service = Utils.getFirst(meta, Constants.SERVICE_FIELD);
+        Optional<String> instance = Utils.getFirst(meta, Constants.INSTANCE_ID_FIELD);
+        Optional<String> traceId = Utils.getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
 
         if (customerId.isPresent() && app.isPresent() && service.isPresent() && collection.isPresent() && runType.isPresent()) {
             EventBuilder eventBuilder = new EventBuilder(customerId.get(), app.get(),
@@ -349,11 +309,6 @@ public class Utils {
 
     }
 
-    /*public static HTTPResponsePayload getResponsePayload(Event event, Config config)
-	    throws IOException, RawPayloadEmptyException, RawPayloadProcessingException {
-    	return (HTTPResponsePayload) event.payload;
-    }*/
-
 	public static Map<String, TemplateEntry> getAllPathRules(Event event, Recording recording, TemplateKey.Type templateKeyType,
                                                              String service, String apiPath, ReqRespStore rrstore, Config config) {
 		TemplateKey tkey = new TemplateKey(recording.templateVersion, recording.customerId, recording.app, service, apiPath,
@@ -368,10 +323,6 @@ public class Utils {
 		return pathRules;
     }
 
-   public static <K,T> List<T> getFromMVMapAsOptional(MultivaluedMap<K, T> map,  K key) {
-	  return Optional.ofNullable(map.get(key)).orElse(Collections.emptyList());
-  }
-
   public static Response flushAll(Config config) {
     config.rrstore.invalidateCache();
     try (Jedis jedis = config.jedisPool.getResource()) {
@@ -381,4 +332,20 @@ public class Utils {
       return Response.serverError().entity("Exception occured while flushing :: " + e.getMessage()).build();
     }
   }
+
+    public static Map solrHealthCheck (SolrClient solr) {
+	    try {
+		    SolrPing solrPing = new SolrPing();
+		    SolrPingResponse solrPingResponse = solrPing.process(solr);
+		    int status = solrPingResponse.getStatus();
+		    String solrStatusMessage = status==0 ? "Solr server up" : "Solr server not working";
+		    return Map.of(Constants.SOLR_STATUS_CODE, status, Constants.SOLR_STATUS_MESSAGE, solrStatusMessage);
+	    }
+	    catch (IOException ioe) {
+		    return Map.of(Constants.SOLR_STATUS_CODE, -1, Constants.SOLR_STATUS_MESSAGE, "Unable to reach Solr server", Constants.ERROR, ioe.getMessage());
+	    }
+	    catch (SolrServerException sse) {
+		    return Map.of(Constants.SOLR_STATUS_CODE, -1, Constants.SOLR_STATUS_MESSAGE, "Unable to reach Solr server", Constants.ERROR, sse.getMessage());
+	    }
+	}
 }

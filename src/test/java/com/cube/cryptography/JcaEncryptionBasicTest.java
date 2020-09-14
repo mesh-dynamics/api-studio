@@ -6,8 +6,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import io.md.cryptography.JcaEncryption;
-
-import com.cube.utils.Constants;
+import io.md.utils.Constants;
 
 public class JcaEncryptionBasicTest {
 

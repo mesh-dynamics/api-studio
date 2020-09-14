@@ -23,16 +23,14 @@ import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
 import io.md.core.TemplateKey;
 import io.md.dao.ReqRespUpdateOperation.OperationType;
-import io.md.services.DataStore;
+import io.md.utils.Constants;
 
-import com.cube.cache.ComparatorCache;
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateEntryOperation;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
-import com.cube.utils.Constants;
 
 public class TemplateSetTransformer {
 
@@ -164,8 +162,12 @@ public class TemplateSetTransformer {
                 TemplateEntry newRule = updateOperation.getNewRule().get();
                 // normalisedPath can also be directly used while creating new rule but getNormalisedPath is called again to be safe
                 // in case the updateOperation's path  and rule's path are different
-                TemplateEntry newRuleNormalised = new TemplateEntry(sourceTemplate.getNormalisedPath(newRule.getPath()).toString(), newRule.getDataType(),
-                    newRule.getPresenceType(), newRule.getCompareType(), newRule.getExtractionMethod(), newRule.getCustomization(), newRule.arrayComparisionKeyPath);
+                TemplateEntry newRuleNormalised = new TemplateEntry
+                    (sourceTemplate.getNormalisedPath(newRule.getPath()).toString()
+                        , newRule.getDataType(), newRule.getPresenceType()
+                        , newRule.getCompareType(), newRule.getExtractionMethod()
+                        , newRule.getCustomization(), newRule.arrayComparisionKeyPath);
+
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Replacing with new rule",
                     Constants.JSON_PATH_FIELD , normalisedPath, Constants.SERVICE_FIELD, sourceTemplate.service,
                     Constants.API_PATH_FIELD , sourceTemplate.requestPath)));
