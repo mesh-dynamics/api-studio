@@ -228,7 +228,8 @@ else
 end
 
 upstream_response = ngx.location.capture("/custom_cube" .. uri, {
-    method = subReqMethod
+    method = subReqMethod,
+    always_forward_body = true
 })
 
  
