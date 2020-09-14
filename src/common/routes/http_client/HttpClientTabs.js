@@ -865,6 +865,9 @@ class HttpClientTabs extends Component {
         node.active = true;
         if (node.children) {
             node.toggled = toggled;
+            if(node.isCubeRunHistory){
+                node.children.forEach(u=> u.isCubeRunHistory = true);
+            }
         }
         if(node.requestEventId){
             this.persistPanelState[node.requestEventId] = toggled;
@@ -2256,6 +2259,7 @@ class HttpClientTabs extends Component {
     }
 
     renderTreeNodeHeader(props) {
+        const isParent = props.node.isCubeRunHistory ? !!(props.node.children && props.node.children.length> 0) : (props.node.parentSpanId == "NA") ;
         return (
             <div style={props.style.base} className="treeNodeItem">
                 <div style={props.style.title}>
@@ -2269,8 +2273,8 @@ class HttpClientTabs extends Component {
     overflow: 'hidden' }} >{props.node.name + " " + moment(props.node.reqTimestamp * 1000).format("hh:mm:ss")}</span>
                         </div>
                         <div className="collection-options"><i className="fas fa-trash pointer" 
-                            data-id={props.node.parentSpanId == "NA"? props.node.traceIdAddedFromClient : props.node.requestEventId} 
-                            data-isparent = {props.node.parentSpanId == "NA"}
+                            data-id={isParent? props.node.traceIdAddedFromClient : props.node.requestEventId} 
+                            data-isparent = {isParent}
                             data-name={props.node.name}  title="Delete"
                             data-collection-id={props.node.collectionIdAddedFromClient} 
                             data-cubehistory={props.node.isCubeRunHistory === true}
@@ -2380,7 +2384,6 @@ class HttpClientTabs extends Component {
                 await cubeService.deleteGolden(itemToDelete.id);
                 dispatch(httpClientActions.deleteUserCollection(itemToDelete.id));
             }else if(itemToDelete.requestType ==  "request"){
-                //Here itemToDelete.id, itemToDelete.collectionId are not able to define uniquley about a trace in History
                 if(itemToDelete.isParent){
                     await cubeService.deleteEventByTraceId(itemToDelete.id, itemToDelete.collectionId);
                 }else{
