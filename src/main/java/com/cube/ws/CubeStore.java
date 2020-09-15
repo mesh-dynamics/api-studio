@@ -859,7 +859,7 @@ public class CubeStore {
                 reqEvent.reqId, reqEvent.apiPath, reqEvent.eventType, reqEvent.recordingType);
 
             //TODO:Add support for Binary payload.
-            eventBuilder.setPayload(reqEvent.payload);
+            eventBuilder.setPayload(reqEvent.getPayload());
             Event defaultReqEvent = eventBuilder.createEvent();
             try {
                 defaultReqEvent.parseAndSetKey(rrstore.
@@ -1493,7 +1493,7 @@ public class CubeStore {
                             Match responseMatch = Match.NOMATCH;
                             if (optionalResponseEvent.isPresent()) {
                                 responseMatch = respComparator
-                                    .compare(response.payload, optionalResponseEvent.get().payload);
+                                    .compare(response.getPayload(), optionalResponseEvent.get().getPayload());
                             }
 
                             ReqRespMatchResult reqRespMatchResult = new ReqRespMatchResult(
@@ -1585,7 +1585,7 @@ public class CubeStore {
             new MDTraceInfo(traceId, event.spanId, event.parentSpanId),
             event.getRunType(), Optional.of(Instant.now()), reqId, event.apiPath,
             event.eventType, recordingType);
-        eventBuilder.setPayload(event.payload);
+        eventBuilder.setPayload(event.getPayload());
         eventBuilder.withMetaData(event.metaData);
         eventBuilder.withRunId(event.runId);
         return eventBuilder.createEvent();

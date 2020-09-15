@@ -108,8 +108,8 @@ public class DynamicInjectionTest {
 	*/
 			dynamicInjectionConfig.extractionMetas.forEach(extMeta -> {
 				InjectionVarResolver varResolver = new InjectionVarResolver(goldenRequestEvent,
-					testResponseEvent.payload,
-					goldenRequestEvent.payload, config.rrstore);
+					testResponseEvent.getPayload(),
+					goldenRequestEvent.getPayload(), config.rrstore);
 				StringSubstitutor sub = new StringSubstitutor(varResolver);
 				DataObj value;
 				String requestHttpMethod = AbstractReplayDriver.getHttpMethod(goldenRequestEvent);
@@ -155,7 +155,7 @@ public class DynamicInjectionTest {
 			injectionMetaList.forEach(injectionMeta -> {
 				StringSubstitutor sub = new StringSubstitutor(
 					new InjectionVarResolver(goldenRequestEvent, null
-						, goldenRequestEvent.payload, config.rrstore));
+						, goldenRequestEvent.getPayload(), config.rrstore));
 
 				if (injectionMeta.injectAllPaths || injectionMeta.apiPaths
 					.contains(goldenRequestEvent.apiPath)) {
@@ -164,8 +164,8 @@ public class DynamicInjectionTest {
 
 					if (value != null) {
 						try {
-							goldenRequestEvent.payload.put(injectionMeta.jsonPath,
-								injectionMeta.map(goldenRequestEvent.payload
+							goldenRequestEvent.getPayload().put(injectionMeta.jsonPath,
+								injectionMeta.map(goldenRequestEvent.getPayload()
 										.getValAsString(injectionMeta.jsonPath), value,
 									config.jsonMapper));
 						} catch (Exception e) {

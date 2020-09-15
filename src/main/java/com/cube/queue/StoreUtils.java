@@ -245,8 +245,8 @@ public class StoreUtils {
 		if (event.isRequestType()) {
 			// if request type, need to extract keys from request and index it, so that it can be
 			// used while mocking
-			if (event.payload instanceof HTTPRequestPayload)  {
-				HTTPRequestPayload payload = (HTTPRequestPayload) event.payload;
+			if (event.getPayload() instanceof HTTPRequestPayload)  {
+				HTTPRequestPayload payload = (HTTPRequestPayload) event.getPayload();
 				payload.transformSubTree("/queryParams" , URLDecoder::decode);
 			}
 

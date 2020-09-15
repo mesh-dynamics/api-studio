@@ -97,7 +97,7 @@ public class ThriftReplayDriver extends AbstractReplayDriver {
 				Class<?> argsClazz = classLoader.loadClass(argsClassName);
 				Constructor<?> constructor = argsClazz.getConstructor();
 				TBase args = (TBase) constructor.newInstance();
-				tDeserializer.deserialize(args, reqEvent.payload.rawPayloadAsByteArray());
+				tDeserializer.deserialize(args, reqEvent.getPayload().rawPayloadAsByteArray());
 				Class<?> resultClazz = classLoader.loadClass(resultClassName);
 				constructor = resultClazz.getConstructor();
 				TBase result = (TBase) constructor.newInstance();

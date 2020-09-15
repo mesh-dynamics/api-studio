@@ -444,7 +444,7 @@ public class AnalyzeWS {
 
 		    Optional<String> recordedResponse = rrstore.getResponseEvent(recordReqId).map(event -> {
 		    	matchRes.respCompareRes.recordedResponse.ifPresent(modifiedPayload
-				    -> event.payload = new HTTPResponsePayload(modifiedPayload));
+				    -> event.setPayload(new HTTPResponsePayload(modifiedPayload)));
 		    	return event.getPayloadAsJsonString();
 		    });
 
@@ -455,7 +455,7 @@ public class AnalyzeWS {
 		    Optional<String> replayedResponse = matchRes.replayReqId
 			    .flatMap(rrstore::getResponseEvent).map(event -> {
 			    matchRes.respCompareRes.replayedResponse.ifPresent(modifiedPayload
-				    -> event.payload = new HTTPResponsePayload(modifiedPayload));
+				    -> event.setPayload( new HTTPResponsePayload(modifiedPayload)));
 			    return event.getPayloadAsJsonString();
 		    });
 
@@ -707,7 +707,7 @@ public class AnalyzeWS {
 
 	                matchRes.respCompareRes.recordedResponse.ifPresent(modifiedPayload -> {
 	                	recordResponseEvent.ifPresent(event
-			                -> event.payload = new HTTPResponsePayload(modifiedPayload));
+			                -> event.setPayload(new HTTPResponsePayload(modifiedPayload)));
 	                });
 
                   Optional<ConvertEventPayloadResponse> convertRecordResponse = recordResponseEvent.map(e ->
@@ -721,7 +721,7 @@ public class AnalyzeWS {
 
 	                matchRes.respCompareRes.replayedResponse.ifPresent(modifiedPayload -> {
 		                replayResponseEvent.ifPresent(event
-			                -> event.payload = new HTTPResponsePayload(modifiedPayload));
+			                -> event.setPayload(new HTTPResponsePayload(modifiedPayload)));
 	                });
 
                   Optional<ConvertEventPayloadResponse> convertReplayResponse = replayResponseEvent.map(e ->
@@ -1539,9 +1539,9 @@ public class AnalyzeWS {
 	  if(level == 0) return;
 
 	  Event responseEvent = responseEventsByReqId.get(e.reqId);
-    HTTPRequestPayload payload = (HTTPRequestPayload) e.payload;
+    HTTPRequestPayload payload = (HTTPRequestPayload) e.getPayload();
 
-    String status = responseEvent != null ? ((ResponsePayload) responseEvent.payload).getStatusCode() : "";
+    String status = responseEvent != null ? ((ResponsePayload) responseEvent.getPayload()).getStatusCode() : "";
     ServiceReqRes serviceReqRes = new ServiceReqRes(e.service, e.apiPath,
         e.reqId, e.timestamp, e.spanId, e.parentSpanId, status, payload.getMethod()
 	    , (MultivaluedHashMap<String, String>) payload.getQueryParams());
@@ -1628,7 +1628,7 @@ public class AnalyzeWS {
 				Type.RequestCompare);
 			Comparator reqComparator = rrstore
 				.getComparator(reqCompareKey, lhsRequestEvent.eventType);
-				reqCompareRes = reqComparator.compare(lhsRequestEvent.payload, rhsRequestEvent.payload);
+				reqCompareRes = reqComparator.compare(lhsRequestEvent.getPayload(), rhsRequestEvent.getPayload());
 			TemplateKey respCompareKey = new TemplateKey(recording.templateVersion,
 				lhsRequestEvent.customerId,
 				lhsRequestEvent.app, lhsRequestEvent.service, lhsRequestEvent.apiPath,
@@ -1640,7 +1640,7 @@ public class AnalyzeWS {
 				Comparator respComparator = rrstore
 					.getComparator(respCompareKey, lhsResponseEvent.eventType);
 				respCompareRes = respComparator
-					.compare(lhsResponseEvent.payload, rhsResponseEvent.payload);
+					.compare(lhsResponseEvent.getPayload(), rhsResponseEvent.getPayload());
 			}
 		} catch (Exception e) {
 			LOGGER.error(new ObjectMessage(Map.of(

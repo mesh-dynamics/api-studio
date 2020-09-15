@@ -237,7 +237,7 @@ public class RealAnalyzer implements Analyzer {
             if (reqComparator.getCompareTemplate().getRules() != null &&
                 ! reqComparator.getCompareTemplate().getRules().isEmpty()) {
                 reqCompareRes = reqComparator
-                    .compare(recordreq.payload, replayreq.payload);
+                    .compare(recordreq.getPayload(), replayreq.getPayload());
             } else {
                 reqCompareRes = new Comparator.Match(DontCare, "",
                     Collections.emptyList());
@@ -251,7 +251,7 @@ public class RealAnalyzer implements Analyzer {
                 Comparator respComparator = rrstore
                     .getComparator(respCompareKey, recordedr.eventType);
                 respCompareRes = respComparator
-                    .compare(recordedr.payload, replayr.payload);
+                    .compare(recordedr.getPayload(), replayr.getPayload());
             }
         } catch (Exception e) {
             LOGGER.error(new ObjectMessage(Map.of(
