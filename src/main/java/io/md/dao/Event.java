@@ -337,7 +337,7 @@ public class Event implements MDStorable {
 	public final String reqId; // for responses, this is the reqId of the corresponding request
 	public final String apiPath; // apiPath for HTTP req, function signature for Java functions, etc
 	public final EventType eventType;
-	public final Payload payload;
+	public Payload payload;
 	public RecordingType recordingType;
 	public final Map<String, String> metaData;
 
