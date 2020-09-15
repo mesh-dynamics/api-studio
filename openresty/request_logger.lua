@@ -182,7 +182,7 @@ cube_request["payload"] = req_payload_wrapper
  
 cube_request["apiPath"] = apiPathToSet
 cube_request["traceId"] = traceId_univ
-cube_request["spanId"] = ""
+cube_request["spanId"] = req_headers_multimap["x-b3-spanid"]
 cube_request["parentSpanId"] = ""
 cube_request["reqId"] = ngx.var.request_id
 cube_request["eventType"] = "HTTPRequest"
@@ -228,8 +228,7 @@ else
 end
 
 upstream_response = ngx.location.capture("/custom_cube" .. uri, {
-    method = subReqMethod,
-    always_forward_body = true
+    method = subReqMethod
 })
 
  
@@ -274,7 +273,7 @@ cube_response["payload"] = resp_payload_wrapper
 
 cube_response["apiPath"] = apiPathToSet
 cube_response["traceId"] = cube_request["traceId"]
-cube_response["spanId"] = ""
+cube_response["spanId"] = req_headers_multimap["x-b3-spanid"]
 cube_response["parentSpanId"] = ""
 cube_response["reqId"] = cube_request["reqId"]
 cube_response["eventType"] = "HTTPResponse"
@@ -323,7 +322,6 @@ local forbiddenHeaders = {
 "origin",
 "proxy-",
 "sec-",
-"referer",
 "te",
 "trailer",
 "transfer-encoding",
