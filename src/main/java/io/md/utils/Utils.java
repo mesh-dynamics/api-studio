@@ -519,7 +519,7 @@ public class Utils {
 		return mockResponse.response.map(UtilException.rethrowFunction(retEvent -> {
 			try {
 				return new FnResponse(
-					retEvent.payload.getValAsString(Constants.FN_RESPONSE_PATH),
+					retEvent.getPayload().getValAsString(Constants.FN_RESPONSE_PATH),
 					Optional.of(retEvent.timestamp),
 					Success, Optional.empty(),
 					mockResponse.numResults > 1);
