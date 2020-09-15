@@ -80,4 +80,12 @@ public class UserController {
             throw new RecordNotFoundException("User with id '" + id + "' not found.");
         }
     }
+    @PostMapping("/deleteByEmail/{email}")
+    public ResponseEntity delete(@PathVariable("email") String email) {
+        if (userService.deleteUser(email)) {
+            return ok("User '" + email + "' removed successfully");
+        } else {
+            throw new RecordNotFoundException("User with email '" + email + "' not found.");
+        }
+    }
 }
