@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.github.underscore.lodash.U;
 
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
@@ -117,7 +118,15 @@ public class JsonDataObj implements DataObj {
 				return ((BinaryNode) node).binaryValue();
 			}
 			if (node.isTextual()) {
-				return node.asText().getBytes();
+				// While loading from solr again the binaryNode could be treated as a textnode and
+				// doing node.asText().getBytes converts the bin data to string and then again to binary
+				// which causes issues with the actual binary data, hence try node.binaryValue() first
+				try {
+					return node.binaryValue();
+				} catch (Exception e) {
+					LOGGER.info("Could not succed with node.binaryValue() for node ");
+					return node.asText().getBytes();
+				}
 			}
 			return jsonMapper.writeValueAsString(node).getBytes();
 		} catch (JsonProcessingException e) {
@@ -263,6 +272,16 @@ public class JsonDataObj implements DataObj {
 						LOGGER.error("Exception in parsing json string, path : "
 							.concat(path).concat(" , value : ").concat(val.toString()), ex);
 					}
+				} else if (mimetype.startsWith(MediaType.APPLICATION_XML)) {
+					try {
+						String jsonString = U.xmlToJson(getValAsString(val));
+						JsonNode parsedVal = jsonMapper.readTree(jsonString);
+						valParentObj.set(fieldName, parsedVal);
+						return true;
+					} catch (Exception ex) {
+						LOGGER.error("Exception in parsing xml data, path : "
+							.concat(path).concat(" , value : ").concat(val.toString()), ex);
+					}
 				} else if (!isBinary(mimetype)) {
 					try {
 						String strVal = getValAsString(val);
@@ -367,6 +386,20 @@ public class JsonDataObj implements DataObj {
 					} catch (JsonProcessingException e) {
 						LOGGER.error("Error while"
 							+ " wrapping Url encoded form as UTF-8 string", e);
+					}
+				} else if (mimetype.startsWith(MediaType.APPLICATION_XML)) {
+					try {
+						String xmlStr = U.jsonToXml(val.toString());
+						if (asByteArray) {
+							valParentObj.set(fieldName, new BinaryNode(xmlStr
+								.getBytes(StandardCharsets.UTF_8)));
+						} else {
+							valParentObj.set(fieldName, new TextNode(xmlStr));
+						}
+						return true;
+					} catch (Exception e) {
+						LOGGER.error("Error while"
+							+ " converting JSON string to XML and wrapping as UTF-8 string", e);
 					}
 				}
 			} else if (val != null && val.isBinary() && !asByteArray) {
@@ -690,7 +723,9 @@ public class JsonDataObj implements DataObj {
 	@JsonIgnore
 	protected final ObjectMapper jsonMapper;
 
-	public static final List<String> binaryMimeTypes = Arrays.asList(MediaType.APPLICATION_OCTET_STREAM);
+	// TODO : Adding Multipart form data as a binary type now.
+	//  Change this to deal with separate part of multipart data as needed.
+	public static final List<String> binaryMimeTypes = Arrays.asList(MediaType.APPLICATION_OCTET_STREAM, MediaType.MULTIPART_FORM_DATA);
 
 	public JsonNode getRoot() {
 		return objRoot;

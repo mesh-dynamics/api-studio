@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.cube</groupId>
   <artifactId>commons</artifactId>
-  <version>1.1.25</version>
+  <version>1.1.27</version>
   <packaging>jar</packaging>
   <properties>
     <version.java>8</version.java>
@@ -122,7 +122,6 @@
       <version>2.0</version>
     </dependency>
 
-
     <dependency>
       <groupId>io.jaegertracing</groupId>
       <artifactId>jaeger-client</artifactId>
@@ -154,6 +153,11 @@
       <groupId>com.flipkart.zjsonpatch</groupId>
       <artifactId>zjsonpatch</artifactId>
       <version>${version.flipkart-jsonpath}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.javadev</groupId>
+      <artifactId>underscore</artifactId>
+      <version>1.58</version>
     </dependency>
   </dependencies>
 </project>
