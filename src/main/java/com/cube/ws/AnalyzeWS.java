@@ -20,6 +20,7 @@ import io.md.core.Comparator.Match;
 import io.md.dao.ConvertEventPayloadResponse;
 import io.md.dao.Event.EventType;
 import io.md.dao.HTTPRequestPayload;
+import io.md.dao.HTTPResponsePayload;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.ResponsePayload;
 import io.md.dao.Analysis.ReqRespMatchWithEvent;
@@ -440,15 +441,23 @@ public class AnalyzeWS {
 	    return matchResult.map(matchRes -> {
 		    Optional<String> request = rrstore.getRequestEvent(recordReqId)
 			    .map(Event::getPayloadAsJsonString);
-		    Optional<String> recordedResponse = rrstore.getResponseEvent(recordReqId)
-			    .map(Event::getPayloadAsJsonString);
+
+		    Optional<String> recordedResponse = rrstore.getResponseEvent(recordReqId).map(event -> {
+		    	matchRes.respCompareRes.recordedResponse.ifPresent(modifiedPayload
+				    -> event.payload = new HTTPResponsePayload(modifiedPayload));
+		    	return event.getPayloadAsJsonString();
+		    });
 
 		    Optional<String> replayedRequest = matchRes.replayReqId
 			    .flatMap(rrstore::getRequestEvent)
 			    .map(Event::getPayloadAsJsonString);
 
-		    Optional<String> replayedResponse = matchRes.replayReqId.flatMap(rrstore::getResponseEvent)
-			    .map(Event::getPayloadAsJsonString);
+		    Optional<String> replayedResponse = matchRes.replayReqId
+			    .flatMap(rrstore::getResponseEvent).map(event -> {
+			    matchRes.respCompareRes.replayedResponse.ifPresent(modifiedPayload
+				    -> event.payload = new HTTPResponsePayload(modifiedPayload));
+			    return event.getPayloadAsJsonString();
+		    });
 
 		    Optional<String> respCompDiff = Optional.empty();
 		    Optional<String> reqCompDiff = Optional.empty();;
@@ -695,6 +704,12 @@ public class AnalyzeWS {
 	                List<String > pathsToKeep = getPathsToKeep(responseCompDiffList);
 
 	                Optional<Event> recordResponseEvent = matchRes.recordReqId.flatMap(rrstore::getResponseEvent);
+
+	                matchRes.respCompareRes.recordedResponse.ifPresent(modifiedPayload -> {
+	                	recordResponseEvent.ifPresent(event
+			                -> event.payload = new HTTPResponsePayload(modifiedPayload));
+	                });
+
                   Optional<ConvertEventPayloadResponse> convertRecordResponse = recordResponseEvent.map(e ->
                       e.checkAndConvertResponseToString(true, pathsToKeep, size, "/body"));
                   recordResponse = convertRecordResponse.map(resp -> resp.getResponse());
@@ -703,6 +718,11 @@ public class AnalyzeWS {
 
 
 	                Optional<Event> replayResponseEvent = matchRes.replayReqId.flatMap(rrstore::getResponseEvent);
+
+	                matchRes.respCompareRes.replayedResponse.ifPresent(modifiedPayload -> {
+		                replayResponseEvent.ifPresent(event
+			                -> event.payload = new HTTPResponsePayload(modifiedPayload));
+	                });
 
                   Optional<ConvertEventPayloadResponse> convertReplayResponse = replayResponseEvent.map(e ->
                       e.checkAndConvertResponseToString(true, pathsToKeep, size, "/body"));
