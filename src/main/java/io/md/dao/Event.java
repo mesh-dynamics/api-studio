@@ -337,7 +337,7 @@ public class Event implements MDStorable {
 	public final String reqId; // for responses, this is the reqId of the corresponding request
 	public final String apiPath; // apiPath for HTTP req, function signature for Java functions, etc
 	public final EventType eventType;
-	public Payload payload;
+	private Payload payload;
 	public RecordingType recordingType;
 	public final Map<String, String> metaData;
 
@@ -358,6 +358,9 @@ public class Event implements MDStorable {
 	public void setTraceId(String traceId) {
 		this.traceId = traceId;
 	}
+
+	public void setPayload(Payload payload) {this.payload = payload;}
+	public Payload getPayload () {return this.payload;}
 
 	public void setRecordingType(RecordingType recordingType) {
 		this.recordingType = recordingType;
