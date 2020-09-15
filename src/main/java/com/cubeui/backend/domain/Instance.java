@@ -39,7 +39,7 @@ public class Instance {
     LocalDateTime createdAt;
 
     @NotEmpty
-    @Column(nullable = false)
+    @Column(nullable = false, length = 500)
     String loggingURL;
 
 }
