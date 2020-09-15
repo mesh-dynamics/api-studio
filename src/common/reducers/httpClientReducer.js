@@ -439,14 +439,14 @@ export const httpClient = (state = initialState, { type, data }) => {
         }
         case httpClientConstants.DELETE_CUBE_RUN_HISTORY: {
             let cubeRunHistory = {};
-            Object.keys(state.cubeRunHistory).forEach((k, i) => {
-              cubeRunHistory[k] = state.cubeRunHistory[k].filter((u) => {
-                if (u.children) {
-                  u.children = u.children.filter(
-                    (p) => (p.requestEventId != data)
+            Object.keys(state.cubeRunHistory).forEach((historyDate) => {
+              cubeRunHistory[historyDate] = state.cubeRunHistory[historyDate].filter((traceList) => {
+                if (traceList.children) {
+                    traceList.children = traceList.children.filter(
+                    (traceItem) => (traceItem.requestEventId != data)
                   );
                 }
-                return !(u.requestEventId == data  || u.traceIdAddedFromClient == data);
+                return !(traceList.requestEventId == data  || traceList.traceIdAddedFromClient == data);
               });
             });
             return {
