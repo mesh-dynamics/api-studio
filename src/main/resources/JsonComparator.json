@@ -582,5 +582,28 @@
                 {"op":"add","path":"/unordered1","value":{"a":"11","b":"8","c":"9"},"resolution":"ERR_NewField"}
             ],"recordedResponse":null,"replayedResponse":null
         }
+    },
+
+    "unorderedArrayJumbledOrder" : {
+        "json1" : {
+            "unordered" : [ {"0" : "a" , "1" : "b"} ,  {"0" : "c" , "1" : "d"} ]
+        },
+
+        "json2" : {
+            "unordered" : [  {"1" : "d" , "0" : "c"} ,  {"1" : "b" , "0" : "a"} ]
+        },
+
+        "rules" : [
+            {"path" :  "/unordered" , "dataType" :  "Set" , "presenceType" :  "Required" ,
+                "comparisonType" : "Equal" , "customization" : "" }
+        ],
+
+        "output" : {
+            "mt" : "ExactMatch",
+            "matchmeta" : "JsonDiff",
+            "diffs" : [] ,
+            "recordedResponse":null,
+            "replayedResponse":null
+        }
     }
 }
