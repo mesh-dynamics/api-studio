@@ -223,7 +223,7 @@ public class StoreUtils {
 
 		Optional<RecordOrReplay> recordOrReplay =
 			rrstore.getCurrentRecordOrReplay(Optional.of(event.customerId),
-				Optional.of(event.app), Optional.of(event.instanceId), true);
+				Optional.of(event.app), Optional.of(event.instanceId), false);
 
 		if (recordOrReplay.isEmpty()) {
 			throw new CubeStoreException(null, "No current record/replay!", event);
