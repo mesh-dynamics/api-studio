@@ -444,6 +444,23 @@ export const httpClient = (state = initialState, { type, data }) => {
                 cubeRunHistory: data.cubeRunHistory
             }
         }
+        case httpClientConstants.DELETE_CUBE_RUN_HISTORY: {
+            let cubeRunHistory = {};
+            Object.keys(state.cubeRunHistory).forEach((historyDate) => {
+              cubeRunHistory[historyDate] = state.cubeRunHistory[historyDate].filter((traceList) => {
+                if (traceList.children) {
+                    traceList.children = traceList.children.filter(
+                    (traceItem) => (traceItem.requestEventId != data)
+                  );
+                }
+                return !(traceList.requestEventId == data  || traceList.traceIdAddedFromClient == data);
+              });
+            });
+            return {
+                ...state,
+                cubeRunHistory: cubeRunHistory
+            }
+        }
 
         case httpClientConstants.ADD_USER_COLLECTIONS: {
             return {

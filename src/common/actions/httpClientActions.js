@@ -71,6 +71,9 @@ export const httpClientActions = {
     addCubeRunHistory: (apiTraces, cubeRunHistory) => {
         return {type: httpClientConstants.ADD_CUBE_RUN_HISTORY, data: {apiTraces, cubeRunHistory}};
     },
+    deleteCubeRunHistory: (userCollectionId) => {
+        return {type: httpClientConstants.DELETE_CUBE_RUN_HISTORY, data: userCollectionId};
+    },
 
     addUserCollections: (userCollections) => {
         return {type: httpClientConstants.ADD_USER_COLLECTIONS, data: {userCollections}};

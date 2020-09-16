@@ -872,6 +872,9 @@ class HttpClientTabs extends Component {
         node.active = true;
         if (node.children) {
             node.toggled = toggled;
+            if(node.isCubeRunHistory){
+                node.children.forEach(u=> u.isCubeRunHistory = true);
+            }
         }
         if(node.requestEventId){
             this.persistPanelState[node.requestEventId] = toggled;
@@ -2177,6 +2180,7 @@ class HttpClientTabs extends Component {
     }
 
     renderTreeNodeHeader(props) {
+        const isParent = props.node.isCubeRunHistory ? !!(props.node.children && props.node.children.length> 0) : (props.node.parentSpanId == "NA") ;
         return (
             <div style={props.style.base} className="treeNodeItem">
                 <div style={props.style.title}>
@@ -2190,10 +2194,11 @@ class HttpClientTabs extends Component {
     overflow: 'hidden' }} >{props.node.name + " " + moment(props.node.reqTimestamp * 1000).format("hh:mm:ss")}</span>
                         </div>
                         <div className="collection-options"><i className="fas fa-trash pointer" 
-                            data-id={props.node.parentSpanId == "NA"? props.node.traceIdAddedFromClient : props.node.requestEventId} 
-                            data-isparent = {props.node.parentSpanId == "NA"}
+                            data-id={isParent? props.node.traceIdAddedFromClient : props.node.requestEventId} 
+                            data-isparent = {isParent}
                             data-name={props.node.name}  title="Delete"
-                            data-collection-id={props.node.collectionIdAddedFromClient}
+                            data-collection-id={props.node.collectionIdAddedFromClient} 
+                            data-cubehistory={props.node.isCubeRunHistory === true}
                             data-type="request" onClick={this.onDeleteBtnClick}/>
                             </div>
                     </div>
@@ -2377,7 +2382,11 @@ class HttpClientTabs extends Component {
                 }else{
                     await cubeService.deleteEventByRequestId(itemToDelete.id);
                 }
-                this.handlePanelClick(itemToDelete.collectionId, true);                
+                if(itemToDelete.isCubeHistory){
+                    dispatch(httpClientActions.deleteCubeRunHistory(itemToDelete.id))
+                }else{
+                    this.handlePanelClick(itemToDelete.collectionId, true);                
+                }
             }
         } catch (error) {
             console.error("Error caught in softDelete Golden: " + error);
@@ -2394,10 +2403,11 @@ class HttpClientTabs extends Component {
         const name = event.target.getAttribute('data-name');       
         const collectionId = event.target.getAttribute('data-collection-id');
         const isParent = event.target.getAttribute('data-isparent') == 'true';
+        const isCubeHistory = event.target.getAttribute('data-cubehistory') == 'true';
         
         this.setState({showDeleteGoldenConfirmation: true, 
             itemToDelete: {
-                requestType, id, name, collectionId, isParent
+                requestType, id, name, collectionId, isParent, isCubeHistory
             }});
     };
 
@@ -2454,6 +2464,7 @@ class HttpClientTabs extends Component {
                                             <Panel.Collapse>
                                                 <Panel.Body style={{ padding: "3px" }}>
                                                     {cubeRunHistory[k].map(eachTabRun => {
+                                                        eachTabRun.isCubeRunHistory = true;
                                                         /* return (
                                                             <div key={eachTabRun.reqTimestamp} style={{padding: "5px", backgroundColor: ""}}>
                                                                 <div style={{display: "inline-block", width: "21%"}}>
