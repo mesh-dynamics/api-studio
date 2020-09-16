@@ -84,7 +84,7 @@ public class Utils {
         TreeSet<String> treeSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         treeSet.addAll(Set.of("connection", "content-length",
                 "date", "expect", "from", "host", "origin",
-                "referer", "upgrade",
+                /*"referer",*/ "upgrade",
                 "via", "warning", "transfer-encoding"));
         DISALLOWED_HEADERS_SET = Collections.unmodifiableSet(treeSet);
     }
