@@ -107,13 +107,21 @@ class JsonComparatorTest  {
                 extractionMethod = ExtractionMethod.valueOf(ruleObj.getString("extractionMethod"));
             }
             String customization = ruleObj.getString("customization");
-            String  arrayCompKeyPath =  ruleObj.getString("arrayCompKeyPath");
-            TemplateEntry rule = new TemplateEntry(path, dataType, presenceType, comparisonType, extractionMethod, Optional.of(customization), Optional.of(arrayCompKeyPath));
+			String arrayElementKeyPath = null;
+			try {
+				arrayElementKeyPath = ruleObj.getString("arrayCompKeyPath");
+			} catch (Exception e) {
+
+			}
+            TemplateEntry rule = new TemplateEntry(path, dataType, presenceType
+	            , comparisonType, extractionMethod, Optional.of(customization)
+	            , Optional.ofNullable(arrayElementKeyPath));
             template.addRule(rule);
         }
 
 		JsonComparator comparator = new JsonComparator(template, config.jsonMapper);
 		Match m = comparator.compare(json1, json2);
+		m = new Match(m.mt, m.matchmeta, m.diffs);
 		String mjson = config.jsonMapper.writeValueAsString(m);
 		JSONAssert.assertEquals(expected, mjson, JSONCompareMode.NON_EXTENSIBLE);
 	}
@@ -302,6 +310,32 @@ class JsonComparatorTest  {
     @DisplayName("Array test")
     final void arrayTest() throws JsonProcessingException, JSONException {
         JSONObject testData = object.getJSONObject("arrayDiff");
+        compareTest(testData);
+    }
+
+	/**
+	 * Test method for {@link com.cube.core.JsonComparator#compare(java.lang.String, java.lang.String)}.
+	 * @throws JsonProcessingException
+	 * @throws JSONException
+	 */
+	@Test
+	@DisplayName("Unordered Array test")
+	final void unorderedArrayTest() throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("unorderedArrayDiff");
+		compareTest(testData);
+	}
+
+    @Test
+    @DisplayName("Unordered Array Object test")
+    final void unorderedMixedArrayObjectTest() throws JsonProcessingException, JSONException {
+        JSONObject testData = object.getJSONObject("unorderedMixedArrayObjectDiff");
+        compareTest(testData);
+    }
+
+    @Test
+    @DisplayName("Unordered Array Element Missing test")
+    final void unorderedArrayDiffElemMissing() throws JsonProcessingException, JSONException {
+        JSONObject testData = object.getJSONObject("unorderedArrayDiffElemMissing");
         compareTest(testData);
     }
 

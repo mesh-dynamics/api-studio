@@ -14,9 +14,9 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
 import io.md.core.TemplateKey;
 import io.md.core.TemplateKey.Type;
+import io.md.utils.Constants;
 
 import com.cube.dao.ReqRespStore;
-import com.cube.utils.Constants;
 import com.cube.ws.Config;
 
 public class UploadTemplatesForSampleApp {

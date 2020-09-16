@@ -5,8 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.md.dao.Event;
-
-import com.cube.utils.Constants;
+import io.md.utils.Constants;
 
 public class CubeEventMetaInfo {
 

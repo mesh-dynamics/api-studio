@@ -119,8 +119,8 @@ public class TemplateSerializationTest {
         TemplateRegistries templateRegistries1 = mapper.readValue(data1, TemplateRegistries.class);
         TemplateRegistries templateRegistries2 = mapper.readValue(data2, TemplateRegistries.class);
 
-        TemplateSet tset1 = Utils.templateRegistriesToTemplateSet(templateRegistries1, CUSTID, app, Optional.empty());
-        TemplateSet tset2 = Utils.templateRegistriesToTemplateSet(templateRegistries2, CUSTID, app, Optional.empty());
+        TemplateSet tset1 = ServerUtils.templateRegistriesToTemplateSet(templateRegistries1, CUSTID, app, Optional.empty());
+        TemplateSet tset2 = ServerUtils.templateRegistriesToTemplateSet(templateRegistries2, CUSTID, app, Optional.empty());
 
         reqRespStore.saveTemplateSet(tset1);
 

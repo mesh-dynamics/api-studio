@@ -221,8 +221,10 @@ public class ResponseComparatorTest {
             if (ruleObj.has("extractionMethod")) {
                 extractionMethod = ExtractionMethod.valueOf(ruleObj.getString("extractionMethod"));
             }            String customization = ruleObj.getString("customization");
+
             String  arrayCompKeyPath =  ruleObj.getString("arrayCompKeyPath");
-            TemplateEntry rule = new TemplateEntry(path, dataType, presenceType, comparisonType, extractionMethod, Optional.of(customization), Optional.of(arrayCompKeyPath));
+            TemplateEntry rule = new TemplateEntry(path, dataType, presenceType
+                , comparisonType, extractionMethod, Optional.of(customization), Optional.of(arrayCompKeyPath));
             template.addRule(rule);
         }
 
@@ -235,7 +237,7 @@ public class ResponseComparatorTest {
 
     /*private Event updateRequestEventHdr(Event event, String hdrField, String val)
         throws IOException, EventBuilder.InvalidEventException, RawPayloadEmptyException, RawPayloadProcessingException {
-        HTTPResponsePayload responsePayload = Utils.getResponsePayload(event, config);
+        HTTPResponsePayload responsePayload = ServerUtils.getResponsePayload(event, config);
         responsePayload.hdrs.putSingle(hdrField, val);
 
         return cloneWithPayload(event, responsePayload);
@@ -244,7 +246,7 @@ public class ResponseComparatorTest {
 */
     /*private Event updateResponseEventBody(Event event, String body) throws IOException,
         EventBuilder.InvalidEventException, RawPayloadEmptyException, RawPayloadProcessingException {
-        HTTPResponsePayload responsePayload = Utils.getResponsePayload(event, config);
+        HTTPResponsePayload responsePayload = ServerUtils.getResponsePayload(event, config);
 
         HTTPResponsePayload newPayload = new HTTPResponsePayload(responsePayload.hdrs, responsePayload.status, body.getBytes());
         return cloneWithPayload(event, newPayload);

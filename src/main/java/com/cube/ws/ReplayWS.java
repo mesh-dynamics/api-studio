@@ -18,8 +18,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -42,20 +40,21 @@ import io.md.dao.Recording;
 import io.md.dao.Replay;
 import io.md.injection.DynamicInjectionConfig;
 import io.md.services.Analyzer;
+import io.md.ws.ReplayBasicWS;
+import io.md.dao.ReplayBuilder;
+import io.md.drivers.AbstractReplayDriver;
+import io.md.dao.ReplayUpdate;
+import io.md.dao.ReplayUpdate.ReplaySaveFailureException;
+import io.md.utils.Constants;
+import io.md.core.Utils;
 
+import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
-import com.cube.core.Utils;
-import com.cube.dao.CubeMetaInfo;
-import com.cube.dao.ReplayBuilder;
 import com.cube.dao.ReplayQuery;
-import com.cube.dao.ReplayUpdate;
-import com.cube.dao.ReplayUpdate.ReplaySaveFailureException;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.dao.Result;
-import com.cube.drivers.AbstractReplayDriver;
 import com.cube.drivers.RealAnalyzer;
-import com.cube.utils.Constants;
 
 /**
  * @author prasad
@@ -70,7 +69,7 @@ public class ReplayWS extends ReplayBasicWS {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
     public Response health() {
-        Map solrHealth = WSUtils.solrHealthCheck(config.solr);
+        Map solrHealth = ServerUtils.solrHealthCheck(config.solr);
         Map respMap = new HashMap(solrHealth);
         respMap.put(Constants.SERVICE_HEALTH_STATUS, "RS is healthy");
         return Response.ok().type(MediaType.APPLICATION_JSON).entity((new JSONObject(respMap)).toString()).build();
@@ -342,7 +341,7 @@ public class ReplayWS extends ReplayBasicWS {
                     .build();
             }
         } else {
-            ReplayBuilder replayBuilder = new ReplayBuilder(endPoint, new CubeMetaInfo(customerId, app, instanceId),
+            ReplayBuilder replayBuilder = new ReplayBuilder(endPoint, customerId, app, instanceId,
                 recordingCollection, userId)
                 .withReplayId(replayId);
             replay = replayBuilder.build();
@@ -385,7 +384,7 @@ public class ReplayWS extends ReplayBasicWS {
     @POST
     @Path("cache/flushall")
     public Response cacheFlushAll() {
-        return Utils.flushAll(config);
+        return ServerUtils.flushAll(config);
     }
 
     @Override
@@ -435,7 +434,7 @@ public class ReplayWS extends ReplayBasicWS {
 	 */
 	@Inject
 	public ReplayWS(Config config) {
-        // super(new io.cube.agent.ProxyDataStore(), new ProxyAnalyzer());
+        //super(new io.cube.agent.ProxyDataStore(), new ProxyAnalyzer());
 		super(config.rrstore, new RealAnalyzer(config.rrstore));
 		this.rrstore = config.rrstore;
 		this.jsonMapper = config.jsonMapper;

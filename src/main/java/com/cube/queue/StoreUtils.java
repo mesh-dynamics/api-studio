@@ -21,8 +21,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateKey;
@@ -34,11 +32,12 @@ import io.md.dao.Event.EventType;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.RecordOrReplay;
 import io.md.services.DataStore.TemplateNotFoundException;
+import io.md.utils.Constants;
+import io.md.core.Utils;
 
-import com.cube.core.Utils;
+import com.cube.core.ServerUtils;
 import com.cube.dao.CubeEventMetaInfo;
 import com.cube.dao.ReqRespStore;
-import com.cube.utils.Constants;
 import com.cube.ws.CubeStore.CubeStoreException;
 
 public class StoreUtils {
@@ -183,7 +182,7 @@ public class StoreUtils {
 					URIBuilder uriBuilder = new URIBuilder(reqApiPath);
 					reqApiPath = uriBuilder.getPath();
 				}
-				responseEvent = Utils
+				responseEvent = ServerUtils
 					.createHTTPResponseEvent(reqApiPath, rid, status, meta, hdrs, rr.body,
 						collection, timestamp, runType, customerId, app, rrstore, runId, recordingType);
 
