@@ -44,27 +44,27 @@ class HttpRequestHeaders extends Component {
             <div style={{display: this.props.showHeaders === true ? "" : "none"}}>
                 {this.props.headers.length > 0 && (
                     <div style={{marginBottom: "1px"}}>
-                        <div style={{display: "inline-block", width: "2%", paddingRight: "9px"}}> 
+                        <div style={{display: "inline-block", width: "3%", paddingRight: "9px"}}> 
                             <FormGroup bsSize="small" style={{marginBottom: "0px", textAlign: "center"}}>
                                 <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} checked={this.allSelected()} onChange={this.handleAllCheckChange}/>
                             </FormGroup>
                         </div>
-                        <div style={{display: "inline-block", width: "20%", paddingRight: "9px"}}> 
+                        <div style={{display: "inline-block", width: "35%", paddingRight: "9px"}}> 
                             <FormGroup style={{marginBottom: "0px"}}>
                                 <ControlLabel style={{fontWeight: "normal", fontSize: "11px"}}>NAME</ControlLabel>
                             </FormGroup>
                         </div>
-                        <div style={{display: "inline-block", width: "20%", paddingRight: "9px"}}>
+                        <div style={{display: "inline-block", width: "55%", paddingRight: "9px"}}>
                             <FormGroup bsSize="small" style={{marginBottom: "0px"}}>
                                 <ControlLabel style={{fontWeight: "normal", fontSize: "11px"}}>VALUE</ControlLabel>
                             </FormGroup>
                         </div>
-                        <div style={{display: "inline-block", width: "54%", paddingRight: "9px"}}>
+                        {/* <div style={{display: "inline-block", width: "54%", paddingRight: "9px"}}>
                             <FormGroup bsSize="small" style={{marginBottom: "0px"}}>
                                 <ControlLabel style={{fontWeight: "normal", fontSize: "11px"}}>DESCRIPTION</ControlLabel>
                             </FormGroup>
-                        </div>
-                        <div style={{display: "inline-block", width: "4%", paddingRight: "9px"}}>
+                        </div> */}
+                        <div style={{display: "inline-block", width: "7%", paddingRight: "9px"}}>
                             <FormGroup bsSize="small" style={{marginBottom: "0px"}}>
                                 <ControlLabel style={{fontWeight: "normal", fontSize: "11px"}}></ControlLabel>
                             </FormGroup>
@@ -73,30 +73,30 @@ class HttpRequestHeaders extends Component {
                 )}
                 {this.props.headers.map(eachHeader => {return (
                     <div style={{marginBottom: "1px"}} key={eachHeader.id}>
-                        <div style={{display: "inline-block", width: "2%", paddingRight: "9px"}}> 
+                        <div style={{display: "inline-block", width: "3%", paddingRight: "9px"}}> 
                             <FormGroup style={{marginBottom: "0px", backgroundColor: "none", textAlign: "center"}}>
                                 <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} checked={eachHeader.selected} 
                                 onChange={() => this.handleCheckChange(eachHeader.id, eachHeader.selected)}/>                            
                             </FormGroup>
                         </div>
-                        <div style={{display: "inline-block", width: "20%", paddingRight: "9px"}}> 
+                        <div style={{display: "inline-block", width: "35%", paddingRight: "9px"}}> 
                             <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
                                 <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="" 
                                 value={eachHeader.name} name="name" onChange={this.handleChange.bind(this, eachHeader.id)}/>
                             </FormGroup>
                         </div>
-                        <div style={{display: "inline-block", width: "20%", paddingRight: "9px"}}>
+                        <div style={{display: "inline-block", width: "55%", paddingRight: "9px"}}>
                             <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
                                 <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="" value={eachHeader.value} name="value" onChange={this.handleChange.bind(this, eachHeader.id)} />
                             </FormGroup>
                         </div>
-                        <div style={{display: "inline-block", width: "54%", paddingRight: "9px"}}>
+                        {/* <div style={{display: "inline-block", width: "54%", paddingRight: "9px"}}>
                             <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
                                 <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="optional" 
                                 value={eachHeader.description} name="description" onChange={this.handleChange.bind(this, eachHeader.id)} />
                             </FormGroup>
-                        </div>
-                        <div style={{display: "inline-block", width: "4%", paddingRight: "9px"}} 
+                        </div> */}
+                        <div style={{display: "inline-block", width: "7%", paddingRight: "9px"}} 
                                 onClick={this.handleDelete.bind(this, eachHeader.id)} > 
                             <FormGroup style={{marginBottom: "0px", backgroundColor: "#ffffff", textAlign: "center", padding: "5px"}}>
                                 <Glyphicon style={{fontSize: "16px", top: "5px"}} glyph="remove-sign" /> 

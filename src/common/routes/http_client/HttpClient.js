@@ -4,6 +4,8 @@ import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, 
 import HttpRequestMessage from "./HttpRequestMessage";
 import HttpResponseMessage from "./HttpResponseMessage";
 
+import HttpRequestMessageRO from "./HttpRequestMessageRO";
+
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import config from "../../config";
 import statusCodeList from "../../status-code-list";
@@ -326,7 +328,7 @@ class HttpClient extends Component {
     render() {
         const {  currentSelectedTab } = this.props;
         let selectedTraceTableReqTabId = currentSelectedTab.selectedTraceTableReqTabId;
-        const selectedTraceTableTestReqTabId = currentSelectedTab.selectedTraceTableTestReqTabId;
+        let selectedTraceTableTestReqTabId = currentSelectedTab.selectedTraceTableTestReqTabId;
         let selectedTraceTableReqTab, selectedTraceTableTestReqTab;
         
         // const selectedTraceTableTestReqTab = getTraceTableTestReqData(currentSelectedTab, currentSelectedTab.selectedTraceTableTestReqTabId);
@@ -341,10 +343,13 @@ class HttpClient extends Component {
             selectedTraceTableReqTab = currentSelectedTab.outgoingRequests ? currentSelectedTab.outgoingRequests.find((eachTab) => eachTab.id === selectedTraceTableReqTabId) : {};
         }
 
-        if(currentSelectedTab.recordedHistory && selectedTraceTableTestReqTabId === currentSelectedTab.recordedHistory.id) {
+        if(selectedTraceTableTestReqTabId && currentSelectedTab.recordedHistory && selectedTraceTableTestReqTabId === currentSelectedTab.recordedHistory.id) {
             selectedTraceTableTestReqTab = currentSelectedTab.recordedHistory;
-        } else if(currentSelectedTab.recordedHistory) {
+        } else if(selectedTraceTableTestReqTabId && currentSelectedTab.recordedHistory) {
             selectedTraceTableTestReqTab = currentSelectedTab.recordedHistory.outgoingRequests ? currentSelectedTab.recordedHistory.outgoingRequests.find((eachTab) => eachTab.id === selectedTraceTableTestReqTabId) : {};
+        } else if(currentSelectedTab.recordedHistory){
+            selectedTraceTableTestReqTabId = currentSelectedTab.recordedHistory.id;
+            selectedTraceTableTestReqTab = currentSelectedTab.recordedHistory;
         }
 
         const { outgoingRequests, service, httpURL, httpURLShowOnly, showTrace } = currentSelectedTab;
@@ -504,8 +509,8 @@ class HttpClient extends Component {
                                 </div>
                             </div>
                         </div>
-                            <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0"}}>
-                                {currentSelectedTab.recordedHistory && (
+                        <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0"}}>
+                            {currentSelectedTab.recordedHistory && (
                                 <div>
                                     <div>Test</div>
                                     <Table hover style={{backgroundColor: "#fff", border: "1px solid #ddd", borderSpacing: "0px", borderCollapse: "separate", marginBottom: "0px"}}>
@@ -585,24 +590,50 @@ class HttpClient extends Component {
                 </div>
                 {!showCompleteDiff && (
                     <div>
-                        <HttpRequestMessage 
-                            tabId={selectedTraceTableReqTab.id}
-                            requestId={selectedTraceTableReqTab.requestId}
-                            httpMethod={selectedTraceTableReqTab.httpMethod}
-                            httpURL={selectedTraceTableReqTab.httpURL}
-                            headers={selectedTraceTableReqTab.headers} 
-                            queryStringParams={selectedTraceTableReqTab.queryStringParams}
-                            bodyType={selectedTraceTableReqTab.bodyType}
-                            formData={selectedTraceTableReqTab.formData} 
-                            rawData={selectedTraceTableReqTab.rawData}
-                            rawDataType={selectedTraceTableReqTab.rawDataType}
-                            paramsType={selectedTraceTableReqTab.paramsType}
-                            addOrRemoveParam={this.props.addOrRemoveParam} 
-                            updateParam={this.props.updateParam}
-                            updateAllParams={this.props.updateAllParams}
-                            updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
-                            isOutgoingRequest={selectedTraceTableReqTab.isOutgoingRequest} >
-                        </HttpRequestMessage>
+                        <div style={{display: "flex", marginBottom: "9px"}}>
+                            <div style={{flex: "1", padding: "0.5rem"}}>
+                                <HttpRequestMessage 
+                                    tabId={selectedTraceTableReqTab.id}
+                                    requestId={selectedTraceTableReqTab.requestId}
+                                    httpMethod={selectedTraceTableReqTab.httpMethod}
+                                    httpURL={selectedTraceTableReqTab.httpURL}
+                                    headers={selectedTraceTableReqTab.headers} 
+                                    queryStringParams={selectedTraceTableReqTab.queryStringParams}
+                                    bodyType={selectedTraceTableReqTab.bodyType}
+                                    formData={selectedTraceTableReqTab.formData} 
+                                    rawData={selectedTraceTableReqTab.rawData}
+                                    rawDataType={selectedTraceTableReqTab.rawDataType}
+                                    paramsType={selectedTraceTableReqTab.paramsType}
+                                    addOrRemoveParam={this.props.addOrRemoveParam} 
+                                    updateParam={this.props.updateParam}
+                                    updateAllParams={this.props.updateAllParams}
+                                    updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
+                                    isOutgoingRequest={selectedTraceTableReqTab.isOutgoingRequest} >
+                                </HttpRequestMessage>
+                            </div>
+                            <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0"}}>
+                                {selectedTraceTableReqTab && selectedTraceTableTestReqTab && (
+                                    <HttpRequestMessageRO
+                                        tabId={selectedTraceTableTestReqTab.id}
+                                        requestId={selectedTraceTableTestReqTab.requestId}
+                                        httpMethod={selectedTraceTableTestReqTab.httpMethod}
+                                        httpURL={selectedTraceTableTestReqTab.httpURL}
+                                        headers={selectedTraceTableTestReqTab.headers} 
+                                        queryStringParams={selectedTraceTableTestReqTab.queryStringParams}
+                                        bodyType={selectedTraceTableTestReqTab.bodyType}
+                                        formData={selectedTraceTableTestReqTab.formData} 
+                                        rawData={selectedTraceTableTestReqTab.rawData}
+                                        rawDataType={selectedTraceTableTestReqTab.rawDataType}
+                                        paramsType={selectedTraceTableReqTab.paramsType}
+                                        addOrRemoveParam={this.props.addOrRemoveParam} 
+                                        updateParam={this.props.updateParam}
+                                        updateAllParams={this.props.updateAllParams}
+                                        updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
+                                        isOutgoingRequest={selectedTraceTableTestReqTab.isOutgoingRequest} >
+                                    </HttpRequestMessageRO>
+                                )}
+                            </div>
+                        </div>
                         <HttpResponseMessage 
                             tabId={selectedTraceTableReqTab.id}
                             /** Belongs to RHS */
