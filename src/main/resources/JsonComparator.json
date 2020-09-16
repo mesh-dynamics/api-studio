@@ -605,5 +605,32 @@
             "recordedResponse":null,
             "replayedResponse":null
         }
+    },
+
+    "unorderedArrayJumbledOrder1" : {
+        "json1" : {
+            "unordered" : [ ["a" , "b"] ,  ["c" , "d"] ]
+        },
+
+        "json2" : {
+            "unordered" :  [ ["d" , "c"] ,  ["b" , "a"] ]
+        },
+
+        "rules" : [
+            {"path" :  "/unordered" , "dataType" :  "Set" , "presenceType" :  "Required" ,
+                "comparisonType" : "Equal" , "customization" : "" },
+            {"path" :  "/unordered/0" , "dataType" :  "Set" , "presenceType" :  "Required" ,
+                "comparisonType" : "Equal" , "customization" : "" },
+            {"path" :  "/unordered/1" , "dataType" :  "Set" , "presenceType" :  "Required" ,
+                "comparisonType" : "Equal" , "customization" : "" }
+        ],
+
+        "output" : {
+            "mt" : "ExactMatch",
+            "matchmeta" : "JsonDiff",
+            "diffs" : [] ,
+            "recordedResponse":null,
+            "replayedResponse":null
+        }
     }
 }
