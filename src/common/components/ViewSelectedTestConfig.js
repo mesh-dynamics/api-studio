@@ -48,6 +48,7 @@ class ViewSelectedTestConfig extends React.Component {
             recId: null,
             stopDisabled: true,
             stoppingStatus: false,
+            forceStopping: false,
             goldenNameErrorMessage: "",
             recordingMode: "new", //allowed values ["new", "resume"]
             userAlertMessage: {
@@ -537,7 +538,7 @@ class ViewSelectedTestConfig extends React.Component {
             this.stopStatusInterval = setInterval(
                 () => { 
                     if(this.state.recStatus.status === "Completed") {
-                        this.setState({stopDisabled: true, stoppingStatus: false});
+                        this.setState({stopDisabled: true, stoppingStatus: false, forceStopping: false});
                         clearInterval(this.stopStatusInterval);
                         dispatch(cubeActions.getTestIds(selectedApp));
                         dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "Golden"));
@@ -644,6 +645,18 @@ class ViewSelectedTestConfig extends React.Component {
         });
     }
     
+    handleForceStopRecording = (recordingId) => {
+        try {
+            cubeService.forceStopRecording(recordingId)
+        } catch (error) {
+            console.error("Unable to force stop recording: " + error)
+            alert("Unable to force stop recording")
+            this.setState({forceStopping: false})
+        }
+
+        this.setState({forceStopping: true})
+    }
+
     renderInstances(cube) {
         if (!cube.instances) {
             return ''
@@ -928,10 +941,10 @@ class ViewSelectedTestConfig extends React.Component {
         const { 
             customHeaders, recordModalVisible, showReplayModal, 
             fcId, showGoldenFilter, selectedGoldenFromFilter,
-            recName, stopDisabled,stoppingStatus, recStatus, showAddCustomHeader,
+            recName, stopDisabled, stoppingStatus, recStatus, showAddCustomHeader,
             goldenNameErrorMessage, fcEnabled, resumeModalVisible,
             dbWarningModalVisible, instanceWarningModalVisible, 
-            goldenSelectWarningModalVisible, showDeleteGoldenConfirmation
+            goldenSelectWarningModalVisible, showDeleteGoldenConfirmation, forceStopping
         } = this.state;
 
         const replayDone = (cube.replayStatus === "Completed" || cube.replayStatus === "Error");
@@ -970,9 +983,9 @@ class ViewSelectedTestConfig extends React.Component {
                         {
                             stoppingStatus &&
                             <div>
-                                <img src={MDLoading} alt="Loading..."/>   
+                                <img src={MDLoading} alt="Stopping..."/>   
                                 <br />
-                                <span>Please wait for 15 seconds to complete recording.</span>
+                                {forceStopping ? <span>Force stopping</span> : <span>Please wait for 15 seconds to complete recording.</span>}
                             </div>
                         }
                         <div className={"padding-15 bold"}>
@@ -982,6 +995,8 @@ class ViewSelectedTestConfig extends React.Component {
                     </Modal.Body>
 
                     <Modal.Footer>
+                        <span onClick={() => this.handleForceStopRecording(recStatus.id)} className={classNames("cube-btn","pull-left", {"hidden" : !stoppingStatus, "disabled" : forceStopping})}>FORCE STOP</span>&nbsp;&nbsp;
+
                         <span onClick={this.handleCloseRecModal} className={stopDisabled ? "cube-btn" : "cube-btn disabled"}>CLOSE</span>
                     </Modal.Footer>
                 </Modal>
