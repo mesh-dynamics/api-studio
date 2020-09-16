@@ -545,6 +545,15 @@ const deleteMockConfig = async (id) => {
     }
 }
 
+const forceStopRecording = async (recordingId) => {
+    try {
+        let url = `${config.recordBaseUrl}/forcestop/${recordingId}`
+        return await api.post(url);
+    } catch (e) {
+        console.error("Error force stopping recording")
+        throw e;
+    }
+}
 
 
 export const cubeService = {
@@ -585,5 +594,6 @@ export const cubeService = {
     getAllMockConfigs,
     insertNewMockConfig,
     updateMockConfig,
-    deleteMockConfig
+    deleteMockConfig,
+    forceStopRecording,
 };
