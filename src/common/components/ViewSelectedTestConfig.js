@@ -417,6 +417,9 @@ class ViewSelectedTestConfig extends React.Component {
                 testIds,
                 selectedApp, 
                 selectedGolden,
+                testConfig: { 
+                    tag
+                }
             }, 
             authentication: { 
                 user: {
@@ -427,6 +430,10 @@ class ViewSelectedTestConfig extends React.Component {
         } = this.props;
 
         const { name: recName, label: recLabel } = testIds.find(recording => recording.id === selectedGolden);
+        
+        const searchParams = new URLSearchParams();
+        searchParams.set('tag', tag || "");
+        searchParams.set('resettag', `default${selectedApp}Noop`);
 
         const resumeUrl = `${config.recordBaseUrl}/resumeRecording/${selectedGolden}`;
         const statusUrl = `${config.recordBaseUrl}/status/${customer_name}/${selectedApp}/${recName}/${recLabel}`;
@@ -438,7 +445,7 @@ class ViewSelectedTestConfig extends React.Component {
             }
         };
 
-        api.post(resumeUrl, {}, configForHTTP).then((data) => {
+        api.post(resumeUrl, searchParams, configForHTTP).then((data) => {
             this.setState({ stopDisabled: false, recId: data.id, recName, recLabel });
             this.recStatusInterval = setInterval(
                 () => (
@@ -483,6 +490,8 @@ class ViewSelectedTestConfig extends React.Component {
         searchParams.set('name', recName);
         searchParams.set('userId', username);
         searchParams.set('label', recLabel);
+        searchParams.set('tag', `default${selectedApp}Record` );
+        searchParams.set('resettag', `default${selectedApp}Noop`);
 
         // axios.post(recordUrl, searchParams, configForHTTP
         api.post(recordUrl, searchParams, configForHTTP).then((data) => {
@@ -547,11 +556,13 @@ class ViewSelectedTestConfig extends React.Component {
                 selectedInstance,
                 collectionTemplateVersion,
                 selectedGolden,
+                selectedApp, 
                 testConfig: { 
                     testPaths, 
                     testMockServices, 
                     testConfigName,
-                    dynamicInjectionConfigVersion
+                    dynamicInjectionConfigVersion,
+                    tag
                 }
             }, 
             authentication: { 
@@ -574,6 +585,10 @@ class ViewSelectedTestConfig extends React.Component {
         searchParams.set('transforms', transforms);
         searchParams.set('testConfigName', testConfigName);
         searchParams.set('analyze', true);
+        if(tag){
+            searchParams.set('tag', tag);
+            searchParams.set('resettag', `default${selectedApp}Noop`);
+        }
 
         // Append dynamic injection configuration if available
         dynamicInjectionConfigVersion && searchParams.set('dynamicInjectionConfigVersion', dynamicInjectionConfigVersion);
