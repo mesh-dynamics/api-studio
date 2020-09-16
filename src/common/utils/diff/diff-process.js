@@ -20,7 +20,15 @@ const cleanEscapedString = (str) => {
     return str;
 }
 
-const validateAndCleanHTTPMessageParts = (messagePart) => {
+const validateAndCleanHTTPMessageParts = (messagePart, headers) => {
+    if(headers) {
+        let contentType = getParameterCaseInsensitive(headers, "content-type");
+        let contentTypeString = contentType ? (_.isArray(contentType) ? contentType[0] : contentType) : "",
+            isMultipart = contentTypeString.toLowerCase().indexOf("multipart") > -1;
+        if(isMultipart) {
+            return messagePart;
+        }
+    }
     let cleanedMessagepart = "";
     if (messagePart &&_.isObject(messagePart)) {
         cleanedMessagepart = messagePart;
@@ -210,7 +218,7 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
         // parse and clean up body string
         if (item.recordRequest) {
             recordedRequestHeaders = validateAndCleanHTTPMessageParts(item.recordRequest.hdrs);
-            recordedRequestBody = validateAndCleanHTTPMessageParts(item.recordRequest.body);
+            recordedRequestBody = validateAndCleanHTTPMessageParts(item.recordRequest.body, item.recordRequest.hdrs);
             recordedRequestQParams = validateAndCleanHTTPMessageParts(item.recordRequest.queryParams);
             recordedRequestFParams = validateAndCleanHTTPMessageParts(item.recordRequest.formParams);
         } else {
@@ -224,7 +232,7 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
         // same as above
         if (item.replayRequest) {
             replayedRequestHeaders = validateAndCleanHTTPMessageParts(item.replayRequest.hdrs);
-            replayedRequestBody = validateAndCleanHTTPMessageParts(item.replayRequest.body);
+            replayedRequestBody = validateAndCleanHTTPMessageParts(item.replayRequest.body, item.replayRequest.hdrs);
             replayedRequestQParams = validateAndCleanHTTPMessageParts(item.replayRequest.queryParams);
             replayedRequestFParams = validateAndCleanHTTPMessageParts(item.replayRequest.formParams);
         } else {
