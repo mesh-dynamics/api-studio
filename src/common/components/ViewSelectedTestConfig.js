@@ -432,7 +432,7 @@ class ViewSelectedTestConfig extends React.Component {
         const { name: recName, label: recLabel } = testIds.find(recording => recording.id === selectedGolden);
         
         const searchParams = new URLSearchParams();
-        searchParams.set('tag', tag || "");
+        searchParams.set('tag', `default${selectedApp}Record`);
         searchParams.set('resettag', `default${selectedApp}Noop`);
 
         const resumeUrl = `${config.recordBaseUrl}/resumeRecording/${selectedGolden}`;
