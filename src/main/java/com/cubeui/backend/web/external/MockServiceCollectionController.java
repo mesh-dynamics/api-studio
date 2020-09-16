@@ -60,7 +60,7 @@ public class MockServiceCollectionController {
     validation.validateCustomerName(request,recording.get().customerId);
 
     String path = getPathForMockWithRunId(request.getRequestURI(), replayCollection, recordCollection, customerId, app, recording.get().id);
-    path = cubeServerService.getPathForHttpMethod(path , request.getMethod() , traceId, service );
+    path = cubeServerService.getPathForHttpMethod(path , request.getMethod() , traceId, runId, service );
 
     return cubeServerService.fetchResponse(request, body, HttpMethod.POST , path);
   }
