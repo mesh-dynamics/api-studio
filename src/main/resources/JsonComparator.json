@@ -532,11 +532,7 @@
         "rules" : [
             { "path": "/unordered",   "dataType": "Set",     "presenceType": "Required",
                 "comparisonType": "Equal",  "customization": "", "arrayCompKeyPath" :  "/a" } ,
-            { "path": "/unordered/0/b",   "dataType": "Set",     "presenceType": "Optional",
-                "comparisonType": "Equal",  "customization": ""},
-            { "path": "/unordered/1/b",   "dataType": "Set",     "presenceType": "Optional",
-                "comparisonType": "Equal",  "customization": ""},
-            { "path": "/unordered/2/b",   "dataType": "Set",     "presenceType": "Optional",
+            { "path": "/unordered/*/b",   "dataType": "Set",     "presenceType": "Optional",
                 "comparisonType": "Equal",  "customization": ""}
         ],
 
@@ -619,9 +615,7 @@
         "rules" : [
             {"path" :  "/unordered" , "dataType" :  "Set" , "presenceType" :  "Required" ,
                 "comparisonType" : "Equal" , "customization" : "" },
-            {"path" :  "/unordered/0" , "dataType" :  "Set" , "presenceType" :  "Required" ,
-                "comparisonType" : "Equal" , "customization" : "" },
-            {"path" :  "/unordered/1" , "dataType" :  "Set" , "presenceType" :  "Required" ,
+            {"path" :  "/unordered/*" , "dataType" :  "Set" , "presenceType" :  "Required" ,
                 "comparisonType" : "Equal" , "customization" : "" }
         ],
 
