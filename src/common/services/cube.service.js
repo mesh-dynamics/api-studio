@@ -61,7 +61,7 @@ const fetchCollectionList = async (app, recordingType="", forCurrentUser=false) 
         
         recordingType && params.set("recordingType", recordingType); // todo
         forCurrentUser && params.set("userId", user.username)
-
+        
         return await api.get(url + "?" + params.toString());
     } catch(error) {
         console.log("Error fetching test config \n", error);
@@ -479,6 +479,81 @@ const deleteEnvironment = async (id) => {
     }
 }
 
+// mock config
+const getAllMockConfigs = async (selectedApp) => {
+    try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        let url = `${config.apiBaseUrl}/config/get`
+        let params = new URLSearchParams()
+        params.set("customer", user.customer_name)
+        params.set("app", selectedApp)
+        params.set("configType", "mockConfig")
+        return await api.get(url + "?" + params.toString());
+    } catch (e) {
+        console.error("Error fetching mock configs")
+        throw e;
+    }
+}
+
+const insertNewMockConfig = async (selectedApp, mockConfig) => {
+    try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        let url = `${config.apiBaseUrl}/config/insert`
+        
+        let body = {
+            customer: user.customer_name,
+            app: selectedApp,
+            configType: "mockConfig",
+            key: mockConfig.name,
+            value: JSON.stringify(mockConfig)
+        }
+
+        return await api.post(url, body);
+    } catch (e) {
+        console.error("Error inserting mock config")
+        throw e;
+    }
+}
+
+const updateMockConfig = async (selectedApp, id, mockConfig) => {
+    try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        let url = `${config.apiBaseUrl}/config/update/${id}`
+        
+        let body = {
+            customer: user.customer_name,
+            app: selectedApp,
+            configType: "mockConfig",
+            key: mockConfig.name,
+            value: JSON.stringify(mockConfig)
+        }
+
+        return await api.post(url, body);
+    } catch (e) {
+        console.error("Error updating mock config")
+        throw e;
+    }
+}
+
+const deleteMockConfig = async (id) => {
+    try {
+        let url = `${config.apiBaseUrl}/config/delete/${id}`
+        return await api.post(url);
+    } catch (e) {
+        console.error("Error deleting mock config")
+        throw e;
+    }
+}
+
+const forceStopRecording = async (recordingId) => {
+    try {
+        let url = `${config.recordBaseUrl}/forcestop/${recordingId}`
+        return await api.post(url);
+    } catch (e) {
+        console.error("Error force stopping recording")
+        throw e;
+    }
+}
 
 
 export const cubeService = {
@@ -515,5 +590,10 @@ export const cubeService = {
     updateEnvironment,
     deleteEnvironment,
     deleteEventByRequestId, 
-    deleteEventByTraceId
+    deleteEventByTraceId,
+    getAllMockConfigs,
+    insertNewMockConfig,
+    updateMockConfig,
+    deleteMockConfig,
+    forceStopRecording,
 };

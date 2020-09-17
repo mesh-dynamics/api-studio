@@ -1,7 +1,7 @@
 /**
  * This file is set up proxy and listeners
  */
-const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, dialog } = require('electron');
 const { autoUpdater } = require('electron-updater');
 autoUpdater.logger = require('electron-log')
 const isDev = require('electron-is-dev');
@@ -175,10 +175,14 @@ const setupListeners = (mockContext, user, replayContext) => {
     });
 
     ipcMain.on('mock_context_change', (event, arg) => {
-        const { collectionId, traceId, selectedApp, customerName, recordingCollectionId, runId, spanId } = arg;
+        const { 
+            recordingId, collectionId, traceId, selectedApp, 
+            customerName, recordingCollectionId, runId, spanId,
+            config
+        } = arg;
 
-        logger.info('Current mock context :', mockContext);
-        logger.info('Changing mock context to : ', arg);
+        logger.info('Current mock context :', JSON.stringify(mockContext));
+        logger.info('Changing mock context to : ', JSON.stringify(arg));
 
         mockContext.traceId = traceId;
         mockContext.selectedApp = selectedApp;
@@ -187,8 +191,10 @@ const setupListeners = (mockContext, user, replayContext) => {
         mockContext.recordingCollectionId = recordingCollectionId;        
         mockContext.runId = runId;
         mockContext.spanId = spanId;
+        mockContext.recordingId = recordingId;
+        mockContext.config = config;
         
-        logger.info('Updated context is : ', mockContext);
+        logger.info('Updated context is : ', JSON.stringify(mockContext));
     });
 
     ipcMain.on('restart_app', () => {
@@ -286,6 +292,18 @@ const setupListeners = (mockContext, user, replayContext) => {
     autoUpdater.on('update-downloaded', info => {
         logger.info('Update downloaded...')
         mainWindow.webContents.send('update_downloaded');
+    })
+
+    process.on('uncaughtException', (err) => {
+        const messageBoxOptions = {
+            type: "error",
+            title: "An exception has occured.",
+            message: err.message
+        };
+
+        logger.info('Uncaught exception in main thread', err);
+
+        dialog.showMessageBox(messageBoxOptions);
     })
 };
 

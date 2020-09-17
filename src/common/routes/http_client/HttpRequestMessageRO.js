@@ -4,39 +4,26 @@ import _ from 'lodash';
 
 // import "./styles_here.css";
 
-import HttpRequestHeaders from "./HttpRequestHeaders";
-import HttpRequestQueryString from "./HttpRequestQueryString";
-import HttpRequestBody from "./HttpRequestBody";
+import HttpRequestHeadersRO from "./HttpRequestHeadersRO";
+import HttpRequestQueryStringRO from "./HttpRequestQueryStringRO";
+import HttpRequestBodyRO from "./HttpRequestBodyRO";
 import HttpRequestFormData from "./HttpRequestFormData";
 import HttpRequestRawData from "./HttpRequestRawData";
 
-class HttpRequestMessage extends Component {
+class HttpRequestMessageRO extends Component {
     constructor(props) {
         super(props);
         this.state = {
             showFormData: this.props.bodyType === "formData",
             showRawData: this.props.bodyType === "rawData"
         };
-        this.onChangeValue = this.onChangeValue.bind(this);
-        this.handleChange = this.handleChange.bind(this);
         this.handleBodyOrRawDataType = this.handleBodyOrRawDataType.bind(this);
-    }
-
-    handleChange(evt) {
-        const { tabId, isOutgoingRequest } = this.props;
-        this.props.updateParam(isOutgoingRequest, tabId, evt.target.name, evt.target.name, evt.target.value);
-    }
-
-    onChangeValue(evt) {
-        const { tabId, isOutgoingRequest } = this.props;
-        this.props.updateParam(isOutgoingRequest, tabId, evt.target.name, evt.target.name, evt.target.value);
     }
 
     handleBodyOrRawDataType(event) {
         const { tabId, isOutgoingRequest } = this.props;
-        const typeToUpdate = event.target.name === "bodyType" ? "bodyType" : "rawDataType";
-        this.props.updateBodyOrRawDataType(isOutgoingRequest, tabId, typeToUpdate === "bodyType" ? "bodyType" : "rawDataType", event.target.value);
-        if(typeToUpdate === "bodyType") {
+        const typeToUpdate = event.target.name === "bodyTypeRO" ? "bodyTypeRO" : "rawDataTypeRO";
+        if(typeToUpdate === "bodyTypeRO") {
             this.setState({
                 showFormData: event.target.value === "formData",
                 showRawData: event.target.value === "rawData"
@@ -55,7 +42,7 @@ class HttpRequestMessage extends Component {
                 <div style={{marginBottom: "0px"}}>
                     <div style={{display: "inline-block", width: "18%", paddingRight: "15px"}}> 
                         <FormGroup bsSize="small" style={{marginBottom: "0px"}}>
-                            <FormControl componentClass="select" placeholder="Method" style={{fontSize: "12px"}} name="httpMethod" value={this.props.httpMethod} onChange={this.handleChange}>
+                            <FormControl componentClass="select" placeholder="Method" style={{fontSize: "12px"}} disabled name="httpMethod" value={this.props.httpMethod} >
                                 <option value="get">GET</option>
                                 <option value="post">POST</option>
                                 <option value="put">PUT</option>
@@ -76,7 +63,7 @@ class HttpRequestMessage extends Component {
                     </div>
                     <div style={{display: "inline-block", width: "82%"}}>
                         <FormGroup bsSize="small" style={{marginBottom: "0px", fontSize: "12px"}}>
-                            <FormControl type="text" placeholder="https://...." style={{fontSize: "12px"}} name="httpURL" value={this.props.httpURL} onChange={this.handleChange} />
+                            <FormControl type="text" placeholder="https://...." style={{fontSize: "12px"}} disabled name="httpURL" value={this.props.httpURL} />
                         </FormGroup>
                     </div>
                 </div>
@@ -85,18 +72,18 @@ class HttpRequestMessage extends Component {
                         VIEW
                     </div>
                     <div className="" style={{display: "inline-block", paddingRight: "25px", fontSize: "12px"}}>
-                        <input type="radio" style={{marginTop: "0px", marginRight: "7px"}} 
-                            value="showHeaders" name="paramsType" checked={this.props.paramsType === "showHeaders"} onChange={this.onChangeValue}/>
+                        <input type="radio" style={{marginTop: "0px", marginRight: "7px"}} disabled 
+                            value="showHeaders" name="paramsTypeRO" checked={this.props.paramsType === "showHeaders"} />
                             Headers
                     </div>
                     <div className="" style={{display: "inline-block", paddingRight: "25px", fontSize: "12px"}}>
-                        <input type="radio" checked style={{marginTop: "0px", marginRight: "7px"}} 
-                            value="showQueryParams" name="paramsType" checked={this.props.paramsType === "showQueryParams"} onChange={this.onChangeValue}/>
+                        <input type="radio" checked style={{marginTop: "0px", marginRight: "7px"}} disabled 
+                            value="showQueryParams" name="paramsTypeRO" checked={this.props.paramsType === "showQueryParams"} />
                             Query Params
                     </div>
                     <div className="" style={{display: "inline-block", paddingRight: "25px", fontSize: "12px"}}>
-                        <input type="radio" checked style={{marginTop: "0px", marginRight: "7px"}} 
-                            value="showBody" name="paramsType" checked={this.props.paramsType === "showBody"} onChange={this.onChangeValue}/>
+                        <input type="radio" checked style={{marginTop: "0px", marginRight: "7px"}} disabled 
+                            value="showBody" name="paramsTypeRO" checked={this.props.paramsType === "showBody"} />
                             Body
                     </div>
                     
@@ -110,17 +97,17 @@ class HttpRequestMessage extends Component {
                     </div>
                     <div className="" style={{display: "inline-block", paddingRight: "25px", fontSize: "12px"}}>
                         <input type="radio" style={{marginTop: "0px", marginRight: "7px"}} 
-                            value="formData" name="bodyType" checked={this.state.showFormData} onChange={this.handleBodyOrRawDataType}/>
+                            value="formData" name="bodyTypeRO" checked={this.state.showFormData} onChange={this.handleBodyOrRawDataType}/>
                             x-www-form-urlencoded
                     </div>
                     <div className="" style={{display: "inline-block", paddingRight: "25px", fontSize: "12px"}}>
                         <input type="radio" style={{marginTop: "0px", marginRight: "7px"}} 
-                            value="rawData" name="bodyType" checked={this.state.showRawData} onChange={this.handleBodyOrRawDataType}/>
+                            value="rawData" name="bodyTypeRO" checked={this.state.showRawData} onChange={this.handleBodyOrRawDataType}/>
                             Raw Data
                     </div>
                     <div className="" style={{display: this.state.showRawData ? "inline-block" : "none", paddingRight: "25px", fontSize: "12px"}}>
                         <FormGroup bsSize="small">
-                            <FormControl componentClass="select" placeholder="Method" style={{fontSize: "12px"}} name="rawDataType" value={this.props.rawDataType} onChange={this.handleBodyOrRawDataType}>
+                            <FormControl componentClass="select" placeholder="Method" style={{fontSize: "12px"}} name="rawDataTypeRO" value={this.props.rawDataType} onChange={this.handleBodyOrRawDataType}>
                                 <option value="txt">Text</option>
                                 <option value="js">JavaScript</option>
                                 <option value="json">JSON</option>
@@ -130,7 +117,7 @@ class HttpRequestMessage extends Component {
                         </FormGroup>
                     </div>
                 </div>
-                <HttpRequestHeaders tabId={this.props.tabId}
+                <HttpRequestHeadersRO tabId={this.props.tabId}
                     showHeaders={this.props.paramsType === "showHeaders"} 
                     headers={this.props.headers} 
                     addOrRemoveParam={this.props.addOrRemoveParam} 
@@ -138,8 +125,8 @@ class HttpRequestMessage extends Component {
                     updateAllParams={this.props.updateAllParams}
                     isOutgoingRequest={this.props.isOutgoingRequest} >
 
-                </HttpRequestHeaders>
-                <HttpRequestQueryString tabId={this.props.tabId}
+                </HttpRequestHeadersRO>
+                <HttpRequestQueryStringRO tabId={this.props.tabId}
                     showQueryParams={this.props.paramsType === "showQueryParams"} 
                     queryStringParams={this.props.queryStringParams} 
                     addOrRemoveParam={this.props.addOrRemoveParam} 
@@ -147,8 +134,8 @@ class HttpRequestMessage extends Component {
                     updateAllParams={this.props.updateAllParams}
                     isOutgoingRequest={this.props.isOutgoingRequest} >
 
-                </HttpRequestQueryString>
-                <HttpRequestBody tabId={this.props.tabId}
+                </HttpRequestQueryStringRO>
+                <HttpRequestBodyRO tabId={this.props.tabId}
                     showBody={this.props.paramsType === "showBody"}
                     showFormData={this.state.showFormData}
                     showRawData={this.state.showRawData}
@@ -159,10 +146,10 @@ class HttpRequestMessage extends Component {
                     rawData={this.props.rawData}
                     isOutgoingRequest={this.props.isOutgoingRequest} >
 
-                </HttpRequestBody>
+                </HttpRequestBodyRO>
             </div>
         );
     }
 }
 
-export default HttpRequestMessage;
+export default HttpRequestMessageRO;

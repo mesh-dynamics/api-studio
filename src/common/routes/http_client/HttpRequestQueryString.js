@@ -45,27 +45,27 @@ class HttpRequestQueryString extends Component {
             <div style={{display: this.props.showQueryParams === true ? "" : "none"}}>
                 {this.props.queryStringParams.length > 0 && (
                     <div style={{marginBottom: "1px"}}>
-                        <div style={{display: "inline-block", width: "2%", paddingRight: "9px"}}> 
+                        <div style={{display: "inline-block", width: "3%", paddingRight: "9px"}}> 
                             <FormGroup bsSize="small" style={{marginBottom: "0px", textAlign: "center"}}>
                                 <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} checked={this.allSelected()} onChange={this.handleAllCheckChange}/>
                             </FormGroup>
                         </div>
-                        <div style={{display: "inline-block", width: "20%", paddingRight: "9px"}}> 
+                        <div style={{display: "inline-block", width: "35%", paddingRight: "9px"}}> 
                             <FormGroup style={{marginBottom: "0px"}}>
                                 <ControlLabel style={{fontWeight: "normal", fontSize: "11px"}}>NAME</ControlLabel>
                             </FormGroup>
                         </div>
-                        <div style={{display: "inline-block", width: "20%", paddingRight: "9px"}}>
+                        <div style={{display: "inline-block", width: "55%", paddingRight: "9px"}}>
                             <FormGroup bsSize="small" style={{marginBottom: "0px"}}>
                                 <ControlLabel style={{fontWeight: "normal", fontSize: "11px"}}>VALUE</ControlLabel>
                             </FormGroup>
                         </div>
-                        <div style={{display: "inline-block", width: "54%", paddingRight: "9px"}}>
+                        {/* <div style={{display: "inline-block", width: "54%", paddingRight: "9px"}}>
                             <FormGroup bsSize="small" style={{marginBottom: "0px"}}>
                                 <ControlLabel style={{fontWeight: "normal", fontSize: "11px"}}>DESCRIPTION</ControlLabel>
                             </FormGroup>
-                        </div>
-                        <div style={{display: "inline-block", width: "4%", paddingRight: "9px"}}>
+                        </div> */}
+                        <div style={{display: "inline-block", width: "7%", paddingRight: "9px"}}>
                             <FormGroup bsSize="small" style={{marginBottom: "0px"}}>
                                 <ControlLabel style={{fontWeight: "normal", fontSize: "11px"}}></ControlLabel>
                             </FormGroup>
@@ -74,30 +74,30 @@ class HttpRequestQueryString extends Component {
                 )}
                 {this.props.queryStringParams.map(eachParam => {return (
                     <div style={{marginBottom: "1px"}} key={eachParam.id}>
-                        <div style={{display: "inline-block", width: "2%", paddingRight: "9px"}}> 
+                        <div style={{display: "inline-block", width: "3%", paddingRight: "9px"}}> 
                             <FormGroup style={{marginBottom: "0px", backgroundColor: "none", textAlign: "center"}}>
                                 <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} checked={eachParam.selected} 
                                 onChange={() => this.handleCheckChange(eachParam.id, eachParam.selected)}/>
                             </FormGroup>
                         </div>
-                        <div style={{display: "inline-block", width: "20%", paddingRight: "9px"}}> 
+                        <div style={{display: "inline-block", width: "35%", paddingRight: "9px"}}> 
                             <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
                                 <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="" 
                                 value={eachParam.name} name="name" onChange={this.handleChange.bind(this, eachParam.id)}/>
                             </FormGroup>
                         </div>
-                        <div style={{display: "inline-block", width: "20%", paddingRight: "9px"}}>
+                        <div style={{display: "inline-block", width: "55%", paddingRight: "9px"}}>
                             <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
                                 <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="" value={eachParam.value} name="value" onChange={this.handleChange.bind(this, eachParam.id)} />
                             </FormGroup>
                         </div>
-                        <div style={{display: "inline-block", width: "54%", paddingRight: "9px"}}>
+                        {/* <div style={{display: "inline-block", width: "54%", paddingRight: "9px"}}>
                             <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
                                 <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="optional" 
                                 value={eachParam.description} name="description" onChange={this.handleChange.bind(this, eachParam.id)} />
                             </FormGroup>
-                        </div>
-                        <div style={{display: "inline-block", width: "4%", paddingRight: "9px"}} 
+                        </div> */}
+                        <div style={{display: "inline-block", width: "7%", paddingRight: "9px"}} 
                                 onClick={this.handleDelete.bind(this, eachParam.id)} > 
                             <FormGroup style={{marginBottom: "0px", backgroundColor: "#ffffff", textAlign: "center", padding: "5px"}}>
                                 <Glyphicon style={{fontSize: "16px", top: "5px"}} glyph="remove-sign" /> 
