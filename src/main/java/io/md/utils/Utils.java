@@ -340,7 +340,7 @@ public class Utils {
 
 	public static HTTPRequestPayload getRequestPayload(Event event, ObjectMapper jsonMapper)
 		throws IOException, RawPayloadEmptyException, RawPayloadProcessingException {
-		String payload = event.getPayloadAsJsonString();
+		String payload = event.payload.getPayloadAsJsonString();
 		return jsonMapper.readValue(payload, HTTPRequestPayload.class);
 	}
 
@@ -427,7 +427,7 @@ public class Utils {
 
 	public static HTTPResponsePayload getResponsePayload(Event event, ObjectMapper jsonMapper)
 		throws IOException, RawPayloadEmptyException, RawPayloadProcessingException {
-		String payload = event.getPayloadAsJsonString();
+		String payload = event.payload.getPayloadAsJsonString();
 		return jsonMapper.readValue(payload, HTTPResponsePayload.class);
 	}
 
@@ -519,7 +519,7 @@ public class Utils {
 		return mockResponse.response.map(UtilException.rethrowFunction(retEvent -> {
 			try {
 				return new FnResponse(
-					retEvent.getPayload().getValAsString(Constants.FN_RESPONSE_PATH),
+					retEvent.payload.getValAsString(Constants.FN_RESPONSE_PATH),
 					Optional.of(retEvent.timestamp),
 					Success, Optional.empty(),
 					mockResponse.numResults > 1);

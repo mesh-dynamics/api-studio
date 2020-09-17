@@ -239,7 +239,7 @@ public class RealMocker implements Mocker {
             Event.RunType.Replay, Optional.of(Instant.now()),
             mockReqId.orElse("NA"),
             mockRequest.apiPath, EventType.getResponseType(mockRequest.eventType), mockRequest.recordingType).withRunId(runId);
-        Optional<Payload> payload = originalResponse.map(Event::getPayload);
+        Optional<Payload> payload = originalResponse.map(event -> event.payload);
         if (!payload.isPresent()) {
             payload = createNoMatchResponsePayload(mockRequest);
         }

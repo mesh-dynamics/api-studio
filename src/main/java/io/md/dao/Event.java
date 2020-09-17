@@ -156,48 +156,6 @@ public class Event implements MDStorable {
 		return reqId;
 	}
 
-	@JsonIgnore
-	public String getPayloadAsJsonString() {
-		return getPayloadAsJsonString(false);
-	}
-
-	@JsonIgnore
-	public ConvertEventPayloadResponse checkAndConvertResponseToString(boolean wrapForDisplay, List<String> pathsToKeep, long size, String path) {
-		ConvertEventPayloadResponse response = new ConvertEventPayloadResponse();
-		if(this.payload != null) {
-			this.updatePayloadBody();
-			if(this.payload.size() > size) {
-				this.payload.replaceContent(pathsToKeep, path, size);
-				response.setTruncated(true);
-			}
-			response.setResponse(this.getPayloadAsJsonString(wrapForDisplay));
-		}
-		return response;
-	}
-
-	@JsonIgnore
-	public void updatePayloadBody() {
-		try {
-			this.payload.updatePayloadBody();
-		} catch (PathNotFoundException e) {
-			LOGGER.error("Error while "
-					+ "updating payload body", e);
-		}
-	}
-
-	@JsonIgnore
-	public String getPayloadAsJsonString(boolean wrapForDisplay) {
-		if (this.payload != null && !this.payload.isRawPayloadEmpty()) {
-			try {
-				return this.payload.rawPayloadAsString(wrapForDisplay);
-			} catch (Exception e) {
-				LOGGER.error("Error while "
-					+ "converting payload to json string", e);
-			}
-		}
-		return "";
-	}
-
 	public String getSpanId() {
 		return spanId;
 	}
@@ -337,7 +295,7 @@ public class Event implements MDStorable {
 	public final String reqId; // for responses, this is the reqId of the corresponding request
 	public final String apiPath; // apiPath for HTTP req, function signature for Java functions, etc
 	public final EventType eventType;
-	private Payload payload;
+	public final Payload payload;
 	public RecordingType recordingType;
 	public final Map<String, String> metaData;
 
@@ -358,9 +316,6 @@ public class Event implements MDStorable {
 	public void setTraceId(String traceId) {
 		this.traceId = traceId;
 	}
-
-	public void setPayload(Payload payload) {this.payload = payload;}
-	public Payload getPayload () {return this.payload;}
 
 	public void setRecordingType(RecordingType recordingType) {
 		this.recordingType = recordingType;
