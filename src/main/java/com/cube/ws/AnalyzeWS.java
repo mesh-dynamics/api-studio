@@ -1495,7 +1495,7 @@ public class AnalyzeWS {
           Map<String, Event> requestEventsBySpanId = new HashMap<>();
           events.forEach(e -> requestEventsBySpanId.put(e.spanId, e));
           return events.stream()
-              .filter(e -> requestEventsBySpanId.get(e.parentSpanId) == null)
+              .filter(e -> e.parentSpanId.equals("NA") || requestEventsBySpanId.get(e.parentSpanId) == null)
               .limit(numResults)
               .collect(Collectors.toList());
 	      });
