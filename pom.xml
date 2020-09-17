@@ -165,11 +165,11 @@
                  </exclusion>        
 	          </exclusions>
         </dependency>
-        <dependency>
+        <!--<<dependency>
             <groupId>io.cube</groupId>
             <artifactId>md-df-springboot-resttemplate-interceptor</artifactId>
             <version>1.2.10</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
             <artifactId>json-simple</artifactId>
