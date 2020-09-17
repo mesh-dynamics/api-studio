@@ -229,7 +229,7 @@ public class ResponseComparatorTest {
         }
 
         Comparator comparator = new JsonComparator(template, mapper);
-        Match m = comparator.compare(event1.getPayload(), event2.getPayload());
+        Match m = comparator.compare(event1.payload, event2.payload);
 
         String mjson = config.jsonMapper.writeValueAsString(m);
         JSONAssert.assertEquals(expected, mjson, false);

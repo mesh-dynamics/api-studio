@@ -94,7 +94,7 @@ public class EventFieldEncryptionTest {
 					metaDataMap.put("cipherKeyType",  metaData.get("cipherKeyType"));
 					EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithmFactory
 						.build(algoName, passPhrase, metaDataMap);
-					Payload payload = event.getPayload();
+					Payload payload = event.payload;
 					try {
 						Assertions.assertEquals(payload.getValAsString("/status"), "200");
 						payload.encryptField(jsonPath, encryptionAlgorithm);
@@ -112,7 +112,7 @@ public class EventFieldEncryptionTest {
 					metaDataMap.put("cipherKeyType",  metaData.get("cipherKeyType"));
 					EncryptionAlgorithm encryptionAlgorithm = EncryptionAlgorithmFactory
 						.build(algoName, passPhrase, metaDataMap);
-					Payload payload = event.getPayload();
+					Payload payload = event.payload;
 					try {
 						Assertions.assertNotEquals(payload.getValAsString("/status"), "200");
 						payload.decryptField(jsonPath, encryptionAlgorithm);

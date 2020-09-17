@@ -258,15 +258,15 @@ public class RequestComparatorTest {
         Comparator comparator = new JsonComparator(template, mapper);
         System.out.println(mapper.writeValueAsString(event1));
         System.out.println(mapper.writeValueAsString(event2));
-        Comparator.MatchType matchType = comparator.compare(event1.getPayload() ,
-            event2.getPayload()).mt;
+        Comparator.MatchType matchType = comparator.compare(event1.payload ,
+            event2.payload).mt;
 
         Assertions.assertEquals(expected, matchType.toString());
     }
 
 
     private Event updateRequestEventHdr(Event event, String hdrField, String val) throws IOException, InvalidEventException {
-        HTTPRequestPayload requestPayload =  (HTTPRequestPayload) event.getPayload();
+        HTTPRequestPayload requestPayload =  (HTTPRequestPayload) event.payload;
         requestPayload.getHdrs().putSingle(hdrField, val);
 
         return cloneWithPayload(event, requestPayload);
@@ -275,7 +275,7 @@ public class RequestComparatorTest {
 
     private Event updateRequestEventFormParams(Event event, String param, String val) throws IOException,
         InvalidEventException {
-        HTTPRequestPayload requestPayload = (HTTPRequestPayload) event.getPayload();
+        HTTPRequestPayload requestPayload = (HTTPRequestPayload) event.payload;
         requestPayload.getFormParams().putSingle(param, val);
 
         return cloneWithPayload(event, requestPayload);

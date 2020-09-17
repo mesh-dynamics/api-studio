@@ -1540,7 +1540,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(RECORDING_TYPE_F, event.recordingType.toString());
         event.runId.ifPresent(runId -> doc.setField(RUNIDF, runId));
         try {
-            doc.setField(PAYLOADSTRF, config.jsonMapper.writeValueAsString(event.getPayload()));
+            doc.setField(PAYLOADSTRF, config.jsonMapper.writeValueAsString(event.payload));
         } catch (JsonProcessingException e) {
             LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Unable to convert "
                 + "event payload as string")) , e);

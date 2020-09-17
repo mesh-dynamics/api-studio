@@ -343,7 +343,7 @@ public class ServerUtils {
 		Optional<CompareTemplate> templateOptional = rrstore.getCompareTemplate(tkey);
 		Map<String, TemplateEntry> pathRules = new HashMap<>();
 		templateOptional.ifPresent(UtilException.rethrowConsumer(template -> {
-			event.getPayload().getPathRules(template, pathRules);
+			event.payload.getPathRules(template, pathRules);
 		}));
 
 		return pathRules;

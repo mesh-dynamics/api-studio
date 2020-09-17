@@ -286,7 +286,7 @@ public class RecordingUpdate {
                     , null), recordResponse.getRunType()
                     , Optional.of(recordResponse.timestamp), newReqId, recordResponse.apiPath
                     , recordResponse.eventType, recordResponse.recordingType)
-                    .setPayload(recordResponse.getPayload())
+                    .setPayload(recordResponse.payload)
                     /*.setRawPayloadString(recordResponse.rawPayloadString)*/
                     .setPayloadKey(recordResponse.payloadKey)
                     .createEvent();
@@ -302,7 +302,7 @@ public class RecordingUpdate {
                     , null), recordRequest.getRunType()
                     , Optional.of(recordRequest.timestamp), newReqId, recordRequest.apiPath
                     , recordRequest.eventType, recordRequest.recordingType)
-                    .setPayload(recordRequest.getPayload())
+                    .setPayload(recordRequest.payload)
                     /*.setRawPayloadString(recordRequest.rawPayloadString)*/
                     .setPayloadKey(recordRequest.payloadKey)
                     .createEvent();
