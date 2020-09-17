@@ -63,20 +63,20 @@ public class Event implements MDStorable {
 		this.app = app;
 		this.service = service;
 		this.instanceId = instanceId;
-		this.collection = collection;
-		this.traceId = traceId;
+		this.collection = collection != null ? collection : "NA";
+		this.traceId = traceId != null ?  traceId : "NA";
 		this.spanId = spanId;
 		this.parentSpanId = parentSpanId != null ? parentSpanId : "NA";
-		this.runType = runType;
+		this.runType = runType != null ? runType : RunType.Record;
 		this.timestamp = timestamp;
 		this.reqId = reqId;
 		this.apiPath = apiPath != null ? CompareTemplate.normaliseAPIPath(apiPath) : apiPath;
 		this.eventType = eventType;
 		this.payload = payload;
 		this.payloadKey = payloadKey;
-		this.recordingType = recordingType;
+		this.recordingType = recordingType != null ? recordingType : RecordingType.Golden;
 		this.metaData = metaData;
-		this.runId = runId;
+		this.runId = runId != null ? runId : Optional.empty();
 	}
 
 	/**
