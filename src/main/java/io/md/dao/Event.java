@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Collections;
+import java.util.stream.Collectors;
+
 import io.md.dao.Recording.RecordingType;
 
 import org.apache.commons.lang3.Validate;
@@ -224,6 +226,9 @@ public class Event implements MDStorable {
 		payload.collectKeyVals(path -> template.getRule(path).getCompareType()
 			== CompareTemplate.ComparisonType.Equal, keyVals);
 		LOGGER.info("Generating event key from vals : ".concat(keyVals.toString()));
+		//Making parameter matching for mock, Case Insensitive
+		keyVals = keyVals.stream().map(key->key.toLowerCase()).collect(Collectors.toList());
+
 		if (!keyVals.isEmpty()) {
 			payloadKey = Objects.hash(keyVals.get(0));
 		}
