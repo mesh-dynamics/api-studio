@@ -12,4 +12,5 @@ public class ConfigDTO {
   String configType;
   String key;
   String value;
+  boolean authenticate;
 }
