@@ -171,6 +171,16 @@ public class UserService {
         }
     }
 
+    public boolean deleteUser(String email) {
+        Optional<User> existed = this.userRepository.findByUsername(email);
+        if (existed.isPresent()) {
+            this.userRepository.delete(existed.get());
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public Optional<User> completePasswordReset(String newPassword, String key) {
         log.debug("Reset user password for reset key {}", key);
         return userRepository.findByResetKey(key)
