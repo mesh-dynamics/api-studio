@@ -156,48 +156,6 @@ public class Event implements MDStorable {
 		return reqId;
 	}
 
-	@JsonIgnore
-	public String getPayloadAsJsonString() {
-		return getPayloadAsJsonString(false);
-	}
-
-	@JsonIgnore
-	public ConvertEventPayloadResponse checkAndConvertResponseToString(boolean wrapForDisplay, List<String> pathsToKeep, long size, String path) {
-		ConvertEventPayloadResponse response = new ConvertEventPayloadResponse();
-		if(this.payload != null) {
-			this.updatePayloadBody();
-			if(this.payload.size() > size) {
-				this.payload.replaceContent(pathsToKeep, path, size);
-				response.setTruncated(true);
-			}
-			response.setResponse(this.getPayloadAsJsonString(wrapForDisplay));
-		}
-		return response;
-	}
-
-	@JsonIgnore
-	public void updatePayloadBody() {
-		try {
-			this.payload.updatePayloadBody();
-		} catch (PathNotFoundException e) {
-			LOGGER.error("Error while "
-					+ "updating payload body", e);
-		}
-	}
-
-	@JsonIgnore
-	public String getPayloadAsJsonString(boolean wrapForDisplay) {
-		if (this.payload != null && !this.payload.isRawPayloadEmpty()) {
-			try {
-				return this.payload.rawPayloadAsString(wrapForDisplay);
-			} catch (Exception e) {
-				LOGGER.error("Error while "
-					+ "converting payload to json string", e);
-			}
-		}
-		return "";
-	}
-
 	public String getSpanId() {
 		return spanId;
 	}

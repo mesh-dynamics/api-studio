@@ -255,7 +255,7 @@ public class EventPayloadTests {
 
 		@Test
 		public void testSizeOfPayload() throws IOException, PathNotFoundException {
-			ConvertEventPayloadResponse resp = httpResponseEvent.checkAndConvertResponseToString
+			ConvertEventPayloadResponse resp = httpResponseEvent.payload.checkAndConvertResponseToString
 					(true, Arrays.asList("/body/0"), 100, "/body");
 			JsonNode node = objectMapper.readTree(resp.getResponse());
 			JsonNode body = node.get("body");
@@ -268,7 +268,7 @@ public class EventPayloadTests {
 
 	@Test
 	public void testPayloadForSmallSize() throws IOException, PathNotFoundException {
-		ConvertEventPayloadResponse resp = httpResponseEvent.checkAndConvertResponseToString
+		ConvertEventPayloadResponse resp = httpResponseEvent.payload.checkAndConvertResponseToString
 				(true, Arrays.asList("/body/0"), 20, "/body");
 		JsonNode node = objectMapper.readTree(resp.getResponse());
 		JsonNode body = node.get("body");

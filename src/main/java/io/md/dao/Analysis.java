@@ -127,20 +127,20 @@ public class Analysis {
 
 
 	    public Optional<String> getRecordedResponseBody() {
-            return recordResp.map(Event::getPayloadAsJsonString);
+            return recordResp.map(event -> event.payload.getPayloadAsJsonString());
         }
 
         public Optional<String> getReplayResponseBody() {
-            return replayResp.map(Event::getPayloadAsJsonString);
+            return replayResp.map(event -> event.payload.getPayloadAsJsonString());
         }
 
         public Optional<String> getReplayReq() {
-            return replayReq.map(Event::getPayloadAsJsonString);
+            return replayReq.map(event -> event.payload.getPayloadAsJsonString());
         }
 
 
         public Optional<String> getRecordReq() {
-	        return Optional.of(recordReq.getPayloadAsJsonString());
+	        return Optional.of(recordReq.payload.getPayloadAsJsonString());
         }
     }
 

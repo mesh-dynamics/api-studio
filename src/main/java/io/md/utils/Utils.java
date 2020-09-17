@@ -340,7 +340,7 @@ public class Utils {
 
 	public static HTTPRequestPayload getRequestPayload(Event event, ObjectMapper jsonMapper)
 		throws IOException, RawPayloadEmptyException, RawPayloadProcessingException {
-		String payload = event.getPayloadAsJsonString();
+		String payload = event.payload.getPayloadAsJsonString();
 		return jsonMapper.readValue(payload, HTTPRequestPayload.class);
 	}
 
@@ -427,7 +427,7 @@ public class Utils {
 
 	public static HTTPResponsePayload getResponsePayload(Event event, ObjectMapper jsonMapper)
 		throws IOException, RawPayloadEmptyException, RawPayloadProcessingException {
-		String payload = event.getPayloadAsJsonString();
+		String payload = event.payload.getPayloadAsJsonString();
 		return jsonMapper.readValue(payload, HTTPResponsePayload.class);
 	}
 

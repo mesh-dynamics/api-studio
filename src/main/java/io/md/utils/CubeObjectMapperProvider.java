@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -33,6 +34,7 @@ public class CubeObjectMapperProvider  {
         result.registerModule(new Jdk8Module());
         result.registerModule(new JavaTimeModule());
         result.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        result.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
         SimpleModule module = new SimpleModule();
         module.addKeySerializer(TemplateKey.class, new TemplateKeySerializer(result));
         module.addKeyDeserializer(TemplateKey.class, new TemplateKeyDeserializer(result));

@@ -7,6 +7,8 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -19,6 +21,8 @@ import io.md.cryptography.EncryptionAlgorithm;
 import io.md.utils.CubeObjectMapperProvider;
 
 public abstract class LazyParseAbstractPayload implements Payload {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(LazyParseAbstractPayload.class);
 
 	@JsonIgnore
 	public JsonDataObj dataObj;
@@ -198,6 +202,41 @@ public abstract class LazyParseAbstractPayload implements Payload {
 	public boolean put(String path, DataObj value) throws PathNotFoundException {
 		parseIfRequired();
 		return dataObj.put(path, value);
+	}
+
+	@JsonIgnore
+	public String getPayloadAsJsonString() {
+		return getPayloadAsJsonString(false);
+	}
+
+	@JsonIgnore
+	public ConvertEventPayloadResponse checkAndConvertResponseToString(boolean wrapForDisplay,
+		List<String> pathsToKeep, long size, String path) {
+		ConvertEventPayloadResponse response = new ConvertEventPayloadResponse();
+		try {
+			this.updatePayloadBody();
+			if (this.size() > size) {
+				this.replaceContent(pathsToKeep, path, size);
+				response.setTruncated(true);
+			}
+		} catch (Exception e) {
+			LOGGER.error("Error while updating payload body", e);
+		}
+		response.setResponse(this.getPayloadAsJsonString(wrapForDisplay));
+		return response;
+	}
+
+	@JsonIgnore
+	public String getPayloadAsJsonString(boolean wrapForDisplay) {
+		if (!isRawPayloadEmpty()) {
+			try {
+				return this.rawPayloadAsString(wrapForDisplay);
+			} catch (Exception e) {
+				LOGGER.error("Error while "
+					+ "converting payload to json string", e);
+			}
+		}
+		return "";
 	}
 }
 
