@@ -16,6 +16,7 @@ import java.util.Optional;
 import io.cube.agent.UtilException;
 import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingStatus;
+import io.md.dao.CubeMetaInfo;
 
 public class RecordingBuilder {
 
@@ -44,10 +45,10 @@ public class RecordingBuilder {
 	private Optional<URLClassLoader> generatedClassLoader;
 	private RecordingType recordingType;
 
-	public RecordingBuilder(CubeMetaInfo cubeMetaInfo, String collection) {
-		this.customerId = cubeMetaInfo.customerId;
-		this.app = cubeMetaInfo.app;
-		this.instanceId = cubeMetaInfo.instance;
+	public RecordingBuilder(String customerId, String app, String instanceId, String collection) {
+		this.customerId = customerId;
+		this.app = app;
+		this.instanceId = instanceId;
 		this.collection = collection;
 		this.status = RecordingStatus.Running;
 		this.timestamp = Optional.of(Instant.now());

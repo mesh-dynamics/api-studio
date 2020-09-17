@@ -27,6 +27,7 @@ import io.cube.agent.TraceIntentResolver;
 import io.md.utils.CommonUtils;
 import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.MeshDGsonProvider;
+import io.md.core.Utils;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -35,7 +36,6 @@ import redis.clients.jedis.JedisPoolConfig;
 import com.cube.cache.RedisPubSub;
 import com.cube.cache.TemplateCache;
 import com.cube.cache.TemplateCacheRedis;
-import com.cube.core.Utils;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr;
 import com.cube.queue.DisruptorEventQueue;
@@ -69,7 +69,7 @@ public class Config {
 
 	public final long pathsToKeepLimit;
 
-	//public final Tracer tracer = Utils.init("Cube");
+	//public final Tracer tracer = ServerUtils.init("Cube");
 
 	public final Recorder recorder;
 	public final ProxyMocker mocker;

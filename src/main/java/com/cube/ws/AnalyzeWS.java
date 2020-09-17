@@ -3,14 +3,15 @@
  */
 package com.cube.ws;
 
-import static com.cube.core.Utils.buildErrorResponse;
-import static com.cube.core.Utils.buildSuccessResponse;
+import static io.md.core.Utils.buildErrorResponse;
+import static io.md.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 import static io.md.core.Comparator.MatchType.DontCare;
 import static io.md.core.TemplateKey.Type;
 import static io.md.dao.Recording.RecordingStatus;
 import static io.md.services.DataStore.TemplateNotFoundException;
 
+import com.cube.core.ServerUtils;
 import com.cube.dao.ApiTraceFacetQuery;
 import io.md.dao.ApiTraceResponse;
 import io.md.dao.ApiTraceResponse.ServiceReqRes;
@@ -81,12 +82,11 @@ import io.md.dao.Analysis;
 import io.md.dao.ReqRespMatchResult;
 import io.md.dao.ReqRespUpdateOperation;
 import io.md.services.Analyzer;
-import redis.clients.jedis.Jedis;
+import io.md.utils.Constants;
+import io.md.core.Utils;
 
 import com.cube.core.TemplateRegistries;
-import com.cube.core.Utils;
 import com.cube.dao.AnalysisMatchResultQuery;
-import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
@@ -99,7 +99,6 @@ import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.golden.transform.TemplateSetTransformer;
 import com.cube.golden.transform.TemplateUpdateOperationSetTransformer;
-import com.cube.utils.Constants;
 
 /**
  * @author prasad
@@ -117,7 +116,7 @@ public class AnalyzeWS {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
     public Response health() {
-    	Map solrHealth = WSUtils.solrHealthCheck(config.solr);
+    	Map solrHealth = ServerUtils.solrHealthCheck(config.solr);
     	Map respMap = new HashMap(solrHealth);
     	respMap.put(Constants.SERVICE_HEALTH_STATUS, "AS is healthy");
 	    return Response.ok().type(MediaType.APPLICATION_JSON).entity((new JSONObject(respMap)).toString()).build();
@@ -236,10 +235,11 @@ public class AnalyzeWS {
             }));
             */
             Optional<String> templateVersion = version.equals("AUTO") ? Optional.empty() : Optional.of(version);
-            TemplateSet templateSet = Utils.templateRegistriesToTemplateSet(registries, customerId, appId, templateVersion);
+            TemplateSet templateSet = ServerUtils.templateRegistriesToTemplateSet(registries, customerId, appId,
+                templateVersion);
             //String templateSetJSON = jsonmapper.writeValueAsString(templateSet);
 
-            ValidateCompareTemplate validTemplate = Utils.validateTemplateSet(templateSet);
+            ValidateCompareTemplate validTemplate = ServerUtils.validateTemplateSet(templateSet);
             if(!validTemplate.isValid()) {
                 return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
             }
@@ -818,7 +818,7 @@ public class AnalyzeWS {
 			        "Normalised APIPath", normalisedAPIPath)));
 		        compareTemplateVersioned.requestPath = normalisedAPIPath;
 	        });
-            ValidateCompareTemplate validTemplate = Utils.validateTemplateSet(templateSet);
+            ValidateCompareTemplate validTemplate = ServerUtils.validateTemplateSet(templateSet);
             if(!validTemplate.isValid()) {
                 return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
             }
@@ -849,7 +849,7 @@ public class AnalyzeWS {
     @POST
     @Path("cache/flushall")
     public Response cacheFlushAll() {
-      return Utils.flushAll(config);
+      return ServerUtils.flushAll(config);
     }
     /**
      * Initiate recording of template set update operations
@@ -943,7 +943,7 @@ public class AnalyzeWS {
 		        .orElseThrow(
 			        () -> new Exception("Missing template set or template update operation set"));
             // Validate updated template set
-            ValidateCompareTemplate validTemplate = Utils.validateTemplateSet(updated);
+            ValidateCompareTemplate validTemplate = ServerUtils.validateTemplateSet(updated);
             if(!validTemplate.isValid()) {
                 return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
             }
@@ -1026,7 +1026,7 @@ public class AnalyzeWS {
 		        templateUpdOpSetId , Constants.RECORDING_ID, recordingId, Constants.REPLAY_ID_FIELD, replayId)));
 
             // Validate updated template set
-            ValidateCompareTemplate validTemplate = Utils.validateTemplateSet(updatedTemplateSet);
+            ValidateCompareTemplate validTemplate = ServerUtils.validateTemplateSet(updatedTemplateSet);
             if(!validTemplate.isValid()) {
                 return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
             }
@@ -1045,8 +1045,8 @@ public class AnalyzeWS {
             List<String> tags = Optional.ofNullable(formParams.get("tags")).orElse(new ArrayList<String>());
             Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
 
-            RecordingBuilder recordingBuilder = new RecordingBuilder(new CubeMetaInfo(
-            	originalRec.customerId, originalRec.app, originalRec.instanceId), newCollectionName)
+            RecordingBuilder recordingBuilder = new RecordingBuilder(
+            	originalRec.customerId, originalRec.app, originalRec.instanceId, newCollectionName)
                 .withStatus(RecordingStatus.Completed).withTemplateSetVersion(updatedTemplateSet.version)
 	            .withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
                 .withName(name).withLabel(label).withTags(tags).withCollectionUpdateOpSetId(collectionUpdateOpSetId)
@@ -1088,8 +1088,8 @@ public class AnalyzeWS {
 
             if (!created) throw new Exception("Unable to create an updated collection from existing golden");
 
-            RecordingBuilder recordingBuilder = new RecordingBuilder(new CubeMetaInfo(
-            	originalRec.customerId, originalRec.app, originalRec.instanceId), newCollectionName)
+            RecordingBuilder recordingBuilder = new RecordingBuilder(
+            	originalRec.customerId, originalRec.app, originalRec.instanceId, newCollectionName)
 	            .withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateSet.version)
 	            .withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
 	            .withName(originalRec.name).withLabel(originalRec.label).withTags(originalRec.tags).withArchived(originalRec.archived)
@@ -1323,7 +1323,7 @@ public class AnalyzeWS {
 
 			responseOptional.ifPresentOrElse(UtilException.rethrowConsumer(response -> {
 
-				Map<String, TemplateEntry> responseCompareRules = Utils
+				Map<String, TemplateEntry> responseCompareRules = ServerUtils
 					.getAllPathRules(response, recording, Type.ResponseCompare,
 						service, normalisedApiPath, rrstore, config);
 
@@ -1540,11 +1540,11 @@ public class AnalyzeWS {
 		JSONObject jsonObject, Event request) throws JsonProcessingException {
 		jsonObject.put(Constants.REQUEST, request.getPayloadAsJsonString());
 
-		Map<String, TemplateEntry> requestMatchRules = Utils
+		Map<String, TemplateEntry> requestMatchRules = ServerUtils
 			.getAllPathRules(request, recording, Type.RequestMatch,
 				service, apiPath, rrstore, config);
 
-		Map<String, TemplateEntry> requestCompareRules = Utils
+		Map<String, TemplateEntry> requestCompareRules = ServerUtils
 			.getAllPathRules(request, recording, Type.RequestCompare,
 				service, apiPath, rrstore, config);
 		jsonObject.put(Constants.REQUEST_MATCH_RULES,

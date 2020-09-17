@@ -11,11 +11,11 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
 import io.md.core.TemplateKey;
+import io.md.utils.Constants;
 
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateEntryOperation;
 import com.cube.golden.TemplateUpdateOperationSet;
-import com.cube.utils.Constants;
 
 public class TemplateUpdateOperationSetTransformer {
 

@@ -10,7 +10,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.TServiceClient;
 import org.apache.thrift.protocol.TProtocol;
 
-import com.cube.utils.Constants;
+import io.md.utils.Constants;
 
 // Just to access protected methods of abstract class
 public class CubeThriftServiceClient extends TServiceClient {

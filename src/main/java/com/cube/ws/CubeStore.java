@@ -3,10 +3,11 @@
  */
 package com.cube.ws;
 
-import static com.cube.core.Utils.buildErrorResponse;
-import static com.cube.core.Utils.buildSuccessResponse;
+import static io.md.core.Utils.buildErrorResponse;
+import static io.md.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
+import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -40,14 +41,12 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
-import com.cube.exception.ParameterException;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.solr.common.util.Pair;
-import org.apache.zookeeper.Op;
 import org.json.JSONObject;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
@@ -65,6 +64,7 @@ import io.md.core.Comparator.MatchType;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.TemplateKey;
 import io.md.core.TemplateKey.Type;
+import io.md.core.Utils.BadValueException;
 import io.md.core.ValidateAgentStore;
 import io.md.dao.DefaultEvent;
 import io.md.dao.Event;
@@ -80,26 +80,25 @@ import io.md.dao.Recording.RecordingSaveFailureException;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
 import io.md.dao.Replay;
+import io.md.dao.ReplayBuilder;
 import io.md.dao.ReqRespMatchResult;
 import io.md.dao.UserReqRespContainer;
+import io.md.dao.CubeMetaInfo;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
 import io.md.services.DataStore.TemplateNotFoundException;
+import io.md.exception.ParameterException;
+import io.md.utils.Constants;
+import io.md.core.Utils;
 
-import com.cube.core.Utils;
 import com.cube.dao.CubeEventMetaInfo;
-import com.cube.dao.CubeMetaInfo;
 import com.cube.dao.RecordingBuilder;
-import com.cube.dao.ReplayBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.dao.Result;
 import com.cube.dao.WrapperEvent;
 import com.cube.queue.DisruptorEventQueue;
 import com.cube.queue.RREvent;
-import com.cube.utils.Constants;
-import com.cube.ws.WSUtils.BadValueException;
-import redis.clients.jedis.Jedis;
 
 //import com.cube.queue.StoreUtils;
 
@@ -116,7 +115,7 @@ public class CubeStore {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
     public Response health() {
-        Map solrHealth = WSUtils.solrHealthCheck(config.solr);
+        Map solrHealth = ServerUtils.solrHealthCheck(config.solr);
         Map respMap = new HashMap(solrHealth);
         respMap.put(Constants.SERVICE_HEALTH_STATUS, "CS is healthy");
         return Response.ok().type(MediaType.APPLICATION_JSON).entity((new JSONObject(respMap)).toString()).build();
@@ -248,7 +247,7 @@ public class CubeStore {
                 -> LOGGER.debug(new ObjectMessage(Map.of("funcName"
                 , fnReqResponse.name, "argVal" , argVal))));
         }
-        Utils.preProcess(fnReqResponse);
+        ServerUtils.preProcess(fnReqResponse);
         Optional<String> collection = getCurrentCollectionIfEmpty(Optional.empty(), Optional.of(fnReqResponse.customerId),
             Optional.of(fnReqResponse.app), Optional.of(fnReqResponse.instanceId));
         return collection.map(collec -> {
@@ -364,6 +363,14 @@ public class CubeStore {
     @Path("/storeEvent")
     @Consumes({MediaType.APPLICATION_JSON})
     public Response storeEvent(Event event) {
+	    try {
+	        event.validateEvent();
+      } catch (InvalidEventException e) {
+          LOGGER.error(new ObjectMessage(
+              Map.of(Constants.MESSAGE, "Invalid Event")), e);
+          return Response.status(Status.BAD_REQUEST).entity(Utils.buildErrorResponse(
+              Status.BAD_REQUEST.toString(),Constants.ERROR,  e.getMessage())).build();
+      }
 	    eventQueue.enqueue(event);
 	    /*
         try {
@@ -417,9 +424,14 @@ public class CubeStore {
                 return 0;
             }
             event = wrapperEvent.cubeEvent;
+            event.validateEvent();
         } catch (IOException e) {
             LOGGER.error(new ObjectMessage(
                 Map.of(Constants.MESSAGE, "Error parsing Event JSON")),e);
+            return 0;
+        }catch (InvalidEventException e) {
+            LOGGER.error(new ObjectMessage(
+                Map.of(Constants.MESSAGE, "Invalid Event")), e);
             return 0;
         }
 
@@ -713,7 +725,7 @@ public class CubeStore {
     public Response getAgentSamplingFacets(@PathParam("customerId") String customerId, @PathParam("app") String app,
         @PathParam("service") String service, @PathParam("instanceId") String instanceId , @Context UriInfo ui) {
         try {
-            io.md.dao.CubeMetaInfo cubeMetaInfo = new io.md.dao.CubeMetaInfo(customerId, instanceId,
+            CubeMetaInfo cubeMetaInfo = new CubeMetaInfo(customerId, instanceId,
                 app, service);
 
             // Returns ack from now to last AGENT_ACK_DEFAULT_DELAY_SEC secs
@@ -900,7 +912,7 @@ public class CubeStore {
           if(rt == RecordingType.History || rt == RecordingType.UserGolden) {
               return Optional.empty();
           } else {
-              return WSUtils.checkActiveCollection(rrstore, customerId, app,
+              return Utils.checkActiveCollection(rrstore, customerId, app,
                   instanceId, Optional.empty());
           }
       });
@@ -966,8 +978,8 @@ public class CubeStore {
         List<String> tags = Optional.ofNullable(formParams.get("tags")).orElse(new ArrayList<String>());
         Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
 
-        RecordingBuilder recordingBuilder = new RecordingBuilder(new CubeMetaInfo(customerId, app
-            , instanceId), collection).withTemplateSetVersion(templateSetVersion).withName(name)
+        RecordingBuilder recordingBuilder = new RecordingBuilder(customerId, app,
+            instanceId, collection).withTemplateSetVersion(templateSetVersion).withName(name)
             .withLabel(label).withUserId(userId).withTags(tags);
         codeVersion.ifPresent(recordingBuilder::withCodeVersion);
         branch.ifPresent(recordingBuilder::withBranch);
@@ -987,8 +999,7 @@ public class CubeStore {
                     .map(newr -> {
                         if (newr.recordingType == RecordingType.History) {
                             ReplayBuilder replayBuilder = new ReplayBuilder(ui.getBaseUri().toString(),
-                                new CubeMetaInfo(newr.customerId,
-                                    newr.app, userId), newr.collection, userId)
+                                newr.customerId, newr.app, userId, newr.collection, userId)
                                 .withTemplateSetVersion(newr.templateVersion)
                                 .withRecordingId(newr.id)
                                 .withGoldenName(newr.name)
@@ -1316,8 +1327,8 @@ public class CubeStore {
                 }
 
 
-                RecordingBuilder recordingBuilder = new RecordingBuilder(new CubeMetaInfo(rec.customerId, rec.app
-                    , rec.instanceId), rec.collection)
+                RecordingBuilder recordingBuilder = new RecordingBuilder(rec.customerId, rec.app,
+                rec.instanceId, rec.collection)
                     .withStatus(rec.status)
                     .withTemplateSetVersion(rec.templateVersion)
                     .withRootRecordingId(rec.rootRecordingId)
@@ -1435,17 +1446,19 @@ public class CubeStore {
                 for (UserReqRespContainer userReqRespContainer : userReqRespContainers) {
                     Event response = userReqRespContainer.response;
                     Event request = userReqRespContainer.request;
-                    String traceId = request.getTraceId();
-                    if (rec.recordingType == RecordingType.UserGolden) {
-                        String oldTraceId = request.getTraceId();
-                        rrstore.deleteReqResByTraceId(oldTraceId, rec.collection);
-                        rrstore.commit();
-                        traceId = generatedTraceId;
-                    }
-
-                    TemplateKey tkey = new TemplateKey(rec.templateVersion, request.customerId,
-                        request.app, request.service, request.apiPath, Type.RequestMatch);
                     try {
+                        request.validateEvent();
+                        response.validateEvent();
+                        String traceId = request.getTraceId();
+                        if (rec.recordingType == RecordingType.UserGolden) {
+                            String oldTraceId = request.getTraceId();
+                            rrstore.deleteReqResByTraceId(oldTraceId, rec.collection);
+                            rrstore.commit();
+                            traceId = generatedTraceId;
+                        }
+
+                        TemplateKey tkey = new TemplateKey(rec.templateVersion, request.customerId,
+                            request.app, request.service, request.apiPath, Type.RequestMatch);
                         Comparator comparator = rrstore
                             .getComparator(tkey, request.eventType);
                         final String reqId = io.md.utils.Utils.generateRequestId(
@@ -1511,8 +1524,8 @@ public class CubeStore {
                         LOGGER.error(new ObjectMessage(
                             Map.of(Constants.MESSAGE, "Invalid Event",
                                 Constants.RECORDING_ID, recordingId)), e);
-                        return Response.serverError().entity("Invalid Event :: "
-                            + e.getMessage()).build();
+                        return Response.status(Status.BAD_REQUEST).entity(Utils.buildErrorResponse(
+                            Status.BAD_REQUEST.toString(),Constants.ERROR,  e.getMessage())).build();
                     } catch (JsonProcessingException e) {
                         LOGGER.error(new ObjectMessage(
                             Map.of(Constants.MESSAGE, "Error while creating response",
@@ -1562,7 +1575,7 @@ public class CubeStore {
     @POST
     @Path("cache/flushall")
     public Response cacheFlushAll() {
-        return Utils.flushAll(config);
+        return ServerUtils.flushAll(config);
     }
 
     private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId)
