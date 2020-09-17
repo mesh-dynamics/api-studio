@@ -68,8 +68,8 @@ class EnvVar extends Component {
         const {httpClient: {
             environmentList
         }, dispatch} = this.props;
-        
-        dispatch(httpClientActions.removeEnvironment(environmentList[index].id))
+        const {id, name} = environmentList[index];
+        dispatch(httpClientActions.removeEnvironment(id, name))
     }
 
     handleRemoveEnvVariable = (index) => {

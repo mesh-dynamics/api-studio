@@ -2325,26 +2325,33 @@ class HttpClientTabs extends Component {
                 </span>
                 <Modal show={this.state.showSelectedMockConfigModal} onHide={this.closeSelectedMockConfigModal}>
                     <Modal.Header closeButton>
-                        <Modal.Title>{selectedMockConfig || "No Mock Configuration Selected"}</Modal.Title>
+                        <Modal.Title>{selectedMockConfig ? "Selected Mock Configuration: " + selectedMockConfig : "No Mock Configuration Selected"}</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         <div>
-                            {currentMockConfig && !_.isEmpty(currentMockConfig.serviceConfigs) && <table className="table table-bordered table-hover">
-                                <thead>
-                                    <tr>
-                                        <th style={{ width: "20%" }}>Service</th>
-                                        <th>Target URL</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                {currentMockConfig.serviceConfigs.map(({service, url, isMocked}) => (
-                                    <tr>
-                                        <td>{service}</td>
-                                        <td style={{wordBreak: "break-all"}}>{isMocked ? "MOCKED" : url}</td>
-                                    </tr>
-                                ))}
-                                </tbody>
-                            </table>}
+                            {selectedMockConfig ? (!_.isEmpty(currentMockConfig.serviceConfigs) ? 
+                                    (<>
+                                        <table className="table table-bordered table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th style={{ width: "20%" }}>Service</th>
+                                                    <th>Target</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            {currentMockConfig.serviceConfigs.map(({service, url, isMocked}) => (
+                                                <tr>
+                                                    <td>{service}</td>
+                                                    <td style={{wordBreak: "break-all"}}>{isMocked ? "MOCKED" : url}</td>
+                                                </tr>
+                                            ))}
+                                            </tbody>
+                                        </table>
+                                        <span>Services not configured here will be mocked by default.</span>
+                                    </>)
+                                    : <span>No service configurations defined. All calls made to the Mock Proxy will be mocked.</span>)
+                                : <span>All calls made to the Mock Proxy will be mocked.</span>
+                            }
                         </div>
                     </Modal.Body>
                 </Modal>

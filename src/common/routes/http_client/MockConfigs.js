@@ -77,8 +77,8 @@ class MockConfigs extends Component {
         const {httpClient: {
             mockConfigList
         }, dispatch} = this.props;
-        
-        dispatch(httpClientActions.removeMockConfig(mockConfigList[index].id))
+        const {id, key} = mockConfigList[index];
+        dispatch(httpClientActions.removeMockConfig(id, key))
     }
 
     handleRemoveServiceConfig = (index) => {
@@ -87,23 +87,57 @@ class MockConfigs extends Component {
         this.setState({selectedEditMockConfig})
     }
 
+    validateMockConfig = (mockConfig) => {
+        const {name, serviceConfigs} = mockConfig;
+        if (_.isEmpty(name)) {
+            this.setMockConfigStatusText("Configuration name cannot be empty", true)
+            return false
+        }
+
+        for(const {service, url, isMocked} of serviceConfigs) {
+            if(!service) {
+                this.setMockConfigStatusText("Service name cannot be empty", true)
+                return false
+            }
+
+            if(!isMocked) {
+                if(!url) {
+                    this.setMockConfigStatusText("Target URL is required for non-mocked service '" + service + "'", true)
+                    return false
+                }
+
+                // validate url
+                try {
+                    new URL(url);
+                } catch (_) {
+                    this.setMockConfigStatusText("Invalid Target URL provided for service '" + service + "'", true)
+                    return false; 
+                }
+            }
+        }
+
+        return true; 
+    }
+
     handleSaveMockConfig = () => {
         const {dispatch} = this.props;
         const {selectedEditMockConfig} = this.state;
-        if (_.isEmpty(selectedEditMockConfig.name)) {
-            this.setMockConfigStatusText("Configuration name cannot be empty", true)
+        
+        if (!this.validateMockConfig(selectedEditMockConfig)) {
             return
         }
+
         dispatch(httpClientActions.saveMockConfig(selectedEditMockConfig));
     }
 
     handleUpdateMockConfig = () => {
         const {dispatch} = this.props;
         const {selectedEditMockConfig, selectedEditMockConfigId} = this.state;
-        if (_.isEmpty(selectedEditMockConfig.name)) {
-            this.setMockConfigStatusText("Configuration name cannot be empty", true)
+        
+        if (!this.validateMockConfig(selectedEditMockConfig)) {
             return
         }
+        
         dispatch(httpClientActions.updateMockConfig(selectedEditMockConfigId, selectedEditMockConfig));
     }
 
@@ -196,7 +230,7 @@ class MockConfigs extends Component {
                                                     <Checkbox inline checked={isMocked} onChange={() => this.handleIsMockedCheckChange(index)}/>
                                                 </Col>
                                                 <Col xs={5}>
-                                                    <input value={url} onChange={(e) => this.handleTargetURLChange(e, index)} className="form-control"/>
+                                                    <input value={url} onChange={(e) => this.handleTargetURLChange(e, index)} className="form-control" disabled={isMocked}/>
                                                 </Col>
                                                 <Col xs={1}>
                                                     <span  onClick={() => this.handleRemoveServiceConfig(index)}>
