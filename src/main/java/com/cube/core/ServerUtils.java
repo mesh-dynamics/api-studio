@@ -143,28 +143,16 @@ public class ServerUtils {
                     arrayRule.arrayComparisionKeyPath.map(JsonPointer::compile);
                 for (int i = 0 ; i < nodeAsArray.size() ; i++) {
                     JsonNode elem = nodeAsArray.get(i);
-                    Set<String> pathsToBeReconstructedElem = new HashSet<>();
                     Optional<String> keyOptional = pathPointer.map(UtilException.rethrowFunction(pathPtr ->
                         convertNode(elem.at(pathPtr), jsonMapper)));
-                    JsonNode transformed = convertArrayToObject(elem
-                        , template, path.concat("/").concat(String.valueOf(i))
-                        , pathsToBeReconstructedElem, jsonMapper);
-                    String key = keyOptional.orElse(convertNode(transformed, jsonMapper));
-                    pathsToBeReconstructedElem.forEach(modifiedPath ->
-                        pathsToBeReconstructed.add(modifiedPath.isEmpty() ?
-                            ("/").concat(key) : ("/").concat(key).concat(modifiedPath)));
-                    equivalentObjNode.set(key, transformed);
+                    assignKeyAndConstructPaths(keyOptional, String.valueOf(i), equivalentObjNode,
+                        path, pathsToBeReconstructed, elem, template, jsonMapper);
                 }
             } else {
                 for (int i = 0 ; i < nodeAsArray.size() ; i++) {
-                    Set<String> pathsToBeReconstructedElem = new HashSet<>();
                     String key = String.valueOf(i);
-                    equivalentObjNode.set(key, convertArrayToObject(nodeAsArray.get(i)
-                        , template, path.concat("/").concat(String.valueOf(i))
-                        , pathsToBeReconstructedElem, jsonMapper));
-                    pathsToBeReconstructedElem.forEach(modifiedPath ->
-                        pathsToBeReconstructed.add(modifiedPath.isEmpty() ?
-                            ("/").concat(key) : ("/").concat(key).concat(modifiedPath)));
+                    assignKeyAndConstructPaths(Optional.of(key), key, equivalentObjNode, path
+                        , pathsToBeReconstructed, nodeAsArray.get(i), template, jsonMapper);
 
                 }
             }
@@ -175,16 +163,25 @@ public class ServerUtils {
             Iterator<String> fieldNames = nodeAsObject.fieldNames();
             while(fieldNames.hasNext()) {
                 String key = fieldNames.next();
-                Set<String> pathsToBeReconstructedElem = new HashSet<>();
-                equivalentObjNode.set(key, convertArrayToObject(nodeAsObject.get(key)
-                    ,template , path.concat("/").concat(key) , pathsToBeReconstructedElem, jsonMapper));
-                pathsToBeReconstructedElem.forEach(modifiedPath ->
-                    pathsToBeReconstructed.add(modifiedPath.isEmpty() ?
-                        ("/").concat(key) : ("/").concat(key).concat(modifiedPath)));
+                assignKeyAndConstructPaths(Optional.of(key) , key, equivalentObjNode
+                    , path, pathsToBeReconstructed, nodeAsObject.get(key) , template, jsonMapper);
             }
             return equivalentObjNode;
         }
         return node;
+    }
+
+    private static void assignKeyAndConstructPaths(Optional<String> newKey, String oldKey, ObjectNode equivalentObjNode
+        , String path, Set<String> pathsToBeReconstructed, JsonNode element
+        , CompareTemplate template, ObjectMapper jsonMapper) throws JsonProcessingException {
+        Set<String> pathsToBeReconstructedElem = new HashSet<>();
+        JsonNode transformed = convertArrayToObject(element
+            , template, path.concat("/").concat(oldKey)
+            , pathsToBeReconstructedElem, jsonMapper);
+        String key = newKey.orElse(convertNode(transformed, jsonMapper));
+        equivalentObjNode.set(key, transformed);
+        pathsToBeReconstructedElem.forEach(modifiedPath ->
+            pathsToBeReconstructed.add (("/").concat(key).concat(modifiedPath)));
     }
 
     /**
