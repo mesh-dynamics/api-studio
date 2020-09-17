@@ -1,5 +1,6 @@
 package com.cubeui.backend.domain;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -33,6 +34,7 @@ public class Config {
   String service;
   String configType;
   String key;
+  @Column(length = 5000)
   String value;
   String userId;
 }
