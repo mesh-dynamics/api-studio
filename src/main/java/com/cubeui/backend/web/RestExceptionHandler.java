@@ -7,7 +7,9 @@ import com.cubeui.backend.web.exception.DuplicateRecordException;
 import com.cubeui.backend.web.exception.EnvironmentNameExitsException;
 import com.cubeui.backend.web.exception.EnvironmentNotFoundException;
 import com.cubeui.backend.web.exception.InvalidDataException;
+import com.cubeui.backend.web.exception.OldPasswordException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
+import com.cubeui.backend.web.exception.ResetPasswordException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -68,5 +70,17 @@ public class RestExceptionHandler {
     public ResponseEntity invalidData(ConfigExistsException ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse<String>("Config already exists", ex.getMessage(), CONFLICT.value());
         return status(CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(value = {ResetPasswordException.class})
+    public ResponseEntity invalidData(ResetPasswordException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse<String>("Reset Password Exception", ex.getMessage(), BAD_REQUEST.value());
+        return status(BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(value = {OldPasswordException.class})
+    public ResponseEntity invalidData(OldPasswordException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse<String>("Password Matches with old passwords", ex.getMessage(), BAD_REQUEST.value());
+        return status(BAD_REQUEST).body(errorResponse);
     }
 }

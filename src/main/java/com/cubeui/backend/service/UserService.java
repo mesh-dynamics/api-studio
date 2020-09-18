@@ -1,5 +1,6 @@
 package com.cubeui.backend.service;
 
+import com.cubeui.backend.config.ResetPasswordConfiguration;
 import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.AppUser;
 import com.cubeui.backend.domain.Customer;
@@ -9,12 +10,16 @@ import com.cubeui.backend.domain.DTO.ChangePasswordDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
 import com.cubeui.backend.domain.Instance;
 import com.cubeui.backend.domain.InstanceUser;
+import com.cubeui.backend.domain.ResetPasswordConfig;
+import com.cubeui.backend.domain.UserOldPasswords;
 import com.cubeui.backend.domain.enums.Role;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.AppUserRepository;
 import com.cubeui.backend.repository.InstanceRepository;
 import com.cubeui.backend.repository.InstanceUserRepository;
+import com.cubeui.backend.repository.ResetPasswordConfigRepository;
+import com.cubeui.backend.repository.UserOldPasswordsRepository;
 import com.cubeui.backend.repository.UserRepository;
 import com.cubeui.backend.repository.JiraCustomerCredentialsRepository;
 import com.cubeui.backend.repository.JiraUserCredentialsRepository;
@@ -22,7 +27,10 @@ import com.cubeui.backend.service.jwt.JwtActivationTokenProvider;
 import com.cubeui.backend.service.utils.RandomUtil;
 import com.cubeui.backend.web.exception.ActivationKeyExpiredException;
 import com.cubeui.backend.web.exception.InvalidDataException;
+import com.cubeui.backend.web.exception.OldPasswordException;
+import com.cubeui.backend.web.exception.ResetPasswordException;
 import com.cubeui.backend.web.exception.UserAlreadyActivatedException;
+import java.time.temporal.ChronoUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -55,11 +63,16 @@ public class UserService {
     private final InstanceUserRepository instanceUserRepository;
     private final JiraCustomerCredentialsRepository jiraCustomerCredentialsRepository;
     private final JiraUserCredentialsRepository jiraUserCredentialsRepository;
+    private final UserOldPasswordsRepository userOldPasswordsRepository;
+    private final ResetPasswordConfigRepository resetPasswordConfigRepository;
+    private final ResetPasswordConfiguration resetPasswordConfiguration;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                        CustomerService customerService, AppRepository appRepository, AppUserRepository appUserRepository,
                        InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository, JwtActivationTokenProvider jwtTokenProvider,
-                       JiraCustomerCredentialsRepository jiraCustomerCredentialsRepository, JiraUserCredentialsRepository jiraUserCredentialsRepository) {
+                       JiraCustomerCredentialsRepository jiraCustomerCredentialsRepository, JiraUserCredentialsRepository jiraUserCredentialsRepository,
+                       UserOldPasswordsRepository userOldPasswordsRepository, ResetPasswordConfigRepository resetPasswordConfigRepository,
+                       ResetPasswordConfiguration resetPasswordConfiguration) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.customerService = customerService;
@@ -70,6 +83,9 @@ public class UserService {
         this.instanceUserRepository = instanceUserRepository;
         this.jiraCustomerCredentialsRepository = jiraCustomerCredentialsRepository;
         this.jiraUserCredentialsRepository = jiraUserCredentialsRepository;
+        this.userOldPasswordsRepository = userOldPasswordsRepository;
+        this.resetPasswordConfigRepository = resetPasswordConfigRepository;
+        this.resetPasswordConfiguration = resetPasswordConfiguration;
     }
 
     public Optional<User> getByUsername(String username) {
@@ -101,23 +117,32 @@ public class UserService {
         if(user.isPresent()) {
             // if user already exists, update the fields
             User u = user.get();
-            Optional.ofNullable(userDTO.getName()).ifPresent(name -> u.setName(name));
-            Optional.ofNullable(userDTO.getPassword()).ifPresent(password -> u.setPassword(this.passwordEncoder.encode(password)));
-            Optional.ofNullable(customer).ifPresent(customerOptional -> u.setCustomer(customerOptional.get()));
+            if(userDTO.getName() != null) {
+                u.setName(userDTO.getName());
+            }
+            if(customer.isPresent()) {
+                u.setCustomer(customer.get());
+            }
             u.setRoles(finalRoles);
             u.setActivated(isActivated);
+            if(userDTO.getPassword() != null) {
+                checkNewPasswordWithOldOnes(u, userDTO.getPassword());
+                u = updatePasswordDataForUser(u, userDTO.getPassword());
+            }
             this.userRepository.save(u);
             return u;
         } else {
             // else it's a new user, so create new user entry and assign related apps etc to it
+            String encodedPassword = this.passwordEncoder.encode(userDTO.getPassword());
             User newUser = this.userRepository.save(User.builder()
                     .name(userDTO.getName())
                     .username(userDTO.getEmail())
-                    .password(this.passwordEncoder.encode(userDTO.getPassword()))
+                    .password(encodedPassword)
                     .customer(customer.get())
                     .roles(roles)
                     .activationKey(jwtTokenProvider.createActivationToken(userDTO.getEmail()))
                     .activated(isActivated)
+                    .resetPasswordDate(getResetPasswordDate(userDTO.getPassword(), customer.get().getId()))
                     .build());
             Optional<JiraCustomerDefaultCredentials> jiraCustomerDefaultCredentialsOptional = jiraCustomerCredentialsRepository.findByCustomerId(userDTO.getCustomerId());
             jiraCustomerDefaultCredentialsOptional.ifPresent(jiraCustomerDefaultCredentials -> {
@@ -184,23 +209,31 @@ public class UserService {
     public Optional<User> completePasswordReset(String newPassword, String key) {
         log.debug("Reset user password for reset key {}", key);
         return userRepository.findByResetKey(key)
-                .filter(user -> user.getResetDate().isAfter(Instant.now().minusSeconds(86400)))
-                .map(user -> {
-                    user.setPassword(passwordEncoder.encode(newPassword));
-                    user.setResetKey(null);
-                    user.setResetDate(null);
-//                    userRepository.save(user);
-                    return user;
-                });
+                .filter(user -> {
+                    if(user.getResetDate().isAfter(Instant.now().minusSeconds(86400))) {
+                        checkNewPasswordWithOldOnes(user, newPassword);
+                        return true;
+                    }
+                    return false;
+                })
+                .map(user -> updatePasswordDataForUser(user, newPassword));
     }
 
     public Optional<User> requestPasswordReset(String mail) {
         return userRepository.findByUsername(mail)
-                .filter(User::isEnabled)
+                .filter(user -> {
+                    if(user.isEnabled()) {
+                        LocalDateTime dateTime = LocalDateTime.now().minusSeconds(resetPasswordConfiguration.getPasswordResetRequestDays()*86400);
+                        if(dateTime.isBefore(user.getUpdatedAt())) {
+                            throw new ResetPasswordException("Password request can be proceed only after " + user.getUpdatedAt().plusSeconds(86400));
+                        }
+                        return true;
+                    }
+                    return false;
+                })
                 .map(user -> {
                     user.setResetKey(RandomUtil.generateResetKey());
                     user.setResetDate(Instant.now());
-//                    userRepository.save(user);
                     return user;
                 });
     }
@@ -213,7 +246,8 @@ public class UserService {
                 throw new InvalidDataException("Old password does not match");
             } else {
                 optionalUser.map(user -> {
-                    user.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
+                    checkNewPasswordWithOldOnes(user, changePasswordDTO.getNewPassword());
+                    user = updatePasswordDataForUser(user, changePasswordDTO.getNewPassword());
                     return userRepository.save(user);
                 });
             }
@@ -264,5 +298,43 @@ public class UserService {
             log.debug("Deleting not activated user {}", user.getUsername());
             userRepository.delete(user);
         }
+    }
+
+    private Instant getResetPasswordDate(String password, Long customerId) {
+        Optional<ResetPasswordConfig> resetPasswordConfig = resetPasswordConfigRepository.findByCustomerId(customerId);
+        int numOfDays = resetPasswordConfig.map( config -> config.getPasswordResetDaysMin()).orElse(resetPasswordConfiguration.getPasswordResetDaysMin());
+        if(password.length() >= resetPasswordConfiguration.getPasswordLength()) {
+            numOfDays = resetPasswordConfig.map(config -> config.getPasswordResetDaysMax()).orElse(resetPasswordConfiguration.getPasswordResetDaysMax());
+        }
+        return Instant.now().plus(numOfDays, ChronoUnit.DAYS);
+    }
+
+    private void checkNewPasswordWithOldOnes(User user, String password) {
+        Integer oldPasswordsMatchSize = resetPasswordConfigRepository.findByCustomerId(user.getCustomer().getId())
+            .map(config -> config.getOldPasswordsMatchSize()).orElse(resetPasswordConfiguration.getOldPasswordsMatchSize());
+        List<UserOldPasswords> userOldPasswords = this.userOldPasswordsRepository.findByUserIdOrderByUpdatedAtDesc(user.getId());
+        userOldPasswords = userOldPasswords.stream().limit(oldPasswordsMatchSize)
+            .filter(uop -> this.passwordEncoder.matches(password, uop.getPassword()))
+                .collect(Collectors.toList());
+        if(this.passwordEncoder.matches(password, user.getPassword())) {
+            throw new OldPasswordException("Password matches with current password");
+        }
+        if(!userOldPasswords.isEmpty()) {
+            throw new OldPasswordException("Password matches with one of your old "+ oldPasswordsMatchSize + "-passwords");
+        }
+    }
+
+    private User updatePasswordDataForUser(User user, String password) {
+        this.userOldPasswordsRepository.save(UserOldPasswords.builder()
+            .user(user)
+            .password(user.getPassword())
+            .updatedAt(LocalDateTime.now())
+            .build());
+        user.setPassword(this.passwordEncoder.encode(password));
+        user.setResetPasswordDate(getResetPasswordDate(password, user.getCustomer().getId()));
+        user.setUpdatedAt(LocalDateTime.now());
+        user.setResetKey(null);
+        user.setResetDate(null);
+        return user;
     }
 }

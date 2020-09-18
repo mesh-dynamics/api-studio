@@ -1,7 +1,10 @@
 package com.cubeui.backend.security.jwt;
 
+import com.cubeui.backend.domain.User;
+import com.cubeui.backend.web.exception.ResetPasswordException;
 import java.io.IOException;
 
+import java.time.Instant;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -35,6 +38,10 @@ public class JwtTokenFilter extends GenericFilterBean {
         try {
             if (token != null && jwtTokenProvider.validateToken(token)) {
                 log.trace("Token validation passed ");
+                User user = (User)jwtTokenProvider.getUser((HttpServletRequest) req);
+                if(user.getResetPasswordDate().isBefore(Instant.now())) {
+                    throw new ResetPasswordException("The User needs to reset his password");
+                }
                 Authentication auth = jwtTokenProvider.getAuthentication(token);
 
                 if (auth != null) {
