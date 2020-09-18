@@ -283,7 +283,7 @@ public abstract class AbstractReplayDriver {
 							, Constants.REPLAY_ID_FIELD, replay.replayId)));
 				}
 				return statusCode;
-			} catch (IOException | InterruptedException e) {
+			} catch (Exception e) {
 				LOGGER.error(
 					new ObjectMessage(Map.of(Constants.MESSAGE, "Exception in replaying requests"
 						, Constants.REPLAY_ID_FIELD, replay.replayId)), e);

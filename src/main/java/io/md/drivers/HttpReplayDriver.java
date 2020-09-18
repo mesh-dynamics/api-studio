@@ -6,10 +6,14 @@
 
 package io.md.drivers;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.Authenticator;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -21,6 +25,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -100,14 +105,47 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 			return formResponsePayload(response);
 		}
 
-		private ResponsePayload formResponsePayload(HttpResponse<byte[]> response) {
-			byte[] responseBody = response.body();
+		public static InputStream getDecodedInputStream(InputStream body, HttpHeaders headers) {
+			String encoding = determineContentEncoding(headers);
+			try {
+				switch (encoding) {
+					case "":
+						return body;
+					case "gzip":
+						return new GZIPInputStream(body);
+					default:
+						throw new UnsupportedOperationException(
+								"Unexpected Content-Encoding: " + encoding);
+				}
+			} catch (IOException ioe) {
+				throw new UncheckedIOException(ioe);
+			}
+		}
+
+		public static String determineContentEncoding(
+				HttpHeaders headers) {
+			return headers.firstValue("Content-Encoding").orElse("");
+		}
+
+		private ResponsePayload formResponsePayload(HttpResponse<byte[]> response)
+		{
+
+			byte[] originalBody = response.body();
+			InputStream stream = getDecodedInputStream(new ByteArrayInputStream(originalBody), response.headers());
+			byte[] responseBody = originalBody;
+			try {
+				responseBody = stream.readAllBytes();
+			} catch (IOException e) {
+				responseBody = response.body();
+				e.printStackTrace();
+			}
+
 			MultivaluedMap<String, String> responseHeaders = new MultivaluedHashMap<>();
 			response.headers().map().forEach((k, v) -> {
 				responseHeaders.addAll(k, v);
 			});
 			HTTPResponsePayload responsePayload = new HTTPResponsePayload(responseHeaders,
-				response.statusCode(), responseBody);
+					response.statusCode(), responseBody);
 			return responsePayload;
 		}
 
