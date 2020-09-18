@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -219,7 +220,7 @@ public class Utils {
 		//last in the rule hierarchy.
 		if (AdaptiveSampler.TYPE.equalsIgnoreCase(type)) {
 			//ordered map to allow special value `other` at the end.
-			Map<Pair<String, String>, Float> samplingParams = new LinkedHashMap<>();
+			Map<Pair<String, Pattern>, Float> samplingParams = new LinkedHashMap<>();
 			for (Attributes attr : attributes.get()) {
 				if (attr.getField() == null || attr.getField().trim().isEmpty()
 					|| !attr.getValue().isPresent() || !attr.getRate().isPresent()) {
@@ -228,7 +229,7 @@ public class Utils {
 					return Sampler.NEVER_SAMPLE;
 				}
 
-				samplingParams.put(new ImmutablePair<>(attr.getField(), attr.getValue().get()),
+				samplingParams.put(new ImmutablePair<>(attr.getField(), Pattern.compile(attr.getValue().get())),
 					attr.getRate().get());
 			}
 			return AdaptiveSampler.create(fieldCategory.get(), samplingParams);

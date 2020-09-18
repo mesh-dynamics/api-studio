@@ -3,6 +3,7 @@ package io.cube.agent.samplers;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -28,15 +29,15 @@ public class AdaptiveSampler extends Sampler {
 	}
 
 	public static Sampler create(String samplingID,
-		Map<Pair<String, String>, Float> samplingParams) {
+		Map<Pair<String, Pattern>, Float> samplingParams) {
 		return new AdaptiveSampler(samplingID, samplingParams);
 	}
 
-	private Map<Pair<String, String>, Float> samplingParams;
+	private Map<Pair<String, Pattern>, Float> samplingParams;
 	private final String fieldCategory;
 	private Random rnd;
 
-	AdaptiveSampler(String fieldCategory, Map<Pair<String, String>, Float> samplingParams) {
+	AdaptiveSampler(String fieldCategory, Map<Pair<String, Pattern>, Float> samplingParams) {
 		this.fieldCategory = fieldCategory;
 		this.samplingParams = samplingParams;
 		this.rnd = new Random();
@@ -50,15 +51,16 @@ public class AdaptiveSampler extends Sampler {
 
 	private Optional<Float> getSamplingRate(MultivaluedMap<String, String> samplingInputs) {
 		Optional<Float> samplingRate = Optional.empty();
-		for (Map.Entry<Pair<String, String>, Float> entry : samplingParams.entrySet()) {
+		for (Map.Entry<Pair<String, Pattern>, Float> entry : samplingParams.entrySet()) {
 			samplingRate =  Optional.ofNullable(samplingInputs.get(entry.getKey().getLeft()))
 				.flatMap(vals -> {
-					String samplingValue = entry.getKey().getRight();
+					Pattern samplingValue = entry.getKey().getRight();
 					//`other` is a special value to denote everything else
-					if (samplingValue.equalsIgnoreCase("other"))
+					if (samplingValue.matcher("other").matches())
 						return Optional.of(entry.getValue());
+
 					return vals.stream()
-						.filter(samplingValue::equalsIgnoreCase)
+						.filter(samplingValue.asPredicate())
 						.findFirst()
 						.map(v -> entry.getValue());
 				});

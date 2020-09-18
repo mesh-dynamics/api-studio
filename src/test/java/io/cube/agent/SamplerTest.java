@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -87,9 +88,9 @@ public class SamplerTest {
 	@Test
 	public void testAdaptiveSamplerInvalidField() {
 		int count = 0;
-		Map<Pair<String,String>,Float> params = new LinkedHashMap<>();
-		params.put(new ImmutablePair<>("source", "aaa"), 0.9f);
-		params.put(new ImmutablePair<>("source", "other"), 0.3f);
+		Map<Pair<String,Pattern>,Float> params = new LinkedHashMap<>();
+		params.put(new ImmutablePair<>("source", Pattern.compile("aaa")), 0.9f);
+		params.put(new ImmutablePair<>("source", Pattern.compile("other")), 0.3f);
 		Sampler sampler = AdaptiveSampler.create("headers", params);
 		MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
 		List<String> sessionIDs = generateSessionIDs();
@@ -101,9 +102,9 @@ public class SamplerTest {
 	public void testAdaptiveSamplerValidInput() {
 		int myCount = 0;
 		int otherCount = 0;
-		Map<Pair<String,String>,Float> params = new LinkedHashMap<>();
-		params.put(new ImmutablePair<>("source", "aaa"), 0.5f);
-		params.put(new ImmutablePair<>("source", "other"), 0.3f);
+		Map<Pair<String,Pattern>,Float> params = new LinkedHashMap<>();
+		params.put(new ImmutablePair<>("source", Pattern.compile("aaa")), 0.5f);
+		params.put(new ImmutablePair<>("source", Pattern.compile("other")), 0.3f);
 		Sampler sampler = AdaptiveSampler.create("headers", params);
 		MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
 		List<String> sessionIDs = generateSessionIDs();
@@ -139,11 +140,35 @@ public class SamplerTest {
 	}
 
 	@Test
+	public void testAdaptiveSamplerValidRegex() {
+		int myCount = 0;
+		int otherCount = 0;
+		Map<Pair<String,Pattern>,Float> params = new LinkedHashMap<>();
+		params.put(new ImmutablePair<>("apiPath", Pattern.compile("ui/.*")), 1.0f);
+		params.put(new ImmutablePair<>("apiPath", Pattern.compile("api/.*")), 1.0f);
+		params.put(new ImmutablePair<>("apiPath", Pattern.compile("other")), 0.0f);
+		Sampler sampler = AdaptiveSampler.create("apiPath", params);
+		MultivaluedMap<String, String> inputMap = new MultivaluedHashMap<>();
+
+		inputMap.add("apiPath", "ui/usermanagement");
+		Assertions.assertTrue(sampler.isSampled(inputMap));
+		inputMap.clear();
+
+		inputMap.add("apiPath", "api.cs");
+		Assertions.assertFalse(sampler.isSampled(inputMap));
+		inputMap.clear();
+
+		inputMap.add("apiPath", "app.json");
+		Assertions.assertFalse(sampler.isSampled(inputMap));
+		inputMap.clear();
+	}
+
+	@Test
 	public void testAdaptiveSamplerOtherInput() {
 		int count = 0;
-		Map<Pair<String,String>,Float> params = new LinkedHashMap<>();
-		params.put(new ImmutablePair<>("source", "aaa"), 0.9f);
-		params.put(new ImmutablePair<>("source", "other"), 0.3f);
+		Map<Pair<String, Pattern>,Float> params = new LinkedHashMap<>();
+		params.put(new ImmutablePair<>("source", Pattern.compile("aaa")), 0.9f);
+		params.put(new ImmutablePair<>("source", Pattern.compile("other")), 0.3f);
 		Sampler sampler = AdaptiveSampler.create("headers", params);
 		MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
 		List<String> sessionIDs = generateSessionIDs();
