@@ -10,7 +10,7 @@ import java.util.List;
 public class Customers {
         String name;
         String emailId;
-        String domainUrl;
+        List<String> domainUrls;
         JiraCredentials jiraCredentials;
         List<Apps> apps;
         List<Users> users;
