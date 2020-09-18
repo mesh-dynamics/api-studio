@@ -7,47 +7,55 @@ import axios from "axios";
 import { store } from "./helpers";
 import auth from "./actions/auth.actions";
 import { getAccesToken } from "./utils/lib/common-utils";
-import createAuthRefreshInterceptor from 'axios-auth-refresh';
-import { refreshAuthLogic } from './services/auth.service';
+import createAuthRefreshInterceptor from "axios-auth-refresh";
+import { refreshAuthLogic, retryRequest } from "./services/auth.service";
 
-const api = axios.create();
+export function getApi() {
+  const api = axios.create();
 
-const handleTokenChange = () => {
+  const handleTokenChange = () => {
     const token = getAccesToken(store.getState());
 
     // Default auth header for get and post
     api.defaults.headers.get["Authorization"] = `Bearer ${token}`;
     api.defaults.headers.post["Authorization"] = `Bearer ${token}`;
-};
+  };
 
-store.subscribe(handleTokenChange);
+  store.subscribe(handleTokenChange);
 
-// Default Get Headers
-api.defaults.headers.get["Content-Type"] = "application/json";
+  // Default Get Headers
+  api.defaults.headers.get["Content-Type"] = "application/json";
 
-// Default POST Headers
-api.defaults.headers.post["Content-Type"] = "application/json";
+  // Default POST Headers
+  api.defaults.headers.post["Content-Type"] = "application/json";
 
-api.interceptors.request.use(
-    config => {
-        config.withCredentials = false;
-        return config;
+  api.interceptors.request.use(
+    (config) => {
+      config.withCredentials = false;
+      //   const token = getAccesToken(store.getState());
+      //   config.headers['Authorization'] = `Bearer ${token}`;
+      return config;
     },
-    error => Promise.reject(error),
-);
+    (error) => Promise.reject(error)
+  );
 
+  createAuthRefreshInterceptor(api, refreshAuthLogic, {
+    pauseInstanceWhileRefreshing: true,
+  });
 
-// createAuthRefreshInterceptor(api, refreshAuthLogic, { skipAuthRefresh: true, pauseInstanceWhileRefreshing: false });
-
-api.interceptors.response.use(
-    response => response.data,
-    error => {
-        if(error.response && (error.response.status === 403 || error.response.status === 401)) {
-            store.dispatch(auth.accessViolationDetected());
-        }
-        return Promise.reject(error);
+  api.interceptors.response.use(
+    (response) => response.data,
+    (error) => {
+      const status = error.response ? error.response.status : null;
+      if ((status === 401 || status == 403) && window.authRefeshInProgress) {
+        return retryRequest(error);
+      }
+      return Promise.reject(error);
     }
-);
+  );
+  return api;
+}
 
+const api = getApi();
 
 export default api;

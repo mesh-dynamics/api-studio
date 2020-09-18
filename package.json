@@ -14,7 +14,7 @@
         "ajv-keywords": "^3.5.2",
         "array-to-tree": "^3.3.2",
         "aws4": "^1.10.1",
-        "axios": "^0.18.1",
+        "axios": "^0.20.0",
         "axios-auth-refresh": "^3.0.0",
         "chokidar": "^3.4.0",
         "classnames": "^2.2.6",
