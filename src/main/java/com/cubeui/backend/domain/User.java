@@ -79,7 +79,7 @@ public class User implements UserDetails {
     @Column(name = "reset_date")
     private Instant resetDate = null;
 
-    @Column(name = "reset_password_date")
+    @Column(name = "reset_password_date" )
     private Instant resetPasswordDate;
 
     @Override
