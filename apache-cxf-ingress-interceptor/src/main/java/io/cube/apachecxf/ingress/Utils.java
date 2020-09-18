@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.cube.agent.CommonConfig;
-import io.cube.agent.ProxyBatchRecorder;
 import io.md.constants.Constants;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
@@ -69,16 +68,15 @@ public class Utils {
 			metaMap.add(Constants.RUN_TYPE_FIELD, Constants.REPLAY);
 		}
 
-		CommonConfig commonConfig = CommonConfig.getInstance();
-		metaMap.add(Constants.CUSTOMER_ID_FIELD, commonConfig.customerId);
-		metaMap.add(Constants.APP_FIELD, commonConfig.app);
-		metaMap.add(Constants.INSTANCE_ID_FIELD, commonConfig.instance);
-		metaMap.add(Constants.SERVICE_FIELD, serviceName.orElse(commonConfig.serviceName));
+		metaMap.add(Constants.CUSTOMER_ID_FIELD, CommonConfig.customerId);
+		metaMap.add(Constants.APP_FIELD, CommonConfig.app);
+		metaMap.add(Constants.INSTANCE_ID_FIELD, CommonConfig.instance);
+		metaMap.add(Constants.SERVICE_FIELD, serviceName.orElse(CommonConfig.serviceName));
 	}
 
 	public static MultivaluedMap<String, String> buildTraceInfoMap(MDTraceInfo mdTraceInfo,
 		String xRequestId) {
-		String cRequestId = CommonConfig.getInstance().serviceName.concat("-")
+		String cRequestId = CommonConfig.serviceName.concat("-")
 			.concat(mdTraceInfo.traceId == null ? "" : mdTraceInfo.traceId).concat("-").concat(
 				UUID.randomUUID().toString());
 
@@ -109,7 +107,7 @@ public class Utils {
 			requestEvent = io.md.utils.Utils
 				.createHTTPRequestEvent(apiPath, queryParams,
 					Utils.createEmptyMultivaluedMap(), meta, requestHeaders, mdTraceInfo,
-					requestBody, Optional.empty(), config.jsonMapper, true, CommonConfig.getInstance().clientMetaDataMap);
+					requestBody, Optional.empty(), config.jsonMapper, true, CommonConfig.clientMetaDataMap);
 
 		} catch (InvalidEventException e) {
 			LOGGER.error("Invalid Event", e);
@@ -123,7 +121,7 @@ public class Utils {
 			final Span reqLog = io.cube.agent.Utils.createPerformanceSpan(
 				Constants.LOG_REQUEST_EVENT_INGRESS);
 			try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(reqLog)) {
-				ProxyBatchRecorder.getInstance().record(requestEvent);
+				CommonConfig.getInstance().getRecorder().record(requestEvent);
 			} finally {
 				reqLog.finish();
 			}
@@ -140,7 +138,7 @@ public class Utils {
 			responseEvent = io.md.utils.Utils
 				.createHTTPResponseEvent(apiPath, meta,
 					responseHeaders, mdTraceInfo, responseBody, Optional.empty(), config.jsonMapper,
-					true, CommonConfig.getInstance().clientMetaDataMap);
+					true, CommonConfig.clientMetaDataMap);
 		} catch (InvalidEventException e) {
 			LOGGER.error("Invalid Event", e);
 		} catch (JsonProcessingException e) {
@@ -153,7 +151,7 @@ public class Utils {
 			final Span respLog = io.cube.agent.Utils.createPerformanceSpan(Constants
 				.LOG_RESPONSE_EVENT_INGRESS);
 			try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(respLog)) {
-				ProxyBatchRecorder.getInstance().record(responseEvent);
+				CommonConfig.getInstance().getRecorder().record(responseEvent);
 			} finally {
 				respLog.finish();
 			}

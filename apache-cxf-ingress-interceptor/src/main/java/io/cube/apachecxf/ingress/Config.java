@@ -1,17 +1,11 @@
 package io.cube.apachecxf.ingress;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import io.cube.agent.CommonConfig;
-import io.cube.agent.ConsoleRecorder;
 import io.cube.agent.IntentResolver;
-import io.cube.agent.ProxyBatchRecorder;
-import io.cube.agent.Recorder;
 import io.cube.agent.TraceIntentResolver;
 import io.md.utils.CubeObjectMapperProvider;
-import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 
 public class Config {
 

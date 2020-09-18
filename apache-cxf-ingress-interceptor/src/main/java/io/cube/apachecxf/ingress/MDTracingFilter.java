@@ -7,6 +7,7 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
+import javax.ws.rs.container.PreMatching;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
@@ -26,6 +27,7 @@ import io.opentracing.Span;
  * filter is executed. We want Logging filter to execute after Tracing Filter during Ingress
  **/
 @Provider
+@PreMatching
 @Priority(3000)
 public class MDTracingFilter implements ContainerRequestFilter, ContainerResponseFilter {
 	// config not used but required to ensure commonConfig initailised properly before
