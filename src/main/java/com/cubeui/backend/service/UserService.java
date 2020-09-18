@@ -300,7 +300,7 @@ public class UserService {
         }
     }
 
-    private Instant getResetPasswordDate(String password, Long customerId) {
+    public Instant getResetPasswordDate(String password, Long customerId) {
         Optional<ResetPasswordConfig> resetPasswordConfig = resetPasswordConfigRepository.findByCustomerId(customerId);
         int numOfDays = resetPasswordConfig.map( config -> config.getPasswordResetDaysMin()).orElse(resetPasswordConfiguration.getPasswordResetDaysMin());
         if(password.length() >= resetPasswordConfiguration.getPasswordLength()) {

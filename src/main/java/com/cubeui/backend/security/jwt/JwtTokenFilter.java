@@ -39,7 +39,7 @@ public class JwtTokenFilter extends GenericFilterBean {
             if (token != null && jwtTokenProvider.validateToken(token)) {
                 log.trace("Token validation passed ");
                 User user = (User)jwtTokenProvider.getUser((HttpServletRequest) req);
-                if(user.getResetPasswordDate().isBefore(Instant.now())) {
+                if(user.getResetPasswordDate() != null && user.getResetPasswordDate().isBefore(Instant.now())) {
                     throw new ResetPasswordException("The User needs to reset his password");
                 }
                 Authentication auth = jwtTokenProvider.getAuthentication(token);
