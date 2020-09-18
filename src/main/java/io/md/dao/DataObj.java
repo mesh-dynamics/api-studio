@@ -47,7 +47,7 @@ public interface DataObj {
 	boolean wrapAsString(String path, String mimetype);
 
 	@JsonIgnore
-	boolean wrapAsByteArray(String path, String mimetype);
+	boolean wrapAsEncoded(String path, String mimetype);
 
 	@JsonIgnore
 	Optional<Object> encryptField(String path, EncryptionAlgorithm encrypter);

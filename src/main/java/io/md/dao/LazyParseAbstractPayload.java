@@ -121,9 +121,9 @@ public abstract class LazyParseAbstractPayload implements Payload {
 	}
 
 	@Override
-	public boolean wrapAsByteArray(String path, String mimetype) {
+	public boolean wrapAsEncoded(String path, String mimetype) {
 		parseIfRequired();
-		return dataObj.wrapAsByteArray(path, mimetype);
+		return dataObj.wrapAsEncoded(path, mimetype);
 	}
 
 	@Override

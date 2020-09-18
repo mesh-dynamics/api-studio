@@ -118,15 +118,7 @@ public class JsonDataObj implements DataObj {
 				return ((BinaryNode) node).binaryValue();
 			}
 			if (node.isTextual()) {
-				// While loading from solr again the binaryNode could be treated as a textnode and
-				// doing node.asText().getBytes converts the bin data to string and then again to binary
-				// which causes issues with the actual binary data, hence try node.binaryValue() first
-				try {
-					return node.binaryValue();
-				} catch (Exception e) {
-					LOGGER.info("Could not succed with node.binaryValue() for node ");
-					return node.asText().getBytes();
-				}
+				return node.asText().getBytes();
 			}
 			return jsonMapper.writeValueAsString(node).getBytes();
 		} catch (JsonProcessingException e) {
@@ -346,11 +338,11 @@ public class JsonDataObj implements DataObj {
 	 * @param mimetype
 	 */
 	@Override
-	public boolean wrapAsByteArray(String path, String mimetype) {
+	public boolean wrapAsEncoded(String path, String mimetype) {
 		return wrap(objRoot, path, mimetype, true);
 	}
 
-	private boolean wrap(JsonNode root, String path, String mimetype, boolean asByteArray) {
+	private boolean wrap(JsonNode root, String path, String mimetype, boolean asEncoded) {
 		JsonPointer pathPtr = JsonPointer.compile(path);
 		JsonNode valParent = root.at(pathPtr.head());
 		if (valParent != null &&  valParent.isObject()) {
@@ -361,9 +353,9 @@ public class JsonDataObj implements DataObj {
 				// convert to string
 				// currently handling only json type
 				if (mimetype.startsWith(MediaType.APPLICATION_JSON) || mimetype.startsWith("application/vnd.api+json")) {
-					if (asByteArray) {
-						valParentObj.set(fieldName, new BinaryNode(val.toString()
-							.getBytes(StandardCharsets.UTF_8)));
+					if (asEncoded) {
+						valParentObj.set(fieldName, new TextNode(
+							Base64.getEncoder().encodeToString(val.toString().getBytes())));
 					} else {
 						valParentObj.set(fieldName, new TextNode(val.toString()));
 					}
@@ -377,9 +369,9 @@ public class JsonDataObj implements DataObj {
 						fromJson.forEach((x , y) -> y.forEach(z -> nameValuePairs.add(
 									new BasicNameValuePair(x, z))));
 						urlEncoded =  URLEncodedUtils.format(nameValuePairs, StandardCharsets.UTF_8);
-						if (asByteArray) {
-							valParentObj.set(fieldName, new BinaryNode(urlEncoded.
-								getBytes(StandardCharsets.UTF_8)));
+						if (asEncoded) {
+							valParentObj.set(fieldName, new TextNode(
+								Base64.getEncoder().encodeToString(urlEncoded.getBytes())));
 						} else {
 							valParentObj.set(fieldName, new TextNode(urlEncoded));
 						}
@@ -390,9 +382,9 @@ public class JsonDataObj implements DataObj {
 				} else if (mimetype.startsWith(MediaType.APPLICATION_XML)) {
 					try {
 						String xmlStr = U.jsonToXml(val.toString());
-						if (asByteArray) {
-							valParentObj.set(fieldName, new BinaryNode(xmlStr
-								.getBytes(StandardCharsets.UTF_8)));
+						if (asEncoded) {
+							valParentObj.set(fieldName, new TextNode(
+								Base64.getEncoder().encodeToString(xmlStr.getBytes())));
 						} else {
 							valParentObj.set(fieldName, new TextNode(xmlStr));
 						}
@@ -402,16 +394,34 @@ public class JsonDataObj implements DataObj {
 							+ " converting JSON string to XML and wrapping as UTF-8 string", e);
 					}
 				}
-			} else if (val != null && val.isBinary() && !asByteArray) {
-				if (!isBinary(mimetype)) {
+			} else if (val != null && val.isBinary()) {
+				// If val is a binary node then we cannot have isBinary(mimetype) as false
+				if (asEncoded) {
+					// Binary node is always created with decoded value, so only need to handle asEncoded case
 					try {
-						valParentObj.set(fieldName,
-							new TextNode(new String(val.binaryValue(), StandardCharsets.UTF_8)));
-						return true;
+						valParentObj.set(fieldName, new TextNode(Base64.getEncoder().encodeToString(val.binaryValue())));
 					} catch (IOException e) {
 						LOGGER.error("Error while"
 							+ " wrapping byte array as UTF-8 string", e);
+					}
+				}
 
+			} else if (val != null && val.isTextual()) {
+				if (isBinary(mimetype)) {
+					if (!asEncoded) {
+						try {
+							valParentObj.set(fieldName,
+								new BinaryNode(val.binaryValue()));
+							return true;
+						} catch (IOException e) {
+							LOGGER.error("Error while"
+								+ " wrapping byte array as UTF-8 string", e);
+						}
+					}
+				} else {
+					if (asEncoded) {
+						valParentObj.set(fieldName, new TextNode(
+							Base64.getEncoder().encodeToString(val.textValue().getBytes())));
 					}
 				}
 			}
