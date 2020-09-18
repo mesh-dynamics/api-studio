@@ -20,6 +20,8 @@ import io.md.core.Comparator.Match;
 import io.md.dao.ConvertEventPayloadResponse;
 import io.md.dao.Event.EventType;
 import io.md.dao.HTTPRequestPayload;
+import io.md.dao.HTTPResponsePayload;
+import io.md.dao.Payload;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.ResponsePayload;
 import io.md.dao.Analysis.ReqRespMatchWithEvent;
@@ -64,6 +66,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.UtilException;
@@ -439,16 +442,19 @@ public class AnalyzeWS {
 		    rrstore.getAnalysisMatchResult(recordReqId, replayId);
 	    return matchResult.map(matchRes -> {
 		    Optional<String> request = rrstore.getRequestEvent(recordReqId)
-			    .map(Event::getPayloadAsJsonString);
-		    Optional<String> recordedResponse = rrstore.getResponseEvent(recordReqId)
-			    .map(Event::getPayloadAsJsonString);
+			    .map(event -> event.payload.getPayloadAsJsonString());
+
+		    Optional<String> recordedResponse = extractPayload(matchRes.respCompareRes.recordedResponse ,
+			    rrstore.getResponseEvent(recordReqId)).map(Payload::getPayloadAsJsonString);
 
 		    Optional<String> replayedRequest = matchRes.replayReqId
 			    .flatMap(rrstore::getRequestEvent)
-			    .map(Event::getPayloadAsJsonString);
+			    .map(event -> event.payload.getPayloadAsJsonString());
 
-		    Optional<String> replayedResponse = matchRes.replayReqId.flatMap(rrstore::getResponseEvent)
-			    .map(Event::getPayloadAsJsonString);
+		    Optional<String> replayedResponse = extractPayload(matchRes.respCompareRes.replayedResponse,
+			    matchRes.replayReqId.flatMap(rrstore::getResponseEvent))
+			    .map(Payload::getPayloadAsJsonString);
+
 
 		    Optional<String> respCompDiff = Optional.empty();
 		    Optional<String> reqCompDiff = Optional.empty();;
@@ -603,6 +609,12 @@ public class AnalyzeWS {
         return Response.ok().type(MediaType.APPLICATION_JSON).entity(finalJson).build();
     }
 
+    private Optional<HTTPResponsePayload> extractPayload(Optional<JsonNode> payload
+	    , Optional<Event> event) {
+    	return payload.map(HTTPResponsePayload::new).or(() ->
+		    event.map(e -> (HTTPResponsePayload)e.payload));
+    }
+
     /**
      *
      * @param ui
@@ -655,61 +667,71 @@ public class AnalyzeWS {
                 requestResult.getObjects().forEach(req -> requestMap.put(req.reqId, req));
             }
 
-            return res.stream().map(matchRes -> {
-	            Optional<Event> reqEvent = matchRes.recordReqId
-		            .flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)));
-	            Optional<String> request = reqEvent.map(e -> e.getPayloadAsJsonString(true));
-	            Optional<Long> recordReqTime = reqEvent.map(e -> e.timestamp.toEpochMilli());
+		    return res.stream().map(matchRes -> {
+			    Optional<Event> reqEvent = matchRes.recordReqId
+				    .flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)));
+			    Optional<String> request = reqEvent
+				    .map(e -> e.payload.getPayloadAsJsonString(true));
+			    Optional<Long> recordReqTime = reqEvent.map(e -> e.timestamp.toEpochMilli());
 
-                Optional<String> recordedRequest = Optional.empty();
-                Optional<String> replayedRequest = Optional.empty();
-                Optional<String> respCompDiff = Optional.empty();
-                Optional<String> recordResponse = Optional.empty();
-                Optional<Boolean> recordResponseTruncated = Optional.of(false);
-                Optional<String> replayResponse = Optional.empty();
-                Optional<Boolean> replayResponseTruncated = Optional.of(false);
-				Optional<String> reqCompDiff = Optional.empty();
-	            Optional<Long> replayReqTime = Optional.empty();
-	            Optional<Long> recordRespTime = Optional.empty();
-	            Optional<Long> replayRespTime = Optional.empty();
-	            MatchType reqCompResType =  matchRes.reqCompareRes.mt;
-                if (includeDiff.orElse(false)) {
-                    recordedRequest = request;
-	                Optional<Event> replayedRequestEvent = matchRes.replayReqId
-		                .flatMap(rrstore::getRequestEvent);
-	                replayedRequest = replayedRequestEvent.map(e -> e.getPayloadAsJsonString(true));
-	                replayReqTime = replayedRequestEvent.map(e -> e.timestamp.toEpochMilli());
-                  List<Comparator.Diff> responseCompDiffList =
-                      matchRes.respCompareRes.diffs.size() > config.getPathsToKeepLimit()
-                          ?  matchRes.respCompareRes.diffs.subList(0, (int)config.getPathsToKeepLimit())
-                      : matchRes.respCompareRes.diffs;
+			    Optional<String> recordedRequest = Optional.empty();
+			    Optional<String> replayedRequest = Optional.empty();
+			    Optional<String> respCompDiff = Optional.empty();
+			    Optional<String> recordResponse = Optional.empty();
+			    Optional<Boolean> recordResponseTruncated = Optional.of(false);
+			    Optional<String> replayResponse = Optional.empty();
+			    Optional<Boolean> replayResponseTruncated = Optional.of(false);
+			    Optional<String> reqCompDiff = Optional.empty();
+			    Optional<Long> replayReqTime = Optional.empty();
+			    Optional<Long> recordRespTime = Optional.empty();
+			    Optional<Long> replayRespTime = Optional.empty();
+			    MatchType reqCompResType = matchRes.reqCompareRes.mt;
+			    if (includeDiff.orElse(false)) {
+				    recordedRequest = request;
+				    Optional<Event> replayedRequestEvent = matchRes.replayReqId
+					    .flatMap(rrstore::getRequestEvent);
+				    replayedRequest = replayedRequestEvent
+					    .map(e -> e.payload.getPayloadAsJsonString(true));
+				    replayReqTime = replayedRequestEvent.map(e -> e.timestamp.toEpochMilli());
+				    List<Comparator.Diff> responseCompDiffList =
+					    matchRes.respCompareRes.diffs.size() > config.getPathsToKeepLimit()
+						    ? matchRes.respCompareRes.diffs
+						    .subList(0, (int) config.getPathsToKeepLimit())
+						    : matchRes.respCompareRes.diffs;
 
-	                try {
-		                respCompDiff = Optional.of(jsonMapper.writeValueAsString(responseCompDiffList));
-		                reqCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes
-			                .reqCompareRes.diffs));
-	                } catch (JsonProcessingException e) {
-		                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-			                "Unable to convert diff to json string")), e);
-	                }
-	                List<String > pathsToKeep = getPathsToKeep(responseCompDiffList);
+				    try {
+					    respCompDiff = Optional
+						    .of(jsonMapper.writeValueAsString(responseCompDiffList));
+					    reqCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes
+						    .reqCompareRes.diffs));
+				    } catch (JsonProcessingException e) {
+					    LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+						    "Unable to convert diff to json string")), e);
+				    }
+				    List<String> pathsToKeep = getPathsToKeep(responseCompDiffList);
 
-	                Optional<Event> recordResponseEvent = matchRes.recordReqId.flatMap(rrstore::getResponseEvent);
-                  Optional<ConvertEventPayloadResponse> convertRecordResponse = recordResponseEvent.map(e ->
-                      e.checkAndConvertResponseToString(true, pathsToKeep, size, "/body"));
-                  recordResponse = convertRecordResponse.map(resp -> resp.getResponse());
-                  recordResponseTruncated = convertRecordResponse.map(resp -> resp.isTruncated());
-                  recordRespTime = recordResponseEvent.map(e -> e.timestamp.toEpochMilli());
+				    Optional<Event> recordResponseEvent = matchRes.recordReqId
+					    .flatMap(rrstore::getResponseEvent);
 
+				    Optional<ConvertEventPayloadResponse> convertRecordResponse =
+					    extractPayload(matchRes.respCompareRes.recordedResponse, recordResponseEvent)
+						    .map(payload -> payload.checkAndConvertResponseToString(true, pathsToKeep,
+						    size, "/body"));
+				    recordResponse = convertRecordResponse.map(resp -> resp.getResponse());
+				    recordResponseTruncated = convertRecordResponse.map(resp -> resp.isTruncated());
+				    recordRespTime = recordResponseEvent.map(e -> e.timestamp.toEpochMilli());
 
-	                Optional<Event> replayResponseEvent = matchRes.replayReqId.flatMap(rrstore::getResponseEvent);
+				    Optional<Event> replayResponseEvent = matchRes.replayReqId
+					    .flatMap(rrstore::getResponseEvent);
 
-                  Optional<ConvertEventPayloadResponse> convertReplayResponse = replayResponseEvent.map(e ->
-                      e.checkAndConvertResponseToString(true, pathsToKeep, size, "/body"));
-                  replayResponse = convertReplayResponse.map(resp -> resp.getResponse());
-                  replayResponseTruncated = convertReplayResponse.map(resp -> resp.isTruncated());
-	                replayRespTime = replayResponseEvent.map(e -> e.timestamp.toEpochMilli());
-                }
+				    Optional<ConvertEventPayloadResponse> convertReplayResponse =
+					    extractPayload(matchRes.respCompareRes.replayedResponse, replayResponseEvent)
+						    .map(payload -> payload.checkAndConvertResponseToString(true, pathsToKeep,
+							    size, "/body"));
+				    replayResponse = convertReplayResponse.map(resp -> resp.getResponse());
+				    replayResponseTruncated = convertReplayResponse.map(resp -> resp.isTruncated());
+				    replayRespTime = replayResponseEvent.map(e -> e.timestamp.toEpochMilli());
+			    }
 
                 return new MatchRes(matchRes.recordReqId, matchRes.replayReqId,
                     matchRes.reqMatchRes, matchRes.numMatch,
@@ -779,9 +801,9 @@ public class AnalyzeWS {
         Optional<ReqRespMatchResult> matchResult =
             rrstore.getAnalysisMatchResult(recordReqId, replayReqId, replayId);
         Optional<String> recordResponse = recordReqId.flatMap(rrstore::getResponseEvent)
-            .map(Event::getPayloadAsJsonString);
+            .map(event -> event.payload.getPayloadAsJsonString());
         Optional<String> replayResponse = replayReqId.flatMap(rrstore::getResponseEvent)
-            .map(Event::getPayloadAsJsonString);
+            .map(event -> event.payload.getPayloadAsJsonString());
 
         String json;
         try {
@@ -1327,7 +1349,7 @@ public class AnalyzeWS {
 					.getAllPathRules(response, recording, Type.ResponseCompare,
 						service, normalisedApiPath, rrstore, config);
 
-				jsonObject.put(Constants.RESPONSE, response.getPayloadAsJsonString());
+				jsonObject.put(Constants.RESPONSE, response.payload.getPayloadAsJsonString());
 				jsonObject.put(Constants.RESPONSE_COMPARE_RULES,
 					jsonMapper.writeValueAsString(responseCompareRules));
 
@@ -1538,7 +1560,7 @@ public class AnalyzeWS {
 
 	private void setRequestAndRules(Recording recording, String service, String apiPath,
 		JSONObject jsonObject, Event request) throws JsonProcessingException {
-		jsonObject.put(Constants.REQUEST, request.getPayloadAsJsonString());
+		jsonObject.put(Constants.REQUEST, request.payload.getPayloadAsJsonString());
 
 		Map<String, TemplateEntry> requestMatchRules = ServerUtils
 			.getAllPathRules(request, recording, Type.RequestMatch,
@@ -1652,10 +1674,10 @@ public class AnalyzeWS {
 		MatchRes matchRes = new MatchRes(res.recordReqId, res.replayReqId,
 			res.reqMatchRes, res.numMatch,
 			res.respCompareRes.mt, res.service, res.path, res.reqCompareRes.mt
-			, respCompDiff, reqCompDiff, Optional.of(lhsRequestEvent.getPayloadAsJsonString(true)),
-			Optional.of(rhsRequestEvent.getPayloadAsJsonString(true)),
-			lhsResponseEventOpt.map(e -> e.getPayloadAsJsonString(true))
-			, rhsResponseEventOpt.map(e -> e.getPayloadAsJsonString(true)), res.recordTraceId,
+			, respCompDiff, reqCompDiff, Optional.of(lhsRequestEvent.payload.getPayloadAsJsonString(true)),
+			Optional.of(rhsRequestEvent.payload.getPayloadAsJsonString(true)),
+			lhsResponseEventOpt.map(e -> e.payload.getPayloadAsJsonString(true))
+			, rhsResponseEventOpt.map(e -> e.payload.getPayloadAsJsonString(true)), res.recordTraceId,
 			res.replayTraceId,
 			res.recordedSpanId, res.recordedParentSpanId,
 			res.replayedSpanId, res.replayedParentSpanId,
