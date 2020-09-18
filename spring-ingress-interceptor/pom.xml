@@ -6,7 +6,7 @@
 
   <groupId>io.cube</groupId>
   <artifactId>md-spring-ingress-interceptor</artifactId>
-  <version>1.2.10</version>
+  <version>1.2.11</version>
   <packaging>jar</packaging>
 
   <name>spring-ingress-interceptor</name>
@@ -78,7 +78,7 @@
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>agent</artifactId>
-      <version>1.0.49</version>
+      <version>1.0.54</version>
     </dependency>
 
   </dependencies>
