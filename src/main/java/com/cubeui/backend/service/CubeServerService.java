@@ -113,26 +113,16 @@ public class CubeServerService {
     public Optional<Recording> getRecording(String recordingId) {
         final String path  = cubeServerBaseUrlRecord + "/cs/status/" + recordingId;
         final ResponseEntity  response = fetchGetResponse(path, null);
-        if (response.getStatusCode() == HttpStatus.OK) {
-            try {
-                final String body = response.getBody().toString();
-                final Recording recording = jsonMapper.readValue(body, Recording.class);
-                return Optional.of(recording);
-            } catch (Exception e) {
-                log.info("Error in converting Json to Recording" + recordingId + " message"  + e.getMessage());
-                return Optional.empty();
-            }
-        }
-        else {
-            log.error("Error while retrieving the data from "+ path + " with statusCode="+ response.getStatusCode() +", message="+response.getBody());
-            return Optional.empty();
-        }
+        return getRecordingFromResponseEntity(response, path);
     }
 
-    public Optional<Recording> searchRecording(String customerId, String app, String colletion) {
+    public Optional<Recording> searchRecording(String query) {
         String path = cubeServerBaseUrlRecord + "/cs/searchRecording";
-        String query =  String.format("customerId=%s&app=%s&collection=%s", customerId, app, colletion);
         ResponseEntity response = fetchGetResponse(path, query);
+        return getRecordingFromResponseEntity(response, path+ "?" +query);
+    }
+
+    public Optional<Recording> getRecordingFromResponseEntity(ResponseEntity response, String request) {
         if (response.getStatusCode() == HttpStatus.OK) {
             try {
                 final String body = response.getBody().toString();
@@ -140,14 +130,12 @@ public class CubeServerService {
                 final List<Recording> recordings = jsonMapper.readValue(body, mapType);
                 return recordings.stream().findFirst();
             } catch (Exception e) {
-                log.info(String.format("Error in converting Json to Recording for customerId=%s, app=%s, collection=%s, message= %s",
-                    customerId, app,  colletion, e.getMessage()));
+                log.info(String.format("Error in converting Json to Recording for request=%s, message= %s", request, e.getMessage()));
                 return Optional.empty();
             }
         }
         else {
-            log.error(String.format("Error while retrieving the data from path=%s , statusCode=%s, message=%s",
-                path, response.getStatusCode(), response.getBody()));
+            log.error(String.format("Error while retrieving the data for request=%s, statusCode=%s, message=%s", request, response.getStatusCode(), response.getBody()));
             return Optional.empty();
         }
     }

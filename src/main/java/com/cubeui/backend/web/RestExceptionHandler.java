@@ -9,6 +9,7 @@ import com.cubeui.backend.web.exception.EnvironmentNotFoundException;
 import com.cubeui.backend.web.exception.InvalidDataException;
 import com.cubeui.backend.web.exception.OldPasswordException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
+import io.md.dao.Event.EventBuilder.InvalidEventException;
 import com.cubeui.backend.web.exception.ResetPasswordException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -72,6 +73,12 @@ public class RestExceptionHandler {
         return status(CONFLICT).body(errorResponse);
     }
 
+    @ExceptionHandler(value = {InvalidEventException.class})
+    public ResponseEntity invalidData(InvalidEventException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse<String>("Invalid Event ", ex.getMessage(), BAD_REQUEST.value());
+        return status(BAD_REQUEST).body(errorResponse);
+    }
+    
     @ExceptionHandler(value = {ResetPasswordException.class})
     public ResponseEntity invalidData(ResetPasswordException ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse<String>("Reset Password Exception", ex.getMessage(), BAD_REQUEST.value());
