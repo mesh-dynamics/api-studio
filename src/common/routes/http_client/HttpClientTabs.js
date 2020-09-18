@@ -812,7 +812,11 @@ class HttpClientTabs extends Component {
                 
                 let headers = {}, queryParams = {}, formData = {}, rawData = "";
                 for (let eachHeader in requestHeaders) {
-                    headers[eachHeader] = [requestHeaders[eachHeader]];
+                    if(_.isArray(requestHeaders[eachHeader])) {
+                        headers[eachHeader] = requestHeaders[eachHeader];
+                    } else {
+                        headers[eachHeader] = [requestHeaders[eachHeader]];
+                    }
                 }
                 for (let eachQueryParam in parsedQueryParams) {
                     queryParams[eachQueryParam] = _.isArray(parsedQueryParams[eachQueryParam]) ? parsedQueryParams[eachQueryParam] : [parsedQueryParams[eachQueryParam]] ;
@@ -820,10 +824,19 @@ class HttpClientTabs extends Component {
                 if(requestBody && requestBody.mode) {
                     let contentTypeHeader = _.isObject(requestHeaders) ? this.getParameterCaseInsensitive(requestHeaders, "content-type") : "";
                     if(contentTypeHeader && contentTypeHeader.indexOf("application/json") > -1 && requestBody.mode === "raw" && requestBody.raw) {
-                        rawData = JSON.parse(requestBody.raw);
+                        try {
+                            rawData = JSON.parse(requestBody.raw);
+                        } catch (ex) {
+                            // need to fix for form params
+                            rawData = requestBody.raw;
+                        }
                     } else if(requestBody.mode === "urlencoded") {
                         for (let eachFormParam of requestBodyUrlEncodedParams) {
-                            formData[eachFormParam.key] = [eachFormParam.value];
+                            if(_.isArray(eachFormParam.value)) {
+                                formData[eachFormParam.key] = eachFormParam.value;
+                            } else {
+                                formData[eachFormParam.key] = [eachFormParam.value];
+                            }
                         }
                     } else if(requestBody.mode === "raw") {
                         rawData = requestBody.raw;
@@ -2359,7 +2372,7 @@ class HttpClientTabs extends Component {
         )
     }
 
-
+    
     openSelectedMockConfigModal = () => {
         this.setState({showSelectedMockConfigModal: true});
     }
