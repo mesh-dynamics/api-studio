@@ -198,10 +198,14 @@ export const httpClientActions = {
         } 
     },
 
-    removeEnvironment: (id) => async (dispatch) => {
+    removeEnvironment: (id, name) => async (dispatch, getState) => {
+        const {httpClient: {selectedEnvironment}} = getState();
         dispatch(httpClientActions.setEnvStatusText("Removing..."))
         try {
             await cubeService.deleteEnvironment(id)
+            if (name === selectedEnvironment) {
+                dispatch(httpClientActions.setSelectedEnvironment(""))
+            }
             dispatch(httpClientActions.fetchEnvironments())
         } catch (e) {
             dispatch(httpClientActions.setEnvStatusText(e.response.data.message, true))
@@ -347,10 +351,14 @@ export const httpClientActions = {
         } 
     },
 
-    removeMockConfig: (id) => async (dispatch) => {
+    removeMockConfig: (id, name) => async (dispatch, getState) => {
+        const {httpClient: {selectedMockConfig}} = getState()
         dispatch(httpClientActions.setMockConfigStatusText("Removing..."))
         try {
             await cubeService.deleteMockConfig(id)
+            if (name === selectedMockConfig) {
+                dispatch(httpClientActions.setSelectedMockConfig(""))
+            }
             dispatch(httpClientActions.fetchMockConfigs())
         } catch (e) {
             dispatch(httpClientActions.setMockConfigStatusText(e.response.data.message, true))
