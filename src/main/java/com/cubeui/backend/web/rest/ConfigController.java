@@ -58,11 +58,17 @@ public class ConfigController {
       @RequestParam(value="service", required = false) String service,
       @RequestParam(value="configType", required = false) String configType,
       @RequestParam(value="key", required = false) String key) {
-    validation.validateCustomerName(request,customer);
-    String userId = jwtTokenProvider.getUser(request).getUsername();
+    String userId = null;
+    boolean authenticate = false;
+    if(request.getHeader("Authorization") != null) {
+      validation.validateCustomerName(request,customer);
+      userId = jwtTokenProvider.getUser(request).getUsername();
+      authenticate = true;
+    }
     Config query = Config.builder().customer(customer).userId(userId)
         .app(app).service(service)
         .configType(configType)
+        .authenticate(authenticate)
         .key(key).build();
     List<Config> response = this.configRepository.findAll(Example.of(query));
     return ok(response);
@@ -107,6 +113,7 @@ public class ConfigController {
             .configType(configDTO.getConfigType())
             .key(configDTO.getKey())
             .value(configDTO.getValue())
+            .authenticate(configDTO.isAuthenticate())
             .build()
     );
     return created(
@@ -154,6 +161,7 @@ public class ConfigController {
     config.setKey(configDTO.getKey());
     config.setConfigType(configDTO.getConfigType());
     config.setApp(configDTO.getApp());
+    config.setAuthenticate(configDTO.isAuthenticate());
     this.configRepository.save(config);
     return ok(config);
   }
