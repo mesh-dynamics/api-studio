@@ -2304,7 +2304,7 @@ class HttpClientTabs extends Component {
         return (
             <FormGroup bsSize="small" style={{ marginBottom: "0px" }}>
                 <FormControl componentClass="select" placeholder="Environment" style={{ fontSize: "12px" }} value={selectedMockConfig} onChange={this.handleMockConfigChange} className="btn-sm">
-                    <option value="">No Mock Configuration</option>
+                    <option value="">Select Mock Configuration</option>
                     {mockConfigList.length && mockConfigList.map((mockConfig) => (<option key={mockConfig.key} value={mockConfig.key}>{mockConfig.key}</option>))}
                 </FormControl>
             </FormGroup>)
