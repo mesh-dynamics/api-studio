@@ -577,7 +577,7 @@ class HttpClient extends Component {
                     <div style={{display: "flex"}}>
                         <div style={{marginLeft: "auto", order: "2"}}>
                             <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleShowDiff}>
-                                <Glyphicon glyph="random" /> COMPARE REQUESTS
+                                <Glyphicon glyph="random" /> DIFF
                             </div>
                             <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "none" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleSetAsReference}>
                                 <Glyphicon glyph="export" /> SET AS REFERENCE

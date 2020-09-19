@@ -2317,7 +2317,7 @@ class HttpClientTabs extends Component {
         return (
             <FormGroup bsSize="small" style={{ marginBottom: "0px" }}>
                 <FormControl componentClass="select" placeholder="Environment" style={{ fontSize: "12px" }} value={selectedMockConfig} onChange={this.handleMockConfigChange} className="btn-sm">
-                    <option value="">No Mock Configuration</option>
+                    <option value="">Mock Configuration: Default</option>
                     {mockConfigList.length && mockConfigList.map((mockConfig) => (<option key={mockConfig.key} value={mockConfig.key}>{mockConfig.key}</option>))}
                 </FormControl>
             </FormGroup>)
@@ -2338,7 +2338,7 @@ class HttpClientTabs extends Component {
                 </span>
                 <Modal show={this.state.showSelectedMockConfigModal} onHide={this.closeSelectedMockConfigModal}>
                     <Modal.Header closeButton>
-                        <Modal.Title>{selectedMockConfig ? "Selected Mock Configuration: " + selectedMockConfig : "No Mock Configuration Selected"}</Modal.Title>
+                        <Modal.Title>{"Mock Configuration: "  + (selectedMockConfig || "Default")}</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         <div>
@@ -2360,10 +2360,10 @@ class HttpClientTabs extends Component {
                                             ))}
                                             </tbody>
                                         </table>
-                                        <span>Services not configured here will be mocked by default.</span>
+                                        <span>Calls to external services not configured here will be served by Mesh Dynamics mock server.</span>
                                     </>)
-                                    : <span>No service configurations defined. All calls made to the Mock Proxy will be mocked.</span>)
-                                : <span>All calls made to the Mock Proxy will be mocked.</span>
+                                    : <span>No service configurations defined. All calls to external services will be served by Mesh Dynamics mock server.</span>)
+                                : <span>All calls to external services will be served by Mesh Dynamics mock server.</span>
                             }
                         </div>
                     </Modal.Body>
