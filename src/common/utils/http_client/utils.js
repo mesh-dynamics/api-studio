@@ -1,4 +1,6 @@
 import {parseExpressionAt} from 'acorn';
+import _, { head } from 'lodash';
+
 const generateRunId = () => {
     return new Date(Date.now()).toISOString()
 }
@@ -57,8 +59,19 @@ const getTraceTableTestReqData = (currentSelectedTab, selectedTraceTableTestReqT
     }
 };
 
+const getCurrentEnvirnoment = (environmentList, selectedEnvironment) => {
+    return _.find(environmentList, { name: selectedEnvironment });
+  };
+  
+  const getCurrentMockConfig = (mockConfigList, selectedMockConfig) => {
+    const foundMockConfig = _.find(mockConfigList, { key: selectedMockConfig });
+    return foundMockConfig ? JSON.parse(foundMockConfig.value) : {};
+  };
+
 export { 
     generateRunId,
     getStatusColor,
-    getTraceTableTestReqData
+    getTraceTableTestReqData,
+    getCurrentEnvirnoment, 
+    getCurrentMockConfig
 };
