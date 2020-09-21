@@ -1544,7 +1544,7 @@ public class AnalyzeWS {
     apiTraceResponse.res.sort(new java.util.Comparator<ServiceReqRes>() {
       @Override
       public int compare(ServiceReqRes o1, ServiceReqRes o2) {
-        return o1.reqTimestamp.compareTo(o2.reqTimestamp);
+        return o2.reqTimestamp.compareTo(o1.reqTimestamp);
       }
     });
     return apiTraceResponse;
