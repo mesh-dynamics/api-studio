@@ -30,7 +30,7 @@ import "./Tabs.css";
 import Mustache from "mustache";
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
-import { generateRunId } from "../../utils/http_client/utils"; 
+import { generateRunId, generateApiPath } from "../../utils/http_client/utils"; 
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
 
 import SplitSlider  from '../../components/SplitSlider.js';
@@ -1315,7 +1315,7 @@ class HttpClientTabs extends Component {
 
         if(httpRequestEvent.reqId === "NA") {
             const parsedUrl = urlParser(tabToSave.httpURL, true);
-            apiPath = parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
+            apiPath = generateApiPath(parsedUrl);
             let service = parsedUrl.host ? parsedUrl.host : "NA";
             httpRequestEvent = this.updateHttpEvent(apiPath, service, httpRequestEvent);
             httpResponseEvent = this.updateHttpEvent(apiPath, service, httpResponseEvent);

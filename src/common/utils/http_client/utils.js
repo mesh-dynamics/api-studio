@@ -61,17 +61,27 @@ const getTraceTableTestReqData = (currentSelectedTab, selectedTraceTableTestReqT
 
 const getCurrentEnvirnoment = (environmentList, selectedEnvironment) => {
     return _.find(environmentList, { name: selectedEnvironment });
-  };
+};
   
-  const getCurrentMockConfig = (mockConfigList, selectedMockConfig) => {
+const getCurrentMockConfig = (mockConfigList, selectedMockConfig) => {
     const foundMockConfig = _.find(mockConfigList, { key: selectedMockConfig });
     return foundMockConfig ? JSON.parse(foundMockConfig.value) : {};
-  };
+};
+
+const generateApiPath = (parsedUrl) => {
+    if(parsedUrl.protocol.includes('file')) {
+        return parsedUrl.pathname.split('/').filter(Boolean).slice(2).join('/');
+    }
+
+    return parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
+};
 
 export { 
     generateRunId,
     getStatusColor,
     getTraceTableTestReqData,
     getCurrentEnvirnoment, 
-    getCurrentMockConfig
+    getCurrentMockConfig,
+    generateApiPath,
+    getTraceTableTestReqData,
 };
