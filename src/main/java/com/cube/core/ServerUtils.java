@@ -37,9 +37,11 @@ import org.apache.solr.client.solrj.request.SolrPing;
 import org.apache.solr.client.solrj.response.SolrPingResponse;
 
 import com.fasterxml.jackson.core.JsonPointer;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -120,30 +122,38 @@ public class ServerUtils {
         }
     }
 
+    //https://stackoverflow.com/questions/18952571/jackson-jsonnode-to-string-with-sorted-keys#18993481
+    private static String convertNode(final JsonNode node, ObjectMapper SORTED_MAPPER)
+        throws JsonProcessingException {
+        final Object obj = SORTED_MAPPER.treeToValue(node, Object.class);
+        return SORTED_MAPPER.writeValueAsString(obj);
+    }
+
     public static JsonNode
-    convertArrayToObject(JsonNode node, CompareTemplate template, String path, String newPath,
-                         Set<String> pathsToBeReconstructed){
+    convertArrayToObject(JsonNode node, CompareTemplate template, String path,
+                         Set<String> pathsToBeReconstructed, ObjectMapper jsonMapper)
+        throws JsonProcessingException {
         if (node.isArray()) {
             TemplateEntry arrayRule = template.getRule(path);
             ArrayNode nodeAsArray = (ArrayNode) node;
             ObjectNode equivalentObjNode = JsonNodeFactory.instance.objectNode();
-            pathsToBeReconstructed.add(newPath);
+            pathsToBeReconstructed.add("");
             if (arrayRule.dt == DataType.Set) {
                 Optional<JsonPointer> pathPointer =
                     arrayRule.arrayComparisionKeyPath.map(JsonPointer::compile);
                 for (int i = 0 ; i < nodeAsArray.size() ; i++) {
                     JsonNode elem = nodeAsArray.get(i);
-                    String key = pathPointer.map(pathPtr ->
-                        elem.at(pathPtr).toString()).orElse(elem.toString());
-                    equivalentObjNode.set(key
-                        , convertArrayToObject(elem, template, path.concat("/").concat(String.valueOf(i)),
-                            newPath.concat("/").concat(key)  , pathsToBeReconstructed));
+                    Optional<String> keyOptional = pathPointer.map(UtilException.rethrowFunction(pathPtr ->
+                        convertNode(elem.at(pathPtr), jsonMapper)));
+                    assignKeyAndConstructPaths(keyOptional, String.valueOf(i), equivalentObjNode,
+                        path, pathsToBeReconstructed, elem, template, jsonMapper);
                 }
             } else {
-                for (int i = 0 ; i < nodeAsArray.size() ; i++){
-                    equivalentObjNode.set(String.valueOf(i), convertArrayToObject(nodeAsArray.get(i)
-                        , template, path.concat("/").concat(String.valueOf(i))
-                        , newPath.concat("/").concat(String.valueOf(i)) , pathsToBeReconstructed));
+                for (int i = 0 ; i < nodeAsArray.size() ; i++) {
+                    String key = String.valueOf(i);
+                    assignKeyAndConstructPaths(Optional.of(key), key, equivalentObjNode, path
+                        , pathsToBeReconstructed, nodeAsArray.get(i), template, jsonMapper);
+
                 }
             }
             return equivalentObjNode;
@@ -152,13 +162,26 @@ public class ServerUtils {
             ObjectNode equivalentObjNode = JsonNodeFactory.instance.objectNode();
             Iterator<String> fieldNames = nodeAsObject.fieldNames();
             while(fieldNames.hasNext()) {
-                String fieldName = fieldNames.next();
-                equivalentObjNode.set(fieldName, convertArrayToObject(nodeAsObject.get(fieldName)
-                    ,template , path.concat("/").concat(fieldName) , newPath.concat("/").concat(fieldName) , pathsToBeReconstructed));
+                String key = fieldNames.next();
+                assignKeyAndConstructPaths(Optional.of(key) , key, equivalentObjNode
+                    , path, pathsToBeReconstructed, nodeAsObject.get(key) , template, jsonMapper);
             }
             return equivalentObjNode;
         }
         return node;
+    }
+
+    private static void assignKeyAndConstructPaths(Optional<String> newKey, String oldKey, ObjectNode equivalentObjNode
+        , String path, Set<String> pathsToBeReconstructed, JsonNode element
+        , CompareTemplate template, ObjectMapper jsonMapper) throws JsonProcessingException {
+        Set<String> pathsToBeReconstructedElem = new HashSet<>();
+        JsonNode transformed = convertArrayToObject(element
+            , template, path.concat("/").concat(oldKey)
+            , pathsToBeReconstructedElem, jsonMapper);
+        String key = newKey.orElse(convertNode(transformed, jsonMapper));
+        equivalentObjNode.set(key, transformed);
+        pathsToBeReconstructedElem.forEach(modifiedPath ->
+            pathsToBeReconstructed.add (("/").concat(key).concat(modifiedPath)));
     }
 
     /**

@@ -339,4 +339,17 @@ class JsonComparatorTest  {
         compareTest(testData);
     }
 
+	@Test
+	@DisplayName("Unordered Array Jumbled Order test")
+	final void unorderedArrayJumbledOrder()  throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("unorderedArrayJumbledOrder");
+		compareTest(testData);
+	}
+
+	@Test
+	@DisplayName("Unordered Array Jumbled Order test 1")
+	final void unorderedArrayJumbledOrder1()  throws JsonProcessingException, JSONException {
+		JSONObject testData = object.getJSONObject("unorderedArrayJumbledOrder1");
+		compareTest(testData);
+	}
 }
