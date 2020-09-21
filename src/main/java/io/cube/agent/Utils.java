@@ -267,6 +267,11 @@ public class Utils {
 				configInstance.disruptorLogMaxBackup, configInstance.ringBufferSize,
 				configInstance.recorderValue)) {
 				configInstance.recorder = initRecorder();
+			} else if (configInstance.recorder == null) {
+				//this case happens when there is a change in the tag
+				//there could be no changes to the disruptor data, but the CommonConfig
+				// is re-init and the recorder is null.
+				configInstance.recorder = initRecorder();
 			}
 		} else {
 			configInstance.recorder = initRecorder();
