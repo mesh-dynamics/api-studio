@@ -4,10 +4,12 @@ package io.md.core;
 import java.util.Objects;
 import java.util.StringJoiner;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Key against which the analysis template will be retrieved/cached
  */
-public class TemplateKey {
+public class TemplateKey implements Comparable<TemplateKey> {
 
     private final String customerId;
     private final String appId;
@@ -19,6 +21,18 @@ public class TemplateKey {
     public Type getReqOrResp() {
         return reqOrResp;
     }
+
+    @Override
+    public int compareTo(@NotNull TemplateKey o) {
+        int ret = getCustomerId().compareTo(o.getCustomerId());
+        if (ret == 0) ret = getAppId().compareTo(o.getAppId());
+        if (ret == 0) ret = getServiceId().compareTo(o.getServiceId());
+        if (ret == 0) ret = getPath().compareTo(o.getPath());
+        if (ret == 0) ret = getVersion().compareTo(o.getVersion());
+        if (ret == 0) ret = getReqOrResp().compareTo(o.getReqOrResp());
+        return ret;
+    }
+
 
     public enum Type {
         RequestMatch,
