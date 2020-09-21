@@ -106,10 +106,16 @@ public class JsonComparator implements Comparator {
 		Set<String> arrayPathsToReconstructRHS = new HashSet<>();
 
         //convert arrays to objects
-        JsonNode lhsConverted = ServerUtils.convertArrayToObject(lhsRoot, template, "", ""
-	        , arrayPathsToReconstructLHS);
-        JsonNode rhsConverted = ServerUtils.convertArrayToObject(rhsRoot, template, "", ""
-	        ,arrayPathsToReconstructRHS);
+		JsonNode lhsConverted, rhsConverted;
+		try {
+			 lhsConverted = ServerUtils.convertArrayToObject(lhsRoot, template, ""
+				, arrayPathsToReconstructLHS, jsonMapper);
+			 rhsConverted = ServerUtils.convertArrayToObject(rhsRoot, template, ""
+				, arrayPathsToReconstructRHS, jsonMapper);
+		 } catch (JsonProcessingException e) {
+			LOGGER.error("Error in converting arrays to objects ", e);
+			return new Match(MatchType.Exception, e.getMessage(), result);
+		}
 
         // Now diff new (rhs) with the old (lhs)
         EnumSet<DiffFlags> flags = EnumSet.of(DiffFlags.OMIT_COPY_OPERATION,

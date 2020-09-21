@@ -9,8 +9,6 @@ import io.md.constants.ReplayStatus;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.TemplateKey;
 import io.md.core.ValidateAgentStore;
-import io.md.dao.HTTPResponsePayload;
-import io.md.dao.ResponsePayload;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
 import io.md.dao.agent.config.ConfigType;
@@ -33,7 +31,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1348,7 +1345,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         else addToQryStr(queryBuff , fieldname , orValues , isOr , weight );
     }
 
-    private static void addFilter(SolrQuery query, String fieldname, List<String> orValues) {
+    private static void addFilter(SolrQuery query, String fieldname, Collection<String> orValues) {
         addFilter(query, fieldname, orValues, false);
     }
 
@@ -1357,7 +1354,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         else addToQryStr(queryBuff , fieldname , orValues , isOr , weight );
     }
 
-    private static void addFilter(SolrQuery query, String fieldname, List<String> orValues, boolean negate) {
+    private static void addFilter(SolrQuery query, String fieldname, Collection<String> orValues, boolean negate) {
         if(orValues.isEmpty()) return; // No values specified, so no filters
         String prefix = negate ? "NOT " : "";
         String filter = orValues.stream().map(val -> {
@@ -2892,14 +2889,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, APPF, apiTraceFacetQuery.appId);
         addFilter(query, INSTANCEIDF, apiTraceFacetQuery.instanceId);
         addRangeFilter(query, TIMESTAMPF, apiTraceFacetQuery.startDate,
-            apiTraceFacetQuery.endDate, true, true);
+            apiTraceFacetQuery.endDate, true, false);
         boolean includeEmpty = apiTraceFacetQuery.recordingType
                 .map(v -> v.equals(RecordingType.Golden.toString()))
                 .orElse(false);
         addFilter(query, RECORDING_TYPE_F, apiTraceFacetQuery.recordingType, true, includeEmpty);
-        addFilter(query, COLLECTIONF,apiTraceFacetQuery.collection);
+        addFilter(query, COLLECTIONF,apiTraceFacetQuery.collections);
         //addFilter(query, PATHF, apiTraceFacetQuery.apiPath);
-        addFilter(query, RUNIDF, apiTraceFacetQuery.runId);
+        addFilter(query, RUNIDF, apiTraceFacetQuery.runIds);
         return query;
     }
 
@@ -2952,37 +2949,22 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Pair<List, Stream<Event>> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> numOfFacets, Optional<Integer> start, Optional<Integer> numberOfResults, List<EventType> eventTypes, boolean addPathServiceFilter) {
+    public Result<Event> getApiTrace(ApiTraceFacetQuery apiTraceFacetQuery, Optional<Integer> start, Optional<Integer> numberOfResults, List<EventType> eventTypes, boolean addPathServiceFilter) {
 
         final SolrQuery query = getEventQuery(apiTraceFacetQuery);
         addFilter(query, EVENTTYPEF, eventTypes.stream().map(type -> type.toString()).collect(Collectors.toList()));
         addFilter(query, TRACEIDF, apiTraceFacetQuery.traceIds);
         if (addPathServiceFilter) {
+            if(apiTraceFacetQuery.apiPath.isEmpty()) {
+                addToFilterOrQuery(query , new StringBuffer() , PARENT_SPAN_ID_F , Arrays.asList("NA", ""), true , Optional.empty());
+            }
             addFilter(query, PATHF, apiTraceFacetQuery.apiPath);
             addFilter(query, SERVICEF, apiTraceFacetQuery.service);
         }
         addSort(query, TIMESTAMPF, false /* desc */);
-        FacetQ traceIdFacetq = new FacetQ();
-        Facet traceIdf = Facet.createTermFacet(TRACEIDF, numOfFacets, Optional.of(1));
-        traceIdFacetq.addFacet(TRACEIDFACET, traceIdf);
 
-        String jsonFacets;
-        try {
-            jsonFacets = config.jsonMapper.writeValueAsString(traceIdFacetq);
-            query.add(SOLRJSONFACETPARAM, jsonFacets);
-        } catch (JsonProcessingException e) {
-            LOGGER.error(String.format("Error in converting facets to json"), e);
-        }
-
-        Result<Event> result = SolrIterator.getResults(solr, query, numberOfResults,
+        return SolrIterator.getResults(solr, query, numberOfResults,
             this::docToEvent, start);
-        List<String> traceIds = new ArrayList<>();
-        ArrayList traceIdFacetResults = result.getFacets(FACETSFIELD, TRACEIDFACET, BUCKETFIELD);
-        traceIdFacetResults.forEach(facet -> {
-            Map<String, String> map = (LinkedHashMap)facet;
-            traceIds.add(map.get(VALFIELD));
-        });
-        return new Pair(traceIds, result.getObjects());
     }
 
 
