@@ -660,6 +660,15 @@ public class CubeStore {
         }
     }
 
+    @POST
+    @Path("/deleteAgentConfig/{customerId}/{app}/{service}/{instanceId}")
+    public Response deleteAgentConfig(@PathParam("customerId") String customerId, @PathParam("app") String app,
+        @PathParam("service") String service, @PathParam("instanceId") String instanceId , @Context UriInfo ui) {
+        boolean deletionSuccess = rrstore.deleteAgentConfig(customerId , app, service, instanceId);
+        return Response.ok().type(MediaType.APPLICATION_JSON).
+            entity(buildSuccessResponse(Constants.SUCCESS , new JSONObject(Map.of("deletion_success" , deletionSuccess)) )).build();
+    }
+
     @GET
     @Path("/fetchAgentConfigWithFacets/{customerId}/{app}")
     @Produces({MediaType.APPLICATION_JSON})
