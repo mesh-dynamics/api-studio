@@ -918,6 +918,7 @@ public class CubeStore {
       });
         if (errResp.isPresent()) {
             asyncResponse.resume(errResp.get());
+            return;
         }
 
         String name = formParams.getFirst("name");
@@ -930,18 +931,21 @@ public class CubeStore {
             asyncResponse.resume(Response.status(Status.BAD_REQUEST)
                 .entity("Name needs to be given for a golden")
                 .build());
+            return;
         }
 
         if (userId==null) {
             asyncResponse.resume(Response.status(Status.BAD_REQUEST)
                 .entity("userId should be specified for a golden")
                 .build());
+            return;
         }
 
         if (label==null) {
             asyncResponse.resume(Response.status(Status.BAD_REQUEST)
                 .entity("label should be specified for a golden")
                 .build());
+            return;
         }
 
         String collection = UUID.randomUUID().toString();;
@@ -956,6 +960,7 @@ public class CubeStore {
                 .build());
         if (errResp.isPresent()) {
             asyncResponse.resume(errResp.get());
+            return;
         }
 
         // NOTE that if the recording is not active, it will be activated again. This allows the same collection recording to be
@@ -970,6 +975,7 @@ public class CubeStore {
             asyncResponse.resume(Response.status(Response.Status.CONFLICT)
             .entity("Golden already present for name/label - " + name + "/" + label + ". Specify unique name/label combination")
             .build());
+            return;
         }
 
         Optional<String> codeVersion = Optional.ofNullable(formParams.getFirst("codeVersion"));
@@ -991,6 +997,7 @@ public class CubeStore {
         } catch (Exception e) {
             asyncResponse.resume(Response.serverError().entity((new JSONObject(Map.of(Constants.ERROR
                 , e.getMessage()))).toString()).build());
+            return;
         }
 
       CompletableFuture<Response> resp =  beforeRecording(formParams, recordingBuilder.build())
@@ -1235,6 +1242,7 @@ public class CubeStore {
              asyncResponse.resume(Response.status(Status.BAD_REQUEST)
                 .entity("CustomerId/app/name needs to be given for a golden")
                 .build());
+             return;
         }
         Optional<String> label = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_LABEL_FIELD));
         Optional<Recording> recording = rrstore.getRecordingByName(customerId, app, name, label);
