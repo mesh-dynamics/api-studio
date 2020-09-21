@@ -113,7 +113,20 @@ public class CubeServerService {
     public Optional<Recording> getRecording(String recordingId) {
         final String path  = cubeServerBaseUrlRecord + "/cs/status/" + recordingId;
         final ResponseEntity  response = fetchGetResponse(path, null);
-        return getRecordingFromResponseEntity(response, path);
+        if (response.getStatusCode() == HttpStatus.OK) {
+            try {
+                final String body = response.getBody().toString();
+                final Recording recording = jsonMapper.readValue(body, Recording.class);
+                return Optional.of(recording);
+            } catch (Exception e) {
+                log.info("Error in converting Json to Recording" + recordingId + " message"  + e.getMessage());
+                return Optional.empty();
+            }
+        }
+        else {
+            log.error("Error while retrieving the data from "+ path + " with statusCode="+ response.getStatusCode() +", message="+response.getBody());
+            return Optional.empty();
+        }
     }
 
     public Optional<Recording> searchRecording(String query) {
