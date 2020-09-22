@@ -1514,6 +1514,12 @@ public class AnalyzeWS {
 	      }
 	    });
 	  }
+    response.sort(new java.util.Comparator<ApiTraceResponse>() {
+      @Override
+      public int compare(ApiTraceResponse o1, ApiTraceResponse o2) {
+        return o2.reqTimestamp.compareTo(o1.reqTimestamp);
+      }
+    });
 	  Map jsonMap = new HashMap();
 
 	  jsonMap.put("response", response);
@@ -1527,7 +1533,7 @@ public class AnalyzeWS {
 
   private ApiTraceResponse getApiTraceResponse(Event parentRequestEvent, int depth, List<Event> eventsForTraceId) {
     final ApiTraceResponse apiTraceResponse = new ApiTraceResponse(parentRequestEvent.getTraceId(),
-        parentRequestEvent.getCollection());
+        parentRequestEvent.getCollection(), parentRequestEvent.timestamp);
 
     MultivaluedMap<String, Event> requestEventsByParentSpanId = new MultivaluedHashMap<>();
     Map<String, Event> responseEventsByReqId = new HashMap<>();
