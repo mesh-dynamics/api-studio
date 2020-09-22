@@ -2970,6 +2970,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 addToFilterOrQuery(query , new StringBuffer() , PARENT_SPAN_ID_F , Arrays.asList("NA", ""), true , Optional.empty());
             }
             addFilter(query, PATHF, apiTraceFacetQuery.apiPath);
+            addFilter(query, RUNIDF, "*");
             addFilter(query, SERVICEF, apiTraceFacetQuery.service);
         }
         addSort(query, TIMESTAMPF, false /* desc */);
