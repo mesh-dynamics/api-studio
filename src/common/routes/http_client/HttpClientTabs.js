@@ -1861,6 +1861,23 @@ class HttpClientTabs extends Component {
         this.setState({ showEnvPopoverOverlay: false});
     };
 
+    componentWillMount() {
+        const { dispatch } = this.props;
+
+        if(PLATFORM_ELECTRON) {
+            ipcRenderer.on('get_config', (event, appConfig) => {
+                ipcRenderer.removeAllListeners('get_config');
+                
+                config.apiBaseUrl= `${appConfig.domain}/api`;
+                config.recordBaseUrl= `${appConfig.domain}/api/cs`;
+                config.replayBaseUrl= `${appConfig.domain}/api/rs`;
+                config.analyzeBaseUrl= `${appConfig.domain}/api/as`;               
+                
+                dispatch(httpClientActions.fetchEnvironments())
+            });
+        }
+    }
+
     componentDidMount() {
         const { dispatch } = this.props;
         const { cube: {selectedApp} } = this.props;
@@ -1902,7 +1919,12 @@ class HttpClientTabs extends Component {
             if(tabs.length === 0)this.addTab(null, null, app);
         }
 
-        dispatch(httpClientActions.fetchEnvironments())
+        if(PLATFORM_ELECTRON) {
+            ipcRenderer.send('get_config');
+        } else {
+            dispatch(httpClientActions.fetchEnvironments());
+        }
+        // dispatch(httpClientActions.fetchEnvironments())
         //dispatch(httpClientActions.fetchMockConfigs())
     }
 
