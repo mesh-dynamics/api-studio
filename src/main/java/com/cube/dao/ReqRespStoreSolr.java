@@ -3120,7 +3120,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> collection, Optional<String> templateVersion, Optional<String> name, Optional<String> parentRecordingId, Optional<String> rootRecordingId,
         Optional<String> codeVersion, Optional<String> branch, List<String> tags, Optional<Boolean> archived, Optional<String> gitCommitId,
         Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label, Optional<String> recordingType,
-        Optional<String> recordingId) {
+        Optional<String> recordingId, Optional<Integer> numberOfResults, Optional<Integer> start) {
 
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
@@ -3150,7 +3150,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addSort(query, TIMESTAMPF, false); // descending
 
         //Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, Optional.empty()).flatMap(doc -> docToRecording(doc).stream());
+        return SolrIterator.getStream(solr, query, numberOfResults, start).flatMap(doc -> docToRecording(doc).stream());
     }
 
     @Override

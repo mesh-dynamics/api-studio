@@ -1141,6 +1141,9 @@ public class CubeStore {
         Optional<String> recordingType = Optional.ofNullable(formParams.getFirst(Constants.RECORDING_TYPE_FIELD));
         Optional<Boolean> archived = Optional.empty();
         Optional<String> recordingId = Optional.ofNullable(formParams.getFirst(Constants.RECORDING_ID));
+        Integer numResults =
+            Optional.ofNullable(formParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).orElse(20);
+        Optional<Integer> start = Optional.ofNullable(formParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
 
         try {
 
@@ -1155,7 +1158,7 @@ public class CubeStore {
             }
 
             List<Recording> recordings = rrstore.getRecording(customerId, app, instanceId, status, collection, templateVersion, name, parentRecordingId, rootRecordingId,
-                codeVersion, branch, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, userId, label, recordingType, recordingId).collect(Collectors.toList());
+                codeVersion, branch, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, userId, label, recordingType, recordingId, Optional.of(numResults), start).collect(Collectors.toList());
 
             String json;
             json = jsonMapper.writeValueAsString(recordings);

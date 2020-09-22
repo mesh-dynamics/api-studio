@@ -432,7 +432,7 @@ public interface ReqRespStore extends DataStore {
                                    Optional<String> collection, Optional<String> templateVersion, Optional<String> name, Optional<String> parentRecordingId, Optional<String> rootRecordingId,
                                    Optional<String> codeVersion, Optional<String> branch, List<String> tags, Optional<Boolean> archived, Optional<String> gitCommitId,
                                    Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label, Optional<String> recordingType,
-																	 Optional<String> recordingId);
+																	 Optional<String> recordingId, Optional<Integer> numberOfResults, Optional<Integer> start);
 
 
     Optional<Recording> getRecording(String recordingId);
