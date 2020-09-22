@@ -2726,6 +2726,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
+    public boolean deleteAgentConfig(String customerId, String app, String service, String instanceId) {
+        StringBuffer queryBuff = new StringBuffer();
+        addToQryStr(queryBuff , TYPEF , Types.AgentConfig.name() , false );
+        addToQryStr(queryBuff , CUSTOMERIDF , customerId , false );
+        addToQryStr(queryBuff , APPF , app , false );
+        addToQryStr(queryBuff , SERVICEF , service , false );
+        addToQryStr(queryBuff , INSTANCEIDF , instanceId , false );
+        return deleteDocsByQuery(queryBuff.toString());
+    }
+
+    @Override
     public boolean deleteReqResByTraceId(String traceId , String customerId, String collectionName , Optional<EventType> eventType){
         StringBuffer queryBuff = new StringBuffer();
         addToQryStr(queryBuff , TRACEIDF , traceId , false);

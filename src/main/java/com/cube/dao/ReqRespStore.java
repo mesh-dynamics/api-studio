@@ -677,4 +677,6 @@ public interface ReqRespStore extends DataStore {
     Result<AgentConfigTagInfo> getAgentConfigTagInfoResults(String customerId, String app,
 				Optional<String> service, String instanceId);
 
+	boolean deleteAgentConfig(String customerId, String app, String service, String instanceId);
+
 }
