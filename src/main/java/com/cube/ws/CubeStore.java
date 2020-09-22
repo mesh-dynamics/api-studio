@@ -1053,49 +1053,57 @@ public class CubeStore {
 
     @POST
     @Path("resumeRecording/{recordingId}")
-    public Response resumeRecording(@PathParam("recordingId") String recordingId) {
+    public void resumeRecording(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui,
+        @PathParam("recordingId") String recordingId) {
         Optional<Recording> recording = rrstore.getRecording(recordingId);
-        return resumeRecording(recording);
+        CompletableFuture<Response> resp = resumeRecording(recording, ui.getQueryParameters());
+        resp.thenApply(response -> asyncResponse.resume(response));
     }
 
     @POST
     @Path("resumeRecordingByNameLabel/")
-    public Response resumeRecordingByNameLabel(@Context UriInfo ui) {
+    public void resumeRecordingByNameLabel(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
         String customerId = queryParams.getFirst(Constants.CUSTOMER_ID_FIELD);
         String app = queryParams.getFirst(Constants.APP_FIELD);
         String name = queryParams.getFirst(Constants.GOLDEN_NAME_FIELD);
         if(customerId ==null || app ==null || name == null) {
-            return Response.status(Status.BAD_REQUEST)
+            asyncResponse.resume(Response.status(Status.BAD_REQUEST)
                 .entity("CustomerId/app/name needs to be given for a golden")
-                .build();
+                .build());
+            return;
         }
         Optional<String> label = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_LABEL_FIELD));
 
 
         Optional<Recording> recording = rrstore.getRecordingByName(customerId, app, name, label);
-        return resumeRecording(recording);
+        CompletableFuture<Response> resp = resumeRecording(recording, ui.getQueryParameters());
+        resp.thenApply(response -> asyncResponse.resume(response));
     }
 
-    public Response resumeRecording(Optional<Recording> recording) {
+    public CompletableFuture<Response> resumeRecording(Optional<Recording> recording, MultivaluedMap<String, String> queryParams) {
         return recording.map(r -> {
-            Recording resumedRecording = ReqRespStore.resumeRecording(r, rrstore);
-            String json;
-            try {
-                json = jsonMapper.writeValueAsString(resumedRecording);
-                return Response.ok(json, MediaType.APPLICATION_JSON).build();
-            } catch (JsonProcessingException ex) {
-                LOGGER.error(new ObjectMessage(Map.of(
-                    Constants.MESSAGE, "Error in converting response and match results to Json",
-                    Constants.RECORDING_ID, r.id
-                )));
-                return Response.serverError()
-                    .entity(buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
-                        ex.getMessage())).build();
-            }
-        }).orElse(Response.status(Response.Status.NOT_FOUND).
+            CompletableFuture<Response> response = beforeRecording(queryParams, r).thenApply(v ->
+            {
+                Recording resumedRecording = ReqRespStore.resumeRecording(r, rrstore);
+                String json;
+                try {
+                    json = jsonMapper.writeValueAsString(resumedRecording);
+                    return Response.ok(json, MediaType.APPLICATION_JSON).build();
+                } catch (JsonProcessingException ex) {
+                    LOGGER.error(new ObjectMessage(Map.of(
+                        Constants.MESSAGE, "Error in converting response and match results to Json",
+                        Constants.RECORDING_ID, r.id
+                    )));
+                    return Response.serverError()
+                        .entity(buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                            ex.getMessage())).build();
+                }
+            });
+            return response;
+        }).orElse(CompletableFuture.completedFuture(Response.status(Response.Status.NOT_FOUND).
             entity(buildErrorResponse(Constants.ERROR, Constants.RECORDING_NOT_FOUND,
-                String.format("Recording not found"))).build());
+                String.format("Recording not found"))).build()));
     }
 
     @GET
