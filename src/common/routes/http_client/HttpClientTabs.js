@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 import { FormControl, FormGroup, Tabs, Tab, Panel, Label, Modal, Button, ControlLabel, Glyphicon } from 'react-bootstrap';
 
-import { getCurrentEnvirnoment, getCurrentMockConfig } from "../../utils/http_client/utils";
+import { getCurrentMockConfig } from "../../utils/http_client/utils";
+import { applyEnvVars } from "../../utils/http_client/envvar";
 import EnvironmentSection from './EnvironmentSection';
 import MockConfigSection from './MockConfigSection';
 import _, { head } from 'lodash';
@@ -27,7 +28,6 @@ import '../../components/Tabs/styles.css';
 // import "./HttpClient.css";
 import "./Tabs.css";
 
-import Mustache from "mustache";
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
 import { generateRunId } from "../../utils/http_client/utils"; 
@@ -1057,76 +1057,6 @@ class HttpClientTabs extends Component {
         return qsParams;
     }
 
-    applyEnvVars = (httpRequestURL, httpRequestQueryStringParams, fetchConfig) => {
-        const headers = fetchConfig.headers;
-        const body = fetchConfig.body;
-        let headersRendered = new Headers(), bodyRendered = "";
-
-        const { httpClient: { environmentList, selectedEnvironment } } = this.props;
-
-        const currentEnvironment = getCurrentEnvirnoment(environmentList, selectedEnvironment);
-
-        // convert list of envvar objects to a map
-        const currentEnvVars = currentEnvironment ? Object.fromEntries(
-            currentEnvironment.vars.map((v) => ([v.key, v.value]))
-        ) : {};
-
-        // define method to check and render Mustache template
-        const renderEnvVars = (input) => {
-            if (!input) return input;
-
-            // get variables in the input string
-            // let pInput = Mustache.parse(input);
-            // console.log(pInput);
-            let inputVariables = Mustache.parse(input)
-                    .filter(v => (v[0]==='name') || v[0]==='&' || v[0]==='#')
-                    .map(v => v[1]);
-        
-            // check for the presence of variables in the environment
-            inputVariables.forEach((inputVariable) => {
-                if (!currentEnvVars.hasOwnProperty(inputVariable)) {
-                    throw new Error("The variable '" + inputVariable + "' is not defined in the current environment. \nPlease check your environment and the variables being used.")
-                }
-            })
-
-            return Mustache.render(input, currentEnvVars);
-        }
-
-        
-        const httpRequestURLRendered = renderEnvVars(httpRequestURL);
-
-        const httpRequestQueryStringParamsRendered = Object.fromEntries(
-            Object.entries(httpRequestQueryStringParams)
-                .map(
-                    ([key, value]) => [renderEnvVars(key), renderEnvVars(value)]
-                )
-        );
-
-        if (headers) {
-            for (let pair of headers.entries()) {
-                headersRendered.append(renderEnvVars(pair[0]), renderEnvVars(pair[1]))
-            }
-        }
-
-        if (body instanceof URLSearchParams) {
-            bodyRendered = new URLSearchParams();
-            for (let pair of body.entries()) {
-                bodyRendered.append(renderEnvVars(pair[0]), renderEnvVars(pair[1]))
-            }
-        } else {
-            // string
-            bodyRendered = renderEnvVars(body)
-        }
-
-        const fetchConfigRendered = {
-            method: fetchConfig.method,
-            headers: headersRendered,
-            body: bodyRendered,
-        }
-
-        return [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered]
-    }
-
     driveRequest(isOutgoingRequest, tabId) {
         const {httpClient: {tabs, selectedTabKey, userHistoryCollection, mockConfigList, selectedMockConfig }} = this.props;
         const { cube: { selectedApp } } = this.props;
@@ -1188,7 +1118,7 @@ class HttpClientTabs extends Component {
         let httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered;
         try {
             [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] 
-                        = this.applyEnvVars(httpRequestURL, httpRequestQueryStringParams, fetchConfig);
+                        = applyEnvVars(httpRequestURL, httpRequestQueryStringParams, fetchConfig);
         } catch (e) {
             this.showErrorAlert(`${e}`); // prompt user for error in env vars
             return
