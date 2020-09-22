@@ -9,24 +9,28 @@ import javax.ws.rs.core.MultivaluedHashMap;
 public class ApiTraceResponse {
   public String traceId;
   public String collection;
+  public Instant reqTimestamp;
   public List<ServiceReqRes> res;
 
   private ApiTraceResponse() {
     this.traceId = "";
     this.collection = "";
+    this.reqTimestamp = Instant.now();
     this.res = Collections.emptyList();
   }
 
-  public ApiTraceResponse(String traceId, String collection) {
+  public ApiTraceResponse(String traceId, String collection, Instant reqTimestamp) {
     this.traceId = traceId;
     this.collection = collection;
+    this.reqTimestamp = reqTimestamp;
     this.res = new ArrayList<>();
   }
 
-  public ApiTraceResponse(String traceId, String collection,
+  public ApiTraceResponse(String traceId, String collection, Instant reqTimestamp,
       List<ServiceReqRes> res) {
     this.traceId = traceId;
     this.collection = collection;
+    this.reqTimestamp = reqTimestamp;
     this.res = res;
   }
 
