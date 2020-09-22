@@ -30,7 +30,7 @@ import "./Tabs.css";
 import Mustache from "mustache";
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
-import { generateRunId, generateApiPath } from "../../utils/http_client/utils"; 
+import { generateRunId, generateApiPath, getApiPathFromRequestEvent } from "../../utils/http_client/utils"; 
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
 
 import SplitSlider  from '../../components/SplitSlider.js';
@@ -1310,11 +1310,12 @@ class HttpClientTabs extends Component {
         const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
         let httpRequestEvent = eachPair[httpRequestEventTypeIndex];
         let httpResponseEvent = eachPair[httpResponseEventTypeIndex];
-
-        let apiPath = httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : "";
+        
+        let apiPath = getApiPathFromRequestEvent(httpRequestEvent); // httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : "";
 
         if(httpRequestEvent.reqId === "NA") {
-            const parsedUrl = urlParser(tabToSave.httpURL, true);
+            const parsedUrl = urlParser(tabToSave.httpURL, PLATFORM_ELECTRON ? {} : true);
+            
             apiPath = generateApiPath(parsedUrl);
             let service = parsedUrl.host ? parsedUrl.host : "NA";
             httpRequestEvent = this.updateHttpEvent(apiPath, service, httpRequestEvent);
@@ -1387,15 +1388,23 @@ class HttpClientTabs extends Component {
     }
 
     saveToCollection(isOutgoingRequest, tabId, recordingId, type, runId="") {
-        const {httpClient: {tabs, selectedTabKey, showSaveModal}} = this.props;
-        const { cube: {selectedApp} } = this.props;
+        const { 
+            httpClient: { tabs: tabsToProcess, showSaveModal }, 
+            cube: { selectedApp }, 
+            dispatch
+        } = this.props;
+
         const app = selectedApp;
-        const {dispatch} = this.props;
-        let tabsToProcess = tabs;
+
         const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
         const tabToProcess = tabsToProcess[tabIndex];
-        if (!tabToProcess.eventData) return;
+        
+        if (!tabToProcess.eventData) {
+            return;
+        }
+        
         const reqResPair = tabToProcess.eventData;
+        
         try {
             if (reqResPair.length > 0) {
                 const data = [];
