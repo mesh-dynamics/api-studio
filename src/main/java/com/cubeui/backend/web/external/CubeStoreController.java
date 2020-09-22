@@ -337,4 +337,12 @@ public class CubeStoreController {
     public ResponseEntity cacheFlushAll(HttpServletRequest request, @RequestBody Optional<String> postBody) {
         return cubeServerService.fetchPostResponse(request, postBody);
     }
+
+    @PostMapping("/deleteAgentConfig/{customerId}/{app}/{service}/{instanceId}")
+    public ResponseEntity deleteAgentConfig(HttpServletRequest request, @RequestBody Optional<String> getBody,
+        @PathVariable String customerId, @PathVariable String app, @PathVariable String service,
+        @PathVariable String instanceId) {
+        validation.validateCustomerName(request, customerId);
+        return cubeServerService.fetchPostResponse(request, getBody);
+    }
 }
