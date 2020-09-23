@@ -53,7 +53,8 @@ const setupProxy = (mockContext, user) => {
             service,
             headers,
             mockContext,
-            requestData: fields,
+            requestData: {},
+            // requestData: fields,
             defaultProxyOptions
         };
     
