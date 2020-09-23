@@ -106,7 +106,5 @@ export {
     getCurrentMockConfig,
     getCurrentEnvirnoment, 
     getTraceTableTestReqData,
-    getApiPathFromRequestEvent,
-    getTraceTableTestReqData,
-    getCurrentMockConfig
+    getApiPathFromRequestEvent
 };
