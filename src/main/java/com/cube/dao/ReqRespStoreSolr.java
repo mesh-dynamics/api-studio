@@ -2996,7 +2996,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String GOLDEN_COMMENTF = CPREFIX + Constants.GOLDEN_COMMENT_FIELD + TEXT_SUFFIX;
     private static final String GENERATED_CLASS_JAR_PATH = CPREFIX +  Constants.GENERATED_CLASS_JAR_PATH_FIELD + STRING_SUFFIX;
 
-    private static Optional<Recording> docToRecording(SolrDocument doc) {
+    private Optional<Recording> docToRecording(SolrDocument doc) {
 
         Optional<String> id = getStrField(doc, IDF);
         Optional<String> app = getStrField(doc, APPF);
@@ -3116,7 +3116,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @see com.cube.dao.ReqRespStore#getRecording(java.util.Optional, java.util.Optional, java.util.Optional, com.cube.dao.Recording.RecordingStatus)
      */
     @Override
-    public Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
+    public Result<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
         Optional<String> collection, Optional<String> templateVersion, Optional<String> name, Optional<String> parentRecordingId, Optional<String> rootRecordingId,
         Optional<String> codeVersion, Optional<String> branch, List<String> tags, Optional<Boolean> archived, Optional<String> gitCommitId,
         Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label, Optional<String> recordingType,
@@ -3150,7 +3150,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addSort(query, TIMESTAMPF, false); // descending
 
         //Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, numberOfResults, start).flatMap(doc -> docToRecording(doc).stream());
+        return SolrIterator.getResults(solr, query, numberOfResults,
+            this::docToRecording, start);
     }
 
     @Override

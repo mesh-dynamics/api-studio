@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1157,11 +1158,15 @@ public class CubeStore {
                 }
             }
 
-            List<Recording> recordings = rrstore.getRecording(customerId, app, instanceId, status, collection, templateVersion, name, parentRecordingId, rootRecordingId,
-                codeVersion, branch, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, userId, label, recordingType, recordingId, Optional.of(numResults), start).collect(Collectors.toList());
+            Result<Recording> result = rrstore.getRecording(customerId, app, instanceId, status, collection, templateVersion, name, parentRecordingId, rootRecordingId,
+                codeVersion, branch, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, userId, label, recordingType, recordingId, Optional.of(numResults), start);
+            Map jsonMap = new HashMap();
+
+            jsonMap.put("recordings", result.getObjects().collect(Collectors.toList()));
+            jsonMap.put("numFound", result.getNumFound());
 
             String json;
-            json = jsonMapper.writeValueAsString(recordings);
+            json = jsonMapper.writeValueAsString(jsonMap);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
 
         } catch (JsonProcessingException je) {
