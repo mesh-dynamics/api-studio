@@ -1448,30 +1448,30 @@ public class AnalyzeWS {
         Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).orElse(20);
 	  Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
 	  long numFound = 0;
-	  if(apiTraceFacetQuery.traceIds.isEmpty()) {
-      Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery, start,
-          Optional.of(numResults),
-          Arrays.asList(EventType.HTTPRequest), true);
-      numFound = result.getNumFound();
-	    Set<String> traceIds = new HashSet<>();
-	    Set<String> collections = new HashSet<>();
-	    Set<String> runIds = new HashSet<>();
-	    result.getObjects().forEach(event -> {
-	      traceIds.add(event.getTraceId());
-	      collections.add(event.getCollection());
-	      event.runId.ifPresent(runIds::add);
-	    });
-	    apiTraceFacetQuery.withTraceIds(traceIds);
-	    apiTraceFacetQuery.withCollections(collections);
-	    apiTraceFacetQuery.withRunIds(runIds);
-	  }
+	  Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery, start,
+        Optional.of(numResults),
+        Arrays.asList(EventType.HTTPRequest), true);
+	  numFound = result.getNumFound();
+	  Set<String> traceIds = new HashSet<>();
+	  Set<String> collections = new HashSet<>();
+	  Set<String> runIds = new HashSet<>();
+    Set<String> reqIds = new HashSet<>();
+	  result.getObjects().forEach(event -> {
+	    traceIds.add(event.getTraceId());
+	    collections.add(event.getCollection());
+	    reqIds.add(event.getReqId());
+	  });
+	  apiTraceFacetQuery.withTraceIds(traceIds);
+	  apiTraceFacetQuery.withCollections(collections);
+	  apiTraceFacetQuery.withRunIds(runIds);
+
 	  ArrayList<ApiTraceResponse> response = new ArrayList<>();
 	  if(!apiTraceFacetQuery.traceIds.isEmpty()) {
 	    /**TODO: we need to update the trace for other event types
        *currently we are supporting only HTTPRequest and HTTPResponse
        * we need to change the logic to support other eventTypes
        */
-	    Result<Event> result = rrstore
+	    result = rrstore
           .getApiTrace(apiTraceFacetQuery, start, Optional.empty(),
               Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse), false);
 
@@ -1509,8 +1509,10 @@ public class AnalyzeWS {
 	        return;
 	      }
 	      for (Event parent : parentRequestEvents) {
-	        response.add(getApiTraceResponse(parent, depth,
-              Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey)));
+	        if(reqIds.contains(parent.getReqId())) {
+            response.add(getApiTraceResponse(parent, depth,
+                Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey)));
+          }
 	      }
 	    });
 	  }
