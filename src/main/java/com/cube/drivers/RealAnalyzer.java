@@ -46,9 +46,11 @@ import io.md.utils.CubeObjectMapperProvider;
 import io.md.dao.ReplayUpdate;
 import io.md.utils.Constants;
 
+import com.cube.core.ServerUtils;
 import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Result;
+import com.cube.queue.StoreUtils;
 
 /*
  * Created by IntelliJ IDEA.
@@ -231,8 +233,10 @@ public class RealAnalyzer implements Analyzer {
         Optional<Event> replayresp = Optional
             .ofNullable(replayResponseMap.get(replayreq.reqId));
         try {
+            Optional<String> method = ServerUtils.extractMethod(recordreq);
             TemplateKey reqCompareKey = new TemplateKey(templateVersion, recordreq.customerId,
-                recordreq.app, recordreq.service, recordreq.apiPath, Type.RequestCompare);
+                recordreq.app, recordreq.service, recordreq.apiPath, Type.RequestCompare,
+                method, Optional.ofNullable(replayreq.getCollection()));
             Comparator reqComparator = rrstore.getComparator(reqCompareKey, recordreq.eventType);
             if (reqComparator.getCompareTemplate().getRules() != null &&
                 ! reqComparator.getCompareTemplate().getRules().isEmpty()) {
@@ -243,7 +247,8 @@ public class RealAnalyzer implements Analyzer {
                     Collections.emptyList());
             }
             TemplateKey respCompareKey = new TemplateKey(templateVersion, recordreq.customerId,
-                recordreq.app, recordreq.service, recordreq.apiPath, Type.ResponseCompare);
+                recordreq.app, recordreq.service, recordreq.apiPath, Type.ResponseCompare,
+                method, Optional.ofNullable(replayreq.getCollection()));
 
             if (recordedResponse.isPresent() && replayresp.isPresent()) {
                 Event recordedr = recordedResponse.get();

@@ -58,7 +58,7 @@ public class TemplateSetTransformer {
         // This is the key to be set by UI for attributeLevelRules
         TemplateKey attributeTemplateKey = new TemplateKey(sourceTemplateSet.version, sourceTemplateSet.customer,
             sourceTemplateSet.app, io.md.constants.Constants.NOT_APPLICABLE, io.md.constants.Constants.NOT_APPLICABLE,
-            Type.DontCare);
+            Type.DontCare, Optional.empty(), Optional.of(templateSetUpdateSpec.getTemplateUpdateOperationSetId()));
 
         // Fetch and store previous existing attribute rules.
         Map<String, TemplateEntry> pathVsEntryAttributes = sourceTemplateSet.appAttributeRuleMap

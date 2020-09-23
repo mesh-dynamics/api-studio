@@ -6,6 +6,7 @@ package com.cube.core;
 
 import io.md.core.Comparator.Diff;
 import io.md.core.CompareTemplate.DataType;
+import io.md.dao.HTTPRequestPayload;
 import io.md.dao.Recording.RecordingType;
 
 import java.io.IOException;
@@ -371,4 +372,11 @@ public class ServerUtils {
 		    return Map.of(Constants.SOLR_STATUS_CODE, -1, Constants.SOLR_STATUS_MESSAGE, "Unable to reach Solr server", Constants.ERROR, sse.getMessage());
 	    }
 	}
+
+	public static Optional<String> extractMethod(Event event) {
+        if (event.payload instanceof HTTPRequestPayload) return
+            Optional.ofNullable(((HTTPRequestPayload) event.payload).getMethod());
+        return Optional.empty();
+    }
+
 }

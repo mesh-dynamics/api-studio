@@ -28,6 +28,7 @@ import io.md.dao.ReqRespUpdateOperation;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.utils.Constants;
 
+import com.cube.core.ServerUtils;
 import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.RecordingOperationSetMeta;
 
@@ -207,7 +208,8 @@ public class RecordingUpdate {
 
                 TemplateKey key = new TemplateKey(newTemplateSetVersion, originalRec.customerId,
                     originalRec.app, recordRequest.service, recordRequest.apiPath,
-                    Type.RequestMatch);
+                    Type.RequestMatch, ServerUtils.extractMethod(recordRequest),
+                    Optional.of(originalRec.collection));
                 Comparator comparator = config.rrstore.getComparator(key
                     , Event.EventType.HTTPRequest);
 

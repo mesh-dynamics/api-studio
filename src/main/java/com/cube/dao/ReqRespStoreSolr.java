@@ -1917,7 +1917,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // Sample key in solr ResponseCompareTemplate-1234-bookinfo-getAllBooks--2013106077
         String id = type.concat("-").concat(String.valueOf(Objects.hash(
                 key.getCustomerId() , key.getAppId() , key.getServiceId() , key.getPath()
-                , key.getReqOrResp().toString() , key.getVersion())));
+                , key.getReqOrResp().toString() , key.getVersion() , key.getMethod())));
         doc.setField(IDF , id);
         doc.setField(COMPARETEMPLATEJSON, jsonCompareTemplate);
         String path = key.getPath();
@@ -1927,6 +1927,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(SERVICEF , key.getServiceId());
         doc.setField(TYPEF , type);
         doc.setField(VERSIONF, key.getVersion());
+        doc.setField(METHODF, key.getMethod());
         return doc;
     }
 
@@ -2147,7 +2148,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query , SERVICEF , key.getServiceId());
         addWeightedPathFilter(query , PATHF , key.getPath());
         addFilter(query, VERSIONF, key.getVersion(), true);
-        addFilter(query, METHODF, key.getMethod());
+        if (!key.getMethod().equals(DEFAULT_METHOD)) addFilter(query, METHODF, key.getMethod());
         //addFilter(query, PATHF , key.getPath());
         Optional<Integer> maxResults = Optional.of(1);
         Optional<CompareTemplate> fromSolr =  SolrIterator.getStream(solr , query , maxResults)

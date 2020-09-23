@@ -1641,14 +1641,16 @@ public class AnalyzeWS {
 			TemplateKey reqCompareKey = new TemplateKey(recording.templateVersion,
 				lhsRequestEvent.customerId,
 				lhsRequestEvent.app, lhsRequestEvent.service, lhsRequestEvent.apiPath,
-				Type.RequestCompare);
+				Type.RequestCompare, ServerUtils.extractMethod(lhsRequestEvent)
+				, Optional.of(recording.collection));
 			Comparator reqComparator = rrstore
 				.getComparator(reqCompareKey, lhsRequestEvent.eventType);
 				reqCompareRes = reqComparator.compare(lhsRequestEvent.payload, rhsRequestEvent.payload);
 			TemplateKey respCompareKey = new TemplateKey(recording.templateVersion,
 				lhsRequestEvent.customerId,
 				lhsRequestEvent.app, lhsRequestEvent.service, lhsRequestEvent.apiPath,
-				Type.ResponseCompare);
+				Type.ResponseCompare, ServerUtils.extractMethod(lhsRequestEvent)
+				, Optional.of(recording.collection));
 
 			if (lhsResponseEventOpt.isPresent() && rhsResponseEventOpt.isPresent()) {
 				Event lhsResponseEvent = lhsResponseEventOpt.get();
