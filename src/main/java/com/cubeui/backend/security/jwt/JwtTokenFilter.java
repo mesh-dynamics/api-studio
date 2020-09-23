@@ -22,32 +22,18 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JwtTokenFilter extends GenericFilterBean {
 
-    private JwtTokenProvider jwtTokenProvider;
+    private JwtTokenValidator jwtTokenValidator;
 
-    public JwtTokenFilter(JwtTokenProvider jwtTokenProvider) {
-        this.jwtTokenProvider = jwtTokenProvider;
+    public JwtTokenFilter(JwtTokenValidator jwtTokenValidator) {
+        this.jwtTokenValidator = jwtTokenValidator;
     }
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain filterChain)
         throws IOException, ServletException {
 
-        String token = jwtTokenProvider.resolveToken((HttpServletRequest) req);
-
-
         try {
-            if (token != null && jwtTokenProvider.validateToken(token)) {
-                log.trace("Token validation passed ");
-                User user = (User)jwtTokenProvider.getUser((HttpServletRequest) req);
-                if(user.getResetPasswordDate() != null && user.getResetPasswordDate().isBefore(Instant.now())) {
-                    throw new ResetPasswordException("The User needs to reset his password");
-                }
-                Authentication auth = jwtTokenProvider.getAuthentication(token);
-
-                if (auth != null) {
-                    SecurityContextHolder.getContext().setAuthentication(auth);
-                }
-            }
+            jwtTokenValidator.resolveAndValidateToken((HttpServletRequest) req);
         } catch(InvalidJwtAuthenticationException e) {
             ((HttpServletResponse) res).sendError(HttpStatus.UNAUTHORIZED.value(), "Invalid authorization token");
             return;
