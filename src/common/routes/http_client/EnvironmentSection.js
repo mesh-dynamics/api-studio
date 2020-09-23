@@ -1,7 +1,7 @@
 import React, { Component, Fragment, createContext } from "react";
 import EnvVar from "./EnvVar";
 import { connect } from "react-redux";
-import { getCurrentEnvirnoment } from "../../utils/http_client/utils";
+import { getCurrentEnvironment } from "../../utils/http_client/envvar";
 import { httpClientActions } from "../../actions/httpClientActions";
 
 //Remove unused Components later
@@ -62,7 +62,8 @@ class EnvironmentSection extends React.Component {
     const {
       httpClient: { environmentList, selectedEnvironment },
     } = this.props;
-    const currentEnvironment = getCurrentEnvirnoment(
+    
+    const currentEnvironment = getCurrentEnvironment(
       environmentList,
       selectedEnvironment
     );

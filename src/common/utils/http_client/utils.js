@@ -62,7 +62,8 @@ const getTraceTableTestReqData = (currentSelectedTab, selectedTraceTableTestReqT
 const getCurrentEnvirnoment = (environmentList, selectedEnvironment) => {
     return _.find(environmentList, { name: selectedEnvironment });
 };
-  
+
+
 const getCurrentMockConfig = (mockConfigList, selectedMockConfig) => {
     const foundMockConfig = _.find(mockConfigList, { key: selectedMockConfig });
     return foundMockConfig ? JSON.parse(foundMockConfig.value) : {};
@@ -105,5 +106,7 @@ export {
     getCurrentMockConfig,
     getCurrentEnvirnoment, 
     getTraceTableTestReqData,
-    getApiPathFromRequestEvent
+    getApiPathFromRequestEvent,
+    getTraceTableTestReqData,
+    getCurrentMockConfig
 };

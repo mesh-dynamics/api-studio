@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Glyphicon, FormGroup, Button, FormControl, Radio, ControlLabel, Checkbox } from 'react-bootstrap';
+import { FormGroup, FormControl, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import _ from 'lodash';
 
 // import "./styles_here.css";
@@ -7,8 +7,9 @@ import _ from 'lodash';
 import HttpRequestHeaders from "./HttpRequestHeaders";
 import HttpRequestQueryString from "./HttpRequestQueryString";
 import HttpRequestBody from "./HttpRequestBody";
-import HttpRequestFormData from "./HttpRequestFormData";
-import HttpRequestRawData from "./HttpRequestRawData";
+import Tippy from '@tippy.js/react';
+import 'tippy.js/themes/light.css';
+import { applyEnvVarsToUrl } from "../../utils/http_client/envvar";
 
 class HttpRequestMessage extends Component {
     constructor(props) {
@@ -45,7 +46,32 @@ class HttpRequestMessage extends Component {
     }
  
 
+    generateUrlTooltip = (url) => {
+        let urlRendered = url;
+        let err = "";
+        try {
+            urlRendered = applyEnvVarsToUrl(url)
+        } catch (e) {
+            err = e.toString()
+        }
+
+        return urlRendered ? <div>
+                    <p style={{fontSize:12}}>{urlRendered}</p>
+                        {err && <p style={{fontSize: 9, color: "red"}}>{err}</p>}
+                </div>
+            : null;
+    
+    }
+
     render() {
+        const urlRendered = this.generateUrlTooltip(this.props.httpURL);
+        
+        const urlTextBox = <div style={{display: "inline-block", width: "82%"}}>
+            <FormGroup bsSize="small" style={{marginBottom: "0px", fontSize: "12px"}}>
+                <FormControl type="text" placeholder="https://...." style={{fontSize: "12px"}} name="httpURL" value={this.props.httpURL} onChange={this.handleChange}/>
+            </FormGroup>
+        </div>
+
         return (
             <div>
                 <div style={{marginRight: "7px"}}>
@@ -74,11 +100,9 @@ class HttpRequestMessage extends Component {
                             </FormControl>
                         </FormGroup>
                     </div>
-                    <div style={{display: "inline-block", width: "82%"}}>
-                        <FormGroup bsSize="small" style={{marginBottom: "0px", fontSize: "12px"}}>
-                            <FormControl type="text" placeholder="https://...." style={{fontSize: "12px"}} name="httpURL" value={this.props.httpURL} onChange={this.handleChange} />
-                        </FormGroup>
-                    </div>
+                    {urlRendered ? <Tippy content={urlRendered} arrow={false} arrowType="round" interactive={true} theme={"google"} size="large" placement="bottom-start">
+                        {urlTextBox}
+                    </Tippy> : urlTextBox}
                 </div>
                 <div className="" style={{marginTop: "18px", marginBottom: "12px"}}>
                     <div className="" style={{display: "inline-block", paddingRight: "18px", opacity: "0.7", fontSize: "12px", width: "50px"}}>
