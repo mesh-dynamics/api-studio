@@ -1162,7 +1162,7 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.resetRunState(tabId))
         // generate a new run id every time a request is run
         const runId = generateRunId();
-        const mockConfig = this.getCurrentMockConfig();
+        //const mockConfig = this.getCurrentMockConfig(); // todo hotfix/disable-live-proxy
         const spanId = tabToProcess.eventData[0].spanId;
 
         if(PLATFORM_ELECTRON) {
@@ -1175,7 +1175,7 @@ class HttpClientTabs extends Component {
                 selectedApp,
                 customerName: customerId,
                 runId: runId,
-                config: mockConfig,
+                // config: mockConfig, // todo hotfix/disable-live-proxy
                 spanId: spanId
             }
 
@@ -2567,10 +2567,10 @@ class HttpClientTabs extends Component {
                             <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleImportModalShow}>
                                 <Glyphicon glyph="import" /> Import
                             </div>
-                            {/* mock configs */}
-                            <div style={{display: "inline-block", padding: 0}} className="btn">{this.renderMockConfigListDD()}</div>
+                            {/* mock configs todo: hotfix/disable-live-proxy */}
+                            {/* <div style={{display: "inline-block", padding: 0}} className="btn">{this.renderMockConfigListDD()}</div>
                             <div style={{display: "inline-block"}}>{this.renderSelectedMockConfigModal()}</div>
-                            <span className="btn btn-sm cube-btn text-center" onClick={() => {this.setState({showMockConfigModal: true})}} title="Service mock configurations"><i className="fas fa-cog"/> </span>
+                            <span className="btn btn-sm cube-btn text-center" onClick={() => {this.setState({showMockConfigModal: true})}} title="Service mock configurations"><i className="fas fa-cog"/> </span> */}
 
                             <div style={{display: "inline-block", padding: 0}} className="btn">{this.renderEnvListDD()}</div>
                             <div style={{display: "inline-block"}}>{this.renderSelectedEnvModal()}</div>
