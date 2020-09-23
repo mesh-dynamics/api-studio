@@ -39,38 +39,31 @@ const setupProxy = (mockContext, user) => {
 
         const headers = req.headers;
 
-        const form = formidable({ multiples: true });
+        // const form = formidable({ multiples: true });
 
-        form.parse(req, (err, fields) => {
-            if(err) {
-                logger.info('Error parsing body',  err);
-                throw err;
-            }
+        logger.info('Headers Received :', headers);
 
-            logger.info('Headers Received :', headers);
-
-            logger.info('Detected Service :', service);
-            
-            logger.info('Received data in request : \n', fields);
-
-            const proxyOptionParameters = {
-                user,
-                proxy,
-                service,
-                headers,
-                mockContext,
-                requestData: fields,
-                defaultProxyOptions
-            };
-
-            logger.info('Configuring Target...');
+        logger.info('Detected Service :', service);
+        
+        // logger.info('Received data in request : \n', fields);
     
-            const proxyServerOptions = selectProxyTargetForService(proxyOptionParameters);
-            
-            logger.info('Selected proxy options : \n', proxyServerOptions);
+        const proxyOptionParameters = {
+            user,
+            proxy,
+            service,
+            headers,
+            mockContext,
+            requestData: fields,
+            defaultProxyOptions
+        };
     
-            proxy.web(req, res, proxyServerOptions);
-        });
+        logger.info('Configuring Target...');
+    
+        const proxyServerOptions = selectProxyTargetForService(proxyOptionParameters);
+        
+        logger.info('Selected proxy options : \n', proxyServerOptions);
+    
+        proxy.web(req, res, proxyServerOptions);
     })
 
     /**
@@ -88,3 +81,34 @@ const setupProxy = (mockContext, user) => {
 };
 
 module.exports = setupProxy;
+
+// form.parse(req, (err, fields) => {
+//     if(err) {
+//         logger.info('Error parsing body',  err);
+//         throw err;
+//     }
+
+//     logger.info('Headers Received :', headers);
+
+//     logger.info('Detected Service :', service);
+    
+//     logger.info('Received data in request : \n', fields);
+
+//     const proxyOptionParameters = {
+//         user,
+//         proxy,
+//         service,
+//         headers,
+//         mockContext,
+//         requestData: fields,
+//         defaultProxyOptions
+//     };
+
+//     logger.info('Configuring Target...');
+
+//     const proxyServerOptions = selectProxyTargetForService(proxyOptionParameters);
+    
+//     logger.info('Selected proxy options : \n', proxyServerOptions);
+
+//     proxy.web(req, res, proxyServerOptions);
+// });
