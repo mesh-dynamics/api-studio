@@ -428,11 +428,11 @@ public interface ReqRespStore extends DataStore {
 	 * @param userId
 	 * @return
 	 */
-	Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
+	Result<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
                                    Optional<String> collection, Optional<String> templateVersion, Optional<String> name, Optional<String> parentRecordingId, Optional<String> rootRecordingId,
                                    Optional<String> codeVersion, Optional<String> branch, List<String> tags, Optional<Boolean> archived, Optional<String> gitCommitId,
                                    Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label, Optional<String> recordingType,
-																	 Optional<String> recordingId);
+																	 Optional<String> recordingId, Optional<Integer> numberOfResults, Optional<Integer> start);
 
 
     Optional<Recording> getRecording(String recordingId);
@@ -676,5 +676,7 @@ public interface ReqRespStore extends DataStore {
 				Optional<String> instanceId, Optional<Integer> numOfResults, Optional<Integer> start, Optional<String> tag);
     Result<AgentConfigTagInfo> getAgentConfigTagInfoResults(String customerId, String app,
 				Optional<String> service, String instanceId);
+
+	boolean deleteAgentConfig(String customerId, String app, String service, String instanceId);
 
 }

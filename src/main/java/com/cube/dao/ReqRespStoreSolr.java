@@ -2730,6 +2730,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
+    public boolean deleteAgentConfig(String customerId, String app, String service, String instanceId) {
+        StringBuffer queryBuff = new StringBuffer();
+        addToQryStr(queryBuff , TYPEF , Types.AgentConfig.name() , false );
+        addToQryStr(queryBuff , CUSTOMERIDF , customerId , false );
+        addToQryStr(queryBuff , APPF , app , false );
+        addToQryStr(queryBuff , SERVICEF , service , false );
+        addToQryStr(queryBuff , INSTANCEIDF , instanceId , false );
+        return deleteDocsByQuery(queryBuff.toString());
+    }
+
+    @Override
     public boolean deleteReqResByTraceId(String traceId , String customerId, String collectionName , Optional<EventType> eventType){
         StringBuffer queryBuff = new StringBuffer();
         addToQryStr(queryBuff , TRACEIDF , traceId , false);
@@ -2989,7 +3000,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String GOLDEN_COMMENTF = CPREFIX + Constants.GOLDEN_COMMENT_FIELD + TEXT_SUFFIX;
     private static final String GENERATED_CLASS_JAR_PATH = CPREFIX +  Constants.GENERATED_CLASS_JAR_PATH_FIELD + STRING_SUFFIX;
 
-    private static Optional<Recording> docToRecording(SolrDocument doc) {
+    private Optional<Recording> docToRecording(SolrDocument doc) {
 
         Optional<String> id = getStrField(doc, IDF);
         Optional<String> app = getStrField(doc, APPF);
@@ -3109,11 +3120,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @see com.cube.dao.ReqRespStore#getRecording(java.util.Optional, java.util.Optional, java.util.Optional, com.cube.dao.Recording.RecordingStatus)
      */
     @Override
-    public Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
+    public Result<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
         Optional<String> collection, Optional<String> templateVersion, Optional<String> name, Optional<String> parentRecordingId, Optional<String> rootRecordingId,
         Optional<String> codeVersion, Optional<String> branch, List<String> tags, Optional<Boolean> archived, Optional<String> gitCommitId,
         Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label, Optional<String> recordingType,
-        Optional<String> recordingId) {
+        Optional<String> recordingId, Optional<Integer> numberOfResults, Optional<Integer> start) {
 
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
@@ -3143,7 +3154,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addSort(query, TIMESTAMPF, false); // descending
 
         //Optional<Integer> maxresults = Optional.of(1);
-        return SolrIterator.getStream(solr, query, Optional.empty()).flatMap(doc -> docToRecording(doc).stream());
+        return SolrIterator.getResults(solr, query, numberOfResults,
+            this::docToRecording, start);
     }
 
     @Override
