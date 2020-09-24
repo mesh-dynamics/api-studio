@@ -206,14 +206,16 @@ const SignUp = (props) => {
                     onChange={(e) => setPassword(e.target.value)}
                 />
                 <div className='checkbox-container'>
+                    <label className='checkbox-label'> 
                     <input 
                         type='checkbox' 
                         name="showPassword" 
+                        id="showPassword" 
                         checked={showPassword} 
                         className="checkbox-custom" 
                         onChange={() => setShowPassword(!showPassword)}
                     /> 
-                    <span className='checkbox-label'>Show Password</span>
+                   &nbsp; Show Password</label>
                 </div>
                 {
                     submitted && 
