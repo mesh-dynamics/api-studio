@@ -373,10 +373,4 @@ public class ServerUtils {
 	    }
 	}
 
-	public static Optional<String> extractMethod(Event event) {
-        if (event.payload instanceof HTTPRequestPayload) return
-            Optional.ofNullable(((HTTPRequestPayload) event.payload).getMethod());
-        return Optional.empty();
-    }
-
 }

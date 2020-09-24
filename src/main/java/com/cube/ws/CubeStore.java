@@ -1494,7 +1494,7 @@ public class CubeStore {
 
                         TemplateKey tkey = new TemplateKey(rec.templateVersion, request.customerId,
                             request.app, request.service, request.apiPath, Type.RequestMatch,
-                            ServerUtils.extractMethod(request), Optional.of(rec.collection));
+                            io.md.utils.Utils.extractMethod(request), Optional.of(rec.collection));
                         Comparator comparator = rrstore
                             .getComparator(tkey, request.eventType);
                         final String reqId = io.md.utils.Utils.generateRequestId(
@@ -1521,7 +1521,7 @@ public class CubeStore {
                             TemplateKey templateKey = new TemplateKey(rec.templateVersion,
                                 response.customerId,
                                 response.app, response.service, response.apiPath,
-                                Type.ResponseCompare, ServerUtils.extractMethod(request)
+                                Type.ResponseCompare, io.md.utils.Utils.extractMethod(request)
                                 , Optional.of(rec.collection));
                             Comparator respComparator = rrstore
                                 .getComparator(templateKey, response.eventType);

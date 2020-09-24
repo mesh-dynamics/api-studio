@@ -233,7 +233,7 @@ public class RealAnalyzer implements Analyzer {
         Optional<Event> replayresp = Optional
             .ofNullable(replayResponseMap.get(replayreq.reqId));
         try {
-            Optional<String> method = ServerUtils.extractMethod(recordreq);
+            Optional<String> method = io.md.utils.Utils.extractMethod(recordreq);
             TemplateKey reqCompareKey = new TemplateKey(templateVersion, recordreq.customerId,
                 recordreq.app, recordreq.service, recordreq.apiPath, Type.RequestCompare,
                 method, Optional.ofNullable(replayreq.getCollection()));
