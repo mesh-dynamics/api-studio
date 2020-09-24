@@ -58,7 +58,7 @@ public class TemplateSetTransformer {
         // This is the key to be set by UI for attributeLevelRules
         TemplateKey attributeTemplateKey = new TemplateKey(sourceTemplateSet.version, sourceTemplateSet.customer,
             sourceTemplateSet.app, io.md.constants.Constants.NOT_APPLICABLE, io.md.constants.Constants.NOT_APPLICABLE,
-            Type.DontCare, Optional.empty(), Optional.of(templateSetUpdateSpec.getTemplateUpdateOperationSetId()));
+            Type.DontCare, Optional.empty(), Optional.empty());
 
         // Fetch and store previous existing attribute rules.
         Map<String, TemplateEntry> pathVsEntryAttributes = sourceTemplateSet.appAttributeRuleMap
@@ -89,8 +89,11 @@ public class TemplateSetTransformer {
                     try {
                         // try to get default compare template based on event type
                         // queried from backend store for the given api path
+                        TemplateKey lookUpKey = new TemplateKey(key.getVersion(), key.getCustomerId(), key.getAppId(),
+                            key.getServiceId(), key.getPath(), key.getReqOrResp(), Optional.of(key.getMethod())
+                            , Optional.of(templateSetUpdateSpec.getTemplateUpdateOperationSetId()));
                         template = rrstore
-                            .getComparator(key).getCompareTemplate();
+                            .getComparator(lookUpKey).getCompareTemplate();
                     } catch (TemplateNotFoundException e) {
                         LOGGER.error(new ObjectMessage(Map.of(
                             Constants.MESSAGE, "Unable to fetch DEFAULT template from comparator " +
