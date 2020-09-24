@@ -36,6 +36,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.github.underscore.lodash.U;
 
+import io.md.constants.Constants;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
@@ -735,7 +736,8 @@ public class JsonDataObj implements DataObj {
 
 	// TODO : Adding Multipart form data as a binary type now.
 	//  Change this to deal with separate part of multipart data as needed.
-	public static final List<String> binaryMimeTypes = Arrays.asList(MediaType.APPLICATION_OCTET_STREAM, MediaType.MULTIPART_FORM_DATA);
+	public static final List<String> binaryMimeTypes = Arrays
+		.asList(MediaType.APPLICATION_OCTET_STREAM, MediaType.MULTIPART_FORM_DATA, Constants.APPLICATION_GRPC);
 
 	public JsonNode getRoot() {
 		return objRoot;
