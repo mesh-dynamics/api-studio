@@ -102,7 +102,7 @@ public class TemplateSetTransformer {
                     }
                     // no need to clone now .. as update will take care of it
                     sourceTemplate = new CompareTemplateVersioned(Optional.of(key.getServiceId())
-                        , Optional.of(key.getPath()), key.getReqOrResp(), template);
+                        , Optional.of(key.getPath()), Optional.of(key.getMethod()) , key.getReqOrResp(), template);
                 }
                 CompareTemplateVersioned updated = updateTemplate(sourceTemplate , update);
                 sourceTemplateMap.put(key, updated);

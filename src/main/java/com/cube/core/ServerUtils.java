@@ -282,7 +282,7 @@ public class ServerUtils {
             templateRegistries
                 .stream()
                 .map(registry -> new CompareTemplateVersioned(Optional.of(registry.getService()),
-            Optional.of(registry.getPath()), registry.getType(), registry.getTemplate()))
+            Optional.of(registry.getPath()), Optional.ofNullable(registry.getMethod()), registry.getType(), registry.getTemplate()))
                 .collect(Collectors.toList());
 
         // pass null for version if version is empty and timestamp so that new version number is created automatically

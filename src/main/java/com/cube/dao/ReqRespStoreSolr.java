@@ -653,7 +653,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         templateSet.templates.forEach(UtilException.rethrowConsumer(template -> {
             TemplateKey templateKey = new TemplateKey(templateSet.version, templateSet.customer,
                 templateSet.app,
-                template.service , template.requestPath, template.type);
+                template.service , template.requestPath, template.type, Optional.of(template.method), Optional.empty());
                 templateIds.add(saveCompareTemplate(templateKey, config.jsonMapper.writeValueAsString(template)));
         }));
         Optional<String> ruleMapId = templateSet.appAttributeRuleMap.map(ruleMap ->
@@ -1097,6 +1097,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> service = getStrField(doc, SERVICEF);
         Optional<String> compareTemplate = getStrField(doc, COMPARETEMPLATEJSON);
         Optional<String> requestPath = getStrField(doc, PATHF);
+        Optional<String> method = getStrField(doc, METHODF);
         if (type.isEmpty() || service.isEmpty() || compareTemplate.isEmpty() || requestPath.isEmpty()) {
             LOGGER.error("Improper compare-template stored in solr :: " + templateId);
             return Stream.empty();
@@ -1107,7 +1108,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             Type templateType = Utils.valueOf(Type.class, type.get()).orElseThrow(
                 () -> new Exception("Couldn't obtain proper template type from solr doc"));
             CompareTemplateVersioned compareTemplateVersioned = new CompareTemplateVersioned(service , requestPath,
-                templateType, compareTemplateObj);
+               method ,templateType, compareTemplateObj);
             return Stream.of(compareTemplateVersioned);
         } catch (Exception e) {
             LOGGER.error("Error while deserializing compare-template from solr :: " + templateId + " " + e.getMessage());
