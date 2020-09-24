@@ -165,3 +165,6 @@ i.fas.fa-trash.pointer:hover {
   padding: 3px !important;
   overflow: auto;
 }
+div.loading, div.loading button{
+  cursor: progress !important;
+}

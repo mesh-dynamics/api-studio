@@ -57,9 +57,35 @@ const getAPICount = (apiFacets, selectedService, selectedApiPath, selectedInstan
     return instanceObject.count;
 }
 
+
+const getDefaultTraceApiFilters = ()=> {
+    //TODO: This should be an interface (typescript) and initial value, rather then a function
+    return {
+        app: "", startTime: null, 
+        endTime: null, service: null, 
+        apiPath: null, instance: null,
+        recordingType: null, collectionName: null,
+        depth: 2, numResults: null
+    }
+}
+
+const getLastApiTraceEndTimeFromApiTrace = (apiTraces)=>{
+    let currentEndTime = null;
+    if(apiTraces && apiTraces.length > 0){
+        const lastApiTrace =apiTraces[apiTraces.length -1];
+        if(lastApiTrace.res && lastApiTrace.res.length > 0){
+            const timestamp = lastApiTrace.res[lastApiTrace.res.length -  1].reqTimestamp;
+            currentEndTime = new Date(timestamp*1000).toISOString();
+        }
+    }
+    return currentEndTime;
+}
+
 export { 
     getServiceList, 
     getIncomingAPIList,
     getInstanceList,
-    getAPICount
+    getAPICount,
+    getDefaultTraceApiFilters,
+    getLastApiTraceEndTimeFromApiTrace
 };

@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
 import { httpClientActions } from "../../actions/httpClientActions";
-import { Tabs, Tab, Panel, Label, Modal } from "react-bootstrap";
+import { Tabs, Tab, Panel, Label, Modal, Glyphicon } from "react-bootstrap";
 import { v4 as uuidv4 } from "uuid";
 import _ from "lodash";
 import * as moment from "moment";
@@ -11,10 +11,12 @@ import config from "../../config";
 import TreeNodeContainer from "./TreeNodeContainer";
 import TreeNodeToggle from "./TreeNodeToggle";
 import CollectionTreeCSS from "./CollectionTreeCSS";
+import { getDefaultTraceApiFilters } from "../../utils/api-catalog/api-catalog-utils";
 
 import { cubeActions } from "../../actions";
 import { cubeService } from "../../services";
 import api from "../../api";
+import classNames from "classnames";
 
 class SideBarTabs extends Component {
   constructor(props) {
@@ -80,7 +82,6 @@ class SideBarTabs extends Component {
 
   handlePanelClick(selectedCollectionId, forceLoad) {
     if (!selectedCollectionId) return;
-    const user = JSON.parse(localStorage.getItem("user"));
     const {
       httpClient: { userCollections },
     } = this.props;
@@ -89,51 +90,53 @@ class SideBarTabs extends Component {
     } = this.props;
     const app = selectedApp;
     const { dispatch } = this.props;
-    const customerId = encodeURIComponent(user.customer_name);
     const selectedCollection = userCollections.find(
       (eachCollection) => eachCollection.collec === selectedCollectionId
     );
     const apiTracesForACollection = selectedCollection.apiTraces;
     try {
       if (!apiTracesForACollection || forceLoad) {
-        api
-          .get(
-            `${config.apiBaseUrl}/as/getApiTrace/${customerId}/${app}?depth=100&collection=${selectedCollectionId}`
-          )
-          .then(
-            (res) => {
-              const apiTraces = [];
-              res.response.sort((a, b) => {
-                return b.res[0].reqTimestamp - a.res[0].reqTimestamp;
+        const filterData = {
+          ...getDefaultTraceApiFilters(),
+          app,
+          collectionName: selectedCollectionId,
+          depth: 100,
+          numResults: 100,
+        };
+        cubeService.fetchAPITraceData(filterData).then(
+          (res) => {
+            const apiTraces = [];
+            res.response.sort((a, b) => {
+              return b.res[0].reqTimestamp - a.res[0].reqTimestamp;
+            });
+            res.response.map((eachApiTrace) => {
+              eachApiTrace.res.map((eachApiTraceEvent) => {
+                eachApiTraceEvent["name"] = eachApiTraceEvent["apiPath"];
+                eachApiTraceEvent["id"] = eachApiTraceEvent["requestEventId"];
+                eachApiTraceEvent["toggled"] = false;
+                eachApiTraceEvent["recordingIdAddedFromClient"] =
+                  selectedCollection.id;
+                eachApiTraceEvent["traceIdAddedFromClient"] =
+                  eachApiTrace.traceId;
+                eachApiTraceEvent["collectionIdAddedFromClient"] =
+                  eachApiTrace.collection;
               });
-              res.response.map((eachApiTrace) => {
-                eachApiTrace.res.map((eachApiTraceEvent) => {
-                  eachApiTraceEvent["name"] = eachApiTraceEvent["apiPath"];
-                  eachApiTraceEvent["id"] = eachApiTraceEvent["requestEventId"];
-                  eachApiTraceEvent["toggled"] = false;
-                  eachApiTraceEvent["recordingIdAddedFromClient"] =
-                    selectedCollection.id;
-                  eachApiTraceEvent["traceIdAddedFromClient"] =
-                    eachApiTrace.traceId;
-                  eachApiTraceEvent["collectionIdAddedFromClient"] =
-                    eachApiTrace.collection;
-                });
-                const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
-                  customID: "spanId",
-                  parentProperty: "parentSpanId",
-                });
-                apiTraces.push({
-                  ...apiFlatArrayToTree[0],
-                });
+              const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
+                customID: "spanId",
+                parentProperty: "parentSpanId",
               });
+              apiTraces.push({
+                ...apiFlatArrayToTree[0],
+              });
+            });
 
-              selectedCollection.apiTraces = apiTraces;
-              dispatch(httpClientActions.addUserCollections(userCollections));
-            },
-            (err) => {
-              console.error("err: ", err);
-            }
-          );
+            selectedCollection.apiTraces = apiTraces;
+            dispatch(httpClientActions.addUserCollections(userCollections));
+          },
+          (err) => {
+            console.error("err: ", err);
+          }
+        );
       }
     } catch (error) {
       console.error("Error ", error);
@@ -288,7 +291,6 @@ class SideBarTabs extends Component {
                   rawDataType = "text";
                 }
               }
-              
               //TODO: Create a separate class to handle below object
               let reqObject = {
                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
@@ -446,6 +448,180 @@ class SideBarTabs extends Component {
     return <TreeNodeToggle {...props} />;
   }
 
+  onFirstPageClickHistoryTab = () => {
+    const {
+      dispatch,
+      httpClient: { isCollectionLoading },
+    } = this.props;
+    !isCollectionLoading && dispatch(httpClientActions.historyTabFirstPage());
+  };
+
+  onNextPageClickHistoryTab = () => {
+    const {
+      dispatch,
+      httpClient: { historyTabState, isHistoryLoading },
+    } = this.props;
+    if (
+      !(
+        (historyTabState.currentPage + 1) * historyTabState.numResults >=
+          historyTabState.count || isHistoryLoading
+      )
+    ) {
+      dispatch(httpClientActions.historyTabNextPage());
+    }
+  };
+
+  onPrevPageClickHistoryTab = () => {
+    const {
+      dispatch,
+      httpClient: { historyTabState, isHistoryLoading },
+    } = this.props;
+    if (!(historyTabState.currentPage == 0 || isHistoryLoading)) {
+      dispatch(httpClientActions.historyTabPrevPage());
+    }
+  };
+
+  getPaginationHistoryTab = () => {
+    const {
+      httpClient: { historyTabState, isHistoryLoading },
+    } = this.props;
+    if (
+      !historyTabState ||
+      historyTabState.numResults >= historyTabState.count
+    ) {
+      return <></>;
+    }
+    const divClass = classNames({
+      "btn-group btn-paging  btn-group-sm": true,
+      loading: isHistoryLoading,
+    });
+    return (
+      <div className={divClass} role="group" aria-label="Pagination control">
+        <div
+          className="btn btn-sm cube-btn text-center"
+          title={
+            historyTabState.currentPage == 0 ? "Reload" : "Go to First Page"
+          }
+          disabled={isHistoryLoading}
+          onClick={this.onFirstPageClickHistoryTab}
+        >
+          {historyTabState.currentPage == 0 ? (
+            <i class="fas fa-sync-alt"></i>
+          ) : (
+            <i class="fas fa-step-backward"></i>
+          )}
+        </div>
+        <div
+          className="btn btn-sm cube-btn text-center"
+          disabled={historyTabState.currentPage == 0 || isHistoryLoading}
+          title="Previous Page"
+          onClick={this.onPrevPageClickHistoryTab}
+        >
+          <i style={{ fontSize: "18px" }} class="fas fa-caret-left"></i>
+        </div>
+        <div
+          className="btn btn-sm cube-btn text-center"
+          disabled={
+            (historyTabState.currentPage + 1) * historyTabState.numResults >=
+              historyTabState.count || isHistoryLoading
+          }
+          title="Next Page"
+          onClick={this.onNextPageClickHistoryTab}
+        >
+          <i style={{ fontSize: "18px" }} class="fas fa-caret-right"></i>
+        </div>
+      </div>
+    );
+  };
+
+  onFirstPageClickCollectionTab = () => {
+    const {
+      dispatch,
+      httpClient: { isCollectionLoading },
+    } = this.props;
+    !isCollectionLoading &&
+      dispatch(httpClientActions.collectionTabFirstPage());
+  };
+
+  onNextPageClickCollectionTab = () => {
+    const {
+      dispatch,
+      httpClient: { collectionTabState, isCollectionLoading },
+    } = this.props;
+    if (
+      !(
+        (collectionTabState.currentPage + 1) * collectionTabState.numResults >=
+          collectionTabState.count || isCollectionLoading
+      )
+    ) {
+      dispatch(httpClientActions.collectionTabNextPage());
+    }
+  };
+
+  onPrevPageClickCollectionTab = () => {
+    const {
+      dispatch,
+      httpClient: { collectionTabState, isCollectionLoading },
+    } = this.props;
+    if (!(collectionTabState.currentPage == 0 || isCollectionLoading)) {
+      dispatch(httpClientActions.collectionTabPrevPage());
+    }
+  };
+
+  getPaginationCollectionTab = () => {
+    const {
+      httpClient: { collectionTabState, isCollectionLoading },
+    } = this.props;
+    if (
+      !collectionTabState ||
+      collectionTabState.numResults >= collectionTabState.count
+    ) {
+      return <></>;
+    }
+    const divClass = classNames({
+      "btn-group btn-paging  btn-group-sm": true,
+      loading: isCollectionLoading,
+    });
+    return (
+      <div className={divClass} role="group" aria-label="Pagination control">
+        <div
+          className="btn btn-sm cube-btn text-center"
+          title={
+            collectionTabState.currentPage == 0 ? "Reload" : "Go to First Page"
+          }
+          disabled={isCollectionLoading}
+          onClick={this.onFirstPageClickCollectionTab}
+        >
+          {collectionTabState.currentPage == 0 ? (
+            <i class="fas fa-sync-alt"></i>
+          ) : (
+            <i class="fas fa-step-backward"></i>
+          )}
+        </div>
+        <div
+          className="btn btn-sm cube-btn text-center"
+          disabled={collectionTabState.currentPage == 0 || isCollectionLoading}
+          title="Previous Page"
+          onClick={this.onPrevPageClickCollectionTab}
+        >
+          <i style={{ fontSize: "18px" }} class="fas fa-caret-left"></i>
+        </div>
+        <div
+          className="btn btn-sm cube-btn text-center"
+          disabled={
+            (collectionTabState.currentPage + 1) *
+              collectionTabState.numResults >=
+              collectionTabState.count || isCollectionLoading
+          }
+          title="Next Page"
+          onClick={this.onNextPageClickCollectionTab}
+        >
+          <i style={{ fontSize: "18px" }} class="fas fa-caret-right"></i>
+        </div>
+      </div>
+    );
+  };
+
   render() {
     //Remove unused vars
     const {
@@ -524,6 +700,8 @@ class SideBarTabs extends Component {
                 );
               })}
             </div>
+
+            {this.getPaginationHistoryTab()}
           </Tab>
           <Tab eventKey={2} title="Collections">
             <div className="margin-top-10">
@@ -595,6 +773,8 @@ class SideBarTabs extends Component {
                   );
                 })}
             </div>
+
+            {this.getPaginationCollectionTab()}
           </Tab>
         </Tabs>
 

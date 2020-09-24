@@ -4,7 +4,8 @@ import {
     getServiceList,
     getIncomingAPIList,
     getInstanceList,
-    getAPICount
+    getDefaultTraceApiFilters,
+    getLastApiTraceEndTimeFromApiTrace
 } from "../utils/api-catalog/api-catalog-utils";
 import _ from "lodash";
 
@@ -56,7 +57,8 @@ export const apiCatalogActions = {
 
     fetchGoldenCollectionList: (app, recordingType) => (dispatch) => {
         cubeService.fetchCollectionList(app, recordingType)
-            .then((result) => {
+            .then((data) => {
+                const result = data.recordings;
                 if (recordingType === "UserGolden") {
                     dispatch({
                         type: apiCatalogConstants.UPDATE_COLLECTION_LIST,
@@ -93,7 +95,7 @@ export const apiCatalogActions = {
                     selectedInstance = ""
 
                     dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "UserGolden"));
-                    dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, "UserGolden", selectedCollection, null, null, selectedService, selectedApiPath)); 
+                    selectedCollection && dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, "UserGolden", selectedCollection, null, null, selectedService, selectedApiPath)); 
                 } else if (selectedSource==="Golden") {
                     startTime = null;
                     endTime = null;
@@ -102,7 +104,7 @@ export const apiCatalogActions = {
                     selectedInstance = ""
 
                     dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "Golden"));
-                    dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, "Golden", selectedGolden, null, null, selectedService, selectedApiPath)); 
+                    selectedGolden && dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, "Golden", selectedGolden, null, null, selectedService, selectedApiPath)); 
                 } else if (selectedSource==="Capture") {
                     startTime = new Date(Date.now() - 86400 * 1000).toISOString()
                     endTime = new Date(Date.now()).toISOString()
@@ -225,7 +227,7 @@ export const apiCatalogActions = {
 
     fetchAPITrace: (selectedSource, selectedCollection, selectedGolden, selectedService, selectedApiPath, selectedInstance, startTime, endTime) => async (dispatch, getState) => {
         const state = getState();
-        const { selectedApp } = state.cube;
+        const { cube: {selectedApp} , apiCatalog: {apiCatalogTableState}} = state;
 
         // assign collection name param for the request based on source
         let goldenCollection = null;
@@ -240,11 +242,86 @@ export const apiCatalogActions = {
                 goldenCollection = selectedGolden;
                 break;
         }
+        
 
         dispatch({type: apiCatalogConstants.SET_API_TRACE_LOADING})
-        const apiTrace = await cubeService.fetchAPITraceData(selectedApp, startTime, endTime, selectedService, selectedApiPath, selectedInstance, selectedSource, goldenCollection);
+        const filterData = { 
+            ...getDefaultTraceApiFilters(),
+            app: selectedApp, startTime, endTime, 
+            service: selectedService, apiPath: selectedApiPath, 
+            instance: selectedInstance, recordingType: selectedSource,
+            collectionName: goldenCollection,
+            numResults: apiCatalogTableState.pageSize
+        };
+        const apiTrace = await cubeService.fetchAPITraceData(filterData);
+        const apiTraces = apiTrace.response;
+        const currentEndTime = getLastApiTraceEndTimeFromApiTrace(apiTraces);
 
-        dispatch({ type: apiCatalogConstants.FETCH_API_TRACE , data: { apiTrace } })
+        const changedApiCatalogTableState = {
+            ...apiCatalogTableState, 
+            currentPage: 0,
+            filterData:filterData,
+            oldPagesData:[{endTime: currentEndTime}],
+            totalPages: Math.ceil(apiTrace.numFound / apiCatalogTableState.pageSize)
+        };
+
+        dispatch({ type: apiCatalogConstants.FETCH_API_TRACE , data: { apiTrace, apiCatalogTableState: changedApiCatalogTableState } })
+    },
+
+    fetchApiTraceByPage : (nextPage) => async(dispatch, getState)=>{
+        const {apiCatalog:{apiCatalogTableState}} = getState();
+        let nextFilterData = {...apiCatalogTableState.filterData};
+        let nextApiCatalogTableState = {...apiCatalogTableState};
+        if(nextPage > apiCatalogTableState.currentPage){
+            nextFilterData.endTime = apiCatalogTableState.oldPagesData[apiCatalogTableState.currentPage].endTime;
+            nextApiCatalogTableState.currentPage++;           
+        }else if (nextPage == 0){
+            nextApiCatalogTableState.currentPage = 0;
+            nextApiCatalogTableState.oldPagesData = [];
+        }
+        else if(nextPage < apiCatalogTableState.currentPage){
+            nextFilterData.endTime = apiCatalogTableState.oldPagesData[apiCatalogTableState.currentPage - 2].endTime;
+            nextApiCatalogTableState.oldPagesData.pop();
+            nextApiCatalogTableState.currentPage--;
+        }
+
+
+        dispatch({type: apiCatalogConstants.SET_API_TRACE_LOADING});
+        const apiTrace = await cubeService.fetchAPITraceData(nextFilterData);
+
+        const apiTraces = apiTrace.response;
+        if(nextPage > apiCatalogTableState.currentPage || nextPage == 0){
+            const endTime = getLastApiTraceEndTimeFromApiTrace(apiTraces);
+            nextApiCatalogTableState.oldPagesData.push({endTime});
+        }
+
+        nextApiCatalogTableState.currentPage = nextPage;
+
+        dispatch({ type: apiCatalogConstants.FETCH_API_TRACE , data: { apiTrace, apiCatalogTableState: nextApiCatalogTableState } })
+    },
+
+    setPageSize : (numResults) => async(dispatch, getState)=>{
+        const { apiCatalog: {apiCatalogTableState}} = getState();
+        
+        const filterData = {...apiCatalogTableState.filterData,  numResults};
+
+        dispatch({type: apiCatalogConstants.SET_API_TRACE_LOADING});
+
+        const apiTrace = await cubeService.fetchAPITraceData(filterData);
+        const apiTraces = apiTrace.response;
+        const currentEndTime = getLastApiTraceEndTimeFromApiTrace(apiTraces);
+        
+        const changedApiCatalogTableState = {
+            ...apiCatalogTableState, 
+            currentPage: 0,
+            filterData:filterData,
+            pageSize: numResults,
+            oldPagesData:[{endTime: currentEndTime}],
+            totalPages: Math.ceil(apiTrace.numFound / numResults)
+        };
+        
+        dispatch({ type: apiCatalogConstants.FETCH_API_TRACE , data: { apiTrace, apiCatalogTableState: changedApiCatalogTableState } })
+  
     },
 
     setHttpClientRequestIds: (requestIdMap) => ({type: apiCatalogConstants.SET_HTTP_CLIENT_REQUESTIDS, data: requestIdMap}),

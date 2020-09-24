@@ -4749,3 +4749,10 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
     border: .5px solid;
     margin: 10px 0;
 }
+.btn-paging{
+    display: flex;
+    justify-content: flex-end;
+  }
+  .btn-paging div{
+      padding: 1px 14px !important;
+    }
