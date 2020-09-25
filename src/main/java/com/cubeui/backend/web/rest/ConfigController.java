@@ -16,6 +16,7 @@ import com.cubeui.backend.repository.CustomerRepository;
 import com.cubeui.backend.repository.ServiceRepository;
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.security.jwt.JwtTokenProvider;
+import com.cubeui.backend.security.jwt.JwtTokenValidator;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.ConfigExistsException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
@@ -50,6 +51,8 @@ public class ConfigController {
   private ServiceRepository serviceRepository;
   @Autowired
   private JwtTokenProvider jwtTokenProvider;
+  @Autowired
+  private JwtTokenValidator jwtTokenValidator;
 
   @GetMapping("/get")
   public ResponseEntity getConfigs(HttpServletRequest request,
@@ -61,6 +64,7 @@ public class ConfigController {
     String userId = null;
     boolean authenticate = false;
     if(request.getHeader("Authorization") != null) {
+      jwtTokenValidator.resolveAndValidateToken(request);
       validation.validateCustomerName(request,customer);
       userId = jwtTokenProvider.getUser(request).getUsername();
       authenticate = true;
