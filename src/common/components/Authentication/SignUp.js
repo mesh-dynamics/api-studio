@@ -273,8 +273,13 @@ const SignUp = (props) => {
     
 
     const renderSuccessMessage = () => (
-        <div className="form-success-message">
-            {MESSAGE.SUCCESS}
+        <div>
+            <div className="form-success-message">
+                {MESSAGE.SUCCESS}
+            </div>
+            <div>
+                <Link to="/login" className="btn-link create-account">Back to Login</Link>
+            </div>
         </div>
     );
 

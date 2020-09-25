@@ -29,9 +29,16 @@ const validateName = (value, nameType) => {
         return fieldStatus;
     }
 
+    if(!isLength(value, { max: 50})) {
+        fieldStatus.isValid =  false;
+        fieldStatus.errorMessages.push("Maximum limit is 50 characters")
+
+        return fieldStatus;
+    }
+
     if(!isAlpha(value)){
         fieldStatus.isValid =  false;
-        fieldStatus.errorMessages.push("Firstname must not contain numbers")
+        fieldStatus.errorMessages.push(`${nameType} must not contain numbers or special characters`)
 
         return fieldStatus;
     }
