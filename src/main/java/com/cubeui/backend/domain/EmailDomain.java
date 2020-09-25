@@ -19,6 +19,9 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UpdateTimestamp;
 
+/**TODO
+ * Remove this entity in new release
+ */
 @Entity
 @Table(name="email_domains")
 @Data
