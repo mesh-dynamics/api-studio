@@ -1329,8 +1329,6 @@ class HttpClientTabs extends Component {
             dispatch
         } = this.props;
 
-        const {httpClient: {tabs, selectedTabKey, showSaveModal, historyTabState}} = this.props;
-
         const app = selectedApp;
 
         const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
