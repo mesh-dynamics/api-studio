@@ -93,14 +93,18 @@ public class CubeServerService {
 
     public Optional<Replay> getReplay(String replayId) {
         final String path  = cubeServerBaseUrlReplay + "/rs/status/" + replayId;
+        return getData(path, Replay.class);
+    }
+
+    public <T> Optional<T> getData(String path, Class<T> valueType) {
         final ResponseEntity  response = fetchGetResponse(path, null);
         if (response.getStatusCode() == HttpStatus.OK) {
             try {
                 final String body = response.getBody().toString();
-                final Replay replay = jsonMapper.readValue(body, Replay.class);
-                return Optional.of(replay);
+                final T data = jsonMapper.readValue(body, valueType);
+                return Optional.of(data);
             } catch (Exception e) {
-                log.info("Error in converting Json to Replay" + replayId + " message"  + e.getMessage());
+                log.info("Error in converting Json to value=" + valueType + ", path="  + path + " message"  + e.getMessage());
                 return Optional.empty();
             }
         }
@@ -108,42 +112,29 @@ public class CubeServerService {
             log.error("Error while retrieving the data from "+ path + " with statusCode="+ response.getStatusCode() +", message="+response.getBody());
             return Optional.empty();
         }
+
     }
 
     public Optional<Recording> getRecording(String recordingId) {
         final String path  = cubeServerBaseUrlRecord + "/cs/status/" + recordingId;
-        final ResponseEntity  response = fetchGetResponse(path, null);
+        return getData(path, Recording.class);
+    }
+
+    public <T> Optional<List<T>> getListData(ResponseEntity response, String request, Optional<String> getField, ObjectReader reader) {
         if (response.getStatusCode() == HttpStatus.OK) {
             try {
                 final String body = response.getBody().toString();
-                final Recording recording = jsonMapper.readValue(body, Recording.class);
-                return Optional.of(recording);
+                List<T> data = new ArrayList<>();
+                if(getField.isPresent()) {
+                    JsonNode json = jsonMapper.readTree(body);
+                    JsonNode responseBody = json.get(getField.get());
+                    data = reader.readValue(responseBody);
+                } else {
+                    data = reader.readValue(body);
+                }
+                return Optional.of(data);
             } catch (Exception e) {
-                log.info("Error in converting Json to Recording" + recordingId + " message"  + e.getMessage());
-                return Optional.empty();
-            }
-        }
-        else {
-            log.error("Error while retrieving the data from "+ path + " with statusCode="+ response.getStatusCode() +", message="+response.getBody());
-            return Optional.empty();
-        }
-    }
-
-    public Optional<Recording> searchRecording(String query) {
-        String path = cubeServerBaseUrlRecord + "/cs/searchRecording";
-        ResponseEntity response = fetchGetResponse(path, query);
-        return getRecordingFromResponseEntity(response, path+ "?" +query);
-    }
-
-    public Optional<Recording> getRecordingFromResponseEntity(ResponseEntity response, String request) {
-        if (response.getStatusCode() == HttpStatus.OK) {
-            try {
-                final String body = response.getBody().toString();
-                TypeReference<List<Recording>> mapType = new TypeReference<List<Recording>>() {};
-                final List<Recording> recordings = jsonMapper.readValue(body, mapType);
-                return recordings.stream().findFirst();
-            } catch (Exception e) {
-                log.info(String.format("Error in converting Json to Recording for request=%s, message= %s", request, e.getMessage()));
+                log.info(String.format("Error in converting Json to response List for request=%s, message= %s", request, e.getMessage()));
                 return Optional.empty();
             }
         }
@@ -151,6 +142,22 @@ public class CubeServerService {
             log.error(String.format("Error while retrieving the data for request=%s, statusCode=%s, message=%s", request, response.getStatusCode(), response.getBody()));
             return Optional.empty();
         }
+    }
+
+    public Optional<Recording> searchRecording(String query) {
+        String path = cubeServerBaseUrlRecord + "/cs/searchRecording";
+        ObjectReader reader = jsonMapper.readerFor(new TypeReference<List<Recording>>() {
+        });
+        ResponseEntity response = fetchGetResponse(path, query);
+        Optional<List<Recording>> recordings = getListData(response, path+query, Optional.of("recordings"), reader);
+        return recordings.map(r -> r.stream().findFirst()).orElse(Optional.empty());
+    }
+
+    public Optional<Recording> getRecordingFromResponseEntity(ResponseEntity response, String request) {
+        ObjectReader reader = jsonMapper.readerFor(new TypeReference<List<Recording>>() {
+        });
+        Optional<List<Recording>> recordings = getListData(response, request, Optional.empty(), reader);
+        return recordings.map(r -> r.stream().findFirst()).orElse(Optional.empty());
     }
 
     public <T> ResponseEntity fetchPostResponseForUserHistory(HttpServletRequest request,
@@ -163,27 +170,11 @@ public class CubeServerService {
 
     public Optional<List<ApiTraceResponse>> getApiTrace(HttpServletRequest request, String customerId, String app) {
         String path = cubeServerBaseUrlReplay + String.format("/as/getApiTrace/%s/%s", customerId, app);
+        ObjectReader reader = jsonMapper.readerFor(new TypeReference<List<ApiTraceResponse>>() {
+        });
         ResponseEntity response = fetchGetResponse(path, request.getQueryString());
-        if (response.getStatusCode() == HttpStatus.OK) {
-            try {
-                final String body = response.getBody().toString();
-                JsonNode json = jsonMapper.readTree(body);
-                JsonNode responseBody = json.get("response");
-                ObjectReader reader = jsonMapper.readerFor(new TypeReference<List<ApiTraceResponse>>() {
-                });
-                final List<ApiTraceResponse> apiTraceResponses = reader.readValue(responseBody);
-                return Optional.of(apiTraceResponses);
-            } catch (Exception e) {
-                log.info(String.format("Error in converting Json to ApiTraceResponse for customerId=%s, app=%s, message= %s",
-                    customerId, app, e.getMessage()));
-                return Optional.empty();
-            }
-        }
-        else {
-            log.error(String.format("Error while retrieving the data from path=%s , statusCode=%s, message=%s",
-                path, response.getStatusCode(), response.getBody()));
-            return Optional.empty();
-        }
+        Optional<List<ApiTraceResponse>> apiTraceResponses = getListData(response, path+request.getQueryString(), Optional.of("response"), reader);
+        return apiTraceResponses;
     }
 
     public String getPathForHttpMethod(String uri , String method , String... lastParams){
