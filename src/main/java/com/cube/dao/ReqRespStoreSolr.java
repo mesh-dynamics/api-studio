@@ -1928,7 +1928,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(SERVICEF , key.getServiceId());
         doc.setField(TYPEF , type);
         doc.setField(VERSIONF, key.getVersion());
-        doc.setField(METHODF, key.getMethod());
+        if (!DEFAULT_METHOD.equals(key.getMethod())) doc.setField(METHODF, key.getMethod());
         return doc;
     }
 
