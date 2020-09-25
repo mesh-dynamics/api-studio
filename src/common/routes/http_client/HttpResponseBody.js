@@ -26,6 +26,18 @@ class HttpResponseBody extends Component {
         this.props.updateParam(isOutgoingRequest, tabId, "responseBody", "responseBody", value[1]);
     }
 
+    shouldComponentUpdate(nextProps, nextState){
+        if(this.props.responseBody != nextProps.responseBody
+            || this.props.responseBodyType != nextProps.responseBodyType
+            || this.props.recordedResponseBody != nextProps.recordedResponseBody
+            || this.props.showBody != nextProps.showBody
+            || this.props.isOutgoingRequest != nextProps.isOutgoingRequest
+            || this.props.tabId != nextProps.tabId){
+                return true;
+        }
+        return false;
+    }
+
     render() {
         const { showBody, tabId } = this.props;
         return showBody ? (

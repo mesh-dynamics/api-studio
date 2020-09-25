@@ -1319,10 +1319,17 @@ class HttpClientTabs extends Component {
 
     saveToCollection(isOutgoingRequest, tabId, recordingId, type, runId="") {
         const { 
-            httpClient: { tabs: tabsToProcess, showSaveModal }, 
+            httpClient: { 
+                showSaveModal, 
+                selectedTabKey, 
+                historyTabState, 
+                tabs: tabsToProcess
+            }, 
             cube: { selectedApp }, 
             dispatch
         } = this.props;
+
+        const {httpClient: {tabs, selectedTabKey, showSaveModal, historyTabState}} = this.props;
 
         const app = selectedApp;
 
@@ -1383,7 +1390,10 @@ class HttpClientTabs extends Component {
                             dispatch(httpClientActions.postSuccessSaveToCollection(tabId, showSaveModal ? true : false, "Saved Successfully!"));
                         }
                         setTimeout(() => {
-                            dispatch(httpClientActions.loadFromHistory());
+                            if(historyTabState.currentPage == 0)
+                            {
+                                dispatch(httpClientActions.refreshHistory());
+                            }
                             dispatch(httpClientActions.loadUserCollections());
                             // update api catalog golden and collection lists
                             dispatch(apiCatalogActions.fetchGoldenCollectionList(app, "Golden"))

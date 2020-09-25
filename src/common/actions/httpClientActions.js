@@ -1,6 +1,7 @@
 import { cubeService } from "../services";
 import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from "lodash";
+import { getDefaultTraceApiFilters } from "../utils/api-catalog/api-catalog-utils";
 import arrayToTree from 'array-to-tree';
 
 export const httpClientActions = {
@@ -68,15 +69,26 @@ export const httpClientActions = {
         return {type: httpClientConstants.ADD_USER_HISTORY_COLLECTION, data: {userHistoryCollection}};
     },
 
-    addCubeRunHistory: (apiTraces, cubeRunHistory) => {
-        return {type: httpClientConstants.ADD_CUBE_RUN_HISTORY, data: {apiTraces, cubeRunHistory}};
+    setHistoryLoading: (isLoading) => {
+        return {type: httpClientConstants.SET_HISTORY_LOADING, data: isLoading};
     },
+    setCollectionLoading: (isLoading) => {
+        return {type: httpClientConstants.SET_COLLECTION_LOADING, data: isLoading};
+    },
+
+    addCubeRunHistory: (apiTraces, cubeRunHistory, historyTabState) => {
+        return {type: httpClientConstants.ADD_CUBE_RUN_HISTORY, data: {apiTraces, cubeRunHistory, historyTabState}};
+    },
+    
     deleteCubeRunHistory: (userCollectionId) => {
         return {type: httpClientConstants.DELETE_CUBE_RUN_HISTORY, data: userCollectionId};
     },
+    setCollectionTabState: (collectionTabState) => {
+        return {type: httpClientConstants.SET_COLLECTION_TAB_STATE, data: collectionTabState};
+    },
 
     addUserCollections: (userCollections) => {
-        return {type: httpClientConstants.ADD_USER_COLLECTIONS, data: {userCollections}};
+        return {type: httpClientConstants.ADD_USER_COLLECTIONS, data: {userCollections, isCollectionLoading: false}};
     },
     deleteUserCollection: (userCollectionId) => {
         return {type: httpClientConstants.DELETE_USER_COLLECTION, data: userCollectionId};
@@ -230,67 +242,230 @@ export const httpClientActions = {
 
     toggleShowTrace: (tabId) => ({type: httpClientConstants.TOGGLE_SHOW_TRACE, data: {tabId}}),
 
+    loadHistoryApiCall : async(app, collection, endTime, numResults)=> {
+        
+        const filterData = {
+            ...getDefaultTraceApiFilters(),
+            app, endTime, 
+            collectionName: collection.collec,
+            depth: 100,
+            numResults
+        }
+        const res = await cubeService.fetchAPITraceData(filterData);
+        const apiTraces = res.response;
+        const count = res.numFound;
+        const cubeRunHistory = {};
+        apiTraces.sort((a, b) => {
+            return b.res[0].reqTimestamp - a.res[0].reqTimestamp;
+        });
+        apiTraces.forEach((eachApiTrace) => {
+            const timeStamp = eachApiTrace.res[0].reqTimestamp,
+                objectKey = new Date(timeStamp * 1000).toDateString();
+            eachApiTrace.res.map((eachApiTraceEvent) => {
+                eachApiTraceEvent["name"] = eachApiTraceEvent["apiPath"];
+                eachApiTraceEvent["id"] = eachApiTraceEvent["requestEventId"];
+                eachApiTraceEvent["toggled"] = false;
+                eachApiTraceEvent["recordingIdAddedFromClient"] = collection.id;
+                eachApiTraceEvent["traceIdAddedFromClient"] = eachApiTrace.traceId;
+                eachApiTraceEvent["collectionIdAddedFromClient"] = eachApiTrace.collection;
+            });
+
+            if (objectKey in cubeRunHistory) {
+                const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
+                    customID: "spanId", parentProperty: "parentSpanId"
+                });
+                cubeRunHistory[objectKey].push({
+                    ...apiFlatArrayToTree[0]
+                });
+            } else {
+                cubeRunHistory[objectKey] = [];
+                const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
+                    customID: "spanId", parentProperty: "parentSpanId"
+                });
+                cubeRunHistory[objectKey].push({
+                    ...apiFlatArrayToTree[0]
+                });
+            }
+        });
+        let currentEndTime = null;
+        if(apiTraces.length > 0){
+            const lastApiTrace =apiTraces[apiTraces.length -1];
+            if(lastApiTrace.res && lastApiTrace.res.length > 0){
+                const timestamp = lastApiTrace.res[lastApiTrace.res.length -  1].reqTimestamp;
+                var epochInitialTime = new Date(0); 
+                epochInitialTime.setUTCSeconds(timestamp);
+                currentEndTime = epochInitialTime.toISOString();
+            }
+        }
+        return {apiTraces, cubeRunHistory, count, endTime: currentEndTime}
+    },
+
     loadFromHistory: () => async (dispatch, getState) => {
-        const { cube: {selectedApp} } = getState();
+        const { cube: {selectedApp}, httpClient:{historyTabState} } = getState();
         let app = selectedApp;
         try {
-            const serverRes = await cubeService.fetchCollectionList(app, "History", true)
+            const response = await cubeService.fetchCollectionList(app, "History", true);
+            const serverRes = response.recordings;
             const {httpClient: {userHistoryCollection}} = getState();
             const fetchedUserHistoryCollection = serverRes.find((eachCollection) => (eachCollection.recordingType === "History"))
 
-            if(!userHistoryCollection && fetchedUserHistoryCollection) {
+            if(fetchedUserHistoryCollection) {
                 dispatch(httpClientActions.addUserHistoryCollection(fetchedUserHistoryCollection));
-            }
-
-            const startTime = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-            const res = await cubeService.fetchAPITraceData(app, startTime, null, null, null, null, null, fetchedUserHistoryCollection.collec, 100)
-            const apiTraces = res.response;
-            const cubeRunHistory = {};
-            apiTraces.sort((a, b) => {
-                return b.res[0].reqTimestamp - a.res[0].reqTimestamp;
-            });
-            apiTraces.forEach((eachApiTrace) => {
-                const timeStamp = eachApiTrace.res[0].reqTimestamp,
-                    objectKey = new Date(timeStamp * 1000).toDateString();
-                eachApiTrace.res.map((eachApiTraceEvent) => {
-                    eachApiTraceEvent["name"] = eachApiTraceEvent["apiPath"];
-                    eachApiTraceEvent["id"] = eachApiTraceEvent["requestEventId"];
-                    eachApiTraceEvent["toggled"] = false;
-                    eachApiTraceEvent["recordingIdAddedFromClient"] = fetchedUserHistoryCollection.id;
-                    eachApiTraceEvent["traceIdAddedFromClient"] = eachApiTrace.traceId;
-                    eachApiTraceEvent["collectionIdAddedFromClient"] = eachApiTrace.collection;
-                });
-
-                if (objectKey in cubeRunHistory) {
-                    const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
-                        customID: "spanId", parentProperty: "parentSpanId"
-                    });
-                    cubeRunHistory[objectKey].push({
-                        ...apiFlatArrayToTree[0]
-                    });
-                } else {
-                    cubeRunHistory[objectKey] = [];
-                    const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
-                        customID: "spanId", parentProperty: "parentSpanId"
-                    });
-                    cubeRunHistory[objectKey].push({
-                        ...apiFlatArrayToTree[0]
-                    });
+            
+                dispatch(httpClientActions.setHistoryLoading(true));
+                const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(app, fetchedUserHistoryCollection, null, historyTabState.numResults)
+                
+                const initialHistoryTabState = {
+                    ...historyTabState, 
+                    currentPage: 0,
+                    oldPagesData:[{
+                        endTime
+                    }],
+                    count
                 }
-            });
-            dispatch(httpClientActions.addCubeRunHistory(apiTraces, cubeRunHistory));
+                dispatch(httpClientActions.addCubeRunHistory(apiTraces, cubeRunHistory, initialHistoryTabState));
+            }
         } catch (error) {
             console.error("Error ", error);
             throw new Error("Error");
         }
     },
 
-    loadUserCollections: () => async (dispatch, getState) => {
-        const { cube: {selectedApp} } = getState();
+    refreshHistory: ()=> async(dispatch, getState)=>{
+        //loadFromHistory: Use to forcefully reset the state of history Tab and load recent data for first page
+        //refreshHistory: Optionaly load the data. If user is on different page in History tab, then will not load the data. 
+        //       User will either reload History, or move to first page
+        //       This will use a redux state in httpClient: historyTabState
+        const { httpClient: { historyTabState } } = getState();
+        if(historyTabState.currentPage == 0){
+            dispatch(httpClientActions.loadFromHistory());
+        }
+
+    },
+    historyTabNextPage: ()=> async(dispatch, getState)=>{
+        const { cube: {selectedApp}, httpClient:{historyTabState, userHistoryCollection} } = getState();
+        let app = selectedApp;
+        try {    
+            const currentPageEndTime = historyTabState.oldPagesData[historyTabState.currentPage];
+            dispatch(httpClientActions.setHistoryLoading(true));
+            const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(app, userHistoryCollection, currentPageEndTime.endTime, historyTabState.numResults);
+            
+            const initialHistoryTabState = {
+                ...historyTabState,
+                currentPage: historyTabState.currentPage + 1,
+                oldPagesData:[
+                    ...historyTabState.oldPagesData, 
+                    {
+                        endTime
+                }],
+            }
+            dispatch(httpClientActions.addCubeRunHistory(apiTraces, cubeRunHistory, initialHistoryTabState));
+        } catch (error) {
+            console.error("Error ", error);
+            throw new Error("Error");
+        }
+    },
+    historyTabFirstPage: ()=> async(dispatch, getState)=>{
+
+        const { cube: {selectedApp}, httpClient:{historyTabState, userHistoryCollection} } = getState();
+        let app = selectedApp;
+        try {            
+            dispatch(httpClientActions.setHistoryLoading(true));
+            const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(app, userHistoryCollection, null, historyTabState.numResults);
+            
+            const initialHistoryTabState = {
+                ...historyTabState,
+                currentPage: 0,
+                oldPagesData:[
+                    {
+                        endTime
+                }],
+                count
+            }
+            dispatch(httpClientActions.addCubeRunHistory(apiTraces, cubeRunHistory, initialHistoryTabState));
+        } catch (error) {
+            console.error("Error ", error);
+            throw new Error("Error");
+        }
+    },
+    historyTabPrevPage: ()=> async(dispatch, getState)=>{
+
+        const { cube: {selectedApp}, httpClient:{historyTabState, userHistoryCollection} } = getState();
+        let app = selectedApp;
+        try {            
+            if(historyTabState.currentPage == 1){
+                dispatch(httpClientActions.historyTabFirstPage());
+            }else{            
+                dispatch(httpClientActions.setHistoryLoading(true));
+                const currentPageEndTime = historyTabState.oldPagesData[historyTabState.currentPage-2];
+                const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(app, userHistoryCollection, currentPageEndTime.endTime);
+                
+                const initialHistoryTabState = {
+                    ...historyTabState,
+                    currentPage: historyTabState.currentPage - 1,
+                    oldPagesData:[
+                        ...historyTabState.oldPagesData.splice(0,historyTabState.oldPagesData.length-2),
+                        { endTime }
+                       ],
+                }
+                dispatch(httpClientActions.addCubeRunHistory(apiTraces, cubeRunHistory, initialHistoryTabState));
+            }
+        } catch (error) {
+            console.error("Error ", error);
+            throw new Error("Error");
+        }
+    },
+
+    collectionTabNextPage: ()=> async(dispatch, getState)=>{
+        const { httpClient:{collectionTabState} } = getState(); 
+        try {    
+             dispatch(httpClientActions.setCollectionLoading(true));
+             dispatch(httpClientActions.setCollectionTabState({...collectionTabState, currentPage: (collectionTabState.currentPage + 1)})); 
+            dispatch(httpClientActions.loadUserCollections(false));
+        } catch (error) {
+            console.error("Error ", error);
+            throw new Error("Error");
+        }
+    },
+    collectionTabFirstPage: ()=> async(dispatch, getState)=>{
+        const { httpClient:{collectionTabState} } = getState(); 
+        try {    
+             dispatch(httpClientActions.setCollectionLoading(true));
+            dispatch(httpClientActions.loadUserCollections(true));
+        } catch (error) {
+            console.error("Error ", error);
+            throw new Error("Error");
+        }
+    },
+    collectionTabPrevPage: ()=> async(dispatch, getState)=>{
+
+        const { httpClient:{collectionTabState} } = getState(); 
+        try {    
+            if(collectionTabState.currentPage == 1){
+                dispatch(httpClientActions.collectionTabFirstPage());
+            }else{ 
+                dispatch(httpClientActions.setCollectionLoading(true));
+                dispatch(httpClientActions.setCollectionTabState({...collectionTabState, currentPage: (collectionTabState.currentPage - 1)}));
+                dispatch(httpClientActions.loadUserCollections(false));
+            }
+        } catch (error) {
+            console.error("Error ", error);
+            throw new Error("Error");
+        }
+    },
+
+    loadUserCollections: (resetToFirstPage = true) => async (dispatch, getState) => {
+        const { cube: {selectedApp}, httpClient: {collectionTabState} } = getState();
         let app = selectedApp;
         try {
-            const serverRes = await cubeService.fetchCollectionList(app, "UserGolden", true)
+            const currentPage = resetToFirstPage ? 0: collectionTabState.currentPage;
+            const response = await cubeService.fetchCollectionList(app, "UserGolden", true, collectionTabState.numResults, currentPage * collectionTabState.numResults);
+            const serverRes = response.recordings;
             const userCollections = serverRes.filter((eachCollection) => (eachCollection.recordingType !== "History"))
+            if(resetToFirstPage){
+                dispatch(httpClientActions.setCollectionTabState({...collectionTabState, currentPage: 0, count: response.numFound }));
+            }
+
             dispatch(httpClientActions.addUserCollections(userCollections));
         } catch (error) {
             console.error("Error ", error);

@@ -1,0 +1,1 @@
+declare var PLATFORM_ELECTRON : boolean;

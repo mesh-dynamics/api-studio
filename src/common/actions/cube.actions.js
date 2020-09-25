@@ -291,7 +291,8 @@ function getTestIds (app) {
     return async dispatch => {
         dispatch(request());
         try {
-            let collections = await cubeService.fetchCollectionList(app);
+            const data = await cubeService.fetchCollectionList(app);
+            const collections = data.recordings;
             dispatch(success(collections, Date.now()));
         } catch (error) {
             dispatch(failure("Failed to getTestIds", Date.now()));
