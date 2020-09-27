@@ -351,6 +351,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         addSort(query , SCOREF , false);
         addSort(query, TIMESTAMPF, eventQuery.isSortOrderAsc());
+        addSort(query, IDF, true);
 
         if(queryBuff.length()!=0){
             query.setQuery(queryBuff.toString());
@@ -462,6 +463,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, COLLECTIONF, collection);
         addFilter(query, SERVICEF, funcReqResponse.service);
         addSort(query, TIMESTAMPF, true);
+        addSort(query, IDF, true);
         funcReqResponse.traceId.ifPresent(trace -> addFilter(query, HDRTRACEF, trace));
         Arrays.asList(funcReqResponse.argsHash).forEach(argHashVal ->
             addFilter(query, FUNC_ARG_HASH_PREFIX + ++counter.x + INT_SUFFIX, argHashVal));
@@ -1047,6 +1049,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             addFilter(query, APPF, app);
             addFilter(query, CUSTOMERIDF, customer);
             addSort(query, TIMESTAMPF, false); // descending
+            addSort(query, IDF, true);
             Optional<Integer> maxResults = Optional.of(1);
 
             return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(this::solrDocToTemplateSet);
@@ -2977,6 +2980,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             addFilter(query, SERVICEF, apiTraceFacetQuery.service);
         }
         addSort(query, TIMESTAMPF, false /* desc */);
+        addSort(query, IDF, true);
 
         return SolrIterator.getResults(solr, query, numberOfResults,
             this::docToEvent, start);
@@ -3152,6 +3156,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 .orElse(false);
         addFilter(query, RECORDING_TYPE_F, recordingType, true, includeEmpty);
         addSort(query, TIMESTAMPF, false); // descending
+        addSort(query, IDF, true);
 
         //Optional<Integer> maxresults = Optional.of(1);
         return SolrIterator.getResults(solr, query, numberOfResults,
@@ -3193,7 +3198,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, CUSTOMERIDF, customerId);
         addFilter(query, APPF, app);
         addFilter(query, GOLDEN_NAMEF, name);
-        label.ifPresentOrElse( l -> addFilter(query, GOLDEN_LABELF, l), () -> addSort(query, TIMESTAMPF, false));
+        label.ifPresentOrElse( l -> addFilter(query, GOLDEN_LABELF, l), () -> {addSort(query, TIMESTAMPF, false); addSort(query, IDF, true);});
         return SolrIterator.getSingleResult(solr, query).flatMap(doc -> docToRecording(doc));
     }
 
