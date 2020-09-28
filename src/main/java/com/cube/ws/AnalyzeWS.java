@@ -1530,7 +1530,7 @@ public class AnalyzeWS {
   }
 
   private String getTraceKeyFromEvent(Event event) {
-      return  event.getTraceId() + " " +  event.getCollection() + " " + event.runId.orElse("NA");
+      return  event.getTraceId() + " " +  event.getCollection() + " " + event.runId;
   }
 
   private ApiTraceResponse getApiTraceResponse(Event parentRequestEvent, int depth, List<Event> eventsForTraceId) {

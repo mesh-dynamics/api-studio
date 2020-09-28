@@ -1539,7 +1539,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(PATHF, event.apiPath);
         doc.setField(EVENTTYPEF, event.eventType.toString());
         doc.setField(RECORDING_TYPE_F, event.recordingType.toString());
-        event.runId.ifPresent(runId -> doc.setField(RUNIDF, runId));
+        doc.setField(RUNIDF, event.runId);
         try {
             doc.setField(PAYLOADSTRF, config.jsonMapper.writeValueAsString(event.payload));
         } catch (JsonProcessingException e) {
@@ -1594,8 +1594,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             , app.orElse(null), service.orElse(null), instanceId.orElse(null)
             , collection.orElse(null), new MDTraceInfo(traceid.orElse(null)
             , spanId.orElse(null), parentSpanId.orElse(null)), runType.orElse(null)
-            , timestamp, reqId.orElse(null), path.orElse(""), eType, recordingType.orElse(RecordingType.Golden)).withMetaData(eventMetaDataMap)
-            .withRunId(runId);
+            , timestamp, reqId.orElse(null), path.orElse(""), eType, recordingType.orElse(RecordingType.Golden))
+            .withRunId(runId.orElse(traceid.orElse(null))).withMetaData(eventMetaDataMap);
         // TODO revisit this need to construct payload properly from type and json string
         try {
             payloadStr.ifPresent(UtilException.rethrowConsumer(payload ->
@@ -1903,7 +1903,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             DYNAMIC_INJECTION_CONFIG_VERSIONF, DIConfVersion));
         replay.staticInjectionMap.ifPresent(sim -> doc.setField(
             STATIC_INJECTION_MAPF, sim));
-        replay.runId.ifPresent(runId -> doc.setField(RUNIDF, runId));
+        doc.setField(RUNIDF, replay.runId);
 
         return doc;
     }
