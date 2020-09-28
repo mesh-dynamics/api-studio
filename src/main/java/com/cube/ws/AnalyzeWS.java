@@ -1650,7 +1650,7 @@ public class AnalyzeWS {
 				lhsRequestEvent.customerId,
 				lhsRequestEvent.app, lhsRequestEvent.service, lhsRequestEvent.apiPath,
 				Type.RequestCompare, io.md.utils.Utils.extractMethod(lhsRequestEvent)
-				, Optional.of(recording.collection));
+				, recording.collection);
 			Comparator reqComparator = rrstore
 				.getComparator(reqCompareKey, lhsRequestEvent.eventType);
 				reqCompareRes = reqComparator.compare(lhsRequestEvent.payload, rhsRequestEvent.payload);
@@ -1658,7 +1658,7 @@ public class AnalyzeWS {
 				lhsRequestEvent.customerId,
 				lhsRequestEvent.app, lhsRequestEvent.service, lhsRequestEvent.apiPath,
 				Type.ResponseCompare, io.md.utils.Utils.extractMethod(lhsRequestEvent)
-				, Optional.of(recording.collection));
+				, recording.collection);
 
 			if (lhsResponseEventOpt.isPresent() && rhsResponseEventOpt.isPresent()) {
 				Event lhsResponseEvent = lhsResponseEventOpt.get();

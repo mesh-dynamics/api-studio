@@ -135,7 +135,7 @@ public class StoreUtils {
 			}
 
 			TemplateKey tkey = new TemplateKey(templateVersion, customerId.get(),
-				app.get(), service.get(), path, Type.RequestMatch, Optional.of(method), collection);
+				app.get(), service.get(), path, Type.RequestMatch, Optional.of(method), collection.get());
 
 			Comparator requestComparator = null;
 			try {
@@ -260,7 +260,7 @@ public class StoreUtils {
 
 				event.parseAndSetKey(rrstore.getTemplate(event.customerId, event.app, event.service, event.apiPath,
 					recordOrReplay.get().getTemplateVersion(), Type.RequestMatch, Optional.ofNullable(event.eventType),
-					method , recordOrReplay.get().getCollection()),
+					method , collection.get()),
                     classLoader);
 			} catch (TemplateNotFoundException e) {
 				throw new CubeStoreException(e, "Compare Template Not Found", event);

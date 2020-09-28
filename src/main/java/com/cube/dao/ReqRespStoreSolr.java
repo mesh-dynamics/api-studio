@@ -655,7 +655,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         templateSet.templates.forEach(UtilException.rethrowConsumer(template -> {
             TemplateKey templateKey = new TemplateKey(templateSet.version, templateSet.customer,
                 templateSet.app,
-                template.service , template.requestPath, template.type, Optional.of(template.method), Optional.empty());
+                template.service , template.requestPath, template.type, template.method);
                 templateIds.add(saveCompareTemplate(templateKey, config.jsonMapper.writeValueAsString(template)));
         }));
         Optional<String> ruleMapId = templateSet.appAttributeRuleMap.map(ruleMap ->
@@ -1931,7 +1931,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(SERVICEF , key.getServiceId());
         doc.setField(TYPEF , type);
         doc.setField(VERSIONF, key.getVersion());
-        if (!DEFAULT_METHOD.equals(key.getMethod())) doc.setField(METHODF, key.getMethod());
+        if (key.getMethod().isPresent()) doc.setField(METHODF, key.getMethod());
         return doc;
     }
 
@@ -2152,8 +2152,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query , SERVICEF , key.getServiceId());
         addWeightedPathFilter(query , PATHF , key.getPath());
         addFilter(query, VERSIONF, key.getVersion(), true);
-        if (!key.getMethod().equals(DEFAULT_METHOD)) {
-            addFilter(query, METHODF, Optional.of(key.getMethod()) , true , true);}
+        if (key.getMethod().isPresent()) {
+            addFilter(query, METHODF, key.getMethod() , true , true);}
         //addFilter(query, PATHF , key.getPath());
         Optional<Integer> maxResults = Optional.of(1);
         Optional<CompareTemplate> fromSolr =  SolrIterator.getStream(solr , query , maxResults)

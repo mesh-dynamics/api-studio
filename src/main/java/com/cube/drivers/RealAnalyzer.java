@@ -236,7 +236,7 @@ public class RealAnalyzer implements Analyzer {
             Optional<String> method = io.md.utils.Utils.extractMethod(recordreq);
             TemplateKey reqCompareKey = new TemplateKey(templateVersion, recordreq.customerId,
                 recordreq.app, recordreq.service, recordreq.apiPath, Type.RequestCompare,
-                method, Optional.ofNullable(replayreq.getCollection()));
+                method, replayreq.getCollection());
             Comparator reqComparator = rrstore.getComparator(reqCompareKey, recordreq.eventType);
             if (reqComparator.getCompareTemplate().getRules() != null &&
                 ! reqComparator.getCompareTemplate().getRules().isEmpty()) {
@@ -248,7 +248,7 @@ public class RealAnalyzer implements Analyzer {
             }
             TemplateKey respCompareKey = new TemplateKey(templateVersion, recordreq.customerId,
                 recordreq.app, recordreq.service, recordreq.apiPath, Type.ResponseCompare,
-                method, Optional.ofNullable(replayreq.getCollection()));
+                method, replayreq.getCollection());
 
             if (recordedResponse.isPresent() && replayresp.isPresent()) {
                 Event recordedr = recordedResponse.get();

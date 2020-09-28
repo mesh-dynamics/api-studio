@@ -14,16 +14,20 @@ import io.md.core.ValidateCompareTemplate;
 public class CompareTemplateVersioned extends CompareTemplate {
 
     @JsonProperty("service")
-    public String service;
+    public final String service;
     @JsonProperty("requestPath")
     public String requestPath;
     @JsonProperty("type")
-    public Type type;
+    public final Type type;
     @JsonProperty("method")
-    public String method;
+    public final Optional<String> method;
 
     public CompareTemplateVersioned() {
         super();
+        this.service = "";
+        this.requestPath = "";
+        this.type = Type.DontCare;
+        this.method = Optional.empty();
     }
 
     public CompareTemplateVersioned(Optional<String> service, Optional<String> requestPath,
@@ -34,13 +38,13 @@ public class CompareTemplateVersioned extends CompareTemplate {
             return CompareTemplate.normaliseAPIPath(reqPath);
         }).orElse("");
         this.type = type;
-        this.method = method.orElse(DEFAULT_METHOD);
+        this.method = method;
         setRules(contained.getRules());
     }
 
-    public CompareTemplateVersioned(CompareTemplateVersioned source) {
+    /*public CompareTemplateVersioned(CompareTemplateVersioned source) {
         this(source, source.getRules());
-    }
+    }*/
 
     public CompareTemplateVersioned(CompareTemplateVersioned source
         , Collection<TemplateEntry> newRules) {
@@ -65,6 +69,6 @@ public class CompareTemplateVersioned extends CompareTemplate {
     }
 
     public static CompareTemplateVersioned EMPTY_COMPARE_TEMPLATE_VERSION = new CompareTemplateVersioned(Optional.of(io.md.constants.Constants.NOT_APPLICABLE),
-        Optional.of(io.md.constants.Constants.NOT_APPLICABLE), Optional.of(DEFAULT_METHOD),
+        Optional.of(io.md.constants.Constants.NOT_APPLICABLE), Optional.empty(),
         Type.DontCare, new CompareTemplate(""));
 }
