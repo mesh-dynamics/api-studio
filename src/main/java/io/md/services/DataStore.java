@@ -48,10 +48,9 @@ public interface DataStore {
      */
     Optional<Event> getResponseEvent(String reqId);
 
-
     CompareTemplate getTemplate(String customerId, String app, String service, String apiPath,
         String templateVersion, Type templateType,
-        Optional<Event.EventType> eventType) throws TemplateNotFoundException;
+        Optional<Event.EventType> eventType, Optional<String> method, String recordingId) throws TemplateNotFoundException;
 
     /**
      *

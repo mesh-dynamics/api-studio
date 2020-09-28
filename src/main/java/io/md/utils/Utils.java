@@ -636,4 +636,10 @@ public class Utils {
 		return service.concat("-").concat(traceId)
 				.concat("-").concat(UUID.randomUUID().toString());
 	}
+
+	public static Optional<String> extractMethod(Event event) {
+		if (event.payload instanceof HTTPRequestPayload) return
+				Optional.ofNullable(((HTTPRequestPayload) event.payload).getMethod());
+		return Optional.empty();
+	}
 }

@@ -26,6 +26,7 @@ import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Event.EventType;
 import io.md.dao.EventQuery;
+import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.MockWithCollection;
@@ -136,7 +137,8 @@ public class RealMocker implements Mocker {
             event.setCollection(replayCollection.get());
             try {
                 event.parseAndSetKey(cube.getTemplate(event.customerId, event.app, event.service,
-                    event.apiPath, templateVersion.get(), Type.RequestMatch, Optional.ofNullable(event.eventType)));
+                    event.apiPath, templateVersion.get(), Type.RequestMatch
+                    , Optional.ofNullable(event.eventType), Utils.extractMethod(event), replayCollection.get()));
                 event.setRunId(runId);
             } catch (TemplateNotFoundException e) {
                 LOGGER.error(Utils.createLogMessasge(
