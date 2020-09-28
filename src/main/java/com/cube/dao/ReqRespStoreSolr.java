@@ -654,8 +654,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         List<String> templateIds = new ArrayList<>();
         templateSet.templates.forEach(UtilException.rethrowConsumer(template -> {
             TemplateKey templateKey = new TemplateKey(templateSet.version, templateSet.customer,
-                templateSet.app,
-                template.service , template.requestPath, template.type, template.method);
+                templateSet.app, template.service, template.requestPath, template.type, template.method, DEFAULT_RECORDING);
                 templateIds.add(saveCompareTemplate(templateKey, config.jsonMapper.writeValueAsString(template)));
         }));
         Optional<String> ruleMapId = templateSet.appAttributeRuleMap.map(ruleMap ->

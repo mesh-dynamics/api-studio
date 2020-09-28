@@ -877,7 +877,7 @@ public class CubeStore {
                     getTemplate(defaultReqEvent.customerId, defaultReqEvent.app, defaultReqEvent.service,
                         defaultReqEvent.apiPath, DEFAULT_TEMPLATE_VER,
                         Type.RequestMatch, Optional.ofNullable(defaultReqEvent.eventType)
-                        , Optional.empty()));
+                        , Optional.empty(), UUID.randomUUID().toString()));
             } catch (TemplateNotFoundException e) {
                 LOGGER.error(new ObjectMessage(
                     Map.of(Constants.EVENT_TYPE_FIELD, defaultReqEvent.eventType,
@@ -1494,7 +1494,7 @@ public class CubeStore {
 
                         TemplateKey tkey = new TemplateKey(rec.templateVersion, request.customerId,
                             request.app, request.service, request.apiPath, Type.RequestMatch,
-                            io.md.utils.Utils.extractMethod(request));
+                            io.md.utils.Utils.extractMethod(request), UUID.randomUUID().toString());
                         Comparator comparator = rrstore
                             .getComparator(tkey, request.eventType);
                         final String reqId = io.md.utils.Utils.generateRequestId(
