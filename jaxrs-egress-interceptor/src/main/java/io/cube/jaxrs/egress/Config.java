@@ -18,4 +18,6 @@ public class Config {
 
 	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 
+	private CommonConfig commonConfig = CommonConfig.getInstance();
+
 }
