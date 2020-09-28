@@ -60,7 +60,7 @@ public class Event implements MDStorable {
 			@JsonProperty("reqId") String reqId, @JsonProperty("apiPath") String apiPath,
 			@JsonProperty("eventType") EventType eventType, @JsonProperty("payload") Payload payload,
 			@JsonProperty("payloadKey") int payloadKey, @JsonProperty("recordingType") RecordingType recordingType,
-			@JsonProperty("metaData") Map<String, String> metaData, @JsonProperty("runId") Optional<String> runId) {
+			@JsonProperty("metaData") Map<String, String> metaData, @JsonProperty("runId") String runId) {
 		this.customerId = customerId;
 		this.app = app;
 		this.service = service;
@@ -78,31 +78,7 @@ public class Event implements MDStorable {
 		this.payloadKey = payloadKey;
 		this.recordingType = recordingType != null ? recordingType : RecordingType.Golden;
 		this.metaData = metaData;
-		this.runId = runId != null ? runId : Optional.empty();
-	}
-
-	/**
-	 * For jackson
-	 */
-	private Event() {
-		this.customerId = null;
-		this.app = null;
-		this.service = null;
-		this.instanceId = null;
-		this.collection = null;
-		this.traceId = null;
-		this.spanId = null;
-		this.parentSpanId = null;
-		this.runType = RunType.Record;
-		this.timestamp = null;
-		this.reqId = null;
-		this.apiPath = null;
-		this.eventType = null;
-		this.payload = null;
-		this.payloadKey = 0;
-		this.recordingType = RecordingType.Golden;
-		this.metaData = null;
-		this.runId = Optional.empty();
+		this.runId = runId != null ? runId : this.traceId;
 	}
 
 	public static List<EventType> getRequestEventTypes() {
@@ -260,7 +236,7 @@ public class Event implements MDStorable {
 				payload.applyTransform(rhsEvent.payload, operationList));
 		Event toReturn = new EventBuilder(customerId, app, service, instanceId, newCollection,
 			new MDTraceInfo(this.traceId, this.spanId, this.parentSpanId),
-			runType, Optional.of(timestamp), newReqId, apiPath, eventType, recordingType)
+			runType, Optional.of(timestamp), newReqId, apiPath, eventType, recordingType).withRunId(runId)
 			.setPayload(newPayload.orElse(payload))
 			.createEvent();
 		// set key for request events
@@ -289,7 +265,7 @@ public class Event implements MDStorable {
 	public final String spanId;
 	public final String parentSpanId;
 	private RunType runType;
-	public Optional<String> runId;
+	public String runId;
 
 
 	public void setCollection(String collection) {
@@ -329,7 +305,7 @@ public class Event implements MDStorable {
 	public RunType getRunType() {return this.runType;}
 
 	public void setRunType(RunType runType) {this.runType = runType;}
-	public void setRunId(Optional<String> runId) {this.runId = runId;}
+	public void setRunId(String runId) {this.runId = runId;}
 
 	public static class EventBuilder {
 
@@ -352,7 +328,7 @@ public class Event implements MDStorable {
 		private int payloadKey = 0;
 		private final RecordingType recordingType;
 		private Map<String, String> metaData = Collections.EMPTY_MAP;
-		private Optional<String> runId;
+		private String runId;
 
 
 		public EventBuilder(String customerId, String app, String service, String instanceId,
@@ -373,7 +349,6 @@ public class Event implements MDStorable {
 			this.apiPath = apiPath;
 			this.eventType = eventType;
 			this.recordingType = recordingType;
-			this.runId = Optional.empty();
 		}
 
 		public EventBuilder(CubeMetaInfo cubeMetaInfo, MDTraceInfo mdTraceInfo,
@@ -393,7 +368,6 @@ public class Event implements MDStorable {
 			this.reqId = reqId;
 			this.collection = collection;
 			this.recordingType = recordingType;
-			this.runId = Optional.empty();
 		}
 
 
@@ -412,8 +386,8 @@ public class Event implements MDStorable {
 			return this;
 		}
 
-		public EventBuilder withRunId(Optional<String> rundId) {
-			this.runId = rundId;
+		public EventBuilder withRunId(String runId) {
+			this.runId = runId;
 			return this;
 		}
 

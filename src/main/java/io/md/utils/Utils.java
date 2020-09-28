@@ -216,6 +216,7 @@ public class Utils {
 		RecordingType recordingType = getFirst(meta, Constants.RECORDING_TYPE_FIELD)
 						.flatMap(r -> Utils.valueOf(RecordingType.class, r))
 						.orElse(RecordingType.Golden);
+		String runId = getFirst(meta, Constants.RUN_ID_FIELD).orElse(mdTraceInfo.traceId);
 
 		if (customerId.isPresent() && app.isPresent() && service.isPresent() && (dontCheckCollection
 			|| collection
@@ -223,12 +224,11 @@ public class Utils {
 
 			HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
 				formParams, method.get(), body , apiPath);
-
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId.get(), app.get(),
 				service.get(), instance.orElse(Constants.NOT_APPLICABLE), dontCheckCollection ? Constants.NOT_APPLICABLE : collection.get(),
 				mdTraceInfo, runType.get(), timestamp,
 				reqId.orElse(Constants.NOT_APPLICABLE),
-				apiPath, Event.EventType.HTTPRequest, recordingType).withMetaData(eventMetaData);
+				apiPath, Event.EventType.HTTPRequest, recordingType).withRunId(runId).withMetaData(eventMetaData);
 			eventBuilder.setPayload(httpRequestPayload);
 			Event event = eventBuilder.createEvent();
 
@@ -256,7 +256,7 @@ public class Utils {
 		MultivaluedMap<String, String> hdrs,
 		MDTraceInfo mdTraceInfo, byte[] body,
 		String customerId, String app, String service, String instance,
-		RunType runType, String method, String reqId, RecordingType recordingType)
+		RunType runType, String method, String reqId, RecordingType recordingType, String runId)
 		throws Event.EventBuilder.InvalidEventException {
 
 			HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
@@ -265,7 +265,7 @@ public class Utils {
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId, app,
 				service, instance, Constants.NOT_APPLICABLE,
 				mdTraceInfo, runType, Optional.empty(),
-				reqId, apiPath, Event.EventType.HTTPRequest, recordingType);
+				reqId, apiPath, Event.EventType.HTTPRequest, recordingType).withRunId(runId);
 			eventBuilder.setPayload(httpRequestPayload);
 			Event event = eventBuilder.createEvent();
 			return event;
@@ -281,7 +281,7 @@ public class Utils {
 		Optional<String> collection, Instant timestamp,
 		Optional<Event.RunType> runType, Optional<String> customerId,
 		Optional<String> app,
-		Comparator comparator, Optional<String> runId, RecordingType recordingType)
+		Comparator comparator, String runId, RecordingType recordingType)
 		throws EventBuilder.InvalidEventException {
 
 
@@ -310,9 +310,8 @@ public class Utils {
 				new MDTraceInfo(traceId.orElse(generateTraceId()) , spanId.orElse("NA") , parentSpanId.orElse("NA"))
 				, runType.get(), Optional.of(timestamp),
 				reqId.orElse("NA"),
-				apiPath, Event.EventType.HTTPRequest, recordingType);
+				apiPath, Event.EventType.HTTPRequest, recordingType).withRunId(runId);
 			eventBuilder.setPayload(httpRequestPayload);
-			eventBuilder.withRunId(runId);
 			Event event = eventBuilder.createEvent();
 			event.parseAndSetKey(comparator.getCompareTemplate());
 
@@ -378,6 +377,7 @@ public class Utils {
 		Optional<String> reqId = getFirst(meta, Constants.DEFAULT_REQUEST_ID);
 		Optional<Instant> timestamp = getFirst(meta, Constants.TIMESTAMP_FIELD)
 			.flatMap(Utils::strToTimeStamp);
+		String runId = getFirst(meta, Constants.RUN_ID_FIELD).orElse(mdTraceInfo.traceId);
 		Optional<Integer> status = getFirst(meta, Constants.STATUS).flatMap(sval -> {
 			try {
 				return Optional.of(Integer.valueOf(sval));
@@ -403,7 +403,7 @@ public class Utils {
 				service.get(), instance.orElse(Constants.NOT_APPLICABLE), isRecordedAtSource ? Constants.NOT_APPLICABLE : collection.get(),
 				mdTraceInfo, runType.get(), timestamp,
 				reqId.orElse(Constants.NOT_APPLICABLE),
-				apiPath, Event.EventType.HTTPResponse, recordingType).withMetaData(eventMetaData);
+				apiPath, Event.EventType.HTTPResponse, recordingType).withRunId(runId).withMetaData(eventMetaData);
 			eventBuilder.setPayload(httpResponsePayload);
 			Event event = eventBuilder.createEvent();
 			return event;
@@ -547,14 +547,16 @@ public class Utils {
 		Optional<String> spanId = getFirst(meta, Constants.DEFAULT_SPAN_FIELD);
 		Optional<String> parentSpanId = getFirst(meta, Constants.DEFAULT_PARENT_SPAN_FIELD);
 		RecordingType recordingType = RecordingType.Replay;
-		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceId.orElse(generateTraceId()) ,
+		String traceIdData = traceId.orElse(generateTraceId());
+		String runId = getFirst(meta, Constants.RUN_ID_FIELD).orElse(traceIdData);
+		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceIdData ,
 			spanId.orElse("NA") , parentSpanId.orElse("NA"));
 
 		byte[] bodyBytes = (body != null && (!body.isEmpty())) ?
 			body.getBytes(StandardCharsets.UTF_8) : null;
 
 		return createHTTPRequestEvent(path, queryParams, formParams, headers, mdTraceInfo,
-			bodyBytes, customerId, app, service, instanceId, RunType.Replay, method, requestId, recordingType);
+			bodyBytes, customerId, app, service, instanceId, RunType.Replay, method, requestId, recordingType, runId);
 	}
 
 

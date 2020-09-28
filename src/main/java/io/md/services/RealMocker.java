@@ -6,6 +6,7 @@
 
 package io.md.services;
 
+import io.md.dao.Replay;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -115,23 +116,25 @@ public class RealMocker implements Mocker {
         Optional<String> replayCollection = Optional.empty();
         Optional<String> collection = Optional.empty();
         Optional<String> templateVersion = Optional.empty();
-        Optional<String> runId = Optional.empty();
+        Optional<String> optionalRunId = Optional.empty();
         if (mockWithCollections.isPresent()) {
             MockWithCollection mockWithCollection = mockWithCollections.get();
             replayCollection = Optional.of(mockWithCollection.replayCollection);
             collection = Optional.of(mockWithCollection.recordCollection);
             templateVersion = Optional.of(mockWithCollection.templateVersion);
-            runId = mockWithCollection.runId;
+            optionalRunId = Optional.of(mockWithCollection.runId);
         } else {
             Optional<RecordOrReplay> recordOrReplay = cube.getCurrentRecordOrReplay(event.customerId, event.app, event.instanceId);
             replayCollection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
             collection = recordOrReplay.flatMap(RecordOrReplay::getRecordingCollection);
             templateVersion = recordOrReplay.map(RecordOrReplay::getTemplateVersion);
-            runId = recordOrReplay.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay)
-                .flatMap(replay -> replay.runId);
+            Optional<Replay>  runningReplay = recordOrReplay.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
+            optionalRunId = recordOrReplay.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay)
+                .map(replay -> replay.runId);
         }
         // check collection, validate, fetch template for request, set key and store. If error at any point stop
         if (collection.isPresent() && replayCollection.isPresent() && templateVersion.isPresent()) {
+            String runId = optionalRunId.orElse(event.getTraceId());
             ret = mockWithCollections.isPresent() ? mockWithCollections :
                 Optional.of(new MockWithCollection(replayCollection.get(), collection.get(), templateVersion.get(), runId));
             event.setCollection(replayCollection.get());
@@ -181,7 +184,7 @@ public class RealMocker implements Mocker {
     }
 
     private Optional<Event> createResponseFromEvent(
-        Event mockRequestEvent, Optional<Event> respEvent, Optional<String> runId) {
+        Event mockRequestEvent, Optional<Event> respEvent, String runId) {
 
         Optional<Event> mockResponse = respEvent;
 
@@ -232,7 +235,7 @@ public class RealMocker implements Mocker {
     private Optional<Event> createMockResponseEvent(Event mockRequest, Optional<Event> originalResponse,
         Optional<String> mockReqId,
         String instanceId,
-        String replayCollection, Optional<String> runId)
+        String replayCollection, String runId)
         throws Event.EventBuilder.InvalidEventException {
         Event.EventBuilder builder = new Event.EventBuilder(mockRequest.customerId, mockRequest.app,
             mockRequest.service,

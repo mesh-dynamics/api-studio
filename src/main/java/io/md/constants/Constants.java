@@ -95,6 +95,7 @@ public class Constants {
 	public static final String CUSTOMER_ID_FIELD = "customerId";
 	public static final String APP_FIELD = "app";
 	public static final String SERVICE_FIELD = "service";
+	public static final String RUN_ID_FIELD = "runId";
 	public static final String INSTANCE_ID_FIELD = "instanceId";
 	public static final String COLLECTION_FIELD = "collection";
 	public static final String TYPE_FIELD = "type";

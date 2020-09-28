@@ -7,10 +7,10 @@ public class MockWithCollection {
   public String replayCollection;
   public String recordCollection;
   public String templateVersion;
-  public Optional<String> runId;
+  public String runId;
 
   public MockWithCollection(String replayCollection, String recordCollection,
-      String templateVersion, Optional<String> runId) {
+      String templateVersion, String runId) {
     this.replayCollection = replayCollection;
     this.recordCollection = recordCollection;
     this.templateVersion = templateVersion;

@@ -43,7 +43,7 @@ public class Replay {
 	public Optional<String> dynamicInjectionConfigVersion;
 	public Optional<String> staticInjectionMap;
 	public Instant analysisCompleteTimestamp;
-	public Optional<String> runId;
+	public String runId;
 
 	public Replay(String endpoint, String customerId, String app, String instanceId,
 		String collection, String userId, List<String> reqIds,
@@ -56,7 +56,7 @@ public class Replay {
 		List<String> mockServices,
 		Optional<String> testConfigName, Optional<String> goldenName, Optional<String> recordingId,
 		boolean archived, Optional<String> dynamicInjectionConfigVersion,
-		Instant analysisCompleteTimestamp, Optional<String> staticInjectionMap, Optional<String> runId) {
+		Instant analysisCompleteTimestamp, Optional<String> staticInjectionMap, String runId) {
 		this.endpoint = endpoint;
 		this.customerId = customerId;
 		this.app = app;
@@ -89,7 +89,7 @@ public class Replay {
 		this.dynamicInjectionConfigVersion = dynamicInjectionConfigVersion;
 		this.analysisCompleteTimestamp = analysisCompleteTimestamp;
 		this.staticInjectionMap = staticInjectionMap;
-		this.runId = runId;
+		this.runId = runId != null ? runId : this.replayId;
 	}
 
 	//for deserialization
@@ -121,7 +121,7 @@ public class Replay {
 		dynamicInjectionConfigVersion = Optional.empty();
 		analysisCompleteTimestamp = null;
 		staticInjectionMap = null;
-		runId = Optional.empty();
+		runId = "";
 	}
 
 }

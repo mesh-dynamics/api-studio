@@ -403,7 +403,7 @@ public class CommonUtils {
 
 	public static Optional<Event> createEvent(FnKey fnKey, MDTraceInfo mdTraceInfo,
 		Event.RunType rrType, Optional<Instant> timestamp, FnReqRespPayload payload,
-			RecordingType recordingType) {
+			RecordingType recordingType, String runId) {
 		String reqId = fnKey.service == null ? "" : fnKey.service
 			.concat("-")
 			.concat(mdTraceInfo.traceId == null ? "" : mdTraceInfo.traceId)
@@ -412,7 +412,7 @@ public class CommonUtils {
 		Event.EventBuilder eventBuilder = new Event.EventBuilder(fnKey.customerId, fnKey.app,
 			fnKey.service, fnKey.instanceId, Constants.NOT_APPLICABLE,
 			mdTraceInfo, rrType, timestamp, reqId,
-			fnKey.signature, Event.EventType.JavaRequest, recordingType);
+			fnKey.signature, Event.EventType.JavaRequest, recordingType).withRunId(runId);
 		eventBuilder.setPayload(payload);
 		return eventBuilder.createEventOpt();
 	}
