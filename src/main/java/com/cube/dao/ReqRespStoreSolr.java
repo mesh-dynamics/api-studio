@@ -2152,8 +2152,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query , SERVICEF , key.getServiceId());
         addWeightedPathFilter(query , PATHF , key.getPath());
         addFilter(query, VERSIONF, key.getVersion(), true);
-        if (key.getMethod().isPresent()) {
-            addFilter(query, METHODF, key.getMethod() , true , true);}
+        addFilter(query, METHODF, key.getMethod() , true , true);
         //addFilter(query, PATHF , key.getPath());
         Optional<Integer> maxResults = Optional.of(1);
         Optional<CompareTemplate> fromSolr =  SolrIterator.getStream(solr , query , maxResults)
