@@ -1004,6 +1004,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if(!success) {
             throw new TemplateSet.TemplateSetMetaStoreException("Error saving Template Set Meta Data in Solr");
         }
+        comparatorCache.invalidateAll();
         return id;
     }
 
