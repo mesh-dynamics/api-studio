@@ -6,6 +6,7 @@ package com.cube.core;
 
 import io.md.core.Comparator.Diff;
 import io.md.core.CompareTemplate.DataType;
+import io.md.dao.HTTPRequestPayload;
 import io.md.dao.Recording.RecordingType;
 
 import java.io.IOException;
@@ -281,7 +282,7 @@ public class ServerUtils {
             templateRegistries
                 .stream()
                 .map(registry -> new CompareTemplateVersioned(Optional.of(registry.getService()),
-            Optional.of(registry.getPath()), registry.getType(), registry.getTemplate()))
+            Optional.of(registry.getPath()), Optional.ofNullable(registry.getMethod()), registry.getType(), registry.getTemplate()))
                 .collect(Collectors.toList());
 
         // pass null for version if version is empty and timestamp so that new version number is created automatically
@@ -371,4 +372,5 @@ public class ServerUtils {
 		    return Map.of(Constants.SOLR_STATUS_CODE, -1, Constants.SOLR_STATUS_MESSAGE, "Unable to reach Solr server", Constants.ERROR, sse.getMessage());
 	    }
 	}
+
 }

@@ -654,8 +654,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         List<String> templateIds = new ArrayList<>();
         templateSet.templates.forEach(UtilException.rethrowConsumer(template -> {
             TemplateKey templateKey = new TemplateKey(templateSet.version, templateSet.customer,
-                templateSet.app,
-                template.service , template.requestPath, template.type);
+                templateSet.app, template.service, template.requestPath, template.type, template.method, DEFAULT_RECORDING);
                 templateIds.add(saveCompareTemplate(templateKey, config.jsonMapper.writeValueAsString(template)));
         }));
         Optional<String> ruleMapId = templateSet.appAttributeRuleMap.map(ruleMap ->
@@ -1005,6 +1004,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if(!success) {
             throw new TemplateSet.TemplateSetMetaStoreException("Error saving Template Set Meta Data in Solr");
         }
+        comparatorCache.invalidateAll();
         return id;
     }
 
@@ -1100,6 +1100,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> service = getStrField(doc, SERVICEF);
         Optional<String> compareTemplate = getStrField(doc, COMPARETEMPLATEJSON);
         Optional<String> requestPath = getStrField(doc, PATHF);
+        Optional<String> method = getStrField(doc, METHODF);
         if (type.isEmpty() || service.isEmpty() || compareTemplate.isEmpty() || requestPath.isEmpty()) {
             LOGGER.error("Improper compare-template stored in solr :: " + templateId);
             return Stream.empty();
@@ -1110,7 +1111,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             Type templateType = Utils.valueOf(Type.class, type.get()).orElseThrow(
                 () -> new Exception("Couldn't obtain proper template type from solr doc"));
             CompareTemplateVersioned compareTemplateVersioned = new CompareTemplateVersioned(service , requestPath,
-                templateType, compareTemplateObj);
+               method ,templateType, compareTemplateObj);
             return Stream.of(compareTemplateVersioned);
         } catch (Exception e) {
             LOGGER.error("Error while deserializing compare-template from solr :: " + templateId + " " + e.getMessage());
@@ -1920,7 +1921,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // Sample key in solr ResponseCompareTemplate-1234-bookinfo-getAllBooks--2013106077
         String id = type.concat("-").concat(String.valueOf(Objects.hash(
                 key.getCustomerId() , key.getAppId() , key.getServiceId() , key.getPath()
-                , key.getReqOrResp().toString() , key.getVersion())));
+                , key.getReqOrResp().toString() , key.getVersion() , key.getMethod())));
         doc.setField(IDF , id);
         doc.setField(COMPARETEMPLATEJSON, jsonCompareTemplate);
         String path = key.getPath();
@@ -1930,6 +1931,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(SERVICEF , key.getServiceId());
         doc.setField(TYPEF , type);
         doc.setField(VERSIONF, key.getVersion());
+        if (key.getMethod().isPresent()) doc.setField(METHODF, key.getMethod());
         return doc;
     }
 
@@ -2150,6 +2152,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query , SERVICEF , key.getServiceId());
         addWeightedPathFilter(query , PATHF , key.getPath());
         addFilter(query, VERSIONF, key.getVersion(), true);
+        addFilter(query, METHODF, key.getMethod() , true , true);
         //addFilter(query, PATHF , key.getPath());
         Optional<Integer> maxResults = Optional.of(1);
         Optional<CompareTemplate> fromSolr =  SolrIterator.getStream(solr , query , maxResults)

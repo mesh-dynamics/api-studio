@@ -58,7 +58,7 @@ public class TemplateSetTransformer {
         // This is the key to be set by UI for attributeLevelRules
         TemplateKey attributeTemplateKey = new TemplateKey(sourceTemplateSet.version, sourceTemplateSet.customer,
             sourceTemplateSet.app, io.md.constants.Constants.NOT_APPLICABLE, io.md.constants.Constants.NOT_APPLICABLE,
-            Type.DontCare);
+            Type.DontCare, Optional.empty(),templateSetUpdateSpec.getTemplateUpdateOperationSetId());
 
         // Fetch and store previous existing attribute rules.
         Map<String, TemplateEntry> pathVsEntryAttributes = sourceTemplateSet.appAttributeRuleMap
@@ -67,7 +67,7 @@ public class TemplateSetTransformer {
             }).orElse(new HashMap());
 
         updates.forEach((key , update) -> {
-            if (key.equals(attributeTemplateKey)) {
+            if (key.equals(attributeTemplateKey, true)) {
                 Collection<TemplateEntryOperation> atomicUpdateOperations = update.getOperationList();
 
                 atomicUpdateOperations.forEach(updateOperation -> {
@@ -99,7 +99,7 @@ public class TemplateSetTransformer {
                     }
                     // no need to clone now .. as update will take care of it
                     sourceTemplate = new CompareTemplateVersioned(Optional.of(key.getServiceId())
-                        , Optional.of(key.getPath()), key.getReqOrResp(), template);
+                        , Optional.of(key.getPath()), key.getMethod() , key.getReqOrResp(), template);
                 }
                 CompareTemplateVersioned updated = updateTemplate(sourceTemplate , update);
                 sourceTemplateMap.put(key, updated);

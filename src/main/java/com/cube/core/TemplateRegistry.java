@@ -19,6 +19,8 @@ public class TemplateRegistry {
     */
     @JsonProperty("type")
     private TemplateKey.Type type;
+    @JsonProperty("method")
+    private String method;
 
     // for jackson
     public TemplateRegistry() {
@@ -49,6 +51,9 @@ public class TemplateRegistry {
         this.template = template;
     }
 
+    public void setMethod(String method) {this.method = method;}
+
+    public String getMethod() {return this.method;}
     /*
     public String getId() {
         return id;

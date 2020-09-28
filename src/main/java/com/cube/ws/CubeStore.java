@@ -100,6 +100,7 @@ import com.cube.dao.Result;
 import com.cube.dao.WrapperEvent;
 import com.cube.queue.DisruptorEventQueue;
 import com.cube.queue.RREvent;
+import com.cube.queue.StoreUtils;
 
 //import com.cube.queue.StoreUtils;
 
@@ -875,7 +876,8 @@ public class CubeStore {
                 defaultReqEvent.parseAndSetKey(rrstore.
                     getTemplate(defaultReqEvent.customerId, defaultReqEvent.app, defaultReqEvent.service,
                         defaultReqEvent.apiPath, DEFAULT_TEMPLATE_VER,
-                        Type.RequestMatch, Optional.ofNullable(defaultReqEvent.eventType)));
+                        Type.RequestMatch, Optional.ofNullable(defaultReqEvent.eventType)
+                        , Optional.empty(), UUID.randomUUID().toString()));
             } catch (TemplateNotFoundException e) {
                 LOGGER.error(new ObjectMessage(
                     Map.of(Constants.EVENT_TYPE_FIELD, defaultReqEvent.eventType,
@@ -1491,7 +1493,8 @@ public class CubeStore {
                         }
 
                         TemplateKey tkey = new TemplateKey(rec.templateVersion, request.customerId,
-                            request.app, request.service, request.apiPath, Type.RequestMatch);
+                            request.app, request.service, request.apiPath, Type.RequestMatch,
+                            io.md.utils.Utils.extractMethod(request), UUID.randomUUID().toString());
                         Comparator comparator = rrstore
                             .getComparator(tkey, request.eventType);
                         final String reqId = io.md.utils.Utils.generateRequestId(
@@ -1518,7 +1521,8 @@ public class CubeStore {
                             TemplateKey templateKey = new TemplateKey(rec.templateVersion,
                                 response.customerId,
                                 response.app, response.service, response.apiPath,
-                                Type.ResponseCompare);
+                                Type.ResponseCompare, io.md.utils.Utils.extractMethod(request)
+                                , rec.collection);
                             Comparator respComparator = rrstore
                                 .getComparator(templateKey, response.eventType);
                             Optional<Event> optionalResponseEvent = rrstore
