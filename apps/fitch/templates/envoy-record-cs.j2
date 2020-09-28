@@ -100,10 +100,14 @@ spec:
             function logRequest(handle, cubeEvent)
               local buf = {'{'}
               local listdelim = ', '
-              logEvent(buf,handle,cubeEvent, 'HTTPRequestPayload')
-              buf[#buf+1] = listdelim .. string.format('"method":%q', handle:headers():get(":method") or "")
               local fullPath = cubeEvent["apiPath"]
               local path = string.match(fullPath ,  "[^%?]+")
+              -- set the event apiPath & global apiPath to path without the query params
+              cubeEvent["apiPath"] = path
+              apiPath = path
+
+              logEvent(buf,handle,cubeEvent, 'HTTPRequestPayload')
+              buf[#buf+1] = listdelim .. string.format('"method":%q', handle:headers():get(":method") or "")
               local queryParamsStr = string.match(fullPath , "%?.+")
               -- handle:logErr('path : ' .. path)
               -- handle:logErr('queryParam : ' .. queryParamsStr)
