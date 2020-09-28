@@ -19,6 +19,8 @@ const ResetLink = (props) => {
 
     const [resetRequestSubmitted, setResetRequestSubmitted] = useState(RESET_LINK_REQUEST.NOT_SUBMITTED);
 
+    const [errorMessageFromServer, setErrorMessageFromServer] = useState('');
+
     const emailValidation = validateEmail(activationEmailId);
 
     const handleResetClick = async () => {
@@ -28,16 +30,22 @@ const ResetLink = (props) => {
 
             try {
 
-                const status = await sendResetLink(activationEmailId);
+                const response = await sendResetLink(activationEmailId);
 
-                if(status.ok) {
+                if(response.ok) {
                     setResetRequestSubmitted(RESET_LINK_REQUEST.SUBMITTED);
 
                     setResetLinkGenerated(true);
                 } else {
+                    const responseBody = await response.json();
+
+                    const { message, status } = responseBody;
+
                     setResetRequestSubmitted(RESET_LINK_REQUEST.SUBMITTED);
 
                     setResetLinkGenerated(false);
+
+                    status >= 400 && message && setErrorMessageFromServer(message);
                 }
             } catch(e) {
 
@@ -59,6 +67,10 @@ const ResetLink = (props) => {
     const renderFailureMessage = () => (
         <div className="reset-link-message-container">
             <div>Failed to generate reset link. Please contact your system administrator or try again later.</div>
+            {
+                errorMessageFromServer && 
+                <div className="server-error-message">{errorMessageFromServer}</div> 
+            }
         </div>
     );
 
