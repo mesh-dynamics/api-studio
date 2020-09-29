@@ -11,10 +11,27 @@ public class Constants {
 	public static final String DEFAULT_SPAN_FIELD = "x-b3-spanid";
 	public static final String DEFAULT_PARENT_SPAN_FIELD = "x-b3-parentspanid";
 	public static final String X_REQUEST_ID = "x-request-id";
+	public static final String PARENT_SPAN_ID_PROP_FIELD = "parent-span-id";
 
-	public static final String DEFAULT_BAGGAGE_PARENT_SPAN = "baggage-parent-span-id";
+
+	//public static final String DEFAULT_BAGGAGE_PARENT_SPAN = "baggage-parent-span-id";
 	public static final String MD_BAGGAGE_PARENT_SPAN = MDTextMapCodec.BAGGAGE_KEY_PREFIX_BASE + io.md.constants.Constants.MD_PARENT_SPAN;
 	public static final String MD_TRACE_FIELD = MDTextMapCodec.SPAN_CONTEXT_BASE;
+
+	public static final String ZIPKIN_TRACE_FIELD = "x-b3-trace-id";
+	public static final String ZIPKIN_SPAN_FIELD = "x-b3-span-id";
+	public static final String ZIPKIN_BAGGAGE_KEY_PREFIX = "baggage-";
+	public static final String ZIPKIN_BAGGAGE_PARENT_SPAN = ZIPKIN_BAGGAGE_KEY_PREFIX + PARENT_SPAN_ID_PROP_FIELD;
+
+	public static final String JAEGER_SPAN_CONTEXT_KEY = "uber-trace-id";
+	public static final String JAEGER_BAGGAGE_KEY_PREFIX = "uberctx-";
+	public static final String JAEGER_BAGGAGE_PARENT_SPAN = JAEGER_BAGGAGE_KEY_PREFIX + PARENT_SPAN_ID_PROP_FIELD;
+
+	public static final String DATADOG_TRACE_FIELD = "x-datadog-trace-id";
+	public static final String DATADOG_SPAN_FIELD = "x-datadog-parent-id";
+	public static final String DATADOG_BAGGAGE_KEY_PREFIX = "ot-baggage-";
+	public static final String DATADOG_BAGGAGE_PARENT_SPAN = DATADOG_BAGGAGE_KEY_PREFIX + PARENT_SPAN_ID_PROP_FIELD;
+
 
 	public static final String DEFAULT_TEMPLATE_VER = "DEFAULT";
 
