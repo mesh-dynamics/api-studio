@@ -1,10 +1,10 @@
 import  React , { Component, Fragment, createContext } from "react";
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Table, ButtonGroup, Button, Radio, Tabs, Tab} from 'react-bootstrap';
 
-import HttpRequestMessage from "./HttpRequestMessage";
-import HttpResponseMessage from "./HttpResponseMessage";
+import HttpRequestMessage from "./HttpRequestMessage.tsx";
+import HttpResponseMessage from "./HttpResponseMessage.tsx";
 
-import HttpRequestMessageRO from "./HttpRequestMessageRO";
+import HttpRequestMessageRO from "./HttpRequestMessageRO.tsx";
 
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import config from "../../config";

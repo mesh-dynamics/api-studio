@@ -76,7 +76,7 @@ class APIRequestsTable extends Component {
             .map((traceData) => ({
               check: <input type="checkbox" value={traceData.parentReqId} checked={traceData.checked} onChange={this.handleRowCheckChanged}/>,
               time: traceData.parentRequest.reqTimestamp,
-              out: traceData.outgoingRequests.length ? traceData.outgoingRequests.map((outgoingRequest) => <div>{outgoingRequest.apiPath}</div>) : "NA", // todo stylize
+              out: traceData.outgoingRequests.length ? traceData.outgoingRequests.map((outgoingRequest) => <div key={outgoingRequest.apiPath}>{outgoingRequest.apiPath}</div>) : "NA", // todo stylize
               compare: <label onClick={() => this.handleCompareSelect(traceData.parentReqId)}><i className="fas fa-1x fa-thumbtack" style={{cursor: "pointer", color: _.find(apiCatalog.compareRequests, {parentReqId: traceData.parentReqId}) ? "#00c853": "grey", fontSize: "large",}}></i></label>,
               service: traceData.parentRequest.service,
               method: traceData.parentRequest.method,
@@ -231,6 +231,10 @@ class APIRequestsTable extends Component {
 
   }
 
+  onPageSizeChange = (pageSize)=>{
+    this.props.dispatch(apiCatalogActions.setPageSize(pageSize)); 
+  };
+
   onResizedColumns = (newResized, event) => {
         this.setState({resizedColumns: newResized});
   }
@@ -329,6 +333,23 @@ class APIRequestsTable extends Component {
     );
   }
 
+  getPaginationProps = ()=>{
+    const { apiCatalog: {apiCatalogTableState, apiTraceLoading, apiFacets, selectedService, selectedApiPath, selectedInstance} } = this.props;
+    const page = apiCatalogTableState.currentPage, 
+              pageSize = apiCatalogTableState.pageSize,
+              pages = apiCatalogTableState.totalPages
+    return {
+              page,
+              pages,
+              pageSize,
+    }
+  }
+
+  onPageChange = (pageNumber)=> {
+    const { dispatch} = this.props;
+    dispatch(apiCatalogActions.fetchApiTraceByPage(pageNumber));
+  }
+
   render() {
     const { apiCatalog: {apiTraceLoading, apiFacets, selectedService, selectedApiPath, selectedInstance} } = this.props;
     const apiCount = getAPICount(apiFacets, selectedService, selectedApiPath, selectedInstance);
@@ -345,14 +366,21 @@ class APIRequestsTable extends Component {
           <ReactTable
             data={this.generateTableRows()}
             columns={this.generateTableColumns()}
-            style={{ height: "500px" }}
-            defaultPageSize={10}
+            style={{ height: "500px" }} //We can have a dynamic height
+            //defaultPageSize={10}
             pageSizeOptions={[5, 10, 15, 20]}
+            onPageSizeChange={this.onPageSizeChange}
             className="-striped -highlight"
             loading={apiTraceLoading}
             resizable={true}
             resized={this.state.resizedColumns}
             onResizedChange={this.onResizedColumns}
+            showPageJump={false}
+            manual={true}    
+            sortable={false}        
+            {...this.getPaginationProps()}
+            onPageChange={this.onPageChange}
+            minRows={5}
           />
         </div>
         <div className="cube-btn api-catalog-view-btn text-center margin-top-10" onClick={this.handleViewRequests}>VIEW</div>

@@ -142,6 +142,19 @@ const initialState = {
     mockConfigStatusIsError: false,
     showMockConfigList: true,
     selectedMockConfig: "",
+    historyTabState:{        
+        currentPage: 0,
+        oldPagesData:[],
+        numResults:15,
+        count:0
+    },
+    isHistoryLoading: false,
+    collectionTabState:{  
+        currentPage : 0,
+        numResults:10,
+        count:0
+    },
+    isCollectionLoading: false
 }
 
 const getTabIndexGivenTabId = (tabId, tabs) => {
@@ -436,12 +449,32 @@ export const httpClient = (state = initialState, { type, data }) => {
                 userHistoryCollection: data.userHistoryCollection
             }
         }
+        case httpClientConstants.SET_HISTORY_LOADING: {
+            return {
+                ...state,
+                isHistoryLoading: data
+            }
+        }
+        case httpClientConstants.SET_COLLECTION_LOADING: {
+            return {
+                ...state,
+                isCollectionLoading: data
+            }
+        }
+        case httpClientConstants.SET_COLLECTION_TAB_STATE: {
+            return {
+                ...state,
+                collectionTabState: data
+            }
+        }
 
         case httpClientConstants.ADD_CUBE_RUN_HISTORY: {
             return {
                 ...state,
                 userApiTraceHistory: data.apiTraces,
-                cubeRunHistory: data.cubeRunHistory
+                cubeRunHistory: data.cubeRunHistory,
+                historyTabState: data.historyTabState,
+                isHistoryLoading: false
             }
         }
         case httpClientConstants.DELETE_CUBE_RUN_HISTORY: {
@@ -465,7 +498,8 @@ export const httpClient = (state = initialState, { type, data }) => {
         case httpClientConstants.ADD_USER_COLLECTIONS: {
             return {
                 ...state,
-                userCollections: data.userCollections
+                userCollections: data.userCollections,
+                isCollectionLoading: data.isCollectionLoading
             }
         }
         case httpClientConstants.DELETE_USER_COLLECTION: {

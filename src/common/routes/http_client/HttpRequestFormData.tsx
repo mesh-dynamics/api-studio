@@ -1,10 +1,20 @@
 import React, { Component } from 'react';
 import { Glyphicon, FormGroup, Button, FormControl, Radio, ControlLabel, Checkbox } from 'react-bootstrap';
-import "./HttpClient.css";
 // import "./styles_here.css";
+import {UpdateParamHandler, AddOrRemoveHandler, IFormData} from './HttpResponseHeaders';
 
-class HttpRequestQueryString extends Component {
-    constructor(props) {
+export interface IHttpRequestFormDataProps{
+    tabId: string;
+     isOutgoingRequest :boolean;
+     showFormData :boolean;
+     updateParam: UpdateParamHandler;
+     addOrRemoveParam: AddOrRemoveHandler;
+     updateAllParams: UpdateParamHandler;
+     formData: IFormData[]
+}
+
+class HttpRequestFormData extends Component<IHttpRequestFormDataProps> {
+    constructor(props: IHttpRequestFormDataProps) {
         super(props);
         this.handleAdd = this.handleAdd.bind(this);
         this.handleDelete = this.handleDelete.bind(this);
@@ -13,37 +23,37 @@ class HttpRequestQueryString extends Component {
 
     handleAdd() {
         const { tabId, isOutgoingRequest } = this.props;
-        this.props.addOrRemoveParam(isOutgoingRequest, tabId, "queryStringParams", "add");
+        this.props.addOrRemoveParam(isOutgoingRequest, tabId, "formData", "add");
     }
 
     handleDelete(id) {
         const { tabId, isOutgoingRequest } = this.props;
-        this.props.addOrRemoveParam(isOutgoingRequest, tabId, "queryStringParams", "delete", id);
+        this.props.addOrRemoveParam(isOutgoingRequest, tabId, "formData", "delete", id);
     }
 
     handleChange(id, evt) {
         const { tabId, isOutgoingRequest } = this.props;
-        this.props.updateParam(isOutgoingRequest, tabId, "queryStringParams", evt.target.name, evt.target.value, id);
+        this.props.updateParam(isOutgoingRequest, tabId, "formData", evt.target.name, evt.target.value, id);
     }
 
     handleCheckChange = (id, currentChecked) => {
         const { tabId, isOutgoingRequest } = this.props;
-        this.props.updateParam(isOutgoingRequest, tabId, "queryStringParams", "selected", !currentChecked, id);
+        this.props.updateParam(isOutgoingRequest, tabId, "formData", "selected", !currentChecked, id);
     }
 
     allSelected = () => {
-        return this.props.queryStringParams.reduce((acc, param) => (acc = acc && param.selected), true)
+        return this.props.formData.reduce((acc, param) => (acc = acc && param.selected), true)
     }
 
     handleAllCheckChange = (e) => {
         const { tabId, isOutgoingRequest } = this.props;
-        this.props.updateAllParams(isOutgoingRequest, tabId, "queryStringParams", "selected", e.target.checked);
+        this.props.updateAllParams(isOutgoingRequest, tabId, "formData", "selected", e.target.checked);
     }
 
     render() {
         return (
-            <div style={{display: this.props.showQueryParams === true ? "" : "none"}}>
-                {this.props.queryStringParams.length > 0 && (
+            <div style={{display: this.props.showFormData === true ? "" : "none"}}>
+                {this.props.formData.length > 0 && (
                     <div style={{marginBottom: "1px"}}>
                         <div style={{display: "inline-block", width: "3%", paddingRight: "9px"}}> 
                             <FormGroup bsSize="small" style={{marginBottom: "0px", textAlign: "center"}}>
@@ -72,11 +82,11 @@ class HttpRequestQueryString extends Component {
                         </div>
                     </div>
                 )}
-                {this.props.queryStringParams.map(eachParam => {return (
+                {this.props.formData.map(eachParam => {return (
                     <div style={{marginBottom: "1px"}} key={eachParam.id}>
                         <div style={{display: "inline-block", width: "3%", paddingRight: "9px"}}> 
                             <FormGroup style={{marginBottom: "0px", backgroundColor: "none", textAlign: "center"}}>
-                                <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} checked={eachParam.selected} 
+                            <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} checked={eachParam.selected} 
                                 onChange={() => this.handleCheckChange(eachParam.id, eachParam.selected)}/>
                             </FormGroup>
                         </div>
@@ -106,10 +116,10 @@ class HttpRequestQueryString extends Component {
                     </div>
                 )})}
                 <div style={{ marginTop: "5px", marginRight: "7px"}}>
-                    <div style={{display: "inline-block", width: "100%"}}> 
+                    <div style={{display: "inline-block", width: "100%"}}>
                         <button className="add-request-options-button" onClick={this.handleAdd}>
                             <span style={{ fontSize: "20px" }}>+</span>
-                            <span style={{ marginLeft: "5px", fontWeight: 400 }}>Add query parameter</span>
+                            <span style={{ marginLeft: "5px", fontWeight: 400 }}>Add form data</span>
                         </button>
                     </div>
                 </div>
@@ -118,4 +128,4 @@ class HttpRequestQueryString extends Component {
     }
 }
 
-export default HttpRequestQueryString;
+export default HttpRequestFormData;

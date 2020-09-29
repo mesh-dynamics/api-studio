@@ -36,7 +36,8 @@ class GoldenPopover extends React.Component {
                 "pt": "",
                 "ct": "",
                 "em": "",
-                "customization": null
+                "customization": null,
+                "arrayCompKeyPath":""
             },
             newRule: {
                 "path": this.props.jsonPath.replace("<BEGIN>", ""),
@@ -44,7 +45,8 @@ class GoldenPopover extends React.Component {
                 "pt": "Optional",
                 "ct": "Ignore",
                 "em": "Default",
-                "customization": null
+                "customization": null,
+                "arrayCompKeyPath":""
             },
             summaryInput: this.getDefaultSummary(this.props.cube),
             descriptionInput: this.getDefaultDescription(this.props.cube),
@@ -60,6 +62,7 @@ class GoldenPopover extends React.Component {
         const { dispatch, jsonPath } = this.props;
         const { defaultRule, newRule } = this.state;
         newRule[tag] = evt.target.value;
+        //TODO: Optimize here, dispatch should be done on Apply button click
         dispatch(cubeActions.addToDefaultRuleBook(jsonPath.replace("<BEGIN>", ""), defaultRule));
         dispatch(cubeActions.addToRuleBook(jsonPath.replace("<BEGIN>", ""), newRule));
         this.setState({ newRule: newRule });
@@ -298,6 +301,15 @@ class GoldenPopover extends React.Component {
         return false;
     }
 
+    formatDtValue(value){
+        switch(value){
+            case "RptArray": return "List [array]";
+            case "NrptArray": return "Unstructured [array]";
+            case "Set": return "Set [array]";
+            default: return value;
+        }
+    }
+
     renderSummary() {
         return (
             <div>
@@ -386,7 +398,7 @@ class GoldenPopover extends React.Component {
                     </div>
                     <div style={{ width: "500px", background: "#ECECE7", padding: "15px 20px", textAlign: "left" }}>
                         <div>Path:&nbsp;<b>{this.props.jsonPath}</b></div>
-                        <div>Data Type:&nbsp;<b>{this.state.newRule.dt}</b></div>
+                        <div>Data Type:&nbsp;<b>{this.formatDtValue(this.state.newRule.dt)}</b></div>
                         <div>Count of similar items:&nbsp;<b>105</b></div>
 
                         <div className="table-responsive margin-top-10">
@@ -413,20 +425,32 @@ class GoldenPopover extends React.Component {
 
                                     <tr>
                                         <td>Data Type</td>
-                                        <td>{this.state.defaultRule.dt}</td>
+                                        <td>{this.formatDtValue(this.state.defaultRule.dt)}</td>
                                         <td>
                                             <select value={this.state.newRule.dt} className="width-100" onChange={(e) => this.setRule("dt", e)}>
                                                 <option value="Default">Default</option>
                                                 <option value="Str">Str</option>
                                                 <option value="Int">Int</option>
                                                 <option value="Float">Float</option>
-                                                <option value="RptArray">RptArray</option>
-                                                <option value="NrptArray">NrptArray</option>
+                                                <option value="RptArray">List [array]</option>
+                                                <option value="Set">Set [array]</option>
+                                                <option value="NrptArray">Unstructured Array</option>
                                                 <option value="Obj">Obj</option>
                                             </select>
                                         </td>
                                     </tr>
+                                    {
+                                        this.state.newRule.dt == "Set" &&
+                                        <tr>
+                                        <td>Match Criteria</td>
+                                        <td>{this.state.defaultRule.arrayCompKeyPath}</td>
+                                        <td>
+                                            <input type="text" value={this.state.newRule.arrayCompKeyPath} className="width-100" onChange={(e) => this.setRule("arrayCompKeyPath", e)} />
+                                        </td>
+                                    </tr>
 
+                                    }
+                                    
                                     <tr>
                                         <td>Transformation</td>
                                         <td>{this.state.defaultRule.em}</td>
@@ -473,7 +497,7 @@ class GoldenPopover extends React.Component {
                     </div>
                     <div style={{ width: "300px", background: "#ECECE7", padding: "15px 20px", textAlign: "left" }}>
                         <div>Path:&nbsp;<b>{this.props.jsonPath.replace("<BEGIN>", "")}</b></div>
-                        <div>Data Type:&nbsp;<b>{this.state.newRule.dt}</b></div>
+                        <div>Data Type:&nbsp;<b>{this.formatDtValue(this.state.newRule.dt)}</b></div>
                         <div>Count of similar items:&nbsp;<b>105</b></div>
                         <div className="text-center margin-top-20">
                             <span onClick={this.updateGolden}

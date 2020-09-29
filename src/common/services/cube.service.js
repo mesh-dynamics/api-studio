@@ -50,7 +50,7 @@ const getTestConfigByAppId = async (appId) => {
     }
 };
 
-const fetchCollectionList = async (app, recordingType="", forCurrentUser=false) => {
+const fetchCollectionList = async (app, recordingType="", forCurrentUser=false, numResults = 0, start = 0) => {
     const user = JSON.parse(localStorage.getItem('user')); // TODO: Change this to be passed from auth tree
     try {
         let url = `${config.recordBaseUrl}/searchRecording`;
@@ -60,7 +60,9 @@ const fetchCollectionList = async (app, recordingType="", forCurrentUser=false) 
         params.set("archived", false);
         
         recordingType && params.set("recordingType", recordingType); // todo
-        forCurrentUser && params.set("userId", user.username)
+        forCurrentUser && params.set("userId", user.username);
+        numResults && params.set("numResults", numResults);
+        start && params.set("start", start);
         
         return await api.get(url + "?" + params.toString());
     } catch(error) {
@@ -372,7 +374,8 @@ const fetchAPIFacetData = async (app, recordingType, collectionName, startTime=n
     }
 }
 
-const fetchAPITraceData = async (app, startTime, endTime, service, apiPath, instance, recordingType, collectionName, depth=2) => {
+const fetchAPITraceData = async (traceApiFiltersProps) => {
+    const {app, startTime, endTime, service, apiPath, instance, recordingType, collectionName, depth, numResults} = traceApiFiltersProps;
     const user = JSON.parse(localStorage.getItem('user'));
 
     let apiTraceURL = `${config.analyzeBaseUrl}/getApiTrace/${user.customer_name}/${app}`;
@@ -386,6 +389,7 @@ const fetchAPITraceData = async (app, startTime, endTime, service, apiPath, inst
     instance && searchParams.set("instanceId", instance);
     recordingType && searchParams.set("recordingType", recordingType); // todo
     collectionName && searchParams.set("collection", collectionName);
+    numResults && searchParams.set('numResults', numResults);
     
     let url = apiTraceURL + "?" + searchParams.toString();
 
