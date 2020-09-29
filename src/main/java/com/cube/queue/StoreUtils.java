@@ -108,7 +108,7 @@ public class StoreUtils {
 		Optional<Replay> currentRunningReplay = recordOrReplay.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
 		String runId = "";
 		if(currentRunningReplay.isPresent()) {
-			runId = Optional.of(currentRunningReplay.get().runId).orElse(currentRunningReplay.get().replayId);
+			runId = currentRunningReplay.get().runId;
 		}
 
 		Optional<String> collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
