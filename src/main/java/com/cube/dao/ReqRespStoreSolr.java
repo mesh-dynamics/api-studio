@@ -1995,8 +1995,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                     .withIntermediateServices(intermediateService)
                     .withReqCounts(reqcnt, reqsent, reqfailed)
                     .withReplayType(replayType).withCreationTimestamp(
-                        creationTimestamp.orElseGet(() -> Instant.now()))
-                    .withRunId(runId);
+                        creationTimestamp.orElseGet(() -> Instant.now()));
+                runId.ifPresent(builder::withRunId);
                 excludePaths.ifPresent(builder::withExcludePaths);
                 sampleRate.ifPresent(builder::withSampleRate);
                 generatedClassJarPath

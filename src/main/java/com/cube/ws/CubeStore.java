@@ -1024,7 +1024,7 @@ public class CubeStore {
                                 .withGoldenName(newr.name)
                                 .withReplayStatus(ReplayStatus.Running)
                                 .withReplayId(newr.collection)
-                                .withRunId(Optional.of(newr.collection + " " + Instant.now().toString()));
+                                .withRunId(newr.collection + " " + Instant.now().toString());
                             Replay replay = replayBuilder.build();
                             rrstore.saveReplay(replay);
                         }
