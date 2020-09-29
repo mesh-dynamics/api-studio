@@ -86,6 +86,11 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 				// The Java HTTP Client supports both HTTP/1.1 and HTTP/2. By default the client
 				// will send requests using HTTP/2. Requests sent to servers that do not yet support
 				// HTTP/2 will automatically be downgraded to HTTP/1.1.
+
+				// Outdated comment below (can remove after testing version HTTP_2)
+				// need to explicitly set this (version as 1.1)
+				// if server is not supporting HTTP 2.0, getting a 403 error
+
 				//.followRedirects(HttpClient.Redirect.NORMAL)  // Don't follow redirects
 				.connectTimeout(Duration.ofSeconds(20));
 			if (Authenticator.getDefault() != null) {
