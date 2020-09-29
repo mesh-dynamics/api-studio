@@ -106,7 +106,10 @@ public class StoreUtils {
 		Optional<Event.RunType> runType = Optional.of(recordOrReplay.get().getRunType());
 		cubeEventMetaInfo.setRunType(runType.map(Enum::name));
 		Optional<Replay> currentRunningReplay = recordOrReplay.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
-		Optional<String> runId = currentRunningReplay.flatMap(replay -> replay.runId);
+		String runId = "";
+		if(currentRunningReplay.isPresent()) {
+			runId = currentRunningReplay.get().runId;
+		}
 
 		Optional<String> collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
 		cubeEventMetaInfo.setCollection(collection);

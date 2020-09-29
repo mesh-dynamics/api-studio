@@ -818,7 +818,7 @@ public class CubeStore {
             defaultReqEvent.service, "NA", "NA",
             new MDTraceInfo("NA", null, null), RunType.Manual
             , Optional.of(Instant.now()), defaultReqEvent.reqId, defaultReqEvent.apiPath,
-            Event.EventType.getResponseType(defaultReqEvent.eventType), defaultReqEvent.recordingType);
+            Event.EventType.getResponseType(defaultReqEvent.eventType), defaultReqEvent.recordingType).withRunId(defaultReqEvent.runId);
         eventBuilder.setPayload(payload);
         Event defaultRespEvent = eventBuilder.createEvent();
         // parseAndSetKey is needed only for requests
@@ -867,7 +867,7 @@ public class CubeStore {
                 reqEvent.service, "NA", "NA"
                 , new MDTraceInfo("NA", null, null), RunType.Manual,
                 Optional.of(Instant.now()),
-                reqEvent.reqId, reqEvent.apiPath, reqEvent.eventType, reqEvent.recordingType);
+                reqEvent.reqId, reqEvent.apiPath, reqEvent.eventType, reqEvent.recordingType).withRunId(reqEvent.runId);
 
             //TODO:Add support for Binary payload.
             eventBuilder.setPayload(reqEvent.payload);
@@ -1024,7 +1024,7 @@ public class CubeStore {
                                 .withGoldenName(newr.name)
                                 .withReplayStatus(ReplayStatus.Running)
                                 .withReplayId(newr.collection)
-                                .withRunId(Optional.of(newr.collection + " " + Instant.now().toString()));
+                                .withRunId(newr.collection + " " + Instant.now().toString());
                             Replay replay = replayBuilder.build();
                             rrstore.saveReplay(replay);
                         }
@@ -1621,7 +1621,7 @@ public class CubeStore {
             event.service, event.instanceId, collection,
             new MDTraceInfo(traceId, event.spanId, event.parentSpanId),
             event.getRunType(), Optional.of(Instant.now()), reqId, event.apiPath,
-            event.eventType, recordingType);
+            event.eventType, recordingType).withRunId(event.runId);
         eventBuilder.setPayload(event.payload);
         eventBuilder.withMetaData(event.metaData);
         eventBuilder.withRunId(event.runId);

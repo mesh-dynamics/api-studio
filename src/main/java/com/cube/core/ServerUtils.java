@@ -302,7 +302,7 @@ public class ServerUtils {
                                                 Optional<String> collection, Instant timestamp,
                                                 Optional<Event.RunType> runType, Optional<String> customerId,
                                                 Optional<String> app,
-                                                ReqRespStore rrstore, Optional<String> runId, RecordingType recordingType) throws EventBuilder.InvalidEventException {
+                                                ReqRespStore rrstore, String runId, RecordingType recordingType) throws EventBuilder.InvalidEventException {
 	    HTTPResponsePayload httpResponsePayload;
 	    // We treat empty body ("") as null
 	    if (body != null && (!body.isEmpty())) {
@@ -322,9 +322,8 @@ public class ServerUtils {
 	                .map(Event::getTraceId).orElse("NA")), null, null),
                 runType.get(), Optional.of(timestamp),
                 reqId.orElse("NA"),
-                apiPath, Event.EventType.HTTPResponse, recordingType);
+                apiPath, Event.EventType.HTTPResponse, recordingType).withRunId(runId);
             eventBuilder.setPayload(httpResponsePayload);
-            eventBuilder.withRunId(runId);
             Event event = eventBuilder.createEvent();
             return event;
         } else {
