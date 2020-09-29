@@ -202,7 +202,7 @@ public class MockServiceHTTP {
         @PathParam("service") String service, @PathParam("method") String httpMethod,
         String body) {
 	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-	    String runId = Optional.ofNullable(queryParams.getFirst(Constants.RUN_ID_FIELD)).orElse(traceId);
+	    String runId = queryParams.getFirst(Constants.RUN_ID_FIELD);
 
 	    LOGGER.info(String.format("path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordingId: %s", path,
             ui.toString(), body, replayCollection, recordingId));

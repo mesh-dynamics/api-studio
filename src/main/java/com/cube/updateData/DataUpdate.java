@@ -27,7 +27,7 @@ public class DataUpdate {
     query.addFilterQuery("*:* NOT runId_s:*");
     ExecutorService executorService = Executors.newFixedThreadPool(1000);
 
-    SolrIterator.getStream(config.solr, query, Optional.empty(), Optional.empty()).forEach(doc -> {
+    SolrIterator.getStream(config.solr, query, Optional.empty(), Optional.empty()).parallel().forEach(doc -> {
         executorService.execute(new Runnable() {
           public void run() {
             try {
