@@ -59,7 +59,7 @@ public class ReplayBuilder {
 	public Optional<String> dynamicInjectionConfigVersion;
 	public Optional<String> staticInjectionMap;
 	public Instant analysisCompleteTimestamp;
-	public Optional<String> runId;
+	public String runId;
 
 	public ReplayBuilder(String endpoint, String customerId, String app, String instanceId,
                          String collection, String userId) {
@@ -99,7 +99,7 @@ public class ReplayBuilder {
 		 * Once analysis is complete the value is set to the corresponding time
 		 */
 		this.analysisCompleteTimestamp = Instant.EPOCH;
-		this.runId = Optional.empty();
+		this.runId = null;
 	}
 
 	private void populateClassLoader() throws Exception {
@@ -245,7 +245,7 @@ public class ReplayBuilder {
     	return this;
 	}
 
-	public ReplayBuilder withRunId(Optional<String> runId) {
+	public ReplayBuilder withRunId(String runId) {
 		this.runId = runId;
 		return this;
 	}

@@ -197,7 +197,7 @@ public class ReplayBasicWS {
         xfms.ifPresent(replayBuilder::withXfms);
         dynamicInjectionConfigVersion.ifPresent(replayBuilder::withDynamicInjectionConfigVersion);
         staticInjectionMap.ifPresent(replayBuilder::withStaticInjectionMap);
-        replayBuilder.withRunId(Optional.of(replayBuilder.getReplayId() + " " + Instant.now().toString()));
+        replayBuilder.withRunId(replayBuilder.getReplayId() + " " + Instant.now().toString());
 
         try {
             recording.generatedClassJarPath
