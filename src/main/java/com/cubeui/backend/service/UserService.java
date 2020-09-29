@@ -225,7 +225,8 @@ public class UserService {
                     if(user.isEnabled()) {
                         LocalDateTime dateTime = LocalDateTime.now().minusSeconds(resetPasswordConfiguration.getPasswordResetRequestDays()*86400);
                         if(dateTime.isBefore(user.getUpdatedAt())) {
-                            throw new ResetPasswordException("Password request can be proceed only after " + user.getUpdatedAt().plusSeconds(86400));
+                            throw new ResetPasswordException("Password request can be proceed only after " +
+                                user.getUpdatedAt().plusSeconds(resetPasswordConfiguration.getPasswordResetRequestDays()*86400).toLocalDate());
                         }
                         return true;
                     }

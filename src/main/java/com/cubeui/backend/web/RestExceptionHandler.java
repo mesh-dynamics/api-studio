@@ -9,6 +9,7 @@ import com.cubeui.backend.web.exception.EnvironmentNotFoundException;
 import com.cubeui.backend.web.exception.InvalidDataException;
 import com.cubeui.backend.web.exception.OldPasswordException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
+import com.cubeui.backend.web.exception.RequiredFieldException;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import com.cubeui.backend.web.exception.ResetPasswordException;
 import lombok.extern.slf4j.Slf4j;
@@ -88,6 +89,12 @@ public class RestExceptionHandler {
     @ExceptionHandler(value = {OldPasswordException.class})
     public ResponseEntity invalidData(OldPasswordException ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse<String>("Password Matches with old passwords", ex.getMessage(), BAD_REQUEST.value());
+        return status(BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(value = {RequiredFieldException.class})
+    public ResponseEntity invalidData(RequiredFieldException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse<String>("Mandatory fields are missing", ex.getMessage(), BAD_REQUEST.value());
         return status(BAD_REQUEST).body(errorResponse);
     }
 }

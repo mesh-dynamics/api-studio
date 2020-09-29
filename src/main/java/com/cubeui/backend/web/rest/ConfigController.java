@@ -17,9 +17,11 @@ import com.cubeui.backend.repository.ServiceRepository;
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.security.jwt.JwtTokenProvider;
 import com.cubeui.backend.security.jwt.JwtTokenValidator;
+import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.ConfigExistsException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
+import com.cubeui.backend.web.exception.RequiredFieldException;
 import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
@@ -53,16 +55,30 @@ public class ConfigController {
   private JwtTokenProvider jwtTokenProvider;
   @Autowired
   private JwtTokenValidator jwtTokenValidator;
+  @Autowired
+  private CustomerService customerService;
 
   @GetMapping("/get")
   public ResponseEntity getConfigs(HttpServletRequest request,
-      @RequestParam(value="customer", required = true) String customer,
+      @RequestParam(value="customer", required = false) String customer,
       @RequestParam(value="app", required = false) String app,
       @RequestParam(value="service", required = false) String service,
       @RequestParam(value="configType", required = false) String configType,
-      @RequestParam(value="key", required = false) String key) {
+      @RequestParam(value="key", required = false) String key,
+      @RequestParam(value="domain", required = false) String domain) {
     String userId = null;
     boolean authenticate = false;
+    if(customer == null && domain == null) {
+      throw new RequiredFieldException("customer and domain both are missing in the api call, One is mandatory for the call");
+    }
+    if(domain != null) {
+      customer = this.customerService.getByDomainUrl(domain).map(Customer::getName).orElseThrow(() -> {
+        throw new RecordNotFoundException("Customer with domain '" + domain + "' not found.");
+      });
+    }
+    if(customer.isBlank()) {
+      throw new RequiredFieldException(String.format("Customer is empty for customer=%s , domain=%s", customer, domain));
+    }
     if(request.getHeader("Authorization") != null) {
       jwtTokenValidator.resolveAndValidateToken(request);
       validation.validateCustomerName(request,customer);
