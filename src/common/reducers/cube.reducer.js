@@ -337,6 +337,7 @@ export function cube (state = initialState, action) {
                 ...state,
                 ruleBook: {
                     ...state.ruleBook,
+                    templateMatchType: action.data.templateMatchType,
                     [action.data.key]: action.data.val
                 }
             };
@@ -345,6 +346,7 @@ export function cube (state = initialState, action) {
                 ...state,
                 defaultRuleBook: {
                     ...state.defaultRuleBook,
+                    templateMatchType: action.data.templateMatchType,
                     [action.data.key]: action.data.val
                 },
             };

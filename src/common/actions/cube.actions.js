@@ -98,20 +98,20 @@ function clearTimeline() {
     return {type: cubeConstants.CLEAR_TIMELINE, data: null};
 }
 
-function pushToOperations(o, key) {
-    return {type: cubeConstants.PUSH_TO_OPERATIONS, data: {op: o, key: key}};
+function pushToOperations(operation, key) {
+    return {type: cubeConstants.PUSH_TO_OPERATIONS, data: {op: operation, key}};
 }
 
-function pushNewOperationKeyToOperations(o, key) {
-    return {type: cubeConstants.NEW_KEY_PUSH_TO_OPERATIONS, data: {op: o, key: key}};
+function pushNewOperationKeyToOperations(operation, key ) {
+    return {type: cubeConstants.NEW_KEY_PUSH_TO_OPERATIONS, data: {op: operation, key}};
 }
 
-function addToRuleBook(key, value) {
-    return {type: cubeConstants.ADD_TO_RULE_BOOK, data: {key: key, val: value}};
+function addToRuleBook(key, value, templateMatchType) {
+    return {type: cubeConstants.ADD_TO_RULE_BOOK, data: {key: key, val: value, templateMatchType }};
 }
 
-function addToDefaultRuleBook(key, value) {
-    return {type: cubeConstants.ADD_TO_DEFAULT_RULE_BOOK, data: {key: key, val: value}}
+function addToDefaultRuleBook(key, value, templateMatchType) {
+    return {type: cubeConstants.ADD_TO_DEFAULT_RULE_BOOK, data: {key: key, val: value, templateMatchType}}
 }
 
 function removeFromRuleBook(key) {

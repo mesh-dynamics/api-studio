@@ -160,7 +160,7 @@ const DiffModalWrapper = (props) => {
                                     type="text" 
                                     className="width-100"
                                     placeholder="Enter Tags(Comma Separated)" 
-                                    onChange={(event) => changeGoldenMetaData('tag', event.target.value.target.value)} 
+                                    onChange={(event) => changeGoldenMetaData('tag', event.target.value)} 
                                 />
                             </div>
                         </div>
