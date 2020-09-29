@@ -25,22 +25,16 @@ public class DataUpdate {
     SolrQuery query = new SolrQuery("*:*");
     query.addFilterQuery("((type_s:Event) OR (type_s:ReplayMeta))");
     query.addFilterQuery("*:* NOT runId_s:*");
-    ExecutorService executorService = Executors.newFixedThreadPool(1000);
 
     SolrIterator.getStream(config.solr, query, Optional.empty(), Optional.empty()).parallel().forEach(doc -> {
-        executorService.execute(new Runnable() {
-          public void run() {
-            try {
-              updateDoc(doc, config.solr);
-            } catch (IOException e) {
-              e.printStackTrace();
-            } catch (SolrServerException e) {
-              e.printStackTrace();
-            }
-          }
-        });
+      try {
+        updateDoc(doc, config.solr);
+      } catch (IOException e) {
+        e.printStackTrace();
+      } catch (SolrServerException e) {
+        e.printStackTrace();
+      }
     });
-    executorService.shutdown();
 
   }
 
