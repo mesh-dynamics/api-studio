@@ -1,7 +1,7 @@
 ################
 ####build####
 ###############
-FROM cubeiocorp/cubeiobase:0.0.1 AS build
+FROM maven:3.6.0-jdk-11-slim AS build
 ARG TOKEN
 COPY pom.xml ./pom.xml
 # download maven dependencies
