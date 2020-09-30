@@ -27,6 +27,7 @@ public interface Recorder {
         Object responseOrException,
         RetStatus retStatus,
         Optional<String> exceptionType,
+        String runId,
         Object... args);
 
     boolean record(ReqResp httpReqResp);

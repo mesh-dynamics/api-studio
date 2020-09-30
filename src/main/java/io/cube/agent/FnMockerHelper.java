@@ -52,7 +52,7 @@ public class FnMockerHelper {
 
 
     public FnResponseObj mock(FnKey fnKey,
-                                     Optional<Instant> prevRespTS, Optional<Type> retType, Object... args) {
+                                     Optional<Instant> prevRespTS, Optional<Type> retType, String runId, Object... args) {
         MDTraceInfo mdTraceInfo;
         if (CommonUtils.getCurrentTraceId().isPresent()) {
             //load the created context
@@ -66,7 +66,7 @@ public class FnMockerHelper {
         FnReqRespPayload fnReqRespPayload = new FnReqRespPayload(Optional.of(Instant.now()),
                 args, null, null , null);
         Optional<Event> event = CommonUtils.createEvent(fnKey, mdTraceInfo, Event.RunType.Replay,
-                Optional.empty(), fnReqRespPayload, Recording.RecordingType.Golden);
+                Optional.empty(), fnReqRespPayload, Recording.RecordingType.Golden, runId);
 
         try {
             return event.map(UtilException.rethrowFunction(eve -> {

@@ -63,7 +63,7 @@ public class ProxyMocker implements Mocker {
 	}
 
 	public FnResponseObj mock(FnKey fnKey,
-		Optional<Instant> prevRespTS, Optional<Type> retType, Object... args) {
+		Optional<Instant> prevRespTS, Optional<Type> retType, String runId, Object... args) {
 		MDTraceInfo mdTraceInfo;
 		if (CommonUtils.getCurrentTraceId().isPresent()) {
 			//load the created context
@@ -86,7 +86,7 @@ public class ProxyMocker implements Mocker {
 			args, null, null , null);
 		Optional<Instant> lowerBound = prevRespTS.isPresent() ? prevRespTS : Optional.ofNullable(fnMap.get(key));
 		Optional<Event> event = CommonUtils.createEvent(fnKey, mdTraceInfo, RunType.Replay,
-			Optional.empty(), fnReqRespPayload, RecordingType.Golden);
+			Optional.empty(), fnReqRespPayload, RecordingType.Golden, runId);
 
 		try {
 			return event.map(UtilException.rethrowFunction(eve -> {
