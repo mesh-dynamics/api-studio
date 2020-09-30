@@ -59,6 +59,7 @@ public class RecorderAndMockerTest {
     private static final String ENDPOINT = "Dummy";
     private static final String TESTUSER = "AgentTest";
     private static final String TEMPLATEVERSION = "Dummy";
+    private static final String RUNID = "Test_runId";
 
 
     static Mode mode;
@@ -155,7 +156,7 @@ public class RecorderAndMockerTest {
 
             if (mode == Mode.Mock) {
                 FnResponseObj ret = mocker.mock(discountedPriceFnKey2,
-                        resTimeStamp, Optional.empty(), pp);
+                        resTimeStamp, Optional.empty(), RUNID,pp);
                 resTimeStamp = ret.timeStamp;
                 return (double) ret.retVal;
             }
@@ -163,7 +164,7 @@ public class RecorderAndMockerTest {
             double ret = (pp != null) ? discountedPrice(pp.productId, pp.price) : 0;
             if (mode == Mode.Record) {
                 RecorderAndMockerTest.recorder.record(discountedPriceFnKey2,
-                        ret, RetStatus.Success, Optional.empty(), pp);
+                        ret, RetStatus.Success, Optional.empty(), RUNID,pp);
             }
             return ret;
         }
@@ -183,7 +184,7 @@ public class RecorderAndMockerTest {
 
             if (mode == Mode.Mock) {
                 FnResponseObj ret = mocker.mock(discountedPriceRuntimeExceptionFnKey,
-                        resTimeStamp, Optional.empty(), pp);
+                        resTimeStamp, Optional.empty(), RUNID,pp);
                 resTimeStamp = ret.timeStamp;
                 if (ret.retStatus == RetStatus.Exception) {
                     UtilException.throwAsUnchecked((Throwable)ret.retVal);
@@ -196,13 +197,13 @@ public class RecorderAndMockerTest {
                 double ret = discountedPrice(pp.productId, pp.price);
                 if (mode == Mode.Record) {
                     RecorderAndMockerTest.recorder.record(discountedPriceRuntimeExceptionFnKey,
-                            ret, RetStatus.Success, Optional.empty(), pp);
+                            ret, RetStatus.Success, Optional.empty(), RUNID,pp);
                 }
                 return ret;
             } catch (Throwable e) {
                 if (mode == Mode.Record) {
                     RecorderAndMockerTest.recorder.record(discountedPriceRuntimeExceptionFnKey,
-                            e, RetStatus.Exception, Optional.of(e.getClass().getName()), pp);
+                            e, RetStatus.Exception, Optional.of(e.getClass().getName()), RUNID,pp);
                 }
                 throw e;
             }
@@ -230,7 +231,7 @@ public class RecorderAndMockerTest {
 
             if (mode == Mode.Mock) {
                 FnResponseObj ret = mocker.mock(discountedPriceTypedExceptionFnKey,
-                        resTimeStamp, Optional.empty(), pp);
+                        resTimeStamp, Optional.empty(), RUNID,pp);
                 resTimeStamp = ret.timeStamp;
                 if (ret.retStatus == RetStatus.Exception) {
                     UtilException.throwAsUnchecked((Throwable)ret.retVal);
@@ -244,13 +245,13 @@ public class RecorderAndMockerTest {
                 if (pp == null) throw new PriceException("Price Exception");
                 if (mode == Mode.Record) {
                     RecorderAndMockerTest.recorder.record(discountedPriceTypedExceptionFnKey,
-                            ret, RetStatus.Success, Optional.empty(), pp);
+                            ret, RetStatus.Success, Optional.empty(), RUNID,pp);
                 }
                 return ret;
             } catch (Throwable e) {
                 if (mode == Mode.Record) {
                     RecorderAndMockerTest.recorder.record(discountedPriceTypedExceptionFnKey,
-                            e, RetStatus.Exception, Optional.of(e.getClass().getName()), pp);
+                            e, RetStatus.Exception, Optional.of(e.getClass().getName()), RUNID,pp);
                 }
                 throw e;
             }
@@ -267,7 +268,7 @@ public class RecorderAndMockerTest {
 
             if (mode == Mode.Mock) {
                 FnResponseObj ret = mocker.mock(getPromoNameFnKey,
-                        resTimeStamp, Optional.empty());
+                        resTimeStamp, Optional.empty(), RUNID);
                 resTimeStamp = ret.timeStamp;
                 return (String) ret.retVal;
             }
@@ -275,7 +276,7 @@ public class RecorderAndMockerTest {
             String ret = name;
             if (mode == Mode.Record) {
                 RecorderAndMockerTest.recorder.record(getPromoNameFnKey,
-                        ret, RetStatus.Success, Optional.empty());
+                        ret, RetStatus.Success, Optional.empty(), RUNID);
             }
             return ret;
         }

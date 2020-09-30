@@ -43,7 +43,7 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
 
 	@Override
 	public boolean  record(FnKey fnKey, Object responseOrException, RetStatus retStatus,
-		Optional<String> exceptionType, Object... args) {
+		Optional<String> exceptionType, String runId,Object... args) {
 
 		MDTraceInfo mdTraceInfo;
 		if (CommonUtils.getCurrentTraceId().isPresent()) {
@@ -60,7 +60,7 @@ public abstract class AbstractGsonSerializeRecorder implements Recorder {
 				args, responseOrException, retStatus, exceptionType);
 			Optional<Event> event = CommonUtils
 				.createEvent(fnKey, mdTraceInfo, Event.RunType.Record,
-					Optional.of(Instant.now()), fnReqRespPayload, RecordingType.Golden);
+					Optional.of(Instant.now()), fnReqRespPayload, RecordingType.Golden, runId);
 			return event.map(ev -> record(ev)).orElseGet(() -> {
 				LOGGER.error("func_name : ".concat(fnKey.fnName)
 					.concat(" , trace_id : ").concat(mdTraceInfo.traceId)

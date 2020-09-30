@@ -1,5 +1,7 @@
 package io.cube.agent;
 
+import io.md.core.TemplateKey.Type;
+import io.md.dao.Event.EventType;
 import java.io.IOException;
 import java.util.Optional;
 
@@ -70,9 +72,9 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
     @Override
     public CompareTemplate getTemplate(String customerId, String app, String service, String apiPath,
                                        String templateVersion, TemplateKey.Type templateType,
-                                       Optional<Event.EventType> eventType) throws TemplateNotFoundException {
+                                       Optional<Event.EventType> eventType, Optional<String> method, String recordingId) throws TemplateNotFoundException {
         try {
-            return cubeClient.getTemplate(customerId, app, service, apiPath, templateVersion, templateType, eventType)
+            return cubeClient.getTemplate(customerId, app, service, apiPath, templateVersion, templateType, eventType, recordingId)
                     .map(UtilException.rethrowFunction(template -> jsonMapper.readValue(template,
                             CompareTemplate.class)))
                     .orElseThrow(() -> new TemplateNotFoundException());
