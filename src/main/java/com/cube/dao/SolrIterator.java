@@ -5,6 +5,7 @@ package com.cube.dao;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -176,6 +177,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
     static Optional<QueryResponse> runQuery(SolrClient solr, SolrQuery query) {
         LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Running Solr Query"
 	        , "query" , query.toQueryString())));
+        String runId = Instant.now().toString();
         if (queryFnKey == null) {
             try {
                 Method currentMethod = solr.getClass().getMethod("query", SolrParams.class);
@@ -187,7 +189,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
             }
         }
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(queryFnKey, Optional.empty(), Optional.empty(), query);
+            FnResponseObj ret = config.mocker.mock(queryFnKey, Optional.empty(), Optional.empty(), runId, query);
             if (ret.retStatus == RetStatus.Exception) {
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }
@@ -207,13 +209,14 @@ public class SolrIterator implements Iterator<SolrDocument> {
         try {
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(queryFnKey, response, RetStatus.Success,
-                    Optional.empty(), query);
+                    Optional.empty(),runId, query);
             }
             return toReturn;
         } catch (Throwable e) {
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(queryFnKey,
-                    e, RetStatus.Exception, Optional.of(e.getClass().getName()), query);
+                    e, RetStatus.Exception, Optional.of(e.getClass().getName()), runId
+										, query);
             }
             throw e;
         }

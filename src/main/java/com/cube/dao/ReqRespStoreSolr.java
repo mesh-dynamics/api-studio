@@ -175,6 +175,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     @Override
     Optional<RecordOrReplay> retrieveFromCache(CollectionKey key, boolean extendTTL) {
         Optional<RecordOrReplay> toReturn = Optional.empty();
+        String runId = Instant.now().toString();
         if (recordReplayRetrieveKey == null) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
             recordReplayRetrieveKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
@@ -182,7 +183,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(recordReplayRetrieveKey, Optional.empty(), Optional.empty(), key);
+            FnResponseObj ret = config.mocker.mock(recordReplayRetrieveKey, Optional.empty(), Optional.empty(),runId,  key);
             if (ret.retStatus == RetStatus.Exception) {
                 LOGGER.info("Throwing exception as a result of mocking function");
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
@@ -208,13 +209,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             }
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(recordReplayRetrieveKey, toReturn,
-                    RetStatus.Success, Optional.empty(), key);
+                    RetStatus.Success, Optional.empty(), runId, key);
             }
         } catch (Exception e) {
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(recordReplayRetrieveKey
                     , e, RetStatus.Exception,
-                    Optional.of(e.getClass().getName()), key);
+                    Optional.of(e.getClass().getName()), runId, key);
             }
             LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
                 "Error while retrieving Record/Replay from cache")) , e);
@@ -224,6 +225,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public void populateCache(CollectionKey collectionKey, RecordOrReplay rr) {
+        String runId = Instant.now().toString();
         if (recordReplayStoreKey == null) {
             Method method = new Object() {}.getClass().getEnclosingMethod();
             recordReplayStoreKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
@@ -231,7 +233,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(recordReplayStoreKey, Optional.empty(), Optional.empty(), collectionKey , rr);
+            FnResponseObj ret = config.mocker.mock(recordReplayStoreKey, Optional.empty(), Optional.empty(), runId, collectionKey , rr);
             if (ret != null && ret.retStatus == RetStatus.Exception) {
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE,
                     "Throwing exception as a result of mocking function")));
@@ -252,7 +254,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 "Error while population RecordOrReplay in cache")) , e);
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(recordReplayStoreKey, e, RetStatus.Exception,
-                    Optional.of(e.getClass().getName()), collectionKey , rr);
+                    Optional.of(e.getClass().getName()), runId, collectionKey , rr);
             }
         }
     }
@@ -1736,6 +1738,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private FnKey saveFuncKey;
 
     private boolean saveDoc(SolrInputDocument doc) {
+        String runId = Instant.now().toString();
         if (saveFuncKey == null) {
             try {
                 Method currentMethod = solr.getClass().getMethod("add", doc.getClass());
@@ -1747,7 +1750,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
         // TODO the or else will change to empty string once we correctly set the baggage state through envoy filters
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(saveFuncKey , Optional.empty(), Optional.empty(), doc);
+            FnResponseObj ret = config.mocker.mock(saveFuncKey , Optional.empty(), Optional.empty(), runId, doc);
             if (ret.retStatus == RetStatus.Exception) {
                 UtilException.throwAsUnchecked((Throwable)ret.retVal);
             }
@@ -1771,13 +1774,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         try {
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(saveFuncKey, fromSolr,
-                    RetStatus.Success, Optional.empty(), doc);
+                    RetStatus.Success, Optional.empty(), runId, doc);
             }
             return toReturn;
         } catch (Throwable e) {
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(saveFuncKey,
-                    e, RetStatus.Exception, Optional.of(e.getClass().getName()), doc);
+                    e, RetStatus.Exception, Optional.of(e.getClass().getName()), runId, doc);
             }
             throw e;
         }
