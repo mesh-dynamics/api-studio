@@ -52,6 +52,18 @@ const createUser = (user) => {
     return fetch(`${config.apiBaseUrl}/account/create-user`, requestOptions);
 }
 
+const getCaptchaConfig = (domain) => {
+
+    const requestOptions = {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    };
+    
+    return fetch(`${config.apiBaseUrl}/config/get?configType=captcha&domain=${domain}`, requestOptions);
+};
+
 const refreshAuthLogic = (failedRequest) => {
     const dataToPost = JSON.stringify({ refreshToken: getRefreshToken(store.getState()), grantType: "refreshToken" });
     window.authRefeshInProgress = true;
@@ -68,7 +80,7 @@ const refreshAuthLogic = (failedRequest) => {
         })
         .then(async (response) => {
             window.authRefeshInProgress = false;
-           const data = await response.json();
+            const data = await response.json();
             if(response.ok && data.status != 401){
 
                 localStorage.setItem('user', JSON.stringify(data));
@@ -172,6 +184,7 @@ export {
     validateCredentials,
     resendActivationToken,
     verifyActivationToken,
+    getCaptchaConfig,
     refreshAuthLogic,
     retryRequest
 };
