@@ -23,7 +23,7 @@ public abstract  class JaegerStyleTracerHandler implements MDTraceHandler {
     @Override
     public Optional<MDTraceInfo> getTraceInfo(MultivaluedMap<String, String> headers, String app) {
         String traceKey = getTracekey(app);
-        Optional<String> trace = getHeader.apply(headers , traceKey);
+        Optional<String> trace = getHeader(headers , traceKey);
         if(!trace.isPresent()) return Optional.empty();
 
         String mdTrace = trace.get();
@@ -42,7 +42,7 @@ public abstract  class JaegerStyleTracerHandler implements MDTraceHandler {
                 LOGGER.error("Trace id [" + traceId + "] length is not within 1 and 32");
             }
         }
-        String parentSpanField =  getDecodedHeaderValue.apply(headers , getParentSpankey(app)).orElse(null);
+        String parentSpanField =  getDecodedHeaderValue(headers , getParentSpankey(app)).orElse(null);
 
         return Optional.of(new MDTraceInfo(traceField , spanField , parentSpanField))  ;
     }

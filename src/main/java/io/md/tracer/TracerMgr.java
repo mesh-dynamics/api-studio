@@ -5,11 +5,15 @@ import io.md.dao.MDTraceInfo;
 import io.md.services.DataStore;
 import io.md.tracer.handlers.*;
 import io.md.utils.Utils;
+import org.apache.commons.collections4.map.PassiveExpiringMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.MultivaluedMap;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 public class TracerMgr {
 
@@ -17,7 +21,8 @@ public class TracerMgr {
     private DataStore dStore;
 
     private static Map<Tracer , MDTraceHandler> tracehandlers;
-    private static Map<String , Optional<Tracer>> appTracerConfig = new HashMap<>();
+    private static DefaultTraceHandler defaultTraceHandler;
+    private static PassiveExpiringMap<String , MDTraceHandler> appTracerConfig = new PassiveExpiringMap<>(30 , TimeUnit.MINUTES);
 
     static {
         // Using LinkedHashMap so that order (priority) is maintained
@@ -27,23 +32,30 @@ public class TracerMgr {
         tracehandlers.put(Tracer.Jaeger , new JaegerTraceHandler());
         tracehandlers.put(Tracer.Zipkin , new ZipkinTraceHandler());
         tracehandlers.put(Tracer.Datadog , new DatadogTraceHandler());
+
+        defaultTraceHandler = DefaultTraceHandler.getInstance(tracehandlers) ;
     }
 
-    private Optional<Tracer> getTracer(String customer,  String app){
-        Optional<Tracer> tracer =  appTracerConfig.get(app);
-        if(tracer!=null) return tracer;
+    private MDTraceHandler getTraceHandler(String customer, String app){
+        String custAppKey = customer.concat("-").concat(app);
+        MDTraceHandler traceHandler =  appTracerConfig.get(custAppKey);
+        if(traceHandler!=null) return traceHandler;
 
         //First time. Populate from Datastore
         synchronized (TracerMgr.class){
-            if(tracer==null){
-                tracer = getTracerFromAppConfig(customer , app);
+            if(traceHandler==null){
+                //See if there is any tracer configured
+                // Otherwise traceHandler based on default priority order of existing trace Handlers.
+                Optional<Tracer> tracer =  getTracerFromAppConfig(customer , app);
+                LOGGER.info("tracer  for app "+ custAppKey + " :"+ tracer);
+                traceHandler = tracer.map(tracehandlers::get).orElse(defaultTraceHandler);
             }
         }
 
-        LOGGER.info("tracer for app "+ app + " :"+ tracer.orElse(null) );
+        LOGGER.info("trace Handler for app "+ custAppKey + " :"+ traceHandler.getTracer() + ":" + traceHandler.getClass().getSimpleName());
 
-        appTracerConfig.put(app , tracer);
-        return tracer;
+        appTracerConfig.put(custAppKey , traceHandler);
+        return traceHandler;
     }
 
     private Optional<Tracer> getTracerFromAppConfig(String customer, String app){
@@ -51,7 +63,7 @@ public class TracerMgr {
 
         return config.flatMap(appCfg->{
             String tracer = appCfg.tracer;
-            LOGGER.info("Tracer config key for cust: "+ customer + " app :" + app +":" + tracer);
+            LOGGER.info("Tracer config key for customer: "+ customer + " app :" + app +":" + tracer);
             return Utils.valueOf(Tracer.class , tracer);
         });
     }
@@ -62,20 +74,7 @@ public class TracerMgr {
 
     public Optional<MDTraceInfo> getTraceInfo(MultivaluedMap<String, String> headers, String customerId, String app){
 
-        //See if there is any tracer configured
-        Optional<Tracer> tracer = getTracer(customerId, app);
-        if(tracer.isPresent()){
-            return tracehandlers.get(tracer.get()).getTraceInfo(headers, app);
-        }
-
-        // Otherwise default priority order of trace Handlers.
-        for(Map.Entry<Tracer, MDTraceHandler> entry : tracehandlers.entrySet()){
-
-            Optional<MDTraceInfo> traceInfo = entry.getValue().getTraceInfo(headers ,app);
-            if(traceInfo.isPresent()) return traceInfo;
-        }
-
-        return Optional.of(new MDTraceInfo());
+        return getTraceHandler(customerId, app).getTraceInfo(headers, app);
     }
 
 }

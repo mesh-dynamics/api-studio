@@ -257,7 +257,7 @@ public class Utils {
 		MultivaluedMap<String, String> hdrs,
 		MDTraceInfo mdTraceInfo, byte[] body,
 		String customerId, String app, String service, String instance,
-		RunType runType, String method, String reqId, RecordingType recordingType, String runId)
+		RunType runType, String method, String reqId, RecordingType recordingType)
 		throws Event.EventBuilder.InvalidEventException {
 
 			HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
@@ -266,7 +266,7 @@ public class Utils {
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId, app,
 				service, instance, Constants.NOT_APPLICABLE,
 				mdTraceInfo, runType, Optional.empty(),
-				reqId, apiPath, Event.EventType.HTTPRequest, recordingType).withRunId(runId);
+				reqId, apiPath, Event.EventType.HTTPRequest, recordingType);
 			eventBuilder.setPayload(httpRequestPayload);
 			Event event = eventBuilder.createEvent();
 			return event;
@@ -550,7 +550,6 @@ public class Utils {
 
 		RecordingType recordingType = RecordingType.Replay;
 		String traceIdData = traceId.orElse(generateTraceId());
-		String runId = traceIdData;
 		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceIdData ,
 			spanId.orElse("NA") , parentSpanId.orElse("NA"));
 
@@ -558,7 +557,7 @@ public class Utils {
 			body.getBytes(StandardCharsets.UTF_8) : null;
 
 		return createHTTPRequestEvent(path, queryParams, formParams, headers, mdTraceInfo,
-			bodyBytes, customerId, app, service, instanceId, RunType.Replay, method, requestId, recordingType, runId);
+			bodyBytes, customerId, app, service, instanceId, RunType.Replay, method, requestId, recordingType);
 	}
 
 	static public String convertTraceId(long traceIdHigh, long traceIdLow) {
