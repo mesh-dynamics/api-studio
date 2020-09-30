@@ -34,6 +34,8 @@ const ResetPassword = (props) => {
 
     const [submitted, setSubmitted] = useState(false);
 
+    const [errorMessageFromServer, setErrorMessageFromServer] = useState('');
+
     const passwordValidation = validatePassword(password);
 
     const handleResetClick = async () => {                    
@@ -43,14 +45,20 @@ const ResetPassword = (props) => {
             try {
                 setFetching(true);
                 
-                const status = await resetPassword(urlParsed.key || '', password);
+                const response = await resetPassword(urlParsed.key || '', password);
 
                 setFetching(false);
                 
-                if (status.ok) {
+                if (response.ok) {
                     setResetState(RESET_STATE.SUCCESS);
                 } else {
+                    const responseBody = await response.json();
+
+                    const { message, status } = responseBody;
+
                     setResetState(RESET_STATE.FAILURE);
+
+                    status >= 400 && message && setErrorMessageFromServer(message);
                 }
             } catch(e) {
                 setResetState(RESET_STATE.FAILURE);
@@ -95,6 +103,10 @@ const ResetPassword = (props) => {
     const renderResetFailure = () => (
         <div className="reset-password-message">
             Failed to reset your password. Please try again after sometime or contact your system administrator.
+            {
+                errorMessageFromServer && 
+                <div className="server-error-message">{errorMessageFromServer}</div> 
+            }
         </div>
     );
 
