@@ -222,12 +222,13 @@ public class CubeClient {
 
 	public Optional<String> getTemplate(String customerId, String app, String service, String apiPath,
 										String templateVersion, TemplateKey.Type templateType,
-										Optional<Event.EventType> eventType) {
+										Optional<Event.EventType> eventType, String recordingId) {
 		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
 				.segment("as", "getTemplate", customerId, app, templateVersion, service,
 						templateType.toString())
 				.queryParam("apiPath", apiPath)
 				.queryParam("eventType", eventType.toString())
+				.queryParam("recordingId", recordingId)
 				.build();
 
 		return getGetResponse(uri);

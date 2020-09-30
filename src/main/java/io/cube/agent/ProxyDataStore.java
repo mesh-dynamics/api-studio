@@ -74,7 +74,7 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
                                        String templateVersion, TemplateKey.Type templateType,
                                        Optional<Event.EventType> eventType, Optional<String> method, String recordingId) throws TemplateNotFoundException {
         try {
-            return cubeClient.getTemplate(customerId, app, service, apiPath, templateVersion, templateType, eventType)
+            return cubeClient.getTemplate(customerId, app, service, apiPath, templateVersion, templateType, eventType, recordingId)
                     .map(UtilException.rethrowFunction(template -> jsonMapper.readValue(template,
                             CompareTemplate.class)))
                     .orElseThrow(() -> new TemplateNotFoundException());
