@@ -20,6 +20,5 @@ public class CustomerAppConfig {
             return new CustomerAppConfig(this.tracer);
         }
     }
-
 }
 
