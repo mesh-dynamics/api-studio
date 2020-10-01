@@ -1,7 +1,10 @@
 package io.md.dao;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class CustomerAppConfig {
 
+    @JsonProperty("tracer")
     public final String tracer;
 
     private CustomerAppConfig(String tracer){
