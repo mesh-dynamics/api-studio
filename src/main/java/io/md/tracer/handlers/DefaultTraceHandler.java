@@ -12,7 +12,7 @@ public class DefaultTraceHandler implements  MDTraceHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultTraceHandler.class);
     private static DefaultTraceHandler singleton;
 
-    private Map<Tracer , MDTraceHandler> tracehandlers;
+    private final Map<Tracer , MDTraceHandler> tracehandlers;
     private DefaultTraceHandler(Map<Tracer , MDTraceHandler> handlers){
         this.tracehandlers = handlers;
     }

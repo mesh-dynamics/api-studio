@@ -37,7 +37,7 @@ public class TracerMgr {
     }
 
     private MDTraceHandler getTraceHandler(String customer, String app){
-        String custAppKey = customer.concat("-").concat(app);
+        final String custAppKey = customer.concat("-").concat(app);
         MDTraceHandler traceHandler =  appTracerConfig.get(custAppKey);
         if(traceHandler!=null) return traceHandler;
 

@@ -14,7 +14,7 @@ public class ZipkinTraceHandler implements MDTraceHandler {
     @Override
     public Optional<MDTraceInfo> getTraceInfo(MultivaluedMap<String, String> headers, String app) {
 
-        Optional<String> trace = getHeader(headers , Constants.ZIPKIN_TRACE_FIELD);
+        final Optional<String> trace = getHeader(headers , Constants.ZIPKIN_TRACE_FIELD);
         if(!trace.isPresent()) return Optional.empty();
 
 

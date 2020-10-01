@@ -22,11 +22,11 @@ public abstract  class JaegerStyleTracerHandler implements MDTraceHandler {
 
     @Override
     public Optional<MDTraceInfo> getTraceInfo(MultivaluedMap<String, String> headers, String app) {
-        String traceKey = getTracekey(app);
-        Optional<String> trace = getHeader(headers , traceKey);
+        final String traceKey = getTracekey(app);
+        final Optional<String> trace = getHeader(headers , traceKey);
         if(!trace.isPresent()) return Optional.empty();
 
-        String mdTrace = trace.get();
+        final String mdTrace = trace.get();
         String[] parts = decodedValue(mdTrace).split(":");
 
         String traceField = null, spanField = null;
