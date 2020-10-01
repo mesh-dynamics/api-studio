@@ -220,6 +220,24 @@ export const apiCatalogActions = {
                 startTime, endTime,apiPaths, instances }
         })
 
+        // fetch api trace only if all necessary filters are selected
+        switch (selectedSource) {
+            case "UserGolden":
+                if(!(selectedCollection && selectedService && selectedApiPath)) {
+                    return;
+                }
+                break
+            case "Golden":
+                if(!(selectedGolden && selectedService && selectedApiPath)) {
+                    return;
+                }
+                break
+            case "Capture":
+                if(!(startTime && endTime && selectedService && selectedApiPath)) {
+                    return;
+                }
+                break
+        }
         dispatch(apiCatalogActions.fetchAPITrace(selectedSource, selectedCollection, selectedGolden, selectedService, selectedApiPath, selectedInstance, startTime, endTime));
     },
 
