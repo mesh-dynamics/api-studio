@@ -1,6 +1,7 @@
 package io.cube.agent;
 
 import io.md.core.TemplateKey.Type;
+import io.md.dao.*;
 import io.md.dao.Event.EventType;
 import java.io.IOException;
 import java.util.Optional;
@@ -13,12 +14,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateKey;
-import io.md.dao.Event;
-import io.md.dao.EventQuery;
-import io.md.dao.RecordOrReplay;
-import io.md.dao.Recording;
-import io.md.dao.Replay;
-import io.md.dao.ReqRespMatchResult;
 import io.md.injection.DynamicInjectionConfig;
 import io.md.services.AbstractDataStore;
 import io.md.services.DSResult;
@@ -97,6 +92,19 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
         }
         return Optional.empty();
     }
+
+    @Override
+    public Optional<CustomerAppConfig> getAppConfiguration(String customerId, String app) {
+        try {
+            return cubeClient.getAppConfiguration(customerId, app)
+                    .map(UtilException.rethrowFunction(config -> jsonMapper.readValue(config,
+                            CustomerAppConfig.class)));
+        } catch (IOException e) {
+            LOGGER.error("Exception occurred while getting Customer App config : " + customerId + " " + app, e);
+        }
+        return Optional.empty();
+    }
+
 
     @Override
     public Optional<Replay> getReplay(String replayId) {

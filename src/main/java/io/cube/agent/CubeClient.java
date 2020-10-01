@@ -15,6 +15,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
+import io.md.dao.*;
 import org.apache.http.Consts;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -33,10 +34,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.md.constants.Constants;
 import io.md.core.TemplateKey;
-import io.md.dao.Event;
-import io.md.dao.EventQuery;
-import io.md.dao.Replay;
-import io.md.dao.ReqRespMatchResult;
 import io.md.services.MockResponse;
 import io.md.utils.CommonUtils;
 
@@ -249,6 +246,15 @@ public class CubeClient {
 
 		return getGetResponse(uri);
 	}
+
+	public Optional<String> getAppConfiguration(String customerId, String app) {
+		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+				.segment("cs", "getAppConfiguration", customerId, app)
+				.build();
+
+		return getGetResponse(uri);
+	}
+
 
 	public Optional<String> getDynamicInjectionConfig(String customerId, String app, String version) {
 		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_REPLAY_SERVICE_URI)
