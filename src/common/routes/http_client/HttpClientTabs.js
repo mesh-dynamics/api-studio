@@ -186,8 +186,7 @@ class HttpClientTabs extends Component {
                 recordingIdAddedFromClient: toBeUpdatedData.recordingIdAddedFromClient,
                 collectionIdAddedFromClient: toBeUpdatedData.collectionIdAddedFromClient,
                 traceIdAddedFromClient: toBeUpdatedData.traceIdAddedFromClient,
-                recordedHistory: [],
-                clearIntervalHandle: null,
+                recordedHistory: []
             }
             return tabData;
         }
@@ -243,8 +242,7 @@ class HttpClientTabs extends Component {
                 recordingIdAddedFromClient: toBeUpdatedData.recordingIdAddedFromClient,
                 collectionIdAddedFromClient: toBeUpdatedData.collectionIdAddedFromClient,
                 traceIdAddedFromClient: toBeUpdatedData.traceIdAddedFromClient,
-                recordedHistory: toBeUpdatedData.recordedHistory,
-                clearIntervalHandle: toBeUpdatedData.clearIntervalHandle,
+                recordedHistory: toBeUpdatedData.recordedHistory
             }
             return tabData;
         }
@@ -404,7 +402,6 @@ class HttpClientTabs extends Component {
                 collectionIdAddedFromClient: "",
                 traceIdAddedFromClient: "",
                 recordedHistory: null,
-                clearIntervalHandle: null,
                 selectedTraceTableReqTabId: "",
                 selectedTraceTableTestReqTabId: "",
                 requestRunning: false,
@@ -551,8 +548,7 @@ class HttpClientTabs extends Component {
                 recordingIdAddedFromClient: "",
                 collectionIdAddedFromClient: "",
                 traceIdAddedFromClient: "",
-                recordedHistory: null,
-                clearIntervalHandle: null
+                recordedHistory: null
             }
 
             if(tabToBeUpdated.outgoingRequests && _.isArray(tabToBeUpdated.outgoingRequests)) {
@@ -843,9 +839,7 @@ class HttpClientTabs extends Component {
         api.post(urlToPost, httpEventPairs, apiConfig)
             .then((serverRes) => {
                 this.setState({
-                    showImportModal: false,
-                    serializedCollection: "",
-                    importedToCollectionId: "",
+                    showImportModal: true,
                     modalErrorImportCollectionMessage: "Saved."
                 });
             }, (error) => {
@@ -1125,13 +1119,7 @@ class HttpClientTabs extends Component {
         }
         const fetchUrlRendered = httpRequestURLRendered + (httpRequestQueryStringParamsRendered ? "?" + stringify(httpRequestQueryStringParamsRendered) : "");
         dispatch(httpClientActions.preDriveRequest(tabId, "WAITING...", false));
-        dispatch(httpClientActions.setReqRunning(tabId))
-        tabs.map(eachTab => {
-            if (eachTab.id === tabId) {
-                if(eachTab["clearIntervalHandle"]) clearInterval(eachTab["clearIntervalHandle"]);
-            }
-            return eachTab; 
-        });
+        dispatch(httpClientActions.setReqRunning(tabId));
         // Make request
         // https://www.mocky.io/v2/5185415ba171ea3a00704eed
         let fetchedResponseHeaders = {}, responseStatus = "", responseStatusText = "";
@@ -1183,7 +1171,6 @@ class HttpClientTabs extends Component {
         // find index to remove
         const indexToRemove = currentTabs.findIndex(tab => tab.id === key);
         const tabToProcess = currentTabs[indexToRemove];
-        if (tabToProcess && tabToProcess.clearIntervalHandle) clearInterval(tabToProcess.clearIntervalHandle);
 
         // create a new array without [indexToRemove] item
         const newTabs = [...currentTabs.slice(0, indexToRemove), ...currentTabs.slice(indexToRemove + 1)];
@@ -1356,33 +1343,20 @@ class HttpClientTabs extends Component {
                 const abortRequest = tabToProcess.abortRequest; //After first successful data from getApiTrace, tabToProcess.abortRequest is set to null without cancelling
                 api.post(urlToPost, data, apiConfig)
                     .then((serverRes) => {
-                        let clearIntervalHandle;
                         if (type === "History") {
                             const jsonTraceReqData = serverRes.data.response && serverRes.data.response.length > 0 ? serverRes.data.response[0] : "";
                             try {
                                 const parsedTraceReqData = JSON.parse(jsonTraceReqData);
                                 const apiPath = _.trimStart(data[0].request.apiPath, '/');
                                 this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
-                                clearIntervalHandle = setInterval(() => {
-                                    if(abortRequest){
-                                        if(!abortRequest.isCancelled){
-                                            this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
-                                        }                                        
-                                        else if (clearIntervalHandle) {
-                                            clearInterval(clearIntervalHandle);
-                                        }
-                                    }else{
-                                        this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
-                                    }
-                                }, 5000);
                                 setTimeout(() => {
-                                    if (clearIntervalHandle) clearInterval(clearIntervalHandle);
-                                }, 120000);
+                                    this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
+                                }, 5000);
                             } catch (error) {
                                 console.error("Error ", error);
                                 throw new Error("Error");
                             }
-                            dispatch(httpClientActions.postSuccessSaveToCollection(tabId, false, "Saved Successfully!", clearIntervalHandle));
+                            dispatch(httpClientActions.postSuccessSaveToCollection(tabId, false, "Saved Successfully!"));
                         } else {
                             this.updateTabWithNewData(tabId, serverRes, recordingId);
                             dispatch(httpClientActions.postSuccessSaveToCollection(tabId, showSaveModal ? true : false, "Saved Successfully!"));
@@ -1646,13 +1620,6 @@ class HttpClientTabs extends Component {
                                 }
                             }
                             dispatch(httpClientActions.postSuccessLoadRecordedHistory(tabId, ingressReqObj));
-                            if(reqIdArray.length > 1) {
-                                tabs.map((eachTab) => {
-                                    if(eachTab.clearIntervalHandle) {
-                                        clearInterval(eachTab.clearIntervalHandle);
-                                    }
-                                });
-                            }
                             dispatch(httpClientActions.unsetReqRunning(tabId))
                         }
                     });
@@ -1707,8 +1674,7 @@ class HttpClientTabs extends Component {
                 recordingIdAddedFromClient: "",
                 collectionIdAddedFromClient: "",
                 traceIdAddedFromClient: traceId,
-                recordedHistory: null,
-                clearIntervalHandle: null
+                recordedHistory: null
             };
         }
         dispatch(httpClientActions.addTab(tabId, reqObject, appAvailable, tabId, reqObject.httpURL ? reqObject.httpURL : "New"));
@@ -1882,11 +1848,6 @@ class HttpClientTabs extends Component {
         dispatch(cubeActions.hideTestConfig(false));
         dispatch(cubeActions.hideServiceGraph(false));
         dispatch(cubeActions.hideHttpClient(true));
-        tabs.map((eachTab) => {
-            if (eachTab.clearIntervalHandle) {
-                clearInterval(eachTab.clearIntervalHandle);
-            }
-        });
     }
 
 
@@ -1982,7 +1943,7 @@ class HttpClientTabs extends Component {
 
     render() {
         const { cube } = this.props;
-        const { showErrorModal, errorMsg, importedToCollectionId, serializedCollection, modalErrorImportCollectionMessage, showImportModal, curlCommand, modalErrorImportFromCurlMessage} = this.state;
+        const { showErrorModal, errorMsg, importedToCollectionId, serializedCollection, modalErrorImportCollectionMessage, showImportModal, curlCommand, modalErrorImportFromCurlMessage } = this.state;
         const { cube: {selectedApp} } = this.props;
         const app = selectedApp;
         const {httpClient: {cubeRunHistory, userCollections, collectionName, collectionLabel, modalErroSaveMessage,modalErroSaveMessageIsError, modalErroCreateCollectionMessage, tabs, selectedTabKey, showSaveModal, showAddMockReqModal, mockRequestServiceName, mockRequestApiPath, modalErrorAddMockReqMessage}} = this.props;

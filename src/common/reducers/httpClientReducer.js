@@ -103,7 +103,6 @@ const initialState = {
         collectionIdAddedFromClient: "",
         traceIdAddedFromClient: "",
         recordedHistory: null,
-        clearIntervalHandle: null,
         selectedTraceTableReqTabId: "",
         selectedTraceTableTestReqTabId: "",
         requestRunning: false,
@@ -516,13 +515,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                 ...state,
                 showSaveModal : data.showSaveModal,
                 modalErroSaveMessage: data.modalErroSaveMessage,
-                modalErroSaveMessageIsError: false,
-                tabs: tabs.map(eachTab => {
-                    if (eachTab.id === data.tabId) {
-                        if(data.clearIntervalHandle) eachTab["clearIntervalHandle"] = data.clearIntervalHandle;
-                    }
-                    return eachTab; 
-                })
+                modalErroSaveMessageIsError: false
             }
         }
 
