@@ -29,6 +29,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.tracer.TracerMgr;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
@@ -64,7 +65,7 @@ public class Utils {
 	// Assumes name is not null
 	public static <T extends Enum<T>> Optional<T> valueOf(Class<T> clazz, String name) {
 		return EnumSet.allOf(clazz).stream()
-			.filter(v -> v.name().toLowerCase().equals(name.toLowerCase()))
+			.filter(v -> v.name().equalsIgnoreCase(name))
 			.findAny();
 	}
 
@@ -256,7 +257,7 @@ public class Utils {
 		MultivaluedMap<String, String> hdrs,
 		MDTraceInfo mdTraceInfo, byte[] body,
 		String customerId, String app, String service, String instance,
-		RunType runType, String method, String reqId, RecordingType recordingType, String runId)
+		RunType runType, String method, String reqId, RecordingType recordingType)
 		throws Event.EventBuilder.InvalidEventException {
 
 			HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
@@ -265,7 +266,7 @@ public class Utils {
 			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId, app,
 				service, instance, Constants.NOT_APPLICABLE,
 				mdTraceInfo, runType, Optional.empty(),
-				reqId, apiPath, Event.EventType.HTTPRequest, recordingType).withRunId(runId);
+				reqId, apiPath, Event.EventType.HTTPRequest, recordingType);
 			eventBuilder.setPayload(httpRequestPayload);
 			Event event = eventBuilder.createEvent();
 			return event;
@@ -535,20 +536,20 @@ public class Utils {
 	public static Event createRequestMockNew(String path, MultivaluedMap<String, String> formParams,
 		String customerId, String app, String instanceId, String service,
 		String method, String body,
-		MultivaluedMap<String, String> headers, MultivaluedMap<String, String> queryParams, Optional<String> traceIdValue) throws EventBuilder.InvalidEventException, JsonProcessingException {
+		MultivaluedMap<String, String> headers,
+		MultivaluedMap<String, String> queryParams,
+		Optional<String> traceIdValue , TracerMgr tracerMgr) throws EventBuilder.InvalidEventException, JsonProcessingException {
 		// At the time of mock, our lua filters don't get deployed, hence no request id is generated
 		// we can generate a new request id here in the mock service
 		String requestId = service.concat("-mock-").concat(String.valueOf(UUID.randomUUID()));
 
-		MultivaluedMap<String, String> meta = new MultivaluedHashMap<>();
+		MDTraceInfo traceInfo  = tracerMgr.getTraceInfo(headers, customerId, app).orElse(new MDTraceInfo());
+		Optional<String> traceId = Optional.ofNullable(traceIdValue.orElse(traceInfo.traceId));
+		Optional<String> spanId = Optional.ofNullable(traceInfo.spanId);
+		Optional<String> parentSpanId = Optional.ofNullable(traceInfo.parentSpanId);
 
-		setSpanTraceIDParentSpanInMeta(meta, headers, app);
-		Optional<String> traceId = traceIdValue.isPresent() ? traceIdValue : getFirst(meta, Constants.DEFAULT_TRACE_FIELD);
-		Optional<String> spanId = getFirst(meta, Constants.DEFAULT_SPAN_FIELD);
-		Optional<String> parentSpanId = getFirst(meta, Constants.DEFAULT_PARENT_SPAN_FIELD);
 		RecordingType recordingType = RecordingType.Replay;
 		String traceIdData = traceId.orElse(generateTraceId());
-		String runId = getFirst(meta, Constants.RUN_ID_FIELD).orElse(traceIdData);
 		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceIdData ,
 			spanId.orElse("NA") , parentSpanId.orElse("NA"));
 
@@ -556,52 +557,10 @@ public class Utils {
 			body.getBytes(StandardCharsets.UTF_8) : null;
 
 		return createHTTPRequestEvent(path, queryParams, formParams, headers, mdTraceInfo,
-			bodyBytes, customerId, app, service, instanceId, RunType.Replay, method, requestId, recordingType, runId);
+			bodyBytes, customerId, app, service, instanceId, RunType.Replay, method, requestId, recordingType);
 	}
 
-
-	static private void setSpanTraceIDParentSpanInMeta(MultivaluedMap<String, String> meta, MultivaluedMap<String, String> headers,
-			String app) {
-	    String mdTrace = headers.getFirst(CommonUtils.getDFSuffixBasedOnApp(Constants.MD_TRACE_FIELD, app));
-	    if (mdTrace != null && !mdTrace.equals("")) {
-	        String[] parts = decodedValue(mdTrace).split(":");
-	        if (parts.length != 4) {
-	            LOGGER.warn("trace id should have 4 parts but found: " + parts.length);
-	            return;
-	        } else {
-	            String traceId = parts[0];
-	            if (traceId.length() <= 32 && traceId.length() >= 1) {
-	                meta.putSingle(Constants.DEFAULT_SPAN_FIELD, Long.toHexString((new BigInteger(parts[1], 16)).longValue()));
-	                meta.putSingle(Constants.DEFAULT_TRACE_FIELD,
-		                convertTraceId(high(parts[0]), (new BigInteger(parts[0], 16)).longValue()));
-	            } else {
-	                LOGGER.error("Trace id [" + traceId + "] length is not within 1 and 32");
-	            }
-	        }
-	    } else if ( headers.getFirst(Constants.DEFAULT_TRACE_FIELD) != null ) {
-	        meta.putSingle(Constants.DEFAULT_TRACE_FIELD, headers.getFirst(Constants.DEFAULT_TRACE_FIELD));
-	        if ( headers.getFirst(Constants.DEFAULT_SPAN_FIELD) != null) {
-	            meta.putSingle(Constants.DEFAULT_SPAN_FIELD, decodedValue(headers.getFirst(Constants.DEFAULT_SPAN_FIELD)));
-	        }
-	    } else {
-	        LOGGER.warn("Neither default not md trace id header found to the mock sever request");
-	    }
-
-	    String mdParentSpanHdr = CommonUtils.getDFSuffixBasedOnApp(Constants.MD_BAGGAGE_PARENT_SPAN, app);
-	    String mdParentSpanVal = headers.getFirst(mdParentSpanHdr);
-
-	    String defaultParentSpanVal = headers.getFirst(Constants.DEFAULT_BAGGAGE_PARENT_SPAN);
-
-	    if ( mdParentSpanVal != null ) {
-	        meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(mdParentSpanVal));
-	    } else if (defaultParentSpanVal != null ) {
-	        meta.putSingle(Constants.DEFAULT_PARENT_SPAN_FIELD, decodedValue(defaultParentSpanVal));
-	    } else {
-	        LOGGER.warn("Neither default not md baggage parent span id header found to the mock sever request");
-	    }
-	}
-
-	static private String convertTraceId(long traceIdHigh, long traceIdLow) {
+	static public String convertTraceId(long traceIdHigh, long traceIdLow) {
 	    if (traceIdHigh == 0L) {
 	        return Long.toHexString(traceIdLow);
 	    }
@@ -616,7 +575,7 @@ public class Utils {
 	    return hexStringHigh + hexStringLow;
 	}
 
-	static private long high(String hexString) {
+	static public long high(String hexString) {
 	    if (hexString.length() > 16) {
 	        int highLength = hexString.length() - 16;
 	        String highString = hexString.substring(0, highLength);
@@ -626,7 +585,7 @@ public class Utils {
 	    }
 	}
 
-	static private String decodedValue(String value) {
+	static public String decodedValue(String value) {
 	    try {
 	        return URLDecoder.decode(value, "UTF-8");
 	    } catch (UnsupportedEncodingException var3) {

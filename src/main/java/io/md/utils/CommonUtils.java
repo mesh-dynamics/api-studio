@@ -388,6 +388,7 @@ public class CommonUtils {
 		return getCaseInsensitiveMatches(mMap, possibleKey).stream().findFirst();
 	}
 
+	//Todo: check why this api is required. Cleanup
 	public static Optional<String> getTraceId(MultivaluedMap<String, String> mMap) {
 		return findFirstCaseInsensitiveMatch(mMap, Constants.ZIPKIN_TRACE_HEADER);
 	}
