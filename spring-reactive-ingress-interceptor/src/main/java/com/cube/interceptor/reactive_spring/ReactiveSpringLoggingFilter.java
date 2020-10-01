@@ -1,5 +1,8 @@
 package com.cube.interceptor.reactive_spring;
 
+import io.md.dao.MDTraceInfo;
+import io.md.utils.CommonUtils;
+import io.opentracing.Span;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -116,9 +119,12 @@ public class ReactiveSpringLoggingFilter implements WebFilter {
 
 		//body
 		String requestBody = reqBaos.toString(StandardCharsets.UTF_8);
-
-		Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta,
-			requestBody);
+		Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
+		currentSpan.ifPresent(span -> {
+			MDTraceInfo mdTraceInfo = io.md.utils.Utils.getTraceInfo(span);
+			Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta,
+					requestBody, mdTraceInfo);
+		});
 	}
 
 	public static Mono<Void> logResponse(ServerHttpResponse response,
@@ -137,8 +143,11 @@ public class ReactiveSpringLoggingFilter implements WebFilter {
 
 		//body
 		String responseBody = respBaos.toString(StandardCharsets.UTF_8);
-
-		Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, responseBody);
+		Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
+		currentSpan.ifPresent(span -> {
+			MDTraceInfo mdTraceInfo = io.md.utils.Utils.getTraceInfo(span);
+			Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, responseBody, mdTraceInfo);
+		});
 		return Mono.empty();
 	}
 
