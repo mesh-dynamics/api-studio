@@ -345,4 +345,12 @@ public class CubeStoreController {
         validation.validateCustomerName(request, customerId);
         return cubeServerService.fetchPostResponse(request, getBody);
     }
+
+    @GetMapping("/getAppConfiguration/{customerId}/{app}")
+    public ResponseEntity getAppConfiguration(HttpServletRequest request,
+                                                    @RequestBody Optional<String> getBody, @PathVariable String customerId,
+                                                    @PathVariable String app) {
+        validation.validateCustomerName(request,customerId);
+        return cubeServerService.fetchGetResponse(request, getBody);
+    }
 }
