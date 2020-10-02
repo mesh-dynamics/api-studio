@@ -5,7 +5,7 @@ public class ProtoDescriptorDAO {
 	public Integer version;
 	public final String customerId;
 	public final String app;
-	public String encodedFile;
+	public final String encodedFile;
 
 	public ProtoDescriptorDAO() {
 		this.customerId = null;
@@ -14,14 +14,10 @@ public class ProtoDescriptorDAO {
 		this.encodedFile = null;
 	}
 
-	public ProtoDescriptorDAO(String customerId, String app) {
+	public ProtoDescriptorDAO(String customerId, String app, String encodedFile) {
 		this.customerId = customerId;
 		this.app = app;
-	}
-
-	public ProtoDescriptorDAO setEncodedFile(String encodedFile) {
 		this.encodedFile = encodedFile;
-		return this;
 	}
 
 	public void setVersion(Integer version) {
