@@ -27,8 +27,6 @@ public class Config {
 	}
 
 	public Config() {
-		Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
-			.create();
-		recorder = new ConsoleRecorder(gson);
+		recorder = ConsoleRecorder.getInstance();
 	}
 }

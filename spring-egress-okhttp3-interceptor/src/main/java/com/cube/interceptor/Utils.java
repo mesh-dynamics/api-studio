@@ -1,5 +1,6 @@
 package com.cube.interceptor;
 
+import io.md.dao.MDTraceInfo;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -113,12 +114,12 @@ public class Utils {
 
 	public static void createAndLogReqEvent(String apiPath,
 		MultivaluedMap<String, String> queryParams, MultivaluedMap<String, String> requestHeaders,
-		MultivaluedMap<String, String> meta, String requestBody) {
+		MultivaluedMap<String, String> meta, String requestBody, MDTraceInfo mdTraceInfo) {
 		try {
 			Event requestEvent = io.md.utils.Utils
 				.createHTTPRequestEvent(apiPath, queryParams,
-					Utils.createEmptyMultivaluedMap(), meta, requestHeaders,
-					requestBody, Optional.empty(), config.jsonMapper, true);
+					Utils.createEmptyMultivaluedMap(), meta, requestHeaders, mdTraceInfo,
+					requestBody.getBytes(), Optional.empty(), config.jsonMapper, true);
 			config.recorder.record(requestEvent);
 		} catch (InvalidEventException e) {
 			LOGGER.error(new ObjectMessage(
@@ -135,11 +136,11 @@ public class Utils {
 
 	public static void createAndLogRespEvent(String apiPath,
 		MultivaluedMap<String, String> responseHeaders, MultivaluedMap<String, String> meta,
-		String responseBody) {
+		String responseBody, MDTraceInfo mdTraceInfo) {
 		try {
 			Event responseEvent = io.md.utils.Utils
 				.createHTTPResponseEvent(apiPath, meta,
-					responseHeaders, responseBody, Optional.empty(), config.jsonMapper,
+					responseHeaders, mdTraceInfo,responseBody.getBytes(), Optional.empty(), config.jsonMapper,
 					true);
 			config.recorder.record(responseEvent);
 		} catch (InvalidEventException e) {

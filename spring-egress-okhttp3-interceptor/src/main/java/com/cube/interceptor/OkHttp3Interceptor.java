@@ -1,5 +1,8 @@
 package com.cube.interceptor;
 
+import io.md.dao.MDTraceInfo;
+import io.md.utils.CommonUtils;
+import io.opentracing.Span;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -80,9 +83,13 @@ public class OkHttp3Interceptor implements Interceptor {
 
 		//body
 		String requestBody = bodyToString(request);
+		Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
+		currentSpan.ifPresent(span -> {
+			MDTraceInfo mdTraceInfo = io.md.utils.Utils.getTraceInfo(span);
+			Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta,
+					requestBody, mdTraceInfo);
+		});
 
-		Utils.createAndLogReqEvent(apiPath, queryParams, requestHeaders, meta,
-			requestBody);
 	}
 
 	private void logResponse(Response response, String apiPath,
@@ -101,8 +108,12 @@ public class OkHttp3Interceptor implements Interceptor {
 
 		//body
 		String responseBody = bodyToString(response, Utils.PAYLOAD_MAX_LIMIT);
+		Optional<Span> currentSpan = CommonUtils.getCurrentSpan();
+		currentSpan.ifPresent(span -> {
+			MDTraceInfo mdTraceInfo = io.md.utils.Utils.getTraceInfo(span);
+			Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, responseBody, mdTraceInfo);
+		});
 
-		Utils.createAndLogRespEvent(apiPath, responseHeaders, meta, responseBody);
 	}
 
 	private MultivaluedMap<String, String> getTraceInfoMetaMap(Request request) {
