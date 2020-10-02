@@ -81,9 +81,6 @@ public class ClientLoggingFilter implements ClientRequestFilter, ClientResponseF
 
 				URI uri = requestContext.getUri();
 
-				//query params
-				MultivaluedMap<String, String> queryParams = Utils.getQueryParams(uri);
-
 				//path
 				String apiPath = uri.getPath();
 
@@ -108,10 +105,6 @@ public class ClientLoggingFilter implements ClientRequestFilter, ClientResponseF
 					requestContext.getEntityStream());
 				requestContext.setEntityStream(stream);
 				requestContext.setProperty(Constants.MD_LOG_STREAM_PROP, stream);
-
-				logRequest(requestContext, apiPath,
-					traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID), requestHeaders,
-					queryParams, mdTraceInfo, serviceName);
 
 				//Setting the current span id as parent span id value
 				//This is intentionally set after the capture as it should be parent for subsequent capture
@@ -149,6 +142,19 @@ public class ClientLoggingFilter implements ClientRequestFilter, ClientResponseF
 				MDTraceInfo mdTraceInfo =
 					traceInfo != null ? (MDTraceInfo) traceInfo : new MDTraceInfo();
 				MultivaluedMap<String, String> responseHeaders = respContext.getHeaders();
+
+				//hdrs
+				MultivaluedMap<String, String> requestHeaders = requestContext
+						.getStringHeaders();
+
+				URI uri = requestContext.getUri();
+
+				//query params
+				MultivaluedMap<String, String> queryParams = Utils.getQueryParams(uri);
+				logRequest(requestContext, apiPath,
+						traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID), requestHeaders,
+						queryParams, mdTraceInfo, serviceName);
+
 
 				//meta
 				MultivaluedMap<String, String> meta = Utils
