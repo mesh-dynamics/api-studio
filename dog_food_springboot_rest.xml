@@ -81,6 +81,10 @@
                 <shadedPattern>io.md.df.services</shadedPattern>
             </relocation>
             <relocation>
+                <pattern>io.md.injection</pattern>
+                <shadedPattern>io.md.df.injection</shadedPattern>
+            </relocation>
+            <relocation>
               <pattern>com.fasterxml.jackson</pattern>
               <shadedPattern>io.md.fasterxml.jackson</shadedPattern>
             </relocation>
