@@ -2765,9 +2765,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<Integer> version = getIntField(doc, INT_VERSION_F);
         Optional<String> encodedFile = getStrField(doc, PROTO_DESCRIPTOR_FILE_F);
         ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId.orElse(null),
-            app.orElse(null));
+            app.orElse(null), encodedFile.orElse(null));
         protoDescriptorDAO.setVersion(version.orElse(0));
-        protoDescriptorDAO.setEncodedFile(encodedFile.orElse(null));
         try {
             ValidateProtoDescriptorDAO.validate(protoDescriptorDAO);
             return Optional.of(protoDescriptorDAO);
@@ -2781,14 +2780,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public boolean storeProtoDescriptorFile(ProtoDescriptorDAO protoDescriptorDAO) {
-        SolrQuery maxVersionQuery = new SolrQuery("*:*");
-        addFilter(maxVersionQuery, TYPEF, Types.ProtoDescriptor.toString());
-        addFilter(maxVersionQuery, CUSTOMERIDF,  protoDescriptorDAO.customerId);
-        addFilter(maxVersionQuery, APPF, protoDescriptorDAO.app);
-        addSort(maxVersionQuery, INT_VERSION_F, false);
-        Optional<SolrDocument> currentDoc = SolrIterator.getSingleResult(solr, maxVersionQuery);
-
-        int maxVersion = currentDoc.flatMap(this::extractVersionFromDoc).orElse(0);
+        Optional<ProtoDescriptorDAO> currentDoc = getLatestProtoDescriptorDAO(protoDescriptorDAO.customerId, protoDescriptorDAO.app);
+        int maxVersion = currentDoc.map(cd -> cd.version).orElse(0);
         protoDescriptorDAO.setVersion(maxVersion+1);
         SolrInputDocument doc = protoDescriptorDAOToSolrDoc(protoDescriptorDAO);
         return saveDoc(doc) && softcommit();
