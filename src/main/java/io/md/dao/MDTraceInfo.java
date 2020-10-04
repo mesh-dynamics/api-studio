@@ -38,4 +38,13 @@ public class MDTraceInfo {
       return baggageParentSpanId;
     return parentSpanId;
   }
+
+  @Override
+  public String toString() {
+    return "MDTraceInfo{" +
+            "traceId='" + traceId + '\'' +
+            ", spanId='" + spanId + '\'' +
+            ", parentSpanId='" + parentSpanId + '\'' +
+            '}';
+  }
 }

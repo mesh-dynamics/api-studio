@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class DefaultTraceHandler implements  MDTraceHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultTraceHandler.class);
@@ -31,9 +32,13 @@ public class DefaultTraceHandler implements  MDTraceHandler {
         for(Map.Entry<Tracer, MDTraceHandler> entry : tracehandlers.entrySet()){
 
             Optional<MDTraceInfo> traceInfo = entry.getValue().getTraceInfo(headers ,app);
-            if(traceInfo.isPresent()) return traceInfo;
+            if(traceInfo.isPresent()) {
+                LOGGER.debug("traceInfo generated "+traceInfo.get().toString() + " by tracer :"+entry.getKey().toString());
+                return traceInfo;
+            }
         }
 
+        LOGGER.warn("No traceInfo generated for app "+app + " giving empty. Request Headers : "+headers.keySet().stream().collect(Collectors.joining(",")));
         return Optional.of(new MDTraceInfo());
     }
 
