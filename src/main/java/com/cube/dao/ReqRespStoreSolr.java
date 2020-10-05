@@ -333,6 +333,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addToFilterOrQuery(query , queryBuff , SERVICEF , eventQuery.getServices() , true , eventQuery.getServicesWeight());
 
         if(eventQuery.getCollection().orElse("").equalsIgnoreCase("NA")){
+            LOGGER.info(String.format("Solr getEvents Applying the recodingType weightage for NA collection %s  %s" , eventQuery.getCustomerId() , eventQuery.getApp() ) );
             recordingTypeWeights.forEach((type , weight)->{
                 addToQryStr(queryBuff , RECORDING_TYPE_F , type.toString() , true, Optional.of(weight) );
             });
