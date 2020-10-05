@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +41,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import io.md.dao.*;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -67,24 +67,12 @@ import io.md.core.TemplateKey;
 import io.md.core.TemplateKey.Type;
 import io.md.core.Utils.BadValueException;
 import io.md.core.ValidateAgentStore;
-import io.md.dao.DefaultEvent;
-import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Event.RunType;
-import io.md.dao.EventQuery;
-import io.md.dao.MDTraceInfo;
-import io.md.dao.Payload;
-import io.md.dao.RecordOrReplay;
-import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingSaveFailureException;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
-import io.md.dao.Replay;
-import io.md.dao.ReplayBuilder;
-import io.md.dao.ReqRespMatchResult;
-import io.md.dao.UserReqRespContainer;
-import io.md.dao.CubeMetaInfo;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
 import io.md.services.DataStore.TemplateNotFoundException;
@@ -100,9 +88,6 @@ import com.cube.dao.Result;
 import com.cube.dao.WrapperEvent;
 import com.cube.queue.DisruptorEventQueue;
 import com.cube.queue.RREvent;
-import com.cube.queue.StoreUtils;
-
-//import com.cube.queue.StoreUtils;
 
 /**
  * @author prasad
@@ -1627,6 +1612,19 @@ public class CubeStore {
         eventBuilder.withRunId(event.runId);
         return eventBuilder.createEvent();
     }
+
+    @GET
+    @Path("getAppConfiguration/{customerId}/{app}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAppConfiguration(@Context UriInfo uriInfo,
+                                              @PathParam("customerId") String customerId, @PathParam("app") String app) {
+        Optional<CustomerAppConfig> custAppConfig = rrstore.getAppConfiguration(customerId, app);
+        Response resp = custAppConfig.map(d -> Response.ok(d , MediaType.APPLICATION_JSON).build())
+            .orElse(Response.status(Response.Status.NOT_FOUND).entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
+                "CustomerAppConfig object not found")).build());
+        return resp;
+    }
+
 
 
     /**

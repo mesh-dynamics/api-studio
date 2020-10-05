@@ -4,6 +4,7 @@
 package com.cube.dao;
 
 import io.md.core.ConfigApplicationAcknowledge;
+import io.md.dao.*;
 import io.md.dao.Event.EventType;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
@@ -34,16 +35,8 @@ import io.md.core.AttributeRuleMap;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateKey;
-import io.md.dao.Event;
 import io.md.dao.Event.RunType;
-import io.md.dao.EventQuery;
-import io.md.dao.RecordOrReplay;
-import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingStatus;
-import io.md.dao.RecordingOperationSetSP;
-import io.md.dao.Replay;
-import io.md.dao.ReqRespMatchResult;
-import io.md.dao.Analysis;
 import io.md.services.DataStore;
 import io.md.services.FnResponse;
 import io.md.injection.DynamicInjectionConfig;
@@ -195,7 +188,8 @@ public interface ReqRespStore extends DataStore {
 		DynamicInjectionConfig,
 		AgentConfigTagInfo,
 		AgentConfig,
-		AgentConfigAcknowledge;
+		AgentConfigAcknowledge,
+        CustomerAppConfig;
 	}
 
     /**

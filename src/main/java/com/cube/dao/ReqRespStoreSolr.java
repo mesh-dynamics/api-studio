@@ -9,19 +9,13 @@ import io.md.constants.ReplayStatus;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.TemplateKey;
 import io.md.core.ValidateAgentStore;
+import io.md.dao.*;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
 import io.md.dao.agent.config.ConfigType;
-import io.md.dao.EventQuery;
-import io.md.dao.RecordOrReplay;
-import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
-import io.md.dao.RecordingOperationSetSP;
-import io.md.dao.Replay;
-import io.md.dao.ReplayBuilder;
-import io.md.dao.Analysis;
-import io.md.dao.Config;
+
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -73,14 +67,9 @@ import io.md.core.Comparator.Resolution;
 import io.md.core.CompareTemplate;
 import io.md.core.CompareTemplate.ComparisonType;
 import io.md.core.ReplayTypeEnum;
-import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
-import io.md.dao.MDTraceInfo;
-import io.md.dao.Payload;
-import io.md.dao.ReqRespMatchResult;
-import io.md.dao.ReqRespUpdateOperation;
 import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.services.FnResponse;
 import io.md.utils.FnKey;
@@ -1861,6 +1850,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String INJECTION_METAS_JSON = CPREFIX + Constants.INJECTION_METAS_JSON_FIELD + STRING_SUFFIX;
     private static final String PARTIALMATCH = CPREFIX + "partialmatch" + STRING_SUFFIX;
 
+
+    private static final String TRACERF = CPREFIX + "tracer" + STRING_SUFFIX;
+
     // DONT use SimpleDateFormat in multi-threaded environment. Each thread should have its own
     // instance. https://www.callicoder.com/java-simpledateformat-thread-safety-issues/
     // private static SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
@@ -3006,6 +2998,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String GOLDEN_COMMENTF = CPREFIX + Constants.GOLDEN_COMMENT_FIELD + TEXT_SUFFIX;
     private static final String GENERATED_CLASS_JAR_PATH = CPREFIX +  Constants.GENERATED_CLASS_JAR_PATH_FIELD + STRING_SUFFIX;
 
+    private Optional<CustomerAppConfig> docToCustomerAppConfig(SolrDocument doc){
+        final Optional<String> tracer = getStrField(doc, TRACERF);
+
+        CustomerAppConfig.Builder builder = new CustomerAppConfig.Builder();
+        tracer.ifPresent(builder::withTracer);
+
+        return Optional.of(builder.build());
+    }
     private Optional<Recording> docToRecording(SolrDocument doc) {
 
         Optional<String> id = getStrField(doc, IDF);
@@ -3172,6 +3172,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, TYPEF, Types.Recording.toString());
         addFilter(query, IDF, recordingId);
         return SolrIterator.getSingleResult(solr, query).flatMap(doc -> docToRecording(doc));
+    }
+
+    @Override
+    public Optional<CustomerAppConfig> getAppConfiguration(String customerId , String app) {
+
+        final SolrQuery query = new SolrQuery("*:*");
+        query.addField("*");
+        addFilter(query, TYPEF, Types.CustomerAppConfig.toString());
+        addFilter(query, CUSTOMERIDF, customerId);
+        addFilter(query, APPF, app);
+        return SolrIterator.getSingleResult(solr, query).flatMap(this::docToCustomerAppConfig);
     }
 
 
