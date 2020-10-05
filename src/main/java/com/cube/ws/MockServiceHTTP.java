@@ -243,8 +243,9 @@ public class MockServiceHTTP {
             return notFound();
         }
         Recording recording = optionalRecording.get();
+        String collection = (recording.recordingType == Recording.RecordingType.History) ? "NA" : recording.collection;
         return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            httpMethod , body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, Optional.of(runId))), Optional.of(traceId));
+            httpMethod , body, headers, Optional.of(new MockWithCollection(replayCollection, collection, recording.templateVersion, Optional.of(runId))), Optional.of(traceId));
     }
 
 

@@ -332,7 +332,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         addToFilterOrQuery(query , queryBuff , SERVICEF , eventQuery.getServices() , true , eventQuery.getServicesWeight());
 
-        addToFilterOrQuery(query , queryBuff , COLLECTIONF , eventQuery.getCollection() , true , eventQuery.getCollectionWeight());
+        if(eventQuery.getCollection().orElse("").equalsIgnoreCase("NA")){
+            recordingTypeWeights.forEach((type , weight)->{
+                addToQryStr(queryBuff , RECORDING_TYPE_F , type.toString() , true, Optional.of(weight) );
+            });
+        }else{
+            addToFilterOrQuery(query , queryBuff , COLLECTIONF , eventQuery.getCollection() , true , eventQuery.getCollectionWeight());
+        }
 
         addToFilterOrQuery(query , queryBuff , TRACEIDF , eventQuery.getTraceIds() , true , eventQuery.getTraceIdsWeight());
 
@@ -359,6 +365,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return SolrIterator.getResults(solr, query, eventQuery.getLimit(),
             this::docToEvent, eventQuery.getOffset());
     }
+
 
     @Override
     public Stream<ReqRespMatchResult> expandOnTrace(ReqRespMatchResult reqRespMatchResult, boolean recordOrReplay) {
@@ -402,6 +409,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String EVENT_META_DATA_KEYSF = CPREFIX + Constants.EVENT_META_DATA_KEY_FIELD + STRINGSET_SUFFIX;
     private static final String CONFIG_ACK_DATA_KEYSF = CPREFIX + Constants.CONFIG_ACK_DATA_KEY_FIELD + STRINGSET_SUFFIX;
 
+    private static final Map<RecordingType, Float> recordingTypeWeights = Map.of(
+        RecordingType.Golden, 3.0f,
+        RecordingType.UserGolden, 2.5f,
+        RecordingType.Capture, 2.0f,
+        RecordingType.Replay, 1.5f,
+        RecordingType.History, 1.0f);
 
 
     private SolrInputDocument funcReqResponseToSolrDoc(FnReqResponse fnReqResponse, String collection) {
