@@ -10,15 +10,19 @@ export interface ICurrentEnv {
   client: () => webdriverio.BrowserObject;
   configData: any;
 }
-
+//TODO: based on OS, binary(application) path will get changed. Need to implement for Windows/Linux by detecting current OS environment
 const getWebDriver = async () => {
   const options: webdriverio.RemoteOptions = {
     hostname: "localhost",
     port: 9515,
     capabilities: {
-      browserName: "chrome"
+      browserName: "chrome",
+      "goog:chromeOptions":{        
+        binary: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+      }
     },
-    logLevel: "error",
+    logLevel: "error"
+    
   };
 
   let client = await webdriverio.remote(options);
