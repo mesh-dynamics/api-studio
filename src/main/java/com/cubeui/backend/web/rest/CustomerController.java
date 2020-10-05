@@ -2,9 +2,7 @@ package com.cubeui.backend.web.rest;
 
 import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.CustomerDTO;
-import com.cubeui.backend.domain.EmailDomain;
 import com.cubeui.backend.domain.JiraCustomerDefaultCredentials;
-import com.cubeui.backend.repository.EmailDomainRepository;
 import com.cubeui.backend.repository.JiraCustomerCredentialsRepository;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.web.ErrorResponse;
@@ -26,13 +24,11 @@ import static org.springframework.http.ResponseEntity.*;
 public class CustomerController {
 
     private CustomerService customerService;
-    private EmailDomainRepository emailDomainRepository;
     private JiraCustomerCredentialsRepository jiraCustomerCredentialsRepository;
 
-    public CustomerController(CustomerService customerService, EmailDomainRepository emailDomainRepository,
+    public CustomerController(CustomerService customerService,
                               JiraCustomerCredentialsRepository jiraCustomerCredentialsRepository) {
         this.customerService = customerService;
-        this.emailDomainRepository = emailDomainRepository;
         this.jiraCustomerCredentialsRepository = jiraCustomerCredentialsRepository;
     }
 
@@ -49,16 +45,16 @@ public class CustomerController {
             return ok(customer);
         }
         if (customer.isEmpty()) {
-            Optional<EmailDomain> existingDomain = this.emailDomainRepository.findByDomain(customerDTO.getDomainURL());
-            if(existingDomain.isPresent()) {
-                return status(FORBIDDEN).body(new ErrorResponse("Customer with domain '" + customer.get().getDomainURL()+ "' already exists."));
+            for(String domainUrl: customerDTO.getDomainURLs()) {
+                Optional<Customer> existingCustomerForDomainUrl = this.customerService
+                    .getByDomainUrl(domainUrl);
+                if (existingCustomerForDomainUrl.isPresent()) {
+                    return status(FORBIDDEN).body(new ErrorResponse(
+                        "Customer with domain '" + domainUrl + "' already exists."));
+                }
             }
             Customer saved = this.customerService.save(customerDTO);
 
-            EmailDomain domain = new EmailDomain();
-            domain.setDomain(customerDTO.getDomainURL());
-            domain.setCustomer(saved);
-            this.emailDomainRepository.save(domain);
             Optional<JiraCustomerDefaultCredentials> jiraCustomerDefaultCredentials = jiraCustomerCredentialsRepository.findByCustomerId(saved.getId());
             if(jiraCustomerDefaultCredentials.isEmpty()) {
                 log.info("Customer is created without jira credentials");

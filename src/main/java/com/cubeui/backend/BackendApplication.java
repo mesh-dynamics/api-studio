@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
-//import io.md.cube.spring.egress.RestTemplateMockInterceptor;
-//import io.md.cube.spring.egress.RestTemplateTracingInterceptor;
+import io.md.cube.spring.egress.RestTemplateMockInterceptor;
+import io.md.cube.spring.egress.RestTemplateTracingInterceptor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,8 +36,8 @@ import static com.cubeui.backend.security.Constants.SPRING_PROFILE_DEVELOPMENT;
 
 @Slf4j
 @EnableAsync
-//@SpringBootApplication(scanBasePackages = {"com.cubeui.backend", "io.md.cube"})
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.cubeui.backend", "io.md.cube"})
+//@SpringBootApplication
 public class BackendApplication {
 
     @Value("${allowed.origins.path}")
@@ -90,8 +90,8 @@ public class BackendApplication {
     @Bean(name = "appRestClient")
     public RestTemplate getRestTemplate() {
         ArrayList<ClientHttpRequestInterceptor> interceptors = new ArrayList<>();
-//        interceptors.add(new RestTemplateMockInterceptor());
-//        interceptors.add(new RestTemplateTracingInterceptor());
+        interceptors.add(new RestTemplateMockInterceptor());
+        interceptors.add(new RestTemplateTracingInterceptor());
         restTemplate.setInterceptors(interceptors);
         return restTemplate;
     }

@@ -32,7 +32,8 @@ public class MockServiceCollectionController {
       @PathVariable String customerId, @PathVariable String app,
       @PathVariable String traceId, @PathVariable String service) {
     validation.validateCustomerName(request,customerId);
-    Optional<Recording> recording = cubeServerService.searchRecording(customerId, app, recordCollection);
+    String query =  String.format("customerId=%s&app=%s&collection=%s", customerId, app, recordCollection);
+    Optional<Recording> recording = cubeServerService.searchRecording(query);
     if(recording.isEmpty())
       return ResponseEntity.status(HttpStatus.NOT_FOUND)
           .body(String.format("There is no Recording Object for customerId=%s, app=%s, collection=%s",
@@ -52,7 +53,8 @@ public class MockServiceCollectionController {
       @PathVariable String customerId, @PathVariable String app,
       @PathVariable String traceId, @PathVariable String service, @PathVariable String runId) {
     validation.validateCustomerName(request,customerId);
-    Optional<Recording> recording = cubeServerService.searchRecording(customerId, app, recordCollection);
+    String query =  String.format("customerId=%s&app=%s&collection=%s", customerId, app, recordCollection);
+    Optional<Recording> recording = cubeServerService.searchRecording(query);
     if(recording.isEmpty())
       return ResponseEntity.status(HttpStatus.NOT_FOUND)
           .body(String.format("There is no Recording Object for customerId=%s, app=%s, collection=%s",

@@ -1,5 +1,7 @@
 package com.cubeui.backend.domain;
 
+import java.util.HashSet;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,8 +30,9 @@ public class Customer {
     @NotEmpty
     String email;
 
-    @Column(name = "domain_url")
-    String domainURL;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @Builder.Default
+    private Set<String> domainUrls = new HashSet<>();
 
     @CreationTimestamp
     LocalDateTime createdAt;
