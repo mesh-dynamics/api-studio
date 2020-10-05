@@ -341,7 +341,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             addToFilterOrQuery(query , queryBuff , COLLECTIONF , eventQuery.getCollection() , true , eventQuery.getCollectionWeight());
         }
 
-        addToFilterOrQuery(query , queryBuff , TRACEIDF , eventQuery.getTraceIds() , true , eventQuery.getTraceIdsWeight());
+        List<String> traceIds = eventQuery.getTraceIds();
+        List<String> filteredTraceIds = traceIds.stream().filter(traceid->!traceid.equalsIgnoreCase("NA")).collect(Collectors.toList());
+        if(traceIds.size()!=filteredTraceIds.size()){
+            LOGGER.info("Filtered NA traceIds from "+traceIds.size()+" to "+filteredTraceIds);
+        }
+        addToFilterOrQuery(query , queryBuff , TRACEIDF , filteredTraceIds , true , eventQuery.getTraceIdsWeight());
 
         addToFilterOrQuery(query , queryBuff , RRTYPEF , eventQuery.getRunType().map(Object::toString) , true , eventQuery.getRunTypeWeight());
 
