@@ -27,6 +27,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.UriInfo;
 
+import io.md.tracer.TracerMgr;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -261,7 +262,7 @@ public class MockServiceHTTP {
         try {
             Event mockRequestEvent = io.md.utils.Utils
                 .createRequestMockNew(path, formParams, customerId, app, instanceId,
-                    service, method, body, headers.getRequestHeaders(), ui.getQueryParameters(), traceId);
+                    service, method, body, headers.getRequestHeaders(), ui.getQueryParameters(), traceId , tracerMgr);
             MockResponse mockResponse = mocker.mock(mockRequestEvent, Optional.empty(), collection);
             respEvent = mockResponse.response;
 
@@ -324,6 +325,7 @@ public class MockServiceHTTP {
         //LOGGER.info("Cube mock service started");
 
         mocker = new RealMocker(rrstore);
+        tracerMgr = new TracerMgr(rrstore);
 	}
 
 
@@ -333,6 +335,7 @@ public class MockServiceHTTP {
 	private final Config config;
 
 	private Mocker mocker;
+	private TracerMgr tracerMgr;
 
 
 }
