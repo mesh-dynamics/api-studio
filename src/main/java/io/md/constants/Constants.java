@@ -18,8 +18,8 @@ public class Constants {
 	public static final String MD_BAGGAGE_PARENT_SPAN = MDTextMapCodec.BAGGAGE_KEY_PREFIX_BASE + io.md.constants.Constants.MD_PARENT_SPAN;
 	public static final String MD_TRACE_FIELD = MDTextMapCodec.SPAN_CONTEXT_BASE;
 
-	public static final String ZIPKIN_TRACE_FIELD = "x-b3-trace-id";
-	public static final String ZIPKIN_SPAN_FIELD = "x-b3-span-id";
+	public static final String ZIPKIN_TRACE_FIELD = "x-b3-traceid";
+	public static final String ZIPKIN_SPAN_FIELD = "x-b3-spanid";
 	public static final String ZIPKIN_BAGGAGE_KEY_PREFIX = "baggage-";
 	public static final String ZIPKIN_BAGGAGE_PARENT_SPAN = ZIPKIN_BAGGAGE_KEY_PREFIX + PARENT_SPAN_ID_PROP_FIELD;
 

@@ -15,7 +15,7 @@ public class DatadogTraceHandler  implements MDTraceHandler {
 
         String traceField = trace.get();
         String parentSpanField =  getDecodedHeaderValue(headers , Constants.DATADOG_BAGGAGE_PARENT_SPAN).orElse(null);
-        String spanField = getHeader(headers , Constants.DATADOG_TRACE_FIELD).orElse(null);
+        String spanField = getHeader(headers , Constants.DATADOG_SPAN_FIELD).orElse(null);
 
         return Optional.of(new MDTraceInfo(traceField , spanField , parentSpanField))  ;
     }

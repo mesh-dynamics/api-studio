@@ -19,7 +19,7 @@ public class ZipkinTraceHandler implements MDTraceHandler {
 
 
         String traceField = trace.get();
-        String spanField = getHeader(headers , Constants.ZIPKIN_TRACE_FIELD).orElse(null);
+        String spanField = getHeader(headers , Constants.ZIPKIN_SPAN_FIELD).orElse(null);
         String parentSpanField =  getDecodedHeaderValue(headers , Constants.ZIPKIN_BAGGAGE_PARENT_SPAN).orElse(null);
 
         return Optional.of(new MDTraceInfo(traceField , spanField , parentSpanField))  ;
