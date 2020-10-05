@@ -34,8 +34,6 @@ public class WebClientConfig {
 	}
 
 	public WebClientConfig() {
-		Gson gson = new GsonBuilder().registerTypeAdapterFactory(new GsonJava8TypeAdapterFactory())
-			.create();
-		recorder = new ConsoleRecorder(gson);
+		recorder = ConsoleRecorder.getInstance();
 	}
 }

@@ -5,7 +5,7 @@
 
 	<groupId>com.cube.interceptor</groupId>
 	<artifactId>md-spring-egress-okhttp3-interceptor</artifactId>
-	<version>0.0.1</version>
+	<version>0.0.2</version>
 	<packaging>jar</packaging>
 
 	<name>spring-egress-okhttp3-interceptor</name>
@@ -74,7 +74,7 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>agent</artifactId>
-			<version>1.0.17</version>
+			<version>1.0.56</version>
 		</dependency>
 
 		<dependency>

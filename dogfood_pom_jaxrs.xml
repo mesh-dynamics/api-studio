@@ -19,12 +19,12 @@
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>md-jaxrs-ingress-interceptor</artifactId>
-      <version>1.2.7</version>
+      <version>1.2.9</version>
     </dependency>
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>md-jaxrs-egress-interceptor</artifactId>
-      <version>1.2.7</version>
+      <version>1.2.10</version>
     </dependency>
   </dependencies>
   <build>
@@ -79,6 +79,10 @@
             <relocation>
                 <pattern>io.md.services</pattern>
                 <shadedPattern>io.md.df.services</shadedPattern>
+            </relocation>
+            <relocation>
+                <pattern>io.md.injection</pattern>
+                <shadedPattern>io.md.df.injection</shadedPattern>
             </relocation>
             <relocation>
               <pattern>com.fasterxml.jackson</pattern>
