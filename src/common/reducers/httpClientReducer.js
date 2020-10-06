@@ -118,13 +118,6 @@ const initialState = {
     userCollections: [],
     userCollectionId: "",
     userHistoryCollection: null,
-    showSaveModal: false,
-    selectedSaveableTabId: "",
-    collectionName: "",
-    collectionLabel: "",
-    modalErroSaveMessage: "",
-    modalErroSaveMessageIsError: false,
-    modalErroCreateCollectionMessage: "",
     environmentList: [],
     envStatusText: "",
     envStatusIsError: false,
@@ -509,34 +502,6 @@ export const httpClient = (state = initialState, { type, data }) => {
             }
         }
 
-        case httpClientConstants.POST_SUCCESS_SAVE_TO_COLLECTION: {
-            let {tabs} = state;
-            return {
-                ...state,
-                showSaveModal : data.showSaveModal,
-                modalErroSaveMessage: data.modalErroSaveMessage,
-                modalErroSaveMessageIsError: false
-            }
-        }
-
-        case httpClientConstants.POST_ERROR_SAVE_TO_COLLECTION: {
-            return {
-                ...state,
-                showSaveModal : data.showSaveModal,
-                modalErroSaveMessage: data.modalErroSaveMessage,
-                modalErroSaveMessageIsError: true
-            }
-        }
-
-        case httpClientConstants.CATCH_ERROR_SAVE_TO_COLLECTION: {
-            return {
-                ...state,
-                showSaveModal : data.showSaveModal,
-                modalErroSaveMessage: data.modalErroSaveMessage,
-                modalErroSaveMessageIsError: true
-            }
-        }
-
         case httpClientConstants.POST_SUCCESS_LOAD_RECORDED_HISTORY: {
             let {tabs} = state;
             return {
@@ -548,26 +513,6 @@ export const httpClient = (state = initialState, { type, data }) => {
                     }
                     return eachTab; 
                 })
-            }
-        }
-
-        case httpClientConstants.CLOSE_SAVE_MODAL: {
-            return {
-                ...state,
-                showSaveModal : data.showSaveModal
-            }
-        }
-
-        case httpClientConstants.SHOW_SAVE_MODAL: {
-            return {
-                ...state,
-                showSaveModal: data.showSaveModal, 
-                collectionName: data.collectionName, 
-                collectionLabel: data.collectionLabel, 
-                selectedSaveableTabId: data.selectedSaveableTabId, 
-                modalErroSaveMessage: data.modalErroSaveMessage, 
-                modalErroSaveMessageIsError: data.modalErroSaveMessageIsError,
-                modalErroCreateCollectionMessage: data.modalErroCreateCollectionMessage
             }
         }
 
@@ -586,30 +531,6 @@ export const httpClient = (state = initialState, { type, data }) => {
             }
         }
 
-        case httpClientConstants.POST_SUCCESS_CREATE_COLLECTION: {
-            return {
-                ...state,
-                showSaveModal : data.showSaveModal,
-                modalErroCreateCollectionMessage: data.modalErroCreateCollectionMessage
-            }
-        }
-
-        case httpClientConstants.POST_ERROR_CREATE_COLLECTION: {
-            return {
-                ...state,
-                showSaveModal : data.showSaveModal,
-                modalErroCreateCollectionMessage: data.modalErroCreateCollectionMessage
-            }
-        }
-
-        case httpClientConstants.CATCH_ERROR_CREATE_COLLECTION: {
-            return {
-                ...state,
-                showSaveModal : data.showSaveModal,
-                modalErroCreateCollectionMessage: data.modalErroCreateCollectionMessage
-            }
-        }
-
         case httpClientConstants.SET_SELECTED_TAB_KEY: {
             return {
                 ...state,
@@ -622,13 +543,6 @@ export const httpClient = (state = initialState, { type, data }) => {
                 ...state,
                 tabs: data.tabs,
                 selectedTabKey : data.selectedTabKey
-            }
-        }
-
-        case httpClientConstants.SET_UPDATED_MODAL_USER_COLLECTION_DETAILS: {
-            return {
-                ...state,
-                [data.name]: data.value
             }
         }
 

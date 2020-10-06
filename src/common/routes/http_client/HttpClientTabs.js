@@ -66,15 +66,6 @@ class HttpClientTabs extends Component {
         this.showOutgoingRequests = this.showOutgoingRequests.bind(this);
         this.saveToCollection = this.saveToCollection.bind(this);
 
-        
-
-        this.handleCloseModal = this.handleCloseModal.bind(this);
-        this.showSaveModal = this.showSaveModal.bind(this);
-        this.handleSave = this.handleSave.bind(this);
-
-        this.handleChange = this.handleChange.bind(this);
-        this.handleCreateCollection = this.handleCreateCollection.bind(this);
-
         this.handleRowClick = this.handleRowClick.bind(this);
         this.setAsReference = this.setAsReference.bind(this);
         this.addMockRequest = this.addMockRequest.bind(this);
@@ -655,16 +646,6 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.setSelectedTraceTableTestReqId(selectedTraceTableTestReqTabId, tabId));
     }
 
-    handleCloseModal() {
-        const { dispatch } = this.props;
-        dispatch(httpClientActions.closeSaveModal(false));
-    }
-
-    showSaveModal(isOutgoingRequest, tabId) {
-        const { dispatch } = this.props;
-        dispatch(httpClientActions.showSaveModal(tabId, true, "", "", "",false, ""));
-    }
-
     handleAddMockReqModalClose() {
         const { dispatch } = this.props;
         dispatch(httpClientActions.closeAddMockReqModal("", false, "", "", ""));
@@ -762,6 +743,7 @@ class HttpClientTabs extends Component {
 
     handleImportCollection() {
         const {importedToCollectionId, serializedCollection } = this.state;
+        const { dispatch } = this.props;
         if(!serializedCollection || !importedToCollectionId) return;
         this.setState({
             showImportModal: true,
@@ -843,6 +825,7 @@ class HttpClientTabs extends Component {
                     showImportModal: true,
                     modalErrorImportCollectionMessage: "Saved."
                 });
+                dispatch(httpClientActions.loadCollectionTrace(importedToCollectionId));
             }, (error) => {
                 console.error("error: ", error);
                 this.setState({
@@ -1308,8 +1291,6 @@ class HttpClientTabs extends Component {
     saveToCollection(isOutgoingRequest, tabId, recordingId, type, runId="") {
         const { 
             httpClient: { 
-                showSaveModal, 
-                selectedTabKey, 
                 historyTabState, 
                 tabs: tabsToProcess
             }, 
@@ -1357,11 +1338,7 @@ class HttpClientTabs extends Component {
                                 console.error("Error ", error);
                                 throw new Error("Error");
                             }
-                            dispatch(httpClientActions.postSuccessSaveToCollection(tabId, false, "Saved Successfully!"));
-                        } else {
-                            this.updateTabWithNewData(tabId, serverRes, recordingId);
-                            dispatch(httpClientActions.postSuccessSaveToCollection(tabId, showSaveModal ? true : false, "Saved Successfully!"));
-                        }
+                        } 
                         setTimeout(() => {
                             if(historyTabState.currentPage == 0)
                             {
@@ -1369,128 +1346,24 @@ class HttpClientTabs extends Component {
                             }
                             dispatch(httpClientActions.loadUserCollections());
                             // update api catalog golden and collection lists
-                            dispatch(apiCatalogActions.fetchGoldenCollectionList(app, "Golden"))
                             dispatch(apiCatalogActions.fetchGoldenCollectionList(app, "UserGolden"))
 
                         }, 2000);
                     }, (error) => {
                         dispatch(httpClientActions.unsetReqRunning(tabId));
-                        dispatch(httpClientActions.postErrorSaveToCollection(type === "History" ? false : showSaveModal ? true : false, "Error saving: " + error));
                         console.error("error: ", error);
                     })
             } 
         } catch (error) {
             console.error("Error ", error);
             dispatch(httpClientActions.unsetReqRunning(tabId));
-            dispatch(httpClientActions.catchErrorSaveToCollection(type === "History" ? false : showSaveModal ? true : false, "Error: Invalid JSON body"));
             throw new Error("Error");
         }        
     }
     
-    updateEachRequest(req, data, collectionId, recordingId) {
-        req.requestId = data.newReqId;
-        req.collectionIdAddedFromClient = collectionId;
-        req.traceIdAddedFromClient = data.newTraceId;
-        req.recordingIdAddedFromClient = recordingId;
-        req.eventData[0].reqId = data.newReqId;
-        req.eventData[0].traceId = data.newTraceId;
-        req.eventData[0].collection = collectionId;
-        req.eventData[1].reqId = data.newReqId;
-        req.eventData[1].traceId = data.newTraceId;
-        req.eventData[1].collection = data.collec;
-    }
-
-    updateTabWithNewData(tabId, response, recordingId) {
-        const {httpClient: {tabs, selectedTabKey, showSaveModal, userCollections}} = this.props;
-        const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
-        const tabToProcess = tabs[tabIndex];
-        if(response.status === "success") {
-            try {
-                const parsedData = response.data.response && response.data.response.length > 0 ?  response.data.response.map((eachOne) => {
-                    return JSON.parse(eachOne);
-                }) : [];
-                const collection = userCollections.find(eachCollection => eachCollection.id === recordingId);
-                for(let eachReq of parsedData) {
-                    if(eachReq.oldReqId === tabToProcess.requestId) {
-                        this.updateEachRequest(tabToProcess, eachReq, collection.collec, collection.id);
-                    } else {
-                        tabToProcess.outgoingRequests.map((eachOutgoingReq) => {
-                            if(eachReq.oldReqId === eachOutgoingReq.requestId) {
-                                this.updateEachRequest(eachOutgoingReq, eachReq, collection.collec, collection.id);
-                            }
-                            return eachOutgoingReq;
-                        })
-                    }
-                }
-            } catch(err) {
-                console.error("Error ", error);
-            }
-        }
-    }
-
     handleChange(evt) {
         const {dispatch} = this.props;
         dispatch(httpClientActions.setUpdatedModalUserCollectionDetails(evt.target.name, evt.target.value));
-    }
-
-    handleCreateCollection() {
-        const user = JSON.parse(localStorage.getItem('user'));
-        const {httpClient: {collectionName, collectionLabel}} = this.props;
-        const {dispatch} = this.props;
-        const { cube: {selectedApp} } = this.props;
-        const app = selectedApp;
-        const userId = user.username,
-            customerId = user.customer_name;
-        const searchParams = new URLSearchParams();
-
-        searchParams.set('name', collectionName);
-        searchParams.set('userId', userId);
-        searchParams.set('label', collectionLabel);
-        searchParams.set('recordingType', "UserGolden");
-
-        const configForHTTP = {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-        };
-
-        try {
-            api.post(`${config.apiBaseUrl}/cs/start/${user.customer_name}/${app}/dev/Default${app}`, searchParams, configForHTTP)
-                .then((serverRes) => {
-                    //TODO: Move collectionName, collectionLabel from redux to local state.
-                    dispatch(httpClientActions.setUpdatedModalUserCollectionDetails("collectionName", ""));
-                    dispatch(httpClientActions.setUpdatedModalUserCollectionDetails("collectionLabel", ""));
-                    dispatch(httpClientActions.loadUserCollections());
-                    dispatch(httpClientActions.postSuccessCreateCollection(true, "Created Successfully! Please select this newly created collection from below dropdown and click save."));
-                }, (error) => {
-                    dispatch(httpClientActions.postErrorCreateCollection(true, "Error saving: " + error));
-                    console.error("error: ", error);
-                })
-        } catch(error) {
-            dispatch(httpClientActions.catchErrorCreateCollection(true, "Error saving: " + error));
-            console.error("Error ", error);
-            throw new Error("Error");
-        }
-    }
-
-    handleSave() {
-        const {httpClient: {userCollectionId, userCollections, selectedSaveableTabId, tabs, selectedTabKey}} = this.props;
-        let isOutgoingRequest = false;
-        let tabsToProcess = tabs;
-        let tabIndex = this.getTabIndexGivenTabId(selectedSaveableTabId, tabsToProcess);
-        if (tabIndex < 0) {
-            const indexToFind = tabs.findIndex(tab => tab.id === selectedTabKey);
-            tabsToProcess = tabs[indexToFind]["outgoingRequests"];
-            tabIndex = this.getTabIndexGivenTabId(selectedSaveableTabId, tabsToProcess);
-            if (tabIndex > -1) {
-                isOutgoingRequest = true;
-            }
-        }
-        const selectedCollection = userCollections.find((eachCollection) => {
-            return eachCollection.id === userCollectionId;
-        });
-        tabs[tabIndex].abortRequest = null;
-        this.saveToCollection(isOutgoingRequest, selectedSaveableTabId, selectedCollection.id, "UserGolden");
     }
 
     formatHttpEventToReqResObject(reqId, httpEventReqResPair) {
@@ -1880,7 +1753,6 @@ class HttpClientTabs extends Component {
                 return (
                     <div className="tab-container">
                         <HttpClient currentSelectedTab={eachTab}
-                        
                         /* tabId={eachTab.id}
                         requestId={eachTab.requestId}
                         httpMethod={eachTab.httpMethod}
@@ -1909,7 +1781,7 @@ class HttpClientTabs extends Component {
                         updateAllParams={this.updateAllParams}
                         updateBodyOrRawDataType={this.updateBodyOrRawDataType}
                         driveRequest={this.driveRequest}
-                        showSaveModal={this.showSaveModal}
+                        getReqResFromTabData={this.getReqResFromTabData.bind(this)}
                         handleRowClick={this.handleRowClick}
                         handleTestRowClick={this.handleTestRowClick}
                         setAsReference={this.setAsReference}
@@ -1947,7 +1819,7 @@ class HttpClientTabs extends Component {
         const { showErrorModal, errorMsg, importedToCollectionId, serializedCollection, modalErrorImportCollectionMessage, showImportModal, curlCommand, modalErrorImportFromCurlMessage } = this.state;
         const { cube: {selectedApp} } = this.props;
         const app = selectedApp;
-        const {httpClient: {cubeRunHistory, userCollections, collectionName, collectionLabel, modalErroSaveMessage,modalErroSaveMessageIsError, modalErroCreateCollectionMessage, tabs, selectedTabKey, showSaveModal, showAddMockReqModal, mockRequestServiceName, mockRequestApiPath, modalErrorAddMockReqMessage}} = this.props;
+        const {httpClient: { userCollections, tabs, selectedTabKey, showAddMockReqModal, mockRequestServiceName, mockRequestApiPath, modalErrorAddMockReqMessage}} = this.props;
 
         return (
 
@@ -2002,58 +1874,6 @@ class HttpClientTabs extends Component {
                             tabsWrapperClass={"md-hc-tabs-wrapper"} 
                             selectedTabKey={selectedTabKey} 
                         />
-                    </div>
-                    <div>
-                        <Modal show={showSaveModal} onHide={this.handleCloseModal}>
-                            <Modal.Header closeButton>
-                                <Modal.Title>Save to collection</Modal.Title>
-                            </Modal.Header>
-                            <Modal.Body>
-                                <h5 style={{ textAlign: 'center' }}>
-                                    Create a new collection
-                                </h5>
-                                <div>
-                                    <FormGroup>
-                                        <ControlLabel>Name</ControlLabel>
-                                        <FormControl componentClass="input" placeholder="Name" name="collectionName" value={collectionName} onChange={this.handleChange} />
-                                    </FormGroup>
-                                </div>
-                                <div>
-                                    <FormGroup>
-                                        <ControlLabel>Label</ControlLabel>
-                                        <FormControl componentClass="input" placeholder="Label" name="collectionLabel" value={collectionLabel} onChange={this.handleChange} />
-                                    </FormGroup>
-                                </div>
-                                <p style={{ fontWeight: 500 }}>{modalErroCreateCollectionMessage}</p>
-                                <div>
-                                    <div onClick={this.handleCreateCollection} className="btn btn-sm cube-btn text-center">Create</div>
-                                </div>
-                                <hr />
-                                <h5 style={{ textAlign: 'center' }}>
-                                    Select an exisiting collection
-                                </h5>
-                                <div>
-                                    <FormGroup style={{ marginBottom: "0px" }}>
-                                        <FormControl componentClass="select" placeholder="Select" name="userCollectionId" value={this.userCollectionId} onChange={this.handleChange}>
-                                            <option value=""></option>
-                                            {userCollections && userCollections.map((eachUserCollection) => {
-                                                return (
-                                                    <option key={eachUserCollection.id} value={eachUserCollection.id}>{eachUserCollection.name}</option>
-                                                );
-                                            })}
-                                        </FormControl>
-                                    </FormGroup>
-                                </div>
-                                <p style={{ marginTop: "10px", fontWeight: 500,color: modalErroSaveMessageIsError ? "red" : "" }} >
-                                    {modalErroSaveMessage}
-                                </p>
-                            </Modal.Body>
-                            <Modal.Footer>
-                                <div onClick={this.handleSave} className="btn btn-sm cube-btn text-center">Save</div>
-                                <div onClick={this.handleCloseModal} className="btn btn-sm cube-btn text-center">Close</div>
-                            </Modal.Footer>
-                        </Modal>
-                       
                     </div>
                     <div>
                         <Modal show={showAddMockReqModal} onHide={this.handleAddMockReqModalClose}>

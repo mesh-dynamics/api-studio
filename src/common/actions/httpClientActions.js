@@ -93,28 +93,9 @@ export const httpClientActions = {
     deleteUserCollection: (userCollectionId) => {
         return {type: httpClientConstants.DELETE_USER_COLLECTION, data: userCollectionId};
     },
-    postSuccessSaveToCollection: (tabId, showSaveModal, modalErroSaveMessage) => {
-        return {type: httpClientConstants.POST_SUCCESS_SAVE_TO_COLLECTION, data: {tabId, showSaveModal, modalErroSaveMessage}};
-    },
-
-    postErrorSaveToCollection: (showSaveModal, modalErroSaveMessage) => {
-        return {type: httpClientConstants.POST_ERROR_SAVE_TO_COLLECTION, data: {showSaveModal, modalErroSaveMessage}};
-    },
-
-    catchErrorSaveToCollection: (showSaveModal, modalErroSaveMessage) => {
-        return {type: httpClientConstants.CATCH_ERROR_SAVE_TO_COLLECTION, data: {showSaveModal, modalErroSaveMessage}};
-    },
 
     postSuccessLoadRecordedHistory: (tabId, recordedHistory) => {
         return {type: httpClientConstants.POST_SUCCESS_LOAD_RECORDED_HISTORY, data: {tabId, recordedHistory}};
-    },
-
-    closeSaveModal: (showSaveModal) => {
-        return {type: httpClientConstants.CLOSE_SAVE_MODAL, data: {showSaveModal}};
-    },
-
-    showSaveModal: (selectedSaveableTabId, showSaveModal, collectionName, collectionLabel, modalErroSaveMessage,modalErroSaveMessageIsError, modalErroCreateCollectionMessage) => {
-        return {type: httpClientConstants.SHOW_SAVE_MODAL, data: {selectedSaveableTabId, showSaveModal, collectionName, collectionLabel, modalErroSaveMessage,modalErroSaveMessageIsError, modalErroCreateCollectionMessage}};
     },
 
     setInactiveHistoryCursor: (historyCursor, active) => {
@@ -125,28 +106,12 @@ export const httpClientActions = {
         return {type: httpClientConstants.SET_ACTIVE_HISTORY_CURSOR, data: {historyCursor}};
     },
 
-    postSuccessCreateCollection: (showSaveModal, modalErroCreateCollectionMessage) => {
-        return {type: httpClientConstants.POST_SUCCESS_CREATE_COLLECTION, data: {showSaveModal, modalErroCreateCollectionMessage}};
-    },
-
-    postErrorCreateCollection: (showSaveModal, modalErroCreateCollectionMessage) => {
-        return {type: httpClientConstants.POST_ERROR_CREATE_COLLECTION, data: {showSaveModal, modalErroCreateCollectionMessage}};
-    },
-
-    catchErrorCreateCollection: (showSaveModal, modalErroCreateCollectionMessage) => {
-        return {type: httpClientConstants.CATCH_ERROR_CREATE_COLLECTION, data: {showSaveModal, modalErroCreateCollectionMessage}};
-    },
-
     setSelectedTabKey: (selectedTabKey) => {
         return {type: httpClientConstants.SET_SELECTED_TAB_KEY, data: {selectedTabKey}};
     },
 
     removeTab: (tabs, selectedTabKey) => {
         return {type: httpClientConstants.REMOVE_TAB, data: {tabs, selectedTabKey}};
-    },
-
-    setUpdatedModalUserCollectionDetails: (name, value) => {
-        return {type: httpClientConstants.SET_UPDATED_MODAL_USER_COLLECTION_DETAILS, data: {name, value}};
     },
 
     setAsReference: (tabId, tab) => {
@@ -241,6 +206,32 @@ export const httpClientActions = {
     createDuplicateTab: (tabId) => ({type: httpClientConstants.CREATE_DUPLICATE_TAB, data: {tabId}}),
 
     toggleShowTrace: (tabId) => ({type: httpClientConstants.TOGGLE_SHOW_TRACE, data: {tabId}}),
+
+
+    loadCollectionTrace: (selectedCollectionId) => async (dispatch, getState) => {
+        const {
+        httpClient: { userCollections },cube: { selectedApp }
+        } = getState();
+        
+        const app = selectedApp;
+        const selectedCollection = userCollections.find(
+            (eachCollection) => eachCollection.id === selectedCollectionId
+        );
+        try {
+        cubeService.loadCollectionTraces(selectedCollection.collec, app).then(
+            (apiTraces) => {
+                selectedCollection.apiTraces = apiTraces;
+                dispatch(httpClientActions.addUserCollections(userCollections));
+            },
+            (err) => {
+                console.error("err: ", err);
+            }
+        );
+        } catch (error) {
+            console.error("Error ", error);
+            throw new Error("Error");
+        }
+    },
 
     loadHistoryApiCall : async(app, collection, endTime, numResults)=> {
         

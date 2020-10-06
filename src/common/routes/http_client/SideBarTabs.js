@@ -1,22 +1,26 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
 import { httpClientActions } from "../../actions/httpClientActions";
-import { Tabs, Tab, Panel, Label, Modal, Glyphicon, FormGroup, FormControl, ControlLabel } from "react-bootstrap";
+import {
+  Tabs,
+  Tab,
+  Panel,
+  Label,
+  Modal,
+} from "react-bootstrap";
 import { v4 as uuidv4 } from "uuid";
 import _ from "lodash";
 import * as moment from "moment";
-import arrayToTree from "array-to-tree";
 import { Treebeard, decorators } from "react-treebeard";
 import config from "../../config";
 import TreeNodeContainer from "./TreeNodeContainer";
 import TreeNodeToggle from "./TreeNodeToggle";
 import CollectionTreeCSS from "./CollectionTreeCSS";
-import { getDefaultTraceApiFilters } from "../../utils/api-catalog/api-catalog-utils";
 
-import { cubeActions } from "../../actions";
 import { cubeService } from "../../services";
 import api from "../../api";
 import classNames from "classnames";
+import CreateCollection from "./CreateCollection";
 
 class SideBarTabs extends Component {
   constructor(props) {
@@ -24,91 +28,14 @@ class SideBarTabs extends Component {
     this.state = {
       showDeleteGoldenConfirmation: false,
       itemToDelete: {},
-      newCollectionName: "",
-      newCollectionLabel: "",
-      modalCreateCollectionMessage: "",
-      showCreateCollectionModal: false,
     };
 
     this.onToggle = this.onToggle.bind(this);
     this.handlePanelClick = this.handlePanelClick.bind(this);
     this.handleTreeNodeClick = this.handleTreeNodeClick.bind(this);
     this.renderTreeNodeHeader = this.renderTreeNodeHeader.bind(this);
-    this.handleInputChange = this.handleInputChange.bind(this);
-    this.handleCreateCollection = this.handleCreateCollection.bind(this);
-    this.onCloseCreateCollectionModal = this.onCloseCreateCollectionModal.bind(this);
-    this.handleCreateCollectionModalShow = this.handleCreateCollectionModalShow.bind(this);
 
     this.persistPanelState = [];
-  }
-
-  handleCreateCollectionModalShow(evt) {
-    this.setState({
-      newCollectionName: "",
-      newCollectionLabel: "",
-      modalCreateCollectionMessage: "",
-      showCreateCollectionModal: true,
-    });
-  }
-
-  handleInputChange(evt) {
-    this.setState({
-      [evt.target.name]: evt.target.value
-    });
-  }
-
-  onCloseCreateCollectionModal(evt) {
-    this.setState({
-      newCollectionName: "",
-      newCollectionLabel: "",
-      modalCreateCollectionMessage: "",
-      showCreateCollectionModal: false,
-    });
-  }
-
-  handleCreateCollection() {
-    const user = JSON.parse(localStorage.getItem('user'));
-    const { newCollectionName, newCollectionLabel } = this.state;
-    const { dispatch } = this.props;
-    const { cube: { selectedApp } } = this.props;
-    const app = selectedApp;
-    const userId = user.username,
-      customerId = user.customer_name;
-    const searchParams = new URLSearchParams();
-
-    searchParams.set('name', newCollectionName);
-    searchParams.set('userId', userId);
-    searchParams.set('label', newCollectionLabel);
-    searchParams.set('recordingType', "UserGolden");
-
-    const configForHTTP = {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
-    };
-
-    try {
-      api.post(`${config.apiBaseUrl}/cs/start/${user.customer_name}/${app}/dev/Default${app}`, searchParams, configForHTTP)
-        .then((serverRes) => {
-          dispatch(httpClientActions.loadUserCollections());
-          this.setState({
-            newCollectionName: "",
-            newCollectionLabel: "",
-            modalCreateCollectionMessage: "Created Successfully!"
-          });
-        }, (error) => {
-          this.setState({
-            modalCreateCollectionMessage: "Error saving: " + error
-          });
-          console.error("error: ", error);
-        })
-    } catch (error) {
-      this.setState({
-        modalCreateCollectionMessage: "Error saving: " + error
-      });
-      console.error("Error ", error);
-      throw new Error("Error");
-    }
   }
 
   getExpendedState = (uniqueid) => {
@@ -126,10 +53,7 @@ class SideBarTabs extends Component {
   };
 
   deleteItem = async () => {
-    const {
-      dispatch,
-      httpClient: { userCollections },
-    } = this.props;
+    const { dispatch } = this.props;
     const { itemToDelete } = this.state;
     try {
       if (itemToDelete.requestType == "collection") {
@@ -174,40 +98,8 @@ class SideBarTabs extends Component {
     const apiTracesForACollection = selectedCollection.apiTraces;
     try {
       if (!apiTracesForACollection || forceLoad) {
-        const filterData = {
-          ...getDefaultTraceApiFilters(),
-          app,
-          collectionName: selectedCollectionId,
-          depth: 100,
-          numResults: 100,
-        };
-        cubeService.fetchAPITraceData(filterData).then(
-          (res) => {
-            const apiTraces = [];
-            res.response.sort((a, b) => {
-              return b.res[0].reqTimestamp - a.res[0].reqTimestamp;
-            });
-            res.response.map((eachApiTrace) => {
-              eachApiTrace.res.map((eachApiTraceEvent) => {
-                eachApiTraceEvent["name"] = eachApiTraceEvent["apiPath"];
-                eachApiTraceEvent["id"] = eachApiTraceEvent["requestEventId"];
-                eachApiTraceEvent["toggled"] = false;
-                eachApiTraceEvent["recordingIdAddedFromClient"] =
-                  selectedCollection.id;
-                eachApiTraceEvent["traceIdAddedFromClient"] =
-                  eachApiTrace.traceId;
-                eachApiTraceEvent["collectionIdAddedFromClient"] =
-                  eachApiTrace.collection;
-              });
-              const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
-                customID: "spanId",
-                parentProperty: "parentSpanId",
-              });
-              apiTraces.push({
-                ...apiFlatArrayToTree[0],
-              });
-            });
-
+        cubeService.loadCollectionTraces(selectedCollectionId, app).then(
+          (apiTraces) => {
             selectedCollection.apiTraces = apiTraces;
             dispatch(httpClientActions.addUserCollections(userCollections));
           },
@@ -584,9 +476,9 @@ class SideBarTabs extends Component {
           onClick={this.onFirstPageClickHistoryTab}
         >
           {historyTabState.currentPage == 0 ? (
-            <i class="fas fa-sync-alt"></i>
+            <i className="fas fa-sync-alt"></i>
           ) : (
-            <i class="fas fa-step-backward"></i>
+            <i className="fas fa-step-backward"></i>
           )}
         </div>
         <div
@@ -595,7 +487,7 @@ class SideBarTabs extends Component {
           title="Previous Page"
           onClick={this.onPrevPageClickHistoryTab}
         >
-          <i style={{ fontSize: "18px" }} class="fas fa-caret-left"></i>
+          <i style={{ fontSize: "18px" }} className="fas fa-caret-left"></i>
         </div>
         <div
           className="btn btn-sm cube-btn text-center"
@@ -606,7 +498,7 @@ class SideBarTabs extends Component {
           title="Next Page"
           onClick={this.onNextPageClickHistoryTab}
         >
-          <i style={{ fontSize: "18px" }} class="fas fa-caret-right"></i>
+          <i style={{ fontSize: "18px" }} className="fas fa-caret-right"></i>
         </div>
       </div>
     );
@@ -671,9 +563,9 @@ class SideBarTabs extends Component {
           onClick={this.onFirstPageClickCollectionTab}
         >
           {collectionTabState.currentPage == 0 ? (
-            <i class="fas fa-sync-alt"></i>
+            <i className="fas fa-sync-alt"></i>
           ) : (
-            <i class="fas fa-step-backward"></i>
+            <i className="fas fa-step-backward"></i>
           )}
         </div>
         <div
@@ -682,7 +574,7 @@ class SideBarTabs extends Component {
           title="Previous Page"
           onClick={this.onPrevPageClickCollectionTab}
         >
-          <i style={{ fontSize: "18px" }} class="fas fa-caret-left"></i>
+          <i style={{ fontSize: "18px" }} className="fas fa-caret-left"></i>
         </div>
         <div
           className="btn btn-sm cube-btn text-center"
@@ -694,7 +586,7 @@ class SideBarTabs extends Component {
           title="Next Page"
           onClick={this.onNextPageClickCollectionTab}
         >
-          <i style={{ fontSize: "18px" }} class="fas fa-caret-right"></i>
+          <i style={{ fontSize: "18px" }} className="fas fa-caret-right"></i>
         </div>
       </div>
     );
@@ -703,25 +595,10 @@ class SideBarTabs extends Component {
   render() {
     //Remove unused vars
     const {
-      httpClient: {
-        cubeRunHistory,
-        userCollections,
-        collectionName,
-        collectionLabel,
-        modalErroSaveMessage,
-        modalErroSaveMessageIsError,
-        modalErroCreateCollectionMessage,
-        tabs,
-        selectedTabKey,
-        showSaveModal,
-        showAddMockReqModal,
-        mockRequestServiceName,
-        mockRequestApiPath,
-        modalErrorAddMockReqMessage,
-      },
+      httpClient: { cubeRunHistory, userCollections },
     } = this.props;
 
-    const { showDeleteGoldenConfirmation, itemToDelete, newCollectionName, newCollectionLabel, modalCreateCollectionMessage, showCreateCollectionModal } = this.state;
+    const { showDeleteGoldenConfirmation, itemToDelete } = this.state;
 
     return (
       <>
@@ -786,9 +663,7 @@ class SideBarTabs extends Component {
               <div className="value-n"></div>
             </div>
             <div className="margin-top-10">
-              <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleCreateCollectionModalShow}>
-                  <Glyphicon glyph="plus" /> New Collection
-              </div>
+              <CreateCollection modalButton={true} />
               {userCollections &&
                 userCollections.map((eachCollec) => {
                   return (
@@ -893,32 +768,6 @@ class SideBarTabs extends Component {
               </div>
             </div>
           </Modal.Body>
-        </Modal>
-        <Modal show={showCreateCollectionModal} onHide={this.onCloseCreateCollectionModal}>
-          <Modal.Header closeButton>
-            <Modal.Title>Create a new collection</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <div>
-              <div>
-                <FormGroup>
-                  <ControlLabel>Name</ControlLabel>
-                  <FormControl componentClass="input" placeholder="Name" name="newCollectionName" value={newCollectionName} onChange={this.handleInputChange} />
-                </FormGroup>
-              </div>
-              <div>
-                <FormGroup>
-                  <ControlLabel>Label</ControlLabel>
-                  <FormControl componentClass="input" placeholder="Label" name="newCollectionLabel" value={newCollectionLabel} onChange={this.handleInputChange} />
-                </FormGroup>
-              </div>
-              <p style={{ fontWeight: 500 }}>{modalCreateCollectionMessage}</p>
-            </div>
-          </Modal.Body>
-          <Modal.Footer>
-            <div onClick={this.handleCreateCollection} className="btn btn-sm cube-btn text-center">Create Collection</div>
-            <div onClick={this.onCloseCreateCollectionModal} className="btn btn-sm cube-btn text-center">Close</div>
-          </Modal.Footer>
         </Modal>
       </>
     );
