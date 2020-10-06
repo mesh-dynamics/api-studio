@@ -1109,7 +1109,12 @@ class HttpClientTabs extends Component {
         let fetchedResponseHeaders = {}, responseStatus = "", responseStatusText = "";
         const startDate = new Date(Date.now() - 2 * 1000).toISOString();
         fetchConfigRendered.signal = tabToProcess.abortRequest.signal;
+        const reqISODate = new Date().toISOString();
+        const reqTimestamp = new Date(reqISODate).getTime();
+        let resTimestamp;
         return fetch(fetchUrlRendered, fetchConfigRendered).then((response) => {
+            const resISODate = new Date().toISOString();
+            resTimestamp = new Date(resISODate).getTime();
             responseStatus = response.status;
             responseStatusText = response.statusText;
             for (const header of response.headers) {
@@ -1127,7 +1132,7 @@ class HttpClientTabs extends Component {
         .then((data) => {
             // handle success
             dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), JSON.stringify(data, undefined, 4)));
-            this.saveToCollection(isOutgoingRequest, tabId, userHistoryCollection.id, "History", runId);
+            this.saveToCollection(isOutgoingRequest, tabId, userHistoryCollection.id, "History", runId, reqTimestamp, resTimestamp);
             //dispatch(httpClientActions.unsetReqRunning(tabId))
         })
         .catch((error) => {
@@ -1206,7 +1211,7 @@ class HttpClientTabs extends Component {
         }
     }
 
-    getReqResFromTabData(eachPair, tabToSave, runId, type) {
+    getReqResFromTabData(eachPair, tabToSave, runId, type, reqTimestamp, resTimestamp) {
         const httpRequestEventTypeIndex = eachPair[0].eventType === "HTTPRequest" ? 0 : 1;
         const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
         let httpRequestEvent = eachPair[httpRequestEventTypeIndex];
@@ -1257,6 +1262,7 @@ class HttpClientTabs extends Component {
         const reqResCubeFormattedData = {   
             request: {
                 ...httpRequestEvent,
+                ...(reqTimestamp && { timestamp: reqTimestamp }),
                 runId: runId,
                 payload: [
                     "HTTPRequestPayload",
@@ -1273,6 +1279,7 @@ class HttpClientTabs extends Component {
             },
             response: {
                 ...httpResponseEvent,
+                ...(resTimestamp && { timestamp: resTimestamp }),
                 runId: runId,
                 payload: [
                     "HTTPResponsePayload",
@@ -1288,7 +1295,7 @@ class HttpClientTabs extends Component {
         return reqResCubeFormattedData;
     }
 
-    saveToCollection(isOutgoingRequest, tabId, recordingId, type, runId="") {
+    saveToCollection(isOutgoingRequest, tabId, recordingId, type, runId="", reqTimestamp="", resTimestamp="") {
         const { 
             httpClient: { 
                 historyTabState, 
@@ -1312,7 +1319,7 @@ class HttpClientTabs extends Component {
         try {
             if (reqResPair.length > 0) {
                 const data = [];
-                data.push(this.getReqResFromTabData(reqResPair, tabToProcess, runId, type));
+                data.push(this.getReqResFromTabData(reqResPair, tabToProcess, runId, type, reqTimestamp, resTimestamp));
                 if (type !== "History") {
                     tabToProcess.outgoingRequests.forEach((eachOutgoingTab) => {
                         if (eachOutgoingTab.eventData && eachOutgoingTab.eventData.length > 0) {
