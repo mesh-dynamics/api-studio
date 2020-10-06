@@ -136,8 +136,7 @@ public class ClientLoggingFilter implements ClientRequestFilter, ClientResponseF
 				String apiPath = apiPathObj != null ? apiPathObj.toString() : "";
 				String serviceName = serviceNameObj != null ? serviceNameObj.toString() : "";
 				ObjectMapper mapper = new ObjectMapper();
-				MultivaluedMap<String, String> traceMetaMap = traceMetaMapObj != null ? mapper
-					.convertValue(traceMetaMapObj, MultivaluedMap.class)
+				MultivaluedMap<String, String> traceMetaMap = traceMetaMapObj != null ? (MultivaluedMap) traceMetaMapObj
 					: new MultivaluedHashMap<>();
 				MDTraceInfo mdTraceInfo =
 					traceInfo != null ? (MDTraceInfo) traceInfo : new MDTraceInfo();
