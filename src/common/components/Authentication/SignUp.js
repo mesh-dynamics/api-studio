@@ -1,4 +1,4 @@
-import React, { useState, Fragment } from 'react';
+import React, { useState, Fragment, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
@@ -9,9 +9,9 @@ import {
     validateEmail, 
     validatePassword
 } from '../../utils/lib/validation';
-import { isAllowedDomain } from '../../utils/lib/common-utils';
+import { getCaptchaConfig } from '../../services/auth.service';
+import { isCaptchaEnabled, getDomainNameFromHostname } from '../../utils/lib/common-utils';
 import "./SignUp.css";
-
 const MESSAGE = {
     SUCCESS: "Your account has been successfully created. A verifcation link has been sent to your email. Please click on the link to verify and activate your account.",
     ERROR: "Failed to create user account. Please contact your system administrator or try again later."
@@ -41,6 +41,8 @@ const SignUp = (props) => {
 
     const [hasServerValidated, setHasServerValidated] = useState(false);
 
+    const [requiresCaptchaValidation, setRequiresCaptchaValidation ] = useState(false);
+
     const firstNameValidation = validateName(firstName, "Firstname");
 
     const lastNameValidation =  validateName(lastName, "Lastname");
@@ -58,7 +60,7 @@ const SignUp = (props) => {
                 && passwordValidation.isValid
         }
 
-        if(isAllowedDomain()) {
+        if(requiresCaptchaValidation) {
             return reCaptchaIsValid
                 && firstNameValidation.isValid
                 && lastNameValidation.isValid
@@ -73,6 +75,27 @@ const SignUp = (props) => {
             && lastNameValidation.isValid
             && emailValidation.isValid
             && passwordValidation.isValid
+    };
+
+    const fetchCaptchaConfig = async () => {
+        try {
+            const domain = getDomainNameFromHostname(window.location.hostname);
+
+            const response = await getCaptchaConfig(domain);
+
+            const responseBody = await response.json();
+
+            if(responseBody.status > 400) {
+                setRequiresCaptchaValidation (false);
+            } else {
+                const captchaEnabled = isCaptchaEnabled(responseBody);
+
+                setRequiresCaptchaValidation (captchaEnabled);
+            }
+        } catch(error) {
+
+            setRequiresCaptchaValidation (false);
+        }
     };
     
     const handleSubmit = async (event) => {
@@ -127,7 +150,9 @@ const SignUp = (props) => {
         }
     };
 
-    
+    useEffect(() => {
+        fetchCaptchaConfig();
+    }, []);
 
     const renderReCaptchaError = () => (
         <div className="error-text">
@@ -206,14 +231,16 @@ const SignUp = (props) => {
                     onChange={(e) => setPassword(e.target.value)}
                 />
                 <div className='checkbox-container'>
+                    <label className='checkbox-label'> 
                     <input 
                         type='checkbox' 
                         name="showPassword" 
+                        id="showPassword" 
                         checked={showPassword} 
                         className="checkbox-custom" 
                         onChange={() => setShowPassword(!showPassword)}
                     /> 
-                    <span className='checkbox-label'>Show Password</span>
+                    &nbsp; Show Password</label>
                 </div>
                 {
                     submitted && 
@@ -227,7 +254,7 @@ const SignUp = (props) => {
                 
                 <div className="custom-fg form-group recaptcha-container">
                 {
-                    (!PLATFORM_ELECTRON && isAllowedDomain())
+                    (!PLATFORM_ELECTRON && requiresCaptchaValidation)
                     &&
                     (
                         <Fragment>
@@ -271,8 +298,13 @@ const SignUp = (props) => {
     
 
     const renderSuccessMessage = () => (
-        <div className="form-success-message">
-            {MESSAGE.SUCCESS}
+        <div>
+            <div className="form-success-message">
+                {MESSAGE.SUCCESS}
+            </div>
+            <div>
+                <Link to="/login" className="btn-link create-account">Back to Login</Link>
+            </div>
         </div>
     );
 

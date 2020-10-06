@@ -7,15 +7,13 @@ import { connect } from "react-redux";
 import _ from "lodash";
 import { apiCatalogActions } from '../../actions/api-catalog.actions';
 import classNames from 'classnames';
+import { DropdownButton, MenuItem, FormControl} from 'react-bootstrap';
+import GoldenCollectionBrowse from './GoldenCollectionBrowse';
 
 class APICatalogFilter extends Component {
 
     constructor(props) {
         super(props)
-        this.state = {
-            showBrowseGoldenCollectionModal: false,
-            selectedGoldenCollectionFromModal: "",
-        };
     }
 
     handleFilterChange = (metadata, value) => {
@@ -46,78 +44,6 @@ class APICatalogFilter extends Component {
                 }
             </select>
         </div>);
-    }
-
-    renderCollectionDropdown = () => {
-        const {apiCatalog: {collectionList, selectedCollection}} = this.props;
-        const handleCollectionDropDownChange = (event) => this.handleFilterChange("selectedCollection", event.target.value);
-
-        const ddlClass = classNames({
-            "r-att form-control": true,
-            'select-indicator': !selectedCollection
-        });
-        return (
-        <div>
-            <select className={ddlClass} placeholder="Select Collection" value={selectedCollection || "DEFAULT"} onChange={handleCollectionDropDownChange}>    
-                <option value="DEFAULT" disabled>Select Collection</option>
-                {
-                    collectionList.map((item, index) => 
-                         <option key={item.collec + index} value={item.collec} hidden={(index > 10) && selectedCollection!=item.collec}>{`${item.name} ${item.label}`}</option>
-                    )
-                }
-            </select>
-        </div>);
-    }
-
-    renderGoldenDropdown = () => {
-        const {apiCatalog: {goldenList, selectedGolden}} = this.props;
-        const handleGoldenDropDownChange = (event) => this.handleFilterChange("selectedGolden", event.target.value);
-
-        const ddlClass = classNames({
-            "r-att form-control": true,
-            'select-indicator': !selectedGolden
-        });
-        return (
-        <div>
-            <select className={ddlClass} placeholder="Select Golden" value={selectedGolden || "DEFAULT"} onChange={handleGoldenDropDownChange}>   
-                <option value="DEFAULT" disabled>Select Golden</option>
-                {
-                    goldenList.map((item, index) => 
-                        <option key={item.collec + index} value={item.collec} hidden={(index > 10) && selectedGolden!=item.collec}>{`${item.name} ${item.label}`}</option>
-                    )
-                }
-            </select>
-        </div>);
-    }
-
-    renderServiceDropdown = () => {
-        const {apiCatalog: {selectedSource, selectedCollection, selectedGolden, selectedService, services}} = this.props;
-        
-        const handleServiceDropDownChange = (event) => this.handleFilterChange("selectedService", event.target.value);
-        
-        const disabled = (!selectedSource) || (selectedSource=="UserGolden" && !selectedCollection) || (selectedSource=="Golden" && !selectedGolden);
-        
-        return (
-        <div>
-            <select className="r-att form-control" placeholder="Select Service" value={selectedService || "DEFAULT"} onChange={handleServiceDropDownChange} disabled={disabled}>
-                {!disabled && <option value="DEFAULT" disabled>Select Service</option>}
-                {services.map(service => 
-                    <option key={service.val} value={service.val}>
-                        {service.val}
-                    </option>)
-                }
-            </select>
-        </div>);
-    }
-
-    renderAPIPathDropdown = () => {
-        const {apiCatalog: {selectedService, selectedApiPath, apiPaths}} = this.props;
-        const handleAPIDropDownChange = (event) => this.handleFilterChange("selectedApiPath", event.target.value);
-        const disabled = !selectedService;
-        return <select className="r-att form-control" placeholder="Select API" value={selectedApiPath || "DEFAULT"} onChange={handleAPIDropDownChange} disabled={disabled}>
-            {!disabled && <option value="DEFAULT" disabled>Select API</option>}
-            {apiPaths.map(apiPath => <option key={apiPath.val} value={apiPath.val}>{apiPath.val}</option>)}
-        </select>;
     }
 
     renderStartTime = () => {
@@ -200,82 +126,6 @@ class APICatalogFilter extends Component {
         })
     }
 
-    showGoldenCollectionBrowseModal = () => {
-        this.setState({
-            showBrowseGoldenCollectionModal: true,
-        });
-
-    };
-
-    hideGoldenCollectionModal = () => {
-        this.setState({showBrowseGoldenCollectionModal: false});
-    };
-
-    selectGoldenCollectionFromModal = (collec) => {
-        this.setState({selectedGoldenCollectionFromModal: collec});
-    }
-
-    selectHighlightedGoldenCollectionFromModal = () => {
-        const {apiCatalog: {selectedSource}} = this.props;
-
-        if (selectedSource==="UserGolden") {
-             this.handleFilterChange("selectedCollection", this.state.selectedGoldenCollectionFromModal);
-        } else if (selectedSource==="Golden") {
-             this.handleFilterChange("selectedGolden", this.state.selectedGoldenCollectionFromModal);
-        }
-
-        this.setState({showBrowseGoldenCollectionModal: false})
-    }
-
-    renderGoldenCollectionTable() {
-        const {apiCatalog: {selectedSource, collectionList, goldenList}} = this.props;
-
-        const goldenCollectionList = selectedSource==="UserGolden" ? collectionList : goldenList;
-
-        if (!goldenCollectionList || goldenCollectionList.length == 0) {
-            return <tr><td colSpan="2" className="text-center">NO DATA FOUND</td></tr>
-        }
-
-        return goldenCollectionList.map(item => (
-            <tr key={item.collec} value={item.collec} className={this.state.selectedGoldenCollectionFromModal == item.collec ? "selected-g-row" : ""} onClick={() => this.selectGoldenCollectionFromModal(item.collec)}>
-                <td>{item.name}</td>
-                <td>{new Date(item.timestmp * 1000).toLocaleString()}</td>
-            </tr>)
-        );
-    }
-     
-    renderModals() {
-        return (
-            <Modal show={this.state.showBrowseGoldenCollectionModal}>
-                <Modal.Header>
-                    <Modal.Title>Browse {this.props.selectedSource==="UserGolden" ? "Collections" : "Goldens"}</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <div style={{height: "300px", overflowY: "auto"}}>
-                        <table className="table table-condensed table-hover table-striped">
-                            <thead>
-                                <tr>
-                                    <th style={{position: "sticky"}}>Name</th>
-                                    <th style={{position: "sticky"}}>Created at</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                            {this.renderGoldenCollectionTable()}
-                            </tbody>
-                        </table>
-                    </div>
-
-                </Modal.Body>
-                <Modal.Footer>
-                    <span onClick={this.selectHighlightedGoldenCollectionFromModal} className={this.state.selectedGoldenCollectionFromModal ? "cube-btn" : "disabled cube-btn"}>Select</span>&nbsp;&nbsp;
-
-                    <span onClick={this.hideGoldenCollectionModal} className="cube-btn">Cancel</span>
-                </Modal.Footer>
-            </Modal>
-        );
-    }
-
     render() {
         const {currentPage, cube, apiCatalog} = this.props;
         const {diffRequestLeft, diffRequestRight, compareRequests, selectedSource, selectedService, selectedApiPath} = apiCatalog;
@@ -296,21 +146,9 @@ class APICatalogFilter extends Component {
                         
 
                         {selectedSource && <div>
-                            {(selectedSource==="UserGolden") &&
-                            <div className="margin-top-10">
-                                <div className="label-n">COLLECTION&nbsp;
-                                    <i onClick={this.showGoldenCollectionBrowseModal} title="Browse Collection" className="link fas fa-folder-open pull-right font-15"></i>
-                                </div>
-                                {this.renderCollectionDropdown()}
-                            </div>}
-                            
-                            {(selectedSource==="Golden") &&
-                            <div className="margin-top-10">
-                                <div className="label-n">GOLDEN&nbsp;
-                                    <i onClick={this.showGoldenCollectionBrowseModal} title="Browse Golden" className="link fas fa-folder-open pull-right font-15"></i>
-                                </div>
-                                {this.renderGoldenDropdown()}
-                            </div>}
+                        {(selectedSource==="UserGolden" || selectedSource==="Golden") && <div>
+                            <GoldenCollectionBrowse selectedSource={selectedSource}/> 
+                        </div>}
 
                             {selectedSource=="Capture" && <div>
                                 <div className="margin-top-10">
@@ -373,7 +211,6 @@ class APICatalogFilter extends Component {
                         </div>
                     </div>
                 }
-                {this.renderModals()}
             </div>
         );
     }

@@ -4,6 +4,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const { DefinePlugin } = require('webpack');
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 const config = {
     node: {
@@ -167,6 +168,9 @@ const config = {
         new MiniCssExtractPlugin({
             filename: '[name].css',
             chunkFilename: '[id].css',
+        }),        
+        new MonacoWebpackPlugin({
+            languages: ['json', 'html', 'javascript', 'typescript']
         }),
         new HtmlWebpackPlugin({
             title: 'Mesh Dynamics',
@@ -190,7 +194,11 @@ const config = {
                 'testReport'
             ]
         }),
-    ]
+    ],
+    
+    resolve:{
+        extensions: ['.ts', '.js', '.tsx']
+    }
 
 };
 
