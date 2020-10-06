@@ -41,6 +41,7 @@ import SplitSlider  from '../../components/SplitSlider.js';
 
 import commonConstants from '../../utils/commonConstants';
 import MockConfigs from "./MockConfigs";
+import {setDefaultMockContext} from '../../helpers/httpClientHelpers'
 
 
 class HttpClientTabs extends Component {
@@ -1983,6 +1984,17 @@ class HttpClientTabs extends Component {
                 clearInterval(eachTab.clearIntervalHandle);
             }
         });
+    }
+    
+    componentWillReceiveProps(nextProps) {
+        const {httpClient:{userHistoryCollection}} = this.props;
+        const {httpClient:{userHistoryCollection: userHistoryCollectionNew}} = nextProps;
+
+        if(userHistoryCollectionNew && !userHistoryCollection) {
+            setDefaultMockContext()
+        } else if (userHistoryCollectionNew && userHistoryCollection && userHistoryCollectionNew.collec != userHistoryCollection.collec) {
+            setDefaultMockContext()
+        }
     }
 
     handleTreeNodeClick(node) {

@@ -2,6 +2,7 @@ import { cubeService } from "../services";
 import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from "lodash";
 import arrayToTree from 'array-to-tree';
+import {setDefaultMockContext} from '../helpers/httpClientHelpers'
 
 export const httpClientActions = {
     deleteParamInSelectedOutgoingTab: (tabId, type, id) => {
@@ -224,7 +225,11 @@ export const httpClientActions = {
 
     setReqRunning: (tabId) => ({type: httpClientConstants.SET_REQUEST_RUNNING, data: {tabId}}),
 
-    unsetReqRunning: (tabId) => ({type: httpClientConstants.UNSET_REQUEST_RUNNING, data: {tabId}}),
+    unsetReqRunning: (tabId) => (dispatch) => {
+        console.log("Resetting mock context");
+        setDefaultMockContext()
+        dispatch({type: httpClientConstants.UNSET_REQUEST_RUNNING, data: {tabId}})
+    },
 
     createDuplicateTab: (tabId) => ({type: httpClientConstants.CREATE_DUPLICATE_TAB, data: {tabId}}),
 
@@ -238,9 +243,11 @@ export const httpClientActions = {
             const {httpClient: {userHistoryCollection}} = getState();
             const fetchedUserHistoryCollection = serverRes.find((eachCollection) => (eachCollection.recordingType === "History"))
 
-            if(!userHistoryCollection && fetchedUserHistoryCollection) {
-                dispatch(httpClientActions.addUserHistoryCollection(fetchedUserHistoryCollection));
+            if(!fetchedUserHistoryCollection) {
+                throw new Error("User history collection not present")
             }
+
+            dispatch(httpClientActions.addUserHistoryCollection(fetchedUserHistoryCollection));
 
             const startTime = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
             const res = await cubeService.fetchAPITraceData(app, startTime, null, null, null, null, null, fetchedUserHistoryCollection.collec, 100)
@@ -281,7 +288,7 @@ export const httpClientActions = {
             dispatch(httpClientActions.addCubeRunHistory(apiTraces, cubeRunHistory));
         } catch (error) {
             console.error("Error ", error);
-            throw new Error("Error");
+            throw new Error("Error", error);
         }
     },
 
@@ -364,4 +371,5 @@ export const httpClientActions = {
             dispatch(httpClientActions.setMockConfigStatusText(e.response.data.message, true))
         }
     },
+
 }
