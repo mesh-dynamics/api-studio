@@ -6,6 +6,7 @@ package com.cube.dao;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.dao.*;
 import io.md.dao.Event.EventType;
+import io.md.dao.ProtoDescriptorDAO;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
 import java.io.IOException;
@@ -189,6 +190,7 @@ public interface ReqRespStore extends DataStore {
 		AgentConfigTagInfo,
 		AgentConfig,
 		AgentConfigAcknowledge,
+        ProtoDescriptor,
         CustomerAppConfig;
 	}
 
@@ -672,5 +674,11 @@ public interface ReqRespStore extends DataStore {
 				Optional<String> service, String instanceId);
 
 	boolean deleteAgentConfig(String customerId, String app, String service, String instanceId);
+
+
+	boolean storeProtoDescriptorFile(ProtoDescriptorDAO protoDescriptorDAO);
+
+	Optional<ProtoDescriptorDAO> getLatestProtoDescriptorDAO(String customerId, String app);
+
 
 }

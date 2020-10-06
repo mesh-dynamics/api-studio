@@ -9,6 +9,8 @@ import io.md.constants.ReplayStatus;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.TemplateKey;
 import io.md.core.ValidateAgentStore;
+import io.md.core.ValidateProtoDescriptorDAO;
+import io.md.dao.ProtoDescriptorDAO;
 import io.md.dao.*;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
@@ -1201,6 +1203,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String PARENT_SPAN_ID_F = CPREFIX  + Constants.PARENT_SPAN_ID_FIELD + STRING_SUFFIX;
     private static final String CONFIG_JSON_F = CPREFIX + Constants.CONFIG_JSON + STRING_SUFFIX;
     private static final String SCOREF = CPREFIX + "score" + CSUFFIX;
+    private static final String PROTO_DESCRIPTOR_FILE_F = CPREFIX + Constants.PROTO_DESCRIPTOR_FILE_FIELD + NOTINDEXED_SUFFIX;
 
 
     private static String getFieldName(String fname, String fkey) {
@@ -2735,6 +2738,58 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addToQryStr(queryBuff , SERVICEF , service , false );
         addToQryStr(queryBuff , INSTANCEIDF , instanceId , false );
         return deleteDocsByQuery(queryBuff.toString());
+    }
+
+
+    private SolrInputDocument protoDescriptorDAOToSolrDoc(ProtoDescriptorDAO protoDescriptorDAO) {
+        final SolrInputDocument doc = new SolrInputDocument();
+        doc.setField(TYPEF, Types.ProtoDescriptor.toString());
+        doc.setField(INT_VERSION_F, protoDescriptorDAO.version);
+        doc.setField(CUSTOMERIDF, protoDescriptorDAO.customerId);
+        doc.setField(APPF, protoDescriptorDAO.app);
+        doc.setField(PROTO_DESCRIPTOR_FILE_F, protoDescriptorDAO.encodedFile);
+        return doc;
+    }
+
+    private Optional<ProtoDescriptorDAO> docToProtoDescriptorDAO(SolrDocument doc) {
+        Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
+        Optional<String> app = getStrField(doc, APPF);
+        Optional<Integer> version = getIntField(doc, INT_VERSION_F);
+        Optional<String> encodedFile = getStrField(doc, PROTO_DESCRIPTOR_FILE_F);
+        ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId.orElse(null),
+            app.orElse(null), encodedFile.orElse(null));
+        protoDescriptorDAO.setVersion(version.orElse(0));
+        try {
+            ValidateProtoDescriptorDAO.validate(protoDescriptorDAO);
+            return Optional.of(protoDescriptorDAO);
+        } catch (NullPointerException | IllegalArgumentException e) {
+            LOGGER.error(
+                new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Data fields are null or empty in protoDescriptorDAO")), e);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public boolean storeProtoDescriptorFile(ProtoDescriptorDAO protoDescriptorDAO) {
+        Optional<ProtoDescriptorDAO> currentDoc = getLatestProtoDescriptorDAO(protoDescriptorDAO.customerId, protoDescriptorDAO.app);
+        int maxVersion = currentDoc.map(cd -> cd.version).orElse(0);
+        protoDescriptorDAO.setVersion(maxVersion+1);
+        SolrInputDocument doc = protoDescriptorDAOToSolrDoc(protoDescriptorDAO);
+        return saveDoc(doc) && softcommit();
+    }
+
+    @Override
+    public Optional<ProtoDescriptorDAO> getLatestProtoDescriptorDAO(String customerId, String app) {
+
+        SolrQuery maxVersionQuery = new SolrQuery("*:*");
+        addFilter(maxVersionQuery, TYPEF, Types.ProtoDescriptor.toString());
+        addFilter(maxVersionQuery, CUSTOMERIDF,  customerId);
+        addFilter(maxVersionQuery, APPF, app);
+        addSort(maxVersionQuery, INT_VERSION_F, false);
+
+        return SolrIterator.getSingleResult(solr, maxVersionQuery).flatMap(this::docToProtoDescriptorDAO);
+
     }
 
     @Override

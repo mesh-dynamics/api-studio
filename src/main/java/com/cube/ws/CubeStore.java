@@ -10,10 +10,17 @@ import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +55,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.solr.common.util.Pair;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.json.JSONObject;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
@@ -70,6 +78,12 @@ import io.md.core.ValidateAgentStore;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Event.RunType;
+import io.md.dao.EventQuery;
+import io.md.dao.MDTraceInfo;
+import io.md.dao.Payload;
+import io.md.dao.ProtoDescriptorDAO;
+import io.md.dao.RecordOrReplay;
+import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingSaveFailureException;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
@@ -1599,6 +1613,39 @@ public class CubeStore {
     public Response cacheFlushAll() {
         return ServerUtils.flushAll(config);
     }
+
+
+    @POST
+    @Path("/protoDescriptorFileUpload/{customerId}/{app}/")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response protoDescriptorFileUpload(@PathParam("customerId") String customerId,
+        @PathParam("app") String app,
+        @FormDataParam("protoDescriptorFile") InputStream uploadedInputStream) {
+
+        if(uploadedInputStream==null) {
+            return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
+                Map.of("Message",
+                    "Uploaded file stream null. Ensure the variable name is \"protoDescriptorFile\" for the file")
+            )).toString()).build();
+        }
+
+
+        byte[] encodedFileBytes;
+        try {
+            encodedFileBytes = Base64.getEncoder().encode(uploadedInputStream.readAllBytes());
+        } catch (IOException e) {
+            LOGGER.error("Cannot encode uploaded proto descriptor file",e);
+            return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
+                Map.of("Message", "Cannot encode uploaded proto descriptor file",
+                    "Error", e.getMessage())).toString())).build();
+        }
+
+        ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app, new String(encodedFileBytes, StandardCharsets.UTF_8));
+        boolean status = rrstore.storeProtoDescriptorFile(protoDescriptorDAO);
+        return status ? Response.ok().build() : Response.serverError().entity(Map.of("Error", "Cannot store proto descriptor file")).build();
+    }
+
 
     private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId)
         throws InvalidEventException {

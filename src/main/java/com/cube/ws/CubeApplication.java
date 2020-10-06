@@ -2,6 +2,7 @@ package com.cube.ws;
 
 import javax.ws.rs.ApplicationPath;
 
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 
 import io.md.cube.jaxrs.ingress.LoggingFilter;
@@ -15,5 +16,6 @@ public class CubeApplication extends ResourceConfig {
         register(LoggingFilter.class);
         register(TracingFilter.class);
         register(new Binder());
+        register(MultiPartFeature.class);
     }
 }
