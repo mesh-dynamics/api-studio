@@ -81,5 +81,7 @@ public interface DataStore {
     boolean deferredDelete(Replay replay);
 
 
-    Optional<ProtoDescriptor> getProtoDescriptor(String customer, String app);
+//    Optional<ProtoDescriptor> getProtoDescriptor(String customer, String app);
+    Optional<ProtoDescriptorDAO> getLatestProtoDescriptorDAO(String customerId, String app);
+
 }

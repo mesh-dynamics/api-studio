@@ -8,6 +8,7 @@ import com.google.common.cache.CacheBuilder;
 
 import io.md.core.ProtoDescriptor;
 import io.md.services.DataStore;
+import io.md.utils.UtilException;
 
 public class ProtoDescriptorCache {
 
@@ -51,7 +52,10 @@ public class ProtoDescriptorCache {
 	public Optional<ProtoDescriptor> get(ProtoDescriptorKey key) {
 		try {
 			return Optional.of(loadingCache.get(key , () ->
-				dataStore.getProtoDescriptor(key.customer, key.app).orElseThrow(() ->
+				dataStore.getLatestProtoDescriptorDAO(key.customer, key.app).map(UtilException
+					.rethrowFunction(
+						protoDescriptorDAO -> new ProtoDescriptor(protoDescriptorDAO.encodedFile)))
+					.orElseThrow(() ->
 					new Exception("Unable to find proto descritor in data store for "
 						+ key.customer + " : " + key.app))));
 		} catch (Exception e) {
