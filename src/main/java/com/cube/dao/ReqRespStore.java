@@ -4,7 +4,9 @@
 package com.cube.dao;
 
 import io.md.core.ConfigApplicationAcknowledge;
+import io.md.dao.*;
 import io.md.dao.Event.EventType;
+import io.md.dao.ProtoDescriptorDAO;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
 import java.io.IOException;
@@ -34,16 +36,8 @@ import io.md.core.AttributeRuleMap;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateKey;
-import io.md.dao.Event;
 import io.md.dao.Event.RunType;
-import io.md.dao.EventQuery;
-import io.md.dao.RecordOrReplay;
-import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingStatus;
-import io.md.dao.RecordingOperationSetSP;
-import io.md.dao.Replay;
-import io.md.dao.ReqRespMatchResult;
-import io.md.dao.Analysis;
 import io.md.services.DataStore;
 import io.md.services.FnResponse;
 import io.md.injection.DynamicInjectionConfig;
@@ -195,7 +189,9 @@ public interface ReqRespStore extends DataStore {
 		DynamicInjectionConfig,
 		AgentConfigTagInfo,
 		AgentConfig,
-		AgentConfigAcknowledge;
+		AgentConfigAcknowledge,
+        ProtoDescriptor,
+        CustomerAppConfig;
 	}
 
     /**
@@ -428,11 +424,11 @@ public interface ReqRespStore extends DataStore {
 	 * @param userId
 	 * @return
 	 */
-	Stream<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
+	Result<Recording> getRecording(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, Optional<RecordingStatus> status,
                                    Optional<String> collection, Optional<String> templateVersion, Optional<String> name, Optional<String> parentRecordingId, Optional<String> rootRecordingId,
                                    Optional<String> codeVersion, Optional<String> branch, List<String> tags, Optional<Boolean> archived, Optional<String> gitCommitId,
                                    Optional<String> collectionUpdOpSetId, Optional<String> templateUpdOpSetId, Optional<String> userId, Optional<String> label, Optional<String> recordingType,
-																	 Optional<String> recordingId);
+																	 Optional<String> recordingId, Optional<Integer> numberOfResults, Optional<Integer> start);
 
 
     Optional<Recording> getRecording(String recordingId);
@@ -676,5 +672,13 @@ public interface ReqRespStore extends DataStore {
 				Optional<String> instanceId, Optional<Integer> numOfResults, Optional<Integer> start, Optional<String> tag);
     Result<AgentConfigTagInfo> getAgentConfigTagInfoResults(String customerId, String app,
 				Optional<String> service, String instanceId);
+
+	boolean deleteAgentConfig(String customerId, String app, String service, String instanceId);
+
+
+	boolean storeProtoDescriptorFile(ProtoDescriptorDAO protoDescriptorDAO);
+
+	Optional<ProtoDescriptorDAO> getLatestProtoDescriptorDAO(String customerId, String app);
+
 
 }

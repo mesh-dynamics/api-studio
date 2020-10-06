@@ -1448,31 +1448,31 @@ public class AnalyzeWS {
         Optional.ofNullable(queryParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).orElse(20);
 	  Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
 	  long numFound = 0;
-	  if(apiTraceFacetQuery.traceIds.isEmpty()) {
-      Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery, start,
-          Optional.of(numResults),
-          Arrays.asList(EventType.HTTPRequest), true);
-      numFound = result.getNumFound();
-	    Set<String> traceIds = new HashSet<>();
-	    Set<String> collections = new HashSet<>();
-	    Set<String> runIds = new HashSet<>();
-	    result.getObjects().forEach(event -> {
-	      traceIds.add(event.getTraceId());
-	      collections.add(event.getCollection());
-	      event.runId.ifPresent(runIds::add);
-	    });
-	    apiTraceFacetQuery.withTraceIds(traceIds);
-	    apiTraceFacetQuery.withCollections(collections);
-	    apiTraceFacetQuery.withRunIds(runIds);
-	  }
+	  Result<Event> result = rrstore.getApiTrace(apiTraceFacetQuery, start,
+        Optional.of(numResults),
+        Arrays.asList(EventType.HTTPRequest), true);
+	  numFound = result.getNumFound();
+	  Set<String> traceIds = new HashSet<>();
+	  Set<String> collections = new HashSet<>();
+	  Set<String> runIds = new HashSet<>();
+    Set<String> reqIds = new HashSet<>();
+	  result.getObjects().forEach(event -> {
+	    traceIds.add(event.getTraceId());
+	    collections.add(event.getCollection());
+	    reqIds.add(event.getReqId());
+	  });
+	  apiTraceFacetQuery.withTraceIds(traceIds);
+	  apiTraceFacetQuery.withCollections(collections);
+	  apiTraceFacetQuery.withRunIds(runIds);
+
 	  ArrayList<ApiTraceResponse> response = new ArrayList<>();
 	  if(!apiTraceFacetQuery.traceIds.isEmpty()) {
 	    /**TODO: we need to update the trace for other event types
        *currently we are supporting only HTTPRequest and HTTPResponse
        * we need to change the logic to support other eventTypes
        */
-	    Result<Event> result = rrstore
-          .getApiTrace(apiTraceFacetQuery, start, Optional.empty(),
+	    result = rrstore
+          .getApiTrace(apiTraceFacetQuery, Optional.empty(), Optional.empty(),
               Arrays.asList(EventType.HTTPRequest, EventType.HTTPResponse), false);
 
 	    MultivaluedMap<String, Event> mapForEventsTraceIds = new MultivaluedHashMap<>();
@@ -1509,11 +1509,19 @@ public class AnalyzeWS {
 	        return;
 	      }
 	      for (Event parent : parentRequestEvents) {
-	        response.add(getApiTraceResponse(parent, depth,
-              Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey)));
+	        if(reqIds.contains(parent.getReqId())) {
+            response.add(getApiTraceResponse(parent, depth,
+                Utils.getFromMVMapAsOptional(mapForEventsTraceIds, traceCollectionKey)));
+          }
 	      }
 	    });
 	  }
+    response.sort(new java.util.Comparator<ApiTraceResponse>() {
+      @Override
+      public int compare(ApiTraceResponse o1, ApiTraceResponse o2) {
+        return o2.reqTimestamp.compareTo(o1.reqTimestamp);
+      }
+    });
 	  Map jsonMap = new HashMap();
 
 	  jsonMap.put("response", response);
@@ -1522,12 +1530,12 @@ public class AnalyzeWS {
   }
 
   private String getTraceKeyFromEvent(Event event) {
-      return  event.getTraceId() + " " +  event.getCollection() + " " + event.runId.orElse("NA");
+      return  event.getTraceId() + " " +  event.getCollection() + " " + event.runId;
   }
 
   private ApiTraceResponse getApiTraceResponse(Event parentRequestEvent, int depth, List<Event> eventsForTraceId) {
     final ApiTraceResponse apiTraceResponse = new ApiTraceResponse(parentRequestEvent.getTraceId(),
-        parentRequestEvent.getCollection());
+        parentRequestEvent.getCollection(), parentRequestEvent.timestamp);
 
     MultivaluedMap<String, Event> requestEventsByParentSpanId = new MultivaluedHashMap<>();
     Map<String, Event> responseEventsByReqId = new HashMap<>();
@@ -1544,7 +1552,7 @@ public class AnalyzeWS {
     apiTraceResponse.res.sort(new java.util.Comparator<ServiceReqRes>() {
       @Override
       public int compare(ServiceReqRes o1, ServiceReqRes o2) {
-        return o1.reqTimestamp.compareTo(o2.reqTimestamp);
+        return o2.reqTimestamp.compareTo(o1.reqTimestamp);
       }
     });
     return apiTraceResponse;
@@ -1641,14 +1649,16 @@ public class AnalyzeWS {
 			TemplateKey reqCompareKey = new TemplateKey(recording.templateVersion,
 				lhsRequestEvent.customerId,
 				lhsRequestEvent.app, lhsRequestEvent.service, lhsRequestEvent.apiPath,
-				Type.RequestCompare);
+				Type.RequestCompare, io.md.utils.Utils.extractMethod(lhsRequestEvent)
+				, recording.collection);
 			Comparator reqComparator = rrstore
 				.getComparator(reqCompareKey, lhsRequestEvent.eventType);
 				reqCompareRes = reqComparator.compare(lhsRequestEvent.payload, rhsRequestEvent.payload);
 			TemplateKey respCompareKey = new TemplateKey(recording.templateVersion,
 				lhsRequestEvent.customerId,
 				lhsRequestEvent.app, lhsRequestEvent.service, lhsRequestEvent.apiPath,
-				Type.ResponseCompare);
+				Type.ResponseCompare, io.md.utils.Utils.extractMethod(lhsRequestEvent)
+				, recording.collection);
 
 			if (lhsResponseEventOpt.isPresent() && rhsResponseEventOpt.isPresent()) {
 				Event lhsResponseEvent = lhsResponseEventOpt.get();

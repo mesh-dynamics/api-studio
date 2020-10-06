@@ -347,7 +347,7 @@ public class ReplayWS extends ReplayBasicWS {
             replay = replayBuilder.build();
         }
         replay.status = ReplayStatus.Running;
-        replay.runId = Optional.of(replayId + " " + Instant.now().toString());
+        replay.runId = replayId + " " + Instant.now().toString();
         rrstore.saveReplay(replay);
         try {
             String json = jsonMapper.writeValueAsString(replay);

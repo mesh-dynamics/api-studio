@@ -28,6 +28,7 @@ import io.md.dao.ReqRespUpdateOperation;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.utils.Constants;
 
+import com.cube.core.ServerUtils;
 import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.RecordingOperationSetMeta;
 
@@ -207,7 +208,8 @@ public class RecordingUpdate {
 
                 TemplateKey key = new TemplateKey(newTemplateSetVersion, originalRec.customerId,
                     originalRec.app, recordRequest.service, recordRequest.apiPath,
-                    Type.RequestMatch);
+                    Type.RequestMatch, io.md.utils.Utils.extractMethod(recordRequest),
+                    originalRec.collection);
                 Comparator comparator = config.rrstore.getComparator(key
                     , Event.EventType.HTTPRequest);
 
@@ -285,7 +287,7 @@ public class RecordingUpdate {
                     , "", new MDTraceInfo(recordResponse.getTraceId(), null
                     , null), recordResponse.getRunType()
                     , Optional.of(recordResponse.timestamp), newReqId, recordResponse.apiPath
-                    , recordResponse.eventType, recordResponse.recordingType)
+                    , recordResponse.eventType, recordResponse.recordingType).withRunId(recordResponse.runId)
                     .setPayload(recordResponse.payload)
                     /*.setRawPayloadString(recordResponse.rawPayloadString)*/
                     .setPayloadKey(recordResponse.payloadKey)
@@ -301,7 +303,7 @@ public class RecordingUpdate {
                     , "", new MDTraceInfo(recordResponse.getTraceId(), null
                     , null), recordRequest.getRunType()
                     , Optional.of(recordRequest.timestamp), newReqId, recordRequest.apiPath
-                    , recordRequest.eventType, recordRequest.recordingType)
+                    , recordRequest.eventType, recordRequest.recordingType).withRunId(recordRequest.runId)
                     .setPayload(recordRequest.payload)
                     /*.setRawPayloadString(recordRequest.rawPayloadString)*/
                     .setPayloadKey(recordRequest.payloadKey)

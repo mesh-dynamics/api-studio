@@ -27,6 +27,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.UriInfo;
 
+import io.md.tracer.TracerMgr;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -202,7 +203,7 @@ public class MockServiceHTTP {
         @PathParam("service") String service, @PathParam("method") String httpMethod,
         String body) {
 	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-	    Optional<String> runId = Optional.ofNullable(queryParams.getFirst(Constants.RUN_ID_FIELD));
+	    String runId = queryParams.getFirst(Constants.RUN_ID_FIELD);
 
 	    LOGGER.info(String.format("path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordingId: %s", path,
             ui.toString(), body, replayCollection, recordingId));
@@ -247,7 +248,7 @@ public class MockServiceHTTP {
         LOGGER.info(String.format("MockWithRunId Passing collection %s for recordingType %s" , recCollection , recording.recordingType.toString() ));
 
         return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            httpMethod , body, headers, Optional.of(new MockWithCollection(replayCollection, recCollection, recording.templateVersion, Optional.of(runId))), Optional.of(traceId));
+            httpMethod , body, headers, Optional.of(new MockWithCollection(replayCollection, recCollection, recording.templateVersion, runId)), Optional.of(traceId));
     }
 
 
@@ -264,7 +265,7 @@ public class MockServiceHTTP {
         try {
             Event mockRequestEvent = io.md.utils.Utils
                 .createRequestMockNew(path, formParams, customerId, app, instanceId,
-                    service, method, body, headers.getRequestHeaders(), ui.getQueryParameters(), traceId);
+                    service, method, body, headers.getRequestHeaders(), ui.getQueryParameters(), traceId , tracerMgr);
             MockResponse mockResponse = mocker.mock(mockRequestEvent, Optional.empty(), collection);
             respEvent = mockResponse.response;
 
@@ -327,6 +328,7 @@ public class MockServiceHTTP {
         //LOGGER.info("Cube mock service started");
 
         mocker = new RealMocker(rrstore);
+        tracerMgr = new TracerMgr(rrstore);
 	}
 
 
@@ -336,6 +338,7 @@ public class MockServiceHTTP {
 	private final Config config;
 
 	private Mocker mocker;
+	private TracerMgr tracerMgr;
 
 
 }

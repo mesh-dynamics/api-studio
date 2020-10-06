@@ -2,6 +2,7 @@ package com.cube.cache;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
@@ -52,9 +53,10 @@ public class TemplateCacheRedis implements TemplateCache {
             cacheFnKey = new FnKey(config.commonConfig.customerId, config.commonConfig.app, config.commonConfig.instance,
                 config.commonConfig.serviceName, method);
         }
+        String runId = Instant.now().toString();
 
         if (config.intentResolver.isIntentToMock()) {
-            FnResponseObj ret = config.mocker.mock(cacheFnKey, Optional.empty(), Optional.empty(), key);
+            FnResponseObj ret = config.mocker.mock(cacheFnKey, Optional.empty(), Optional.empty(), runId, key);
             if (ret.retStatus == RetStatus.Exception) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
                     "Throwing exception as a result of mocking function")));
@@ -80,7 +82,7 @@ public class TemplateCacheRedis implements TemplateCache {
             }
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(cacheFnKey, toReturn, RetStatus.Success,
-                    Optional.empty(), key);
+                    Optional.empty(),runId, key);
             }
             return toReturn;
         }  catch (Throwable e) {
@@ -88,7 +90,7 @@ public class TemplateCacheRedis implements TemplateCache {
             CacheException ce = new CacheException("Error while fetching template for :".concat(key.toString()) , e);
             if (config.intentResolver.isIntentToRecord()) {
                 config.recorder.record(cacheFnKey,
-                    ce, RetStatus.Exception, Optional.of(ce.getClass().getName()), key);
+                    ce, RetStatus.Exception, Optional.of(ce.getClass().getName()), runId, key);
             }
             throw ce;
         }
