@@ -16,6 +16,8 @@ import com.fasterxml.jackson.databind.ser.BeanSerializerModifier;
 
 import io.md.constants.Constants;
 import io.md.dao.FnReqRespPayload;
+import io.md.dao.GRPCRequestPayload;
+import io.md.dao.GRPCResponsePayload;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.JsonByteArrayPayload;
@@ -29,7 +31,8 @@ public class PayloadSerializerModifier extends BeanSerializerModifier {
 	//them here
 	Set<Class> payloadClasses = new HashSet<>(
 	Arrays.asList(HTTPResponsePayload.class, HTTPRequestPayload.class,
-		JsonByteArrayPayload.class , JsonPayload.class));
+		JsonByteArrayPayload.class , JsonPayload.class, GRPCRequestPayload.class,
+		GRPCResponsePayload.class));
 
 	@Override
 	public JsonSerializer<?> modifySerializer(

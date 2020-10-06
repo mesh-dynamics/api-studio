@@ -15,7 +15,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 	@Type(value = HTTPResponsePayload.class),
 	@Type(value = JsonPayload.class),
 	@Type(value = JsonByteArrayPayload.class),
-	@Type(value = FnReqRespPayload.class)
+	@Type(value = FnReqRespPayload.class),
+	@Type(value = GRPCRequestPayload.class),
+	@Type(value = GRPCResponsePayload.class)
 })
 public interface Payload extends DataObj, RawPayload {
 

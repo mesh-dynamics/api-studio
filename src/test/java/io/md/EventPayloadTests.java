@@ -2,18 +2,29 @@ package io.md;
 
 
 import com.fasterxml.jackson.databind.JsonNode;
-import io.md.dao.ConvertEventPayloadResponse;
-import io.md.dao.Payload;
+
+import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
+import io.md.core.CompareTemplate;
+import io.md.core.ProtoDescriptor;
+import io.md.core.TemplateKey.Type;
+import io.md.dao.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Optional;
+import java.util.Random;
+import java.util.UUID;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
+
 import io.md.dao.Recording.RecordingType;
 
 import org.junit.Assert;
@@ -21,24 +32,20 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.protobuf.Descriptors.DescriptorValidationException;
 
 import io.md.cryptography.JcaEncryption;
-import io.md.dao.CubeMetaInfo;
 import io.md.dao.DataObj.PathNotFoundException;
-import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
-import io.md.dao.FnReqRespPayload;
 import io.md.dao.FnReqRespPayload.RetStatus;
-import io.md.dao.HTTPRequestPayload;
-import io.md.dao.HTTPResponsePayload;
-import io.md.dao.JsonByteArrayPayload;
-import io.md.dao.JsonPayload;
-import io.md.dao.MDTraceInfo;
+import io.md.injection.DynamicInjectionConfig;
+import io.md.services.DSResult;
+import io.md.services.DataStore;
 import io.md.utils.CubeObjectMapperProvider;
-import io.md.utils.Utils;
+import io.md.utils.ProtoDescriptorCacheProvider;
 
 public class EventPayloadTests {
 
@@ -50,6 +57,133 @@ public class EventPayloadTests {
 		private Event fnReqRespEvent;
 		private ObjectMapper objectMapper;
 		private Event httpResponseEvent;
+		private Event grpcRequestEvent;
+		private Event grpcResponseEvent;
+		private Optional<ProtoDescriptor> protoDescriptor;
+
+		private void setUpProtoDescirptorCache() {
+			DataStore dataStoreExp = new DataStore() {
+
+				/**
+				 * @param customerId
+				 * @param app
+				 * @param instanceId
+				 * @return
+				 */
+				@Override
+				public Optional<RecordOrReplay> getCurrentRecordOrReplay(String customerId,
+					String app, String instanceId) {
+					return Optional.empty();
+				}
+
+				@Override
+				public DSResult<Event> getEvents(EventQuery eventQuery) {
+					return null;
+				}
+
+				@Override
+				public Optional<Event> getSingleEvent(EventQuery eventQuery) {
+					return Optional.empty();
+				}
+
+				@Override
+				public Optional<Event> getRespEventForReqEvent(Event reqEvent) {
+					return Optional.empty();
+				}
+
+				/**
+				 * @param reqId
+				 * @return the matching response on the reqId
+				 */
+				@Override
+				public Optional<Event> getResponseEvent(String reqId) {
+					return Optional.empty();
+				}
+
+				@Override
+				public CompareTemplate getTemplate(String customerId, String app, String service,
+					String apiPath, String templateVersion, Type templateType,
+					Optional<EventType> eventType, Optional<String> method, String recordingId)
+					throws TemplateNotFoundException {
+					return null;
+				}
+
+				/**
+				 * @param customerId
+				 * @param app
+				 * @param version
+				 * @return
+				 */
+				@Override
+				public Optional<DynamicInjectionConfig> getDynamicInjectionConfig(String customerId,
+					String app, String version) {
+					return Optional.empty();
+				}
+
+				@Override
+				public Optional<Replay> getReplay(String replayId) {
+					return Optional.empty();
+				}
+
+				@Override
+				public Optional<Recording> getRecording(String recordingId) {
+					return Optional.empty();
+				}
+
+				@Override
+				public Optional<CustomerAppConfig> getAppConfiguration(String customer, String app) {
+					return Optional.empty();
+				}
+
+				/**
+				 * @param res
+				 * @return
+				 */
+				@Override
+				public boolean saveResult(ReqRespMatchResult res) {
+					return false;
+				}
+
+				@Override
+				public boolean save(Event event) {
+					return false;
+				}
+
+				@Override
+				public boolean saveReplay(Replay replay) {
+					return false;
+				}
+
+				/**
+				 * @param replay
+				 * @return
+				 */
+				@Override
+				public boolean deferredDelete(Replay replay) {
+					return false;
+				}
+
+				@Override
+				public Optional<ProtoDescriptor> getProtoDescriptor(String customer, String app) {
+					if ("CubeCorp".equals(customer) && "grpc".equals(app)) {
+						String filePath = "src/test/resources/route_guide.desc";
+						try {
+							String content = new String(Base64.getEncoder().encode( Files.readAllBytes(Paths.get(filePath))));
+							return Optional.of(new ProtoDescriptor(content));
+						} catch (IOException e) {
+							e.printStackTrace();
+						} catch (DescriptorValidationException e) {
+							e.printStackTrace();
+						}
+					}
+					return Optional.empty();
+				}
+			};
+
+			ProtoDescriptorCacheProvider.instantiateCache(dataStoreExp);
+
+		}
+
 
 		@Before
 		/**
@@ -58,6 +192,10 @@ public class EventPayloadTests {
 		 * 			Optional<Instant> timestamp, String reqId, String collection)
 		 */
 		public void setUp() throws InvalidEventException {
+			setUpProtoDescirptorCache();
+			protoDescriptor = ProtoDescriptorCacheProvider.getInstance().flatMap(protoDescriptorCache ->
+				protoDescriptorCache.get(new ProtoDescriptorKey("CubeCorp",
+					"grpc",  UUID.randomUUID().toString())));
 			CubeMetaInfo cubeMetaInfo = new CubeMetaInfo("random-user"
 				, "test", "movie-info", "mi-rest");
 			MDTraceInfo traceInfo = new MDTraceInfo("random-trace"
@@ -117,6 +255,26 @@ public class EventPayloadTests {
 				eventBuilder.setPayload(httpResponsePayload);
 				httpResponseEvent = eventBuilder.createEvent();
 			} catch (IOException e) {
+			}
+
+			try {
+				Payload payload = objectMapper
+					.readValue(new File("src/test/resources/grpcRequestPayload.json"), Payload.class);
+				GRPCRequestPayload grpcRequestPayload = (GRPCRequestPayload) payload;
+				eventBuilder.setPayload(grpcRequestPayload);
+				grpcRequestEvent = eventBuilder.createEvent();
+			}  catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			try {
+				Payload payload = objectMapper
+					.readValue(new File("src/test/resources/grpcResponsePayload.json"), Payload.class);
+				GRPCResponsePayload grpcResponsePayload = (GRPCResponsePayload) payload;
+				eventBuilder.setPayload(grpcResponsePayload);
+				grpcResponseEvent = eventBuilder.createEvent();
+			}  catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 
@@ -277,5 +435,35 @@ public class EventPayloadTests {
 		Assert.assertTrue(resp.isTruncated());
 		Assert.assertEquals("bookinfo", body.at("/0/app_s").asText());
 		Assert.assertEquals("", body.at("/0/id").asText());
+	}
+
+	@Test
+	public void testGRPCRequestEvent() throws IOException, PathNotFoundException {
+		String serialized = objectMapper.writeValueAsString(grpcRequestEvent);
+		Event reRead = objectMapper.readValue(serialized, Event.class);
+		GRPCRequestPayload payload = (GRPCRequestPayload) reRead.payload;
+		payload.setProtoDescriptor(protoDescriptor);
+		Assert.assertEquals(payload.getValAsString("/path"), "routeguide.RouteGuide/GetFeature");
+		Assert.assertEquals(payload.getValAsString("/body/latitude"), "409146138");
+		System.out.println("GRPC (POST UNWRAP) :: " +objectMapper.writeValueAsString(payload));
+		payload.wrapBodyAndEncode();
+		System.out.println("GRPC (POST WRAP) :: " +objectMapper.writeValueAsString(payload));
+		System.out.println(payload.getValAsString("/body"));
+		Assert.assertEquals(payload.getValAsString("/body"), "CJqmjMMBEJafmJz9/////wE=");
+	}
+
+	@Test
+	public void testGRPCResponseEvent() throws IOException, PathNotFoundException {
+		String serialized = objectMapper.writeValueAsString(grpcResponseEvent);
+		Event reRead = objectMapper.readValue(serialized, Event.class);
+		GRPCResponsePayload payload = (GRPCResponsePayload) reRead.payload;
+		payload.setProtoDescriptor(protoDescriptor);
+		Assert.assertEquals(payload.getValAsString("/path"), "routeguide.RouteGuide/GetFeature");
+		Assert.assertEquals(payload.getValAsString("/body/name"), "Berkshire Valley Management Area Trail, Jefferson, NJ, USA");
+		System.out.println("GRPC (POST UNWRAP) :: " +objectMapper.writeValueAsString(payload));
+		payload.wrapBodyAndEncode();
+		System.out.println("GRPC (POST WRAP) :: " +objectMapper.writeValueAsString(payload));
+		System.out.println(payload.getValAsString("/body"));
+		Assert.assertEquals(payload.getValAsString("/body"), "CjpCZXJrc2hpcmUgVmFsbGV5IE1hbmFnZW1lbnQgQXJlYSBUcmFpbCwgSmVmZmVyc29uLCBOSiwgVVNBEhEImqaMwwEQlp+YnP3/////AQ==");
 	}
 }

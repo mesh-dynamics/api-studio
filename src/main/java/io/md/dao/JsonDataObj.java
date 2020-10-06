@@ -37,11 +37,13 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import com.github.underscore.lodash.U;
 
 import io.md.constants.Constants;
+import io.md.core.WrapUnwrapContext;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
 import io.md.cryptography.EncryptionAlgorithm;
 import io.md.utils.JsonTransformer;
+import io.md.utils.UtilException;
 import io.md.utils.Utils;
 
 public class JsonDataObj implements DataObj {
@@ -203,17 +205,22 @@ public class JsonDataObj implements DataObj {
 		return null;
 	}
 
+	//public boolean unwrapAsJson(String path)
+
+
 	/**
 	 * Unwrap the string at path into a json object. The type for interpreting the
 	 * string is given by mimetype
 	 * @param path
 	 * @param mimetype
 	 */
-	public boolean unwrapAsJson(String path, String mimetype) {
-		return unwrapAsJson(objRoot, path, mimetype);
+	public boolean unwrapAsJson(String path, String mimetype
+		, Optional<WrapUnwrapContext> unwrapContext) {
+		return unwrapAsJson(objRoot, path, mimetype, unwrapContext);
 	}
 
-	private boolean unwrapAsJson(JsonNode root, String path, String mimetype) {
+	private boolean unwrapAsJson(JsonNode root, String path, String mimetype
+		, Optional<WrapUnwrapContext> unwrapContext) {
 		JsonPointer pathPtr = JsonPointer.compile(path);
 		JsonNode valParent = root.at(pathPtr.head());
 		if (valParent != null &&  valParent.isObject()) {
@@ -275,6 +282,24 @@ public class JsonDataObj implements DataObj {
 						LOGGER.error("Exception in parsing xml data, path : "
 							.concat(path).concat(" , value : ").concat(val.toString()), ex);
 					}
+				} else if (mimetype.startsWith(Constants.APPLICATION_GRPC)) {
+					try {
+						if (!unwrapContext.isPresent()) {
+							throw new Exception("Unwrap Context not present while " +
+									"trying to deserialize grpc byte array string");
+						}
+						unwrapContext.flatMap(UtilException.rethrowFunction(context ->
+							context.protoDescriptor.convertByteStringToJson(context.service,
+								context.method, val.asText(), context.isRequest)
+						)).ifPresent(UtilException.rethrowConsumer(jsonString -> {
+							JsonNode parsedValue = jsonMapper.readTree(jsonString);
+							valParentObj.set(fieldName, parsedValue);
+						}));
+						return true;
+					} catch (Exception ex) {
+						LOGGER.error("Exception in parsing grpc payload, path : "
+							.concat(path).concat(" , value : ").concat(val.toString()), ex);
+					}
 				} else if (!isBinary(mimetype)) {
 					try {
 						String strVal = getValAsString(val);
@@ -329,8 +354,8 @@ public class JsonDataObj implements DataObj {
 	 * @param mimetype
 	 */
 	@Override
-	public boolean wrapAsString(String path, String mimetype) {
-		return wrap(objRoot, path, mimetype, false);
+	public boolean wrapAsString(String path, String mimetype, Optional<WrapUnwrapContext> wrapContext) {
+		return wrap(objRoot, path, mimetype, false, wrapContext);
 	}
 
 	/**
@@ -339,11 +364,12 @@ public class JsonDataObj implements DataObj {
 	 * @param mimetype
 	 */
 	@Override
-	public boolean wrapAsEncoded(String path, String mimetype) {
-		return wrap(objRoot, path, mimetype, true);
+	public boolean wrapAsEncoded(String path, String mimetype, Optional<WrapUnwrapContext> wrapContext) {
+		return wrap(objRoot, path, mimetype, true, wrapContext);
 	}
 
-	private boolean wrap(JsonNode root, String path, String mimetype, boolean asEncoded) {
+	private boolean wrap(JsonNode root, String path, String mimetype, boolean asEncoded
+		, Optional<WrapUnwrapContext> wrapContext) {
 		JsonPointer pathPtr = JsonPointer.compile(path);
 		JsonNode valParent = root.at(pathPtr.head());
 		if (valParent != null &&  valParent.isObject()) {
@@ -393,6 +419,29 @@ public class JsonDataObj implements DataObj {
 					} catch (Exception e) {
 						LOGGER.error("Error while"
 							+ " converting JSON string to XML and wrapping as UTF-8 string", e);
+					}
+				} else if (mimetype.startsWith(Constants.APPLICATION_GRPC)) {
+					try {
+						if (asEncoded) {
+							// To be used during replay
+							if (!wrapContext.isPresent()) {
+								throw new Exception("Wrap Context not present while " +
+										"trying to serialize json grpc message to encoded binary string");
+							}
+							wrapContext.flatMap(UtilException.rethrowFunction(context ->
+									context.protoDescriptor.convertJsonToByteString(context.service,
+											context.method, val.toString(), context.isRequest)
+							)).ifPresent(UtilException.rethrowConsumer(byteArrayString -> {
+								valParentObj.set(fieldName, new TextNode(byteArrayString));
+							}));
+						} else {
+							// to be used before sending payload to UI
+							valParentObj.set(fieldName, new TextNode(val.toString()));
+						}
+						return true;
+					} catch (Exception e) {
+						LOGGER.error("Error while"
+							+ " converting grpc JSON message to encoded binary string", e);
 					}
 				}
 			} else if (val != null && val.isBinary()) {

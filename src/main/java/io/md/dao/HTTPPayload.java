@@ -1,5 +1,7 @@
 package io.md.dao;
 
+import java.util.Optional;
+
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -147,17 +149,17 @@ public class HTTPPayload extends LazyParseAbstractPayload {
 	protected void wrapBody() {
 		if (payloadState == HTTPPayloadState.UnwrappedDecoded) {
 			this.dataObj.wrapAsString("/".concat(HTTPRequestPayload.BODY),
-				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN));
+				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN), Optional.empty());
 			setPayloadState(HTTPPayloadState.WrappedDecoded);
 		}
 	}
 
-	private void unWrapBody() {
+	protected void unWrapBody() {
 		// Currently unwrapAsJson does both decoding and unwrapping.
 		// Will cleanup and separate the functions later
 		if (payloadState == HTTPPayloadState.WrappedDecoded || payloadState == HTTPPayloadState.WrappedEncoded) {
 			this.dataObj.unwrapAsJson("/".concat(HTTPRequestPayload.BODY),
-				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN));
+				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN), Optional.empty());
 			setPayloadState(HTTPPayloadState.UnwrappedDecoded);
 		}
 	}
@@ -165,7 +167,7 @@ public class HTTPPayload extends LazyParseAbstractPayload {
 	/*
 	 * this will update state both in this object and the parsed dataObj
 	 */
-	private void setPayloadState(HTTPPayloadState payloadState) {
+	void setPayloadState(HTTPPayloadState payloadState) {
 		this.payloadState = payloadState;
 		try {
 			dataObj.put(PAYLOADSTATEPATH, new JsonDataObj(payloadState, mapper));

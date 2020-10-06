@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.md.core.WrapUnwrapContext;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,15 +116,15 @@ public abstract class LazyParseAbstractPayload implements Payload {
 	}
 
 	@Override
-	public boolean wrapAsString(String path, String mimetype) {
+	public boolean wrapAsString(String path, String mimetype, Optional<WrapUnwrapContext> wrapContext) {
 		parseIfRequired();
-		return dataObj.wrapAsString(path, mimetype);
+		return dataObj.wrapAsString(path, mimetype, wrapContext);
 	}
 
 	@Override
-	public boolean wrapAsEncoded(String path, String mimetype) {
+	public boolean wrapAsEncoded(String path, String mimetype, Optional<WrapUnwrapContext> wrapContext) {
 		parseIfRequired();
-		return dataObj.wrapAsEncoded(path, mimetype);
+		return dataObj.wrapAsEncoded(path, mimetype, wrapContext);
 	}
 
 	@Override

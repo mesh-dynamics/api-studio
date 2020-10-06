@@ -424,7 +424,7 @@ public class CommonUtils {
 
 	public static JsonArray createArgsJsonArray(Gson gson, Object... argVals) {
 		JsonArray argsArray = new JsonArray();
-		Arrays.stream(argVals).forEach(arg -> argsArray.add(gson.toJson(arg)));
+		Arrays.stream(argVals).forEach(arg -> argsArray.add(gson.toJsonTree(arg)));
 		return argsArray;
 	}
 

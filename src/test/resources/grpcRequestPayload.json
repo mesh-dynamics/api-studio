@@ -1,0 +1,60 @@
+{
+	"type": "GRPCRequestPayload",
+	"hdrs": {
+		":authority": [
+			"grpc.dev.cubecorp.io:8980"
+		],
+		":path": [
+			"/routeguide.RouteGuide/GetFeature"
+		],
+		":method": [
+			"POST"
+		],
+		":scheme": [
+			"http"
+		],
+		"content-type": [
+			"application/grpc"
+		],
+		"te": [
+			"trailers"
+		],
+		"user-agent": [
+			"grpc-java-netty/1.30.2"
+		],
+		"grpc-accept-encoding": [
+			"gzip"
+		],
+		"x-forwarded-for": [
+			"100.96.13.1"
+		],
+		"x-forwarded-proto": [
+			"http"
+		],
+		"x-envoy-external-address": [
+			"100.96.13.1"
+		],
+		"x-request-id": [
+			"8a5a09d5-04f4-91b1-a8ab-2d899ad0dba1"
+		],
+		"x-istio-attributes": [
+			"Ck4KGGRlc3RpbmF0aW9uLnNlcnZpY2UuaG9zdBIyEjByb3V0ZS1ndWlkZS1zZXJ2aWNlLnN0YWdpbmctYXMuc3ZjLmNsdXN0ZXIubG9jYWwKTAoXZGVzdGluYXRpb24uc2VydmljZS51aWQSMRIvaXN0aW86Ly9zdGFnaW5nLWFzL3NlcnZpY2VzL3JvdXRlLWd1aWRlLXNlcnZpY2UKMQoYZGVzdGluYXRpb24uc2VydmljZS5uYW1lEhUSE3JvdXRlLWd1aWRlLXNlcnZpY2UKLQodZGVzdGluYXRpb24uc2VydmljZS5uYW1lc3BhY2USDBIKc3RhZ2luZy1hcwpPCgpzb3VyY2UudWlkEkESP2t1YmVybmV0ZXM6Ly9pc3Rpby1pbmdyZXNzZ2F0ZXdheS03NTg0NGNiZjZmLW42a3IyLmlzdGlvLXN5c3RlbQ=="
+		],
+		"x-b3-traceid": [
+			"7100a522161189d128632500b78df85b"
+		],
+		"x-b3-spanid": [
+			"28632500b78df85b"
+		],
+		"x-b3-sampled": [
+			"1"
+		],
+		"x-datadog-trace-id": [
+			"660217143"
+		]
+	},
+	"body": "AAAAABEImqaMwwEQlp+YnP3/////AQ==",
+	"payloadState": "WrappedDecoded",
+	"path": "routeguide.RouteGuide/GetFeature"
+}
+

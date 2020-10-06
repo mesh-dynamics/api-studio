@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.md.core.Comparator.MatchType;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
+import io.md.core.WrapUnwrapContext;
 import io.md.cryptography.EncryptionAlgorithm;
 
 /*
@@ -44,10 +45,10 @@ public interface DataObj {
 	MatchType compare(DataObj rhs, CompareTemplate template);
 
 	@JsonIgnore
-	boolean wrapAsString(String path, String mimetype);
+	boolean wrapAsString(String path, String mimetype, Optional<WrapUnwrapContext> wrapContext);
 
 	@JsonIgnore
-	boolean wrapAsEncoded(String path, String mimetype);
+	boolean wrapAsEncoded(String path, String mimetype, Optional<WrapUnwrapContext> wrapContext);
 
 	@JsonIgnore
 	Optional<Object> encryptField(String path, EncryptionAlgorithm encrypter);
