@@ -3,6 +3,7 @@ import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from "lodash";
 import { getDefaultTraceApiFilters } from "../utils/api-catalog/api-catalog-utils";
 import arrayToTree from 'array-to-tree';
+import {setDefaultMockContext} from '../helpers/httpClientHelpers'
 
 export const httpClientActions = {
     deleteParamInSelectedOutgoingTab: (tabId, type, id) => {
@@ -201,7 +202,11 @@ export const httpClientActions = {
 
     setReqRunning: (tabId) => ({type: httpClientConstants.SET_REQUEST_RUNNING, data: {tabId}}),
 
-    unsetReqRunning: (tabId) => ({type: httpClientConstants.UNSET_REQUEST_RUNNING, data: {tabId}}),
+    unsetReqRunning: (tabId) => (dispatch) => {
+        console.log("Resetting mock context");
+        setDefaultMockContext()
+        dispatch({type: httpClientConstants.UNSET_REQUEST_RUNNING, data: {tabId}})
+    },
 
     createDuplicateTab: (tabId) => ({type: httpClientConstants.CREATE_DUPLICATE_TAB, data: {tabId}}),
 
@@ -297,10 +302,11 @@ export const httpClientActions = {
         try {
             const response = await cubeService.fetchCollectionList(app, "History", true);
             const serverRes = response.recordings;
-            const {httpClient: {userHistoryCollection}} = getState();
             const fetchedUserHistoryCollection = serverRes.find((eachCollection) => (eachCollection.recordingType === "History"))
 
-            if(fetchedUserHistoryCollection) {
+            if(!fetchedUserHistoryCollection) {
+                throw new Error("User history collection not present")
+            } else {
                 dispatch(httpClientActions.addUserHistoryCollection(fetchedUserHistoryCollection));
             
                 dispatch(httpClientActions.setHistoryLoading(true));
@@ -318,7 +324,7 @@ export const httpClientActions = {
             }
         } catch (error) {
             console.error("Error ", error);
-            throw new Error("Error");
+            throw new Error("Error", error);
         }
     },
 
@@ -403,7 +409,7 @@ export const httpClientActions = {
             }
         } catch (error) {
             console.error("Error ", error);
-            throw new Error("Error");
+            throw new Error("Error", error);
         }
     },
 
@@ -530,4 +536,5 @@ export const httpClientActions = {
             dispatch(httpClientActions.setMockConfigStatusText(e.response.data.message, true))
         }
     },
+
 }

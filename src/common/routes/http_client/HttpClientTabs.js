@@ -36,6 +36,8 @@ import { parseCurlCommand } from '../../utils/http_client/curlparser';
 import SplitSlider  from '../../components/SplitSlider.js';
 
 import commonConstants from '../../utils/commonConstants';
+import MockConfigs from "./MockConfigs";
+import {setDefaultMockContext} from '../../helpers/httpClientHelpers'
 import SideBarTabs from "./SideBarTabs";
 
 
@@ -1729,6 +1731,17 @@ class HttpClientTabs extends Component {
         dispatch(cubeActions.hideTestConfig(false));
         dispatch(cubeActions.hideServiceGraph(false));
         dispatch(cubeActions.hideHttpClient(true));
+    }
+    
+    componentWillReceiveProps(nextProps) {
+        const {httpClient:{userHistoryCollection}} = this.props;
+        const {httpClient:{userHistoryCollection: userHistoryCollectionNew}} = nextProps;
+
+        if(userHistoryCollectionNew && !userHistoryCollection) {
+            setDefaultMockContext()
+        } else if (userHistoryCollectionNew && userHistoryCollection && userHistoryCollectionNew.collec != userHistoryCollection.collec) {
+            setDefaultMockContext()
+        }
     }
 
 

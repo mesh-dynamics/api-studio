@@ -30,6 +30,9 @@ const setupProxy = (mockContext, user) => {
     const proxy = httpProxy.createProxyServer({});
 
     const server = http.createServer((req, res) => {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader("Access-Control-Allow-Methods", "GET, PUT, PATCH, POST, DELETE");
+        res.setHeader("Access-Control-Allow-Headers", "*");
 
         logger.info('Request URL received at proxy server :', req.url);
 
