@@ -244,8 +244,11 @@ public class MockServiceHTTP {
             return notFound();
         }
         Recording recording = optionalRecording.get();
+        String recCollection = (recording.recordingType == Recording.RecordingType.History) ? "NA" : recording.collection;
+        LOGGER.info(String.format("MockWithRunId Passing collection %s for recordingType %s" , recCollection , recording.recordingType.toString() ));
+
         return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            httpMethod , body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId)), Optional.of(traceId));
+            httpMethod , body, headers, Optional.of(new MockWithCollection(replayCollection, recCollection, recording.templateVersion, runId)), Optional.of(traceId));
     }
 
 
