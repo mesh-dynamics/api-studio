@@ -1,7 +1,7 @@
 [![Build Status](http://drone.cubecorp.io/api/badges/cube-io-corp/cubeui/status.svg)](http://drone.cubecorp.io/cube-io-corp/cubeui)
 [![Cube Status](https://img.shields.io/badge/cubeIO-Optional-orange.svg)](http://dogfooding.cubecorp.io)
 
-This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).
+This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app)
 
 Below you will find some information on how to perform common tasks.<br>
 You can find the most recent version of this guide [here](https://github.com/facebookincubator/create-react-app/blob/master/packages/react-scripts/template/README.md). 
