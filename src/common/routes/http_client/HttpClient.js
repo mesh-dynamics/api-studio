@@ -637,10 +637,10 @@ class HttpClient extends Component {
                         <HttpResponseMessage 
                             tabId={selectedTraceTableReqTab.id}
                             /** Belongs to RHS */
-                            responseStatus={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseStatus : ""}
+                            responseStatus={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseStatus : selectedTraceTableReqTab.responseStatus}
                             responseStatusText={""}
-                            responseHeaders={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseHeaders : ""}
-                            responseBody={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseBody : ""}
+                            responseHeaders={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseHeaders : selectedTraceTableReqTab.responseHeaders}
+                            responseBody={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseBody : selectedTraceTableReqTab.responseBody}
                             /** Belongs to LHS */
                             recordedResponseHeaders={selectedTraceTableReqTab.recordedResponseHeaders}
                             recordedResponseBody={ selectedTraceTableReqTab.recordedResponseBody}
