@@ -1,10 +1,10 @@
 import  React , { Component, Fragment, createContext } from "react";
 import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Table, ButtonGroup, Button, Radio, Tabs, Tab} from 'react-bootstrap';
 
-import HttpRequestMessage from "./HttpRequestMessage";
-import HttpResponseMessage from "./HttpResponseMessage";
+import HttpRequestMessage from "./HttpRequestMessage.tsx";
+import HttpResponseMessage from "./HttpResponseMessage.tsx";
 
-import HttpRequestMessageRO from "./HttpRequestMessageRO";
+import HttpRequestMessageRO from "./HttpRequestMessageRO.tsx";
 
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import config from "../../config";
@@ -17,6 +17,7 @@ import {
     validateAndCreateDiffLayoutData  
 } from "../../utils/diff/diff-process.js";
 import { AbortRequest } from "./abortRequest";
+import SaveToCollection from './SaveToCollection';
 
 const newStyles = {
     variables: {
@@ -80,7 +81,6 @@ class HttpClient extends Component {
         this.increaseCollapseLength = this.increaseCollapseLength.bind(this);
 
         this.handleClick = this.handleClick.bind(this);
-        this.handleSaveClick = this.handleSaveClick.bind(this);
         this.handleShowDiff = this.handleShowDiff.bind(this);
         this.handleShowCompleteDiffClick = this.handleShowCompleteDiffClick.bind(this);
         this.handleSetAsReference = this.handleSetAsReference.bind(this);
@@ -183,11 +183,6 @@ class HttpClient extends Component {
                 showCompleteDiff: false
             })
         }
-    }
-
-    handleSaveClick(evt) {
-        const { currentSelectedTab } = this.props;
-        this.props.showSaveModal(false, currentSelectedTab.id);
     }
 
     handleDuplicateTabClick = () => {
@@ -441,9 +436,12 @@ class HttpClient extends Component {
                         <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleClick}>
                             {currentSelectedTab.requestRunning ? <><i className="fa fa-spinner fa-spin"></i> STOP</>: <><Glyphicon glyph="play" /> RUN</>} 
                         </div>
-                        <div disabled={currentSelectedTab.httpURL.length === 0} className={currentSelectedTab.httpURL.length === 0 ? "btn btn-sm cube-btn text-center disabled": "btn btn-sm cube-btn text-center"} style={{ padding: "2px 10px", display: currentSelectedTab.showSaveBtn ? "inline-block" : "none"}} onClick={this.handleSaveClick}>
-                            <Glyphicon glyph="save" /> SAVE
-                        </div>
+                        <SaveToCollection 
+                        disabled={currentSelectedTab.httpURL.length === 0} 
+                        visible={currentSelectedTab.showSaveBtn} 
+                        tabId={currentSelectedTab.id} 
+                        getReqResFromTabData={this.props.getReqResFromTabData}
+                        />
                         <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleDuplicateTabClick} title="Duplicate Tab">
                             <i className="fa fa-clone"></i>
                         </div>
@@ -637,10 +635,10 @@ class HttpClient extends Component {
                         <HttpResponseMessage 
                             tabId={selectedTraceTableReqTab.id}
                             /** Belongs to RHS */
-                            responseStatus={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseStatus : ""}
+                            responseStatus={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseStatus : selectedTraceTableReqTab.responseStatus}
                             responseStatusText={""}
-                            responseHeaders={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseHeaders : ""}
-                            responseBody={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseBody : ""}
+                            responseHeaders={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseHeaders : selectedTraceTableReqTab.responseHeaders}
+                            responseBody={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseBody : selectedTraceTableReqTab.responseBody}
                             /** Belongs to LHS */
                             recordedResponseHeaders={selectedTraceTableReqTab.recordedResponseHeaders}
                             recordedResponseBody={ selectedTraceTableReqTab.recordedResponseBody}

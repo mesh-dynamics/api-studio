@@ -300,7 +300,8 @@ class DiffResults extends Component {
     async getAnalysisResults(replayId, filter) {
         const { app } = this.state;
         const { auth: { user: { customer_name }}} = this.props;
-        const numResultsToFetch = ((app === "CourseApp" || customer_name === "Walmart") ? 1 : config.defaultFetchDiffResults);
+        // const numResultsToFetch = ((app === "CourseApp" || customer_name === "Walmart") ? 1 : config.defaultFetchDiffResults);
+        const numResultsToFetch = config.defaultFetchDiffResults;
 
         const searchParams = new URLSearchParams();
         searchParams.set("start", filter.startIndex);
@@ -356,7 +357,8 @@ class DiffResults extends Component {
     
     updatePageResults = async (isNextPage, index) => {
         let {filter, replayId} = this.state;
-        let pageSize = config.defaultFetchDiffResults;
+        const pageSize = config.defaultFetchDiffResults;
+        const maxDiffResultsPerPage = config.maxDiffResultsPerPage;
         let startIndex, endIndex;
         let diffLayoutDataPruned, resultsData;
 
@@ -369,13 +371,12 @@ class DiffResults extends Component {
             const results = resultsData.data && resultsData.data.res || [];
             const numFound = resultsData.data && resultsData.data.numFound || 0;
             const diffLayoutData = this.preProcessResults(results);
+            // prune from top of the list
+            diffLayoutDataPruned = diffLayoutData.slice(0, maxDiffResultsPerPage);
             
-            let pruneEndIndex, updatedEndIndex;
-            ({diffLayoutDataPruned, i: pruneEndIndex} = pruneResults(diffLayoutData, true));
-            
-            updatedEndIndex = startIndex + diffLayoutDataPruned.length;
             // Use the number of results found on server to limit the endIndex
-            endIndex = updatedEndIndex > numFound ?  numFound : updatedEndIndex;            
+            let updatedEndIndex = startIndex + diffLayoutDataPruned.length;
+            endIndex = updatedEndIndex > numFound ?  numFound : updatedEndIndex; 
         } else {
             endIndex = index;
             startIndex = Math.max(endIndex - pageSize, 0);
@@ -383,12 +384,11 @@ class DiffResults extends Component {
             
             const results = resultsData.data && resultsData.data.res || [];
             const diffLayoutData = this.preProcessResults(results);
-            
-            let pruneStartIndex;
-            ({diffLayoutDataPruned, i: pruneStartIndex} = pruneResults(diffLayoutData, false))
+            let len = diffLayoutData.length;
+            // prune from bottom of the list
+            diffLayoutDataPruned =  diffLayoutData.slice(len - maxDiffResultsPerPage, len);
             
             startIndex = Math.max(endIndex - diffLayoutDataPruned.length, 0);
-
         }
 
         const facets = resultsData.data && resultsData.data.facets || {};
