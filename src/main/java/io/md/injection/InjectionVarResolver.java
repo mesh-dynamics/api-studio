@@ -1,22 +1,22 @@
-package io.md.utils;
+package io.md.injection;
 
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.apache.commons.text.lookup.StringLookup;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
+import io.md.utils.Constants;
 import io.md.dao.DataObj;
 import io.md.dao.DataObj.PathNotFoundException;
 import io.md.dao.Event;
 import io.md.dao.Payload;
 import io.md.services.DataStore;
+import org.apache.commons.text.lookup.StringLookup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class InjectionVarResolver implements StringLookup {
 
-	private static Logger LOGGER = LogManager.getLogger(InjectionVarResolver.class);
+	private static Logger LOGGER = LoggerFactory.getLogger(InjectionVarResolver.class);
 
 	Event goldenRequestEvent;
 	Payload testResponsePayload;
@@ -53,7 +53,7 @@ public class InjectionVarResolver implements StringLookup {
 			case Constants.GOLDEN_RESPONSE:
 				Optional<Event> goldenResponseOptional = dataStore
 					.getResponseEvent(goldenRequestEvent.reqId);
-				if (goldenResponseOptional.isEmpty()) {
+				if (!goldenResponseOptional.isPresent()) {
 					LOGGER.error("Cannot fetch golden response for golden request");
 					return null; // Null resorts to default variable in substitutor
 				}

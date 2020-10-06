@@ -12,37 +12,32 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.md.injection.DynamicInjectorFactory;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.text.StringSubstitutor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.TextNode;
 
+import io.md.injection.DynamicInjector;
 import io.md.constants.ReplayStatus;
 import io.md.dao.DataObj;
-import io.md.dao.DataObj.PathNotFoundException;
 import io.md.dao.Event;
 import io.md.dao.JsonDataObj;
-import io.md.dao.Payload;
 import io.md.dao.RecordOrReplay;
 import io.md.dao.Replay;
 import io.md.dao.ResponsePayload;
-import io.md.injection.DynamicInjectionConfig;
 import io.md.services.DataStore;
 import io.md.utils.CubeObjectMapperProvider;
 
 import io.md.core.Utils;
 import io.md.dao.ReplayUpdate;
 import io.md.utils.Constants;
-import io.md.utils.InjectionVarResolver;
 
 public abstract class AbstractReplayDriver {
 
@@ -50,8 +45,11 @@ public abstract class AbstractReplayDriver {
 	protected final Replay replay;
 	public final DataStore dataStore;
 	protected ObjectMapper jsonMapper;
-	protected Optional<DynamicInjectionConfig> dynamicInjectionConfig;
 	Map<String, DataObj> extractionMap;
+	protected DynamicInjector diMgr;
+	//Todo : this needs to be passed or present as singleton somewhere
+	DynamicInjectorFactory factory;
+
 
 
 	static int UPDBATCHSIZE = 10; // replay metadata will be updated after each such batch
@@ -63,8 +61,8 @@ public abstract class AbstractReplayDriver {
 		this.replay = replay;
 		this.dataStore = dataStore;
 		this.jsonMapper = CubeObjectMapperProvider.getInstance();
-		this.dynamicInjectionConfig = Optional.empty();
 		this.extractionMap = new HashMap<>();
+		this.factory = new DynamicInjectorFactory(dataStore , jsonMapper);
 	}
 
 	public abstract IReplayClient initClient(Replay replay) throws Exception;
@@ -87,13 +85,9 @@ public abstract class AbstractReplayDriver {
 		LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Starting Replay",
 			Constants.REPLAY_ID_FIELD, replay.replayId)));
 
-		this.dynamicInjectionConfig = replay.dynamicInjectionConfigVersion.map(DIConfVersion -> {
-			return dataStore.getDynamicInjectionConfig(replay.customerId, replay.app, DIConfVersion);
-		}).orElse(Optional.empty());
+		populateStaticExtactionMap();
 
-		if (dynamicInjectionConfig.isPresent()) {
-			populateStaticExtactionMap();
-		}
+		this.diMgr = factory.getMgr(replay.customerId, replay.app, replay.dynamicInjectionConfigVersion , extractionMap);
 
 		CompletableFuture.runAsync(() -> replay()).handle((ret, e) -> {
 			if (e != null) {
@@ -231,12 +225,12 @@ public abstract class AbstractReplayDriver {
 		List<CompletableFuture<String>> respcodes = replayRequests.map(request -> {
 			replay.reqsent++;
 			logUpdate();
-			inject(request);
+			diMgr.inject(request);
 			CompletableFuture<ResponsePayload> responsePayloadCompletableFuture = client
 				.sendAsync(request, replay);
 
 			return responsePayloadCompletableFuture.thenApply(responsePayload -> {
-				extract(request, responsePayload);
+				diMgr.extract(request, responsePayload);
 				return responsePayload.getStatusCode();
 			}).handle((ret, e) -> {
 				if (e != null) {
@@ -269,10 +263,10 @@ public abstract class AbstractReplayDriver {
 			try {
 				replay.reqsent++;
 				logUpdate();
-				inject(request);
+				diMgr.inject(request);
 				ResponsePayload responsePayload = client.send(request, replay);
 				// Extract variables in extractionMap
-				extract(request, responsePayload);
+				diMgr.extract(request, responsePayload);
 				String statusCode = responsePayload.getStatusCode();
 
 				// for debugging - can remove later
@@ -317,122 +311,8 @@ public abstract class AbstractReplayDriver {
 		}).orElse(new HashMap<String, DataObj>());
 	}
 
-	public void extract(Event goldenRequestEvent, Payload testResponsePayload) {
-		dynamicInjectionConfig.ifPresent(dic-> {
-
-			dic.extractionMetas.forEach(extractionMeta -> {
-				// Test request is same as golden for replay extraction.
-				InjectionVarResolver varResolver = new InjectionVarResolver(goldenRequestEvent,
-					testResponsePayload,
-					goldenRequestEvent.payload, dataStore);
-				StringSubstitutor sub = new StringSubstitutor(varResolver);
-				DataObj value;
-				String requestHttpMethod = getHttpMethod(goldenRequestEvent);
-				boolean apiPathMatch = apiPathMatch(Collections.singletonList(extractionMeta.apiPath), goldenRequestEvent.apiPath);
-				if (apiPathMatch && extractionMeta.method.toString()
-					.equalsIgnoreCase(requestHttpMethod)) {
-					//  TODO ADD checks on reset field
-					String sourceString = extractionMeta.value;
-					// Boolean placeholder to specify if the value to be extracted
-					// is an Object and not a string.
-					// NOTE - if this is true value should be a single source & jsonPath
-					// (Only one placeholder of ${Source: JSONPath}
-					if (extractionMeta.valueObject) {
-						String lookupString = sourceString.trim()
-							.substring(sourceString.indexOf("{") + 1, sourceString.indexOf("}"));
-						value = varResolver.lookupObject(lookupString);
-					} else {
-						String valueString = sub.replace(sourceString);
-						value = new JsonDataObj(new TextNode(valueString), jsonMapper);
-					}
-					if (value != null) {
-						extractionMap
-							.put(sub.replace(extractionMeta.name), value);
-					}
-				}
-			});
-		});
-	}
-
-
-
-	public void inject(Event request) {
-
-		dynamicInjectionConfig.ifPresent(dic -> {
-			dic.injectionMetas.forEach(injectionMeta -> {
-				StringSubstitutor sub = new StringSubstitutor(
-					new InjectionVarResolver(request, null, request.payload, dataStore));
-
-				String requestHttpMethod = getHttpMethod(request);
-				boolean apiPathMatch = apiPathMatch(injectionMeta.apiPaths, request.apiPath);
-				if ((injectionMeta.injectAllPaths || apiPathMatch) && injectionMeta.method
-					.toString().equalsIgnoreCase(requestHttpMethod)) {
-					String key = sub.replace(injectionMeta.name);
-					DataObj value = extractionMap.get(key);
-					try {
-						if (value != null) {
-							request.payload.put(injectionMeta.jsonPath,
-								injectionMeta.map(request.payload
-									.getValAsString(injectionMeta.jsonPath), value, jsonMapper));
-							LOGGER.info(new ObjectMessage(
-								Map.of(Constants.MESSAGE,
-									"Injecting value in request before replaying",
-									"Key", key,
-									"Value", value,
-									Constants.JSON_PATH_FIELD, injectionMeta.jsonPath,
-									Constants.REQ_ID_FIELD, request.reqId)));
-						} else {
-							LOGGER.info(new ObjectMessage(
-								Map.of(Constants.MESSAGE,
-									"Not injecting value as key not found in extraction map",
-									"Key", key,
-									Constants.JSON_PATH_FIELD, injectionMeta.jsonPath,
-									Constants.REQ_ID_FIELD, request.reqId)));
-						}
-					} catch (PathNotFoundException e) {
-						LOGGER.error(new ObjectMessage(
-							Map.of(Constants.MESSAGE,
-								"Couldn't inject value as path not found in request",
-								"Key", key,
-								Constants.JSON_PATH_FIELD, injectionMeta.jsonPath,
-								Constants.REQ_ID_FIELD, request.reqId)), e);
-					} catch (Exception e) {
-						LOGGER.error(new ObjectMessage(
-							Map.of(Constants.MESSAGE,
-								"Exception occurred while injecting in request",
-								"Key", key,
-								Constants.JSON_PATH_FIELD, injectionMeta.jsonPath,
-								Constants.REQ_ID_FIELD, request.reqId)), e);
-					}
-
-				}
-			});
-		});
-	}
-
-	static public String getHttpMethod(Event event) {
-		String requestHttpMethod;
-		try {
-			requestHttpMethod= event.payload.getValAsString("/method");
-		} catch (PathNotFoundException e) {
-			LOGGER
-				.error("Cannot find /method in request" + event.reqId + " No extraction", e);
-			requestHttpMethod = "";
-		}
-		return requestHttpMethod;
-	}
-
-	static public boolean apiPathMatch(List<String> apiPathRegexes, String apiPathToMatch) {
-		return apiPathRegexes.stream().anyMatch(regex -> {
-			Pattern p = Pattern.compile(regex);
-			return p.matcher(apiPathToMatch).matches();
-		});
-	}
-
-
 	public static Optional<Replay> getStatus(String replayId, DataStore dataStore) {
 		return dataStore.getReplay(replayId);
 	}
-
 
 }
