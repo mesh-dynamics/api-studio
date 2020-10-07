@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.cube</groupId>
     <artifactId>commons-server</artifactId>
-    <version>1.0.21</version>
+    <version>1.0.22</version>
     <packaging>jar</packaging>
     <properties>
         <version.java>11</version.java>
@@ -64,6 +64,12 @@
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-server</artifactId>
             <version>${version.jersey}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.10</version>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 </project>
