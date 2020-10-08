@@ -76,9 +76,9 @@ const createUserCollection = async(collectionName, app) => {
     );
 };
 
-const storeUserReqResponse = async(recordingId, data) => {
+const storeUserReqResponse = async(recordingId, data, apiConfig={}) => {
     const urlToPost = `${config.apiBaseUrl}/cs/storeUserReqResp/${recordingId}`;
-    return api.post(urlToPost, data);
+    return api.post(urlToPost, data, apiConfig);
 }
 
 const fetchCollectionList = async (app, recordingType="", forCurrentUser=false, numResults = 0, start = 0) => {

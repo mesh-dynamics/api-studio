@@ -66,7 +66,6 @@ class HttpClientTabs extends Component {
 
         this.driveRequest = this.driveRequest.bind(this);
         this.showOutgoingRequests = this.showOutgoingRequests.bind(this);
-        this.saveToCollection = this.saveToCollection.bind(this);
 
         this.handleRowClick = this.handleRowClick.bind(this);
         this.setAsReference = this.setAsReference.bind(this);
@@ -1134,7 +1133,7 @@ class HttpClientTabs extends Component {
         .then((data) => {
             // handle success
             dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), JSON.stringify(data, undefined, 4)));
-            this.saveToCollection(isOutgoingRequest, tabId, userHistoryCollection.id, "History", runId, reqTimestamp, resTimestamp);
+            this.saveToHistory(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp);
             //dispatch(httpClientActions.unsetReqRunning(tabId))
         })
         .catch((error) => {
@@ -1213,7 +1212,7 @@ class HttpClientTabs extends Component {
         }
     }
 
-    getReqResFromTabData(eachPair, tabToSave, runId, type, reqTimestamp, resTimestamp) {
+    getReqResFromTabData(eachPair, tabToSave, runId, reqTimestamp, resTimestamp) {
         const httpRequestEventTypeIndex = eachPair[0].eventType === "HTTPRequest" ? 0 : 1;
         const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
         let httpRequestEvent = eachPair[httpRequestEventTypeIndex];
@@ -1252,15 +1251,15 @@ class HttpClientTabs extends Component {
         }
         const httpMethod = tabToSave.httpMethod;
         let httpResponseHeaders, httpResponseBody, httpResponseStatus;
-        if (type !== "History") {
-            httpResponseHeaders = recordedResponseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : responseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : null;
-            httpResponseBody = recordedResponseBody ? JSON.parse(recordedResponseBody) : responseBody ? JSON.parse(responseBody) : null;
-            httpResponseStatus = httpResponseEvent.payload[1].status
-        } else {
+        // if (type !== "History") {
+        //     httpResponseHeaders = recordedResponseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : responseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : null;
+        //     httpResponseBody = recordedResponseBody ? JSON.parse(recordedResponseBody) : responseBody ? JSON.parse(responseBody) : null;
+        //     httpResponseStatus = httpResponseEvent.payload[1].status
+        // } else {
             httpResponseHeaders = responseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : recordedResponseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : null;
             httpResponseBody = responseBody ? JSON.parse(responseBody) : recordedResponseBody ? JSON.parse(recordedResponseBody) : null;
             httpResponseStatus = responseStatus
-        }
+        // }
         const reqResCubeFormattedData = {   
             request: {
                 ...httpRequestEvent,
@@ -1297,7 +1296,7 @@ class HttpClientTabs extends Component {
         return reqResCubeFormattedData;
     }
 
-    saveToCollection(isOutgoingRequest, tabId, recordingId, type, runId="", reqTimestamp="", resTimestamp="") {
+    saveToHistory = (tabId, recordingId, runId="", reqTimestamp="", resTimestamp="") => {
         const { 
             httpClient: { 
                 historyTabState, 
@@ -1306,8 +1305,6 @@ class HttpClientTabs extends Component {
             cube: { selectedApp }, 
             dispatch
         } = this.props;
-
-        const app = selectedApp;
 
         const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
         const tabToProcess = tabsToProcess[tabIndex];
@@ -1321,42 +1318,28 @@ class HttpClientTabs extends Component {
         try {
             if (reqResPair.length > 0) {
                 const data = [];
-                data.push(this.getReqResFromTabData(reqResPair, tabToProcess, runId, type, reqTimestamp, resTimestamp));
-                if (type !== "History") {
-                    tabToProcess.outgoingRequests.forEach((eachOutgoingTab) => {
-                        if (eachOutgoingTab.eventData && eachOutgoingTab.eventData.length > 0) {
-                            data.push(this.getReqResFromTabData(eachOutgoingTab.eventData, eachOutgoingTab, runId, type));
-                        }
-                    });
+                data.push(this.getReqResFromTabData(reqResPair, tabToProcess, runId, reqTimestamp, resTimestamp));
+                const apiConfig = {
+                    cancelToken: tabToProcess.abortRequest.cancelToken
                 }
-                const urlToPost = `${config.apiBaseUrl}/cs/storeUserReqResp/${recordingId}`;
-                const apiConfig = type == "History" ? {cancelToken: tabToProcess.abortRequest.cancelToken}:{};
-                const abortRequest = tabToProcess.abortRequest; //After first successful data from getApiTrace, tabToProcess.abortRequest is set to null without cancelling
-                api.post(urlToPost, data, apiConfig)
+                cubeService.storeUserReqResponse(recordingId, data, apiConfig)
                     .then((serverRes) => {
-                        if (type === "History") {
-                            const jsonTraceReqData = serverRes.data.response && serverRes.data.response.length > 0 ? serverRes.data.response[0] : "";
-                            try {
-                                const parsedTraceReqData = JSON.parse(jsonTraceReqData);
-                                const apiPath = _.trimStart(data[0].request.apiPath, '/');
+                        const jsonTraceReqData = serverRes.data.response && serverRes.data.response.length > 0 ? serverRes.data.response[0] : "";
+                        try {
+                            const parsedTraceReqData = JSON.parse(jsonTraceReqData);
+                            const apiPath = _.trimStart(data[0].request.apiPath, '/');
+                            this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
+                            setTimeout(() => {
                                 this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
-                                setTimeout(() => {
-                                    this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
-                                }, 5000);
-                            } catch (error) {
-                                console.error("Error ", error);
-                                throw new Error("Error");
-                            }
-                        } 
+                            }, 5000);
+                        } catch (error) {
+                            console.error("Error ", error);
+                            throw new Error(error);
+                        }
                         setTimeout(() => {
-                            if(historyTabState.currentPage == 0)
-                            {
+                            if(historyTabState.currentPage == 0){
                                 dispatch(httpClientActions.refreshHistory());
                             }
-                            dispatch(httpClientActions.loadUserCollections());
-                            // update api catalog golden and collection lists
-                            dispatch(apiCatalogActions.fetchGoldenCollectionList(app, "UserGolden"))
-
                         }, 2000);
                     }, (error) => {
                         dispatch(httpClientActions.unsetReqRunning(tabId));
@@ -1366,7 +1349,7 @@ class HttpClientTabs extends Component {
         } catch (error) {
             console.error("Error ", error);
             dispatch(httpClientActions.unsetReqRunning(tabId));
-            throw new Error("Error");
+            throw new Error(error);
         }        
     }
     
