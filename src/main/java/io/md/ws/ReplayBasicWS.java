@@ -32,6 +32,7 @@ import org.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.md.constants.ReplayStatus;
 import io.md.core.ReplayTypeEnum;
 import io.md.core.Utils;
 import io.md.dao.Recording;
@@ -245,6 +246,27 @@ public class ReplayBasicWS {
         // nothing to do
         return ;
     }
+
+    protected void analyze(Replay replay, Optional<Analyzer> analyzerOpt) {
+        ReplayStatus status = ReplayStatus.Running;
+        while (status == ReplayStatus.Running) {
+            try {
+                Thread.sleep(5000);
+                Optional<Replay> currentRunningReplay = dataStore
+                        .getCurrentRecordOrReplay(replay.customerId,
+                                replay.app, replay.instanceId)
+                        .flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
+                status = currentRunningReplay.filter(runningReplay -> runningReplay.
+                        replayId.equals(replay.replayId)).map(r -> r.status).orElse(replay.status);
+            } catch (InterruptedException e) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                        "Exception while sleeping  the thread", Constants.REPLAY_ID_FIELD
+                        , replay.replayId)));
+            }
+        }
+        analyzerOpt.ifPresent(analyzer -> analyzer.analyze(replay.replayId));
+    }
+
 
 
     /**
