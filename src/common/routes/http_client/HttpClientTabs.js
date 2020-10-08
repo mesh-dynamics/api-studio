@@ -1036,7 +1036,7 @@ class HttpClientTabs extends Component {
         return qsParams;
     }
 
-    driveRequest(isOutgoingRequest, tabId) {
+    async driveRequest(isOutgoingRequest, tabId) {
         const {httpClient: {tabs, selectedTabKey, userHistoryCollection, mockConfigList, selectedMockConfig }} = this.props;
         const { cube: { selectedApp } } = this.props;
         const { dispatch } = this.props;
@@ -1133,7 +1133,7 @@ class HttpClientTabs extends Component {
         .then((data) => {
             // handle success
             dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), JSON.stringify(data, undefined, 4)));
-            this.saveToHistory(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp);
+            this.saveToHistoryAndLoadTrace(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp);
             //dispatch(httpClientActions.unsetReqRunning(tabId))
         })
         .catch((error) => {
@@ -1296,13 +1296,12 @@ class HttpClientTabs extends Component {
         return reqResCubeFormattedData;
     }
 
-    saveToHistory = (tabId, recordingId, runId="", reqTimestamp="", resTimestamp="") => {
+    saveToHistoryAndLoadTrace = (tabId, recordingId, runId="", reqTimestamp="", resTimestamp="") => {
         const { 
             httpClient: { 
                 historyTabState, 
                 tabs: tabsToProcess
             }, 
-            cube: { selectedApp }, 
             dispatch
         } = this.props;
 
