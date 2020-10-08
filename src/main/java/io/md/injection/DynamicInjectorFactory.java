@@ -32,7 +32,7 @@ public class DynamicInjectorFactory {
         return new DynamicInjector(cfg , dataStore , jsonMapper , extractionMap);
     }
 
-    public DynamicInjector getMgrFromStrMap(String customerId , String app , Optional<String> dynamicCfgVersion , Map<String, String> extractionMap) throws IOException {
+    public DynamicInjector getMgrFromStrMap(String customerId , String app , Optional<String> dynamicCfgVersion , Map<String, String> extractionMap) {
         Optional<DynamicInjectionConfig> cfg = diCfgMgr.getConfig(customerId , app , dynamicCfgVersion);
 
         return new DynamicInjector(cfg , dataStore , jsonMapper , DynamicInjector.convert(extractionMap , jsonMapper));

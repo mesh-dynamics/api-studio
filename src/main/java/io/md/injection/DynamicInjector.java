@@ -9,6 +9,7 @@ import io.md.dao.Event;
 import io.md.dao.JsonDataObj;
 import io.md.dao.Payload;
 import io.md.services.DataStore;
+import io.md.utils.Utils;
 import org.apache.commons.text.StringSubstitutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,10 +27,10 @@ public class DynamicInjector {
     protected final ObjectMapper jsonMapper;
     protected final Map<String, DataObj> extractionMap;
 
-    public static Map<String , DataObj> convert(Map<String , String> extractionMap , ObjectMapper jsonMapper) throws IOException {
+    public static Map<String , DataObj> convert(Map<String , String> extractionMap , ObjectMapper jsonMapper) {
         Map<String , DataObj> dataObjMap = new HashMap<>();
         for(Map.Entry<String , String> entry : extractionMap.entrySet()){
-            JsonNode node =  jsonMapper.readTree(entry.getValue());
+            JsonNode node = Utils.convertStringToNode(entry.getValue(), jsonMapper);
             dataObjMap.put(entry.getKey() ,  new JsonDataObj(node , jsonMapper));
         }
         return dataObjMap;
