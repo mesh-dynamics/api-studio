@@ -42,18 +42,24 @@ import io.md.utils.CommonUtils;
  */
 public class CubeClient {
 
-	private ObjectMapper jsonMapper;
+	private final ObjectMapper jsonMapper;
+	private Optional<String> authToken;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CubeClient.class);
 
 
 	public CubeClient(ObjectMapper jsonMapper) {
 		this.jsonMapper = jsonMapper;
+		authToken = Optional.empty();
 	}
 
-	public static Optional<String> getResponse(HttpRequestBase request) {
-		CommonConfig.getInstance().authToken.ifPresent(
-				val -> request.setHeader(io.cube.agent.Constants.AUTHORIZATION_HEADER, val));
+	public void setAuthToken(String authToken) {
+		this.authToken = Optional.of(authToken);
+	}
+
+	public Optional<String> getResponse(HttpRequestBase request) {
+		Optional<String> token = authToken.isPresent() ? authToken : CommonConfig.getInstance().authToken;
+		token.ifPresent(val -> request.setHeader(io.cube.agent.Constants.AUTHORIZATION_HEADER, val));
 
 		Optional<CloseableHttpResponse> response = HttpUtils.getResponse(request, Optional.empty());
 		try {

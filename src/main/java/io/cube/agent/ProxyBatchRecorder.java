@@ -18,6 +18,7 @@ import com.lmax.disruptor.dsl.ProducerType;
 import io.cube.agent.logging.ProxyEventBatchConsumer;
 import io.cube.agent.logging.ValueEvent;
 import io.md.dao.Event;
+import io.md.utils.CubeObjectMapperProvider;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
@@ -66,9 +67,10 @@ public class ProxyBatchRecorder extends AbstractGsonSerializeRecorder {
 		super();
 
 		ThreadFactory threadFactory = MDThreadFactory.INSTANCE;
+		CubeClient cubeClient = new CubeClient(jsonMapper);
 
 		WaitStrategy waitStrategy = new BlockingWaitStrategy();
-		ProxyEventBatchConsumer eventConsumer = new ProxyEventBatchConsumer();
+		ProxyEventBatchConsumer eventConsumer = new ProxyEventBatchConsumer(cubeClient);
 		disruptor
 			= new Disruptor<>(
 			ValueEvent.EVENT_FACTORY,

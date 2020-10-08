@@ -57,6 +57,11 @@ public class ProxyMocker implements Mocker {
 		this.gson = MeshDGsonProvider.getInstance();
 	}
 
+	public void setAuthToken(String authToken) {
+		cubeClient.setAuthToken(authToken);
+	}
+
+
 	@Override
 	public MockResponse mock(Event event, Optional<Instant> lowerBoundForMatching, Optional<MockWithCollection> mockWithCollectionOptional) throws MockerException {
 		return cubeClient.getMockResponseEvent(event, lowerBoundForMatching).orElse(emptyResponse);
