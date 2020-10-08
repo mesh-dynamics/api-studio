@@ -42,7 +42,7 @@ public class MailService {
     @Value("${spring.mail.frontend.resetEndpoint}")
     private String resetEndpoint;
 
-    @Value("${spring.mail.username}")
+    @Value("${spring.mail.emailsender}")
     private String emailSender;
 
     public MailService(JavaMailSender javaMailSender, MessageSource messageSource, SpringTemplateEngine templateEngine) {
