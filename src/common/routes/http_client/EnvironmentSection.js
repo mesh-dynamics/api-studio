@@ -3,6 +3,7 @@ import EnvVar from "./EnvVar";
 import { connect } from "react-redux";
 import { getCurrentEnvironment } from "../../utils/http_client/envvar";
 import { httpClientActions } from "../../actions/httpClientActions";
+import _ from "lodash";
 
 //Remove unused Components later
 import {
@@ -62,7 +63,7 @@ class EnvironmentSection extends React.Component {
     const {
       httpClient: { environmentList, selectedEnvironment },
     } = this.props;
-    
+
     const currentEnvironment = getCurrentEnvironment(
       environmentList,
       selectedEnvironment
