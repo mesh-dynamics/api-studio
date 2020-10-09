@@ -16,9 +16,8 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -33,7 +32,7 @@ import org.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.md.utils.UtilException;
+import io.md.constants.ReplayStatus;
 import io.md.core.ReplayTypeEnum;
 import io.md.core.Utils;
 import io.md.dao.Recording;
@@ -46,6 +45,7 @@ import io.md.services.Analyzer;
 import io.md.services.DataStore;
 import io.md.utils.Constants;
 import io.md.utils.CubeObjectMapperProvider;
+import io.md.utils.UtilException;
 
 /**
  * @author prasad
@@ -56,13 +56,10 @@ public class ReplayBasicWS {
 
     private static final Logger LOGGER = LogManager.getLogger(io.md.ws.ReplayBasicWS.class);
 
-    private final Analyzer analyzer;
-
-
-
 	@GET
 	@Path("status/{replayId}")
-    public Response status(@Context UriInfo ui, @PathParam("replayId") String replayId) {
+    public Response status(@Context HttpHeaders headers, @Context UriInfo ui, @PathParam("replayId") String replayId) {
+	    beforeApi(headers);
         Optional<Replay> replay = AbstractReplayDriver.getStatus(replayId, dataStore);
         Response resp = replay.map(r -> {
             String json;
@@ -89,23 +86,24 @@ public class ReplayBasicWS {
     @POST
     @Path("start/{recordingId}")
     @Consumes("application/x-www-form-urlencoded")
-    public Response start(@Context UriInfo ui,
+    public Response start(@Context HttpHeaders headers, @Context UriInfo ui,
                           @PathParam("recordingId") String recordingId,
                           MultivaluedMap<String, String> formParams) {
-        Optional<Recording> recordingOpt = dataStore.getRecording(recordingId);
 
+        beforeApi(headers);
+        Optional<Recording> recordingOpt = dataStore.getRecording(recordingId);
 
         if (recordingOpt.isEmpty()) {
             LOGGER.error(String
                     .format("Cannot init Replay since cannot find recording for id %s", recordingId));
-            Response.status(Status.NOT_FOUND)
+            return Response.status(Status.NOT_FOUND)
                     .entity(String.format("cannot find recording for id %s", recordingId)).build();
         }
 
-        return startReplay(formParams, recordingOpt.get());
+        return startReplay(headers, formParams, recordingOpt.get());
     }
 
-    protected Response startReplay(MultivaluedMap<String, String> formParams, Recording recording) {
+    protected Response startReplay(HttpHeaders headers, MultivaluedMap<String, String> formParams, Recording recording) {
         String replayId = "NotInited";
         try {
             // boolean startReplay = Utils.strToBool(formParams.getFirst("startReplay")).orElse(true);
@@ -121,9 +119,9 @@ public class ReplayBasicWS {
             if (errResp.isPresent()) {
                 return errResp.get();
             }
-            beforeReplay(formParams, recording, replay)
+            beforeReplay(headers, formParams, recording, replay)
                     .thenApply(v -> doStartReplay(replay))
-                    .thenCompose(v -> afterReplay(formParams, recording, replay,
+                    .thenCompose(v -> afterReplay(headers, formParams, recording, replay,
                             analyze ? Optional.ofNullable(analyzer) : Optional.empty()));
             String json = jsonMapper.writeValueAsString(replay);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
@@ -232,17 +230,43 @@ public class ReplayBasicWS {
                 });
     }
 
-    protected CompletableFuture<Void> beforeReplay(MultivaluedMap<String, String> formParams, Recording recording,
+    protected CompletableFuture<Void> beforeReplay(HttpHeaders headers, MultivaluedMap<String, String> formParams, Recording recording,
                                                    Replay replay) {
         // nothing to do
 	    return CompletableFuture.completedFuture(null);
     }
 
-    protected CompletableFuture<Void> afterReplay(MultivaluedMap<String, String> formParams, Recording recording,
+    protected CompletableFuture<Void> afterReplay(HttpHeaders headers, MultivaluedMap<String, String> formParams, Recording recording,
                                                   Replay replay, Optional<Analyzer> analyzer) {
         // nothing to do
         return CompletableFuture.completedFuture(null);
     }
+
+    protected void beforeApi(HttpHeaders headers) {
+        // nothing to do
+        return ;
+    }
+
+    protected void analyze(Replay replay, Optional<Analyzer> analyzerOpt) {
+        ReplayStatus status = ReplayStatus.Running;
+        while (status == ReplayStatus.Running) {
+            try {
+                Thread.sleep(5000);
+                Optional<Replay> currentRunningReplay = dataStore
+                        .getCurrentRecordOrReplay(replay.customerId,
+                                replay.app, replay.instanceId)
+                        .flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
+                status = currentRunningReplay.filter(runningReplay -> runningReplay.
+                        replayId.equals(replay.replayId)).map(r -> r.status).orElse(replay.status);
+            } catch (InterruptedException e) {
+                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                        "Exception while sleeping  the thread", Constants.REPLAY_ID_FIELD
+                        , replay.replayId)));
+            }
+        }
+        analyzerOpt.ifPresent(analyzer -> analyzer.analyze(replay.replayId));
+    }
+
 
 
     /**
@@ -255,6 +279,7 @@ public class ReplayBasicWS {
         this.analyzer = analyzer;
     }
 
-	protected DataStore dataStore;
-	ObjectMapper jsonMapper;
+	protected final DataStore dataStore;
+    protected final Analyzer analyzer;
+    ObjectMapper jsonMapper;
 }
