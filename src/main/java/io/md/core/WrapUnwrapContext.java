@@ -1,13 +1,15 @@
 package io.md.core;
 
+import io.md.dao.ProtoDescriptorDAO;
+
 public class WrapUnwrapContext {
 
-	public final ProtoDescriptor protoDescriptor;
+	public final ProtoDescriptorDAO protoDescriptor;
 	public final String service;
 	public final String method;
 	public final boolean isRequest;
 
-	public WrapUnwrapContext(ProtoDescriptor protoDescriptor, String service, String method,
+	public WrapUnwrapContext(ProtoDescriptorDAO protoDescriptor, String service, String method,
 							 boolean isRequest) {
 		this.protoDescriptor = protoDescriptor;
 		this.service = service;

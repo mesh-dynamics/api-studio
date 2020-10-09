@@ -6,11 +6,9 @@
 
 package io.md.services;
 
-import java.util.Map;
 import java.util.Optional;
 
 import io.md.core.CompareTemplate;
-import io.md.core.ProtoDescriptor;
 import io.md.core.TemplateKey.Type;
 import io.md.dao.*;
 import io.md.injection.DynamicInjectionConfig;
