@@ -10,10 +10,17 @@ import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,12 +48,14 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import io.md.dao.*;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.solr.common.util.Pair;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.json.JSONObject;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
@@ -66,24 +75,18 @@ import io.md.core.TemplateKey;
 import io.md.core.TemplateKey.Type;
 import io.md.core.Utils.BadValueException;
 import io.md.core.ValidateAgentStore;
-import io.md.dao.DefaultEvent;
-import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Event.RunType;
 import io.md.dao.EventQuery;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Payload;
+import io.md.dao.ProtoDescriptorDAO;
 import io.md.dao.RecordOrReplay;
 import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingSaveFailureException;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
-import io.md.dao.Replay;
-import io.md.dao.ReplayBuilder;
-import io.md.dao.ReqRespMatchResult;
-import io.md.dao.UserReqRespContainer;
-import io.md.dao.CubeMetaInfo;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
 import io.md.services.DataStore.TemplateNotFoundException;
@@ -99,8 +102,6 @@ import com.cube.dao.Result;
 import com.cube.dao.WrapperEvent;
 import com.cube.queue.DisruptorEventQueue;
 import com.cube.queue.RREvent;
-
-//import com.cube.queue.StoreUtils;
 
 /**
  * @author prasad
@@ -660,6 +661,15 @@ public class CubeStore {
         }
     }
 
+    @POST
+    @Path("/deleteAgentConfig/{customerId}/{app}/{service}/{instanceId}")
+    public Response deleteAgentConfig(@PathParam("customerId") String customerId, @PathParam("app") String app,
+        @PathParam("service") String service, @PathParam("instanceId") String instanceId , @Context UriInfo ui) {
+        boolean deletionSuccess = rrstore.deleteAgentConfig(customerId , app, service, instanceId);
+        return Response.ok().type(MediaType.APPLICATION_JSON).
+            entity(buildSuccessResponse(Constants.SUCCESS , new JSONObject(Map.of("deletion_success" , deletionSuccess)) )).build();
+    }
+
     @GET
     @Path("/fetchAgentConfigWithFacets/{customerId}/{app}")
     @Produces({MediaType.APPLICATION_JSON})
@@ -807,7 +817,7 @@ public class CubeStore {
             defaultReqEvent.service, "NA", "NA",
             new MDTraceInfo("NA", null, null), RunType.Manual
             , Optional.of(Instant.now()), defaultReqEvent.reqId, defaultReqEvent.apiPath,
-            Event.EventType.getResponseType(defaultReqEvent.eventType), defaultReqEvent.recordingType);
+            Event.EventType.getResponseType(defaultReqEvent.eventType), defaultReqEvent.recordingType).withRunId(defaultReqEvent.runId);
         eventBuilder.setPayload(payload);
         Event defaultRespEvent = eventBuilder.createEvent();
         // parseAndSetKey is needed only for requests
@@ -856,7 +866,7 @@ public class CubeStore {
                 reqEvent.service, "NA", "NA"
                 , new MDTraceInfo("NA", null, null), RunType.Manual,
                 Optional.of(Instant.now()),
-                reqEvent.reqId, reqEvent.apiPath, reqEvent.eventType, reqEvent.recordingType);
+                reqEvent.reqId, reqEvent.apiPath, reqEvent.eventType, reqEvent.recordingType).withRunId(reqEvent.runId);
 
             //TODO:Add support for Binary payload.
             eventBuilder.setPayload(reqEvent.payload);
@@ -865,7 +875,8 @@ public class CubeStore {
                 defaultReqEvent.parseAndSetKey(rrstore.
                     getTemplate(defaultReqEvent.customerId, defaultReqEvent.app, defaultReqEvent.service,
                         defaultReqEvent.apiPath, DEFAULT_TEMPLATE_VER,
-                        Type.RequestMatch, Optional.ofNullable(defaultReqEvent.eventType)));
+                        Type.RequestMatch, Optional.ofNullable(defaultReqEvent.eventType)
+                        , Optional.empty(), UUID.randomUUID().toString()));
             } catch (TemplateNotFoundException e) {
                 LOGGER.error(new ObjectMessage(
                     Map.of(Constants.EVENT_TYPE_FIELD, defaultReqEvent.eventType,
@@ -1012,7 +1023,7 @@ public class CubeStore {
                                 .withGoldenName(newr.name)
                                 .withReplayStatus(ReplayStatus.Running)
                                 .withReplayId(newr.collection)
-                                .withRunId(Optional.of(newr.collection + " " + Instant.now().toString()));
+                                .withRunId(newr.collection + " " + Instant.now().toString());
                             Replay replay = replayBuilder.build();
                             rrstore.saveReplay(replay);
                         }
@@ -1053,49 +1064,57 @@ public class CubeStore {
 
     @POST
     @Path("resumeRecording/{recordingId}")
-    public Response resumeRecording(@PathParam("recordingId") String recordingId) {
+    public void resumeRecording(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui,
+        @PathParam("recordingId") String recordingId) {
         Optional<Recording> recording = rrstore.getRecording(recordingId);
-        return resumeRecording(recording);
+        CompletableFuture<Response> resp = resumeRecording(recording, ui.getQueryParameters());
+        resp.thenApply(response -> asyncResponse.resume(response));
     }
 
     @POST
     @Path("resumeRecordingByNameLabel/")
-    public Response resumeRecordingByNameLabel(@Context UriInfo ui) {
+    public void resumeRecordingByNameLabel(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
         String customerId = queryParams.getFirst(Constants.CUSTOMER_ID_FIELD);
         String app = queryParams.getFirst(Constants.APP_FIELD);
         String name = queryParams.getFirst(Constants.GOLDEN_NAME_FIELD);
         if(customerId ==null || app ==null || name == null) {
-            return Response.status(Status.BAD_REQUEST)
+            asyncResponse.resume(Response.status(Status.BAD_REQUEST)
                 .entity("CustomerId/app/name needs to be given for a golden")
-                .build();
+                .build());
+            return;
         }
         Optional<String> label = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_LABEL_FIELD));
 
 
         Optional<Recording> recording = rrstore.getRecordingByName(customerId, app, name, label);
-        return resumeRecording(recording);
+        CompletableFuture<Response> resp = resumeRecording(recording, ui.getQueryParameters());
+        resp.thenApply(response -> asyncResponse.resume(response));
     }
 
-    public Response resumeRecording(Optional<Recording> recording) {
+    public CompletableFuture<Response> resumeRecording(Optional<Recording> recording, MultivaluedMap<String, String> queryParams) {
         return recording.map(r -> {
-            Recording resumedRecording = ReqRespStore.resumeRecording(r, rrstore);
-            String json;
-            try {
-                json = jsonMapper.writeValueAsString(resumedRecording);
-                return Response.ok(json, MediaType.APPLICATION_JSON).build();
-            } catch (JsonProcessingException ex) {
-                LOGGER.error(new ObjectMessage(Map.of(
-                    Constants.MESSAGE, "Error in converting response and match results to Json",
-                    Constants.RECORDING_ID, r.id
-                )));
-                return Response.serverError()
-                    .entity(buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
-                        ex.getMessage())).build();
-            }
-        }).orElse(Response.status(Response.Status.NOT_FOUND).
+            CompletableFuture<Response> response = beforeRecording(queryParams, r).thenApply(v ->
+            {
+                Recording resumedRecording = ReqRespStore.resumeRecording(r, rrstore);
+                String json;
+                try {
+                    json = jsonMapper.writeValueAsString(resumedRecording);
+                    return Response.ok(json, MediaType.APPLICATION_JSON).build();
+                } catch (JsonProcessingException ex) {
+                    LOGGER.error(new ObjectMessage(Map.of(
+                        Constants.MESSAGE, "Error in converting response and match results to Json",
+                        Constants.RECORDING_ID, r.id
+                    )));
+                    return Response.serverError()
+                        .entity(buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                            ex.getMessage())).build();
+                }
+            });
+            return response;
+        }).orElse(CompletableFuture.completedFuture(Response.status(Response.Status.NOT_FOUND).
             entity(buildErrorResponse(Constants.ERROR, Constants.RECORDING_NOT_FOUND,
-                String.format("Recording not found"))).build());
+                String.format("Recording not found"))).build()));
     }
 
     @GET
@@ -1124,6 +1143,9 @@ public class CubeStore {
         Optional<String> recordingType = Optional.ofNullable(formParams.getFirst(Constants.RECORDING_TYPE_FIELD));
         Optional<Boolean> archived = Optional.empty();
         Optional<String> recordingId = Optional.ofNullable(formParams.getFirst(Constants.RECORDING_ID));
+        Integer numResults =
+            Optional.ofNullable(formParams.getFirst(Constants.NUM_RESULTS_FIELD)).flatMap(Utils::strToInt).orElse(20);
+        Optional<Integer> start = Optional.ofNullable(formParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
 
         try {
 
@@ -1137,11 +1159,15 @@ public class CubeStore {
                 }
             }
 
-            List<Recording> recordings = rrstore.getRecording(customerId, app, instanceId, status, collection, templateVersion, name, parentRecordingId, rootRecordingId,
-                codeVersion, branch, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, userId, label, recordingType, recordingId).collect(Collectors.toList());
+            Result<Recording> result = rrstore.getRecording(customerId, app, instanceId, status, collection, templateVersion, name, parentRecordingId, rootRecordingId,
+                codeVersion, branch, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, userId, label, recordingType, recordingId, Optional.of(numResults), start);
+            Map jsonMap = new HashMap();
+
+            jsonMap.put("recordings", result.getObjects().collect(Collectors.toList()));
+            jsonMap.put("numFound", result.getNumFound());
 
             String json;
-            json = jsonMapper.writeValueAsString(recordings);
+            json = jsonMapper.writeValueAsString(jsonMap);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
 
         } catch (JsonProcessingException je) {
@@ -1470,7 +1496,8 @@ public class CubeStore {
                         }
 
                         TemplateKey tkey = new TemplateKey(rec.templateVersion, request.customerId,
-                            request.app, request.service, request.apiPath, Type.RequestMatch);
+                            request.app, request.service, request.apiPath, Type.RequestMatch,
+                            io.md.utils.Utils.extractMethod(request), UUID.randomUUID().toString());
                         Comparator comparator = rrstore
                             .getComparator(tkey, request.eventType);
                         final String reqId = io.md.utils.Utils.generateRequestId(
@@ -1497,7 +1524,8 @@ public class CubeStore {
                             TemplateKey templateKey = new TemplateKey(rec.templateVersion,
                                 response.customerId,
                                 response.app, response.service, response.apiPath,
-                                Type.ResponseCompare);
+                                Type.ResponseCompare, io.md.utils.Utils.extractMethod(request)
+                                , rec.collection);
                             Comparator respComparator = rrstore
                                 .getComparator(templateKey, response.eventType);
                             Optional<Event> optionalResponseEvent = rrstore
@@ -1590,18 +1618,64 @@ public class CubeStore {
         return ServerUtils.flushAll(config);
     }
 
+
+    @POST
+    @Path("/protoDescriptorFileUpload/{customerId}/{app}/")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response protoDescriptorFileUpload(@PathParam("customerId") String customerId,
+        @PathParam("app") String app,
+        @FormDataParam("protoDescriptorFile") InputStream uploadedInputStream) {
+
+        if(uploadedInputStream==null) {
+            return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
+                Map.of("Message",
+                    "Uploaded file stream null. Ensure the variable name is \"protoDescriptorFile\" for the file")
+            )).toString()).build();
+        }
+
+
+        byte[] encodedFileBytes;
+        try {
+            encodedFileBytes = Base64.getEncoder().encode(uploadedInputStream.readAllBytes());
+        } catch (IOException e) {
+            LOGGER.error("Cannot encode uploaded proto descriptor file",e);
+            return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
+                Map.of("Message", "Cannot encode uploaded proto descriptor file",
+                    "Error", e.getMessage())).toString())).build();
+        }
+
+        ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app, new String(encodedFileBytes, StandardCharsets.UTF_8));
+        boolean status = rrstore.storeProtoDescriptorFile(protoDescriptorDAO);
+        return status ? Response.ok().build() : Response.serverError().entity(Map.of("Error", "Cannot store proto descriptor file")).build();
+    }
+
+
     private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId)
         throws InvalidEventException {
         EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
             event.service, event.instanceId, collection,
             new MDTraceInfo(traceId, event.spanId, event.parentSpanId),
             event.getRunType(), Optional.of(Instant.now()), reqId, event.apiPath,
-            event.eventType, recordingType);
+            event.eventType, recordingType).withRunId(event.runId);
         eventBuilder.setPayload(event.payload);
         eventBuilder.withMetaData(event.metaData);
         eventBuilder.withRunId(event.runId);
         return eventBuilder.createEvent();
     }
+
+    @GET
+    @Path("getAppConfiguration/{customerId}/{app}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAppConfiguration(@Context UriInfo uriInfo,
+                                              @PathParam("customerId") String customerId, @PathParam("app") String app) {
+        Optional<CustomerAppConfig> custAppConfig = rrstore.getAppConfiguration(customerId, app);
+        Response resp = custAppConfig.map(d -> Response.ok(d , MediaType.APPLICATION_JSON).build())
+            .orElse(Response.status(Response.Status.NOT_FOUND).entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
+                "CustomerAppConfig object not found")).build());
+        return resp;
+    }
+
 
 
     /**

@@ -77,7 +77,7 @@ public class DynamicInjectionTest {
 			String apiPath = "/minfo/health";
 			EventBuilder eventBuilder = new EventBuilder(cubeMetaInfo, traceInfo
 				, RunType.Record, apiPath, EventType.HTTPRequest
-				, Optional.empty(), "random-req-id", "random-collection", RecordingType.Golden);
+				, Optional.empty(), "random-req-id", "random-collection", RecordingType.Golden).withRunId(traceInfo.traceId);
 
 			MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
 			headers.add("content-type", MediaType.APPLICATION_JSON);
@@ -90,7 +90,7 @@ public class DynamicInjectionTest {
 
 			eventBuilder = new EventBuilder(cubeMetaInfo, traceInfo
 				, RunType.Record, apiPath, EventType.HTTPResponse
-				, Optional.empty(), "random-req-id", "random-collection", RecordingType.Golden);
+				, Optional.empty(), "random-req-id", "random-collection", RecordingType.Golden).withRunId(traceInfo.traceId);
 
 			headers = new MultivaluedHashMap<>();
 			headers.add("content-type", MediaType.APPLICATION_JSON);

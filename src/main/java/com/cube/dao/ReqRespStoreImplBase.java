@@ -105,8 +105,8 @@ public abstract class ReqRespStoreImplBase extends AbstractDataStore implements 
                 Optional.empty(),Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty(), Collections.emptyList(), Optional.empty(),
                 Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-								Optional.empty(), Optional.empty())
-				.findFirst()
+								Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty())
+				.getObjects().findFirst()
 				.map(recording -> RecordOrReplay.createFromRecording(recording))
 				.or(() -> { // no ongoing recording, check replay
 					LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE
@@ -187,8 +187,20 @@ public abstract class ReqRespStoreImplBase extends AbstractDataStore implements 
 	    return getComparator(key, Optional.ofNullable(eventType));
     }
 
+	@Override
+	public CompareTemplate getTemplate(String customerId, String app, String service
+		, String apiPath, String templateVersion, TemplateKey.Type templateType,
+		Optional<Event.EventType> eventType, Optional<String> method, String recordingId)
+		throws TemplateNotFoundException {
+		TemplateKey tkey =
+			new TemplateKey(templateVersion, customerId,
+				app, service, apiPath, templateType, method, recordingId);
 
-    @Override
+		return getComparator(tkey, eventType).getCompareTemplate();
+	}
+
+
+   /* @Override
     public CompareTemplate getTemplate(String customerId, String app, String service, String apiPath,
                                        String templateVersion, TemplateKey.Type templateType,
                                        Optional<Event.EventType> eventType) throws TemplateNotFoundException {
@@ -197,7 +209,7 @@ public abstract class ReqRespStoreImplBase extends AbstractDataStore implements 
                 app, service, apiPath, templateType);
 
         return getComparator(tkey, eventType).getCompareTemplate();
-    }
+    }*/
 
 	static protected class CollectionKey {
 
