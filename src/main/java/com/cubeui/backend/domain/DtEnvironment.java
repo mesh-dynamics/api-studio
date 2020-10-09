@@ -55,5 +55,6 @@ public class DtEnvironment {
   String name;
 
   @OneToMany(mappedBy = "environment", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+  @OnDelete(action = OnDeleteAction.CASCADE)
   List<DtEnvVar> vars;
 }

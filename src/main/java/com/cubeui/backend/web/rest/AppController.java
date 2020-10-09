@@ -86,6 +86,15 @@ public class AppController {
                         .name(appDTO.getName())
                         .customer(customer.get())
                         .build());
+        Optional<List<User>> optionalUsers = this.userRepository.findByCustomerId(appDTO.getCustomerId());
+        optionalUsers.ifPresent(users -> {
+            users.forEach(user -> {
+                AppUser appUser = new AppUser();
+                appUser.setApp(saved);
+                appUser.setUser(user);
+                appUserRepository.save(appUser);
+            });
+        });
         return created(
                 ServletUriComponentsBuilder
                         .fromContextPath(request)

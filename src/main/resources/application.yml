@@ -89,3 +89,14 @@ logging:
 allowed:
     origins:
         path: ""
+password:
+    old:
+        match:
+            size: 3
+    reset:
+        days:
+            min: 180
+            max: 365
+        request:
+            days: 1
+    length: 20

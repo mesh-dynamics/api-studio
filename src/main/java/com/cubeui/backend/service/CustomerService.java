@@ -38,14 +38,14 @@ public class CustomerService {
         customer.ifPresent(c -> {
             Optional.ofNullable(customerDTO.getName()).ifPresent(name -> c.setName(name));
             Optional.ofNullable(customerDTO.getEmail()).ifPresent(name -> c.setEmail(name));
-            Optional.ofNullable(customerDTO.getDomainURL()).ifPresent(name -> c.setDomainURL(name));
+            c.setDomainUrls(customerDTO.getDomainURLs());
             this.customerRepository.save(c);
         });
         if (customer.isEmpty()){
             customer = Optional.of(this.customerRepository.save(Customer.builder()
                     .name(customerDTO.getName())
                     .email(customerDTO.getEmail())
-                    .domainURL(customerDTO.getDomainURL())
+                    .domainUrls(customerDTO.getDomainURLs())
                     .build()
             ));
         }
@@ -60,5 +60,9 @@ public class CustomerService {
         } else {
             return false;
         }
+    }
+
+    public Optional<Customer> getByDomainUrl(String domainUrl) {
+        return this.customerRepository.findByDomainUrls(domainUrl);
     }
 }

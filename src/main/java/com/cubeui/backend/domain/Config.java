@@ -37,4 +37,6 @@ public class Config {
   @Column(length = 5000)
   String value;
   String userId;
+  @Column(columnDefinition = "boolean default true")
+  Boolean authenticate;
 }

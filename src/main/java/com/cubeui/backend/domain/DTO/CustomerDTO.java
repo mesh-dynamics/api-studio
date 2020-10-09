@@ -1,6 +1,7 @@
 package com.cubeui.backend.domain.DTO;
 
 
+import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,7 +17,7 @@ public class CustomerDTO {
 
     private String email;
 
-    private String domainURL;
+    private Set<String> domainURLs;
 
     private LocalDateTime createdAt;
 

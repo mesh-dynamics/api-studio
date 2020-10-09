@@ -5,11 +5,10 @@ import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.ChangePasswordDTO;
 import com.cubeui.backend.domain.DTO.KeyAndPasswordDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
-import com.cubeui.backend.domain.EmailDomain;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.AppRepository;
-import com.cubeui.backend.repository.EmailDomainRepository;
 import com.cubeui.backend.service.CubeServerService;
+import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.service.MailService;
 import com.cubeui.backend.service.ReCaptchaAPIService;
 import com.cubeui.backend.service.UserService;
@@ -53,28 +52,27 @@ public class AccountController {
 
     private UserService userService;
     private MailService mailService;
-    private EmailDomainRepository emailDomainRepository;
     private ReCaptchaAPIService reCaptchaAPIService;
     private CubeServerService cubeServerService;
     private AppRepository appRepository;
+    private CustomerService customerService;
 
     public AccountController(UserService userService,
-        MailService mailService, EmailDomainRepository emailDomainRepository, ReCaptchaAPIService reCaptchaAPIService,
-        CubeServerService cubeServerService, AppRepository appRepository) {
+        MailService mailService, ReCaptchaAPIService reCaptchaAPIService,
+        CubeServerService cubeServerService, AppRepository appRepository, CustomerService customerService) {
         this.userService = userService;
         this.mailService = mailService;
-        this.emailDomainRepository = emailDomainRepository;
         this.reCaptchaAPIService = reCaptchaAPIService;
         this.cubeServerService = cubeServerService;
         this.appRepository = appRepository;
+        this.customerService = customerService;
     }
 
     Optional<Customer> validateEmailDomain(String email) {
         // todo validate email string
         String[] emailSplit = email.split("@");
         String domain = emailSplit[1];
-        Optional<EmailDomain> emailDomain = emailDomainRepository.findByDomain(domain);
-        return emailDomain.map(EmailDomain::getCustomer);
+        return customerService.getByDomainUrl(domain);
     }
 
     @PostMapping("/create-user")

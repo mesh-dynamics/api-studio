@@ -1,7 +1,10 @@
 package com.cubeui.backend.security.jwt;
 
+import com.cubeui.backend.domain.User;
+import com.cubeui.backend.web.exception.ResetPasswordException;
 import java.io.IOException;
 
+import java.time.Instant;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -19,28 +22,18 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JwtTokenFilter extends GenericFilterBean {
 
-    private JwtTokenProvider jwtTokenProvider;
+    private JwtTokenValidator jwtTokenValidator;
 
-    public JwtTokenFilter(JwtTokenProvider jwtTokenProvider) {
-        this.jwtTokenProvider = jwtTokenProvider;
+    public JwtTokenFilter(JwtTokenValidator jwtTokenValidator) {
+        this.jwtTokenValidator = jwtTokenValidator;
     }
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain filterChain)
         throws IOException, ServletException {
 
-        String token = jwtTokenProvider.resolveToken((HttpServletRequest) req);
-
-
         try {
-            if (token != null && jwtTokenProvider.validateToken(token)) {
-                log.trace("Token validation passed ");
-                Authentication auth = jwtTokenProvider.getAuthentication(token);
-
-                if (auth != null) {
-                    SecurityContextHolder.getContext().setAuthentication(auth);
-                }
-            }
+            jwtTokenValidator.resolveAndValidateToken((HttpServletRequest) req);
         } catch(InvalidJwtAuthenticationException e) {
             ((HttpServletResponse) res).sendError(HttpStatus.UNAUTHORIZED.value(), "Invalid authorization token");
             return;

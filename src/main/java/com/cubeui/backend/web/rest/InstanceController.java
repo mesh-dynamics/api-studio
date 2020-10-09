@@ -5,6 +5,7 @@ import com.cubeui.backend.domain.DTO.InstanceDTO;
 import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.InstanceRepository;
 import com.cubeui.backend.repository.InstanceUserRepository;
+import com.cubeui.backend.repository.UserRepository;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
 import org.apache.commons.lang3.StringUtils;
@@ -30,11 +31,14 @@ public class InstanceController {
     private InstanceRepository instanceRepository;
     private AppRepository appRepository;
     private InstanceUserRepository instanceUserRepository;
+    private UserRepository userRepository;
 
-    public InstanceController(InstanceRepository instanceRepository, AppRepository appRepository, InstanceUserRepository instanceUserRepository) {
+    public InstanceController(InstanceRepository instanceRepository, AppRepository appRepository, InstanceUserRepository instanceUserRepository,
+        UserRepository userRepository) {
         this.instanceRepository = instanceRepository;
         this.appRepository = appRepository;
         this.instanceUserRepository = instanceUserRepository;
+        this.userRepository = userRepository;
     }
 
     @GetMapping("")
@@ -77,6 +81,15 @@ public class InstanceController {
                     .gatewayEndpoint(instanceDTO.getGatewayEndpoint())
                     .loggingURL(instanceDTO.getLoggingURL())
                     .build());
+            Optional<List<User>> optionalUsers = this.userRepository.findByCustomerId(app.get().getCustomer().getId());
+            optionalUsers.ifPresent(users -> {
+                users.forEach(user -> {
+                    InstanceUser instanceUser = new InstanceUser();
+                    instanceUser.setUser(user);
+                    instanceUser.setInstance(saved);
+                    this.instanceUserRepository.save(instanceUser);
+                });
+            });
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)

@@ -2,6 +2,7 @@ package com.cubeui.backend.config;
 
 import com.cubeui.backend.security.jwt.JwtConfigurer;
 import com.cubeui.backend.security.jwt.JwtTokenProvider;
+import com.cubeui.backend.security.jwt.JwtTokenValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,7 +16,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 
     @Autowired
-    JwtTokenProvider jwtTokenProvider;
+    JwtTokenValidator jwtTokenValidator;
 
     @Bean
     @Override
@@ -35,6 +36,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/api/health").permitAll()
                 .antMatchers("/api/login").permitAll()
                 .antMatchers("/api/token").permitAll()
+                .antMatchers("/api/config/get").permitAll()
 //                .antMatchers("/api/data").permitAll()
                 .antMatchers("/api/account/**").permitAll()
 //                .antMatchers("/as/**").permitAll()
@@ -45,7 +47,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 //                .antMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("USER")
                 .anyRequest().authenticated()
             .and()
-            .apply(new JwtConfigurer(jwtTokenProvider));
+            .apply(new JwtConfigurer(jwtTokenValidator));
         //@formatter:on
         http.cors();
     }
