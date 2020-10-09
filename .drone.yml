@@ -70,6 +70,7 @@ steps:
       branch:
       - develop
       - staging
+      - master
       event:
         include:
         - pull_request
