@@ -28,6 +28,10 @@ public class ProxyAnalyzer implements Analyzer {
         cubeClient = new CubeClient(jsonMapper);
     }
 
+    public void setAuthToken(String authToken) {
+        cubeClient.setAuthToken(authToken);
+    }
+
     @Override
     public Optional<Analysis> analyze(String replayId) {
         try {

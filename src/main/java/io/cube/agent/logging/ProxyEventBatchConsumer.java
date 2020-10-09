@@ -36,15 +36,18 @@ public class ProxyEventBatchConsumer {
 
 	private long maxWaitTimeMillis = 5000;
 
+	private final CubeClient cubeClient;
 
 	private static int threadCount = 0;
+
 
 	//long totalTimeInMillis;
 	//long count;
 
 
-	public ProxyEventBatchConsumer() {
+	public ProxyEventBatchConsumer(CubeClient cubeClient) {
 		LOGGER.info("Thread number : " + threadCount);
+		this.cubeClient = cubeClient;
 		new Thread(() -> {
 			while (true) {
 				try {
@@ -133,7 +136,7 @@ public class ProxyEventBatchConsumer {
 			HttpPost recordReqbuilder = new HttpPost(recordURI);
 			recordReqbuilder.setEntity(eventEntity);
 			recordReqbuilder.setHeader("Content-Type", Constants.APPLICATION_X_NDJSON);
-			Optional<String> response = CubeClient.getResponse(recordReqbuilder);
+			Optional<String> response = cubeClient.getResponse(recordReqbuilder);
 			LOGGER.info("Got Response for batch store event request " + response.orElse("NA"));
 			temporaryBuffer.clear();
 			lastTimeStamp = System.currentTimeMillis();

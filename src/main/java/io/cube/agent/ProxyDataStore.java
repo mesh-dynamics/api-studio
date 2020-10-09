@@ -39,6 +39,11 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
         cubeClient = new CubeClient(jsonMapper);
     }
 
+    public void setAuthToken(String authToken) {
+        cubeClient.setAuthToken(authToken);
+    }
+
+
     @Override
     public Optional<RecordOrReplay> getCurrentRecordOrReplay(String customerId, String app, String instanceId) {
         try {
