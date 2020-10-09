@@ -1,8 +1,19 @@
 import React, { Component } from 'react';
 import { Glyphicon, FormGroup, Button, FormControl, Radio, ControlLabel, Checkbox } from 'react-bootstrap';
 // import "./styles_here.css";
+import { AddOrRemoveHandler, UpdateParamHandler } from './HttpResponseHeaders';
 
-class HttpRequestFormData extends Component {
+export interface IHttpRequestHeadersProps{
+    tabId: string;
+    isOutgoingRequest : boolean;
+    showHeaders : boolean;
+    addOrRemoveParam: AddOrRemoveHandler;
+    updateParam: UpdateParamHandler;
+    updateAllParams: UpdateParamHandler;
+    headers: any[]; //TODO: Get proper interface from HttpClientTabs
+}
+
+class HttpRequestHeaders extends Component<IHttpRequestHeadersProps> {
     constructor(props) {
         super(props);
         this.handleAdd = this.handleAdd.bind(this);
@@ -12,37 +23,37 @@ class HttpRequestFormData extends Component {
 
     handleAdd() {
         const { tabId, isOutgoingRequest } = this.props;
-        this.props.addOrRemoveParam(isOutgoingRequest, tabId, "formData", "add");
+        this.props.addOrRemoveParam(isOutgoingRequest, tabId, "headers", "add");
     }
 
     handleDelete(id) {
         const { tabId, isOutgoingRequest } = this.props;
-        this.props.addOrRemoveParam(isOutgoingRequest, tabId, "formData", "delete", id);
+        this.props.addOrRemoveParam(isOutgoingRequest, tabId, "headers", "delete", id);
     }
 
     handleChange(id, evt) {
         const { tabId, isOutgoingRequest } = this.props;
-        this.props.updateParam(isOutgoingRequest, tabId, "formData", evt.target.name, evt.target.value, id);
+        this.props.updateParam(isOutgoingRequest, tabId, "headers", evt.target.name, evt.target.value, id);
     }
 
     handleCheckChange = (id, currentChecked) => {
         const { tabId, isOutgoingRequest } = this.props;
-        this.props.updateParam(isOutgoingRequest, tabId, "formData", "selected", !currentChecked, id);
+        this.props.updateParam(isOutgoingRequest, tabId, "headers", "selected", !currentChecked, id);
     }
 
     allSelected = () => {
-        return this.props.formData.reduce((acc, param) => (acc = acc && param.selected), true)
+        return this.props.headers.reduce((acc, param) => (acc = acc && param.selected), true)
     }
 
     handleAllCheckChange = (e) => {
         const { tabId, isOutgoingRequest } = this.props;
-        this.props.updateAllParams(isOutgoingRequest, tabId, "formData", "selected", e.target.checked);
+        this.props.updateAllParams(isOutgoingRequest, tabId, "headers", "selected", e.target.checked);
     }
 
     render() {
         return (
-            <div style={{display: this.props.showFormData === true ? "" : "none"}}>
-                {this.props.formData.length > 0 && (
+            <div style={{display: this.props.showHeaders === true ? "" : "none"}}>
+                {this.props.headers.length > 0 && (
                     <div style={{marginBottom: "1px"}}>
                         <div style={{display: "inline-block", width: "3%", paddingRight: "9px"}}> 
                             <FormGroup bsSize="small" style={{marginBottom: "0px", textAlign: "center"}}>
@@ -71,33 +82,33 @@ class HttpRequestFormData extends Component {
                         </div>
                     </div>
                 )}
-                {this.props.formData.map(eachParam => {return (
-                    <div style={{marginBottom: "1px"}} key={eachParam.id}>
+                {this.props.headers.map(eachHeader => {return (
+                    <div style={{marginBottom: "1px"}} key={eachHeader.id}>
                         <div style={{display: "inline-block", width: "3%", paddingRight: "9px"}}> 
                             <FormGroup style={{marginBottom: "0px", backgroundColor: "none", textAlign: "center"}}>
-                            <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} checked={eachParam.selected} 
-                                onChange={() => this.handleCheckChange(eachParam.id, eachParam.selected)}/>
+                                <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} checked={eachHeader.selected} 
+                                onChange={() => this.handleCheckChange(eachHeader.id, eachHeader.selected)}/>                            
                             </FormGroup>
                         </div>
                         <div style={{display: "inline-block", width: "35%", paddingRight: "9px"}}> 
                             <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
                                 <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="" 
-                                value={eachParam.name} name="name" onChange={this.handleChange.bind(this, eachParam.id)}/>
+                                value={eachHeader.name} name="name" onChange={this.handleChange.bind(this, eachHeader.id)}/>
                             </FormGroup>
                         </div>
                         <div style={{display: "inline-block", width: "55%", paddingRight: "9px"}}>
                             <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
-                                <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="" value={eachParam.value} name="value" onChange={this.handleChange.bind(this, eachParam.id)} />
+                                <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="" value={eachHeader.value} name="value" onChange={this.handleChange.bind(this, eachHeader.id)} />
                             </FormGroup>
                         </div>
                         {/* <div style={{display: "inline-block", width: "54%", paddingRight: "9px"}}>
                             <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
                                 <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="optional" 
-                                value={eachParam.description} name="description" onChange={this.handleChange.bind(this, eachParam.id)} />
+                                value={eachHeader.description} name="description" onChange={this.handleChange.bind(this, eachHeader.id)} />
                             </FormGroup>
                         </div> */}
                         <div style={{display: "inline-block", width: "7%", paddingRight: "9px"}} 
-                                onClick={this.handleDelete.bind(this, eachParam.id)} > 
+                                onClick={this.handleDelete.bind(this, eachHeader.id)} > 
                             <FormGroup style={{marginBottom: "0px", backgroundColor: "#ffffff", textAlign: "center", padding: "5px"}}>
                                 <Glyphicon style={{fontSize: "16px", top: "5px"}} glyph="remove-sign" /> 
                             </FormGroup>
@@ -108,7 +119,7 @@ class HttpRequestFormData extends Component {
                     <div style={{display: "inline-block", width: "100%"}}>
                         <button className="add-request-options-button" onClick={this.handleAdd}>
                             <span style={{ fontSize: "20px" }}>+</span>
-                            <span style={{ marginLeft: "5px", fontWeight: 400 }}>Add form data</span>
+                            <span style={{ marginLeft: "5px", fontWeight: 400 }}>Add header</span>
                         </button>
                     </div>
                 </div>
@@ -117,4 +128,4 @@ class HttpRequestFormData extends Component {
     }
 }
 
-export default HttpRequestFormData;
+export default HttpRequestHeaders;

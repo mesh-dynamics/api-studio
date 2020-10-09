@@ -15,15 +15,18 @@ class GoldenPopover extends React.Component {
         this.setRule = this.setRule.bind(this);
         this.hideGR = this.hideGR.bind(this);
         this.createIssue = this.createIssue.bind(this);
-        this.handleInputChange = this.handleInputChange.bind(this)
-        this.handleSelectProjectChange = this.handleSelectProjectChange.bind(this)
-        this.renderSummary = this.renderSummary.bind(this)
-        this.renderDescription = this.renderDescription.bind(this)
+        this.handleInputChange = this.handleInputChange.bind(this);
+        this.handleSelectProjectChange = this.handleSelectProjectChange.bind(this);
+        this.renderSummary = this.renderSummary.bind(this);
+        this.renderDescription = this.renderDescription.bind(this);
         this.getDefaultSummary = this.getDefaultSummary.bind(this)
-        this.getDefaultDescription = this.getDefaultDescription.bind(this)
-        this.openJiraLink = this.openJiraLink.bind(this)
-        this.refreshList = this.refreshList.bind(this)
-        this.closeTippy = this.closeTippy.bind(this)
+        this.getDefaultDescription = this.getDefaultDescription.bind(this);
+        this.openJiraLink = this.openJiraLink.bind(this);
+        this.refreshList = this.refreshList.bind(this);
+        this.closeTippy = this.closeTippy.bind(this);
+        this.fetchRuleAndPopulate = this.fetchRuleAndPopulate.bind(this);
+        this.getInitialTemplateMatchType =  this.getInitialTemplateMatchType.bind(this);
+        this.handleTemplateMatchTypeChange = this.handleTemplateMatchTypeChange.bind(this);
 
         this.state = {
             showGolden: false,
@@ -36,7 +39,8 @@ class GoldenPopover extends React.Component {
                 "pt": "",
                 "ct": "",
                 "em": "",
-                "customization": null
+                "customization": null,
+                "arrayCompKeyPath":""
             },
             newRule: {
                 "path": this.props.jsonPath.replace("<BEGIN>", ""),
@@ -44,7 +48,8 @@ class GoldenPopover extends React.Component {
                 "pt": "Optional",
                 "ct": "Ignore",
                 "em": "Default",
-                "customization": null
+                "customization": null,
+                "arrayCompKeyPath":""
             },
             summaryInput: this.getDefaultSummary(this.props.cube),
             descriptionInput: this.getDefaultDescription(this.props.cube),
@@ -53,15 +58,35 @@ class GoldenPopover extends React.Component {
             projectList: [],
             jiraErrorMessage: null,
             showJiraError: false,
+            templateMatchType: null
         };
+    }
+
+    componentDidMount() {
+        this.getInitialTemplateMatchType();
+    }
+
+    getInitialTemplateMatchType(){
+        const { eventType } = this.props;
+
+        switch(eventType) {
+            case "Request":
+                this.setState({ templateMatchType: "RequestCompare" });
+            case "Response":
+                this.setState({ templateMatchType: "ResponseCompare" });
+            default:
+                this.setState({ templateMatchType: "ResponseCompare" });
+        } 
+        
     }
 
     setRule(tag, evt) {
         const { dispatch, jsonPath } = this.props;
-        const { defaultRule, newRule } = this.state;
+        const { defaultRule, newRule, templateMatchType } = this.state;
         newRule[tag] = evt.target.value;
-        dispatch(cubeActions.addToDefaultRuleBook(jsonPath.replace("<BEGIN>", ""), defaultRule));
-        dispatch(cubeActions.addToRuleBook(jsonPath.replace("<BEGIN>", ""), newRule));
+        //TODO: Optimize here, dispatch should be done on Apply button click
+        dispatch(cubeActions.addToDefaultRuleBook(jsonPath.replace("<BEGIN>", ""), defaultRule, templateMatchType));
+        dispatch(cubeActions.addToRuleBook(jsonPath.replace("<BEGIN>", ""), newRule, templateMatchType));
         this.setState({ newRule: newRule });
 
     }
@@ -81,31 +106,36 @@ class GoldenPopover extends React.Component {
     };
 
     updateRule(operationType) {
-        const {dispatch, jsonPath, cube, eventType} = this.props;
-        this.hideGR();
+        const { dispatch, jsonPath, cube, eventType} = this.props;
+        const { templateMatchType } = this.state;
+        const user = JSON.parse(localStorage.getItem('user')); // TODO: Take from reducer
+        const operationsObj = {
+            type: operationType, // "REPLACE" or "REMOVE";
+            path: jsonPath.replace("<BEGIN>", ""),
+            newRule: this.state.newRule,
+        };
 
-        let operationsObj = {};
-        operationsObj.type = operationType; // "REPLACE" or "REMOVE";
-        operationsObj.path = jsonPath.replace("<BEGIN>", "");
-        operationsObj.newRule = this.state.newRule;
+        
 
-        let key = this.getKeyFromTOS();
-        if (!key) {
-            let user = JSON.parse(localStorage.getItem('user'));
-            let keyObj = {
-                customerId: user.customer_name,
-                appId: cube.selectedApp,
-                serviceId: cube.pathResultsParams.service,
-                path: cube.pathResultsParams.path,
-                version: cube.pathResultsParams.currentTemplateVer,
-                reqOrResp: eventType==="Response" ? "ResponseCompare" : "RequestCompare",
-            };
-            key = JSON.stringify(keyObj);
-            dispatch(cubeActions.pushNewOperationKeyToOperations(operationsObj, key));
-        } else {
+        const key = this.getKeyFromTOS(); // This is already stringified
+
+        const newKey = JSON.stringify({
+            customerId: user.customer_name,
+            appId: cube.selectedApp,
+            serviceId: cube.pathResultsParams.service,
+            path: cube.pathResultsParams.path,
+            version: cube.pathResultsParams.currentTemplateVer,
+            reqOrResp: templateMatchType,
+        });
+
+        if(key === newKey) {
+            // If the key already exists in some form then push operation for the same key
             dispatch(cubeActions.pushToOperations(operationsObj, key));
+        } else {
+            // else create a new key and push
+            dispatch(cubeActions.pushNewOperationKeyToOperations(operationsObj, newKey));
         }
-
+        this.hideGR();
         this.props.handleHidePopoverClick();
     }
 
@@ -173,42 +203,78 @@ class GoldenPopover extends React.Component {
         this.setState({ showGolden: true });
     }
 
+    async fetchRuleAndPopulate(reqOrRespCompare){
+        const { cube, jsonPath } = this.props;
+
+        try {
+            const { path, dt, pt, ct, em , customization } = await cubeService.getResponseTemplate(
+                cube.selectedApp, 
+                cube.pathResultsParams, 
+                reqOrRespCompare, 
+                jsonPath.replace("<BEGIN>", "")
+            );
+            
+            const newlyFetchedRule = {
+                path: jsonPath.replace("<BEGIN>", ""),
+                dt, 
+                pt: pt === "Default" ? "Optional" : pt, 
+                ct: ct === "Default" ? "Ignore": ct, 
+                em, 
+                customization  
+            };
+
+            this.setState({ templateMatchType: reqOrRespCompare, defaultRule: { ...newlyFetchedRule }, newRule: { ...newlyFetchedRule } });
+        } catch (e) {
+            console.log("Failed to fetch rules from api. Setting default rules");
+            this.setState({ 
+                templateMatchType: reqOrRespCompare, 
+                defaultRule: {
+                    "path": this.props.jsonPath.replace("<BEGIN>", ""),
+                    "dt": "",
+                    "pt": "",
+                    "ct": "",
+                    "em": "",
+                    "customization": null,
+                    "arrayCompKeyPath":""
+                },
+                newRule: {
+                    "path": this.props.jsonPath.replace("<BEGIN>", ""),
+                    "dt": "Default",
+                    "pt": "Optional",
+                    "ct": "Ignore",
+                    "em": "Default",
+                    "customization": null,
+                    "arrayCompKeyPath":""
+                }
+            });
+        }
+    }
+
+    async handleTemplateMatchTypeChange(event){
+        await this.fetchRuleAndPopulate(event.target.value);
+    }
+
     async showRuleModal() {
-        const { cube, jsonPath, eventType } = this.props;
-        const reqOrRespCompare = (eventType === "Response" ? "ResponseCompare" : "RequestCompare");
+        const { cube, jsonPath } = this.props;
+        const { templateMatchType: reqOrRespCompare } = this.state;
+
+        // Keep this old implementation
+        // const reqOrRespCompare = (eventType === "Response" ? "ResponseCompare" : "RequestCompare"); eventType
 
         if(cube.defaultRuleBook[jsonPath.replace("<BEGIN>", "")]) {
             const defaultRule = cube.defaultRuleBook[jsonPath.replace("<BEGIN>", "")];
-            this.setState({ defaultRule: { ...defaultRule }});
+            const { templateMatchType } = cube.defaultRuleBook[jsonPath.replace("<BEGIN>", "")];
+            this.setState({ templateMatchType, defaultRule: { ...defaultRule }});
         }
 
         if (cube.ruleBook[jsonPath.replace("<BEGIN>", "")]) {
             const rule = cube.ruleBook[jsonPath.replace("<BEGIN>", "")];
-            this.setState({ newRule: { ...rule } });
+            const { templateMatchType } = cube.ruleBook.templateMatchType;
+            this.setState({ templateMatchType, newRule: { ...rule } });
         } else {
-            
-            try {
-                const { path, dt, pt, ct, em , customization } = await cubeService.getResponseTemplate(
-                    cube.selectedApp, 
-                    cube.pathResultsParams, 
-                    reqOrRespCompare, 
-                    jsonPath.replace("<BEGIN>", "")
-                );
-                
-                const newlyFetchedRule = {
-                    path: jsonPath.replace("<BEGIN>", ""),
-                    dt, 
-                    pt: pt === "Default" ? "Optional" : pt, 
-                    ct: ct === "Default" ? "Ignore": ct, 
-                    em, 
-                    customization  
-                };
-
-                this.setState({ defaultRule: { ...newlyFetchedRule }, newRule: { ...newlyFetchedRule } });
-            } catch (e) {
-                console.log("Failed to fetch rules from api.");
-            }
+            await this.fetchRuleAndPopulate(reqOrRespCompare)
         }
+
         this.setState({ showRule: true });
     }
 
@@ -298,6 +364,15 @@ class GoldenPopover extends React.Component {
         return false;
     }
 
+    formatDtValue(value){
+        switch(value){
+            case "RptArray": return "List [array]";
+            case "NrptArray": return "Unstructured [array]";
+            case "Set": return "Set [array]";
+            default: return value;
+        }
+    }
+
     renderSummary() {
         return (
             <div>
@@ -330,6 +405,7 @@ class GoldenPopover extends React.Component {
     }
 
     render() {
+
         return (
             <React.Fragment>
                 <span
@@ -385,10 +461,30 @@ class GoldenPopover extends React.Component {
                         UPDATE ASSERTION RULE
                     </div>
                     <div style={{ width: "500px", background: "#ECECE7", padding: "15px 20px", textAlign: "left" }}>
-                        <div>Path:&nbsp;<b>{this.props.jsonPath}</b></div>
-                        <div>Data Type:&nbsp;<b>{this.state.newRule.dt}</b></div>
-                        <div>Count of similar items:&nbsp;<b>105</b></div>
-
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <div>
+                                <div>Path:&nbsp;<b>{this.props.jsonPath}</b></div>
+                                <div>Data Type:&nbsp;<b>{this.state.newRule.dt}</b></div>
+                                <div>Count of similar items:&nbsp;<b>105</b></div>
+                                {/* TODO: Above value is hardcoded. Find out more */}
+                            </div>
+                            { 
+                                this.props.eventType === 'Request'
+                                &&
+                                (
+                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                                        <span>Template Type</span>
+                                        <div>
+                                            <select style={{ width: '100px' }} onChange={this.handleTemplateMatchTypeChange} value={this.state.templateMatchType}>
+                                                <option value="RequestMatch">Match</option>
+                                                <option value="RequestCompare">Compare</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                )
+                            }
+                            
+                        </div>
                         <div className="table-responsive margin-top-10">
                             <table className="table table-striped" style={{ textAlign: "left" }}>
                                 <thead>
@@ -413,20 +509,32 @@ class GoldenPopover extends React.Component {
 
                                     <tr>
                                         <td>Data Type</td>
-                                        <td>{this.state.defaultRule.dt}</td>
+                                        <td>{this.formatDtValue(this.state.defaultRule.dt)}</td>
                                         <td>
                                             <select value={this.state.newRule.dt} className="width-100" onChange={(e) => this.setRule("dt", e)}>
                                                 <option value="Default">Default</option>
                                                 <option value="Str">Str</option>
                                                 <option value="Int">Int</option>
                                                 <option value="Float">Float</option>
-                                                <option value="RptArray">RptArray</option>
-                                                <option value="NrptArray">NrptArray</option>
+                                                <option value="RptArray">List [array]</option>
+                                                <option value="Set">Set [array]</option>
+                                                <option value="NrptArray">Unstructured Array</option>
                                                 <option value="Obj">Obj</option>
                                             </select>
                                         </td>
                                     </tr>
+                                    {
+                                        this.state.newRule.dt == "Set" &&
+                                        <tr>
+                                        <td>Match Criteria</td>
+                                        <td>{this.state.defaultRule.arrayCompKeyPath}</td>
+                                        <td>
+                                            <input type="text" value={this.state.newRule.arrayCompKeyPath} className="width-100" onChange={(e) => this.setRule("arrayCompKeyPath", e)} />
+                                        </td>
+                                    </tr>
 
+                                    }
+                                    
                                     <tr>
                                         <td>Transformation</td>
                                         <td>{this.state.defaultRule.em}</td>
@@ -473,8 +581,9 @@ class GoldenPopover extends React.Component {
                     </div>
                     <div style={{ width: "300px", background: "#ECECE7", padding: "15px 20px", textAlign: "left" }}>
                         <div>Path:&nbsp;<b>{this.props.jsonPath.replace("<BEGIN>", "")}</b></div>
-                        <div>Data Type:&nbsp;<b>{this.state.newRule.dt}</b></div>
-                        <div>Count of similar items:&nbsp;<b>105</b></div>
+                        <div>Data Type:&nbsp;<b>{this.formatDtValue(this.state.newRule.dt)}</b></div>
+                        <div>Count of similar items:&nbsp;<b>105</b></div> 
+                        {/* TODO: Above value is hardcoded. Find out more */}
                         <div className="text-center margin-top-20">
                             <span onClick={this.updateGolden}
                                 className="cube-btn font-12">MARK FOR UPDATE</span>&nbsp;&nbsp;

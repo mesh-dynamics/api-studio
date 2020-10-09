@@ -669,13 +669,13 @@ class ViewSelectedTestConfig extends React.Component {
         let jsxContent = '';
         if (options.length) {
             jsxContent = <div>
-                <select className="r-att" onChange={this.handleChangeForInstance} value={cube.selectedInstance} placeholder={'Select...'}>
+                <select id="ddlInstance" className="r-att" onChange={this.handleChangeForInstance} value={cube.selectedInstance} placeholder={'Select...'}>
                     <option value="">Select Instance</option>
                     {options}
                 </select>
             </div>
         } else {
-            jsxContent = <select className="r-att" value={cube.selectedInstance} placeholder={'Select...'}>
+            jsxContent = <select id="ddlInstance" className="r-att" value={cube.selectedInstance} placeholder={'Select...'}>
                 <option value="">Select Instance</option>
             </select>
         }
@@ -714,7 +714,7 @@ class ViewSelectedTestConfig extends React.Component {
 
     renderCollectionDD ( cube ) {
         if (cube.testIdsReqStatus != cubeConstants.REQ_SUCCESS || cube.testIdsReqStatus == cubeConstants.REQ_NOT_DONE)
-            return <select className="r-att" disabled value={cube.selectedTestId} placeholder={'Select...'}>
+            return <select id="ddlTestId" className="r-att" disabled value={cube.selectedTestId} placeholder={'Select...'}>
                 <option value="">No App Selected</option>
             </select>;
         let options = [];
@@ -733,7 +733,7 @@ class ViewSelectedTestConfig extends React.Component {
             if (cube.selectedTestId)
                 selectedTestIdObj = { label: cube.selectedTestId, value: cube.selectedTestId};
             jsxContent = <div>
-                <select className="r-att" onChange={this.handleChangeForTestIds} value={cube.selectedTestId} placeholder={'Select...'}>
+                <select id="ddlTestId" className="r-att" onChange={this.handleChangeForTestIds} value={cube.selectedTestId} placeholder={'Select...'}>
                     <option value="">Select Golden</option>
                     {options}
                 </select>
@@ -845,7 +845,7 @@ class ViewSelectedTestConfig extends React.Component {
 
                 <div className="margin-top-10">
                     <div className="label-n">SELECT RECORD MODE&nbsp;
-                        <select 
+                        <select  id="ddlRecordMode" 
                             className="r-att" 
                             style={{ fontSize: "12px", fontWeight: "500", color: "#5f5f5f" }} 
                             onChange={(event) => this.handleRecordingModeChange(event.target.value)}
@@ -889,9 +889,9 @@ class ViewSelectedTestConfig extends React.Component {
 
                 <div className="margin-top-10 row">
                     <div className="col-sm-6">
-                        <div onClick={this.handleRunTestClick} className="cube-btn width-100 text-center">RUN TEST</div>
+                        <div onClick={this.handleRunTestClick} id="btnRunTest" className="cube-btn width-100 text-center">RUN TEST</div>
                     </div>
-                    <div className="col-sm-6"><div onClick={this.handleRecordButtonClick} className="cube-btn width-100 text-center">RECORD</div></div>
+                    <div className="col-sm-6"><div onClick={this.handleRecordButtonClick} id="btnRecord"  className="cube-btn width-100 text-center">RECORD</div></div>
                 </div>
                 <div className="test-config-divider" />
                 <div className="margin-top-10 row">
@@ -1052,7 +1052,7 @@ class ViewSelectedTestConfig extends React.Component {
                     <Modal.Footer >
                         {analysisDone ? 
                         <Link to="/">
-                            <span onClick={this.handleClose} className="cube-btn">View Results</span>&nbsp;&nbsp;
+                            <span onClick={this.handleClose} id="btnRunTestViewResults" className="cube-btn">View Results</span>&nbsp;&nbsp;
                         </Link>
                     :
                     <span className="modal-footer-text">The results will be available on the test results page once the test completes</span>

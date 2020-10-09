@@ -1,6 +1,8 @@
 import config from '../config';
 import api from '../api';
 import _ from 'lodash';
+import { getDefaultTraceApiFilters } from "../utils/api-catalog/api-catalog-utils";
+import arrayToTree from "array-to-tree";
 
 // TODO: replace console log statements with logging
 const fetchAppsList = async () => {
@@ -50,7 +52,36 @@ const getTestConfigByAppId = async (appId) => {
     }
 };
 
-const fetchCollectionList = async (app, recordingType="", forCurrentUser=false) => {
+const createUserCollection = async(collectionName, app) => {
+    const user = JSON.parse(localStorage.getItem('user')); 
+    const userId = user.username;
+      const searchParams = new URLSearchParams();
+
+      searchParams.set("name", collectionName);
+      searchParams.set("userId", userId);
+      searchParams.set("label", userId);
+      searchParams.set("recordingType", "UserGolden");
+
+      const configForHTTP = {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      };
+
+    return api
+    .post(
+      `${config.apiBaseUrl}/cs/start/${user.customer_name}/${app}/dev/Default${app}`,
+      searchParams,
+      configForHTTP
+    );
+};
+
+const storeUserReqResponse = async(recordingId, data) => {
+    const urlToPost = `${config.apiBaseUrl}/cs/storeUserReqResp/${recordingId}`;
+    return api.post(urlToPost, data);
+}
+
+const fetchCollectionList = async (app, recordingType="", forCurrentUser=false, numResults = 0, start = 0) => {
     const user = JSON.parse(localStorage.getItem('user')); // TODO: Change this to be passed from auth tree
     try {
         let url = `${config.recordBaseUrl}/searchRecording`;
@@ -60,7 +91,9 @@ const fetchCollectionList = async (app, recordingType="", forCurrentUser=false) 
         params.set("archived", false);
         
         recordingType && params.set("recordingType", recordingType); // todo
-        forCurrentUser && params.set("userId", user.username)
+        forCurrentUser && params.set("userId", user.username);
+        numResults && params.set("numResults", numResults);
+        start && params.set("start", start);
         
         return await api.get(url + "?" + params.toString());
     } catch(error) {
@@ -372,7 +405,8 @@ const fetchAPIFacetData = async (app, recordingType, collectionName, startTime=n
     }
 }
 
-const fetchAPITraceData = async (app, startTime, endTime, service, apiPath, instance, recordingType, collectionName, depth=2) => {
+const fetchAPITraceData = async (traceApiFiltersProps) => {
+    const {app, startTime, endTime, service, apiPath, instance, recordingType, collectionName, depth, numResults} = traceApiFiltersProps;
     const user = JSON.parse(localStorage.getItem('user'));
 
     let apiTraceURL = `${config.analyzeBaseUrl}/getApiTrace/${user.customer_name}/${app}`;
@@ -386,6 +420,7 @@ const fetchAPITraceData = async (app, startTime, endTime, service, apiPath, inst
     instance && searchParams.set("instanceId", instance);
     recordingType && searchParams.set("recordingType", recordingType); // todo
     collectionName && searchParams.set("collection", collectionName);
+    numResults && searchParams.set('numResults', numResults);
     
     let url = apiTraceURL + "?" + searchParams.toString();
 
@@ -395,6 +430,44 @@ const fetchAPITraceData = async (app, startTime, endTime, service, apiPath, inst
         console.error("Error fetching API Trace data");
         throw e;
     }
+}
+
+const loadCollectionTraces = async(selectedCollectionId, app)=> {
+        const filterData = {
+          ...getDefaultTraceApiFilters(),
+          app,
+          collectionName: selectedCollectionId,
+          depth: 100,
+          numResults: 100,
+        };
+        const res = await fetchAPITraceData(filterData);
+        
+        const apiTraces = [];
+        res.response.sort((a, b) => {
+            return b.res[0].reqTimestamp - a.res[0].reqTimestamp;
+        });
+        res.response.map((eachApiTrace) => {
+            eachApiTrace.res.map((eachApiTraceEvent) => {
+            eachApiTraceEvent["name"] = eachApiTraceEvent["apiPath"];
+            eachApiTraceEvent["id"] = eachApiTraceEvent["requestEventId"];
+            eachApiTraceEvent["toggled"] = false;
+            eachApiTraceEvent["recordingIdAddedFromClient"] =
+            selectedCollectionId;
+            eachApiTraceEvent["traceIdAddedFromClient"] =
+                eachApiTrace.traceId;
+            eachApiTraceEvent["collectionIdAddedFromClient"] =
+                eachApiTrace.collection;
+            });
+            const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
+            customID: "spanId",
+            parentProperty: "parentSpanId",
+            });
+            apiTraces.push({
+            ...apiFlatArrayToTree[0],
+            });
+        });
+
+        return apiTraces;
 }
 
 const fetchAPIEventData = async (app, reqIds, eventTypes=[], apiConfig={}) => {
@@ -596,4 +669,7 @@ export const cubeService = {
     updateMockConfig,
     deleteMockConfig,
     forceStopRecording,
+    loadCollectionTraces,
+    createUserCollection,
+    storeUserReqResponse
 };

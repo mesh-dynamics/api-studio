@@ -14,6 +14,7 @@ const menu = require('./menu');
 const { resourceRootPath, updateApplicationConfig, getApplicationConfig } = require('./fs-utils');
 const { useGetLatest } = require('react-table');
 
+autoUpdater.autoInstallOnAppQuit = false;
 autoUpdater.autoDownload = false; 
 autoUpdater.channel = 'latest';
 

@@ -934,7 +934,7 @@ class ViewTrace extends Component {
                             </span>
                     </div>
                     <div style={{display: "inline-block"}} className="pull-right">
-                        <Button bsSize="small" bsStyle={"primary"} href={"/test_config_view"} style={{}}>VIEW SERVICE MESH</Button>
+                        <Link to={"/test_config_view"}><Button bsSize="small" bsStyle={"primary"} type="button">VIEW SERVICE MESH</Button></Link>
                         <span style={{borderRight: "1px solid #ccc", paddingLeft: "5px", marginRight: "9px"}}></span>
                         <Button 
                             bsSize="small" 
