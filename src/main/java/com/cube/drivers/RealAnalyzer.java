@@ -37,6 +37,7 @@ import io.md.core.Comparator.MatchType;
 import io.md.core.TemplateKey;
 import io.md.dao.Analysis;
 import io.md.dao.Analysis.ReqRespMatchWithEvent;
+import io.md.dao.DataObj.PathNotFoundException;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
 import io.md.dao.Replay;
@@ -307,13 +308,26 @@ public class RealAnalyzer implements Analyzer {
 
         EventQuery.Builder builder = new EventQuery.Builder(reqEvent.customerId, reqEvent.app, reqEvent.eventType);
 
-        // For gateway replay requests, don't match apiPaths, since the dynamic injection could change the
-        // path leading to mismatch
-        if (!replayedReqs.containsKey(reqEvent.reqId)) {
-            builder.withPath(reqEvent.apiPath);
+        // For gateway replay requests, just match based on the source request Id added by the replay driver
+        if (replayedReqs.containsKey(reqEvent.reqId)) {
+            String srcReqIdHdrJsonPath =  Constants.HDR_PATH.concat("/").concat(Constants.CUBE_HEADER_PREFIX)
+                .concat(Constants.SRC_REQUEST_ID).concat("/0");
+            try {
+                builder.withReqId(reqEvent.payload.getValAsString(srcReqIdHdrJsonPath));
+                return builder.build();
+            } catch (PathNotFoundException e) {
+                LOGGER.error(
+                    new ObjectMessage(Map.of(Constants.MESSAGE, "Cannot fetch c-src-request-id from replay request. Defaulting on rest of the fields for matching",
+                        Constants.REQ_ID_FIELD, reqEvent.reqId,
+                        Constants.REPLAY_ID_FIELD, replayId,
+                        "srcReqIdHdrJsonPath", srcReqIdHdrJsonPath
+                    )), e);
+
+            }
         }
 
         return builder.withService(reqEvent.service)
+            .withPath(reqEvent.apiPath)
             .withCollection(replayId)
             .withRunType(Event.RunType.Replay)
             .withTraceId(reqEvent.getTraceId())
