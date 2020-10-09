@@ -1215,7 +1215,7 @@ class HttpClientTabs extends Component {
         }
     }
 
-    getReqResFromTabData(eachPair, tabToSave, runId, reqTimestamp, resTimestamp) {
+    getReqResFromTabData(eachPair, tabToSave, runId, reqTimestamp, resTimestamp, type) {
         const httpRequestEventTypeIndex = eachPair[0].eventType === "HTTPRequest" ? 0 : 1;
         const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
         let httpRequestEvent = eachPair[httpRequestEventTypeIndex];
