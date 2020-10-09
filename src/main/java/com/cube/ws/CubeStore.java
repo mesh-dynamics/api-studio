@@ -1462,8 +1462,11 @@ public class CubeStore {
                             String oldTraceId = request.getTraceId();
                             rrstore.deleteReqResByTraceId(oldTraceId, rec.collection);
                             rrstore.commit();
-                            traceId = traceIdMap.get(request.getTraceId()) != null ? traceIdMap.get(request.getTraceId()) : io.md.utils.Utils.generateTraceId() ;
-                            traceIdMap.put(request.getTraceId(), traceId);
+                            traceId = traceIdMap.get(request.getTraceId());
+                            if(traceId == null) {
+                                traceId = io.md.utils.Utils.generateTraceId() ;
+                                traceIdMap.put(request.getTraceId(), traceId);
+                            }
                         }
 
                         TemplateKey tkey = new TemplateKey(rec.templateVersion, request.customerId,
