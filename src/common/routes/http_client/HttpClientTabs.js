@@ -1251,15 +1251,15 @@ class HttpClientTabs extends Component {
         }
         const httpMethod = tabToSave.httpMethod;
         let httpResponseHeaders, httpResponseBody, httpResponseStatus;
-        // if (type !== "History") {
-        //     httpResponseHeaders = recordedResponseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : responseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : null;
-        //     httpResponseBody = recordedResponseBody ? JSON.parse(recordedResponseBody) : responseBody ? JSON.parse(responseBody) : null;
-        //     httpResponseStatus = httpResponseEvent.payload[1].status
-        // } else {
+        if (type !== "History") {
+            httpResponseHeaders = recordedResponseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : responseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : null;
+            httpResponseBody = recordedResponseBody ? JSON.parse(recordedResponseBody) : responseBody ? JSON.parse(responseBody) : null;
+            httpResponseStatus = httpResponseEvent.payload[1].status
+        } else {
             httpResponseHeaders = responseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : recordedResponseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : null;
             httpResponseBody = responseBody ? JSON.parse(responseBody) : recordedResponseBody ? JSON.parse(recordedResponseBody) : null;
             httpResponseStatus = responseStatus
-        // }
+        }
         const reqResCubeFormattedData = {   
             request: {
                 ...httpRequestEvent,
