@@ -198,6 +198,20 @@ const setupListeners = (mockContext, user, replayContext) => {
         logger.info('Updated context is : ', JSON.stringify(mockContext));
     });
 
+    ipcMain.on('reset_context_to_default', (event) => {
+        logger.info('Resetting mock context to default')
+        
+        mockContext.spanId = 'sample-span-id';
+        mockContext.traceId = 'sample-trace-id';
+        mockContext.selectedApp = 'sample-selected-app';
+        mockContext.customerName = 'sample-customer-name';
+        mockContext.collectionId = 'sample-collection-id';
+        mockContext.recordingCollectionId = 'sample-recording-collection-id';
+        mockContext.recordingId ='sample-recording-id';
+        mockContext.runId = 'sample-recording-collection-id';
+        mockContext.config = {}
+    });
+
     ipcMain.on('restart_app', () => {
         logger.info('Performing a quit and install');
         autoUpdater.quitAndInstall();

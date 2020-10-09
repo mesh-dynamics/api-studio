@@ -10,25 +10,7 @@ const initialState = {
   accessViolation: false,
 };
 
-// TODO: To use redux-persist instead
-let user = JSON.parse(localStorage.getItem('user'));
-
-const rehydrateUserInfo = () => {
-    if(PLATFORM_ELECTRON) {
-      ipcRenderer.send('set_user', user);
-    }
-
-    return {
-      ...initialState, 
-      loggedIn: true, 
-      user
-    }
-};
-const persistedState = user 
-  ? rehydrateUserInfo() 
-  : initialState;
-
-const authenticationReducer = (state = persistedState, action) => {
+const authenticationReducer = (state = initialState, action) => {
   switch (action.type) {
   case authConstants.REQUEST_BEGIN:
     return { 

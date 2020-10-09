@@ -10,9 +10,10 @@ import {
 import _ from "lodash";
 
 export const apiCatalogActions = {
-    getDiffData: (app, requestIdLeft, requestIdRight) => async (dispatch) => {
+    getDiffData: (app, requestIdLeft, requestIdRight) => async (dispatch, getState) => {
+        const { user: { customer_name: customerId } } = getState().authentication;
         try {
-            const data = await cubeService.fetchAPIEventData(app, [requestIdLeft, requestIdRight], [])
+            const data = await cubeService.fetchAPIEventData(customerId, app, [requestIdLeft, requestIdRight], [])
 
             if (data.numFound) {
                 const [requestLeft, requestRight] = data.objects.filter(obj => obj.eventType === "HTTPRequest");
@@ -47,16 +48,19 @@ export const apiCatalogActions = {
     resetCompareRequest: () => ({ type: apiCatalogConstants.RESET_COMPARE_REQUEST }),
     setResizedColumns: (data) => ({ type: apiCatalogConstants.SET_RESIZED_COLUMNS, data: data }),
 
-    fetchAPIFacets: (app, selectedSource, selectedGoldenCollection, startTime, endTime, selectedService, selectedApiPath,) => async (dispatch) => {
-        const apiFacets = await cubeService.fetchAPIFacetData(app, selectedSource, selectedGoldenCollection, startTime, endTime);
+    fetchAPIFacets: (app, selectedSource, selectedGoldenCollection, startTime, endTime, selectedService, selectedApiPath,) => async (dispatch, getState) => {
+        const { authentication: { user: { customer_name: customerId } }} = getState();
+        const apiFacets = await cubeService.fetchAPIFacetData(customerId, app, selectedSource, selectedGoldenCollection, startTime, endTime);
         const services = getServiceList(apiFacets);
         const apiPaths = getIncomingAPIList(apiFacets, selectedService);
         const instances = getInstanceList(apiFacets, selectedService, selectedApiPath);
         dispatch({ type: apiCatalogConstants.FETCH_API_FACETS, data: { apiFacets, services, apiPaths, instances } })
     },
 
-    fetchGoldenCollectionList: (app, recordingType) => (dispatch) => {
-        cubeService.fetchCollectionList(app, recordingType)
+    fetchGoldenCollectionList: (app, recordingType) => (dispatch, getState) => {
+        const { user } = getState().authentication;
+
+        cubeService.fetchCollectionList(user, app, recordingType)
             .then((data) => {
                 const result = data.recordings;
                 if (recordingType === "UserGolden") {
@@ -245,7 +249,11 @@ export const apiCatalogActions = {
 
     fetchAPITrace: (selectedSource, selectedCollection, selectedGolden, selectedService, selectedApiPath, selectedInstance, startTime, endTime) => async (dispatch, getState) => {
         const state = getState();
-        const { cube: {selectedApp} , apiCatalog: {apiCatalogTableState}} = state;
+        const { 
+            cube: { selectedApp } , 
+            apiCatalog: { apiCatalogTableState }, 
+            authentication: { user: { customer_name: customerId } }
+        } = state;
 
         // assign collection name param for the request based on source
         let goldenCollection = null;
@@ -271,7 +279,7 @@ export const apiCatalogActions = {
             collectionName: goldenCollection,
             numResults: apiCatalogTableState.pageSize
         };
-        const apiTrace = await cubeService.fetchAPITraceData(filterData);
+        const apiTrace = await cubeService.fetchAPITraceData(customerId, filterData);
         const apiTraces = apiTrace.response;
         const currentEndTime = getLastApiTraceEndTimeFromApiTrace(apiTraces);
 
@@ -287,7 +295,10 @@ export const apiCatalogActions = {
     },
 
     fetchApiTraceByPage : (nextPage) => async(dispatch, getState)=>{
-        const {apiCatalog:{apiCatalogTableState}} = getState();
+        const {
+            apiCatalog:{ apiCatalogTableState },
+            authentication: { user: { customer_name: customerId } }
+        } = getState();
         let nextFilterData = {...apiCatalogTableState.filterData};
         let nextApiCatalogTableState = {...apiCatalogTableState};
         if(nextPage > apiCatalogTableState.currentPage){
@@ -305,7 +316,7 @@ export const apiCatalogActions = {
 
 
         dispatch({type: apiCatalogConstants.SET_API_TRACE_LOADING});
-        const apiTrace = await cubeService.fetchAPITraceData(nextFilterData);
+        const apiTrace = await cubeService.fetchAPITraceData(customerId, nextFilterData);
 
         const apiTraces = apiTrace.response;
         if(nextPage > apiCatalogTableState.currentPage || nextPage == 0){
@@ -319,13 +330,16 @@ export const apiCatalogActions = {
     },
 
     setPageSize : (numResults) => async(dispatch, getState)=>{
-        const { apiCatalog: {apiCatalogTableState}} = getState();
+        const { 
+            apiCatalog: {apiCatalogTableState},
+            authentication: { user: { customer_name: customerId } }
+        } = getState();
         
         const filterData = {...apiCatalogTableState.filterData,  numResults};
 
         dispatch({type: apiCatalogConstants.SET_API_TRACE_LOADING});
 
-        const apiTrace = await cubeService.fetchAPITraceData(filterData);
+        const apiTrace = await cubeService.fetchAPITraceData(customerId, filterData);
         const apiTraces = apiTrace.response;
         const currentEndTime = getLastApiTraceEndTimeFromApiTrace(apiTraces);
         
@@ -339,8 +353,9 @@ export const apiCatalogActions = {
         };
         
         dispatch({ type: apiCatalogConstants.FETCH_API_TRACE , data: { apiTrace, apiCatalogTableState: changedApiCatalogTableState } })
-  
     },
 
     setHttpClientRequestIds: (requestIdMap) => ({type: apiCatalogConstants.SET_HTTP_CLIENT_REQUESTIDS, data: requestIdMap}),
+
+    resetApiCatalogToInitialState: () => ({ type: apiCatalogConstants.RESET_API_CATALOG_TO_INITIAL_STATE })
 }

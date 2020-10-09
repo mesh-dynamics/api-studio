@@ -27,7 +27,7 @@ class TestReport extends Component {
     }
 
     async componentDidMount() {
-        const {dispatch, cube} = this.props;
+        const { user } = this.props;
         let urlParameters = _.chain(window.location.search)
             .replace('?', '')
             .split('&')
@@ -52,8 +52,8 @@ class TestReport extends Component {
         // get results current and previous results
         const numResults = 30; // todo configurable?
         const [testConfig, timelineResults] = await Promise.all([
-            replayStatus.testConfigName ? cubeService.getTestConfig(replayStatus.app, replayStatus.testConfigName) : Promise.resolve({}), 
-            cubeService.fetchTimelineData(replayStatus.app, null, new Date(replayStatus.creationTimeStamp * 1000), null, numResults, replayStatus.testConfigName, replayStatus.goldenName) // todo user
+            replayStatus.testConfigName ? cubeService.getTestConfig(user.customer_name, replayStatus.app, replayStatus.testConfigName) : Promise.resolve({}), 
+            cubeService.fetchTimelineData(user, replayStatus.app, null, new Date(replayStatus.creationTimeStamp * 1000), null, numResults, replayStatus.testConfigName, replayStatus.goldenName)
         ]).catch(
             (e) => {
                 errorText = "error fetching test config or timeline results: " + e;
@@ -286,7 +286,8 @@ class TestReport extends Component {
 }
 
 const mapStateToProps = (state) => ({
-    cube: state.cube
+    cube: state.cube,
+    user: state.authentication.user
 })
 
 const connectedTestReport = connect(mapStateToProps)(TestReport);
