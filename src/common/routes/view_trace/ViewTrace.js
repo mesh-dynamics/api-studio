@@ -389,7 +389,6 @@ class ViewTrace extends Component {
         if(!replayId) throw new Error("replayId is required");
         if(!traceId) throw new Error("traceId is required");
         let response, json;
-        let user = JSON.parse(localStorage.getItem('user'));
         let url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=0&includeDiff=true&path=%2A&traceId=${traceId}`;
         let dataList = {};
 
@@ -1304,13 +1303,9 @@ class ViewTrace extends Component {
     }
 }
 
-
-function mapStateToProps(state) {
-    const cube = state.cube;
-    return {
-        cube
-    }
-}
+const mapStateToProps = (state) => ({
+    cube: state.cube
+});
 
 const connectedViewTrace = connect(mapStateToProps)(ViewTrace);
 

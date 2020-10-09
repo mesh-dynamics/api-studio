@@ -6,6 +6,8 @@ import arrayToTree from 'array-to-tree';
 import {setDefaultMockContext} from '../helpers/httpClientHelpers'
 
 export const httpClientActions = {
+    resetHttpClientToInitialState: () => ({ type: httpClientConstants.RESET_HTTP_CLIENT_TO_INITIAL_STATE }),
+
     deleteParamInSelectedOutgoingTab: (tabId, type, id) => {
         return {type: httpClientConstants.DELETE_PARAM_IN_OUTGOING_TAB, data: {tabId, type, id}};
     },
@@ -215,15 +217,16 @@ export const httpClientActions = {
 
     loadCollectionTrace: (selectedCollectionId) => async (dispatch, getState) => {
         const {
-        httpClient: { userCollections },cube: { selectedApp }
+            httpClient: { userCollections }, 
+            cube: { selectedApp: app },
+            authentication: { user: { customer_name: customerId } } 
         } = getState();
         
-        const app = selectedApp;
         const selectedCollection = userCollections.find(
             (eachCollection) => eachCollection.id === selectedCollectionId
         );
         try {
-        cubeService.loadCollectionTraces(selectedCollection.collec, app).then(
+        cubeService.loadCollectionTraces(customerId, selectedCollection.collec, app).then(
             (apiTraces) => {
                 selectedCollection.apiTraces = apiTraces;
                 dispatch(httpClientActions.addUserCollections(userCollections));
@@ -238,7 +241,7 @@ export const httpClientActions = {
         }
     },
 
-    loadHistoryApiCall : async(app, collection, endTime, numResults)=> {
+    loadHistoryApiCall : async(customerId, app, collection, endTime, numResults)=> {
         
         const filterData = {
             ...getDefaultTraceApiFilters(),
@@ -246,8 +249,8 @@ export const httpClientActions = {
             collectionName: collection.collec,
             depth: 100,
             numResults
-        }
-        const res = await cubeService.fetchAPITraceData(filterData);
+        };
+        const res = await cubeService.fetchAPITraceData(customerId, filterData);
         const apiTraces = res.response;
         const count = res.numFound;
         const cubeRunHistory = {};
@@ -297,10 +300,14 @@ export const httpClientActions = {
     },
 
     loadFromHistory: () => async (dispatch, getState) => {
-        const { cube: {selectedApp}, httpClient:{historyTabState} } = getState();
-        let app = selectedApp;
+        const { 
+            cube: { selectedApp: app }, 
+            httpClient: { historyTabState }, 
+            authentication: { user } 
+        } = getState();
+
         try {
-            const response = await cubeService.fetchCollectionList(app, "History", true);
+            const response = await cubeService.fetchCollectionList(user, app, "History", true);
             const serverRes = response.recordings;
             const fetchedUserHistoryCollection = serverRes.find((eachCollection) => (eachCollection.recordingType === "History"))
 
@@ -310,7 +317,7 @@ export const httpClientActions = {
                 dispatch(httpClientActions.addUserHistoryCollection(fetchedUserHistoryCollection));
             
                 dispatch(httpClientActions.setHistoryLoading(true));
-                const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(app, fetchedUserHistoryCollection, null, historyTabState.numResults)
+                const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(customerId, app, fetchedUserHistoryCollection, null, historyTabState.numResults)
                 
                 const initialHistoryTabState = {
                     ...historyTabState, 
@@ -339,13 +346,18 @@ export const httpClientActions = {
         }
 
     },
+
     historyTabNextPage: ()=> async(dispatch, getState)=>{
-        const { cube: {selectedApp}, httpClient:{historyTabState, userHistoryCollection} } = getState();
-        let app = selectedApp;
+        const { 
+            cube: { selectedApp: app }, 
+            httpClient:{ historyTabState, userHistoryCollection }, 
+            authentication: { user: { customer_name: customerId } } 
+        } = getState();
+
         try {    
             const currentPageEndTime = historyTabState.oldPagesData[historyTabState.currentPage];
             dispatch(httpClientActions.setHistoryLoading(true));
-            const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(app, userHistoryCollection, currentPageEndTime.endTime, historyTabState.numResults);
+            const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(customerId, app, userHistoryCollection, currentPageEndTime.endTime, historyTabState.numResults);
             
             const initialHistoryTabState = {
                 ...historyTabState,
@@ -362,13 +374,18 @@ export const httpClientActions = {
             throw new Error("Error");
         }
     },
+
     historyTabFirstPage: ()=> async(dispatch, getState)=>{
 
-        const { cube: {selectedApp}, httpClient:{historyTabState, userHistoryCollection} } = getState();
-        let app = selectedApp;
+        const { 
+            cube: { selectedApp: app }, 
+            httpClient: { historyTabState, userHistoryCollection }, 
+            authentication: { user: { customer_name: customerId } } 
+        } = getState();
+
         try {            
             dispatch(httpClientActions.setHistoryLoading(true));
-            const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(app, userHistoryCollection, null, historyTabState.numResults);
+            const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(customerId, app, userHistoryCollection, null, historyTabState.numResults);
             
             const initialHistoryTabState = {
                 ...historyTabState,
@@ -386,16 +403,19 @@ export const httpClientActions = {
         }
     },
     historyTabPrevPage: ()=> async(dispatch, getState)=>{
+        const { 
+            cube: { selectedApp: app }, 
+            httpClient:{ historyTabState, userHistoryCollection }, 
+            authentication: { user: { customer_name: customerId } }  
+        } = getState();
 
-        const { cube: {selectedApp}, httpClient:{historyTabState, userHistoryCollection} } = getState();
-        let app = selectedApp;
         try {            
             if(historyTabState.currentPage == 1){
                 dispatch(httpClientActions.historyTabFirstPage());
             }else{            
                 dispatch(httpClientActions.setHistoryLoading(true));
                 const currentPageEndTime = historyTabState.oldPagesData[historyTabState.currentPage-2];
-                const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(app, userHistoryCollection, currentPageEndTime.endTime);
+                const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(customerId, app, userHistoryCollection, currentPageEndTime.endTime);
                 
                 const initialHistoryTabState = {
                     ...historyTabState,
@@ -403,7 +423,7 @@ export const httpClientActions = {
                     oldPagesData:[
                         ...historyTabState.oldPagesData.splice(0,historyTabState.oldPagesData.length-2),
                         { endTime }
-                       ],
+                    ],
                 }
                 dispatch(httpClientActions.addCubeRunHistory(apiTraces, cubeRunHistory, initialHistoryTabState));
             }
@@ -452,11 +472,11 @@ export const httpClientActions = {
     },
 
     loadUserCollections: (resetToFirstPage = true) => async (dispatch, getState) => {
-        const { cube: {selectedApp}, httpClient: {collectionTabState} } = getState();
+        const { cube: {selectedApp}, httpClient: {collectionTabState}, authentication: { user } } = getState();
         let app = selectedApp;
         try {
             const currentPage = resetToFirstPage ? 0: collectionTabState.currentPage;
-            const response = await cubeService.fetchCollectionList(app, "UserGolden", true, collectionTabState.numResults, currentPage * collectionTabState.numResults);
+            const response = await cubeService.fetchCollectionList(user, app, "UserGolden", true, collectionTabState.numResults, currentPage * collectionTabState.numResults);
             const serverRes = response.recordings;
             const userCollections = serverRes.filter((eachCollection) => (eachCollection.recordingType !== "History"))
             if(resetToFirstPage){
@@ -484,10 +504,12 @@ export const httpClientActions = {
 
     fetchMockConfigs: () => async (dispatch, getState) => {
         dispatch(httpClientActions.setMockConfigStatusText("Loading..."))
-        const state = getState();
-        const { selectedApp } = state.cube;
+        const { 
+            cube: { selectedApp }, 
+            authentication: { user: { customer_name: customerId } } 
+        } = getState();
         try {
-            const mockConfigList = await cubeService.getAllMockConfigs(selectedApp);
+            const mockConfigList = await cubeService.getAllMockConfigs(customerId, selectedApp);
             dispatch(httpClientActions.setMockConfigList(mockConfigList))
             dispatch(httpClientActions.resetMockConfigStatusText())
         } catch (e) {
@@ -497,10 +519,13 @@ export const httpClientActions = {
 
     saveMockConfig: (mockConfig) => async (dispatch, getState) => {
         dispatch(httpClientActions.setMockConfigStatusText("Saving..."))
-        const state = getState();
-        const { selectedApp } = state.cube;
+        const { 
+            cube: { selectedApp }, 
+            authentication: { user: { customer_name: customerId } } 
+        } = getState();
+
         try {
-            await cubeService.insertNewMockConfig(selectedApp, mockConfig);
+            await cubeService.insertNewMockConfig(customerId, selectedApp, mockConfig);
             dispatch(httpClientActions.fetchMockConfigs())
             dispatch(httpClientActions.resetMockConfigStatusText())
             dispatch(httpClientActions.showMockConfigList(true));
@@ -509,14 +534,17 @@ export const httpClientActions = {
         } 
     },
 
-    updateMockConfig: (id, mockConfig) => async (dispatch, getState) => {
-        dispatch(httpClientActions.setMockConfigStatusText("Updating..."))
-        const state = getState();
-        const { selectedApp } = state.cube;
+    updateMockConfig: (mockId, mockConfig) => async (dispatch, getState) => {
+        dispatch(httpClientActions.setMockConfigStatusText("Updating..."));
+        const { 
+            cube: { selectedApp }, 
+            authentication: { user: { customer_name: customerId } } 
+        } = getState();
+
         try {
-            await cubeService.updateMockConfig(selectedApp, id, mockConfig);
-            dispatch(httpClientActions.fetchMockConfigs())
-            dispatch(httpClientActions.resetMockConfigStatusText())
+            await cubeService.updateMockConfig(customerId, selectedApp, mockId, mockConfig);
+            dispatch(httpClientActions.fetchMockConfigs());
+            dispatch(httpClientActions.resetMockConfigStatusText());
             dispatch(httpClientActions.showMockConfigList(true));
         } catch (e) {
             dispatch(httpClientActions.setMockConfigStatusText(e.response.data.message, true))

@@ -291,7 +291,7 @@ class HttpClientTabs extends Component {
     }
 
     importFromCurl(curlCommand) {
-        const { dispatch } = this.props;
+        const { user } = this.props;
         if(!curlCommand) return;
         try {
             const parsedCurl = parseCurlCommand(curlCommand);
@@ -307,7 +307,6 @@ class HttpClientTabs extends Component {
             let apiPath = parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
             let service = parsedUrl.host ? parsedUrl.host : "NA";
             const traceId = cryptoRandomString({length: 32});
-            const user = JSON.parse(localStorage.getItem('user'));
             const customerId = user.customer_name;
             const eventData = this.generateEventdata(app, customerId, traceId, service, apiPath);
             let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "", bodyType = "";
@@ -418,8 +417,12 @@ class HttpClientTabs extends Component {
     }
 
     addMockRequest(tabId) {
-        const {httpClient: {tabs, mockReqServiceName, mockReqApiPath}} = this.props;
-        const { dispatch } = this.props;
+        const { 
+            dispatch, 
+            user: { customer_name: customerId }, 
+            httpClient: { tabs, mockReqServiceName, mockReqApiPath }
+        } = this.props;
+
         const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
         const tabToBeUpdated = tabs[tabIndex];
 
@@ -441,8 +444,6 @@ class HttpClientTabs extends Component {
                 isoDate = new Date().toISOString(),
                 timestamp = new Date(isoDate).getTime();
 
-            const user = JSON.parse(localStorage.getItem('user'));
-            const customerId = user.customer_name;
             let outgoingRequests = [];
             
             let httpResponseEvent = {
@@ -744,7 +745,7 @@ class HttpClientTabs extends Component {
 
     handleImportCollection() {
         const {importedToCollectionId, serializedCollection } = this.state;
-        const { dispatch } = this.props;
+        const { user, dispatch } = this.props;
         if(!serializedCollection || !importedToCollectionId) return;
         this.setState({
             showImportModal: true,
@@ -773,7 +774,6 @@ class HttpClientTabs extends Component {
                 let apiPath = parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
                 let service = parsedUrl.host ? parsedUrl.host : "NA";
                 const traceId = cryptoRandomString({length: 32});
-                const user = JSON.parse(localStorage.getItem('user'));
                 const customerId = user.customer_name;
                 
                 let headers = {}, queryParams = {}, formData = {}, rawData = "";
@@ -889,17 +889,21 @@ class HttpClientTabs extends Component {
     }
 
     showOutgoingRequests(tabId, traceId, collectionId, recordingId) {    
-        const {httpClient: {tabs}} = this.props, tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
-        const { cube: {selectedApp} } = this.props;
-        const app = selectedApp;
-        const { dispatch } = this.props;
+        const { 
+            dispatch,
+            httpClient: { tabs },
+            cube: { selectedApp: app },
+            user: { customer_name: customerId },
+        } = this.props; 
+        const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
+
         const reqIdArray = tabs[tabIndex]["outgoingRequestIds"];
         if(tabs[tabIndex]["outgoingRequests"] && tabs[tabIndex]["outgoingRequests"].length > 0) {
             return;
         };
         if (reqIdArray && reqIdArray.length > 0) {
             const eventTypes = [];
-            cubeService.fetchAPIEventData(app, reqIdArray, eventTypes).then((result) => {
+            cubeService.fetchAPIEventData(customerId, app, reqIdArray, eventTypes).then((result) => {
                 if (result && result.numResults > 0) {
                     let outgoingRequests = [];
                     for (let eachReqId of reqIdArray) {
@@ -1038,11 +1042,10 @@ class HttpClientTabs extends Component {
 
     async driveRequest(isOutgoingRequest, tabId) {
         const {httpClient: {tabs, selectedTabKey, userHistoryCollection, mockConfigList, selectedMockConfig }} = this.props;
-        const { cube: { selectedApp } } = this.props;
+        const { cube: { selectedApp }, user } = this.props;
         const { dispatch } = this.props;
-        const user = JSON.parse(localStorage.getItem('user'));
-        const userId = user.username,
-            customerId = user.customer_name;
+        const userId = user.username;
+        const customerId = user.customer_name;
         let tabsToProcess = tabs;
         const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
         const tabToProcess = tabsToProcess[tabIndex];
@@ -1444,17 +1447,19 @@ class HttpClientTabs extends Component {
     }
 
     loadSavedTrace(tabId, traceId, reqId, runId, apiPath, apiConfig) {
-        const {httpClient: {tabs, userHistoryCollection}} = this.props;
-        const { cube: {selectedApp} } = this.props;
-        const app = selectedApp;
+        const { 
+            dispatch,
+            cube: { selectedApp: app },
+            user: { customer_name: customerId },
+            httpClient: { tabs, userHistoryCollection}, // seems like tabs is no longer used
+        } = this.props;
+
         if(!app) {
             const parsedUrlObj = urlParser(window.location.href, true);
             app = parsedUrlObj.query.app;
         }
-        const { dispatch } = this.props;
-        const user = JSON.parse(localStorage.getItem('user'));
         const historyCollectionId = userHistoryCollection.collec;
-        const apiTraceUrl = `${config.apiBaseUrl}/as/getApiTrace/${user.customer_name}/${app}?depth=100&collection=${historyCollectionId}&apiPath=${apiPath}&runId=${runId}`;
+        const apiTraceUrl = `${config.apiBaseUrl}/as/getApiTrace/${customerId}/${app}?depth=100&collection=${historyCollectionId}&apiPath=${apiPath}&runId=${runId}`;
         api.get(apiTraceUrl, apiConfig)
             .then((res) => {
                 res.response.sort((a, b) => {
@@ -1468,7 +1473,7 @@ class HttpClientTabs extends Component {
 
                 if (reqIdArray && reqIdArray.length > 0) {
                     const eventTypes = [];
-                    cubeService.fetchAPIEventData(app, reqIdArray, eventTypes, apiConfig).then((result) => {
+                    cubeService.fetchAPIEventData(customerId, app, reqIdArray, eventTypes, apiConfig).then((result) => {
                         if(result && result.numResults > 0) {
                             const ingressReqResPair = result.objects.filter(eachReq => eachReq.apiPath === apiPath);
                             let ingressReqObj;
@@ -1497,15 +1502,14 @@ class HttpClientTabs extends Component {
 
 
     addTab(evt, reqObject, givenApp) {
-        const { dispatch } = this.props;
+        const { dispatch, user } = this.props;
         const tabId = uuidv4();
         const requestId = uuidv4();
         const { app } = this.state;
         const appAvailable = givenApp ? givenApp : app ? app : "";
         if (!reqObject) {
             const traceId = cryptoRandomString({length: 32});
-            const { cube: {selectedApp} } = this.props;
-            const user = JSON.parse(localStorage.getItem('user'));
+            const { cube: { selectedApp } } = this.props;
             const customerId = user.customer_name;
             const eventData = this.generateEventdata(selectedApp, customerId, traceId);
             reqObject = {
@@ -1657,9 +1661,13 @@ class HttpClientTabs extends Component {
     }
 
     componentDidMount() {
-        const { dispatch } = this.props;
-        const { cube: {selectedApp} } = this.props;
-        const {httpClient: {tabs}} = this.props;
+        const { 
+            dispatch,
+            cube: { selectedApp },
+            httpClient: { tabs },
+            user: { customer_name: customerId },
+        } = this.props;
+
         window.addEventListener('resize', this.updateDimensions);
         dispatch(cubeActions.hideTestConfig(true));
         dispatch(cubeActions.hideServiceGraph(true));
@@ -1676,7 +1684,7 @@ class HttpClientTabs extends Component {
         });
         if (reqIdArray && reqIdArray.length > 0) {
             const eventTypes = [];
-            cubeService.fetchAPIEventData(selectedApp, reqIdArray, eventTypes).then((result) => {
+            cubeService.fetchAPIEventData(customerId, selectedApp, reqIdArray, eventTypes).then((result) => {
                 if (result && result.numResults > 0) {
                     for (let eachReqId of reqIdArray) {
                         const reqResPair = result.objects.filter(eachReq => eachReq.reqId === eachReqId);
@@ -1969,14 +1977,12 @@ class HttpClientTabs extends Component {
     }
 }
 
-function mapStateToProps(state) {
-    const {cube, apiCatalog, httpClient} = state;
-    return {
-        cube,
-        apiCatalog,
-        httpClient
-    }
-}
+const mapStateToProps = (state) => ({
+    cube: state.cube,
+    httpClient: state.httpClient,
+    apiCatalog: state.apiCatalog,
+    user: state.authentication.user
+});
 
 const connectedHttpClientTabs = connect(mapStateToProps)(HttpClientTabs);
 

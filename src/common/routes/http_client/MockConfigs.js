@@ -131,14 +131,14 @@ class MockConfigs extends Component {
     }
 
     handleUpdateMockConfig = () => {
-        const {dispatch} = this.props;
-        const {selectedEditMockConfig, selectedEditMockConfigId} = this.state;
+        const { dispatch, user: { customer_name: customerId }} = this.props;
+        const { selectedEditMockConfig, selectedEditMockConfigId } = this.state;
         
         if (!this.validateMockConfig(selectedEditMockConfig)) {
             return
         }
         
-        dispatch(httpClientActions.updateMockConfig(selectedEditMockConfigId, selectedEditMockConfig));
+        dispatch(httpClientActions.updateMockConfig(customerId, selectedEditMockConfigId, selectedEditMockConfig));
     }
 
     setMockConfigStatusText = (text, isError) => {
@@ -263,7 +263,10 @@ class MockConfigs extends Component {
     }
 }
 
-const mapStateToProps = (state) =>  ({httpClient: state.httpClient});
+const mapStateToProps = (state) => ({
+    httpClient: state.httpClient,
+    user: state.authentication.user
+});
 
 export default connect(mapStateToProps)(MockConfigs);
 

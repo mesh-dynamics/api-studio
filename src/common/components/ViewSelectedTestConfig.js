@@ -143,7 +143,7 @@ class ViewSelectedTestConfig extends React.Component {
     };
 
     handleChangeForTestIds = (e) => {
-        const { user, match, history, dispatch, cube } = this.props;
+        const { dispatch, cube } = this.props;
         cube.selectedTestId = e.target.value;
         if (e) {
             dispatch(cubeActions.clear());

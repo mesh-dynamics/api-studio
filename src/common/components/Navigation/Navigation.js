@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, Fragment } from 'react';
 import {connect} from "react-redux";
 import UserAvatar from 'react-user-avatar';
 import { Radio, Checkbox, Tabs, Tab, Panel, Label } from 'react-bootstrap';
@@ -84,25 +84,32 @@ class Navigation extends Component{
         }
     }
 
-    createAppList(cube) {
-        if (cube.appsListReqStatus != cubeConstants.REQ_SUCCESS || !cube.appsList) {
+    createAppList() {
+        const { cube: { appsList, appsListReqStatus, selectedApp } } = this.props;
+
+        if(appsList.length === 0 && appsListReqStatus === cubeConstants.REQ_LOADING) {
             return 'Loading...'
         }
-        let jsxContent = cube.appsList.map(item => {
-            return (
-                <div key={item.id} className="app-wrapper" onClick={() => this.handleChangeForApps(item.name)}>
-                    <div className="app-img">
-                        <img src={"https://app.meshdynamics.io/assets/images/" + item.name + "-app.png"} alt=""/>
-                        {/* <img src={"./assets/images/" + item.name + "-app.png"} alt=""/> */}
-                    </div>
-                    <div className={cube.selectedApp == item.name ? "app-name selected" : "app-name"}>
-                        {item.name}
-                    </div>
-                </div>
-            );
-        })
 
-        return jsxContent;
+        return (
+            <Fragment>
+            {
+                appsList.map(item => 
+                    (
+                        <div key={item.id} className="app-wrapper" onClick={() => this.handleChangeForApps(item.name)}>
+                            <div className="app-img">
+                                <img src={"https://app.meshdynamics.io/assets/images/" + item.name + "-app.png"} alt=""/>
+                                {/* <img src={"./assets/images/" + item.name + "-app.png"} alt=""/> */}
+                            </div>
+                            <div className={selectedApp == item.name ? "app-name selected" : "app-name"}>
+                                {item.name}
+                            </div>
+                        </div>
+                    )
+                )
+            }
+            </Fragment>
+        );
     }
 
     checkReplayStatus = (replayId) => {
@@ -182,7 +189,7 @@ class Navigation extends Component{
                     <div className={appsVisible ? "app-select" : "app-select disp-none"}>
                         <h4 className="applic">Applications</h4>
                         <div className="app-list">
-                            {this.createAppList(cube)}
+                            {this.createAppList()}
                         </div>
                     </div>
                     <div className="app-s-b">

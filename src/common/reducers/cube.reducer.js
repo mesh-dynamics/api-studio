@@ -480,7 +480,9 @@ export function cube (state = initialState, action) {
                 ...state,
                 hideHttpClient: action.data,
             }
+        case cubeConstants.RESET_CUBE_TO_INITIAL_STATE:
+            return initialState;
         default:
-            return state
+            return state;
     }
 }

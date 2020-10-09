@@ -752,7 +752,9 @@ export const httpClient = (state = initialState, { type, data }) => {
                 selectedMockConfig: data,
             }
         }
-
+        case httpClientConstants.RESET_HTTP_CLIENT_TO_INITIAL_STATE: {
+            return initialState;
+        }
         default:
             return state;
     }
