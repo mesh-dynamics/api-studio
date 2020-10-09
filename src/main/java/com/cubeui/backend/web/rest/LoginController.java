@@ -50,6 +50,12 @@ public class LoginController {
                         .body(new ErrorResponse("Authentication Failed", "User not activated yet. Please check your email", UNAUTHORIZED.value()));
 
             }
+            /**TODO
+             * the below logic can be removed once every user reset date gets set to some value
+             */
+            if(user.getResetPasswordDate() == null) {
+                user.setResetPasswordDate(this.userService.getResetPasswordDate(data.getPassword(), user.getCustomer().getId()));
+            }
             return ok(tokenResponseService.getTokenResponse(user));
         } catch (AuthenticationException ex) {
             return status(UNAUTHORIZED)

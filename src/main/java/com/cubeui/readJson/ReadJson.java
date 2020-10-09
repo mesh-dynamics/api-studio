@@ -210,7 +210,7 @@ public class ReadJson {
         JSONObject json = new JSONObject();
         json.put("name", customer.getName());
         json.put("email", customer.getEmailId());
-        json.put("domainURL", customer.getDomainUrl());
+        json.put("domainURLs", customer.getDomainUrls());
         return json.toString();
     }
 

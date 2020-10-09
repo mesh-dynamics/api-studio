@@ -15,4 +15,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByResetKey(String resetKey);
 
     List<User> findAllByActivatedIsFalseAndCreatedAtBefore(LocalDateTime dateTime);
+    Optional<List<User>> findByCustomerId(Long customerId);
 }
