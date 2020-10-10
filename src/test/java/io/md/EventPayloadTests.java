@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.core.CompareTemplate;
-import io.md.core.ProtoDescriptor;
 import io.md.core.TemplateKey.Type;
 import io.md.dao.*;
 
@@ -59,7 +58,7 @@ public class EventPayloadTests {
 		private Event httpResponseEvent;
 		private Event grpcRequestEvent;
 		private Event grpcResponseEvent;
-		private Optional<ProtoDescriptor> protoDescriptor;
+		private Optional<ProtoDescriptorDAO> protoDescriptor;
 
 		private void setUpProtoDescirptorCache() {
 			DataStore dataStoreExp = new DataStore() {
@@ -164,12 +163,12 @@ public class EventPayloadTests {
 				}
 
 				@Override
-				public Optional<ProtoDescriptor> getProtoDescriptor(String customer, String app) {
+				public Optional<ProtoDescriptorDAO> getLatestProtoDescriptorDAO(String customer, String app) {
 					if ("CubeCorp".equals(customer) && "grpc".equals(app)) {
 						String filePath = "src/test/resources/route_guide.desc";
 						try {
 							String content = new String(Base64.getEncoder().encode( Files.readAllBytes(Paths.get(filePath))));
-							return Optional.of(new ProtoDescriptor(content));
+							return Optional.of(new ProtoDescriptorDAO(customer, app, content));
 						} catch (IOException e) {
 							e.printStackTrace();
 						} catch (DescriptorValidationException e) {
