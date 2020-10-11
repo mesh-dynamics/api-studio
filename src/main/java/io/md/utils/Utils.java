@@ -25,10 +25,13 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.swing.text.html.Option;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.dao.*;
+import io.md.services.DataStore;
 import io.md.tracer.TracerMgr;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.http.client.utils.URIBuilder;
@@ -43,14 +46,9 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import io.jaegertracing.internal.JaegerSpanContext;
 import io.md.constants.Constants;
 import io.md.core.Comparator;
-import io.md.dao.DataObj;
-import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.RunType;
-import io.md.dao.HTTPRequestPayload;
-import io.md.dao.HTTPResponsePayload;
 import io.md.dao.Recording.RecordingType;
-import io.md.dao.MDTraceInfo;
 import io.md.dao.RawPayload.RawPayloadEmptyException;
 import io.md.dao.RawPayload.RawPayloadProcessingException;
 import io.md.services.FnResponse;
@@ -602,5 +600,17 @@ public class Utils {
 		if (event.payload instanceof HTTPRequestPayload) return
 				Optional.ofNullable(((HTTPRequestPayload) event.payload).getMethod());
 		return Optional.empty();
+	}
+
+	public static MockWithCollection getMockCollection(DataStore dataStore, String customerId , String app , String instanceId){
+		RecordOrReplay recordOrReplay = dataStore.getCurrentRecordOrReplay(customerId, app, instanceId).get();
+		String replayCollection = recordOrReplay.getCollection().get();
+		String collection = recordOrReplay.getRecordingCollection().get();
+		String templateVersion = recordOrReplay.getTemplateVersion();
+		Optional<Replay> runningReplay = recordOrReplay.replay;
+		Optional<String> optionalRunId = runningReplay.map(r->r.runId);
+		Optional<String> dynamicInjectionCfgVersion = recordOrReplay.getDynamicInjectionConfigVersion();
+
+		return new MockWithCollection(replayCollection, collection, templateVersion, optionalRunId.orElse(null) , dynamicInjectionCfgVersion);
 	}
 }

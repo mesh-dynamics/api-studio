@@ -8,12 +8,14 @@ public class MockWithCollection {
   public String recordCollection;
   public String templateVersion;
   public String runId;
+  public Optional<String> dynamicInjectionConfigVersion;
 
   public MockWithCollection(String replayCollection, String recordCollection,
-      String templateVersion, String runId) {
+      String templateVersion, String runId , Optional<String> dynamicInjectionConfigVersion) {
     this.replayCollection = replayCollection;
     this.recordCollection = recordCollection;
     this.templateVersion = templateVersion;
     this.runId = runId;
+    this.dynamicInjectionConfigVersion = dynamicInjectionConfigVersion;
   }
 }
