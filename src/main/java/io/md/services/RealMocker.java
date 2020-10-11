@@ -112,31 +112,18 @@ public class RealMocker implements Mocker {
     }
 
     private Optional<MockWithCollection> setPayloadKeyAndCollection(Event event, Optional<MockWithCollection> mockWithCollections) {
-        Optional<MockWithCollection> ret = Optional.empty();
-        Optional<String> replayCollection = Optional.empty();
-        Optional<String> collection = Optional.empty();
-        Optional<String> templateVersion = Optional.empty();
-        Optional<String> optionalRunId = Optional.empty();
-        if (mockWithCollections.isPresent()) {
-            MockWithCollection mockWithCollection = mockWithCollections.get();
-            replayCollection = Optional.of(mockWithCollection.replayCollection);
-            collection = Optional.of(mockWithCollection.recordCollection);
-            templateVersion = Optional.of(mockWithCollection.templateVersion);
-            optionalRunId = Optional.of(mockWithCollection.runId);
-        } else {
-            Optional<RecordOrReplay> recordOrReplay = cube.getCurrentRecordOrReplay(event.customerId, event.app, event.instanceId);
-            replayCollection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
-            collection = recordOrReplay.flatMap(RecordOrReplay::getRecordingCollection);
-            templateVersion = recordOrReplay.map(RecordOrReplay::getTemplateVersion);
-            Optional<Replay>  runningReplay = recordOrReplay.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
-            optionalRunId = recordOrReplay.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay)
-                .map(replay -> replay.runId);
-        }
+
+        MockWithCollection mockWithCollection = mockWithCollections.orElse(Utils.getMockCollection(cube , event.customerId, event.app, event.instanceId ));
+
+        Optional<String> replayCollection = Optional.of(mockWithCollection.replayCollection);
+        Optional<String> collection = Optional.of(mockWithCollection.recordCollection);
+        Optional<String> templateVersion = Optional.of(mockWithCollection.templateVersion);
+        Optional<String> optionalRunId = Optional.of(mockWithCollection.runId);
+
         // check collection, validate, fetch template for request, set key and store. If error at any point stop
         if (collection.isPresent() && replayCollection.isPresent() && templateVersion.isPresent()) {
             String runId = optionalRunId.orElse(event.getTraceId());
-            ret = mockWithCollections.isPresent() ? mockWithCollections :
-                Optional.of(new MockWithCollection(replayCollection.get(), collection.get(), templateVersion.get(), runId));
+            mockWithCollection.runId = runId;
             event.setCollection(replayCollection.get());
             try {
                 event.parseAndSetKey(cube.getTemplate(event.customerId, event.app, event.service,
@@ -162,7 +149,7 @@ public class RealMocker implements Mocker {
         if (shouldStore(event.eventType)) {
             cube.save(event);
         }
-        return ret;
+        return Optional.of(mockWithCollection);
     }
 
     private boolean shouldStore(EventType eventType) {

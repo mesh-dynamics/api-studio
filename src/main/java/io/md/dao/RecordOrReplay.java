@@ -83,6 +83,12 @@ public class RecordOrReplay {
 		return recording.map(r -> r.recordingType).orElse(RecordingType.Replay);
 	}
 
+	public Optional<String> getDynamicInjectionConfigVersion(){
+		// check in replay first. otherwise in recording
+		Optional<String> diCfgVer = replay.flatMap(r->r.dynamicInjectionConfigVersion);
+		if(diCfgVer.isPresent()) return diCfgVer;
+		return recording.flatMap(r->r.dynamicInjectionConfigVersion);
+	}
 
 	// for json de-serialization
 	public RecordOrReplay() {
