@@ -1185,7 +1185,13 @@ class HttpClientTabs extends Component {
         let headers = {};
         if (_.isArray(headersReceived)) {
             headersReceived.forEach(each => {
-                if (each.name && each.value) headers[each.name] = each.value.split(",");
+                if (each.name && each.value) {
+                    if(headers[each.name]){
+                        headers[each.name] = [...headers[each.name], each.value];
+                    }else{
+                        headers[each.name] = [each.value];
+                    }
+                }
             });
         } else if (_.isObject(headersReceived)) {
             Object.keys(headersReceived).map((eachHeader) => {
@@ -1202,7 +1208,13 @@ class HttpClientTabs extends Component {
     extractQueryStringParamsToCubeFormat(httpRequestQueryStringParams) {
         let qsParams = {};
         httpRequestQueryStringParams.forEach(each => {
-            if (each.name && each.value) qsParams[each.name] = [each.value];
+            if (each.name && each.value) {
+                if(qsParams[each.name]){
+                    qsParams[each.name] = [...qsParams[each.name], each.value];
+                }else{
+                    qsParams[each.name] = [each.value];
+                }
+            }
         })
         return qsParams;
     }
@@ -1211,7 +1223,13 @@ class HttpClientTabs extends Component {
         let formData = {};
         if (_.isArray(httpRequestBody)) {
             httpRequestBody.forEach(each => {
-                if (each.name && each.value) formData[each.name] = each.value.split(",");
+                if (each.name && each.value) {
+                    if(formData[each.name]){
+                        formData[each.name] = [...formData[each.name], each.value];
+                    }else{
+                        formData[each.name] = [each.value];
+                    }
+                }
             })
             return formData;
         } else {
@@ -1388,31 +1406,38 @@ class HttpClientTabs extends Component {
         const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
         let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "";
         for (let eachHeader in httpRequestEvent.payload[1].hdrs) {
-            headers.push({
-                id: uuidv4(),
-                name: eachHeader,
-                value: httpRequestEvent.payload[1].hdrs[eachHeader].join(","),
-                description: "",
-                selected: true,
+            httpRequestEvent.payload[1].hdrs[eachHeader].forEach(value=>{            
+                headers.push({
+                    id: uuidv4(),
+                    name: eachHeader,
+                    value,
+                    description: "",
+                    selected: true,
+                });
             });
+                       
         }
         for (let eachQueryParam in httpRequestEvent.payload[1].queryParams) {
-            queryParams.push({
-                id: uuidv4(),
-                name: eachQueryParam,
-                value: httpRequestEvent.payload[1].queryParams[eachQueryParam][0],
-                description: "",
-                selected: true,
+            httpRequestEvent.payload[1].queryParams[eachQueryParam].forEach(value=>{    
+                queryParams.push({
+                    id: uuidv4(),
+                    name: eachQueryParam,
+                    value,
+                    description: "",
+                    selected: true,
+                });
             });
         }
         for (let eachFormParam in httpRequestEvent.payload[1].formParams) {
-            formData.push({
-                id: uuidv4(),
-                name: eachFormParam,
-                value: httpRequestEvent.payload[1].formParams[eachFormParam].join(","),
-                description: "",
-                selected: true,
-            });
+            httpRequestEvent.payload[1].formParams[eachFormParam].forEach(value=>{
+                formData.push({
+                    id: uuidv4(),
+                    name: eachFormParam,
+                    value,
+                    description: "",
+                    selected: true,
+                });
+            });            
             rawDataType = "";
         }
         if (httpRequestEvent.payload[1].body) {

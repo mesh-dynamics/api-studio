@@ -226,7 +226,7 @@ export const httpClientActions = {
             (eachCollection) => eachCollection.id === selectedCollectionId
         );
         try {
-        cubeService.loadCollectionTraces(customerId, selectedCollection.collec, app).then(
+            cubeService.loadCollectionTraces(customerId, selectedCollection.collec, app, selectedCollection.id).then(
             (apiTraces) => {
                 selectedCollection.apiTraces = apiTraces;
                 dispatch(httpClientActions.addUserCollections(userCollections));

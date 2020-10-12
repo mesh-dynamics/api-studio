@@ -2,8 +2,6 @@ import React from "react";
 import { connect } from "react-redux";
 import { FormControl, FormGroup, Modal, Glyphicon } from "react-bootstrap";
 
-import api from "../../api";
-import config from "../../config";
 import { httpClientActions } from "../../actions/httpClientActions";
 import CreateCollection from "./CreateCollection";
 import { cubeService } from "../../services";
@@ -13,12 +11,14 @@ class SaveToCollection extends React.Component {
     super(props);
     this.state = {
       showModal: false,
+      showSaveStatusModal: false,
       userCollectionId: "",
       modalErroSaveMessage: "",
       modalErroSaveMessageIsError: false,
     };
     this.handleCloseModal = this.handleCloseModal.bind(this);
     this.showSaveModal = this.showSaveModal.bind(this);
+    this.handleSaveStatusCloseModal = this.handleSaveStatusCloseModal.bind(this);
 
     this.handleChange = this.handleChange.bind(this);
     this.saveTabToCollection = this.saveTabToCollection.bind(this);
@@ -28,17 +28,34 @@ class SaveToCollection extends React.Component {
     this.setState({ showModal: false });
   }
 
+  handleSaveStatusCloseModal() {
+    this.setState({ showSaveStatusModal: false });
+  }
+
   handleChange(evt) {
     this.setState({ [evt.target.name]: evt.target.value });
   }
 
   showSaveModal() {
-    this.setState({
-      showModal: true,
-      userCollectionId: "",
-      modalErroSaveMessage: "",
-      modalErroSaveMessageIsError: false,
-    });
+    const {
+      httpClient: { tabs, userHistoryCollection },
+      tabId,
+    } = this.props;
+
+    const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
+    const recordingId = tabs[tabIndex].recordingIdAddedFromClient;
+    if (recordingId && userHistoryCollection.id !== recordingId) {     
+      this.setState({showSaveStatusModal: true, modalErroSaveMessage: "Saving...", userCollectionId: recordingId }, ()=>{
+        this.saveTabToCollection();
+      });
+    } else {
+      this.setState({
+        showModal: true,
+        userCollectionId: "",
+        modalErroSaveMessage: "",
+        modalErroSaveMessageIsError: false,
+      });
+    }
   }
 
   updateEachRequest(req, data, collectionId, recordingId) {
@@ -108,7 +125,6 @@ class SaveToCollection extends React.Component {
     const recordingId = this.state.userCollectionId;
     const {
       httpClient: { tabs: tabsToProcess },
-      cube: { selectedApp },
       dispatch,
       tabId,
     } = this.props;
@@ -195,6 +211,31 @@ class SaveToCollection extends React.Component {
         >
           <Glyphicon glyph="save" /> SAVE
         </div>
+
+        <Modal show={this.state.showSaveStatusModal} onHide={this.handleSaveStatusCloseModal}>
+          <Modal.Header closeButton>
+            <Modal.Title>Saving to Collection</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+          <p
+              style={{
+                marginTop: "10px",
+                fontWeight: 500,
+                color: this.state.modalErroSaveMessageIsError ? "red" : "",
+              }}
+            >
+              {this.state.modalErroSaveMessage}
+            </p>
+          </Modal.Body>
+          <Modal.Footer>
+            <div
+              onClick={this.handleSaveStatusCloseModal}
+              className="btn btn-sm cube-btn text-center"
+            >
+              Close
+            </div>
+          </Modal.Footer>
+        </Modal>
 
         <Modal show={this.state.showModal} onHide={this.handleCloseModal}>
           <Modal.Header closeButton>
