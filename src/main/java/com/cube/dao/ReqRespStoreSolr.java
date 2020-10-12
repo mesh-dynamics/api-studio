@@ -57,6 +57,7 @@ import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.protobuf.Descriptors.DescriptorValidationException;
 
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.FnResponseObj;
@@ -2775,16 +2776,20 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> app = getStrField(doc, APPF);
         Optional<Integer> version = getIntField(doc, INT_VERSION_F);
         Optional<String> encodedFile = getStrField(doc, PROTO_DESCRIPTOR_FILE_F);
-        ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId.orElse(null),
-            app.orElse(null), encodedFile.orElse(null));
-        protoDescriptorDAO.setVersion(version.orElse(0));
         try {
+            ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId.orElse(null),
+                app.orElse(null), encodedFile.orElse(null));
+            protoDescriptorDAO.setVersion(version.orElse(0));
             ValidateProtoDescriptorDAO.validate(protoDescriptorDAO);
             return Optional.of(protoDescriptorDAO);
         } catch (NullPointerException | IllegalArgumentException e) {
             LOGGER.error(
                 new ObjectMessage(Map.of(Constants.MESSAGE,
                     "Data fields are null or empty in protoDescriptorDAO")), e);
+        } catch (DescriptorValidationException | IOException e) {
+            LOGGER.error(
+                new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Error decoding encoded file in Proto Descriptor or invalid Descriptor")), e);
         }
         return Optional.empty();
     }

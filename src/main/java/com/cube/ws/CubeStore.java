@@ -63,6 +63,7 @@ import org.msgpack.value.ValueType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.protobuf.Descriptors.DescriptorValidationException;
 
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.UtilException;
@@ -1635,18 +1636,18 @@ public class CubeStore {
         }
 
 
+        boolean status = false;
         byte[] encodedFileBytes;
         try {
             encodedFileBytes = Base64.getEncoder().encode(uploadedInputStream.readAllBytes());
-        } catch (IOException e) {
+            ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app, new String(encodedFileBytes, StandardCharsets.UTF_8));
+            status = rrstore.storeProtoDescriptorFile(protoDescriptorDAO);
+        } catch (IOException | DescriptorValidationException e) {
             LOGGER.error("Cannot encode uploaded proto descriptor file",e);
             return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
                 Map.of("Message", "Cannot encode uploaded proto descriptor file",
                     "Error", e.getMessage())).toString())).build();
         }
-
-        ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app, new String(encodedFileBytes, StandardCharsets.UTF_8));
-        boolean status = rrstore.storeProtoDescriptorFile(protoDescriptorDAO);
         return status ? Response.ok().build() : Response.serverError().entity(Map.of("Error", "Cannot store proto descriptor file")).build();
     }
 
