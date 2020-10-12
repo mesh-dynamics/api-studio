@@ -477,7 +477,6 @@ public class JsonDataObj implements DataObj {
 								LOGGER.error("Error while setting new content type for multipart node",e);
 							}
 						});
-						System.out.println(boundary);
 						multipartBody.writeTo(buffer);
 						return Optional.of(new TextNode(
 							new String(Base64.getEncoder().encode(buffer.readByteArray()))));
