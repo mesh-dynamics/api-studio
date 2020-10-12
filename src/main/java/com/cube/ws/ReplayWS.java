@@ -19,6 +19,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -158,7 +159,8 @@ public class ReplayWS extends ReplayBasicWS {
     @POST
     @Path("start/byGoldenName/{customerId}/{app}/{goldenName}")
     @Consumes("application/x-www-form-urlencoded")
-    public Response startByGoldenName(@Context UriInfo ui,
+    public Response startByGoldenName(@Context HttpHeaders headers,
+                                      @Context UriInfo ui,
                                       @PathParam("app") String app,
                                       @PathParam("customerId") String customerId,
                                       @PathParam("goldenName") String goldenName,
@@ -175,7 +177,7 @@ public class ReplayWS extends ReplayBasicWS {
                 .entity(String.format("cannot find recording for golden  name %s", goldenName)).build();
         }
 
-        return startReplay(formParams, recordingOpt.get());
+        return startReplay(headers, formParams, recordingOpt.get());
     }
 
     @POST
@@ -388,7 +390,8 @@ public class ReplayWS extends ReplayBasicWS {
     }
 
     @Override
-    protected CompletableFuture<Void> beforeReplay(MultivaluedMap<String, String> formParams, Recording recording,
+    protected CompletableFuture<Void> beforeReplay(@Context HttpHeaders headers,
+                                                   MultivaluedMap<String, String> formParams, Recording recording,
                                                    Replay replay) {
         Optional<String> tagOpt = formParams == null ? Optional.empty()
             : Optional.ofNullable(formParams.getFirst(Constants.TAG_FIELD));
@@ -398,7 +401,8 @@ public class ReplayWS extends ReplayBasicWS {
     }
 
     @Override
-    protected CompletableFuture<Void> afterReplay(MultivaluedMap<String, String> formParams, Recording recording,
+    protected CompletableFuture<Void> afterReplay(@Context HttpHeaders headers,
+                                                  MultivaluedMap<String, String> formParams, Recording recording,
         Replay replay, Optional<Analyzer> analyzerOpt) {
         Optional<String> resetTagOpt = formParams == null ? Optional.empty()
             : Optional.ofNullable(formParams.getFirst(Constants.RESET_TAG_FIELD));
@@ -407,26 +411,6 @@ public class ReplayWS extends ReplayBasicWS {
             .thenCompose(v ->
                  resetTagOpt.map(tag -> this.tagConfig.setTag(recording, replay.instanceId, tag))
                     .orElse(CompletableFuture.completedFuture(null)));
-    }
-
-    private void analyze(Replay replay, Optional<Analyzer> analyzerOpt) {
-        ReplayStatus status = ReplayStatus.Running;
-        while (status == ReplayStatus.Running) {
-            try {
-                Thread.sleep(5000);
-                Optional<Replay> currentRunningReplay = dataStore
-                    .getCurrentRecordOrReplay(replay.customerId,
-                        replay.app, replay.instanceId)
-                    .flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
-                status = currentRunningReplay.filter(runningReplay -> runningReplay.
-                    replayId.equals(replay.replayId)).map(r -> r.status).orElse(replay.status);
-            } catch (InterruptedException e) {
-                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                    "Exception while sleeping  the thread", Constants.REPLAY_ID_FIELD
-                    , replay.replayId)));
-            }
-        }
-        analyzerOpt.ifPresent(analyzer -> analyzer.analyze(replay.replayId));
     }
 
     /**
