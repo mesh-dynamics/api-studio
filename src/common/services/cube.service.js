@@ -420,7 +420,7 @@ const fetchAPITraceData = async (customerId, traceApiFiltersProps) => {
     }
 }
 
-const loadCollectionTraces = async(customerId, selectedCollectionId, app)=> {
+const loadCollectionTraces = async(customerId, selectedCollectionId, app, recordingId)=> {
         const filterData = {
             ...getDefaultTraceApiFilters(),
             app,
@@ -440,7 +440,7 @@ const loadCollectionTraces = async(customerId, selectedCollectionId, app)=> {
             eachApiTraceEvent["id"] = eachApiTraceEvent["requestEventId"];
             eachApiTraceEvent["toggled"] = false;
             eachApiTraceEvent["recordingIdAddedFromClient"] =
-            selectedCollectionId;
+            recordingId;
             eachApiTraceEvent["traceIdAddedFromClient"] =
                 eachApiTrace.traceId;
             eachApiTraceEvent["collectionIdAddedFromClient"] =
@@ -561,7 +561,8 @@ const insertNewMockConfig = async (customerId, selectedApp, mockConfig) => {
             app: selectedApp,
             configType: "mockConfig",
             key: mockConfig.name,
-            value: JSON.stringify(mockConfig)
+            value: JSON.stringify(mockConfig),
+            authenticate: true
         }
 
         return await api.post(url, body);
@@ -580,7 +581,8 @@ const updateMockConfig = async (customerId, selectedApp, mockId, mockConfig) => 
             app: selectedApp,
             configType: "mockConfig",
             key: mockConfig.name,
-            value: JSON.stringify(mockConfig)
+            value: JSON.stringify(mockConfig),
+            authenticate: true
         }
 
         return await api.post(url, body);

@@ -94,7 +94,7 @@ class SideBarTabs extends Component {
     const apiTracesForACollection = selectedCollection.apiTraces;
     try {
       if (!apiTracesForACollection || forceLoad) {
-        cubeService.loadCollectionTraces(customerId, selectedCollectionId, app).then(
+        cubeService.loadCollectionTraces(customerId, selectedCollectionId, app, selectedCollection.id).then(
           (apiTraces) => {
             selectedCollection.apiTraces = apiTraces;
             dispatch(httpClientActions.addUserCollections(userCollections));
@@ -372,8 +372,8 @@ class SideBarTabs extends Component {
                 style={{
                   paddingLeft: "5px",
                   marginLeft: "5px",
-                  borderLeft: "2px solid #fc6c0a",
-                  whiteSpace: "nowrap",
+                  borderLeft: "2px solid #fc6c0a",                  
+                  whiteSpace: "initial",
                   textOverflow: "ellipsis",
                   overflow: "hidden",
                 }}

@@ -28,7 +28,7 @@ export interface IHttpRequestMessageState{
 }
 
 class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpRequestMessageState> {
-    constructor(props) {
+    constructor(props: IHttpRequestMessageProps) {
         super(props);
         this.state = {
             showFormData: this.props.bodyType === "formData",
@@ -89,7 +89,7 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
         </div>
 
         return (
-            <div>
+            <>
                 <div style={{marginRight: "7px"}}>
                     <div style={{marginBottom: "9px", display: "inline-block", width: "20%", fontSize: "11px"}}>REQUEST</div>
                 </div>
@@ -200,7 +200,7 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
                     isOutgoingRequest={this.props.isOutgoingRequest} >
 
                 </HttpRequestBody>
-            </div>
+            </>
         );
     }
 }

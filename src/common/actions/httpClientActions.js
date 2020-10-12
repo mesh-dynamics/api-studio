@@ -226,7 +226,7 @@ export const httpClientActions = {
             (eachCollection) => eachCollection.id === selectedCollectionId
         );
         try {
-        cubeService.loadCollectionTraces(customerId, selectedCollection.collec, app).then(
+            cubeService.loadCollectionTraces(customerId, selectedCollection.collec, app, selectedCollection.id).then(
             (apiTraces) => {
                 selectedCollection.apiTraces = apiTraces;
                 dispatch(httpClientActions.addUserCollections(userCollections));
@@ -305,6 +305,8 @@ export const httpClientActions = {
             httpClient: { historyTabState }, 
             authentication: { user } 
         } = getState();
+
+        const { customer_name: customerId } = user;
 
         try {
             const response = await cubeService.fetchCollectionList(user, app, "History", true);

@@ -32,8 +32,9 @@ import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
 import { generateRunId, generateApiPath, getApiPathFromRequestEvent } from "../../utils/http_client/utils"; 
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
+import { getParameterCaseInsensitive } from '../../../shared/utils';
 
-import SplitSlider  from '../../components/SplitSlider.js';
+import SplitSlider  from '../../components/SplitSlider.tsx';
 
 import commonConstants from '../../utils/commonConstants';
 import MockConfigs from "./MockConfigs";
@@ -283,12 +284,14 @@ class HttpClientTabs extends Component {
         }, 0);
     }
 
-    getParameterCaseInsensitive (object, key) {
-        return object[
-            Object.keys(object)
-            .find(k => k.toLowerCase() === key.toLowerCase())
-        ];
-    }
+    // Has been imported from shared directory. Do not remove. Keeping it as fallback.
+    // In this file it seems to be used in import from curl and collection
+    // getParameterCaseInsensitive (object, key) {
+    //     return object[
+    //         Object.keys(object)
+    //         .find(k => k.toLowerCase() === key.toLowerCase())
+    //     ];
+    // }
 
     importFromCurl(curlCommand) {
         const { user } = this.props;
@@ -337,7 +340,7 @@ class HttpClientTabs extends Component {
                     selected: true,
                 });
             }
-            let contentTypeHeader = _.isObject(parsedCurl.headers) ? this.getParameterCaseInsensitive(parsedCurl.headers, "content-type") : "";
+            let contentTypeHeader = _.isObject(parsedCurl.headers) ? getParameterCaseInsensitive(parsedCurl.headers, "content-type") : "";
             if(contentTypeHeader && contentTypeHeader.indexOf("json") > -1) {
                 rawData = JSON.stringify(JSON.parse(parsedCurl.data), undefined, 4);
                 rawDataType = "json";
@@ -788,7 +791,7 @@ class HttpClientTabs extends Component {
                     queryParams[eachQueryParam] = _.isArray(parsedQueryParams[eachQueryParam]) ? parsedQueryParams[eachQueryParam] : [parsedQueryParams[eachQueryParam]] ;
                 }
                 if(requestBody && requestBody.mode) {
-                    let contentTypeHeader = _.isObject(requestHeaders) ? this.getParameterCaseInsensitive(requestHeaders, "content-type") : "";
+                    let contentTypeHeader = _.isObject(requestHeaders) ? getParameterCaseInsensitive(requestHeaders, "content-type") : "";
                     if(contentTypeHeader && contentTypeHeader.indexOf("application/json") > -1 && requestBody.mode === "raw" && requestBody.raw) {
                         try {
                             rawData = JSON.parse(requestBody.raw);
@@ -1053,7 +1056,7 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.resetRunState(tabId))
         // generate a new run id every time a request is run
         const runId = generateRunId();
-        //const mockConfig = this.getCurrentMockConfig(); // todo hotfix/disable-live-proxy
+        const mockConfig = getCurrentMockConfig();
         const spanId = tabToProcess.eventData[0].spanId;
 
         if(PLATFORM_ELECTRON) {
@@ -1066,7 +1069,7 @@ class HttpClientTabs extends Component {
                 selectedApp,
                 customerName: customerId,
                 runId: runId,
-                // config: mockConfig, // todo hotfix/disable-live-proxy
+                config: mockConfig,
                 spanId: spanId
             }
 
@@ -1181,7 +1184,13 @@ class HttpClientTabs extends Component {
         let headers = {};
         if (_.isArray(headersReceived)) {
             headersReceived.forEach(each => {
-                if (each.name && each.value) headers[each.name] = each.value.split(",");
+                if (each.name && each.value) {
+                    if(headers[each.name]){
+                        headers[each.name] = [...headers[each.name], each.value];
+                    }else{
+                        headers[each.name] = [each.value];
+                    }
+                }
             });
         } else if (_.isObject(headersReceived)) {
             Object.keys(headersReceived).map((eachHeader) => {
@@ -1198,7 +1207,13 @@ class HttpClientTabs extends Component {
     extractQueryStringParamsToCubeFormat(httpRequestQueryStringParams) {
         let qsParams = {};
         httpRequestQueryStringParams.forEach(each => {
-            if (each.name && each.value) qsParams[each.name] = [each.value];
+            if (each.name && each.value) {
+                if(qsParams[each.name]){
+                    qsParams[each.name] = [...qsParams[each.name], each.value];
+                }else{
+                    qsParams[each.name] = [each.value];
+                }
+            }
         })
         return qsParams;
     }
@@ -1207,7 +1222,13 @@ class HttpClientTabs extends Component {
         let formData = {};
         if (_.isArray(httpRequestBody)) {
             httpRequestBody.forEach(each => {
-                if (each.name && each.value) formData[each.name] = each.value.split(",");
+                if (each.name && each.value) {
+                    if(formData[each.name]){
+                        formData[each.name] = [...formData[each.name], each.value];
+                    }else{
+                        formData[each.name] = [each.value];
+                    }
+                }
             })
             return formData;
         } else {
@@ -1367,31 +1388,38 @@ class HttpClientTabs extends Component {
         const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
         let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "";
         for (let eachHeader in httpRequestEvent.payload[1].hdrs) {
-            headers.push({
-                id: uuidv4(),
-                name: eachHeader,
-                value: httpRequestEvent.payload[1].hdrs[eachHeader].join(","),
-                description: "",
-                selected: true,
+            httpRequestEvent.payload[1].hdrs[eachHeader].forEach(value=>{            
+                headers.push({
+                    id: uuidv4(),
+                    name: eachHeader,
+                    value,
+                    description: "",
+                    selected: true,
+                });
             });
+                       
         }
         for (let eachQueryParam in httpRequestEvent.payload[1].queryParams) {
-            queryParams.push({
-                id: uuidv4(),
-                name: eachQueryParam,
-                value: httpRequestEvent.payload[1].queryParams[eachQueryParam][0],
-                description: "",
-                selected: true,
+            httpRequestEvent.payload[1].queryParams[eachQueryParam].forEach(value=>{    
+                queryParams.push({
+                    id: uuidv4(),
+                    name: eachQueryParam,
+                    value,
+                    description: "",
+                    selected: true,
+                });
             });
         }
         for (let eachFormParam in httpRequestEvent.payload[1].formParams) {
-            formData.push({
-                id: uuidv4(),
-                name: eachFormParam,
-                value: httpRequestEvent.payload[1].formParams[eachFormParam].join(","),
-                description: "",
-                selected: true,
-            });
+            httpRequestEvent.payload[1].formParams[eachFormParam].forEach(value=>{
+                formData.push({
+                    id: uuidv4(),
+                    name: eachFormParam,
+                    value,
+                    description: "",
+                    selected: true,
+                });
+            });            
             rawDataType = "";
         }
         if (httpRequestEvent.payload[1].body) {
@@ -1867,8 +1895,7 @@ class HttpClientTabs extends Component {
                             <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleImportModalShow}>
                                 <Glyphicon glyph="import" /> Import
                             </div>
-                            {/* mock configs todo: hotfix/disable-live-proxy */}
-                            {/* <MockConfigSection /> */}
+                            <MockConfigSection />
                             <EnvironmentSection />
                         </div>
                     </div>
