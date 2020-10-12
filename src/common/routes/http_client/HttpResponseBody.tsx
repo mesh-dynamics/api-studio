@@ -12,25 +12,13 @@ export interface IHttpResponseBodyProps {
   isOutgoingRequest: boolean;
   tabId: string;
   updateParam: UpdateParamHandler;
+  maximizeEditorHeight: boolean;
 }
 
 class HttpResponseBody extends Component<IHttpResponseBodyProps> {
-
   private editor: monacoEditor.editor.IStandaloneDiffEditor;
   constructor(props: IHttpResponseBodyProps) {
     super(props);
-  }
-
-  updateDimensions() {
-    this.editor && this.editor.layout();
-  }
-
-  componentDidMount() {
-    window.addEventListener("resize", this.updateDimensions.bind(this));
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener("resize", this.updateDimensions.bind(this));
   }
 
   shouldComponentUpdate(nextProps: IHttpResponseBodyProps) {
@@ -40,17 +28,30 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
       this.props.recordedResponseBody != nextProps.recordedResponseBody ||
       this.props.showBody != nextProps.showBody ||
       this.props.isOutgoingRequest != nextProps.isOutgoingRequest ||
-      this.props.tabId != nextProps.tabId
+      this.props.tabId != nextProps.tabId ||
+      this.props.maximizeEditorHeight != nextProps.maximizeEditorHeight
     ) {
       return true;
     }
     return false;
   }
-  editorDidMount = (editor) => {
+  formatHandler() {
+    this.editor
+      .getOriginalEditor()
+      .getAction("editor.action.formatDocument")
+      .run()
+      .then(() => {});
+    this.editor
+      .getModifiedEditor()
+      .getAction("editor.action.formatDocument")
+      .run()
+      .then(() => {});
+  }
+  editorDidMount = (editor: monacoEditor.editor.IStandaloneDiffEditor) => {
     this.editor = editor;
-    const { original, modified } = editor.getModel();
-    const { tabId, isOutgoingRequest } = this.props;
 
+    const { original, modified } = editor.getModel()!;
+    const { tabId, isOutgoingRequest } = this.props;
     modified.onDidChangeContent((event) => {
       this.props.updateParam(
         isOutgoingRequest,
@@ -79,25 +80,26 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
         : this.props.responseBodyType;
 
     return showBody ? (
-      <div>
-        <MonacoDiffEditor
-          width="100%"
-          height="600"
-          language={language}
-          original={this.props.recordedResponseBody}
-          value={this.props.responseBody}
-          options={{
-            wordWrap: "on",
-            originalEditable: true,
-            colorDecorators: true,
-            readOnly: true,
-            scrollbar: {
-              alwaysConsumeMouseWheel: false,
-            },
-          }}
-          editorDidMount={this.editorDidMount}
-        />
-      </div>
+      <MonacoDiffEditor
+        width="100%"
+        height={this.props.maximizeEditorHeight ? "calc(100vh - 30px)" : "600"}
+        language={language}
+        original={this.props.recordedResponseBody}
+        value={this.props.responseBody}
+        options={{
+          wordWrap: "on",
+          originalEditable: true,
+          colorDecorators: true,
+          readOnly: true,
+          scrollbar: {
+            alwaysConsumeMouseWheel: false,
+          },
+          automaticLayout: true,
+          scrollBeyondLastLine: false,
+          contextmenu: false,
+        }}
+        editorDidMount={this.editorDidMount}
+      />
     ) : (
       <div></div>
     );

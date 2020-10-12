@@ -21,12 +21,15 @@ export interface IHttpResponseMessageState {
   showHeaders: boolean;
   showBody: boolean;
   responseBodyType: string;
+  maximizeEditorHeight: boolean;
 }
 
 class HttpResponseMessage extends Component<
   IHttpResponseMessageProps,
   IHttpResponseMessageState
 > {
+  private childRefHttpResponseBody: React.RefObject<HttpResponseBody>;
+  private childRefHttpResponseHeaders: React.RefObject<HttpResponseHeaders>;
   constructor(props: IHttpResponseMessageProps) {
     super(props);
     this.state = {
@@ -34,9 +37,14 @@ class HttpResponseMessage extends Component<
       showHeaders: false,
       showBody: true,
       responseBodyType: "json",
+      maximizeEditorHeight: false,
     };
+    this.childRefHttpResponseBody = React.createRef<HttpResponseBody>();
+    this.childRefHttpResponseHeaders = React.createRef<HttpResponseHeaders>();
     this.onChangeValue = this.onChangeValue.bind(this);
     this.handleChange = this.handleChange.bind(this);
+    this.onFormatIconClick = this.onFormatIconClick.bind(this);
+    this.onMaxHeightIconClick = this.onMaxHeightIconClick.bind(this);
   }
 
   onChangeValue(event) {
@@ -44,6 +52,39 @@ class HttpResponseMessage extends Component<
       showHeaders: event.target.value === "showHeaders",
       showBody: event.target.value === "showBody",
     });
+  }
+
+  onFormatIconClick() {
+    if (this.state.showHeaders) {
+      this.childRefHttpResponseHeaders.current &&
+        this.childRefHttpResponseHeaders.current.formatHandler();
+    } else {
+      this.childRefHttpResponseBody.current &&
+        this.childRefHttpResponseBody.current.formatHandler();
+    }
+  }
+
+  onMaxHeightIconClick() {
+    this.setState(
+      { maximizeEditorHeight: !this.state.maximizeEditorHeight },
+      () => {
+        if (this.state.maximizeEditorHeight) {
+          const contentWrapper = document.querySelector(".content-wrapper");
+          const monacoDiffEditor = document.querySelector(
+            ".diffEditors .react-monaco-editor-container"
+          ) as HTMLDivElement;
+          if (contentWrapper && monacoDiffEditor) {
+            contentWrapper.scroll({
+              behavior: "smooth",
+              top:
+                contentWrapper.scrollHeight -
+                monacoDiffEditor.offsetHeight -
+                85,
+            });
+          }
+        }
+      }
+    );
   }
 
   handleChange(event) {
@@ -139,8 +180,8 @@ class HttpResponseMessage extends Component<
           style={{ fontSize: "12px", marginBottom: "12px" }}
         >
           <Row className="show-grid">
-            <Col xs={5}>
-              <div style={{ opacity: "0.7" }}>
+            <Col xs={6}>
+              <span style={{ opacity: "0.7" }}>
                 HTTP RESPONSE STATUS:
                 <b
                   style={{
@@ -154,10 +195,11 @@ class HttpResponseMessage extends Component<
                     ? getHttpStatus(recordedResponseStatus)
                     : "NA"}
                 </b>
-              </div>
+              </span>
+              
             </Col>
-            <Col xs={5} style={{ marginLeft: "7.2%" }}>
-              <div style={{ opacity: "0.7" }}>
+            <Col xs={6}>
+              <span style={{ opacity: "0.7" }}>
                 HTTP RESPONSE STATUS:
                 <b
                   style={{
@@ -171,20 +213,53 @@ class HttpResponseMessage extends Component<
                     ? getHttpStatus(responseStatus)
                     : "NA"}
                 </b>
+              </span>
+              
+              <div style={{ float: "right" }}>
+                <span
+                  className="btn btn-sm cube-btn text-center"
+                  style={{ padding: "2px 10px", display: "inline-block" }}
+                  title={
+                    this.state.maximizeEditorHeight
+                      ? "Shrink editor height"
+                      : "Fit to window height"
+                  }
+                  onClick={this.onMaxHeightIconClick}
+                >
+                  {this.state.maximizeEditorHeight ? (
+                    <i className="fa fa-compress" aria-hidden="true"></i>
+                  ) : (
+                    <i className="fa fa-expand" aria-hidden="true"></i>
+                  )}
+                </span>
+              </div>
+              <div style={{ float: "right" }}>
+                <span
+                  className="btn btn-sm cube-btn text-center"
+                  style={{ padding: "2px 10px", display: "inline-block" }}
+                  title="Format document"
+                  onClick={this.onFormatIconClick}
+                >
+                  <i className="fa fa-align-center" aria-hidden="true"></i>{" "}
+                  Format
+                </span>
               </div>
             </Col>
           </Row>
         </Grid>
-        <div>
+        <div className="diffEditors">
           <HttpResponseHeaders
+            ref={this.childRefHttpResponseHeaders}
             tabId={this.props.tabId}
             showHeaders={this.state.showHeaders}
             responseHeaders={this.props.responseHeaders}
             recordedResponseHeaders={this.props.recordedResponseHeaders}
             updateParam={this.props.updateParam}
             isOutgoingRequest={this.props.isOutgoingRequest}
+            maximizeEditorHeight={this.state.maximizeEditorHeight}
           ></HttpResponseHeaders>
           <HttpResponseBody
+            ref={this.childRefHttpResponseBody}
             tabId={this.props.tabId}
             showBody={this.state.showBody}
             responseBody={this.props.responseBody}
@@ -192,6 +267,7 @@ class HttpResponseMessage extends Component<
             updateParam={this.props.updateParam}
             responseBodyType={this.state.responseBodyType}
             isOutgoingRequest={this.props.isOutgoingRequest}
+            maximizeEditorHeight={this.state.maximizeEditorHeight}
           ></HttpResponseBody>
         </div>
       </div>

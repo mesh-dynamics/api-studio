@@ -34,7 +34,7 @@ import { generateRunId, generateApiPath, getApiPathFromRequestEvent } from "../.
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
 import { getParameterCaseInsensitive } from '../../../shared/utils';
 
-import SplitSlider  from '../../components/SplitSlider.js';
+import SplitSlider  from '../../components/SplitSlider.tsx';
 
 import commonConstants from '../../utils/commonConstants';
 import MockConfigs from "./MockConfigs";

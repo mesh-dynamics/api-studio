@@ -372,8 +372,8 @@ class SideBarTabs extends Component {
                 style={{
                   paddingLeft: "5px",
                   marginLeft: "5px",
-                  borderLeft: "2px solid #fc6c0a",
-                  whiteSpace: "nowrap",
+                  borderLeft: "2px solid #fc6c0a",                  
+                  whiteSpace: "initial",
                   textOverflow: "ellipsis",
                   overflow: "hidden",
                 }}

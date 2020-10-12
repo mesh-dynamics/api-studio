@@ -15,7 +15,12 @@
       "strictNullChecks": true,
       "esModuleInterop": true,
       "allowSyntheticDefaultImports": true,
-
+      "paths": {
+        "baseUrl": ["./"],
+        "src/*": [
+            "./*"
+        ]
+    }
     },
     "exclude": [
       "node_modules",

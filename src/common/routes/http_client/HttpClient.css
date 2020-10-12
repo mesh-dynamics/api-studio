@@ -158,6 +158,11 @@ i.fas.fa-trash.pointer:hover {
   background-color: #d8d8d8;
   cursor: ew-resize;
 }
+.split-slider.horizontal {
+  width: 100%;
+  height: 3px;
+  cursor: ns-resize;
+}
 .split-slider:hover {
   border: 1px solid #8c8989;
 }
@@ -167,4 +172,7 @@ i.fas.fa-trash.pointer:hover {
 }
 div.loading, div.loading button{
   cursor: progress !important;
+}
+.react-monaco-editor-container{
+  min-height: 50px;
 }
