@@ -306,6 +306,8 @@ export const httpClientActions = {
             authentication: { user } 
         } = getState();
 
+        const { customer_name: customerId } = user;
+
         try {
             const response = await cubeService.fetchCollectionList(user, app, "History", true);
             const serverRes = response.recordings;
