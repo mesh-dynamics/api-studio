@@ -51,11 +51,14 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
     this.editor = editor;
 
     const { original, modified } = editor.getModel()!;
-    const { tabId, isOutgoingRequest } = this.props;
+    
+    // Following function is cached and editorDidMount is called only once at the time of first page load, not when props changing. 
+    // So any param from props should be taken fresh from props.
+
     modified.onDidChangeContent((event) => {
       this.props.updateParam(
-        isOutgoingRequest,
-        tabId,
+        this.props.isOutgoingRequest,
+        this.props.tabId,
         "responseBody",
         "responseBody",
         modified.getValue()
@@ -63,8 +66,8 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
     });
     original.onDidChangeContent((event) => {
       this.props.updateParam(
-        isOutgoingRequest,
-        tabId,
+        this.props.isOutgoingRequest,
+        this.props.tabId,
         "recordedResponseBody",
         "recordedResponseBody",
         original.getValue()
