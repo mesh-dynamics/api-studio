@@ -96,9 +96,9 @@ call_replay() {
 
 	#Status Check
 	COUNT=0
-	while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ] && [ "$COUNT" != "30" ]; do
+	while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Error" ] && [ "$COUNT" != "40" ]; do
 		STATUS=$(curl -X GET $CUBE_ENDPOINT/api/rs/status/$REPLAY_ID -H "Authorization: Bearer $AUTH_TOKEN" | jq .status | tr -d '"')
-		sleep 20
+		sleep 10
 		COUNT=$((COUNT+1))
 	done
 }
@@ -108,7 +108,7 @@ analyze() {
 	curl --location --request POST $CUBE_ENDPOINT/api/rs/forcecomplete/$REPLAY_ID \
 	-H "Authorization: Bearer $AUTH_TOKEN"
 
-	sleep 30
+	sleep 10
 
 	ANALYZE=$(curl -X POST $CUBE_ENDPOINT/api/as/analyze/$REPLAY_ID -H 'Content-Type: application/x-www-form-urlencoded' -H "Authorization: Bearer $AUTH_TOKEN" -H 'cache-control: no-cache')
 	REQNOTMATCHED=$(echo $ANALYZE | sed 's/^.*"reqNotMatched":\([^"]*\).*/\1/' | cut -d ',' -f 1)
@@ -128,19 +128,25 @@ analyze() {
 
 generate_traffic() {
 	for ((i=1;i<=$1;i++)); do
+		id=$(( $RANDOM % 1000 + 1 ))
+		DATA="{\"filmId\":$id,\"storeId\":1,\"duration\":2,\"customerId\":200,\"staffId\":1}"
 		curl -X GET "https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io/minfo/listmovies?filmName=BEVERLY%20OUTLAW" -H 'Content-Type: application/x-www-form-urlencoded' -H 'cache-control: no-cache';
-		curl "https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io/minfo/rentmovie" -H 'Content-Type: application/json;charset=UTF-8' --data-binary '{"filmId":4,"storeId":1,"duration":2,"customerId":200,"staffId":1}'
+		curl "https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io/minfo/rentmovie" -H 'Content-Type: application/json;charset=UTF-8' --data-binary $DATA
 	done
 }
 
 check_test_status() {
 	COUNT=0
-	while [ "$STATUS" != 1 ] && [ "$COUNT" != "20" ]; do
+	while [ "$STATUS" != 1 ] && [ "$COUNT" != "30" ]; do
 		kubectl get ns $DRONE_COMMIT_AUTHOR
 		STATUS=$(echo $?)
 		COUNT=$((COUNT+1))
 		echo "Waiting for previous test to finish"
-		sleep 30
+		sleep 10
+		if [ $COUNT -eq 30 ]; then
+			echo "timeout waiting for previous test to finish"
+			exit 1
+		fi
 	done
 }
 
@@ -159,10 +165,10 @@ clean() {
 
 main() {
 	set -x
-	# DRONE_BRANCH="develop"
-	# DRONE_COMMIT="411e4ee4dfeb290932122f3ad56141c5b8ec6b15"
+	# DRONE_BRANCH="staging"
+	# DRONE_COMMIT="f1d7b6f21374e4b573dbfb6a7cc35f03c6eab572"
 	# DRONE_COMMIT_AUTHOR="ethicalaakash"
-	# DRONE_BUILD_NUMBER="test102"
+	# DRONE_BUILD_NUMBER="test5oct3"
 	AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s"
 	check_test_status
 	generate_config_file
@@ -171,22 +177,20 @@ main() {
 	VERSION="v1"
 	TRANSFORMS="%7B%22requestTransforms%22%3A%7B%22Test%22%3A%5B%7B%22source%22%3A%22*%22%2C%22target%22%3A%22test123%22%7D%5D%7D%7D"
 	call_deploy_script cube init $CONFIG_FILE
-	kubectl get deploy -o name -l app=cube -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout status -n $DRONE_COMMIT_AUTHOR
 	call_deploy_script moviebook init $CONFIG_FILE
-	kubectl get deploy -o name -l app=moviebook -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout status -n $DRONE_COMMIT_AUTHOR
 	call_deploy_script springboot init $CONFIG_FILE
+	kubectl get deploy -o name -l app=cube -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout status -n $DRONE_COMMIT_AUTHOR
+	kubectl get deploy -o name -l app=moviebook -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout status -n $DRONE_COMMIT_AUTHOR
 	call_deploy_script moviebook record $CONFIG_FILE moviebook-$DRONE_BUILD_NUMBER RespPartialMatch moviebook-$DRONE_BUILD_NUMBER
-	sleep 30
+	sleep 10
 	generate_traffic $NO_OF_REQUEST
 	sleep 5
 	call_deploy_script moviebook stop_record $CONFIG_FILE
 	call_deploy_script moviebook setup_replay $CONFIG_FILE $VERSION
-	sleep 10
 	kubectl get deploy -o name -l app=moviebook -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout restart -n $DRONE_COMMIT_AUTHOR
 	kubectl get deploy -o name -l app=moviebook -n $DRONE_COMMIT_AUTHOR | xargs -n1 -t kubectl rollout status -n $DRONE_COMMIT_AUTHOR
-	sleep 60
+	sleep 5
 	call_replay
-	sleep 20
 	analyze
 	clean
 }
