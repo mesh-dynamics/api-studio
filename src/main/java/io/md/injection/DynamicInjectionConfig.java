@@ -191,7 +191,8 @@ public class DynamicInjectionConfig {
 			GET,
 			POST,
 			PUT,
-			DELETE
+			DELETE,
+			PATCH
 		}
 
 	}
