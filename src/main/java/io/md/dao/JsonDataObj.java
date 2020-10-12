@@ -381,7 +381,7 @@ public class JsonDataObj implements DataObj {
 	}
 
 	private Optional<JsonNode> wrap(JsonNode original, String mimeType, boolean asEncoded,
-		Optional<WrapUnwrapContext> wrapContext) {
+		Optional<WrapUnwrapContext> wrapContext, Optional<ObjectNode> parent) {
 		try {
 			if (original != null && !original.isValueNode()) {
 				if (mimeType.startsWith(MediaType.APPLICATION_JSON) || mimeType
@@ -451,22 +451,38 @@ public class JsonDataObj implements DataObj {
 										JsonNode valueNode = fieldObject.get("value");
 										JsonNode fileNameNode = fieldObject.get("filename");
 										JsonNode wrapped = wrap(valueNode, mimeTypePart, false,
-											wrapContext).orElse(valueNode);
+											wrapContext, Optional.empty()).orElse(valueNode);
 										byte[] content = wrapped.isTextual() ?
 											wrapped.textValue().getBytes() : wrapped.binaryValue();
 										builder.addFormDataPart(fieldName,
 											fileNameNode.textValue(), RequestBody.create(content,
 												okhttp3.MediaType.parse(mimeTypePart)));
 									} catch (Exception e) {
-										e.printStackTrace();
+										LOGGER.error("Error while adding file to multipart form", e);
 									}
 								}
 							}
 						}
 						final Buffer buffer = new Buffer();
-						builder.build().writeTo(buffer);
+						MultipartBody multipartBody = builder.build();
+						String boundary = multipartBody.boundary();
+						String newContentType = "multipart/form-data; boundary=".concat(boundary);
+						parent.ifPresent(parentObj -> {
+							try {
+								ArrayNode contentTypeArray = (ArrayNode)
+										parentObj.at(JsonPointer.compile("/hdrs/content-type"));
+								TextNode textNode = JsonNodeFactory.instance.textNode(newContentType);
+								contentTypeArray.set(0, textNode);
+							} catch (Exception e) {
+								LOGGER.error("Error while setting new content type for multipart node",e);
+							}
+						});
+						System.out.println(boundary);
+						multipartBody.writeTo(buffer);
 						return Optional.of(new TextNode(
 							new String(Base64.getEncoder().encode(buffer.readByteArray()))));
+					} else {
+						return wrap(original, MediaType.APPLICATION_JSON, false, wrapContext, Optional.empty());
 					}
 				}
 			} else if (original != null && original.isBinary()) {
@@ -505,7 +521,7 @@ public class JsonDataObj implements DataObj {
 			ObjectNode valParentObj = (ObjectNode) valParent;
 			String fieldName = pathPtr.last().getMatchingProperty();
 			JsonNode val = valParentObj.get(fieldName);
-			return wrap(val, mimetype, asEncoded, wrapContext).map(wrapped -> {
+			return wrap(val, mimetype, asEncoded, wrapContext, Optional.of(valParentObj)).map(wrapped -> {
 				valParentObj.set(fieldName, wrapped);
 				return true;
 			}).orElse(false);

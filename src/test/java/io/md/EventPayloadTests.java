@@ -506,6 +506,10 @@ public class EventPayloadTests {
 		HTTPRequestPayload payload = (HTTPRequestPayload) reRead.payload;
 		Assert.assertEquals(payload.getValAsString("/body/tp/value") , "as");
 		payload.wrapAsEncoded("/body" , payload.getValAsString("/hdrs/content-type/0"), Optional.empty());
+		payload.dataObj.unwrapAsJson("/body",payload.getValAsString("/hdrs/content-type/0"), Optional.empty());
+		//System.out.println(payload.getValAsString("/body"));
+		payload.wrapAsEncoded("/body" , payload.getValAsString("/hdrs/content-type/0"), Optional.empty());
+		//System.out.println(payload.getValAsString("/body"));
 
 		serialized = objectMapper.writeValueAsString(httpMultipartRequestEvent2);
 		//System.out.println(serialized);
@@ -513,6 +517,8 @@ public class EventPayloadTests {
 		payload = (HTTPRequestPayload) reRead.payload;
 		Assert.assertEquals(payload.getValAsString("/body/link/value") , "RELATIONSHIP_AGREEMENT");
 		payload.wrapAsEncoded("/body" , payload.getValAsString("/hdrs/content-type/0"), Optional.empty());
+		payload.dataObj.unwrapAsJson("/body",payload.getValAsString("/hdrs/content-type/0"), Optional.empty());
+		//System.out.println(payload.getValAsString("/body"));
 
 		serialized = objectMapper.writeValueAsString(httpMultipartRequestEvent3);
 		//System.out.println(serialized);
@@ -520,6 +526,12 @@ public class EventPayloadTests {
 		payload = (HTTPRequestPayload) reRead.payload;
 		Assert.assertEquals(payload.getValAsString("/body/link/value") , "RELATIONSHIP_AGREEMENT");
 		payload.wrapAsEncoded("/body" , payload.getValAsString("/hdrs/content-type/0"), Optional.empty());
+		//System.out.println(payload.getValAsString("/body"));
+		payload.dataObj.unwrapAsJson("/body",payload.getValAsString("/hdrs/content-type/0"), Optional.empty());
+		//System.out.println(payload.getValAsString("/body"));
+		payload.dataObj.wrapAsString("/body" , payload.getValAsString("/hdrs/content-type/0"), Optional.empty());
+		//System.out.println(payload.getValAsString("/body"));
+
 
 
 
