@@ -6,6 +6,8 @@ public class Constants {
 	public static final String APPLICATION_X_NDJSON = "application/x-ndjson";
 	public static final String APPLICATION_X_MSGPACK = "application/x-msgpack";
 	public static final String APPLICATION_GRPC = "application/grpc";
+	public static final String IMAGE_JPEG = "image/jpeg";
+	public static final String IMAGE_PNG = "image/png";
 	public static final String DEFAULT_REQUEST_ID = "c-request-id";
 	public static final String DEFAULT_TRACE_FIELD = "x-b3-traceid";
 	public static final String DEFAULT_SPAN_FIELD = "x-b3-spanid";
