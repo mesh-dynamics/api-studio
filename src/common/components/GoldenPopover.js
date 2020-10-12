@@ -269,7 +269,7 @@ class GoldenPopover extends React.Component {
 
         if (cube.ruleBook[jsonPath.replace("<BEGIN>", "")]) {
             const rule = cube.ruleBook[jsonPath.replace("<BEGIN>", "")];
-            const { templateMatchType } = cube.ruleBook.templateMatchType;
+            const { templateMatchType } = cube.ruleBook;
             this.setState({ templateMatchType, newRule: { ...rule } });
         } else {
             await this.fetchRuleAndPopulate(reqOrRespCompare)

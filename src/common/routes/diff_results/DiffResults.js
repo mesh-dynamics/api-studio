@@ -507,9 +507,12 @@ class DiffResults extends Component {
         }
 
         try {
+            this.setState({ showNewGolden: true });
+            dispatch(cubeActions.updateRecordingOperationSet()); 
+
             const result  = await cubeService.unifiedGoldenUpdate(data);
 
-            this.setState({showSaveGoldenModal: false, saveGoldenError: ""});
+            this.setState({ showSaveGoldenModal: false, saveGoldenError: "" });
 
             dispatch(cubeActions.updateGoldenSet(result));
             dispatch(cubeActions.getTestIds(this.state.app));
@@ -521,8 +524,6 @@ class DiffResults extends Component {
             this.setState({ saveGoldenError: error.response.data.message });
         }
         
-        // needed for showing the updating dialog. (is this a good idea?)
-        dispatch(cubeActions.updateRecordingOperationSet()); 
     }
 
     handleCurrentPopoverPathChange = (popoverCurrentPath) => this.setState({ popoverCurrentPath });
