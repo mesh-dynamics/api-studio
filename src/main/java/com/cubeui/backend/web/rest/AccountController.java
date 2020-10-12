@@ -12,17 +12,13 @@ import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.service.MailService;
 import com.cubeui.backend.service.ReCaptchaAPIService;
 import com.cubeui.backend.service.UserService;
-import com.cubeui.backend.service.exception.InvalidReCaptchaException;
-import com.cubeui.backend.web.exception.ActivationKeyExpiredException;
 import com.cubeui.backend.web.exception.DuplicateRecordException;
 import com.cubeui.backend.web.exception.InvalidDataException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
 import io.md.dao.Recording.RecordingType;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
@@ -109,7 +105,7 @@ public class AccountController {
                 if (appsOptional.isPresent()) {
                     List<App> apps = appsOptional.get();
                     apps.forEach(app -> {
-                        cubeServerService.fetchPostResponseForUserHistory(request,
+                        cubeServerService.createRecording(request,
                             customerOptional.get().getName(), app.getName(),
                             saved.getUsername(),Optional.of(formParams));
                     });

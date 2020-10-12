@@ -1,7 +1,5 @@
 package com.cubeui.backend.web.external;
 
-import com.cubeui.backend.domain.Customer;
-import com.cubeui.backend.security.Constants;
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.security.jwt.JwtTokenProvider;
 import com.cubeui.backend.service.CubeServerService;
@@ -223,7 +221,7 @@ public class CubeStoreController {
         validation.validateCustomerName(request, customerId);
         String userId = jwtTokenProvider.getUser(request).getUsername();
         queryMap.set("recordingType", RecordingType.History.toString());
-        return cubeServerService.fetchPostResponseForUserHistory(request,
+        return cubeServerService.createRecording(request,
             customerId, app,userId,Optional.of(queryMap));
     }
 
@@ -263,7 +261,7 @@ public class CubeStoreController {
                 formParams.set("label", new Date().toString());
                 formParams.set("userId", userId);
                 formParams.set("recordingType", RecordingType.History.toString());
-                ResponseEntity responseEntity = cubeServerService.fetchPostResponseForUserHistory(request,
+                ResponseEntity responseEntity = cubeServerService.createRecording(request,
                     requestEvent.customerId, requestEvent.app,
                     userId,Optional.of(formParams));
                 recording = cubeServerService.getRecordingFromResponseEntity(responseEntity, query);
