@@ -154,4 +154,7 @@ public class DynamicInjector {
         });
     }
 
+    public Map<String, DataObj> getExtractionMap() {
+        return extractionMap;
+    }
 }
