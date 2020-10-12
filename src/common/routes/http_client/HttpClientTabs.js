@@ -32,6 +32,7 @@ import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
 import { generateRunId, generateApiPath, getApiPathFromRequestEvent } from "../../utils/http_client/utils"; 
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
+import { getParameterCaseInsensitive } from '../../../shared/utils';
 
 import SplitSlider  from '../../components/SplitSlider.js';
 
@@ -284,12 +285,14 @@ class HttpClientTabs extends Component {
         }, 0);
     }
 
-    getParameterCaseInsensitive (object, key) {
-        return object[
-            Object.keys(object)
-            .find(k => k.toLowerCase() === key.toLowerCase())
-        ];
-    }
+    // Has been imported from shared directory. Do not remove. Keeping it as fallback.
+    // In this file it seems to be used in import from curl and collection
+    // getParameterCaseInsensitive (object, key) {
+    //     return object[
+    //         Object.keys(object)
+    //         .find(k => k.toLowerCase() === key.toLowerCase())
+    //     ];
+    // }
 
     importFromCurl(curlCommand) {
         const { user } = this.props;
@@ -338,7 +341,7 @@ class HttpClientTabs extends Component {
                     selected: true,
                 });
             }
-            let contentTypeHeader = _.isObject(parsedCurl.headers) ? this.getParameterCaseInsensitive(parsedCurl.headers, "content-type") : "";
+            let contentTypeHeader = _.isObject(parsedCurl.headers) ? getParameterCaseInsensitive(parsedCurl.headers, "content-type") : "";
             if(contentTypeHeader && contentTypeHeader.indexOf("json") > -1) {
                 rawData = JSON.stringify(JSON.parse(parsedCurl.data), undefined, 4);
                 rawDataType = "json";
@@ -789,7 +792,7 @@ class HttpClientTabs extends Component {
                     queryParams[eachQueryParam] = _.isArray(parsedQueryParams[eachQueryParam]) ? parsedQueryParams[eachQueryParam] : [parsedQueryParams[eachQueryParam]] ;
                 }
                 if(requestBody && requestBody.mode) {
-                    let contentTypeHeader = _.isObject(requestHeaders) ? this.getParameterCaseInsensitive(requestHeaders, "content-type") : "";
+                    let contentTypeHeader = _.isObject(requestHeaders) ? getParameterCaseInsensitive(requestHeaders, "content-type") : "";
                     if(contentTypeHeader && contentTypeHeader.indexOf("application/json") > -1 && requestBody.mode === "raw" && requestBody.raw) {
                         try {
                             rawData = JSON.parse(requestBody.raw);
@@ -1054,7 +1057,7 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.resetRunState(tabId))
         // generate a new run id every time a request is run
         const runId = generateRunId();
-        //const mockConfig = this.getCurrentMockConfig(); // todo hotfix/disable-live-proxy
+        const mockConfig = getCurrentMockConfig();
         const spanId = tabToProcess.eventData[0].spanId;
 
         if(PLATFORM_ELECTRON) {
@@ -1067,7 +1070,7 @@ class HttpClientTabs extends Component {
                 selectedApp,
                 customerName: customerId,
                 runId: runId,
-                // config: mockConfig, // todo hotfix/disable-live-proxy
+                config: mockConfig,
                 spanId: spanId
             }
 
@@ -1885,8 +1888,7 @@ class HttpClientTabs extends Component {
                             <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleImportModalShow}>
                                 <Glyphicon glyph="import" /> Import
                             </div>
-                            {/* mock configs todo: hotfix/disable-live-proxy */}
-                            {/* <MockConfigSection /> */}
+                            <MockConfigSection />
                             <EnvironmentSection />
                         </div>
                     </div>

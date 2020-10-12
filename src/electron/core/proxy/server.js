@@ -2,12 +2,15 @@
  * PROXY SERVER CODE
  */
 const http = require('http');
-const formidable = require('formidable');
+const stream = require('stream');
 const find = require('find-process');
 const httpProxy = require('http-proxy');
 const logger = require('electron-log');
 const { getApplicationConfig } = require('../fs-utils');
-const { getServiceNameFromUrl, selectProxyTargetForService } = require('./proxy-utils');
+const { 
+    getServiceNameFromUrl, 
+    selectProxyTargetForService
+} = require('./proxy-utils');
 
 /**
  * This function will setup the proxy server
@@ -34,40 +37,62 @@ const setupProxy = (mockContext, user) => {
         res.setHeader("Access-Control-Allow-Methods", "GET, PUT, PATCH, POST, DELETE");
         res.setHeader("Access-Control-Allow-Headers", "*");
 
-        logger.info('Request URL received at proxy server :', req.url);
-
-        logger.info('Request Method received at proxy server :', req.method);
-
-        const service = getServiceNameFromUrl(req.url);
-
-        const headers = req.headers;
-
-        // const form = formidable({ multiples: true });
-
-        logger.info('Headers Received :', headers);
-
-        logger.info('Detected Service :', service);
+        let buffer = '';
+        // Event handlers for reading request body
         
-        // logger.info('Received data in request : \n', fields);
+        // 'data' event on request
+        req.on('data', (data) => buffer+=data);
+
+        // 'end' event on request
+        req.on('end', () => {
+
+            const { url, method, headers } = req;
+
+            req.body = buffer;
+
+            // readRequestBodyFromBuffer,
+
+            // const contentType = headers['content-type'];
+
+            // const requestBody = readRequestBodyFromBuffer(buffer, contentType);
+
+            //Here we create a new stream with the buffered body on it
+            const bufferStream = new stream.PassThrough();
+            
+            bufferStream.end(new Buffer.from(buffer));
+            
+            req.bodyStream = bufferStream;
+            
+            const service = getServiceNameFromUrl(url);
+
+            logger.info(`Request Details at proxy 
+                            URL: ${url} 
+                            METHOD: ${method} 
+                            SERVICE: ${service} 
+                            HEADERS: ${JSON.stringify(headers)} 
+                            REQUEST BODY: ${buffer}
+                        `);
+
+            const proxyOptionParameters = {
+                user,
+                proxy,
+                service,
+                headers,
+                mockContext,
+                requestData: buffer,
+                defaultProxyOptions,
+            };
+
+            logger.info('Configuring Target...');
     
-        const proxyOptionParameters = {
-            user,
-            proxy,
-            service,
-            headers,
-            mockContext,
-            requestData: {},
-            // requestData: fields,
-            defaultProxyOptions
-        };
-    
-        logger.info('Configuring Target...');
-    
-        const proxyServerOptions = selectProxyTargetForService(proxyOptionParameters);
+            const proxyServerOptions = selectProxyTargetForService(proxyOptionParameters);
         
-        logger.info('Selected proxy options : \n', proxyServerOptions);
+            logger.info('Selected proxy options : \n', proxyServerOptions);
     
-        proxy.web(req, res, proxyServerOptions);
+            proxy.web(req, res, { ...proxyServerOptions, buffer: bufferStream });    
+    
+        })
+
     })
 
     /**
@@ -85,34 +110,12 @@ const setupProxy = (mockContext, user) => {
 };
 
 module.exports = setupProxy;
-
-// form.parse(req, (err, fields) => {
-//     if(err) {
-//         logger.info('Error parsing body',  err);
-//         throw err;
-//     }
-
-//     logger.info('Headers Received :', headers);
-
-//     logger.info('Detected Service :', service);
+        
+// logger.info('Received data in request : \n', fields);
+// protocol: 'http:',
+// host: 'localhost',
+// port: 8091
     
-//     logger.info('Received data in request : \n', fields);
-
-//     const proxyOptionParameters = {
-//         user,
-//         proxy,
-//         service,
-//         headers,
-//         mockContext,
-//         requestData: fields,
-//         defaultProxyOptions
-//     };
-
-//     logger.info('Configuring Target...');
-
-//     const proxyServerOptions = selectProxyTargetForService(proxyOptionParameters);
+        
     
-//     logger.info('Selected proxy options : \n', proxyServerOptions);
-
-//     proxy.web(req, res, proxyServerOptions);
-// });
+        

@@ -561,7 +561,8 @@ const insertNewMockConfig = async (customerId, selectedApp, mockConfig) => {
             app: selectedApp,
             configType: "mockConfig",
             key: mockConfig.name,
-            value: JSON.stringify(mockConfig)
+            value: JSON.stringify(mockConfig),
+            authenticate: true
         }
 
         return await api.post(url, body);
@@ -580,7 +581,8 @@ const updateMockConfig = async (customerId, selectedApp, mockId, mockConfig) => 
             app: selectedApp,
             configType: "mockConfig",
             key: mockConfig.name,
-            value: JSON.stringify(mockConfig)
+            value: JSON.stringify(mockConfig),
+            authenticate: true
         }
 
         return await api.post(url, body);

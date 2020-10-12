@@ -38,7 +38,6 @@
         "emotion": "^10.0.27",
         "extract-zip": "^2.0.1",
         "find-process": "^1.4.3",
-        "formidable": "^1.2.2",
         "formik": "^2.1.5",
         "http-proxy": "^1.18.1",
         "is-electron": "^2.2.0",
