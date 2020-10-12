@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import io.md.constants.Constants;
-import io.md.core.ProtoDescriptor;
 import io.md.core.WrapUnwrapContext;
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -21,7 +20,7 @@ public abstract class GRPCPayload extends HTTPPayload {
     protected String service;
     protected String method;
     @JsonIgnore
-    private Optional<ProtoDescriptor> protoDescriptor;
+    private Optional<ProtoDescriptorDAO> protoDescriptor;
 
     protected GRPCPayload(MultivaluedMap<String, String> hdrs, byte[] body, String path) {
         super(hdrs, body);
@@ -85,7 +84,7 @@ public abstract class GRPCPayload extends HTTPPayload {
     }
 
     @JsonIgnore
-    public void setProtoDescriptor(Optional<ProtoDescriptor> protoDescriptor) {
+    public void setProtoDescriptor(Optional<ProtoDescriptorDAO> protoDescriptor) {
         this.protoDescriptor = protoDescriptor;
         postParse();
     }
