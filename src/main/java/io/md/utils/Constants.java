@@ -85,6 +85,7 @@ public class Constants {
     public static final String QUERY_PARAMS_PATH = "/queryParams";
     public static final String FORM_PARAMS_PATH = "/formParams";
     public static final String PATH_PATH = "/path";
+    public static final String PATH_SEGMENTS_PATH = "/pathSegments";
     public static final String METHOD_PATH = "/method";
     public static final String ARGS_PATH = "/argVals";
     public static final String HDR_PATH = "/hdrs";
@@ -105,16 +106,19 @@ public class Constants {
     //COMMON STRINGS
     public static final String CUSTOMER_ID_FIELD = "customerId";
     public static final String APP_FIELD = "app";
+    public static final String ASYNC_FIELD = "async";
     public static final String SERVICE_FIELD = "service";
     public static final String INSTANCE_ID_FIELD = "instanceId";
     public static final String COLLECTION_FIELD = "collection";
     public static final String RUN_TYPE_FIELD = "runType";
     public static final String RUN_ID_FIELD = "runId";
     public static final String PATH_FIELD = "path";
+    public static final String PATHS_FIELD = "paths";
     public static final String MOCK_SERVICES_FIELD ="mockServices";
     public static final String EXCLUDE_PATH_FIELD = "excludePaths";
     public static final String API_PATH_FIELD = "apiPath";
     public static final String REQ_ID_FIELD = "reqId";
+    public static final String REQ_IDS_FIELD = "reqIds";
     public static final String REPLAY_ID_FIELD = "replayId";
     public static final String TIMESTAMP_FIELD = "timestamp";
     public static final String TRACE_ID_FIELD = "traceId";
@@ -134,6 +138,11 @@ public class Constants {
     public static final String OFFSET_FIELD = "offset";
     public static final String JAR_PATH_FIELD = "jarPath";
     public static final String REPLAY_TYPE_FIELD = "replayType";
+    public static final String SAMPLE_RATE_FIELD = "sampleRate";
+    public static final String INTERM_SERVICE_FIELD = "intermService";
+    public static final String TRANSFORMS_FIELD = "transforms";
+    public static final String ANALYZE_FIELD = "analyze";
+
     public static final String GENERATED_CLASS_JAR_PATH_FIELD ="generated_class_jar_path"  ;
     public static final String TEMPLATE_KEY_FIELD = "templateKey";
     public static final String OLD_TEMPLATE_SET_ID = "oldTemplateSetId";

@@ -192,15 +192,15 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 			// because of jackson serialisation to Multivalued map
 
 			MultivaluedHashMap<String, String> headers = httpRequest.dataObj
-				.getValAsObject("/".concat("hdrs"), MultivaluedHashMap.class)
+				.getValAsObject(Constants.HDR_PATH, MultivaluedHashMap.class)
 				.orElse(new MultivaluedHashMap<String, String>());
 
 			MultivaluedHashMap<String, String> queryParams = httpRequest.dataObj
-				.getValAsObject("/".concat("queryParams"), MultivaluedHashMap.class)
+				.getValAsObject(Constants.QUERY_PARAMS_PATH, MultivaluedHashMap.class)
 				.orElse(new MultivaluedHashMap<String, String>());
 
 			List<String> pathSegments = httpRequest.dataObj
-				.getValAsObject("/".concat("pathSegments"), List.class)
+				.getValAsObject(Constants.PATH_SEGMENTS_PATH, List.class)
 				.orElse(Collections.EMPTY_LIST);
 
 			String apiPath;

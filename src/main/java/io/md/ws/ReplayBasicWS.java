@@ -47,6 +47,7 @@ import io.md.utils.Constants;
 import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.UtilException;
 
+
 /**
  * @author prasad
  * The replay service with basic apis needed for client side replays
@@ -107,7 +108,7 @@ public class ReplayBasicWS {
         String replayId = "NotInited";
         try {
             // boolean startReplay = Utils.strToBool(formParams.getFirst("startReplay")).orElse(true);
-            boolean analyze = Utils.strToBool(formParams.getFirst("analyze")).orElse(true);
+            boolean analyze = Utils.strToBool(formParams.getFirst(Constants.ANALYZE_FIELD)).orElse(true);
 
             Replay replay = createReplayObject(formParams, recording);
             replayId = replay.replayId;
@@ -139,31 +140,31 @@ public class ReplayBasicWS {
 
     private Replay createReplayObject(MultivaluedMap<String, String> formParams, Recording recording) throws ParameterException {
         // TODO: move all these constant strings to a file so we can easily change them.
-        boolean async = Utils.strToBool(formParams.getFirst("async")).orElse(false);
-        boolean excludePaths = Utils.strToBool(formParams.getFirst("excludePaths")).orElse(false);
-        List<String> reqIds = Optional.ofNullable(formParams.get("reqIds"))
+        boolean async = Utils.strToBool(formParams.getFirst(Constants.ASYNC_FIELD)).orElse(false);
+        boolean excludePaths = Utils.strToBool(formParams.getFirst(Constants.EXCLUDE_PATH_FIELD)).orElse(false);
+        List<String> reqIds = Optional.ofNullable(formParams.get(Constants.REQ_IDS_FIELD))
             .orElse(new ArrayList<String>());
-        String endpoint = formParams.getFirst("endPoint");
-        List<String> paths = Optional.ofNullable(formParams.get("paths"))
+        String endpoint = formParams.getFirst(Constants.END_POINT_FIELD);
+        List<String> paths = Optional.ofNullable(formParams.get(Constants.PATHS_FIELD))
             .orElse(new ArrayList<String>());
-        Optional<Double> sampleRate = Optional.ofNullable(formParams.getFirst("sampleRate"))
+        Optional<Double> sampleRate = Optional.ofNullable(formParams.getFirst(Constants.SAMPLE_RATE_FIELD))
             .flatMap(v -> Utils.strToDouble(v));
-        List<String> intermediateServices = Optional.ofNullable(formParams.get("intermService"))
+        List<String> intermediateServices = Optional.ofNullable(formParams.get(Constants.INTERM_SERVICE_FIELD))
             .orElse(new ArrayList<>());
-        List<String> service = Optional.ofNullable(formParams.get("service"))
+        List<String> service = Optional.ofNullable(formParams.get(Constants.SERVICE_FIELD))
             .orElse(Collections.emptyList());
-        String userId = formParams.getFirst("userId");
-        String instanceId = formParams.getFirst("instanceId");
-        String replayType = formParams.getFirst("replayType");
-        List<String> mockServices = Optional.ofNullable(formParams.get("mockServices"))
+        String userId = formParams.getFirst(Constants.USER_ID_FIELD);
+        String instanceId = formParams.getFirst(Constants.INSTANCE_ID_FIELD);
+        String replayType = formParams.getFirst(Constants.REPLAY_TYPE_FIELD);
+        List<String> mockServices = Optional.ofNullable(formParams.get(Constants.MOCK_SERVICES_FIELD))
             .orElse(new ArrayList<String>());
-        Optional<String> testConfigName = Optional.ofNullable(formParams.getFirst("testConfigName"));
+        Optional<String> testConfigName = Optional.ofNullable(formParams.getFirst(Constants.TEST_CONFIG_NAME_FIELD));
 
-        Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst("dynamicInjectionConfigVersion"));
-        Optional<String> staticInjectionMap = Optional.ofNullable(formParams.getFirst("staticInjectionMap"));
+        Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst(Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD)).or(()->recording.dynamicInjectionConfigVersion);
+        Optional<String> staticInjectionMap = Optional.ofNullable(formParams.getFirst(Constants.STATIC_INJECTION_MAP_FIELD));
 
         // Request transformations - for injecting tokens and such
-        Optional<String> xfms = Optional.ofNullable(formParams.getFirst("transforms"));
+        Optional<String> xfms = Optional.ofNullable(formParams.getFirst(Constants.TRANSFORMS_FIELD));
 
         if (userId == null) {
             throw new ParameterException("userId Not Specified");

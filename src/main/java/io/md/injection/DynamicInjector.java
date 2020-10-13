@@ -14,7 +14,6 @@ import org.apache.commons.text.StringSubstitutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -138,7 +137,7 @@ public class DynamicInjector {
     static public String getHttpMethod(Event event) {
         String requestHttpMethod;
         try {
-            requestHttpMethod= event.payload.getValAsString("/method");
+            requestHttpMethod= event.payload.getValAsString(Constants.METHOD_PATH);
         } catch (DataObj.PathNotFoundException e) {
             LOGGER
                     .error("Cannot find /method in request" + event.reqId + " No extraction", e);
