@@ -9,6 +9,7 @@ import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
 import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
+import io.md.dao.DataObj.DataObjProcessingException;
 import io.md.injection.DynamicInjector;
 import io.md.injection.DynamicInjectorFactory;
 import java.io.ByteArrayInputStream;
@@ -39,6 +40,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
@@ -1474,6 +1476,9 @@ public class CubeStore {
     public Response storeUserReqResp(@Context UriInfo ui,
         @PathParam("recordingId") String recordingId,
         List<UserReqRespContainer> userReqRespContainers) {
+        Optional<String> dynamicCfgVersion = Optional
+            .ofNullable(ui.getQueryParameters().getFirst(Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD));
+
         Optional<Recording> recording = rrstore.getRecording(recordingId);
         Response resp = recording.map(rec -> {
             if(rec.recordingType == RecordingType.History
@@ -1486,6 +1491,9 @@ public class CubeStore {
                     try {
                         request.validateEvent();
                         response.validateEvent();
+                        DynamicInjector dynamicInjector = this.factory.getMgr(request.customerId, request.app, dynamicCfgVersion);
+                        dynamicInjector.extract(request, response.payload);
+                        Map<String, String> strMap = DynamicInjector.convertToStrMap(dynamicInjector.getExtractionMap());
                         String traceId = request.getTraceId();
                         if (rec.recordingType == RecordingType.UserGolden) {
                             String oldTraceId = request.getTraceId();
@@ -1519,8 +1527,9 @@ public class CubeStore {
                                 buildErrorResponse(Constants.ERROR, Constants.RECORDING_ID,
                                     "Unable to store event in solr")).build();
                         }
+                        String extractionMapString = jsonMapper.writeValueAsString(strMap);
                         String responseString = jsonMapper.writeValueAsString(Map.of("oldReqId", request.reqId,
-                            "oldTraceId", request.getTraceId(), "newReqId", reqId, "newTraceId", traceId));
+                            "oldTraceId", request.getTraceId(), "newReqId", reqId, "newTraceId", traceId, "extractionMap", extractionMapString));
                         responseList.add(responseString);
 
                         if (rec.recordingType == RecordingType.History) {
@@ -1574,6 +1583,12 @@ public class CubeStore {
                             Map.of(Constants.MESSAGE, "Error while creating response",
                                 Constants.RECORDING_ID, recordingId)), e);
                         return Response.serverError().entity("Error while creating response"
+                            + e.getMessage()).build();
+                    } catch (DataObjProcessingException e) {
+                        LOGGER.error(new ObjectMessage(
+                            Map.of(Constants.MESSAGE, "Error while converting extraction Map",
+                                Constants.RECORDING_ID, recordingId)), e);
+                        return Response.serverError().entity("Error while converting extraction Map"
                             + e.getMessage()).build();
                     }
                 }
