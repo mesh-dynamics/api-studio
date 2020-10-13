@@ -235,26 +235,26 @@ public class JsonDataObj implements DataObj {
 		fileItemList.forEach(UtilException.rethrowConsumer(fileItem -> {
 			if (fileItem.isFormField()) {
 				ObjectNode objectNode = JsonNodeFactory.instance.objectNode();
-				objectNode.set("type" , new TextNode("field"));
-				objectNode.set("value", new TextNode(fileItem.getString()));
+				objectNode.set(Constants.MULTIPART_TYPE , new TextNode(Constants.MULTIPART_FIELD_TYPE));
+				objectNode.set(Constants.MULTIPART_VALUE, new TextNode(fileItem.getString()));
 				multipartParent.set(fileItem.getFieldName(), objectNode);
 			} else {
 				ObjectNode objectNode = JsonNodeFactory.instance.objectNode();
-				objectNode.set("type" , new TextNode("file"));
+				objectNode.set(Constants.MULTIPART_TYPE  , new TextNode(Constants.MULTIPART_FILE_TYPE));
 				if (fileItem.getName() != null) {
-					objectNode.set("filename" , new TextNode(fileItem.getName()));
+					objectNode.set(Constants.MULTIPART_FILENAME  , new TextNode(fileItem.getName()));
 				}
 				if (fileItem.getContentType() != null) {
-					objectNode.set("content-type" , new TextNode(fileItem.getContentType()));
+					objectNode.set(Constants.MULTIPART_CONTENT_TYPE , new TextNode(fileItem.getContentType()));
 				}
 				String mediaType = Optional.ofNullable(fileItem.getContentType())
-					.map(okhttp3.MediaType::parse).map(okhttp3.MediaType::toString)
 					.orElse(MediaType.TEXT_PLAIN);
 				byte[] byteContent = IOUtils.toByteArray(fileItem.getInputStream());
-				Optional<JsonNode> unwrapped = unwrap(new BinaryNode(byteContent)
+				BinaryNode binaryNode = new BinaryNode(byteContent);
+				Optional<JsonNode> unwrapped = unwrap(binaryNode
 					, mediaType, unwrapContext);
-				objectNode.set("value"
-					, unwrapped.orElse(new BinaryNode(byteContent)));
+				objectNode.set(Constants.MULTIPART_VALUE
+					, unwrapped.orElse(binaryNode));
 				multipartParent.set(fileItem.getFieldName(), objectNode);
 			}
 		}));
@@ -380,6 +380,64 @@ public class JsonDataObj implements DataObj {
 		return wrap(objRoot, path, mimetype, true, wrapContext);
 	}
 
+	private Optional<JsonNode> wrapMultipart(JsonNode original, boolean asEncoded
+			, Optional<WrapUnwrapContext> wrapContext, Optional<ObjectNode> parent) throws IOException {
+
+			Builder builder = new MultipartBody.Builder();
+			if (original instanceof ObjectNode) {
+				ObjectNode bodyAsObject = (ObjectNode) original;
+				Iterator<String> fieldNames = bodyAsObject.fieldNames();
+				while (fieldNames.hasNext()) {
+					String fieldName = fieldNames.next();
+					ObjectNode fieldObject = (ObjectNode) bodyAsObject.get(fieldName);
+					if (fieldObject.get(Constants.MULTIPART_TYPE).textValue().equals(Constants.MULTIPART_FIELD_TYPE)) {
+						builder.addFormDataPart(fieldName,
+								fieldObject.get(Constants.MULTIPART_VALUE).textValue());
+					} else {
+						// file type
+						try {
+							String mimeTypePart = Optional.ofNullable(fieldObject.get(Constants.MULTIPART_CONTENT_TYPE)
+							).map(JsonNode::textValue).orElse(MediaType.TEXT_PLAIN);
+							JsonNode valueNode = fieldObject.get(Constants.MULTIPART_VALUE);
+							JsonNode fileNameNode = fieldObject.get(Constants.MULTIPART_FILENAME);
+							JsonNode wrapped = wrap(valueNode, mimeTypePart, false,
+									wrapContext, Optional.empty()).orElse(valueNode);
+							byte[] content = wrapped.isTextual() ?
+									wrapped.textValue().getBytes() : wrapped.binaryValue();
+							builder.addFormDataPart(fieldName,
+									fileNameNode != null? fileNameNode.textValue() : null, RequestBody.create(content,
+											okhttp3.MediaType.parse(mimeTypePart)));
+						} catch (Exception e) {
+							LOGGER.error("Error while adding file to multipart form", e);
+						}
+					}
+				}
+			}
+			final Buffer buffer = new Buffer();
+			MultipartBody multipartBody = builder.build();
+			String boundary = multipartBody.boundary();
+			String newContentType = "multipart/form-data; boundary=".concat(boundary);
+			parent.ifPresent(parentObj -> {
+				try {
+					ArrayNode contentTypeArray = (ArrayNode)
+							parentObj.at(JsonPointer.compile("/hdrs/content-type"));
+					TextNode textNode = JsonNodeFactory.instance.textNode(newContentType);
+					contentTypeArray.set(0, textNode);
+				} catch (Exception e) {
+					LOGGER.error("Error while setting new content type for multipart node",e);
+				}
+			});
+			multipartBody.writeTo(buffer);
+
+			byte[] originalContent = buffer.readByteArray();
+
+			return asEncoded?  Optional.of(new TextNode(
+					new String(Base64.getEncoder().encode(buffer.readByteArray())))) :
+					Optional.of(new BinaryNode(originalContent));
+
+
+	}
+
 	private Optional<JsonNode> wrap(JsonNode original, String mimeType, boolean asEncoded,
 		Optional<WrapUnwrapContext> wrapContext, Optional<ObjectNode> parent) {
 		try {
@@ -432,57 +490,7 @@ public class JsonDataObj implements DataObj {
 						return Optional.of(new TextNode(original.toString()));
 					}
 				} else if (mimeType.startsWith(MediaType.MULTIPART_FORM_DATA)) {
-					if (asEncoded) {
-						Builder builder = new MultipartBody.Builder();
-						if (original instanceof ObjectNode) {
-							ObjectNode bodyAsObject = (ObjectNode) original;
-							Iterator<String> fieldNames = bodyAsObject.fieldNames();
-							while (fieldNames.hasNext()) {
-								String fieldName = fieldNames.next();
-								ObjectNode fieldObject = (ObjectNode) bodyAsObject.get(fieldName);
-								if (fieldObject.get("type").textValue().equals("field")) {
-									builder.addFormDataPart(fieldName,
-										fieldObject.get("value").textValue());
-								} else {
-									// file type
-									try {
-										String mimeTypePart = fieldObject.get("content-type")
-											.textValue();
-										JsonNode valueNode = fieldObject.get("value");
-										JsonNode fileNameNode = fieldObject.get("filename");
-										JsonNode wrapped = wrap(valueNode, mimeTypePart, false,
-											wrapContext, Optional.empty()).orElse(valueNode);
-										byte[] content = wrapped.isTextual() ?
-											wrapped.textValue().getBytes() : wrapped.binaryValue();
-										builder.addFormDataPart(fieldName,
-											fileNameNode.textValue(), RequestBody.create(content,
-												okhttp3.MediaType.parse(mimeTypePart)));
-									} catch (Exception e) {
-										LOGGER.error("Error while adding file to multipart form", e);
-									}
-								}
-							}
-						}
-						final Buffer buffer = new Buffer();
-						MultipartBody multipartBody = builder.build();
-						String boundary = multipartBody.boundary();
-						String newContentType = "multipart/form-data; boundary=".concat(boundary);
-						parent.ifPresent(parentObj -> {
-							try {
-								ArrayNode contentTypeArray = (ArrayNode)
-										parentObj.at(JsonPointer.compile("/hdrs/content-type"));
-								TextNode textNode = JsonNodeFactory.instance.textNode(newContentType);
-								contentTypeArray.set(0, textNode);
-							} catch (Exception e) {
-								LOGGER.error("Error while setting new content type for multipart node",e);
-							}
-						});
-						multipartBody.writeTo(buffer);
-						return Optional.of(new TextNode(
-							new String(Base64.getEncoder().encode(buffer.readByteArray()))));
-					} else {
-						return wrap(original, MediaType.APPLICATION_JSON, false, wrapContext, Optional.empty());
-					}
+					return wrapMultipart( original, asEncoded,  wrapContext,  parent);
 				}
 			} else if (original != null && original.isBinary()) {
 				// If val is a binary node then we cannot have isBinary(mimetype) as false
