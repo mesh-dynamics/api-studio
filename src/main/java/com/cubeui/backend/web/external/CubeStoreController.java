@@ -242,9 +242,9 @@ public class CubeStoreController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @PostMapping("/storeUserReqResp/{recordingId}")
+    @PostMapping("/storeUserReqResp/{recordingId}/{dynamicCfgVersion}")
     public ResponseEntity storeUserReqResp(HttpServletRequest request,
-        @RequestBody List<UserReqRespContainer> postBody, @PathVariable String recordingId)
+        @RequestBody List<UserReqRespContainer> postBody, @PathVariable String recordingId, @PathVariable String dynamicCfgVersion)
         throws InvalidEventException {
         if(postBody == null || postBody.size() < 1) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -283,7 +283,7 @@ public class CubeStoreController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body("No Recording Object found for recordingId=" + recordingId);
         validation.validateCustomerName(request,recording.get().customerId);
-        return cubeServerService.fetchPostResponse(request, Optional.of(postBody), "/cs/storeUserReqResp/" + recording.get().id);
+        return cubeServerService.fetchPostResponse(request, Optional.of(postBody), "/cs/storeUserReqResp/" + recording.get().id + "/" + dynamicCfgVersion);
     }
 
     @GetMapping("/status/{recordingId}")
