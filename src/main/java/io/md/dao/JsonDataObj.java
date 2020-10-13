@@ -16,6 +16,8 @@ import java.util.function.Function;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.ContentType;
@@ -36,15 +38,20 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.github.underscore.lodash.U;
 
+import delight.fileupload.FileUpload;
 import io.md.constants.Constants;
-import io.md.core.WrapUnwrapContext;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
+import io.md.core.WrapUnwrapContext;
 import io.md.cryptography.EncryptionAlgorithm;
 import io.md.utils.JsonTransformer;
 import io.md.utils.UtilException;
 import io.md.utils.Utils;
+import okhttp3.MultipartBody;
+import okhttp3.MultipartBody.Builder;
+import okhttp3.RequestBody;
+import okio.Buffer;
 
 public class JsonDataObj implements DataObj {
 
@@ -219,6 +226,107 @@ public class JsonDataObj implements DataObj {
 		return unwrapAsJson(objRoot, path, mimetype, unwrapContext);
 	}
 
+	private JsonNode unwrapMultipartContent(JsonNode original
+		, String mimeType, Optional<WrapUnwrapContext> unwrapContext)
+		throws IOException {
+		List<FileItem> fileItemList = FileUpload
+			.parse(Base64.getDecoder().decode(original.asText()), mimeType);
+		ObjectNode multipartParent = JsonNodeFactory.instance.objectNode();
+		fileItemList.forEach(UtilException.rethrowConsumer(fileItem -> {
+			if (fileItem.isFormField()) {
+				ObjectNode objectNode = JsonNodeFactory.instance.objectNode();
+				objectNode.set(Constants.MULTIPART_TYPE , new TextNode(Constants.MULTIPART_FIELD_TYPE));
+				objectNode.set(Constants.MULTIPART_VALUE, new TextNode(fileItem.getString()));
+				multipartParent.set(fileItem.getFieldName(), objectNode);
+			} else {
+				ObjectNode objectNode = JsonNodeFactory.instance.objectNode();
+				objectNode.set(Constants.MULTIPART_TYPE  , new TextNode(Constants.MULTIPART_FILE_TYPE));
+				if (fileItem.getName() != null) {
+					objectNode.set(Constants.MULTIPART_FILENAME  , new TextNode(fileItem.getName()));
+				}
+				if (fileItem.getContentType() != null) {
+					objectNode.set(Constants.MULTIPART_CONTENT_TYPE , new TextNode(fileItem.getContentType()));
+				}
+				String mediaType = Optional.ofNullable(fileItem.getContentType())
+					.orElse(MediaType.TEXT_PLAIN);
+				byte[] byteContent = IOUtils.toByteArray(fileItem.getInputStream());
+				BinaryNode binaryNode = new BinaryNode(byteContent);
+				Optional<JsonNode> unwrapped = unwrap(binaryNode
+					, mediaType, unwrapContext);
+				objectNode.set(Constants.MULTIPART_VALUE
+					, unwrapped.orElse(binaryNode));
+				multipartParent.set(fileItem.getFieldName(), objectNode);
+			}
+		}));
+		return multipartParent;
+	}
+
+	private Optional<JsonNode> unwrap(JsonNode original, String mimeType
+		, Optional<WrapUnwrapContext> unwrapContext) {
+		try {
+			if (original == null || !(original.isTextual() || original.isBinary())) {
+				return Optional.empty();
+			}
+			// parse it as per mime type
+			// currently handling only json type
+			if (isJson(mimeType)) {
+				try {
+					// This will work irrespective if the val is a TextNode (if unwrapped in
+					// collector or CubeServer after serialization by agent)
+					// or BinaryNode (if unwrapped in agent before serialization)
+					return Optional.of(jsonMapper.readTree(original.binaryValue()));
+				} catch (IOException e) {
+					try {
+						return Optional.of(jsonMapper.readTree(original.textValue()));
+					} catch (IOException ex) {
+						LOGGER.error("Exception in parsing json string, "
+							.concat(" , value : ").concat(original.toString()), e);
+						String strVal = getValAsString(original);
+						return Optional.of(new TextNode(strVal));
+					}
+				}
+			} else if (mimeType.startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
+				List<NameValuePair> pairs = URLEncodedUtils
+					.parse(getValAsString(original), StandardCharsets.UTF_8);
+				MultivaluedHashMap<String, String> formMap = new MultivaluedHashMap<>();
+				pairs.forEach(nameValuePair ->
+					formMap.add(nameValuePair.getName(), nameValuePair.getValue()));
+				return Optional.of(jsonMapper.valueToTree(formMap));
+			} else if (mimeType.startsWith(MediaType.APPLICATION_XML)) {
+				return Optional.of(jsonMapper.readTree(U.
+					xmlToJson(getValAsString(original))));
+			} else if (mimeType.startsWith(Constants.APPLICATION_GRPC)) {
+				if (!unwrapContext.isPresent()) {
+					throw new IOException("Unwrap Context not present while " +
+						"trying to deserialize grpc byte array string");
+				}
+				return unwrapContext.flatMap(UtilException.rethrowFunction(context ->
+					context.protoDescriptor.convertByteStringToJson(context.service,
+						context.method, original.asText(), context.isRequest)
+				)).map(UtilException.rethrowFunction(jsonMapper::readTree));
+			} else if (mimeType.startsWith(MediaType.MULTIPART_FORM_DATA)) {
+				return Optional.of(unwrapMultipartContent(original, mimeType, unwrapContext));
+			} else if (!isBinary(mimeType)) {
+				return Optional.of(new TextNode(getValAsString(original)));
+			} else if (original.isTextual()) {
+				// if the value is not object, it is always a byte array ,( for now )
+				// since we are using generic objectMapper.readTree(jsonParser) in serializer,
+				// all leaf values in quotes will be read as TextNode (even though they might a Base64
+				// encoded byte array)
+				// so we are just converting a TextNode to a BinaryNode here (to avoid confusion)
+				return Optional.of(new BinaryNode(original.binaryValue()));
+			}
+			return Optional.empty();
+		} catch (Exception e) {
+			LOGGER.error("Exception in parsing json string, "
+				.concat(" , value : ").concat(original.toString())
+				.concat(" for mime type : ").concat(mimeType), e);
+			return Optional.empty();
+		}
+
+	}
+
+
 	private boolean unwrapAsJson(JsonNode root, String path, String mimetype
 		, Optional<WrapUnwrapContext> unwrapContext) {
 		JsonPointer pathPtr = JsonPointer.compile(path);
@@ -227,105 +335,9 @@ public class JsonDataObj implements DataObj {
 			ObjectNode valParentObj = (ObjectNode) valParent;
 			String fieldName = pathPtr.last().getMatchingProperty();
 			JsonNode val = valParentObj.get(fieldName);
-			if (val != null && (val.isTextual() || val.isBinary())) {
-				// parse it as per mime type
-				// currently handling only json type
-				if ( isJson(mimetype) ) {
-					try {
-						// This will work irrespective if the val is a TextNode (if unwrapped in
-						// collector or CubeServer after serialization by agent)
-						// or BinaryNode (if unwrapped in agent before serialization)
-						JsonNode parsedVal = jsonMapper.readTree(val.binaryValue());
-						valParentObj.set(fieldName, parsedVal);
-						return true;
-					} catch (IOException e) {
-						try {
-							JsonNode parsedVal = jsonMapper.readTree(val.textValue());
-							valParentObj.set(fieldName, parsedVal);
-							return true;
-						} catch (IOException ex) {
-							LOGGER.error("Exception in parsing json string, path : "
-									.concat(path).concat(" , value : ").concat(val.toString()), e);
-							try {
-								String strVal = getValAsString(val);
-								valParentObj.set(fieldName, new TextNode(strVal));
-								return true;
-							} catch (IOException ex1) {
-								LOGGER.error("Exception in parsing json string, path : "
-										.concat(path).concat(" , value : ").concat(val.toString()), ex1);
-							}
-						}
-					}
-				} else if (mimetype.startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
-					try {
-						JsonNode parsedVal = null;
-						String encodedUrl = getValAsString(val);
-						List<NameValuePair> pairs = URLEncodedUtils
-							.parse(encodedUrl, StandardCharsets.UTF_8);
-						MultivaluedHashMap<String,String> formMap = new MultivaluedHashMap<>();
-						pairs.forEach(nameValuePair ->
-							formMap.add(nameValuePair.getName(), nameValuePair.getValue()));
-						parsedVal = jsonMapper.valueToTree(formMap);
-						valParentObj.set(fieldName, parsedVal);
-						return true;
-					} catch (IOException ex) {
-						LOGGER.error("Exception in parsing json string, path : "
-							.concat(path).concat(" , value : ").concat(val.toString()), ex);
-					}
-				} else if (mimetype.startsWith(MediaType.APPLICATION_XML)) {
-					try {
-						String jsonString = U.xmlToJson(getValAsString(val));
-						JsonNode parsedVal = jsonMapper.readTree(jsonString);
-						valParentObj.set(fieldName, parsedVal);
-						return true;
-					} catch (Exception ex) {
-						LOGGER.error("Exception in parsing xml data, path : "
-							.concat(path).concat(" , value : ").concat(val.toString()), ex);
-					}
-				} else if (mimetype.startsWith(Constants.APPLICATION_GRPC)) {
-					try {
-						if (!unwrapContext.isPresent()) {
-							throw new Exception("Unwrap Context not present while " +
-									"trying to deserialize grpc byte array string");
-						}
-						unwrapContext.flatMap(UtilException.rethrowFunction(context ->
-							context.protoDescriptor.convertByteStringToJson(context.service,
-								context.method, val.asText(), context.isRequest)
-						)).ifPresent(UtilException.rethrowConsumer(jsonString -> {
-							JsonNode parsedValue = jsonMapper.readTree(jsonString);
-							valParentObj.set(fieldName, parsedValue);
-						}));
-						return true;
-					} catch (Exception ex) {
-						LOGGER.error("Exception in parsing grpc payload, path : "
-							.concat(path).concat(" , value : ").concat(val.toString()), ex);
-					}
-				} else if (!isBinary(mimetype)) {
-					try {
-						String strVal = getValAsString(val);
-						valParentObj.set(fieldName, new TextNode(strVal));
-						return true;
-					} catch (IOException ex) {
-						LOGGER.error("Exception in parsing json string, path : "
-							.concat(path).concat(" , value : ").concat(val.toString()), ex);
-					}
-
-				} else if (val.isTextual()) {
-					try {
-						// if the value is not object, it is always a byte array ,( for now )
-						// since we are using generic objectMapper.readTree(jsonParser) in serializer,
-						// all leaf values in quotes will be read as TextNode (even though they might a Base64
-						// encoded byte array)
-						// so we are just converting a TextNode to a BinaryNode here (to avoid confusion)
-						JsonNode parsedVal = new BinaryNode(val.binaryValue());
-						valParentObj.set(fieldName, parsedVal);
-						return true;
-					} catch (Exception e) {
-						LOGGER.error("Exception in parsing json string, path : "
-							.concat(path).concat(" , value : ").concat(val.toString()), e);
-					}
-				}
-			}
+			return unwrap(val, mimetype, unwrapContext).map(unwrapped -> {
+				valParentObj.set(fieldName, unwrapped); return true;})
+				.orElse(false);
 		}
 		return false;
 	}
@@ -368,6 +380,146 @@ public class JsonDataObj implements DataObj {
 		return wrap(objRoot, path, mimetype, true, wrapContext);
 	}
 
+	private Optional<JsonNode> wrapMultipart(JsonNode original, boolean asEncoded
+			, Optional<WrapUnwrapContext> wrapContext, Optional<ObjectNode> parent) throws IOException {
+
+			Builder builder = new MultipartBody.Builder();
+			if (original instanceof ObjectNode) {
+				ObjectNode bodyAsObject = (ObjectNode) original;
+				Iterator<String> fieldNames = bodyAsObject.fieldNames();
+				while (fieldNames.hasNext()) {
+					String fieldName = fieldNames.next();
+					ObjectNode fieldObject = (ObjectNode) bodyAsObject.get(fieldName);
+					if (fieldObject.get(Constants.MULTIPART_TYPE).textValue().equals(Constants.MULTIPART_FIELD_TYPE)) {
+						builder.addFormDataPart(fieldName,
+								fieldObject.get(Constants.MULTIPART_VALUE).textValue());
+					} else {
+						// file type
+						try {
+							String mimeTypePart = Optional.ofNullable(fieldObject.get(Constants.MULTIPART_CONTENT_TYPE)
+							).map(JsonNode::textValue).orElse(MediaType.TEXT_PLAIN);
+							JsonNode valueNode = fieldObject.get(Constants.MULTIPART_VALUE);
+							JsonNode fileNameNode = fieldObject.get(Constants.MULTIPART_FILENAME);
+							JsonNode wrapped = wrap(valueNode, mimeTypePart, false,
+									wrapContext, Optional.empty()).orElse(valueNode);
+							byte[] content = wrapped.isTextual() ?
+									wrapped.textValue().getBytes() : wrapped.binaryValue();
+							builder.addFormDataPart(fieldName,
+									fileNameNode != null? fileNameNode.textValue() : null, RequestBody.create(content,
+											okhttp3.MediaType.parse(mimeTypePart)));
+						} catch (Exception e) {
+							LOGGER.error("Error while adding file to multipart form", e);
+						}
+					}
+				}
+			}
+			final Buffer buffer = new Buffer();
+			MultipartBody multipartBody = builder.build();
+			String boundary = multipartBody.boundary();
+			String newContentType = "multipart/form-data; boundary=".concat(boundary);
+			parent.ifPresent(parentObj -> {
+				try {
+					ArrayNode contentTypeArray = (ArrayNode)
+							parentObj.at(JsonPointer.compile("/hdrs/content-type"));
+					TextNode textNode = JsonNodeFactory.instance.textNode(newContentType);
+					contentTypeArray.set(0, textNode);
+				} catch (Exception e) {
+					LOGGER.error("Error while setting new content type for multipart node",e);
+				}
+			});
+			multipartBody.writeTo(buffer);
+
+			byte[] originalContent = buffer.readByteArray();
+
+			return asEncoded?  Optional.of(new TextNode(
+					new String(Base64.getEncoder().encode(buffer.readByteArray())))) :
+					Optional.of(new BinaryNode(originalContent));
+
+
+	}
+
+	private Optional<JsonNode> wrap(JsonNode original, String mimeType, boolean asEncoded,
+		Optional<WrapUnwrapContext> wrapContext, Optional<ObjectNode> parent) {
+		try {
+			if (original != null && !original.isValueNode()) {
+				if (mimeType.startsWith(MediaType.APPLICATION_JSON) || mimeType
+					.startsWith("application/vnd.api+json")) {
+					if (asEncoded) {
+						return Optional.of(new TextNode(
+							Base64.getEncoder().encodeToString(original.toString().getBytes())));
+					} else {
+						return Optional.of(new TextNode(original.toString()));
+					}
+				} else if (mimeType.startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
+					String urlEncoded = null;
+
+					MultivaluedHashMap<String, String> fromJson = jsonMapper.treeToValue(original
+						, MultivaluedHashMap.class);
+					List<NameValuePair> nameValuePairs = new ArrayList<>();
+					fromJson.forEach((x, y) -> y.forEach(z -> nameValuePairs.add(
+						new BasicNameValuePair(x, z))));
+					urlEncoded = URLEncodedUtils.format(nameValuePairs, StandardCharsets.UTF_8);
+					if (asEncoded) {
+						return Optional.of(new TextNode(
+							Base64.getEncoder().encodeToString(urlEncoded.getBytes())));
+					} else {
+						return Optional.of(new TextNode(urlEncoded));
+					}
+				} else if (mimeType.startsWith(MediaType.APPLICATION_XML)) {
+					String xmlStr = U.jsonToXml(original.toString());
+					if (asEncoded) {
+						return Optional.of(new TextNode(
+							Base64.getEncoder().encodeToString(xmlStr.getBytes())));
+					} else {
+						return Optional.of(new TextNode(xmlStr));
+					}
+				} else if (mimeType.startsWith(Constants.APPLICATION_GRPC)) {
+					if (asEncoded) {
+						// To be used during replay
+						if (!wrapContext.isPresent()) {
+							throw new Exception("Wrap Context not present while " +
+								"trying to serialize json grpc message to encoded binary string");
+						}
+						return wrapContext.flatMap(UtilException.rethrowFunction(context ->
+							context.protoDescriptor.convertJsonToByteString(context.service,
+								context.method, original.toString(), context.isRequest)
+						)).map(UtilException.rethrowFunction(TextNode::new));
+
+					} else {
+						// to be used before sending payload to UI
+						return Optional.of(new TextNode(original.toString()));
+					}
+				} else if (mimeType.startsWith(MediaType.MULTIPART_FORM_DATA)) {
+					return wrapMultipart( original, asEncoded,  wrapContext,  parent);
+				}
+			} else if (original != null && original.isBinary()) {
+				// If val is a binary node then we cannot have isBinary(mimetype) as false
+				if (asEncoded) {
+					// Binary node is always created with decoded value, so only need to handle asEncoded case
+					return Optional.of(new TextNode(
+						Base64.getEncoder().encodeToString(original.binaryValue())));
+				}
+			} else if (original != null && original.isTextual()) {
+				if (isBinary(mimeType)) {
+					if (!asEncoded) {
+						return Optional.of(new BinaryNode(original.binaryValue()));
+					}
+				} else {
+					if (asEncoded) {
+						return Optional.of(new TextNode(
+							Base64.getEncoder().encodeToString(original.textValue().getBytes())));
+					}
+				}
+			}
+			return Optional.empty();
+		} catch (Exception e) {
+			LOGGER.error("Error while wrapping : value : " + original.toString() + " for mime type " +
+				mimeType, e);
+			return Optional.empty();
+		}
+	}
+
+
 	private boolean wrap(JsonNode root, String path, String mimetype, boolean asEncoded
 		, Optional<WrapUnwrapContext> wrapContext) {
 		JsonPointer pathPtr = JsonPointer.compile(path);
@@ -376,105 +528,10 @@ public class JsonDataObj implements DataObj {
 			ObjectNode valParentObj = (ObjectNode) valParent;
 			String fieldName = pathPtr.last().getMatchingProperty();
 			JsonNode val = valParentObj.get(fieldName);
-			if (val != null && !val.isValueNode()) {
-				// convert to string
-				// currently handling only json type
-				if (mimetype.startsWith(MediaType.APPLICATION_JSON) || mimetype.startsWith("application/vnd.api+json")) {
-					if (asEncoded) {
-						valParentObj.set(fieldName, new TextNode(
-							Base64.getEncoder().encodeToString(val.toString().getBytes())));
-					} else {
-						valParentObj.set(fieldName, new TextNode(val.toString()));
-					}
-					return true;
-				} else if (mimetype.startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
-					String urlEncoded = null;
-					try {
-						MultivaluedHashMap<String, String> fromJson = jsonMapper.treeToValue(val
-							, MultivaluedHashMap.class);
-						List<NameValuePair> nameValuePairs = new ArrayList<>();
-						fromJson.forEach((x , y) -> y.forEach(z -> nameValuePairs.add(
-									new BasicNameValuePair(x, z))));
-						urlEncoded =  URLEncodedUtils.format(nameValuePairs, StandardCharsets.UTF_8);
-						if (asEncoded) {
-							valParentObj.set(fieldName, new TextNode(
-								Base64.getEncoder().encodeToString(urlEncoded.getBytes())));
-						} else {
-							valParentObj.set(fieldName, new TextNode(urlEncoded));
-						}
-					} catch (JsonProcessingException e) {
-						LOGGER.error("Error while"
-							+ " wrapping Url encoded form as UTF-8 string", e);
-					}
-				} else if (mimetype.startsWith(MediaType.APPLICATION_XML)) {
-					try {
-						String xmlStr = U.jsonToXml(val.toString());
-						if (asEncoded) {
-							valParentObj.set(fieldName, new TextNode(
-								Base64.getEncoder().encodeToString(xmlStr.getBytes())));
-						} else {
-							valParentObj.set(fieldName, new TextNode(xmlStr));
-						}
-						return true;
-					} catch (Exception e) {
-						LOGGER.error("Error while"
-							+ " converting JSON string to XML and wrapping as UTF-8 string", e);
-					}
-				} else if (mimetype.startsWith(Constants.APPLICATION_GRPC)) {
-					try {
-						if (asEncoded) {
-							// To be used during replay
-							if (!wrapContext.isPresent()) {
-								throw new Exception("Wrap Context not present while " +
-										"trying to serialize json grpc message to encoded binary string");
-							}
-							wrapContext.flatMap(UtilException.rethrowFunction(context ->
-									context.protoDescriptor.convertJsonToByteString(context.service,
-											context.method, val.toString(), context.isRequest)
-							)).ifPresent(UtilException.rethrowConsumer(byteArrayString -> {
-								valParentObj.set(fieldName, new TextNode(byteArrayString));
-							}));
-						} else {
-							// to be used before sending payload to UI
-							valParentObj.set(fieldName, new TextNode(val.toString()));
-						}
-						return true;
-					} catch (Exception e) {
-						LOGGER.error("Error while"
-							+ " converting grpc JSON message to encoded binary string", e);
-					}
-				}
-			} else if (val != null && val.isBinary()) {
-				// If val is a binary node then we cannot have isBinary(mimetype) as false
-				if (asEncoded) {
-					// Binary node is always created with decoded value, so only need to handle asEncoded case
-					try {
-						valParentObj.set(fieldName, new TextNode(Base64.getEncoder().encodeToString(val.binaryValue())));
-					} catch (IOException e) {
-						LOGGER.error("Error while"
-							+ " wrapping byte array as UTF-8 string", e);
-					}
-				}
-
-			} else if (val != null && val.isTextual()) {
-				if (isBinary(mimetype)) {
-					if (!asEncoded) {
-						try {
-							valParentObj.set(fieldName,
-								new BinaryNode(val.binaryValue()));
-							return true;
-						} catch (IOException e) {
-							LOGGER.error("Error while"
-								+ " wrapping byte array as UTF-8 string", e);
-						}
-					}
-				} else {
-					if (asEncoded) {
-						valParentObj.set(fieldName, new TextNode(
-							Base64.getEncoder().encodeToString(val.textValue().getBytes())));
-					}
-				}
-			}
+			return wrap(val, mimetype, asEncoded, wrapContext, Optional.of(valParentObj)).map(wrapped -> {
+				valParentObj.set(fieldName, wrapped);
+				return true;
+			}).orElse(false);
 		}
 		return false;
 	}
@@ -786,7 +843,8 @@ public class JsonDataObj implements DataObj {
 	// TODO : Adding Multipart form data as a binary type now.
 	//  Change this to deal with separate part of multipart data as needed.
 	public static final List<String> binaryMimeTypes = Arrays
-		.asList(MediaType.APPLICATION_OCTET_STREAM, MediaType.MULTIPART_FORM_DATA, Constants.APPLICATION_GRPC);
+		.asList(MediaType.APPLICATION_OCTET_STREAM, MediaType.MULTIPART_FORM_DATA
+			, Constants.APPLICATION_GRPC,Constants.IMAGE_JPEG );
 
 	public JsonNode getRoot() {
 		return objRoot;

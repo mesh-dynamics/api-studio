@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.cube</groupId>
   <artifactId>commons</artifactId>
-  <version>1.1.43</version>
+  <version>1.1.44</version>
   <packaging>jar</packaging>
   <properties>
     <version.java>8</version.java>
@@ -172,6 +172,17 @@
       <version>1.0.1</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.javadelight</groupId>
+      <artifactId>delight-fileupload</artifactId>
+      <version>0.0.5</version>
+    </dependency>
+
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <version>3.1.0</version>
+    </dependency>
 
   </dependencies>
 </project>

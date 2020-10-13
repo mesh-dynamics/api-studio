@@ -58,6 +58,10 @@ public class EventPayloadTests {
 		private Event httpResponseEvent;
 		private Event grpcRequestEvent;
 		private Event grpcResponseEvent;
+
+		private Event httpMultipartRequestEvent1;
+		private Event httpMultipartRequestEvent2;
+		private Event httpMultipartRequestEvent3;
 		private Optional<ProtoDescriptorDAO> protoDescriptor;
 
 		private void setUpProtoDescirptorCache() {
@@ -275,6 +279,33 @@ public class EventPayloadTests {
 			}  catch (Exception e) {
 				e.printStackTrace();
 			}
+
+			try {
+				Payload payload = objectMapper
+					.readValue(new File("src/test/resources/httpMultipart_1.json"), Payload.class);
+				eventBuilder.setPayload(payload);
+				httpMultipartRequestEvent1 = eventBuilder.createEvent();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			try {
+				Payload payload = objectMapper
+					.readValue(new File("src/test/resources/httpMultipart_2.json"), Payload.class);
+				eventBuilder.setPayload(payload);
+				httpMultipartRequestEvent2 = eventBuilder.createEvent();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			try {
+				Payload payload = objectMapper
+				.readValue(new File("src/test/resources/httpMultipart_3.json"), Payload.class);
+				eventBuilder.setPayload(payload);
+				httpMultipartRequestEvent3 = eventBuilder.createEvent();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 
 		@Test
@@ -464,5 +495,46 @@ public class EventPayloadTests {
 		System.out.println("GRPC (POST WRAP) :: " +objectMapper.writeValueAsString(payload));
 		System.out.println(payload.getValAsString("/body"));
 		Assert.assertEquals(payload.getValAsString("/body"), "CjpCZXJrc2hpcmUgVmFsbGV5IE1hbmFnZW1lbnQgQXJlYSBUcmFpbCwgSmVmZmVyc29uLCBOSiwgVVNBEhEImqaMwwEQlp+YnP3/////AQ==");
+	}
+
+
+	@Test
+	public void testHttpMultipartRequestEvent() throws IOException, PathNotFoundException {
+		String serialized = objectMapper.writeValueAsString(httpMultipartRequestEvent1);
+		//System.out.println(serialized);
+		Event reRead = objectMapper.readValue(serialized, Event.class);
+		HTTPRequestPayload payload = (HTTPRequestPayload) reRead.payload;
+		Assert.assertEquals(payload.getValAsString("/body/tp/value") , "as");
+		payload.wrapAsString("/body" , payload.getValAsString("/hdrs/content-type/0"), Optional.empty());
+		payload.dataObj.unwrapAsJson("/body",payload.getValAsString("/hdrs/content-type/0"), Optional.empty());
+		//System.out.println(payload.getValAsString("/body"));
+		payload.wrapAsString("/body" , payload.getValAsString("/hdrs/content-type/0"), Optional.empty());
+		//System.out.println(payload.getValAsString("/body"));
+
+		serialized = objectMapper.writeValueAsString(httpMultipartRequestEvent2);
+		//System.out.println(serialized);
+		reRead = objectMapper.readValue(serialized, Event.class);
+		payload = (HTTPRequestPayload) reRead.payload;
+		Assert.assertEquals(payload.getValAsString("/body/link/value") , "RELATIONSHIP_AGREEMENT");
+		payload.wrapAsString("/body" , payload.getValAsString("/hdrs/content-type/0"), Optional.empty());
+		//System.out.println(payload.getValAsString("/body"));
+		payload.dataObj.unwrapAsJson("/body",payload.getValAsString("/hdrs/content-type/0"), Optional.empty());
+
+
+		serialized = objectMapper.writeValueAsString(httpMultipartRequestEvent3);
+		//System.out.println(serialized);
+		reRead = objectMapper.readValue(serialized, Event.class);
+		payload = (HTTPRequestPayload) reRead.payload;
+		Assert.assertEquals(payload.getValAsString("/body/link/value") , "RELATIONSHIP_AGREEMENT");
+		payload.wrapAsString("/body" , payload.getValAsString("/hdrs/content-type/0"), Optional.empty());
+		//System.out.println(payload.getValAsString("/body"));
+		payload.dataObj.unwrapAsJson("/body",payload.getValAsString("/hdrs/content-type/0"), Optional.empty());
+		//System.out.println(payload.getValAsString("/body"));
+		payload.dataObj.wrapAsString("/body" , payload.getValAsString("/hdrs/content-type/0"), Optional.empty());
+		//System.out.println(payload.getValAsString("/body"));
+
+
+
+
 	}
 }
