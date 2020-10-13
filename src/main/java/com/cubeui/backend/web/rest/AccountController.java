@@ -3,6 +3,7 @@ package com.cubeui.backend.web.rest;
 import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.ChangePasswordDTO;
+import com.cubeui.backend.domain.DTO.CustomerDTO;
 import com.cubeui.backend.domain.DTO.KeyAndPasswordDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
 import com.cubeui.backend.domain.User;
@@ -19,8 +20,10 @@ import io.md.dao.Recording.RecordingType;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.GrantedAuthority;
@@ -46,6 +49,9 @@ import static org.springframework.http.ResponseEntity.*;
 @RequestMapping("/api/account")
 public class AccountController {
 
+    @Value("${md_cloud}")
+    private boolean md_cloud = false;
+
     private UserService userService;
     private MailService mailService;
     private ReCaptchaAPIService reCaptchaAPIService;
@@ -66,9 +72,19 @@ public class AccountController {
 
     Optional<Customer> validateEmailDomain(String email) {
         // todo validate email string
-        String[] emailSplit = email.split("@");
-        String domain = emailSplit[1];
+        String domain = getDomainFromEmail(email);
         return customerService.getByDomainUrl(domain);
+    }
+
+    private String getDomainFromEmail(String email) {
+        try {
+            String[] emailSplit = email.split("@");
+            String domain = emailSplit[1];
+            return domain;
+        } catch (Exception e) {
+            log.error("The email doesn't have '@' field in it");
+            throw new InvalidDataException("The email doesn't have '@' field in it");
+        }
     }
 
     @PostMapping("/create-user")
@@ -85,47 +101,59 @@ public class AccountController {
             // validate email domain and set customer id from email
             log.info("Validating email domain");
             Optional<Customer> customerOptional = validateEmailDomain(userDTO.getEmail());
-            if (customerOptional.isPresent()) {
-                log.info("Customer: " + customerOptional.get().getName());
-                userDTO.setCustomerId(customerOptional.get().getId());
+            if(md_cloud && customerOptional.isEmpty()) {
 
-                // set default roles
-                List<String> defaultRoles = Arrays.asList("ROLE_USER");
-                userDTO.setRoles(defaultRoles);
+                String domain = getDomainFromEmail(userDTO.getEmail());
+                CustomerDTO customerDTO = new CustomerDTO();
+                customerDTO.setDomainURLs(Set.of(domain));
+                customerDTO.setEmail(userDTO.getEmail());
+                customerDTO.setName(domain);
 
-                // save user
-                User saved = this.userService.save(userDTO, false, true);
-                MultiValueMap<String, String> formParams= new LinkedMultiValueMap<>();
-                formParams.set("name", "History-" + saved.getUsername());
-                formParams.set("label", new Date().toString());
-                formParams.set("userId", saved.getUsername());
-                formParams.set("recordingType", RecordingType.History.toString());
-
-                Optional<List<App>> appsOptional = this.appRepository.findByCustomerId(customerOptional.get().getId());
-                if (appsOptional.isPresent()) {
-                    List<App> apps = appsOptional.get();
-                    apps.forEach(app -> {
-                        cubeServerService.createRecording(request,
-                            customerOptional.get().getName(), app.getName(),
-                            saved.getUsername(),Optional.of(formParams));
-                    });
-                }
-
-                // send activation mail
-                log.info("Sending activation mail");
-                mailService.sendActivationEmail(saved);
-
-                return created(
-                        ServletUriComponentsBuilder
-                                .fromContextPath(request)
-                                .path("/api/users/{id}")
-                                .buildAndExpand(saved.getId())
-                                .toUri())
-                        .body(saved);
-            } else {
+                customerOptional = Optional.of(this.customerService.save(customerDTO));
+            }
+            Customer customer = customerOptional.orElseThrow(() -> {
                 log.error("Invalid email");
                 throw new InvalidDataException("Invalid email");
+            });
+            String customerName = customer.getName();
+            log.info("Customer: " + customerName);
+            userDTO.setCustomerId(customer.getId());
+
+            // set default roles
+            List<String> defaultRoles = Arrays.asList("ROLE_USER");
+            userDTO.setRoles(defaultRoles);
+
+            // save user
+            User saved = this.userService.save(userDTO, false, true);
+
+            MultiValueMap<String, String> formParams= new LinkedMultiValueMap<>();
+            formParams.set("name", "History-" + saved.getUsername());
+            formParams.set("label", new Date().toString());
+            formParams.set("userId", saved.getUsername());
+            formParams.set("recordingType", RecordingType.History.toString());
+
+            Optional<List<App>> appsOptional = this.appRepository.findByCustomerId(customer.getId());
+            if (appsOptional.isPresent()) {
+                List<App> apps = appsOptional.get();
+                apps.forEach(app -> {
+                    cubeServerService.createRecording(request,
+                        customerName, app.getName(),
+                        saved.getUsername(),Optional.of(formParams));
+                });
             }
+
+            // send activation mail
+            log.info("Sending activation mail");
+            mailService.sendActivationEmail(saved);
+
+            return created(
+                ServletUriComponentsBuilder
+                    .fromContextPath(request)
+                    .path("/api/users/{id}")
+                    .buildAndExpand(saved.getId())
+                    .toUri())
+                .body(saved);
+
         }
     }
 
