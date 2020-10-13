@@ -1,5 +1,7 @@
 package com.cube;
 
+import io.md.injection.DynamicInjector;
+import io.md.injection.InjectionVarResolver;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -31,6 +33,7 @@ import io.md.injection.DynamicInjectionConfig.InjectionMeta.HTTPMethodType;
 import io.md.injection.DynamicInjector;
 import io.md.injection.InjectionVarResolver;
 
+import io.md.drivers.AbstractReplayDriver;
 import com.cube.ws.Config;
 
 public class DynamicInjectionTest {

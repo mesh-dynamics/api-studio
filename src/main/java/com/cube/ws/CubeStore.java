@@ -9,6 +9,8 @@ import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
 import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
+import io.md.injection.DynamicInjector;
+import io.md.injection.DynamicInjectorFactory;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -1646,6 +1648,31 @@ public class CubeStore {
         return status ? Response.ok().build() : Response.serverError().entity(Map.of("Error", "Cannot store proto descriptor file")).build();
     }
 
+    @POST
+    @Path("/injectEvent")
+    public Response injectEvent(@Context UriInfo uriInfo, DynamicInjectionEventDao dynamicInjectionEventDao) {
+        if(dynamicInjectionEventDao == null || dynamicInjectionEventDao.getInjectionConfigVersion() == null ||
+            dynamicInjectionEventDao.getContextMap() == null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("dynamicInjectionEventDao or InjectionConfigVersion or ContextMap is not present for given request").build();
+        }
+        final Event requestEvent = dynamicInjectionEventDao.getRequestEvent();
+        try {
+            requestEvent.validateEvent();
+            DynamicInjector dynamicInjector = this.factory.getMgrFromStrMap(requestEvent.customerId,
+                requestEvent.app, Optional.of(dynamicInjectionEventDao.getInjectionConfigVersion()),
+                dynamicInjectionEventDao.getContextMap());
+            dynamicInjector.inject(requestEvent);
+            return  Response.ok(requestEvent , MediaType.APPLICATION_JSON).build();
+        } catch (InvalidEventException e) {
+            LOGGER.error(new ObjectMessage(
+                Map.of(Constants.MESSAGE, "Invalid Event")), e);
+            return Response.status(Status.BAD_REQUEST).entity(Utils.buildErrorResponse(
+                Status.BAD_REQUEST.toString(),Constants.ERROR,  e.getMessage())).build();
+
+        }
+    }
+
 
     private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId)
         throws InvalidEventException {
@@ -1685,11 +1712,13 @@ public class CubeStore {
 		this.config = config;
 		this.eventQueue = config.disruptorEventQueue;
 		this.tagConfig = new TagConfig(config.rrstore);
+		this.factory = new DynamicInjectorFactory(rrstore, jsonMapper);
 	}
 
 
 	ReqRespStore rrstore;
 	ObjectMapper jsonMapper;
+	DynamicInjectorFactory factory;
 	Config config;
 	TagConfig tagConfig;
     DisruptorEventQueue eventQueue;
