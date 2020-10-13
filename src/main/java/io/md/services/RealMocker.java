@@ -113,7 +113,7 @@ public class RealMocker implements Mocker {
 
     private Optional<MockWithCollection> setPayloadKeyAndCollection(Event event, Optional<MockWithCollection> mockWithCollections) {
 
-        MockWithCollection mockWithCollection = mockWithCollections.orElse(Utils.getMockCollection(cube , event.customerId, event.app, event.instanceId ));
+        MockWithCollection mockWithCollection = mockWithCollections.orElseGet(()->Utils.getMockCollection(cube , event.customerId, event.app, event.instanceId ));
 
         Optional<String> replayCollection = Optional.of(mockWithCollection.replayCollection);
         Optional<String> collection = Optional.of(mockWithCollection.recordCollection);
