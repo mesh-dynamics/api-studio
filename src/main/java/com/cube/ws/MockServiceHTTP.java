@@ -197,14 +197,14 @@ public class MockServiceHTTP {
     }
 
     @POST
-    @Path("mockWithCollection/{replayCollection}/{recordingId}/{traceId}/{service}/{method}/{var:.+}")
+    @Path("mockWithCollection/{replayCollection}/{recordingId}/{traceId}/{service}/{diCfgVer}/{method}/{var:.+}")
     @Consumes(MediaType.WILDCARD)
     public Response postMockWithCollection(@Context UriInfo ui, @PathParam("var") String path,
         @Context HttpHeaders headers,
         @PathParam("replayCollection") String replayCollection,
         @PathParam("recordingId") String recordingId,
         @PathParam("traceId") String traceId,
-        @PathParam("service") String service, @PathParam("method") String httpMethod,
+        @PathParam("service") String service, @PathParam("method") String httpMethod, @PathParam("diCfgVer") String diCfgVer,
         String body) {
 	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
 	    String runId = queryParams.getFirst(Constants.RUN_ID_FIELD);
@@ -220,12 +220,13 @@ public class MockServiceHTTP {
             return notFound();
         }
         Recording recording = optionalRecording.get();
+        Optional<String> dynamicInjCfgVersion = diCfgVer.equalsIgnoreCase("na") ? recording.dynamicInjectionConfigVersion : Optional.of(diCfgVer);
         return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            httpMethod , body, headers, new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId, recording.dynamicInjectionConfigVersion), Optional.of(traceId));
+            httpMethod , body, headers, new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId, dynamicInjCfgVersion ), Optional.of(traceId));
     }
 
     @POST
-    @Path("mockWithRunId/{replayCollection}/{recordingId}/{traceId}/{runId}/{service}/{method}/{var:.+}")
+    @Path("mockWithRunId/{replayCollection}/{recordingId}/{traceId}/{runId}/{service}/{diCfgVer}/{method}/{var:.+}")
     @Consumes(MediaType.WILDCARD)
     public Response postMockWithRunId(@Context UriInfo ui, @PathParam("var") String path,
         @Context HttpHeaders headers,
@@ -233,7 +234,7 @@ public class MockServiceHTTP {
         @PathParam("recordingId") String recordingId,
         @PathParam("traceId") String traceId,
         @PathParam("service") String service,
-        @PathParam("runId") String runId , @PathParam("method") String httpMethod,
+        @PathParam("runId") String runId , @PathParam("method") String httpMethod, @PathParam("diCfgVer") String diCfgVer,
         String body) {
 
         LOGGER.info(String.format(" path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordingId: %s", path,
@@ -248,10 +249,11 @@ public class MockServiceHTTP {
         }
         Recording recording = optionalRecording.get();
         String recCollection = (recording.recordingType == Recording.RecordingType.History) ? "NA" : recording.collection;
-        LOGGER.info(String.format("MockWithRunId Passing collection %s for recordingType %s" , recCollection , recording.recordingType.toString() ));
+        Optional<String> dynamicInjCfgVersion = diCfgVer.equalsIgnoreCase("na") ? recording.dynamicInjectionConfigVersion : Optional.of(diCfgVer);
+        LOGGER.debug(String.format("MockWithRunId Passing collection %s for recordingType %s" , recCollection , recording.recordingType.toString() ));
 
         return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            httpMethod , body, headers, new MockWithCollection(replayCollection, recCollection, recording.templateVersion, runId, recording.dynamicInjectionConfigVersion), Optional.of(traceId));
+            httpMethod , body, headers, new MockWithCollection(replayCollection, recCollection, recording.templateVersion, runId, dynamicInjCfgVersion), Optional.of(traceId));
     }
 
 

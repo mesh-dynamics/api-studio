@@ -2782,13 +2782,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             protoDescriptorDAO.setVersion(version.orElse(0));
             ValidateProtoDescriptorDAO.validate(protoDescriptorDAO);
             return Optional.of(protoDescriptorDAO);
-        }catch (NullPointerException | IllegalArgumentException e) {
+        } catch (NullPointerException | IllegalArgumentException e) {
             LOGGER.error(
                 new ObjectMessage(Map.of(Constants.MESSAGE,
-                    "Data fields are null or empty")), e);
-        } catch (Exception e) {
-            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                "Unable to convert json string back to StoreConfig object")), e);
+                    "Data fields are null or empty in protoDescriptorDAO")), e);
+        } catch (DescriptorValidationException | IOException e) {
+            LOGGER.error(
+                new ObjectMessage(Map.of(Constants.MESSAGE,
+                    "Error decoding encoded file in Proto Descriptor or invalid Descriptor")), e);
         }
         return Optional.empty();
     }

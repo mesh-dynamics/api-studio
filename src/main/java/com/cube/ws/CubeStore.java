@@ -1000,7 +1000,7 @@ public class CubeStore {
         Optional<String> gitCommitId = Optional.ofNullable(formParams.getFirst("gitCommitId"));
         List<String> tags = Optional.ofNullable(formParams.get(Constants.TAGS_FIELD)).orElse(new ArrayList<String>());
         Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
-        String dynamicInjectionConfigVersion = formParams.getFirst(Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD);
+        Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst(Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD)) ;
 
 
         RecordingBuilder recordingBuilder = new RecordingBuilder(customerId, app,
@@ -1011,7 +1011,7 @@ public class CubeStore {
         gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
         comment.ifPresent(recordingBuilder::withComment);
         recordingType.ifPresent(recordingBuilder::withRecordingType);
-        recordingBuilder.withDynamicInjectionConfigVersion(dynamicInjectionConfigVersion);
+        dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
 
         try {
             jarPath.ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
