@@ -37,6 +37,7 @@ import io.md.core.Comparator.MatchType;
 import io.md.core.TemplateKey;
 import io.md.dao.Analysis;
 import io.md.dao.Analysis.ReqRespMatchWithEvent;
+import io.md.dao.DataObj.PathNotFoundException;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
 import io.md.dao.Replay;
@@ -312,17 +313,19 @@ public class RealAnalyzer implements Analyzer {
 
         EventQuery.Builder builder = new EventQuery.Builder(reqEvent.customerId, reqEvent.app, reqEvent.eventType);
 
-        // For gateway replay requests, don't match apiPaths, since the dynamic injection could change the
-        // path leading to mismatch
+        // For gateway replay requests, don't match apiPaths,
+        // since the dynamic injection could change the path leading to mismatch
+        // Also don't match based on the payload key as the request body might change
+        // on injection at body level causing different payload key.
         if (!replayedReqs.containsKey(reqEvent.reqId)) {
-            builder.withPath(reqEvent.apiPath);
+            builder.withPath(reqEvent.apiPath)
+                .withPayloadKey(reqEvent.payloadKey);
         }
 
         return builder.withService(reqEvent.service)
             .withCollection(replayId)
             .withRunType(Event.RunType.Replay)
             .withTraceId(reqEvent.getTraceId())
-            .withPayloadKey(reqEvent.payloadKey)
             .withLimit(limit)
             .build();
     }
