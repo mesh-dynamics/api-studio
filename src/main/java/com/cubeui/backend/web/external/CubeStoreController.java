@@ -1,9 +1,16 @@
 package com.cubeui.backend.web.external;
 
+import com.cubeui.backend.domain.Customer;
+import com.cubeui.backend.domain.DtEnvVar;
+import com.cubeui.backend.domain.DtEnvironment;
+import com.cubeui.backend.domain.User;
+import com.cubeui.backend.repository.DevtoolEnvironmentsRepository;
+import com.cubeui.backend.security.Constants;
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.security.jwt.JwtTokenProvider;
 import com.cubeui.backend.service.CubeServerService;
 import io.md.core.ConfigApplicationAcknowledge;
+import io.md.dao.DynamicInjectionEventDao;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingType;
@@ -37,6 +44,8 @@ public class CubeStoreController {
     private Validation validation;
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
+    @Autowired
+    private DevtoolEnvironmentsRepository devtoolEnvironmentsRepository;
 
     @GetMapping("/status/{customerId}/{app}/{name}/{label}")
     public ResponseEntity status(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String customerId,
@@ -350,5 +359,35 @@ public class CubeStoreController {
                                                     @PathVariable String app) {
         validation.validateCustomerName(request,customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
+    }
+
+    @PostMapping("/injectEvent")
+    public ResponseEntity injectEvent(HttpServletRequest request, @RequestBody
+        DynamicInjectionEventDao dynamicInjectionEventDao) {
+        if(dynamicInjectionEventDao == null || dynamicInjectionEventDao.getRequestEvent() == null) {
+           return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("post Body  or requestEvent cannot be null");
+        }
+        validation.validateCustomerName(request, dynamicInjectionEventDao.getRequestEvent().customerId);
+        if(dynamicInjectionEventDao.getInjectionConfigVersion() == null ||
+            dynamicInjectionEventDao.getInjectionConfigVersion().isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("InjectionConfigVersion cannot be null or empty");
+        }
+
+        Long userId = ((User)jwtTokenProvider.getUser(request)).getId();
+
+        Map<String, String> contextMap = new HashMap<>();
+        Optional<DtEnvironment> dtEnvironment = Optional.ofNullable(dynamicInjectionEventDao.getEnvironmentName())
+            .flatMap(env -> devtoolEnvironmentsRepository.findDtEnvironmentByUserIdAndName(userId,  env));
+        dtEnvironment.ifPresent(dt -> {
+            List<DtEnvVar> dtEnvVars = dt.getVars();
+            dtEnvVars.forEach(dtEnvVar -> contextMap.put(dtEnvVar.getKey(), dtEnvVar.getValue()));
+        });
+        if (dynamicInjectionEventDao.getContextMap() != null) {
+            dynamicInjectionEventDao.getContextMap().forEach((k, v) -> contextMap.put(k, v));
+        }
+        dynamicInjectionEventDao.setContextMap(contextMap);
+        return cubeServerService.fetchPostResponse(request, Optional.of(dynamicInjectionEventDao));
     }
 }
