@@ -129,7 +129,7 @@ analyze() {
 generate_traffic() {
 	for ((i=1;i<=$1;i++)); do
 		id=$(( $RANDOM % 1000 + 1 ))
-		DATA="{\"filmId\":$id,\"storeId\":1,\"duration\":2,\"customerId\":200,\"staffId\":1}"
+		DATA="{\"filmId\":$id,\"storeId\":2,\"duration\":2,\"customerId\":200,\"staffId\":1}"
 		curl -X GET "https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io/minfo/listmovies?filmName=BEVERLY%20OUTLAW" -H 'Content-Type: application/x-www-form-urlencoded' -H 'cache-control: no-cache';
 		curl "https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io/minfo/rentmovie" -H 'Content-Type: application/json;charset=UTF-8' --data-binary $DATA
 	done
