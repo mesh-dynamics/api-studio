@@ -44,6 +44,7 @@ public class RecordingBuilder {
 	private Optional<String> generatedClassJarPath;
 	private Optional<URLClassLoader> generatedClassLoader;
 	private RecordingType recordingType;
+	private String dynamicInjectionConfigVersion;
 
 	public RecordingBuilder(String customerId, String app, String instanceId, String collection) {
 		this.customerId = customerId;
@@ -84,7 +85,7 @@ public class RecordingBuilder {
 		return new Recording(idv, customerId, app, instanceId, collection, status, timestamp
 			, templateVersion, parentRecordingId, rootRecordingId, name, codeVersion, branch
 		, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment
-			, userId, generatedClassJarPath, generatedClassLoader, label, recordingType);
+			, userId, generatedClassJarPath, generatedClassLoader, label, recordingType , Optional.ofNullable(dynamicInjectionConfigVersion));
 	}
 
 	private String recalculateId() {
@@ -199,5 +200,10 @@ public class RecordingBuilder {
 		this.recordingType = recordingType;
 		return this;
 	}
+
+	public RecordingBuilder withDynamicInjectionConfigVersion(String dInjCfgVersion){
+	    this.dynamicInjectionConfigVersion = dInjCfgVersion;
+	    return this;
+    }
 
 }

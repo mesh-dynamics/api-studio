@@ -50,6 +50,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import com.sun.xml.bind.v2.runtime.reflect.opt.Const;
 import io.md.dao.*;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
@@ -936,10 +937,10 @@ public class CubeStore {
         }
 
         String name = formParams.getFirst("name");
-        String userId = formParams.getFirst("userId");
-        String label = formParams.getFirst("label");
+        String userId = formParams.getFirst(Constants.USER_ID_FIELD);
+        String label = formParams.getFirst(Constants.GOLDEN_LABEL_FIELD);
 
-        Optional<String> jarPath = Optional.ofNullable(formParams.getFirst("jarPath"));
+        Optional<String> jarPath = Optional.ofNullable(formParams.getFirst(Constants.JAR_PATH_FIELD));
 
         if (name==null) {
             asyncResponse.resume(Response.status(Status.BAD_REQUEST)
@@ -993,10 +994,12 @@ public class CubeStore {
         }
 
         Optional<String> codeVersion = Optional.ofNullable(formParams.getFirst("codeVersion"));
-        Optional<String> branch = Optional.ofNullable(formParams.getFirst("branch"));
+        Optional<String> branch = Optional.ofNullable(formParams.getFirst(Constants.BRANCH_FIELD));
         Optional<String> gitCommitId = Optional.ofNullable(formParams.getFirst("gitCommitId"));
-        List<String> tags = Optional.ofNullable(formParams.get("tags")).orElse(new ArrayList<String>());
+        List<String> tags = Optional.ofNullable(formParams.get(Constants.TAGS_FIELD)).orElse(new ArrayList<String>());
         Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
+        String dynamicInjectionConfigVersion = formParams.getFirst(Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD);
+
 
         RecordingBuilder recordingBuilder = new RecordingBuilder(customerId, app,
             instanceId, collection).withTemplateSetVersion(templateSetVersion).withName(name)
@@ -1006,6 +1009,8 @@ public class CubeStore {
         gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
         comment.ifPresent(recordingBuilder::withComment);
         recordingType.ifPresent(recordingBuilder::withRecordingType);
+        recordingBuilder.withDynamicInjectionConfigVersion(dynamicInjectionConfigVersion);
+
         try {
             jarPath.ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
         } catch (Exception e) {
@@ -1027,6 +1032,8 @@ public class CubeStore {
                                 .withReplayStatus(ReplayStatus.Running)
                                 .withReplayId(newr.collection)
                                 .withRunId(newr.collection + " " + Instant.now().toString());
+                            newr.dynamicInjectionConfigVersion.ifPresent(replayBuilder::withDynamicInjectionConfigVersion);
+
                             Replay replay = replayBuilder.build();
                             rrstore.saveReplay(replay);
                         }
@@ -1378,6 +1385,7 @@ public class CubeStore {
                 recordingBuilder.withUserId(userId.orElse(rec.userId));
                 recordingBuilder.withCodeVersion(codeVersion.orElse(rec.codeVersion.orElse(null)));
                 recordingBuilder.withBranch(branch.orElse(rec.branch.orElse(null)));
+                rec.dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
 
                 if(tags.isEmpty()) {
                     recordingBuilder.withTags(rec.tags);

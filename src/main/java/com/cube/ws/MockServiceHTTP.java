@@ -27,6 +27,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.UriInfo;
 
+import io.md.injection.DynamicInjector;
+import io.md.injection.DynamicInjectorFactory;
 import io.md.tracer.TracerMgr;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -85,7 +87,9 @@ public class MockServiceHTTP {
                               String body) {
         LOGGER.info(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s, body: %s", customerId, app, path,
             ui.toString(), body));
-        return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service, httpMethod , body, headers, Optional.empty(), Optional.empty());
+        MockWithCollection mockWithCollection = io.md.utils.Utils.getMockCollection(rrstore , customerId , app , instanceId);
+        return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service, httpMethod , body, headers, mockWithCollection
+            , Optional.empty());
     }
 
 
@@ -217,7 +221,7 @@ public class MockServiceHTTP {
         }
         Recording recording = optionalRecording.get();
         return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            httpMethod , body, headers, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId)), Optional.of(traceId));
+            httpMethod , body, headers, new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId, recording.dynamicInjectionConfigVersion), Optional.of(traceId));
     }
 
     @POST
@@ -231,7 +235,6 @@ public class MockServiceHTTP {
         @PathParam("service") String service,
         @PathParam("runId") String runId , @PathParam("method") String httpMethod,
         String body) {
-        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
 
         LOGGER.info(String.format(" path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordingId: %s", path,
             ui.toString(), body, replayCollection, recordingId));
@@ -248,13 +251,15 @@ public class MockServiceHTTP {
         LOGGER.info(String.format("MockWithRunId Passing collection %s for recordingType %s" , recCollection , recording.recordingType.toString() ));
 
         return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            httpMethod , body, headers, Optional.of(new MockWithCollection(replayCollection, recCollection, recording.templateVersion, runId)), Optional.of(traceId));
+            httpMethod , body, headers, new MockWithCollection(replayCollection, recCollection, recording.templateVersion, runId, recording.dynamicInjectionConfigVersion), Optional.of(traceId));
     }
 
 
     private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
         String customerId, String app, String instanceId,
-        String service, String method, String body, HttpHeaders headers, Optional<MockWithCollection> collection, Optional<String> traceId) {
+        String service, String method, String body, HttpHeaders headers,
+        MockWithCollection collection, Optional<String> traceId)
+    {
 
         LOGGER.info(io.md.utils.Utils.createLogMessasge(io.md.constants.Constants.MESSAGE, "Attempting to mock request",
             io.md.constants.Constants.CUSTOMER_ID_FIELD, customerId, io.md.constants.Constants.APP_FIELD, app
@@ -262,11 +267,14 @@ public class MockServiceHTTP {
             io.md.constants.Constants.METHOD_FIELD, method, io.md.constants.Constants.PATH_FIELD, path));
 
         Optional<Event> respEvent = Optional.empty();
+        DynamicInjector di = diFactory.getMgr(customerId , app , collection.dynamicInjectionConfigVersion);
         try {
             Event mockRequestEvent = io.md.utils.Utils
                 .createRequestMockNew(path, formParams, customerId, app, instanceId,
                     service, method, body, headers.getRequestHeaders(), ui.getQueryParameters(), traceId , tracerMgr);
-            MockResponse mockResponse = mocker.mock(mockRequestEvent, Optional.empty(), collection);
+            di.inject(mockRequestEvent);
+            MockResponse mockResponse = mocker.mock(mockRequestEvent, Optional.empty(),  Optional.of(collection));
+            mockResponse.response.ifPresent(resp-> di.extract(mockRequestEvent , resp.payload));
             respEvent = mockResponse.response;
 
         } catch (Exception e) {
@@ -329,6 +337,7 @@ public class MockServiceHTTP {
 
         mocker = new RealMocker(rrstore);
         tracerMgr = new TracerMgr(rrstore);
+        diFactory = new DynamicInjectorFactory(rrstore , jsonMapper);
 	}
 
 
@@ -339,6 +348,7 @@ public class MockServiceHTTP {
 
 	private Mocker mocker;
 	private TracerMgr tracerMgr;
+	private DynamicInjectorFactory diFactory;
 
 
 }

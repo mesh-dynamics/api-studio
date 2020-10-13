@@ -338,7 +338,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         List<String> traceIds = eventQuery.getTraceIds();
         List<String> filteredTraceIds = traceIds.stream().filter(traceid->!traceid.equalsIgnoreCase("NA")).collect(Collectors.toList());
         if(traceIds.size()!=filteredTraceIds.size()){
-            LOGGER.info("Filtered NA traceIds from "+traceIds.size()+" to "+filteredTraceIds);
+            LOGGER.info("Filtered NA traceIds from "+traceIds.size()+" to "+filteredTraceIds.size());
         }
         addToFilterOrQuery(query , queryBuff , TRACEIDF , filteredTraceIds , true , eventQuery.getTraceIdsWeight());
 
@@ -2782,14 +2782,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             protoDescriptorDAO.setVersion(version.orElse(0));
             ValidateProtoDescriptorDAO.validate(protoDescriptorDAO);
             return Optional.of(protoDescriptorDAO);
-        } catch (NullPointerException | IllegalArgumentException e) {
+        }catch (NullPointerException | IllegalArgumentException e) {
             LOGGER.error(
                 new ObjectMessage(Map.of(Constants.MESSAGE,
-                    "Data fields are null or empty in protoDescriptorDAO")), e);
-        } catch (DescriptorValidationException | IOException e) {
-            LOGGER.error(
-                new ObjectMessage(Map.of(Constants.MESSAGE,
-                    "Error decoding encoded file in Proto Descriptor or invalid Descriptor")), e);
+                    "Data fields are null or empty")), e);
+        } catch (Exception e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                "Unable to convert json string back to StoreConfig object")), e);
         }
         return Optional.empty();
     }
@@ -3112,6 +3111,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> generatedClassJarPath = getStrField(doc, GENERATED_CLASS_JAR_PATH);
         Optional<RecordingType> recordingType = getStrField(doc, RECORDING_TYPE_F)
             .flatMap(r -> Utils.valueOf(RecordingType.class, r));
+        Optional<String> dynamicInjectionConfigVersion = getStrField(doc , DYNAMIC_INJECTION_CONFIG_VERSIONF);
 
         if (id.isPresent() && customerId.isPresent() && app.isPresent() && instanceId.isPresent() && collection
             .isPresent() &&
@@ -3134,6 +3134,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             comment.ifPresent(recordingBuilder::withComment);
             label.ifPresent(recordingBuilder::withLabel);
             recordingType.ifPresent(recordingBuilder::withRecordingType);
+            dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
+
             try {
                 generatedClassJarPath.ifPresent(
                     UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
@@ -3189,6 +3191,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         recording.collectionUpdOpSetId.ifPresent(c -> doc.setField(COLLECTION_UPD_OP_SET_IDF, c));
         recording.templateUpdOpSetId.ifPresent(t -> doc.setField(TEMPLATE_UPD_OP_SET_IDF, t));
         recording.comment.ifPresent(comment -> doc.setField(GOLDEN_COMMENTF, comment));
+        recording.dynamicInjectionConfigVersion.ifPresent(diCfgVer -> doc.setField(DYNAMIC_INJECTION_CONFIG_VERSIONF , diCfgVer));
         return doc;
     }
 
