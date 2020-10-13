@@ -9,6 +9,7 @@ import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
 import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
+import io.md.dao.DataObj.DataObjProcessingException;
 import io.md.injection.DynamicInjector;
 import io.md.injection.DynamicInjectorFactory;
 import java.io.ByteArrayInputStream;
@@ -1477,10 +1478,10 @@ public class CubeStore {
     }
 
     @POST
-    @Path("storeUserReqResp/{recordingId}")
+    @Path("storeUserReqResp/{recordingId}/{dynamicCfgVersion}")
     @Consumes({MediaType.APPLICATION_JSON})
     public Response storeUserReqResp(@Context UriInfo ui,
-        @PathParam("recordingId") String recordingId,
+        @PathParam("recordingId") String recordingId, @PathParam("dynamicCfgVersion") String dynamicCfgVersion,
         List<UserReqRespContainer> userReqRespContainers) {
         Optional<Recording> recording = rrstore.getRecording(recordingId);
         Response resp = recording.map(rec -> {
@@ -1488,12 +1489,17 @@ public class CubeStore {
                 || rec.recordingType == RecordingType.UserGolden) {
                 List<String> responseList = new ArrayList<>();
                 Map<String, String> traceIdMap = new HashMap<>();
+                Map<String, String> extractionMap = new HashMap<>();
+                final String generatedTraceId = io.md.utils.Utils.generateTraceId();
                 for (UserReqRespContainer userReqRespContainer : userReqRespContainers) {
                     Event response = userReqRespContainer.response;
                     Event request = userReqRespContainer.request;
                     try {
                         request.validateEvent();
                         response.validateEvent();
+                        DynamicInjector dynamicInjector = this.factory.getMgr(request.customerId, request.app, Optional.of(dynamicCfgVersion));
+                        dynamicInjector.extract(request, response.payload);
+                        Map<String, String> strMap = DynamicInjector.convertToStrMap(dynamicInjector.getExtractionMap());
                         String traceId = request.getTraceId();
                         if (rec.recordingType == RecordingType.UserGolden) {
                             String oldTraceId = request.getTraceId();
@@ -1530,6 +1536,8 @@ public class CubeStore {
                         String responseString = jsonMapper.writeValueAsString(Map.of("oldReqId", request.reqId,
                             "oldTraceId", request.getTraceId(), "newReqId", reqId, "newTraceId", traceId));
                         responseList.add(responseString);
+                        String extractionMapString = jsonMapper.writeValueAsString(strMap);
+                        extractionMap.put(request.reqId+ " "  + reqId, extractionMapString);
 
                         if (rec.recordingType == RecordingType.History) {
                             TemplateKey templateKey = new TemplateKey(rec.templateVersion,
@@ -1583,6 +1591,13 @@ public class CubeStore {
                                 Constants.RECORDING_ID, recordingId)), e);
                         return Response.serverError().entity("Error while creating response"
                             + e.getMessage()).build();
+                    } catch (DataObjProcessingException e) {
+                        LOGGER.error(new ObjectMessage(
+                            Map.of(Constants.MESSAGE, "Error while converting extraction Map",
+                                Constants.RECORDING_ID, recordingId,
+                                Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD, dynamicCfgVersion)), e);
+                        return Response.serverError().entity("Error while converting extraction Map"
+                            + e.getMessage()).build();
                     }
                 }
                 rrstore.commit();
@@ -1590,7 +1605,9 @@ public class CubeStore {
                     .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject(
                         Map.of(Constants.MESSAGE, "The UserData is saved",
                             Constants.RECORDING_ID, recordingId,
-                            Constants.RESPONSE, responseList)))).build();
+                            Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD, dynamicCfgVersion,
+                            Constants.RESPONSE, responseList,
+                            "extractionMap", extractionMap)))).build();
             }
             LOGGER.error(new ObjectMessage(
                 Map.of(Constants.MESSAGE, "Recording is not a UserGolden or History ",
