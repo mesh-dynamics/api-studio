@@ -246,7 +246,7 @@ public class CubeStoreController {
     @PostMapping("/storeUserReqResp/{recordingId}")
     public ResponseEntity storeUserReqResp(HttpServletRequest request,
         @RequestBody List<UserReqRespContainer> postBody, @PathVariable String recordingId,
-        @RequestParam(value=Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD, required = false) String dynamicCfgVersion)
+        @RequestParam(value="environmentName", required = false) String environmentName)
         throws InvalidEventException {
         if(postBody == null || postBody.size() < 1) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -287,9 +287,9 @@ public class CubeStoreController {
                 .body("No Recording Object found for recordingId=" + recordingId);
         validation.validateCustomerName(request,recording.get().customerId);
         ResponseEntity responseEntity = cubeServerService.fetchPostResponse(request, Optional.of(postBody), "/cs/storeUserReqResp/" + recording.get().id);
-        if(dynamicCfgVersion != null && responseEntity.getStatusCode() == HttpStatus.OK) {
+        if(environmentName != null && responseEntity.getStatusCode() == HttpStatus.OK) {
             Optional<DtEnvironment> dtEnvironmentOptional
-                = devtoolEnvironmentsRepository.findDtEnvironmentByUserIdAndName(user.getId(), dynamicCfgVersion);
+                = devtoolEnvironmentsRepository.findDtEnvironmentByUserIdAndName(user.getId(), environmentName);
             dtEnvironmentOptional.ifPresent(dt -> {
                 Map<String, String> extractionMap = cubeServerService.getExtractionMap(responseEntity);
                 List<DtEnvVar> vars = dt.getVars();

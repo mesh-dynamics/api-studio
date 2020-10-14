@@ -2,6 +2,7 @@ package com.cubeui.backend.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.md.dao.ApiTraceResponse;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
@@ -154,17 +155,23 @@ public class CubeServerService {
         try {
             String body = response.getBody().toString();
             JsonNode json = jsonMapper.readTree(body);
-            JsonNode responseBody = json.get(Constants.RESPONSE);
+            JsonNode data = json.get("data");
+            JsonNode responseBody = data.get(Constants.RESPONSE);
             if(responseBody.isArray()) {
-                responseBody.forEach(node -> {
-                JsonNode  nodeMap= node.get("extractionMap");
-                try {
-                    Map<String, String> extractionMap =
-                        jsonMapper.readValue(nodeMap.toString(), new TypeReference<Map<String, String>>(){});
-                    map.putAll(extractionMap);
-                } catch (IOException e) {
-                    log.info(String.format("Error in converting node to Map for  message= %s", e.getMessage()));
-                }
+                ArrayNode arrayNode = (ArrayNode) responseBody;
+                arrayNode.forEach(node -> {
+                    try {
+                        String stringValue = node.toString();
+                        /*Text is in this format
+                        * node = ""["{\"extractionMap\":\"{}\",\"newReqId\":\"movieinfo-e75825b2b19518870aca52ba5487f4c3-cfa68bae-def4-4751-8129-38ee93ce8e23\",\"newTraceId\":\"e75825b2b19518870aca52ba5487f4c3\",\"oldReqId\":\"gu-1106045394\",\"oldTraceId\":\"e75825b2b19518870aca52ba5487f4c3\"}"]""
+                        * */
+
+                        stringValue = stringValue.substring(1, stringValue.length()-1).replaceAll("\\\\", "");
+                        Map<String, String> extractionMap = jsonMapper.readValue(stringValue, new TypeReference<Map<String, String>>(){});
+                        map.putAll(extractionMap);
+                    } catch (IOException e) {
+                        log.info(String.format("Error in converting node to Map for  message= %s", e.getMessage()));
+                    }
                 });
             }
         } catch (Exception e) {
