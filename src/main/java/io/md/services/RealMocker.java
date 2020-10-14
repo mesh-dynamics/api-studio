@@ -56,7 +56,7 @@ public class RealMocker implements Mocker {
     public MockResponse mock(Event reqEvent, Optional<Instant> lowerBoundForMatching, Optional<MockWithCollection> mockWithCollections) throws MockerException {
         Optional<MockWithCollection> mockWithCollection = setPayloadKeyAndCollection(reqEvent, mockWithCollections);
         if (mockWithCollection.isPresent()) {
-            EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, 1, true, lowerBoundForMatching, mockWithCollection.get().recordCollection);
+            EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, 1, !mockWithCollection.get().isDevtool, lowerBoundForMatching, mockWithCollection.get().recordCollection);
             DSResult<Event> res = cube.getEvents(eventQuery);
             Optional<Event> matchingResponse = res.getObjects().findFirst()
                 .flatMap(cube::getRespEventForReqEvent);
@@ -136,7 +136,7 @@ public class RealMocker implements Mocker {
         if (collection.isPresent() && replayCollection.isPresent() && templateVersion.isPresent()) {
             String runId = optionalRunId.orElse(event.getTraceId());
             ret = mockWithCollections.isPresent() ? mockWithCollections :
-                Optional.of(new MockWithCollection(replayCollection.get(), collection.get(), templateVersion.get(), runId));
+                Optional.of(new MockWithCollection(replayCollection.get(), collection.get(), templateVersion.get(), runId, false));
             event.setCollection(replayCollection.get());
             try {
                 event.parseAndSetKey(cube.getTemplate(event.customerId, event.app, event.service,

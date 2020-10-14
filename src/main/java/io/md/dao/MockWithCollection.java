@@ -8,12 +8,14 @@ public class MockWithCollection {
   public String recordCollection;
   public String templateVersion;
   public String runId;
+  public boolean isDevtool;
 
   public MockWithCollection(String replayCollection, String recordCollection,
-      String templateVersion, String runId) {
+      String templateVersion, String runId , boolean isDevtool) {
     this.replayCollection = replayCollection;
     this.recordCollection = recordCollection;
     this.templateVersion = templateVersion;
     this.runId = runId;
+    this.isDevtool = isDevtool;
   }
 }
