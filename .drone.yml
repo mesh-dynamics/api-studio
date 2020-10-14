@@ -1,0 +1,49 @@
+kind: pipeline
+name: default
+
+steps:
+  - name: docker_build
+    image: plugins/docker
+    environment:
+      TOKEN:
+        from_secret: githubtoken
+    settings:
+      username: aakashsinghalmd01
+      password: Welcome@md
+      repo: cubeiocorp/cubews-replay
+      build_args_from_env:
+      - TOKEN
+      target: prod
+      tags: ${DRONE_COMMIT}-${DRONE_BRANCH}
+    resources:
+      requests:
+        cpu: 0.1
+        memory: "1500Mi"
+      limits:
+        cpu: 1
+        memory: "1500Mi"
+    when:
+      branch:
+      - master
+      - staging
+      - develop
+
+  - name: notify
+    image: drillster/drone-email
+    settings:
+      host: smtp.office365.com
+      username:
+        from_secret: EMAIL_USERNAME
+      password:
+        from_secret: EMAIL_PASSWORD
+      from: email.sender@meshdynamics.io
+      recipients: [ a80f6254.meshdynamics.io@amer.teams.ms, developers@meshdynamics.io ]
+    when:
+      status:
+      - failure
+
+trigger:
+  branch:
+  - master
+  - staging
+  - develop
