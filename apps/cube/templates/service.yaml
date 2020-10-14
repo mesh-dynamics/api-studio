@@ -71,6 +71,8 @@ spec:
           successThreshold: 1
           timeoutSeconds: 1
         env:
+          - name: JAVA_TOOL_OPTIONS
+            value: "-XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=80.0 -XX:+HeapDumpOnOutOfMemoryError"
           - name: solr_base_url
             valueFrom:
               configMapKeyRef:
@@ -192,6 +194,8 @@ spec:
           successThreshold: 1
           timeoutSeconds: 1
         env:
+          - name: JAVA_TOOL_OPTIONS
+            value: "-XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=80.0 -XX:+HeapDumpOnOutOfMemoryError"
           - name: solr_base_url
             valueFrom:
               configMapKeyRef:
@@ -313,6 +317,8 @@ spec:
           successThreshold: 1
           timeoutSeconds: 1
         env:
+          - name: JAVA_TOOL_OPTIONS
+            value: "-XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=80.0 -XX:+HeapDumpOnOutOfMemoryError"
           - name: solr_base_url
             valueFrom:
               configMapKeyRef:
@@ -458,6 +464,8 @@ spec:
         image: cubeiocorp/cubeuibackend:{{cubeui_backend_tag}}
         imagePullPolicy: Always
         env:
+        - name: JAVA_TOOL_OPTIONS
+          value: "-XX:MinRAMPercentage=60.0 -XX:MaxRAMPercentage=80.0 -XX:+HeapDumpOnOutOfMemoryError"
         - name: SPRING_PROFILES_ACTIVE
           value: "{{springboot_profile}}"
         - name: spring.datasource.url

@@ -35,6 +35,9 @@ kind: Deployment
 metadata:
   name: details-v1
   namespace: {{namespace}}
+  labels:
+    app: moviebook
+    component: details
 spec:
   selector:
     matchLabels:
@@ -57,8 +60,8 @@ spec:
             memory: "50Mi"
             cpu: "50m"
           limits:
-            memory: "100Mi"
-            cpu: "100m"
+            memory: "500Mi"
+            cpu: "500m"
         ports:
         - containerPort: 9080
 ---
@@ -85,6 +88,9 @@ kind: Deployment
 metadata:
   name: ratings-v1
   namespace: {{namespace}}
+  labels:
+    app: moviebook
+    component: ratings
 spec:
   selector:
     matchLabels:
@@ -107,8 +113,8 @@ spec:
             memory: "50Mi"
             cpu: "50m"
           limits:
-            memory: "100Mi"
-            cpu: "100m"
+            memory: "500Mi"
+            cpu: "500m"
         ports:
         - containerPort: 9080
 ---
@@ -135,6 +141,10 @@ kind: Deployment
 metadata:
   name: reviews-v1
   namespace: {{namespace}}
+  labels:
+    app: moviebook
+    component: reviews
+    version: v1
 spec:
   selector:
     matchLabels:
@@ -158,8 +168,8 @@ spec:
             memory: "130Mi"
             cpu: "100m"
           limits:
-            memory: "200Mi"
-            cpu: "200m"
+            memory: "500Mi"
+            cpu: "500m"
         ports:
         - containerPort: 9080
 ---
@@ -168,6 +178,10 @@ kind: Deployment
 metadata:
   name: reviews-v2
   namespace: {{namespace}}
+  labels:
+    app: moviebook
+    component: reviews
+    version: v2
 spec:
   selector:
     matchLabels:
@@ -191,8 +205,8 @@ spec:
             memory: "130Mi"
             cpu: "100m"
           limits:
-            memory: "200Mi"
-            cpu: "200m"
+            memory: "500Mi"
+            cpu: "500m"
         ports:
         - containerPort: 9080
 ---
@@ -201,6 +215,10 @@ kind: Deployment
 metadata:
   name: reviews-v3
   namespace: {{namespace}}
+  labels:
+    app: moviebook
+    component: reviews
+    version: v3
 spec:
   selector:
     matchLabels:
@@ -224,8 +242,8 @@ spec:
             memory: "130Mi"
             cpu: "100m"
           limits:
-            memory: "200Mi"
-            cpu: "200m"
+            memory: "500Mi"
+            cpu: "500m"
         ports:
         - containerPort: 9080
 ---
@@ -252,6 +270,9 @@ kind: Deployment
 metadata:
   name: productpage-v1
   namespace: {{namespace}}
+  labels:
+    app: moviebook
+    component: productpage
 spec:
   selector:
     matchLabels:
@@ -274,8 +295,8 @@ spec:
             memory: "70Mi"
             cpu: "50m"
           limits:
-            memory: "130Mi"
-            cpu: "100m"
+            memory: "530Mi"
+            cpu: "500m"
         ports:
         - containerPort: 9080
 ---
@@ -303,6 +324,10 @@ kind: Deployment
 metadata:
   name: movieinfo-v1  #movieinfo without bugs
   namespace: {{namespace}}
+  labels:
+    app: moviebook
+    component: movieinfo
+    version: v1
 spec:
   selector:
     matchLabels:
@@ -331,7 +356,7 @@ spec:
             memory: "190Mi"
             cpu: "100m"
           limits:
-            memory: "250Mi"
+            memory: "550Mi"
             cpu: "500m"
         ports:
         - containerPort: 8080
@@ -383,6 +408,10 @@ kind: Deployment
 metadata:
   name: movieinfo-v2    #Movieinfo with bugs
   namespace: {{namespace}}
+  labels:
+    app: moviebook
+    component: movieinfo
+    version: v2
 spec:
   selector:
     matchLabels:
@@ -411,7 +440,7 @@ spec:
             memory: "190Mi"
             cpu: "100m"
           limits:
-            memory: "250Mi"
+            memory: "550Mi"
             cpu: "500m"
         ports:
         - containerPort: 8080
@@ -498,6 +527,9 @@ kind: Deployment
 metadata:
   name: restwrapjdbc-v1
   namespace: {{namespace}}
+  labels:
+    app: moviebook
+    component: restwrapjdbc
 spec:
   selector:
     matchLabels:
@@ -520,8 +552,8 @@ spec:
             memory: "190Mi"
             cpu: "100m"
           limits:
-            memory: "250Mi"
-            cpu: "250m"
+            memory: "550Mi"
+            cpu: "550m"
         ports:
         - containerPort: 8080
 
@@ -549,6 +581,9 @@ kind: Deployment
 metadata:
   name: moviebookui
   namespace: {{namespace}}
+  labels:
+    app: moviebook
+    component: moviebookui
 spec:
   selector:
     matchLabels:
