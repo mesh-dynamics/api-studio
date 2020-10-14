@@ -456,7 +456,18 @@ public class Utils {
 			return Optional.empty();
 		return HTTP_CONTENT_TYPE_HEADERS.stream()
 			.map(headers::getFirst).filter(Objects::nonNull)
-			.findFirst().map(x -> x.toLowerCase().trim());
+			.findFirst().map(x -> x.trim());
+	}
+
+	public static boolean startsWithIgnoreCase(String str, String prefix)
+	{
+		return str.regionMatches(true, 0, prefix, 0, prefix.length());
+	}
+
+	public static boolean endsWithIgnoreCase(String str, String suffix)
+	{
+		int suffixLength = suffix.length();
+		return str.regionMatches(true, str.length() - suffixLength, suffix, 0, suffixLength);
 	}
 
 	//Referred from io.jaegertracing.internal.propagation

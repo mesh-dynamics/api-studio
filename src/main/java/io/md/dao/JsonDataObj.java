@@ -285,17 +285,17 @@ public class JsonDataObj implements DataObj {
 						return Optional.of(new TextNode(strVal));
 					}
 				}
-			} else if (mimeType.startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
+			} else if (Utils.startsWithIgnoreCase(mimeType, MediaType.APPLICATION_FORM_URLENCODED)) {
 				List<NameValuePair> pairs = URLEncodedUtils
 					.parse(getValAsString(original), StandardCharsets.UTF_8);
 				MultivaluedHashMap<String, String> formMap = new MultivaluedHashMap<>();
 				pairs.forEach(nameValuePair ->
 					formMap.add(nameValuePair.getName(), nameValuePair.getValue()));
 				return Optional.of(jsonMapper.valueToTree(formMap));
-			} else if (mimeType.startsWith(MediaType.APPLICATION_XML)) {
+			} else if (Utils.startsWithIgnoreCase(mimeType, MediaType.APPLICATION_XML)) {
 				return Optional.of(jsonMapper.readTree(U.
 					xmlToJson(getValAsString(original))));
-			} else if (mimeType.startsWith(Constants.APPLICATION_GRPC)) {
+			} else if (Utils.startsWithIgnoreCase(mimeType, Constants.APPLICATION_GRPC)) {
 				if (!unwrapContext.isPresent()) {
 					throw new IOException("Unwrap Context not present while " +
 						"trying to deserialize grpc byte array string");
@@ -304,7 +304,7 @@ public class JsonDataObj implements DataObj {
 					context.protoDescriptor.convertByteStringToJson(context.service,
 						context.method, original.asText(), context.isRequest)
 				)).map(UtilException.rethrowFunction(jsonMapper::readTree));
-			} else if (mimeType.startsWith(MediaType.MULTIPART_FORM_DATA)) {
+			} else if (Utils.startsWithIgnoreCase(mimeType, MediaType.MULTIPART_FORM_DATA)) {
 				return Optional.of(unwrapMultipartContent(original, mimeType, unwrapContext));
 			} else if (!isBinary(mimeType)) {
 				return Optional.of(new TextNode(getValAsString(original)));
@@ -442,15 +442,15 @@ public class JsonDataObj implements DataObj {
 		Optional<WrapUnwrapContext> wrapContext, Optional<ObjectNode> parent) {
 		try {
 			if (original != null && !original.isValueNode()) {
-				if (mimeType.startsWith(MediaType.APPLICATION_JSON) || mimeType
-					.startsWith("application/vnd.api+json")) {
+				if (Utils.startsWithIgnoreCase(mimeType, MediaType.APPLICATION_JSON) ||
+					Utils.startsWithIgnoreCase(mimeType,"application/vnd.api+json")) {
 					if (asEncoded) {
 						return Optional.of(new TextNode(
 							Base64.getEncoder().encodeToString(original.toString().getBytes())));
 					} else {
 						return Optional.of(new TextNode(original.toString()));
 					}
-				} else if (mimeType.startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
+				} else if (Utils.startsWithIgnoreCase(mimeType, MediaType.APPLICATION_FORM_URLENCODED)) {
 					String urlEncoded = null;
 
 					MultivaluedHashMap<String, String> fromJson = jsonMapper.treeToValue(original
@@ -465,7 +465,7 @@ public class JsonDataObj implements DataObj {
 					} else {
 						return Optional.of(new TextNode(urlEncoded));
 					}
-				} else if (mimeType.startsWith(MediaType.APPLICATION_XML)) {
+				} else if (Utils.startsWithIgnoreCase(mimeType, MediaType.APPLICATION_XML)) {
 					String xmlStr = U.jsonToXml(original.toString());
 					if (asEncoded) {
 						return Optional.of(new TextNode(
@@ -473,7 +473,7 @@ public class JsonDataObj implements DataObj {
 					} else {
 						return Optional.of(new TextNode(xmlStr));
 					}
-				} else if (mimeType.startsWith(Constants.APPLICATION_GRPC)) {
+				} else if (Utils.startsWithIgnoreCase(mimeType, Constants.APPLICATION_GRPC)) {
 					if (asEncoded) {
 						// To be used during replay
 						if (!wrapContext.isPresent()) {
@@ -832,7 +832,7 @@ public class JsonDataObj implements DataObj {
 	private boolean isJson(String mimeType) {
 		//mime type given may contain the charset and other attributes
 		ContentType ct = ContentType.parse(mimeType);
-		return ct.getMimeType().endsWith("json");
+		return Utils.endsWithIgnoreCase(ct.getMimeType(), "json");
 	}
 
 	@JsonIgnore
