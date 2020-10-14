@@ -54,6 +54,7 @@ public class Constants {
 	public static final String EXCEPTION_STACK = "exceptionStack";
 	public static final String REQ_MATCH_TYPE = "reqMatchType";
 	public static final String RESP_MATCH_TYPE = "respMatchType";
+	public static final String MATCH_TYPE = "MatchType";
 	public static final String INCLUDE_DIFF = "includeDiff";
 	public static final String LOWER_BOUND = "lowerBound";
 
@@ -75,6 +76,7 @@ public class Constants {
 	public static final String SERVICE_HEALTH_STATUS = "SERVICE_HEALTH_STATUS";
 	public static final String SOLR_STATUS_CODE = "SOLR_STATUS_CODE";
 	public static final String SOLR_STATUS_MESSAGE = "SOLR_STATUS_MESSAGE";
+
 
 
 	//EXCEPTIONS
@@ -148,6 +150,7 @@ public class Constants {
 	public static final String QUERY_PARAMS = "queryParams";
 	public static final String IS_NODE_SELECTED = "isNodeSelected";
 	public static final String RECORDING_TYPE_FIELD = "recordingType";
+	public static final String SCORE_FIELD = "score";
 
 	public static final String ROOT_RECORDING_FIELD = "root_recording_id";
 	public static final String PARENT_RECORDING_FIELD = "parent_recording_id";
@@ -262,11 +265,6 @@ public class Constants {
 	public static final String LOG4J_LOG = "log4jLog";
 	public static final String ENCRYPT_PAYLOAD = "encryptPayload";
 
-	//Mocking Optional Query Weight related Constants
-    // should ideally be in a different file
-	public static final float COLLECTION_WEIGHT = 1.0f;
-	public static final float TRACEID_WEIGHT = 1.5f;
-	public static final float PAYLOAD_KEY_WEIGHT = 3.0f;
 
 	public static final String MULTIPART_FIELD_TYPE = "field";
 	public static final String MULTIPART_FILE_TYPE = "file";

@@ -8,17 +8,9 @@ package io.md.dao;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.md.dao.DataObj.PathNotFoundException;
 import java.net.URLClassLoader;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Collections;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import io.md.dao.Recording.RecordingType;
@@ -307,6 +299,14 @@ public class Event implements MDStorable {
 	public void setRunType(RunType runType) {this.runType = runType;}
 	public void setRunId(String runId) {this.runId = runId;}
 
+	public Optional<String> getMetaFieldValue(String field){
+		return Optional.ofNullable(metaData.get(field)) ;
+	}
+
+	public void setMetaFieldValue(String field , String val){
+		metaData.put(field , val);
+	}
+
 	public static class EventBuilder {
 
 		private static final Logger LOGGER = LoggerFactory.getLogger(EventBuilder.class);
@@ -327,7 +327,7 @@ public class Event implements MDStorable {
 		private Payload payload;
 		private int payloadKey = 0;
 		private final RecordingType recordingType;
-		private Map<String, String> metaData = Collections.EMPTY_MAP;
+		private Map<String, String> metaData = new HashMap<>(0);
 		private String runId;
 
 

@@ -58,8 +58,8 @@ public class RealMocker implements Mocker {
         if (mockWithCollection.isPresent()) {
             EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, 1, true, lowerBoundForMatching, mockWithCollection.get().recordCollection);
             DSResult<Event> res = cube.getEvents(eventQuery);
-            Optional<Event> matchingResponse = res.getObjects().findFirst()
-                .flatMap(cube::getRespEventForReqEvent);
+            Optional<Event> matchedReq = res.getObjects().findFirst();
+            Optional<Event> matchingResponse = matchedReq.flatMap(cube::getRespEventForReqEvent);
 
             if (!matchingResponse.isPresent()) {
                 LOGGER.info(createMockReqErrorLogMessage(reqEvent,
@@ -72,7 +72,7 @@ public class RealMocker implements Mocker {
                         "Unable to mock request since no default response found"));
                 }
             }
-            Optional<Event> mockResponse = createResponseFromEvent(reqEvent, matchingResponse, mockWithCollection.get().runId);
+            Optional<Event> mockResponse = createResponseFromEvent(reqEvent, matchedReq , matchingResponse, mockWithCollection.get().runId);
             return new MockResponse(mockResponse, res.getNumFound());
         } else {
             String errorReason = "Invalid event or no record/replay found.";
@@ -99,11 +99,11 @@ public class RealMocker implements Mocker {
         EventQuery.Builder builder =
             new EventQuery.Builder(event.customerId, event.app, event.eventType)
                 .withService(event.service)
-                .withCollection(collection , Constants.COLLECTION_WEIGHT)
+                .withCollection(collection , EventQuery.COLLECTION_WEIGHT)
                 //.withInstanceId(event.instanceId)
                 .withPaths(Arrays.asList(event.apiPath))
-                .withTraceId(event.getTraceId() , Constants.TRACEID_WEIGHT)
-                .withPayloadKey(event.payloadKey , Constants.PAYLOAD_KEY_WEIGHT)
+                .withTraceId(event.getTraceId() , EventQuery.TRACEID_WEIGHT)
+                .withPayloadKey(event.payloadKey , EventQuery.PAYLOAD_KEY_WEIGHT)
                 .withOffset(offset)
                 .withLimit(limit)
                 .withSortOrderAsc(isSortOrderAsc);
@@ -171,15 +171,22 @@ public class RealMocker implements Mocker {
     }
 
     private Optional<Event> createResponseFromEvent(
-        Event mockRequestEvent, Optional<Event> respEvent, String runId) {
+        Event mockRequestEvent, Optional<Event> matchedReq ,  Optional<Event> respEvent, String runId) {
 
         Optional<Event> mockResponse = respEvent;
 
         if (shouldStore(mockRequestEvent.eventType)) {
 
+            Optional<String> score  = matchedReq.flatMap(e->e.getMetaFieldValue(Constants.SCORE_FIELD));
+            MatchType match = score.map(scr->{
+                return EventQuery.getEventMaxWeight() == Float.parseFloat(scr) ? MatchType.ExactMatch : MatchType.FuzzyMatch;
+            }).orElse(MatchType.NoMatch);
+
+            respEvent.ifPresent(ev->ev.setMetaFieldValue(Constants.MATCH_TYPE , match.toString()));
+
             // store a req-resp analysis match result for the mock request (during replay)
             // and the matched recording request
-            MatchType reqMatch = respEvent.map(e -> MatchType.ExactMatch).orElse(MatchType.NoMatch);
+            MatchType reqMatch = respEvent.map(e -> match).orElse(MatchType.NoMatch);
             MatchType respMatch = respEvent.map(e -> MatchType.ExactMatch)
                 .orElse(MatchType.Default);
             ReqRespMatchResult matchResult =
