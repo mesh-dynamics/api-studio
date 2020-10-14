@@ -454,7 +454,18 @@ public class Utils {
 			return Optional.empty();
 		return HTTP_CONTENT_TYPE_HEADERS.stream()
 			.map(headers::getFirst).filter(Objects::nonNull)
-			.findFirst().map(x -> x.toLowerCase().trim());
+			.findFirst().map(x -> x.trim());
+	}
+
+	public static boolean startsWithIgnoreCase(String str, String prefix)
+	{
+		return str.regionMatches(true, 0, prefix, 0, prefix.length());
+	}
+
+	public static boolean endsWithIgnoreCase(String str, String suffix)
+	{
+		int suffixLength = suffix.length();
+		return str.regionMatches(true, str.length() - suffixLength, suffix, 0, suffixLength);
 	}
 
 	//Referred from io.jaegertracing.internal.propagation
@@ -602,7 +613,7 @@ public class Utils {
 		return Optional.empty();
 	}
 
-	public static MockWithCollection getMockCollection(DataStore dataStore, String customerId , String app , String instanceId){
+	public static MockWithCollection getMockCollection(DataStore dataStore, String customerId , String app , String instanceId , boolean devtool){
 		RecordOrReplay recordOrReplay = dataStore.getCurrentRecordOrReplay(customerId, app, instanceId).get();
 		String replayCollection = recordOrReplay.getCollection().get();
 		String collection = recordOrReplay.getRecordingCollection().get();
@@ -611,6 +622,6 @@ public class Utils {
 		Optional<String> optionalRunId = runningReplay.map(r->r.runId);
 		Optional<String> dynamicInjectionCfgVersion = recordOrReplay.getDynamicInjectionConfigVersion();
 
-		return new MockWithCollection(replayCollection, collection, templateVersion, optionalRunId.orElse(null) , dynamicInjectionCfgVersion);
+		return new MockWithCollection(replayCollection, collection, templateVersion, optionalRunId.orElse(null) , dynamicInjectionCfgVersion, devtool);
 	}
 }
