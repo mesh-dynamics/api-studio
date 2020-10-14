@@ -47,7 +47,7 @@ var DiffViewer = /** @class */ (function (_super) {
     __extends(DiffViewer, _super);
     function DiffViewer() {
         var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.splitView = function (filterPaths, diffArray, styles, inputElementRef, showAll, searchFilterPath, disableOperationSet, handleCollapseLength, handleMaxLinesLength) {
+        _this.splitView = function (filterPaths, diffArray, styles, inputElementRef, showAll, searchFilterPath, disableOperationSet, handleCollapseLength, handleMaxLinesLength, method) {
             var leftLineNumber = 0;
             var rightLineNumber = 0;
             return function () { return diffArray.map(function (obj, i) {
@@ -58,7 +58,42 @@ var DiffViewer = /** @class */ (function (_super) {
                         rightLineNumber = rightLineNumber + 1;
                         leftLineNumber = leftLineNumber + 1;
                         // author raj.maddireddy@cubecorp.io
-                        return React.createElement(line_1.DefaultLine, { styles: styles, hideLineNumbers: _this.props.hideLineNumbers, leftLineNumber: leftLineNumber, rightLineNumber: rightLineNumber, leftContent: ch, rightContent: ch, key: num, hightlightLines: _this.props.highlightLines, renderContent: _this.props.renderContent, onLineNumberClick: _this.props.onLineNumberClick, serverSideDiff: obj.serverSideDiff, jsonPath: obj.jsonPath, filterPaths: filterPaths, inputElementRef: inputElementRef, replayId: obj.replayId, recordingId: obj.recordingId,  apiPath: obj.apiPath, templateVersion: obj.templateVersion, showAll, searchFilterPath, disableOperationSet, hasChildren: obj.hasChildren, collapseChunk: obj.collapseChunk, drawChunk: obj.drawChunk, hasDiff: obj.hasDiff, showDiff: obj.showDiff, handleCollapseLength, recordReqId: obj.recordReqId, replayReqId: obj.replayReqId, eventType: obj.eventType, showMaxChunk: obj.showMaxChunk, handleMaxLinesLength, showMaxChunkToggle: obj.showMaxChunkToggle, });
+                        return React.createElement(line_1.DefaultLine, { 
+                            styles: styles, 
+                            hideLineNumbers: _this.props.hideLineNumbers, 
+                            leftLineNumber: leftLineNumber, 
+                            rightLineNumber: rightLineNumber, 
+                            leftContent: ch, 
+                            rightContent: ch, 
+                            key: num, 
+                            hightlightLines: _this.props.highlightLines, 
+                            renderContent: _this.props.renderContent, 
+                            onLineNumberClick: _this.props.onLineNumberClick, 
+                            serverSideDiff: obj.serverSideDiff, 
+                            jsonPath: obj.jsonPath, 
+                            filterPaths: filterPaths, 
+                            inputElementRef: inputElementRef, 
+                            replayId: obj.replayId, 
+                            recordingId: obj.recordingId,  
+                            apiPath: obj.apiPath, 
+                            templateVersion: obj.templateVersion, 
+                            showAll, 
+                            searchFilterPath, 
+                            disableOperationSet, 
+                            hasChildren: obj.hasChildren, 
+                            collapseChunk: obj.collapseChunk, 
+                            drawChunk: obj.drawChunk, 
+                            hasDiff: obj.hasDiff, 
+                            showDiff: obj.showDiff, 
+                            handleCollapseLength, 
+                            recordReqId: obj.recordReqId, 
+                            replayReqId: obj.replayReqId, 
+                            eventType: obj.eventType, 
+                            showMaxChunk: obj.showMaxChunk, 
+                            handleMaxLinesLength, 
+                            showMaxChunkToggle: obj.showMaxChunkToggle, 
+                            method
+                        });
                     }
                     var leftContent;
                     var rightContent;
@@ -102,7 +137,44 @@ var DiffViewer = /** @class */ (function (_super) {
                         rightContent = ch;
                     }
                     // author raj.maddireddy@cubecorp.io
-                    return React.createElement(line_1.DefaultLine, { styles: styles, leftLineNumber: !removed || leftLineNumber, rightLineNumber: !added || rightLineNumber, removed: removed, added: added, key: num, hideLineNumbers: _this.props.hideLineNumbers, hightlightLines: _this.props.highlightLines, renderContent: _this.props.renderContent, leftContent: leftContent, rightContent: rightContent, onLineNumberClick: _this.props.onLineNumberClick, serverSideDiff: obj.serverSideDiff, jsonPath: obj.jsonPath, filterPaths: filterPaths, inputElementRef: inputElementRef, replayId: obj.replayId, recordingId: obj.recordingId,  apiPath: obj.apiPath, templateVersion: obj.templateVersion, showAll, searchFilterPath, disableOperationSet, hasChildren: obj.hasChildren, collapseChunk: obj.collapseChunk, drawChunk: obj.drawChunk, hasDiff: obj.hasDiff, showDiff: obj.showDiff, handleCollapseLength, recordReqId: obj.recordReqId, replayReqId: obj.replayReqId, eventType: obj.eventType, showMaxChunk: obj.showMaxChunk, handleMaxLinesLength, showMaxChunkToggle: obj.showMaxChunkToggle, });
+                    return React.createElement(line_1.DefaultLine, {
+                      styles: styles,
+                      leftLineNumber: !removed || leftLineNumber,
+                      rightLineNumber: !added || rightLineNumber,
+                      removed: removed,
+                      added: added,
+                      key: num,
+                      hideLineNumbers: _this.props.hideLineNumbers,
+                      hightlightLines: _this.props.highlightLines,
+                      renderContent: _this.props.renderContent,
+                      leftContent: leftContent,
+                      rightContent: rightContent,
+                      onLineNumberClick: _this.props.onLineNumberClick,
+                      serverSideDiff: obj.serverSideDiff,
+                      jsonPath: obj.jsonPath,
+                      filterPaths: filterPaths,
+                      inputElementRef: inputElementRef,
+                      replayId: obj.replayId,
+                      recordingId: obj.recordingId,
+                      apiPath: obj.apiPath,
+                      templateVersion: obj.templateVersion,
+                      showAll,
+                      searchFilterPath,
+                      disableOperationSet,
+                      hasChildren: obj.hasChildren,
+                      collapseChunk: obj.collapseChunk,
+                      drawChunk: obj.drawChunk,
+                      hasDiff: obj.hasDiff,
+                      showDiff: obj.showDiff,
+                      handleCollapseLength,
+                      recordReqId: obj.recordReqId,
+                      replayReqId: obj.replayReqId,
+                      eventType: obj.eventType,
+                      showMaxChunk: obj.showMaxChunk,
+                      handleMaxLinesLength,
+                      showMaxChunkToggle: obj.showMaxChunkToggle,
+                      method,
+                    });
                 }));
             }); };
         };
@@ -173,11 +245,15 @@ var DiffViewer = /** @class */ (function (_super) {
                 });
             }
             let filterPaths = _a.filterPaths;
+            if(!filterPaths) filterPaths = [];
+            
             let showAll = _a.showAll;
             let searchFilterPath = _a.searchFilterPath;
-            if(!filterPaths) filterPaths = [];
+            let method = _a.method;
+
+            
             var nodes = splitView
-                ? _this.splitView(filterPaths, diffArray, newStyles, inputElementRef, showAll, searchFilterPath, disableOperationSet, handleCollapseLength, handleMaxLinesLength)()
+                ? _this.splitView(filterPaths, diffArray, newStyles, inputElementRef, showAll, searchFilterPath, disableOperationSet, handleCollapseLength, handleMaxLinesLength, method)()
                 : _this.inlineView(filterPaths, diffArray, newStyles, inputElementRef)();
             return (React.createElement("table", { className: newStyles.diffContainer },
                 React.createElement("tbody", null, nodes)));
