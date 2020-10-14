@@ -485,7 +485,10 @@ export default class DiffResultsList extends Component {
                         </div>
                         {
                             item.missedRequiredFields.length > 0 &&
-                            <DiffResultsMissingItems missedRequiredFields={item.missedRequiredFields} />
+                            <DiffResultsMissingItems 
+                                missedRequiredFields={item.missedRequiredFields} 
+                                method={item.recordRequest.method}
+                            />
                         }
                         {(item.recordedData || item.replayedData) && (
                             <div className="diff-wrapper">

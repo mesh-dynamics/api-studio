@@ -98,7 +98,7 @@ class DiffResultsMissingItems extends Component{
     };
 
     render(){
-        const { missedRequiredFields } = this.props;
+        const { missedRequiredFields, method } = this.props;
 
         return(
 
@@ -156,7 +156,8 @@ class DiffResultsMissingItems extends Component{
                                                 eventType={eachMissedField.eventType}
                                                 hideMarkForUpdate={true}
                                                 showDeleteRuleAction={true}
-                                                handleHidePopoverClick={this.handleHidePopoverClick} 
+                                                handleHidePopoverClick={this.handleHidePopoverClick}
+                                                method={method} 
                                             />
                                         </div>
                                     </Modal>
