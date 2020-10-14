@@ -14,12 +14,13 @@ const menu = require('./menu');
 const { resourceRootPath, updateApplicationConfig, getApplicationConfig } = require('./fs-utils');
 const { useGetLatest } = require('react-table');
 
-autoUpdater.autoInstallOnAppQuit = false;
+autoUpdater.autoInstallOnAppQuit = true;
 autoUpdater.autoDownload = false; 
 autoUpdater.channel = 'latest';
 
 let mainWindow;
 let releaseDirectory = '/'; // Default is root of bucket
+let downloadInfo = null;
 
 const browserWindowOptions = {
     width: 1280,
@@ -242,6 +243,27 @@ const setupListeners = (mockContext, user, replayContext) => {
         mainWindow.loadURL(mainWindowIndex);
     });
 
+    ipcMain.on('download_update', () => {
+        if(!downloadInfo) {
+            mainWindow.webContents.send('error_downloading_update');
+        }
+
+        const filePath =  `${releaseDirectory}/${downloadInfo.path}`;
+
+        awsSigingOptions.path = filePath;
+
+        // Sign the headers
+        aws4.sign(awsSigingOptions, awsSigningCredentials);
+
+        logger.info("Updater Signing Options \n", awsSigingOptions);
+
+        // Update the headers
+        autoUpdater.requestHeaders = awsSigingOptions.headers;
+        
+        // Trigger Download
+        autoUpdater.downloadUpdate();
+    });
+
 
     /**
      * AUTO Updater events
@@ -263,20 +285,7 @@ const setupListeners = (mockContext, user, replayContext) => {
         
         logger.info("\n\n", info);
 
-        const filePath =  `${releaseDirectory}/${info.path}`;
-
-        awsSigingOptions.path = filePath;
-
-        // Sign the headers
-        aws4.sign(awsSigingOptions, awsSigningCredentials);
-
-        logger.info("Updater Signing Options \n", awsSigingOptions);
-
-        // Update the headers
-        autoUpdater.requestHeaders = awsSigingOptions.headers;
-        
-        // Trigger Download
-        autoUpdater.downloadUpdate();
+        downloadInfo = info;
 
         // Notify Renderer Process
         mainWindow.webContents.send('update_available');
@@ -307,7 +316,7 @@ const setupListeners = (mockContext, user, replayContext) => {
     autoUpdater.on('update-downloaded', info => {
         logger.info('Update downloaded...')
         mainWindow.webContents.send('update_downloaded');
-    })
+    });
 
     process.on('uncaughtException', (err) => {
         const messageBoxOptions = {
