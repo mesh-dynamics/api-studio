@@ -88,7 +88,7 @@ public class MockServiceHTTP {
         LOGGER.info(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s, body: %s", customerId, app, path,
             ui.toString(), body));
         MockWithCollection mockWithCollection = io.md.utils.Utils.getMockCollection(rrstore , customerId , app , instanceId);
-        return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service, httpMethod , body, headers, mockWithCollection
+        return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service, httpMethod , body, headers.getRequestHeaders(), mockWithCollection
             , Optional.empty());
     }
 
@@ -197,14 +197,14 @@ public class MockServiceHTTP {
     }
 
     @POST
-    @Path("mockWithCollection/{replayCollection}/{recordingId}/{traceId}/{service}/{diCfgVer}/{method}/{var:.+}")
+    @Path("mockWithCollection/{replayCollection}/{recordingId}/{traceId}/{service}/{method}/{var:.+}")
     @Consumes(MediaType.WILDCARD)
     public Response postMockWithCollection(@Context UriInfo ui, @PathParam("var") String path,
         @Context HttpHeaders headers,
         @PathParam("replayCollection") String replayCollection,
         @PathParam("recordingId") String recordingId,
         @PathParam("traceId") String traceId,
-        @PathParam("service") String service, @PathParam("method") String httpMethod, @PathParam("diCfgVer") String diCfgVer,
+        @PathParam("service") String service, @PathParam("method") String httpMethod,
         String body) {
 	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
 	    String runId = queryParams.getFirst(Constants.RUN_ID_FIELD);
@@ -220,13 +220,14 @@ public class MockServiceHTTP {
             return notFound();
         }
         Recording recording = optionalRecording.get();
-        Optional<String> dynamicInjCfgVersion = diCfgVer.equalsIgnoreCase("na") ? recording.dynamicInjectionConfigVersion : Optional.of(diCfgVer);
+        MultivaluedMap<String, String> hdrs = headers.getRequestHeaders();
+        Optional<String> dynamicInjCfgVersion = ServerUtils.getCustomHeaderValue(hdrs , Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD).or(()->recording.dynamicInjectionConfigVersion);
         return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            httpMethod , body, headers, new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId, dynamicInjCfgVersion ), Optional.of(traceId));
+            httpMethod , body, hdrs, new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId, dynamicInjCfgVersion ), Optional.of(traceId));
     }
 
     @POST
-    @Path("mockWithRunId/{replayCollection}/{recordingId}/{traceId}/{runId}/{service}/{diCfgVer}/{method}/{var:.+}")
+    @Path("mockWithRunId/{replayCollection}/{recordingId}/{traceId}/{runId}/{service}/{method}/{var:.+}")
     @Consumes(MediaType.WILDCARD)
     public Response postMockWithRunId(@Context UriInfo ui, @PathParam("var") String path,
         @Context HttpHeaders headers,
@@ -234,7 +235,7 @@ public class MockServiceHTTP {
         @PathParam("recordingId") String recordingId,
         @PathParam("traceId") String traceId,
         @PathParam("service") String service,
-        @PathParam("runId") String runId , @PathParam("method") String httpMethod, @PathParam("diCfgVer") String diCfgVer,
+        @PathParam("runId") String runId , @PathParam("method") String httpMethod,
         String body) {
 
         LOGGER.info(String.format(" path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordingId: %s", path,
@@ -249,17 +250,20 @@ public class MockServiceHTTP {
         }
         Recording recording = optionalRecording.get();
         String recCollection = (recording.recordingType == Recording.RecordingType.History) ? "NA" : recording.collection;
-        Optional<String> dynamicInjCfgVersion = diCfgVer.equalsIgnoreCase("na") ? recording.dynamicInjectionConfigVersion : Optional.of(diCfgVer);
-        LOGGER.debug(String.format("MockWithRunId Passing collection %s for recordingType %s" , recCollection , recording.recordingType.toString() ));
+
+        MultivaluedMap<String, String> hdrs = headers.getRequestHeaders();
+        Optional<String> dynamicInjCfgVersion = ServerUtils.getCustomHeaderValue(hdrs , Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD).or(()->recording.dynamicInjectionConfigVersion);
+        LOGGER.debug(String.format("MockWithRunId Passing collection %s for recordingType %s dynamicInjCfgVersion %s" , recCollection , recording.recordingType.toString(), dynamicInjCfgVersion.orElse(null)  ));
 
         return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            httpMethod , body, headers, new MockWithCollection(replayCollection, recCollection, recording.templateVersion, runId, dynamicInjCfgVersion), Optional.of(traceId));
+            httpMethod , body, hdrs, new MockWithCollection(replayCollection, recCollection, recording.templateVersion, runId, dynamicInjCfgVersion), Optional.of(traceId));
     }
+
 
 
     private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
         String customerId, String app, String instanceId,
-        String service, String method, String body, HttpHeaders headers,
+        String service, String method, String body, MultivaluedMap<String, String> headers,
         MockWithCollection collection, Optional<String> traceId)
     {
 
@@ -273,7 +277,7 @@ public class MockServiceHTTP {
         try {
             Event mockRequestEvent = io.md.utils.Utils
                 .createRequestMockNew(path, formParams, customerId, app, instanceId,
-                    service, method, body, headers.getRequestHeaders(), ui.getQueryParameters(), traceId , tracerMgr);
+                    service, method, body, headers, ui.getQueryParameters(), traceId , tracerMgr);
             di.inject(mockRequestEvent);
             MockResponse mockResponse = mocker.mock(mockRequestEvent, Optional.empty(),  Optional.of(collection));
             mockResponse.response.ifPresent(resp-> di.extract(mockRequestEvent , resp.payload));

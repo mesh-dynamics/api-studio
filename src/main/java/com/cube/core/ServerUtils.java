@@ -372,4 +372,16 @@ public class ServerUtils {
 	    }
 	}
 
+	/*
+	    Get the custom header value from headers.
+	    Will take care of clearing the headers so that it doesn't get stored.
+	 */
+	public static Optional<String> getCustomHeaderValue(MultivaluedMap<String, String> headers , String field) {
+	    String value =  headers.getFirst(field);
+	    if(value!=null){
+	        headers.remove(field);
+        }
+        return Optional.ofNullable(value);
+    }
+
 }
