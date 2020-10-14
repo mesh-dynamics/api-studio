@@ -9,8 +9,12 @@ import io.md.dao.Recording;
 import io.md.dao.Replay;
 import com.cubeui.backend.web.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.md.utils.Constants;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
@@ -143,6 +147,30 @@ public class CubeServerService {
             log.error(String.format("Error while retrieving the data for request=%s, statusCode=%s, message=%s", request, response.getStatusCode(), response.getBody()));
             return Optional.empty();
         }
+    }
+
+    public Map<String, String> getExtractionMap(ResponseEntity response) {
+        Map<String, String> map = new HashMap<>();
+        try {
+            String body = response.getBody().toString();
+            JsonNode json = jsonMapper.readTree(body);
+            JsonNode responseBody = json.get(Constants.RESPONSE);
+            if(responseBody.isArray()) {
+                responseBody.forEach(node -> {
+                JsonNode  nodeMap= node.get("extractionMap");
+                try {
+                    Map<String, String> extractionMap =
+                        jsonMapper.readValue(nodeMap.toString(), new TypeReference<Map<String, String>>(){});
+                    map.putAll(extractionMap);
+                } catch (IOException e) {
+                    log.info(String.format("Error in converting node to Map for  message= %s", e.getMessage()));
+                }
+                });
+            }
+        } catch (Exception e) {
+            log.info(String.format("Error in converting Json to response Map for  message= %s", e.getMessage()));
+        }
+        return map;
     }
     public Optional<List<Event>> getEvents(EventQuery query, HttpServletRequest request) {
         ResponseEntity response = fetchPostResponse(request, Optional.of(query), "/cs/getEvents");
