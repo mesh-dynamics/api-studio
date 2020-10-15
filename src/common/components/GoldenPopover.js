@@ -106,16 +106,14 @@ class GoldenPopover extends React.Component {
     };
 
     updateRule(operationType) {
-        const { dispatch, jsonPath, cube, eventType} = this.props;
+        const { dispatch, jsonPath, cube, eventType, method} = this.props;
         const { templateMatchType } = this.state;
         const user = JSON.parse(localStorage.getItem('user')); // TODO: Take from reducer
         const operationsObj = {
             type: operationType, // "REPLACE" or "REMOVE";
             path: jsonPath.replace("<BEGIN>", ""),
             newRule: this.state.newRule,
-        };
-
-        
+        };        
 
         const key = this.getKeyFromTOS(); // This is already stringified
 
@@ -126,6 +124,7 @@ class GoldenPopover extends React.Component {
             path: cube.pathResultsParams.path,
             version: cube.pathResultsParams.currentTemplateVer,
             reqOrResp: templateMatchType,
+            method: method,
         });
 
         if(key === newKey) {
