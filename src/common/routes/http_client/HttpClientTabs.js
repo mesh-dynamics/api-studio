@@ -1900,8 +1900,7 @@ class HttpClientTabs extends Component {
                         </div>
                     </div>
                     <div style={{marginTop: "10px", display: ""}}>
-                        <ResponsiveTabs 
-                            showMore={true} 
+                        <ResponsiveTabs
                             allowRemove={true} 
                             onAddClick={this.addTab}
                             removeActiveOnly={false} 
