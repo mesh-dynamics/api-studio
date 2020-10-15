@@ -66,6 +66,10 @@ public class DynamicInjector {
                         testResponsePayload,
                         goldenRequestEvent.payload, dataStore);
                 StringSubstitutor sub = new StringSubstitutor(varResolver);
+
+                // Detect if key not found in substitution map
+                sub.setEnableUndefinedVariableException(true);
+
                 DataObj value;
                 String requestHttpMethod = getHttpMethod(goldenRequestEvent);
                 boolean apiPathMatch = apiPathMatch(Collections.singletonList(extractionMeta.apiPath), goldenRequestEvent.apiPath);
@@ -82,12 +86,16 @@ public class DynamicInjector {
                                 .substring(sourceString.indexOf("{") + 1, sourceString.indexOf("}"));
                         value = varResolver.lookupObject(lookupString);
                     } else {
-                        String valueString = sub.replace(sourceString);
-                        value = new JsonDataObj(new TextNode(valueString), jsonMapper);
+                          try {
+                              String valueString = sub.replace(sourceString);
+                              value = new JsonDataObj(new TextNode(valueString), jsonMapper);
+                          } catch (Exception e) {
+                              // Exception indicates key is missing in map
+                              value = null;
+                          }
                     }
                     if (value != null) {
-                        extractionMap
-                                .put(sub.replace(extractionMeta.name), value);
+                        extractionMap.put(sub.replace(extractionMeta.name), value);
                     }
                 }
             });
