@@ -106,14 +106,14 @@ class GoldenPopover extends React.Component {
     };
 
     updateRule(operationType) {
-        const { dispatch, jsonPath, cube, user } = this.props;
+        const { dispatch, jsonPath, cube, user, method } = this.props;
         const { templateMatchType } = this.state;
         const operationsObj = {
             type: operationType, // "REPLACE" or "REMOVE";
             path: jsonPath.replace("<BEGIN>", ""),
             newRule: this.state.newRule,
-        };
-        
+        };        
+
         const key = this.getKeyFromTOS(); // This is already stringified
         
         const newKey = JSON.stringify({
@@ -123,6 +123,7 @@ class GoldenPopover extends React.Component {
             path: cube.pathResultsParams.path,
             version: cube.pathResultsParams.currentTemplateVer,
             reqOrResp: templateMatchType,
+            method: method,
         });
 
         if(key === newKey) {

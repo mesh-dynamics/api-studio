@@ -372,6 +372,7 @@ export default class DiffResultsList extends Component {
                                 filterPaths={item.filterPaths}
                                 searchFilterPath={this.state.searchFilterPath}
                                 enableClientSideDiff={true}
+                                method={item.recordRequest.method}
                             />
                         </div>
                     </div>
@@ -393,6 +394,7 @@ export default class DiffResultsList extends Component {
                                 filterPaths={item.filterPaths}
                                 searchFilterPath={this.state.searchFilterPath}
                                 enableClientSideDiff={true}
+                                method={item.recordRequest.method}
                             />
                         </div>
                     </div>
@@ -414,6 +416,7 @@ export default class DiffResultsList extends Component {
                                 filterPaths={item.filterPaths}
                                 searchFilterPath={this.state.searchFilterPath}
                                 enableClientSideDiff={true}
+                                method={item.recordRequest.method}
                             />
                         </div>
                     </div>
@@ -435,6 +438,7 @@ export default class DiffResultsList extends Component {
                                 filterPaths={item.filterPaths}
                                 searchFilterPath={this.state.searchFilterPath}
                                 enableClientSideDiff={true}
+                                method={item.recordRequest.method}
                             />
                         </div>
                     </div>
@@ -457,6 +461,7 @@ export default class DiffResultsList extends Component {
                                 filterPaths={item.filterPaths}
                                 inputElementRef={this.inputElementRef}
                                 enableClientSideDiff={true}
+                                method={item.recordRequest.method}
                             />
                         </div>
                     </div>
@@ -480,7 +485,10 @@ export default class DiffResultsList extends Component {
                         </div>
                         {
                             item.missedRequiredFields.length > 0 &&
-                            <DiffResultsMissingItems missedRequiredFields={item.missedRequiredFields} />
+                            <DiffResultsMissingItems 
+                                missedRequiredFields={item.missedRequiredFields} 
+                                method={item.recordRequest.method}
+                            />
                         }
                         {(item.recordedData || item.replayedData) && (
                             <div className="diff-wrapper">
@@ -499,6 +507,7 @@ export default class DiffResultsList extends Component {
                                     handleCollapseLength={this.increaseCollapseLength}
                                     handleMaxLinesLength={this.increaseCollapseLength}
                                     enableClientSideDiff={this.state.enableClientSideDiff}
+                                    method={item.recordRequest.method}
                                 />
                             </div>
                         )}

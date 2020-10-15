@@ -49,12 +49,10 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
   }
   editorDidMount = (editor: monacoEditor.editor.IStandaloneDiffEditor) => {
     this.editor = editor;
-
     const { original, modified } = editor.getModel()!;
     
     // Following function is cached and editorDidMount is called only once at the time of first page load, not when props changing. 
     // So any param from props should be taken fresh from props.
-
     modified.onDidChangeContent((event) => {
       this.props.updateParam(
         this.props.isOutgoingRequest,

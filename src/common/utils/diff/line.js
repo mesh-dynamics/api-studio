@@ -79,7 +79,7 @@ exports.DefaultLine = function (_a) {
     showDiff = _a.showDiff,
     handleCollapseLength = _a.handleCollapseLength,
     handleMaxLinesLength = _a.handleMaxLinesLength,
-    eventType = _a.eventType;
+    eventType = _a.eventType, method = _a.method;
     // author raj.maddireddy@cubecorp.io
     var _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n;
     var hightlightLeftLine = leftLineNumber !== true
@@ -288,7 +288,7 @@ exports.DefaultLine = function (_a) {
                 </td>
 
                 <td className={classnames_1.default(styles.marker, (_l = {}, _l[styles.diffRemoved] = removed, _l[styles.hightlightedLine] = hightlightLeftLine, _l))}>
-                    {(!disableOperationSet || disableOperationSet !== true) && (<OperationSet added={added} removed={removed} jsonPath={jsonPath} serverSideDiff={serverSideDiff} app={app} templateVersion={templateVersion} service={service} apiPath={apiPath} replayId={replayId} recordingId={recordingId} elementRef={leftOperationSetElementRef} inputElementRef={inputElementRef} eventType={eventType}/>) }
+                    {(!disableOperationSet || disableOperationSet !== true) && (<OperationSet added={added} removed={removed} jsonPath={jsonPath} serverSideDiff={serverSideDiff} app={app} templateVersion={templateVersion} service={service} apiPath={apiPath} replayId={replayId} recordingId={recordingId} elementRef={leftOperationSetElementRef} inputElementRef={inputElementRef} eventType={eventType} method={method}/>) }
                 </td>
 
                 <td className={classnames_1.default(styles.marker, (_d = {}, _d[styles.diffRemoved] = removed, _d[styles.hightlightedLine] = hightlightLeftLine, _d))}>
@@ -328,7 +328,7 @@ exports.DefaultLine = function (_a) {
                 </td>
 
                 <td className={classnames_1.default(styles.marker, (_n = {}, _n[styles.diffAdded] = added, _n[styles.hightlightedLine] = hightlightRightLine, _n))}>
-                    {(!disableOperationSet || disableOperationSet !== true) && (<OperationSet added={added} removed={removed} jsonPath={jsonPath} serverSideDiff={serverSideDiff} app={app} templateVersion={templateVersion} service={service} apiPath={apiPath} replayId={replayId} recordingId={recordingId} elementRef={rightOperationSetElementRef} inputElementRef={inputElementRef} eventType={eventType}/>) }
+                    {(!disableOperationSet || disableOperationSet !== true) && (<OperationSet added={added} removed={removed} jsonPath={jsonPath} serverSideDiff={serverSideDiff} app={app} templateVersion={templateVersion} service={service} apiPath={apiPath} replayId={replayId} recordingId={recordingId} elementRef={rightOperationSetElementRef} inputElementRef={inputElementRef} eventType={eventType} method={method}/>) }
                 </td>
 
                 <td className={classnames_1.default(styles.marker, (_g = {}, _g[styles.diffAdded] = added, _g[styles.hightlightedLine] = hightlightRightLine, _g))}>
