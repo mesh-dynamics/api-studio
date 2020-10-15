@@ -108,8 +108,11 @@ public class JwtTokenProvider {
         List<String> bearerTokens = Collections.list(req.getHeaders("Authorization"));
         List<String> tokens = new ArrayList<>();
         bearerTokens.forEach(bearerToken -> {
-            if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-                 tokens.add(bearerToken.substring(7));
+            String tokenArray[] = bearerToken.split(",");
+            for(String token : tokenArray) {
+                if (token != null && token.startsWith("Bearer ")) {
+                    tokens.add(token.substring(7));
+                }
             }
         });
 
