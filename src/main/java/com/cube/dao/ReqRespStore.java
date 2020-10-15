@@ -101,9 +101,17 @@ public interface ReqRespStore extends DataStore {
 
     static Recording softDeleteRecording(Recording recording, ReqRespStore rrstore)
 		throws Recording.RecordingSaveFailureException {
-		recording.archived = true;
-		recording.updateTimestamp = Optional.of(Instant.now());
-		boolean success = rrstore.saveRecording(recording);
+    	Instant timeStamp = Instant.now();
+    	//update name as oldName-instantString
+			Recording  updatedRecording = new Recording(recording.id, recording.customerId, recording.app,
+					recording.instanceId, recording.collection, recording.status, Optional.of(timeStamp),
+					recording.templateVersion, recording.parentRecordingId, recording.rootRecordingId,
+					recording.name.concat("-").concat(timeStamp.toString()), recording.codeVersion,
+					recording.branch, recording.tags, true, recording.gitCommitId, recording.collectionUpdOpSetId,
+					recording.templateUpdOpSetId, recording.comment, recording.userId, recording.generatedClassJarPath,
+					recording.generatedClassLoader, recording.label, recording.recordingType,
+					recording.dynamicInjectionConfigVersion);
+		boolean success = rrstore.saveRecording(updatedRecording);
 		if (!success) {
 			throw new Recording.RecordingSaveFailureException("Cannot delete recording");
 		}
