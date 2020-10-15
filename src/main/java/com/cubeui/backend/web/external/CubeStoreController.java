@@ -361,9 +361,9 @@ public class CubeStoreController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @PostMapping("/injectEvent")
-    public ResponseEntity injectEvent(HttpServletRequest request, @RequestBody
-        DynamicInjectionEventDao dynamicInjectionEventDao) {
+    @PostMapping("/injectEvent/{replayId}/{runId}")
+    public ResponseEntity injectEvent(HttpServletRequest request, @PathVariable String replayId,
+        @PathVariable String runId, @RequestBody DynamicInjectionEventDao dynamicInjectionEventDao) {
         if(dynamicInjectionEventDao == null || dynamicInjectionEventDao.getRequestEvent() == null) {
            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body("post Body  or requestEvent cannot be null");
