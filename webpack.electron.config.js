@@ -162,7 +162,8 @@ const config = {
         new CopyPlugin({
             patterns: [
                 { from: path.resolve(__dirname, 'public'), to: '' },                
-                { from: path.resolve(__dirname, 'src/electron'), to: 'electron' }
+                { from: path.resolve(__dirname, 'src/electron'), to: 'electron' },
+                { from: path.resolve(__dirname, 'src/shared'), to: 'shared' }
             ],
         }),
         new MiniCssExtractPlugin({

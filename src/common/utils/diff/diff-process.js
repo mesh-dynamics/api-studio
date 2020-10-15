@@ -4,6 +4,7 @@ import generator from '../generator/json-path-generator';
 import sortJson from "../sort-json";
 import _ from 'lodash';
 import config from "../../config";
+import { getParameterCaseInsensitive } from '../../../shared/utils';
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -64,13 +65,6 @@ const getDiffForMessagePart = (replayedPart, recordedPart, serverSideDiff, prefi
         }
     });
     return updatedReductedDiffArrayMsgPart;
-}
-
-const getParameterCaseInsensitive = (object, key) => {
-    return object[
-        Object.keys(object)
-        .find(k => k.toLowerCase() === key.toLowerCase())
-    ];
 }
 
 const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId, templateVersion, collapseLength, maxLinesLength) => {

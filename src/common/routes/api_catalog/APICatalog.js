@@ -15,7 +15,7 @@ import { connect } from "react-redux";
 import { cubeActions } from "../../actions";
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { FormControl, FormGroup } from "react-bootstrap";
-import SplitSlider from "../../components/SplitSlider";
+import SplitSlider from "../../components/SplitSlider.tsx";
 
 class APICatalog extends Component {
   constructor(props) {

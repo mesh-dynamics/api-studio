@@ -43,7 +43,7 @@ class HttpRequestMessageRO extends Component<IHttpRequestMessageROProps, IHttpRe
 
     render() {
         return (
-            <div>
+            <>
                 <div style={{marginRight: "7px"}}>
                     <div style={{marginBottom: "9px", display: "inline-block", width: "20%", fontSize: "11px"}}>REQUEST</div>
                 </div>
@@ -146,7 +146,7 @@ class HttpRequestMessageRO extends Component<IHttpRequestMessageROProps, IHttpRe
                     rawData={this.props.rawData}  >
 
                 </HttpRequestBodyRO>
-            </div>
+            </>
         );
     }
 }

@@ -18,6 +18,7 @@ import {
 } from "../../utils/diff/diff-process.js";
 import { AbortRequest } from "./abortRequest";
 import SaveToCollection from './SaveToCollection';
+import SplitSlider from "../../components/SplitSlider.tsx";
 
 const newStyles = {
     variables: {
@@ -588,8 +589,8 @@ class HttpClient extends Component {
                 </div>
                 {!showCompleteDiff && (
                     <div>
-                        <div style={{display: "flex", marginBottom: "9px"}}>
-                            <div style={{flex: "1", padding: "0.5rem"}}>
+                        <div style={{display: "flex", marginBottom: "9px", minHeight:'20px', overflowY: 'auto'}} ref={e=> (this.httpRequestRef = e)}>
+                            <div style={{flex: "1", padding: "0.5rem", height:'100%'}}>
                                 <HttpRequestMessage 
                                     tabId={selectedTraceTableReqTab.id}
                                     requestId={selectedTraceTableReqTab.requestId}
@@ -632,6 +633,7 @@ class HttpClient extends Component {
                                 )}
                             </div>
                         </div>
+                        <SplitSlider slidingElement={this.httpRequestRef} horizontal/> 
                         <HttpResponseMessage 
                             tabId={selectedTraceTableReqTab.id}
                             /** Belongs to RHS */

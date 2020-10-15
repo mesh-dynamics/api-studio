@@ -1,6 +1,14 @@
 const logger = require('electron-log');
 const _ = require('lodash');
 const url = require("url");
+const { getParameterCaseInsensitive } = require('../../../shared/utils');
+
+// Specification for request payload state
+const PAYLOAD_STATE = {
+    WRAPPED_ENCODED: 'WrappedEncoded', // To be used if payload is sent with base64 encoding
+    WRAPPED_DECODED: 'WrappedDecoded', // To be used if payload is string. This is the default for live proxy
+    UNWRAPPED_DECODED: 'UnwrappedDecoded' // To be used if payload is sent in cube format
+};
 
 const extractHeadersToCubeFormat = (headersReceived) => {
     let headers = {};
@@ -20,22 +28,8 @@ const extractHeadersToCubeFormat = (headersReceived) => {
     return headers;
 }
 
-
-const convertFormParamsToCubeFormat = (requestData) => {
-    const formParams = {};
-    
-    if(requestData) {
-        Object.keys(requestData).map(key => formParams[key] = [requestData[key]]);
-
-        return formParams;
-    }
-    
-    return formParams;
-};
-
-
 const extractRequestBodyAndFormParams = (headers, requestData) => {
-    const contentType = headers['content-type'] || headers['CONTENT-TYPE'];
+    const contentType = getParameterCaseInsensitive(headers, 'content-type');
 
     logger.info('Detected content type in intercepted proxied response:', contentType);
 
@@ -45,23 +39,29 @@ const extractRequestBodyAndFormParams = (headers, requestData) => {
         }
     }
 
-    if(contentType && contentType.includes('application/x-www-form-urlencoded')) {
+    if(contentType && 
+            (
+                contentType.includes('application/x-www-form-urlencoded') ||
+                contentType && contentType.includes('multipart/form-data')      
+            )
+    ) {
         return {
-            formParams: convertFormParamsToCubeFormat(requestData),
+            formParams: requestData
+        }
+        
+    }
+
+    if(contentType && (
+            contentType.includes('application/xml') ||
+            contentType.includes('text/html') ||
+            contentType.includes('text/plain')
+            )) {
+        return {
+            body: requestData
         }
     }
 
-    if(contentType && contentType.includes('multipart/form-data')) {
-        return {
-            formParams: convertFormParamsToCubeFormat(requestData),
-        }
-    }
-
-    return {
-        body: _.isObject(requestData) 
-            ? JSON.stringify(requestData) 
-            : requestData.toString()
-    }
+    return {};
 }
 
 const extractQueryStringParamsToCubeFormat = (queryString) => {
@@ -96,7 +96,8 @@ const extractRequestPayloadDetailsFromProxy = (proxyRes, apiPath, options) => {
         queryParams,
         path: apiPath,
         method: proxyRes.req.method.toUpperCase(),
-        pathSegments: apiPath.split("/").filter(Boolean)
+        pathSegments: apiPath.split("/").filter(Boolean),
+        payloadState: PAYLOAD_STATE.WRAPPED_DECODED
     }
 }
 
@@ -126,3 +127,44 @@ module.exports = {
     extractRequestPayloadDetailsFromProxy,
     extractResponsePayloadDetailsFromProxy
 };
+
+
+// Not To be deleted
+// const convertMultiPartToCubeFormat = (requestDataString) => {
+//     const formParams = {};
+//     const fieldParts = requestDataString.split('&');
+    
+//     fieldParts.map(part => {
+//         const [fieldPart, content] = part.split('#content=');
+//         const [fieldName, fileName] = fieldPart.split('=');
+
+//         formParams[fieldName] = [fileName, content].filter(Boolean);
+//     })
+
+//     return formParams;
+// };
+
+// const convertFormParamsToCubeFormat = (requestDataString) => {
+//     const formParams = {};
+//     const fieldParts = requestDataString.split('&');
+
+//     fieldParts.map(part => {
+//         const [fieldName, fieldValue] = part.split('=');
+//         formParams[fieldName] = [fieldValue];
+//     })
+
+//     return formParams;
+// };
+
+// Not To be deleted
+// if(contentType && contentType.includes('application/x-www-form-urlencoded')) {
+//     return {
+//         formParams: convertFormParamsToCubeFormat(requestData)
+//     }
+// }
+
+// if(contentType && contentType.includes('multipart/form-data')) {
+//     return {
+//         formParams: convertMultiPartToCubeFormat(requestData)
+//     }
+// }

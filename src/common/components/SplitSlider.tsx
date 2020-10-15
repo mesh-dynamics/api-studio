@@ -1,15 +1,21 @@
 import React, { useEffect, useState } from 'react';
-// export interface ISplitSlider {
-//     slidingElement: React.RefObject<HTMLElement>
-// }
+import classNames from 'classnames';
+export interface ISplitSliderProps {
+    slidingElement: HTMLDivElement,
+    horizontal?: boolean
+}
 let isMouseDown = false;
 let mousePositionDiff = 0;
-export default function SplitSlider(props) {
-    const sliderRef = React.createRef();
+export default function SplitSlider(props:ISplitSliderProps) {
+    const sliderRef = React.createRef<HTMLDivElement>();
 
-    var onMouseMove = (event) => {
+    var onMouseMove = (event: MouseEvent) => {
         if (isMouseDown === true && props.slidingElement) {
-            props.slidingElement.style.width = (event.clientX - mousePositionDiff) + "px"
+            if(props.horizontal){
+                props.slidingElement.style.height = (event.clientY - mousePositionDiff) + "px"
+            }else{
+                props.slidingElement.style.width = (event.clientX - mousePositionDiff) + "px"
+            }
         } else {
             onMouseUp()
         }
@@ -19,10 +25,14 @@ export default function SplitSlider(props) {
         document.body.removeEventListener('mouseup', onMouseUp);
         document.body.removeEventListener('mousemove', onMouseMove);
     }
-    var onMouseDown = (event) => {
+    var onMouseDown = (event: MouseEvent) => {
         isMouseDown = true;
         if (props.slidingElement) {
-            mousePositionDiff = event.clientX - props.slidingElement.offsetWidth;
+            if(props.horizontal){
+                mousePositionDiff = event.clientY - props.slidingElement.offsetHeight;
+            }else{
+                mousePositionDiff = event.clientX - props.slidingElement.offsetWidth;
+            }
         }
         document.body.addEventListener('mousemove', onMouseMove)
         document.body.addEventListener('mouseup', onMouseUp);
@@ -41,8 +51,8 @@ export default function SplitSlider(props) {
         }
     }, [props.slidingElement]);
 
-
+    const className = classNames({"split-slider": true, "horizontal": props.horizontal});
     return (
-        <div className="split-slider" ref={sliderRef}></div>
+        <div className={className} ref={sliderRef}></div>
     )
 }

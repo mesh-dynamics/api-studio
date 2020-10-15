@@ -46,6 +46,7 @@ export interface IHttpResponseHeadersProps {
   updateParam: UpdateParamHandler;
   recordedResponseHeaders: string;
   responseHeaders: string;
+  maximizeEditorHeight: boolean;
 }
 
 class HttpResponseHeaders extends Component<IHttpResponseHeadersProps> {
@@ -54,16 +55,10 @@ class HttpResponseHeaders extends Component<IHttpResponseHeadersProps> {
     super(props);
   }
 
-  updateDimensions() {
-    this.editor  && this.editor.layout();
-  }
 
-  componentDidMount() {
-    window.addEventListener("resize", this.updateDimensions.bind(this));
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener("resize", this.updateDimensions.bind(this));
+  formatHandler(){
+    this.editor.getOriginalEditor().getAction('editor.action.formatDocument').run().then(()=>{});
+    this.editor.getModifiedEditor().getAction('editor.action.formatDocument').run().then(()=>{});
   }
 
   editorDidMount: DiffEditorDidMount = (editor) => {
@@ -104,7 +99,7 @@ class HttpResponseHeaders extends Component<IHttpResponseHeadersProps> {
         <MonacoDiffEditor
           key={"responseHeaders" + tabId}
           width="100%"
-          height="600"
+          height={this.props.maximizeEditorHeight? "calc(100vh - 30px)": "600"}
           language="json"
           original={this.props.recordedResponseHeaders}
           value={this.props.responseHeaders}
@@ -116,6 +111,10 @@ class HttpResponseHeaders extends Component<IHttpResponseHeadersProps> {
             scrollbar: {
               alwaysConsumeMouseWheel: false,
             },
+            enableSplitViewResizing: true,            
+            automaticLayout: true,
+            scrollBeyondLastLine: false,
+            contextmenu: false,
           }}
           editorDidMount={this.editorDidMount}
         />

@@ -131,10 +131,10 @@ class APIRequestsTable extends Component {
   }
 
   onCellClick = (rowInfo) => {
-    const { app } = this.props;
+    const { app, user: { customer_name: customerId } } = this.props;
     const requestId = rowInfo.original.check.props.value;
 
-    cubeService.fetchAPIEventData(app, [requestId], ["HTTPRequest"])
+    cubeService.fetchAPIEventData(customerId, app, [requestId], ["HTTPRequest"])
       .then((result) => {
         this.setState({
           details: result.objects[0],
@@ -394,6 +394,7 @@ class APIRequestsTable extends Component {
 const mapStateToProps = (state) => ({
   cube: state.cube,
   apiCatalog: state.apiCatalog,
+  user: state.authentication.user
 });
 
 const connectedAPIRequestsTable = connect(mapStateToProps)(APIRequestsTable);

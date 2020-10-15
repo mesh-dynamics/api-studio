@@ -18,6 +18,7 @@ export interface ICreateCollectionProps {
   dispatch: any;
   httpClient: any;
   cube: any;
+  user: any
 }
 interface ICreateCollectionState {
   newCollectionName: string;
@@ -28,7 +29,7 @@ interface ICreateCollectionState {
 class CreateCollection extends Component<
   ICreateCollectionProps,
   ICreateCollectionState
-> {
+  > {
   constructor(props: ICreateCollectionProps) {
     super(props);
     this.state = {
@@ -75,6 +76,7 @@ class CreateCollection extends Component<
   handleCreateCollection() {
     const { newCollectionName } = this.state;
     const {
+      user,
       dispatch,
       httpClient: { userCollections },
       cube: { selectedApp },
@@ -92,11 +94,9 @@ class CreateCollection extends Component<
       const app = selectedApp;
 
       try {
-        cubeService.createUserCollection(newCollectionName, app).then(() => {
+        cubeService.createUserCollection(user, newCollectionName, app).then(() => {
           dispatch(httpClientActions.loadUserCollections());
-          dispatch(
-            apiCatalogActions.fetchGoldenCollectionList(app, "UserGolden")
-          );
+          dispatch(apiCatalogActions.fetchGoldenCollectionList(app, "UserGolden"));
           this.setState({
             newCollectionName: "",
             modalCreateCollectionMessage:
@@ -199,11 +199,12 @@ class CreateCollection extends Component<
 }
 
 function mapStateToProps(state: any) {
-  const { cube, apiCatalog, httpClient } = state;
+  const { cube, apiCatalog, httpClient, authentication } = state;
   return {
     cube,
     apiCatalog,
     httpClient,
+    user: authentication.user
   };
 }
 
