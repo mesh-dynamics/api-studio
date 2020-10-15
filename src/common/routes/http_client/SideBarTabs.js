@@ -161,6 +161,14 @@ class SideBarTabs extends Component {
   }
 
   handleTreeNodeClick(node) {
+    const {httpClient: {tabs}, dispatch} = this.props;
+    const existingTab = _.find(tabs, {requestId: node.requestEventId});
+    // if the request is already open in a tab, switch to it, and don't create a new tab
+    if (existingTab){
+      dispatch(httpClientActions.setSelectedTabKey(existingTab.id))
+      return
+    }
+
     this.openTab(node);
   }
 
