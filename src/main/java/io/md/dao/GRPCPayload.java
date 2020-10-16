@@ -5,10 +5,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import io.md.constants.Constants;
 import io.md.core.WrapUnwrapContext;
+import io.md.utils.Utils;
+
 import javax.ws.rs.core.MultivaluedMap;
 
 import java.util.Optional;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +35,7 @@ public abstract class GRPCPayload extends HTTPPayload {
         super(deserializedJsonTree);
         try {
             this.path = this.dataObj.getValAsString("/".concat("path"));
+            this.payloadState = Utils.valueOf(HTTPPayload.HTTPPayloadState.class, this.dataObj.getValAsString(HTTPPayload.PAYLOADSTATEPATH)).orElse(HTTPPayloadState.UnwrappedDecoded);
         } catch (Exception e) {
             LOGGER.error("Error while initializing GRPC Payload" , e);
         }
@@ -70,8 +74,9 @@ public abstract class GRPCPayload extends HTTPPayload {
 
         if (payloadState == HTTPPayloadState.UnwrappedDecoded) {
             if (this.dataObj.wrapAsString("/".concat(HTTPRequestPayload.BODY),
-                Constants.APPLICATION_GRPC, Optional.empty()))
+                Constants.APPLICATION_GRPC, getWrapUnwrapContext())) {
                 setPayloadState(HTTPPayloadState.WrappedDecoded);
+            }
         }
     }
 
@@ -87,5 +92,24 @@ public abstract class GRPCPayload extends HTTPPayload {
     public void setProtoDescriptor(Optional<ProtoDescriptorDAO> protoDescriptor) {
         this.protoDescriptor = protoDescriptor;
         postParse();
+    }
+
+
+    @Override
+    public String rawPayloadAsString(boolean wrapForDisplay) throws
+        NotImplementedException, RawPayloadProcessingException {
+        try {
+            if (this.dataObj.isDataObjEmpty()) {
+                return mapper.writeValueAsString(this);
+            } else {
+                if (wrapForDisplay) {
+                    // Grpc body is already unwrapped decoded and ready for display just need to
+                    // make string out of it and return
+                }
+                return dataObj.serializeDataObj();
+            }
+        } catch (Exception e) {
+            throw  new RawPayloadProcessingException(e);
+        }
     }
 }

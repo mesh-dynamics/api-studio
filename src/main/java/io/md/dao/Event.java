@@ -180,7 +180,8 @@ public class Event implements MDStorable {
 				case THRIFT:
 					return ThriftRequest;
 				case GRPC:
-					return ProtoBufRequest;
+					// For now treat Grpc as http
+					return HTTPRequest;
 				default:
 					return HTTPRequest;
 			}

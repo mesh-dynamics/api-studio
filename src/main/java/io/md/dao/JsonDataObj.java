@@ -473,22 +473,22 @@ public class JsonDataObj implements DataObj {
 					} else {
 						return Optional.of(new TextNode(xmlStr));
 					}
-				} else if (Utils.startsWithIgnoreCase(mimeType, Constants.APPLICATION_GRPC)) {
-					if (asEncoded) {
-						// To be used during replay
-						if (!wrapContext.isPresent()) {
-							throw new Exception("Wrap Context not present while " +
-								"trying to serialize json grpc message to encoded binary string");
-						}
-						return wrapContext.flatMap(UtilException.rethrowFunction(context ->
-							context.protoDescriptor.convertJsonToByteString(context.service,
-								context.method, original.toString(), context.isRequest)
-						)).map(UtilException.rethrowFunction(TextNode::new));
-
-					} else {
-						// to be used before sending payload to UI
-						return Optional.of(new TextNode(original.toString()));
+				} else if (mimeType.startsWith(Constants.APPLICATION_GRPC)) {
+					if (!wrapContext.isPresent()) {
+						throw new Exception("Wrap Context not present while " +
+							"trying to serialize json grpc message to encoded binary string");
 					}
+					Optional<byte[]> optionalBytes = wrapContext
+						.flatMap(UtilException.rethrowFunction(context ->
+							context.protoDescriptor.convertJsonToByteString(context.service,
+								context.method, original.toString(), context.isRequest)));
+					if (!optionalBytes.isPresent()) {
+						throw new Exception("Unable to get bytes from json");
+					}
+					byte[] bytes = optionalBytes.get();
+					return asEncoded ? Optional.of(new TextNode(
+						new String(Base64.getEncoder().encode(bytes))))
+						: Optional.of(new BinaryNode(bytes));
 				} else if (mimeType.startsWith(MediaType.MULTIPART_FORM_DATA)) {
 					return wrapMultipart( original, asEncoded,  wrapContext,  parent);
 				}

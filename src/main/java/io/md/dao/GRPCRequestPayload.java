@@ -2,6 +2,7 @@ package io.md.dao;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -22,6 +23,18 @@ public class GRPCRequestPayload extends  GRPCPayload implements RequestPayload {
 	@Override
 	boolean isRequest() {
 		return true;
+	}
+
+	@JsonIgnore
+	public String getMethod() {
+		if (this.dataObj != null && !this.dataObj.isDataObjEmpty()) {
+			try {
+				return this.dataObj.getValAsString("/".concat("method"));
+			} catch (PathNotFoundException e) {
+				return null;
+			}
+		}
+		return method;
 	}
 
 
