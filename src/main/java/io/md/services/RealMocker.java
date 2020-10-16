@@ -6,7 +6,8 @@
 
 package io.md.services;
 
-import io.md.dao.Replay;
+import io.md.dao.*;
+
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,17 +24,8 @@ import io.md.constants.Constants;
 import io.md.core.Comparator;
 import io.md.core.Comparator.MatchType;
 import io.md.core.TemplateKey.Type;
-import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Event.EventType;
-import io.md.dao.EventQuery;
-import io.md.dao.HTTPRequestPayload;
-import io.md.dao.HTTPResponsePayload;
-import io.md.dao.MDTraceInfo;
-import io.md.dao.MockWithCollection;
-import io.md.dao.Payload;
-import io.md.dao.RecordOrReplay;
-import io.md.dao.ReqRespMatchResult;
 import io.md.services.DataStore.TemplateNotFoundException;
 import io.md.utils.UtilException;
 import io.md.utils.Utils;
@@ -58,8 +50,17 @@ public class RealMocker implements Mocker {
         if (mockWithCollection.isPresent()) {
             EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, 1, !mockWithCollection.get().isDevtool, lowerBoundForMatching, mockWithCollection.get().recordCollection);
             DSResult<Event> res = cube.getEvents(eventQuery);
-            Optional<Event> matchingResponse = res.getObjects().findFirst()
-                .flatMap(cube::getRespEventForReqEvent);
+
+            Optional<Event> matchingResponse = mockWithCollection.get().isDevtool==false ?
+                    //Normal Replay Mock - Old logic of getting first event and getting response corresponding to it
+                    res.getObjects().findFirst().flatMap(cube::getRespEventForReqEvent) :
+                    // Devtool Mock -> Find the response for each matched request un-till success response is found
+                    res.getObjects().map(cube::getRespEventForReqEvent)
+                    .filter(this::isSuccessResponse)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .findFirst();
+
 
             if (!matchingResponse.isPresent()) {
                 LOGGER.info(createMockReqErrorLogMessage(reqEvent,
@@ -80,6 +81,25 @@ public class RealMocker implements Mocker {
             throw new MockerException(Constants.INVALID_EVENT,
                 errorReason);
         }
+    }
+
+    private boolean isSuccessResponse(Optional<Event> response){
+        //Ignore Absent Response
+        if(!response.isPresent()) return false;
+
+        Event respEvent = response.get();
+        //Payload present
+        if(respEvent.payload==null) return false;
+        //Allow all Non http Response payload
+        if(!(respEvent.payload instanceof HTTPResponsePayload)) return true;
+
+        HTTPResponsePayload httpRespPayload = (HTTPResponsePayload) respEvent.payload;
+        int status = httpRespPayload.getStatus();
+        // All 2xx OK
+        if((status >= 200 && status < 300)) return true;
+
+        // All Non 2xx
+        return false;
     }
 
     private String createMockReqErrorLogMessage(Event reqEvent, String errStr) {
