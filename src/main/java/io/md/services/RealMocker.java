@@ -57,7 +57,6 @@ public class RealMocker implements Mocker {
                     // Devtool Mock -> Find the response for each matched request un-till success response is found
                     res.getObjects().map(cube::getRespEventForReqEvent)
                     .filter(this::isSuccessResponse)
-                    .filter(Optional::isPresent)
                     .map(Optional::get)
                     .findFirst();
 
@@ -96,7 +95,7 @@ public class RealMocker implements Mocker {
         HTTPResponsePayload httpRespPayload = (HTTPResponsePayload) respEvent.payload;
         int status = httpRespPayload.getStatus();
         // All 2xx OK
-        if((status >= 200 && status < 300)) return true;
+        if((status >= 200 && status < 400)) return true;
 
         // All Non 2xx
         return false;
