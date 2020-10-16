@@ -45,10 +45,11 @@ class Navigation extends Component{
     }
 
     componentDidMount() {
-        const { dispatch } = this.props;
+        const { dispatch, user } = this.props;
 
         if(PLATFORM_ELECTRON) {
             ipcRenderer.send('get_config');
+            ipcRenderer.send('set_user', user);
         } else {
             dispatch(cubeActions.getApps());
             dispatch(cubeActions.getInstances());
