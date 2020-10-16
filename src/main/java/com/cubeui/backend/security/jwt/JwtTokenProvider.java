@@ -1,6 +1,8 @@
 package com.cubeui.backend.security.jwt;
 
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -11,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.cubeui.backend.domain.Customer;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.util.Pair;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -101,12 +104,19 @@ public class JwtTokenProvider {
         return Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody().getSubject();
     }
 
-    String resolveToken(HttpServletRequest req) {
-        String bearerToken = req.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-        return null;
+    List<String> resolveToken(HttpServletRequest req) {
+        List<String> bearerTokens = Collections.list(req.getHeaders("Authorization"));
+        List<String> tokens = new ArrayList<>();
+        bearerTokens.forEach(bearerToken -> {
+            String tokenArray[] = bearerToken.split(",");
+            for(String token : tokenArray) {
+                if (token != null && token.startsWith("Bearer ")) {
+                    tokens.add(token.substring(7));
+                }
+            }
+        });
+
+        return tokens;
     }
 
     public Customer getCustomer(HttpServletRequest req) {
@@ -115,44 +125,51 @@ public class JwtTokenProvider {
     }
 
     public UserDetails getUser(HttpServletRequest request) {
-        final String token = resolveToken((HttpServletRequest) request);
-        return this.userDetailsService.loadUserByUsername(getUsername(token, secretKey));
+        final List<String> tokens = resolveToken((HttpServletRequest) request);
+        Pair<String, Boolean> token = validateToken(tokens);
+        return this.userDetailsService.loadUserByUsername(getUsername(token.getFirst(), secretKey));
     }
 
     public UserDetails getUserFromRefreshToken(String token) {
         return this.userDetailsService.loadUserByUsername(getUsername(token, refreshSecretKey));
     }
 
-    boolean validateToken(String token) {
-        return  validate(token, secretKey);
+    Pair<String, Boolean> validateToken(List<String> tokens) {
+        return  validate(tokens, secretKey);
     }
 
     public boolean validateRefreshToken(String token) {
-        return validate(token, refreshSecretKey);
+        return validate(List.of(token), refreshSecretKey).getSecond();
     }
 
-     boolean validate(String token, String secretKey) {
-        try {
-            Jws<Claims> claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
-            log.trace("validate token is called ");
-            if ("pat".equalsIgnoreCase(claims.getBody().get("type", String.class))) {
-                log.trace("Found that the token is of type API token");
-                long customerId = claims.getBody().get("customer_id", Long.class);
-                //The token is of type personal access token, so check the DB to confirm that it is not revoked
-                Optional<List<ApiAccessToken>> accessToken = userRepository.findByUsernameAndCustomerId(getUsername(token, secretKey), customerId)
-                    .map(User::getId).flatMap(apiAccessTokenRepository::findByUserId);
-                return accessToken.flatMap(list -> list.stream().findFirst())
-                    .map(ApiAccessToken::getToken)
-                    .filter(token::equals)
-                    .isPresent();
-            } else {
-                log.trace("It is a normal token");
-                return !claims.getBody().getExpiration().before(new Date());
+     Pair<String, Boolean> validate(List<String> tokens, String secretKey) {
+        for(String token : tokens) {
+            try {
+                boolean value = false;
+                Jws<Claims> claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
+                log.trace("validate token is called ");
+                if ("pat".equalsIgnoreCase(claims.getBody().get("type", String.class))) {
+                    log.trace("Found that the token is of type API token");
+                    long customerId = claims.getBody().get("customer_id", Long.class);
+                    //The token is of type personal access token, so check the DB to confirm that it is not revoked
+                    Optional<List<ApiAccessToken>> accessToken = userRepository.findByUsernameAndCustomerId(getUsername(token, secretKey), customerId)
+                        .map(User::getId).flatMap(apiAccessTokenRepository::findByUserId);
+                    value =  accessToken.flatMap(list -> list.stream().findFirst())
+                        .map(ApiAccessToken::getToken)
+                        .filter(token::equals)
+                        .isPresent();
+                } else {
+                    log.trace("It is a normal token");
+                    value = !claims.getBody().getExpiration().before(new Date());
+                }
+                if(value) {
+                    return Pair.of(token, true);
+                }
+            } catch (JwtException | IllegalArgumentException e) {
+                log.error("Expired or invalid authentication token, message=" + e.getMessage());
             }
-
-        } catch (JwtException | IllegalArgumentException e) {
-            throw new InvalidJwtAuthenticationException("Expired or invalid authentication token");
         }
+        return Pair.of("The token is not valid", false);
     }
 
     public long getValidity() {
