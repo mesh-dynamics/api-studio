@@ -680,5 +680,5 @@ public interface ReqRespStore extends DataStore {
 
 	Optional<ProtoDescriptorDAO> getLatestProtoDescriptorDAO(String customerId, String app);
 
-	
+
 }
