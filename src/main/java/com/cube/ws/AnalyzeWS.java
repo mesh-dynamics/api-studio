@@ -13,12 +13,17 @@ import static io.md.services.DataStore.TemplateNotFoundException;
 
 import com.cube.core.ServerUtils;
 import com.cube.dao.ApiTraceFacetQuery;
+
+import io.md.cache.ProtoDescriptorCache;
+import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
+import io.md.core.Comparator.Diff;
 import io.md.dao.ApiTraceResponse;
 import io.md.dao.ApiTraceResponse.ServiceReqRes;
 import io.md.constants.ReplayStatus;
 import io.md.core.Comparator.Match;
 import io.md.dao.ConvertEventPayloadResponse;
 import io.md.dao.Event.EventType;
+import io.md.dao.GRPCPayload;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.Payload;
@@ -61,7 +66,6 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
-import org.apache.solr.common.util.Pair;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -104,6 +108,7 @@ import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.golden.transform.TemplateSetTransformer;
 import com.cube.golden.transform.TemplateUpdateOperationSetTransformer;
+import com.cube.queue.StoreUtils;
 
 /**
  * @author prasad
@@ -611,10 +616,18 @@ public class AnalyzeWS {
         return Response.ok().type(MediaType.APPLICATION_JSON).entity(finalJson).build();
     }
 
-    private Optional<HTTPResponsePayload> extractPayload(Optional<JsonNode> payload
+    private Optional<Payload> extractPayload(Optional<JsonNode> payload
 	    , Optional<Event> event) {
-    	return payload.map(HTTPResponsePayload::new).or(() ->
-		    event.map(e -> (HTTPResponsePayload)e.payload));
+    	return payload.map(p-> {
+    		try {
+			    String stringNode = jsonMapper.writeValueAsString(p);
+			    return jsonMapper.readValue(stringNode, Payload.class);
+		    } catch (IOException e) {
+			    return null;
+		    }
+	    }).or(() -> event.map(e -> e.payload));
+//    	return payload.map(HTTPResponsePayload::new).or(() ->
+//		    event.map(e -> (HTTPResponsePayload)e.payload));
     }
 
     /**
@@ -665,7 +678,7 @@ public class AnalyzeWS {
                 Result<Event> requestResult = rrstore
                     .getRequests(replay.customerId, replay.app, replay.collection,
                         reqIds, Collections.emptyList(), Collections.emptyList(), Optional.of(
-		                    Event.RunType.Record));
+		                    RunType.Record));
                 requestResult.getObjects().forEach(req -> requestMap.put(req.reqId, req));
             }
 
@@ -673,7 +686,12 @@ public class AnalyzeWS {
 			    Optional<Event> reqEvent = matchRes.recordReqId
 				    .flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)));
 			    Optional<String> request = reqEvent
-				    .map(e -> e.payload.getPayloadAsJsonString(true));
+				    .map(e -> {
+				    	if(e.payload instanceof GRPCPayload) {
+						    StoreUtils.setProtoDescriptorGrpcEvent(e, config.protoDescriptorCache);
+					    }
+				    	return e.payload.getPayloadAsJsonString(true);
+				    });
 			    Optional<Long> recordReqTime = reqEvent.map(e -> e.timestamp.toEpochMilli());
 
 			    Optional<String> recordedRequest = Optional.empty();
@@ -693,9 +711,14 @@ public class AnalyzeWS {
 				    Optional<Event> replayedRequestEvent = matchRes.replayReqId
 					    .flatMap(rrstore::getRequestEvent);
 				    replayedRequest = replayedRequestEvent
-					    .map(e -> e.payload.getPayloadAsJsonString(true));
+					    .map(e -> {
+						    if(e.payload instanceof GRPCPayload) {
+							    StoreUtils.setProtoDescriptorGrpcEvent(e, config.protoDescriptorCache);
+						    }
+						    return e.payload.getPayloadAsJsonString(true);
+					    });
 				    replayReqTime = replayedRequestEvent.map(e -> e.timestamp.toEpochMilli());
-				    List<Comparator.Diff> responseCompDiffList =
+				    List<Diff> responseCompDiffList =
 					    matchRes.respCompareRes.diffs.size() > config.getPathsToKeepLimit()
 						    ? matchRes.respCompareRes.diffs
 						    .subList(0, (int) config.getPathsToKeepLimit())
@@ -772,7 +795,7 @@ public class AnalyzeWS {
         }
     }
 
-    private List<String> getPathsToKeep(List<Comparator.Diff> diffs) {
+	private List<String> getPathsToKeep(List<Comparator.Diff> diffs) {
       List<String> pathsToKeep = new ArrayList<>();
       for(Comparator.Diff diff: diffs) {
         if(diff.path.contains("body")) {

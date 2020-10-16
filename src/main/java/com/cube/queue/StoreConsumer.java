@@ -1,6 +1,7 @@
 package com.cube.queue;
 
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -8,6 +9,7 @@ import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.lmax.disruptor.EventHandler;
 
+import io.md.cache.ProtoDescriptorCache;
 import io.md.dao.Event;
 import io.md.dao.MDStorable;
 import io.md.utils.Constants;
@@ -18,9 +20,11 @@ public class StoreConsumer {
 	private static final Logger LOGGER = LogManager.getLogger(StoreConsumer.class);
 
 	private ReqRespStore reqRespStore;
+	private Optional<ProtoDescriptorCache> protoDescriptorCacheOptional;
 
-	public StoreConsumer(ReqRespStore reqRespStore) {
+	public StoreConsumer(ReqRespStore reqRespStore, Optional<ProtoDescriptorCache> protoDescriptorCacheOptional) {
 		this.reqRespStore = reqRespStore;
+		this.protoDescriptorCacheOptional = protoDescriptorCacheOptional;
 		LOGGER.debug("Store Consumer Constructor Called");
 	}
 
@@ -30,7 +34,7 @@ public class StoreConsumer {
 			try {
 				MDStorable toStore = event.getValue();
 				if (toStore instanceof Event)
-					StoreUtils.processEvent((Event) toStore, reqRespStore);
+					StoreUtils.processEvent((Event) toStore, reqRespStore, protoDescriptorCacheOptional);
 				else if (toStore instanceof RREvent) {
 					RREvent rrEvent = (RREvent) toStore;
 					StoreUtils.storeSingleReqResp(rrEvent.rr, rrEvent.path, rrEvent.queryParams,

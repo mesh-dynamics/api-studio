@@ -12,6 +12,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
+import javax.swing.text.html.Option;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -419,7 +420,7 @@ public class ReplayWS extends ReplayBasicWS {
 	@Inject
 	public ReplayWS(Config config) {
         //super(new io.cube.agent.ProxyDataStore(), new ProxyAnalyzer());
-		super(config.rrstore, new RealAnalyzer(config.rrstore));
+		super(config.rrstore, new RealAnalyzer(config.rrstore), Optional.of(config.protoDescriptorCache));
 		this.rrstore = config.rrstore;
 		this.jsonMapper = config.jsonMapper;
 		this.config = config;
