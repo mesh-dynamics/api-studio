@@ -2082,23 +2082,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     }
 
-    @Override
-    public Optional<Boolean> updateReplayRunId(String replayId, String runId) {
-        final SolrQuery query = new SolrQuery("*:*");
-        addFilter(query, TYPEF, Types.ReplayMeta.toString());
-        addFilter(query, REPLAYIDF, replayId);
-        return SolrIterator.getStream(solr, query, Optional.of(1)).findFirst().map(doc -> updateReplayDoc(doc, runId));
-
-    }
-
-    private boolean updateReplayDoc(SolrDocument entry, String runId) {
-        entry.setField(RUNIDF, runId);
-        entry.remove("_version_");
-        SolrInputDocument doc = new SolrInputDocument();
-        entry.forEach((key, val) -> doc.setField(key, val));
-        return saveDoc(doc);
-    }
-
     /**
      * Extract ResponseCompareTemplate from query result
      * @param doc Retrieve Result

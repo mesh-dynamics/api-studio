@@ -1694,12 +1694,16 @@ public class CubeStore {
                 requestEvent.app, Optional.of(dynamicInjectionEventDao.getInjectionConfigVersion()),
                 dynamicInjectionEventDao.getContextMap());
             dynamicInjector.inject(requestEvent);
-            Optional<Boolean> updateReplay = rrstore.updateReplayRunId(replayId, runId);
-            if(updateReplay.isEmpty()) {
+            Optional<Replay> optionalReplay = rrstore.getReplay(replayId);
+            if(optionalReplay.isEmpty()) {
                 LOGGER.error("No replay found for the replayId=" + replayId);
                 return Response.status(Status.BAD_REQUEST).entity(Utils.buildErrorResponse(Status.BAD_REQUEST.toString(),
                     Constants.MESSAGE,  "No replay found for the replayId=" + replayId)).build();
             }
+            optionalReplay.ifPresent(replay-> {
+                replay.runId = runId;
+                rrstore.saveReplay(replay);
+            });
             return  Response.ok(requestEvent , MediaType.APPLICATION_JSON).build();
         } catch (InvalidEventException e) {
             LOGGER.error(new ObjectMessage(

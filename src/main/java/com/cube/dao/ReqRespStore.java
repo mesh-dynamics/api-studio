@@ -679,7 +679,4 @@ public interface ReqRespStore extends DataStore {
 	boolean storeProtoDescriptorFile(ProtoDescriptorDAO protoDescriptorDAO);
 
 	Optional<ProtoDescriptorDAO> getLatestProtoDescriptorDAO(String customerId, String app);
-
-	Optional<Boolean> updateReplayRunId(String replayId, String runId);
-
 }
