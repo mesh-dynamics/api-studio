@@ -87,7 +87,9 @@ public class HTTPPayload extends LazyParseAbstractPayload {
 			if (this.dataObj.isDataObjEmpty()) {
 				return mapper.writeValueAsString(this);
 			} else {
-				if (wrapForDisplay) {
+				String mimeType = Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN);
+				if (wrapForDisplay && !Utils.startsWithIgnoreCase(mimeType,
+					MediaType.MULTIPART_FORM_DATA)) {
 					wrapBody();
 				}
 				return dataObj.serializeDataObj();
@@ -149,7 +151,7 @@ public class HTTPPayload extends LazyParseAbstractPayload {
 	protected void wrapBody() {
 		if (payloadState == HTTPPayloadState.UnwrappedDecoded) {
 			this.dataObj.wrapAsString("/".concat(HTTPRequestPayload.BODY),
-				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN), Optional.empty());
+				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN) , Optional.empty());
 			setPayloadState(HTTPPayloadState.WrappedDecoded);
 		}
 	}

@@ -843,8 +843,9 @@ public class JsonDataObj implements DataObj {
 	// TODO : Adding Multipart form data as a binary type now.
 	//  Change this to deal with separate part of multipart data as needed.
 	public static final List<String> binaryMimeTypes = Arrays
-		.asList(MediaType.APPLICATION_OCTET_STREAM, MediaType.MULTIPART_FORM_DATA
-			, Constants.APPLICATION_GRPC,Constants.IMAGE_JPEG );
+		.asList(MediaType.APPLICATION_OCTET_STREAM, MediaType.MULTIPART_FORM_DATA,
+			Constants.APPLICATION_GRPC, Constants.IMAGE_JPEG,
+			Constants.SPREADSHEET_XML, Constants.PDF);
 
 	public JsonNode getRoot() {
 		return objRoot;
