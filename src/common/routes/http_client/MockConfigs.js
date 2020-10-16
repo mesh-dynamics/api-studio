@@ -131,14 +131,14 @@ class MockConfigs extends Component {
     }
 
     handleUpdateMockConfig = () => {
-        const { dispatch, user: { customer_name: customerId }} = this.props;
+        const { dispatch } = this.props;
         const { selectedEditMockConfig, selectedEditMockConfigId } = this.state;
         
         if (!this.validateMockConfig(selectedEditMockConfig)) {
             return
         }
         
-        dispatch(httpClientActions.updateMockConfig(customerId, selectedEditMockConfigId, selectedEditMockConfig));
+        dispatch(httpClientActions.updateMockConfig(selectedEditMockConfigId, selectedEditMockConfig));
     }
 
     setMockConfigStatusText = (text, isError) => {

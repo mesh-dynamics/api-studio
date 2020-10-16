@@ -933,7 +933,7 @@ class ViewSelectedTestConfig extends React.Component {
             ['/test_config_view/test_cluster']: () => this.renderTestClusterPanel()
         };
 
-        return panel[pathname]();
+        return panel[pathname] ? panel[pathname]() : (<div />);
     };
 
     render() {

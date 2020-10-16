@@ -9,6 +9,13 @@ const settingsClickHandler = (mainWindow) => {
     mainWindow.loadURL(`file://${path.join(__dirname, `../../../dist/pages/settings.html`)}`);
 };
 
+const reloadClickHandler = (mainWindow) => {
+    logger.info('User clicked on reload');
+
+    mainWindow.loadURL(`file://${path.join(__dirname, `../../../dist/index.html`)}`);
+};
+
 module.exports = {
-    settingsClickHandler
+    settingsClickHandler,
+    reloadClickHandler
 };
