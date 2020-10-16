@@ -1949,7 +1949,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(SERVICEF , key.getServiceId());
         doc.setField(TYPEF , type);
         doc.setField(VERSIONF, key.getVersion());
-        if (key.getMethod().isPresent()) doc.setField(METHODF, key.getMethod());
+        key.getMethod().ifPresent(method -> doc.setField(METHODF, method));
         return doc;
     }
 
@@ -2087,11 +2087,29 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @param doc Retrieve Result
      * @return
      */
-    private  Optional<CompareTemplate> docToCompareTemplate(SolrDocument doc) {
+    private  Optional<Pair<TemplateKey, CompareTemplate>> docToCompareTemplate(SolrDocument doc) {
+
         return getStrField(doc, COMPARETEMPLATEJSON).flatMap(templateJson -> {
             try {
-                return Optional.of(config.jsonMapper.readValue(templateJson, CompareTemplate.class));
-            } catch (IOException e) {
+                String version = getStrField(doc, VERSIONF).orElseThrow(() ->
+                    new Exception("Version not present"));
+                String customerId = getStrField(doc, CUSTOMERIDF).orElseThrow(() ->
+                    new Exception("Customer id not present"));
+                String appId = getStrField(doc, APPF).orElseThrow(() ->
+                    new Exception("App not present"));
+                String serviceId = getStrField(doc, SERVICEF).orElseThrow(() ->
+                    new Exception("Service not present"));
+                String path = getStrField(doc, PATHF).orElseThrow(() ->
+                    new Exception("Path not present"));
+                TemplateKey.Type reqOrResp = getStrField(doc, TYPEF).flatMap(res ->
+                    Utils.valueOf(TemplateKey.Type.class, res)).orElseThrow(() ->
+                    new Exception("Template key type Not Specified"));
+                Optional<String> method = getStrField(doc, METHODF);
+                Optional<Pair<TemplateKey, CompareTemplate>> ret = Optional.of(new Pair(new TemplateKey(version,
+                    customerId, appId, serviceId, path, reqOrResp,
+                    method, "NA"), config.jsonMapper.readValue(templateJson, CompareTemplate.class)));
+                return ret;
+            } catch (Exception e) {
                 LOGGER.error("Error while reading template object from json :: " + getIntField(doc , IDF).orElse(-1));
                 return Optional.empty();
             }
@@ -2172,9 +2190,18 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, VERSIONF, key.getVersion(), true);
         addFilter(query, METHODF, key.getMethod() , true , true);
         //addFilter(query, PATHF , key.getPath());
-        Optional<Integer> maxResults = Optional.of(1);
-        Optional<CompareTemplate> fromSolr =  SolrIterator.getStream(solr , query , maxResults)
-            .findFirst().flatMap(this::docToCompareTemplate);
+        // 2 at max since there may be one with method empty and one with matching method
+        Optional<Integer> maxResults = Optional.of(2);
+        Collection<Pair<TemplateKey, CompareTemplate>> templates = SolrIterator.getStream(solr , query , maxResults)
+            .map(this::docToCompareTemplate)
+            .flatMap(Optional::stream)
+            .collect(Collectors.toList());
+        // give preference to a match that matches on method as well. If method is empty, it gets lower preference
+        Optional<CompareTemplate> fromSolr =
+            templates.stream().filter(val -> key.getMethod().equals(val.first().getMethod()))
+            .findFirst()
+            .or(() -> templates.stream().findFirst())
+            .map(val -> val.second());
         // logic to append app level attribute filter
         fromSolr.ifPresent(compareTemplate -> {
             if (key.getReqOrResp().equals(Type.ResponseCompare) || key.getReqOrResp().equals(Type.RequestCompare) || key.getReqOrResp().equals(Type.DontCare)) {
