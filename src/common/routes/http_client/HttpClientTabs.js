@@ -1056,7 +1056,7 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.resetRunState(tabId))
         // generate a new run id every time a request is run
         const runId = generateRunId();
-        const mockConfig = getCurrentMockConfig();
+        const mockConfig = getCurrentMockConfig(mockConfigList, selectedMockConfig);
         const spanId = tabToProcess.eventData[0].spanId;
 
         if(PLATFORM_ELECTRON) {
