@@ -9,6 +9,7 @@ import io.md.dao.Event;
 import io.md.dao.JsonDataObj;
 import io.md.dao.Payload;
 import io.md.services.DataStore;
+import io.md.utils.ServerUtils;
 import io.md.utils.Utils;
 import org.apache.commons.text.StringSubstitutor;
 import org.slf4j.Logger;
@@ -29,7 +30,7 @@ public class DynamicInjector {
     public static Map<String , DataObj> convert(Map<String , String> extractionMap , ObjectMapper jsonMapper) {
         Map<String , DataObj> dataObjMap = new HashMap<>();
         for(Map.Entry<String , String> entry : extractionMap.entrySet()){
-            JsonNode node = Utils.convertStringToNode(entry.getValue(), jsonMapper);
+            JsonNode node = ServerUtils.convertStringToNode(entry.getValue(), jsonMapper);
             dataObjMap.put(entry.getKey() ,  new JsonDataObj(node , jsonMapper));
         }
         return dataObjMap;

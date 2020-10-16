@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
-public class Utils {
+public class ServerUtils {
 
   public static JsonNode convertStringToNode(String value, ObjectMapper jsonMapper)
   {
