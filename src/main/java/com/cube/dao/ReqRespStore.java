@@ -3,6 +3,7 @@
  */
 package com.cube.dao;
 
+import io.cube.agent.UtilException;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.dao.*;
 import io.md.dao.Event.EventType;
@@ -102,20 +103,39 @@ public interface ReqRespStore extends DataStore {
     static Recording softDeleteRecording(Recording recording, ReqRespStore rrstore)
 		throws Recording.RecordingSaveFailureException {
     	Instant timeStamp = Instant.now();
-    	//update name as oldName-instantString
-			Recording  updatedRecording = new Recording(recording.id, recording.customerId, recording.app,
-					recording.instanceId, recording.collection, recording.status, Optional.of(timeStamp),
-					recording.templateVersion, recording.parentRecordingId, recording.rootRecordingId,
-					recording.name.concat("-").concat(timeStamp.toString()), recording.codeVersion,
-					recording.branch, recording.tags, true, recording.gitCommitId, recording.collectionUpdOpSetId,
-					recording.templateUpdOpSetId, recording.comment, recording.userId, recording.generatedClassJarPath,
-					recording.generatedClassLoader, recording.label, recording.recordingType,
-					recording.dynamicInjectionConfigVersion);
-		boolean success = rrstore.saveRecording(updatedRecording);
-		if (!success) {
-			throw new Recording.RecordingSaveFailureException("Cannot delete recording");
-		}
-		return recording;
+			RecordingBuilder recordingBuilder = new RecordingBuilder(
+					recording.customerId, recording.app, recording.instanceId, recording.collection)
+					.withStatus(recording.status).withTemplateSetVersion(recording.templateVersion)
+					.withName(recording.name.concat("-").concat(timeStamp.toString())).withArchived(true)
+					.withUserId(recording.userId).withTags(recording.tags)
+					.withId(recording.id).withUpdateTimestamp(timeStamp)
+					.withRootRecordingId(recording.rootRecordingId).withLabel(recording.label)
+					.withRecordingType(recording.recordingType);
+			recording.parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
+			recording.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
+			recording.branch.ifPresent(recordingBuilder::withBranch);
+			recording.gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
+			recording.collectionUpdOpSetId.ifPresent(recordingBuilder::withCollectionUpdateOpSetId);
+			recording.templateUpdOpSetId.ifPresent(recordingBuilder::withTemplateUpdateOpSetId);
+			recording.comment.ifPresent(recordingBuilder::withComment);
+			recording.dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
+			try {
+				recording.generatedClassJarPath
+						.ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
+			} catch (Exception e) {
+				LOGGER.error(new ObjectMessage(Map.of(
+						Constants.MESSAGE, "Error while generatedClassJarPath",
+						Constants.CUSTOMER_ID_FIELD, recording.customerId,
+						Constants.APP_FIELD, recording.app,
+						Constants.INSTANCE_ID_FIELD, recording.instanceId
+				)), e);
+			}
+			Recording  updatedRecording = recordingBuilder.build();
+			boolean success = rrstore.saveRecording(updatedRecording);
+			if (!success) {
+				throw new Recording.RecordingSaveFailureException("Cannot delete recording");
+			}
+			return recording;
 	}
 
     Optional<TemplateSet> getTemplateSet(String customerId, String app, String version);
