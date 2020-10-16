@@ -293,21 +293,20 @@ public class CubeStoreController {
             dtEnvironmentOptional.ifPresent(dt -> {
                 Map<String, String> extractionMap = cubeServerService.getExtractionMap(responseEntity);
                 List<DtEnvVar> vars = dt.getVars();
-                extractionMap.forEach((key, value) -> {
-                    Optional<DtEnvVar> var = vars.stream().filter(v -> v.getKey().equals(key)).findFirst();
-                    var.ifPresentOrElse(v -> {
-                        v.setValue(value);
-                        int index = vars.indexOf(v);
-                        vars.add(index, v);
-                    }, () -> {
-                        DtEnvVar dtEnvVar = new DtEnvVar();
-                        dtEnvVar.setKey(key);
-                        dtEnvVar.setValue(value);
-                        dtEnvVar.setEnvironment(dt);
-                        vars.add(dtEnvVar);
-                    });
+                Map<String, String> varsMap = new HashMap<>();
+                vars.forEach(dtEnvVar -> {
+                    varsMap.put(dtEnvVar.getKey(), dtEnvVar.getValue());
                 });
-                dt.setVars(vars);
+                varsMap.putAll(extractionMap);
+                List<DtEnvVar> updatedVars = new ArrayList<>();
+                varsMap.forEach((key, value) -> {
+                    DtEnvVar dtEnvVar = new DtEnvVar();
+                    dtEnvVar.setKey(key);
+                    dtEnvVar.setValue(value);
+                    dtEnvVar.setEnvironment(dt);
+                    updatedVars.add(dtEnvVar);
+                });
+                dt.setVars(updatedVars);
                 devtoolEnvironmentsRepository.save(dt);
             });
 

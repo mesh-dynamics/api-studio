@@ -161,13 +161,12 @@ public class CubeServerService {
                 ArrayNode arrayNode = (ArrayNode) responseBody;
                 arrayNode.forEach(node -> {
                     try {
-                        String stringValue = node.toString();
-                        /*Text is in this format
-                        * node = ""["{\"extractionMap\":\"{}\",\"newReqId\":\"movieinfo-e75825b2b19518870aca52ba5487f4c3-cfa68bae-def4-4751-8129-38ee93ce8e23\",\"newTraceId\":\"e75825b2b19518870aca52ba5487f4c3\",\"oldReqId\":\"gu-1106045394\",\"oldTraceId\":\"e75825b2b19518870aca52ba5487f4c3\"}"]""
-                        * */
-
-                        stringValue = stringValue.substring(1, stringValue.length()-1).replaceAll("\\\\", "");
-                        Map<String, String> extractionMap = jsonMapper.readValue(stringValue, new TypeReference<Map<String, String>>(){});
+                        JsonNode nodeTree = jsonMapper.readTree(node.textValue());
+                        JsonNode extractionMapJson = jsonMapper.readTree(nodeTree.get("extractionMap").textValue());
+                        TypeReference<HashMap<String,String>> typeRef
+                            = new TypeReference<HashMap<String,String>>() {};
+                        ObjectReader reader = jsonMapper.readerFor(typeRef);
+                        Map<String, String> extractionMap = reader.readValue(extractionMapJson);
                         map.putAll(extractionMap);
                     } catch (IOException e) {
                         log.info(String.format("Error in converting node to Map for  message= %s", e.getMessage()));
