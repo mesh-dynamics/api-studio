@@ -48,10 +48,15 @@ public class RealMocker implements Mocker {
     public MockResponse mock(Event reqEvent, Optional<Instant> lowerBoundForMatching, Optional<MockWithCollection> mockWithCollections) throws MockerException {
         Optional<MockWithCollection> mockWithCollection = setPayloadKeyAndCollection(reqEvent, mockWithCollections);
         if (mockWithCollection.isPresent()) {
-            EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, 1, !mockWithCollection.get().isDevtool, lowerBoundForMatching, mockWithCollection.get().recordCollection);
+            MockWithCollection mockWColl = mockWithCollection.get();
+            // devtool sortOrder -> desc , asc otherwise for normal mock
+            boolean isSortOrderAsc = !mockWColl.isDevtool;
+            //devtool let all results come. No limit
+            Integer limit = mockWColl.isDevtool ? null : 1;
+            EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, limit, isSortOrderAsc, lowerBoundForMatching, mockWithCollection.get().recordCollection);
             DSResult<Event> res = cube.getEvents(eventQuery);
 
-            Optional<Event> matchingResponse = mockWithCollection.get().isDevtool==false ?
+            Optional<Event> matchingResponse = mockWColl.isDevtool==false ?
                     //Normal Replay Mock - Old logic of getting first event and getting response corresponding to it
                     res.getObjects().findFirst().flatMap(cube::getRespEventForReqEvent) :
                     // Devtool Mock -> Find the response for each matched request un-till success response is found
@@ -94,11 +99,8 @@ public class RealMocker implements Mocker {
 
         HTTPResponsePayload httpRespPayload = (HTTPResponsePayload) respEvent.payload;
         int status = httpRespPayload.getStatus();
-        // All 2xx OK
-        if((status >= 200 && status < 400)) return true;
-
-        // All Non 2xx
-        return false;
+        // All 2xx & 3xx OK
+        return (status >= 200 && status < 400);
     }
 
     private String createMockReqErrorLogMessage(Event reqEvent, String errStr) {
@@ -113,7 +115,7 @@ public class RealMocker implements Mocker {
             Constants.REPLAY_ID_FIELD, reqEvent.getCollection());
     }
 
-    private static EventQuery buildRequestEventQuery(Event event, int offset, int limit,
+    private static EventQuery buildRequestEventQuery(Event event, int offset, Integer limit,
         boolean isSortOrderAsc, Optional<Instant> lowerBoundForMatching, String collection) {
         EventQuery.Builder builder =
             new EventQuery.Builder(event.customerId, event.app, event.eventType)
