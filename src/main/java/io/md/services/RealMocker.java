@@ -51,12 +51,12 @@ public class RealMocker implements Mocker {
             MockWithCollection mockWColl = mockWithCollection.get();
             // devtool sortOrder -> desc , asc otherwise for normal mock
             boolean isSortOrderAsc = !mockWColl.isDevtool;
-            //devtool let all results come. No limit
-            Integer limit = mockWColl.isDevtool ? null : 1;
-            EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, limit, isSortOrderAsc, lowerBoundForMatching, mockWithCollection.get().recordCollection);
+            //devtool let all results come. No limit (default batch size)
+            Optional<Integer> limit = mockWColl.isDevtool ? Optional.empty() : Optional.of(1);
+            EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, limit, isSortOrderAsc, lowerBoundForMatching, mockWColl.recordCollection);
             DSResult<Event> res = cube.getEvents(eventQuery);
 
-            Optional<Event> matchingResponse = mockWColl.isDevtool==false ?
+            Optional<Event> matchingResponse = !mockWColl.isDevtool ?
                     //Normal Replay Mock - Old logic of getting first event and getting response corresponding to it
                     res.getObjects().findFirst().flatMap(cube::getRespEventForReqEvent) :
                     // Devtool Mock -> Find the response for each matched request un-till success response is found
@@ -115,7 +115,7 @@ public class RealMocker implements Mocker {
             Constants.REPLAY_ID_FIELD, reqEvent.getCollection());
     }
 
-    private static EventQuery buildRequestEventQuery(Event event, int offset, Integer limit,
+    private static EventQuery buildRequestEventQuery(Event event, int offset, Optional<Integer> limit,
         boolean isSortOrderAsc, Optional<Instant> lowerBoundForMatching, String collection) {
         EventQuery.Builder builder =
             new EventQuery.Builder(event.customerId, event.app, event.eventType)
@@ -126,9 +126,9 @@ public class RealMocker implements Mocker {
                 .withTraceId(event.getTraceId() , Constants.TRACEID_WEIGHT)
                 .withPayloadKey(event.payloadKey , Constants.PAYLOAD_KEY_WEIGHT)
                 .withOffset(offset)
-                .withLimit(limit)
                 .withSortOrderAsc(isSortOrderAsc);
         lowerBoundForMatching.ifPresent(builder::withTimestamp);
+        limit.ifPresent(builder::withLimit);
         return builder.build();
     }
 
