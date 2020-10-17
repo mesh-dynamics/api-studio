@@ -6,7 +6,8 @@
 
 package io.md.services;
 
-import io.md.dao.Replay;
+import io.md.dao.*;
+
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,17 +24,8 @@ import io.md.constants.Constants;
 import io.md.core.Comparator;
 import io.md.core.Comparator.MatchType;
 import io.md.core.TemplateKey.Type;
-import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Event.EventType;
-import io.md.dao.EventQuery;
-import io.md.dao.HTTPRequestPayload;
-import io.md.dao.HTTPResponsePayload;
-import io.md.dao.MDTraceInfo;
-import io.md.dao.MockWithCollection;
-import io.md.dao.Payload;
-import io.md.dao.RecordOrReplay;
-import io.md.dao.ReqRespMatchResult;
 import io.md.services.DataStore.TemplateNotFoundException;
 import io.md.utils.UtilException;
 import io.md.utils.Utils;
@@ -56,10 +48,23 @@ public class RealMocker implements Mocker {
     public MockResponse mock(Event reqEvent, Optional<Instant> lowerBoundForMatching, Optional<MockWithCollection> mockWithCollections) throws MockerException {
         Optional<MockWithCollection> mockWithCollection = setPayloadKeyAndCollection(reqEvent, mockWithCollections);
         if (mockWithCollection.isPresent()) {
-            EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, 1, !mockWithCollection.get().isDevtool, lowerBoundForMatching, mockWithCollection.get().recordCollection);
+            MockWithCollection mockWColl = mockWithCollection.get();
+            // devtool sortOrder -> desc , asc otherwise for normal mock
+            boolean isSortOrderAsc = !mockWColl.isDevtool;
+            //devtool let all results come. No limit (default batch size)
+            Optional<Integer> limit = mockWColl.isDevtool ? Optional.empty() : Optional.of(1);
+            EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, limit, isSortOrderAsc, lowerBoundForMatching, mockWColl.recordCollection);
             DSResult<Event> res = cube.getEvents(eventQuery);
-            Optional<Event> matchingResponse = res.getObjects().findFirst()
-                .flatMap(cube::getRespEventForReqEvent);
+
+            Optional<Event> matchingResponse = !mockWColl.isDevtool ?
+                    //Normal Replay Mock - Old logic of getting first event and getting response corresponding to it
+                    res.getObjects().findFirst().flatMap(cube::getRespEventForReqEvent) :
+                    // Devtool Mock -> Find the response for each matched request un-till success response is found
+                    res.getObjects().map(cube::getRespEventForReqEvent)
+                    .filter(this::isSuccessResponse)
+                    .map(Optional::get)
+                    .findFirst();
+
 
             if (!matchingResponse.isPresent()) {
                 LOGGER.info(createMockReqErrorLogMessage(reqEvent,
@@ -82,6 +87,22 @@ public class RealMocker implements Mocker {
         }
     }
 
+    private boolean isSuccessResponse(Optional<Event> response){
+        //Ignore Absent Response
+        if(!response.isPresent()) return false;
+
+        Event respEvent = response.get();
+        //Payload present
+        if(respEvent.payload==null) return false;
+        //Allow all Non http Response payload
+        if(!(respEvent.payload instanceof HTTPResponsePayload)) return true;
+
+        HTTPResponsePayload httpRespPayload = (HTTPResponsePayload) respEvent.payload;
+        int status = httpRespPayload.getStatus();
+        // All 2xx & 3xx OK
+        return (status >= 200 && status < 400);
+    }
+
     private String createMockReqErrorLogMessage(Event reqEvent, String errStr) {
         return Utils.createLogMessasge(
             Constants.MESSAGE, errStr,
@@ -94,7 +115,7 @@ public class RealMocker implements Mocker {
             Constants.REPLAY_ID_FIELD, reqEvent.getCollection());
     }
 
-    private static EventQuery buildRequestEventQuery(Event event, int offset, int limit,
+    private static EventQuery buildRequestEventQuery(Event event, int offset, Optional<Integer> limit,
         boolean isSortOrderAsc, Optional<Instant> lowerBoundForMatching, String collection) {
         EventQuery.Builder builder =
             new EventQuery.Builder(event.customerId, event.app, event.eventType)
@@ -105,9 +126,9 @@ public class RealMocker implements Mocker {
                 .withTraceId(event.getTraceId() , Constants.TRACEID_WEIGHT)
                 .withPayloadKey(event.payloadKey , Constants.PAYLOAD_KEY_WEIGHT)
                 .withOffset(offset)
-                .withLimit(limit)
                 .withSortOrderAsc(isSortOrderAsc);
         lowerBoundForMatching.ifPresent(builder::withTimestamp);
+        limit.ifPresent(builder::withLimit);
         return builder.build();
     }
 
