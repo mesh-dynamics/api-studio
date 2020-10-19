@@ -2,6 +2,7 @@ package com.cubeui.backend.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.md.dao.ApiTraceResponse;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
@@ -9,8 +10,12 @@ import io.md.dao.Recording;
 import io.md.dao.Replay;
 import com.cubeui.backend.web.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.md.utils.Constants;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
@@ -143,6 +148,35 @@ public class CubeServerService {
             log.error(String.format("Error while retrieving the data for request=%s, statusCode=%s, message=%s", request, response.getStatusCode(), response.getBody()));
             return Optional.empty();
         }
+    }
+
+    public Map<String, String> getExtractionMap(ResponseEntity response) {
+        Map<String, String> map = new HashMap<>();
+        try {
+            String body = response.getBody().toString();
+            JsonNode json = jsonMapper.readTree(body);
+            JsonNode data = json.get("data");
+            JsonNode responseBody = data.get(Constants.RESPONSE);
+            if(responseBody.isArray()) {
+                ArrayNode arrayNode = (ArrayNode) responseBody;
+                arrayNode.forEach(node -> {
+                    try {
+                        JsonNode nodeTree = jsonMapper.readTree(node.textValue());
+                        JsonNode extractionMapJson = jsonMapper.readTree(nodeTree.get("extractionMap").textValue());
+                        TypeReference<HashMap<String,String>> typeRef
+                            = new TypeReference<HashMap<String,String>>() {};
+                        ObjectReader reader = jsonMapper.readerFor(typeRef);
+                        Map<String, String> extractionMap = reader.readValue(extractionMapJson);
+                        map.putAll(extractionMap);
+                    } catch (IOException e) {
+                        log.info(String.format("Error in converting node to Map for  message= %s", e.getMessage()));
+                    }
+                });
+            }
+        } catch (Exception e) {
+            log.info(String.format("Error in converting Json to response Map for  message= %s", e.getMessage()));
+        }
+        return map;
     }
     public Optional<List<Event>> getEvents(EventQuery query, HttpServletRequest request) {
         ResponseEntity response = fetchPostResponse(request, Optional.of(query), "/cs/getEvents");

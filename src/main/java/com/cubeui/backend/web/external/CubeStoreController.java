@@ -5,10 +5,10 @@ import com.cubeui.backend.domain.DtEnvVar;
 import com.cubeui.backend.domain.DtEnvironment;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.DevtoolEnvironmentsRepository;
-import com.cubeui.backend.security.Constants;
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.security.jwt.JwtTokenProvider;
 import com.cubeui.backend.service.CubeServerService;
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.dao.DynamicInjectionEventDao;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
@@ -23,6 +23,7 @@ import io.md.dao.DefaultEvent;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
 
+import io.md.utils.Constants;
 import java.util.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -244,7 +245,8 @@ public class CubeStoreController {
 
     @PostMapping("/storeUserReqResp/{recordingId}")
     public ResponseEntity storeUserReqResp(HttpServletRequest request,
-        @RequestBody List<UserReqRespContainer> postBody, @PathVariable String recordingId)
+        @RequestBody List<UserReqRespContainer> postBody, @PathVariable String recordingId,
+        @RequestParam(value="environmentName", required = false) String environmentName)
         throws InvalidEventException {
         if(postBody == null || postBody.size() < 1) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -252,8 +254,9 @@ public class CubeStoreController {
         }
 
         Optional<Recording> recording = Optional.empty();
+        User user = (User)jwtTokenProvider.getUser(request);
         if(recordingId.equals("History")) {
-            String userId = jwtTokenProvider.getUser(request).getUsername();
+            String userId = user.getUsername();
             Event requestEvent = postBody.get(0).request;
             if(requestEvent == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -283,7 +286,32 @@ public class CubeStoreController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body("No Recording Object found for recordingId=" + recordingId);
         validation.validateCustomerName(request,recording.get().customerId);
-        return cubeServerService.fetchPostResponse(request, Optional.of(postBody), "/cs/storeUserReqResp/" + recording.get().id);
+        ResponseEntity responseEntity = cubeServerService.fetchPostResponse(request, Optional.of(postBody), "/cs/storeUserReqResp/" + recording.get().id);
+        if(environmentName != null && responseEntity.getStatusCode() == HttpStatus.OK) {
+            Optional<DtEnvironment> dtEnvironmentOptional
+                = devtoolEnvironmentsRepository.findDtEnvironmentByUserIdAndName(user.getId(), environmentName);
+            dtEnvironmentOptional.ifPresent(dt -> {
+                Map<String, String> extractionMap = cubeServerService.getExtractionMap(responseEntity);
+                List<DtEnvVar> vars = dt.getVars();
+                Map<String, String> varsMap = new HashMap<>();
+                vars.forEach(dtEnvVar -> {
+                    varsMap.put(dtEnvVar.getKey(), dtEnvVar.getValue());
+                });
+                varsMap.putAll(extractionMap);
+                List<DtEnvVar> updatedVars = new ArrayList<>();
+                varsMap.forEach((key, value) -> {
+                    DtEnvVar dtEnvVar = new DtEnvVar();
+                    dtEnvVar.setKey(key);
+                    dtEnvVar.setValue(value);
+                    dtEnvVar.setEnvironment(dt);
+                    updatedVars.add(dtEnvVar);
+                });
+                dt.setVars(updatedVars);
+                devtoolEnvironmentsRepository.save(dt);
+            });
+
+        }
+        return responseEntity;
     }
 
     @GetMapping("/status/{recordingId}")
