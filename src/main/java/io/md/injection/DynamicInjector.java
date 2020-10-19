@@ -66,7 +66,13 @@ public class DynamicInjector {
                         testResponsePayload,
                         goldenRequestEvent.payload, dataStore);
                 StringSubstitutor sub = new StringSubstitutor(varResolver);
+
+                // Detect if key not found in substitution map
+                sub.setEnableUndefinedVariableException(true);
+
+                String name;
                 DataObj value;
+
                 String requestHttpMethod = getHttpMethod(goldenRequestEvent);
                 boolean apiPathMatch = apiPathMatch(Collections.singletonList(extractionMeta.apiPath), goldenRequestEvent.apiPath);
                 if (apiPathMatch && extractionMeta.method.toString()
@@ -82,12 +88,32 @@ public class DynamicInjector {
                                 .substring(sourceString.indexOf("{") + 1, sourceString.indexOf("}"));
                         value = varResolver.lookupObject(lookupString);
                     } else {
-                        String valueString = sub.replace(sourceString);
-                        value = new JsonDataObj(new TextNode(valueString), jsonMapper);
+                          try {
+                              String valueString = sub.replace(sourceString);
+                              value = new JsonDataObj(new TextNode(valueString), jsonMapper);
+                          } catch (Exception e) {
+                              // Exception indicates Value couldn't be resolved at api path
+                              LOGGER.error(String.format("Extraction variable in Value not found at API path. " +
+                                              "Reusing golden. Value %s %s %s %s %s",
+                                      extractionMeta.value, Constants.API_PATH_FIELD, extractionMeta.apiPath,
+                                      Constants.REQ_ID_FIELD, goldenRequestEvent.reqId), e);
+                              value = null;
+                          }
                     }
-                    if (value != null) {
-                        extractionMap
-                                .put(sub.replace(extractionMeta.name), value);
+
+                    try {
+                        name = sub.replace(extractionMeta.name);
+                    } catch (Exception e) {
+                        // Exception indicates Key couldn't be resolved at api path
+                        LOGGER.error(String.format("Extraction variable in Key not found at API path. Reusing golden. " +
+                                        "Key %s %s %s %s %s",
+                                extractionMeta.name, Constants.API_PATH_FIELD, extractionMeta.apiPath,
+                                Constants.REQ_ID_FIELD, goldenRequestEvent.reqId), e);
+                        name = null;
+                    }
+
+                    if (name != null && value != null) {
+                        extractionMap.put(name, value);
                     }
                 }
             });
