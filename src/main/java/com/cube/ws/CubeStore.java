@@ -1679,8 +1679,9 @@ public class CubeStore {
     }
 
     @POST
-    @Path("/injectEvent")
-    public Response injectEvent(@Context UriInfo uriInfo, DynamicInjectionEventDao dynamicInjectionEventDao) {
+    @Path("/injectEvent/{replayId}/{runId}")
+    public Response injectEvent(@Context UriInfo uriInfo,@PathParam("replayId") String replayId,
+        @PathParam("runId") String runId, DynamicInjectionEventDao dynamicInjectionEventDao) {
         if(dynamicInjectionEventDao == null || dynamicInjectionEventDao.getInjectionConfigVersion() == null ||
             dynamicInjectionEventDao.getContextMap() == null) {
             return Response.status(Status.BAD_REQUEST)
@@ -1693,6 +1694,15 @@ public class CubeStore {
                 requestEvent.app, Optional.of(dynamicInjectionEventDao.getInjectionConfigVersion()),
                 dynamicInjectionEventDao.getContextMap());
             dynamicInjector.inject(requestEvent);
+            Optional<Replay> optionalReplay = rrstore.getReplay(replayId);
+            if(optionalReplay.isEmpty()) {
+                LOGGER.error("No replay found for the replayId=" + replayId);
+                return Response.status(Status.BAD_REQUEST).entity(Utils.buildErrorResponse(Status.BAD_REQUEST.toString(),
+                    Constants.MESSAGE,  "No replay found for the replayId=" + replayId)).build();
+            }
+            Replay replay = optionalReplay.get();
+            replay.runId = runId;
+            rrstore.saveReplay(replay);
             return  Response.ok(requestEvent , MediaType.APPLICATION_JSON).build();
         } catch (InvalidEventException e) {
             LOGGER.error(new ObjectMessage(
