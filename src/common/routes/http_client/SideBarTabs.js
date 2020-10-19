@@ -53,7 +53,7 @@ class SideBarTabs extends Component {
   };
 
   deleteItem = async () => {
-    const { dispatch } = this.props;
+    const { dispatch, user: { customer_name: customerId } } = this.props;
     const { itemToDelete } = this.state;
     try {
       if (itemToDelete.requestType == "collection") {
@@ -61,12 +61,9 @@ class SideBarTabs extends Component {
         dispatch(httpClientActions.deleteUserCollection(itemToDelete.id));
       } else if (itemToDelete.requestType == "request") {
         if (itemToDelete.isParent) {
-          await cubeService.deleteEventByTraceId(
-            itemToDelete.id,
-            itemToDelete.collectionId
-          );
+          await cubeService.deleteEventByTraceId(customerId, itemToDelete.id, itemToDelete.collectionId);
         } else {
-          await cubeService.deleteEventByRequestId(itemToDelete.id);
+          await cubeService.deleteEventByRequestId(customerId, itemToDelete.id);
         }
         if (itemToDelete.isCubeHistory) {
           dispatch(httpClientActions.deleteCubeRunHistory(itemToDelete.id));
@@ -86,11 +83,10 @@ class SideBarTabs extends Component {
     if (!selectedCollectionId) return;
     const {
       httpClient: { userCollections },
+      cube: { selectedApp: app },
+      user: { customer_name: customerId }
     } = this.props;
-    const {
-      cube: { selectedApp },
-    } = this.props;
-    const app = selectedApp;
+
     const { dispatch } = this.props;
     const selectedCollection = userCollections.find(
       (eachCollection) => eachCollection.collec === selectedCollectionId
@@ -98,7 +94,7 @@ class SideBarTabs extends Component {
     const apiTracesForACollection = selectedCollection.apiTraces;
     try {
       if (!apiTracesForACollection || forceLoad) {
-        cubeService.loadCollectionTraces(selectedCollectionId, app).then(
+        cubeService.loadCollectionTraces(customerId, selectedCollectionId, app, selectedCollection.id).then(
           (apiTraces) => {
             selectedCollection.apiTraces = apiTraces;
             dispatch(httpClientActions.addUserCollections(userCollections));
@@ -165,16 +161,24 @@ class SideBarTabs extends Component {
   }
 
   handleTreeNodeClick(node) {
+    const {httpClient: {tabs}, dispatch} = this.props;
+    const existingTab = _.find(tabs, {requestId: node.requestEventId});
+    // if the request is already open in a tab, switch to it, and don't create a new tab
+    if (existingTab){
+      dispatch(httpClientActions.setSelectedTabKey(existingTab.id))
+      return
+    }
+
     this.openTab(node);
   }
 
   openTab(node) {
     const {
       cube: { selectedApp },
+      user,
     } = this.props;
     const reqIdArray = [node.requestEventId];
     if (reqIdArray && reqIdArray.length > 0) {
-      const user = JSON.parse(localStorage.getItem("user"));
       const apiEventURL = `${config.recordBaseUrl}/getEvents`;
       let body = {
         customerId: user.customer_name,
@@ -376,8 +380,8 @@ class SideBarTabs extends Component {
                 style={{
                   paddingLeft: "5px",
                   marginLeft: "5px",
-                  borderLeft: "2px solid #fc6c0a",
-                  whiteSpace: "nowrap",
+                  borderLeft: "2px solid #fc6c0a",                  
+                  whiteSpace: "initial",
                   textOverflow: "ellipsis",
                   overflow: "hidden",
                 }}
@@ -774,13 +778,11 @@ class SideBarTabs extends Component {
   }
 }
 
-function mapStateToProps(state) {
-  const { cube, apiCatalog, httpClient } = state;
-  return {
-    cube,
-    apiCatalog,
-    httpClient,
-  };
-}
+const mapStateToProps = (state) => ({
+  cube: state.cube,
+  apiCatalog: state.apiCatalog,
+  httpClient: state.httpClient,
+  user: state.authentication.user
+});
 
 export default connect(mapStateToProps)(SideBarTabs);

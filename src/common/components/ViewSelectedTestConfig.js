@@ -143,7 +143,7 @@ class ViewSelectedTestConfig extends React.Component {
     };
 
     handleChangeForTestIds = (e) => {
-        const { user, match, history, dispatch, cube } = this.props;
+        const { dispatch, cube } = this.props;
         cube.selectedTestId = e.target.value;
         if (e) {
             dispatch(cubeActions.clear());
@@ -669,7 +669,7 @@ class ViewSelectedTestConfig extends React.Component {
         let jsxContent = '';
         if (options.length) {
             jsxContent = <div>
-                <select id="ddlInstance" className="r-att" onChange={this.handleChangeForInstance} value={cube.selectedInstance} placeholder={'Select...'}>
+                <select id="ddlInstance" className="r-att" onChange={this.handleChangeForInstance} value={cube.selectedInstance || ""} placeholder={'Select...'}>
                     <option value="">Select Instance</option>
                     {options}
                 </select>
@@ -733,7 +733,7 @@ class ViewSelectedTestConfig extends React.Component {
             if (cube.selectedTestId)
                 selectedTestIdObj = { label: cube.selectedTestId, value: cube.selectedTestId};
             jsxContent = <div>
-                <select id="ddlTestId" className="r-att" onChange={this.handleChangeForTestIds} value={cube.selectedTestId} placeholder={'Select...'}>
+                <select id="ddlTestId" className="r-att" onChange={this.handleChangeForTestIds} value={cube.selectedTestId || ""} placeholder={'Select...'}>
                     <option value="">Select Golden</option>
                     {options}
                 </select>
@@ -926,14 +926,12 @@ class ViewSelectedTestConfig extends React.Component {
         const { location: { pathname }} = this.props;
         
         const panel = {
-            ['/']: () => (<div />),
-            ['/configs']: () => (<div />),
             ['/test_config_view']: () => this.renderTestInfo(),
             ['/test_config_view/golden_visibility']: () => this.renderGoldenMeta(),
             ['/test_config_view/test_cluster']: () => this.renderTestClusterPanel()
         };
 
-        return panel[pathname]();
+        return panel[pathname] ? panel[pathname]() : (<div />);
     };
 
     render() {
@@ -1051,7 +1049,7 @@ class ViewSelectedTestConfig extends React.Component {
                     </Modal.Body>
                     <Modal.Footer >
                         {analysisDone ? 
-                        <Link to="/">
+                        <Link to="/test_results">
                             <span onClick={this.handleClose} id="btnRunTestViewResults" className="cube-btn">View Results</span>&nbsp;&nbsp;
                         </Link>
                     :

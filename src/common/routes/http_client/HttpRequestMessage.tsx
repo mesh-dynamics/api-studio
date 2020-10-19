@@ -28,7 +28,7 @@ export interface IHttpRequestMessageState{
 }
 
 class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpRequestMessageState> {
-    constructor(props) {
+    constructor(props: IHttpRequestMessageProps) {
         super(props);
         this.state = {
             showFormData: this.props.bodyType === "formData",
@@ -75,9 +75,17 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
                     <p style={{fontSize:12}}>{urlRendered}</p>
                         {err && <p style={{fontSize: 9, color: "red"}}>{err}</p>}
                 </div>
-            : null;
+            : <></>;
     
     }
+
+    onTippyShow =(instance: any) => {  
+        if(instance.props.content == null || instance.props.content.innerText == ""){ 
+            return false 
+        } 
+        return;
+    };
+
 
     render() {
         const urlRendered = this.generateUrlTooltip(this.props.httpURL);
@@ -89,7 +97,7 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
         </div>
 
         return (
-            <div>
+            <>
                 <div style={{marginRight: "7px"}}>
                     <div style={{marginBottom: "9px", display: "inline-block", width: "20%", fontSize: "11px"}}>REQUEST</div>
                 </div>
@@ -116,9 +124,9 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
                             </FormControl>
                         </FormGroup>
                     </div>
-                    {urlRendered ? <Tippy content={urlRendered} arrow={false} arrowType="round" interactive={true} theme={"google"} size="large" placement="bottom-start">
+                    <Tippy content={urlRendered} arrow={false} arrowType="round" interactive={true} theme={"google"} size="large" placement="bottom-start" onShow={this.onTippyShow}>
                         {urlTextBox}
-                    </Tippy> : urlTextBox}
+                    </Tippy>
                 </div>
                 <div className="" style={{marginTop: "18px", marginBottom: "12px"}}>
                     <div className="" style={{display: "inline-block", paddingRight: "18px", opacity: "0.7", fontSize: "12px", width: "50px"}}>
@@ -200,7 +208,7 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
                     isOutgoingRequest={this.props.isOutgoingRequest} >
 
                 </HttpRequestBody>
-            </div>
+            </>
         );
     }
 }

@@ -114,16 +114,16 @@ const parseCurlCommand = curlCommand => {
         cookies = cookie.parse(cookieString.replace(/^Cookie: /gi, ''), cookieParseOptions)
     }
     let method
-    if (parsedArguments.X === 'POST') {
+    if (parsedArguments.X === 'POST' || parsedArguments.request === 'POST') {
         method = 'post'
     } else if (parsedArguments.X === 'PUT' ||
-        parsedArguments.T) {
+        parsedArguments.T || parsedArguments.request === 'PUT') {
         method = 'put'
-    } else if (parsedArguments.X === 'PATCH') {
+    } else if (parsedArguments.X === 'PATCH' || parsedArguments.request === 'PATCH') {
         method = 'patch'
-    } else if (parsedArguments.X === 'DELETE') {
+    } else if (parsedArguments.X === 'DELETE' || parsedArguments.request === 'DELETE') {
         method = 'delete'
-    } else if (parsedArguments.X === 'OPTIONS') {
+    } else if (parsedArguments.X === 'OPTIONS' || parsedArguments.request === 'OPTIONS') {
         method = 'options'
     } else if ((parsedArguments.d ||
         parsedArguments.data ||

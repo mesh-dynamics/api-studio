@@ -1,6 +1,6 @@
 import { generateRunId } from "../utils/http_client/utils";
 import { ipcRenderer } from "./ipc-renderer";
-import {store} from "../../common/helpers"
+import { store } from "../../common/helpers"
 
 const setDefaultMockContext = () => {
   console.log("Setting default mock context...");
@@ -9,6 +9,7 @@ const setDefaultMockContext = () => {
     const {
       httpClient: { userHistoryCollection },
       cube: { selectedApp },
+      authentication: { user: { customer_name: customerId } }
     } = store.getState();
 
     if (!userHistoryCollection) {
@@ -17,8 +18,6 @@ const setDefaultMockContext = () => {
     }
 
     const runId = generateRunId();
-    const user = JSON.parse(localStorage.getItem("user"));
-    const customerId = user.customer_name;
     const mockContext = {
       collectionId: userHistoryCollection.collec, // where to store the mocked/live captured requests (new/existing collection)
       recordingCollectionId: userHistoryCollection.collec, // configurable for preferred collection or all collections or history (default)

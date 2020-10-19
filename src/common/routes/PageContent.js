@@ -45,18 +45,3 @@ class PageContent extends Component {
 }
 
 export default PageContent
-
-// import replay from './service_graph'
-// import PathResults from "./path_results";
-// import SetupTestConfig from "./setup_test_config";
-// import ReviewGolden from "./review_golden";
-// import ShareableLink from "./shareable_link";
-// import ShareableDiff from "./shareable_diff";
-// {/* {PathResults} */}
-//         {/* {ReviewGolden} */}
-//         {/* {SetupTestConfig} */}
-//         {/* {ShareableLink} */}
-//         {/* {ShareableDiff} */}
-//         {/*  */}
-
-// {replay}

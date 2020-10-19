@@ -21,7 +21,7 @@ describe("Web Window Startup Test", ()=>{
     // Verify the window's title
     expect(title).toBe("Mesh Dynamics");
   });
-  it("Login Should Success", async()=>{
+  it("After successful login, test result page should be visible", async()=>{
    
 
     await (await appClient.$("[name='username']")).setValue(currentDriver.configData.username);

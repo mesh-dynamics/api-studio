@@ -49,8 +49,14 @@ const menutemplate = (mainWindow) => [
     {
         label: 'View',
         submenu: [
-            {
-                role: 'reload'
+            // {
+            //     role: 'reload'
+            // },
+            { 
+                label: 'Reload',
+                click() {
+                    events.reloadClickHandler(mainWindow);
+                }
             },
             {
                 role: 'toggledevtools'

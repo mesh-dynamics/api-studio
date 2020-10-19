@@ -27,7 +27,13 @@ export interface IHttpRequestBodyProps {
 class HttpRequestBody extends Component<IHttpRequestBodyProps> {
   render() {
     return (
-      <div style={{ display: this.props.showBody === true ? "" : "none" }}>
+      <div
+        style={{
+          display: this.props.showBody === true ? "" : "none",
+          height: "calc(100% - 210px)",
+          minHeight: "50px",
+        }}
+      >
         <HttpRequestFormData
           tabId={this.props.tabId}
           showFormData={this.props.showFormData}

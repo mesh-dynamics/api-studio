@@ -22,6 +22,7 @@ import {getSearchHistoryParams, updateSearchHistoryParams} from "../../utils/lib
 import statusCodeList from "../../status-code-list";
 import {resolutionsIconMap} from '../../components/Resolutions.js';
 import { cubeService } from '../../services';
+import { getParameterCaseInsensitive } from '../../../shared/utils';
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -389,7 +390,6 @@ class ViewTrace extends Component {
         if(!replayId) throw new Error("replayId is required");
         if(!traceId) throw new Error("traceId is required");
         let response, json;
-        let user = JSON.parse(localStorage.getItem('user'));
         let url = `${config.analyzeBaseUrl}/analysisResByPath/${replayId}?start=0&includeDiff=true&path=%2A&traceId=${traceId}`;
         let dataList = {};
 
@@ -510,7 +510,7 @@ class ViewTrace extends Component {
 
     validateAndCleanHTTPMessageParts (messagePart, headers) {
         if(headers) {
-            let contentType = this.getParameterCaseInsensitive(headers, "content-type");
+            let contentType = getParameterCaseInsensitive(headers, "content-type");
             let contentTypeString = contentType ? (_.isArray(contentType) ? contentType[0] : contentType) : "",
                 isMultipart = contentTypeString.toLowerCase().indexOf("multipart") > -1;
             if(isMultipart) {
@@ -622,13 +622,6 @@ class ViewTrace extends Component {
         return diffData;
     }
 
-    getParameterCaseInsensitive (object, key) {
-        return object[
-            Object.keys(object)
-            .find(k => k.toLowerCase() === key.toLowerCase())
-        ];
-    }
-
     validateAndCreateDiffLayoutData(replayList) {
         let loggingURL = this.loggingURL;
         let diffLayoutData = replayList.map((item, index) => {
@@ -640,7 +633,7 @@ class ViewTrace extends Component {
             if (item.recordResponse) {
                 recordedResponseHeaders = item.recordResponse.hdrs ? item.recordResponse.hdrs : [];
                 // check if the content type is JSON and attempt to parse it
-                let recordedResponseContentType = this.getParameterCaseInsensitive(recordedResponseHeaders, "content-type");
+                let recordedResponseContentType = getParameterCaseInsensitive(recordedResponseHeaders, "content-type");
                 let recordedResponseMime = recordedResponseContentType ? (_.isArray(recordedResponseContentType) ? recordedResponseContentType[0] : recordedResponseContentType) : "";
                 isJson = recordedResponseMime.toLowerCase().indexOf("json") > -1;
                 if (item.recordResponse.body && isJson) {
@@ -663,7 +656,7 @@ class ViewTrace extends Component {
             if (item.replayResponse) {
                 replayedResponseHeaders = item.replayResponse.hdrs ? item.replayResponse.hdrs : [];
                 // check if the content type is JSON and attempt to parse it
-                let replayedResponseContentType = this.getParameterCaseInsensitive(replayedResponseHeaders, "content-type");
+                let replayedResponseContentType = getParameterCaseInsensitive(replayedResponseHeaders, "content-type");
                 let replayedResponseMime = replayedResponseContentType ? (_.isArray(replayedResponseContentType) ? replayedResponseContentType[0] : replayedResponseContentType) : "";
                 isJson = replayedResponseMime.toLowerCase().indexOf("json") > -1;
                 if (item.replayResponse.body && isJson) {
@@ -1304,13 +1297,9 @@ class ViewTrace extends Component {
     }
 }
 
-
-function mapStateToProps(state) {
-    const cube = state.cube;
-    return {
-        cube
-    }
-}
+const mapStateToProps = (state) => ({
+    cube: state.cube
+});
 
 const connectedViewTrace = connect(mapStateToProps)(ViewTrace);
 

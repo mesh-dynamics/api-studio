@@ -7,6 +7,8 @@ const setupElectronListeners = () => {
         const notification = document.getElementById('notification');
         const message = document.getElementById('message');
         const closeButton = document.getElementById('close-button');
+        const laterButton = document.getElementById('later-button');
+        const downloadButton =  document.getElementById('download-button');
         const restartButton = document.getElementById('restart-button');
 
         const updaterConfig = {
@@ -20,8 +22,10 @@ const setupElectronListeners = () => {
     
         ipcRenderer.on('update_available', () => {
           ipcRenderer.removeAllListeners('update_available');
-          message.innerText = 'A new update is available. Downloading now...';
+          message.innerText = 'A new update is available for download.';
           notification.classList.remove('hidden');
+          downloadButton.classList.remove('hidden');
+          restartButton.classList.add('hidden');
         });
     
         const downloadProgressInterval = setInterval(() => ipcRenderer.on('download_progress', processDownloadProgress), 1000);
@@ -31,6 +35,9 @@ const setupElectronListeners = () => {
           message.innerText = 'A new version has been downloaded. It will be installed on restart. Restart now?';
           notification.classList.remove('hidden');
           restartButton.classList.remove('hidden');
+          laterButton.classList.remove('hidden');
+          downloadButton.classList.add('hidden');
+          closeButton.classList.add('hidden');
         });
     
         ipcRenderer.on('get_config', (event, appConfig) => {
@@ -40,6 +47,13 @@ const setupElectronListeners = () => {
           config.recordBaseUrl= `${appConfig.domain}/api/cs`;
           config.replayBaseUrl= `${appConfig.domain}/api/rs`;
           config.analyzeBaseUrl= `${appConfig.domain}/api/as`;
+        });
+
+        ipcRenderer.on('error_downloading_update', () => {
+          ipcRenderer.removeAllListeners('error_downloading_update');
+          message.innerText = 'There was an error downloading update. Please try again later.';
+          notification.classList.remove('hidden');
+
         });
     
         function processDownloadProgress(event, percent) {
@@ -59,7 +73,14 @@ const setupElectronListeners = () => {
           ipcRenderer.send('restart_app');
         }
 
+        function downloadUpdate(){
+          ipcRenderer.send('download_update');
+          downloadButton.classList.add('hidden');
+        }
+
         closeButton.onclick = closeNotification;
+        laterButton.onclick = closeNotification;
+        downloadButton.onclick = downloadUpdate;
         restartButton.onclick = restartApp;
     }
 };

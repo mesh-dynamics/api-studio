@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import { Glyphicon } from 'react-bootstrap';
 import Modal from "react-bootstrap/lib/Modal";
 import GoldenPopover from "../GoldenPopover";
-import { ShareableLinkContext } from "../../routes/shareable_link/ShareableLink";
 import { DiffResultsContext } from "../../routes/diff_results/DiffResults";
 import "./OperationalSet.css";
 
@@ -68,18 +67,9 @@ class OperationSet extends Component {
                         onMouseLeave={this.handleHidePopoverTrigger} 
                         className="os-root-container"
                     >
-                        {	
-                            /* TODO: temporary workaround; cleanup when removing shareable_link page */	
-                            ((window.location.pathname.includes("/diff_results")) && 	
-                            <DiffResultsContext.Consumer>
+                        <DiffResultsContext.Consumer>
                                 {(context) => this.renderOperationalSet(context)}
-                            </DiffResultsContext.Consumer>)
-                            || 	
-                            (<ShareableLinkContext.Consumer>
-                                {(context) => this.renderOperationalSet(context)}
-                            </ShareableLinkContext.Consumer>)
-                        }
-
+                        </DiffResultsContext.Consumer>
                         <Modal show={this.state.showPopover} dialogClassName="os-popover-modal popover-golden">
                             <div 
                                 className="os-popover-wrapper grey" 
@@ -98,3 +88,12 @@ class OperationSet extends Component {
 }
 
 export default OperationSet;
+
+	// import { ShareableLinkContext } from "../../routes/shareable_link/ShareableLink";
+    /* TODO: temporary workaround; cleanup when removing shareable_link page */	
+    // ((window.location.pathname.includes("/diff_results")) && 	
+    
+    // || 	
+    // (<ShareableLinkContext.Consumer>
+    //     {(context) => this.renderOperationalSet(context)}
+    // </ShareableLinkContext.Consumer>)

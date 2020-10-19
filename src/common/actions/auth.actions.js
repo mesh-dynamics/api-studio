@@ -6,6 +6,10 @@ import {
 } from '../services/auth.service';
 import { history } from '../helpers';
 import { ipcRenderer } from '../helpers/ipc-renderer';
+import { apiCatalogActions } from './api-catalog.actions';
+import { cubeActions } from './cube.actions';
+import { httpClientActions } from './httpClientActions';
+import { goldenActions } from './golden.actions';
 
 const authActions = {
     beginFetch: () => ({ type: authConstants.REQUEST_BEGIN }),
@@ -24,6 +28,12 @@ const authActions = {
 
     accessViolationDetected: () => ({ type: authConstants.ACCESS_VIOLATION }),
 
+    rememberCredentials: (payload) => ({ type: authConstants.REMEMBER_CREDENTIALS, payload }),
+
+    toggleRememberMe: () => ({ type: authConstants.TOGGLE_REMEMBER_ME }),
+
+    forgetCredentials: () => ({ type: authConstants.FORGET_CREDENTIALS }),
+
     login: (username, password) => async (dispatch) => {
         dispatch(authActions.clearMessage());
 
@@ -38,7 +48,6 @@ const authActions = {
                 ipcRenderer.send('set_user', user);
             }
             
-
             history.push("/")
         } catch(e) {
             dispatch(authActions.fetchFailure(e));
@@ -47,7 +56,10 @@ const authActions = {
     },
 
     logout: () => (dispatch) => {
-        // May have to set user for ipc here
+        dispatch(apiCatalogActions.resetApiCatalogToInitialState());
+        dispatch(cubeActions.resetCubeToInitialState());
+        dispatch(httpClientActions.resetHttpClientToInitialState());
+        dispatch(goldenActions.resetGoldenVisibilityDetails());
         dispatch(authActions.clearUser());
         
         if(PLATFORM_ELECTRON){
@@ -57,11 +69,13 @@ const authActions = {
                 token_type: "", 
                 username: ""
             };
-
+            
             ipcRenderer.send('set_user', user);
+            // Reset context as well
+            ipcRenderer.send('reset_context_to_default');
         }
         
-        localStorage.removeItem('user');
+        localStorage.removeItem('user'); // TODO: Remove this after a few release cycles
         
         history.push("/login");
     },
