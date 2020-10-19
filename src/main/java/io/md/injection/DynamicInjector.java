@@ -113,7 +113,7 @@ public class DynamicInjector {
                     }
 
                     if (name != null && value != null) {
-                        extractionMap.put(sub.replace(extractionMeta.name), value);
+                        extractionMap.put(name, value);
                     }
                 }
             });
