@@ -191,10 +191,6 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 			// also add validation to be an array even if a singleton
 			// because of jackson serialisation to Multivalued map
 
-			MultivaluedHashMap<String, String> headers = httpRequest.dataObj
-				.getValAsObject(Constants.HDR_PATH, MultivaluedHashMap.class)
-				.orElse(new MultivaluedHashMap<String, String>());
-
 			MultivaluedHashMap<String, String> queryParams = httpRequest.dataObj
 				.getValAsObject(Constants.QUERY_PARAMS_PATH, MultivaluedHashMap.class)
 				.orElse(new MultivaluedHashMap<String, String>());
@@ -238,6 +234,10 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 
 			LOGGER.debug("PATH :: " + uri.toString() + " OUTGOING REQUEST BODY :: " + new String(httpRequest.getBody(),
 				StandardCharsets.UTF_8));
+
+			MultivaluedHashMap<String, String> headers = httpRequest.dataObj
+				.getValAsObject(Constants.HDR_PATH, MultivaluedHashMap.class)
+				.orElse(new MultivaluedHashMap<String, String>());
 
 			headers.forEach((k, vlist) -> {
 				// some headers are restricted and cannot be set on the request
