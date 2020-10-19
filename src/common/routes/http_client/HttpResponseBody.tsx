@@ -3,6 +3,7 @@ import { MonacoDiffEditor } from "react-monaco-editor";
 import { UpdateParamHandler } from "./HttpResponseHeaders";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import "./diff.css";
+import _ from "lodash";
 
 export interface IHttpResponseBodyProps {
   responseBody: string;
@@ -39,39 +40,59 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
     this.editor
       .getOriginalEditor()
       .getAction("editor.action.formatDocument")
-      .run()
+      ?.run()
       .then(() => {});
     this.editor
       .getModifiedEditor()
       .getAction("editor.action.formatDocument")
-      .run()
+      ?.run()
       .then(() => {});
   }
   editorDidMount = (editor: monacoEditor.editor.IStandaloneDiffEditor) => {
     this.editor = editor;
     const { original, modified } = editor.getModel()!;
-    
-    // Following function is cached and editorDidMount is called only once at the time of first page load, not when props changing. 
+
+    // Following function is cached and editorDidMount is called only once at the time of first page load, not when props changing.
     // So any param from props should be taken fresh from props.
     modified.onDidChangeContent((event) => {
+      const value =
+        this.props.responseBodyType !== "json"
+          ? JSON.stringify(modified.getValue())
+          : modified.getValue(); //
       this.props.updateParam(
         this.props.isOutgoingRequest,
         this.props.tabId,
         "responseBody",
         "responseBody",
-        modified.getValue()
+        value
       );
     });
     original.onDidChangeContent((event) => {
+      const value =
+        this.props.responseBodyType !== "json"
+          ? JSON.stringify(original.getValue())
+          : original.getValue(); //
       this.props.updateParam(
         this.props.isOutgoingRequest,
         this.props.tabId,
         "recordedResponseBody",
         "recordedResponseBody",
-        original.getValue()
+        value
       );
     });
   };
+
+  tryParseStringToHTML(jsonString: string) {
+    try {
+      const htmlString = JSON.parse(jsonString);
+      if (_.isString(htmlString)) {
+        return htmlString;
+      }
+    } catch (error) {
+      //Silently absorb error, happens in case of empty or null string or invalid json
+    }
+    return jsonString;
+  }
 
   render() {
     const { showBody, tabId } = this.props;
@@ -79,14 +100,22 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
       this.props.responseBodyType == "js"
         ? "javascript"
         : this.props.responseBodyType;
+    const recordedResponseBody =
+      language !== "json"
+        ? this.tryParseStringToHTML(this.props.recordedResponseBody)
+        : this.props.recordedResponseBody;
+    const responseBody =
+      language !== "json"
+        ? this.tryParseStringToHTML(this.props.responseBody)
+        : this.props.responseBody;
 
     return showBody ? (
       <MonacoDiffEditor
         width="100%"
         height={this.props.maximizeEditorHeight ? "calc(100vh - 30px)" : "600"}
         language={language}
-        original={this.props.recordedResponseBody}
-        value={this.props.responseBody}
+        original={recordedResponseBody}
+        value={responseBody}
         options={{
           wordWrap: "on",
           originalEditable: true,

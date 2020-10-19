@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { FormGroup, FormControl, Grid, Row, Col } from "react-bootstrap";
 import { getStatusColor } from "../../utils/http_client/utils";
 import { getHttpStatus } from "../../status-code-list";
+import _ from "lodash";
 // import "./styles_here.css";
 
 import HttpResponseHeaders, {
@@ -30,13 +31,14 @@ class HttpResponseMessage extends Component<
 > {
   private childRefHttpResponseBody: React.RefObject<HttpResponseBody>;
   private childRefHttpResponseHeaders: React.RefObject<HttpResponseHeaders>;
+  private isResponseBodyTypeManuallySet: boolean = false;
   constructor(props: IHttpResponseMessageProps) {
     super(props);
     this.state = {
       status: "",
       showHeaders: false,
       showBody: true,
-      responseBodyType: "json",
+      responseBodyType: this.getInitialResponseBodyType(props),
       maximizeEditorHeight: false,
     };
     this.childRefHttpResponseBody = React.createRef<HttpResponseBody>();
@@ -64,6 +66,79 @@ class HttpResponseMessage extends Component<
     }
   }
 
+  //Move this to utilities
+
+  getContentTypeToLanguage(headers: string) {
+    try {
+      const contentType = JSON.parse(headers)["content-type"];
+      if (_.isArray(contentType)) {
+        return contentType.find((header) => header.indexOf("text/html") !== -1)
+          ? "html"
+          : contentType.find(
+              (header) => header.indexOf("application/json") !== -1
+            )
+          ? "json"
+          : "text";
+      } else if (_.isString(contentType)) {
+        return contentType.indexOf("text/html") !== -1
+          ? "html"
+          : contentType.indexOf("application/json") !== -1
+          ? "json"
+          : "text";
+      }
+    } catch (error) {
+      //Silent error handling. Occurs due to headers is null or empty or not valid JSON object
+    }
+    return "json";
+  }
+
+  getInitialResponseBodyType(props: IHttpResponseMessageProps) {
+    const responseLanguage = this.getContentTypeToLanguage(
+      this.props.responseHeaders
+    );
+    const recordedResponseLanguage = this.getContentTypeToLanguage(
+      this.props.recordedResponseHeaders
+    );
+    if (responseLanguage !== "json") {
+      return responseLanguage;
+    } else if (recordedResponseLanguage !== "json") {
+      return recordedResponseLanguage;
+    } else {
+      return "json";
+    }
+  }
+
+  //Get language type headers from contentType header on props change
+  componentWillReceiveProps(nextProps: IHttpResponseMessageProps) {
+    const responseLanguage = this.getContentTypeToLanguage(
+      this.props.responseHeaders
+    );
+    const recordedResponseLanguage = this.getContentTypeToLanguage(
+      this.props.recordedResponseHeaders
+    );
+    const responseLanguageNext = this.getContentTypeToLanguage(
+      nextProps.responseHeaders
+    );
+    const recordedResponseLanguageNext = this.getContentTypeToLanguage(
+      nextProps.recordedResponseHeaders
+    );
+    if (responseLanguage !== responseLanguageNext) {
+      this.setState({ responseBodyType: responseLanguageNext });
+    } else if (recordedResponseLanguage !== recordedResponseLanguageNext) {
+      this.setState({ responseBodyType: recordedResponseLanguageNext });
+    } else if(!this.isResponseBodyTypeManuallySet){
+      if (responseLanguageNext !== "json" || nextProps.responseBody) {
+        responseLanguageNext !== this.state.responseBodyType &&
+          this.setState({ responseBodyType: responseLanguageNext });
+      } else if (recordedResponseLanguageNext !== "json") {
+        recordedResponseLanguageNext !== this.state.responseBodyType &&
+          this.setState({ responseBodyType: recordedResponseLanguageNext });
+      } else {
+        this.setState({ responseBodyType: "json" });
+      }
+    }
+  }
+
   onMaxHeightIconClick() {
     this.setState(
       { maximizeEditorHeight: !this.state.maximizeEditorHeight },
@@ -88,6 +163,7 @@ class HttpResponseMessage extends Component<
   }
 
   handleChange(event) {
+    this.isResponseBodyTypeManuallySet = true;
     this.setState({
       responseBodyType: event.target.value,
     });
@@ -162,7 +238,7 @@ class HttpResponseMessage extends Component<
                 placeholder="Method"
                 style={{ fontSize: "12px" }}
                 name="responseBodyType"
-                value={this.props.responseBodyType}
+                value={this.state.responseBodyType}
                 onChange={this.handleChange}
               >
                 <option value="json">JSON</option>
@@ -214,7 +290,7 @@ class HttpResponseMessage extends Component<
                     : "NA"}
                 </b>
               </span>
-              
+
               <div style={{ float: "right" }}>
                 <span
                   className="btn btn-sm cube-btn text-center"
