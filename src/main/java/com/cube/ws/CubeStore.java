@@ -1700,10 +1700,9 @@ public class CubeStore {
                 return Response.status(Status.BAD_REQUEST).entity(Utils.buildErrorResponse(Status.BAD_REQUEST.toString(),
                     Constants.MESSAGE,  "No replay found for the replayId=" + replayId)).build();
             }
-            optionalReplay.ifPresent(replay-> {
-                replay.runId = runId;
-                rrstore.saveReplay(replay);
-            });
+            Replay replay = optionalReplay.get();
+            replay.runId = runId;
+            rrstore.saveReplay(replay);
             return  Response.ok(requestEvent , MediaType.APPLICATION_JSON).build();
         } catch (InvalidEventException e) {
             LOGGER.error(new ObjectMessage(
