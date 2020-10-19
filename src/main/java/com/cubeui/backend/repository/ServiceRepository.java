@@ -12,4 +12,5 @@ public interface ServiceRepository extends JpaRepository<Service, Long> {
     Optional<List<Service>> findByAppId(Long appId);
     Optional<Service> findByNameAndAppIdAndServiceGroupId(String name, Long appId, Long serviceGroupId);
     Optional<Service> findByNameAndAppId(String name, Long appId);
+    Optional<List<Service>> findByServiceGroupId(Long serviceGroupId);
 }

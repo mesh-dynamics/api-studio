@@ -16,4 +16,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findAllByActivatedIsFalseAndCreatedAtBefore(LocalDateTime dateTime);
     Optional<List<User>> findByCustomerId(Long customerId);
+    void deleteByCustomerId(long customerId);
 }
