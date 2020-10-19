@@ -6,19 +6,41 @@ import authActions from '../../actions/auth.actions';
 
 const SignIn = (props) => {
 
-    const [username, setUsername] = useState('');
+    const { 
+        login, 
+        authentication: { 
+            messages, 
+            credentials,
+            rememberMe
+        }, 
+        rememberCredentials,
+        forgetCredentials,
+        toggleRememberMe,
+    }  = props;
 
-    const [password, setPassword] = useState('');
+    const persistedUsername = credentials?.username || ''; // Persist Migration
+
+    const persistedPassword = credentials?.password || '';
+
+    const persistedRememberMe = rememberMe || false;
+
+    const [username, setUsername] = useState(persistedUsername);
+
+    const [password, setPassword] = useState(persistedPassword);
 
     const [submitted, setSubmitted] = useState(false);
-
-    const { authentication: { messages }, login }  = props;
 
     const handleSubmit = (e) => {
         e.preventDefault();
 
         setSubmitted(true);
 
+        if(persistedRememberMe){ 
+            rememberCredentials(username, password);
+        } else {
+            forgetCredentials();
+        }
+        
         if (username && password) {
             login(username, password)
         }
@@ -38,8 +60,17 @@ const SignIn = (props) => {
                 <div className={'custom-fg form-group' + (submitted && !password ? ' has-error' : '')}>
                     {/*<label htmlFor="password">Password</label>*/}
                     <input type="password" placeholder="Enter Password" className="form-control" name="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                    {submitted && !password &&
-                    <div className="help-block">Password is required</div>
+                    {
+                        submitted && !password &&
+                        <div className="help-block">Password is required</div>
+                    }
+                    {
+                        PLATFORM_ELECTRON
+                        && 
+                        <div className="login-remember-container">
+                            <input className="login-remember-input" type="checkbox" checked={persistedRememberMe} onChange={toggleRememberMe} />
+                            <span className="login-remember-label">Remember Me</span>
+                        </div>
                     }
                 </div>
                 <div className="btn-link forgot-password">
@@ -72,6 +103,12 @@ const mapStateToProps = (state) => ({
 
 const mapDispatchToProps = (dispatch) => ({
     login: (username, password) => dispatch(authActions.login(username, password)),
+
+    rememberCredentials: (username, password) => dispatch(authActions.rememberCredentials({ username, password })),
+
+    toggleRememberMe: () => dispatch(authActions.toggleRememberMe()),
+
+    forgetCredentials: () => dispatch(authActions.forgetCredentials())
 })
 
 SignIn.propTypes = {

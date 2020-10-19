@@ -8,6 +8,11 @@ const initialState = {
   isFetching: false,
   messages: [],
   accessViolation: false,
+  rememberMe: false,
+  credentials: {
+    username: '',
+    password: ''
+  }
 };
 
 const authenticationReducer = (state = initialState, action) => {
@@ -60,6 +65,27 @@ const authenticationReducer = (state = initialState, action) => {
     return {
       ...state,
       accessViolation: true
+    };
+  case authConstants.REMEMBER_CREDENTIALS:
+    return {
+      ...state,
+      credentials: {
+        username: action.payload.username,
+        password: action.payload.password
+      }
+    }
+  case authConstants.TOGGLE_REMEMBER_ME:
+    return {
+      ...state,
+      rememberMe: !state.rememberMe,
+    };
+  case authConstants.FORGET_CREDENTIALS:
+    return {
+      ...state,
+      credentials: {
+        username: '',
+        password: ''
+      }
     };
   default:
     return state

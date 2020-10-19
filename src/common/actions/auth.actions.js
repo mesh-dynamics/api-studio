@@ -28,6 +28,12 @@ const authActions = {
 
     accessViolationDetected: () => ({ type: authConstants.ACCESS_VIOLATION }),
 
+    rememberCredentials: (payload) => ({ type: authConstants.REMEMBER_CREDENTIALS, payload }),
+
+    toggleRememberMe: () => ({ type: authConstants.TOGGLE_REMEMBER_ME }),
+
+    forgetCredentials: () => ({ type: authConstants.FORGET_CREDENTIALS }),
+
     login: (username, password) => async (dispatch) => {
         dispatch(authActions.clearMessage());
 
