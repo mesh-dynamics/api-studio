@@ -3285,6 +3285,28 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
+    public boolean deleteRecordingMeta(Recording recording) {
+        StringBuffer queryBuff = new StringBuffer();
+        addToQryStr(queryBuff , COLLECTIONF , recording.collection ,false);
+        addToQryStr(queryBuff , TYPEF ,
+            List.of(Types.Recording.name(), Types.Event.name()),
+            true, Optional.empty());
+
+        return deleteDocsByQuery(queryBuff.toString());
+    }
+
+    @Override
+    public boolean deleteReplayMeta(List<Replay> replays) {
+        StringBuffer queryBuff = new StringBuffer();
+        addToQryStr(queryBuff , REPLAYIDF ,  replays.stream().map(replay -> replay.replayId).collect(Collectors.toList()) ,false, Optional.empty());
+        addToQryStr(queryBuff , TYPEF ,
+            List.of(Types.ReqRespMatchResult.name(), Types.Analysis.name(), Types.MatchResultAggregate.name(), Types.ReplayMeta.name()),
+            true, Optional.empty());
+
+        return deleteDocsByQuery(queryBuff.toString());
+    }
+
+    @Override
     public Optional<CustomerAppConfig> getAppConfiguration(String customerId , String app) {
 
         final SolrQuery query = new SolrQuery("*:*");

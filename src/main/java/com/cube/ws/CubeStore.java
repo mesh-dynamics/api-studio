@@ -13,17 +13,14 @@ import io.md.dao.DataObj.DataObjProcessingException;
 import io.md.injection.DynamicInjector;
 import io.md.injection.DynamicInjectorFactory;
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +37,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
@@ -52,7 +48,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
-import com.sun.xml.bind.v2.runtime.reflect.opt.Const;
 import io.md.dao.*;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
@@ -1312,15 +1307,35 @@ public class CubeStore {
     }
 
     @POST
-    @Path("softDelete/{recordingId}")
-    public Response softDelete(@PathParam("recordingId") String recordingId) {
+    @Path("delete/{recordingId}")
+    public Response softDelete(@Context UriInfo ui, @PathParam("recordingId") String recordingId) {
+        boolean hardDelete = Optional.ofNullable(ui.getQueryParameters().getFirst(io.md.constants.Constants.HARD_DELETE))
+                .flatMap(Utils::strToBool).orElse(false);
         Optional<Recording> recording = rrstore.getRecording(recordingId);
         Response resp = recording.map(rec -> {
             try {
-                Recording deletedR = ReqRespStore.softDeleteRecording(rec, rrstore);
                 String json;
-                LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Soft deleting recording", "RecordingId", recordingId)));
-                json = jsonMapper.writeValueAsString(deletedR);
+                if(hardDelete) {
+                    boolean deleteRecordingMeta = rrstore.deleteRecordingMeta(rec);
+                    if(deleteRecordingMeta) {
+                       Stream<Replay> replays = rrstore.getReplay(Optional.of(rec.customerId), Optional.of(rec.app),
+                            Optional.empty(), Collections.EMPTY_LIST, Optional.empty(),
+                            Optional.of(rec.collection));
+                       rrstore.deleteReplayMeta(replays.collect(Collectors.toList()));
+                    } else {
+                        LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR, "RecordingMeta is not deleted", "RecordingId", recordingId)));
+                        return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                            buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                                "Unable to delete RecordingMeta ")).build();
+                    }
+                    json = "Recording is completely deleted";
+                } else {
+                    Recording deletedR = ReqRespStore.softDeleteRecording(rec, rrstore);
+                    LOGGER.info(new ObjectMessage(
+                        Map.of(Constants.MESSAGE, "Soft deleting recording", "RecordingId",
+                            recordingId)));
+                    json = jsonMapper.writeValueAsString(deletedR);
+                }
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
             } catch (JsonProcessingException ex) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR, "Error in converting Recording object to Json for recordingId", "RecordingId", recordingId,
