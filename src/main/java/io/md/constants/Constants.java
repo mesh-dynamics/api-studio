@@ -277,4 +277,6 @@ public class Constants {
 
 	public static final String SPREADSHEET_XML = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 	public static final String PDF  = "application/pdf";
+
+	public static final String HARD_DELETE = "hardDelete";
 }
