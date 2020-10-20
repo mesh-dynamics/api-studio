@@ -209,7 +209,7 @@ public class ReplayWS extends ReplayBasicWS {
      */
     @POST
     @Path("delete/{replayId}")
-    public Response softDelete(@Context UriInfo ui, @PathParam("replayId") String replayId) {
+    public Response delete(@Context UriInfo ui, @PathParam("replayId") String replayId) {
         boolean hardDelete = Optional.ofNullable(ui.getQueryParameters().getFirst(io.md.constants.Constants.HARD_DELETE))
             .flatMap(Utils::strToBool).orElse(false);
         Optional<Replay> replay = rrstore.getReplay(replayId);

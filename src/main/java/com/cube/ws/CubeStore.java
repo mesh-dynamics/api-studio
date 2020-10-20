@@ -1308,7 +1308,7 @@ public class CubeStore {
 
     @POST
     @Path("delete/{recordingId}")
-    public Response softDelete(@Context UriInfo ui, @PathParam("recordingId") String recordingId) {
+    public Response delete(@Context UriInfo ui, @PathParam("recordingId") String recordingId) {
         boolean hardDelete = Optional.ofNullable(ui.getQueryParameters().getFirst(io.md.constants.Constants.HARD_DELETE))
                 .flatMap(Utils::strToBool).orElse(false);
         Optional<Recording> recording = rrstore.getRecording(recordingId);
