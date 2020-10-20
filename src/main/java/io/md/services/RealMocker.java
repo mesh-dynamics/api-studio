@@ -56,15 +56,31 @@ public class RealMocker implements Mocker {
             EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, limit, isSortOrderAsc, lowerBoundForMatching, mockWColl.recordCollection);
             DSResult<Event> res = cube.getEvents(eventQuery);
 
+            //variable used in lambda should be final
+            final Event[] firstRespArr = {null};
             Optional<Event> matchingResponse = !mockWColl.isDevtool ?
                     //Normal Replay Mock - Old logic of getting first event and getting response corresponding to it
                     res.getObjects().findFirst().flatMap(cube::getRespEventForReqEvent) :
                     // Devtool Mock -> Find the response for each matched request un-till success response is found
                     res.getObjects().map(cube::getRespEventForReqEvent)
+                    //.flatMap(Optional::stream)   //Java9
+                    .filter(Optional::isPresent)
+                    //.map(Optional::get)
+                    .map(optEvent -> {
+                        Event event = optEvent.get();
+                        if(firstRespArr[0] == null){
+                            firstRespArr[0] = event;
+                        }
+                        return event;
+                    })
                     .filter(this::isSuccessResponse)
-                    .map(Optional::get)
                     .findFirst();
 
+            if(mockWColl.isDevtool && !matchingResponse.isPresent()){
+                LOGGER.info(createMockReqErrorLogMessage(reqEvent,
+                        "Did not find any valid non-200 response. Giving first match resp"));
+                matchingResponse = Optional.ofNullable(firstRespArr[0]);
+            }
 
             if (!matchingResponse.isPresent()) {
                 LOGGER.info(createMockReqErrorLogMessage(reqEvent,
@@ -87,11 +103,7 @@ public class RealMocker implements Mocker {
         }
     }
 
-    private boolean isSuccessResponse(Optional<Event> response){
-        //Ignore Absent Response
-        if(!response.isPresent()) return false;
-
-        Event respEvent = response.get();
+    private boolean isSuccessResponse(Event respEvent){
         //Payload present
         if(respEvent.payload==null) return false;
         //Allow all Non http Response payload
