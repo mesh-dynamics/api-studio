@@ -1,27 +1,22 @@
 package com.cube;
 
+import io.md.injection.DynamicInjector;
+import io.md.injection.InjectionVarResolver;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.apache.commons.text.StringSubstitutor;
-import org.apache.logging.log4j.message.ObjectMessage;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.node.TextNode;
 
 import io.md.dao.CubeMetaInfo;
 import io.md.dao.DataObj;
-import io.md.dao.DataObj.PathNotFoundException;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventType;
@@ -33,12 +28,12 @@ import io.md.dao.MDTraceInfo;
 import io.md.dao.Recording.RecordingType;
 import io.md.injection.DynamicInjectionConfig;
 import io.md.injection.DynamicInjectionConfig.ExtractionMeta;
-
 import io.md.injection.DynamicInjectionConfig.InjectionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta.HTTPMethodType;
+import io.md.injection.DynamicInjector;
+import io.md.injection.InjectionVarResolver;
 
 import io.md.drivers.AbstractReplayDriver;
-import io.md.utils.InjectionVarResolver;
 import com.cube.ws.Config;
 
 public class DynamicInjectionTest {
@@ -112,7 +107,7 @@ public class DynamicInjectionTest {
 					goldenRequestEvent.payload, config.rrstore);
 				StringSubstitutor sub = new StringSubstitutor(varResolver);
 				DataObj value;
-				String requestHttpMethod = AbstractReplayDriver.getHttpMethod(goldenRequestEvent);
+				String requestHttpMethod = DynamicInjector.getHttpMethod(goldenRequestEvent);
 				if (extMeta.apiPath.equalsIgnoreCase(goldenRequestEvent.apiPath)
 					&& extractionMeta.method.toString().equalsIgnoreCase(requestHttpMethod)) {
 					//  TODO ADD checks for method type GET/POST & also on reset field
