@@ -131,8 +131,8 @@ class MockConfigs extends Component {
     }
 
     handleUpdateMockConfig = () => {
-        const {dispatch} = this.props;
-        const {selectedEditMockConfig, selectedEditMockConfigId} = this.state;
+        const { dispatch } = this.props;
+        const { selectedEditMockConfig, selectedEditMockConfigId } = this.state;
         
         if (!this.validateMockConfig(selectedEditMockConfig)) {
             return
@@ -263,7 +263,10 @@ class MockConfigs extends Component {
     }
 }
 
-const mapStateToProps = (state) =>  ({httpClient: state.httpClient});
+const mapStateToProps = (state) => ({
+    httpClient: state.httpClient,
+    user: state.authentication.user
+});
 
 export default connect(mapStateToProps)(MockConfigs);
 

@@ -6,7 +6,6 @@ import arrayToTree from "array-to-tree";
 
 // TODO: replace console log statements with logging
 const fetchAppsList = async () => {
-    const user = JSON.parse(localStorage.getItem('user'));
     try {
         return await api.get(`${config.apiBaseUrl}/app`);
     } catch(error) {
@@ -52,37 +51,35 @@ const getTestConfigByAppId = async (appId) => {
     }
 };
 
-const createUserCollection = async(collectionName, app) => {
-    const user = JSON.parse(localStorage.getItem('user')); 
+const createUserCollection = async (user, collectionName, app) => {
     const userId = user.username;
-      const searchParams = new URLSearchParams();
+    const searchParams = new URLSearchParams();
 
-      searchParams.set("name", collectionName);
-      searchParams.set("userId", userId);
-      searchParams.set("label", userId);
-      searchParams.set("recordingType", "UserGolden");
+    searchParams.set("name", collectionName);
+    searchParams.set("userId", userId);
+    searchParams.set("label", userId);
+    searchParams.set("recordingType", "UserGolden");
 
-      const configForHTTP = {
+    const configForHTTP = {
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
+            "Content-Type": "application/x-www-form-urlencoded",
         },
-      };
+    };
 
     return api
     .post(
-      `${config.apiBaseUrl}/cs/start/${user.customer_name}/${app}/dev/Default${app}`,
-      searchParams,
-      configForHTTP
+        `${config.apiBaseUrl}/cs/start/${user.customer_name}/${app}/dev/Default${app}`,
+        searchParams,
+        configForHTTP
     );
 };
 
-const storeUserReqResponse = async(recordingId, data) => {
+const storeUserReqResponse = async(recordingId, data, apiConfig={}) => {
     const urlToPost = `${config.apiBaseUrl}/cs/storeUserReqResp/${recordingId}`;
-    return api.post(urlToPost, data);
+    return api.post(urlToPost, data, apiConfig);
 }
 
-const fetchCollectionList = async (app, recordingType="", forCurrentUser=false, numResults = 0, start = 0) => {
-    const user = JSON.parse(localStorage.getItem('user')); // TODO: Change this to be passed from auth tree
+const fetchCollectionList = async (user, app, recordingType="", forCurrentUser=false, numResults = 0, start = 0) => {
     try {
         let url = `${config.recordBaseUrl}/searchRecording`;
         const params = new URLSearchParams();
@@ -125,8 +122,7 @@ const checkStatusForReplay = async (replayId) => {
     }
 };
 
-const fetchTimelineData = (app, userId, endDate, startDate, numResults, testConfigName, goldenName) => {
-    const user = JSON.parse(localStorage.getItem('user')); // TODO: Update to pass user from correct place
+const fetchTimelineData = ({ username, customer_name }, app, userId, endDate, startDate, numResults, testConfigName, goldenName) => {
     const endDateString = endDate.toISOString();
     const params = new URLSearchParams();
     const requestOptions = {
@@ -144,7 +140,7 @@ const fetchTimelineData = (app, userId, endDate, startDate, numResults, testConf
     }
 
     if (userId !== 'ALL') {
-        params.set("userId", user.username);
+        params.set("userId", username);
     }
     
     if (numResults || numResults == 0){
@@ -160,21 +156,20 @@ const fetchTimelineData = (app, userId, endDate, startDate, numResults, testConf
     }
 
     try {
-        return api.get(`${config.analyzeBaseUrl}/timelineres/${user.customer_name}/${app}?${params.toString()}`, requestOptions);
+        return api.get(`${config.analyzeBaseUrl}/timelineres/${customer_name}/${app}?${params.toString()}`, requestOptions);
     } catch (error) {
         console.log("Error fetching timeline data \n", error);
         throw error;
     }
 };
 
-const getCollectionUpdateOperationSet = async (app) => {
-    const user = JSON.parse(localStorage.getItem('user')); // TODO: Update to pass user from correct place
+const getCollectionUpdateOperationSet = async (app, customerId) => {
     const requestOptions = {
         headers: {
             "Access-Control-Allow-Origin": "*",
         }
     }
-    const url = `${config.analyzeBaseUrl}/goldenUpdate/recordingOperationSet/create?customer=${user.customer_name}&app=${app}`;
+    const url = `${config.analyzeBaseUrl}/goldenUpdate/recordingOperationSet/create?customer=${customerId}&app=${app}`;
     try {
         return await api.post(url, null, requestOptions);
     } catch (error) {
@@ -207,10 +202,9 @@ const fetchAnalysisStatus = async (replayId) => {
     }
 };
 
-const getTestConfig = async (app, testConfigName) => {
-    const user = JSON.parse(localStorage.getItem('user'));
+const getTestConfig = async (customerId, app, testConfigName) => {
     try {
-        return await api.get(`${config.apiBaseUrl}/test_config/${user.customer_name}/${app}/${testConfigName}`);
+        return await api.get(`${config.apiBaseUrl}/test_config/${customerId}/${app}/${testConfigName}`);
     } catch (error) {
         console.error("Error fetching Test Config for Test summary!", error);
         throw error;
@@ -246,8 +240,7 @@ const removeReplay = async (replayId) => {
     }
 };
 
-const getNewTemplateVerInfo = async (app, currentTemplateVer) => {
-    const user = JSON.parse(localStorage.getItem('user'));
+const getNewTemplateVerInfo = async (customerId, app, currentTemplateVer) => {
     const requestOptions = {
         headers: {
             "Access-Control-Allow-Origin": "*",
@@ -255,7 +248,7 @@ const getNewTemplateVerInfo = async (app, currentTemplateVer) => {
     };
 
     try {
-        return await api.post(`${config.analyzeBaseUrl}/initTemplateOperationSet/${user.customer_name}/${app}/${currentTemplateVer}`, null, requestOptions);
+        return await api.post(`${config.analyzeBaseUrl}/initTemplateOperationSet/${customerId}/${app}/${currentTemplateVer}`, null, requestOptions);
     } catch (error) {
         console.log("Error getting new template version info\n", error);
         throw error;
@@ -292,10 +285,9 @@ const createJiraIssue = async (summary, description, issueTypeId, projectId, rep
     }
 }
 
-const getResponseTemplate = async (selectedApp, pathResultsParams, reqOrRespCompare, jsonPath) => {
-    const user = JSON.parse(localStorage.getItem('user')); // TODO: Take this from auth reducer
+const getResponseTemplate = async (customerId, selectedApp, pathResultsParams, reqOrRespCompare, jsonPath) => {
     const { currentTemplateVer, service, path } = pathResultsParams;
-    const url = `${config.analyzeBaseUrl}/getTemplate/${user.customer_name}/${selectedApp}/${currentTemplateVer}/${service}/${reqOrRespCompare}?apiPath=${path}&jsonPath=${jsonPath}`;
+    const url = `${config.analyzeBaseUrl}/getTemplate/${customerId}/${selectedApp}/${currentTemplateVer}/${service}/${reqOrRespCompare}?apiPath=${path}&jsonPath=${jsonPath}`;
 
     const requestOptions = {
         headers: {
@@ -348,11 +340,10 @@ const deleteGolden = async (recordingId) => {
         throw error;
     }
 };
-const deleteEventByRequestId = async (requestId) => {
+const deleteEventByRequestId = async (customerId, requestId) => {
     try {
-        const user = JSON.parse(localStorage.getItem('user'));
         let body = {
-            "customerId":user.customer_name
+            "customerId": customerId
         }
         return await api.post(`${config.recordBaseUrl}/deleteEventByReqId/${requestId}`, body);
     } catch (error) {
@@ -361,13 +352,12 @@ const deleteEventByRequestId = async (requestId) => {
     }
 };
 
-const deleteEventByTraceId = async (traceId, collectionId) => {
+const deleteEventByTraceId = async (customerId, traceId, collectionId) => {
     try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        let body = {
-            "customerId":user.customer_name,
+        const body = {
+            "customerId": customerId,
             "collection": collectionId
-        }
+        };
         return await api.post(`${config.recordBaseUrl}/deleteEventByTraceId/${traceId}`, body);
     } catch (error) {
         console.log("Error deleting Collection request \n", error);
@@ -384,10 +374,9 @@ const fetchClusterList = async () => {
     }
 };
 
-const fetchAPIFacetData = async (app, recordingType, collectionName, startTime=null, endTime=null) => {
-    const user = JSON.parse(localStorage.getItem('user'));
+const fetchAPIFacetData = async (customerId, app, recordingType, collectionName, startTime=null, endTime=null) => {
 
-    let apiFacetURL = `${config.analyzeBaseUrl}/getApiFacets/${user.customer_name}/${app}`;
+    let apiFacetURL = `${config.analyzeBaseUrl}/getApiFacets/${customerId}/${app}`;
     
     let searchParams = new URLSearchParams();
     startTime && searchParams.set("startDate", startTime);
@@ -405,11 +394,10 @@ const fetchAPIFacetData = async (app, recordingType, collectionName, startTime=n
     }
 }
 
-const fetchAPITraceData = async (traceApiFiltersProps) => {
+const fetchAPITraceData = async (customerId, traceApiFiltersProps) => {
     const {app, startTime, endTime, service, apiPath, instance, recordingType, collectionName, depth, numResults} = traceApiFiltersProps;
-    const user = JSON.parse(localStorage.getItem('user'));
 
-    let apiTraceURL = `${config.analyzeBaseUrl}/getApiTrace/${user.customer_name}/${app}`;
+    let apiTraceURL = `${config.analyzeBaseUrl}/getApiTrace/${customerId}/${app}`;
     
     let searchParams = new URLSearchParams();
     startTime && searchParams.set("startDate", startTime);
@@ -432,15 +420,15 @@ const fetchAPITraceData = async (traceApiFiltersProps) => {
     }
 }
 
-const loadCollectionTraces = async(selectedCollectionId, app)=> {
+const loadCollectionTraces = async(customerId, selectedCollectionId, app, recordingId)=> {
         const filterData = {
-          ...getDefaultTraceApiFilters(),
-          app,
-          collectionName: selectedCollectionId,
-          depth: 100,
-          numResults: 100,
+            ...getDefaultTraceApiFilters(),
+            app,
+            collectionName: selectedCollectionId,
+            depth: 100,
+            numResults: 100,
         };
-        const res = await fetchAPITraceData(filterData);
+        const res = await fetchAPITraceData(customerId, filterData);
         
         const apiTraces = [];
         res.response.sort((a, b) => {
@@ -452,7 +440,7 @@ const loadCollectionTraces = async(selectedCollectionId, app)=> {
             eachApiTraceEvent["id"] = eachApiTraceEvent["requestEventId"];
             eachApiTraceEvent["toggled"] = false;
             eachApiTraceEvent["recordingIdAddedFromClient"] =
-            selectedCollectionId;
+            recordingId;
             eachApiTraceEvent["traceIdAddedFromClient"] =
                 eachApiTrace.traceId;
             eachApiTraceEvent["collectionIdAddedFromClient"] =
@@ -470,13 +458,11 @@ const loadCollectionTraces = async(selectedCollectionId, app)=> {
         return apiTraces;
 }
 
-const fetchAPIEventData = async (app, reqIds, eventTypes=[], apiConfig={}) => {
-    const user = JSON.parse(localStorage.getItem('user'));
-
+const fetchAPIEventData = async (customerId, app, reqIds, eventTypes=[], apiConfig={}) => {
     let apiEventURL = `${config.recordBaseUrl}/getEvents`;
     
     let body = {
-        "customerId":user.customer_name,
+        "customerId": customerId,
         "app": app,
         "eventTypes": eventTypes,
         "services": [],
@@ -494,10 +480,9 @@ const fetchAPIEventData = async (app, reqIds, eventTypes=[], apiConfig={}) => {
     }
 }
 
-const fetchAgentConfigs = async (app) => {
-    const user = JSON.parse(localStorage.getItem('user')); 
+const fetchAgentConfigs = async (customerId, app) => { 
     try {
-        return await api.get(`${config.recordBaseUrl}/fetchAgentConfigWithFacets/${user.customer_name}/${app}`);
+        return await api.get(`${config.recordBaseUrl}/fetchAgentConfigWithFacets/${customerId}/${app}`);
     } catch(error) {
         console.log("Error Fetching agent configs \n", error);
         throw new Error("Error Fetching agent configs");
@@ -524,7 +509,7 @@ const getAllEnvironments = async () => {
 
 const insertNewEnvironment = async (environment) => {
     try {
-        let url = `${config.apiBaseUrl}/dtEnvironment/insert`
+        const url = `${config.apiBaseUrl}/dtEnvironment/insert`
         return await api.post(url, environment);
     } catch (e) {
         console.error("Error inserting environment")
@@ -534,7 +519,7 @@ const insertNewEnvironment = async (environment) => {
 
 const updateEnvironment = async (environment) => {
     try {
-        let url = `${config.apiBaseUrl}/dtEnvironment/update/${environment.id}`
+        const url = `${config.apiBaseUrl}/dtEnvironment/update/${environment.id}`
         return await api.post(url, environment);
     } catch (e) {
         console.error("Error updating environment")
@@ -544,7 +529,7 @@ const updateEnvironment = async (environment) => {
 
 const deleteEnvironment = async (id) => {
     try {
-        let url = `${config.apiBaseUrl}/dtEnvironment/delete/${id}`
+        const url = `${config.apiBaseUrl}/dtEnvironment/delete/${id}`
         return await api.post(url);
     } catch (e) {
         console.error("Error deleting environment")
@@ -553,12 +538,11 @@ const deleteEnvironment = async (id) => {
 }
 
 // mock config
-const getAllMockConfigs = async (selectedApp) => {
+const getAllMockConfigs = async (customerId, selectedApp) => {
     try {
-        const user = JSON.parse(localStorage.getItem('user'));
         let url = `${config.apiBaseUrl}/config/get`
         let params = new URLSearchParams()
-        params.set("customer", user.customer_name)
+        params.set("customer", customerId)
         params.set("app", selectedApp)
         params.set("configType", "mockConfig")
         return await api.get(url + "?" + params.toString());
@@ -568,17 +552,17 @@ const getAllMockConfigs = async (selectedApp) => {
     }
 }
 
-const insertNewMockConfig = async (selectedApp, mockConfig) => {
+const insertNewMockConfig = async (customerId, selectedApp, mockConfig) => {
     try {
-        const user = JSON.parse(localStorage.getItem('user'));
         let url = `${config.apiBaseUrl}/config/insert`
         
         let body = {
-            customer: user.customer_name,
+            customer: customerId,
             app: selectedApp,
             configType: "mockConfig",
             key: mockConfig.name,
-            value: JSON.stringify(mockConfig)
+            value: JSON.stringify(mockConfig),
+            authenticate: true
         }
 
         return await api.post(url, body);
@@ -588,17 +572,17 @@ const insertNewMockConfig = async (selectedApp, mockConfig) => {
     }
 }
 
-const updateMockConfig = async (selectedApp, id, mockConfig) => {
+const updateMockConfig = async (customerId, selectedApp, mockId, mockConfig) => {
     try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        let url = `${config.apiBaseUrl}/config/update/${id}`
+        let url = `${config.apiBaseUrl}/config/update/${mockId}`
         
         let body = {
-            customer: user.customer_name,
+            customer: customerId,
             app: selectedApp,
             configType: "mockConfig",
             key: mockConfig.name,
-            value: JSON.stringify(mockConfig)
+            value: JSON.stringify(mockConfig),
+            authenticate: true
         }
 
         return await api.post(url, body);
@@ -610,7 +594,7 @@ const updateMockConfig = async (selectedApp, id, mockConfig) => {
 
 const deleteMockConfig = async (id) => {
     try {
-        let url = `${config.apiBaseUrl}/config/delete/${id}`
+        const url = `${config.apiBaseUrl}/config/delete/${id}`
         return await api.post(url);
     } catch (e) {
         console.error("Error deleting mock config")
@@ -620,7 +604,7 @@ const deleteMockConfig = async (id) => {
 
 const forceStopRecording = async (recordingId) => {
     try {
-        let url = `${config.recordBaseUrl}/forcestop/${recordingId}`
+        const url = `${config.recordBaseUrl}/forcestop/${recordingId}`
         return await api.post(url);
     } catch (e) {
         console.error("Error force stopping recording")

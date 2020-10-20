@@ -355,3 +355,18 @@ form:after {
     border-radius: 3px;
     margin-bottom: 20px;
 }
+
+.login-remember-container {
+	display: flex;
+    padding-top: 5px;
+}
+
+.login-remember-label {
+	font-size: 14px;
+    margin-top: 1px;
+    margin-left: 5px;
+}
+
+.login-remember-input {
+	cursor: pointer;
+}

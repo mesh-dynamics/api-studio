@@ -495,10 +495,26 @@ export const httpClient = (state = initialState, { type, data }) => {
             }
         }
         case httpClientConstants.DELETE_USER_COLLECTION: {
-            const userCollections = state.userCollections.filter( u=> u.rootRcrdngId !== data);
+            let deletedCollection;
+            const userCollections = state.userCollections.filter( collection => { 
+                if(collection.rootRcrdngId === data){
+                    deletedCollection = collection;
+                } 
+                return collection.rootRcrdngId !== data;
+            });
+            const tabs = state.tabs.map( tab => {
+                if(deletedCollection && tab.collectionIdAddedFromClient === deletedCollection.collec){
+                    return {...tab, 
+                    collectionIdAddedFromClient : "",
+                    recordingIdAddedFromClient : ""
+                    }
+                }
+                return tab;
+            });
             return {
                 ...state,
-                userCollections
+                userCollections,
+                tabs
             }
         }
 
@@ -752,7 +768,9 @@ export const httpClient = (state = initialState, { type, data }) => {
                 selectedMockConfig: data,
             }
         }
-
+        case httpClientConstants.RESET_HTTP_CLIENT_TO_INITIAL_STATE: {
+            return initialState;
+        }
         default:
             return state;
     }

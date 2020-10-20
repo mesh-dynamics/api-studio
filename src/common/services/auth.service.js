@@ -19,7 +19,7 @@ const handleResponseLogin = (response) => {
             const error = (data && data.message) || response.statusText;
             return Promise.reject(error);
         }
-        localStorage.setItem('user', JSON.stringify(json));
+
         return (data);
     });
 }
@@ -83,7 +83,6 @@ const refreshAuthLogic = (failedRequest) => {
             const data = await response.json();
             if(response.ok && data.status != 401){
 
-                localStorage.setItem('user', JSON.stringify(data));
                 store.dispatch(authActions.setUser(data));
                 
                 if (PLATFORM_ELECTRON) {
@@ -93,7 +92,8 @@ const refreshAuthLogic = (failedRequest) => {
                 window.authRefreshPromise.resolve();
                 resolve();
             }else{
-                store.dispatch(authActions.logout());
+                // store.dispatch(authActions.logout());
+                store.dispatch(authActions.accessViolationDetected());
                 const error = (data && data.message) || response.statusText;
                 window.authRefreshPromise.reject();
                 return Promise.reject(error);

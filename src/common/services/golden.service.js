@@ -2,8 +2,7 @@ import config from '../config';
 import api from '../api';
 
 // Overriding default Content-Type in the calls below
-// TODO: remove token parameter
-const fetchGoldenInsights = async (goldenId, service, apiPath, token) => {
+const fetchGoldenInsights = async (goldenId, service, apiPath) => {
     const requestOptions = {
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -19,7 +18,7 @@ const fetchGoldenInsights = async (goldenId, service, apiPath, token) => {
     
 };
 
-const fetchGoldenMeta = async (recordingId, token) => {
+const fetchGoldenMeta = async (recordingId) => {
     const requestOptions = {
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
@@ -34,7 +33,7 @@ const fetchGoldenMeta = async (recordingId, token) => {
     }
 };
 
-const postGoldenMeta = async (goldenDetails, token) => {
+const postGoldenMeta = async (goldenDetails) => {
     const { id, goldenName, labelName, branchName, codeVersionNumber, commitId } = goldenDetails;
     //userId, golden_comment, tags to be added in later iterations
     const urlencoded = new URLSearchParams();
@@ -47,7 +46,6 @@ const postGoldenMeta = async (goldenDetails, token) => {
     const requestOptions = {
         headers: {
             "Content-Type": "application/x-www-form-urlencoded",
-            // "Authorization": "" // TODO: Remove this
         }
     };
 

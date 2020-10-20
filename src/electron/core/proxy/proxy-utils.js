@@ -1,6 +1,7 @@
 const url = require('url');
 const logger = require('electron-log');
 const proxyResponseInterceptor = require('./response-interceptor');
+// const { parseMultipart } = require('./multipart-parser');
 const { proxyRequestInterceptorMockService, proxyRequestInterceptorLiveService } = require('./request-interceptor');
 
 
@@ -13,6 +14,14 @@ const proxyErrorHandler = (error) => {
     logger.info('Error : \n', error);
 }
 
+
+// const readRequestBodyFromBuffer = (buffer, contentType) => {
+//     if(contentType && contentType.toLowerCase().includes('multipart/form-data; boundary=')) {
+//         return parseMultipart(buffer, contentType);
+//     }
+
+//     return buffer;
+// };
 
 /**
  * 
@@ -63,11 +72,11 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
         defaultProxyOptions, 
     } = proxyOptionParameters;
 
-    // const { config:  { serviceConfigs } } = mockContext;
+    const { config:  { serviceConfigs } } = mockContext;
 
-    // const serviceConfigObject = getServiceConfig(serviceConfigs, service); // serviceConfigs.find(item => item.service === service);
+    const serviceConfigObject = getServiceConfig(serviceConfigs, service); // serviceConfigs.find(item => item.service === service);
 
-    // logger.info('Selected service config object :', serviceConfigObject);
+    logger.info('Selected service config object :', serviceConfigObject);
 
     logger.info('Removing Existing Listeners');
 
@@ -77,44 +86,44 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
     proxy.on('error', proxyErrorHandler);
 
     // Block executes when service is detected and live
-    // if(serviceConfigObject && !serviceConfigObject.isMocked) {
-    //     const parsedUrl = url.parse(serviceConfigObject.url);
+    if(serviceConfigObject && !serviceConfigObject.isMocked) {
+        const parsedUrl = url.parse(serviceConfigObject.url);
 
-    //     // Update live server options
-    //     const liveServerProxyOptions = {
-    //         target: {
-    //             protocol: parsedUrl.protocol,
-    //             host: parsedUrl.hostname,
-    //             port: parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80)
-    //         },
-    //         selfHandleResponse : true,
-    //         changeOrigin: true,
-    //     };
+        // Update live server options
+        const liveServerProxyOptions = {
+            target: {
+                protocol: parsedUrl.protocol,
+                host: parsedUrl.hostname,
+                port: parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80)
+            },
+            selfHandleResponse : true,
+            changeOrigin: true,
+        };
     
-    //     logger.info(`Service : ${service} configured to be live`);
+        logger.info(`Service : ${service} configured to be live`);
         
-    //     logger.info('Attaching REQUEST INTERCEPTOR for live service');
-    //     proxy.on('proxyReq', (proxyReq) => proxyRequestInterceptorLiveService(proxyReq, serviceConfigObject));
+        logger.info('Attaching REQUEST INTERCEPTOR for live service');
+        proxy.on('proxyReq', (proxyReq) => proxyRequestInterceptorLiveService(proxyReq, serviceConfigObject));
     
-    //     logger.info('Attaching RESPONSE INTERCEPTOR for live service');
-    //     proxy.on(
-    //             'proxyRes', 
-    //             (proxyRes, req, res) => 
-    //                 proxyResponseInterceptor(
-    //                     proxyRes, 
-    //                     req, 
-    //                     res, 
-    //                     { 
-    //                         user,
-    //                         service, 
-    //                         headers, 
-    //                         mockContext, 
-    //                         requestData
-    //                     })
-    //         );
+        logger.info('Attaching RESPONSE INTERCEPTOR for live service');
+        proxy.on(
+                'proxyRes', 
+                (proxyRes, req, res) => 
+                    proxyResponseInterceptor(
+                        proxyRes, 
+                        req, 
+                        res, 
+                        { 
+                            user,
+                            service, 
+                            headers, 
+                            mockContext, 
+                            requestData
+                        })
+            );
     
-    //     return liveServerProxyOptions;                                                                    
-    // } 
+        return liveServerProxyOptions;                                                                    
+    } 
 
     logger.info(`Service : ${service} configured to be mocked`);
     logger.info('Attaching REQUEST INTERCEPTOR for config injection');
@@ -129,5 +138,6 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
 
 module.exports = {
     getServiceNameFromUrl,
+    // readRequestBodyFromBuffer,
     selectProxyTargetForService
 };

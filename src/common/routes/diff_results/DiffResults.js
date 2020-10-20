@@ -167,7 +167,7 @@ class DiffResults extends Component {
         updateFunc);
 
         setTimeout(() => {
-            const { dispatch } = this.props;
+            const { dispatch, auth: { user: { customer_name: customerId }} } = this.props;
             dispatch(cubeActions.setPathResultsParams({
                 path: selectedAPI,
                 service: selectedService,
@@ -177,9 +177,9 @@ class DiffResults extends Component {
                 currentTemplateVer: currentTemplateVer,
                 timeStamp: timeStamp
             }));
-            dispatch(cubeActions.getCollectionUpdateOperationSet(app));
+            dispatch(cubeActions.getCollectionUpdateOperationSet(app, customerId));
             dispatch(cubeActions.setGolden({ golden: recordingId, timeStamp: "" }));
-            dispatch(cubeActions.getNewTemplateVerInfo(app, currentTemplateVer));
+            dispatch(cubeActions.getNewTemplateVerInfo(customerId, app, currentTemplateVer));
             dispatch(cubeActions.getJiraBugs(replayId, selectedAPI));
             dispatch(cubeActions.hideHttpClient(true));
             

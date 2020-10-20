@@ -106,9 +106,8 @@ class GoldenPopover extends React.Component {
     };
 
     updateRule(operationType) {
-        const { dispatch, jsonPath, cube, eventType, method} = this.props;
+        const { dispatch, jsonPath, cube, user, method } = this.props;
         const { templateMatchType } = this.state;
-        const user = JSON.parse(localStorage.getItem('user')); // TODO: Take from reducer
         const operationsObj = {
             type: operationType, // "REPLACE" or "REMOVE";
             path: jsonPath.replace("<BEGIN>", ""),
@@ -116,7 +115,7 @@ class GoldenPopover extends React.Component {
         };        
 
         const key = this.getKeyFromTOS(); // This is already stringified
-
+        
         const newKey = JSON.stringify({
             customerId: user.customer_name,
             appId: cube.selectedApp,
@@ -139,7 +138,7 @@ class GoldenPopover extends React.Component {
     }
 
     updateGolden() {
-        const { dispatch, serverSideDiff, cube, jsonPath, handleHidePopoverClick, eventType } = this.props;
+        const { dispatch, serverSideDiff, cube, jsonPath, handleHidePopoverClick, eventType, user } = this.props;
         const operation = {};
 
         if (serverSideDiff) {
@@ -162,7 +161,6 @@ class GoldenPopover extends React.Component {
         if (indexMOS != -1) {
             dispatch(cubeActions.pushToOperationSet(operation, indexMOS));
         } else {
-            let user = JSON.parse(localStorage.getItem('user'));
             dispatch(cubeActions.pushToMOS({
                 "operationSetId": cube.collectionUpdateOperationSetId.operationSetId,
                 "service": cube.pathResultsParams.service,
@@ -203,10 +201,11 @@ class GoldenPopover extends React.Component {
     }
 
     async fetchRuleAndPopulate(reqOrRespCompare){
-        const { cube, jsonPath } = this.props;
+        const { cube, jsonPath, user: { customer_name: customerId } } = this.props;
 
         try {
             const { path, dt, pt, ct, em , customization } = await cubeService.getResponseTemplate(
+                customerId,
                 cube.selectedApp, 
                 cube.pathResultsParams, 
                 reqOrRespCompare, 
@@ -666,12 +665,10 @@ class GoldenPopover extends React.Component {
     }
 }
 
-function mapStateToProps(state) {
-    const cube = state.cube;
-    return {
-        cube
-    }
-}
+const mapStateToProps = (state) => ({
+    user: state.authentication.user,
+    cube: state.cube
+});
 
 const connectedGoldenPopover = connect(mapStateToProps)(GoldenPopover);
 

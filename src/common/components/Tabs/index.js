@@ -1,13 +1,10 @@
 import React, { Component } from 'react';
 import { Glyphicon } from 'react-bootstrap';
-import ResizeDetector from 'react-resize-detector';
 import cs from 'classnames';
-import throttle from 'lodash.throttle';
 import PropTypes from 'prop-types';
-import ShowMore from './components/ShowMore';
+// import ShowMore from './components/ShowMore';
 import Tab from './components/Tab';
 import TabPanel from './components/TabPanel';
-import InkBar from './components/InkBar';
 
 const tabPrefix = 'tab-';
 const panelPrefix = 'panel-';
@@ -21,15 +18,9 @@ export default class Tabs extends Component {
     this.selectedTabKeyProp = props.selectedTabKey;
 
     this.state = {
-      tabDimensions: {},
-      blockWidth: 0,
-      tabsTotalWidth: 0,
-      showMoreWidth: 40,
       selectedTabKey: props.selectedTabKey,
       focusedTabKey: null
     };
-
-    this.onResizeThrottled = throttle(this.onResize, props.resizeThrottle, { trailing: true });
   }
 
   componentDidMount() {
@@ -37,18 +28,14 @@ export default class Tabs extends Component {
   }
 
   shouldComponentUpdate(nextProps, nextState) {
-    const { selectedTabKey, blockWidth, showMoreWidth } = this.state;
-    const { items, transform, showMore, showInkBar, allowRemove, removeActiveOnly } = this.props;
+    const { selectedTabKey } = this.state;
+    const { items, transform, allowRemove, removeActiveOnly } = this.props;
 
     return (
       items !== nextProps.items ||
       nextProps.transform !== transform ||
-      nextProps.showMore !== showMore ||
-      nextProps.showInkBar !== showInkBar ||
       nextProps.allowRemove !== allowRemove ||
       nextProps.removeActiveOnly !== removeActiveOnly ||
-      nextState.blockWidth !== blockWidth ||
-      nextState.showMoreWidth !== showMoreWidth ||
       nextProps.selectedTabKey !== this.selectedTabKeyProp ||
       nextState.selectedTabKey !== selectedTabKey
     );
@@ -69,33 +56,12 @@ export default class Tabs extends Component {
     this.selectedTabKeyProp = selectedTabKey;
   }
 
-  onResize = () => {
-    if (this.tabsWrapper) {
-      const currentIsCollapsed = this.getIsCollapsed();
-      this.setState({ blockWidth: this.tabsWrapper.offsetWidth }, () => {
-        const { items } = this.props;
-        const { selectedTabKey } = this.state;
-        const nextIsCollapsed = this.getIsCollapsed();
-        if (currentIsCollapsed && !nextIsCollapsed && selectedTabKey === -1 && items && items.length) {
-          const firstTabKey = items[0].key || 0;
-          this.setState({ selectedTabKey: firstTabKey });
-        }
-      });
-    }
-  };
-
   onChangeTab = nextTabKey => {
     const { onChange } = this.props;
-    const { selectedTabKey } = this.state;
-    const isCollapsed = this.getIsCollapsed();
-    if (isCollapsed && selectedTabKey === nextTabKey) {
-      // hide on mobile
-      this.setState({ selectedTabKey: -1 });
-    } else {
+   
       // change active tab
-      this.setState({ selectedTabKey: nextTabKey });
-    }
-
+    this.setState({ selectedTabKey: nextTabKey });
+    
     if (onChange) {
       onChange(nextTabKey);
     }
@@ -133,13 +99,12 @@ export default class Tabs extends Component {
 
   getTabs = () => {
     //TODO: Need more cleanup here as we will not need to hide tabs.
-    const { showMore, transform, transformWidth, items, allowRemove, removeActiveOnly, onRemove } = this.props;
-    const { blockWidth, tabsTotalWidth, tabDimensions, showMoreWidth } = this.state;
+    const { transform, transformWidth, items, allowRemove, removeActiveOnly, onRemove } = this.props;
+   
     const selectedTabKey = this.getSelectedTabKey();
-    const collapsed = blockWidth && transform && blockWidth < transformWidth;
+    const collapsed = false;
 
     let tabIndex = 0;
-    let availableWidth = blockWidth - (tabsTotalWidth > blockWidth ? showMoreWidth : 0);
 
     return items.reduce(
       (result, item, index) => {
@@ -166,8 +131,6 @@ export default class Tabs extends Component {
           className: panelClassName
         };
 
-        const tabWidth = tabDimensions[key] ? tabDimensions[key].width : 0;
-
         tabIndex += 1;
         result.tabsVisible.push(tabPayload);
         /* eslint-disable no-param-reassign */
@@ -175,11 +138,11 @@ export default class Tabs extends Component {
         /* eslint-enable no-param-reassign */
 
         result.panels[key] = panelPayload; // eslint-disable-line no-param-reassign
-        availableWidth -= tabWidth;
+        // availableWidth -= tabWidth;
 
         return result;
       },
-      { tabsVisible: [], tabsHidden: [], panels: {}, isSelectedTabHidden: false }
+      { tabsVisible: [], panels: {}, isSelectedTabHidden: false }
     );
   };
 
@@ -214,13 +177,6 @@ export default class Tabs extends Component {
     classNames: this.getClassNamesFor('panel', { className })
   });
 
-  getShowMoreProps = (isShown, isSelectedTabHidden, showMoreLabel) => ({
-    onShowMoreChanged: this.showMoreChanged,
-    isShown,
-    label: showMoreLabel,
-    hasChildSelected: isSelectedTabHidden
-  });
-
   getClassNamesFor = (type, { selected, collapsed, tabIndex, disabled, className = '' }) => {
     const { tabClass, panelClass } = this.props;
     switch (type) {
@@ -253,28 +209,6 @@ export default class Tabs extends Component {
     return selectedTabKey;
   };
 
-  getIsCollapsed = () => {
-    const { transform, transformWidth } = this.props;
-    const { blockWidth } = this.state;
-    return blockWidth && transform && blockWidth < transformWidth;
-  };
-
-  showMoreChanged = element => {
-    if (!element) {
-      return;
-    }
-
-    const { showMoreWidth } = this.state;
-    const { offsetWidth } = element;
-    if (showMoreWidth === offsetWidth) {
-      return;
-    }
-
-    this.setState({
-      showMoreWidth: offsetWidth
-    });
-  };
-  
   onScrollLeft = ()=>{
     const refEle = this.tabScrollRef;
     let leftScroll = refEle.scrollLeft;
@@ -304,28 +238,21 @@ export default class Tabs extends Component {
   };
 
   render() {
-    const { showInkBar, containerClass, tabsWrapperClass, showMore, transform, showMoreLabel, onAddClick } = this.props;
-    const { tabDimensions } = this.state;
-    const { tabsVisible, tabsHidden, panels, isSelectedTabHidden } = this.getTabs();
-    const isCollapsed = this.getIsCollapsed();
+    const { containerClass, tabsWrapperClass, onAddClick } = this.props;
+    const { tabsVisible, panels } = this.getTabs();
+    const isCollapsed = false;
     const selectedTabKey = this.getSelectedTabKey();
-    const selectedTabDimensions = tabDimensions[selectedTabKey] || {};
 
     const containerClasses = cs('RRT__container', containerClass);
-    const tabsClasses = cs('RRT__tabs', tabsWrapperClass, { RRT__accordion: isCollapsed });
+    const tabsClasses = cs('RRT__tabs', tabsWrapperClass);
 
     return (
       <div className={containerClasses} ref={e => (this.tabsWrapper = e)} onKeyDown={this.onKeyDown}>
         <div  className={tabsClasses} >
         <div className="tabContainer" ref={e=> (this.tabScrollRef=  e)}>        
-          {tabsVisible.reduce((result, tab) => {
-            result.push(<Tab {...this.getTabProps(tab)} />);
-
-            if (isCollapsed && selectedTabKey === tab.key) {
-              result.push(<TabPanel {...this.getPanelProps(panels[tab.key])} />);
-            }
-            return result;
-          }, [])}
+          {tabsVisible.map((tab) => {
+            return (<Tab {...this.getTabProps(tab)} />);
+          })}
 
          
           <div className="RRT_add-icon-container"  ref={e=> (this.addBtnRef = e)} onClick={onAddClick}>
@@ -347,13 +274,8 @@ export default class Tabs extends Component {
           </div>
         </div>
         
-        {showInkBar && !isCollapsed && !isSelectedTabHidden && (
-          <InkBar left={selectedTabDimensions.offset || 0} width={selectedTabDimensions.width || 0} />
-        )}
-
         {!isCollapsed && panels[selectedTabKey] && <TabPanel {...this.getPanelProps(panels[selectedTabKey])} />}
 
-        {(showMore || transform) && <ResizeDetector handleWidth onResize={this.onResizeThrottled} />}
       </div>
     );
   }
@@ -370,10 +292,6 @@ Tabs.propTypes = {
   allowRemove: PropTypes.bool,
   // show 'X' closing element only for active tab
   removeActiveOnly: PropTypes.bool,
-  // move tabs to the special `Show more` tab if they don't fit into a screen
-  showMore: PropTypes.bool,
-  // materialUI-like rail under the selected tab
-  showInkBar: PropTypes.bool,
   // transform to the accordion on small screens
   transform: PropTypes.bool,
   // tabs will be transformed to accodrion for screen sizes below `transformWidth`px
@@ -384,32 +302,25 @@ Tabs.propTypes = {
   onChange: PropTypes.func,
   // onRemove callback
   onRemove: PropTypes.func,
-  // frequency of onResize recalculation fires
-  resizeThrottle: PropTypes.number,
   // classnames
   containerClass: PropTypes.string,
   tabsWrapperClass: PropTypes.string,
   tabClass: PropTypes.string,
   panelClass: PropTypes.string,
-  // labels
-  showMoreLabel: PropTypes.oneOfType([PropTypes.string, PropTypes.node])
 };
 
 Tabs.defaultProps = {
   items: [],
   selectedTabKey: undefined,
-  showMore: true,
-  showInkBar: false,
   allowRemove: false,
   removeActiveOnly: false,
   transform: true,
   transformWidth: 800,
-  resizeThrottle: 100,
+  // resizeThrottle: 100,
   containerClass: undefined,
   tabsWrapperClass: undefined,
   tabClass: undefined,
   panelClass: undefined,
-  showMoreLabel: '...',
   onChange: () => null,
   onRemove: () => null
 };

@@ -41,6 +41,7 @@ export function getApi() {
 
   createAuthRefreshInterceptor(api, refreshAuthLogic, {
     pauseInstanceWhileRefreshing: true,
+    statusCodes: [401, 403],
   });
 
   api.interceptors.response.use(

@@ -108,7 +108,8 @@ class AgentConfig extends Component {
             .fromPairs()
             .value();
         const app = urlParameters["app"];
-        cubeService.fetchAgentConfigs(app).then(res => {
+        const { user: { customer_name: customerId } } = this.props;
+        cubeService.fetchAgentConfigs(customerId, app).then(res => {
             this.setState({ facets: res.facets.instance_facets });
             this.setState({ configs: res.configs });
         });
@@ -385,11 +386,9 @@ class AgentConfig extends Component {
     }
 }
 
-function mapStateToProps(state) {
-    const cube = state.cube;
-    return {
-        cube
-    }
-}
+const mapStateToProps = (state) => ({
+    cube: state.cube,
+    user: state.authentication.user
+})
 
 export default connect(mapStateToProps)(AgentConfig);
