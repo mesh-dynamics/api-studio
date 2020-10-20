@@ -351,6 +351,7 @@ public class AnalyzeWS {
         Optional<String> jsonpath = Optional.ofNullable(queryParams.getFirst(Constants.JSON_PATH_FIELD));
         Optional<EventType> eventType = Optional.ofNullable(queryParams.getFirst(Constants.EVENT_TYPE_FIELD))
             .flatMap(v -> Utils.valueOf(EventType.class, v));
+        Optional<String> method = Optional.ofNullable(queryParams.getFirst(Constants.METHOD_FIELD));
 
         if (apipath.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
@@ -358,7 +359,7 @@ public class AnalyzeWS {
         }
 
         TemplateKey tkey = new TemplateKey(templateVersion, customerId, appId, service, apipath.get(),
-            ruleType);
+            ruleType, method, TemplateKey.DEFAULT_RECORDING);
 
         try {
           CompareTemplate compareTemplate = rrstore.getComparator(tkey, eventType).getCompareTemplate();
