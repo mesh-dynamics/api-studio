@@ -9,6 +9,9 @@ import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
 import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
+import io.md.dao.DataObj.DataObjProcessingException;
+import io.md.injection.DynamicInjector;
+import io.md.injection.DynamicInjectorFactory;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -37,6 +40,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
@@ -48,6 +52,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import com.sun.xml.bind.v2.runtime.reflect.opt.Const;
 import io.md.dao.*;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
@@ -934,10 +939,10 @@ public class CubeStore {
         }
 
         String name = formParams.getFirst("name");
-        String userId = formParams.getFirst("userId");
-        String label = formParams.getFirst("label");
+        String userId = formParams.getFirst(Constants.USER_ID_FIELD);
+        String label = formParams.getFirst(Constants.GOLDEN_LABEL_FIELD);
 
-        Optional<String> jarPath = Optional.ofNullable(formParams.getFirst("jarPath"));
+        Optional<String> jarPath = Optional.ofNullable(formParams.getFirst(Constants.JAR_PATH_FIELD));
 
         if (name==null) {
             asyncResponse.resume(Response.status(Status.BAD_REQUEST)
@@ -991,10 +996,12 @@ public class CubeStore {
         }
 
         Optional<String> codeVersion = Optional.ofNullable(formParams.getFirst("codeVersion"));
-        Optional<String> branch = Optional.ofNullable(formParams.getFirst("branch"));
+        Optional<String> branch = Optional.ofNullable(formParams.getFirst(Constants.BRANCH_FIELD));
         Optional<String> gitCommitId = Optional.ofNullable(formParams.getFirst("gitCommitId"));
-        List<String> tags = Optional.ofNullable(formParams.get("tags")).orElse(new ArrayList<String>());
+        List<String> tags = Optional.ofNullable(formParams.get(Constants.TAGS_FIELD)).orElse(new ArrayList<String>());
         Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
+        Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst(Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD)) ;
+
 
         RecordingBuilder recordingBuilder = new RecordingBuilder(customerId, app,
             instanceId, collection).withTemplateSetVersion(templateSetVersion).withName(name)
@@ -1004,6 +1011,8 @@ public class CubeStore {
         gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
         comment.ifPresent(recordingBuilder::withComment);
         recordingType.ifPresent(recordingBuilder::withRecordingType);
+        dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
+
         try {
             jarPath.ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
         } catch (Exception e) {
@@ -1025,6 +1034,8 @@ public class CubeStore {
                                 .withReplayStatus(ReplayStatus.Running)
                                 .withReplayId(newr.collection)
                                 .withRunId(newr.collection + " " + Instant.now().toString());
+                            newr.dynamicInjectionConfigVersion.ifPresent(replayBuilder::withDynamicInjectionConfigVersion);
+
                             Replay replay = replayBuilder.build();
                             rrstore.saveReplay(replay);
                         }
@@ -1376,6 +1387,7 @@ public class CubeStore {
                 recordingBuilder.withUserId(userId.orElse(rec.userId));
                 recordingBuilder.withCodeVersion(codeVersion.orElse(rec.codeVersion.orElse(null)));
                 recordingBuilder.withBranch(branch.orElse(rec.branch.orElse(null)));
+                rec.dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
 
                 if(tags.isEmpty()) {
                     recordingBuilder.withTags(rec.tags);
@@ -1472,18 +1484,26 @@ public class CubeStore {
     public Response storeUserReqResp(@Context UriInfo ui,
         @PathParam("recordingId") String recordingId,
         List<UserReqRespContainer> userReqRespContainers) {
+        Optional<String> dynamicCfgVersion = Optional
+            .ofNullable(ui.getQueryParameters().getFirst(Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD));
+
         Optional<Recording> recording = rrstore.getRecording(recordingId);
         Response resp = recording.map(rec -> {
             if(rec.recordingType == RecordingType.History
                 || rec.recordingType == RecordingType.UserGolden) {
                 List<String> responseList = new ArrayList<>();
                 Map<String, String> traceIdMap = new HashMap<>();
+                Map<String, String> extractionMap = new HashMap<>();
+                final String generatedTraceId = io.md.utils.Utils.generateTraceId();
                 for (UserReqRespContainer userReqRespContainer : userReqRespContainers) {
                     Event response = userReqRespContainer.response;
                     Event request = userReqRespContainer.request;
                     try {
                         request.validateEvent();
                         response.validateEvent();
+                        DynamicInjector dynamicInjector = this.factory.getMgr(request.customerId, request.app, dynamicCfgVersion);
+                        dynamicInjector.extract(request, response.payload);
+                        Map<String, String> strMap = DynamicInjector.convertToStrMap(dynamicInjector.getExtractionMap());
                         String traceId = request.getTraceId();
                         if (rec.recordingType == RecordingType.UserGolden) {
                             String oldTraceId = request.getTraceId();
@@ -1517,8 +1537,9 @@ public class CubeStore {
                                 buildErrorResponse(Constants.ERROR, Constants.RECORDING_ID,
                                     "Unable to store event in solr")).build();
                         }
+                        String extractionMapString = jsonMapper.writeValueAsString(strMap);
                         String responseString = jsonMapper.writeValueAsString(Map.of("oldReqId", request.reqId,
-                            "oldTraceId", request.getTraceId(), "newReqId", reqId, "newTraceId", traceId));
+                            "oldTraceId", request.getTraceId(), "newReqId", reqId, "newTraceId", traceId, "extractionMap", extractionMapString));
                         responseList.add(responseString);
 
                         if (rec.recordingType == RecordingType.History) {
@@ -1572,6 +1593,12 @@ public class CubeStore {
                             Map.of(Constants.MESSAGE, "Error while creating response",
                                 Constants.RECORDING_ID, recordingId)), e);
                         return Response.serverError().entity("Error while creating response"
+                            + e.getMessage()).build();
+                    } catch (DataObjProcessingException e) {
+                        LOGGER.error(new ObjectMessage(
+                            Map.of(Constants.MESSAGE, "Error while converting extraction Map",
+                                Constants.RECORDING_ID, recordingId)), e);
+                        return Response.serverError().entity("Error while converting extraction Map"
                             + e.getMessage()).build();
                     }
                 }
@@ -1651,6 +1678,41 @@ public class CubeStore {
         return status ? Response.ok().build() : Response.serverError().entity(Map.of("Error", "Cannot store proto descriptor file")).build();
     }
 
+    @POST
+    @Path("/injectEvent/{replayId}/{runId}")
+    public Response injectEvent(@Context UriInfo uriInfo,@PathParam("replayId") String replayId,
+        @PathParam("runId") String runId, DynamicInjectionEventDao dynamicInjectionEventDao) {
+        if(dynamicInjectionEventDao == null || dynamicInjectionEventDao.getInjectionConfigVersion() == null ||
+            dynamicInjectionEventDao.getContextMap() == null) {
+            return Response.status(Status.BAD_REQUEST)
+                .entity("dynamicInjectionEventDao or InjectionConfigVersion or ContextMap is not present for given request").build();
+        }
+        final Event requestEvent = dynamicInjectionEventDao.getRequestEvent();
+        try {
+            requestEvent.validateEvent();
+            DynamicInjector dynamicInjector = this.factory.getMgrFromStrMap(requestEvent.customerId,
+                requestEvent.app, Optional.of(dynamicInjectionEventDao.getInjectionConfigVersion()),
+                dynamicInjectionEventDao.getContextMap());
+            dynamicInjector.inject(requestEvent);
+            Optional<Replay> optionalReplay = rrstore.getReplay(replayId);
+            if(optionalReplay.isEmpty()) {
+                LOGGER.error("No replay found for the replayId=" + replayId);
+                return Response.status(Status.BAD_REQUEST).entity(Utils.buildErrorResponse(Status.BAD_REQUEST.toString(),
+                    Constants.MESSAGE,  "No replay found for the replayId=" + replayId)).build();
+            }
+            Replay replay = optionalReplay.get();
+            replay.runId = runId;
+            rrstore.saveReplay(replay);
+            return  Response.ok(requestEvent , MediaType.APPLICATION_JSON).build();
+        } catch (InvalidEventException e) {
+            LOGGER.error(new ObjectMessage(
+                Map.of(Constants.MESSAGE, "Invalid Event")), e);
+            return Response.status(Status.BAD_REQUEST).entity(Utils.buildErrorResponse(
+                Status.BAD_REQUEST.toString(),Constants.ERROR,  e.getMessage())).build();
+
+        }
+    }
+
 
     private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId)
         throws InvalidEventException {
@@ -1690,11 +1752,13 @@ public class CubeStore {
 		this.config = config;
 		this.eventQueue = config.disruptorEventQueue;
 		this.tagConfig = new TagConfig(config.rrstore);
+		this.factory = new DynamicInjectorFactory(rrstore, jsonMapper);
 	}
 
 
 	ReqRespStore rrstore;
 	ObjectMapper jsonMapper;
+	DynamicInjectorFactory factory;
 	Config config;
 	TagConfig tagConfig;
     DisruptorEventQueue eventQueue;

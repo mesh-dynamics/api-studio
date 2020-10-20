@@ -1082,6 +1082,7 @@ public class AnalyzeWS {
             comment.ifPresent(recordingBuilder::withComment);
 	        originalRec.generatedClassJarPath.ifPresent(UtilException
 		        .rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
+	        originalRec.dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
 
             Recording updatedRecording = recordingBuilder.build();
 
@@ -1125,6 +1126,7 @@ public class AnalyzeWS {
 	        originalRec.comment.ifPresent(recordingBuilder::withComment);
 	        originalRec.generatedClassJarPath.ifPresent(UtilException
 		        .rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
+	        originalRec.dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
 
             Recording updatedRecording = recordingBuilder.build();
 
