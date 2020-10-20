@@ -63,14 +63,17 @@ public class RealMocker implements Mocker {
                     res.getObjects().findFirst().flatMap(cube::getRespEventForReqEvent) :
                     // Devtool Mock -> Find the response for each matched request un-till success response is found
                     res.getObjects().map(cube::getRespEventForReqEvent)
+                    //.flatMap(Optional::stream)   //Java9
                     .filter(Optional::isPresent)
-                    .peek(event -> {
+                    //.map(Optional::get)
+                    .map(optEvent -> {
+                        Event event = optEvent.get();
                         if(firstRespArr[0] == null){
-                            firstRespArr[0] = event.get();
+                            firstRespArr[0] = event;
                         }
+                        return event;
                     })
                     .filter(this::isSuccessResponse)
-                    .map(Optional::get)
                     .findFirst();
 
             if(mockWColl.isDevtool && !matchingResponse.isPresent()){
@@ -100,11 +103,7 @@ public class RealMocker implements Mocker {
         }
     }
 
-    private boolean isSuccessResponse(Optional<Event> response){
-        //Ignore Absent Response
-        if(!response.isPresent()) return false;
-
-        Event respEvent = response.get();
+    private boolean isSuccessResponse(Event respEvent){
         //Payload present
         if(respEvent.payload==null) return false;
         //Allow all Non http Response payload
