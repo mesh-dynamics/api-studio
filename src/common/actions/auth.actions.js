@@ -10,6 +10,8 @@ import { apiCatalogActions } from './api-catalog.actions';
 import { cubeActions } from './cube.actions';
 import { httpClientActions } from './httpClientActions';
 import { goldenActions } from './golden.actions';
+import config from '../config';
+import { getRefreshToken} from "../utils/lib/common-utils";
 
 const authActions = {
     beginFetch: () => ({ type: authConstants.REQUEST_BEGIN }),
@@ -79,7 +81,37 @@ const authActions = {
         
         history.push("/login");
     },
-    
+
+    //Silently refresh token before expiry
+    refreshToken: () => async(dispatch, getState) =>{
+        const dataToPost = JSON.stringify({ refreshToken: getRefreshToken(getState()), grantType: "refreshToken" });
+        return new Promise((resolve, reject) => {
+
+            fetch(`${config.apiBaseUrl}/token`, {
+                body: dataToPost,
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                mode: 'cors'
+            })
+            .then(async (response) => {
+                const data = await response.json();
+                if(response.ok && data.status != 401){
+
+                    dispatch(authActions.setUser(data));
+                    
+                    if (PLATFORM_ELECTRON) {
+                        ipcRenderer.send('set_user', data);
+                    }
+                    resolve();
+                }
+            }).catch(error => {
+                reject(error);
+            });
+        });
+    },
+
     createUser: (user) => createUser(user),
 
     verifyToken: (token) => validateReCaptcha(token),
