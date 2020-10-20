@@ -157,8 +157,8 @@ public class CubeStoreController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @PostMapping("/softDelete/{recordingId}")
-    public ResponseEntity softDelete(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId) {
+    @PostMapping("/delete/{recordingId}")
+    public ResponseEntity delete(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId) {
         Optional<Recording> recording = cubeServerService.getRecording(recordingId);
         if(recording.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
