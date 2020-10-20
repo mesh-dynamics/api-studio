@@ -346,12 +346,12 @@ class HttpClientTabs extends Component {
                 rawDataType = "json";
                 bodyType = "rawData";
             } else if(contentTypeHeader && contentTypeHeader.indexOf("application/x-www-form-urlencoded") > -1) {
-                const formParams = new URLSearchParams(parsedCurl.data);
-                for (let eachFormParam of formParams) {
+                const formParams = parse(parsedCurl.data);
+                for (let eachFormParam in formParams) {
                     formData.push({
                         id: uuidv4(),
                         name: eachFormParam,
-                        value: formParams.get(eachFormParam),
+                        value: formParams[eachFormParam],
                         description: "",
                         selected: true,
                     });
