@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import { FormControl, FormGroup, Tabs, Tab, Panel, Label, Modal, Button, ControlLabel, Glyphicon } from 'react-bootstrap';
 
 import { getCurrentMockConfig } from "../../utils/http_client/utils";
-import { applyEnvVars } from "../../utils/http_client/envvar";
+import { applyEnvVars, getCurrentEnvironment, getCurrentEnvVars } from "../../utils/http_client/envvar";
 import EnvironmentSection from './EnvironmentSection';
 import MockConfigSection from './MockConfigSection';
 import _, { head } from 'lodash';
@@ -1101,9 +1101,12 @@ class HttpClientTabs extends Component {
         
         // render environment variables
         let httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered;
+        let currentEnvironment, currentEnvironmentVars;
         try {
             [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] 
                         = applyEnvVars(httpRequestURL, httpRequestQueryStringParams, fetchConfig);
+            currentEnvironment = getCurrentEnvironment();
+            currentEnvironmentVars = getCurrentEnvVars();
         } catch (e) {
             this.showErrorAlert(`${e}`); // prompt user for error in env vars
             return
@@ -1139,7 +1142,7 @@ class HttpClientTabs extends Component {
         .then((data) => {
             // handle success
             dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), JSON.stringify(data, undefined, 4)));
-            this.saveToHistoryAndLoadTrace(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp);
+            this.saveToHistoryAndLoadTrace(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp, httpRequestURLRendered, currentEnvironment, currentEnvironmentVars);
             //dispatch(httpClientActions.unsetReqRunning(tabId))
         })
         .catch((error) => {
@@ -1236,7 +1239,7 @@ class HttpClientTabs extends Component {
         }
     }
 
-    getReqResFromTabData(eachPair, tabToSave, runId, type, reqTimestamp, resTimestamp) {
+    getReqResFromTabData(eachPair, tabToSave, runId, type, reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment, currentEnvironmentVars) {
         const httpRequestEventTypeIndex = eachPair[0].eventType === "HTTPRequest" ? 0 : 1;
         const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
         let httpRequestEvent = eachPair[httpRequestEventTypeIndex];
@@ -1251,6 +1254,9 @@ class HttpClientTabs extends Component {
             let service = parsedUrl.host ? parsedUrl.host : "NA";
             httpRequestEvent = this.updateHttpEvent(apiPath, service, httpRequestEvent);
             httpResponseEvent = this.updateHttpEvent(apiPath, service, httpResponseEvent);
+            httpRequestEvent.metaData.typeOfRequest = "devtool";
+        } else {
+            if(!httpRequestEvent.metaData.typeOfRequest) httpRequestEvent.metaData.typeOfRequest = "apiCatalog";
         }
 
         if(httpRequestEvent.parentSpanId === null) {
@@ -1259,6 +1265,15 @@ class HttpClientTabs extends Component {
 
         if(httpRequestEvent.spanId === null) {
             httpRequestEvent.spanId = "NA"
+        }
+
+        if(currentEnvironment) {
+            httpRequestEvent.metaData.currentEnvironment = currentEnvironment;
+            httpRequestEvent.metaData.currentEnvironmentVars = currentEnvironmentVars;
+        }
+
+        if(urlEnvVal) {
+            httpRequestEvent.metaData.href = urlEnvVal;
         }
 
         const { headers, queryStringParams, bodyType, rawDataType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus } = tabToSave;
@@ -1320,7 +1335,7 @@ class HttpClientTabs extends Component {
         return reqResCubeFormattedData;
     }
 
-    saveToHistoryAndLoadTrace = (tabId, recordingId, runId="", reqTimestamp="", resTimestamp="") => {
+    saveToHistoryAndLoadTrace = (tabId, recordingId, runId="", reqTimestamp="", resTimestamp="", urlEnvVal="", currentEnvironment="", currentEnvironmentVars={}) => {
         const { 
             httpClient: { 
                 historyTabState, 
@@ -1341,7 +1356,7 @@ class HttpClientTabs extends Component {
         try {
             if (reqResPair.length > 0) {
                 const data = [];
-                data.push(this.getReqResFromTabData(reqResPair, tabToProcess, runId, "History", reqTimestamp, resTimestamp));
+                data.push(this.getReqResFromTabData(reqResPair, tabToProcess, runId, "History", reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment, currentEnvironmentVars));
                 const apiConfig = {
                     cancelToken: tabToProcess.abortRequest.cancelToken
                 }
