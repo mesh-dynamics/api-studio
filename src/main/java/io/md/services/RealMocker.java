@@ -61,7 +61,7 @@ public class RealMocker implements Mocker {
             //saving the request event corresponding to matched response event
             Function<Event , Optional<Event>> getRespEventForReqEvent = (req)->{
                 Optional<Event> resp = cube.getRespEventForReqEvent(req);
-                resp.ifPresent(respEvent->{respReqMapping.put(respEvent.reqId , req);});
+                resp.ifPresent(respEvent->respReqMapping.put(respEvent.reqId , req));
                 return resp;
             };
             Optional<Event> matchingResponse = !mockWColl.isDevtool ?
