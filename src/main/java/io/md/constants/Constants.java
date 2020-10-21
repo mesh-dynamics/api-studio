@@ -273,5 +273,6 @@ public class Constants {
 	public static final String MULTIPART_FILENAME = "filename";
 	public static final String MULTIPART_CONTENT_TYPE = "content-type";
 
-
+	public static final String SPREADSHEET_XML = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+	public static final String PDF  = "application/pdf";
 }
