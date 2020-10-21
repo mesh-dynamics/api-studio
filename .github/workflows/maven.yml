@@ -4,6 +4,8 @@ on:
   push:
     branches:
     - develop
+  release:
+    types: [published]
   pull_request:
     branches:
     - develop
@@ -14,7 +16,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
+      - run: git fetch --prune --unshallow --tags
       - name: Set up JDK 12
         uses: actions/setup-java@v1
         with:
@@ -25,12 +28,26 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mvn -B package --file pom.xml
+      - name: Build with Maven(release)
+        if: ${{ github.event_name == 'release'}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version=$(git describe --tags `git rev-list --tags --max-count=1`)
+          python helper.py $version
+          mvn -B package --file pom.xml
           echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-      - name: Build with Maven(publish)
+          mvn deploy -Dregistry=https://maven.pkg.github.com/cube-io-corp -Dtoken=GH_TOKEN
+      - name: Build with Maven(publish internal)
         if: ${{ github.event_name == 'push'}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          version=$(git describe --tags `git rev-list --tags --max-count=1`)
+          NEXTVERSION=$(echo ${version} | awk -F. -v OFS=. '{$(NF-1)++;print}')
+          python helper.py $NEXTVERSION
           mvn -B package --file pom.xml
+          git tag $NEXTVERSION
           echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${GITHUB_TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
           mvn deploy -Dregistry=https://maven.pkg.github.com/cube-io-corp -Dtoken=GH_TOKEN
+          git push --tags
