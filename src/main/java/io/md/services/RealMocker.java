@@ -218,15 +218,17 @@ public class RealMocker implements Mocker {
         if (shouldStore(mockRequestEvent.eventType)) {
 
             Optional<String> score  = matchedReq.flatMap(e->e.getMetaFieldValue(Constants.SCORE_FIELD));
-            MatchType match = score.map(scr->{
+            MatchType reqMatch = score.map(scr->{
                 return EventQuery.getEventMaxWeight() == Float.parseFloat(scr) ? MatchType.ExactMatch : MatchType.FuzzyMatch;
             }).orElse(MatchType.NoMatch);
 
-            respEvent.ifPresent(ev->ev.setMetaFieldValue(Constants.MATCH_TYPE , match.toString()));
+            respEvent.ifPresent(ev->{
+                ev.setMetaFieldValue(Constants.MATCH_TYPE , reqMatch.toString());
+                score.ifPresent(scr->ev.setMetaFieldValue(Constants.SCORE_FIELD , scr));
+            });
 
             // store a req-resp analysis match result for the mock request (during replay)
             // and the matched recording request
-            MatchType reqMatch = respEvent.map(e -> match).orElse(MatchType.NoMatch);
             MatchType respMatch = respEvent.map(e -> MatchType.ExactMatch)
                 .orElse(MatchType.Default);
             ReqRespMatchResult matchResult =
@@ -279,6 +281,9 @@ public class RealMocker implements Mocker {
             mockReqId.orElse("NA"),
             mockRequest.apiPath, EventType.getResponseType(mockRequest.eventType), mockRequest.recordingType).withRunId(runId);
         Optional<Payload> payload = originalResponse.map(event -> event.payload);
+        Optional<Map<String,String>> meta = originalResponse.map(e->e.metaData);
+        meta.ifPresent(builder::withMetaData);
+
         if (!payload.isPresent()) {
             payload = createNoMatchResponsePayload(mockRequest);
         }
