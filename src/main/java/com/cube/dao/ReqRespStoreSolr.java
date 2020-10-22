@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -92,6 +93,8 @@ import com.cube.core.CompareTemplateVersioned;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
+
+import static io.md.constants.Constants.SCORE_FIELD;
 
 /**
  * @author prasad
@@ -317,6 +320,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Result<Event> getEvents(EventQuery eventQuery) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
+        query.addField("score");
 
         StringBuffer queryBuff = new StringBuffer();
 
@@ -1155,7 +1159,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Optional<Event> getRequestEvent(String reqId) {
 
         EventQuery.Builder builder = new EventQuery.Builder("*", "*", Event.REQUEST_EVENT_TYPES);
-        builder.withReqId(reqId);
+        builder.withReqId(reqId).withLimit(1);
 
         return getSingleEvent(builder.build());
     }
@@ -1222,7 +1226,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String SPAN_ID_F = CPREFIX  + Constants.SPAN_ID_FIELD + STRING_SUFFIX ;
     private static final String PARENT_SPAN_ID_F = CPREFIX  + Constants.PARENT_SPAN_ID_FIELD + STRING_SUFFIX;
     private static final String CONFIG_JSON_F = CPREFIX + Constants.CONFIG_JSON + STRING_SUFFIX;
-    private static final String SCOREF = CPREFIX + "score" + CSUFFIX;
+    private static final String SCOREF = CPREFIX + SCORE_FIELD + CSUFFIX;
     private static final String PROTO_DESCRIPTOR_FILE_F = CPREFIX + Constants.PROTO_DESCRIPTOR_FILE_FIELD + NOTINDEXED_SUFFIX;
 
 
@@ -1592,8 +1596,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> payloadStr = getStrFieldMVFirst(doc, PAYLOADSTRF);
         Optional<Integer> payloadKey = getIntField(doc, PAYLOADKEYF);
         List<String> eventMetaDataKeys = getStrFieldMV(doc, EVENT_META_DATA_KEYSF);
+        Optional<Double> score = getDblField(doc , SCOREF);
 
         Map<String, String> eventMetaDataMap = new HashMap<String, String>();
+        score.ifPresent(dblScore->{
+            eventMetaDataMap.put(SCORE_FIELD , dblScore.toString());
+        });
         eventMetaDataKeys.forEach(key -> {
             Optional<String> val = getStrField(doc, EVENT_META_DATA_PREFIX + key + STRING_SUFFIX);
             val.ifPresent(v -> eventMetaDataMap.put(key, v));
@@ -1656,87 +1664,61 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
     }
 
-    private static Optional<String> getStrField(SolrDocument doc, String fname) {
-        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
-            if (v instanceof String)
-                return Optional.of((String) v);
+    private static<T> Optional<T> getField(SolrDocument doc , String fieldName , Class<T> clazz){
+        return Optional.ofNullable(doc.get(fieldName)).flatMap(v -> {
+            if (clazz.isInstance(v))
+                return Optional.of((T)v);
             return Optional.empty();
         });
     }
+    private static<T> Optional<T> getField(SolrDocument doc , String fieldName , Function<Object , T> mapper){
+        return Optional.ofNullable(doc.get(fieldName)).flatMap(v -> {
+            return io.md.utils.Utils.safeFnExecute(v , mapper);
+        });
+    }
+
+    private static Optional<String> getStrField(SolrDocument doc, String fname) {
+        return getField(doc , fname , String.class);
+    }
 
     private static List<String> getStrFieldMV(SolrDocument doc, String fname) {
-        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
-            @SuppressWarnings("unchecked")
-            Optional<List<String>> vals = (v instanceof List<?>) ? Optional.of((List<String>)v) : Optional.empty();
-            return vals;
-        }).orElse(new ArrayList<>());
+        return getField(doc, fname, List.class).orElse(new ArrayList());
+    }
+
+    private static<T> Optional<T> getFirst(Collection<?> collection , Class<T> clazz){
+        return (Optional<T>) collection.stream().findFirst();
     }
 
     // get first value of a multi-valued field
     private static Optional<String> getStrFieldMVFirst(SolrDocument doc, String fname) {
-        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
-            if (v instanceof List<?>)
-                return ((List<String>) v).stream().findFirst();
-            return Optional.empty();
-        });
+        return getField(doc, fname , List.class).flatMap(l->getFirst(l , String.class));
     }
 
     private static Optional<Integer> getIntField(SolrDocument doc, String fname) {
-        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
-            if (v instanceof Integer)
-                return Optional.of((Integer) v);
-            return Optional.empty();
-        });
+        return getField(doc, fname , Integer.class);
     }
 
     private static Optional<Double> getDblField(SolrDocument doc, String fname) {
-        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
-            if (v instanceof Double) {
-                return Optional.of((Double) v);
-            } else if (v instanceof Float) {
-                return Optional.of(((Float)v).doubleValue());
-            } else if (v instanceof Integer) {
-                return Optional.of(((Integer)v).doubleValue());
-            }
-            return Optional.empty();
-        });
+        return getField(doc, fname , obj->Double.valueOf(obj.toString()));
     }
 
     private static Optional<Instant> getTSField(SolrDocument doc, String fname) {
-        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
-            if (v instanceof Date)
-                return Optional.of(((Date) v).toInstant());
-            return Optional.empty();
-        });
+        return getField(doc, fname , Date.class).map(Date::toInstant);
     }
 
     private static Optional<Boolean> getBoolField(SolrDocument doc, String fname) {
-        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
-            if (v instanceof Boolean)
-                return Optional.of((Boolean) v);
-            return Optional.empty();
-        });
+        return getField(doc, fname, Boolean.class);
     }
 
     // get binary field
     private static Optional<byte[]> getBinField(SolrDocument doc, String fname) {
-        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
-            if (v instanceof byte[])
-                return Optional.of((byte[]) v);
-            return Optional.empty();
-        });
+        return getField(doc, fname , byte[].class);
     }
 
     // get first value of a multi-valued field
     private static Optional<byte[]> getBinFieldMVFirst(SolrDocument doc, String fname) {
-        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
-            if (v instanceof List<?>)
-                return ((List<byte[]>) v).stream().findFirst();
-            return Optional.empty();
-        });
+        return getField(doc, fname , List.class).flatMap(l->getFirst(l , byte[].class));
     }
-
-
 
     private static void addFieldsToDoc(SolrInputDocument doc,
             String ftype, MultivaluedMap<String, String> fields) {
