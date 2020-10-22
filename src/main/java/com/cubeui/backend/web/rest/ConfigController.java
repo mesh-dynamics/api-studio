@@ -10,12 +10,12 @@ import com.cubeui.backend.domain.Config;
 import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.ConfigDTO;
 import com.cubeui.backend.domain.Service;
+import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.ConfigRepository;
 import com.cubeui.backend.repository.CustomerRepository;
 import com.cubeui.backend.repository.ServiceRepository;
 import com.cubeui.backend.security.Validation;
-import com.cubeui.backend.security.jwt.JwtTokenProvider;
 import com.cubeui.backend.security.jwt.JwtTokenValidator;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.web.ErrorResponse;
@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -52,8 +53,6 @@ public class ConfigController {
   @Autowired
   private ServiceRepository serviceRepository;
   @Autowired
-  private JwtTokenProvider jwtTokenProvider;
-  @Autowired
   private JwtTokenValidator jwtTokenValidator;
   @Autowired
   private CustomerService customerService;
@@ -65,7 +64,8 @@ public class ConfigController {
       @RequestParam(value="service", required = false) String service,
       @RequestParam(value="configType", required = false) String configType,
       @RequestParam(value="key", required = false) String key,
-      @RequestParam(value="domain", required = false) String domain) {
+      @RequestParam(value="domain", required = false) String domain,
+      Authentication authentication) {
     String userId = null;
     boolean authenticate = false;
     if(customer == null && domain == null) {
@@ -81,8 +81,8 @@ public class ConfigController {
     }
     if(request.getHeader("Authorization") != null) {
       jwtTokenValidator.resolveAndValidateToken(request);
-      validation.validateCustomerName(request,customer);
-      userId = jwtTokenProvider.getUser(request).getUsername();
+      validation.validateCustomerName(authentication,customer);
+      userId = ((User) authentication.getPrincipal()).getUsername();
       authenticate = true;
     }
     Config query = Config.builder().customer(customer).userId(userId)
@@ -95,9 +95,9 @@ public class ConfigController {
   }
 
   @PostMapping("/insert")
-  public ResponseEntity saveConfig(HttpServletRequest request, @RequestBody ConfigDTO configDTO) {
-    validation.validateCustomerName(request, configDTO.getCustomer());
-    String userId = jwtTokenProvider.getUser(request).getUsername();
+  public ResponseEntity saveConfig(HttpServletRequest request, @RequestBody ConfigDTO configDTO, Authentication authentication) {
+    validation.validateCustomerName(authentication, configDTO.getCustomer());
+    String userId = ((User) authentication.getPrincipal()).getUsername();
     Optional<Config> existingConfig = this.configRepository
         .findByKeyAndCustomerAndAppAndConfigTypeAndUserId(configDTO.getKey(), configDTO.getCustomer(),
             configDTO.getApp(), configDTO.getConfigType(), userId);
@@ -147,8 +147,8 @@ public class ConfigController {
   }
 
   @PostMapping("/delete/{id}")
-  public ResponseEntity delete(HttpServletRequest request, @PathVariable Long id) {
-    String userId = jwtTokenProvider.getUser(request).getUsername();
+  public ResponseEntity delete(HttpServletRequest request, @PathVariable Long id, Authentication authentication) {
+    String userId = ((User) authentication.getPrincipal()).getUsername();
     Optional<Config> config = this.configRepository.findByIdAndUserId(id, userId);
 
     if(config.isPresent()) {
@@ -162,9 +162,9 @@ public class ConfigController {
 
   @PostMapping("/update/{id}")
   public ResponseEntity update(HttpServletRequest request, @RequestBody ConfigDTO configDTO,
-      @PathVariable Long id) {
-    validation.validateCustomerName(request, configDTO.getCustomer());
-    String userId = this.jwtTokenProvider.getUser(request).getUsername();
+      @PathVariable Long id, Authentication authentication) {
+    validation.validateCustomerName(authentication, configDTO.getCustomer());
+    String userId = ((User) authentication.getPrincipal()).getUsername();
     Optional<Config> existingConfig = this.configRepository.findByIdAndUserId(id, userId);
     if (existingConfig.isEmpty()) {
       throw new RecordNotFoundException(String.format("No Config found for id=%s", id));
