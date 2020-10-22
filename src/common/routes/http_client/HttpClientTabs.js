@@ -1510,9 +1510,13 @@ class HttpClientTabs extends Component {
                 });
                 const apiTrace = res.response[0];
                 const reqIdArray = [];
-                apiTrace && apiTrace.res.map((eachApiTraceEvent) => {
-                    reqIdArray.push(eachApiTraceEvent.requestEventId);
-                });
+                if(apiTrace && apiTrace.res.length > 0){
+                    reqIdArray.push(apiTrace.res[0].requestEventId);
+                    apiTrace.res.reverse().pop();
+                    apiTrace.res.forEach((eachApiTraceEvent) => {
+                        reqIdArray.push(eachApiTraceEvent.requestEventId);
+                    });
+                }
 
                 if (reqIdArray && reqIdArray.length > 0) {
                     const eventTypes = [];
