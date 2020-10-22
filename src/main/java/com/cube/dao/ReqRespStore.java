@@ -707,8 +707,9 @@ public interface ReqRespStore extends DataStore {
 	boolean storeProtoDescriptorFile(ProtoDescriptorDAO protoDescriptorDAO);
 
 	Optional<ProtoDescriptorDAO> getLatestProtoDescriptorDAO(String customerId, String app);
-	boolean deleteRecordingMeta(Recording recording);
-	boolean deleteReplayMeta(List<Replay> replays);
+	boolean deleteAllRecordingData(Recording recording);
+	boolean deleteAllReplayData(List<Replay> replays);
+	boolean deleteAllAnalysisData(List<String> replays);
 
 
 }

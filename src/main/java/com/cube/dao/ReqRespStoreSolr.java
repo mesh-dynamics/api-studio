@@ -2481,13 +2481,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.addChildDocuments(res.respCompareRes.diffs.stream().map(diff ->
                 diffToSolrDoc(diff, DiffType.Response, recReplayReqIdCombined
                     .concat(res.service).concat(res.path).concat(String
-                        .valueOf(counter.getAndIncrement()))))
+                        .valueOf(counter.getAndIncrement())), res.replayId))
             .collect(Collectors.toList()));
         counter.getAndSet(0);
         doc.addChildDocuments(res.reqCompareRes.diffs.stream().map(diff ->
         diffToSolrDoc(diff, DiffType.Request, recReplayReqIdCombined
             .concat(res.service).concat(res.path).concat(String
-                .valueOf(counter.getAndIncrement()))))
+                .valueOf(counter.getAndIncrement())), res.replayId))
             .collect(Collectors.toList()));
         doc.addField(REQ_COMP_RES_TYPE_F, res.reqCompareRes.mt.toString());
         doc.addField(REQ_COMP_RES_META_F, res.reqCompareRes.matchmeta);
@@ -2506,7 +2506,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Request, Response
     }
 
-    private SolrInputDocument diffToSolrDoc(Diff diff, DiffType type, String idPrefix) {
+    private SolrInputDocument diffToSolrDoc(Diff diff, DiffType type, String idPrefix, String replayId) {
         SolrInputDocument inputDocument = new SolrInputDocument();
         diff.value.ifPresent(val -> inputDocument
             .setField(DIFF_VALUE_F, val.toString()));
@@ -2521,6 +2521,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             String.valueOf(Objects.hash(idPrefix, diff.path, diff.op, type.name())));
         inputDocument.setField(IDF, id);
         inputDocument.setField(TYPEF, Types.Diff.toString());
+        inputDocument.setField(REPLAYIDF, replayId);
         return inputDocument;
     }
 
@@ -3285,25 +3286,72 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public boolean deleteRecordingMeta(Recording recording) {
+    public boolean deleteAllRecordingData(Recording recording) {
         StringBuffer queryBuff = new StringBuffer();
         addToQryStr(queryBuff , COLLECTIONF , recording.collection ,false);
-        addToQryStr(queryBuff , TYPEF ,
-            List.of(Types.Recording.name(), Types.Event.name()),
-            true, Optional.empty());
+        addToQryStr(queryBuff , TYPEF , Types.Recording.name(), false);
+        boolean deleteRecording =  deleteDocsByQuery(queryBuff.toString());
+        if(deleteRecording) {
+            return deleteEventsByCollection(List.of(recording.collection));
+        }
+        return deleteRecording;
+    }
 
+    public boolean deleteEventsByCollection(List<String> collections) {
+        StringBuffer queryBuff = new StringBuffer();
+        addToQryStr(queryBuff , COLLECTIONF , collections ,true, Optional.empty());
+        addToQryStr(queryBuff , TYPEF , Types.Event.name(), false);
         return deleteDocsByQuery(queryBuff.toString());
     }
 
     @Override
-    public boolean deleteReplayMeta(List<Replay> replays) {
+    public boolean deleteAllReplayData(List<Replay> replays) {
         StringBuffer queryBuff = new StringBuffer();
-        addToQryStr(queryBuff , REPLAYIDF ,  replays.stream().map(replay -> replay.replayId).collect(Collectors.toList()) ,false, Optional.empty());
+        List<String> replayIds = replays.stream().map(replay -> replay.replayId).collect(Collectors.toList());
+        addToQryStr(queryBuff , REPLAYIDF ,  replayIds ,true, Optional.empty());
+        addToQryStr(queryBuff , TYPEF , Types.ReplayMeta.name(), false);
+
+         boolean deleteReplay = deleteDocsByQuery(queryBuff.toString());
+         if(deleteReplay) {
+             deleteEventsByCollection(replayIds);
+             return deleteAllAnalysisData(replayIds);
+         }
+         return deleteReplay;
+    }
+
+    @Override
+    public boolean deleteAllAnalysisData(List<String> replayIds) {
+        StringBuffer queryBuff = new StringBuffer();
+        addToQryStr(queryBuff , REPLAYIDF ,  replayIds ,true, Optional.empty());
         addToQryStr(queryBuff , TYPEF ,
-            List.of(Types.ReqRespMatchResult.name(), Types.Analysis.name(), Types.MatchResultAggregate.name(), Types.ReplayMeta.name()),
+            List.of(Types.Analysis.name(), Types.MatchResultAggregate.name()),
             true, Optional.empty());
 
-        return deleteDocsByQuery(queryBuff.toString());
+        boolean analysisDeleted = deleteDocsByQuery(queryBuff.toString());
+        if(analysisDeleted) {
+            List<String> ids = new ArrayList<>();
+            final SolrQuery query = new SolrQuery("*:*");
+            query.addField("*");
+            addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
+            addFilter(query, REPLAYIDF, replayIds);
+
+            SolrIterator.getStream(solr, query, Optional.empty()).forEach(doc ->  {
+                getStrField(doc, IDF).map(id -> ids.add(id));
+            });
+            return deleteReqRespMatchResults(ids);
+        }
+        return analysisDeleted;
+    }
+
+    public boolean deleteReqRespMatchResults(List<String> ids) {
+        try {
+            solr.deleteById(ids);
+            return softcommit();
+        } catch(Exception e) {
+            LOGGER.error("Error in deleting ReqRespMatchResults from solr for ids " +
+                ids.toString(), e);
+            return false;
+        }
     }
 
     @Override

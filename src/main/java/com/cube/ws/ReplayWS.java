@@ -217,12 +217,12 @@ public class ReplayWS extends ReplayBasicWS {
             try {
                 String json;
                 if(hardDelete) {
-                    boolean deleteReplayMeta = rrstore.deleteReplayMeta(List.of(rep));
+                    boolean deleteReplayMeta = rrstore.deleteAllReplayData(List.of(rep));
                     if(!deleteReplayMeta) {
-                        LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR, "ReplayMeta is not deleted", "replayId", replayId)));
+                        LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR, "Replay Data is not deleted", "replayId", replayId)));
                         return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
-                            buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
-                                "Unable to delete ReplayMeta ")).build();
+                            buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
+                                "Replay Data is not deleted")).build();
                     }
                     json = "Replay is completely deleted";
                 } else {

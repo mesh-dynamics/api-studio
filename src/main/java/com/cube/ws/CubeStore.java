@@ -1316,17 +1316,17 @@ public class CubeStore {
             try {
                 String json;
                 if(hardDelete) {
-                    boolean deleteRecordingMeta = rrstore.deleteRecordingMeta(rec);
+                    boolean deleteRecordingMeta = rrstore.deleteAllRecordingData(rec);
                     if(deleteRecordingMeta) {
                        Stream<Replay> replays = rrstore.getReplay(Optional.of(rec.customerId), Optional.of(rec.app),
                             Optional.empty(), Collections.EMPTY_LIST, Optional.empty(),
                             Optional.of(rec.collection));
-                       rrstore.deleteReplayMeta(replays.collect(Collectors.toList()));
+                       rrstore.deleteAllReplayData(replays.collect(Collectors.toList()));
                     } else {
-                        LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR, "RecordingMeta is not deleted", "RecordingId", recordingId)));
+                        LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR, "Recording Data is not deleted", "RecordingId", recordingId)));
                         return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
-                            buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
-                                "Unable to delete RecordingMeta ")).build();
+                            buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
+                                "Recording Data is  not deleted ")).build();
                     }
                     json = "Recording is completely deleted";
                 } else {
