@@ -97,6 +97,13 @@ public class Utils {
 		}
 	}
 
+	public static Optional<Float> strToFloat(String intStr) {
+		try {
+			return Optional.ofNullable(intStr).map(Float::valueOf);
+		} catch (Exception e) {
+			return Optional.empty();
+		}
+	}
 
 	public static Optional<Double> strToDouble(String dblStr) {
 		try {

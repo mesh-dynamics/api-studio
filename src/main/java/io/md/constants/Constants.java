@@ -54,7 +54,7 @@ public class Constants {
 	public static final String EXCEPTION_STACK = "exceptionStack";
 	public static final String REQ_MATCH_TYPE = "reqMatchType";
 	public static final String RESP_MATCH_TYPE = "respMatchType";
-	public static final String MATCH_TYPE = "MatchType";
+	public static final String MATCH_TYPE = "matchType";
 	public static final String INCLUDE_DIFF = "includeDiff";
 	public static final String LOWER_BOUND = "lowerBound";
 

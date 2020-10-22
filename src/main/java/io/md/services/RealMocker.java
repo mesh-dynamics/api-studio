@@ -57,13 +57,14 @@ public class RealMocker implements Mocker {
 
             //variable used in lambda should be final
             final Event[] firstRespArr = {null};
-            final Map<String , Event> respReqMapping = new HashMap<>();
-            //saving the request event corresponding to matched response event
+
+            final Map<String , Event> reqIdReqMapping = new HashMap<>();
+            //saving the request and requestId mapping
             Function<Event , Optional<Event>> getRespEventForReqEvent = (req)->{
-                Optional<Event> resp = cube.getRespEventForReqEvent(req);
-                resp.ifPresent(respEvent->respReqMapping.put(respEvent.reqId , req));
-                return resp;
+                reqIdReqMapping.put(req.reqId , req);
+                return cube.getRespEventForReqEvent(req);
             };
+
             Optional<Event> matchingResponse = !mockWColl.isDevtool ?
                     //Normal Replay Mock - Old logic of getting first event and getting response corresponding to it
                     res.getObjects().findFirst().flatMap(getRespEventForReqEvent) :
@@ -99,7 +100,7 @@ public class RealMocker implements Mocker {
                         "Unable to mock request since no default response found"));
                 }
             }
-            Optional<Event> matchedReq = matchingResponse.map(resp->respReqMapping.get(resp.reqId));
+            Optional<Event> matchedReq = matchingResponse.map(resp->reqIdReqMapping.get(resp.reqId));
             Optional<Event> mockResponse = createResponseFromEvent(reqEvent, matchedReq , matchingResponse, mockWithCollection.get().runId);
             return new MockResponse(mockResponse, res.getNumFound());
         } else {
@@ -218,14 +219,13 @@ public class RealMocker implements Mocker {
         if (shouldStore(mockRequestEvent.eventType)) {
 
             Optional<String> score  = matchedReq.flatMap(e->e.getMetaFieldValue(Constants.SCORE_FIELD));
-            MatchType reqMatch = score.map(scr->{
-                return EventQuery.getEventMaxWeight() == Float.parseFloat(scr) ? MatchType.ExactMatch : MatchType.FuzzyMatch;
+            MatchType reqMatch = score.flatMap(Utils::strToFloat).map(val->{
+                return EventQuery.getEventMaxWeight() == val ? MatchType.ExactMatch : MatchType.FuzzyMatch;
             }).orElse(MatchType.NoMatch);
 
-            respEvent.ifPresent(ev->{
-                ev.setMetaFieldValue(Constants.MATCH_TYPE , reqMatch.toString());
-                score.ifPresent(scr->ev.setMetaFieldValue(Constants.SCORE_FIELD , scr));
-            });
+            Map<String,String> meta = new HashMap<>();
+            meta.put(Constants.MATCH_TYPE , reqMatch.toString());
+            score.ifPresent(scr->meta.put(Constants.SCORE_FIELD , scr));
 
             // store a req-resp analysis match result for the mock request (during replay)
             // and the matched recording request
@@ -248,7 +248,7 @@ public class RealMocker implements Mocker {
             try {
                 mockResponse = createMockResponseEvent(mockRequestEvent, respEvent,
                     Optional.of(mockRequestEvent.reqId),
-                    mockRequestEvent.instanceId, mockRequestEvent.getCollection(), runId);
+                    mockRequestEvent.instanceId, mockRequestEvent.getCollection(), runId, meta);
                 mockResponse.ifPresent(cube::save);
             } catch (InvalidEventException e) {
                 LOGGER.error(Utils.createLogMessasge(
@@ -271,7 +271,7 @@ public class RealMocker implements Mocker {
     private Optional<Event> createMockResponseEvent(Event mockRequest, Optional<Event> originalResponse,
         Optional<String> mockReqId,
         String instanceId,
-        String replayCollection, String runId)
+        String replayCollection, String runId , Map<String , String> meta)
         throws Event.EventBuilder.InvalidEventException {
         Event.EventBuilder builder = new Event.EventBuilder(mockRequest.customerId, mockRequest.app,
             mockRequest.service,
@@ -279,10 +279,10 @@ public class RealMocker implements Mocker {
             new MDTraceInfo(mockRequest.getTraceId() , null, null),
             Event.RunType.Replay, Optional.of(Instant.now()),
             mockReqId.orElse("NA"),
-            mockRequest.apiPath, EventType.getResponseType(mockRequest.eventType), mockRequest.recordingType).withRunId(runId);
+            mockRequest.apiPath, EventType.getResponseType(mockRequest.eventType), mockRequest.recordingType)
+                .withRunId(runId)
+                .withMetaData(meta);
         Optional<Payload> payload = originalResponse.map(event -> event.payload);
-        Optional<Map<String,String>> meta = originalResponse.map(e->e.metaData);
-        meta.ifPresent(builder::withMetaData);
 
         if (!payload.isPresent()) {
             payload = createNoMatchResponsePayload(mockRequest);
