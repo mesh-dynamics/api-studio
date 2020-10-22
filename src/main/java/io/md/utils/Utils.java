@@ -21,11 +21,12 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.swing.text.html.Option;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -85,57 +86,48 @@ public class Utils {
 	public static final Predicate<String>
 		ALLOWED_HEADERS = (header) -> !DISALLOWED_HEADERS_SET.contains(header);
 
+	public static<T> Optional<T> safeGet(Supplier<T> supplier){
+		try{
+			return Optional.ofNullable(supplier.get());
+		}catch(Exception e){
+			return Optional.empty();
+		}
+	}
+
+	public static<T,U> Optional<U> safeFnExecute(T val , Function<T , U> mapperFn){
+		try{
+			return Optional.ofNullable(val).map(mapperFn);
+		}catch(Exception e){
+			return Optional.empty();
+		}
+	}
+
 	/**
 	 * @param intStr
 	 * @return
 	 */
 	public static Optional<Integer> strToInt(String intStr) {
-		try {
-			return Optional.ofNullable(intStr).map(Integer::valueOf);
-		} catch (Exception e) {
-			return Optional.empty();
-		}
+		return safeFnExecute(intStr , Integer::valueOf);
 	}
 
-	public static Optional<Float> strToFloat(String intStr) {
-		try {
-			return Optional.ofNullable(intStr).map(Float::valueOf);
-		} catch (Exception e) {
-			return Optional.empty();
-		}
+	public static Optional<Float> strToFloat(String floatStr) {
+		return safeFnExecute(floatStr , Float::valueOf);
 	}
 
 	public static Optional<Double> strToDouble(String dblStr) {
-		try {
-			return Optional.ofNullable(dblStr).map(Double::valueOf);
-		} catch (Exception e) {
-			return Optional.empty();
-		}
+		return safeFnExecute(dblStr , Double::valueOf);
 	}
 
-
 	public static Optional<Long> strToLong(String longStr) {
-		try {
-			return Optional.ofNullable(longStr).map(Long::valueOf);
-		} catch (Exception e) {
-			return Optional.empty();
-		}
+		return safeFnExecute(longStr , Long::valueOf);
 	}
 
 	public static Optional<Instant> strToTimeStamp(String val) {
-		try {
-			return Optional.of(Instant.parse(val)); // parse cannot return null
-		} catch (Exception e) {
-			return Optional.empty();
-		}
+		return safeFnExecute(val , Instant::parse);
 	}
 
 	public static Optional<Boolean> strToBool(String boolStr) {
-		try {
-			return Optional.ofNullable(boolStr).map(BooleanUtils::toBoolean);
-		} catch (Exception e) {
-			return Optional.empty();
-		}
+		return safeFnExecute(boolStr , BooleanUtils::toBoolean);
 	}
 
 
