@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.*;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -15,6 +16,16 @@ import io.md.dao.Event.EventType;
  */
 @JsonDeserialize(builder = EventQuery.Builder.class)
 public class EventQuery {
+
+    //Mocking Optional Query Weight related Constants
+    public static final float COLLECTION_WEIGHT = 1.0f;
+    public static final float TRACEID_WEIGHT = 1.5f;
+    public static final float PAYLOAD_KEY_WEIGHT = 3.0f;
+
+    public static float getEventMaxWeight(){
+        return COLLECTION_WEIGHT + TRACEID_WEIGHT + PAYLOAD_KEY_WEIGHT;
+    }
+
 
     private final String customerId;
     private final String app;
@@ -324,44 +335,53 @@ public class EventQuery {
     public Optional<String> getCollection() {
         return collection;
     }
+    @JsonIgnore
     public Optional<Float> getCollectionWeight() { return Optional.ofNullable(orQueryWeightage.get(Constants.COLLECTION_FIELD)) ; }
 
     public List<String> getServices() {
         return services;
     }
+    @JsonIgnore
     public Optional<Float> getServicesWeight() {return Optional.ofNullable(orQueryWeightage.get(Constants.SERVICE_FIELD)); }
 
     public Optional<String> getInstanceId() {
         return instanceId;
     }
+    @JsonIgnore
     public Optional<Float> getInstanceIdWeight() {return Optional.ofNullable(orQueryWeightage.get(Constants.INSTANCE_ID_FIELD)); }
 
     public List<String> getTraceIds() {
         return traceIds;
     }
+    @JsonIgnore
     public Optional<Float> getTraceIdsWeight() {return Optional.ofNullable(orQueryWeightage.get(Constants.TRACE_ID_FIELD)); }
 
     public Optional<Event.RunType> getRunType() { return runType; }
+    @JsonIgnore
     public Optional<Float> getRunTypeWeight() {return Optional.ofNullable(orQueryWeightage.get(Constants.RUN_TYPE_FIELD)); }
 
     public List<String> getReqIds() {
         return reqIds;
     }
+    @JsonIgnore
     public Optional<Float> getReqIdsWeight() {return Optional.ofNullable(orQueryWeightage.get(Constants.REQ_ID_FIELD)); }
 
     public List<String> getPaths() {
         return paths;
     }
+    @JsonIgnore
     public Optional<Float> getPathsWeight() {return Optional.ofNullable(orQueryWeightage.get(Constants.PATH_FIELD)); }
 
     public boolean excludePaths() {
         return excludePaths;
     }
+    @JsonIgnore
     public Optional<Float> excludePathsWeight() {return Optional.ofNullable(orQueryWeightage.get(Constants.EXCLUDE_PATH_FIELD)); }
 
     public Optional<Integer> getPayloadKey() {
         return payloadKey;
     }
+    @JsonIgnore
     public Optional<Float> getPayloadKeyWeight() {return Optional.ofNullable(orQueryWeightage.get(Constants.PAYLOAD_KEY_FIELD)); }
 
     public Optional<Integer> getOffset() {
@@ -379,6 +399,7 @@ public class EventQuery {
     public Optional<Instant> getTimestamp() {
         return timestamp;
     }
+    @JsonIgnore
     public Optional<Float> getTimestampWeight() {return Optional.ofNullable(orQueryWeightage.get(Constants.TIMESTAMP_FIELD)); }
 
 }
