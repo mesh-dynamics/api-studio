@@ -206,7 +206,7 @@ class HttpClientTabs extends Component {
             let tabData = {
                 id: toBeUpdatedData.id,
                 tabName: toBeUpdatedData.tabName,
-                requestId: toBeUpdatedData.requestId,
+                requestId: toBeUpdatedData.requestId, // from the original request. diff fails in case of setAsReference
                 httpMethod: toBeCopiedFromData.httpMethod,
                 httpURL: toBeCopiedFromData.httpURL,
                 httpURLShowOnly: toBeUpdatedData.httpURLShowOnly,
@@ -267,6 +267,8 @@ class HttpClientTabs extends Component {
             }
         })
         copiedTab.outgoingRequests = [...tabToBeProcessed.outgoingRequests, ...outgoingRequests];
+        copiedTab.selectedTraceTableReqTabId = copiedTab.id
+        copiedTab.selectedTraceTableTestReqTabId = recordedHistory.id
         return copiedTab;
     }
 
