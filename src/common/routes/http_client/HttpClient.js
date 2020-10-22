@@ -348,7 +348,7 @@ class HttpClient extends Component {
             selectedTraceTableTestReqTab = currentSelectedTab.recordedHistory;
         }
 
-        const { outgoingRequests, service, httpURL, httpURLShowOnly, showTrace } = currentSelectedTab;
+        const { outgoingRequests, service, httpURL, httpURLShowOnly, showTrace, hasChanged } = currentSelectedTab;
 
         const { selectedResolutionType, showLogs, collapseLength, incrementCollapseLengthForRecReqId, incrementCollapseLengthForRepReqId, maxLinesLength, showResponseMessageHeaders, showResponseMessageBody, showRequestMessageHeaders, showRequestMessageQParams, showRequestMessageFParams, showRequestMessageBody, showAll, searchFilterPath,  shownResponseMessageHeaders, shownResponseMessageBody, shownRequestMessageHeaders, shownRequestMessageQParams, shownRequestMessageFParams, shownRequestMessageBody, diffLayoutData, showCompleteDiff } = this.state;
 
@@ -478,7 +478,11 @@ class HttpClient extends Component {
                                             {service}
                                         </td>
                                         <td>{httpURLShowOnly}</td>
-                                        <td></td>
+                                        <td>
+                                            <span>
+                                                {hasChanged && <i className="fas fa-circle" style={{fontSize: "14px", marginRight: "12px"}}></i>}
+                                            </span>
+                                        </td>
                                         <td></td>
                                     </tr>
                                     {outgoingRequests && outgoingRequests.length > 0 && outgoingRequests.map((eachReq) => {
@@ -492,7 +496,11 @@ class HttpClient extends Component {
                                                     {eachReq.service}
                                                 </td>
                                                 <td>{eachReq.httpURLShowOnly}</td>
-                                                <td></td>
+                                                <td>
+                                                    <span>
+                                                        {eachReq.hasChanged && <i className="fas fa-circle" style={{fontSize: "14px", marginRight: "12px"}}></i>}
+                                                    </span>
+                                                </td>
                                                 <td></td>
                                             </tr>
                                         );
