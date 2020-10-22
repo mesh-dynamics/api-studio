@@ -60,6 +60,8 @@ export const apiCatalogActions = {
     fetchGoldenCollectionList: (app, recordingType) => (dispatch, getState) => {
         const { user } = getState().authentication;
 
+        dispatch({ type: apiCatalogConstants.FETCHING_GOLDEN_LIST });
+
         cubeService.fetchCollectionList(user, app, recordingType)
             .then((data) => {
                 const result = data.recordings;
@@ -75,6 +77,10 @@ export const apiCatalogActions = {
                     });
                 }
             })
+            .catch(() => {
+                // TODO: Add sentry (or something similar) log for api call failure
+                dispatch({ type: apiCatalogConstants.GOLDEN_LIST_FETCH_COMPLETE });
+            });
     },
 
     handleFilterChange: (metadata, value) => (dispatch, getState) => {
