@@ -55,10 +55,17 @@ class HttpResponseHeaders extends Component<IHttpResponseHeadersProps> {
     super(props);
   }
 
-
-  formatHandler(){
-    this.editor.getOriginalEditor().getAction('editor.action.formatDocument').run().then(()=>{});
-    this.editor.getModifiedEditor().getAction('editor.action.formatDocument').run().then(()=>{});
+  formatHandler() {
+    this.editor
+      .getOriginalEditor()
+      .getAction("editor.action.formatDocument")
+      .run()
+      .then(() => {});
+    this.editor
+      .getModifiedEditor()
+      .getAction("editor.action.formatDocument")
+      .run()
+      .then(() => {});
   }
 
   editorDidMount: DiffEditorDidMount = (editor) => {
@@ -71,23 +78,29 @@ class HttpResponseHeaders extends Component<IHttpResponseHeadersProps> {
       const { tabId, isOutgoingRequest } = this.props;
 
       modified.onDidChangeContent((event) => {
-        this.props.updateParam(
-          isOutgoingRequest,
-          tabId,
-          "responseHeaders",
-          "responseHeaders",
-          modified.getValue()
-        );
+        const value = modified.getValue();
+        if (value !== this.props.responseHeaders) {
+          this.props.updateParam(
+            isOutgoingRequest,
+            tabId,
+            "responseHeaders",
+            "responseHeaders",
+            value
+          );
+        }
       });
 
       original.onDidChangeContent((event) => {
-        this.props.updateParam(
-          isOutgoingRequest,
-          tabId,
-          "recordedResponseHeaders",
-          "recordedResponseHeaders",
-          original.getValue()
-        );
+        const value = original.getValue();
+        if (value !== this.props.recordedResponseHeaders) {
+          this.props.updateParam(
+            isOutgoingRequest,
+            tabId,
+            "recordedResponseHeaders",
+            "recordedResponseHeaders",
+            value
+          );
+        }
       });
     }
   };
@@ -99,7 +112,9 @@ class HttpResponseHeaders extends Component<IHttpResponseHeadersProps> {
         <MonacoDiffEditor
           key={"responseHeaders" + tabId}
           width="100%"
-          height={this.props.maximizeEditorHeight? "calc(100vh - 30px)": "600"}
+          height={
+            this.props.maximizeEditorHeight ? "calc(100vh - 30px)" : "600"
+          }
           language="json"
           original={this.props.recordedResponseHeaders}
           value={this.props.responseHeaders}
@@ -111,7 +126,7 @@ class HttpResponseHeaders extends Component<IHttpResponseHeadersProps> {
             scrollbar: {
               alwaysConsumeMouseWheel: false,
             },
-            enableSplitViewResizing: true,            
+            enableSplitViewResizing: true,
             automaticLayout: true,
             scrollBeyondLastLine: false,
             contextmenu: false,
