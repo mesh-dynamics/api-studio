@@ -164,6 +164,7 @@ class SaveToCollection extends React.Component {
 
         cubeService.storeUserReqResponse(recordingId, data).then(
           (serverRes) => {
+            dispatch(httpClientActions.unsetHasChangedAll(tabId));
             this.updateTabWithNewData(tabId, serverRes, recordingId);
             this.setState({
               modalErroSaveMessage: "Saved Successfully!",
