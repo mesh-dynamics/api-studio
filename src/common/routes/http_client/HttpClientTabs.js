@@ -40,7 +40,7 @@ import commonConstants from '../../utils/commonConstants';
 import MockConfigs from "./MockConfigs";
 import {setDefaultMockContext} from '../../helpers/httpClientHelpers'
 import SideBarTabs from "./SideBarTabs";
-
+import {hasTabDataChanged} from "../../utils/http_client/utils"
 
 class HttpClientTabs extends Component {
 
@@ -180,7 +180,8 @@ class HttpClientTabs extends Component {
                 recordingIdAddedFromClient: toBeUpdatedData.recordingIdAddedFromClient,
                 collectionIdAddedFromClient: toBeUpdatedData.collectionIdAddedFromClient,
                 traceIdAddedFromClient: toBeUpdatedData.traceIdAddedFromClient,
-                recordedHistory: []
+                recordedHistory: [],
+                hasChanged: true,
             }
             return tabData;
         }
@@ -236,7 +237,8 @@ class HttpClientTabs extends Component {
                 recordingIdAddedFromClient: toBeUpdatedData.recordingIdAddedFromClient,
                 collectionIdAddedFromClient: toBeUpdatedData.collectionIdAddedFromClient,
                 traceIdAddedFromClient: toBeUpdatedData.traceIdAddedFromClient,
-                recordedHistory: toBeUpdatedData.recordedHistory
+                recordedHistory: toBeUpdatedData.recordedHistory,
+                hasChanged: true,
             }
             return tabData;
         }
@@ -1837,7 +1839,8 @@ class HttpClientTabs extends Component {
             /* Optional parameters */
             key: eachTab.id,
             tabClassName: 'md-hc-tab',
-            panelClassName: 'md-hc-tab-panel'
+            panelClassName: 'md-hc-tab-panel',
+            hasTabChanged: hasTabDataChanged(eachTab),
         }));
     }
 

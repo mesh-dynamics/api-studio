@@ -19,6 +19,7 @@ import {
 import { AbortRequest } from "./abortRequest";
 import SaveToCollection from './SaveToCollection';
 import SplitSlider from "../../components/SplitSlider.tsx";
+import {hasTabDataChanged} from "../../utils/http_client/utils"
 
 const newStyles = {
     variables: {
@@ -120,6 +121,11 @@ class HttpClient extends Component {
         const selectedTraceTableReqTabId = currentSelectedTab.selectedTraceTableReqTabId;
         const selectedTraceTableTestReqTabId = currentSelectedTab.selectedTraceTableTestReqTabId;
         let selectedTraceTableReqTab, selectedTraceTableTestReqTab;
+
+        if(hasTabDataChanged(currentSelectedTab)) {
+            alert("Please save the modified request before proceeding with the diff.")
+            return
+        }
 
         if(currentSelectedTab.selectedTraceTableReqTabId === currentSelectedTab.id) {
             selectedTraceTableReqTab = currentSelectedTab;

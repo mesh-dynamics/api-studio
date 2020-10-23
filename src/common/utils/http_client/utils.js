@@ -1,4 +1,4 @@
-import _, { head } from 'lodash';
+import _ from 'lodash';
 
 const generateRunId = () => {
     return new Date(Date.now()).toISOString()
@@ -93,11 +93,24 @@ const getApiPathFromRequestEvent = (requestEvent) => {
     return EMPTY_STRING;
 };
 
+const hasTabDataChanged = (tab) => {
+    if (tab.hasChanged) {
+      return true;
+    }
+
+    if (_.find(tab.outgoingRequests, {hasChanged: true})) {
+      return true;
+    }
+
+    return false;
+}
+
 export { 
     generateRunId,
     getStatusColor,
     generateApiPath,
     getCurrentMockConfig,
     getTraceTableTestReqData,
-    getApiPathFromRequestEvent
+    getApiPathFromRequestEvent,
+    hasTabDataChanged,
 };
