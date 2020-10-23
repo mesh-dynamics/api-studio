@@ -156,7 +156,7 @@ public class CubeStoreController {
     }
 
     @PostMapping("/delete/{recordingId}")
-    public ResponseEntity delete(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId) {
+    public ResponseEntity delete(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId, Authentication authentication) {
         Optional<Recording> recording = cubeServerService.getRecording(recordingId);
         if(recording.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

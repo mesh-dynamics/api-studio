@@ -83,7 +83,7 @@ public class ReplayWSController {
     }
 
     @PostMapping("/delete/{replayId}")
-    public ResponseEntity delete(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String replayId) {
+    public ResponseEntity delete(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String replayId, Authentication authentication) {
         final Optional<Replay> replay =cubeServerService.getReplay(replayId);
         if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
