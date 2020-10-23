@@ -1130,18 +1130,11 @@ class HttpClientTabs extends Component {
             for (const header of response.headers) {
                 fetchedResponseHeaders[header[0]] = header[1];
             }
-            if(response.headers.get("content-type").indexOf("text/html") !== -1) {
-                return response.text();
-            } else if (response.headers.get("content-type").indexOf("application/json") !== -1 ) {// checking response header
-                return response.json();
-            } else {
-                return response.text();
-                //throw new TypeError('Response from has unexpected "content-type"');
-            }
+            return response.text();
         })
         .then((data) => {
             // handle success
-            dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), JSON.stringify(data, undefined, 4)));
+            dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), data));
             this.saveToHistoryAndLoadTrace(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp, httpRequestURLRendered, currentEnvironment, currentEnvironmentVars);
             //dispatch(httpClientActions.unsetReqRunning(tabId))
         })
