@@ -1,14 +1,11 @@
 package com.cubeui.backend.web.external;
 
-import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DtEnvVar;
 import com.cubeui.backend.domain.DtEnvironment;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.DevtoolEnvironmentsRepository;
 import com.cubeui.backend.security.Validation;
-import com.cubeui.backend.security.jwt.JwtTokenProvider;
 import com.cubeui.backend.service.CubeServerService;
-import com.fasterxml.jackson.core.type.TypeReference;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.dao.DynamicInjectionEventDao;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
@@ -23,12 +20,12 @@ import io.md.dao.DefaultEvent;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
 
-import io.md.utils.Constants;
 import java.util.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -44,44 +41,43 @@ public class CubeStoreController {
     @Autowired
     private Validation validation;
     @Autowired
-    private JwtTokenProvider jwtTokenProvider;
-    @Autowired
     private DevtoolEnvironmentsRepository devtoolEnvironmentsRepository;
 
     @GetMapping("/status/{customerId}/{app}/{name}/{label}")
     public ResponseEntity status(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String customerId,
-                                 @PathVariable String app, @PathVariable String name, @PathVariable String label){
-        validation.validateCustomerName(request,customerId);
+                                 @PathVariable String app, @PathVariable String name, @PathVariable String label, Authentication authentication){
+        validation.validateCustomerName(authentication,customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
     @PostMapping("/start/{customerId}/{app}/{instanceId}/{templateSetVersion}")
     public ResponseEntity start(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String customerId,
                                   @PathVariable String app, @PathVariable String instanceId,
-                                  @PathVariable String templateSetVersion) {
-        validation.validateCustomerName(request,customerId);
+                                  @PathVariable String templateSetVersion, Authentication authentication) {
+        validation.validateCustomerName(authentication,customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
     @PostMapping("/stop/{recordingId}")
-    public ResponseEntity stop(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId) {
+    public ResponseEntity stop(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId, Authentication authentication) {
         Optional<Recording> recording = cubeServerService.getRecording(recordingId);
         if(recording.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Error while retrieving Recording Object for recordingId=" + recordingId);
-        validation.validateCustomerName(request,recording.get().customerId);
+        validation.validateCustomerName(authentication,recording.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
     @PostMapping("/getEvents")
-    public ResponseEntity getEvents(HttpServletRequest request, @RequestBody EventQuery postBody) {
-        validation.validateCustomerName(request,postBody.getCustomerId());
+    public ResponseEntity getEvents(HttpServletRequest request, @RequestBody EventQuery postBody, Authentication authentication) {
+        validation.validateCustomerName(authentication,postBody.getCustomerId());
         return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 
     @PostMapping("/rr/{var}")
-    public ResponseEntity storerr(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String var, @RequestParam String customerId) {
-        validation.validateCustomerName(request,customerId);
+    public ResponseEntity storerr(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String var, @RequestParam String customerId,
+        Authentication authentication) {
+        validation.validateCustomerName(authentication,customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
@@ -101,15 +97,15 @@ public class CubeStoreController {
     }
 
     @PostMapping("/storeEvent")
-    public ResponseEntity storeEvent(HttpServletRequest request, @RequestBody Event postBody) {
-        validation.validateCustomerName(request, postBody.customerId);
+    public ResponseEntity storeEvent(HttpServletRequest request, @RequestBody Event postBody, Authentication authentication) {
+        validation.validateCustomerName(authentication, postBody.customerId);
         return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 
     @PostMapping("/deleteEventByReqId/{reqId}")
-    public ResponseEntity deleteEventByReqId(HttpServletRequest request, @RequestBody Event postBody , @PathVariable String reqId){
+    public ResponseEntity deleteEventByReqId(HttpServletRequest request, @RequestBody Event postBody , @PathVariable String reqId, Authentication authentication){
 
-        validation.validateCustomerName(request, postBody.customerId);
+        validation.validateCustomerName(authentication, postBody.customerId);
 
         /*
             Any validation regarding the the ownership of event by that customer is done at datastore level (solr).
@@ -120,9 +116,9 @@ public class CubeStoreController {
     }
 
     @PostMapping("/deleteEventByTraceId/{traceId}")
-    public ResponseEntity deleteEventByTraceId(HttpServletRequest request, @RequestBody Event postBody , @PathVariable String traceId){
+    public ResponseEntity deleteEventByTraceId(HttpServletRequest request, @RequestBody Event postBody , @PathVariable String traceId, Authentication authentication){
 
-        validation.validateCustomerName(request, postBody.customerId);
+        validation.validateCustomerName(authentication, postBody.customerId);
 
         /*
             Any validation regarding the the ownership of event by that customer is done at datastore level (solr).
@@ -140,30 +136,33 @@ public class CubeStoreController {
     }
 
     @PostMapping("/event/setDefaultResponse")
-    public ResponseEntity setDefaultRespForEvent(HttpServletRequest request, @RequestBody DefaultEvent postBody) {
-        validation.validateCustomerName(request, postBody.getEvent().customerId);
+    public ResponseEntity setDefaultRespForEvent(HttpServletRequest request, @RequestBody DefaultEvent postBody, Authentication authentication) {
+        validation.validateCustomerName(authentication, postBody.getEvent().customerId);
         return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 
     @GetMapping("/searchRecording")
-    public ResponseEntity searchRecording(HttpServletRequest request, @RequestBody Optional<String> getBody, @RequestParam String customerId){
-        validation.validateCustomerName(request,customerId);
+    public ResponseEntity searchRecording(HttpServletRequest request, @RequestBody Optional<String> getBody, @RequestParam String customerId,
+        Authentication authentication){
+        validation.validateCustomerName(authentication,customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
     @GetMapping("/currentcollection")
-    public ResponseEntity currentcollection(HttpServletRequest request, @RequestBody Optional<String> getBody, @RequestParam String customerId){
-        validation.validateCustomerName(request,customerId);
+    public ResponseEntity currentcollection(HttpServletRequest request, @RequestBody Optional<String> getBody, @RequestParam String customerId,
+        Authentication authentication){
+        validation.validateCustomerName(authentication,customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
     @PostMapping("/softDelete/{recordingId}")
-    public ResponseEntity softDelete(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId) {
+    public ResponseEntity softDelete(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId,
+        Authentication authentication) {
         Optional<Recording> recording = cubeServerService.getRecording(recordingId);
         if(recording.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Error while retrieving Recording Object for recordingId=" + recordingId);
-        validation.validateCustomerName(request,recording.get().customerId);
+        validation.validateCustomerName(authentication,recording.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
@@ -178,58 +177,60 @@ public class CubeStoreController {
     }
 
     @PostMapping("/updateGoldenFields/{recordingId}")
-    public ResponseEntity updateGoldenFields(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId) {
+    public ResponseEntity updateGoldenFields(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId,
+        Authentication authentication) {
         Optional<Recording> recording = cubeServerService.getRecording(recordingId);
         if(recording.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Error while retrieving Recording Object for recordingId=" + recordingId);
-        validation.validateCustomerName(request,recording.get().customerId);
+        validation.validateCustomerName(authentication,recording.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
     @PostMapping("/resumeRecording/{recordingId}")
-    public  ResponseEntity resumeRecordingByNameLabel(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId) {
+    public  ResponseEntity resumeRecordingByNameLabel(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId,
+        Authentication authentication) {
         Optional<Recording> recording = cubeServerService.getRecording(recordingId);
         if(recording.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Error while retrieving Recording Object for recordingId=" + recordingId);
-        validation.validateCustomerName(request,recording.get().customerId);
+        validation.validateCustomerName(authentication,recording.get().customerId);
         return  cubeServerService.fetchPostResponse(request, postBody);
     }
 
     @PostMapping("/setCurrentAgentConfigTag")
-    public ResponseEntity setAgentConfigTag(HttpServletRequest request, @RequestBody AgentConfigTagInfo postBody) {
-        validation.validateCustomerName(request, postBody.customerId);
+    public ResponseEntity setAgentConfigTag(HttpServletRequest request, @RequestBody AgentConfigTagInfo postBody, Authentication authentication) {
+        validation.validateCustomerName(authentication, postBody.customerId);
         return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 
     @PostMapping("/storeAgentConfig")
-    public ResponseEntity storeAgentConfig(HttpServletRequest request, @RequestBody ConfigDAO postBody) {
-        validation.validateCustomerName(request,postBody.customerId);
+    public ResponseEntity storeAgentConfig(HttpServletRequest request, @RequestBody ConfigDAO postBody, Authentication authentication) {
+        validation.validateCustomerName(authentication,postBody.customerId);
         return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 
     @GetMapping("/fetchAgentConfig/{customerId}/{app}/{service}/{instanceId}")
     public ResponseEntity fetchAgentConfig(HttpServletRequest request, @RequestBody Optional<String> getBody,
             @PathVariable String customerId, @PathVariable String app, @PathVariable String service,
-            @PathVariable String instanceId) {
-        validation.validateCustomerName(request, customerId);
+            @PathVariable String instanceId, Authentication authentication) {
+        validation.validateCustomerName(authentication, customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
     @PostMapping("/ackConfigApplication")
     public ResponseEntity acknowledgeConfigApplication(HttpServletRequest request,
-            @RequestBody ConfigApplicationAcknowledge postBody) {
-        validation.validateCustomerName(request,postBody.customerId);
+            @RequestBody ConfigApplicationAcknowledge postBody, Authentication authentication) {
+        validation.validateCustomerName(authentication,postBody.customerId);
         return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 
     @PostMapping("/createUserHistory/{customerId}/{app}")
     public ResponseEntity createUserHistory(HttpServletRequest request,
             @RequestBody Optional<String> postBody, @PathVariable String customerId,
-            @PathVariable String app, @RequestParam MultiValueMap<String, String> queryMap) {
-        validation.validateCustomerName(request, customerId);
-        String userId = jwtTokenProvider.getUser(request).getUsername();
+            @PathVariable String app, @RequestParam MultiValueMap<String, String> queryMap, Authentication authentication) {
+        validation.validateCustomerName(authentication, customerId);
+        String userId = ((User) authentication.getPrincipal()).getUsername();
         queryMap.set("recordingType", RecordingType.History.toString());
         return cubeServerService.createRecording(request,
             customerId, app,userId,Optional.of(queryMap));
@@ -238,15 +239,16 @@ public class CubeStoreController {
     @GetMapping("/getAgentSamplingFacets/{customerId}/{app}/{service}/{instanceId}")
     public ResponseEntity getAgentSamplingFacets(HttpServletRequest request,
         @RequestBody Optional<String> getBody, @PathVariable String customerId,
-        @PathVariable String app, @PathVariable String service, @PathVariable String instanceId) {
-        validation.validateCustomerName(request, customerId);
+        @PathVariable String app, @PathVariable String service, @PathVariable String instanceId, Authentication authentication) {
+        validation.validateCustomerName(authentication, customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
     @PostMapping("/storeUserReqResp/{recordingId}")
     public ResponseEntity storeUserReqResp(HttpServletRequest request,
         @RequestBody List<UserReqRespContainer> postBody, @PathVariable String recordingId,
-        @RequestParam(value="environmentName", required = false) String environmentName)
+        @RequestParam(value="environmentName", required = false) String environmentName,
+        Authentication authentication)
         throws InvalidEventException {
         if(postBody == null || postBody.size() < 1) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -254,7 +256,7 @@ public class CubeStoreController {
         }
 
         Optional<Recording> recording = Optional.empty();
-        User user = (User)jwtTokenProvider.getUser(request);
+        User user = (User) authentication.getPrincipal();
         if(recordingId.equals("History")) {
             String userId = user.getUsername();
             Event requestEvent = postBody.get(0).request;
@@ -263,7 +265,7 @@ public class CubeStoreController {
                     .body("No Request Event found in body for recordingId=" + recordingId);
             }
             requestEvent.validateEvent();
-            validation.validateCustomerName(request,requestEvent.customerId);
+            validation.validateCustomerName(authentication,requestEvent.customerId);
             String query =  String.format("customerId=%s&app=%s&userId=%s&recordingType=%s&archived=%s",
                 requestEvent.customerId, requestEvent.app, userId, RecordingType.History.toString(), false);
             recording = cubeServerService.searchRecording(query);
@@ -285,7 +287,7 @@ public class CubeStoreController {
         if(recording.isEmpty())
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body("No Recording Object found for recordingId=" + recordingId);
-        validation.validateCustomerName(request,recording.get().customerId);
+        validation.validateCustomerName(authentication,recording.get().customerId);
         ResponseEntity responseEntity = cubeServerService.fetchPostResponse(request, Optional.of(postBody), "/cs/storeUserReqResp/" + recording.get().id);
         if(environmentName != null && responseEntity.getStatusCode() == HttpStatus.OK) {
             Optional<DtEnvironment> dtEnvironmentOptional
@@ -315,56 +317,56 @@ public class CubeStoreController {
     }
 
     @GetMapping("/status/{recordingId}")
-    public ResponseEntity status(HttpServletRequest request, @PathVariable String recordingId) {
+    public ResponseEntity status(HttpServletRequest request, @PathVariable String recordingId, Authentication authentication) {
         Optional<Recording> recording = cubeServerService.getRecording(recordingId);
         if(recording.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Error while retrieving Recording Object for recordingId=" + recordingId);
-        validation.validateCustomerName(request,recording.get().customerId);
+        validation.validateCustomerName(authentication,recording.get().customerId);
         return ResponseEntity.ok(recording);
     }
 
     @PostMapping("/saveResult")
-    public ResponseEntity saveResult(HttpServletRequest request, @RequestBody ReqRespMatchResult reqRespMatchResult) {
+    public ResponseEntity saveResult(HttpServletRequest request, @RequestBody ReqRespMatchResult reqRespMatchResult, Authentication authentication) {
         Optional<Replay> replay = cubeServerService.getReplay(reqRespMatchResult.replayId);
         if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body("No Replay found for replayId=" + reqRespMatchResult.replayId);
-        validation.validateCustomerName(request, replay.get().customerId);
+        validation.validateCustomerName(authentication, replay.get().customerId);
         return cubeServerService.fetchPostResponse(request, Optional.of(reqRespMatchResult));
     }
 
     @GetMapping("/getCurrentRecordOrReplay/{customerId}/{app}/{instanceId}")
     public ResponseEntity getCurrentRecordOrReplay(HttpServletRequest request,
         @RequestBody Optional<String> getBody, @PathVariable String customerId,
-        @PathVariable String app, @PathVariable String instanceId) {
-        validation.validateCustomerName(request, customerId);
+        @PathVariable String app, @PathVariable String instanceId, Authentication authentication) {
+        validation.validateCustomerName(authentication, customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
     @PostMapping("/forcestop/{recordingId}")
     public ResponseEntity forceStop(HttpServletRequest request,
-        @RequestBody Optional<String> postBody,@PathVariable String recordingId) {
+        @RequestBody Optional<String> postBody,@PathVariable String recordingId, Authentication authentication) {
         Optional<Recording> recording = cubeServerService.getRecording(recordingId);
         if(recording.isEmpty())
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body("No Recording found for recordingId=" + recordingId);
-        validation.validateCustomerName(request,recording.get().customerId);
+        validation.validateCustomerName(authentication,recording.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
     @PostMapping("/stopRecordingByNameLabel")
     public ResponseEntity stopRecordingByNameLabel(HttpServletRequest request,
-        @RequestBody Optional<String> postBody,@RequestParam String customerId) {
-        validation.validateCustomerName(request, customerId);
+        @RequestBody Optional<String> postBody,@RequestParam String customerId, Authentication authentication) {
+        validation.validateCustomerName(authentication, customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
     @GetMapping("/fetchAgentConfigWithFacets/{customerId}/{app}")
     public ResponseEntity fetchAgentConfigWithFacets(HttpServletRequest request,
         @RequestBody Optional<String> getBody, @PathVariable String customerId,
-        @PathVariable String app) {
-        validation.validateCustomerName(request, customerId);
+        @PathVariable String app, Authentication authentication) {
+        validation.validateCustomerName(authentication, customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
@@ -376,34 +378,35 @@ public class CubeStoreController {
     @PostMapping("/deleteAgentConfig/{customerId}/{app}/{service}/{instanceId}")
     public ResponseEntity deleteAgentConfig(HttpServletRequest request, @RequestBody Optional<String> getBody,
         @PathVariable String customerId, @PathVariable String app, @PathVariable String service,
-        @PathVariable String instanceId) {
-        validation.validateCustomerName(request, customerId);
+        @PathVariable String instanceId, Authentication authentication) {
+        validation.validateCustomerName(authentication, customerId);
         return cubeServerService.fetchPostResponse(request, getBody);
     }
 
     @GetMapping("/getAppConfiguration/{customerId}/{app}")
     public ResponseEntity getAppConfiguration(HttpServletRequest request,
                                                     @RequestBody Optional<String> getBody, @PathVariable String customerId,
-                                                    @PathVariable String app) {
-        validation.validateCustomerName(request,customerId);
+                                                    @PathVariable String app, Authentication authentication) {
+        validation.validateCustomerName(authentication,customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
     @PostMapping("/injectEvent/{replayId}/{runId}")
     public ResponseEntity injectEvent(HttpServletRequest request, @PathVariable String replayId,
-        @PathVariable String runId, @RequestBody DynamicInjectionEventDao dynamicInjectionEventDao) {
+        @PathVariable String runId, @RequestBody DynamicInjectionEventDao dynamicInjectionEventDao,
+        Authentication authentication) {
         if(dynamicInjectionEventDao == null || dynamicInjectionEventDao.getRequestEvent() == null) {
            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body("post Body  or requestEvent cannot be null");
         }
-        validation.validateCustomerName(request, dynamicInjectionEventDao.getRequestEvent().customerId);
+        validation.validateCustomerName(authentication, dynamicInjectionEventDao.getRequestEvent().customerId);
         if(dynamicInjectionEventDao.getInjectionConfigVersion() == null ||
             dynamicInjectionEventDao.getInjectionConfigVersion().isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body("InjectionConfigVersion cannot be null or empty");
         }
 
-        Long userId = ((User)jwtTokenProvider.getUser(request)).getId();
+        Long userId = ((User) authentication.getPrincipal()).getId();
 
         Map<String, String> contextMap = new HashMap<>();
         Optional<DtEnvironment> dtEnvironment = Optional.ofNullable(dynamicInjectionEventDao.getEnvironmentName())
