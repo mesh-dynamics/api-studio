@@ -2202,12 +2202,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             .findFirst()
             .or(() -> templates.stream().findFirst())
             .map(val -> val.second());
-        // logic to append app level attribute filter
-        fromSolr.ifPresent(compareTemplate -> {
-            if (key.getReqOrResp().equals(Type.ResponseCompare) || key.getReqOrResp().equals(Type.RequestCompare) || key.getReqOrResp().equals(Type.DontCare)) {
-                getAttributeRuleMap(key).ifPresent(compareTemplate::setAppLevelAttributeRuleMap);
-            }
-        });
 
         return fromSolr;
     }
