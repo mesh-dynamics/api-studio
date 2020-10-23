@@ -20,6 +20,7 @@ import { AbortRequest } from "./abortRequest";
 import SaveToCollection from './SaveToCollection';
 import SplitSlider from "../../components/SplitSlider.tsx";
 import {hasTabDataChanged} from "../../utils/http_client/utils"
+import Tippy from "@tippy.js/react";
 
 const newStyles = {
     variables: {
@@ -470,7 +471,7 @@ class HttpClient extends Component {
                                     <tr>
                                         <th>SERVICE BY TRACE ORDER</th>
                                         <th>API PATH</th>
-                                        <th>REPLAY CONFIG</th>
+                                        <th></th>
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -486,7 +487,9 @@ class HttpClient extends Component {
                                         <td>{httpURLShowOnly}</td>
                                         <td>
                                             <span>
-                                                {hasChanged && <i className="fas fa-circle" style={{fontSize: "14px", marginRight: "12px"}}></i>}
+                                                <Tippy content={"Unsaved changes in this request"} arrow={true} placement="bottom">
+                                                    {hasChanged ? <i className="fas fa-circle" style={{fontSize: "12px", marginRight: "12px"}}></i> : <i></i>}
+                                                </Tippy>
                                             </span>
                                         </td>
                                         <td></td>
@@ -504,7 +507,9 @@ class HttpClient extends Component {
                                                 <td>{eachReq.httpURLShowOnly}</td>
                                                 <td>
                                                     <span>
-                                                        {eachReq.hasChanged && <i className="fas fa-circle" style={{fontSize: "14px", marginRight: "12px"}}></i>}
+                                                        <Tippy content={"Unsaved changes in this request"} arrow={true} placement="bottom">
+                                                            {eachReq.hasChanged ? <i className="fas fa-circle" style={{fontSize: "12px", marginRight: "12px"}}></i> : <i></i>}
+                                                        </Tippy>
                                                     </span>
                                                 </td>
                                                 <td></td>
@@ -531,7 +536,7 @@ class HttpClient extends Component {
                                             <tr>
                                                 <th>SERVICE BY TRACE ORDER</th>
                                                 <th>API PATH</th>
-                                                <th>SOURCE</th>
+                                                <th></th>
                                                 <th></th>
                                             </tr>
                                         </thead>
