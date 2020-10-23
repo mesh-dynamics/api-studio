@@ -11,6 +11,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -31,29 +32,30 @@ public class MockServiceController {
 
     @RequestMapping(value = "/{customerId}/{app}/{instanceId}/{service}/**" , consumes = {MediaType.ALL_VALUE})
     public ResponseEntity data(HttpServletRequest request, @RequestBody Optional<String> body, @PathVariable String customerId,
-                              @PathVariable String app, @PathVariable String instanceId, @PathVariable String service) {
-        validation.validateCustomerName(request,customerId);
+                              @PathVariable String app, @PathVariable String instanceId, @PathVariable String service,
+                              Authentication authentication) {
+        validation.validateCustomerName(authentication,customerId);
 
         String path = cubeServerService.getPathForHttpMethod(request.getRequestURI() , request.getMethod() , app, instanceId , service);
         return cubeServerService.fetchResponse(request, body ,HttpMethod.POST , path );
     }
 
     @PostMapping("/mockEvent")
-    public ResponseEntity mockEvent(HttpServletRequest request, @RequestBody Event event) {
-        validation.validateCustomerName(request,event.customerId);
+    public ResponseEntity mockEvent(HttpServletRequest request, @RequestBody Event event, Authentication authentication) {
+        validation.validateCustomerName(authentication,event.customerId);
         final Optional<Event> bodyData = Optional.of(event);
         return cubeServerService.fetchPostResponse(request, bodyData);
     }
 
     @PostMapping("/thrift")
-    public ResponseEntity thrift(HttpServletRequest request, @RequestBody Event event) {
-        validation.validateCustomerName(request,event.customerId);
+    public ResponseEntity thrift(HttpServletRequest request, @RequestBody Event event, Authentication authentication) {
+        validation.validateCustomerName(authentication,event.customerId);
         final Optional<Event> bodyData = Optional.of(event);
         return cubeServerService.fetchPostResponse(request, bodyData);
     }
 
     @PostMapping("/fr")
-    public ResponseEntity funcJson(HttpServletRequest request, @RequestBody Optional<String> getBody) {
+    public ResponseEntity funcJson(HttpServletRequest request, @RequestBody Optional<String> getBody, Authentication authentication) {
         FnReqResponse fnReqResponse;
         try {
             String body = getBody.get();
@@ -61,7 +63,7 @@ public class MockServiceController {
         } catch (Exception e) {
             return status(HttpStatus.INTERNAL_SERVER_ERROR).body(e);
         }
-        validation.validateCustomerName(request,fnReqResponse.customerId);
+        validation.validateCustomerName(authentication,fnReqResponse.customerId);
         return cubeServerService.fetchPostResponse(request, getBody);
     }
 
@@ -73,12 +75,12 @@ public class MockServiceController {
     @RequestMapping(value = "/mockWithCollection/{replayCollection}/{recordingId}/{traceId}/{service}/**" , consumes = {MediaType.ALL_VALUE})
     public ResponseEntity mockWithCollection(HttpServletRequest request,
         @RequestBody Optional<String> body, @PathVariable String replayCollection,
-        @PathVariable String recordingId, @PathVariable String traceId, @PathVariable String service) {
+        @PathVariable String recordingId, @PathVariable String traceId, @PathVariable String service, Authentication authentication) {
         Optional<Recording> recording = cubeServerService.getRecording(recordingId);
         if(recording.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Error while retrieving Recording Object for recordingId=" + recordingId);
-        validation.validateCustomerName(request,recording.get().customerId);
+        validation.validateCustomerName(authentication,recording.get().customerId);
 
         String path = cubeServerService.getPathForHttpMethod(request.getRequestURI() , request.getMethod() , recordingId , traceId , service);
         return cubeServerService.fetchResponse(request, body , HttpMethod.POST , path);
