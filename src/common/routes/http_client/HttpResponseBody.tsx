@@ -36,6 +36,11 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
     }
     return false;
   }
+
+  componentDidUpdate() {
+    this.resetOptions();
+  }
+
   formatHandler() {
     this.editor
       .getOriginalEditor()
@@ -48,10 +53,28 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
       ?.run()
       .then(() => {});
   }
+
+  compareAndSetOptions(editor: monacoEditor.editor.IStandaloneCodeEditor) {
+    const currentoptions = editor.getRawOptions();
+    if (currentoptions.wordWrap != "bounded") {
+      editor.updateOptions({
+        wordWrap: "bounded",
+        wordWrapMinified: true,
+      });
+    }
+  }
+
+  resetOptions = () => {
+    if (this.editor) {
+      this.compareAndSetOptions(this.editor.getOriginalEditor());
+      this.compareAndSetOptions(this.editor.getModifiedEditor());
+    }
+  };
+  
   editorDidMount = (editor: monacoEditor.editor.IStandaloneDiffEditor) => {
     this.editor = editor;
     const { original, modified } = editor.getModel()!;
-
+    this.resetOptions();
     // Following function is cached and editorDidMount is called only once at the time of first page load, not when props changing.
     // So any param from props should be taken fresh from props.
     modified.onDidChangeContent((event) => {
@@ -79,6 +102,7 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
         "recordedResponseBody",
         value
       );
+      this.resetOptions();
     });
   };
 
@@ -117,7 +141,8 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
         original={recordedResponseBody}
         value={responseBody}
         options={{
-          wordWrap: "on",
+          wordWrap: "bounded",
+          wordWrapMinified: true,
           originalEditable: true,
           colorDecorators: true,
           readOnly: true,
