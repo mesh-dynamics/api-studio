@@ -315,9 +315,10 @@ public class CustomerService {
                     .getRecordingFromResponseEntity(responseEntity, query);
                 newRecordingOptional.ifPresent(newRecording -> {
                     StringBuilder eventBatchBuilder = new StringBuilder();
+                    String timestamp = Instant.now().toString();
                     events.stream().parallel().forEach(event -> {
                         try {
-                            Event newEvent = createEvent(event, customer.getName(), newRecording.collection);
+                            Event newEvent = createEvent(event, customer.getName(), newRecording.collection, timestamp);
                             Map<String, Event> map = Map.of("cubeEvent",newEvent);
                             eventBatchBuilder.append(jsonMapper.writeValueAsString(map)).append("\n");
                         } catch (InvalidEventException e) {
@@ -331,25 +332,22 @@ public class CustomerService {
                        cubeServerService.fetchPostResponse(httpServletRequest, Optional.of(eventBatch), "/cs/storeEventBatch",
                             Constants.APPLICATION_X_NDJSON);
                     }
-                    cubeServerService.fetchPostResponse(httpServletRequest, Optional.empty(), "/cs/forcestop/"+ newRecording.getId());
+                    cubeServerService.fetchPostResponse(httpServletRequest, Optional.empty(), "/cs/stop/"+ newRecording.getId());
                 });
             });
         });
 
     }
-    private Event createEvent(Event event, String customerId, String collection)
+    private Event createEvent(Event event, String customerId, String collection, String timestamp)
         throws InvalidEventException {
-        final String generatedTraceId = io.md.utils.Utils.generateTraceId();
-        final String reqId = io.md.utils.Utils.generateRequestId(
-            event.service, generatedTraceId);
+        final String reqId = event.reqId.concat("-").concat(timestamp);
         EventBuilder eventBuilder = new EventBuilder(customerId, event.app,
             event.service, event.instanceId, collection,
-            new MDTraceInfo(generatedTraceId, event.spanId, event.parentSpanId),
+            new MDTraceInfo(event.getTraceId(), event.spanId, event.parentSpanId),
             event.getRunType(), Optional.of(Instant.now()), reqId, event.apiPath,
-            event.eventType, event.recordingType).withRunId(generatedTraceId);
+            event.eventType, event.recordingType).withRunId(event.runId);
         eventBuilder.setPayload(event.payload);
         eventBuilder.withMetaData(event.metaData);
-        eventBuilder.withRunId(event.runId);
         return eventBuilder.createEvent();
     }
 }
