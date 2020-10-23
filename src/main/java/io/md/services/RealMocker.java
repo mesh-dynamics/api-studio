@@ -226,6 +226,7 @@ public class RealMocker implements Mocker {
             Map<String,String> meta = new HashMap<>();
             meta.put(Constants.MATCH_TYPE , reqMatch.toString());
             score.ifPresent(scr->meta.put(Constants.SCORE_FIELD , scr));
+            matchedReq.ifPresent(req->meta.put(Constants.MATCHED_REQUEST_ID , req.reqId));
 
             // store a req-resp analysis match result for the mock request (during replay)
             // and the matched recording request
