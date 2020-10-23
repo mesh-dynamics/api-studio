@@ -57,6 +57,8 @@ public class Constants {
 	public static final String MATCH_TYPE = "matchType";
 	public static final String INCLUDE_DIFF = "includeDiff";
 	public static final String LOWER_BOUND = "lowerBound";
+	public static final String MATCHED_REQUEST_ID = "matchedRequestId";
+
 
 	//MESSAGE KEYS
 	public static final String CLASS_NAME = "className";
