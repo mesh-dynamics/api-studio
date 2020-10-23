@@ -91,3 +91,7 @@
     justify-content: center;
     font-weight: bold;
 }
+
+.RRT__removable-icon-has-changed:hover:before {
+    content: "\f00d";
+}

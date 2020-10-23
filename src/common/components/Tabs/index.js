@@ -108,7 +108,7 @@ export default class Tabs extends Component {
 
     return items.reduce(
       (result, item, index) => {
-        const { key = index, title, content, getContent, disabled, tabClassName, panelClassName } = item;
+        const { key = index, title, content, getContent, disabled, tabClassName, panelClassName, hasTabChanged } = item;
 
         const selected = selectedTabKey === key;
         const payload = { tabIndex, collapsed, selected, disabled, key };
@@ -121,7 +121,8 @@ export default class Tabs extends Component {
             }
           },
           allowRemove: allowRemove && (!removeActiveOnly || selected),
-          className: tabClassName
+          className: tabClassName,
+          hasTabChanged,
         };
 
         const panelPayload = {
@@ -146,26 +147,27 @@ export default class Tabs extends Component {
     );
   };
 
-  getTabProps = ({ title, key, selected, collapsed, tabIndex, disabled, className, onRemove, allowRemove }) => ({
-    selected,
-    allowRemove,
-    children: title,
-    key: tabPrefix + key,
-    id: tabPrefix + key,
-    ref: e => (this.tabRefs[tabPrefix + key] = e),
-    originalKey: key,
-    onClick: this.onChangeTab,
-    onFocus: this.onFocusTab,
-    onBlur: this.onBlurTab,
-    onRemove,
-    panelId: panelPrefix + key,
-    classNames: this.getClassNamesFor('tab', {
+  getTabProps = ({ title, key, selected, collapsed, tabIndex, disabled, className, onRemove, allowRemove, hasTabChanged }) => ({
       selected,
-      collapsed,
-      tabIndex,
-      disabled,
-      className
-    })
+      allowRemove,
+      children: title,
+      key: tabPrefix + key,
+      id: tabPrefix + key,
+      ref: e => (this.tabRefs[tabPrefix + key] = e),
+      originalKey: key,
+      onClick: this.onChangeTab,
+      onFocus: this.onFocusTab,
+      onBlur: this.onBlurTab,
+      onRemove,
+      panelId: panelPrefix + key,
+      classNames: this.getClassNamesFor('tab', {
+        selected,
+        collapsed,
+        tabIndex,
+        disabled,
+        className
+      }),
+      hasTabChanged: hasTabChanged,
   });
 
   getPanelProps = ({ key, content, getContent, className }) => ({
