@@ -354,6 +354,7 @@ public class AnalyzeWS {
         Optional<String> method = Optional.ofNullable(queryParams.getFirst(Constants.METHOD_FIELD));
         Optional<String> recordingId = Optional.ofNullable(queryParams.getFirst(Constants.RECORDING_ID));
 
+
         if (apipath.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
                 .entity(Map.of(Constants.ERROR, "Api Path not Specified")).build();
@@ -361,7 +362,7 @@ public class AnalyzeWS {
 
         TemplateKey tkey = new TemplateKey(templateVersion, customerId, appId, service, apipath.get(),
             ruleType, method, recordingId.orElse(TemplateKey.DEFAULT_RECORDING));
-
+        
         try {
           CompareTemplate compareTemplate = rrstore.getComparator(tkey, eventType).getCompareTemplate();
           String resp = "";
