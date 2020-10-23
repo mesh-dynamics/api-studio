@@ -19,14 +19,14 @@ const setDefaultMockContext = () => {
 
     const runId = generateRunId();
     const mockContext = {
-      collectionId: userHistoryCollection.collec, // where to store the mocked/live captured requests (new/existing collection)
+      collectionId: userHistoryCollection.collec, // where to store the mocked/live captured requests (new/existing collection) [mockWithRunId]
       recordingCollectionId: userHistoryCollection.collec, // configurable for preferred collection or all collections or history (default)
-      recordingId: userHistoryCollection.id, // where to store the mocked/live captured requests (new/existing collection)
+      recordingId: userHistoryCollection.id, // where to store the mocked/live captured requests (new/existing collection) [storeReqResp]
       traceId: "NA",
       selectedApp, // selected app from the app list
       customerName: customerId, // constant
       runId: runId, // timestamp
-      // config: mockConfig, // todo hotfix/disable-live-proxy // default + custom config
+      config: {}, // default config
       spanId: "NA",
     };
 
