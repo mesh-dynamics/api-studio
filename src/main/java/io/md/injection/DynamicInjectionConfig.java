@@ -88,6 +88,10 @@ public class DynamicInjectionConfig {
 		@JsonProperty("valueObject")
 		public final boolean valueObject;
 
+		@JsonProperty("forEach")
+		public final Optional<ForEachStruct> forEach;
+
+
 		public ExtractionMeta() {
 			apiPath = "";
 			method = HTTPMethodType.POST;
@@ -95,16 +99,19 @@ public class DynamicInjectionConfig {
 			value = "";
 			reset = true;
 			valueObject = false;
+			forEach = Optional.empty();
 		}
 
 		public ExtractionMeta(String apiPath, HTTPMethodType method,
-			String name, String value, boolean reset, boolean valueObject) {
+			String name, String value, boolean reset, boolean valueObject,
+			Optional<ForEachStruct> forEach) {
 			this.apiPath = apiPath;
 			this.method = method;
 			this.name = name;
 			this.value = value;
 			this.reset = reset;
 			this.valueObject = valueObject;
+			this.forEach = forEach;
 		}
 
 	}
@@ -132,6 +139,9 @@ public class DynamicInjectionConfig {
 		@JsonProperty("method")
 		public final HTTPMethodType method;
 
+		@JsonProperty("forEach")
+		public final Optional<ForEachStruct> forEach;
+
 		public InjectionMeta() {
 			this.apiPaths = Collections.EMPTY_LIST;
 			this.jsonPath = "";
@@ -139,17 +149,20 @@ public class DynamicInjectionConfig {
 			this.name = "";
 			this.regex = Optional.empty();
 			this.method = HTTPMethodType.POST;
+			this.forEach = Optional.empty();
 		}
 
 
 		public InjectionMeta(List<String> apiPaths, String jsonPath, boolean injectAllPaths
-			, String name, Optional<String> regex, HTTPMethodType method) {
+			, String name, Optional<String> regex, HTTPMethodType method,
+			Optional<ForEachStruct> forEach) {
 			this.apiPaths = apiPaths;
 			this.jsonPath = jsonPath;
 			this.injectAllPaths = injectAllPaths;
 			this.name = name;
 			this.regex = regex;
 			this.method = method;
+			this.forEach = forEach;
 		}
 
 		public String map(String original, String replacement) {
@@ -195,5 +208,37 @@ public class DynamicInjectionConfig {
 			PATCH
 		}
 
+	}
+
+	static public class ForEachStruct {
+
+		@JsonProperty("sourceForName")
+		public final String sourceForName;
+
+		@JsonProperty("sourceForValue")
+		public final String sourceForValue;
+
+		@JsonProperty("path")
+		public final String path;
+
+		// To be used later when matching has to be done on keys instead of path/indexes
+		// in arrays
+		@JsonProperty("keys")
+		public final List<String> keys;
+
+		public ForEachStruct() {
+			sourceForName = "";
+			sourceForValue = "";
+			path = "";
+			keys = Collections.EMPTY_LIST;
+		}
+
+		public ForEachStruct(String sourceForName, String sourceForValue, String path,
+			List<String> keys) {
+			this.sourceForName = sourceForName;
+			this.sourceForValue = sourceForValue;
+			this.path = path;
+			this.keys = keys;
+		}
 	}
 }

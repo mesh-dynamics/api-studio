@@ -36,7 +36,7 @@ public interface DataObj {
 	String serializeDataObj() throws DataObjProcessingException;
 
 	@JsonIgnore
-	void collectKeyVals(Function<String, Boolean> filter, Collection<String> vals);
+	void collectKeyVals(Function<String, Boolean> filter, Map<String, String> vals);
 
 	@JsonIgnore
 	void transformSubTree(String path, Function<String, String>  transformFunction);

@@ -104,7 +104,7 @@ public abstract class LazyParseAbstractPayload implements Payload {
 	}
 
 	@Override
-	public void collectKeyVals(Function<String, Boolean> filter, Collection<String> vals) {
+	public void collectKeyVals(Function<String, Boolean> filter, Map<String, String> vals) {
 		parseIfRequired();
 		dataObj.collectKeyVals(filter, vals);
 	}
