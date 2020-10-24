@@ -174,12 +174,16 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 		}
 
 		protected boolean verifyPayload(Event reqEvent) throws IOException {
-			if (!(reqEvent.payload instanceof HTTPRequestPayload)) {
-				return false;
-			}
-			else {
-				return true;
-			}
+			return reqEvent.payload instanceof HTTPRequestPayload;
+		}
+
+		protected RequestPayload modifyRequest(Event reqEvent) {
+			HTTPRequestPayload httpRequest = (HTTPRequestPayload) reqEvent.payload;
+
+			// TODO: Replace transformations functionality using injection
+			// transform fields in the request before the replay.
+			xfmer.ifPresent(x -> RRTransformerOperations.transformRequest(httpRequest, x, jsonMapper));
+			return httpRequest;
 		}
 
 		public HttpRequest build(Replay replay, Event reqEvent)
@@ -187,12 +191,7 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 			if (!verifyPayload(reqEvent)) {
 				throw new IOException("Invalid Payload type");
 			}
-
-			HTTPRequestPayload httpRequest = (HTTPRequestPayload) reqEvent.payload;
-
-			// TODO: Replace transformations functionality using injection
-			// transform fields in the request before the replay.
-			xfmer.ifPresent(x -> RRTransformerOperations.transformRequest(httpRequest, x, jsonMapper));
+			RequestPayload httpRequest = modifyRequest(reqEvent);
 			return buildRequest(replay, reqEvent, httpRequest);
 		}
 

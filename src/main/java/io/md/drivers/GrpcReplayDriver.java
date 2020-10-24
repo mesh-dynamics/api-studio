@@ -16,6 +16,7 @@ import javax.ws.rs.core.UriBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.jersey.uri.UriComponent;
+import org.jetbrains.annotations.Nullable;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -28,6 +29,7 @@ import io.md.dao.GRPCPayload;
 import io.md.dao.GRPCRequestPayload;
 import io.md.dao.ProtoDescriptorDAO;
 import io.md.dao.Replay;
+import io.md.dao.RequestPayload;
 import io.md.services.DataStore;
 import io.md.utils.Constants;
 import io.md.utils.UtilException;
@@ -36,7 +38,7 @@ public class GrpcReplayDriver extends HttpReplayDriver {
 
 	protected final Optional<ProtoDescriptorCache> protoDescriptorCacheOptional;
 
-	private static Logger LOGGER = LogManager.getLogger(AbstractReplayDriver.class);
+	private static Logger LOGGER = LogManager.getLogger(GrpcReplayDriver.class);
 
 
 	GrpcReplayDriver(Replay replay, DataStore dataStore,
@@ -62,21 +64,11 @@ public class GrpcReplayDriver extends HttpReplayDriver {
 
 		@Override
 		protected boolean verifyPayload(Event reqEvent) throws IOException {
-			if (!(reqEvent.payload instanceof GRPCRequestPayload)) {
-				return false;
-			}
-			else {
-				return true;
-			}
+			return reqEvent.payload instanceof GRPCRequestPayload;
 		}
 
 		@Override
-		public HttpRequest build(Replay replay, Event reqEvent)
-			throws IOException {
-			if (!verifyPayload(reqEvent)) {
-				throw new IOException("Invalid Payload type");
-			}
-
+		protected RequestPayload modifyRequest(Event reqEvent) {
 			GRPCRequestPayload grpcRequestPayload = (GRPCRequestPayload) reqEvent.payload;
 			try {
 
@@ -94,9 +86,8 @@ public class GrpcReplayDriver extends HttpReplayDriver {
 			} catch (Exception e) {
 				LOGGER.error("protoDescriptorCache is missing for GRPCPayload in GRPCReplayDriver", e);
 			}
-
-
-			return buildRequest(replay, reqEvent, grpcRequestPayload);
+			return grpcRequestPayload;
 		}
+
 	}
 }
