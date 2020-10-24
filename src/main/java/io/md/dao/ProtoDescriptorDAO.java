@@ -126,13 +126,8 @@ public class ProtoDescriptorDAO {
 				mb[0] = 0;
 				byte[] contentLengthBytes = ByteBuffer.allocate(4).putInt(originalBytes.length)
 					.array();
-				for (int i = 1; i < mbLength; i++) {
-					if (i < 5) {
-						mb[i] = contentLengthBytes[i - 1];
-					} else {
-						mb[i] = originalBytes[i - 5];
-					}
-				}
+				System.arraycopy(contentLengthBytes, 0, mb, 1, 4); // copy length
+				System.arraycopy(originalBytes, 0, mb, 5, originalBytes.length); // copy original bytes
 				return mb;
 			} else {
 				return originalBytes;

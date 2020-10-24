@@ -473,7 +473,7 @@ public class JsonDataObj implements DataObj {
 					} else {
 						return Optional.of(new TextNode(xmlStr));
 					}
-				} else if (mimeType.startsWith(Constants.APPLICATION_GRPC)) {
+				} else if (Utils.startsWithIgnoreCase(mimeType, Constants.APPLICATION_GRPC)) {
 					if (!wrapContext.isPresent()) {
 						throw new Exception("Wrap Context not present while " +
 							"trying to serialize json grpc message to encoded binary string");
@@ -489,7 +489,7 @@ public class JsonDataObj implements DataObj {
 					return asEncoded ? Optional.of(new TextNode(
 						new String(Base64.getEncoder().encode(bytes))))
 						: Optional.of(new BinaryNode(bytes));
-				} else if (mimeType.startsWith(MediaType.MULTIPART_FORM_DATA)) {
+				} else if (Utils.startsWithIgnoreCase(mimeType, MediaType.MULTIPART_FORM_DATA)) {
 					return wrapMultipart( original, asEncoded,  wrapContext,  parent);
 				}
 			} else if (original != null && original.isBinary()) {
