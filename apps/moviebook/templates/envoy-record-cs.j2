@@ -40,9 +40,8 @@ spec:
                 local function esc_str_opt(str)
                   local charmap = {['\\']='\\\\', ['"']='\\"', ['/']='\\/', ['\b']='\\b', ['\f']='\\f', ['\n']='\\n', ['\r']='\\r', ['\t']='\\t'}
                   local buf = {}
-                  local inpstr = {string.byte(str, 1, #str)}
-                  for i = 1, #inpstr do
-                    local inp = string.char(inpstr[i])
+                  for i = 1, #str do
+                    local inp = string.sub(str, i, i)
                     local out = charmap[inp]
                     if out == nil then out = inp end
                     buf[#buf+1] = out
@@ -53,9 +52,8 @@ spec:
                   local in_char  = {'\\', '"', '/', '\b', '\f', '\n', '\r', '\t'}
                   local out_char = {'\\\\', '\\"', '\\/',  '\\b',  '\\f',  '\\n',  '\\r',  '\\t'}
                   local buf = {}
-                  local inpstr = {string.byte(str, 1, #str)}
-                  for i = 1, #inpstr do
-                    local inp = string.char(inpstr[i])
+                  for i = 1, #str do
+                    local inp = string.sub(str, i, i)
                     local out = inp
                     for i, c in ipairs(in_char) do
                       if (c == inp) then out = out_char[i] end
