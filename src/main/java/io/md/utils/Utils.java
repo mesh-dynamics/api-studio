@@ -30,6 +30,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.cache.ProtoDescriptorCache;
+import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.dao.*;
 import io.md.services.DataStore;
 import io.md.tracer.TracerMgr;
@@ -623,5 +625,17 @@ public class Utils {
 		Optional<String> dynamicInjectionCfgVersion = recordOrReplay.getDynamicInjectionConfigVersion();
 
 		return new MockWithCollection(replayCollection, collection, templateVersion, optionalRunId.orElse(null) , dynamicInjectionCfgVersion, devtool);
+	}
+
+	public static void setProtoDescriptorGrpcEvent(Event e, ProtoDescriptorCache protoDescriptorCache) {
+		if(!(e.payload instanceof GRPCPayload)) {
+			LOGGER.error(Utils.createLogMessasge(
+				Constants.MESSAGE, "Payload type not Grpc for event.Cannot set protodescriptor",
+				Constants.REQ_ID_FIELD, e.reqId));
+			return;
+		}
+		GRPCPayload ge = (GRPCPayload) e.payload;
+		ge.setProtoDescriptor(protoDescriptorCache.get(
+			new ProtoDescriptorKey(e.customerId, e.app, e.getCollection())));
 	}
 }
