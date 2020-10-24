@@ -39,6 +39,7 @@ import io.md.services.DataStore.TemplateNotFoundException;
 import io.md.utils.Constants;
 import io.md.core.Utils;
 import io.md.utils.UtilException;
+import jdk.jshell.execution.Util;
 
 import com.cube.core.ServerUtils;
 import com.cube.dao.CubeEventMetaInfo;
@@ -255,21 +256,10 @@ public class StoreUtils {
 		if(event.payload instanceof GRPCPayload) {
 			protoDescriptorCacheOptional.map(
 				protoDescriptorCache -> {
-					setProtoDescriptorGrpcEvent(event, protoDescriptorCache);
+					io.md.utils.Utils.setProtoDescriptorGrpcEvent(event, protoDescriptorCache);
 					return protoDescriptorCache;
 				}
 			).orElseThrow(() -> new CubeStoreException(null, "protoDescriptorCache is missing for GRPCPAyload", event));
-
-//			protoDescriptorCacheOptional.ifPresentOrElse(protoDescriptorCache -> {
-//				Optional<ProtoDescriptorDAO> protoDescriptorDAOOptional = protoDescriptorCache.get(
-//					new ProtoDescriptorKey(event.customerId, event.app, event.getCollection()));
-//
-//				GRPCPayload grpcPayload = (GRPCPayload) event.payload;
-//				grpcPayload.setProtoDescriptor(protoDescriptorDAOOptional);
-//			}, UtilException.rethrowSupplier(()-> {
-//				throw new CubeStoreException(null, "protoDescriptorCache is missing for GRPCPAyload", event);
-//			}));
-
 		}
 
 		if (event.isRequestType()) {
@@ -304,10 +294,5 @@ public class StoreUtils {
 
 	}
 
-	public static void setProtoDescriptorGrpcEvent(Event e, ProtoDescriptorCache protoDescriptorCache) {
-		GRPCPayload ge = (GRPCPayload) e.payload;
-		ge.setProtoDescriptor(protoDescriptorCache.get(
-			new ProtoDescriptorKey(e.customerId, e.app, e.getCollection())));
-	}
 
 }

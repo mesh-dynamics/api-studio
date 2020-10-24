@@ -620,8 +620,7 @@ public class AnalyzeWS {
 	    , Optional<Event> event) {
     	return payload.map(p-> {
     		try {
-			    String stringNode = jsonMapper.writeValueAsString(p);
-			    return jsonMapper.readValue(stringNode, Payload.class);
+			    return jsonMapper.treeToValue(p, Payload.class);
 		    } catch (IOException e) {
 			    return null;
 		    }
@@ -688,7 +687,7 @@ public class AnalyzeWS {
 			    Optional<String> request = reqEvent
 				    .map(e -> {
 				    	if(e.payload instanceof GRPCPayload) {
-						    StoreUtils.setProtoDescriptorGrpcEvent(e, config.protoDescriptorCache);
+						    io.md.utils.Utils.setProtoDescriptorGrpcEvent(e, config.protoDescriptorCache);
 					    }
 				    	return e.payload.getPayloadAsJsonString(true);
 				    });
@@ -713,7 +712,7 @@ public class AnalyzeWS {
 				    replayedRequest = replayedRequestEvent
 					    .map(e -> {
 						    if(e.payload instanceof GRPCPayload) {
-							    StoreUtils.setProtoDescriptorGrpcEvent(e, config.protoDescriptorCache);
+							    io.md.utils.Utils.setProtoDescriptorGrpcEvent(e, config.protoDescriptorCache);
 						    }
 						    return e.payload.getPayloadAsJsonString(true);
 					    });
