@@ -69,16 +69,11 @@ public class GrpcReplayDriver extends HttpReplayDriver {
 
 		@Override
 		protected RequestPayload modifyRequest(Event reqEvent) {
-			GRPCRequestPayload grpcRequestPayload = (GRPCRequestPayload) reqEvent.payload;
 			try {
 
 				protoDescriptorCacheOptional.map(
 					protoDescriptorCache -> {
-						Optional<ProtoDescriptorDAO> protoDescriptorDAOOptional = protoDescriptorCache
-							.get(
-								new ProtoDescriptorKey(reqEvent.customerId, reqEvent.app,
-									reqEvent.getCollection()));
-						grpcRequestPayload.setProtoDescriptor(protoDescriptorDAOOptional);
+						io.md.utils.Utils.setProtoDescriptorGrpcEvent(reqEvent, protoDescriptorCache);
 						return protoDescriptorCache;
 					}
 				).orElseThrow(() -> new Exception(
@@ -86,7 +81,7 @@ public class GrpcReplayDriver extends HttpReplayDriver {
 			} catch (Exception e) {
 				LOGGER.error("protoDescriptorCache is missing for GRPCPayload in GRPCReplayDriver", e);
 			}
-			return grpcRequestPayload;
+			return (RequestPayload) reqEvent.payload;
 		}
 
 	}
