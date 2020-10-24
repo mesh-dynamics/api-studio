@@ -31,7 +31,7 @@ const extractHeadersToCubeFormat = (headersReceived) => {
 const extractRequestBodyAndFormParams = (headers, requestData) => {
     const contentType = getParameterCaseInsensitive(headers, 'content-type');
 
-    logger.info('Detected content type in intercepted proxied response:', contentType);
+    logger.info('Detected content type in intercepted proxied request:', contentType);
 
     if(contentType && contentType.includes('json')) {
         return {
@@ -103,11 +103,12 @@ const extractRequestPayloadDetailsFromProxy = (proxyRes, apiPath, options) => {
 
 const extractAndFormatProxyResponseBody = (headers, responseBody) => {
     
-    const contentType = headers['content-type'] || headers['Content-Type'];
+    //const contentType = headers['content-type'] || headers['Content-Type'];
+    
 
-    if(contentType.includes('json')) {
-        return JSON.parse(responseBody);
-    }
+    // if(contentType.includes('json')) {
+    //     return JSON.parse(responseBody);
+    // }
 
     // Add more content type code here when required
 
