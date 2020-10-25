@@ -567,4 +567,8 @@ export const httpClientActions = {
         }
     },
 
+    updateAbortRequest: (tabId, abortRequest) => {
+        return {type: httpClientConstants.UPDATE_ABORT_REQUEST, data: {tabId, abortRequest}};
+    },
+
 }
