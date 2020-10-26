@@ -1,5 +1,6 @@
 package io.md.dao;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
@@ -91,11 +92,11 @@ public class ProtoDescriptorDAO {
 		}
 	}
 
-	private Optional<String> convertToByteString(String json, String typeName) {
+	private Optional<byte[]> convertToByteString(String json, String typeName) {
 		try {
 			DynamicMessage.Builder featureMessageBuilder  = schema.newMessageBuilder(typeName);
 			JsonFormat.parser().merge(json, featureMessageBuilder);
-			return Optional.of(Base64.getEncoder().encodeToString(featureMessageBuilder.build().toByteArray()));
+			return Optional.of(featureMessageBuilder.build().toByteArray());
 		} catch (Exception e) {
 			return Optional.empty();
 		}
@@ -110,12 +111,29 @@ public class ProtoDescriptorDAO {
 					: methodDescriptor.outputTypeName));
 	}
 
-	public Optional<String> convertJsonToByteString(String serviceName, String methodName
+	public Optional<byte[]> convertJsonToByteString(String serviceName, String methodName
 		, String json, boolean isRequest) {
-		return findMethodDescriptor(serviceName, methodName)
+
+		Optional<byte[]> originalBytesOptional = findMethodDescriptor(serviceName, methodName)
 			.flatMap(methodDescriptor ->
-				convertToByteString(json, isRequest? methodDescriptor.inputTypeName :
+				convertToByteString(json, isRequest ? methodDescriptor.inputTypeName :
 					methodDescriptor.outputTypeName));
+		Optional<byte[]> modifiedBytes = originalBytesOptional.map(originalBytes -> {
+			// Need to add the 1st byte as 0 and 2nd to 5th byte as content length in case of grpc request
+			if (isRequest) {
+				int mbLength = originalBytes.length + 5;
+				byte[] mb = new byte[mbLength];
+				mb[0] = 0;
+				byte[] contentLengthBytes = ByteBuffer.allocate(4).putInt(originalBytes.length)
+					.array();
+				System.arraycopy(contentLengthBytes, 0, mb, 1, 4); // copy length
+				System.arraycopy(originalBytes, 0, mb, 5, originalBytes.length); // copy original bytes
+				return mb;
+			} else {
+				return originalBytes;
+			}
+		});
+		return modifiedBytes;
 	}
 
 

@@ -479,7 +479,7 @@ public class EventPayloadTests {
 		payload.wrapBodyAndEncode();
 		System.out.println("GRPC (POST WRAP) :: " +objectMapper.writeValueAsString(payload));
 		System.out.println(payload.getValAsString("/body"));
-		Assert.assertEquals(payload.getValAsString("/body"), "CJqmjMMBEJafmJz9/////wE=");
+		Assert.assertEquals(payload.getValAsString("/body"), "AAAAABEImqaMwwEQlp+YnP3/////AQ==");
 	}
 
 	@Test
