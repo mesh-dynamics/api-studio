@@ -91,24 +91,28 @@ class HttpClientTabs extends Component {
     }
 
     createRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFromData) {
-        let referenceEventData = toBeCopiedFromData ? toBeCopiedFromData.eventData : null,
-            eventData = toBeUpdatedData.eventData;
+        let referenceEventData = toBeCopiedFromData ? toBeCopiedFromData.eventData : null;
+        let eventData = toBeUpdatedData.eventData;
         if(referenceEventData && referenceEventData.length > 0) {
             let refHttpRequestEventTypeIndex = referenceEventData[0].eventType === "HTTPRequest" ? 0 : 1;
             let refHttpResponseEventTypeIndex = refHttpRequestEventTypeIndex === 0 ? 1 : 0;
             let refHttpResponseEvent = referenceEventData[refHttpResponseEventTypeIndex];
             let refHttpRequestEvent = referenceEventData[refHttpRequestEventTypeIndex];
+            let refRequestEventData = eventData[refHttpRequestEventTypeIndex];
+            let refResponseEventData = eventData[refHttpResponseEventTypeIndex];
 
             let httpRequestEventTypeIndex = eventData[0].eventType === "HTTPRequest" ? 0 : 1;
             let httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
             let gatewayHttpResponseEvent = eventData[httpResponseEventTypeIndex];
             let gatewayHttpRequestEvent = eventData[httpRequestEventTypeIndex];
 
+            // TODO: should have been more careful while copying event data.
+            // This has to be simpler.
             let httpResponseEvent = {
-                customerId: eventData.customerId,
-                app: eventData.app,
+                customerId: refResponseEventData.customerId,
+                app: refResponseEventData.app,
                 service: refHttpRequestEvent.service,
-                instanceId: eventData.custominstanceIderId,
+                instanceId: refResponseEventData.instanceId,
                 collection: toBeUpdatedData.collectionIdAddedFromClient,
                 traceId: toBeUpdatedData.traceIdAddedFromClient,
                 spanId: null,
@@ -120,17 +124,15 @@ class HttpClientTabs extends Component {
                 apiPath: refHttpRequestEvent.apiPath,
                 eventType: "HTTPResponse",
                 payload: refHttpResponseEvent.payload,
-                recordingType: eventData.recordingType,
-                metaData: {
-
-                }
+                recordingType: refResponseEventData.recordingType,
+                metaData: {}
             };
             
             let httpRequestEvent = {
-                customerId: eventData.customerId,
-                app: eventData.app,
+                customerId: refRequestEventData.customerId,
+                app: refRequestEventData.app,
                 service: refHttpRequestEvent.service,
-                instanceId: eventData.custominstanceIderId,
+                instanceId: refRequestEventData.instanceId,
                 collection: toBeUpdatedData.collectionIdAddedFromClient,
                 traceId: toBeUpdatedData.traceIdAddedFromClient,
                 spanId: cryptoRandomString({length: 16}),
@@ -142,10 +144,8 @@ class HttpClientTabs extends Component {
                 apiPath: refHttpRequestEvent.apiPath,
                 eventType: "HTTPRequest",
                 payload: refHttpRequestEvent.payload,
-                recordingType: eventData.recordingType,
-                metaData: {
-
-                }
+                recordingType: refRequestEventData.recordingType,
+                metaData: {}
             };
 
             let tabData = {
@@ -260,7 +260,7 @@ class HttpClientTabs extends Component {
             if(matchedReqIndex > -1) {
                 const copiedOutgoingData = this.copyRecordedDataForEachRequest(tabToBeProcessed.outgoingRequests[matchedReqIndex], eachReq);
                 outgoingRequests.push(copiedOutgoingData);
-                tabToBeProcessed.outgoingRequests.splice(matchedReqIndex, 1);
+                tabToBeProcessed.outgoingRequests.splice(matchedReqIndex, 1); // Please please please no. Mutation of passed parameters leads to untraceable and confusing bugs
             } else {
                 const copiedOutgoingData = this.createRecordedDataForEachRequest(tabToBeProcessed, eachReq);
                 outgoingRequests.push(copiedOutgoingData);
