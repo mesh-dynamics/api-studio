@@ -2778,7 +2778,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
         Optional<String> app = getStrField(doc, APPF);
         Optional<Integer> version = getIntField(doc, INT_VERSION_F);
-        Optional<String> encodedFile = getStrField(doc, PROTO_DESCRIPTOR_FILE_F);
+        Optional<String> encodedFile = getStrFieldMVFirst(doc,PROTO_DESCRIPTOR_FILE_F);
         try {
             ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId.orElse(null),
                 app.orElse(null), encodedFile.orElse(null));

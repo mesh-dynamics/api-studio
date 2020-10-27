@@ -3,6 +3,7 @@
  */
 package com.cube.ws;
 
+import java.util.Optional;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
@@ -24,10 +25,12 @@ import io.cube.agent.IntentResolver;
 import io.cube.agent.ProxyMocker;
 import io.cube.agent.Recorder;
 import io.cube.agent.TraceIntentResolver;
+import io.md.cache.ProtoDescriptorCache;
 import io.md.utils.CommonUtils;
 import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.MeshDGsonProvider;
 import io.md.core.Utils;
+import io.md.utils.ProtoDescriptorCacheProvider;
 import net.dongliu.gson.GsonJava8TypeAdapterFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -81,6 +84,8 @@ public class Config {
 
     public final DisruptorEventQueue disruptorEventQueue;
 
+    public final ProtoDescriptorCache protoDescriptorCache;
+
 	public Config() throws Exception {
 		LOGGER.info("Creating config");
 		properties = new java.util.Properties();
@@ -105,6 +110,9 @@ public class Config {
             solr =  new MDHttpSolrClient.Builder(solrurl).build();
             rrstore = new ReqRespStoreSolr(solr, this);
             templateCache = new TemplateCacheRedis(rrstore , this);
+            ProtoDescriptorCacheProvider.instantiateCache(rrstore);
+	        protoDescriptorCache = ProtoDescriptorCacheProvider.getInstance()
+		        .orElseThrow(() -> new Exception("Cannot instantiate ProtoDescriptorCache"));
         } else {
             final String msg = String.format("Solrurl missing in the config file %s", CONFFILE);
             LOGGER.error(msg);
@@ -160,7 +168,7 @@ public class Config {
         DISRUPTOR_QUEUE_SIZE = Integer.parseInt(fromEnvOrProperties("disruptor_queue_size"
 	        , "16384"));
 
-        disruptorEventQueue = new DisruptorEventQueue(rrstore, DISRUPTOR_QUEUE_SIZE);
+        disruptorEventQueue = new DisruptorEventQueue(rrstore, DISRUPTOR_QUEUE_SIZE, Optional.of(this.protoDescriptorCache));
 
 	}
 
