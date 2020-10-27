@@ -11,14 +11,15 @@ const mockApiPrefix = '/api/msc/mockWithRunId';
  */
 const stripServiceNameFromOutgoingProxyPath = (apiPath) => {
     if(apiPath) {
+        
         // Exclude the service part from url
         const apiPathParts = apiPath.split('/').filter(Boolean).slice(1);
-
         logger.info('Api Path Parts :', apiPathParts);
         
         const updatedPath = apiPathParts.join('/');
-
-        return updatedPath;
+        
+        // Must include trailing slashes
+        return apiPath.endsWith('/') ? `${updatedPath}/` : updatedPath;
     }
 
     return '';
