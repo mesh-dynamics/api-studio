@@ -6,6 +6,7 @@ package com.cube.dao;
 import static io.md.core.TemplateKey.*;
 
 import io.md.constants.ReplayStatus;
+import io.md.core.BatchingIterator;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.TemplateKey;
 import io.md.core.ValidateAgentStore;
@@ -3305,16 +3306,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         boolean analysisDeleted = deleteDocsByQuery(queryBuff.toString());
         if(analysisDeleted) {
-            List<String> ids = new ArrayList<>();
             final SolrQuery query = new SolrQuery("*:*");
             query.addField("*");
             addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
             addFilter(query, REPLAYIDF, replayIds);
 
-            SolrIterator.getStream(solr, query, Optional.empty()).forEach(doc ->  {
-                getStrField(doc, IDF).map(id -> ids.add(id));
-            });
-            return deleteReqRespMatchResults(ids);
+            BatchingIterator.batchedStreamOf(SolrIterator.getStream(solr, query, Optional.empty()), 200)
+                .forEach(docs -> {
+                    List<String> ids = new ArrayList<>();
+                    docs.forEach(doc -> getStrField(doc, IDF).map(id-> ids.add(id)));
+                    deleteReqRespMatchResults(ids);
+                });
         }
         return analysisDeleted;
     }
