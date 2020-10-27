@@ -223,7 +223,7 @@ public class MockServiceHTTP {
         MultivaluedMap<String, String> hdrs = headers.getRequestHeaders();
         Optional<String> dynamicInjCfgVersion = ServerUtils.getCustomHeaderValue(hdrs , Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD).or(()->recording.dynamicInjectionConfigVersion);
         return getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            httpMethod , body, hdrs, new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId, dynamicInjCfgVersion, true ), Optional.of(traceId));
+            httpMethod , body, hdrs, new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId, dynamicInjCfgVersion, true), Optional.of(traceId));
     }
 
     @POST
@@ -293,7 +293,7 @@ public class MockServiceHTTP {
         }
 
         return respEvent
-            .flatMap(respEventVal -> createResponseFromEvent(respEventVal))
+            .flatMap(this::createResponseFromEvent)
             .orElseGet(this::notFound);
     }
 

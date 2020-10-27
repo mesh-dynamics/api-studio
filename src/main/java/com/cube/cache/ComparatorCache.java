@@ -198,6 +198,11 @@ public class ComparatorCache {
 
         compareTemplate = templateCache.fetchCompareTemplate(key);
 
+        if (key.getReqOrResp().equals(Type.ResponseCompare) || key.getReqOrResp().equals(Type.RequestCompare)
+            || key.getReqOrResp().equals(Type.DontCare)) {
+            rrStore.getAttributeRuleMap(key).ifPresent(compareTemplate::setAppLevelAttributeRuleMap);
+        }
+
         switch (eventType) {
             case HTTPRequest:
             case HTTPResponse:

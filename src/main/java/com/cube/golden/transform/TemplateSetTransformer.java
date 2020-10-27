@@ -53,7 +53,7 @@ public class TemplateSetTransformer {
         Map<TemplateKey, CompareTemplateVersioned> sourceTemplateMap = sourceTemplates.stream()
             .collect(Collectors.toMap(template -> new TemplateKey(sourceTemplateSet.version,
             sourceTemplateSet.customer, sourceTemplateSet.app, template.service,
-            template.requestPath, template.type) , Function.identity()));
+            template.requestPath, template.type, template.method, "NA") , Function.identity()));
 
         // This is the key to be set by UI for attributeLevelRules
         TemplateKey attributeTemplateKey = new TemplateKey(sourceTemplateSet.version, sourceTemplateSet.customer,
