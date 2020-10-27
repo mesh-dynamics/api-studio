@@ -3313,8 +3313,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
             BatchingIterator.batchedStreamOf(SolrIterator.getStream(solr, query, Optional.empty()), 200)
                 .forEach(docs -> {
-                    List<String> ids = new ArrayList<>();
-                    docs.forEach(doc -> getStrField(doc, IDF).map(id-> ids.add(id)));
+                    List<String> ids = docs.stream().flatMap(doc -> getStrField(doc, IDF).stream()).collect(Collectors.toList());
                     deleteReqRespMatchResults(ids);
                 });
         }
