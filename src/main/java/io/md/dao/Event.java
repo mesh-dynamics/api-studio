@@ -196,12 +196,11 @@ public class Event implements MDStorable {
 			== CompareTemplate.ComparisonType.Equal, keyValMap);
 
 		for (Map.Entry<String, String> entry : keyValMap.entrySet()) {
-			keyVals.add(entry.getKey() + "=" + entry.getValue());
+			keyVals.add((entry.getKey() + "=" + entry.getValue()).toLowerCase());
 		}
 
 		LOGGER.info("Generating event key from vals : ".concat(keyVals.toString()));
 		//Making parameter matching for mock, Case Insensitive
-		keyVals = keyVals.stream().map(key->key.toLowerCase()).collect(Collectors.toList());
 
 		if (!keyVals.isEmpty()) {
 			payloadKey = Objects.hash(keyVals.get(0));
