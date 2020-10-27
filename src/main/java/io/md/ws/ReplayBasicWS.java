@@ -32,6 +32,7 @@ import org.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.md.cache.ProtoDescriptorCache;
 import io.md.constants.ReplayStatus;
 import io.md.core.ReplayTypeEnum;
 import io.md.core.Utils;
@@ -214,7 +215,7 @@ public class ReplayBasicWS {
     private boolean doStartReplay(Replay replay) {
 
         return ReplayDriverFactory
-                .initReplay(replay, dataStore, jsonMapper)
+                .initReplay(replay, dataStore, jsonMapper, protoDescriptorCacheOptional)
                 .map(replayDriver -> {
                     boolean status = replayDriver.start();
                     if (!status) {
@@ -273,14 +274,16 @@ public class ReplayBasicWS {
     /**
      * @param dataStore
      */
-    public ReplayBasicWS(DataStore dataStore, Analyzer analyzer) {
+    public ReplayBasicWS(DataStore dataStore, Analyzer analyzer, Optional<ProtoDescriptorCache> protoDescriptorCacheOptional) {
         super();
         this.dataStore = dataStore;
         this.jsonMapper = CubeObjectMapperProvider.getInstance();
         this.analyzer = analyzer;
+        this.protoDescriptorCacheOptional = protoDescriptorCacheOptional;
     }
 
 	protected final DataStore dataStore;
     protected final Analyzer analyzer;
     ObjectMapper jsonMapper;
+    protected final Optional<ProtoDescriptorCache>  protoDescriptorCacheOptional;
 }

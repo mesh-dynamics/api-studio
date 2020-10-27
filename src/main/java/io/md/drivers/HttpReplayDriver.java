@@ -40,6 +40,7 @@ import org.json.JSONObject;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.md.dao.RequestPayload;
 import io.md.utils.UtilException;
 import io.md.core.RRTransformerOperations;
 import io.md.core.Utils;
@@ -61,7 +62,7 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 
 	private static Logger LOGGER = LogManager.getLogger(AbstractReplayDriver.class);
 
-	private final ObjectMapper jsonMapper;
+	protected final ObjectMapper jsonMapper;
 
 	HttpReplayDriver(Replay replay, DataStore dataStore, ObjectMapper jsonMapper) {
 		super(replay, dataStore);
@@ -76,9 +77,9 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 
 	static class HttpReplayClient implements IReplayClient {
 
-		private HttpClient httpClient;
-		private Optional<RRTransformer> xfmer = Optional.empty();
-		private final ObjectMapper jsonMapper;
+		protected HttpClient httpClient;
+		protected Optional<RRTransformer> xfmer = Optional.empty();
+		protected final ObjectMapper jsonMapper;
 
 		HttpReplayClient(Replay replay, ObjectMapper jsonMapper) throws Exception {
 			HttpClient.Builder clientbuilder = HttpClient.newBuilder()
@@ -172,17 +173,30 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 			});
 		}
 
-		public HttpRequest build(Replay replay, Event reqEvent)
-			throws IOException {
-			if (!(reqEvent.payload instanceof HTTPRequestPayload)) {
-				throw new IOException("Invalid Payload type");
-			}
+		protected boolean verifyPayload(Event reqEvent) throws IOException {
+			return reqEvent.payload instanceof HTTPRequestPayload;
+		}
+
+		protected RequestPayload modifyRequest(Event reqEvent) {
 			HTTPRequestPayload httpRequest = (HTTPRequestPayload) reqEvent.payload;
 
 			// TODO: Replace transformations functionality using injection
 			// transform fields in the request before the replay.
 			xfmer.ifPresent(x -> RRTransformerOperations.transformRequest(httpRequest, x, jsonMapper));
+			return httpRequest;
+		}
 
+		public HttpRequest build(Replay replay, Event reqEvent)
+			throws IOException {
+			if (!verifyPayload(reqEvent)) {
+				throw new IOException("Invalid Payload type");
+			}
+			RequestPayload httpRequest = modifyRequest(reqEvent);
+			return buildRequest(replay, reqEvent, httpRequest);
+		}
+
+		protected HttpRequest buildRequest(Replay replay, Event reqEvent,
+			RequestPayload httpRequest) {
 			// Fetch headers/queryParams and path etc from here since injected value
 			// would be present in dataObj instead of payload fields
 
@@ -191,11 +205,16 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 			// also add validation to be an array even if a singleton
 			// because of jackson serialisation to Multivalued map
 
-			MultivaluedHashMap<String, String> queryParams = httpRequest.dataObj
+
+			MultivaluedHashMap<String, String> headers = httpRequest
+				.getValAsObject(Constants.HDR_PATH, MultivaluedHashMap.class)
+				.orElse(new MultivaluedHashMap<String, String>());
+
+			MultivaluedHashMap<String, String> queryParams = httpRequest
 				.getValAsObject(Constants.QUERY_PARAMS_PATH, MultivaluedHashMap.class)
 				.orElse(new MultivaluedHashMap<String, String>());
 
-			List<String> pathSegments = httpRequest.dataObj
+			List<String> pathSegments = httpRequest
 				.getValAsObject(Constants.PATH_SEGMENTS_PATH, List.class)
 				.orElse(Collections.EMPTY_LIST);
 
@@ -234,10 +253,6 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 
 			LOGGER.debug("PATH :: " + uri.toString() + " OUTGOING REQUEST BODY :: " + new String(httpRequest.getBody(),
 				StandardCharsets.UTF_8));
-
-			MultivaluedHashMap<String, String> headers = httpRequest.dataObj
-				.getValAsObject(Constants.HDR_PATH, MultivaluedHashMap.class)
-				.orElse(new MultivaluedHashMap<String, String>());
 
 			headers.forEach((k, vlist) -> {
 				// some headers are restricted and cannot be set on the request
