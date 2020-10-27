@@ -13,7 +13,7 @@ function generator(JSONObject, beginBracket, endBracket, prefix) {
 			++lineCount;
 			let temp;
 			if (!isEmpty(value)) pathMap.set(path + beginBracket, value);
-			else pathMap.set(path, value);
+			else pathMap.set(path + beginBracket + endBracket, value);
 			if (Array.isArray(value)) {
 				value.forEach((element, i) => {
 					temp = path + "/" + i;

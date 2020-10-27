@@ -12,7 +12,6 @@ class PrivateRoute extends React.Component {
         const { component: Component, ...rest } = this.props;
         return (
             <Route {...rest} render={props => (
-                //localStorage.getItem('user')
                 loggedIn
                     ? <Component {...props} />
                     : <Redirect to={{ pathname: '/login', state: { from: props.location } }} />

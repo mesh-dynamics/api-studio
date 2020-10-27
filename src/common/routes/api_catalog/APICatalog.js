@@ -4,7 +4,7 @@ import {
   APICatalogAPIView,
   APICatalogLanding,
   APICatalogSearchResults,
-  APICatalogServiceGraph,
+  CollapsibleTabs,
   APICatalogDiff,
 } from "../../components/APICatalog/"
 import {
@@ -15,7 +15,7 @@ import { connect } from "react-redux";
 import { cubeActions } from "../../actions";
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { FormControl, FormGroup } from "react-bootstrap";
-import SplitSlider from "../../components/SplitSlider";
+import SplitSlider from "../../components/SplitSlider.tsx";
 
 class APICatalog extends Component {
   constructor(props) {
@@ -100,7 +100,8 @@ class APICatalog extends Component {
             </FormGroup>
           </div> */}
 
-          <APICatalogServiceGraph />
+          <CollapsibleTabs currentPage={this.state.currentPage} />
+        
           <Route exact path="/api_catalog"
             render={() => <APICatalogLanding
               setCurrentPage={this.setCurrentPage}

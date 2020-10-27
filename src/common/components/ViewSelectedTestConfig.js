@@ -13,6 +13,7 @@ import {validateGoldenName} from "../utils/lib/golden-utils";
 import classNames from "classnames";
 import { cubeService } from '../services';
 import { apiCatalogActions } from '../actions/api-catalog.actions';
+import MDLoading from '../../../public/assets/images/md-loading.gif';
 // import { history } from "../helpers";
 // import { Glyphicon } from 'react-bootstrap';
 
@@ -47,6 +48,7 @@ class ViewSelectedTestConfig extends React.Component {
             recId: null,
             stopDisabled: true,
             stoppingStatus: false,
+            forceStopping: false,
             goldenNameErrorMessage: "",
             recordingMode: "new", //allowed values ["new", "resume"]
             userAlertMessage: {
@@ -141,7 +143,7 @@ class ViewSelectedTestConfig extends React.Component {
     };
 
     handleChangeForTestIds = (e) => {
-        const { user, match, history, dispatch, cube } = this.props;
+        const { dispatch, cube } = this.props;
         cube.selectedTestId = e.target.value;
         if (e) {
             dispatch(cubeActions.clear());
@@ -416,6 +418,9 @@ class ViewSelectedTestConfig extends React.Component {
                 testIds,
                 selectedApp, 
                 selectedGolden,
+                testConfig: { 
+                    tag
+                }
             }, 
             authentication: { 
                 user: {
@@ -426,6 +431,10 @@ class ViewSelectedTestConfig extends React.Component {
         } = this.props;
 
         const { name: recName, label: recLabel } = testIds.find(recording => recording.id === selectedGolden);
+        
+        const searchParams = new URLSearchParams();
+        searchParams.set('tag', `default${selectedApp}Record`);
+        searchParams.set('resettag', `default${selectedApp}Noop`);
 
         const resumeUrl = `${config.recordBaseUrl}/resumeRecording/${selectedGolden}`;
         const statusUrl = `${config.recordBaseUrl}/status/${customer_name}/${selectedApp}/${recName}/${recLabel}`;
@@ -437,7 +446,7 @@ class ViewSelectedTestConfig extends React.Component {
             }
         };
 
-        api.post(resumeUrl, {}, configForHTTP).then((data) => {
+        api.post(resumeUrl, searchParams, configForHTTP).then((data) => {
             this.setState({ stopDisabled: false, recId: data.id, recName, recLabel });
             this.recStatusInterval = setInterval(
                 () => (
@@ -482,6 +491,8 @@ class ViewSelectedTestConfig extends React.Component {
         searchParams.set('name', recName);
         searchParams.set('userId', username);
         searchParams.set('label', recLabel);
+        searchParams.set('tag', `default${selectedApp}Record` );
+        searchParams.set('resettag', `default${selectedApp}Noop`);
 
         // axios.post(recordUrl, searchParams, configForHTTP
         api.post(recordUrl, searchParams, configForHTTP).then((data) => {
@@ -527,7 +538,7 @@ class ViewSelectedTestConfig extends React.Component {
             this.stopStatusInterval = setInterval(
                 () => { 
                     if(this.state.recStatus.status === "Completed") {
-                        this.setState({stopDisabled: true, stoppingStatus: false});
+                        this.setState({stopDisabled: true, stoppingStatus: false, forceStopping: false});
                         clearInterval(this.stopStatusInterval);
                         dispatch(cubeActions.getTestIds(selectedApp));
                         dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "Golden"));
@@ -546,10 +557,13 @@ class ViewSelectedTestConfig extends React.Component {
                 selectedInstance,
                 collectionTemplateVersion,
                 selectedGolden,
+                selectedApp, 
                 testConfig: { 
                     testPaths, 
                     testMockServices, 
-                    testConfigName 
+                    testConfigName,
+                    dynamicInjectionConfigVersion,
+                    tag
                 }
             }, 
             authentication: { 
@@ -572,6 +586,13 @@ class ViewSelectedTestConfig extends React.Component {
         searchParams.set('transforms', transforms);
         searchParams.set('testConfigName', testConfigName);
         searchParams.set('analyze', true);
+        if(tag){
+            searchParams.set('tag', tag);
+            searchParams.set('resettag', `default${selectedApp}Noop`);
+        }
+
+        // Append dynamic injection configuration if available
+        dynamicInjectionConfigVersion && searchParams.set('dynamicInjectionConfigVersion', dynamicInjectionConfigVersion);
         // Append mock services
         testMockServices && testMockServices.length != 0 &&
             testMockServices.map(testMockService => searchParams.append('mockServices',testMockService))
@@ -624,6 +645,18 @@ class ViewSelectedTestConfig extends React.Component {
         });
     }
     
+    handleForceStopRecording = (recordingId) => {
+        try {
+            cubeService.forceStopRecording(recordingId)
+        } catch (error) {
+            console.error("Unable to force stop recording: " + error)
+            alert("Unable to force stop recording")
+            this.setState({forceStopping: false})
+        }
+
+        this.setState({forceStopping: true})
+    }
+
     renderInstances(cube) {
         if (!cube.instances) {
             return ''
@@ -636,13 +669,13 @@ class ViewSelectedTestConfig extends React.Component {
         let jsxContent = '';
         if (options.length) {
             jsxContent = <div>
-                <select className="r-att" onChange={this.handleChangeForInstance} value={cube.selectedInstance} placeholder={'Select...'}>
+                <select id="ddlInstance" className="r-att" onChange={this.handleChangeForInstance} value={cube.selectedInstance || ""} placeholder={'Select...'}>
                     <option value="">Select Instance</option>
                     {options}
                 </select>
             </div>
         } else {
-            jsxContent = <select className="r-att" value={cube.selectedInstance} placeholder={'Select...'}>
+            jsxContent = <select id="ddlInstance" className="r-att" value={cube.selectedInstance} placeholder={'Select...'}>
                 <option value="">Select Instance</option>
             </select>
         }
@@ -681,7 +714,7 @@ class ViewSelectedTestConfig extends React.Component {
 
     renderCollectionDD ( cube ) {
         if (cube.testIdsReqStatus != cubeConstants.REQ_SUCCESS || cube.testIdsReqStatus == cubeConstants.REQ_NOT_DONE)
-            return <select className="r-att" disabled value={cube.selectedTestId} placeholder={'Select...'}>
+            return <select id="ddlTestId" className="r-att" disabled value={cube.selectedTestId} placeholder={'Select...'}>
                 <option value="">No App Selected</option>
             </select>;
         let options = [];
@@ -700,7 +733,7 @@ class ViewSelectedTestConfig extends React.Component {
             if (cube.selectedTestId)
                 selectedTestIdObj = { label: cube.selectedTestId, value: cube.selectedTestId};
             jsxContent = <div>
-                <select className="r-att" onChange={this.handleChangeForTestIds} value={cube.selectedTestId} placeholder={'Select...'}>
+                <select id="ddlTestId" className="r-att" onChange={this.handleChangeForTestIds} value={cube.selectedTestId || ""} placeholder={'Select...'}>
                     <option value="">Select Golden</option>
                     {options}
                 </select>
@@ -812,7 +845,7 @@ class ViewSelectedTestConfig extends React.Component {
 
                 <div className="margin-top-10">
                     <div className="label-n">SELECT RECORD MODE&nbsp;
-                        <select 
+                        <select  id="ddlRecordMode" 
                             className="r-att" 
                             style={{ fontSize: "12px", fontWeight: "500", color: "#5f5f5f" }} 
                             onChange={(event) => this.handleRecordingModeChange(event.target.value)}
@@ -856,9 +889,9 @@ class ViewSelectedTestConfig extends React.Component {
 
                 <div className="margin-top-10 row">
                     <div className="col-sm-6">
-                        <div onClick={this.handleRunTestClick} className="cube-btn width-100 text-center">RUN TEST</div>
+                        <div onClick={this.handleRunTestClick} id="btnRunTest" className="cube-btn width-100 text-center">RUN TEST</div>
                     </div>
-                    <div className="col-sm-6"><div onClick={this.handleRecordButtonClick} className="cube-btn width-100 text-center">RECORD</div></div>
+                    <div className="col-sm-6"><div onClick={this.handleRecordButtonClick} id="btnRecord"  className="cube-btn width-100 text-center">RECORD</div></div>
                 </div>
                 <div className="test-config-divider" />
                 <div className="margin-top-10 row">
@@ -893,14 +926,12 @@ class ViewSelectedTestConfig extends React.Component {
         const { location: { pathname }} = this.props;
         
         const panel = {
-            ['/']: () => (<div />),
-            ['/configs']: () => (<div />),
             ['/test_config_view']: () => this.renderTestInfo(),
             ['/test_config_view/golden_visibility']: () => this.renderGoldenMeta(),
             ['/test_config_view/test_cluster']: () => this.renderTestClusterPanel()
         };
 
-        return panel[pathname]();
+        return panel[pathname] ? panel[pathname]() : (<div />);
     };
 
     render() {
@@ -908,10 +939,10 @@ class ViewSelectedTestConfig extends React.Component {
         const { 
             customHeaders, recordModalVisible, showReplayModal, 
             fcId, showGoldenFilter, selectedGoldenFromFilter,
-            recName, stopDisabled,stoppingStatus, recStatus, showAddCustomHeader,
+            recName, stopDisabled, stoppingStatus, recStatus, showAddCustomHeader,
             goldenNameErrorMessage, fcEnabled, resumeModalVisible,
             dbWarningModalVisible, instanceWarningModalVisible, 
-            goldenSelectWarningModalVisible, showDeleteGoldenConfirmation
+            goldenSelectWarningModalVisible, showDeleteGoldenConfirmation, forceStopping
         } = this.state;
 
         const replayDone = (cube.replayStatus === "Completed" || cube.replayStatus === "Error");
@@ -950,9 +981,9 @@ class ViewSelectedTestConfig extends React.Component {
                         {
                             stoppingStatus &&
                             <div>
-                                <img src="/assets/images/md-loading.gif" alt="Loading..."/>   
+                                <img src={MDLoading} alt="Stopping..."/>   
                                 <br />
-                                <span>Please wait for 15 seconds to complete recording.</span>
+                                {forceStopping ? <span>Force stopping</span> : <span>Please wait for 15 seconds to complete recording.</span>}
                             </div>
                         }
                         <div className={"padding-15 bold"}>
@@ -962,6 +993,8 @@ class ViewSelectedTestConfig extends React.Component {
                     </Modal.Body>
 
                     <Modal.Footer>
+                        <span onClick={() => this.handleForceStopRecording(recStatus.id)} className={classNames("cube-btn","pull-left", {"hidden" : !stoppingStatus, "disabled" : forceStopping})}>FORCE STOP</span>&nbsp;&nbsp;
+
                         <span onClick={this.handleCloseRecModal} className={stopDisabled ? "cube-btn" : "cube-btn disabled"}>CLOSE</span>
                     </Modal.Footer>
                 </Modal>
@@ -1016,8 +1049,8 @@ class ViewSelectedTestConfig extends React.Component {
                     </Modal.Body>
                     <Modal.Footer >
                         {analysisDone ? 
-                        <Link to="/">
-                            <span onClick={this.handleClose} className="cube-btn">View Results</span>&nbsp;&nbsp;
+                        <Link to="/test_results">
+                            <span onClick={this.handleClose} id="btnRunTestViewResults" className="cube-btn">View Results</span>&nbsp;&nbsp;
                         </Link>
                     :
                     <span className="modal-footer-text">The results will be available on the test results page once the test completes</span>

@@ -167,7 +167,7 @@ class DiffResults extends Component {
         updateFunc);
 
         setTimeout(() => {
-            const { dispatch } = this.props;
+            const { dispatch, auth: { user: { customer_name: customerId }} } = this.props;
             dispatch(cubeActions.setPathResultsParams({
                 path: selectedAPI,
                 service: selectedService,
@@ -177,9 +177,9 @@ class DiffResults extends Component {
                 currentTemplateVer: currentTemplateVer,
                 timeStamp: timeStamp
             }));
-            dispatch(cubeActions.getCollectionUpdateOperationSet(app));
+            dispatch(cubeActions.getCollectionUpdateOperationSet(app, customerId));
             dispatch(cubeActions.setGolden({ golden: recordingId, timeStamp: "" }));
-            dispatch(cubeActions.getNewTemplateVerInfo(app, currentTemplateVer));
+            dispatch(cubeActions.getNewTemplateVerInfo(customerId, app, currentTemplateVer));
             dispatch(cubeActions.getJiraBugs(replayId, selectedAPI));
             dispatch(cubeActions.hideHttpClient(true));
             
@@ -206,14 +206,23 @@ class DiffResults extends Component {
     // update the filter, which will update the values in the DiffResultsFilter component,
     // and then fetch the new set of results    
     handleFilterChange = (metaData, value) => {
-        let { filter: newFilter } = this.state;
-        
+        let { filter: newFilter, replayId, recordingId, currentTemplateVer } = this.state;
+        const {dispatch} = this.props;
         // utilize the fallthrough mechanism to set hierarchical defaults for filters
         switch(metaData){
             case "selectedService":
                 newFilter["selectedService"] = "All";
             case "selectedAPI":
                 newFilter["selectedAPI"] = "All";
+                setTimeout(() => {
+                    dispatch(cubeActions.setPathResultsParams({
+                        path: value,
+                        service: newFilter.selectedService,
+                        replayId: replayId,
+                        recordingId: recordingId,
+                        currentTemplateVer: currentTemplateVer,
+                    }));
+                });
             case "selectedReqMatchType":
                 newFilter["selectedReqMatchType"] = "match";
             case "selectedDiffType":
@@ -291,7 +300,8 @@ class DiffResults extends Component {
     async getAnalysisResults(replayId, filter) {
         const { app } = this.state;
         const { auth: { user: { customer_name }}} = this.props;
-        const numResultsToFetch = ((app === "CourseApp" || customer_name === "Walmart") ? 1 : config.defaultFetchDiffResults);
+        // const numResultsToFetch = ((app === "CourseApp" || customer_name === "Walmart") ? 1 : config.defaultFetchDiffResults);
+        const numResultsToFetch = config.defaultFetchDiffResults;
 
         const searchParams = new URLSearchParams();
         searchParams.set("start", filter.startIndex);
@@ -347,7 +357,8 @@ class DiffResults extends Component {
     
     updatePageResults = async (isNextPage, index) => {
         let {filter, replayId} = this.state;
-        let pageSize = config.defaultFetchDiffResults;
+        const pageSize = config.defaultFetchDiffResults;
+        const maxDiffResultsPerPage = config.maxDiffResultsPerPage;
         let startIndex, endIndex;
         let diffLayoutDataPruned, resultsData;
 
@@ -360,13 +371,12 @@ class DiffResults extends Component {
             const results = resultsData.data && resultsData.data.res || [];
             const numFound = resultsData.data && resultsData.data.numFound || 0;
             const diffLayoutData = this.preProcessResults(results);
+            // prune from top of the list
+            diffLayoutDataPruned = diffLayoutData.slice(0, maxDiffResultsPerPage);
             
-            let pruneEndIndex, updatedEndIndex;
-            ({diffLayoutDataPruned, i: pruneEndIndex} = pruneResults(diffLayoutData, true));
-            
-            updatedEndIndex = startIndex + diffLayoutDataPruned.length;
             // Use the number of results found on server to limit the endIndex
-            endIndex = updatedEndIndex > numFound ?  numFound : updatedEndIndex;            
+            let updatedEndIndex = startIndex + diffLayoutDataPruned.length;
+            endIndex = updatedEndIndex > numFound ?  numFound : updatedEndIndex; 
         } else {
             endIndex = index;
             startIndex = Math.max(endIndex - pageSize, 0);
@@ -374,12 +384,11 @@ class DiffResults extends Component {
             
             const results = resultsData.data && resultsData.data.res || [];
             const diffLayoutData = this.preProcessResults(results);
-            
-            let pruneStartIndex;
-            ({diffLayoutDataPruned, i: pruneStartIndex} = pruneResults(diffLayoutData, false))
+            let len = diffLayoutData.length;
+            // prune from bottom of the list
+            diffLayoutDataPruned =  diffLayoutData.slice(len - maxDiffResultsPerPage, len);
             
             startIndex = Math.max(endIndex - diffLayoutDataPruned.length, 0);
-
         }
 
         const facets = resultsData.data && resultsData.data.facets || {};
@@ -498,9 +507,12 @@ class DiffResults extends Component {
         }
 
         try {
+            this.setState({ showNewGolden: true });
+            dispatch(cubeActions.updateRecordingOperationSet()); 
+
             const result  = await cubeService.unifiedGoldenUpdate(data);
 
-            this.setState({showSaveGoldenModal: false, saveGoldenError: ""});
+            this.setState({ showSaveGoldenModal: false, saveGoldenError: "" });
 
             dispatch(cubeActions.updateGoldenSet(result));
             dispatch(cubeActions.getTestIds(this.state.app));
@@ -512,8 +524,6 @@ class DiffResults extends Component {
             this.setState({ saveGoldenError: error.response.data.message });
         }
         
-        // needed for showing the updating dialog. (is this a good idea?)
-        dispatch(cubeActions.updateRecordingOperationSet()); 
     }
 
     handleCurrentPopoverPathChange = (popoverCurrentPath) => this.setState({ popoverCurrentPath });
@@ -573,7 +583,7 @@ class DiffResults extends Component {
                 <div className="content-wrapper">
                     
                     <div className="back" style={{ marginBottom: "10px", padding: "5px", background: "#454545" }}>
-                        <Link to={"/"} onClick={this.handleBackToDashboardClick}><span className="link-alt"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
+                        <Link to={"/test_results"} onClick={this.handleBackToDashboardClick}><span className="link-alt"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
                         <span className="link-alt pull-right" onClick={this.showSaveGoldenModal}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-save font-15"></i>&nbsp;Save Golden</span>
                         <Link to="/review_golden_updates" className="hidden">
                             <span className="link pull-right"><i className="fas fa-pen-square font-15"></i>&nbsp;REVIEW GOLDEN UPDATES</span>

@@ -15,10 +15,14 @@
     background: #f1f1f1;
     margin-bottom: 5px;
 }
+/**
+* Important because this causes the style to be 
+* overriden by bootstrap pre in case of electron app.
+*/
 pre{
-    margin: 0;
-    padding: 0;
-    border: none;
+    margin: 0 !important; 
+    padding: 0 !important;
+    border: none !important;
     background-clip: content-box;
     width: fit-content;
 }

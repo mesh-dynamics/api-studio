@@ -42,6 +42,12 @@ const initialState = {
     goldenList: [],
 
     httpClientRequestIds: {},
+    apiCatalogTableState:{
+        pageSize: 20,
+        currentPage: 0,
+        filterData:{},
+        oldPagesData:[]
+    }
 }
 
 export const apiCatalog = (state = initialState, { type, data }) => {
@@ -150,6 +156,7 @@ export const apiCatalog = (state = initialState, { type, data }) => {
             return {
                 ...state,
                 apiTrace: data.apiTrace,
+                apiCatalogTableState: data.apiCatalogTableState,
                 apiTraceLoading: false,
             }
         }
@@ -167,7 +174,9 @@ export const apiCatalog = (state = initialState, { type, data }) => {
                 httpClientRequestIds: data,
             }
         }
-        
+        case apiCatalogConstants.RESET_API_CATALOG_TO_INITIAL_STATE: {
+            return initialState;
+        }
         default:
             return state;
     }

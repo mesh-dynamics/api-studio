@@ -1,7 +1,7 @@
 /**
  * This file is set up proxy and listeners
  */
-const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, dialog } = require('electron');
 const { autoUpdater } = require('electron-updater');
 autoUpdater.logger = require('electron-log')
 const isDev = require('electron-is-dev');
@@ -14,11 +14,13 @@ const menu = require('./menu');
 const { resourceRootPath, updateApplicationConfig, getApplicationConfig } = require('./fs-utils');
 const { useGetLatest } = require('react-table');
 
+autoUpdater.autoInstallOnAppQuit = true;
 autoUpdater.autoDownload = false; 
 autoUpdater.channel = 'latest';
 
 let mainWindow;
 let releaseDirectory = '/'; // Default is root of bucket
+let downloadInfo = null;
 
 const browserWindowOptions = {
     width: 1280,
@@ -156,7 +158,9 @@ const setupListeners = (mockContext, user, replayContext) => {
         logger.info('Updated AWS Signing Options \n', awsSigingOptions);
 
         // Check for updates once the configs are set
-        autoUpdater.checkForUpdates();
+        if(!isDev) {
+            autoUpdater.checkForUpdates();
+        }
     });
 
     ipcMain.on('set_user', (event, arg) => {
@@ -173,19 +177,40 @@ const setupListeners = (mockContext, user, replayContext) => {
     });
 
     ipcMain.on('mock_context_change', (event, arg) => {
-        const { collectionId, traceId, selectedApp, customerName, recordingCollectionId, runId } = arg;
+        const { 
+            recordingId, collectionId, traceId, selectedApp, 
+            customerName, recordingCollectionId, runId, spanId,
+            config
+        } = arg;
 
-        logger.info('Current mock context :', mockContext);
-        logger.info('Changing mock context to : ', arg);
+        logger.info('Current mock context :', JSON.stringify(mockContext));
+        logger.info('Changing mock context to : ', JSON.stringify(arg));
 
         mockContext.traceId = traceId;
         mockContext.selectedApp = selectedApp;
         mockContext.customerName = customerName;
         mockContext.collectionId = collectionId;
         mockContext.recordingCollectionId = recordingCollectionId;        
-        mockContext.runId = runId   
+        mockContext.runId = runId;
+        mockContext.spanId = spanId;
+        mockContext.recordingId = recordingId;
+        mockContext.config = config;
         
-        logger.info('Updated context is : ', mockContext);
+        logger.info('Updated context is : ', JSON.stringify(mockContext));
+    });
+
+    ipcMain.on('reset_context_to_default', (event) => {
+        logger.info('Resetting mock context to default')
+        
+        mockContext.spanId = 'sample-span-id';
+        mockContext.traceId = 'sample-trace-id';
+        mockContext.selectedApp = 'sample-selected-app';
+        mockContext.customerName = 'sample-customer-name';
+        mockContext.collectionId = 'sample-collection-id';
+        mockContext.recordingCollectionId = 'sample-recording-collection-id';
+        mockContext.recordingId ='sample-recording-id';
+        mockContext.runId = 'sample-recording-collection-id';
+        mockContext.config = {}
     });
 
     ipcMain.on('restart_app', () => {
@@ -218,6 +243,27 @@ const setupListeners = (mockContext, user, replayContext) => {
         mainWindow.loadURL(mainWindowIndex);
     });
 
+    ipcMain.on('download_update', () => {
+        if(!downloadInfo) {
+            mainWindow.webContents.send('error_downloading_update');
+        }
+
+        const filePath =  `${releaseDirectory}/${downloadInfo.path}`;
+
+        awsSigingOptions.path = filePath;
+
+        // Sign the headers
+        aws4.sign(awsSigingOptions, awsSigningCredentials);
+
+        logger.info("Updater Signing Options \n", awsSigingOptions);
+
+        // Update the headers
+        autoUpdater.requestHeaders = awsSigingOptions.headers;
+        
+        // Trigger Download
+        autoUpdater.downloadUpdate();
+    });
+
 
     /**
      * AUTO Updater events
@@ -239,20 +285,7 @@ const setupListeners = (mockContext, user, replayContext) => {
         
         logger.info("\n\n", info);
 
-        const filePath =  `${releaseDirectory}/${info.path}`;
-
-        awsSigingOptions.path = filePath;
-
-        // Sign the headers
-        aws4.sign(awsSigingOptions, awsSigningCredentials);
-
-        logger.info("Updater Signing Options \n", awsSigingOptions);
-
-        // Update the headers
-        autoUpdater.requestHeaders = awsSigingOptions.headers;
-        
-        // Trigger Download
-        autoUpdater.downloadUpdate();
+        downloadInfo = info;
 
         // Notify Renderer Process
         mainWindow.webContents.send('update_available');
@@ -283,6 +316,18 @@ const setupListeners = (mockContext, user, replayContext) => {
     autoUpdater.on('update-downloaded', info => {
         logger.info('Update downloaded...')
         mainWindow.webContents.send('update_downloaded');
+    });
+
+    process.on('uncaughtException', (err) => {
+        const messageBoxOptions = {
+            type: "error",
+            title: "An exception has occured.",
+            message: err.message
+        };
+
+        logger.info('Uncaught exception in main thread', err);
+
+        dialog.showMessageBox(messageBoxOptions);
     })
 };
 

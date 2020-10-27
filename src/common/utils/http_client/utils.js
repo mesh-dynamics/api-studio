@@ -1,4 +1,5 @@
-import {parseExpressionAt} from 'acorn';
+import _, { head } from 'lodash';
+
 const generateRunId = () => {
     return new Date(Date.now()).toISOString()
 }
@@ -57,8 +58,46 @@ const getTraceTableTestReqData = (currentSelectedTab, selectedTraceTableTestReqT
     }
 };
 
+const getCurrentMockConfig = (mockConfigList, selectedMockConfig) => {
+    const foundMockConfig = _.find(mockConfigList, { key: selectedMockConfig });
+    return foundMockConfig ? JSON.parse(foundMockConfig.value) : {};
+};
+
+const generateApiPath = (parsedUrl) => {
+    // Handle if 'file' protocol is detected
+    if(parsedUrl.protocol.includes('file')) {
+        return parsedUrl.pathname.split('/').filter(Boolean).slice(2).join('/');
+    }
+
+    // Handle if no protocol is detected
+    if(!parsedUrl.protocol) {
+        return parsedUrl.pathname.split('/').filter(Boolean).slice(1).join('/');
+    }
+
+    return parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
+};
+
+const getApiPathFromRequestEvent = (requestEvent) => {
+
+    const { payload, apiPath } = requestEvent;
+    const EMPTY_STRING = "";
+
+    if(apiPath) {
+        return apiPath;
+    }
+
+    if(payload[1].path) {
+        return payload[1].path;
+    }
+
+    return EMPTY_STRING;
+};
+
 export { 
     generateRunId,
     getStatusColor,
-    getTraceTableTestReqData
+    generateApiPath,
+    getCurrentMockConfig,
+    getTraceTableTestReqData,
+    getApiPathFromRequestEvent
 };

@@ -16,6 +16,7 @@
 .checkbox-label {
     margin: 1px 0px 0px 5px;
     cursor: default;
+    font-weight: 400;
 }
 
 .checkbox-custom {

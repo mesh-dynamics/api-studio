@@ -4,6 +4,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const { DefinePlugin } = require('webpack');
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 const config = {
     node: {
@@ -63,6 +64,27 @@ const config = {
         historyApiFallback: true, 
         historyApiFallback: {
             index: '/index.html',
+        },
+        clientLogLevel: 'none',
+        watchOptions: {
+            poll: 5000,
+            ignored: ["node_modules", "relase", "dist"]
+        },
+        stats: {
+            colors: true,
+            hash: false,
+            version: false,
+            timings: false,
+            assets: false,
+            chunks: false,
+            modules: false,
+            reasons: false,
+            children: false,
+            source: false,
+            errors: true,
+            errorDetails: false,
+            warnings: false,
+            publicPath: false
         }
     },
 
@@ -86,7 +108,7 @@ const config = {
     module: {
         rules: [
             {
-                test: /\.(js|jsx)$/,
+                test: /\.(js|jsx|ts|tsx)$/,
                 exclude: /node_modules/,
                 use: {
                     loader: "babel-loader"
@@ -157,6 +179,9 @@ const config = {
                 { from: path.resolve(__dirname, 'public'), to: '' }
             ],
         }),
+        new MonacoWebpackPlugin({
+            languages: ['json', 'html', 'javascript', 'typescript']
+        }),
         new MiniCssExtractPlugin({
             filename: '[name].css',
             chunkFilename: '[id].css',
@@ -166,7 +191,10 @@ const config = {
             template: './src/templates/index.html',
             filename: 'index.html'
         })
-    ]
+    ],
+    resolve:{
+        extensions: ['.ts', '.js', '.tsx']
+    }
 
 };
 

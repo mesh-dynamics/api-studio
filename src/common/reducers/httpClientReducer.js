@@ -29,6 +29,7 @@ const initialState = {
         recordedResponseBody: "",
         responseBodyType: "json",
         outgoingRequestIds: [],
+        paramsType: "showQueryParams",
         eventData: [
             {
                 customerId: "",
@@ -102,10 +103,10 @@ const initialState = {
         collectionIdAddedFromClient: "",
         traceIdAddedFromClient: "",
         recordedHistory: null,
-        clearIntervalHandle: null,
         selectedTraceTableReqTabId: "",
         selectedTraceTableTestReqTabId: "",
         requestRunning: false,
+        showTrace: null,
     } */],
     toggleTestAndOutgoingRequests: true,
     selectedTabKey: "",
@@ -117,13 +118,6 @@ const initialState = {
     userCollections: [],
     userCollectionId: "",
     userHistoryCollection: null,
-    showSaveModal: false,
-    selectedSaveableTabId: "",
-    collectionName: "",
-    collectionLabel: "",
-    modalErroSaveMessage: "",
-    modalErroSaveMessageIsError: false,
-    modalErroCreateCollectionMessage: "",
     environmentList: [],
     envStatusText: "",
     envStatusIsError: false,
@@ -134,9 +128,25 @@ const initialState = {
     mockReqApiPath: "",
     modalErrorAddMockReqMessage: "",
     selectedTabIdToAddMockReq: "",
-    showImportFromCurlModal: false,
-    curlCommand: "",
-    modalErrorImportFromCurlMessage: "",
+
+    mockConfigList: [],
+    mockConfigStatusText: "",
+    mockConfigStatusIsError: false,
+    showMockConfigList: true,
+    selectedMockConfig: "",
+    historyTabState:{        
+        currentPage: 0,
+        oldPagesData:[],
+        numResults:15,
+        count:0
+    },
+    isHistoryLoading: false,
+    collectionTabState:{  
+        currentPage : 0,
+        numResults:10,
+        count:0
+    },
+    isCollectionLoading: false
 }
 
 const getTabIndexGivenTabId = (tabId, tabs) => {
@@ -431,60 +441,80 @@ export const httpClient = (state = initialState, { type, data }) => {
                 userHistoryCollection: data.userHistoryCollection
             }
         }
+        case httpClientConstants.SET_HISTORY_LOADING: {
+            return {
+                ...state,
+                isHistoryLoading: data
+            }
+        }
+        case httpClientConstants.SET_COLLECTION_LOADING: {
+            return {
+                ...state,
+                isCollectionLoading: data
+            }
+        }
+        case httpClientConstants.SET_COLLECTION_TAB_STATE: {
+            return {
+                ...state,
+                collectionTabState: data
+            }
+        }
 
         case httpClientConstants.ADD_CUBE_RUN_HISTORY: {
             return {
                 ...state,
                 userApiTraceHistory: data.apiTraces,
-                cubeRunHistory: data.cubeRunHistory
+                cubeRunHistory: data.cubeRunHistory,
+                historyTabState: data.historyTabState,
+                isHistoryLoading: false
+            }
+        }
+        case httpClientConstants.DELETE_CUBE_RUN_HISTORY: {
+            let cubeRunHistory = {};
+            Object.keys(state.cubeRunHistory).forEach((historyDate) => {
+              cubeRunHistory[historyDate] = state.cubeRunHistory[historyDate].filter((traceList) => {
+                if (traceList.children) {
+                    traceList.children = traceList.children.filter(
+                    (traceItem) => (traceItem.requestEventId != data)
+                  );
+                }
+                return !(traceList.requestEventId == data  || traceList.traceIdAddedFromClient == data);
+              });
+            });
+            return {
+                ...state,
+                cubeRunHistory: cubeRunHistory
             }
         }
 
         case httpClientConstants.ADD_USER_COLLECTIONS: {
             return {
                 ...state,
-                userCollections: data.userCollections
+                userCollections: data.userCollections,
+                isCollectionLoading: data.isCollectionLoading
             }
         }
         case httpClientConstants.DELETE_USER_COLLECTION: {
-            const userCollections = state.userCollections.filter( u=> u.rootRcrdngId !== data);
-            return {
-                ...state,
-                userCollections
-            }
-        }
-
-        case httpClientConstants.POST_SUCCESS_SAVE_TO_COLLECTION: {
-            let {tabs} = state;
-            return {
-                ...state,
-                showSaveModal : data.showSaveModal,
-                modalErroSaveMessage: data.modalErroSaveMessage,
-                modalErroSaveMessageIsError: false,
-                tabs: tabs.map(eachTab => {
-                    if (eachTab.id === data.tabId) {
-                        if(data.clearIntervalHandle) eachTab["clearIntervalHandle"] = data.clearIntervalHandle;
+            let deletedCollection;
+            const userCollections = state.userCollections.filter( collection => { 
+                if(collection.rootRcrdngId === data){
+                    deletedCollection = collection;
+                } 
+                return collection.rootRcrdngId !== data;
+            });
+            const tabs = state.tabs.map( tab => {
+                if(deletedCollection && tab.collectionIdAddedFromClient === deletedCollection.collec){
+                    return {...tab, 
+                    collectionIdAddedFromClient : "",
+                    recordingIdAddedFromClient : ""
                     }
-                    return eachTab; 
-                })
-            }
-        }
-
-        case httpClientConstants.POST_ERROR_SAVE_TO_COLLECTION: {
+                }
+                return tab;
+            });
             return {
                 ...state,
-                showSaveModal : data.showSaveModal,
-                modalErroSaveMessage: data.modalErroSaveMessage,
-                modalErroSaveMessageIsError: true
-            }
-        }
-
-        case httpClientConstants.CATCH_ERROR_SAVE_TO_COLLECTION: {
-            return {
-                ...state,
-                showSaveModal : data.showSaveModal,
-                modalErroSaveMessage: data.modalErroSaveMessage,
-                modalErroSaveMessageIsError: true
+                userCollections,
+                tabs
             }
         }
 
@@ -499,26 +529,6 @@ export const httpClient = (state = initialState, { type, data }) => {
                     }
                     return eachTab; 
                 })
-            }
-        }
-
-        case httpClientConstants.CLOSE_SAVE_MODAL: {
-            return {
-                ...state,
-                showSaveModal : data.showSaveModal
-            }
-        }
-
-        case httpClientConstants.SHOW_SAVE_MODAL: {
-            return {
-                ...state,
-                showSaveModal: data.showSaveModal, 
-                collectionName: data.collectionName, 
-                collectionLabel: data.collectionLabel, 
-                selectedSaveableTabId: data.selectedSaveableTabId, 
-                modalErroSaveMessage: data.modalErroSaveMessage, 
-                modalErroSaveMessageIsError: data.modalErroSaveMessageIsError,
-                modalErroCreateCollectionMessage: data.modalErroCreateCollectionMessage
             }
         }
 
@@ -537,30 +547,6 @@ export const httpClient = (state = initialState, { type, data }) => {
             }
         }
 
-        case httpClientConstants.POST_SUCCESS_CREATE_COLLECTION: {
-            return {
-                ...state,
-                showSaveModal : data.showSaveModal,
-                modalErroCreateCollectionMessage: data.modalErroCreateCollectionMessage
-            }
-        }
-
-        case httpClientConstants.POST_ERROR_CREATE_COLLECTION: {
-            return {
-                ...state,
-                showSaveModal : data.showSaveModal,
-                modalErroCreateCollectionMessage: data.modalErroCreateCollectionMessage
-            }
-        }
-
-        case httpClientConstants.CATCH_ERROR_CREATE_COLLECTION: {
-            return {
-                ...state,
-                showSaveModal : data.showSaveModal,
-                modalErroCreateCollectionMessage: data.modalErroCreateCollectionMessage
-            }
-        }
-
         case httpClientConstants.SET_SELECTED_TAB_KEY: {
             return {
                 ...state,
@@ -573,13 +559,6 @@ export const httpClient = (state = initialState, { type, data }) => {
                 ...state,
                 tabs: data.tabs,
                 selectedTabKey : data.selectedTabKey
-            }
-        }
-
-        case httpClientConstants.SET_UPDATED_MODAL_USER_COLLECTION_DETAILS: {
-            return {
-                ...state,
-                [data.name]: data.value
             }
         }
 
@@ -619,6 +598,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                 selectedEnvironment: data,
             }
         }
+
         case httpClientConstants.RESET_RUN_STATE: {
             let {tabs} = state;
             return {
@@ -726,33 +706,8 @@ export const httpClient = (state = initialState, { type, data }) => {
                     })
             }
         }
-
-        case httpClientConstants.SHOW_IMPORT_FROM_CURL_MODAL: {
-            return {
-                ...state,
-                showImportFromCurlModal: data.showImportFromCurlModal, 
-                curlCommand: data.curlCommand, 
-                modalErrorImportFromCurlMessage: data.modalErrorImportFromCurlMessage
-            }
-        }
-
-        case httpClientConstants.CLOSE_IMPORT_FROM_CURL_MODAL: {
-            return {
-                ...state,
-                showImportFromCurlModal: data.showImportFromCurlModal, 
-                curlCommand: data.curlCommand, 
-                modalErrorImportFromCurlMessage: data.modalErrorImportFromCurlMessage
-            }
-        }
-
-        case httpClientConstants.UPDATE_MODAL_CURL_COMMAND: {
-            return {
-                ...state,
-                [data.name]: data.value
-            }
-        }
         
-        case httpClientConstants.CREATE_DUPPLICATE_TAB: {
+        case httpClientConstants.CREATE_DUPLICATE_TAB: {
             let {tabs} = state;
             const tabToClone = _.find(tabs, {id: data.tabId});
             const newTab = _.cloneDeep(tabToClone);
@@ -761,6 +716,72 @@ export const httpClient = (state = initialState, { type, data }) => {
             return {
                 ...state,
                 tabs: [...tabs, newTab],
+            }
+        }
+
+        case httpClientConstants.TOGGLE_SHOW_TRACE: {            
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab.showTrace = !eachTab.showTrace
+                    }
+                    return eachTab;
+                })
+            }
+        }
+
+        // mock configs
+        case httpClientConstants.SET_MOCK_CONFIG_LIST: {
+            return {
+                ...state,
+                mockConfigList: data,
+            }
+        }
+
+        case httpClientConstants.SET_MOCK_CONFIG_STATUS_TEXT: {
+            return {
+                ...state,
+                mockConfigStatusText: data.text,
+                mockConfigStatusIsError: data.isError,
+            }
+        }
+
+        case httpClientConstants.RESET_MOCK_CONFIG_STATUS_TEXT: {
+            return {
+                ...state,
+                mockConfigStatusText: "",
+            }
+        }
+        
+        case httpClientConstants.SHOW_MOCK_CONFIG_LIST: {
+            return {
+                ...state,
+                showMockConfigList: data,
+            }
+        }
+
+        case httpClientConstants.SET_SELECTED_MOCK_CONFIG: {
+            return {
+                ...state,
+                selectedMockConfig: data,
+            }
+        }
+        case httpClientConstants.RESET_HTTP_CLIENT_TO_INITIAL_STATE: {
+            return initialState;
+        }
+
+        case httpClientConstants.UPDATE_ABORT_REQUEST: {
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                        if (eachTab.id === data.tabId) {
+                            eachTab["abortRequest"] = data.abortRequest;
+                        }
+                        return eachTab;
+                    })
             }
         }
 

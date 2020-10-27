@@ -1,13 +1,9 @@
-// const find = require('find-process');
-// const logger = require('electron-log');
-const { setupProxy } = require('./core/proxy');
+const setupProxy = require('./core/proxy/server');
 const { setupListeners } = require('./core/listeners');
-// const replayDriver = require('./electron/replay-driver');
-const { getApplicationConfig, setupApplicationConfig } = require('./core/fs-utils');
+const { setupApplicationConfig } = require('./core/fs-utils');
 
 /**
- * This will setup the application config into
- * fs for persistence.
+ * This will setup the application config into fs for persistence.
  */
 setupApplicationConfig();
 
@@ -19,15 +15,16 @@ const user = {
 };
 
 const mockContext = {
+    spanId: 'sample-span-id',
     traceId: 'sample-trace-id',
     selectedApp: 'sample-selected-app',
     customerName: 'sample-customer-name',
     collectionId: 'sample-collection-id',
     recordingCollectionId: 'sample-recording-collection-id',
-    runId: 'sample-recording-collection-id'
+    recordingId: 'sample-recording-id',
+    runId: 'sample-recording-collection-id',
+    config: {}
 };
-
-// const { mock: { proxyPort } } = getApplicationConfig();
 
 /**
  * Set up auto update, ipc and main window listeners
@@ -37,11 +34,16 @@ setupListeners(mockContext, user);
 /**
  * Setup server proxy
  */
-setupProxy(mockContext, user)
+setupProxy(mockContext, user);
 
 // DO NOT DELETE
 // const replayContext = {
 //     port: 8090,
 // };
-
-// replayDriver.setupReplayDriver(replayContext);
+// const replayDriver = require('./electron/replay-driver');
+// replayDriver.setupReplayDriver(replayContext); Recording-118804835
+// name: "sample-config", 
+//         serviceConfigs: [
+//             { service: "sampleService1", url: "http://localhost:8091", isMocked: false },
+//             { service: "sampleService2", url: "http://localhost:8092", isMocked: true }
+//         ]

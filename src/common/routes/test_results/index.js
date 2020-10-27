@@ -1,8 +1,1 @@
-import React from 'react'
-import { Route } from 'react-router'
-import TestResults from "./TestResults";
-
-export default [
-    <Route exact key="TestResults" path="/" component={TestResults} />,
-    <Route key="RootRedirect" path="/*" component={TestResults} />,
-]
+export { default as TestResults}  from "./TestResults";

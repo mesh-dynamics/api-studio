@@ -1,6 +1,7 @@
 import { cubeConstants } from "../constants";
 import { cubeService } from "../services";
 import { processInstanceList } from "../utils/lib/common-utils";
+import { httpClientActions } from "./httpClientActions";
 
 export const cubeActions = {
     getApps,
@@ -47,7 +48,8 @@ export const cubeActions = {
     getAnalysisStatus,
     removeReplayFromTimeline,
     removeSelectedGoldenFromTestIds,
-    hideHttpClient
+    hideHttpClient,
+    resetCubeToInitialState
 };
 
 function clear() {
@@ -61,16 +63,19 @@ function clear() {
 }
 
 function getApps () {
-    return async dispatch => {
+    return async (dispatch, getState) => {
         dispatch(request());
         try {
-            let appsList = await cubeService.fetchAppsList();
-            dispatch(success(appsList, Date.now()));
-            dispatch(cubeActions.setSelectedApp(appsList[0].name));
-            dispatch(cubeActions.getGraphDataByAppId(appsList[0].id));
-            dispatch(cubeActions.getTimelineData(appsList[0].name));
-            dispatch(cubeActions.getTestConfigByAppId(appsList[0].id));
-            dispatch(cubeActions.getTestIds(appsList[0].name));
+            const { selectedApp } = getState().cube;
+            if(!selectedApp) {
+                let appsList = await cubeService.fetchAppsList();
+                dispatch(success(appsList, Date.now()));
+                dispatch(cubeActions.setSelectedApp(appsList[0].name));
+                dispatch(cubeActions.getGraphDataByAppId(appsList[0].id));
+                dispatch(cubeActions.getTimelineData(appsList[0].name));
+                dispatch(cubeActions.getTestConfigByAppId(appsList[0].id));
+                dispatch(cubeActions.getTestIds(appsList[0].name));
+            }
         } catch (error) {
             dispatch(failure("Failed to getApps", Date.now()));
         }
@@ -97,20 +102,20 @@ function clearTimeline() {
     return {type: cubeConstants.CLEAR_TIMELINE, data: null};
 }
 
-function pushToOperations(o, key) {
-    return {type: cubeConstants.PUSH_TO_OPERATIONS, data: {op: o, key: key}};
+function pushToOperations(operation, key) {
+    return {type: cubeConstants.PUSH_TO_OPERATIONS, data: {op: operation, key}};
 }
 
-function pushNewOperationKeyToOperations(o, key) {
-    return {type: cubeConstants.NEW_KEY_PUSH_TO_OPERATIONS, data: {op: o, key: key}};
+function pushNewOperationKeyToOperations(operation, key ) {
+    return {type: cubeConstants.NEW_KEY_PUSH_TO_OPERATIONS, data: {op: operation, key}};
 }
 
-function addToRuleBook(key, value) {
-    return {type: cubeConstants.ADD_TO_RULE_BOOK, data: {key: key, val: value}};
+function addToRuleBook(key, value, templateMatchType) {
+    return {type: cubeConstants.ADD_TO_RULE_BOOK, data: {key: key, val: value, templateMatchType }};
 }
 
-function addToDefaultRuleBook(key, value) {
-    return {type: cubeConstants.ADD_TO_DEFAULT_RULE_BOOK, data: {key: key, val: value}}
+function addToDefaultRuleBook(key, value, templateMatchType) {
+    return {type: cubeConstants.ADD_TO_DEFAULT_RULE_BOOK, data: {key: key, val: value, templateMatchType}}
 }
 
 function removeFromRuleBook(key) {
@@ -135,9 +140,10 @@ function removeFromOperations(index, length, key) {
 
 
 function getCollectionUpdateOperationSet(app) {
-    return async dispatch => {
+    return async (dispatch, getState) => {
+        const { user: { customer_name: customerId } } = getState().authentication;
         try {
-            let collectionUpdateOperationSetId = await cubeService.getCollectionUpdateOperationSet(app);
+            let collectionUpdateOperationSetId = await cubeService.getCollectionUpdateOperationSet(app, customerId);
             dispatch(success(collectionUpdateOperationSetId, Date.now()));
         } catch (error) {
             console.error("Failed to getCollectionUpdateOperationSet", Date.now());
@@ -149,9 +155,10 @@ function getCollectionUpdateOperationSet(app) {
 }
 
 function getNewTemplateVerInfo(app, currentTemplateVer) {
-    return async dispatch => {
+    return async (dispatch, getState) => {
+        const { user: { customer_name: customerId } } = getState().authentication;
         try {
-            let newTemplateVerInfo = await cubeService.getNewTemplateVerInfo(app, currentTemplateVer);
+            let newTemplateVerInfo = await cubeService.getNewTemplateVerInfo(customerId, app, currentTemplateVer);
             dispatch(success(newTemplateVerInfo, Date.now()));
         } catch (error) {
             console.error("Failed to getNewTemplateVerInfo", Date.now());
@@ -239,7 +246,7 @@ function getTestConfigByAppId(appId) {
             dispatch(success(gd, Date.now()));
             dispatch(cubeActions.setTestConfig(gd[0]));
         } catch (error) {
-            dispatch(failure("Failed to getTestConfig", Date.now()));
+            dispatch(failure("Failed to getTestConfigByAppId", Date.now()));
         }
     };
 
@@ -252,9 +259,19 @@ function setTestConfig(tc) {
     return {type: cubeConstants.SET_TEST_CONFIG, data: tc};
 }
 
-function setSelectedApp ( appLabel ) {
-    return {type: cubeConstants.SET_SELECTED_APP, data: appLabel}
+function setSelectedApp (app) {
+    return (dispatch) => {
+        dispatch({type: cubeConstants.SET_SELECTED_APP, data: app})
+        
+        // now fetch things that depend upon the app
+        setTimeout(() => {
+            dispatch(httpClientActions.fetchMockConfigs())
+            dispatch(httpClientActions.loadFromHistory());
+            dispatch(httpClientActions.loadUserCollections());
+        });
+    }
 }
+
 
 function setSelectedInstance ( instance ) {
     return {type: cubeConstants.SET_SELECTED_INSTANCE, data: instance}
@@ -277,10 +294,12 @@ function setJiraBugs( jiraBugs ) {
 }
 
 function getTestIds (app) {
-    return async dispatch => {
+    return async (dispatch, getState) => {
+        const { user } = getState().authentication;
         dispatch(request());
         try {
-            let collections = await cubeService.fetchCollectionList(app);
+            const data = await cubeService.fetchCollectionList(user, app);
+            const collections = data.recordings;
             dispatch(success(collections, Date.now()));
         } catch (error) {
             dispatch(failure("Failed to getTestIds", Date.now()));
@@ -329,9 +348,10 @@ function getGraphData (app) {
 }
 
 function getTimelineData(app = "Cube", userId = "ALL", endDate = new Date(), startDate = null, clearTimeline = false) {
-    return async dispatch => {
+    return async (dispatch, getState) => {
+        const { authentication : { user } } = getState();
         try {
-            let timeline = await cubeService.fetchTimelineData(app, userId, endDate, startDate);
+            let timeline = await cubeService.fetchTimelineData(user, app, userId, endDate, startDate);
             if(clearTimeline){
                 dispatch(cubeActions.clearTimeline())
             };
@@ -389,6 +409,10 @@ function removeReplayFromTimeline(replayId) {
 
 function removeSelectedGoldenFromTestIds (selectedGolden) {
     return {type: cubeConstants.REMOVE_SELECTED_GOLDEN_FROM_TESTIDS, data: selectedGolden};
+}
+
+function resetCubeToInitialState () {
+    return {type: cubeConstants.RESET_CUBE_TO_INITIAL_STATE}
 }
 
 /**

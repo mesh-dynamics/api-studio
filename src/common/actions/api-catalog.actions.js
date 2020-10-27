@@ -4,14 +4,16 @@ import {
     getServiceList,
     getIncomingAPIList,
     getInstanceList,
-    getAPICount
+    getDefaultTraceApiFilters,
+    getLastApiTraceEndTimeFromApiTrace
 } from "../utils/api-catalog/api-catalog-utils";
 import _ from "lodash";
 
 export const apiCatalogActions = {
-    getDiffData: (app, requestIdLeft, requestIdRight) => async (dispatch) => {
+    getDiffData: (app, requestIdLeft, requestIdRight) => async (dispatch, getState) => {
+        const { user: { customer_name: customerId } } = getState().authentication;
         try {
-            const data = await cubeService.fetchAPIEventData(app, [requestIdLeft, requestIdRight], [])
+            const data = await cubeService.fetchAPIEventData(customerId, app, [requestIdLeft, requestIdRight], [])
 
             if (data.numFound) {
                 const [requestLeft, requestRight] = data.objects.filter(obj => obj.eventType === "HTTPRequest");
@@ -46,17 +48,21 @@ export const apiCatalogActions = {
     resetCompareRequest: () => ({ type: apiCatalogConstants.RESET_COMPARE_REQUEST }),
     setResizedColumns: (data) => ({ type: apiCatalogConstants.SET_RESIZED_COLUMNS, data: data }),
 
-    fetchAPIFacets: (app, selectedSource, selectedGoldenCollection, startTime, endTime, selectedService, selectedApiPath,) => async (dispatch) => {
-        const apiFacets = await cubeService.fetchAPIFacetData(app, selectedSource, selectedGoldenCollection, startTime, endTime);
+    fetchAPIFacets: (app, selectedSource, selectedGoldenCollection, startTime, endTime, selectedService, selectedApiPath,) => async (dispatch, getState) => {
+        const { authentication: { user: { customer_name: customerId } }} = getState();
+        const apiFacets = await cubeService.fetchAPIFacetData(customerId, app, selectedSource, selectedGoldenCollection, startTime, endTime);
         const services = getServiceList(apiFacets);
         const apiPaths = getIncomingAPIList(apiFacets, selectedService);
         const instances = getInstanceList(apiFacets, selectedService, selectedApiPath);
         dispatch({ type: apiCatalogConstants.FETCH_API_FACETS, data: { apiFacets, services, apiPaths, instances } })
     },
 
-    fetchGoldenCollectionList: (app, recordingType) => (dispatch) => {
-        cubeService.fetchCollectionList(app, recordingType)
-            .then((result) => {
+    fetchGoldenCollectionList: (app, recordingType) => (dispatch, getState) => {
+        const { user } = getState().authentication;
+
+        cubeService.fetchCollectionList(user, app, recordingType)
+            .then((data) => {
+                const result = data.recordings;
                 if (recordingType === "UserGolden") {
                     dispatch({
                         type: apiCatalogConstants.UPDATE_COLLECTION_LIST,
@@ -93,7 +99,7 @@ export const apiCatalogActions = {
                     selectedInstance = ""
 
                     dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "UserGolden"));
-                    dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, "UserGolden", selectedCollection, null, null, selectedService, selectedApiPath)); 
+                    selectedCollection && dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, "UserGolden", selectedCollection, null, null, selectedService, selectedApiPath)); 
                 } else if (selectedSource==="Golden") {
                     startTime = null;
                     endTime = null;
@@ -102,7 +108,7 @@ export const apiCatalogActions = {
                     selectedInstance = ""
 
                     dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "Golden"));
-                    dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, "Golden", selectedGolden, null, null, selectedService, selectedApiPath)); 
+                    selectedGolden && dispatch(apiCatalogActions.fetchAPIFacets(selectedApp, "Golden", selectedGolden, null, null, selectedService, selectedApiPath)); 
                 } else if (selectedSource==="Capture") {
                     startTime = new Date(Date.now() - 86400 * 1000).toISOString()
                     endTime = new Date(Date.now()).toISOString()
@@ -164,11 +170,11 @@ export const apiCatalogActions = {
             case "selectedApiPath":
                 selectedApiPath = value;
                 if (selectedSource==="Golden") {
-                    selectedGoldenApi = selectedService;
+                    selectedGoldenApi = selectedApiPath;
                 } else if (selectedSource==="UserGolden") {
-                    selectedCollectionApi = selectedService;
+                    selectedCollectionApi = selectedApiPath;
                 } else if (selectedSource==="Capture") {
-                    selectedCaptureApi = selectedService;
+                    selectedCaptureApi = selectedApiPath;
                 }
                 break;
 
@@ -218,6 +224,24 @@ export const apiCatalogActions = {
                 startTime, endTime,apiPaths, instances }
         })
 
+        // fetch api trace only if all necessary filters are selected
+        switch (selectedSource) {
+            case "UserGolden":
+                if(!(selectedCollection && selectedService && selectedApiPath)) {
+                    return;
+                }
+                break
+            case "Golden":
+                if(!(selectedGolden && selectedService && selectedApiPath)) {
+                    return;
+                }
+                break
+            case "Capture":
+                if(!(startTime && endTime && selectedService && selectedApiPath)) {
+                    return;
+                }
+                break
+        }
         dispatch(apiCatalogActions.fetchAPITrace(selectedSource, selectedCollection, selectedGolden, selectedService, selectedApiPath, selectedInstance, startTime, endTime));
     },
 
@@ -225,7 +249,11 @@ export const apiCatalogActions = {
 
     fetchAPITrace: (selectedSource, selectedCollection, selectedGolden, selectedService, selectedApiPath, selectedInstance, startTime, endTime) => async (dispatch, getState) => {
         const state = getState();
-        const { selectedApp } = state.cube;
+        const { 
+            cube: { selectedApp } , 
+            apiCatalog: { apiCatalogTableState }, 
+            authentication: { user: { customer_name: customerId } }
+        } = state;
 
         // assign collection name param for the request based on source
         let goldenCollection = null;
@@ -240,12 +268,94 @@ export const apiCatalogActions = {
                 goldenCollection = selectedGolden;
                 break;
         }
+        
 
         dispatch({type: apiCatalogConstants.SET_API_TRACE_LOADING})
-        const apiTrace = await cubeService.fetchAPITraceData(selectedApp, startTime, endTime, selectedService, selectedApiPath, selectedInstance, selectedSource, goldenCollection);
+        const filterData = { 
+            ...getDefaultTraceApiFilters(),
+            app: selectedApp, startTime, endTime, 
+            service: selectedService, apiPath: selectedApiPath, 
+            instance: selectedInstance, recordingType: selectedSource,
+            collectionName: goldenCollection,
+            numResults: apiCatalogTableState.pageSize
+        };
+        const apiTrace = await cubeService.fetchAPITraceData(customerId, filterData);
+        const apiTraces = apiTrace.response;
+        const currentEndTime = getLastApiTraceEndTimeFromApiTrace(apiTraces);
 
-        dispatch({ type: apiCatalogConstants.FETCH_API_TRACE , data: { apiTrace } })
+        const changedApiCatalogTableState = {
+            ...apiCatalogTableState, 
+            currentPage: 0,
+            filterData:filterData,
+            oldPagesData:[{endTime: currentEndTime}],
+            totalPages: Math.ceil(apiTrace.numFound / apiCatalogTableState.pageSize)
+        };
+
+        dispatch({ type: apiCatalogConstants.FETCH_API_TRACE , data: { apiTrace, apiCatalogTableState: changedApiCatalogTableState } })
+    },
+
+    fetchApiTraceByPage : (nextPage) => async(dispatch, getState)=>{
+        const {
+            apiCatalog:{ apiCatalogTableState },
+            authentication: { user: { customer_name: customerId } }
+        } = getState();
+        let nextFilterData = {...apiCatalogTableState.filterData};
+        let nextApiCatalogTableState = {...apiCatalogTableState};
+        if(nextPage > apiCatalogTableState.currentPage){
+            nextFilterData.endTime = apiCatalogTableState.oldPagesData[apiCatalogTableState.currentPage].endTime;
+            nextApiCatalogTableState.currentPage++;           
+        }else if (nextPage == 0){
+            nextApiCatalogTableState.currentPage = 0;
+            nextApiCatalogTableState.oldPagesData = [];
+        }
+        else if(nextPage < apiCatalogTableState.currentPage){
+            nextFilterData.endTime = apiCatalogTableState.oldPagesData[apiCatalogTableState.currentPage - 2].endTime;
+            nextApiCatalogTableState.oldPagesData.pop();
+            nextApiCatalogTableState.currentPage--;
+        }
+
+
+        dispatch({type: apiCatalogConstants.SET_API_TRACE_LOADING});
+        const apiTrace = await cubeService.fetchAPITraceData(customerId, nextFilterData);
+
+        const apiTraces = apiTrace.response;
+        if(nextPage > apiCatalogTableState.currentPage || nextPage == 0){
+            const endTime = getLastApiTraceEndTimeFromApiTrace(apiTraces);
+            nextApiCatalogTableState.oldPagesData.push({endTime});
+        }
+
+        nextApiCatalogTableState.currentPage = nextPage;
+
+        dispatch({ type: apiCatalogConstants.FETCH_API_TRACE , data: { apiTrace, apiCatalogTableState: nextApiCatalogTableState } })
+    },
+
+    setPageSize : (numResults) => async(dispatch, getState)=>{
+        const { 
+            apiCatalog: {apiCatalogTableState},
+            authentication: { user: { customer_name: customerId } }
+        } = getState();
+        
+        const filterData = {...apiCatalogTableState.filterData,  numResults};
+
+        dispatch({type: apiCatalogConstants.SET_API_TRACE_LOADING});
+
+        const apiTrace = await cubeService.fetchAPITraceData(customerId, filterData);
+        const apiTraces = apiTrace.response;
+        const currentEndTime = getLastApiTraceEndTimeFromApiTrace(apiTraces);
+        
+        const changedApiCatalogTableState = {
+            ...apiCatalogTableState, 
+            currentPage: 0,
+            filterData:filterData,
+            pageSize: numResults,
+            oldPagesData:[{endTime: currentEndTime}],
+            totalPages: Math.ceil(apiTrace.numFound / numResults)
+        };
+        
+        dispatch({ type: apiCatalogConstants.FETCH_API_TRACE , data: { apiTrace, apiCatalogTableState: changedApiCatalogTableState } })
     },
 
     setHttpClientRequestIds: (requestIdMap) => ({type: apiCatalogConstants.SET_HTTP_CLIENT_REQUESTIDS, data: requestIdMap}),
+
+    resetApiCatalogToInitialState: () => ({ type: apiCatalogConstants.RESET_API_CATALOG_TO_INITIAL_STATE })
 }

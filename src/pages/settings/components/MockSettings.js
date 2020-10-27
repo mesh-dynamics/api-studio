@@ -20,7 +20,7 @@ const MockSettings = (props) => {
 
                 <div className="panel-body">
                     <br />
-                    <span>Protocol</span>
+                    {/* <span>Protocol</span>
                     <div className="input-group input-group-sm">
                         <span className="input-group-addon settings-no-border">
                             <i className="fa fa-lock" aria-hidden="true"></i>
@@ -50,7 +50,7 @@ const MockSettings = (props) => {
                         />
                     </div>
                     <br />
-                    <span>Destination Port</span>
+                    <span>Default Destination Port</span>
                     <div className="input-group input-group-sm">
                         <span className="input-group-addon settings-no-border">
                             <i className="fa fa-microchip" aria-hidden="true"></i>
@@ -64,8 +64,8 @@ const MockSettings = (props) => {
                             onChange={(event) => handleMockSettingsChange('port', event.target.value)}
                         />
                     </div>
-                    <br />
-                    {/* <span>Proxy Port</span>
+                    <br /> */}
+                    <span>Proxy Port</span>
                     <div className="input-group input-group-sm">
                         <span className="input-group-addon settings-no-border">
                             <i className="fa fa-server" aria-hidden="true"></i>
@@ -78,7 +78,7 @@ const MockSettings = (props) => {
                             value={proxyPort}
                             onChange={(event) => handleMockSettingsChange('proxyPort', event.target.value)}
                         />
-                    </div> */}
+                    </div>
                     <br />
                     <div className="settings-action-buttons">
                         <span className="settings-margin-left-10">

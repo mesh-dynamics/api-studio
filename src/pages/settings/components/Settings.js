@@ -158,7 +158,7 @@ class Settings extends Component {
                             </Modal.Title>
                         </Modal.Header>
                         <Modal.Body>
-                            Updating these config will forward all mock requests to the target host that you have selected.
+                            Updating these config will forward all mock requests through the target port that you have selected.
                             Please click on update to proceed.
                         </Modal.Body>
                         <Modal.Footer>

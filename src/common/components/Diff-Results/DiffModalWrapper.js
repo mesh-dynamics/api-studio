@@ -46,7 +46,11 @@ const DiffModalWrapper = (props) => {
                         :
                             <span className="modal-footer-text">The golden is being saved in the background and will be available later. </span>
                         }
-                        &nbsp;&nbsp;<span onClick={handleCloseDone} className="cube-btn">Close</span>
+                            &nbsp;&nbsp;
+                            <span onClick={handleCloseDone} className={cube.goldenInProg ? "cube-btn disabled" : "cube-btn"}>
+                                {cube.goldenInProg && <i className="fa fa-spinner fa-spin"></i>}
+                                &nbsp;&nbsp;Close
+                            </span>
                     </div>
                 </Modal.Footer>
             </Modal>
@@ -160,7 +164,7 @@ const DiffModalWrapper = (props) => {
                                     type="text" 
                                     className="width-100"
                                     placeholder="Enter Tags(Comma Separated)" 
-                                    onChange={(event) => changeGoldenMetaData('tag', event.target.value.target.value)} 
+                                    onChange={(event) => changeGoldenMetaData('tag', event.target.value)} 
                                 />
                             </div>
                         </div>

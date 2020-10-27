@@ -4,6 +4,7 @@ import generator from '../generator/json-path-generator';
 import sortJson from "../sort-json";
 import _ from 'lodash';
 import config from "../../config";
+import { getParameterCaseInsensitive } from '../../../shared/utils';
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -20,7 +21,15 @@ const cleanEscapedString = (str) => {
     return str;
 }
 
-const validateAndCleanHTTPMessageParts = (messagePart) => {
+const validateAndCleanHTTPMessageParts = (messagePart, headers) => {
+    if(headers) {
+        let contentType = getParameterCaseInsensitive(headers, "content-type");
+        let contentTypeString = contentType ? (_.isArray(contentType) ? contentType[0] : contentType) : "",
+            isMultipart = contentTypeString.toLowerCase().indexOf("multipart") > -1;
+        if(isMultipart) {
+            return messagePart;
+        }
+    }
     let cleanedMessagepart = "";
     if (messagePart &&_.isObject(messagePart)) {
         cleanedMessagepart = messagePart;
@@ -56,13 +65,6 @@ const getDiffForMessagePart = (replayedPart, recordedPart, serverSideDiff, prefi
         }
     });
     return updatedReductedDiffArrayMsgPart;
-}
-
-const getParameterCaseInsensitive = (object, key) => {
-    return object[
-        Object.keys(object)
-        .find(k => k.toLowerCase() === key.toLowerCase())
-    ];
 }
 
 const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId, templateVersion, collapseLength, maxLinesLength) => {
@@ -210,7 +212,7 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
         // parse and clean up body string
         if (item.recordRequest) {
             recordedRequestHeaders = validateAndCleanHTTPMessageParts(item.recordRequest.hdrs);
-            recordedRequestBody = validateAndCleanHTTPMessageParts(item.recordRequest.body);
+            recordedRequestBody = validateAndCleanHTTPMessageParts(item.recordRequest.body, item.recordRequest.hdrs);
             recordedRequestQParams = validateAndCleanHTTPMessageParts(item.recordRequest.queryParams);
             recordedRequestFParams = validateAndCleanHTTPMessageParts(item.recordRequest.formParams);
         } else {
@@ -224,7 +226,7 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
         // same as above
         if (item.replayRequest) {
             replayedRequestHeaders = validateAndCleanHTTPMessageParts(item.replayRequest.hdrs);
-            replayedRequestBody = validateAndCleanHTTPMessageParts(item.replayRequest.body);
+            replayedRequestBody = validateAndCleanHTTPMessageParts(item.replayRequest.body, item.replayRequest.hdrs);
             replayedRequestQParams = validateAndCleanHTTPMessageParts(item.replayRequest.queryParams);
             replayedRequestFParams = validateAndCleanHTTPMessageParts(item.replayRequest.formParams);
         } else {
@@ -339,69 +341,7 @@ const addCompressToggleData = (diffData, collapseLength, maxLinesLength, diffCol
     return diffData;
 }
 
-const roughSizeOfObject = (object) => {
-
-    var objectList = [];
-    var stack = [ object ];
-    var bytes = 0;
-
-    while ( stack.length ) {
-        var value = stack.pop();
-
-        if ( typeof value === 'boolean' ) {
-            bytes += 4;
-        }
-        else if ( typeof value === 'string' ) {
-            bytes += value.length * 2;
-        }
-        else if ( typeof value === 'number' ) {
-            bytes += 8;
-        }
-        else if
-        (
-            typeof value === 'object'
-            && objectList.indexOf( value ) === -1
-        )
-        {
-            objectList.push( value );
-
-            for( var i in value ) {
-                stack.push( value[ i ] );
-            }
-        }
-    }
-    return bytes;
-}
-
-const pruneResults = (diffLayoutData, fromBeginning) => {
-    let accumulatedObjectSize = 0;
-    const diffObjectSizeThreshold = config.diffObjectSizeThreshold;
-    const maxDiffResultsPerPage = config.maxDiffResultsPerPage;
-    let len = diffLayoutData.length;
-    let i;
-    if (fromBeginning) { // prune from top of the list
-        i = 0;
-        // while (accumulatedObjectSize <= diffObjectSizeThreshold && i < len && i < maxDiffResultsPerPage) {
-        //     accumulatedObjectSize += roughSizeOfObject(diffLayoutData[i]);
-        //     i++;
-        // }
-        i = maxDiffResultsPerPage - 1;
-        let diffLayoutDataPruned = diffLayoutData.slice(0, i)
-        return {diffLayoutDataPruned, i};
-    } else { // prune from bottom of the list
-        i = 0;
-        // while (accumulatedObjectSize <= diffObjectSizeThreshold && i < len && i < maxDiffResultsPerPage) {
-        //     accumulatedObjectSize += roughSizeOfObject(diffLayoutData[len-i-1]);
-        //     i++;
-        // }
-        i = maxDiffResultsPerPage - 1;
-        let diffLayoutDataPruned = diffLayoutData.slice(len - i, len);
-        return {diffLayoutDataPruned, i} 
-    }
-}
-
 export {
     validateAndCreateDiffLayoutData, 
     addCompressToggleData,
-    pruneResults
 }

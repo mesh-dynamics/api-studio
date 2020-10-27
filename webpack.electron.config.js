@@ -4,6 +4,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const { DefinePlugin } = require('webpack');
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 const config = {
     node: {
@@ -86,7 +87,7 @@ const config = {
     module: {
         rules: [
             {
-                test: /\.(js|jsx)$/,
+                test: /\.(js|jsx|ts|tsx)$/,
                 exclude: /node_modules/,
                 use: {
                     loader: "babel-loader"
@@ -161,12 +162,16 @@ const config = {
         new CopyPlugin({
             patterns: [
                 { from: path.resolve(__dirname, 'public'), to: '' },                
-                { from: path.resolve(__dirname, 'src/electron'), to: 'electron' }
+                { from: path.resolve(__dirname, 'src/electron'), to: 'electron' },
+                { from: path.resolve(__dirname, 'src/shared'), to: 'shared' }
             ],
         }),
         new MiniCssExtractPlugin({
             filename: '[name].css',
             chunkFilename: '[id].css',
+        }),        
+        new MonacoWebpackPlugin({
+            languages: ['json', 'html', 'javascript', 'typescript']
         }),
         new HtmlWebpackPlugin({
             title: 'Mesh Dynamics',
@@ -190,7 +195,11 @@ const config = {
                 'testReport'
             ]
         }),
-    ]
+    ],
+    
+    resolve:{
+        extensions: ['.ts', '.js', '.tsx']
+    }
 
 };
 

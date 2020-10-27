@@ -2,8 +2,8 @@
 
 .md-hc-tabs-wrapper {
     background: #DCD1B5;
-    border-radius: 16px 16px 0px 0px;
-    padding-top: 18px;
+    border-radius: 8px 8px 0px 0px;
+    padding-top: 8px;
     display: flex;
 }
 
@@ -12,10 +12,10 @@
     border-style: solid;
     border-color: transparent;
     border-image: initial;
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
     cursor: pointer;
-    padding: 12px;
+    padding: 5px;
     margin-left: 8px;
     flex: 0 0 auto;
     background-color: #ADADAD;
@@ -43,6 +43,8 @@
 .RRT__removable {
     position: relative;
     display: flex;
+    margin-right: 5px;
+    margin-left: 5px;
 }
 
 .RRT__removable-text {

@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import './APICatalog.css';
+import './APICatalog.scss';
 
 // incoming/outgoing requests table
 const APICountTable = (props) => {

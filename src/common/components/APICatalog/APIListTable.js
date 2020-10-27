@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { Link } from 'react-router-dom'
-import './APICatalog.css';
+import './APICatalog.scss';
 
 // incoming/outgoing requests table
 const APIListTable = (props) => {

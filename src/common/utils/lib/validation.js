@@ -2,6 +2,10 @@
  * This file contains field validations for inputs used across the application
  */
 import { isEmail, isEmpty, isAlpha, isLength, isNumeric } from 'validator';
+const containsSpecialChar = (value)=>{
+    var format = /[`!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/;
+    return format.test(value);
+}
 
 const validateName = (value, nameType) => {
 
@@ -25,9 +29,16 @@ const validateName = (value, nameType) => {
         return fieldStatus;
     }
 
+    if(!isLength(value, { max: 50})) {
+        fieldStatus.isValid =  false;
+        fieldStatus.errorMessages.push("Maximum limit is 50 characters")
+
+        return fieldStatus;
+    }
+
     if(!isAlpha(value)){
         fieldStatus.isValid =  false;
-        fieldStatus.errorMessages.push("Firstname must not contain numbers")
+        fieldStatus.errorMessages.push(`${nameType} must not contain numbers or special characters`)
 
         return fieldStatus;
     }
@@ -74,17 +85,17 @@ const validatePassword = (value) => {
         return fieldStatus;
     }
 
-    if(!isLength(value, { min: 6})) {
+    if(!isLength(value, { min: 7})) {
         fieldStatus.isValid =  false;
-        fieldStatus.errorMessages.push("Minimum 6 characters required")
+        fieldStatus.errorMessages.push("Minimum 7 characters required")
 
         return fieldStatus;
     }
 
-    if(!(!isAlpha(value) && !isNumeric(value))) {
+    if(!(!isAlpha(value) && !isNumeric(value) && containsSpecialChar(value))) {
 
         fieldStatus.isValid =  false;
-        fieldStatus.errorMessages.push("Password must contain letters and numbers")
+        fieldStatus.errorMessages.push("Password must contain letters, numbers and special characters")
 
         return fieldStatus;
     }
