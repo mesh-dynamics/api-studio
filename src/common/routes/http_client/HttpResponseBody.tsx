@@ -70,7 +70,7 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
       this.compareAndSetOptions(this.editor.getModifiedEditor());
     }
   };
-  
+
   editorDidMount = (editor: monacoEditor.editor.IStandaloneDiffEditor) => {
     this.editor = editor;
     const { original, modified } = editor.getModel()!;
@@ -82,7 +82,7 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
         this.props.responseBodyType !== "json"
           ? JSON.stringify(modified.getValue())
           : modified.getValue(); //
-          // todo: is value of this.props.responseBody the same as the one used in render passed to monaco?
+      // todo: is value of this.props.responseBody the same as the one used in render passed to monaco?
       if (value !== this.props.responseBody) {
         this.props.updateParam(
           this.props.isOutgoingRequest,
@@ -98,7 +98,7 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
         this.props.responseBodyType !== "json"
           ? JSON.stringify(original.getValue())
           : original.getValue(); //
-         // todo: same as above 
+      // todo: same as above
       if (value !== this.props.recordedResponseBody) {
         this.props.updateParam(
           this.props.isOutgoingRequest,
