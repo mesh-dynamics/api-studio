@@ -3,6 +3,8 @@
  */
 package com.cube.ws;
 
+import static io.md.core.Utils.buildErrorResponse;
+
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -35,7 +37,6 @@ import org.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.cube.agent.ProxyAnalyzer;
 import io.md.constants.ReplayStatus;
 import io.md.dao.RecordOrReplay;
 import io.md.dao.Recording;
@@ -208,15 +209,29 @@ public class ReplayWS extends ReplayBasicWS {
      * @return
      */
     @POST
-    @Path("softDelete/{replayId}")
-    public Response softDelete(@PathParam("replayId") String replayId) {
+    @Path("delete/{replayId}")
+    public Response delete(@Context UriInfo ui, @PathParam("replayId") String replayId) {
+        boolean hardDelete = Optional.ofNullable(ui.getQueryParameters().getFirst(io.md.constants.Constants.HARD_DELETE))
+            .flatMap(Utils::strToBool).orElse(false);
         Optional<Replay> replay = rrstore.getReplay(replayId);
         Response response = replay.map(rep -> {
             try {
-                Replay deletedReplay = ReplayUpdate.softDeleteReplay(rrstore, rep);
                 String json;
-                LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Soft deleting replay", "replayId", replayId)));
-                json = jsonMapper.writeValueAsString(deletedReplay);
+                if(hardDelete) {
+                    boolean deleteReplayMeta = rrstore.deleteAllReplayData(List.of(rep));
+                    if(!deleteReplayMeta) {
+                        LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR, "Replay Data is not deleted", "replayId", replayId)));
+                        return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+                            buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
+                                "Replay Data is not deleted")).build();
+                    }
+                    json = "Replay is completely deleted";
+                } else {
+                    Replay deletedReplay = ReplayUpdate.softDeleteReplay(rrstore, rep);
+                    LOGGER.info(new ObjectMessage(
+                        Map.of(Constants.MESSAGE, "Soft deleting replay", "replayId", replayId)));
+                    json = jsonMapper.writeValueAsString(deletedReplay);
+                }
                 return Response.ok(json, MediaType.APPLICATION_JSON).build();
 
             } catch (ReplaySaveFailureException ex) {
