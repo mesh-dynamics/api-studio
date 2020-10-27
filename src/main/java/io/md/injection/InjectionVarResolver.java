@@ -16,12 +16,44 @@ import java.util.regex.Pattern;
 
 public class InjectionVarResolver implements StringLookup {
 
+	public static final String VAL_PLACEHOLDER = "_VAL";
+	public static final String MATCHEDVAL_PLACEHOLDER = "_MATCHEDVAL";
+	public static final String PATH_PLACEHOLDER = "_PATH";
+
 	private static Logger LOGGER = LoggerFactory.getLogger(InjectionVarResolver.class);
 
 	Event goldenRequestEvent;
 	Payload testResponsePayload;
 	Payload testRequestPayload;
 	DataStore dataStore;
+
+	private String _valResolved = null;
+	private String _matchedValResolved = null;
+	private String _pathResolved = null;
+
+	public String get_valResolved() {
+		return _valResolved;
+	}
+
+	public void set_valResolved(String _valResolved) {
+		this._valResolved = _valResolved;
+	}
+
+	public String get_matchedValResolved() {
+		return _matchedValResolved;
+	}
+
+	public void set_matchedValResolved(String _matchedValResolved) {
+		this._matchedValResolved = _matchedValResolved;
+	}
+
+	public String get_pathResolved() {
+		return _pathResolved;
+	}
+
+	public void set_pathResolved(String _pathResolved) {
+		this._pathResolved = _pathResolved;
+	}
 
 	public InjectionVarResolver(Event goldenRequestEvent, Payload testResponsePayload,
                                 Payload testRequestPayload, DataStore dataStore) {
@@ -31,24 +63,11 @@ public class InjectionVarResolver implements StringLookup {
 		this.dataStore = dataStore;
 	}
 
-	public ExtractionInfo getSourcePayloadAndJsonPath(String lookupString) {
-		String[] splitStrings = lookupString.split(":");
-		if (splitStrings.length < 2 || splitStrings.length > 3) {
-			LOGGER.error("Lookup String format mismatch");
-			return null; // Null resorts to default variable in substitutor
-		}
-		String source = splitStrings[0].trim();
-		String jsonPath = splitStrings[1].trim();
-
-		String regularExpression = null;
-		if (splitStrings.length == 3) {
-			regularExpression = splitStrings[2].trim();
-		}
-
-		Payload sourcePayload;
-		switch (source) {
+	public Payload getPayload(String sourceString) {
+		Payload payload = null;
+		switch (sourceString) {
 			case Constants.GOLDEN_REQUEST:
-				sourcePayload = goldenRequestEvent.payload;
+				payload = goldenRequestEvent.payload;
 				break;
 			case Constants.GOLDEN_RESPONSE:
 				Optional<Event> goldenResponseOptional = dataStore
@@ -57,19 +76,58 @@ public class InjectionVarResolver implements StringLookup {
 					LOGGER.error("Cannot fetch golden response for golden request");
 					return null; // Null resorts to default variable in substitutor
 				}
-				sourcePayload = goldenResponseOptional.get().payload;
+				payload = goldenResponseOptional.get().payload;
 				break;
 			case Constants.TESTSET_RESPONSE:
-				sourcePayload = testResponsePayload;
+				payload = testResponsePayload;
 				break;
 			case Constants.TESTSET_REQUEST:
-				sourcePayload = testRequestPayload;
+				payload = testRequestPayload;
 				break;
 			default:
-				throw new IllegalStateException("Unexpected value: " + source);
+				throw new IllegalStateException("Unexpected value: " + sourceString);
+		}
+		return payload;
+	}
+
+	public ExtractionInfo getSourcePayloadAndJsonPath(String lookupString) {
+		Payload sourcePayload = null;
+		String jsonPath = null;
+		Optional<String> resolvedValue = Optional.empty();
+		String regularExpression = null;
+		// TODO : Add support for iterating over objects and not only values.
+		// _VAL/_MATCHEDVAL could itself be a source to be resolved. In this case collectKeyVals in event would return Map<string, DataObj>
+		// "foreach": {source: Golden.Response, match: TestSet.Response, path: /body/.+/vals/.+, keys: [key1, key2]}
+		//"name": "${_VAL}: /id}_record_ids",
+		//"value": "${_MATCHEDVAL: /id}",
+		switch (lookupString) {
+			case VAL_PLACEHOLDER:
+				resolvedValue = Optional.ofNullable(get_valResolved());
+				break;
+			case MATCHEDVAL_PLACEHOLDER:
+				resolvedValue = Optional.ofNullable(get_matchedValResolved());
+				break;
+			case PATH_PLACEHOLDER:
+				resolvedValue = Optional.ofNullable(get_pathResolved());
+				break;
+			default:
+				String[] splitStrings = lookupString.split(":");
+				if (splitStrings.length < 2 || splitStrings.length > 3) {
+					LOGGER.error("Lookup String format mismatch");
+					return null; // Null resorts to default variable in substitutor
+				}
+				String source = splitStrings[0].trim();
+				jsonPath = splitStrings[1].trim();
+
+				if (splitStrings.length == 3) {
+					regularExpression = splitStrings[2].trim();
+				}
+
+				sourcePayload = getPayload(source);
 		}
 
-		return new ExtractionInfo(sourcePayload, jsonPath, regularExpression);
+		if(sourcePayload==null && jsonPath==null && resolvedValue.isEmpty()) return null;
+		return new ExtractionInfo(sourcePayload, jsonPath, regularExpression, resolvedValue);
 	}
 
 	public DataObj lookupObject(String lookupString) {
@@ -87,7 +145,12 @@ public class InjectionVarResolver implements StringLookup {
 	public String lookup(String lookupString) {
 		String value = null;
 		ExtractionInfo extractionInfo =  getSourcePayloadAndJsonPath(lookupString);
-		if (extractionInfo == null) return null;
+		if (extractionInfo == null) return null; //Nothing got resolved
+		else if(extractionInfo.resolvedValue.isPresent()) // Case of _val, _path, _mathchedval
+		{
+			return extractionInfo.resolvedValue.get();
+		}
+
 		String regex = extractionInfo.regex;
 		try {
 			value = extractionInfo.source.getValAsString(extractionInfo.jsonPath);
@@ -112,14 +175,17 @@ public class InjectionVarResolver implements StringLookup {
 
 	class ExtractionInfo {
 
-		public ExtractionInfo(Payload source, String jsonPath, String regex) {
+		public ExtractionInfo(Payload source, String jsonPath, String regex,
+			Optional<String> resolvedValue) {
 			this.source = source;
 			this.jsonPath = jsonPath;
 			this.regex = regex;
+			this.resolvedValue = resolvedValue;
 		}
 
 		public final Payload source;
 		public final String jsonPath;
 		public final String regex;
+		public final Optional<String> resolvedValue;
 	}
 }
