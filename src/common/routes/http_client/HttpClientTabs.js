@@ -87,6 +87,8 @@ class HttpClientTabs extends Component {
         this.handleImportCollectionInputChange = this.handleImportCollectionInputChange.bind(this);
         this.handleImportCollection = this.handleImportCollection.bind(this);
         this.handleImportedToCollectionIdChange = this.handleImportedToCollectionIdChange.bind(this);
+
+        this.updateAbortRequest = this.updateAbortRequest.bind(this);
         
     }
 
@@ -1148,6 +1150,11 @@ class HttpClientTabs extends Component {
         });
     }
 
+    updateAbortRequest(tabId, abortRequest) {
+        const { dispatch } = this.props;
+        dispatch(httpClientActions.updateAbortRequest(tabId, abortRequest));
+    }
+
     handleTabChange(tabKey) {
         const { dispatch } = this.props;
         dispatch(httpClientActions.setSelectedTabKey(tabKey));
@@ -1361,7 +1368,7 @@ class HttpClientTabs extends Component {
                             const apiPath = _.trimStart(data[0].request.apiPath, '/');
                             this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
                             setTimeout(() => {
-                                this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
+                                this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig, true);
                             }, 5000);
                         } catch (error) {
                             console.error("Error ", error);
@@ -1482,7 +1489,7 @@ class HttpClientTabs extends Component {
         return reqObject;
     }
 
-    loadSavedTrace(tabId, traceId, reqId, runId, apiPath, apiConfig) {
+    loadSavedTrace(tabId, traceId, reqId, runId, apiPath, apiConfig, isRefetchTrace) {
         const { 
             dispatch,
             cube: { selectedApp: app },
@@ -1530,7 +1537,7 @@ class HttpClientTabs extends Component {
                                 }
                             }
                             dispatch(httpClientActions.postSuccessLoadRecordedHistory(tabId, ingressReqObj));
-                            dispatch(httpClientActions.unsetReqRunning(tabId))
+                            if(!isRefetchTrace) dispatch(httpClientActions.unsetReqRunning(tabId));
                         }
                     });
                 }
@@ -1839,6 +1846,7 @@ class HttpClientTabs extends Component {
                         showAddMockReqModal={this.showAddMockReqModal}
                         handleDuplicateTab={this.handleDuplicateTab}
                         toggleShowTrace={this.toggleShowTrace}
+                        updateAbortRequest={this.updateAbortRequest}
                         >
                         </HttpClient>
                     </div>
