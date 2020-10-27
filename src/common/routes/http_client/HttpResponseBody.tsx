@@ -70,7 +70,7 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
       this.compareAndSetOptions(this.editor.getModifiedEditor());
     }
   };
-  
+
   editorDidMount = (editor: monacoEditor.editor.IStandaloneDiffEditor) => {
     this.editor = editor;
     const { original, modified } = editor.getModel()!;
@@ -82,26 +82,32 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
         this.props.responseBodyType !== "json"
           ? JSON.stringify(modified.getValue())
           : modified.getValue(); //
-      this.props.updateParam(
-        this.props.isOutgoingRequest,
-        this.props.tabId,
-        "responseBody",
-        "responseBody",
-        value
-      );
+      // todo: is value of this.props.responseBody the same as the one used in render passed to monaco?
+      if (value !== this.props.responseBody) {
+        this.props.updateParam(
+          this.props.isOutgoingRequest,
+          this.props.tabId,
+          "responseBody",
+          "responseBody",
+          value
+        );
+      }
     });
     original.onDidChangeContent((event) => {
       const value =
         this.props.responseBodyType !== "json"
           ? JSON.stringify(original.getValue())
           : original.getValue(); //
-      this.props.updateParam(
-        this.props.isOutgoingRequest,
-        this.props.tabId,
-        "recordedResponseBody",
-        "recordedResponseBody",
-        value
-      );
+      // todo: same as above
+      if (value !== this.props.recordedResponseBody) {
+        this.props.updateParam(
+          this.props.isOutgoingRequest,
+          this.props.tabId,
+          "recordedResponseBody",
+          "recordedResponseBody",
+          value
+        );
+      }
       this.resetOptions();
     });
   };

@@ -40,7 +40,7 @@ import commonConstants from '../../utils/commonConstants';
 import MockConfigs from "./MockConfigs";
 import {setDefaultMockContext} from '../../helpers/httpClientHelpers'
 import SideBarTabs from "./SideBarTabs";
-
+import {hasTabDataChanged} from "../../utils/http_client/utils"
 
 class HttpClientTabs extends Component {
 
@@ -182,7 +182,8 @@ class HttpClientTabs extends Component {
                 recordingIdAddedFromClient: toBeUpdatedData.recordingIdAddedFromClient,
                 collectionIdAddedFromClient: toBeUpdatedData.collectionIdAddedFromClient,
                 traceIdAddedFromClient: toBeUpdatedData.traceIdAddedFromClient,
-                recordedHistory: []
+                recordedHistory: [],
+                hasChanged: true,
             }
             return tabData;
         }
@@ -208,7 +209,7 @@ class HttpClientTabs extends Component {
             let tabData = {
                 id: toBeUpdatedData.id,
                 tabName: toBeUpdatedData.tabName,
-                requestId: toBeUpdatedData.requestId,
+                requestId: toBeUpdatedData.requestId, // from the original request. diff fails in case of setAsReference
                 httpMethod: toBeCopiedFromData.httpMethod,
                 httpURL: toBeCopiedFromData.httpURL,
                 httpURLShowOnly: toBeUpdatedData.httpURLShowOnly,
@@ -238,7 +239,8 @@ class HttpClientTabs extends Component {
                 recordingIdAddedFromClient: toBeUpdatedData.recordingIdAddedFromClient,
                 collectionIdAddedFromClient: toBeUpdatedData.collectionIdAddedFromClient,
                 traceIdAddedFromClient: toBeUpdatedData.traceIdAddedFromClient,
-                recordedHistory: toBeUpdatedData.recordedHistory
+                recordedHistory: toBeUpdatedData.recordedHistory,
+                hasChanged: true,
             }
             return tabData;
         }
@@ -269,6 +271,8 @@ class HttpClientTabs extends Component {
             }
         })
         copiedTab.outgoingRequests = [...tabToBeProcessed.outgoingRequests, ...outgoingRequests];
+        copiedTab.selectedTraceTableReqTabId = copiedTab.id
+        copiedTab.selectedTraceTableTestReqTabId = recordedHistory.id
         return copiedTab;
     }
 
@@ -1855,7 +1859,8 @@ class HttpClientTabs extends Component {
             /* Optional parameters */
             key: eachTab.id,
             tabClassName: 'md-hc-tab',
-            panelClassName: 'md-hc-tab-panel'
+            panelClassName: 'md-hc-tab-panel',
+            hasTabChanged: hasTabDataChanged(eachTab),
         }));
     }
 

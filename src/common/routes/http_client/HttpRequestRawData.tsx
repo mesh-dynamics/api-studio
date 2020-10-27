@@ -27,14 +27,16 @@ class HttpRequestRawData extends Component<IHttpRequestRawDataProps,IHttpRequest
   }
 
   handleChange(value: string) {
-    const { tabId, isOutgoingRequest } = this.props;
-    this.props.updateParam(
-      isOutgoingRequest,
-      tabId,
-      "rawData",
-      "rawData",
-      value
-    );
+    const { tabId, isOutgoingRequest, rawData } = this.props;
+    if (value !== rawData) {
+      this.props.updateParam(
+        isOutgoingRequest,
+        tabId,
+        "rawData",
+        "rawData",
+        value
+      );
+    }
   }
   formatHandler = ()=> {
     //Ideally following statement should work. Need to check later if this bug is resolved in any updates.

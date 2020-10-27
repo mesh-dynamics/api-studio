@@ -19,6 +19,8 @@ import {
 import { AbortRequest } from "./abortRequest";
 import SaveToCollection from './SaveToCollection';
 import SplitSlider from "../../components/SplitSlider.tsx";
+import {hasTabDataChanged} from "../../utils/http_client/utils"
+import Tippy from "@tippy.js/react";
 
 const newStyles = {
     variables: {
@@ -141,6 +143,11 @@ class HttpClient extends Component {
         const selectedTraceTableReqTabId = currentSelectedTab.selectedTraceTableReqTabId;
         const selectedTraceTableTestReqTabId = currentSelectedTab.selectedTraceTableTestReqTabId;
         let selectedTraceTableReqTab, selectedTraceTableTestReqTab;
+
+        if(hasTabDataChanged(currentSelectedTab)) {
+            alert("Please save the modified request before proceeding with the diff.")
+            return
+        }
 
         if(currentSelectedTab.selectedTraceTableReqTabId === currentSelectedTab.id) {
             selectedTraceTableReqTab = currentSelectedTab;
@@ -345,6 +352,12 @@ class HttpClient extends Component {
         return code;
     }
 
+    renderHasChangedTippy = (hasChanged) => {
+        return <Tippy content={"Unsaved changes in this request"} arrow={true} placement="bottom">
+            {hasChanged ? <i className="fas fa-circle" style={{fontSize: "12px", marginRight: "12px"}}></i> : <i></i>}
+        </Tippy>
+    }
+
     render() {
         const {  currentSelectedTab } = this.props;
         let selectedTraceTableReqTabId = currentSelectedTab.selectedTraceTableReqTabId;
@@ -372,7 +385,7 @@ class HttpClient extends Component {
             selectedTraceTableTestReqTab = currentSelectedTab.recordedHistory;
         }
 
-        const { outgoingRequests, service, httpURL, httpURLShowOnly, showTrace } = currentSelectedTab;
+        const { outgoingRequests, service, httpURL, httpURLShowOnly, showTrace, hasChanged } = currentSelectedTab;
 
         const { selectedResolutionType, showLogs, collapseLength, incrementCollapseLengthForRecReqId, incrementCollapseLengthForRepReqId, maxLinesLength, showResponseMessageHeaders, showResponseMessageBody, showRequestMessageHeaders, showRequestMessageQParams, showRequestMessageFParams, showRequestMessageBody, showAll, searchFilterPath,  shownResponseMessageHeaders, shownResponseMessageBody, shownRequestMessageHeaders, shownRequestMessageQParams, shownRequestMessageFParams, shownRequestMessageBody, diffLayoutData, showCompleteDiff } = this.state;
 
@@ -488,7 +501,7 @@ class HttpClient extends Component {
                                     <tr>
                                         <th>SERVICE BY TRACE ORDER</th>
                                         <th>API PATH</th>
-                                        <th>REPLAY CONFIG</th>
+                                        <th></th>
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -502,7 +515,11 @@ class HttpClient extends Component {
                                             {service}
                                         </td>
                                         <td>{httpURLShowOnly}</td>
-                                        <td></td>
+                                        <td>
+                                            <span>
+                                                {this.renderHasChangedTippy(hasChanged)}
+                                            </span>
+                                        </td>
                                         <td></td>
                                     </tr>
                                     {outgoingRequests && outgoingRequests.length > 0 && outgoingRequests.map((eachReq) => {
@@ -516,7 +533,11 @@ class HttpClient extends Component {
                                                     {eachReq.service}
                                                 </td>
                                                 <td>{eachReq.httpURLShowOnly}</td>
-                                                <td></td>
+                                                <td>
+                                                    <span>
+                                                        {this.renderHasChangedTippy(eachReq.hasChanged)}
+                                                    </span>
+                                                </td>
                                                 <td></td>
                                             </tr>
                                         );
@@ -541,7 +562,7 @@ class HttpClient extends Component {
                                             <tr>
                                                 <th>SERVICE BY TRACE ORDER</th>
                                                 <th>API PATH</th>
-                                                <th>SOURCE</th>
+                                                <th></th>
                                                 <th></th>
                                             </tr>
                                         </thead>
