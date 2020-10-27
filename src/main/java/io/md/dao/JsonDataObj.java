@@ -159,7 +159,7 @@ public class JsonDataObj implements DataObj {
 	}
 
 	@Override
-	public void collectKeyVals(Function<String, Boolean> filter, Collection<String> vals) {
+	public void collectKeyVals(Function<String, Boolean> filter, Map<String, String> vals) {
 		// Using json pointer to handle proper escaping in case keys have special characters
 		JsonPointer path = JsonPointer.compile("");
 		processNode(objRoot, filter, vals, path);
@@ -712,11 +712,11 @@ public class JsonDataObj implements DataObj {
 
 
 	private void processNode(JsonNode node, Function<String, Boolean> filter,
-		Collection<String> vals, JsonPointer path) {
+		Map<String, String> vals, JsonPointer path) {
 		if (node.isValueNode()) {
 			String nodeValString = node.asText();
 			if (filter.apply(path.toString()) && !node.isNull() && !nodeValString.isEmpty()) {
-				vals.add(path + "=" + nodeValString);
+				vals.put(path.toString(), nodeValString);
 			}
 		} else if (node.isObject()) {
 			Iterator<Entry<String, JsonNode>> fields = node.fields();
