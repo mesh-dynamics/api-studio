@@ -795,6 +795,20 @@ export const httpClient = (state = initialState, { type, data }) => {
         case httpClientConstants.RESET_HTTP_CLIENT_TO_INITIAL_STATE: {
             return initialState;
         }
+
+        case httpClientConstants.UPDATE_ABORT_REQUEST: {
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                        if (eachTab.id === data.tabId) {
+                            eachTab["abortRequest"] = data.abortRequest;
+                        }
+                        return eachTab;
+                    })
+            }
+        }
+
         default:
             return state;
     }

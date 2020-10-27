@@ -285,9 +285,9 @@ const createJiraIssue = async (summary, description, issueTypeId, projectId, rep
     }
 }
 
-const getResponseTemplate = async (customerId, selectedApp, pathResultsParams, reqOrRespCompare, jsonPath) => {
+const getResponseTemplate = async (customerId, selectedApp, pathResultsParams, reqOrRespCompare, jsonPath, method) => {
     const { currentTemplateVer, service, path } = pathResultsParams;
-    const url = `${config.analyzeBaseUrl}/getTemplate/${customerId}/${selectedApp}/${currentTemplateVer}/${service}/${reqOrRespCompare}?apiPath=${path}&jsonPath=${jsonPath}`;
+    const url = `${config.analyzeBaseUrl}/getTemplate/${customerId}/${selectedApp}/${currentTemplateVer}/${service}/${reqOrRespCompare}?apiPath=${path}&jsonPath=${jsonPath}&method=${method}`;
 
     const requestOptions = {
         headers: {

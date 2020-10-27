@@ -28,7 +28,7 @@ const authenticationReducer = (state = initialState, action) => {
       ...state,
       isFetching: false,
       loggedIn: true,
-      user: action.payload.user
+      user: {...action.payload.user, timestamp: new Date()}
     };
   case authConstants.REQUEST_FAILURE:
     return {
@@ -41,7 +41,7 @@ const authenticationReducer = (state = initialState, action) => {
   case authConstants.SET_USER:
     return {
       ...state,
-      user: {...action.payload},
+      user: {...action.payload, timestamp: new Date()},
       loggedIn: true,
     };
   case authConstants.LOGOUT:

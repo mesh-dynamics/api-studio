@@ -180,6 +180,14 @@ class Navigation extends Component{
                             {/* <div title="Notification" className="link-q"><i className="fas fa-bell"></i></div>
                             <div title="Settings" className="link-q"><i className="fas fa-cog"></i></div> */}
                             <div title={username} className="link-q">
+                                
+                            <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=cFWmFBw2NkC9cZE-UHbkR9N-ipU4B_JMjy3zTczH9hFUM1RHRzhUSFkyM0wxVFFESU9ESk5MWlNMWC4u"
+                                target="_blank" title="">  
+                                <div title="Feedback" className="link-q">
+                                    <i className="fa fa-comment" aria-hidden="true"></i>
+                                </div></a>
+                              
+                                <div title="Help (Coming soon)" style={{marginBottom: '10px', color:'gray'}}><i className="fa fa-question" aria-hidden="true"></i></div>
                                 <Link to="/account">
                                     <UserAvatar size="24" name={username} className="user-avatar" color="#CCC6B0"/>
                                 </Link>

@@ -201,7 +201,7 @@ class GoldenPopover extends React.Component {
     }
 
     async fetchRuleAndPopulate(reqOrRespCompare){
-        const { cube, jsonPath, user: { customer_name: customerId } } = this.props;
+        const { cube, jsonPath, user: { customer_name: customerId }, method } = this.props;
 
         try {
             const { path, dt, pt, ct, em , customization } = await cubeService.getResponseTemplate(
@@ -209,7 +209,8 @@ class GoldenPopover extends React.Component {
                 cube.selectedApp, 
                 cube.pathResultsParams, 
                 reqOrRespCompare, 
-                jsonPath.replace("<BEGIN>", "")
+                jsonPath.replace("<BEGIN>", ""),
+                method
             );
             
             const newlyFetchedRule = {

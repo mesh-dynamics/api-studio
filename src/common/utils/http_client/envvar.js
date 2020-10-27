@@ -6,8 +6,8 @@ const getCurrentEnvironment = (environmentList, selectedEnvironment) => {
   return _.find(environmentList, { name: selectedEnvironment });
 };
 
-// returns a function that can be used to render the given environment vars on an input
-const initEnvVars = () => {
+// returns current EnvVArs
+const getCurrentEnvVars = () => {
   const { httpClient: { environmentList, selectedEnvironment } } = store.getState();
   const currentEnvironment = getCurrentEnvironment(environmentList, selectedEnvironment);
 
@@ -16,7 +16,12 @@ const initEnvVars = () => {
   Object.fromEntries(
     currentEnvironment.vars.map(({key, value}) => ([key, value]))
   ) : {};
+  return currentEnvVars;
+}
 
+// returns a function that can be used to render the given environment vars on an input
+const initEnvVars = () => {
+  const currentEnvVars = getCurrentEnvVars();
   // return method to check and render Mustache template on an input
   return (input) => {
     if (!input) return input;
@@ -87,6 +92,7 @@ const applyEnvVars = (httpRequestURL, httpRequestQueryStringParams, fetchConfig)
 
 export {
   getCurrentEnvironment,
+  getCurrentEnvVars,
   applyEnvVars,
   applyEnvVarsToUrl,
 }
