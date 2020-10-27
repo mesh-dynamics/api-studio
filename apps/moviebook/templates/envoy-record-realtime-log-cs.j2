@@ -77,17 +77,18 @@ spec:
                   return outstr
                 end
                 function logToCubeBackend(handle, data)
-                  handle:logErr(data)
+                  -- handle:logErr(data)
+                  local logMessage = '{ "logMessage" : "' .. esc_str_opt(data) .. '"}'
                   local hhdr, hbody = handle:httpCall(
                     "outbound|8080||cubews-record.staging.svc.cluster.local",
                     {
                       [":method"] = "POST",
                       [":path"] = "/api/logStore/{{customer}}",
                       [":authority"] = "cube",
-                      ["Content-Type"] = "text/plain",
+                      ["Content-Type"] = "application/json",
                       ["Authorization"] = "Bearer {{auth_token}}"
                     },
-                    data,
+                    logMessage,
                     5000)
                    if hbody then
                     handle:logErr("Response from cube backend for log : ".. hbody)
