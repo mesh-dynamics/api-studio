@@ -352,6 +352,12 @@ class HttpClient extends Component {
         return code;
     }
 
+    renderHasChangedTippy = (hasChanged) => {
+        return <Tippy content={"Unsaved changes in this request"} arrow={true} placement="bottom">
+            {hasChanged ? <i className="fas fa-circle" style={{fontSize: "12px", marginRight: "12px"}}></i> : <i></i>}
+        </Tippy>
+    }
+
     render() {
         const {  currentSelectedTab } = this.props;
         let selectedTraceTableReqTabId = currentSelectedTab.selectedTraceTableReqTabId;
@@ -511,9 +517,7 @@ class HttpClient extends Component {
                                         <td>{httpURLShowOnly}</td>
                                         <td>
                                             <span>
-                                                <Tippy content={"Unsaved changes in this request"} arrow={true} placement="bottom">
-                                                    {hasChanged ? <i className="fas fa-circle" style={{fontSize: "12px", marginRight: "12px"}}></i> : <i></i>}
-                                                </Tippy>
+                                                {this.renderHasChangedTippy(hasChanged)}
                                             </span>
                                         </td>
                                         <td></td>
@@ -531,9 +535,7 @@ class HttpClient extends Component {
                                                 <td>{eachReq.httpURLShowOnly}</td>
                                                 <td>
                                                     <span>
-                                                        <Tippy content={"Unsaved changes in this request"} arrow={true} placement="bottom">
-                                                            {eachReq.hasChanged ? <i className="fas fa-circle" style={{fontSize: "12px", marginRight: "12px"}}></i> : <i></i>}
-                                                        </Tippy>
+                                                        {this.renderHasChangedTippy(eachReq.hasChanged)}
                                                     </span>
                                                 </td>
                                                 <td></td>
