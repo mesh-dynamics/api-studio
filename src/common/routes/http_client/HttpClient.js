@@ -75,7 +75,9 @@ class HttpClient extends Component {
             incrementCollapseLengthForRepReqId: null,
             incrementStartJsonPath: null,
             diffLayoutData: null,
-            showCompleteDiff: false
+            showCompleteDiff: false,
+            prevSelectedTraceTableReqTabId: this.props.currentSelectedTab.selectedTraceTableReqTabId,
+            prevSelectedTraceTableTestReqTabId: this.props.currentSelectedTab.selectedTraceTableTestReqTabId,
         };
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
         this.handleSearchFilterChange = this.handleSearchFilterChange.bind(this);
@@ -87,6 +89,25 @@ class HttpClient extends Component {
         this.handleSetAsReference = this.handleSetAsReference.bind(this);
         this.handleAddMockRequestClick = this.handleAddMockRequestClick.bind(this);
     }
+
+    static getDerivedStateFromProps(props, state) {   
+        let newState = {};   
+        if(props.currentSelectedTab.selectedTraceTableReqTabId != state.prevSelectedTraceTableReqTabId){
+            newState = {
+                prevSelectedTraceTableReqTabId: props.currentSelectedTab.selectedTraceTableReqTabId,
+                showCompleteDiff: false
+            }
+        }
+        if(props.currentSelectedTab.selectedTraceTableTestReqTabId != state.prevSelectedTraceTableTestReqTabId){
+            newState = {
+                ...newState,
+                prevSelectedTraceTableTestReqTabId: props.currentSelectedTab.selectedTraceTableTestReqTabId,
+                showCompleteDiff: false
+            }
+        }
+        return newState;
+      }
+    
 
     preProcessResults = (results) => {
         const {app, replayId, recordingId, templateVersion} = this.state;
@@ -194,6 +215,9 @@ class HttpClient extends Component {
     handleSetAsReference(evt) {
         const { currentSelectedTab } = this.props;
         this.props.setAsReference(currentSelectedTab.id);
+        this.setState({
+            showCompleteDiff: false
+        })
     }
 
     handleAddMockRequestClick(evt) {
@@ -575,14 +599,14 @@ class HttpClient extends Component {
                     </div>
                     <div style={{display: "flex"}}>
                         <div style={{marginLeft: "auto", order: "2"}}>
-                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleShowDiff}>
+                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "none" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleShowDiff}>
                                 <Glyphicon glyph="random" /> DIFF
                             </div>
-                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "none" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleSetAsReference}>
-                                <Glyphicon glyph="export" /> SET AS REFERENCE
-                            </div>
                             <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "inline-block" : "none"}} onClick={this.handleShowCompleteDiffClick}>
-                                <Glyphicon glyph="sort-by-attributes" /> SHOW REQUESTS
+                                <Glyphicon glyph="sort-by-attributes" /> FULL VIEW
+                            </div>
+                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "inline-block" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleSetAsReference}>
+                                <Glyphicon glyph="export" /> SET AS REFERENCE
                             </div>
                         </div>
                     </div>

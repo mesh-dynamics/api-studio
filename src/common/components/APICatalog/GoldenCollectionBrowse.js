@@ -4,7 +4,6 @@ import classNames from "classnames";
 import Modal from "react-bootstrap/es/Modal";
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import "./APICatalog.scss";
-import { DropdownButton, MenuItem, FormControl } from "react-bootstrap";
 
 class GoldenCollectionBrowse extends Component {
   constructor(props) {
@@ -111,9 +110,10 @@ class GoldenCollectionBrowse extends Component {
   };
 
   showGoldenCollectionBrowseModal = () => {
-    this.setState({
-      showBrowseGoldenCollectionModal: true,
-    });
+    const { dispatch, cube: { selectedApp }, selectedSource } = this.props;
+
+    dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, selectedSource));
+    this.setState({ showBrowseGoldenCollectionModal: true });
   };
 
   hideGoldenCollectionModal = () => {
@@ -302,7 +302,8 @@ class GoldenCollectionBrowse extends Component {
   };
 
   renderBrowseModal() {
-    const { selectedSource } = this.props;
+    const { selectedSource, apiCatalog: { goldenCollectionLoading }  } = this.props;
+
     return (
       <Modal show={this.state.showBrowseGoldenCollectionModal} size="xl">
         <Modal.Header>
@@ -319,9 +320,24 @@ class GoldenCollectionBrowse extends Component {
           >
             {this.renderGoldenCollectionFilters()}
           </div>
-          <div style={{ height: "300px", overflowY: "auto" }}>
-            {this.renderGoldenCollectionTable()}
-          </div>
+          {
+            goldenCollectionLoading 
+            ? 
+              (
+                <div className="browse-golden-spinner-root">
+                  <div className="browse-golden-spinner-inner">
+                    <i className="fa fa-spinner fa-spin"></i>
+                  </div>
+                </div>
+              )
+            : 
+              (
+                <div className="browse-golden-list-container">
+                  {this.renderGoldenCollectionTable()}
+                </div>
+              )
+          }
+          
         </Modal.Body>
         <Modal.Footer>
           <span

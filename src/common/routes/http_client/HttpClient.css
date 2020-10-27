@@ -176,3 +176,17 @@ div.loading, div.loading button{
 .react-monaco-editor-container{
   min-height: 50px;
 }
+.request-data-label{
+  display: inline-block;
+  padding-right: 25px;
+  font-size: 12px;
+  font-weight: 300;
+}
+.request-data-label.filled{
+  font-weight: 500;
+  color: #527b52;
+}
+.request-data-label input[type=radio]{
+  margin-top: 0px;
+  margin-right: 7px;
+}
