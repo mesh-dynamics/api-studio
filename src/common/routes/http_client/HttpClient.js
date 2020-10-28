@@ -81,6 +81,7 @@ class HttpClient extends Component {
             showCompleteDiff: false,
             prevSelectedTraceTableReqTabId: this.props.currentSelectedTab.selectedTraceTableReqTabId,
             prevSelectedTraceTableTestReqTabId: this.props.currentSelectedTab.selectedTraceTableTestReqTabId,
+            httpRequestRef: null
         };
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
         this.handleSearchFilterChange = this.handleSearchFilterChange.bind(this);
@@ -645,7 +646,7 @@ class HttpClient extends Component {
                 </div>
                 {!showCompleteDiff && (
                     <div>
-                        <div style={{display: "flex", marginBottom: "9px", minHeight:'20px', overflowY: 'auto'}} ref={e=> (this.httpRequestRef = e)}>
+                        <div style={{display: "flex", marginBottom: "9px", minHeight:'20px', overflowY: 'auto'}} ref={e=> (!this.state.httpRequestRef && this.setState({httpRequestRef : e}))}>
                             <div style={{flex: "1", padding: "0.5rem", height:'100%'}}>
                                 <HttpRequestMessage 
                                     tabId={selectedTraceTableReqTab.id}
@@ -689,7 +690,7 @@ class HttpClient extends Component {
                                 )}
                             </div>
                         </div>
-                        <SplitSlider slidingElement={this.httpRequestRef} horizontal/> 
+                        <SplitSlider slidingElement={this.state.httpRequestRef} horizontal/> 
                         <HttpResponseMessage 
                             tabId={selectedTraceTableReqTab.id}
                             /** Belongs to RHS */

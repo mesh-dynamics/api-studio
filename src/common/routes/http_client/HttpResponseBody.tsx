@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { MonacoDiffEditor } from "react-monaco-editor";
+import MonacoEditor from "react-monaco-editor";
 import { UpdateParamHandler } from "./HttpResponseHeaders";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import "./diff.css";
@@ -17,9 +17,10 @@ export interface IHttpResponseBodyProps {
 }
 
 class HttpResponseBody extends Component<IHttpResponseBodyProps> {
-  private editor: monacoEditor.editor.IStandaloneDiffEditor;
+  private lhsEditor: monacoEditor.editor.IStandaloneCodeEditor;
   constructor(props: IHttpResponseBodyProps) {
     super(props);
+    this.formatHandler = this.formatHandler.bind(this);
   }
 
   shouldComponentUpdate(nextProps: IHttpResponseBodyProps) {
@@ -37,21 +38,22 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
     return false;
   }
 
-  componentDidUpdate() {
-    this.resetOptions();
-  }
 
   formatHandler() {
-    this.editor
-      .getOriginalEditor()
+    if (this.props.responseBodyType === "json") {
+      //In case of json action.run() doesn't work, hence needs to format json manually. This is mostly due to jsonworker error.
+      try {
+        this.lhsEditor.setValue(
+          JSON.stringify(JSON.parse(this.lhsEditor.getValue()), null, "\t")
+        );
+      } catch (error) {}
+    }else{
+
+      this.lhsEditor
       .getAction("editor.action.formatDocument")
       ?.run()
       .then(() => {});
-    this.editor
-      .getModifiedEditor()
-      .getAction("editor.action.formatDocument")
-      ?.run()
-      .then(() => {});
+    }
   }
 
   compareAndSetOptions(editor: monacoEditor.editor.IStandaloneCodeEditor) {
@@ -64,52 +66,21 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
     }
   }
 
-  resetOptions = () => {
-    if (this.editor) {
-      this.compareAndSetOptions(this.editor.getOriginalEditor());
-      this.compareAndSetOptions(this.editor.getModifiedEditor());
-    }
-  };
 
-  editorDidMount = (editor: monacoEditor.editor.IStandaloneDiffEditor) => {
-    this.editor = editor;
-    const { original, modified } = editor.getModel()!;
-    this.resetOptions();
-    // Following function is cached and editorDidMount is called only once at the time of first page load, not when props changing.
-    // So any param from props should be taken fresh from props.
-    modified.onDidChangeContent((event) => {
-      const value =
-        this.props.responseBodyType !== "json"
-          ? JSON.stringify(modified.getValue())
-          : modified.getValue(); //
-      // todo: is value of this.props.responseBody the same as the one used in render passed to monaco?
-      if (value !== this.props.responseBody) {
-        this.props.updateParam(
-          this.props.isOutgoingRequest,
-          this.props.tabId,
-          "responseBody",
-          "responseBody",
-          value
-        );
-      }
-    });
-    original.onDidChangeContent((event) => {
-      const value =
-        this.props.responseBodyType !== "json"
-          ? JSON.stringify(original.getValue())
-          : original.getValue(); //
-      // todo: same as above
-      if (value !== this.props.recordedResponseBody) {
-        this.props.updateParam(
-          this.props.isOutgoingRequest,
-          this.props.tabId,
-          "recordedResponseBody",
-          "recordedResponseBody",
-          value
-        );
-      }
-      this.resetOptions();
-    });
+  handleChange = (editorValue: string) => {
+    const value =
+      this.props.responseBodyType !== "json"
+        ? JSON.stringify(editorValue)
+        : editorValue; 
+    if (value !== this.props.recordedResponseBody) {
+      this.props.updateParam(
+        this.props.isOutgoingRequest,
+        this.props.tabId,
+        "recordedResponseBody",
+        "recordedResponseBody",
+        value
+      );
+    }
   };
 
   tryParseStringToHTML(jsonString: string) {
@@ -140,27 +111,59 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
         : this.props.responseBody;
 
     return showBody ? (
-      <MonacoDiffEditor
-        width="100%"
-        height={this.props.maximizeEditorHeight ? "calc(100vh - 30px)" : "600"}
-        language={language}
-        original={recordedResponseBody}
-        value={responseBody}
-        options={{
-          wordWrap: "bounded",
-          wordWrapMinified: true,
-          originalEditable: true,
-          colorDecorators: true,
-          readOnly: true,
-          scrollbar: {
-            alwaysConsumeMouseWheel: false,
-          },
-          automaticLayout: true,
-          scrollBeyondLastLine: false,
-          contextmenu: false,
-        }}
-        editorDidMount={this.editorDidMount}
-      />
+      <div style={{ width: "100%", display: "flex" }}>
+        <div style={{ width: "50%", paddingRight: "10px" }}>
+          <MonacoEditor
+            value={recordedResponseBody}
+            language={language}
+            key="rawLhsData"
+            height={
+              this.props.maximizeEditorHeight ? "calc(100vh - 30px)" : "600"
+            }
+            onChange={this.handleChange}
+            options={{
+              wordWrap: "bounded",
+              wordWrapMinified: true,
+              colorDecorators: true,
+
+              minimap: { enabled: false },
+              scrollBeyondLastLine: false,
+              scrollbar: {
+                alwaysConsumeMouseWheel: false,
+              },
+              automaticLayout: true,
+              contextmenu: false,
+            }}
+            editorDidMount={(editor) => {
+              this.lhsEditor = editor;
+            }}
+          />
+        </div>
+        <div style={{ width: "50%" }}>
+          <MonacoEditor
+            value={responseBody}
+            language={language}
+            key="rawRhsData"
+            height={
+              this.props.maximizeEditorHeight ? "calc(100vh - 30px)" : "600"
+            }
+            options={{
+              wordWrap: "bounded",
+              wordWrapMinified: true,
+              colorDecorators: true,
+
+              minimap: { enabled: false },
+              scrollBeyondLastLine: false,
+              scrollbar: {
+                alwaysConsumeMouseWheel: false,
+              },
+              automaticLayout: true,
+              contextmenu: false,
+              readOnly: true,
+            }}
+          />
+        </div>
+      </div>
     ) : (
       <div></div>
     );
