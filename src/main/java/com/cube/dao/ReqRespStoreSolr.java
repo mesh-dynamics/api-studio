@@ -6,6 +6,7 @@ package com.cube.dao;
 import static io.md.core.TemplateKey.*;
 
 import io.md.constants.ReplayStatus;
+import io.md.core.BatchingIterator;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.TemplateKey;
 import io.md.core.ValidateAgentStore;
@@ -33,6 +34,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -92,6 +94,8 @@ import com.cube.core.CompareTemplateVersioned;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
+
+import static io.md.constants.Constants.SCORE_FIELD;
 
 /**
  * @author prasad
@@ -317,6 +321,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Result<Event> getEvents(EventQuery eventQuery) {
         final SolrQuery query = new SolrQuery("*:*");
         query.addField("*");
+        query.addField("score");
 
         StringBuffer queryBuff = new StringBuffer();
 
@@ -1155,7 +1160,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Optional<Event> getRequestEvent(String reqId) {
 
         EventQuery.Builder builder = new EventQuery.Builder("*", "*", Event.REQUEST_EVENT_TYPES);
-        builder.withReqId(reqId);
+        builder.withReqId(reqId).withLimit(1);
 
         return getSingleEvent(builder.build());
     }
@@ -1222,7 +1227,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String SPAN_ID_F = CPREFIX  + Constants.SPAN_ID_FIELD + STRING_SUFFIX ;
     private static final String PARENT_SPAN_ID_F = CPREFIX  + Constants.PARENT_SPAN_ID_FIELD + STRING_SUFFIX;
     private static final String CONFIG_JSON_F = CPREFIX + Constants.CONFIG_JSON + STRING_SUFFIX;
-    private static final String SCOREF = CPREFIX + "score" + CSUFFIX;
+    private static final String SCOREF = CPREFIX + SCORE_FIELD + CSUFFIX;
     private static final String PROTO_DESCRIPTOR_FILE_F = CPREFIX + Constants.PROTO_DESCRIPTOR_FILE_FIELD + NOTINDEXED_SUFFIX;
 
 
@@ -1592,8 +1597,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> payloadStr = getStrFieldMVFirst(doc, PAYLOADSTRF);
         Optional<Integer> payloadKey = getIntField(doc, PAYLOADKEYF);
         List<String> eventMetaDataKeys = getStrFieldMV(doc, EVENT_META_DATA_KEYSF);
+        Optional<Double> score = getDblField(doc , SCOREF);
 
         Map<String, String> eventMetaDataMap = new HashMap<String, String>();
+        score.ifPresent(dblScore->{
+            eventMetaDataMap.put(SCORE_FIELD , dblScore.toString());
+        });
         eventMetaDataKeys.forEach(key -> {
             Optional<String> val = getStrField(doc, EVENT_META_DATA_PREFIX + key + STRING_SUFFIX);
             val.ifPresent(v -> eventMetaDataMap.put(key, v));
@@ -1656,87 +1665,61 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
     }
 
-    private static Optional<String> getStrField(SolrDocument doc, String fname) {
-        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
-            if (v instanceof String)
-                return Optional.of((String) v);
+    private static<T> Optional<T> getField(SolrDocument doc , String fieldName , Class<T> clazz){
+        return Optional.ofNullable(doc.get(fieldName)).flatMap(v -> {
+            if (clazz.isInstance(v))
+                return Optional.of((T)v);
             return Optional.empty();
         });
     }
+    private static<T> Optional<T> getField(SolrDocument doc , String fieldName , Function<Object , T> mapper){
+        return Optional.ofNullable(doc.get(fieldName)).flatMap(v -> {
+            return io.md.utils.Utils.safeFnExecute(v , mapper);
+        });
+    }
+
+    private static Optional<String> getStrField(SolrDocument doc, String fname) {
+        return getField(doc , fname , String.class);
+    }
 
     private static List<String> getStrFieldMV(SolrDocument doc, String fname) {
-        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
-            @SuppressWarnings("unchecked")
-            Optional<List<String>> vals = (v instanceof List<?>) ? Optional.of((List<String>)v) : Optional.empty();
-            return vals;
-        }).orElse(new ArrayList<>());
+        return getField(doc, fname, List.class).orElse(new ArrayList());
+    }
+
+    private static<T> Optional<T> getFirst(Collection<?> collection , Class<T> clazz){
+        return (Optional<T>) collection.stream().findFirst();
     }
 
     // get first value of a multi-valued field
     private static Optional<String> getStrFieldMVFirst(SolrDocument doc, String fname) {
-        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
-            if (v instanceof List<?>)
-                return ((List<String>) v).stream().findFirst();
-            return Optional.empty();
-        });
+        return getField(doc, fname , List.class).flatMap(l->getFirst(l , String.class));
     }
 
     private static Optional<Integer> getIntField(SolrDocument doc, String fname) {
-        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
-            if (v instanceof Integer)
-                return Optional.of((Integer) v);
-            return Optional.empty();
-        });
+        return getField(doc, fname , Integer.class);
     }
 
     private static Optional<Double> getDblField(SolrDocument doc, String fname) {
-        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
-            if (v instanceof Double) {
-                return Optional.of((Double) v);
-            } else if (v instanceof Float) {
-                return Optional.of(((Float)v).doubleValue());
-            } else if (v instanceof Integer) {
-                return Optional.of(((Integer)v).doubleValue());
-            }
-            return Optional.empty();
-        });
+        return getField(doc, fname , obj->Double.valueOf(obj.toString()));
     }
 
     private static Optional<Instant> getTSField(SolrDocument doc, String fname) {
-        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
-            if (v instanceof Date)
-                return Optional.of(((Date) v).toInstant());
-            return Optional.empty();
-        });
+        return getField(doc, fname , Date.class).map(Date::toInstant);
     }
 
     private static Optional<Boolean> getBoolField(SolrDocument doc, String fname) {
-        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
-            if (v instanceof Boolean)
-                return Optional.of((Boolean) v);
-            return Optional.empty();
-        });
+        return getField(doc, fname, Boolean.class);
     }
 
     // get binary field
     private static Optional<byte[]> getBinField(SolrDocument doc, String fname) {
-        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
-            if (v instanceof byte[])
-                return Optional.of((byte[]) v);
-            return Optional.empty();
-        });
+        return getField(doc, fname , byte[].class);
     }
 
     // get first value of a multi-valued field
     private static Optional<byte[]> getBinFieldMVFirst(SolrDocument doc, String fname) {
-        return Optional.ofNullable(doc.get(fname)).flatMap(v -> {
-            if (v instanceof List<?>)
-                return ((List<byte[]>) v).stream().findFirst();
-            return Optional.empty();
-        });
+        return getField(doc, fname , List.class).flatMap(l->getFirst(l , byte[].class));
     }
-
-
 
     private static void addFieldsToDoc(SolrInputDocument doc,
             String ftype, MultivaluedMap<String, String> fields) {
@@ -2202,12 +2185,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             .findFirst()
             .or(() -> templates.stream().findFirst())
             .map(val -> val.second());
-        // logic to append app level attribute filter
-        fromSolr.ifPresent(compareTemplate -> {
-            if (key.getReqOrResp().equals(Type.ResponseCompare) || key.getReqOrResp().equals(Type.RequestCompare) || key.getReqOrResp().equals(Type.DontCare)) {
-                getAttributeRuleMap(key).ifPresent(compareTemplate::setAppLevelAttributeRuleMap);
-            }
-        });
 
         return fromSolr;
     }
@@ -2481,13 +2458,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.addChildDocuments(res.respCompareRes.diffs.stream().map(diff ->
                 diffToSolrDoc(diff, DiffType.Response, recReplayReqIdCombined
                     .concat(res.service).concat(res.path).concat(String
-                        .valueOf(counter.getAndIncrement()))))
+                        .valueOf(counter.getAndIncrement())), res.replayId))
             .collect(Collectors.toList()));
         counter.getAndSet(0);
         doc.addChildDocuments(res.reqCompareRes.diffs.stream().map(diff ->
         diffToSolrDoc(diff, DiffType.Request, recReplayReqIdCombined
             .concat(res.service).concat(res.path).concat(String
-                .valueOf(counter.getAndIncrement()))))
+                .valueOf(counter.getAndIncrement())), res.replayId))
             .collect(Collectors.toList()));
         doc.addField(REQ_COMP_RES_TYPE_F, res.reqCompareRes.mt.toString());
         doc.addField(REQ_COMP_RES_META_F, res.reqCompareRes.matchmeta);
@@ -2506,7 +2483,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Request, Response
     }
 
-    private SolrInputDocument diffToSolrDoc(Diff diff, DiffType type, String idPrefix) {
+    private SolrInputDocument diffToSolrDoc(Diff diff, DiffType type, String idPrefix, String replayId) {
         SolrInputDocument inputDocument = new SolrInputDocument();
         diff.value.ifPresent(val -> inputDocument
             .setField(DIFF_VALUE_F, val.toString()));
@@ -2521,6 +2498,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             String.valueOf(Objects.hash(idPrefix, diff.path, diff.op, type.name())));
         inputDocument.setField(IDF, id);
         inputDocument.setField(TYPEF, Types.Diff.toString());
+        inputDocument.setField(REPLAYIDF, replayId);
         return inputDocument;
     }
 
@@ -2802,7 +2780,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
         Optional<String> app = getStrField(doc, APPF);
         Optional<Integer> version = getIntField(doc, INT_VERSION_F);
-        Optional<String> encodedFile = getStrField(doc, PROTO_DESCRIPTOR_FILE_F);
+        Optional<String> encodedFile = getStrFieldMVFirst(doc,PROTO_DESCRIPTOR_FILE_F);
         try {
             ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId.orElse(null),
                 app.orElse(null), encodedFile.orElse(null));
@@ -3282,6 +3260,75 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, TYPEF, Types.Recording.toString());
         addFilter(query, IDF, recordingId);
         return SolrIterator.getSingleResult(solr, query).flatMap(doc -> docToRecording(doc));
+    }
+
+    @Override
+    public boolean deleteAllRecordingData(Recording recording) {
+        StringBuffer queryBuff = new StringBuffer();
+        addToQryStr(queryBuff , COLLECTIONF , recording.collection ,false);
+        addToQryStr(queryBuff , TYPEF , Types.Recording.name(), false);
+        boolean deleteRecording =  deleteDocsByQuery(queryBuff.toString());
+        if(deleteRecording) {
+            return deleteEventsByCollection(List.of(recording.collection));
+        }
+        return deleteRecording;
+    }
+
+    public boolean deleteEventsByCollection(List<String> collections) {
+        StringBuffer queryBuff = new StringBuffer();
+        addToQryStr(queryBuff , COLLECTIONF , collections ,true, Optional.empty());
+        addToQryStr(queryBuff , TYPEF , Types.Event.name(), false);
+        return deleteDocsByQuery(queryBuff.toString());
+    }
+
+    @Override
+    public boolean deleteAllReplayData(List<Replay> replays) {
+        StringBuffer queryBuff = new StringBuffer();
+        List<String> replayIds = replays.stream().map(replay -> replay.replayId).collect(Collectors.toList());
+        addToQryStr(queryBuff , REPLAYIDF ,  replayIds ,true, Optional.empty());
+        addToQryStr(queryBuff , TYPEF , Types.ReplayMeta.name(), false);
+
+         boolean deleteReplay = deleteDocsByQuery(queryBuff.toString());
+         if(deleteReplay) {
+             deleteEventsByCollection(replayIds);
+             return deleteAllAnalysisData(replayIds);
+         }
+         return deleteReplay;
+    }
+
+    @Override
+    public boolean deleteAllAnalysisData(List<String> replayIds) {
+        StringBuffer queryBuff = new StringBuffer();
+        addToQryStr(queryBuff , REPLAYIDF ,  replayIds ,true, Optional.empty());
+        addToQryStr(queryBuff , TYPEF ,
+            List.of(Types.Analysis.name(), Types.MatchResultAggregate.name()),
+            true, Optional.empty());
+
+        boolean analysisDeleted = deleteDocsByQuery(queryBuff.toString());
+        if(analysisDeleted) {
+            final SolrQuery query = new SolrQuery("*:*");
+            query.addField("*");
+            addFilter(query, TYPEF, Types.ReqRespMatchResult.toString());
+            addFilter(query, REPLAYIDF, replayIds);
+
+            BatchingIterator.batchedStreamOf(SolrIterator.getStream(solr, query, Optional.empty()), 200)
+                .forEach(docs -> {
+                    List<String> ids = docs.stream().flatMap(doc -> getStrField(doc, IDF).stream()).collect(Collectors.toList());
+                    deleteReqRespMatchResults(ids);
+                });
+        }
+        return analysisDeleted;
+    }
+
+    public boolean deleteReqRespMatchResults(List<String> ids) {
+        try {
+            solr.deleteById(ids);
+            return softcommit();
+        } catch(Exception e) {
+            LOGGER.error("Error in deleting ReqRespMatchResults from solr for ids " +
+                ids.toString(), e);
+            return false;
+        }
     }
 
     @Override

@@ -2,6 +2,10 @@ package com.cube.queue;
 
 import static io.md.utils.Utils.createHTTPRequestEvent;
 
+import io.md.cache.ProtoDescriptorCache;
+import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
+import io.md.dao.GRPCPayload;
+import io.md.dao.ProtoDescriptorDAO;
 import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingType;
 import io.md.dao.Replay;
@@ -34,10 +38,13 @@ import io.md.dao.RecordOrReplay;
 import io.md.services.DataStore.TemplateNotFoundException;
 import io.md.utils.Constants;
 import io.md.core.Utils;
+import io.md.utils.UtilException;
+import jdk.jshell.execution.Util;
 
 import com.cube.core.ServerUtils;
 import com.cube.dao.CubeEventMetaInfo;
 import com.cube.dao.ReqRespStore;
+import com.cube.ws.Config;
 import com.cube.ws.CubeStore.CubeStoreException;
 
 public class StoreUtils {
@@ -209,7 +216,7 @@ public class StoreUtils {
 
 	// process and store Event
 	// return error string (Optional<String>)
-	public static void processEvent(Event event, ReqRespStore rrstore) throws CubeStoreException {
+	public static void processEvent(Event event, ReqRespStore rrstore, Optional<ProtoDescriptorCache> protoDescriptorCacheOptional) throws CubeStoreException {
 		if (event == null) {
 			throw new CubeStoreException(null, "Event is null", new CubeEventMetaInfo());
 		}
@@ -245,6 +252,16 @@ public class StoreUtils {
 			throw new CubeStoreException(null, "Collection is missing", event);
 		}
 		event.setCollection(collection.get());
+
+		if(event.payload instanceof GRPCPayload) {
+			protoDescriptorCacheOptional.map(
+				protoDescriptorCache -> {
+					io.md.utils.Utils.setProtoDescriptorGrpcEvent(event, protoDescriptorCache);
+					return protoDescriptorCache;
+				}
+			).orElseThrow(() -> new CubeStoreException(null, "protoDescriptorCache is missing for GRPCPAyload", event));
+		}
+
 		if (event.isRequestType()) {
 			// if request type, need to extract keys from request and index it, so that it can be
 			// used while mocking
@@ -276,5 +293,6 @@ public class StoreUtils {
 		}
 
 	}
+
 
 }
