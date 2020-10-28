@@ -1813,46 +1813,46 @@ class HttpClientTabs extends Component {
             getContent: () => {
                 return (
                     <div className="tab-container">
-                        <HttpClient currentSelectedTab={eachTab}
-                        /* tabId={eachTab.id}
-                        requestId={eachTab.requestId}
-                        httpMethod={eachTab.httpMethod}
-                        httpURL={eachTab.httpURL}
-                        headers={eachTab.headers} 
-                        queryStringParams={eachTab.queryStringParams}
-                        bodyType={eachTab.bodyType}
-                        formData={eachTab.formData} 
-                        rawData={eachTab.rawData}
-                        rawDataType={eachTab.rawDataType}
-                        responseStatus={eachTab.responseStatus}
-                        responseStatusText={eachTab.responseStatusText}
-                        responseHeaders={eachTab.responseHeaders}
-                        responseBody={eachTab.responseBody}
-                        recordedResponseHeaders={eachTab.recordedResponseHeaders}
-                        recordedResponseBody={eachTab.recordedResponseBody}
-                        responseBodyType={eachTab.responseBodyType}
-                        outgoingRequests={eachTab.outgoingRequests}
-                        showSaveBtn={eachTab.showSaveBtn}
-                        showCompleteDiff={eachTab.showCompleteDiff}
-                        service={eachTab.service}
-                        diffLayoutData={eachTab.diffLayoutData} */
+                        <HttpClient 
+                            currentSelectedTab={eachTab}
+                            /* tabId={eachTab.id}
+                            requestId={eachTab.requestId}
+                            httpMethod={eachTab.httpMethod}
+                            httpURL={eachTab.httpURL}
+                            headers={eachTab.headers} 
+                            queryStringParams={eachTab.queryStringParams}
+                            bodyType={eachTab.bodyType}
+                            formData={eachTab.formData} 
+                            rawData={eachTab.rawData}
+                            rawDataType={eachTab.rawDataType}
+                            responseStatus={eachTab.responseStatus}
+                            responseStatusText={eachTab.responseStatusText}
+                            responseHeaders={eachTab.responseHeaders}
+                            responseBody={eachTab.responseBody}
+                            recordedResponseHeaders={eachTab.recordedResponseHeaders}
+                            recordedResponseBody={eachTab.recordedResponseBody}
+                            responseBodyType={eachTab.responseBodyType}
+                            outgoingRequests={eachTab.outgoingRequests}
+                            showSaveBtn={eachTab.showSaveBtn}
+                            showCompleteDiff={eachTab.showCompleteDiff}
+                            service={eachTab.service}
+                            diffLayoutData={eachTab.diffLayoutData} */
 
-                        addOrRemoveParam={this.addOrRemoveParam} 
-                        updateParam={this.updateParam}
-                        updateAllParams={this.updateAllParams}
-                        updateBodyOrRawDataType={this.updateBodyOrRawDataType}
-                        driveRequest={this.driveRequest}
-                        getReqResFromTabData={this.getReqResFromTabData.bind(this)}
-                        handleRowClick={this.handleRowClick}
-                        handleTestRowClick={this.handleTestRowClick}
-                        setAsReference={this.setAsReference}
-                        cubeRunHistory={cubeRunHistory}
-                        showAddMockReqModal={this.showAddMockReqModal}
-                        handleDuplicateTab={this.handleDuplicateTab}
-                        toggleShowTrace={this.toggleShowTrace}
-                        updateAbortRequest={this.updateAbortRequest}
-                        >
-                        </HttpClient>
+                            addOrRemoveParam={this.addOrRemoveParam} 
+                            updateParam={this.updateParam}
+                            updateAllParams={this.updateAllParams}
+                            updateBodyOrRawDataType={this.updateBodyOrRawDataType}
+                            driveRequest={this.driveRequest}
+                            getReqResFromTabData={this.getReqResFromTabData.bind(this)}
+                            handleRowClick={this.handleRowClick}
+                            handleTestRowClick={this.handleTestRowClick}
+                            setAsReference={this.setAsReference}
+                            cubeRunHistory={cubeRunHistory}
+                            showAddMockReqModal={this.showAddMockReqModal}
+                            handleDuplicateTab={this.handleDuplicateTab}
+                            toggleShowTrace={this.toggleShowTrace}
+                            updateAbortRequest={this.updateAbortRequest}
+                        />
                     </div>
                 )
             },

@@ -19,6 +19,7 @@ import {
 import { AbortRequest } from "./abortRequest";
 import SaveToCollection from './SaveToCollection';
 import SplitSlider from "../../components/SplitSlider.tsx";
+import EditableLabel from "./EditableLabel";
 import {hasTabDataChanged} from "../../utils/http_client/utils"
 import Tippy from "@tippy.js/react";
 
@@ -108,7 +109,7 @@ class HttpClient extends Component {
             }
         }
         return newState;
-      }
+    }
     
 
     preProcessResults = (results) => {
@@ -135,6 +136,16 @@ class HttpClient extends Component {
                 }
             }
         });
+    }
+
+    handleEditServiceNameComplete = (updatedServiceName) => {
+        const { currentSelectedTab: { id: tabId, eventData }, updateParam, isOutgoingRequest } = this.props;
+        const eventsWithUpdatedServiceName = eventData.map(event => event.service = updatedServiceName);
+
+        // Update service name on top level
+        updateParam(isOutgoingRequest, tabId, "service", "service", updatedServiceName);
+        // Update service name in event objects
+        updateParam(isOutgoingRequest, tabId, "eventData", "eventData", eventsWithUpdatedServiceName);
     }
 
     handleShowDiff() {
@@ -507,12 +518,12 @@ class HttpClient extends Component {
                                 </thead>
                                 <tbody>
                                     <tr style={{cursor: "pointer", backgroundColor: selectedTraceTableReqTab.id === currentSelectedTab.id ? "#ccc" : "#fff"}} onClick={() => this.handleRowClick(false, currentSelectedTab.id)}>
-                                        <td>
+                                        <td style={{ display: "inline-flex", width: "100%" }}>
                                             <span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>
                                             <span>
                                                 <i className="far fa-minus-square" style={{fontSize: "12px", marginRight: "12px", cursor: "pointer"}}></i>
                                             </span>
-                                            {service}
+                                            <EditableLabel label={service} handleEditComplete={this.handleEditServiceNameComplete} />
                                         </td>
                                         <td>{httpURLShowOnly}</td>
                                         <td>
