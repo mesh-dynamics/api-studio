@@ -48,6 +48,8 @@ export const httpClientActions = {
         return {type: httpClientConstants.UPDATE_BODY_OR_RAWA_DATA_TYPE_IN_TAB, data: {tabId, type, value}};
     },
 
+    unsetHasChangedAll: (tabId) => ({type: httpClientConstants.UNSET_HAS_CHANGED_ALL, data: {tabId}}),
+
     preDriveRequest: (tabId, responseStatus, showCompleteDiff) => {
         return {type: httpClientConstants.PRE_DRIVE_REQUEST, data: {tabId, responseStatus, showCompleteDiff}}; 
     },
@@ -565,6 +567,12 @@ export const httpClientActions = {
         } catch (e) {
             dispatch(httpClientActions.setMockConfigStatusText(e.response.data.message, true))
         }
+    },
+
+    setMockContextLookupCollection: (lookupCollection) => (dispatch) => { 
+        dispatch({type: httpClientConstants.SET_MOCK_CONTEXT_LOOKUP_COLLECTION, data: lookupCollection})
+        // update proxy context
+        setDefaultMockContext(lookupCollection)
     },
 
     updateAbortRequest: (tabId, abortRequest) => {

@@ -1,6 +1,6 @@
 import React, { Component, Fragment } from 'react'
 import { connect } from "react-redux";
-import { Modal,Grid, Row, Col, Checkbox} from 'react-bootstrap';
+import { Modal, Grid, Row, Col, Checkbox, Tabs, Tab, FormGroup, FormControl, ControlLabel, Form} from 'react-bootstrap';
 import { httpClientActions } from '../../actions/httpClientActions';
 import _ from "lodash";
 
@@ -160,6 +160,141 @@ class MockConfigs extends Component {
         this.showMockConfigList(true)
     }
 
+    handleMockContextLookupCollectionChange = (e) => {
+        const {dispatch} = this.props;
+        dispatch(httpClientActions.setMockContextLookupCollection(e.target.value))
+    }
+
+    renderMockContextConfig = () => {
+        const {httpClient: {mockContextLookupCollection, userCollections}} = this.props;
+        return <div className="margin-top-10">
+            <Grid>
+                <Row>            
+                    <Col xs={2}> <label style={{marginTop: "8px"}}>Lookup collection</label> </Col>
+                    <Col xs={6}> 
+                        <FormControl
+                            componentClass="select"
+                            placeholder="Collection"
+                            style={{ fontSize: "12px" }}
+                            value={mockContextLookupCollection}
+                            onChange={this.handleMockContextLookupCollectionChange}
+                            className="btn-sm"
+                        >
+                        <option value="">History</option>
+                        {
+                            userCollections.length && userCollections.map((collection) => (
+                            <option key={collection.collec} value={collection.collec}>
+                                {collection.name}
+                            </option>
+                            ))
+                        }
+                        </FormControl>
+                    </Col>
+                </Row>
+            </Grid>
+        </div>
+    }
+
+    renderMockConfig = () => {
+        const {selectedEditMockConfig, addNew} = this.state;
+        const {httpClient: {
+            mockConfigList, showMockConfigList
+        }} = this.props;
+        return (<>
+            <div className="margin-top-10">
+                {showMockConfigList && <div>
+                    <label>Configurations</label>
+                    <table className="table table-hover">
+                        <tbody>
+                            {mockConfigList.map((mockConfig, index) => (
+                                <tr key={index}>
+                                    <td style={{cursor: "pointer"}} onClick={() => this.handleMockConfigRowClick(index)}>
+                                        {mockConfig.key}
+                                    </td>
+                                    <td style={{width: "10%", textAlign: "right"}}>
+                                        <i className="fas fa-trash pointer" onClick={() => this.handleRemoveMockConfig(index)}/>
+                                    </td>
+                                </tr>)
+                            )}
+                            <tr>
+                                <td onClick={this.handleAddNewMockConfig} className="pointer">
+                                    <i className="fas fa-plus" style={{marginRight: "5px"}}></i><span>Add New Configuration</span>
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>}
+
+                {!showMockConfigList && <>
+                    <div style={{display: "flex", justifyContent: "space-between", marginBottom: "10px"}}>
+                        <div>
+                            <span className="cube-btn" onClick={this.handleBackMockConfig}>
+                                <i className="fa fa-arrow-circle-left"></i>
+                                &nbsp;BACK
+                            </span>
+                        </div>
+                        <div className="pull-right">
+                            {addNew ? <span className="cube-btn" onClick={this.handleSaveMockConfig}><i className="fa fa-save"></i>&nbsp;SAVE</span>
+                                    : <span className="cube-btn" onClick={this.handleUpdateMockConfig}><i className="fa fa-save"></i>&nbsp;UPDATE</span>
+                            }
+                        </div>
+                    </div>
+                    <Grid>
+                        <Row>
+                            <Col xs={2}>
+                                <label style={{ marginTop: "8px" }}>Configuration Name: </label>
+                            </Col>
+                            <Col xs={6}>
+                                <input value={selectedEditMockConfig["name"]} onChange={this.handleSelectedMockConfigNameChange} className="form-control"/>
+                            </Col>  
+                        </Row>
+                        
+                        <Row className="show-grid margin-top-15">
+                            <Col xs={5}>
+                                <b>Service</b>
+                            </Col>
+                            <Col xs={1}>
+                                <b>Mock</b>
+                            </Col>
+                            <Col xs={5}>
+                                <b>Target URL</b>
+                            </Col>
+                            <Col xs={1}></Col>
+                        </Row>
+                        {(selectedEditMockConfig.serviceConfigs || [])
+                            .map(({service, url, isMocked}, index) => (
+                                    <Row className="show-grid margin-top-10" key={index}>
+                                        <Col xs={5}>
+                                            <input value={service} onChange={(e) => this.handleServiceChange(e, index)} className="form-control"/>
+                                        </Col>
+                                        <Col xs={1} style={{}}>
+                                            <Checkbox inline checked={isMocked} onChange={() => this.handleIsMockedCheckChange(index)}/>
+                                        </Col>
+                                        <Col xs={5}>
+                                            <input value={url} onChange={(e) => this.handleTargetURLChange(e, index)} className="form-control" disabled={isMocked}/>
+                                        </Col>
+                                        <Col xs={1}>
+                                            <span  onClick={() => this.handleRemoveServiceConfig(index)}>
+                                                <i className="fas fa-times pointer"/>
+                                            </span>
+                                        </Col>
+                                    </Row>
+                            )
+                        )}                                    
+                        <Row className="show-grid margin-top-15">
+                            <Col xs={3}>
+                                <div onClick={this.handleAddNewServiceConfig} className="pointer btn btn-sm cube-btn text-center">
+                                    <i className="fas fa-plus-circle" style={{marginRight: "5px"}}></i><span>Add New Service</span>
+                                </div>
+                            </Col>
+                        </Row>
+                    </Grid>
+                </>}
+            </div>
+        </>)
+    }
+  
     render() {
         const {selectedEditMockConfig, addNew} = this.state;
         const {httpClient: {
@@ -168,95 +303,26 @@ class MockConfigs extends Component {
         return (
             <Fragment>
                 <Modal.Header closeButton>
-                    Mock Configurations
+                    Proxy Settings
                 </Modal.Header>
                 <Modal.Body>
                     <div style={{height: "400px", overflowY: "scroll"}}>
-                        
-                        {showMockConfigList && <div>
-                            <label>Configurations</label>
-                            <table className="table table-hover">
-                                <tbody>
-                                    {mockConfigList.map((mockConfig, index) => (
-                                        <tr key={index}>
-                                            <td style={{cursor: "pointer"}} onClick={() => this.handleMockConfigRowClick(index)}>
-                                                {mockConfig.key}
-                                            </td>
-                                            <td style={{width: "10%", textAlign: "right"}}>
-                                                <i className="fas fa-trash pointer" onClick={() => this.handleRemoveMockConfig(index)}/>
-                                            </td>
-                                        </tr>)
-                                    )}
-                                    <tr>
-                                        <td onClick={this.handleAddNewMockConfig} className="pointer">
-                                            <i className="fas fa-plus" style={{marginRight: "5px"}}></i><span>Add New Configuration</span>
-                                        </td>
-                                        <td></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>}
-
-                        {!showMockConfigList && 
-                        <Grid>
-                            <Row>
-                                <Col xs={2}>
-                                    <label style={{ marginTop: "8px" }}>Configuration Name: </label>
-                                </Col>
-                                <Col xs={6}>
-                                    <input value={selectedEditMockConfig["name"]} onChange={this.handleSelectedMockConfigNameChange} className="form-control"/>
-                                </Col>  
-                            </Row>
-                            
-                                <Row className="show-grid margin-top-15">
-                                    <Col xs={5}>
-                                        <b>Service</b>
-                                    </Col>
-                                    <Col xs={1}>
-                                        <b>Mock</b>
-                                    </Col>
-                                    <Col xs={5}>
-                                        <b>Target URL</b>
-                                    </Col>
-                                    <Col xs={1}></Col>
-                                </Row>
-                                {(selectedEditMockConfig.serviceConfigs || [])
-                                    .map(({service, url, isMocked}, index) => (
-                                            <Row className="show-grid margin-top-10" key={index}>
-                                                <Col xs={5}>
-                                                    <input value={service} onChange={(e) => this.handleServiceChange(e, index)} className="form-control"/>
-                                                </Col>
-                                                <Col xs={1} style={{marginTop: "5px"}}>
-                                                    <Checkbox inline checked={isMocked} onChange={() => this.handleIsMockedCheckChange(index)}/>
-                                                </Col>
-                                                <Col xs={5}>
-                                                    <input value={url} onChange={(e) => this.handleTargetURLChange(e, index)} className="form-control" disabled={isMocked}/>
-                                                </Col>
-                                                <Col xs={1}>
-                                                    <span  onClick={() => this.handleRemoveServiceConfig(index)}>
-                                                        <i className="fas fa-times pointer"/>
-                                                    </span>
-                                                </Col>
-                                            </Row>
-                                    )
-                                )}                                    
-                                <Row className="show-grid margin-top-15">
-                                    <Col xs={3}>
-                                        <div onClick={this.handleAddNewServiceConfig} className="pointer btn btn-sm cube-btn text-center">
-                                            <i className="fas fa-plus" style={{marginRight: "5px"}}></i><span>Add New Service</span>
-                                        </div>
-                                    </Col>
-                                </Row>
-                        </Grid>
-                        }
+                        <Tabs defaultActiveKey={0}>
+                            <Tab eventKey={0} title="Service Configurations">
+                                {this.renderMockConfig()}
+                            </Tab>
+                            <Tab eventKey={1} title="Mock Settings">
+                                {this.renderMockContextConfig()}
+                            </Tab>
+                        </Tabs>
                     </div>
                 </Modal.Body>
                 <Modal.Footer>
                     <span className="pull-left" style={{color: mockConfigStatusIsError ? "red" : ""}}>{mockConfigStatusText}</span>
-                    {showMockConfigList && <span className="cube-btn margin-left-15" onClick={this.props.hideModal}>DONE</span>}
-                    {!showMockConfigList && <span className="cube-btn margin-left-15" onClick={this.handleBackMockConfig}>BACK</span>}
-                    {!showMockConfigList && addNew && <span className="cube-btn margin-left-15" onClick={this.handleSaveMockConfig}>SAVE</span>}
-                    {!showMockConfigList && !addNew && <span className="cube-btn margin-left-15" onClick={this.handleUpdateMockConfig}>UPDATE</span>}
+                    <span className="cube-btn margin-left-15" onClick={this.props.hideModal}>DONE</span>
+                    {/* {!showMockConfigList && <span className="cube-btn margin-left-15" onClick={this.handleBackMockConfig}>BACK</span>} */}
+                    {/* {!showMockConfigList && addNew && <span className="cube-btn margin-left-15" onClick={this.handleSaveMockConfig}>SAVE</span>}
+                    {!showMockConfigList && !addNew && <span className="cube-btn margin-left-15" onClick={this.handleUpdateMockConfig}>UPDATE</span>} */}
                 </Modal.Footer>
             </Fragment>
         )

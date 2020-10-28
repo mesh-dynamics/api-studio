@@ -12,6 +12,7 @@
     text-align: center;
     padding: 10px !important;
     display: inline-block;
+    min-height: 380px;
 }
 .q-links {
     position: absolute;

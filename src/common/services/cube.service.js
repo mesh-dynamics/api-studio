@@ -233,7 +233,7 @@ const fetchFacetData = async (replayId) => {
 
 const removeReplay = async (replayId) => {
     try {
-        return await api.post(`${config.replayBaseUrl}/softDelete/${replayId}`);
+        return await api.post(`${config.replayBaseUrl}/delete/${replayId}`);
     } catch(error) {
         console.log("Error deleting replay\n", error);
         throw error;
@@ -334,7 +334,7 @@ const unifiedGoldenUpdate = async (data) => {
 
 const deleteGolden = async (recordingId) => {
     try {
-        return await api.post(`${config.recordBaseUrl}/softDelete/${recordingId}`);
+        return await api.post(`${config.recordBaseUrl}/delete/${recordingId}`);
     } catch (error) {
         console.log("Error deleting Golden \n", error);
         throw error;

@@ -16,6 +16,7 @@ const initialState = {
 
     apiTrace: {},
     apiTraceLoading: false,
+    goldenCollectionLoading: false,
 
     selectedSource: "",
     selectedCollection: "",
@@ -124,10 +125,18 @@ export const apiCatalog = (state = initialState, { type, data }) => {
             }
         }
 
+        case apiCatalogConstants.FETCHING_GOLDEN_LIST: {
+            return {
+                ...state,
+                goldenCollectionLoading: true,
+            }
+        }
+
         case apiCatalogConstants.UPDATE_COLLECTION_LIST: {
             return {
                 ...state,
                 collectionList: data,
+                goldenCollectionLoading: false,
             }
         }
 
@@ -135,6 +144,14 @@ export const apiCatalog = (state = initialState, { type, data }) => {
             return {
                 ...state,
                 goldenList: data,
+                goldenCollectionLoading: false,
+            }
+        }
+
+        case apiCatalogConstants.GOLDEN_LIST_FETCH_COMPLETE: {
+            return {
+                ...state,
+                goldenCollectionLoading: false,
             }
         }
 

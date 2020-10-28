@@ -2,12 +2,12 @@ import { generateRunId } from "../utils/http_client/utils";
 import { ipcRenderer } from "./ipc-renderer";
 import { store } from "../../common/helpers"
 
-const setDefaultMockContext = () => {
+const setDefaultMockContext = (lookupCollection) => {
   console.log("Setting default mock context...");
 
   if (PLATFORM_ELECTRON) {
     const {
-      httpClient: { userHistoryCollection },
+      httpClient: { userHistoryCollection, mockContextLookupCollection },
       cube: { selectedApp },
       authentication: { user: { customer_name: customerId } }
     } = store.getState();
@@ -20,7 +20,7 @@ const setDefaultMockContext = () => {
     const runId = generateRunId();
     const mockContext = {
       collectionId: userHistoryCollection.collec, // where to store the mocked/live captured requests (new/existing collection) [mockWithRunId]
-      recordingCollectionId: userHistoryCollection.collec, // configurable for preferred collection or all collections or history (default)
+      recordingCollectionId: lookupCollection || (mockContextLookupCollection || userHistoryCollection.collec), // configurable for preferred collection or all collections or history (default)
       recordingId: userHistoryCollection.id, // where to store the mocked/live captured requests (new/existing collection) [storeReqResp]
       traceId: "NA",
       selectedApp, // selected app from the app list

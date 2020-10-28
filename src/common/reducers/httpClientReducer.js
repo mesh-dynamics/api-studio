@@ -146,7 +146,9 @@ const initialState = {
         numResults:10,
         count:0
     },
-    isCollectionLoading: false
+    isCollectionLoading: false,
+    mockContextLookupCollection: "",
+    
 }
 
 const getTabIndexGivenTabId = (tabId, tabs) => {
@@ -166,6 +168,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                         eachTab.outgoingRequests.map((eachOutgoingTab) => {
                             if (eachOutgoingTab.id === data.tabId) {
                                 eachOutgoingTab[data.type] = eachOutgoingTab[data.type].filter((e) => e.id !== data.id);
+                                eachOutgoingTab.hasChanged = true;
                             }
                         })
                     }
@@ -204,6 +207,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab[data.type] = eachTab[data.type].filter((e) => e.id !== data.id);
+                        eachTab.hasChanged = true;
                     }
                     return eachTab; 
                 })
@@ -250,6 +254,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                             if (eachOutgoingTab.id === data.tabId) {
                                 eachOutgoingTab[data.type] = params;
                                 if(data.type === "httpURL") eachOutgoingTab.tabName = params;
+                                eachOutgoingTab.hasChanged = true;
                             }
                         })
                     }
@@ -278,6 +283,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                     if (eachTab.id === data.tabId) {
                         eachTab[data.type] = params;
                         if(data.type === "httpURL") eachTab.tabName = params;
+                        eachTab.hasChanged = true;
                     }
                     return eachTab; 
                 })
@@ -302,6 +308,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                             if (eachOutgoingTab.id === data.tabId) {
                                 eachOutgoingTab[data.type] = params;
                                 if(data.type === "httpURL") eachOutgoingTab.tabName = params;
+                                eachOutgoingTab.hasChanged = true;
                             }
                         })
                     }
@@ -327,6 +334,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                     if (eachTab.id === data.tabId) {
                         eachTab[data.type] = params;
                         if(data.type === "httpURL") eachTab.tabName = params;
+                        eachTab.hasChanged = true;
                     }
                     return eachTab; 
                 })
@@ -342,6 +350,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                         eachTab.outgoingRequests.map((eachOutgoingTab) => {
                             if (eachOutgoingTab.id === data.tabId) {
                                 eachOutgoingTab[data.type] = data.value;
+                                eachOutgoingTab.hasChanged = true;
                             }
                         })
                     }
@@ -358,12 +367,29 @@ export const httpClient = (state = initialState, { type, data }) => {
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab[data.type] = data.value;
+                        eachTab.hasChanged = true;
                     }
                     return eachTab; 
                 })
             }
         }
 
+        case httpClientConstants.UNSET_HAS_CHANGED_ALL: {
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab.hasChanged = false;
+                        eachTab.outgoingRequests.map((eachOutgoingTab) => {
+                            eachOutgoingTab.hasChanged = false;
+                        })
+                    }
+                    return eachTab; 
+                })
+            }
+
+        }
         case httpClientConstants.PRE_DRIVE_REQUEST: {
             let {tabs} = state;
             return {
@@ -768,8 +794,16 @@ export const httpClient = (state = initialState, { type, data }) => {
                 selectedMockConfig: data,
             }
         }
+        
         case httpClientConstants.RESET_HTTP_CLIENT_TO_INITIAL_STATE: {
             return initialState;
+        }
+
+        case httpClientConstants.SET_MOCK_CONTEXT_LOOKUP_COLLECTION: {
+            return {
+                ...state,
+                mockContextLookupCollection: data, // empty -> History
+            }
         }
 
         case httpClientConstants.UPDATE_ABORT_REQUEST: {
