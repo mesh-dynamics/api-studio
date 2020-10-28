@@ -146,7 +146,9 @@ const initialState = {
         numResults:10,
         count:0
     },
-    isCollectionLoading: false
+    isCollectionLoading: false,
+    mockContextLookupCollection: "",
+    
 }
 
 const getTabIndexGivenTabId = (tabId, tabs) => {
@@ -792,8 +794,16 @@ export const httpClient = (state = initialState, { type, data }) => {
                 selectedMockConfig: data,
             }
         }
+        
         case httpClientConstants.RESET_HTTP_CLIENT_TO_INITIAL_STATE: {
             return initialState;
+        }
+
+        case httpClientConstants.SET_MOCK_CONTEXT_LOOKUP_COLLECTION: {
+            return {
+                ...state,
+                mockContextLookupCollection: data, // empty -> History
+            }
         }
 
         case httpClientConstants.UPDATE_ABORT_REQUEST: {

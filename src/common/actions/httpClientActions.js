@@ -569,6 +569,12 @@ export const httpClientActions = {
         }
     },
 
+    setMockContextLookupCollection: (lookupCollection) => (dispatch) => { 
+        dispatch({type: httpClientConstants.SET_MOCK_CONTEXT_LOOKUP_COLLECTION, data: lookupCollection})
+        // update proxy context
+        setDefaultMockContext(lookupCollection)
+    },
+
     updateAbortRequest: (tabId, abortRequest) => {
         return {type: httpClientConstants.UPDATE_ABORT_REQUEST, data: {tabId, abortRequest}};
     },
