@@ -10,9 +10,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,15 +29,15 @@ public class MockServiceCollectionController {
   public ResponseEntity mockWithCollection(HttpServletRequest request, @RequestBody Optional<String> body,
       @PathVariable String replayCollection, @PathVariable String recordCollection,
       @PathVariable String customerId, @PathVariable String app,
-      @PathVariable String traceId, @PathVariable String service) {
-    validation.validateCustomerName(request,customerId);
+      @PathVariable String traceId, @PathVariable String service, Authentication authentication) {
+    validation.validateCustomerName(authentication,customerId);
     String query =  String.format("customerId=%s&app=%s&collection=%s", customerId, app, recordCollection);
     Optional<Recording> recording = cubeServerService.searchRecording(query);
     if(recording.isEmpty())
       return ResponseEntity.status(HttpStatus.NOT_FOUND)
           .body(String.format("There is no Recording Object for customerId=%s, app=%s, collection=%s",
               customerId, app,  recordCollection));
-    validation.validateCustomerName(request,recording.get().customerId);
+    validation.validateCustomerName(authentication,recording.get().customerId);
 
     String path = getPath(request.getRequestURI(), replayCollection, recordCollection, customerId, app, recording.get().id);
     path = cubeServerService.getPathForHttpMethod(path , request.getMethod()  , traceId, service);
@@ -51,15 +50,15 @@ public class MockServiceCollectionController {
   public ResponseEntity mockWithRunId(HttpServletRequest request, @RequestBody Optional<String> body,
       @PathVariable String replayCollection, @PathVariable String recordCollection,
       @PathVariable String customerId, @PathVariable String app,
-      @PathVariable String traceId, @PathVariable String service, @PathVariable String runId) {
-    validation.validateCustomerName(request,customerId);
+      @PathVariable String traceId, @PathVariable String service, @PathVariable String runId, Authentication authentication) {
+    validation.validateCustomerName(authentication,customerId);
     String query =  String.format("customerId=%s&app=%s&collection=%s", customerId, app, recordCollection);
     Optional<Recording> recording = cubeServerService.searchRecording(query);
     if(recording.isEmpty())
       return ResponseEntity.status(HttpStatus.NOT_FOUND)
           .body(String.format("There is no Recording Object for customerId=%s, app=%s, collection=%s",
               customerId, app,  recordCollection));
-    validation.validateCustomerName(request,recording.get().customerId);
+    validation.validateCustomerName(authentication,recording.get().customerId);
 
     String path = getPathForMockWithRunId(request.getRequestURI(), replayCollection, recordCollection, customerId, app, recording.get().id);
     path = cubeServerService.getPathForHttpMethod(path , request.getMethod() , traceId, runId, service );
