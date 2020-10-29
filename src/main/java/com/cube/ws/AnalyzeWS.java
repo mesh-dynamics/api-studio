@@ -1099,7 +1099,7 @@ public class AnalyzeWS {
                 .withStatus(RecordingStatus.Completed).withTemplateSetVersion(updatedTemplateSet.version)
 	            .withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
                 .withName(name).withLabel(label).withTags(tags).withCollectionUpdateOpSetId(collectionUpdateOpSetId)
-	            .withTemplateUpdateOpSetId(templateUpdOpSetId).withUserId(userId).withRecordingType(originalRec.recordingType);
+	            .withTemplateUpdateOpSetId(templateUpdOpSetId).withUserId(userId).withRecordingType(originalRec.recordingType).withRunId(originalRec.runId);
             codeVersion.ifPresent(recordingBuilder::withCodeVersion);
             branch.ifPresent(recordingBuilder::withBranch);
             gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
@@ -1143,7 +1143,7 @@ public class AnalyzeWS {
 	            .withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateSet.version)
 	            .withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
 	            .withName(originalRec.name).withLabel(originalRec.label).withTags(originalRec.tags).withArchived(originalRec.archived)
-	            .withUserId(originalRec.userId).withRecordingType(originalRec.recordingType);
+	            .withUserId(originalRec.userId).withRecordingType(originalRec.recordingType).withRunId(originalRec.runId);
 	        originalRec.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
 	        originalRec.branch.ifPresent(recordingBuilder::withBranch);
 	        originalRec.gitCommitId.ifPresent(recordingBuilder::withGitCommitId);

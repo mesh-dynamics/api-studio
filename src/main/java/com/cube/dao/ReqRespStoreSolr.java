@@ -3118,6 +3118,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<RecordingType> recordingType = getStrField(doc, RECORDING_TYPE_F)
             .flatMap(r -> Utils.valueOf(RecordingType.class, r));
         Optional<String> dynamicInjectionConfigVersion = getStrField(doc , DYNAMIC_INJECTION_CONFIG_VERSIONF);
+        Optional<String> runId = getStrField(doc , RUNIDF);
 
         if (id.isPresent() && customerId.isPresent() && app.isPresent() && instanceId.isPresent() && collection
             .isPresent() &&
@@ -3141,6 +3142,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             label.ifPresent(recordingBuilder::withLabel);
             recordingType.ifPresent(recordingBuilder::withRecordingType);
             dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
+            runId.ifPresent(recordingBuilder::withRunId);
 
             try {
                 generatedClassJarPath.ifPresent(
@@ -3187,6 +3189,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(GOLDEN_LABELF, recording.label);
         doc.setField(USERIDF, recording.userId);
         doc.setField(RECORDING_TYPE_F, recording.recordingType.toString());
+        doc.setField(RUNIDF, recording.runId);
         recording.parentRecordingId.ifPresent(parentRecId -> doc.setField(PARENT_RECORDING_IDF, parentRecId));
         recording.generatedClassJarPath.ifPresent(jarPath -> doc.setField(GENERATED_CLASS_JAR_PATH, jarPath));
         recording.updateTimestamp.ifPresent(timestamp -> doc.setField(TIMESTAMPF , timestamp.toString()));

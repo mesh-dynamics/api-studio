@@ -238,9 +238,8 @@ public class StoreUtils {
 			throw new CubeStoreException(null, "No current record/replay!", event);
 		}
 		event.setRecordingType(recordOrReplay.get().getRecordingType());
-		Optional<Replay> currentRunningReplay = recordOrReplay.flatMap(runningRecordOrReplay -> runningRecordOrReplay.replay);
-		currentRunningReplay.ifPresent(replay -> {
-			event.setRunId(replay.runId);
+		recordOrReplay.get().getRunId().ifPresent(runId -> {
+			event.setRunId(runId);
 		});
 
 		event.setRunType(recordOrReplay.get().getRunType());
