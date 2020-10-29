@@ -396,10 +396,11 @@ public class RealAnalyzer implements Analyzer {
 
             Analysis analysis = new Analysis(replayId, result.getRight().intValue(), templateVersionToUse);
 
+            rrstore.deleteAllAnalysisData(List.of(r.replayId));
+
             if (!rrstore.saveAnalysis(analysis)) {
                 return Optional.empty();
             }
-            rrstore.deleteAllAnalysisData(List.of(r.replayId));
 
             analyzeWithEvent(rrstore, result.getLeft(), r, templateVersionToUse, analysis);
 
