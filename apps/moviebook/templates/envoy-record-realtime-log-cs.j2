@@ -78,7 +78,7 @@ spec:
                 end
                 function logToCubeBackend(handle, data)
                   -- handle:logErr(data)
-                  local logMessage = '{ "logMessage" : "' .. esc_str_opt(data) .. '"}'
+                  local logMessage = '{ "customerId" : "{{customer}}" , "app" : "{{cube_application}}" , "instanceId" : "{{cube_instanceid}}" , "logMessage" : "' .. esc_str_opt(data) .. '"}'
                   local hhdr, hbody = handle:httpCall(
                     "outbound|8080||cubews-record.staging.svc.cluster.local",
                     {
