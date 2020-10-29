@@ -130,6 +130,16 @@ public class RecordOrReplay {
 			.orElse(getRecordingCollection().orElse("N/A"));
 	}
 
+	@JsonIgnore
+	public Optional<String> getRunId() {
+		Optional<String> ret = replay.map(replay -> replay.runId);
+		if (ret.isPresent()) {
+			return ret;
+		} else {
+			return recording.map(recording -> recording.runId);
+		}
+	}
+
 	@JsonProperty("recording")
 	public final Optional<Recording> recording;
 	@JsonProperty("replay")
