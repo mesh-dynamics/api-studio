@@ -572,7 +572,13 @@ export const httpClientActions = {
     setMockContextLookupCollection: (lookupCollection) => (dispatch) => { 
         dispatch({type: httpClientConstants.SET_MOCK_CONTEXT_LOOKUP_COLLECTION, data: lookupCollection})
         // update proxy context
-        setDefaultMockContext(lookupCollection)
+        setDefaultMockContext({lookupCollection})
+    },
+
+    setMockContextSaveToCollection: (saveToCollection) => (dispatch) => { 
+        dispatch({type: httpClientConstants.SET_MOCK_CONTEXT_SAVE_TO_COLLECTION, data: saveToCollection})
+        // update proxy context
+        setDefaultMockContext({saveToCollection})
     },
 
     updateAbortRequest: (tabId, abortRequest) => {

@@ -1050,7 +1050,7 @@ class HttpClientTabs extends Component {
     }
 
     async driveRequest(isOutgoingRequest, tabId) {
-        const {httpClient: {tabs, selectedTabKey, userHistoryCollection, mockConfigList, selectedMockConfig, mockContextLookupCollection }} = this.props;
+        const {httpClient: {tabs, selectedTabKey, userHistoryCollection, mockConfigList, selectedMockConfig, mockContextLookupCollection, mockContextSaveToCollection }} = this.props;
         const { cube: { selectedApp }, user } = this.props;
         const { dispatch } = this.props;
         const userId = user.username;
@@ -1070,7 +1070,7 @@ class HttpClientTabs extends Component {
                 collectionId: userHistoryCollection.collec,
                 // recordingId: this.state.tabs[tabIndex].recordingIdAddedFromClient,
                 recordingCollectionId: tabs[tabIndex].collectionIdAddedFromClient || (mockContextLookupCollection || userHistoryCollection.collec),
-                recordingId: userHistoryCollection.id,
+                recordingId: mockContextSaveToCollection || userHistoryCollection.id,
                 traceId: tabs[tabIndex].traceIdAddedFromClient,
                 selectedApp,
                 customerName: customerId,

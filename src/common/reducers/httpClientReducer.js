@@ -148,6 +148,7 @@ const initialState = {
     },
     isCollectionLoading: false,
     mockContextLookupCollection: "",
+    mockContextSaveToCollection: "",
     
 }
 
@@ -803,6 +804,13 @@ export const httpClient = (state = initialState, { type, data }) => {
             return {
                 ...state,
                 mockContextLookupCollection: data, // empty -> History
+            }
+        }
+
+        case httpClientConstants.SET_MOCK_CONTEXT_SAVE_TO_COLLECTION: {
+            return {
+                ...state,
+                mockContextSaveToCollection: data, // empty -> History
             }
         }
 

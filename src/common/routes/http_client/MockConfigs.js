@@ -164,9 +164,13 @@ class MockConfigs extends Component {
         const {dispatch} = this.props;
         dispatch(httpClientActions.setMockContextLookupCollection(e.target.value))
     }
+    handleMockContextSaveToCollectionChange = (e) => {
+        const {dispatch} = this.props;
+        dispatch(httpClientActions.setMockContextSaveToCollection(e.target.value))
+    }
 
     renderMockContextConfig = () => {
-        const {httpClient: {mockContextLookupCollection, userCollections}} = this.props;
+        const {httpClient: {mockContextLookupCollection,mockContextSaveToCollection, userCollections}} = this.props;
         return <div className="margin-top-10">
             <Grid>
                 <Row>            
@@ -184,6 +188,28 @@ class MockConfigs extends Component {
                         {
                             userCollections.length && userCollections.map((collection) => (
                             <option key={collection.collec} value={collection.collec}>
+                                {collection.name}
+                            </option>
+                            ))
+                        }
+                        </FormControl>
+                    </Col>
+                </Row>    
+                <Row style={{marginTop: "10px"}}>       
+                    <Col xs={2}> <label style={{marginTop: "8px"}}>Save to collection</label> </Col>
+                    <Col xs={6}> 
+                        <FormControl
+                            componentClass="select"
+                            placeholder="User Collection"
+                            style={{ fontSize: "12px" }}
+                            value={mockContextSaveToCollection}
+                            onChange={this.handleMockContextSaveToCollectionChange}
+                            className="btn-sm"
+                        >
+                        <option value="">Select Collection</option>
+                        {
+                            userCollections.length && userCollections.map((collection) => (
+                            <option key={collection.id} value={collection.id}>
                                 {collection.name}
                             </option>
                             ))
@@ -306,8 +332,8 @@ class MockConfigs extends Component {
                     Proxy Settings
                 </Modal.Header>
                 <Modal.Body>
-                    <div style={{height: "400px", overflowY: "scroll"}}>
-                        <Tabs defaultActiveKey={0}>
+                    <div style={{height: "400px", overflowY: "auto"}}>
+                        <Tabs defaultActiveKey={0} id="proxyDialogBoxTabs">
                             <Tab eventKey={0} title="Service Configurations">
                                 {this.renderMockConfig()}
                             </Tab>
