@@ -1712,22 +1712,25 @@ public class CubeStore {
                 dynamicInjectionEventDao.getContextMap());
             dynamicInjector.inject(requestEvent);
             Optional<Recording> optionalRecording = rrstore.getRecording(recordingOrReplayId);
-            if(optionalRecording.isPresent()) {
-                Recording recording = optionalRecording.get();
+            Optional<String> recordOrReplayRunId = optionalRecording.map(recording -> {
                 recording.runId = runId;
                 rrstore.saveRecording(recording);
-            } else {
+                return recording.runId;
+            }).or(() -> {
                 Optional<Replay> optionalReplay = rrstore.getReplay(recordingOrReplayId);
-                if (optionalReplay.isEmpty()) {
-                    LOGGER.error("No replay found for the replayId=" + recordingOrReplayId);
-                    return Response.status(Status.BAD_REQUEST)
-                        .entity(Utils.buildErrorResponse(Status.BAD_REQUEST.toString(),
-                            Constants.MESSAGE, "No replay found for the replayId=" + recordingOrReplayId))
-                        .build();
-                }
-                Replay replay = optionalReplay.get();
-                replay.runId = runId;
-                rrstore.saveReplay(replay);
+                return optionalReplay.map(replay -> {
+                    replay.runId = runId;
+                    rrstore.saveReplay(replay);
+                    return replay.replayId;
+                }).or(() -> Optional.empty());
+            });
+            if(recordOrReplayRunId.isEmpty()) {
+                LOGGER.error("No record or replay found for the id=" + recordingOrReplayId);
+                return Response.status(Status.BAD_REQUEST)
+                    .entity(Utils.buildErrorResponse(Status.BAD_REQUEST.toString(),
+                        Constants.MESSAGE, "No record or replay found for the id=" + recordingOrReplayId))
+                    .build();
+
             }
             return  Response.ok(requestEvent , MediaType.APPLICATION_JSON).build();
         } catch (InvalidEventException e) {
