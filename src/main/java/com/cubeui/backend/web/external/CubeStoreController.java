@@ -243,8 +243,8 @@ public class CubeStoreController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @PostMapping("/storeUserReqResp/{recordingId}")
-    public ResponseEntity storeUserReqResp(HttpServletRequest request,
+    @PostMapping("/afterResponse/{recordingId}")
+    public ResponseEntity afterResponse(HttpServletRequest request,
         @RequestBody List<UserReqRespContainer> postBody, @PathVariable String recordingId,
         @RequestParam(value="environmentName", required = false) String environmentName,
         Authentication authentication)
@@ -287,7 +287,7 @@ public class CubeStoreController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body("No Recording Object found for recordingId=" + recordingId);
         validation.validateCustomerName(authentication,recording.get().customerId);
-        ResponseEntity responseEntity = cubeServerService.fetchPostResponse(request, Optional.of(postBody), "/cs/storeUserReqResp/" + recording.get().id);
+        ResponseEntity responseEntity = cubeServerService.fetchPostResponse(request, Optional.of(postBody), "/cs/afterResponse/" + recording.get().id);
         if(environmentName != null && responseEntity.getStatusCode() == HttpStatus.OK) {
             Optional<DtEnvironment> dtEnvironmentOptional
                 = devtoolEnvironmentsRepository.findDtEnvironmentByUserIdAndName(user.getId(), environmentName);
@@ -313,6 +313,15 @@ public class CubeStoreController {
 
         }
         return responseEntity;
+    }
+
+    @PostMapping("/storeUserReqResp/{recordingId}")
+    public ResponseEntity storeUserReqResp(HttpServletRequest request,
+        @RequestBody List<UserReqRespContainer> postBody, @PathVariable String recordingId,
+        @RequestParam(value="environmentName", required = false) String environmentName,
+        Authentication authentication)
+        throws InvalidEventException {
+        return afterResponse(request, postBody, recordingId, environmentName, authentication);
     }
 
     @GetMapping("/status/{recordingId}")
@@ -390,8 +399,8 @@ public class CubeStoreController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @PostMapping("/injectEvent/{replayId}/{runId}")
-    public ResponseEntity injectEvent(HttpServletRequest request, @PathVariable String replayId,
+    @PostMapping("/preRequest/{recordingOrReplayId}/{runId}")
+    public ResponseEntity preRequest(HttpServletRequest request, @PathVariable String recordingOrReplayId,
         @PathVariable String runId, @RequestBody DynamicInjectionEventDao dynamicInjectionEventDao,
         Authentication authentication) {
         if(dynamicInjectionEventDao == null || dynamicInjectionEventDao.getRequestEvent() == null) {
