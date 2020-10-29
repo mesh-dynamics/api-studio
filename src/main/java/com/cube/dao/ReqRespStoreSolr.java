@@ -1784,6 +1784,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private FnKey deleteFuncKey;
 
     private boolean deleteDocsByQuery(String query) {
+        LOGGER.info("Attempting solr query to delete docs: {" + query + "}");
         if (deleteFuncKey == null) {
             try {
                 Method currentMethod = solr.getClass().getMethod("deleteByQuery", query.getClass());
@@ -3276,7 +3277,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     public boolean deleteEventsByCollection(List<String> collections) {
         StringBuffer queryBuff = new StringBuffer();
-        addToQryStr(queryBuff , COLLECTIONF , collections ,true, Optional.empty());
+        addToQryStr(queryBuff , COLLECTIONF , collections ,false, Optional.empty());
         addToQryStr(queryBuff , TYPEF , Types.Event.name(), false);
         return deleteDocsByQuery(queryBuff.toString());
     }
@@ -3285,7 +3286,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public boolean deleteAllReplayData(List<Replay> replays) {
         StringBuffer queryBuff = new StringBuffer();
         List<String> replayIds = replays.stream().map(replay -> replay.replayId).collect(Collectors.toList());
-        addToQryStr(queryBuff , REPLAYIDF ,  replayIds ,true, Optional.empty());
+        addToQryStr(queryBuff , REPLAYIDF ,  replayIds ,false, Optional.empty());
         addToQryStr(queryBuff , TYPEF , Types.ReplayMeta.name(), false);
 
          boolean deleteReplay = deleteDocsByQuery(queryBuff.toString());
@@ -3299,10 +3300,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     @Override
     public boolean deleteAllAnalysisData(List<String> replayIds) {
         StringBuffer queryBuff = new StringBuffer();
-        addToQryStr(queryBuff , REPLAYIDF ,  replayIds ,true, Optional.empty());
+        addToQryStr(queryBuff , REPLAYIDF ,  replayIds ,false, Optional.empty());
         addToQryStr(queryBuff , TYPEF ,
             List.of(Types.Analysis.name(), Types.MatchResultAggregate.name()),
-            true, Optional.empty());
+            false, Optional.empty());
 
         boolean analysisDeleted = deleteDocsByQuery(queryBuff.toString());
         if(analysisDeleted) {
