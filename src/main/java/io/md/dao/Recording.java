@@ -54,7 +54,7 @@ public class Recording {
 		, boolean archived, Optional<String> gitCommitId, Optional<String> collectionUpdOpSetId
 		, Optional<String> templateUpdOpSetId, Optional<String> comment, String userId,
 		Optional<String> generatedClassJarPath, Optional<URLClassLoader> generatedClassLoader, String label,
-			RecordingType recordingType , Optional<String> dynamicInjectionConfigVersion) {
+			RecordingType recordingType , Optional<String> dynamicInjectionConfigVersion, String runId) {
 
 		super();
 		this.customerId = customerId;
@@ -82,6 +82,7 @@ public class Recording {
 		this.label = label;
 		this.recordingType = recordingType;
 		this.dynamicInjectionConfigVersion = dynamicInjectionConfigVersion;
+		this.runId = runId;
 	}
 
 	// for json deserialization
@@ -108,6 +109,7 @@ public class Recording {
 		this.generatedClassJarPath = Optional.empty();
 		this.label="";
 		this.dynamicInjectionConfigVersion = Optional.empty();
+		this.runId = "";
 	}
 
 	@JsonProperty("id")
@@ -158,6 +160,8 @@ public class Recording {
 	public RecordingType recordingType;
 	@JsonProperty("dynamicInjectionConfigVersion")
 	public Optional<String> dynamicInjectionConfigVersion;
+	@JsonProperty("runId")
+	public String runId;
 
 	public transient Optional<URLClassLoader> generatedClassLoader;
 
