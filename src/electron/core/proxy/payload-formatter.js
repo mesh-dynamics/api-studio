@@ -10,6 +10,18 @@ const PAYLOAD_STATE = {
     UNWRAPPED_DECODED: 'UnwrappedDecoded' // To be used if payload is sent in cube format
 };
 
+const convertFormParamsToCubeFormat = (requestDataString) => {
+    const formParams = {};
+    const fieldParts = requestDataString.split('&');
+
+    fieldParts.map(part => {
+        const [fieldName, fieldValue] = part.split('=');
+        formParams[fieldName] = [fieldValue];
+    })
+
+    return formParams;
+};
+
 const extractHeadersToCubeFormat = (headersReceived) => {
     let headers = {};
     if (_.isArray(headersReceived)) {
@@ -35,20 +47,24 @@ const extractRequestBodyAndFormParams = (headers, requestData) => {
 
     if(contentType && contentType.includes('json')) {
         return {
-            body: requestData
+            body: requestData,
+            payloadState: PAYLOAD_STATE.WRAPPED_DECODED
         }
     }
 
-    if(contentType && 
-            (
-                contentType.includes('application/x-www-form-urlencoded') ||
-                contentType && contentType.includes('multipart/form-data')      
-            )
-    ) {
+    if(contentType && contentType.includes('application/x-www-form-urlencoded')) {
         return {
-            formParams: requestData
+            formParams: convertFormParamsToCubeFormat(requestData),
+            payloadState: PAYLOAD_STATE.UNWRAPPED_DECODED
         }
-        
+    }
+
+    if(contentType && contentType && contentType.includes('multipart/form-data')) {
+
+        return {
+            body: requestData, // TODO: Handle this in future
+            payloadState: PAYLOAD_STATE.WRAPPED_DECODED
+        }
     }
 
     if(contentType && (
@@ -57,7 +73,8 @@ const extractRequestBodyAndFormParams = (headers, requestData) => {
             contentType.includes('text/plain')
             )) {
         return {
-            body: requestData
+            body: requestData,
+            payloadState: PAYLOAD_STATE.WRAPPED_DECODED
         }
     }
 
@@ -87,7 +104,7 @@ const extractRequestPayloadDetailsFromProxy = (proxyRes, apiPath, options) => {
 
     const queryParams = extractQueryStringParamsToCubeFormat(query);
 
-    const { formParams, body } = extractRequestBodyAndFormParams(headers, requestData);
+    const { formParams, body, payloadState } = extractRequestBodyAndFormParams(headers, requestData);
 
     return  {
         hdrs: extractHeadersToCubeFormat(headers),
@@ -97,28 +114,16 @@ const extractRequestPayloadDetailsFromProxy = (proxyRes, apiPath, options) => {
         path: apiPath,
         method: proxyRes.req.method.toUpperCase(),
         pathSegments: apiPath.split("/").filter(Boolean),
-        payloadState: PAYLOAD_STATE.WRAPPED_DECODED
+        payloadState
     }
 }
 
-const extractAndFormatProxyResponseBody = (headers, responseBody) => {
-    
-    //const contentType = headers['content-type'] || headers['Content-Type'];
-    
 
-    // if(contentType.includes('json')) {
-    //     return JSON.parse(responseBody);
-    // }
-
-    // Add more content type code here when required
-
-    return responseBody;
-}
 
 const extractResponsePayloadDetailsFromProxy = (proxyRes, responseBody) => {
     return {
         hdrs: extractHeadersToCubeFormat(proxyRes.headers),
-        body: extractAndFormatProxyResponseBody(proxyRes.headers, responseBody),
+        body: responseBody,
         status: proxyRes.statusCode,
         statusCode: String(proxyRes.statusMessage),
     }
@@ -145,17 +150,19 @@ module.exports = {
 //     return formParams;
 // };
 
-// const convertFormParamsToCubeFormat = (requestDataString) => {
-//     const formParams = {};
-//     const fieldParts = requestDataString.split('&');
+// const extractAndFormatProxyResponseBody = (headers, responseBody) => {
+    
+// const contentType = headers['content-type'] || headers['Content-Type'];
 
-//     fieldParts.map(part => {
-//         const [fieldName, fieldValue] = part.split('=');
-//         formParams[fieldName] = [fieldValue];
-//     })
 
-//     return formParams;
-// };
+// if(contentType.includes('json')) {
+//     return JSON.parse(responseBody);
+// }
+
+// Add more content type code here when required
+
+// return responseBody;
+// }
 
 // Not To be deleted
 // if(contentType && contentType.includes('application/x-www-form-urlencoded')) {
