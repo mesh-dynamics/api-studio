@@ -1722,7 +1722,7 @@ public class CubeStore {
                     replay.runId = runId;
                     rrstore.saveReplay(replay);
                     return replay.replayId;
-                }).or(() -> Optional.empty());
+                });
             });
             if(recordOrReplayRunId.isEmpty()) {
                 LOGGER.error("No record or replay found for the id=" + recordingOrReplayId);
