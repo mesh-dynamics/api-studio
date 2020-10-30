@@ -14,7 +14,19 @@ def main():
 
 def getDeploymentsAndLabels(namespace):
     # Configs can be set in Configuration class directly or using helper utility
-    config.load_kube_config()
+    k8s_config_file = os.environ.get('KUBECONFIG')
+    if k8s_config_file:
+      try:
+        print("Loading kubernetes config from the file", k8s_config_file)
+        config.load_kube_config(config_file=k8s_config_file)
+      except Exception as e:
+        raise RuntimeError('Can not load kube config from the file %s, error: %s', k8s_config_file, e)
+    else:
+        try:
+          config.load_kube_config()
+          print('Found local kubernetes config. Initialized with kube_config.')
+        except:
+            raise RuntimeError('Cannot find configuration file')
     v1 = client.AppsV1Api()
     deployment_info = {}
 
