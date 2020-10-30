@@ -1,5 +1,6 @@
 package com.cube.queue;
 
+import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -14,6 +15,7 @@ import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.lmax.disruptor.util.DaemonThreadFactory;
 
+import io.md.cache.ProtoDescriptorCache;
 import io.md.dao.MDStorable;
 
 import com.cube.dao.ReqRespStore;
@@ -27,11 +29,11 @@ public class DisruptorEventQueue {
 
 	protected final Logger LOGGER = LogManager.getLogger(this.getClass());
 
-	public DisruptorEventQueue(ReqRespStore reqRespStore, int queueSize) {
+	public DisruptorEventQueue(ReqRespStore reqRespStore, int queueSize, Optional<ProtoDescriptorCache> protoDescriptorCacheOptional) {
 		ThreadFactory threadFactory = DaemonThreadFactory.INSTANCE;
 
 		WaitStrategy waitStrategy = new BlockingWaitStrategy();
-		StoreConsumer eventConsumer = new StoreConsumer(reqRespStore);
+		StoreConsumer eventConsumer = new StoreConsumer(reqRespStore, protoDescriptorCacheOptional);
 		disruptor
 			= new Disruptor<>(
 			DisruptorValue.getEventFactory(),

@@ -293,7 +293,7 @@ public class MockServiceHTTP {
         }
 
         return respEvent
-            .flatMap(respEventVal -> createResponseFromEvent(respEventVal))
+            .flatMap(this::createResponseFromEvent)
             .orElseGet(this::notFound);
     }
 
