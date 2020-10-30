@@ -422,7 +422,7 @@ class HttpClient extends Component {
         const { selectedResolutionType, showLogs, collapseLength, incrementCollapseLengthForRecReqId, incrementCollapseLengthForRepReqId, maxLinesLength, showResponseMessageHeaders, showResponseMessageBody, showRequestMessageHeaders, showRequestMessageQParams, showRequestMessageFParams, showRequestMessageBody, showAll, searchFilterPath,  shownResponseMessageHeaders, shownResponseMessageBody, shownRequestMessageHeaders, shownRequestMessageQParams, shownRequestMessageFParams, shownRequestMessageBody, diffLayoutData, showCompleteDiff } = this.state;
 
         // if showTrace isn't set, show based on outgoing requests being non empty
-        const showTraceV = showTrace == null ? (outgoingRequests?.length != 0) : showTrace;
+        const showTraceV = showTrace == null ? ((outgoingRequests?.length) || (currentSelectedTab.recordedHistory?.outgoingRequests?.length)) : showTrace;
 
         const selectedDiffItem = diffLayoutData ? diffLayoutData[0] : null;
 
