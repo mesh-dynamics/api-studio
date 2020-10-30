@@ -9,6 +9,7 @@ import com.cubeui.backend.service.CubeServerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -25,54 +26,54 @@ public class ReplayWSController {
     private Validation validation;
 
     @GetMapping("/status/{replayId}")
-    public ResponseEntity status(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String replayId) {
+    public ResponseEntity status(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String replayId, Authentication authentication) {
         final Optional<Replay> replay =cubeServerService.getReplay(replayId);
         if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.get().customerId);
+        validation.validateCustomerName(authentication,replay.get().customerId);
         return ResponseEntity.ok(replay);
     }
 
     @PostMapping("/start/{recordingId}")
-    public ResponseEntity start(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId) {
+    public ResponseEntity start(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId, Authentication authentication) {
         Optional<Recording> recording = cubeServerService.getRecording(recordingId);
         if(recording.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Error while retrieving Recording Object for recordingId=" + recordingId);
-        validation.validateCustomerName(request,recording.get().customerId);
+        validation.validateCustomerName(authentication,recording.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
     @PostMapping("/transforms/{customerId}/{app}/{collection}/{replayId}")
     public ResponseEntity transforms(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String customerId,
-                                     @PathVariable String app, @PathVariable String collection, @PathVariable String replayId) {
+                                     @PathVariable String app, @PathVariable String collection, @PathVariable String replayId, Authentication authentication) {
         final Optional<Replay> replay =cubeServerService.getReplay(replayId);
         if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.get().customerId);
-        validation.validateCustomerName(request,customerId);
+        validation.validateCustomerName(authentication,replay.get().customerId);
+        validation.validateCustomerName(authentication,customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
     @PostMapping("/forcecomplete/{replayId}")
-    public ResponseEntity forceComplete(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String replayId) {
+    public ResponseEntity forceComplete(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String replayId, Authentication authentication) {
         final Optional<Replay> replay =cubeServerService.getReplay(replayId);
         if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.get().customerId);
+        validation.validateCustomerName(authentication,replay.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
     @PostMapping("/forcestart/{replayId}")
-    public ResponseEntity forceStart(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String replayId) {
+    public ResponseEntity forceStart(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String replayId, Authentication authentication) {
         final Optional<Replay> replay =cubeServerService.getReplay(replayId);
         if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.get().customerId);
+        validation.validateCustomerName(authentication,replay.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
@@ -81,66 +82,66 @@ public class ReplayWSController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @PostMapping("/softDelete/{replayId}")
-    public ResponseEntity softDelete(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String replayId) {
+    @PostMapping("/delete/{replayId}")
+    public ResponseEntity delete(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String replayId, Authentication authentication) {
         final Optional<Replay> replay =cubeServerService.getReplay(replayId);
         if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Error while retrieving Replay Object for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.get().customerId);
+        validation.validateCustomerName(authentication,replay.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
     @PostMapping("/start/byGoldenName/{customerId}/{app}/{goldenName}")
     public ResponseEntity startByGoldenName(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String customerId,
-                        @PathVariable String app, @PathVariable String goldenName) {
-        validation.validateCustomerName(request, customerId);
+                        @PathVariable String app, @PathVariable String goldenName, Authentication authentication) {
+        validation.validateCustomerName(authentication, customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
     @GetMapping("/getReplays/{customerId}")
     public ResponseEntity getReplays(HttpServletRequest request, @RequestBody Optional<String> getBody,
-            @PathVariable String customerId) {
-        validation.validateCustomerName(request, customerId);
+            @PathVariable String customerId, Authentication authentication) {
+        validation.validateCustomerName(authentication, customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
     @PostMapping("/replay/restart/{customerId}/{app}/{replayId}")
     public ResponseEntity restartReplay(HttpServletRequest request, @RequestBody Optional<String> postBody,
-        @PathVariable String customerId, @PathVariable String app, @PathVariable String replayId) {
-        validation.validateCustomerName(request, customerId);
+        @PathVariable String customerId, @PathVariable String app, @PathVariable String replayId, Authentication authentication) {
+        validation.validateCustomerName(authentication, customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
     @PostMapping("/saveReplay")
-    public ResponseEntity saveReplay(HttpServletRequest request, @RequestBody Replay replay) {
-        validation.validateCustomerName(request, replay.customerId);
+    public ResponseEntity saveReplay(HttpServletRequest request, @RequestBody Replay replay, Authentication authentication) {
+        validation.validateCustomerName(authentication, replay.customerId);
         return cubeServerService.fetchPostResponse(request, Optional.of(replay));
     }
 
     @GetMapping("/getDynamicInjectionConfig/{customerId}/{app}/{version}")
     public ResponseEntity getDynamicInjectionConfig(HttpServletRequest request,
         @RequestBody Optional<String> getBody, @PathVariable String customerId,
-        @PathVariable String app, @PathVariable String version) {
-        validation.validateCustomerName(request,customerId);
+        @PathVariable String app, @PathVariable String version, Authentication authentication) {
+        validation.validateCustomerName(authentication,customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
     @PostMapping("/saveDynamicInjectionConfig")
     public ResponseEntity getDynamicInjectionConfig(HttpServletRequest request,
-        @RequestBody DynamicInjectionConfig dynamicInjectionConfig) {
-        validation.validateCustomerName(request, dynamicInjectionConfig.customerId);
+        @RequestBody DynamicInjectionConfig dynamicInjectionConfig, Authentication authentication) {
+        validation.validateCustomerName(authentication, dynamicInjectionConfig.customerId);
         return cubeServerService.fetchPostResponse(request, Optional.of(dynamicInjectionConfig));
     }
 
     @PostMapping("/deferredDeleteReplay/{replayId}/{status}")
     public ResponseEntity deferredDeleteReplay(HttpServletRequest request,
-        @RequestBody Optional<String> postBody, @PathVariable String replayId) {
+        @RequestBody Optional<String> postBody, @PathVariable String replayId, Authentication authentication) {
         final Optional<Replay> replay =cubeServerService.getReplay(replayId);
         if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("No Replay found for replayId=" + replayId);
-        validation.validateCustomerName(request,replay.get().customerId);
+        validation.validateCustomerName(authentication,replay.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 

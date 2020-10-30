@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -149,12 +150,12 @@ public class ServiceGraphController {
     @PostMapping("/generateServiceGraph/{customerId}/{appId}")
     public  ResponseEntity generateServiceGraph(HttpServletRequest request,
         @PathVariable String customerId, @PathVariable String appId,
-        @RequestParam(value="saveGraph", required = false, defaultValue = "false") boolean saveServiceGraph) {
+        @RequestParam(value="saveGraph", required = false, defaultValue = "false") boolean saveServiceGraph, Authentication authentication) {
         Optional<Customer> existingCustomer = this.customerService.getByName(customerId);
         if(existingCustomer.isEmpty()) {
             return status(BAD_REQUEST).body(new ErrorResponse("customer with Name '" + customerId + "' not found."));
         }
-        validation.validateCustomerName(request, customerId);
+        validation.validateCustomerName(authentication , customerId);
         Optional<App> existingApp = this.appRepository.findByNameAndCustomerId(appId, existingCustomer.get().getId());
         if(existingApp.isEmpty()) {
             return status(BAD_REQUEST).body(new ErrorResponse("App with Name '" + appId + "' not found."));

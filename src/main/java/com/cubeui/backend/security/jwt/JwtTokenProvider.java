@@ -119,11 +119,6 @@ public class JwtTokenProvider {
         return tokens;
     }
 
-    public Customer getCustomer(HttpServletRequest req) {
-        final UserDetails userDetails = getUser(req);
-        return ((User)userDetails).getCustomer();
-    }
-
     public UserDetails getUser(HttpServletRequest request) {
         final List<String> tokens = resolveToken((HttpServletRequest) request);
         Pair<String, Boolean> token = validateToken(tokens);
