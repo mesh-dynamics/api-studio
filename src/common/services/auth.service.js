@@ -4,6 +4,7 @@ import { store } from "../helpers";
 import authActions from '../actions/auth.actions'
 import Deferred from './deferred.ts';
 import {getApi} from '../api';
+import { ipcRenderer } from '../helpers/ipc-renderer';
 
 const handleResponseLogin = (response) => {
     return response.json().then(json => {

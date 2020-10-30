@@ -138,3 +138,20 @@
   background-color: #7e8992 !important;
   border-color: #7e8992 !important;
 }
+
+.browse-golden-spinner-root {
+  height: 300px;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.browse-golden-spinner-inner {
+  display: flex; 
+  align-items: center;
+}
+
+.browse-golden-list-container {
+  height: 300px;
+  overflow-y: auto;
+}

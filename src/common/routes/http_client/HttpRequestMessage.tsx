@@ -1,18 +1,19 @@
 import React, { Component } from 'react';
 import { FormGroup, FormControl, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import _ from 'lodash';
+import classNames from 'classnames';
 
 // import "./styles_here.css";
 
 import HttpRequestHeaders, {IHttpRequestHeadersProps} from "./HttpRequestHeaders";
 import HttpRequestQueryString, {IHttpRequestQueryStringProps} from "./HttpRequestQueryString";
-import HttpRequestBody, {IHttpRequestBody} from "./HttpRequestBody";
+import HttpRequestBody, {IHttpRequestBodyProps} from "./HttpRequestBody";
 import Tippy from '@tippy.js/react';
 import 'tippy.js/themes/light.css';
 import { applyEnvVarsToUrl } from "../../utils/http_client/envvar";
 import { UpdateBodyOrRawDataTypeHandler } from './HttpResponseHeaders';
 
-export interface IHttpRequestMessageProps extends IHttpRequestHeadersProps, IHttpRequestQueryStringProps, IHttpRequestBody{
+export interface IHttpRequestMessageProps extends IHttpRequestHeadersProps, IHttpRequestQueryStringProps, IHttpRequestBodyProps{
     bodyType: string;
     httpMethod: string;
     httpURL: string;
@@ -96,6 +97,31 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
             </FormGroup>
         </div>
 
+        const headerLabelClass = classNames({
+            "request-data-label": true,
+            "filled": this.props.headers.findIndex( header => header.name !== '') > -1
+        });
+        const queryParamLabelClass = classNames({
+            "request-data-label": true,
+            "filled": this.props.queryStringParams.findIndex( queryString => queryString.name !== '') > -1
+        });
+        const isRawDataHighlighted = this.props.rawData && this.props.rawData.trim();
+        const rawDataLabelClass = classNames({
+            "request-data-label": true,
+            "filled": isRawDataHighlighted
+        });
+        const isFormDataExists =this.props.formData.findIndex( header => header.name !== '') > -1;
+        const formDataLabelClass = classNames({
+            "request-data-label": true,
+            "filled": isFormDataExists
+        });
+        
+        const bodyLabelClass = classNames({
+            "request-data-label": true,
+            "filled": isFormDataExists || isRawDataHighlighted
+        });
+        
+
         return (
             <>
                 <div style={{marginRight: "7px"}}>
@@ -132,18 +158,18 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
                     <div className="" style={{display: "inline-block", paddingRight: "18px", opacity: "0.7", fontSize: "12px", width: "50px"}}>
                         VIEW
                     </div>
-                    <div className="" style={{display: "inline-block", paddingRight: "25px", fontSize: "12px"}}>
-                        <input type="radio" style={{marginTop: "0px", marginRight: "7px"}} 
+                    <div className={headerLabelClass}>
+                        <input type="radio"
                             value="showHeaders" name="paramsType" checked={this.props.paramsType === "showHeaders"} onChange={this.onChangeValue}/>
                             Headers
                     </div>
-                    <div className="" style={{display: "inline-block", paddingRight: "25px", fontSize: "12px"}}>
-                        <input type="radio"  style={{marginTop: "0px", marginRight: "7px"}} 
+                    <div className={queryParamLabelClass}>
+                        <input type="radio"
                             value="showQueryParams" name="paramsType" checked={this.props.paramsType === "showQueryParams"} onChange={this.onChangeValue}/>
                             Query Params
                     </div>
-                    <div className="" style={{display: "inline-block", paddingRight: "25px", fontSize: "12px"}}>
-                        <input type="radio"  style={{marginTop: "0px", marginRight: "7px"}} 
+                    <div className={bodyLabelClass}>
+                        <input type="radio"
                             value="showBody" name="paramsType" checked={this.props.paramsType === "showBody"} onChange={this.onChangeValue}/>
                             Body
                     </div>
@@ -156,13 +182,13 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
                     <div className="" style={{display: "inline-block", paddingRight: "18px", opacity: "0.7", fontSize: "12px", width: "50px"}}>
                         BODY
                     </div>
-                    <div className="" style={{display: "inline-block", paddingRight: "25px", fontSize: "12px"}}>
-                        <input type="radio" style={{marginTop: "0px", marginRight: "7px"}} 
+                    <div className={formDataLabelClass}>
+                        <input type="radio"
                             value="formData" name="bodyType" checked={this.state.showFormData} onChange={this.handleBodyOrRawDataType}/>
                             x-www-form-urlencoded
                     </div>
-                    <div className="" style={{display: "inline-block", paddingRight: "25px", fontSize: "12px"}}>
-                        <input type="radio" style={{marginTop: "0px", marginRight: "7px"}} 
+                    <div className={rawDataLabelClass}>
+                        <input type="radio"
                             value="rawData" name="bodyType" checked={this.state.showRawData} onChange={this.handleBodyOrRawDataType}/>
                             Raw Data
                     </div>

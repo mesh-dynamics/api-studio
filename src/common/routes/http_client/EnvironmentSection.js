@@ -42,6 +42,7 @@ class EnvironmentSection extends React.Component {
           onChange={this.handleEnvChange}
           className="btn-sm"
         >
+          <option value="NONE" disabled>Select Environment</option>
           <option value="">No Environment</option>
           {environmentList.length &&
             environmentList.map((env) => (

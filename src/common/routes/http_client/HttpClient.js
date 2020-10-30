@@ -19,6 +19,9 @@ import {
 import { AbortRequest } from "./abortRequest";
 import SaveToCollection from './SaveToCollection';
 import SplitSlider from "../../components/SplitSlider.tsx";
+import EditableLabel from "./EditableLabel";
+import {hasTabDataChanged} from "../../utils/http_client/utils"
+import Tippy from "@tippy.js/react";
 
 const newStyles = {
     variables: {
@@ -75,7 +78,10 @@ class HttpClient extends Component {
             incrementCollapseLengthForRepReqId: null,
             incrementStartJsonPath: null,
             diffLayoutData: null,
-            showCompleteDiff: false
+            showCompleteDiff: false,
+            prevSelectedTraceTableReqTabId: this.props.currentSelectedTab.selectedTraceTableReqTabId,
+            prevSelectedTraceTableTestReqTabId: this.props.currentSelectedTab.selectedTraceTableTestReqTabId,
+            httpRequestRef: null
         };
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
         this.handleSearchFilterChange = this.handleSearchFilterChange.bind(this);
@@ -87,6 +93,25 @@ class HttpClient extends Component {
         this.handleSetAsReference = this.handleSetAsReference.bind(this);
         this.handleAddMockRequestClick = this.handleAddMockRequestClick.bind(this);
     }
+
+    static getDerivedStateFromProps(props, state) {   
+        let newState = {};   
+        if(props.currentSelectedTab.selectedTraceTableReqTabId != state.prevSelectedTraceTableReqTabId){
+            newState = {
+                prevSelectedTraceTableReqTabId: props.currentSelectedTab.selectedTraceTableReqTabId,
+                showCompleteDiff: false
+            }
+        }
+        if(props.currentSelectedTab.selectedTraceTableTestReqTabId != state.prevSelectedTraceTableTestReqTabId){
+            newState = {
+                ...newState,
+                prevSelectedTraceTableTestReqTabId: props.currentSelectedTab.selectedTraceTableTestReqTabId,
+                showCompleteDiff: false
+            }
+        }
+        return newState;
+    }
+    
 
     preProcessResults = (results) => {
         const {app, replayId, recordingId, templateVersion} = this.state;
@@ -114,12 +139,27 @@ class HttpClient extends Component {
         });
     }
 
+    handleEditServiceNameComplete = (updatedServiceName) => {
+        const { currentSelectedTab: { id: tabId, eventData }, updateParam, isOutgoingRequest } = this.props;
+        const eventsWithUpdatedServiceName = eventData.map(event => event.service = updatedServiceName);
+
+        // Update service name on top level
+        updateParam(isOutgoingRequest, tabId, "service", "service", updatedServiceName);
+        // Update service name in event objects
+        updateParam(isOutgoingRequest, tabId, "eventData", "eventData", eventsWithUpdatedServiceName);
+    }
+
     handleShowDiff() {
         const { showCompleteDiff } = this.state;
         const { currentSelectedTab } = this.props;
         const selectedTraceTableReqTabId = currentSelectedTab.selectedTraceTableReqTabId;
         const selectedTraceTableTestReqTabId = currentSelectedTab.selectedTraceTableTestReqTabId;
         let selectedTraceTableReqTab, selectedTraceTableTestReqTab;
+
+        if(hasTabDataChanged(currentSelectedTab)) {
+            alert("Please save the modified request before proceeding with the diff.")
+            return
+        }
 
         if(currentSelectedTab.selectedTraceTableReqTabId === currentSelectedTab.id) {
             selectedTraceTableReqTab = currentSelectedTab;
@@ -194,6 +234,9 @@ class HttpClient extends Component {
     handleSetAsReference(evt) {
         const { currentSelectedTab } = this.props;
         this.props.setAsReference(currentSelectedTab.id);
+        this.setState({
+            showCompleteDiff: false
+        })
     }
 
     handleAddMockRequestClick(evt) {
@@ -321,6 +364,12 @@ class HttpClient extends Component {
         return code;
     }
 
+    renderHasChangedTippy = (hasChanged) => {
+        return <Tippy content={"Unsaved changes in this request"} arrow={true} placement="bottom">
+            {hasChanged ? <i className="fas fa-circle" style={{fontSize: "12px", marginRight: "12px"}}></i> : <i></i>}
+        </Tippy>
+    }
+
     render() {
         const {  currentSelectedTab } = this.props;
         let selectedTraceTableReqTabId = currentSelectedTab.selectedTraceTableReqTabId;
@@ -348,7 +397,7 @@ class HttpClient extends Component {
             selectedTraceTableTestReqTab = currentSelectedTab.recordedHistory;
         }
 
-        const { outgoingRequests, service, httpURL, httpURLShowOnly, showTrace } = currentSelectedTab;
+        const { outgoingRequests, service, httpURL, httpURLShowOnly, showTrace, hasChanged } = currentSelectedTab;
 
         const { selectedResolutionType, showLogs, collapseLength, incrementCollapseLengthForRecReqId, incrementCollapseLengthForRepReqId, maxLinesLength, showResponseMessageHeaders, showResponseMessageBody, showRequestMessageHeaders, showRequestMessageQParams, showRequestMessageFParams, showRequestMessageBody, showAll, searchFilterPath,  shownResponseMessageHeaders, shownResponseMessageBody, shownRequestMessageHeaders, shownRequestMessageQParams, shownRequestMessageFParams, shownRequestMessageBody, diffLayoutData, showCompleteDiff } = this.state;
 
@@ -464,21 +513,25 @@ class HttpClient extends Component {
                                     <tr>
                                         <th>SERVICE BY TRACE ORDER</th>
                                         <th>API PATH</th>
-                                        <th>REPLAY CONFIG</th>
+                                        <th></th>
                                         <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr style={{cursor: "pointer", backgroundColor: selectedTraceTableReqTab.id === currentSelectedTab.id ? "#ccc" : "#fff"}} onClick={() => this.handleRowClick(false, currentSelectedTab.id)}>
-                                        <td>
+                                        <td style={{ display: "inline-flex", width: "100%" }}>
                                             <span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>
                                             <span>
                                                 <i className="far fa-minus-square" style={{fontSize: "12px", marginRight: "12px", cursor: "pointer"}}></i>
                                             </span>
-                                            {service}
+                                            <EditableLabel label={service} handleEditComplete={this.handleEditServiceNameComplete} />
                                         </td>
                                         <td>{httpURLShowOnly}</td>
-                                        <td></td>
+                                        <td>
+                                            <span>
+                                                {this.renderHasChangedTippy(hasChanged)}
+                                            </span>
+                                        </td>
                                         <td></td>
                                     </tr>
                                     {outgoingRequests && outgoingRequests.length > 0 && outgoingRequests.map((eachReq) => {
@@ -492,7 +545,11 @@ class HttpClient extends Component {
                                                     {eachReq.service}
                                                 </td>
                                                 <td>{eachReq.httpURLShowOnly}</td>
-                                                <td></td>
+                                                <td>
+                                                    <span>
+                                                        {this.renderHasChangedTippy(eachReq.hasChanged)}
+                                                    </span>
+                                                </td>
                                                 <td></td>
                                             </tr>
                                         );
@@ -517,7 +574,7 @@ class HttpClient extends Component {
                                             <tr>
                                                 <th>SERVICE BY TRACE ORDER</th>
                                                 <th>API PATH</th>
-                                                <th>SOURCE</th>
+                                                <th></th>
                                                 <th></th>
                                             </tr>
                                         </thead>
@@ -575,21 +632,21 @@ class HttpClient extends Component {
                     </div>
                     <div style={{display: "flex"}}>
                         <div style={{marginLeft: "auto", order: "2"}}>
-                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleShowDiff}>
+                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "none" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleShowDiff}>
                                 <Glyphicon glyph="random" /> DIFF
                             </div>
-                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "none" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleSetAsReference}>
-                                <Glyphicon glyph="export" /> SET AS REFERENCE
-                            </div>
                             <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "inline-block" : "none"}} onClick={this.handleShowCompleteDiffClick}>
-                                <Glyphicon glyph="sort-by-attributes" /> SHOW REQUESTS
+                                <Glyphicon glyph="sort-by-attributes" /> FULL VIEW
+                            </div>
+                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "inline-block" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleSetAsReference}>
+                                <Glyphicon glyph="export" /> SET AS REFERENCE
                             </div>
                         </div>
                     </div>
                 </div>
                 {!showCompleteDiff && (
                     <div>
-                        <div style={{display: "flex", marginBottom: "9px", minHeight:'20px', overflowY: 'auto'}} ref={e=> (this.httpRequestRef = e)}>
+                        <div style={{display: "flex", marginBottom: "9px", minHeight:'20px', overflowY: 'auto'}} ref={e=> (!this.state.httpRequestRef && this.setState({httpRequestRef : e}))}>
                             <div style={{flex: "1", padding: "0.5rem", height:'100%'}}>
                                 <HttpRequestMessage 
                                     tabId={selectedTraceTableReqTab.id}
@@ -633,7 +690,7 @@ class HttpClient extends Component {
                                 )}
                             </div>
                         </div>
-                        <SplitSlider slidingElement={this.httpRequestRef} horizontal/> 
+                        <SplitSlider slidingElement={this.state.httpRequestRef} horizontal/> 
                         <HttpResponseMessage 
                             tabId={selectedTraceTableReqTab.id}
                             /** Belongs to RHS */

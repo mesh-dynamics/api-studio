@@ -44,7 +44,8 @@ class MockConfigSection extends React.Component {
           onChange={this.handleMockConfigChange}
           className="btn-sm"
         >
-          <option value="">Mock Configuration: Default</option>
+          <option value="NONE" disabled>Select Mock Configuration</option>
+          <option value="">All services mocked</option>
           {mockConfigList.length &&
             mockConfigList.map((mockConfig) => (
               <option key={mockConfig.key} value={mockConfig.key}>
@@ -84,7 +85,7 @@ class MockConfigSection extends React.Component {
         >
           <Modal.Header closeButton>
             <Modal.Title>
-              {"Mock Configuration: " + (selectedMockConfig || "Default")}
+              {"Mock Configuration: " + (selectedMockConfig || "All services mocked")}
             </Modal.Title>
           </Modal.Header>
           <Modal.Body>
@@ -163,7 +164,7 @@ class MockConfigSection extends React.Component {
           onClick={() => {
             this.setState({ showMockConfigModal: true });
           }}
-          title="Service mock configurations"
+          title="Proxy settings"
         >
           <i className="fas fa-cog" />{" "}
         </span>
