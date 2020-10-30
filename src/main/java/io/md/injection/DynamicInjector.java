@@ -177,9 +177,10 @@ public class DynamicInjector {
 				StringSubstitutor sub = new StringSubstitutor(varResolver);
 
 				String requestHttpMethod = getHttpMethod(request);
+				boolean isResponse = (request.eventType == Event.EventType.HTTPResponse);
 				boolean apiPathMatch = apiPathMatch(injectionMeta.apiPaths, request.apiPath);
-				if ((injectionMeta.injectAllPaths || apiPathMatch) && injectionMeta.method
-					.toString().equalsIgnoreCase(requestHttpMethod)) {
+				if ((injectionMeta.injectAllPaths || apiPathMatch) && (isResponse || injectionMeta.method
+					.toString().equalsIgnoreCase(requestHttpMethod))) {
 
 					injectionMeta.forEach.ifPresentOrElse(forEachStruct -> {
 						Payload sourceForNamePayload = varResolver
