@@ -139,7 +139,27 @@ class HttpClient extends Component {
         });
     }
 
-    handleEditServiceNameComplete = (updatedServiceName) => {
+    handleEditServiceNameForEgress = (updatedServiceName, requestId) => {
+        const { currentSelectedTab: { id: tabId, outgoingRequests }, updateParam, isOutgoingRequest } = this.props;
+
+        const updatedOutgoingRequests = outgoingRequests.map(request => {
+            // If request id matches, update the concerned values
+            if(request.requestId === requestId) {
+                // update service name outside
+                request.service = updatedServiceName;
+                // update in events
+                request.eventData.forEach(event => event.service = updatedServiceName) 
+                // return updated value
+                return request;
+            }
+            // else return the request object as is
+            return request;
+        });
+
+        updateParam(isOutgoingRequest, tabId, "outgoingRequests", "outgoingRequests", updatedOutgoingRequests);
+    }
+
+    handleEditServiceNameForGateway = (updatedServiceName) => {
         const { currentSelectedTab: { id: tabId, eventData }, updateParam, isOutgoingRequest } = this.props;
         const eventsWithUpdatedServiceName = eventData.map(event => event.service = updatedServiceName);
 
@@ -524,7 +544,7 @@ class HttpClient extends Component {
                                             <span>
                                                 <i className="far fa-minus-square" style={{fontSize: "12px", marginRight: "12px", cursor: "pointer"}}></i>
                                             </span>
-                                            <EditableLabel label={service} handleEditComplete={this.handleEditServiceNameComplete} />
+                                            <EditableLabel label={service} handleEditComplete={this.handleEditServiceNameForGateway} />
                                         </td>
                                         <td>{httpURLShowOnly}</td>
                                         <td>
@@ -537,12 +557,15 @@ class HttpClient extends Component {
                                     {outgoingRequests && outgoingRequests.length > 0 && outgoingRequests.map((eachReq) => {
                                         return (
                                             <tr key={eachReq.id} style={{cursor: "pointer", backgroundColor: selectedTraceTableReqTab.id === eachReq.id ? "#ccc" : "#fff"}} onClick={() => this.handleRowClick(true, eachReq.id)}>
-                                                <td>
+                                                <td style={{ display: "inline-flex", width: "100%" }}>
                                                     <span style={{marginRight: "30px", width: "25px"}}></span>
                                                     <span>
                                                         <i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i>
                                                     </span>
-                                                    {eachReq.service}
+                                                    <EditableLabel 
+                                                        label={eachReq.service} 
+                                                        handleEditComplete={(updatedServiceName) => this.handleEditServiceNameForEgress(updatedServiceName, eachReq.requestId)} 
+                                                    />
                                                 </td>
                                                 <td>{eachReq.httpURLShowOnly}</td>
                                                 <td>
