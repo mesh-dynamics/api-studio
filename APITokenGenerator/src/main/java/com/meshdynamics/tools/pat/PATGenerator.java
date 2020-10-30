@@ -67,13 +67,13 @@ public class PATGenerator {
 
     private String getDomain(int customerId) throws Exception {
         try {
-            String sql ="SELECT * FROM public.email_domains WHERE customer_id = ?";
+            String sql ="SELECT * FROM public.customer_domain_urls WHERE customer_id = ?";
             PreparedStatement preparedStatement = dbConnection.prepareStatement(sql);
             preparedStatement.setInt(1, customerId);
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next() == true) {
                 System.out.println("Agent user Domain is present");
-                return resultSet.getString("domain");
+                return resultSet.getString("domain_urls");
             }
         }catch (SQLException sqe) {
             throw sqe;
