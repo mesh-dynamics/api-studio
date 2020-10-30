@@ -5,7 +5,12 @@
 1. Run `deploy_istio_and_envoy_sidecar.sh` script to install istio.  
 ```
 ./deploy_istio_and_envoy_sidecar.sh
+```  
+NOTE: If your kubernetes configuration is not at the default location, export `KUBECONFIG` environment variable.  
 ```
+KUBECONFIG=/Users/aakashsinghal/.kube/config_test ./deploy_istio_and_envoy_sidecar.sh
+```
+
 
 2. Enable istio on namespace where you want to deploy Meshdynamics envoy filters.  
 ```
