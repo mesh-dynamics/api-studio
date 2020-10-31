@@ -219,6 +219,21 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 			UriBuilder uribuilder = UriBuilder.fromUri(replay.endpoint)
 				.path(apiPath);
 
+			MultivaluedHashMap<String, String> queryParams = httpRequest
+					.getValAsObject(Constants.QUERY_PARAMS_PATH, MultivaluedHashMap.class)
+					.orElse(new MultivaluedHashMap<String, String>());
+
+			queryParams.forEach(UtilException.rethrowBiConsumer((k, vlist) -> {
+				String[] params = vlist.stream().map(UtilException.rethrowFunction(v -> {
+					return UriComponent
+							.encode(v, UriComponent.Type.QUERY_PARAM_SPACE_ENCODED);
+					// return URLEncoder.encode(v, "UTF-8"); // this had a problem of
+					// encoding space as +, which further gets encoded as %2B
+				})).toArray(String[]::new);
+				uribuilder.queryParam(k, (Object[]) params);
+			}));
+
+
 			byte[] requestBody = httpRequest.getBody();
 			URI uri = uribuilder.build();
 			HttpRequest.Builder reqbuilder = HttpRequest.newBuilder()
@@ -245,10 +260,6 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 				.getValAsObject(Constants.HDR_PATH, MultivaluedHashMap.class)
 				.orElse(new MultivaluedHashMap<String, String>());
 
-			MultivaluedHashMap<String, String> queryParams = httpRequest
-				.getValAsObject(Constants.QUERY_PARAMS_PATH, MultivaluedHashMap.class)
-				.orElse(new MultivaluedHashMap<String, String>());
-
 			headers.forEach((k, vlist) -> {
 				// some headers are restricted and cannot be set on the request
 				// lua adds ':' to some headers which we filter as they are invalid
@@ -257,16 +268,6 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 					vlist.forEach(value -> reqbuilder.header(k, value));
 				}
 			});
-
-			queryParams.forEach(UtilException.rethrowBiConsumer((k, vlist) -> {
-				String[] params = vlist.stream().map(UtilException.rethrowFunction(v -> {
-					return UriComponent
-						.encode(v, UriComponent.Type.QUERY_PARAM_SPACE_ENCODED);
-					// return URLEncoder.encode(v, "UTF-8"); // this had a problem of
-					// encoding space as +, which further gets encoded as %2B
-				})).toArray(String[]::new);
-				uribuilder.queryParam(k, (Object[]) params);
-			}));
 
 
 			//Adding additional headers during Replay, This will help identify the case where the request is retried
