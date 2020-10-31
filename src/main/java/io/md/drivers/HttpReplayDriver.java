@@ -197,22 +197,6 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 
 		protected HttpRequest buildRequest(Replay replay, Event reqEvent,
 			RequestPayload httpRequest) {
-			// Fetch headers/queryParams and path etc from here since injected value
-			// would be present in dataObj instead of payload fields
-
-			//TODO - HTTPHeaders and queryParams don't support types
-			// they have to be string so add validation for that,
-			// also add validation to be an array even if a singleton
-			// because of jackson serialisation to Multivalued map
-
-
-			MultivaluedHashMap<String, String> headers = httpRequest
-				.getValAsObject(Constants.HDR_PATH, MultivaluedHashMap.class)
-				.orElse(new MultivaluedHashMap<String, String>());
-
-			MultivaluedHashMap<String, String> queryParams = httpRequest
-				.getValAsObject(Constants.QUERY_PARAMS_PATH, MultivaluedHashMap.class)
-				.orElse(new MultivaluedHashMap<String, String>());
 
 			List<String> pathSegments = httpRequest
 				.getValAsObject(Constants.PATH_SEGMENTS_PATH, List.class)
@@ -235,6 +219,45 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 			UriBuilder uribuilder = UriBuilder.fromUri(replay.endpoint)
 				.path(apiPath);
 
+			byte[] requestBody = httpRequest.getBody();
+			URI uri = uribuilder.build();
+			HttpRequest.Builder reqbuilder = HttpRequest.newBuilder()
+				.uri(uri)
+				.method(httpRequest.getMethod(),
+					HttpRequest.BodyPublishers.ofByteArray(requestBody));
+
+			LOGGER.debug("PATH :: " + uri.toString() + " OUTGOING REQUEST BODY :: " + new String(requestBody,
+				StandardCharsets.UTF_8));
+
+			// Fetch headers/queryParams and path etc from payload since injected value
+			// would be present in dataObj instead of payload fields
+
+			//TODO - HTTPHeaders and queryParams don't support types
+			// they have to be string so add validation for that,
+			// also add validation to be an array even if a singleton
+			// because of jackson serialisation to Multivalued map
+			
+			// NOTE - HEADERS SHOULD BE READ AND SET AFTER SETTING THE BODY BECAUSE WHILE DOING GETBODY()
+			// THE HEADERS MIGHT GET UPDATED ESPECIALLY IN CASE OF MULTIPART DATA WHERE WE SET NEW CONTENT-TYPE
+			// HEADER WHILE WRAPPING THE BODY
+
+			MultivaluedHashMap<String, String> headers = httpRequest
+				.getValAsObject(Constants.HDR_PATH, MultivaluedHashMap.class)
+				.orElse(new MultivaluedHashMap<String, String>());
+
+			MultivaluedHashMap<String, String> queryParams = httpRequest
+				.getValAsObject(Constants.QUERY_PARAMS_PATH, MultivaluedHashMap.class)
+				.orElse(new MultivaluedHashMap<String, String>());
+
+			headers.forEach((k, vlist) -> {
+				// some headers are restricted and cannot be set on the request
+				// lua adds ':' to some headers which we filter as they are invalid
+				// and not needed for our requests.
+				if (Utils.ALLOWED_HEADERS.test(k) && !k.startsWith(":")) {
+					vlist.forEach(value -> reqbuilder.header(k, value));
+				}
+			});
+
 			queryParams.forEach(UtilException.rethrowBiConsumer((k, vlist) -> {
 				String[] params = vlist.stream().map(UtilException.rethrowFunction(v -> {
 					return UriComponent
@@ -245,23 +268,6 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 				uribuilder.queryParam(k, (Object[]) params);
 			}));
 
-			URI uri = uribuilder.build();
-			HttpRequest.Builder reqbuilder = HttpRequest.newBuilder()
-				.uri(uri)
-				.method(httpRequest.getMethod(),
-					HttpRequest.BodyPublishers.ofByteArray(httpRequest.getBody()));
-
-			LOGGER.debug("PATH :: " + uri.toString() + " OUTGOING REQUEST BODY :: " + new String(httpRequest.getBody(),
-				StandardCharsets.UTF_8));
-
-			headers.forEach((k, vlist) -> {
-				// some headers are restricted and cannot be set on the request
-				// lua adds ':' to some headers which we filter as they are invalid
-				// and not needed for our requests.
-				if (Utils.ALLOWED_HEADERS.test(k) && !k.startsWith(":")) {
-					vlist.forEach(value -> reqbuilder.header(k, value));
-				}
-			});
 
 			//Adding additional headers during Replay, This will help identify the case where the request is retried
 			// by the platform for some reason, which leads to multiple identical events during the replay run.
