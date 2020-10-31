@@ -197,13 +197,6 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 
 		protected HttpRequest buildRequest(Replay replay, Event reqEvent,
 			RequestPayload httpRequest) {
-			// Fetch headers/queryParams and path etc from here since injected value
-			// would be present in dataObj instead of payload fields
-
-			//TODO - HTTPHeaders and queryParams don't support types
-			// they have to be string so add validation for that,
-			// also add validation to be an array even if a singleton
-			// because of jackson serialisation to Multivalued map
 
 			List<String> pathSegments = httpRequest
 				.getValAsObject(Constants.PATH_SEGMENTS_PATH, List.class)
@@ -236,6 +229,14 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 			LOGGER.debug("PATH :: " + uri.toString() + " OUTGOING REQUEST BODY :: " + new String(requestBody,
 				StandardCharsets.UTF_8));
 
+			// Fetch headers/queryParams and path etc from payload since injected value
+			// would be present in dataObj instead of payload fields
+
+			//TODO - HTTPHeaders and queryParams don't support types
+			// they have to be string so add validation for that,
+			// also add validation to be an array even if a singleton
+			// because of jackson serialisation to Multivalued map
+			
 			// NOTE - HEADERS SHOULD BE READ AND SET AFTER SETTING THE BODY BECAUSE WHILE DOING GETBODY()
 			// THE HEADERS MIGHT GET UPDATED ESPECIALLY IN CASE OF MULTIPART DATA WHERE WE SET NEW CONTENT-TYPE
 			// HEADER WHILE WRAPPING THE BODY
