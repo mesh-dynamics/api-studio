@@ -1,5 +1,6 @@
 package io.md.dao;
 
+import java.util.Collections;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -29,5 +30,8 @@ public interface Payload extends DataObj, RawPayload {
 	ConvertEventPayloadResponse checkAndConvertResponseToString(boolean wrapForDisplay
 		, List<String> pathsToKeep, long size, String path);
 	String getPayloadAsJsonString(boolean wrapForDisplay);
+	default  List<String> getPayloadFields(){
+		return Collections.EMPTY_LIST;
+	}
 
 }

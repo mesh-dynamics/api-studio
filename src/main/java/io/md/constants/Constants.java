@@ -43,6 +43,7 @@ public class Constants {
 	public static final String CONTENT_TYPE = "content-type";
 	public static final String BODY = "body";
 	public static final String STATUS = "status";
+	public static final String METHOD = "method";
 	public static final String SUCCESS = "success";
 	public static final String FAIL = "fail";
 	public static final String ERROR = "error";
@@ -133,6 +134,7 @@ public class Constants {
 	public static final String SPAN_ID_FIELD = "spanId";
 	public static final String PARENT_SPAN_ID_FIELD = "parentSpanId";
 	public static final String EXCLUDE_PATH_FIELD = "excludePath";
+	public static final String PAYLOAD_FIELDS_FIELD = "payloadFields";
 
 	public static final String EVENT_TYPE_FIELD = "eventType";
 	public static final String JSON_PATH_FIELD = "jsonPath";

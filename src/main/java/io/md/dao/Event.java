@@ -11,7 +11,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URLClassLoader;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import io.md.dao.Recording.RecordingType;
 
@@ -52,7 +51,8 @@ public class Event implements MDStorable {
 			@JsonProperty("reqId") String reqId, @JsonProperty("apiPath") String apiPath,
 			@JsonProperty("eventType") EventType eventType, @JsonProperty("payload") Payload payload,
 			@JsonProperty("payloadKey") int payloadKey, @JsonProperty("recordingType") RecordingType recordingType,
-			@JsonProperty("metaData") Map<String, String> metaData, @JsonProperty("runId") String runId) {
+			@JsonProperty("metaData") Map<String, String> metaData, @JsonProperty("runId") String runId,
+			@JsonProperty("payloadFields") List<String> payloadFields) {
 		this.customerId = customerId;
 		this.app = app;
 		this.service = service;
@@ -71,6 +71,7 @@ public class Event implements MDStorable {
 		this.recordingType = recordingType != null ? recordingType : RecordingType.Golden;
 		this.metaData = metaData;
 		this.runId = runId != null ? runId : this.traceId;
+		this.payloadFields = payloadFields;
 	}
 
 	public static List<EventType> getRequestEventTypes() {
@@ -277,6 +278,7 @@ public class Event implements MDStorable {
 	public final Payload payload;
 	public RecordingType recordingType;
 	public final Map<String, String> metaData;
+	public final List<String> payloadFields;
 
 	@JsonIgnore
 	public int payloadKey;
@@ -335,7 +337,7 @@ public class Event implements MDStorable {
 		private final RecordingType recordingType;
 		private Map<String, String> metaData = new HashMap<>(0);
 		private String runId;
-
+		private List<String> payloadFields = Collections.EMPTY_LIST;
 
 		public EventBuilder(String customerId, String app, String service, String instanceId,
 			String collection, MDTraceInfo mdTraceInfo,
@@ -396,11 +398,16 @@ public class Event implements MDStorable {
 			this.runId = runId;
 			return this;
 		}
+		public EventBuilder withPayloadFields(List<String> payloadFields) {
+			this.payloadFields = payloadFields;
+			return this;
+		}
+
 
 		public Event createEvent() throws io.md.dao.Event.EventBuilder.InvalidEventException {
 			Event event = new Event(customerId, app, service, instanceId, collection, traceId
 				, spanId, parentSpanId, runType, timestamp.orElse(Instant.now()), reqId, apiPath,
-				eventType , payload, payloadKey, recordingType, metaData, runId);
+				eventType , payload, payloadKey, recordingType, metaData, runId , payloadFields);
 			if (event.validate()) {
 				return event;
 			} else {

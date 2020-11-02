@@ -48,7 +48,10 @@ public class EventQuery {
     private final Optional<Integer> offset;
     private final Optional<Integer> limit;
     private final Optional<Boolean> sortOrderAsc;
+
+    private final List<String> payloadFields;
     private final Map<String , Float> orQueryWeightage;
+    private final Optional<JoinQuery> joinQuery;
 
     public static class Builder {
         private final String customerId;
@@ -70,7 +73,10 @@ public class EventQuery {
         private Integer offset = null;
         private Integer limit = null;
         private Boolean sortOrderAsc = null;
+        private List<String> payloadFields = Collections.EMPTY_LIST;
         private Map<String , Float> orQueryWeightage = new HashMap<>();
+        private Optional<JoinQuery> joinQuery = Optional.empty();
+
 
         //@JsonCreator
         public Builder(String customerId,
@@ -292,6 +298,24 @@ public class EventQuery {
             return this;
         }
 
+        public Builder withPayloadFields(List<String> pyldFields){
+            this.payloadFields = pyldFields;
+            return this;
+        }
+
+        /*
+        public Builder withPayloadFields(List<String> pyldFields , Float weight){
+            this.payloadFields = pyldFields;
+            orQueryWeightage.put(Constants.PAYLOAD_FIELDS_FIELD, weight);
+            return this;
+        }
+        */
+
+        public Builder withJoinQuery(JoinQuery joinQuery){
+            this.joinQuery = Optional.ofNullable(joinQuery);
+            return this;
+        }
+
         public EventQuery build() {
             return new EventQuery(this);
         }
@@ -318,6 +342,8 @@ public class EventQuery {
         limit = Optional.ofNullable(builder.limit);
         sortOrderAsc = Optional.ofNullable(builder.sortOrderAsc);
         orQueryWeightage = builder.orQueryWeightage;
+        payloadFields = builder.payloadFields;
+        joinQuery = builder.joinQuery;
     }
 
     public String getCustomerId() {
@@ -401,5 +427,13 @@ public class EventQuery {
     }
     @JsonIgnore
     public Optional<Float> getTimestampWeight() {return Optional.ofNullable(orQueryWeightage.get(Constants.TIMESTAMP_FIELD)); }
+
+    public List<String> getPayloadFields() {
+        return payloadFields;
+    }
+
+    public Optional<JoinQuery> getJoinQuery() {
+        return joinQuery;
+    }
 
 }

@@ -16,6 +16,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,15 +49,12 @@ public class RealMocker implements Mocker {
         Optional<MockWithCollection> mockWithCollection = setPayloadKeyAndCollection(reqEvent, mockWithCollections);
         if (mockWithCollection.isPresent()) {
             MockWithCollection mockWColl = mockWithCollection.get();
-            // devtool sortOrder -> desc , asc otherwise for normal mock
-            boolean isSortOrderAsc = !mockWColl.isDevtool;
-            //devtool let all results come. No limit (default batch size)
-            Optional<Integer> limit = mockWColl.isDevtool ? Optional.empty() : Optional.of(1);
-            EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, limit, isSortOrderAsc, lowerBoundForMatching, mockWColl.recordCollection);
-            DSResult<Event> res = cube.getEvents(eventQuery);
+            List<String> payLoadFields = reqEvent.payload.getPayloadFields();
+            Optional<JoinQuery> joinQuery = mockWColl.isDevtool ? Optional.of(getSuccessResponseMatch()) : Optional.empty();
 
-            //variable used in lambda should be final
-            final Event[] firstRespArr = {null};
+            EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1), !mockWColl.isDevtool, lowerBoundForMatching, mockWColl.recordCollection , payLoadFields , joinQuery);
+
+            DSResult<Event> res = cube.getEvents(eventQuery);
 
             final Map<String , Event> reqIdReqMapping = new HashMap<>();
             //saving the request and requestId mapping
@@ -65,28 +63,14 @@ public class RealMocker implements Mocker {
                 return cube.getRespEventForReqEvent(req);
             };
 
-            Optional<Event> matchingResponse = !mockWColl.isDevtool ?
-                    //Normal Replay Mock - Old logic of getting first event and getting response corresponding to it
-                    res.getObjects().findFirst().flatMap(getRespEventForReqEvent) :
-                    // Devtool Mock -> Find the response for each matched request un-till success response is found
-                    res.getObjects().map(getRespEventForReqEvent)
-                    //.flatMap(Optional::stream)   //Java9
-                    .filter(Optional::isPresent)
-                    //.map(Optional::get)
-                    .map(optEvent -> {
-                        Event event = optEvent.get();
-                        if(firstRespArr[0] == null){
-                            firstRespArr[0] = event;
-                        }
-                        return event;
-                    })
-                    .filter(this::isSuccessResponse)
-                    .findFirst();
+            Optional<Event> matchingResponse = res.getObjects().findFirst().flatMap(getRespEventForReqEvent);
 
             if(mockWColl.isDevtool && !matchingResponse.isPresent()){
                 LOGGER.info(createMockReqErrorLogMessage(reqEvent,
-                        "Did not find any valid non-200 response. Giving first match resp"));
-                matchingResponse = Optional.ofNullable(firstRespArr[0]);
+                        "Did not find any valid 200 response. Giving first match resp"));
+                eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1), false , lowerBoundForMatching, mockWColl.recordCollection , payLoadFields , Optional.empty());
+                res = cube.getEvents(eventQuery);
+                matchingResponse = res.getObjects().findFirst().flatMap(getRespEventForReqEvent);
             }
 
             if (!matchingResponse.isPresent()) {
@@ -109,6 +93,19 @@ public class RealMocker implements Mocker {
             throw new MockerException(Constants.INVALID_EVENT,
                 errorReason);
         }
+    }
+
+    private JoinQuery getSuccessResponseMatch(){
+
+        JoinQuery.Builder builder = new JoinQuery.Builder();
+        Map<String,String> successfulRespCond = new HashMap<>();
+        successfulRespCond.put(Constants.EVENT_TYPE_FIELD , EventType.HTTPResponse.toString());
+        successfulRespCond.put(Constants.PAYLOAD_FIELDS_FIELD , String.format("%s:%s", Constants.STATUS, String.valueOf(HttpStatus.SC_OK)));
+
+        builder.withAndConds(successfulRespCond);
+
+        return builder.build();
+
     }
 
     private boolean isSuccessResponse(Event respEvent){
@@ -136,7 +133,7 @@ public class RealMocker implements Mocker {
     }
 
     private static EventQuery buildRequestEventQuery(Event event, int offset, Optional<Integer> limit,
-        boolean isSortOrderAsc, Optional<Instant> lowerBoundForMatching, String collection) {
+        boolean isSortOrderAsc, Optional<Instant> lowerBoundForMatching, String collection , List<String> payloadFields , Optional<JoinQuery> joinQuery) {
         EventQuery.Builder builder =
             new EventQuery.Builder(event.customerId, event.app, event.eventType)
                 .withService(event.service)
@@ -146,9 +143,13 @@ public class RealMocker implements Mocker {
                 .withTraceId(event.getTraceId() , EventQuery.TRACEID_WEIGHT)
                 .withPayloadKey(event.payloadKey , EventQuery.PAYLOAD_KEY_WEIGHT)
                 .withOffset(offset)
-                .withSortOrderAsc(isSortOrderAsc);
+                .withSortOrderAsc(isSortOrderAsc)
+                .withPayloadFields(payloadFields);
+
         lowerBoundForMatching.ifPresent(builder::withTimestamp);
         limit.ifPresent(builder::withLimit);
+        joinQuery.ifPresent(builder::withJoinQuery);
+
         return builder.build();
     }
 
