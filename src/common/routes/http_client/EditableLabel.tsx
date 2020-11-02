@@ -32,6 +32,7 @@ const EditableLabel: FC<EditableLabelProps> = (props) => {
 
     const handleBlur = () => {
         setAllowEdit(false);
+        setShowEditIcon(false);
         handleValueUpdate();
     }
 

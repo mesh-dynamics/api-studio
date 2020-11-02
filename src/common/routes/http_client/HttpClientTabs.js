@@ -40,7 +40,8 @@ import commonConstants from '../../utils/commonConstants';
 import MockConfigs from "./MockConfigs";
 import {setDefaultMockContext} from '../../helpers/httpClientHelpers'
 import SideBarTabs from "./SideBarTabs";
-import {hasTabDataChanged} from "../../utils/http_client/utils"
+import {hasTabDataChanged} from "../../utils/http_client/utils";
+import {applyEnvVarsToUrl} from "../../utils/http_client/envvar";
 
 class HttpClientTabs extends Component {
 
@@ -138,11 +139,11 @@ class HttpClientTabs extends Component {
                 collection: toBeUpdatedData.collectionIdAddedFromClient,
                 traceId: toBeUpdatedData.traceIdAddedFromClient,
                 spanId: cryptoRandomString({length: 16}),
-                parentSpanId: eventData[httpRequestEventTypeIndex].parentSpanId,
+                parentSpanId: eventData[httpRequestEventTypeIndex].spanId,
                 runType: refHttpRequestEvent.runType,
                 runId: null,
                 timestamp: refHttpRequestEvent.timestamp,
-                reqId: "NA",
+                reqId: refHttpRequestEvent.reqId || "NA", // TODO: Revisit this for new request
                 apiPath: refHttpRequestEvent.apiPath,
                 eventType: "HTTPRequest",
                 payload: refHttpRequestEvent.payload,
@@ -212,7 +213,7 @@ class HttpClientTabs extends Component {
                 requestId: toBeUpdatedData.requestId, // from the original request. diff fails in case of setAsReference
                 httpMethod: toBeCopiedFromData.httpMethod,
                 httpURL: toBeCopiedFromData.httpURL,
-                httpURLShowOnly: toBeUpdatedData.httpURLShowOnly,
+                httpURLShowOnly: toBeCopiedFromData.httpURLShowOnly,
                 headers: toBeCopiedFromData.headers,
                 queryStringParams: toBeCopiedFromData.queryStringParams,
                 bodyType: toBeCopiedFromData.bodyType,
@@ -1256,13 +1257,13 @@ class HttpClientTabs extends Component {
         let httpRequestEvent = eachPair[httpRequestEventTypeIndex];
         let httpResponseEvent = eachPair[httpResponseEventTypeIndex];
         
-        let apiPath = getApiPathFromRequestEvent(httpRequestEvent); // httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : "";
+        let apiPath = getApiPathFromRequestEvent(httpRequestEvent);
 
         if(httpRequestEvent.reqId === "NA") {
-            const parsedUrl = urlParser(tabToSave.httpURL, PLATFORM_ELECTRON ? {} : true);
+            const parsedUrl = urlParser(applyEnvVarsToUrl(tabToSave.httpURL), PLATFORM_ELECTRON ? {} : true); // {{{ url}}}/someservice/name
             
-            apiPath = generateApiPath(parsedUrl);
-            let service = parsedUrl.host ? parsedUrl.host : "NA";
+            apiPath = generateApiPath(parsedUrl); 
+            let service = parsedUrl.host ||  "NA";
             httpRequestEvent = this.updateHttpEvent(apiPath, service, httpRequestEvent);
             httpResponseEvent = this.updateHttpEvent(apiPath, service, httpResponseEvent);
             httpRequestEvent.metaData.typeOfRequest = "devtool";
