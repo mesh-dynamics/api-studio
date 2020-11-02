@@ -190,3 +190,9 @@ div.loading, div.loading button{
   margin-top: 0px;
   margin-right: 7px;
 }
+.requestMatchTypeBody{
+  text-align: left;
+
+  background-color: #ECECE7;
+  padding: 8px;
+}

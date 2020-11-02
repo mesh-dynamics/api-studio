@@ -22,6 +22,7 @@ import SplitSlider from "../../components/SplitSlider.tsx";
 import EditableLabel from "./EditableLabel";
 import {hasTabDataChanged} from "../../utils/http_client/utils"
 import Tippy from "@tippy.js/react";
+import RequestMatchType from './RequestMatchType.tsx';
 
 const newStyles = {
     variables: {
@@ -81,7 +82,8 @@ class HttpClient extends Component {
             showCompleteDiff: false,
             prevSelectedTraceTableReqTabId: this.props.currentSelectedTab.selectedTraceTableReqTabId,
             prevSelectedTraceTableTestReqTabId: this.props.currentSelectedTab.selectedTraceTableTestReqTabId,
-            httpRequestRef: null
+            httpRequestRef: null,
+            matchRequestShowPopup: false
         };
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
         this.handleSearchFilterChange = this.handleSearchFilterChange.bind(this);
@@ -179,7 +181,6 @@ class HttpClient extends Component {
             try {
                 api.get(`${config.apiBaseUrl}/as/getReqRespMatchResult?lhsReqId=${tabToProcess.requestId}&rhsReqId=${selectedTraceTableTestReqTab.requestId}`)
                     .then((serverRes) => {
-                        console.log("serverRes: ", serverRes);
                         const results = serverRes.res && [serverRes.res];
                         diffLayoutData = this.preProcessResults(results);
                         this.setState({
@@ -584,7 +585,6 @@ class HttpClient extends Component {
                                                     cursor: "pointer", 
                                                     backgroundColor: 
                                                     selectedTraceTableTestReqTab.id === currentSelectedTab.recordedHistory.id ? "#ccc" : "#fff",
-                                                    color: currentSelectedTab.recordedHistory.recordedResponseStatus==404 ? "red" : null,
                                                 }} 
                                                 onClick={() => this.handleTestRowClick(currentSelectedTab.recordedHistory.id)}
                                             >
@@ -607,7 +607,6 @@ class HttpClient extends Component {
                                                         style={{
                                                             cursor: "pointer", 
                                                             backgroundColor: selectedTraceTableTestReqTab.id === eachReq.id ? "#ccc" : "#fff",
-                                                            color: eachReq.recordedResponseStatus==404 ? "red" : null,
                                                             }} 
                                                         onClick={() => this.handleTestRowClick(eachReq.id)} 
                                                     >
@@ -620,7 +619,13 @@ class HttpClient extends Component {
                                                         </td>
                                                         <td>{eachReq.apiPath}</td>
                                                         <td></td>
-                                                        <td></td>
+                                                        <td>
+                                                            {eachReq.metaData && eachReq.metaData.matchType &&
+                                                                <RequestMatchType 
+                                                                matchType={eachReq.metaData.matchType } 
+                                                                matchedRequestId={eachReq.metaData.matchedRequestId}/>
+                                                            }
+                                                        </td>
                                                     </tr>
                                                 );
                                             })}
@@ -664,7 +669,9 @@ class HttpClient extends Component {
                                     updateParam={this.props.updateParam}
                                     updateAllParams={this.props.updateAllParams}
                                     updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
-                                    isOutgoingRequest={selectedTraceTableReqTab.isOutgoingRequest} >
+                                    isOutgoingRequest={selectedTraceTableReqTab.isOutgoingRequest} 
+                                    id="" 
+                                    readOnly={false}>
                                 </HttpRequestMessage>
                             </div>
                             <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0"}}>

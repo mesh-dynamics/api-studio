@@ -10,6 +10,7 @@ export interface IHttpRequestRawDataProps {
   tabId: string;
   isOutgoingRequest: boolean;
   updateParam: UpdateParamHandler;
+  readOnly: boolean;
 }
 export interface IHttpRequestRawDataState{
   showError: boolean;     
@@ -59,7 +60,7 @@ class HttpRequestRawData extends Component<IHttpRequestRawDataProps,IHttpRequest
     const showRawData = this.props.showRawData;
     return showRawData ? (
       <div style={{ height: "100%", minHeight: "100px" }}>
-        <div style={{ width: "100%", height: "30px" }}>
+        <div style={{ width: "100%", height: "30px", display: this.props.readOnly ? "none" : "block" }}>
         {this.state.showError? <span style={{color: 'red'}}>Couldn't format. Please validate the document for any errors.</span>: <></>}
           <div style={{ float: "right" }}>
             <span
@@ -87,6 +88,7 @@ class HttpRequestRawData extends Component<IHttpRequestRawDataProps,IHttpRequest
             automaticLayout: true,
             formatOnPaste: true,
             contextmenu: false,
+            readOnly: this.props.readOnly
           }}
           editorDidMount={this.editorDidMount}
         />

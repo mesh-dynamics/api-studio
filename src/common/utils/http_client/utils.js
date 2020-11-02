@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { v4 as uuidv4 } from "uuid";
 
 const generateRunId = () => {
     return new Date(Date.now()).toISOString()
@@ -105,6 +106,91 @@ const hasTabDataChanged = (tab) => {
     return false;
 }
 
+const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) => {
+    const httpRequestEventTypeIndex = httpEventReqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
+    const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
+    const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
+    const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
+    let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "";
+    for (let eachHeader in httpRequestEvent.payload[1].hdrs) {
+        headers.push({
+            id: uuidv4(),
+            name: eachHeader,
+            value: httpRequestEvent.payload[1].hdrs[eachHeader].join(","),
+            description: "",
+            selected: true,
+        });
+    }
+    for (let eachQueryParam in httpRequestEvent.payload[1].queryParams) {
+        queryParams.push({
+            id: uuidv4(),
+            name: eachQueryParam,
+            value: httpRequestEvent.payload[1].queryParams[eachQueryParam][0],
+            description: "",
+            selected: true,
+        });
+    }
+    for (let eachFormParam in httpRequestEvent.payload[1].formParams) {
+        formData.push({
+            id: uuidv4(),
+            name: eachFormParam,
+            value: httpRequestEvent.payload[1].formParams[eachFormParam].join(","),
+            description: "",
+            selected: true,
+        });
+        rawDataType = "";
+    }
+    if (httpRequestEvent.payload[1].body) {
+        if (!_.isString(httpRequestEvent.payload[1].body)) {
+            try {
+                rawData = JSON.stringify(httpRequestEvent.payload[1].body, undefined, 4)
+                rawDataType = "json";
+            } catch (err) {
+                console.error(err);
+            }
+        } else {
+            rawData = httpRequestEvent.payload[1].body;
+            rawDataType = "text";
+        }
+    }
+    let reqObject = {
+        httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
+        httpURL: "{{{url}}}/" + httpRequestEvent.apiPath,
+        httpURLShowOnly: httpRequestEvent.apiPath,
+        headers: headers,
+        queryStringParams: queryParams,
+        bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
+        formData: formData,
+        rawData: rawData,
+        rawDataType: rawDataType,
+        paramsType: "showQueryParams",
+        responseStatus: "NA",
+        responseStatusText: "",
+        responseHeaders: "",
+        responseBody: "",
+        recordedResponseHeaders: httpResponseEvent ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
+        recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
+        recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
+        responseBodyType: "json",
+        requestId: reqId,
+        outgoingRequestIds: requestIdsObj[reqId] ? requestIdsObj[reqId] : [],
+        eventData: httpEventReqResPair,
+        showOutgoingRequestsBtn: requestIdsObj[reqId] && requestIdsObj[reqId].length > 0,
+        showSaveBtn: true,
+        outgoingRequests: [],
+        showCompleteDiff: false,
+        isOutgoingRequest: false,
+        service: httpRequestEvent.service,
+        recordingIdAddedFromClient: "",
+        collectionIdAddedFromClient: httpRequestEvent.collection,
+        traceIdAddedFromClient: httpRequestEvent.traceId,
+        requestRunning: false,
+        showTrace: null,
+    };
+    return reqObject;
+}
+
+
 export { 
     generateRunId,
     getStatusColor,
@@ -113,4 +199,5 @@ export {
     getTraceTableTestReqData,
     getApiPathFromRequestEvent,
     hasTabDataChanged,
+    formatHttpEventToTabObject,
 };
