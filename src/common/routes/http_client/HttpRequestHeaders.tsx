@@ -10,6 +10,7 @@ export interface IHttpRequestHeadersProps{
     addOrRemoveParam: AddOrRemoveHandler;
     updateParam: UpdateParamHandler;
     updateAllParams: UpdateParamHandler;
+    readOnly: boolean;
     headers: any[]; //TODO: Get proper interface from HttpClientTabs
 }
 
@@ -57,7 +58,7 @@ class HttpRequestHeaders extends Component<IHttpRequestHeadersProps> {
                     <div style={{marginBottom: "1px"}}>
                         <div style={{display: "inline-block", width: "3%", paddingRight: "9px"}}> 
                             <FormGroup bsSize="small" style={{marginBottom: "0px", textAlign: "center"}}>
-                                <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} checked={this.allSelected()} onChange={this.handleAllCheckChange}/>
+                                <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} disabled={this.props.readOnly} checked={this.allSelected()} onChange={this.handleAllCheckChange}/>
                             </FormGroup>
                         </div>
                         <div style={{display: "inline-block", width: "35%", paddingRight: "9px"}}> 
@@ -87,18 +88,21 @@ class HttpRequestHeaders extends Component<IHttpRequestHeadersProps> {
                         <div style={{display: "inline-block", width: "3%", paddingRight: "9px"}}> 
                             <FormGroup style={{marginBottom: "0px", backgroundColor: "none", textAlign: "center"}}>
                                 <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} checked={eachHeader.selected} 
+                                disabled={this.props.readOnly} 
                                 onChange={() => this.handleCheckChange(eachHeader.id, eachHeader.selected)}/>                            
                             </FormGroup>
                         </div>
                         <div style={{display: "inline-block", width: "35%", paddingRight: "9px"}}> 
                             <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
                                 <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="" 
+                                readOnly={this.props.readOnly} 
                                 value={eachHeader.name} name="name" onChange={this.handleChange.bind(this, eachHeader.id)}/>
                             </FormGroup>
                         </div>
                         <div style={{display: "inline-block", width: "55%", paddingRight: "9px"}}>
                             <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
-                                <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="" value={eachHeader.value} name="value" onChange={this.handleChange.bind(this, eachHeader.id)} />
+                                <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}}
+                                readOnly={this.props.readOnly}  type="text" placeholder="" value={eachHeader.value} name="value" onChange={this.handleChange.bind(this, eachHeader.id)} />
                             </FormGroup>
                         </div>
                         {/* <div style={{display: "inline-block", width: "54%", paddingRight: "9px"}}>
@@ -116,7 +120,7 @@ class HttpRequestHeaders extends Component<IHttpRequestHeadersProps> {
                     </div>
                 )})}
                 <div style={{ marginTop: "5px", marginRight: "7px"}}>
-                    <div style={{display: "inline-block", width: "100%"}}>
+                    <div style={{display:  this.props.readOnly? "none" : "inline-block", width: "100%"}}>
                         <button className="add-request-options-button" onClick={this.handleAdd}>
                             <span style={{ fontSize: "20px" }}>+</span>
                             <span style={{ marginLeft: "5px", fontWeight: 400 }}>Add header</span>

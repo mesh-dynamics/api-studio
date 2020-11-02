@@ -1,6 +1,8 @@
+import { Action, Reducer } from "redux";
 import { apiCatalogConstants } from "../constants/api-catalog.constants";
+import { IApiCatalogState } from "./state.types";
 
-const initialState = {
+const initialState:IApiCatalogState = {
 
     diffRequestLeft: {},
     diffRequestRight: {},
@@ -48,10 +50,11 @@ const initialState = {
         currentPage: 0,
         filterData:{},
         oldPagesData:[]
-    }
+    },
+    resizedColumns: []
 }
 
-export const apiCatalog = (state = initialState, { type, data }) => {
+export const apiCatalog : Reducer<IApiCatalogState> = (state = initialState, { type, data }) => {
     switch (type) {
         case apiCatalogConstants.SET_DIFF_DATA:
             return {

@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import { FormControl, FormGroup, Tabs, Tab, Panel, Label, Modal, Button, ControlLabel, Glyphicon } from 'react-bootstrap';
 
 import { getCurrentMockConfig } from "../../utils/http_client/utils";
-import { applyEnvVars, getCurrentEnvironment, getCurrentEnvVars } from "../../utils/http_client/envvar";
+import { applyEnvVars, getCurrentEnvironment, getRenderEnvVars } from "../../utils/http_client/envvar";
 import EnvironmentSection from './EnvironmentSection';
 import MockConfigSection from './MockConfigSection';
 import _, { head } from 'lodash';
@@ -40,7 +40,7 @@ import commonConstants from '../../utils/commonConstants';
 import MockConfigs from "./MockConfigs";
 import {setDefaultMockContext} from '../../helpers/httpClientHelpers'
 import SideBarTabs from "./SideBarTabs";
-import {hasTabDataChanged} from "../../utils/http_client/utils";
+import {hasTabDataChanged, formatHttpEventToTabObject} from "../../utils/http_client/utils"
 import {applyEnvVarsToUrl} from "../../utils/http_client/envvar";
 
 class HttpClientTabs extends Component {
@@ -649,13 +649,23 @@ class HttpClientTabs extends Component {
     }
 
     handleRowClick(isOutgoingRequest, selectedTraceTableReqTabId, tabId) {
-        const { dispatch } = this.props;
-        dispatch(httpClientActions.setSelectedTraceTableReqTabId(selectedTraceTableReqTabId, tabId));
+        const { dispatch, httpClient: { tabs } } = this.props;
+        
+        const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
+        const currentTableReqId = tabs[tabIndex].selectedTraceTableReqTabId;
+        if(selectedTraceTableReqTabId !== currentTableReqId){
+            dispatch(httpClientActions.setSelectedTraceTableReqTabId(selectedTraceTableReqTabId, tabId));
+        }
     }
 
     handleTestRowClick(selectedTraceTableTestReqTabId, tabId) {
-        const { dispatch } = this.props;
-        dispatch(httpClientActions.setSelectedTraceTableTestReqId(selectedTraceTableTestReqTabId, tabId));
+        const { dispatch, httpClient: { tabs } } = this.props;
+        
+        const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
+        const currentTableReqId = tabs[tabIndex].selectedTraceTableTestReqTabId;
+        if(selectedTraceTableTestReqTabId !== currentTableReqId) {
+            dispatch(httpClientActions.setSelectedTraceTableTestReqId(selectedTraceTableTestReqTabId, tabId));
+        }
     }
 
     handleAddMockReqModalClose() {
@@ -1051,7 +1061,7 @@ class HttpClientTabs extends Component {
     }
 
     async driveRequest(isOutgoingRequest, tabId) {
-        const {httpClient: {tabs, selectedTabKey, userHistoryCollection, mockConfigList, selectedMockConfig, mockContextLookupCollection }} = this.props;
+        const {httpClient: {tabs, selectedTabKey, userHistoryCollection, mockConfigList, selectedMockConfig, mockContextLookupCollection, mockContextSaveToCollection }} = this.props;
         const { cube: { selectedApp }, user } = this.props;
         const { dispatch } = this.props;
         const userId = user.username;
@@ -1071,7 +1081,7 @@ class HttpClientTabs extends Component {
                 collectionId: userHistoryCollection.collec,
                 // recordingId: this.state.tabs[tabIndex].recordingIdAddedFromClient,
                 recordingCollectionId: tabs[tabIndex].collectionIdAddedFromClient || (mockContextLookupCollection || userHistoryCollection.collec),
-                recordingId: userHistoryCollection.id,
+                recordingId: mockContextSaveToCollection || userHistoryCollection.id,
                 traceId: tabs[tabIndex].traceIdAddedFromClient,
                 selectedApp,
                 customerName: customerId,
@@ -1108,12 +1118,11 @@ class HttpClientTabs extends Component {
         
         // render environment variables
         let httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered;
-        let currentEnvironment, currentEnvironmentVars;
+        let currentEnvironment;
         try {
             [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] 
                         = applyEnvVars(httpRequestURL, httpRequestQueryStringParams, fetchConfig);
             currentEnvironment = getCurrentEnvironment();
-            currentEnvironmentVars = getCurrentEnvVars();
         } catch (e) {
             this.showErrorAlert(`${e}`); // prompt user for error in env vars
             return
@@ -1121,8 +1130,6 @@ class HttpClientTabs extends Component {
         const fetchUrlRendered = httpRequestURLRendered + (httpRequestQueryStringParamsRendered ? "?" + stringify(httpRequestQueryStringParamsRendered) : "");
         dispatch(httpClientActions.preDriveRequest(tabId, "WAITING...", false));
         dispatch(httpClientActions.setReqRunning(tabId));
-        // Make request
-        // https://www.mocky.io/v2/5185415ba171ea3a00704eed
         let fetchedResponseHeaders = {}, responseStatus = "", responseStatusText = "";
         const startDate = new Date(Date.now() - 2 * 1000).toISOString();
         fetchConfigRendered.signal = tabToProcess.abortRequest.signal;
@@ -1142,7 +1149,7 @@ class HttpClientTabs extends Component {
         .then((data) => {
             // handle success
             dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), data));
-            this.saveToHistoryAndLoadTrace(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp, httpRequestURLRendered, currentEnvironment, currentEnvironmentVars);
+            this.saveToHistoryAndLoadTrace(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp, httpRequestURLRendered, currentEnvironment);
             //dispatch(httpClientActions.unsetReqRunning(tabId))
         })
         .catch((error) => {
@@ -1188,23 +1195,28 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.removeTab(newTabs, newTabs[nextSelectedIndex].id));
     }
 
-    extractHeadersToCubeFormat(headersReceived) {
+    getValueBySaveType(value, type) {
+        const renderEnvVars = getRenderEnvVars();
+        return type !== "History" ? value : renderEnvVars(value);
+    }
+
+    extractHeadersToCubeFormat(headersReceived, type="") {
         let headers = {};
         if (_.isArray(headersReceived)) {
             headersReceived.forEach(each => {
                 if (each.name && each.value) {
                     if(headers[each.name]){
-                        headers[each.name] = [...headers[each.name], each.value];
+                        headers[each.name] = [...headers[each.name], this.getValueBySaveType(each.value, type)];
                     }else{
-                        headers[each.name] = [each.value];
+                        headers[each.name] = [this.getValueBySaveType(each.value, type)];
                     }
                 }
             });
         } else if (_.isObject(headersReceived)) {
             Object.keys(headersReceived).map((eachHeader) => {
                 if (eachHeader && headersReceived[eachHeader]) {
-                    if(_.isArray(headersReceived[eachHeader])) headers[eachHeader] = headersReceived[eachHeader];
-                    if(_.isString(headersReceived[eachHeader])) headers[eachHeader] = [headersReceived[eachHeader]];
+                    if(_.isArray(headersReceived[eachHeader])) headers[eachHeader] = this.getValueBySaveType(headersReceived[eachHeader], type);
+                    if(_.isString(headersReceived[eachHeader])) headers[eachHeader] = [this.getValueBySaveType(headersReceived[eachHeader], type)];
                 }
             })
         }
@@ -1212,35 +1224,35 @@ class HttpClientTabs extends Component {
         return headers;
     }
 
-    extractQueryStringParamsToCubeFormat(httpRequestQueryStringParams) {
+    extractQueryStringParamsToCubeFormat(httpRequestQueryStringParams, type) {
         let qsParams = {};
         httpRequestQueryStringParams.forEach(each => {
             if (each.name && each.value) {
                 if(qsParams[each.name]){
-                    qsParams[each.name] = [...qsParams[each.name], each.value];
+                    qsParams[each.name] = [...qsParams[each.name], this.getValueBySaveType(each.value, type)];
                 }else{
-                    qsParams[each.name] = [each.value];
+                    qsParams[each.name] = [this.getValueBySaveType(each.value, type)];
                 }
             }
         })
         return qsParams;
     }
 
-    extractBodyToCubeFormat(httpRequestBody) {
+    extractBodyToCubeFormat(httpRequestBody, type) {
         let formData = {};
         if (_.isArray(httpRequestBody)) {
             httpRequestBody.forEach(each => {
                 if (each.name && each.value) {
                     if(formData[each.name]){
-                        formData[each.name] = [...formData[each.name], each.value];
+                        formData[each.name] = [...formData[each.name], this.getValueBySaveType(each.value, type)];
                     }else{
-                        formData[each.name] = [each.value];
+                        formData[each.name] = [this.getValueBySaveTypev(each.value, type)];
                     }
                 }
             })
             return formData;
         } else {
-            return httpRequestBody;
+            return this.getValueBySaveType(httpRequestBody, type);
         }
     }
 
@@ -1251,24 +1263,25 @@ class HttpClientTabs extends Component {
         return jsonString;
     }
 
-    getReqResFromTabData(eachPair, tabToSave, runId, type, reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment, currentEnvironmentVars) {
+    getReqResFromTabData(eachPair, tabToSave, runId, type, reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment) {
         const httpRequestEventTypeIndex = eachPair[0].eventType === "HTTPRequest" ? 0 : 1;
         const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
         let httpRequestEvent = eachPair[httpRequestEventTypeIndex];
         let httpResponseEvent = eachPair[httpResponseEventTypeIndex];
         
-        let apiPath = getApiPathFromRequestEvent(httpRequestEvent);
-
+        // let apiPath = getApiPathFromRequestEvent(httpRequestEvent); // httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : "";
+        let apiPath = tabToSave.httpURL;
         if(httpRequestEvent.reqId === "NA") {
-            const parsedUrl = urlParser(applyEnvVarsToUrl(tabToSave.httpURL), PLATFORM_ELECTRON ? {} : true); // {{{ url}}}/someservice/name
-            
-            apiPath = generateApiPath(parsedUrl); 
-            let service = parsedUrl.host ||  "NA";
+            const parsedUrl = urlParser(applyEnvVarsToUrl(tabToSave.httpURL), PLATFORM_ELECTRON ? {} : true);
+            apiPath = generateApiPath(parsedUrl);
+            let service = parsedUrl.host || "NA";
             httpRequestEvent = this.updateHttpEvent(apiPath, service, httpRequestEvent);
             httpResponseEvent = this.updateHttpEvent(apiPath, service, httpResponseEvent);
             httpRequestEvent.metaData.typeOfRequest = "devtool";
         } else {
             if(!httpRequestEvent.metaData.typeOfRequest) httpRequestEvent.metaData.typeOfRequest = "apiCatalog";
+            httpRequestEvent = this.updateHttpEvent(apiPath, "", httpRequestEvent);
+            httpResponseEvent = this.updateHttpEvent(apiPath, "", httpResponseEvent);
         }
 
         if(httpRequestEvent.parentSpanId === null) {
@@ -1279,26 +1292,32 @@ class HttpClientTabs extends Component {
             httpRequestEvent.spanId = "NA"
         }
 
-        if(currentEnvironment) {
-            httpRequestEvent.metaData.currentEnvironment = currentEnvironment;
-            httpRequestEvent.metaData.currentEnvironmentVars = currentEnvironmentVars;
-        }
-
-        if(urlEnvVal) {
-            httpRequestEvent.metaData.href = urlEnvVal;
+        if(type === "History") {
+            httpRequestEvent.metaData.collectionId = tabToSave.collectionIdAddedFromClient;
+            httpRequestEvent.metaData.requestId = tabToSave.requestId;
+            if(urlEnvVal) {
+                httpRequestEvent.apiPath = urlEnvVal;
+                httpResponseEvent.apiPath = urlEnvVal;
+                httpRequestEvent.metaData.href = urlEnvVal;
+            }
+            if(currentEnvironment) {
+                httpRequestEvent.metaData.currentEnvironment = currentEnvironment;
+            }
+            const renderEnvVars = getRenderEnvVars();
+            apiPath = renderEnvVars(apiPath);
         }
 
         const { headers, queryStringParams, bodyType, rawDataType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus } = tabToSave;
-        const httpReqestHeaders = this.extractHeadersToCubeFormat(headers);
-        const httpRequestQueryStringParams = this.extractQueryStringParamsToCubeFormat(queryStringParams);
+        const httpReqestHeaders = this.extractHeadersToCubeFormat(headers, type);
+        const httpRequestQueryStringParams = this.extractQueryStringParamsToCubeFormat(queryStringParams, type);
         let httpRequestFormParams = {}, httpRequestBody = "";
         if (bodyType === "formData") {
             const { formData } = tabToSave;
-            httpRequestFormParams = this.extractBodyToCubeFormat(formData);
+            httpRequestFormParams = this.extractBodyToCubeFormat(formData, type);
         }
         if (bodyType === "rawData") {
             const { rawData } = tabToSave;
-            httpRequestBody = this.extractBodyToCubeFormat(rawData);
+            httpRequestBody = this.extractBodyToCubeFormat(rawData, type);
         }
         const httpMethod = tabToSave.httpMethod;
         let httpResponseHeaders, httpResponseBody, httpResponseStatus;
@@ -1309,7 +1328,7 @@ class HttpClientTabs extends Component {
         } else {
             httpResponseHeaders = responseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : recordedResponseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : null;
             httpResponseBody = responseBody ? this.tryJsonParse(responseBody) : recordedResponseBody ? this.tryJsonParse(recordedResponseBody) : null;
-            httpResponseStatus = responseStatus
+            httpResponseStatus = responseStatus;
         }
         const reqResCubeFormattedData = {   
             request: {
@@ -1347,7 +1366,7 @@ class HttpClientTabs extends Component {
         return reqResCubeFormattedData;
     }
 
-    saveToHistoryAndLoadTrace = (tabId, recordingId, runId="", reqTimestamp="", resTimestamp="", urlEnvVal="", currentEnvironment="", currentEnvironmentVars={}) => {
+    saveToHistoryAndLoadTrace = (tabId, recordingId, runId="", reqTimestamp="", resTimestamp="", urlEnvVal="", currentEnvironment="") => {
         const { 
             httpClient: { 
                 historyTabState, 
@@ -1368,7 +1387,7 @@ class HttpClientTabs extends Component {
         try {
             if (reqResPair.length > 0) {
                 const data = [];
-                data.push(this.getReqResFromTabData(reqResPair, tabToProcess, runId, "History", reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment, currentEnvironmentVars));
+                data.push(this.getReqResFromTabData(reqResPair, tabToProcess, runId, "History", reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment));
                 const apiConfig = {
                     cancelToken: tabToProcess.abortRequest.cancelToken
                 }
@@ -1465,7 +1484,7 @@ class HttpClientTabs extends Component {
         let reqObject = {
             id: uuidv4(),
             httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-            httpURL: "{{{url}}}/" + httpRequestEvent.apiPath,
+            httpURL: httpRequestEvent.apiPath,
             httpURLShowOnly: httpRequestEvent.apiPath,
             headers: headers,
             queryStringParams: queryParams,
@@ -1497,6 +1516,7 @@ class HttpClientTabs extends Component {
             apiPath: httpRequestEvent.apiPath,
             requestRunning: false,
             showTrace: null,
+            metaData: httpResponseEvent.metaData
         };
         return reqObject;
     }
@@ -1614,90 +1634,6 @@ class HttpClientTabs extends Component {
         return httpClientRequestIds;
     }
 
-    formatHttpEventToTabObject(reqId, requestIdsObj, httpEventReqResPair) {
-        const httpRequestEventTypeIndex = httpEventReqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
-        const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
-        const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
-        const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
-        let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "";
-        for (let eachHeader in httpRequestEvent.payload[1].hdrs) {
-            headers.push({
-                id: uuidv4(),
-                name: eachHeader,
-                value: httpRequestEvent.payload[1].hdrs[eachHeader].join(","),
-                description: "",
-                selected: true,
-            });
-        }
-        for (let eachQueryParam in httpRequestEvent.payload[1].queryParams) {
-            queryParams.push({
-                id: uuidv4(),
-                name: eachQueryParam,
-                value: httpRequestEvent.payload[1].queryParams[eachQueryParam][0],
-                description: "",
-                selected: true,
-            });
-        }
-        for (let eachFormParam in httpRequestEvent.payload[1].formParams) {
-            formData.push({
-                id: uuidv4(),
-                name: eachFormParam,
-                value: httpRequestEvent.payload[1].formParams[eachFormParam].join(","),
-                description: "",
-                selected: true,
-            });
-            rawDataType = "";
-        }
-        if (httpRequestEvent.payload[1].body) {
-            if (!_.isString(httpRequestEvent.payload[1].body)) {
-                try {
-                    rawData = JSON.stringify(httpRequestEvent.payload[1].body, undefined, 4)
-                    rawDataType = "json";
-                } catch (err) {
-                    console.error(err);
-                }
-            } else {
-                rawData = httpRequestEvent.payload[1].body;
-                rawDataType = "text";
-            }
-        }
-        let reqObject = {
-            httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-            httpURL: "{{{url}}}/" + httpRequestEvent.apiPath,
-            httpURLShowOnly: httpRequestEvent.apiPath,
-            headers: headers,
-            queryStringParams: queryParams,
-            bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
-            formData: formData,
-            rawData: rawData,
-            rawDataType: rawDataType,
-            paramsType: "showQueryParams",
-            responseStatus: "NA",
-            responseStatusText: "",
-            responseHeaders: "",
-            responseBody: "",
-            recordedResponseHeaders: httpResponseEvent ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
-            recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
-            recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
-            responseBodyType: "json",
-            requestId: reqId,
-            outgoingRequestIds: requestIdsObj[reqId] ? requestIdsObj[reqId] : [],
-            eventData: httpEventReqResPair,
-            showOutgoingRequestsBtn: requestIdsObj[reqId] && requestIdsObj[reqId].length > 0,
-            showSaveBtn: true,
-            outgoingRequests: [],
-            showCompleteDiff: false,
-            isOutgoingRequest: false,
-            service: httpRequestEvent.service,
-            recordingIdAddedFromClient: "",
-            collectionIdAddedFromClient: httpRequestEvent.collection,
-            traceIdAddedFromClient: httpRequestEvent.traceId,
-            requestRunning: false,
-            showTrace: null,
-        };
-        return reqObject;
-    }
-
     updateDimensions = () => {
         this.setState({ showEnvPopoverOverlay: false});
     };
@@ -1748,7 +1684,7 @@ class HttpClientTabs extends Component {
                     for (let eachReqId of reqIdArray) {
                         const reqResPair = result.objects.filter(eachReq => eachReq.reqId === eachReqId);
                         if (reqResPair.length > 0) {
-                            let reqObject = this.formatHttpEventToTabObject(eachReqId, requestIds, reqResPair);
+                            let reqObject = formatHttpEventToTabObject(eachReqId, requestIds, reqResPair);
                             const savedTabId = this.addTab(null, reqObject, selectedApp);
                             this.showOutgoingRequests(savedTabId, reqObject.traceIdAddedFromClient, reqObject.collectionIdAddedFromClient, reqObject.recordingIdAddedFromClient);
                         }
