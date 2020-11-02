@@ -2,13 +2,30 @@ import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import cryptoRandomString from 'crypto-random-string';
+import { ICollectionDetails, ICubeRunHistory, IHttpClientStoreState, IHttpClientTabDetails } from "./state.types";
+
+
+export interface IHttpClientAction{
+    type: string,
+    data:any;
+  }
+
+  /*
+    eachTab[data.type]: this is not proper as per typescript. data.type may be key which doesn't belong into eachTab
+    To remove compile errors, as of now adding a type. But slowly this pattern needs to be improved.
+    Adding below interface only to ask TS to consider data.type as one of these props, which belongs to IHttpClientTabDetails type
+  */
+
+ export type IHttpClientTabDetailsFieldNames = 
+ "eventData" | "formData" | "headers" | "outgoingRequestIds"
+ | "outgoingRequests" | "queryStringParams";
 
 /* const tabId = uuidv4();
 const isoDate = new Date().toISOString();
 const timestamp = new Date(isoDate).getTime();
 const traceId = cryptoRandomString({length: 32});
 const spanId = cryptoRandomString({length: 16}); */
-const initialState = { 
+const initialState : IHttpClientStoreState = { 
     tabs: [/* { 
         id: tabId,
         requestId: "",
@@ -152,12 +169,12 @@ const initialState = {
     
 }
 
-const getTabIndexGivenTabId = (tabId, tabs) => {
+const getTabIndexGivenTabId = (tabId:string, tabs: IHttpClientTabDetails[]) => {
     if(!tabs) return -1;
     return tabs.findIndex((e) => e.id === tabId);
 }
 
-export const httpClient = (state = initialState, { type, data }) => {
+export const httpClient = (state = initialState, { type, data }: IHttpClientAction) => {
     switch (type) {
 
         case httpClientConstants.DELETE_PARAM_IN_OUTGOING_TAB: {
@@ -168,7 +185,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                     if(eachTab.id === selectedTabKey) {
                         eachTab.outgoingRequests.map((eachOutgoingTab) => {
                             if (eachOutgoingTab.id === data.tabId) {
-                                eachOutgoingTab[data.type] = eachOutgoingTab[data.type].filter((e) => e.id !== data.id);
+                                eachOutgoingTab[data.type] = eachOutgoingTab[data.type].filter((e: any) => e.id !== data.id);
                                 eachOutgoingTab.hasChanged = true;
                             }
                         })
@@ -207,7 +224,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                 ...state,
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
-                        eachTab[data.type] = eachTab[data.type].filter((e) => e.id !== data.id);
+                        eachTab[data.type as IHttpClientTabDetailsFieldNames] = eachTab[data.type as IHttpClientTabDetailsFieldNames].filter((e: any) => e.id !== data.id);
                         eachTab.hasChanged = true;
                     }
                     return eachTab; 
@@ -221,7 +238,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                 ...state,
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
-                        eachTab[data.type] = [...eachTab[data.type], {
+                        eachTab[data.type  as IHttpClientTabDetailsFieldNames] = [...eachTab[data.type  as IHttpClientTabDetailsFieldNames], {
                             id: uuidv4(),
                             name: "",
                             value: "",
@@ -268,7 +285,7 @@ export const httpClient = (state = initialState, { type, data }) => {
             let {tabs} = state;
             const tabIndex = tabs.findIndex(tab => tab.id === data.tabId);
             if(tabIndex < 0) return state;
-            let params = tabs[tabIndex][data.type];
+            let params = tabs[tabIndex][data.type  as IHttpClientTabDetailsFieldNames];
             if(_.isArray(params)) {
                 let specificParamArr = params.filter((e) => e.id === data.id);
                 if(specificParamArr.length > 0) {
@@ -282,8 +299,8 @@ export const httpClient = (state = initialState, { type, data }) => {
                 ...state,
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
-                        eachTab[data.type] = params;
-                        if(data.type === "httpURL") eachTab.tabName = params;
+                        eachTab[data.type as IHttpClientTabDetailsFieldNames] = params as any[];
+                        if(data.type === "httpURL") eachTab.tabName = params as unknown as string;
                         eachTab.hasChanged = true;
                     }
                     return eachTab; 
@@ -322,7 +339,7 @@ export const httpClient = (state = initialState, { type, data }) => {
             let {tabs} = state;
             const tabIndex = tabs.findIndex(tab => tab.id === data.tabId);
             if(tabIndex < 0) return state;
-            let params = tabs[tabIndex][data.type];
+            let params = tabs[tabIndex][data.type  as IHttpClientTabDetailsFieldNames];
             if(_.isArray(params)) {
                 params.forEach((param) => {param[data.key]=data.value})
             } else {
@@ -333,8 +350,8 @@ export const httpClient = (state = initialState, { type, data }) => {
                 ...state,
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
-                        eachTab[data.type] = params;
-                        if(data.type === "httpURL") eachTab.tabName = params;
+                        eachTab[data.type as IHttpClientTabDetailsFieldNames] = params as any[];
+                        if(data.type === "httpURL") eachTab.tabName = params as unknown as string;
                         eachTab.hasChanged = true;
                     }
                     return eachTab; 
@@ -367,7 +384,7 @@ export const httpClient = (state = initialState, { type, data }) => {
                 ...state,
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
-                        eachTab[data.type] = data.value;
+                        eachTab[data.type  as IHttpClientTabDetailsFieldNames] = data.value;
                         eachTab.hasChanged = true;
                     }
                     return eachTab; 
@@ -497,7 +514,7 @@ export const httpClient = (state = initialState, { type, data }) => {
             }
         }
         case httpClientConstants.DELETE_CUBE_RUN_HISTORY: {
-            let cubeRunHistory = {};
+            let cubeRunHistory: ICubeRunHistory = {};
             Object.keys(state.cubeRunHistory).forEach((historyDate) => {
               cubeRunHistory[historyDate] = state.cubeRunHistory[historyDate].filter((traceList) => {
                 if (traceList.children) {
@@ -522,7 +539,7 @@ export const httpClient = (state = initialState, { type, data }) => {
             }
         }
         case httpClientConstants.DELETE_USER_COLLECTION: {
-            let deletedCollection;
+            let deletedCollection: ICollectionDetails;
             const userCollections = state.userCollections.filter( collection => { 
                 if(collection.rootRcrdngId === data){
                     deletedCollection = collection;
@@ -737,7 +754,7 @@ export const httpClient = (state = initialState, { type, data }) => {
         case httpClientConstants.CREATE_DUPLICATE_TAB: {
             let {tabs} = state;
             const tabToClone = _.find(tabs, {id: data.tabId});
-            const newTab = _.cloneDeep(tabToClone);
+            const newTab = _.cloneDeep(tabToClone)!;
             newTab.id = uuidv4();
             newTab.selectedTraceTableReqTabId = newTab.id;
             return {
