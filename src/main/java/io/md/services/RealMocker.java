@@ -6,6 +6,7 @@
 
 package io.md.services;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.md.dao.*;
 
 import java.time.Instant;
@@ -16,6 +17,9 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response.Status;
 
+import io.md.injection.DynamicInjector;
+import io.md.injection.DynamicInjectorFactory;
+import io.md.utils.CubeObjectMapperProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,10 +41,13 @@ import io.md.utils.Utils;
 public class RealMocker implements Mocker {
 
     private DataStore cube;
+    private DynamicInjectorFactory diFactory;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(RealMocker.class);
 
     public RealMocker(DataStore cube) {
         this.cube = cube;
+        this.diFactory = new DynamicInjectorFactory(cube , CubeObjectMapperProvider.getInstance());
     }
 
     @Override
@@ -48,6 +55,9 @@ public class RealMocker implements Mocker {
         Optional<MockWithCollection> mockWithCollection = setPayloadKeyAndCollection(reqEvent, mockWithCollections);
         if (mockWithCollection.isPresent()) {
             MockWithCollection mockWColl = mockWithCollection.get();
+            DynamicInjector di = diFactory.getMgr(reqEvent.customerId , reqEvent.app , mockWColl.dynamicInjectionConfigVersion);
+            di = diFactory.getMgr("FitchSolutions" , "FitchConnect" , Optional.of("FitchDynInject"));
+            di.extract(reqEvent , null);
             // devtool sortOrder -> desc , asc otherwise for normal mock
             boolean isSortOrderAsc = !mockWColl.isDevtool;
             //devtool let all results come. No limit (default batch size)
@@ -100,6 +110,8 @@ public class RealMocker implements Mocker {
                         "Unable to mock request since no default response found"));
                 }
             }
+            matchingResponse.ifPresent(di::inject);
+            
             Optional<Event> matchedReq = matchingResponse.map(resp->reqIdReqMapping.get(resp.reqId));
             Optional<Event> mockResponse = createResponseFromEvent(reqEvent, matchedReq , matchingResponse, mockWithCollection.get().runId);
             return new MockResponse(mockResponse, res.getNumFound());
