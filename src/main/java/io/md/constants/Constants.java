@@ -281,4 +281,10 @@ public class Constants {
 	public static final String PDF  = "application/pdf";
 
 	public static final String HARD_DELETE = "hardDelete";
+
+	public static final String GOLDEN_REQUEST = "Golden.Request";
+	public static final String GOLDEN_RESPONSE = "Golden.Response";
+	public static final String TESTSET_REQUEST = "TestSet.Request";
+	public static final String TESTSET_RESPONSE = "TestSet.Response";
+
 }

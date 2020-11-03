@@ -21,6 +21,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -31,6 +32,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.md.cache.ProtoDescriptorCache;
 import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.dao.*;
@@ -648,5 +650,21 @@ public class Utils {
 			requestHttpMethod = "";
 		}
 		return requestHttpMethod;
+	}
+	public static JsonNode convertStringToNode(String value, ObjectMapper jsonMapper)
+	{
+		try {
+			return  jsonMapper.readTree(value);
+		} catch (IOException e) {
+			return new TextNode(value);
+		}
+	}
+
+	public static <T> void ifPresentOrElse(Optional<T> val , Consumer<? super T> action, Runnable emptyAction ){
+		if (val.isPresent()) {
+			action.accept(val.get());
+		} else {
+			emptyAction.run();
+		}
 	}
 }
