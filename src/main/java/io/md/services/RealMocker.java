@@ -56,7 +56,6 @@ public class RealMocker implements Mocker {
         if (mockWithCollection.isPresent()) {
             MockWithCollection mockWColl = mockWithCollection.get();
             DynamicInjector di = diFactory.getMgr(reqEvent.customerId , reqEvent.app , mockWColl.dynamicInjectionConfigVersion);
-            di = diFactory.getMgr("FitchSolutions" , "FitchConnect" , Optional.of("FitchDynInject"));
             di.extract(reqEvent , null);
             // devtool sortOrder -> desc , asc otherwise for normal mock
             boolean isSortOrderAsc = !mockWColl.isDevtool;
