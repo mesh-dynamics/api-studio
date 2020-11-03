@@ -49,7 +49,7 @@ public class RealMocker implements Mocker {
         Optional<MockWithCollection> mockWithCollection = setPayloadKeyAndCollection(reqEvent, mockWithCollections);
         if (mockWithCollection.isPresent()) {
             MockWithCollection mockWColl = mockWithCollection.get();
-            List<String> payLoadFields = reqEvent.payload.getPayloadFields();
+            List<String> payLoadFields = Arrays.asList(String.format("%s:%s" , Constants.METHOD , Utils.getHttpMethod(reqEvent))) ;
             Optional<JoinQuery> joinQuery = mockWColl.isDevtool ? Optional.of(getSuccessResponseMatch()) : Optional.empty();
 
             EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1), !mockWColl.isDevtool, lowerBoundForMatching, mockWColl.recordCollection , payLoadFields , joinQuery);

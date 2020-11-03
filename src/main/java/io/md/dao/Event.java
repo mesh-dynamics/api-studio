@@ -71,7 +71,7 @@ public class Event implements MDStorable {
 		this.recordingType = recordingType != null ? recordingType : RecordingType.Golden;
 		this.metaData = metaData;
 		this.runId = runId != null ? runId : this.traceId;
-		this.payloadFields = payloadFields;
+		this.payloadFields = payloadFields!=null ? payloadFields : payload.getPayloadFields();
 	}
 
 	public static List<EventType> getRequestEventTypes() {
@@ -112,6 +112,7 @@ public class Event implements MDStorable {
 			}
 			Validate.notNull(payload);
 			Validate.isTrue(!payload.isRawPayloadEmpty());
+			Validate.notNull(payloadFields);
 		} catch (Exception ex) {
 			throw new InvalidEventException("Invalid Event Object " + ex.getMessage(), ex);
 		}
