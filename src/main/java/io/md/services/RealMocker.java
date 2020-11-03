@@ -19,6 +19,7 @@ import javax.ws.rs.core.Response.Status;
 
 import io.md.injection.DynamicInjector;
 import io.md.injection.DynamicInjectorFactory;
+import io.md.utils.CubeObjectMapperProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,14 +42,12 @@ public class RealMocker implements Mocker {
 
     private DataStore cube;
     private DynamicInjectorFactory diFactory;
-    private ObjectMapper jsonMapper;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RealMocker.class);
 
-    public RealMocker(DataStore cube , ObjectMapper jsonMapper) {
+    public RealMocker(DataStore cube) {
         this.cube = cube;
-        this.jsonMapper = jsonMapper;
-        this.diFactory = new DynamicInjectorFactory(cube , jsonMapper);
+        this.diFactory = new DynamicInjectorFactory(cube , CubeObjectMapperProvider.getInstance());
     }
 
     @Override
@@ -57,6 +56,7 @@ public class RealMocker implements Mocker {
         if (mockWithCollection.isPresent()) {
             MockWithCollection mockWColl = mockWithCollection.get();
             DynamicInjector di = diFactory.getMgr(reqEvent.customerId , reqEvent.app , mockWColl.dynamicInjectionConfigVersion);
+            di = diFactory.getMgr("FitchSolutions" , "FitchConnect" , Optional.of("FitchDynInject"));
             di.extract(reqEvent , null);
             // devtool sortOrder -> desc , asc otherwise for normal mock
             boolean isSortOrderAsc = !mockWColl.isDevtool;
