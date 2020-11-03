@@ -43,8 +43,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          version=$(git describe --tags `git rev-list --tags --max-count=1`)
-          NEXTVERSION=$(echo ${version} | awk -F. -v OFS=. '{$(NF-1)++;print}')
+          version=$(git tag --list)
+          IFS=$'\n'
+          NEXTVERSION=$(echo "${version[*]}" | sort -nr | head -n1 | awk -F. -v OFS=. '{$(NF-1)++;$(NF)=0;print}')
           python helper.py $NEXTVERSION
           mvn -B package --file pom.xml
           git tag $NEXTVERSION

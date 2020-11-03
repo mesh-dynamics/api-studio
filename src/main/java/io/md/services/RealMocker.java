@@ -17,6 +17,9 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.http.HttpStatus;
+import io.md.injection.DynamicInjector;
+import io.md.injection.DynamicInjectorFactory;
+import io.md.utils.CubeObjectMapperProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,10 +41,13 @@ import io.md.utils.Utils;
 public class RealMocker implements Mocker {
 
     private DataStore cube;
+    private DynamicInjectorFactory diFactory;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(RealMocker.class);
 
     public RealMocker(DataStore cube) {
         this.cube = cube;
+        this.diFactory = new DynamicInjectorFactory(cube , CubeObjectMapperProvider.getInstance());
     }
 
     @Override
@@ -49,11 +55,13 @@ public class RealMocker implements Mocker {
         Optional<MockWithCollection> mockWithCollection = setPayloadKeyAndCollection(reqEvent, mockWithCollections);
         if (mockWithCollection.isPresent()) {
             MockWithCollection mockWColl = mockWithCollection.get();
+            DynamicInjector di = diFactory.getMgr(reqEvent.customerId , reqEvent.app , mockWColl.dynamicInjectionConfigVersion);
+            di.extract(reqEvent , null);
+
             List<String> payLoadFields = Arrays.asList(String.format("%s:%s" , Constants.METHOD , Utils.getHttpMethod(reqEvent))) ;
             Optional<JoinQuery> joinQuery = mockWColl.isDevtool ? Optional.of(getSuccessResponseMatch()) : Optional.empty();
 
             EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1), !mockWColl.isDevtool, lowerBoundForMatching, mockWColl.recordCollection , payLoadFields , joinQuery);
-
             DSResult<Event> res = cube.getEvents(eventQuery);
 
             final Map<String , Event> reqIdReqMapping = new HashMap<>();
@@ -84,6 +92,8 @@ public class RealMocker implements Mocker {
                         "Unable to mock request since no default response found"));
                 }
             }
+            matchingResponse.ifPresent(di::inject);
+            
             Optional<Event> matchedReq = matchingResponse.map(resp->reqIdReqMapping.get(resp.reqId));
             Optional<Event> mockResponse = createResponseFromEvent(reqEvent, matchedReq , matchingResponse, mockWithCollection.get().runId);
             return new MockResponse(mockResponse, res.getNumFound());
