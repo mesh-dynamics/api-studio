@@ -71,7 +71,7 @@ public class Event implements MDStorable {
 		this.recordingType = recordingType != null ? recordingType : RecordingType.Golden;
 		this.metaData = metaData;
 		this.runId = runId != null ? runId : this.traceId;
-		this.payloadFields = payloadFields!=null ? payloadFields : payload.getPayloadFields();
+		this.payloadFields = payloadFields!=null && !payloadFields.isEmpty() ? payloadFields : payload.getPayloadFields();
 	}
 
 	public static List<EventType> getRequestEventTypes() {
