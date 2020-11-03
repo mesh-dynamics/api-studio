@@ -143,7 +143,7 @@ public class EventPayloadTests {
 				 * @return
 				 */
 				@Override
-				public boolean saveResult(ReqRespMatchResult res) {
+				public boolean saveResult(ReqRespMatchResult res, String customerId) {
 					return false;
 				}
 
