@@ -12,13 +12,15 @@ import _ from "lodash";
 
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { cubeService } from "../../services";
+import { ICubeState, IHttpClientStoreState, IStoreState, IUserAuthDetails } from "../../reducers/state.types";
 
 export interface ICreateCollectionProps {
   modalButton?: boolean;
   dispatch: any;
-  httpClient: any;
-  cube: any;
-  user: any
+  httpClient: IHttpClientStoreState;
+  cube: ICubeState;
+  user: IUserAuthDetails;
+  resetParentMessage?: () => void;
 }
 interface ICreateCollectionState {
   newCollectionName: string;
@@ -29,7 +31,7 @@ interface ICreateCollectionState {
 class CreateCollection extends Component<
   ICreateCollectionProps,
   ICreateCollectionState
-  > {
+> {
   constructor(props: ICreateCollectionProps) {
     super(props);
     this.state = {
@@ -70,7 +72,15 @@ class CreateCollection extends Component<
   handleCollectionNameChange(evt: React.ChangeEvent<HTMLInputElement>) {
     this.setState({
       newCollectionName: evt.target.value,
+      modalCreateCollectionMessage: "",
     });
+    this.props.resetParentMessage && this.props.resetParentMessage();
+  }
+
+  reset() {
+    if (this.state.modalCreateCollectionMessage) {
+      this.setState({ modalCreateCollectionMessage: "" });
+    }
   }
 
   handleCreateCollection() {
@@ -94,18 +104,23 @@ class CreateCollection extends Component<
       const app = selectedApp;
 
       try {
-        cubeService.createUserCollection(user, newCollectionName, app).then(() => {
-          dispatch(httpClientActions.loadUserCollections());
-          dispatch(apiCatalogActions.fetchGoldenCollectionList(app, "UserGolden"));
-          this.setState({
-            newCollectionName: "",
-            modalCreateCollectionMessage:
-              "Created Successfully!" +
-              (this.props.modalButton
-                ? ""
-                : " Please select this newly created collection from below dropdown and click save."),
+        this.setState({ modalCreateCollectionMessage: "Saving.." });
+        cubeService
+          .createUserCollection(user, newCollectionName, app)
+          .then(() => {
+            dispatch(httpClientActions.loadUserCollections());
+            dispatch(
+              apiCatalogActions.fetchGoldenCollectionList(app, "UserGolden")
+            );
+            this.setState({
+              newCollectionName: "",
+              modalCreateCollectionMessage:
+                "Created Successfully!" +
+                (this.props.modalButton
+                  ? ""
+                  : " Please select this newly created collection from below dropdown and click save."),
+            });
           });
-        });
       } catch (error) {
         this.setState({
           modalCreateCollectionMessage: "Error saving: " + error,
@@ -198,14 +213,16 @@ class CreateCollection extends Component<
   }
 }
 
-function mapStateToProps(state: any) {
+function mapStateToProps(state: IStoreState) {
   const { cube, apiCatalog, httpClient, authentication } = state;
   return {
     cube,
     apiCatalog,
     httpClient,
-    user: authentication.user
+    user: authentication.user,
   };
 }
 
-export default connect(mapStateToProps)(CreateCollection);
+export default connect(mapStateToProps, null, null, { withRef: true })(
+  CreateCollection
+);

@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 import { FormControl, FormGroup, Tabs, Tab, Panel, Label, Modal, Button, ControlLabel, Glyphicon } from 'react-bootstrap';
 
-import { getCurrentMockConfig } from "../../utils/http_client/utils";
-import { applyEnvVars, getCurrentEnvironment, getRenderEnvVars } from "../../utils/http_client/envvar";
+import { preRequestToFetchableConfig, getCurrentMockConfig } from "../../utils/http_client/utils";
+import { applyEnvVars, getCurrentEnvironment, getRenderEnvVars, getCurrentEnvVars } from "../../utils/http_client/envvar";
 import EnvironmentSection from './EnvironmentSection';
 import MockConfigSection from './MockConfigSection';
 import _, { head } from 'lodash';
@@ -838,9 +838,9 @@ class HttpClientTabs extends Component {
         } catch (err) {
             console.error("err: ", err);
         }
-        const urlToPost = `${config.apiBaseUrl}/cs/storeUserReqResp/${importedToCollectionId}`;
+        
         const apiConfig = {};
-        api.post(urlToPost, httpEventPairs, apiConfig)
+        cubeService.storeUserReqResponse(importedToCollectionId, httpEventPairs, apiConfig)
             .then((serverRes) => {
                 this.setState({
                     showImportModal: true,
@@ -1061,7 +1061,7 @@ class HttpClientTabs extends Component {
     }
 
     async driveRequest(isOutgoingRequest, tabId) {
-        const {httpClient: {tabs, selectedTabKey, userHistoryCollection, mockConfigList, selectedMockConfig, mockContextLookupCollection, mockContextSaveToCollection }} = this.props;
+        const {httpClient: {tabs, selectedTabKey, userHistoryCollection, mockConfigList, selectedMockConfig, mockContextLookupCollection, mockContextSaveToCollection, selectedEnvironment  }} = this.props;
         const { cube: { selectedApp }, user } = this.props;
         const { dispatch } = this.props;
         const userId = user.username;
@@ -1112,29 +1112,58 @@ class HttpClientTabs extends Component {
             method: httpMethod,
             headers: httpReqestHeaders
         }
+                
         if (httpMethod !== "GET".toLowerCase() && httpMethod !== "HEAD".toLowerCase()) {
             fetchConfig["body"] = httpRequestBody;
         }
-        
-        // render environment variables
-        let httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered;
-        let currentEnvironment;
-        try {
-            [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] 
-                        = applyEnvVars(httpRequestURL, httpRequestQueryStringParams, fetchConfig);
-            currentEnvironment = getCurrentEnvironment();
-        } catch (e) {
-            this.showErrorAlert(`${e}`); // prompt user for error in env vars
-            return
-        }
-        const fetchUrlRendered = httpRequestURLRendered + (httpRequestQueryStringParamsRendered ? "?" + stringify(httpRequestQueryStringParamsRendered) : "");
+
         dispatch(httpClientActions.preDriveRequest(tabId, "WAITING...", false));
         dispatch(httpClientActions.setReqRunning(tabId));
+
+
+        //Check if some more code can be moved to Utils
+
+        // render environment variables
+        let httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered;
+        let currentEnvironment, currentEnvironmentVars;
+        currentEnvironment = getCurrentEnvironment();
+        currentEnvironmentVars = getCurrentEnvVars();
+
+        const reqISODate = new Date().toISOString();
+        const reqTimestamp = new Date(reqISODate).getTime();
+
+        try {
+            
+            const reqResPair = tabToProcess.eventData;
+            const formattedData = this.getReqResFromTabData(reqResPair, tabToProcess, runId, "History", reqTimestamp, null, httpRequestURLRendered, currentEnvironment, currentEnvironmentVars);
+            const preRequestData = {
+                requestEvent : formattedData.request,
+                environmentName: selectedEnvironment,
+                injectionConfigVersion: `default${selectedApp}`,
+                contextMap: {}
+            }
+            const preRequestResult = await cubeService.fetchPreRequest(userHistoryCollection.id, runId, preRequestData, tabToProcess.abortRequest.cancelToken);
+        
+            [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] = preRequestToFetchableConfig(preRequestResult);
+
+        } catch (e) {
+            console.error(e);
+            //Fallback to old way of generating request
+            try{
+                [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] 
+                = applyEnvVars(httpRequestURL, httpRequestQueryStringParams, fetchConfig);
+            }
+            catch(error){
+                this.showErrorAlert(`${e}`); // prompt user for error in env vars
+                dispatch(httpClientActions.postErrorDriveRequest(tabId, error.message));
+                dispatch(httpClientActions.unsetReqRunning(tabId));
+                return
+            }
+        }
+        const fetchUrlRendered = httpRequestURLRendered + (httpRequestQueryStringParamsRendered ? "?" + stringify(httpRequestQueryStringParamsRendered) : "");
         let fetchedResponseHeaders = {}, responseStatus = "", responseStatusText = "";
         const startDate = new Date(Date.now() - 2 * 1000).toISOString();
         fetchConfigRendered.signal = tabToProcess.abortRequest.signal;
-        const reqISODate = new Date().toISOString();
-        const reqTimestamp = new Date(reqISODate).getTime();
         let resTimestamp;
         return fetch(fetchUrlRendered, fetchConfigRendered).then((response) => {
             const resISODate = new Date().toISOString();
@@ -1246,7 +1275,7 @@ class HttpClientTabs extends Component {
                     if(formData[each.name]){
                         formData[each.name] = [...formData[each.name], this.getValueBySaveType(each.value, type)];
                     }else{
-                        formData[each.name] = [this.getValueBySaveTypev(each.value, type)];
+                        formData[each.name] = [this.getValueBySaveType(each.value, type)];
                     }
                 }
             })
@@ -1391,7 +1420,7 @@ class HttpClientTabs extends Component {
                 const apiConfig = {
                     cancelToken: tabToProcess.abortRequest.cancelToken
                 }
-                cubeService.storeUserReqResponse(recordingId, data, apiConfig)
+                cubeService.afterResponse(recordingId, data, apiConfig)
                     .then((serverRes) => {
                         const jsonTraceReqData = serverRes.data.response && serverRes.data.response.length > 0 ? serverRes.data.response[0] : "";
                         try {

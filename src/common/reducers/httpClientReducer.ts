@@ -757,6 +757,8 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             const newTab = _.cloneDeep(tabToClone)!;
             newTab.id = uuidv4();
             newTab.selectedTraceTableReqTabId = newTab.id;
+            newTab.abortRequest = null;
+            newTab.requestRunning = false;
             return {
                 ...state,
                 tabs: [...tabs, newTab],

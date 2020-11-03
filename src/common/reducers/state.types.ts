@@ -496,3 +496,13 @@ export interface INavigationState {
   sidebar: any; //2
   top: any; //2
 }
+
+export interface IStoreState{
+  cube: ICubeState,
+  httpClient: IHttpClientStoreState;
+  authentication: IAuthenticationState,
+  navigation: INavigationState,
+  golden: IGoldenState,
+  
+  apiCatalog: IApiCatalogState
+}

@@ -190,6 +190,55 @@ const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) =
     return reqObject;
 }
 
+const preRequestToFetchableConfig = (preRequestResult) => {
+    const payload = preRequestResult.payload[1];
+    // URL
+    const httpRequestURLRendered = preRequestResult.metaData.href;
+  
+    //Headers
+    const headers = new Headers();
+    const preRequestheaders = payload.hdrs;
+    Object.entries(preRequestheaders).forEach(([headerName, headerValues]) => {
+        headerValues.forEach((headerValue) => {
+        if (headerName && headerValue && headerName.indexOf(":") < 0)
+          headers.append(headerName, headerValue);
+        if (headerName === "x-b3-spanid" && headerValue)
+          headers.append("baggage-parent-span-id", headerValue);
+      });
+    });
+  
+    //Query String
+    const httpRequestQueryStringParamsRendered = {};
+    const preRequestqueryString = payload.queryParams;
+    Object.entries(preRequestqueryString).forEach(([key, queryStringValueArray]) => {
+        queryStringValueArray.forEach((value) => {
+        httpRequestQueryStringParamsRendered[key] = value;
+      });
+    });
+  
+    //Form params
+    const formParams = payload.formParams;
+    const bodyFormParams = new URLSearchParams();
+    let containsFormParam = false;
+    Object.entries(formParams).forEach(([key, paramValues]) => {
+      containsFormParam = true;
+      paramValues.forEach((value) => {
+        bodyFormParams.append(key, value);
+      });
+    });
+  
+    const fetchConfigRendered = {
+      method: payload.method,
+      headers,
+      body: containsFormParam ? bodyFormParams : payload.body,
+    };
+  
+    return [
+      httpRequestURLRendered,
+      httpRequestQueryStringParamsRendered,
+      fetchConfigRendered,
+    ];
+  };
 
 export { 
     generateRunId,
@@ -200,4 +249,5 @@ export {
     getApiPathFromRequestEvent,
     hasTabDataChanged,
     formatHttpEventToTabObject,
+    preRequestToFetchableConfig,
 };
