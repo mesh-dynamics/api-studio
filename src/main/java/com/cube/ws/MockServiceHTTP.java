@@ -278,9 +278,9 @@ public class MockServiceHTTP {
             Event mockRequestEvent = io.md.utils.Utils
                 .createRequestMockNew(path, formParams, customerId, app, instanceId,
                     service, method, body, headers, ui.getQueryParameters(), traceId , tracerMgr);
-            di.inject(mockRequestEvent);
+            di.extract(mockRequestEvent , null);
             MockResponse mockResponse = mocker.mock(mockRequestEvent, Optional.empty(),  Optional.of(collection));
-            mockResponse.response.ifPresent(resp-> di.extract(mockRequestEvent , resp.payload));
+            mockResponse.response.ifPresent(di::inject);
             respEvent = mockResponse.response;
 
         } catch (Exception e) {
