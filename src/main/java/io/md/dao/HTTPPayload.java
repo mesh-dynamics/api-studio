@@ -116,15 +116,15 @@ public class HTTPPayload extends LazyParseAbstractPayload {
 
 	@JsonIgnore
 	public byte[] getBody() {
-		if (this.body != null && !(this.body.length == 0)) {
-			return body;
-		} else if (this.dataObj!= null && !this.dataObj.isDataObjEmpty()) {
+		if (this.dataObj != null && !this.dataObj.isDataObjEmpty()) {
 			try {
 				wrapBody();
 				return this.dataObj.getValAsByteArray("/".concat(BODY));
 			} catch (PathNotFoundException e) {
 				//do nothing
 			}
+		} else if (this.body != null && !(this.body.length == 0)) {
+			return body;
 		}
 		return new byte[]{};
 	}
