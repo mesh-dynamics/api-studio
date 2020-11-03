@@ -205,11 +205,7 @@ public class Constants {
     public static final String PARENT_SPAN_ID_FIELD = "parentSpanId";
 
     // VariableSources
-    public static final String GOLDEN_REQUEST = "Golden.Request";
-    public static final String GOLDEN_RESPONSE = "Golden.Response";
-    public static final String TESTSET_REQUEST = "TestSet.Request";
-    public static final String TESTSET_RESPONSE = "TestSet.Response";
-	public static final String REDIS_SHADOW_KEY_PREFIX = "shadowKey:";
+    public static final String REDIS_SHADOW_KEY_PREFIX = "shadowKey:";
     public static final String REDIS_STATUS_KEY_PREFIX = "statusKey:";
     public static final String CONFIG_JSON = "config_json";
 	public static final String TAG_FIELD = "tag";
