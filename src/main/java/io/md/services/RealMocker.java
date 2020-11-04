@@ -256,7 +256,7 @@ public class RealMocker implements Mocker {
                     new Comparator.Match(
                         respMatch, "", Collections.emptyList()));
 
-            cube.saveResult(matchResult);
+            cube.saveResult(matchResult, mockRequestEvent.customerId);
             try {
                 mockResponse = createMockResponseEvent(mockRequestEvent, respEvent,
                     Optional.of(mockRequestEvent.reqId),
