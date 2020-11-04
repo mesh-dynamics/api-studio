@@ -1,8 +1,14 @@
 import { authConstants } from '../constants';
 import { ipcRenderer } from '../helpers/ipc-renderer';
+import { IAuthenticationState } from './state.types';
 
-const initialState = {
-  user: {},
+export interface IAuthenticationAction{
+  type: string,
+  payload:any;
+}
+
+const initialState: IAuthenticationState = {
+  user: {}, 
   role: "",
   loggedIn: false,
   isFetching: false,
@@ -15,7 +21,7 @@ const initialState = {
   }
 };
 
-const authenticationReducer = (state = initialState, action) => {
+const authenticationReducer = (state = initialState, action: IAuthenticationAction) => {
   switch (action.type) {
   case authConstants.REQUEST_BEGIN:
     return { 

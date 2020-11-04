@@ -1,6 +1,13 @@
 import { cubeConstants } from '../constants';
+import { ICubeState } from './state.types';
 
-const initialState = {
+export interface ICubeAction{
+    type: string,
+    data:any;
+    err: any; //Check if this can be avoided. 
+  }
+
+const initialState : ICubeState = {
     appsListReqStatus: cubeConstants.REQ_NOT_DONE,
     appsListReqErr: '',
     appsList: [],
@@ -41,7 +48,7 @@ const initialState = {
 
     graphDataReqStatus: cubeConstants.REQ_NOT_DONE,
     graphDataReqErr: '',
-    graphData: null,
+    graphData: [],
 
     replayStatus:'Fetching Replay ID',  
     replayStatusObj: null,
@@ -64,7 +71,7 @@ const initialState = {
     hideHttpClient: false
 };
 
-export function cube (state = initialState, action) {
+export function cube (state = initialState, action: ICubeAction) {
     switch (action.type) {
         case cubeConstants.APPS_REQUEST: 
             return {

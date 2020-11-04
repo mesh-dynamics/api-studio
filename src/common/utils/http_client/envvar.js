@@ -42,6 +42,10 @@ const initEnvVars = () => {
   }
 }
 
+const getRenderEnvVars = () => {
+  return initEnvVars();
+}
+
 const applyEnvVarsToUrl = (url) => {
   const renderEnvVars = initEnvVars();
   return renderEnvVars(url);
@@ -93,6 +97,7 @@ const applyEnvVars = (httpRequestURL, httpRequestQueryStringParams, fetchConfig)
 export {
   getCurrentEnvironment,
   getCurrentEnvVars,
+  getRenderEnvVars,
   applyEnvVars,
   applyEnvVarsToUrl,
 }
