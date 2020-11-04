@@ -165,17 +165,6 @@ public class CustomerService {
                 .name(existingMovieInfo.get().getName())
                 .customer(customer)
                 .build());
-        Optional<List<Instance>> existingInstances = this.instanceRepository.findByAppId(id);
-        existingInstances.ifPresent(instances -> {
-            instances.forEach(i -> {
-                Instance savedInstance = this.instanceRepository.save(Instance.builder()
-                    .name(i.getName())
-                    .app(movieInfo)
-                    .gatewayEndpoint(i.getGatewayEndpoint())
-                    .loggingURL(i.getLoggingURL())
-                    .build());
-            });
-        });
 
         Optional<List<ServiceGroup>> existingServiceGroups = this.serviceGroupRepository.findByAppId(id);
         existingServiceGroups.ifPresent(serviceGroups -> {
