@@ -110,7 +110,7 @@ public interface ReqRespStore extends DataStore {
 					.withUserId(recording.userId).withTags(recording.tags)
 					.withId(recording.id).withUpdateTimestamp(timeStamp)
 					.withRootRecordingId(recording.rootRecordingId).withLabel(recording.label)
-					.withRecordingType(recording.recordingType);
+					.withRecordingType(recording.recordingType).withRunId(recording.runId);
 			recording.parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
 			recording.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
 			recording.branch.ifPresent(recordingBuilder::withBranch);

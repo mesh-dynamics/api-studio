@@ -996,6 +996,7 @@ public class CubeStore {
         List<String> tags = Optional.ofNullable(formParams.get(Constants.TAGS_FIELD)).orElse(new ArrayList<String>());
         Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
         Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst(Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD)) ;
+        Optional<String> runId = Optional.ofNullable(formParams.getFirst(Constants.RUN_ID_FIELD));
 
 
         RecordingBuilder recordingBuilder = new RecordingBuilder(customerId, app,
@@ -1007,6 +1008,7 @@ public class CubeStore {
         comment.ifPresent(recordingBuilder::withComment);
         recordingType.ifPresent(recordingBuilder::withRecordingType);
         dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
+        runId.ifPresentOrElse(recordingBuilder::withRunId, () -> recordingBuilder.withRunId(Instant.now().toString()));
 
         try {
             jarPath.ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
@@ -1395,7 +1397,7 @@ public class CubeStore {
                     .withRootRecordingId(rec.rootRecordingId)
                     .withArchived(rec.archived)
                     .withId(rec.id) // same recording is updated, so carry over id
-                    .withRecordingType(rec.recordingType);
+                    .withRecordingType(rec.recordingType).withRunId(rec.runId);
                 rec.parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
                 recordingBuilder.withName(name.orElse(rec.name));
                 recordingBuilder.withLabel(label.orElse(rec.label));
@@ -1494,9 +1496,9 @@ public class CubeStore {
     }
 
     @POST
-    @Path("storeUserReqResp/{recordingId}")
+    @Path("afterResponse/{recordingId}")
     @Consumes({MediaType.APPLICATION_JSON})
-    public Response storeUserReqResp(@Context UriInfo ui,
+    public Response afterResponse(@Context UriInfo ui,
         @PathParam("recordingId") String recordingId,
         List<UserReqRespContainer> userReqRespContainers) {
         Optional<String> dynamicCfgVersion = Optional
@@ -1694,8 +1696,8 @@ public class CubeStore {
     }
 
     @POST
-    @Path("/injectEvent/{replayId}/{runId}")
-    public Response injectEvent(@Context UriInfo uriInfo,@PathParam("replayId") String replayId,
+    @Path("/preRequest/{recordingOrReplayId}/{runId}")
+    public Response preRequest(@Context UriInfo uriInfo,@PathParam("recordingOrReplayId") String recordingOrReplayId,
         @PathParam("runId") String runId, DynamicInjectionEventDao dynamicInjectionEventDao) {
         if(dynamicInjectionEventDao == null || dynamicInjectionEventDao.getInjectionConfigVersion() == null ||
             dynamicInjectionEventDao.getContextMap() == null) {
@@ -1709,15 +1711,27 @@ public class CubeStore {
                 requestEvent.app, Optional.of(dynamicInjectionEventDao.getInjectionConfigVersion()),
                 dynamicInjectionEventDao.getContextMap());
             dynamicInjector.inject(requestEvent);
-            Optional<Replay> optionalReplay = rrstore.getReplay(replayId);
-            if(optionalReplay.isEmpty()) {
-                LOGGER.error("No replay found for the replayId=" + replayId);
-                return Response.status(Status.BAD_REQUEST).entity(Utils.buildErrorResponse(Status.BAD_REQUEST.toString(),
-                    Constants.MESSAGE,  "No replay found for the replayId=" + replayId)).build();
+            Optional<Recording> optionalRecording = rrstore.getRecording(recordingOrReplayId);
+            Optional<String> recordOrReplayRunId = optionalRecording.map(recording -> {
+                recording.runId = runId;
+                rrstore.saveRecording(recording);
+                return recording.runId;
+            }).or(() -> {
+                Optional<Replay> optionalReplay = rrstore.getReplay(recordingOrReplayId);
+                return optionalReplay.map(replay -> {
+                    replay.runId = runId;
+                    rrstore.saveReplay(replay);
+                    return replay.replayId;
+                });
+            });
+            if(recordOrReplayRunId.isEmpty()) {
+                LOGGER.error("No record or replay found for the id=" + recordingOrReplayId);
+                return Response.status(Status.BAD_REQUEST)
+                    .entity(Utils.buildErrorResponse(Status.BAD_REQUEST.toString(),
+                        Constants.MESSAGE, "No record or replay found for the id=" + recordingOrReplayId))
+                    .build();
+
             }
-            Replay replay = optionalReplay.get();
-            replay.runId = runId;
-            rrstore.saveReplay(replay);
             return  Response.ok(requestEvent , MediaType.APPLICATION_JSON).build();
         } catch (InvalidEventException e) {
             LOGGER.error(new ObjectMessage(
