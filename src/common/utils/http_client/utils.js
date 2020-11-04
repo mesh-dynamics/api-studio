@@ -249,8 +249,8 @@ const preRequestToFetchableConfig = (preRequestResult, httpURL) => {
   
     const fetchConfigRendered = {
       method: payload.method,
-      headers,
-      body: containsFormParam ? bodyFormParams : rawData,
+      headers,      
+     ...( !(payload.method == "GET" || payload.method == "HEAD") && {body: containsFormParam ? bodyFormParams : rawData}),
     };
   
     return [
