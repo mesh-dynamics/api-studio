@@ -459,7 +459,8 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                     id: data.tabId,
                     tabName: data.tabName,
                     ...data.reqObject,
-                    selectedTraceTableReqTabId: data.tabId
+                    selectedTraceTableReqTabId: data.tabId,
+                    isHighlighted: true,
                 }],
                 selectedTabKey: data.selectedTabKey,
                 app: data.app
@@ -840,6 +841,20 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 tabs: tabs.map(eachTab => {
                         if (eachTab.id === data.tabId) {
                             eachTab["abortRequest"] = data.abortRequest;
+                        }
+                        return eachTab;
+                    })
+            }
+        }
+
+        case httpClientConstants.SET_TAB_IS_HIGHLIGHTED: {
+            let {tabs} = state;
+            const {tabId, isHighlighted} = data;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                        if (eachTab.id === data.tabId) {
+                            eachTab["isHighlighted"] = isHighlighted;
                         }
                         return eachTab;
                     })
