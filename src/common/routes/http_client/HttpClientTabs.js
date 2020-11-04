@@ -1672,10 +1672,12 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.loadUserCollections());
         
         const requestIds = this.getRequestIds(), reqIdArray = Object.keys(requestIds);
-        tabs.map(eachTab => {
+        tabs.forEach(eachTab => {
             const indx = reqIdArray.findIndex((eachReq) => eachReq === eachTab.requestId);
-            if(indx > -1) reqIdArray.splice(indx, 1);
-            return eachTab; 
+            if(indx > -1) {
+                reqIdArray.splice(indx, 1);
+                dispatch(httpClientActions.highlightTab(eachTab.id))
+            }
         });
         if (reqIdArray && reqIdArray.length > 0) {
             const eventTypes = [];
@@ -1805,6 +1807,7 @@ class HttpClientTabs extends Component {
             tabClassName: 'md-hc-tab',
             panelClassName: 'md-hc-tab-panel',
             hasTabChanged: hasTabDataChanged(eachTab),
+            isHighlighted: eachTab.isHighlighted,
         }));
     }
 

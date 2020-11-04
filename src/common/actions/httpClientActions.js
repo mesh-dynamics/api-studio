@@ -585,4 +585,7 @@ export const httpClientActions = {
         return {type: httpClientConstants.UPDATE_ABORT_REQUEST, data: {tabId, abortRequest}};
     },
 
+    highlightTab: (tabId) => {
+        return {type: httpClientConstants.HIGHLIGHT_TAB, data: {tabId}};
+    }
 }

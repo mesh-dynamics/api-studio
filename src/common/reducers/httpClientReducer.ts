@@ -844,6 +844,19 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             }
         }
 
+        case httpClientConstants.HIGHLIGHT_TAB: {
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                        if (eachTab.id === data.tabId) {
+                            eachTab["isHighlighted"] = true;
+                        }
+                        return eachTab;
+                    })
+            }
+        }
+
         default:
             return state;
     }
