@@ -1144,7 +1144,7 @@ class HttpClientTabs extends Component {
             }
             const preRequestResult = await cubeService.fetchPreRequest(userHistoryCollection.id, runId, preRequestData, tabToProcess.abortRequest.cancelToken);
         
-            [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] = preRequestToFetchableConfig(preRequestResult);
+            [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] = preRequestToFetchableConfig(preRequestResult, httpRequestURL);
 
         } catch (e) {
             console.error(e);

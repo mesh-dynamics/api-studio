@@ -1,6 +1,8 @@
 import _ from 'lodash';
 import { v4 as uuidv4 } from "uuid";
 
+import {applyEnvVarsToUrl} from './envvar';
+
 const generateRunId = () => {
     return new Date(Date.now()).toISOString()
 }
@@ -190,10 +192,10 @@ const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) =
     return reqObject;
 }
 
-const preRequestToFetchableConfig = (preRequestResult) => {
+const preRequestToFetchableConfig = (preRequestResult, httpURL) => {
     const payload = preRequestResult.payload[1];
     // URL
-    const httpRequestURLRendered = preRequestResult.metaData.href;
+    const httpRequestURLRendered = applyEnvVarsToUrl(httpURL);
   
     //Headers
     const headers = new Headers();
@@ -226,11 +228,29 @@ const preRequestToFetchableConfig = (preRequestResult) => {
         bodyFormParams.append(key, value);
       });
     });
+
+    let rawData = "";
+
+    if (payload.body) {
+        if (!_.isString(payload.body)) {
+          try {
+            rawData = JSON.stringify(
+                payload.body,
+              undefined,
+              4
+            );
+          } catch (err) {
+            console.error(err);
+          }
+        } else {
+          rawData = payload.body;
+        }
+    }
   
     const fetchConfigRendered = {
       method: payload.method,
       headers,
-      body: containsFormParam ? bodyFormParams : payload.body,
+      body: containsFormParam ? bodyFormParams : rawData,
     };
   
     return [
