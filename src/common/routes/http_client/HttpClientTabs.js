@@ -1170,6 +1170,7 @@ class HttpClientTabs extends Component {
     handleTabChange(tabKey) {
         const { dispatch } = this.props;
         dispatch(httpClientActions.setSelectedTabKey(tabKey));
+        dispatch(httpClientActions.setTabIsHighlighted(tabKey, false));
     }
 
     handleRemoveTab(key, evt) {
@@ -1676,7 +1677,7 @@ class HttpClientTabs extends Component {
             const indx = reqIdArray.findIndex((eachReq) => eachReq === eachTab.requestId);
             if(indx > -1) {
                 reqIdArray.splice(indx, 1);
-                dispatch(httpClientActions.highlightTab(eachTab.id))
+                dispatch(httpClientActions.setTabIsHighlighted(eachTab.id, true));
             }
         });
         if (reqIdArray && reqIdArray.length > 0) {

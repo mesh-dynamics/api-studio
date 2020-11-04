@@ -414,6 +414,7 @@ export interface IHttpClientTabDetails {
   abortRequest: any; //2
   selectedTraceTableTestReqTabId: string;
   hasChanged: boolean;
+  isHighlighted: boolean;
 }
 
 export interface IUserApiTraceHistory {
