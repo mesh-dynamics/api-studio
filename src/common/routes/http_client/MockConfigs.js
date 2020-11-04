@@ -206,7 +206,7 @@ class MockConfigs extends Component {
                             onChange={this.handleMockContextSaveToCollectionChange}
                             className="btn-sm"
                         >
-                        <option value="">Select Collection</option>
+                        <option value="">History</option>
                         {
                             userCollections.length && userCollections.map((collection) => (
                             <option key={collection.id} value={collection.id}>
