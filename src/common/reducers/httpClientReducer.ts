@@ -754,15 +754,17 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
         
         case httpClientConstants.CREATE_DUPLICATE_TAB: {
             let {tabs} = state;
-            const tabToClone = _.find(tabs, {id: data.tabId});
+            const tabToCloneIndex = _.findIndex(tabs, {id: data.tabId});
+            const tabToClone = tabs[tabToCloneIndex];
             const newTab = _.cloneDeep(tabToClone)!;
             newTab.id = uuidv4();
             newTab.selectedTraceTableReqTabId = newTab.id;
             newTab.abortRequest = null;
             newTab.requestRunning = false;
+            newTab.isHighlighted = true;
             return {
                 ...state,
-                tabs: [...tabs, newTab],
+                tabs: [...tabs.slice(0, tabToCloneIndex + 1), newTab, ...tabs.slice(tabToCloneIndex + 1)],
             }
         }
 
