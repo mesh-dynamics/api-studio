@@ -936,11 +936,11 @@ public class AnalyzeWS {
      * @return Appropriate Response
      */
     @POST
-    @Path("updateTemplateOperationSet/{operationSetId}")
+    @Path("updateTemplateOperationSet/{customerId}/{operationSetId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateTemplateOperationSet(@Context UriInfo uriInfo, @PathParam("operationSetId") String operationSetId
-        , String templateUpdateOperations) {
+    public Response updateTemplateOperationSet(@Context UriInfo uriInfo, @PathParam("operationSetId") String operationSetId,
+        @PathParam("customerId") String customerId, String templateUpdateOperations) {
         TypeReference<HashMap<TemplateKey, SingleTemplateUpdateOperation>> typeReference =
             new TypeReference<>() {};
         try {
@@ -955,7 +955,7 @@ public class AnalyzeWS {
                 (transformer.updateTemplateOperationSet(updateOperationSet , updates)))
                 .orElseThrow(() -> new Exception("Missing template update operation set for given id"));
             // save the merged operation set
-            rrstore.saveTemplateUpdateOperationSet(transformed);
+            rrstore.saveTemplateUpdateOperationSet(transformed, customerId);
             LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully updated template "
 	            + "rules update op set", Constants.TEMPLATE_UPD_OP_SET_ID_FIELD, operationSetId)));
             return Response.ok().entity("{\"Message\" :  \"Successfully updated Template update operation set\" , \"ID\" : \"" +

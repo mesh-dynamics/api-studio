@@ -771,22 +771,28 @@ public class CubeStore {
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public Response saveResult(ReqRespMatchResult reqRespMatchResult) {
-        if (reqRespMatchResult == null) {
+        if (reqRespMatchResult == null || reqRespMatchResult.replayId == null ) {
             LOGGER.error(Map.of(Constants.MESSAGE, "ReqRespMatchResult is null"));
             return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(
                 buildErrorResponse(Constants.FAIL, Constants.INVALID_INPUT,
                     "Invalid input!")).build();
         }
-        boolean result = rrstore.saveResult(reqRespMatchResult);
-        if (!result) {
-            LOGGER.error(Map.of(Constants.MESSAGE, "Unable to store result in solr",
+        Optional<Replay> replay = rrstore.getReplay(reqRespMatchResult.replayId);
+        return replay.map(r -> {
+            boolean result = rrstore.saveResult(reqRespMatchResult, r.customerId);
+            if (!result) {
+                LOGGER.error(Map.of(Constants.MESSAGE, "Unable to store result in solr",
                     Constants.REPLAY_ID_FIELD, reqRespMatchResult.replayId));
-            return Response.serverError().entity(
-                buildErrorResponse(Constants.ERROR, Constants.REPLAY_ID_FIELD,
-                    "Unable to store result in solr")).build();
-        }
-        return Response.ok().type(MediaType.APPLICATION_JSON)
-            .entity("The Result is saved in Solr").build();
+                return Response.serverError().entity(
+                    buildErrorResponse(Constants.ERROR, Constants.REPLAY_ID_FIELD,
+                        "Unable to store result in solr")).build();
+            }
+            return Response.ok().type(MediaType.APPLICATION_JSON)
+                .entity("The Result is saved in Solr").build();
+        }).orElse(Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(
+            buildErrorResponse(Constants.FAIL, Constants.RESPONSE,
+                "No replay found for replayId= " + reqRespMatchResult.replayId)).build());
+
     }
 
     @GET
@@ -1584,7 +1590,7 @@ public class CubeStore {
                                 Optional.of(request.parentSpanId), Optional.of(requestEvent.spanId),
                                 Optional.of(requestEvent.parentSpanId), responseMatch,
                                 Match.DONT_CARE);
-                            if (!rrstore.saveResult(reqRespMatchResult)) {
+                            if (!rrstore.saveResult(reqRespMatchResult, request.customerId)) {
                                 LOGGER.error(new ObjectMessage(
                                     Map.of(Constants.MESSAGE, "Unable to store result in solr",
                                         Constants.RECORDING_ID, recordingId)));
@@ -1655,6 +1661,21 @@ public class CubeStore {
             }
         }).orElse(Response.status(Response.Status.NOT_FOUND).entity(String.format("Status not found for for recordingId %s", recordingId)).build());
         return resp;
+    }
+
+    @POST
+    @Path("deleteCustomerData/{customerId}")
+    public Response deleteCustomerData(@Context UriInfo ui,
+        @PathParam("customerId") String customerId) {
+        if(rrstore.deleteAllData(customerId)) {
+            return Response.ok().type(MediaType.APPLICATION_JSON).
+                entity(buildSuccessResponse(Constants.SUCCESS ,
+                    new JSONObject(Map.of(customerId, "All corresponding data is deleted"))))
+                .build();
+        }
+        return Response.serverError().type(MediaType.APPLICATION_JSON).entity(
+            buildErrorResponse(Constants.ERROR, Constants.BODY,
+                "Unable to delete data for customer=" + customerId)).build();
     }
 
     @POST
