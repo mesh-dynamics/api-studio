@@ -273,14 +273,11 @@ public class MockServiceHTTP {
             io.md.constants.Constants.METHOD_FIELD, method, io.md.constants.Constants.PATH_FIELD, path));
 
         Optional<Event> respEvent = Optional.empty();
-        DynamicInjector di = diFactory.getMgr(customerId , app , collection.dynamicInjectionConfigVersion);
         try {
             Event mockRequestEvent = io.md.utils.Utils
                 .createRequestMockNew(path, formParams, customerId, app, instanceId,
                     service, method, body, headers, ui.getQueryParameters(), traceId , tracerMgr);
-            di.extract(mockRequestEvent , null);
             MockResponse mockResponse = mocker.mock(mockRequestEvent, Optional.empty(),  Optional.of(collection));
-            mockResponse.response.ifPresent(di::inject);
             respEvent = mockResponse.response;
 
         } catch (Exception e) {
@@ -343,7 +340,6 @@ public class MockServiceHTTP {
 
         mocker = new RealMocker(rrstore);
         tracerMgr = new TracerMgr(rrstore);
-        diFactory = new DynamicInjectorFactory(rrstore , jsonMapper);
 	}
 
 
@@ -354,7 +350,6 @@ public class MockServiceHTTP {
 
 	private Mocker mocker;
 	private TracerMgr tracerMgr;
-	private DynamicInjectorFactory diFactory;
 
 
 }
