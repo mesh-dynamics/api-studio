@@ -197,6 +197,7 @@ public class Constants {
     public static final String DIFF_RES_FACET = "diffResFacets";
     public static final String SERVICE_FACET = "serviceFacets";
     public static final String PATH_FACET = "pathFacets";
+    public static final String DIFF_PATH_FACET = "diffPathFacets";
     public static final String SAMPLING_FACET = "samplingFacets";
 
 	public static final String REPLAY_TRACE_ID = "replayTraceId";
