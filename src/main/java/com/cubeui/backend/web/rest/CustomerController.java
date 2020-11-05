@@ -9,6 +9,7 @@ import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -21,6 +22,7 @@ import static org.springframework.http.ResponseEntity.*;
 @RestController
 @Slf4j
 @RequestMapping("/api/customer")
+@Secured("ROLE_ADMIN")
 public class CustomerController {
 
     private CustomerService customerService;
@@ -94,12 +96,24 @@ public class CustomerController {
                 .orElseThrow(() -> new RecordNotFoundException("Customer with id '" + id + "' not found.")));
     }
 
-    @GetMapping("/delete/{id}")
+    @PostMapping("/delete/{id}")
     public ResponseEntity delete(@PathVariable("id") Long id) {
-        if (customerService.deleteCustomer(id)) {
-            return ok("Customer '" + id + "' removed successfully");
-        } else {
-            throw new RecordNotFoundException("Customer with id '" + id + "' not found.");
-        }
+        Optional<Customer> existed = this.customerService.getById(id);
+        return existed.map(customer -> this.customerService.deleteCustomer(customer))
+            .orElseThrow(() -> new RecordNotFoundException("Customer with id '" + id + "' not found."));
+    }
+
+    @PostMapping("/deleteByCustomerName/{customerName}")
+    public ResponseEntity deleteByCustomerName(@PathVariable("customerName") String customerName) {
+        Optional<Customer> existed = this.customerService.getByName(customerName);
+        return existed.map(customer -> this.customerService.deleteCustomer(customer))
+            .orElseThrow(() ->new RecordNotFoundException("Customer with name '" + customerName + "' not found."));
+    }
+
+    @PostMapping("/deleteByCustomerDomain/{customerDomain}")
+    public ResponseEntity deleteByCustomerDomain(@PathVariable("customerDomain") String customerDomain) {
+        Optional<Customer> existed = this.customerService.getByDomainUrl(customerDomain);
+        return existed.map(customer -> this.customerService.deleteCustomer(customer))
+            .orElseThrow(() ->new RecordNotFoundException("Customer with domain '" + customerDomain + "' not found."));
     }
 }
