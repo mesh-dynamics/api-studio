@@ -763,6 +763,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             return {
                 ...state,
                 tabs: [...tabs, newTab],
+                selectedTabKey: newTab.id,
             }
         }
 
