@@ -58,7 +58,7 @@ public class RealMocker implements Mocker {
             DynamicInjector di = diFactory.getMgr(reqEvent.customerId , reqEvent.app , mockWColl.dynamicInjectionConfigVersion);
             di.extract(reqEvent , null);
 
-            List<String> payLoadFields = Arrays.asList(String.format("%s:%s" , Constants.METHOD , Utils.getHttpMethod(reqEvent))) ;
+            List<String> payLoadFields = Arrays.asList(String.format("%s:%s" , Constants.METHOD_PATH , Utils.getHttpMethod(reqEvent))) ;
             Optional<JoinQuery> joinQuery = mockWColl.isDevtool ? Optional.of(getSuccessResponseMatch()) : Optional.empty();
 
             EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1), !mockWColl.isDevtool, lowerBoundForMatching, mockWColl.recordCollection , payLoadFields , joinQuery);
@@ -110,7 +110,7 @@ public class RealMocker implements Mocker {
         JoinQuery.Builder builder = new JoinQuery.Builder();
         Map<String,String> successfulRespCond = new HashMap<>();
         successfulRespCond.put(Constants.EVENT_TYPE_FIELD , EventType.HTTPResponse.toString());
-        successfulRespCond.put(Constants.PAYLOAD_FIELDS_FIELD , String.format("%s:%s", Constants.STATUS, String.valueOf(HttpStatus.SC_OK)));
+        successfulRespCond.put(Constants.PAYLOAD_FIELDS_FIELD , String.format("%s:%s", Constants.STATUS_PATH, String.valueOf(HttpStatus.SC_OK)));
 
         builder.withAndConds(successfulRespCond);
 
