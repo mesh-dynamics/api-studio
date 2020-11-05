@@ -79,6 +79,11 @@ const storeUserReqResponse = async(recordingId, data, apiConfig={}) => {
     return api.post(urlToPost, data, apiConfig);
 }
 
+const afterResponse = async(recordingId, data, apiConfig={}) => {
+    const urlToPost = `${config.apiBaseUrl}/cs/afterResponse/${recordingId}`;
+    return api.post(urlToPost, data, apiConfig);
+}
+
 const fetchCollectionList = async (user, app, recordingType="", forCurrentUser=false, numResults = 0, start = 0) => {
     try {
         let url = `${config.recordBaseUrl}/searchRecording`;
@@ -612,6 +617,11 @@ const forceStopRecording = async (recordingId) => {
     }
 }
 
+const fetchPreRequest = async (collectionId, runId, preRequestData, cancelToken) => {
+
+    const preRequestUrl = `${config.recordBaseUrl}/preRequest/${collectionId}/${runId}`;
+    return await api.post(preRequestUrl, preRequestData, {cancelToken});
+}
 
 export const cubeService = {
     fetchAppsList,
@@ -655,5 +665,7 @@ export const cubeService = {
     forceStopRecording,
     loadCollectionTraces,
     createUserCollection,
-    storeUserReqResponse
+    storeUserReqResponse,
+    fetchPreRequest,
+    afterResponse
 };

@@ -1,5 +1,13 @@
 import {navigationConstants} from '../constants';
-const initialState = {
+import { INavigationState } from './state.types';
+
+export interface INavigationAction{
+    type: string,
+    title:any; 
+  }
+
+
+const initialState : INavigationState = {
     top: {},
     left: {
         replayList: [
@@ -12,7 +20,7 @@ const initialState = {
     sidebar: {}
 };
 
-export function navigation(state = initialState, action) {
+export function navigation(state = initialState, action: INavigationAction) {
     switch (action.type) {
         case navigationConstants.UPDATE_SIDEBAR_GRP_TITLE:
         return {

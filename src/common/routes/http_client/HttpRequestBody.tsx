@@ -19,6 +19,7 @@ export interface IHttpRequestBodyProps {
   rawData: string;
   isOutgoingRequest: boolean;
   showFormData: boolean;
+  readOnly: boolean;
   updateParam: UpdateParamHandler;
   addOrRemoveParam: AddOrRemoveHandler;
   updateAllParams: UpdateParamHandler;
@@ -42,6 +43,7 @@ class HttpRequestBody extends Component<IHttpRequestBodyProps> {
           updateParam={this.props.updateParam}
           isOutgoingRequest={this.props.isOutgoingRequest}
           updateAllParams={this.props.updateAllParams}
+          readOnly={this.props.readOnly} 
         ></HttpRequestFormData>
         <HttpRequestRawData
           tabId={this.props.tabId}
@@ -49,6 +51,7 @@ class HttpRequestBody extends Component<IHttpRequestBodyProps> {
           rawData={this.props.rawData}
           updateParam={this.props.updateParam}
           isOutgoingRequest={this.props.isOutgoingRequest}
+          readOnly={this.props.readOnly} 
         ></HttpRequestRawData>
         {/* <HttpRequestBinaryData></HttpRequestBinaryData> */}
       </div>

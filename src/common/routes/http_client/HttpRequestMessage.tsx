@@ -19,7 +19,9 @@ export interface IHttpRequestMessageProps extends IHttpRequestHeadersProps, IHtt
     httpURL: string;
     paramsType: string;
     rawDataType: string;
-    updateBodyOrRawDataType: UpdateBodyOrRawDataTypeHandler
+    updateBodyOrRawDataType: UpdateBodyOrRawDataTypeHandler;
+    id: string;
+    readOnly: boolean;
 }
 
 
@@ -52,7 +54,7 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
 
     handleBodyOrRawDataType(event) {
         const { tabId, isOutgoingRequest } = this.props;
-        const typeToUpdate = event.target.name === "bodyType" ? "bodyType" : "rawDataType";
+        const typeToUpdate = event.target.name === "bodyType"+this.props.id.trim() ? "bodyType" : "rawDataType";
         this.props.updateBodyOrRawDataType(isOutgoingRequest, tabId, typeToUpdate === "bodyType" ? "bodyType" : "rawDataType", event.target.value);
         if(typeToUpdate === "bodyType") {
             this.setState({
@@ -93,7 +95,7 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
         
         const urlTextBox = <div style={{display: "inline-block", width: "82%"}}>
             <FormGroup bsSize="small" style={{marginBottom: "0px", fontSize: "12px"}}>
-                <FormControl type="text" placeholder="https://...." style={{fontSize: "12px"}} name="httpURL" value={this.props.httpURL} onChange={this.handleChange}/>
+                <FormControl type="text" placeholder="https://...." style={{fontSize: "12px"}} readOnly={this.props.readOnly}  name="httpURL" value={this.props.httpURL} onChange={this.handleChange}/>
             </FormGroup>
         </div>
 
@@ -131,7 +133,8 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
                 <div style={{marginBottom: "0px"}}>
                     <div style={{display: "inline-block", width: "18%", paddingRight: "15px"}}> 
                         <FormGroup bsSize="small" style={{marginBottom: "0px"}}>
-                            <FormControl componentClass="select" placeholder="Method" style={{fontSize: "12px"}} name="httpMethod" value={this.props.httpMethod} onChange={this.handleChange}>
+                            <FormControl componentClass="select" placeholder="Method" style={{fontSize: "12px"}} name="httpMethod" 
+                            readOnly={this.props.readOnly} value={this.props.httpMethod} onChange={this.handleChange}>
                                 <option value="get">GET</option>
                                 <option value="post">POST</option>
                                 <option value="put">PUT</option>
@@ -160,17 +163,17 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
                     </div>
                     <div className={headerLabelClass}>
                         <input type="radio"
-                            value="showHeaders" name="paramsType" checked={this.props.paramsType === "showHeaders"} onChange={this.onChangeValue}/>
+                            value="showHeaders" name={"paramsType"+this.props.id.trim()} checked={this.props.paramsType === "showHeaders"} onChange={this.onChangeValue}/>
                             Headers
                     </div>
                     <div className={queryParamLabelClass}>
                         <input type="radio"
-                            value="showQueryParams" name="paramsType" checked={this.props.paramsType === "showQueryParams"} onChange={this.onChangeValue}/>
+                            value="showQueryParams" name={"paramsType"+this.props.id.trim()}  checked={this.props.paramsType === "showQueryParams"} onChange={this.onChangeValue}/>
                             Query Params
                     </div>
                     <div className={bodyLabelClass}>
                         <input type="radio"
-                            value="showBody" name="paramsType" checked={this.props.paramsType === "showBody"} onChange={this.onChangeValue}/>
+                            value="showBody" name={"paramsType"+this.props.id.trim()}  checked={this.props.paramsType === "showBody"} onChange={this.onChangeValue}/>
                             Body
                     </div>
                     
@@ -184,17 +187,17 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
                     </div>
                     <div className={formDataLabelClass}>
                         <input type="radio"
-                            value="formData" name="bodyType" checked={this.state.showFormData} onChange={this.handleBodyOrRawDataType}/>
+                            value="formData" name={"bodyType"+this.props.id.trim()} checked={this.state.showFormData} onChange={this.handleBodyOrRawDataType}/>
                             x-www-form-urlencoded
                     </div>
                     <div className={rawDataLabelClass}>
                         <input type="radio"
-                            value="rawData" name="bodyType" checked={this.state.showRawData} onChange={this.handleBodyOrRawDataType}/>
+                            value="rawData" name={"bodyType"+this.props.id.trim()} checked={this.state.showRawData} onChange={this.handleBodyOrRawDataType}/>
                             Raw Data
                     </div>
                     <div className="" style={{display: this.state.showRawData ? "inline-block" : "none", paddingRight: "25px", fontSize: "12px"}}>
                         <FormGroup bsSize="small">
-                            <FormControl componentClass="select" placeholder="Method" style={{fontSize: "12px"}} name="rawDataType" value={this.props.rawDataType} onChange={this.handleBodyOrRawDataType}>
+                            <FormControl componentClass="select" placeholder="Method" style={{fontSize: "12px"}} readOnly={this.props.readOnly} name="rawDataType" value={this.props.rawDataType} onChange={this.handleBodyOrRawDataType}>
                                 <option value="txt">Text</option>
                                 <option value="js">JavaScript</option>
                                 <option value="json">JSON</option>
@@ -210,7 +213,8 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
                     addOrRemoveParam={this.props.addOrRemoveParam} 
                     updateParam={this.props.updateParam}
                     updateAllParams={this.props.updateAllParams}
-                    isOutgoingRequest={this.props.isOutgoingRequest} >
+                    isOutgoingRequest={this.props.isOutgoingRequest}
+                    readOnly={this.props.readOnly}  >
 
                 </HttpRequestHeaders>
                 <HttpRequestQueryString tabId={this.props.tabId}
@@ -219,6 +223,7 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
                     addOrRemoveParam={this.props.addOrRemoveParam} 
                     updateParam={this.props.updateParam}
                     updateAllParams={this.props.updateAllParams}
+                    readOnly={this.props.readOnly} 
                     isOutgoingRequest={this.props.isOutgoingRequest} >
 
                 </HttpRequestQueryString>
@@ -231,6 +236,7 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
                     updateParam={this.props.updateParam}
                     updateAllParams={this.props.updateAllParams}
                     rawData={this.props.rawData}
+                    readOnly={this.props.readOnly} 
                     isOutgoingRequest={this.props.isOutgoingRequest} >
 
                 </HttpRequestBody>

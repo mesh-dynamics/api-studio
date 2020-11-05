@@ -7,6 +7,7 @@ export interface IHttpRequestFormDataProps{
     tabId: string;
      isOutgoingRequest :boolean;
      showFormData :boolean;
+     readOnly :boolean;
      updateParam: UpdateParamHandler;
      addOrRemoveParam: AddOrRemoveHandler;
      updateAllParams: UpdateParamHandler;
@@ -57,7 +58,8 @@ class HttpRequestFormData extends Component<IHttpRequestFormDataProps> {
                     <div style={{marginBottom: "1px"}}>
                         <div style={{display: "inline-block", width: "3%", paddingRight: "9px"}}> 
                             <FormGroup bsSize="small" style={{marginBottom: "0px", textAlign: "center"}}>
-                                <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} checked={this.allSelected()} onChange={this.handleAllCheckChange}/>
+                                <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} checked={this.allSelected()} 
+                                disabled={this.props.readOnly} onChange={this.handleAllCheckChange}/>
                             </FormGroup>
                         </div>
                         <div style={{display: "inline-block", width: "35%", paddingRight: "9px"}}> 
@@ -87,18 +89,21 @@ class HttpRequestFormData extends Component<IHttpRequestFormDataProps> {
                         <div style={{display: "inline-block", width: "3%", paddingRight: "9px"}}> 
                             <FormGroup style={{marginBottom: "0px", backgroundColor: "none", textAlign: "center"}}>
                             <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} checked={eachParam.selected} 
+                            disabled={this.props.readOnly} 
                                 onChange={() => this.handleCheckChange(eachParam.id, eachParam.selected)}/>
                             </FormGroup>
                         </div>
                         <div style={{display: "inline-block", width: "35%", paddingRight: "9px"}}> 
                             <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
                                 <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="" 
+                                readOnly={this.props.readOnly} 
                                 value={eachParam.name} name="name" onChange={this.handleChange.bind(this, eachParam.id)}/>
                             </FormGroup>
                         </div>
                         <div style={{display: "inline-block", width: "55%", paddingRight: "9px"}}>
                             <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
-                                <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="" value={eachParam.value} name="value" onChange={this.handleChange.bind(this, eachParam.id)} />
+                                <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="" 
+                                readOnly={this.props.readOnly} value={eachParam.value} name="value" onChange={this.handleChange.bind(this, eachParam.id)} />
                             </FormGroup>
                         </div>
                         {/* <div style={{display: "inline-block", width: "54%", paddingRight: "9px"}}>
@@ -107,7 +112,7 @@ class HttpRequestFormData extends Component<IHttpRequestFormDataProps> {
                                 value={eachParam.description} name="description" onChange={this.handleChange.bind(this, eachParam.id)} />
                             </FormGroup>
                         </div> */}
-                        <div style={{display: "inline-block", width: "7%", paddingRight: "9px"}} 
+                        <div style={{display: this.props.readOnly? "none" : "inline-block", width: "7%", paddingRight: "9px"}} 
                                 onClick={this.handleDelete.bind(this, eachParam.id)} > 
                             <FormGroup style={{marginBottom: "0px", backgroundColor: "#ffffff", textAlign: "center", padding: "5px"}}>
                                 <Glyphicon style={{fontSize: "16px", top: "5px"}} glyph="remove-sign" /> 
@@ -116,8 +121,8 @@ class HttpRequestFormData extends Component<IHttpRequestFormDataProps> {
                     </div>
                 )})}
                 <div style={{ marginTop: "5px", marginRight: "7px"}}>
-                    <div style={{display: "inline-block", width: "100%"}}>
-                        <button className="add-request-options-button" onClick={this.handleAdd}>
+                    <div style={{display: this.props.readOnly? "none" : "inline-block", width: "100%"}}>
+                        <button className="add-request-options-button" onClick={this.handleAdd} >
                             <span style={{ fontSize: "20px" }}>+</span>
                             <span style={{ marginLeft: "5px", fontWeight: 400 }}>Add form data</span>
                         </button>
