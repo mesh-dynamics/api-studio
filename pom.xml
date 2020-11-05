@@ -6,7 +6,7 @@
   <groupId>com.cube.readjson</groupId>
   <packaging>jar</packaging>
   <artifactId>cubeui-backend-readjson</artifactId>
-  <version>1.1</version>
+  <version>1.2</version>
   <properties>
     <version.java>8</version.java>
     <org.projectlombok.version>1.18.10</org.projectlombok.version>
