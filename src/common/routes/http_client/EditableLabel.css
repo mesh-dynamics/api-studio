@@ -1,22 +1,26 @@
-
 .editable-label-root {
-    display: flex;
-    width: 100%;
-    cursor: text;
+  display: flex;
+  width: 100%;
 }
 
 .editable-input {
-    border: 1px dotted #cacaca;
+  border: 1px dotted #cacaca;
 }
 
 .editable-label-text {
-    display: flex;
-    flex: 1;
-    justify-content: space-between;
-    align-items: center;
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.editable-label-icon {    
-    font-size: 10px;
-    margin-bottom: 4px;
+.editable-label-icon {
+  font-size: 10px;
+  margin-bottom: 4px;
+  display: none;
+  cursor: pointer;
+}
+.editable-label-text:hover .editable-label-icon {
+  display: block;
+  font-weight: 900;
 }

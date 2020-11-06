@@ -1,4 +1,5 @@
-import React, { FC, useState, useEffect } from "react";
+import Tippy from "@tippy.js/react";
+import React, { FC, useState, useEffect, ChangeEvent } from "react";
 
 import "./EditableLabel.css";
 
@@ -12,7 +13,7 @@ interface EditableLabelProps {
 const EMPTY_STRING: string = "";
 
 const EditableLabel: FC<EditableLabelProps> = (props) => {
-    let textInput: React.ReactHTMLElement<HTMLDivElement>;
+    let textInput: HTMLDivElement | null = null;
 
     const { label, handleEditComplete } = props;
 
@@ -20,10 +21,8 @@ const EditableLabel: FC<EditableLabelProps> = (props) => {
 
     const [labelString, setLabelString] = useState(label);
 
-    const [showEditIcon, setShowEditIcon] = useState(false);
-
     const handleValueUpdate = () => {
-        if (labelString === EMPTY_STRING) {
+        if (labelString === EMPTY_STRING || labelString === label) {
             setLabelString(label);
         } else {
             handleEditComplete(labelString);
@@ -32,8 +31,7 @@ const EditableLabel: FC<EditableLabelProps> = (props) => {
 
     const handleBlur = () => {
         setAllowEdit(false);
-        setShowEditIcon(false);
-        handleValueUpdate();
+        setLabelString(label);
     }
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -54,27 +52,29 @@ const EditableLabel: FC<EditableLabelProps> = (props) => {
     );
 
     return (
-        <div className="editable-label-root" onClick={() => setAllowEdit(true)}>
+        <div className="editable-label-root">
             {
                 allowEdit
                     ?
-                    <input
+                    <><input
                         type="text"
                         value={labelString}
                         className="editable-input"
                         onBlur={handleBlur}
                         onKeyDown={handleKeyDown}
                         ref={ref => textInput = ref}
-                        onChange={(event: React.KeyboardEvent<HTMLDivElement>) => setLabelString(event.target.value)}
-                    />
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => setLabelString((event.target as HTMLInputElement).value)}
+                    /> 
+                    <Tippy content="Press ENTER to save, ESC to reset" arrow={true} placement="bottom">
+                        <span className="margin-right-15"><i className="fa fa-info-circle"></i></span>
+                    </Tippy>
+                    </>
                     :
                     <span
                         className="editable-label-text"
-                        onMouseEnter={() => setShowEditIcon(true)}
-                        onMouseLeave={() => setShowEditIcon(false)}
                     >
                         {label}
-                        {showEditIcon && <i className="far fa-edit editable-label-icon"></i>}
+                        <i className="far fa-edit editable-label-icon"  onClick={() => setAllowEdit(true)}></i>
                     </span>
             }
         </div>
