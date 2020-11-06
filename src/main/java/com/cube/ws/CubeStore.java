@@ -1519,6 +1519,8 @@ public class CubeStore {
                 Map<String, String> extractionMap = new HashMap<>();
                 final String generatedTraceId = io.md.utils.Utils.generateTraceId();
                 for (UserReqRespContainer userReqRespContainer : userReqRespContainers) {
+                    // NOTE - Check if response needs to be modified in grpc/binary cases.
+                    // Ideally deserialisation and serialisation should take care of it.
                     Event response = userReqRespContainer.response;
                     Event request = userReqRespContainer.request;
                     try {
@@ -1627,8 +1629,11 @@ public class CubeStore {
                 }
                 rrstore.commit();
                 return Response.ok()
-                    .entity(buildSuccessResponse(Constants.SUCCESS, new JSONObject(
-                        Map.of(Constants.MESSAGE, "The UserData is saved",
+                    .entity(buildSuccessResponse(
+                        Constants.SUCCESS, new JSONObject(
+                        Map.of(
+                            "userReqRespContainers", userReqRespContainers,
+                            Constants.MESSAGE, "The UserData is saved",
                             Constants.RECORDING_ID, recordingId,
                             Constants.RESPONSE, responseList)))).build();
             }
@@ -1732,6 +1737,14 @@ public class CubeStore {
                 requestEvent.app, Optional.of(dynamicInjectionEventDao.getInjectionConfigVersion()),
                 dynamicInjectionEventDao.getContextMap());
             dynamicInjector.inject(requestEvent);
+
+            if(requestEvent.payload instanceof GRPCPayload) {
+                io.md.utils.Utils.setProtoDescriptorGrpcEvent(requestEvent, config.protoDescriptorCache);
+                // Note the state for stored event in solr will be UnwrappedDecoded if this is directly coming from devtool
+                // then the state has to be set as UnwrappedDecoded by devtool.
+                ((GRPCPayload) requestEvent.payload).wrapBody();
+            }
+
             Optional<Recording> optionalRecording = rrstore.getRecording(recordingOrReplayId);
             Optional<String> recordOrReplayRunId = optionalRecording.map(recording -> {
                 recording.runId = runId;
