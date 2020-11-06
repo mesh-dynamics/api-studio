@@ -697,7 +697,7 @@ class HttpClient extends Component {
                                     readOnly={false}>
                                 </HttpRequestMessage>
                             </div>
-                            <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0"}}>
+                            <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0", height:'100%'}}>
                                 {selectedTraceTableReqTab && selectedTraceTableTestReqTab && (
                                     <HttpRequestMessageRO
                                         tabId={selectedTraceTableTestReqTab.id}
