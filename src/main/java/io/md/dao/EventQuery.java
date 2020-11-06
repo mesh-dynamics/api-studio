@@ -3,9 +3,7 @@ package io.md.dao;
 import java.time.Instant;
 import java.util.*;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import io.md.constants.Constants;
@@ -100,6 +98,7 @@ public class EventQuery {
             this.eventTypes = eventTypes;
         }
 
+        @JsonSetter(nulls = Nulls.FAIL)
         public Builder withService(String val) {
             services = Arrays.asList(val);
             return this;
@@ -111,7 +110,7 @@ public class EventQuery {
             return this;
         }
 
-
+        @JsonSetter(nulls = Nulls.FAIL , contentNulls = Nulls.FAIL)
         public Builder withServices(List<String> vals) {
             services = vals;
             return this;
@@ -145,6 +144,7 @@ public class EventQuery {
         }
 
 
+        @JsonSetter(nulls = Nulls.FAIL)
         public Builder withTraceId(String val) {
             traceIds = Arrays.asList(val);
             return this;
@@ -157,6 +157,7 @@ public class EventQuery {
             return this;
         }
 
+        @JsonSetter(nulls = Nulls.FAIL , contentNulls = Nulls.FAIL)
         public Builder withTraceIds(List<String> vals) {
             traceIds = vals;
             return this;
@@ -213,6 +214,7 @@ public class EventQuery {
             return this;
         }
 
+        @JsonSetter(nulls = Nulls.FAIL)
         public Builder withReqId(String val) {
             reqIds = Arrays.asList(val);
             return this;
@@ -224,6 +226,7 @@ public class EventQuery {
             return this;
         }
 
+        @JsonSetter(nulls = Nulls.FAIL , contentNulls = Nulls.FAIL)
         public Builder withReqIds(List<String> val) {
             reqIds = val;
             return this;
@@ -236,6 +239,7 @@ public class EventQuery {
         }
 
 
+        @JsonSetter(nulls = Nulls.FAIL)
         public Builder withPath(String val) {
             paths = Arrays.asList(val);
             return this;
@@ -247,6 +251,7 @@ public class EventQuery {
             return this;
         }
 
+        @JsonSetter(nulls = Nulls.FAIL , contentNulls = Nulls.FAIL)
         public Builder withPaths(List<String> val) {
             paths = val;
             return this;
@@ -298,6 +303,7 @@ public class EventQuery {
             return this;
         }
 
+        @JsonSetter(nulls = Nulls.FAIL , contentNulls = Nulls.FAIL)
         public Builder withPayloadFields(List<String> pyldFields){
             this.payloadFields = pyldFields;
             return this;
