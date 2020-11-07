@@ -411,4 +411,5 @@ public class EventQuery {
     @JsonIgnore
     public Optional<Float> getTimestampWeight() {return Optional.ofNullable(orQueryWeightage.get(Constants.TIMESTAMP_FIELD)); }
 
+    public boolean isFromMocker(){return fromMocker;}
 }
