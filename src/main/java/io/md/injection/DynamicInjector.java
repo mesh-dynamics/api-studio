@@ -80,7 +80,7 @@ public class DynamicInjector {
 				String name;
 				DataObj value;
 
-				String requestHttpMethod = getHttpMethod(goldenRequestEvent);
+				String requestHttpMethod = Utils.getHttpMethod(goldenRequestEvent);
 				boolean apiPathMatch = apiPathMatch(
 					Collections.singletonList(extractionMeta.apiPath), goldenRequestEvent.apiPath);
 				if (apiPathMatch && extractionMeta.method.toString()
@@ -175,7 +175,7 @@ public class DynamicInjector {
 				StringSubstitutor sub = new StringSubstitutor(varResolver);
 
 				boolean isResponse = !Event.isReqType(request.eventType);
-				String requestHttpMethod = isResponse ? "" : getHttpMethod(request);
+				String requestHttpMethod = isResponse ? "" : Utils.getHttpMethod(request);
 				boolean apiPathMatch = apiPathMatch(injectionMeta.apiPaths, request.apiPath);
 				if ((injectionMeta.injectAllPaths || apiPathMatch) && (isResponse || injectionMeta.method
 					.toString().equalsIgnoreCase(requestHttpMethod))) {
@@ -245,18 +245,6 @@ public class DynamicInjector {
 				key, Constants.JSON_PATH_FIELD, path,
 				Constants.REQ_ID_FIELD, request.reqId), e);
 		}
-	}
-
-	static public String getHttpMethod(Event event) {
-		String requestHttpMethod;
-		try {
-			requestHttpMethod = event.payload.getValAsString(Constants.METHOD_PATH);
-		} catch (PathNotFoundException e) {
-			LOGGER
-				.error("Cannot find /method in request" + event.reqId + " No extraction", e);
-			requestHttpMethod = "";
-		}
-		return requestHttpMethod;
 	}
 
 	static public boolean apiPathMatch(List<String> apiPathRegexes, String apiPathToMatch) {

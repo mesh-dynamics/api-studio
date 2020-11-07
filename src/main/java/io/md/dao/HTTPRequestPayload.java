@@ -5,12 +5,15 @@
  */
 package io.md.dao;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.constants.Constants;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -150,6 +153,8 @@ public class HTTPRequestPayload extends HTTPPayload implements RequestPayload {
 		}
 	}
 
-
-
+	@Override
+	public List<String> getPayloadFields() {
+		return Arrays.asList(String.format("%s:%s", Constants.METHOD_PATH, method));
+	}
 }

@@ -640,6 +640,17 @@ public class Utils {
 			new ProtoDescriptorKey(e.customerId, e.app, e.getCollection())));
 	}
 
+	static public String getHttpMethod(Event event) {
+		String requestHttpMethod;
+		try {
+			requestHttpMethod = event.payload.getValAsString(Constants.METHOD_PATH);
+		} catch (DataObj.PathNotFoundException e) {
+			LOGGER
+					.error("Cannot find /method in request" + event.reqId + " No extraction", e);
+			requestHttpMethod = "";
+		}
+		return requestHttpMethod;
+	}
 	public static JsonNode convertStringToNode(String value, ObjectMapper jsonMapper)
 	{
 		try {

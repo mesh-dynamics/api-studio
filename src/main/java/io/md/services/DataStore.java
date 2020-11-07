@@ -66,7 +66,7 @@ public interface DataStore {
      * @param res
      * @return
      */
-    boolean saveResult(ReqRespMatchResult res);
+    boolean saveResult(ReqRespMatchResult res, String customerId);
 
     boolean save(Event event);
 
