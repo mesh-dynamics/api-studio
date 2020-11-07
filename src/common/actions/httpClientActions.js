@@ -228,15 +228,16 @@ export const httpClientActions = {
             (eachCollection) => eachCollection.id === selectedCollectionId
         );
         try {
-            cubeService.loadCollectionTraces(customerId, selectedCollection.collec, app, selectedCollection.id).then(
-            (apiTraces) => {
-                selectedCollection.apiTraces = apiTraces;
-                dispatch(httpClientActions.addUserCollections(userCollections));
-            },
-            (err) => {
-                console.error("err: ", err);
+            if(selectedCollection){            
+                cubeService.loadCollectionTraces(customerId, selectedCollection.collec, app, selectedCollection.id).then(
+                (apiTraces) => {
+                    selectedCollection.apiTraces = apiTraces;
+                    dispatch(httpClientActions.addUserCollections(userCollections));
+                },
+                (err) => {
+                    console.error("err: ", err);
+                });
             }
-        );
         } catch (error) {
             console.error("Error ", error);
             throw new Error("Error");

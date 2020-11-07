@@ -101,8 +101,9 @@ class SaveToCollection extends React.Component {
 
   updateTabWithNewData(tabId, response, recordingId) {
     const {
-      httpClient: { tabs, userCollections },
+      httpClient: { tabs, userCollections }, goldenList
     } = this.props;
+    const collections = [...userCollections, ...goldenList]
     const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
     const tabToProcess = tabs[tabIndex];
     if (response.status === "success") {
@@ -113,7 +114,7 @@ class SaveToCollection extends React.Component {
                 return JSON.parse(eachOne);
               })
             : [];
-        const collection = userCollections.find(
+        const collection = collections.find(
           (eachCollection) => eachCollection.id === recordingId
         );
         for (let eachReq of parsedData) {
