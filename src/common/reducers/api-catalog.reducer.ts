@@ -124,6 +124,7 @@ export const apiCatalog : Reducer<IApiCatalogState> = (state = initialState, { t
                 startTime: data.startTime,
                 endTime: data.endTime,
                 apiPaths: data.apiPaths,
+                services: data.services,
                 instances: data.instances,
             }
         }

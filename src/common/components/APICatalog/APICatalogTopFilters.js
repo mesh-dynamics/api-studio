@@ -6,9 +6,8 @@ import MultiSelect from '../MultiSelect/MultiSelect';
 import { Glyphicon } from 'react-bootstrap';
 
 function APICatalogTopFilters(props) {
-    const { apiCatalog: { selectedService, services, apiPaths, selectedApiPath } } = props;
+    const { apiCatalog: { selectedService, services, apiPaths, selectedApiPath, selectedSource, selectedCollection, selectedGolden } } = props;
 
-    const [selectedValue, setSelectedValue] = useState([selectedService]);
     const onChangeService = React.useCallback((value) => {
         const { dispatch } = props;
         dispatch(apiCatalogActions.handleFilterChange("selectedService", value));
@@ -17,13 +16,20 @@ function APICatalogTopFilters(props) {
         const { dispatch } = props;
         dispatch(apiCatalogActions.handleFilterChange("selectedApiPath", value));
     });
+    let servicesToDisplay = [], apiPathsToDisplay= [];
+
+    //Sometimes, even if nothing is selected, it fetches old values, which should not be displayed.
+    if(selectedSource && (selectedCollection || selectedGolden || selectedSource == "Capture")){
+        servicesToDisplay = services;
+        apiPathsToDisplay = apiPaths;
+    }
 
     return <div className="topFilters">
-        <MultiSelect options={services} value={selectedService} onChange={onChangeService} title="SERVICE" placeholder="Search Service..." />
+        <MultiSelect options={servicesToDisplay} value={selectedService} onChange={onChangeService} title="SERVICE" placeholder="Search Service..." />
         <div className="left-arrow-glyph">
             <Glyphicon glyph="play" />
         </div>
-        <MultiSelect options={apiPaths}  value={selectedApiPath} onChange={onChangeAPI} title="API"  placeholder="Search API..." />
+        <MultiSelect options={apiPathsToDisplay}  value={selectedApiPath} onChange={onChangeAPI} title="API"  placeholder="Search API..." />
     </div>
 }
 
