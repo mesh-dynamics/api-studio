@@ -569,7 +569,7 @@ public class Utils {
 			body.getBytes(StandardCharsets.UTF_8) : null;
 
 		return createHTTPRequestEvent(path, queryParams, formParams, headers, mdTraceInfo,
-			bodyBytes, customerId, app, service, instanceId, RunType.Replay, method, requestId, recordingType);
+			bodyBytes, customerId, app, service, instanceId, RunType.Mock, method, requestId, recordingType);
 	}
 
 	static public String convertTraceId(long traceIdHigh, long traceIdLow) {

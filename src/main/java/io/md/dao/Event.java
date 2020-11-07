@@ -285,7 +285,10 @@ public class Event implements MDStorable {
 	public enum RunType {
 		Record,
 		Replay,
-		Manual  // manually created e.g. default requests and responses
+		Manual, // manually created e.g. default requests and responses
+		DevTool,
+		DevToolProxy,
+		Mock
 	}
 
 	public String getTraceId() {

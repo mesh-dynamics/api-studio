@@ -157,7 +157,8 @@ public class RealMocker implements Mocker {
                 .withTraceId(event.getTraceId() , EventQuery.TRACEID_WEIGHT)
                 .withPayloadKey(event.payloadKey , EventQuery.PAYLOAD_KEY_WEIGHT)
                 .withOffset(offset)
-                .withSortOrderAsc(isSortOrderAsc);
+                .withSortOrderAsc(isSortOrderAsc)
+                .withFromMocker(true);
         lowerBoundForMatching.ifPresent(builder::withTimestamp);
         limit.ifPresent(builder::withLimit);
         return builder.build();

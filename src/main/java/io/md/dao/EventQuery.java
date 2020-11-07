@@ -49,6 +49,7 @@ public class EventQuery {
     private final Optional<Integer> limit;
     private final Optional<Boolean> sortOrderAsc;
     private final Map<String , Float> orQueryWeightage;
+    private final boolean fromMocker;
 
     public static class Builder {
         private final String customerId;
@@ -71,6 +72,7 @@ public class EventQuery {
         private Integer limit = null;
         private Boolean sortOrderAsc = null;
         private Map<String , Float> orQueryWeightage = new HashMap<>();
+        private boolean fromMocker = false;
 
         //@JsonCreator
         public Builder(String customerId,
@@ -292,6 +294,11 @@ public class EventQuery {
             return this;
         }
 
+        public Builder withFromMocker(boolean mocker){
+            fromMocker = mocker;
+            return this;
+        }
+
         public EventQuery build() {
             return new EventQuery(this);
         }
@@ -318,6 +325,8 @@ public class EventQuery {
         limit = Optional.ofNullable(builder.limit);
         sortOrderAsc = Optional.ofNullable(builder.sortOrderAsc);
         orQueryWeightage = builder.orQueryWeightage;
+        fromMocker = builder.fromMocker;
+
     }
 
     public String getCustomerId() {
