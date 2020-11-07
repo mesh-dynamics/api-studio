@@ -367,7 +367,7 @@ public class AnalyzeWS {
 
         TemplateKey tkey = new TemplateKey(templateVersion, customerId, appId, service, apipath.get(),
             ruleType, method, recordingId.orElse(TemplateKey.DEFAULT_RECORDING));
-        
+
         try {
           CompareTemplate compareTemplate = rrstore.getComparator(tkey, eventType).getCompareTemplate();
           String resp = "";
@@ -1514,18 +1514,28 @@ public class AnalyzeWS {
 
 	    traceCollectionMap.forEach((traceCollectionKey, events) -> {
 	      List<Event> parentRequestEvents = apiTraceFacetQuery.apiPath.map(path -> {
-	        return events.stream()
-              .filter(e -> e.apiPath.equals(path))
-              .limit(numResults)
-              .collect(Collectors.toList());
-	      }).orElseGet(() -> {
-	        // find event such that there is no event having span id equal to its parent span id
-          Map<String, Event> requestEventsBySpanId = new HashMap<>();
-          events.forEach(e -> requestEventsBySpanId.put(e.spanId, e));
-          return events.stream()
-              .filter(e -> e.parentSpanId.equals("NA") || requestEventsBySpanId.get(e.parentSpanId) == null)
-              .limit(numResults)
-              .collect(Collectors.toList());
+	          // get parent events based on apiPath filter if it is non-empty
+              return events.stream()
+                  .filter(e -> e.apiPath.equals(path) && apiTraceFacetQuery.service.map(e.service::equals).orElse(true))
+                  .limit(numResults)
+                  .collect(Collectors.toList());
+	      }).or(() -> {
+              // get parent events based on service filter if it is non-empty
+              return apiTraceFacetQuery.service.map(service -> {
+                      return events.stream()
+                          .filter(e -> e.service.equals(service) && apiTraceFacetQuery.apiPath.map(e.apiPath::equals).orElse(true))
+                          .limit(numResults)
+                          .collect(Collectors.toList());
+                  });
+              }).orElseGet(() -> {
+              // parent events based on spanid and parentspanid
+              // find event such that there is no event having span id equal to its parent span id
+              Map<String, Event> requestEventsBySpanId = new HashMap<>();
+              events.forEach(e -> requestEventsBySpanId.put(e.spanId, e));
+              return events.stream()
+                  .filter(e -> e.parentSpanId.equals("NA") || requestEventsBySpanId.get(e.parentSpanId) == null)
+                  .limit(numResults)
+                  .collect(Collectors.toList());
 	      });
 	      if (parentRequestEvents.isEmpty()) {
 	        LOGGER.error(
