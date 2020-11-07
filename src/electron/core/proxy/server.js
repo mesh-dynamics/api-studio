@@ -11,6 +11,7 @@ const {
     getServiceNameFromUrl, 
     selectProxyTargetForService
 } = require('./proxy-utils');
+const cryptoRandomString = require('crypto-random-string');
 
 /**
  * This function will setup the proxy server
@@ -72,6 +73,10 @@ const setupProxy = (mockContext, user) => {
                             HEADERS: ${JSON.stringify(headers)} 
                             REQUEST BODY: ${buffer}
                         `);
+
+            // if traceId isn't present in the mock context, generate a new one (for every request)
+            // this is to avoid stored requests from getting deleted by storeUserReqResp call
+            mockContext.traceId = mockContext.traceId || cryptoRandomString({length: 32});
 
             const proxyOptionParameters = {
                 user,

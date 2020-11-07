@@ -505,7 +505,10 @@ export const httpClientActions = {
 
     showMockConfigList: (show) => ({type: httpClientConstants.SHOW_MOCK_CONFIG_LIST, data: show}),
 
-    setSelectedMockConfig: (selectedMockConfig) => ({type: httpClientConstants.SET_SELECTED_MOCK_CONFIG, data: selectedMockConfig}),
+    setSelectedMockConfig: (selectedMockConfig) => dispatch => {
+        dispatch({type: httpClientConstants.SET_SELECTED_MOCK_CONFIG, data: selectedMockConfig})
+        setDefaultMockContext({mockConfigName: selectedMockConfig})
+    },
 
     fetchMockConfigs: () => async (dispatch, getState) => {
         dispatch(httpClientActions.setMockConfigStatusText("Loading..."))

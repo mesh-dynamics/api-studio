@@ -165,7 +165,7 @@ const initialState : IHttpClientStoreState = {
     },
     isCollectionLoading: false,
     mockContextLookupCollection: "",
-    mockContextSaveToCollection: "",
+    mockContextSaveToCollection: {},
     
 }
 
