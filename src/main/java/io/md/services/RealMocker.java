@@ -154,8 +154,8 @@ public class RealMocker implements Mocker {
                 .withPayloadKey(event.payloadKey , EventQuery.PAYLOAD_KEY_WEIGHT)
                 .withOffset(offset)
                 .withSortOrderAsc(isSortOrderAsc)
-                .withPayloadFields(payloadFields);
-
+                .withPayloadFields(payloadFields)
+                .withFromMocker(true);
         lowerBoundForMatching.ifPresent(builder::withTimestamp);
         limit.ifPresent(builder::withLimit);
         joinQuery.ifPresent(builder::withJoinQuery);
