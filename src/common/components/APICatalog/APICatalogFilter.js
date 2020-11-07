@@ -89,8 +89,8 @@ class APICatalogFilter extends Component {
             compareRequests
         }} = this.props;
 
-        return compareRequests.map((reqData) => (
-            <div style={{display: "flex", flexDirection: "row", margin: "5px"}}>
+        return compareRequests.map((reqData, index) => (
+            <div key={index} style={{display: "flex", flexDirection: "row", margin: "5px"}}>
                 <div style={{display: "flex", flexDirection: "column"}}>
                     <div style={{display: "flex", flexDirection: "row"}}>
                         <span style={{fontWeight: 300}}>INSTANCE: </span>
