@@ -30,7 +30,6 @@ export default function (props) {
     }
     const mutliSelectClass = classNames({
         'multi-select api-catalog-bordered-box': true,
-        'select-indicator': props.options.length > 0 && !value
       });
 
     return (<div className={mutliSelectClass}>
@@ -45,11 +44,13 @@ export default function (props) {
 
         </div>
         <ListGroup onClick={onItemClick}>
-            {props.options.length == 0 && <>
+            {props.options.length == 0 ? <>
                 <ListGroupItem disabled>&nbsp;</ListGroupItem>
                 <ListGroupItem disabled>&nbsp;</ListGroupItem>
                 <ListGroupItem disabled>&nbsp;</ListGroupItem>
-            </>}
+            </>
+            :            
+            <ListGroupItem key="All" value="" active={value == ""}>All</ListGroupItem>}
             {options.map(u =>
                 <ListGroupItem key={u.val} value={u.val} active={u.val == value}>{u.val}</ListGroupItem>
             )}

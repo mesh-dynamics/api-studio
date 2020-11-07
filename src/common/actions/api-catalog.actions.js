@@ -90,10 +90,14 @@ export const apiCatalogActions = {
             selectedService, selectedGoldenService, selectedCollectionService, 
             selectedCaptureService, selectedApiPath, selectedCaptureApi,
             selectedCollectionApi, selectedGoldenApi, selectedInstance, selectedCaptureInstance,
-            startTime, endTime, apiPaths, instances, apiFacets} = state.apiCatalog;
+            startTime, endTime, apiPaths, instances, apiFacets, services} = state.apiCatalog;
 
         switch (metadata) {
             case "selectedSource":
+                if(selectedSource != value){
+                    apiPaths = [];
+                    services = [];
+                }
                 selectedSource = value;
                 
                 // since the source has changed, we set the selections from the respective stored values
@@ -154,7 +158,7 @@ export const apiCatalogActions = {
                 selectedService = value;
 
                 apiPaths = getIncomingAPIList(apiFacets, selectedService)
-                selectedApiPath = !_.isEmpty(apiPaths) ? apiPaths[0].val : "";
+                selectedApiPath = "";
 
                 
                 if (selectedSource==="Golden") {
@@ -227,18 +231,18 @@ export const apiCatalogActions = {
                 selectedService,selectedGoldenService, selectedCollectionService,
                 selectedCaptureService, selectedApiPath,selectedCaptureApi,
                 selectedCollectionApi,selectedGoldenApi, selectedInstance, selectedCaptureInstance, 
-                startTime, endTime,apiPaths, instances }
+                startTime, endTime,apiPaths, instances, services }
         })
 
         // fetch api trace only if all necessary filters are selected
         switch (selectedSource) {
             case "UserGolden":
-                if(!(selectedCollection && selectedService && selectedApiPath)) {
+                if(!(selectedCollection )) {
                     return;
                 }
                 break
             case "Golden":
-                if(!(selectedGolden && selectedService && selectedApiPath)) {
+                if(!(selectedGolden)) {
                     return;
                 }
                 break
