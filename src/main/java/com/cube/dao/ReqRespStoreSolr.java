@@ -347,7 +347,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
         addToFilterOrQuery(query , queryBuff , TRACEIDF , filteredTraceIds , true , eventQuery.getTraceIdsWeight());
 
-        addToFilterOrQuery(query , queryBuff , RRTYPEF , eventQuery.getRunType().map(Object::toString) , true , eventQuery.getRunTypeWeight());
+        if(eventQuery.isFromMocker()){
+            addNegativeFilter(query ,  RRTYPEF , RunType.Mock.toString()  , false);
+        }else{
+            addToFilterOrQuery(query , queryBuff , RRTYPEF , eventQuery.getRunType().map(Object::toString) , true , eventQuery.getRunTypeWeight());
+        }
 
         addToFilterOrQuery(query , queryBuff , REQIDF , eventQuery.getReqIds(), true , eventQuery.getReqIdsWeight());
 
