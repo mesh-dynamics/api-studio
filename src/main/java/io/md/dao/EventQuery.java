@@ -50,6 +50,7 @@ public class EventQuery {
     private final List<String> payloadFields;
     private final Map<String , Float> orQueryWeightage;
     private final Optional<JoinQuery> joinQuery;
+    private final boolean fromMocker;
 
     public static class Builder {
         private final String customerId;
@@ -74,7 +75,7 @@ public class EventQuery {
         private List<String> payloadFields = Collections.EMPTY_LIST;
         private Map<String , Float> orQueryWeightage = new HashMap<>();
         private Optional<JoinQuery> joinQuery = Optional.empty();
-
+        private boolean fromMocker = false;
 
         //@JsonCreator
         public Builder(String customerId,
@@ -303,6 +304,11 @@ public class EventQuery {
             return this;
         }
 
+        public Builder withFromMocker(boolean mocker) {
+            fromMocker = mocker;
+            return this;
+        }
+
         @JsonSetter(nulls = Nulls.FAIL , contentNulls = Nulls.FAIL)
         public Builder withPayloadFields(List<String> pyldFields){
             this.payloadFields = pyldFields;
@@ -350,6 +356,7 @@ public class EventQuery {
         orQueryWeightage = builder.orQueryWeightage;
         payloadFields = builder.payloadFields;
         joinQuery = builder.joinQuery;
+        fromMocker = builder.fromMocker;
     }
 
     public String getCustomerId() {
@@ -434,6 +441,8 @@ public class EventQuery {
     @JsonIgnore
     public Optional<Float> getTimestampWeight() {return Optional.ofNullable(orQueryWeightage.get(Constants.TIMESTAMP_FIELD)); }
 
+    public boolean isFromMocker(){return fromMocker;}
+
     public List<String> getPayloadFields() {
         return payloadFields;
     }
@@ -441,5 +450,4 @@ public class EventQuery {
     public Optional<JoinQuery> getJoinQuery() {
         return joinQuery;
     }
-
 }
