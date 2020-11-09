@@ -665,6 +665,7 @@ public class AnalyzeWS {
 		    facetMap.put(Constants.DIFF_RES_FACET, diffResFacets);
 		    facetMap.put(Constants.SERVICE_FACET, serviceFacets);
 		    facetMap.put(Constants.PATH_FACET, pathFacets);
+		    facetMap.put(Constants.DIFF_PATH_FACET, resultWithFacets.diffPathFacets);
 
 		    numFound[0] = result.numFound;
             app[0] = replay.app;
