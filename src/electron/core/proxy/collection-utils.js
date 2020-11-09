@@ -24,7 +24,7 @@ const constructEventDetails = (mockContext, service, apiPath, eventName) => {
         spanId: cryptoRandomString({ length: 16 }), // Randomly picked for live request
         recordingType: 'History', // Hardcoded for live request
         reqId: 'NA', // Hardcoded for live request
-        runType: 'Manual', // Hardcoded for live request 
+        runType: 'DevToolProxy', // Hardcoded for live request 
         timestamp: new Date().valueOf(), // Calculated dynamically for each req/res
     }
 };

@@ -228,15 +228,16 @@ export const httpClientActions = {
             (eachCollection) => eachCollection.id === selectedCollectionId
         );
         try {
-            cubeService.loadCollectionTraces(customerId, selectedCollection.collec, app, selectedCollection.id).then(
-            (apiTraces) => {
-                selectedCollection.apiTraces = apiTraces;
-                dispatch(httpClientActions.addUserCollections(userCollections));
-            },
-            (err) => {
-                console.error("err: ", err);
+            if(selectedCollection){            
+                cubeService.loadCollectionTraces(customerId, selectedCollection.collec, app, selectedCollection.id).then(
+                (apiTraces) => {
+                    selectedCollection.apiTraces = apiTraces;
+                    dispatch(httpClientActions.addUserCollections(userCollections));
+                },
+                (err) => {
+                    console.error("err: ", err);
+                });
             }
-        );
         } catch (error) {
             console.error("Error ", error);
             throw new Error("Error");
@@ -504,7 +505,10 @@ export const httpClientActions = {
 
     showMockConfigList: (show) => ({type: httpClientConstants.SHOW_MOCK_CONFIG_LIST, data: show}),
 
-    setSelectedMockConfig: (selectedMockConfig) => ({type: httpClientConstants.SET_SELECTED_MOCK_CONFIG, data: selectedMockConfig}),
+    setSelectedMockConfig: (selectedMockConfig) => dispatch => {
+        dispatch({type: httpClientConstants.SET_SELECTED_MOCK_CONFIG, data: selectedMockConfig})
+        setDefaultMockContext({mockConfigName: selectedMockConfig})
+    },
 
     fetchMockConfigs: () => async (dispatch, getState) => {
         dispatch(httpClientActions.setMockConfigStatusText("Loading..."))

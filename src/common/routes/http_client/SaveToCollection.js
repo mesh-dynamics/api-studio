@@ -101,8 +101,9 @@ class SaveToCollection extends React.Component {
 
   updateTabWithNewData(tabId, response, recordingId) {
     const {
-      httpClient: { tabs, userCollections },
+      httpClient: { tabs, userCollections }, goldenList
     } = this.props;
+    const collections = [...userCollections, ...goldenList]
     const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
     const tabToProcess = tabs[tabIndex];
     if (response.status === "success") {
@@ -113,7 +114,7 @@ class SaveToCollection extends React.Component {
                 return JSON.parse(eachOne);
               })
             : [];
-        const collection = userCollections.find(
+        const collection = collections.find(
           (eachCollection) => eachCollection.id === recordingId
         );
         for (let eachReq of parsedData) {
@@ -221,8 +222,9 @@ class SaveToCollection extends React.Component {
 
   render() {
     const {
-      httpClient: { userCollections },
+      httpClient: { userCollections }, goldenList
     } = this.props;
+    const collections = [...userCollections, ...goldenList];
     return (
       <>
         <div
@@ -293,8 +295,8 @@ class SaveToCollection extends React.Component {
                   onChange={this.handleChange}
                 >
                   <option value=""></option>
-                  {userCollections &&
-                    userCollections.map((eachUserCollection) => {
+                  {collections &&
+                    collections.map((eachUserCollection) => {
                       return (
                         <option
                           key={eachUserCollection.id}
@@ -338,10 +340,10 @@ class SaveToCollection extends React.Component {
 }
 
 function mapStateToProps(state) {
-  const { cube, httpClient } = state;
+  const { httpClient, apiCatalog : {goldenList} } = state;
   return {
-    cube,
     httpClient,
+    goldenList
   };
 }
 

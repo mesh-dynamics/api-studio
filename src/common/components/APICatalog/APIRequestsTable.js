@@ -8,7 +8,6 @@ import _ from "lodash";
 import { apiCatalogActions } from '../../actions/api-catalog.actions';
 import { connect } from "react-redux";
 
-import { getAPICount } from '../../utils/api-catalog/api-catalog-utils';
 
 class APIRequestsTable extends Component {
 
@@ -44,7 +43,17 @@ class APIRequestsTable extends Component {
     if (apiTrace && !_.isEmpty(apiTrace.response)) {
       return apiTrace.response.map((trace) => {
           const requests = trace.res;
-          const parentRequest = _.find(requests, {service: selectedService, apiPath: selectedApiPath});
+          let filters = {};
+          if(selectedService){
+            filters = {service: selectedService};
+          }
+          if(selectedApiPath){
+            filters = {...filters, apiPath: selectedApiPath}
+          }
+          if(!(selectedService || selectedApiPath)){
+            filters = {parentSpanId: "NA"};
+          }
+          const parentRequest = _.find(requests, filters);
           if (!parentRequest) {
             return
           }
@@ -351,8 +360,8 @@ class APIRequestsTable extends Component {
   }
 
   render() {
-    const { apiCatalog: {apiTraceLoading, apiFacets, selectedService, selectedApiPath, selectedInstance} } = this.props;
-    const apiCount = getAPICount(apiFacets, selectedService, selectedApiPath, selectedInstance);
+    const { apiCatalog: {apiTraceLoading, apiFacets, selectedService, selectedApiPath, selectedInstance, apiTrace} } = this.props;
+    const apiCount = apiTrace.numFound;
     return (
       <div>
         <div className="header-container">

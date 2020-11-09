@@ -465,7 +465,7 @@ class HttpClientTabs extends Component {
                 traceId: traceId,
                 spanId: null,
                 parentSpanId: null,
-                runType: "Manual",
+                runType: "DevTool",
                 runId: runId,
                 timestamp: timestamp,
                 reqId: "NA",
@@ -495,7 +495,7 @@ class HttpClientTabs extends Component {
                 traceId: traceId,
                 spanId: spanId,
                 parentSpanId: parentSpanId,
-                runType: "Manual",
+                runType: "DevTool",
                 runId: runId,
                 timestamp: timestamp,
                 reqId: "NA",
@@ -580,7 +580,7 @@ class HttpClientTabs extends Component {
             traceId: traceId,
             spanId: "NA",
             parentSpanId: "NA",
-            runType: "Manual",
+            runType: "DevTool",
             runId: generateRunId(),
             timestamp: timestamp,
             reqId: "NA",
@@ -610,7 +610,7 @@ class HttpClientTabs extends Component {
             traceId: traceId,
             spanId: cryptoRandomString({length: 16}),
             parentSpanId: "NA",
-            runType: "Manual",
+            runType: "DevTool",
             runId: generateRunId(),
             timestamp: timestamp,
             reqId: "NA",
@@ -1364,6 +1364,7 @@ class HttpClientTabs extends Component {
                 ...httpRequestEvent,
                 ...(reqTimestamp && { timestamp: reqTimestamp }),
                 runId: runId,
+                runType: "DevTool",
                 payload: [
                     "HTTPRequestPayload",
                     {
@@ -1381,6 +1382,7 @@ class HttpClientTabs extends Component {
                 ...httpResponseEvent,
                 ...(resTimestamp && { timestamp: resTimestamp }),
                 runId: runId,
+                runType: "DevTool",
                 payload: [
                     "HTTPResponsePayload",
                     {
