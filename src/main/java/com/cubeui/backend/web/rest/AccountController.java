@@ -6,8 +6,10 @@ import com.cubeui.backend.domain.DTO.ChangePasswordDTO;
 import com.cubeui.backend.domain.DTO.CustomerDTO;
 import com.cubeui.backend.domain.DTO.KeyAndPasswordDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
+import com.cubeui.backend.domain.PersonalEmailDomains;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.AppRepository;
+import com.cubeui.backend.repository.PersonalEmailDomainsRepository;
 import com.cubeui.backend.service.CubeServerService;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.service.MailService;
@@ -58,21 +60,23 @@ public class AccountController {
     private CubeServerService cubeServerService;
     private AppRepository appRepository;
     private CustomerService customerService;
+    private PersonalEmailDomainsRepository personalEmailDomainsRepository;
 
     public AccountController(UserService userService,
         MailService mailService, ReCaptchaAPIService reCaptchaAPIService,
-        CubeServerService cubeServerService, AppRepository appRepository, CustomerService customerService) {
+        CubeServerService cubeServerService, AppRepository appRepository, CustomerService customerService,
+        PersonalEmailDomainsRepository personalEmailDomainsRepository) {
         this.userService = userService;
         this.mailService = mailService;
         this.reCaptchaAPIService = reCaptchaAPIService;
         this.cubeServerService = cubeServerService;
         this.appRepository = appRepository;
         this.customerService = customerService;
+        this.personalEmailDomainsRepository = personalEmailDomainsRepository;
     }
 
-    Optional<Customer> validateEmailDomain(String email) {
+    Optional<Customer> validateEmailDomain(String domain) {
         // todo validate email string
-        String domain = getDomainFromEmail(email);
         return customerService.getByDomainUrl(domain);
     }
 
@@ -100,14 +104,18 @@ public class AccountController {
         } else {
             // validate email domain and set customer id from email
             log.info("Validating email domain");
-            Optional<Customer> customerOptional = validateEmailDomain(userDTO.getEmail());
+            String domain = getDomainFromEmail(userDTO.getEmail());
+            Optional<PersonalEmailDomains> personalEmailDomains = personalEmailDomainsRepository.findByDomain(domain);
+            Optional<Customer> customerOptional = Optional.empty();
+            if(personalEmailDomains.isEmpty()) {
+                customerOptional = validateEmailDomain(domain);
+            }
             if(md_cloud && customerOptional.isEmpty()) {
-
-                String domain = getDomainFromEmail(userDTO.getEmail());
+                String customerName = personalEmailDomains.map(personalEmailDomain -> userDTO.getEmail()).orElse(domain);
                 CustomerDTO customerDTO = new CustomerDTO();
                 customerDTO.setDomainURLs(Set.of(domain));
                 customerDTO.setEmail(userDTO.getEmail());
-                customerDTO.setName(domain);
+                customerDTO.setName(customerName);
 
                 customerOptional = Optional.of(this.customerService.save(customerDTO));
             }

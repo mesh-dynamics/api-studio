@@ -179,8 +179,10 @@ public class AnalyzeWSController {
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
-    @PostMapping("/updateTemplateOperationSet/{operationSetId}")
-    public ResponseEntity updateTemplateOperationSet(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String operationSetId) {
+    @PostMapping("/updateTemplateOperationSet/{customerId}/{operationSetId}")
+    public ResponseEntity updateTemplateOperationSet(HttpServletRequest request, @RequestBody Optional<String> postBody,
+        @PathVariable String operationSetId, @PathVariable String customerId, Authentication authentication) {
+        validation.validateCustomerName(authentication, customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
