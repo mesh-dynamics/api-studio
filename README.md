@@ -1,2 +1,2 @@
-# cubeui-backend-readjson
-Used to initialise database
+# cubeui-backend-utils
+Used to add new customer and add personal email domains
