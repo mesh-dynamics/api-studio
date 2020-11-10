@@ -6,6 +6,9 @@ import com.cubeui.backend.domain.DTO.UserDTO;
 import com.cubeui.backend.repository.*;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.service.UserService;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Set;
 import lombok.*;
@@ -35,9 +38,11 @@ public class DataInitializer implements CommandLineRunner {
 
     private EmailDomainRepository emailDomainRepository;
 
+    private PersonalEmailDomainsRepository personalEmailDomainsRepository;
+
     public DataInitializer(UserService userService, CustomerService customerService,
         CustomerRepository customerRepository, UserRepository userRepository,
-        EmailDomainRepository emailDomainRepository
+        EmailDomainRepository emailDomainRepository, PersonalEmailDomainsRepository personalEmailDomainsRepository
         ) {
 
         this.userService = userService;
@@ -45,6 +50,7 @@ public class DataInitializer implements CommandLineRunner {
         this.customerRepository = customerRepository;
         this.userRepository = userRepository;
         this.emailDomainRepository = emailDomainRepository;
+        this.personalEmailDomainsRepository = personalEmailDomainsRepository;
     }
 
     @Override
@@ -73,22 +79,6 @@ public class DataInitializer implements CommandLineRunner {
             this.userService.save(userDTOAdmin, true, false);
             log.info("User with username '{}' created", userDTOAdmin.getEmail());
         }
-        /**TODO
-         * need to remove in next release
-         */
-        List<EmailDomain> emailDomainList = emailDomainRepository.findAll();
-        MultiValueMap<Long, String> domainMap= new LinkedMultiValueMap<>();
-        emailDomainList.forEach(emailDomain -> domainMap.add(emailDomain.getCustomer().getId(), emailDomain.getDomain()));
-        domainMap.forEach((customerId, domains) -> {
-            Customer existingCustomer = customerRepository.findById(customerId).get();
-            Set<String> domainUrls = existingCustomer.getDomainUrls();
-            domains.forEach(d -> {
-                if(!domainUrls.contains(d)) {
-                    domainUrls.add(d);
-                }
-            });
-            existingCustomer.setDomainUrls(domainUrls);
-            customerRepository.save(existingCustomer);
-        });
+
     }
 }
