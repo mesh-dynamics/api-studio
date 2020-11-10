@@ -5,12 +5,14 @@ import { store } from "../../common/helpers"
 const setDefaultMockContext = (args) => {
   let lookupCollection = args?.lookupCollection, 
   saveToCollection = args?.saveToCollection, 
-  mockConfigName = args?.mockConfigName;
+  mockConfigName = args?.mockConfigName,
+  mockConfigList = args?.mockConfigList;
+
   console.log("Setting default mock context...");
 
   if (PLATFORM_ELECTRON) {
     const {
-      httpClient: { userHistoryCollection, mockContextLookupCollection, mockContextSaveToCollection, mockConfigList, selectedMockConfig },
+      httpClient: { userHistoryCollection, mockContextLookupCollection, mockContextSaveToCollection, mockConfigList: mockConfigListFromStore, selectedMockConfig },
       cube: { selectedApp },
       authentication: { user: { customer_name: customerId } }
     } = store.getState();
@@ -19,6 +21,8 @@ const setDefaultMockContext = (args) => {
       console.warn("User history not available, skipping setting default proxy config");
       return;
     }
+
+    mockConfigList = mockConfigList || mockConfigListFromStore;
 
     mockConfigName = mockConfigName || selectedMockConfig;
     const mockConfig = getCurrentMockConfig(mockConfigList, mockConfigName);
