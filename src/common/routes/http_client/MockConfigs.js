@@ -170,7 +170,10 @@ class MockConfigs extends Component {
     }
     handleMockContextSaveToCollectionChange = (e) => {
         const {dispatch} = this.props;
-        dispatch(httpClientActions.setMockContextSaveToCollection(e.target.value))
+        const {httpClient: {userCollections}} = this.props;
+        const collectionId = e.target.value;
+        const saveToCollection = collectionId ? _.find(userCollections, {id: collectionId}) : {};
+        dispatch(httpClientActions.setMockContextSaveToCollection(saveToCollection))
     }
 
     renderMockContextConfig = () => {
@@ -206,7 +209,7 @@ class MockConfigs extends Component {
                             componentClass="select"
                             placeholder="User Collection"
                             style={{ fontSize: "12px" }}
-                            value={mockContextSaveToCollection}
+                            value={mockContextSaveToCollection?.id}
                             onChange={this.handleMockContextSaveToCollectionChange}
                             className="btn-sm"
                         >
