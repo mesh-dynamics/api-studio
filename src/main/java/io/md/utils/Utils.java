@@ -550,7 +550,7 @@ public class Utils {
 		String method, String body,
 		MultivaluedMap<String, String> headers,
 		MultivaluedMap<String, String> queryParams,
-		Optional<String> traceIdValue , RunType rtype , TracerMgr tracerMgr ) throws EventBuilder.InvalidEventException, JsonProcessingException {
+		Optional<String> traceIdValue , TracerMgr tracerMgr ) throws EventBuilder.InvalidEventException, JsonProcessingException {
 		// At the time of mock, our lua filters don't get deployed, hence no request id is generated
 		// we can generate a new request id here in the mock service
 		String requestId = service.concat("-mock-").concat(String.valueOf(UUID.randomUUID()));
@@ -569,7 +569,7 @@ public class Utils {
 			body.getBytes(StandardCharsets.UTF_8) : null;
 
 		return createHTTPRequestEvent(path, queryParams, formParams, headers, mdTraceInfo,
-			bodyBytes, customerId, app, service, instanceId, rtype , method, requestId, recordingType);
+			bodyBytes, customerId, app, service, instanceId, RunType.Mock , method, requestId, recordingType);
 	}
 
 	static public String convertTraceId(long traceIdHigh, long traceIdLow) {
