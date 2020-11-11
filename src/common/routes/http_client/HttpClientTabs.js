@@ -1459,7 +1459,7 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.setUpdatedModalUserCollectionDetails(evt.target.name, evt.target.value));
     }
 
-    formatHttpEventToReqResObject(reqId, httpEventReqResPair) {
+    formatHttpEventToReqResObject(reqId, httpEventReqResPair, isOutgoingRequest=false) {
         const httpRequestEventTypeIndex = httpEventReqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
         const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
         const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
@@ -1540,7 +1540,7 @@ class HttpClientTabs extends Component {
             showSaveBtn: true,
             outgoingRequests: [],
             showCompleteDiff: false,
-            isOutgoingRequest: false,
+            isOutgoingRequest: isOutgoingRequest,
             service: httpRequestEvent.service,
             recordingIdAddedFromClient: "",
             collectionIdAddedFromClient: httpRequestEvent.collection,
@@ -1589,14 +1589,14 @@ class HttpClientTabs extends Component {
                             const ingressReqResPair = result.objects.filter(eachReq => eachReq.apiPath === apiPath);
                             let ingressReqObj;
                             if (ingressReqResPair.length > 0) {
-                                ingressReqObj = this.formatHttpEventToReqResObject(reqId, ingressReqResPair);
+                                ingressReqObj = this.formatHttpEventToReqResObject(reqId, ingressReqResPair, false);
                             }
                             for (let eachReqId of reqIdArray) {
                                 const reqResPair = result.objects.filter(eachReq => {
                                     return (eachReq.reqId === eachReqId && eachReq.apiPath !== apiPath);
                                 });
                                 if (reqResPair.length > 0 && eachReqId !== reqId) {
-                                    let reqObject = this.formatHttpEventToReqResObject(eachReqId, reqResPair);
+                                    let reqObject = this.formatHttpEventToReqResObject(eachReqId, reqResPair, true);
                                     ingressReqObj.outgoingRequests.push(reqObject);
                                 }
                             }
