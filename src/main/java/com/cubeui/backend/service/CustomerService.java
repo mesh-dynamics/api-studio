@@ -1,5 +1,7 @@
 package com.cubeui.backend.service;
 
+import static org.springframework.http.ResponseEntity.ok;
+
 import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.CustomerDTO;
@@ -44,6 +46,7 @@ import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -135,13 +138,19 @@ public class CustomerService {
         return customer.get();
     }
 
-    public boolean deleteCustomer(Long id) {
-        Optional<Customer> existed = this.customerRepository.findById(id);
-        return existed.map(ex -> {
-            this.userRepository.deleteByCustomerId(existed.get().getId());
-            this.customerRepository.delete(existed.get());
-            return true;
-        }).orElse(false);
+    public ResponseEntity deleteCustomer(Customer customer) {
+        ResponseEntity responseEntity = deleteAllData(customer.getName());
+        if(responseEntity.getStatusCode() == HttpStatus.OK) {
+            this.userRepository.deleteByCustomerId(customer.getId());
+            this.customerRepository.delete(customer);
+            return ok("Customer is removed successfully");
+        }
+        return responseEntity;
+    }
+
+    private ResponseEntity deleteAllData(String customerName) {
+        return cubeServerService.fetchPostResponse(httpServletRequest, Optional.empty(),
+                "/cs/deleteCustomerData/"+ customerName);
     }
 
     public Optional<Customer> getByDomainUrl(String domainUrl) {
