@@ -204,7 +204,9 @@ public class ServerUtils {
             getByPrefix(diffMap, oldPrefix);
         diffByPrefix.values().forEach(diff -> {
             String oldPath = diff.path;
-            diff.path = oldPath.replace(oldPrefix, arrayPath.concat("/").concat(newIndex));
+            if(oldPrefix.equals(oldPath) || oldPath.startsWith(oldPrefix.concat("/"))) {
+                diff.path = oldPath.replace(oldPrefix, arrayPath.concat("/").concat(newIndex));
+            }
         });
     }
 
