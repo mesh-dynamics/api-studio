@@ -520,6 +520,7 @@ export const httpClientActions = {
             const mockConfigList = await cubeService.getAllMockConfigs(customerId, selectedApp);
             dispatch(httpClientActions.setMockConfigList(mockConfigList))
             dispatch(httpClientActions.resetMockConfigStatusText())
+            setDefaultMockContext({mockConfigList})
         } catch (e) {
             dispatch(httpClientActions.setMockConfigStatusText(e.response?.data.message, true))
         }  
