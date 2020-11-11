@@ -349,7 +349,7 @@ class HttpClientTabs extends Component {
             }
             let contentTypeHeader = _.isObject(parsedCurl.headers) ? getParameterCaseInsensitive(parsedCurl.headers, "content-type") : "";
             if(contentTypeHeader && contentTypeHeader.indexOf("json") > -1) {
-                rawData = JSON.stringify(JSON.parse(parsedCurl.data), undefined, 4);
+                rawData = parsedCurl.data;
                 rawDataType = "json";
                 bodyType = "rawData";
             } else if(contentTypeHeader && contentTypeHeader.indexOf("application/x-www-form-urlencoded") > -1) {
