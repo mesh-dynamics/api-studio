@@ -347,7 +347,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
         addToFilterOrQuery(query , queryBuff , TRACEIDF , filteredTraceIds , true , eventQuery.getTraceIdsWeight());
 
-        addToFilterOrQuery(query , queryBuff , RRTYPEF , eventQuery.getRunType().map(Object::toString) , true , eventQuery.getRunTypeWeight());
+        if(eventQuery.isFromMocker()){
+            addNegativeFilter(query ,  RRTYPEF , RunType.Mock.toString()  , false);
+        }else{
+            addToFilterOrQuery(query , queryBuff , RRTYPEF , eventQuery.getRunType().map(Object::toString) , true , eventQuery.getRunTypeWeight());
+        }
 
         addToFilterOrQuery(query , queryBuff , REQIDF , eventQuery.getReqIds(), true , eventQuery.getReqIdsWeight());
 
@@ -3052,7 +3056,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, EVENTTYPEF, eventTypes.stream().map(type -> type.toString()).collect(Collectors.toList()));
         addFilter(query, TRACEIDF, apiTraceFacetQuery.traceIds);
         if (addPathServiceFilter) {
-            if(apiTraceFacetQuery.apiPath.isEmpty()) {
+            if(apiTraceFacetQuery.service.isEmpty() && apiTraceFacetQuery.apiPath.isEmpty()) {
                 addToFilterOrQuery(query , new StringBuffer() , PARENT_SPAN_ID_F , Arrays.asList("NA", ""), true , Optional.empty());
             }
             addFilter(query, PATHF, apiTraceFacetQuery.apiPath);

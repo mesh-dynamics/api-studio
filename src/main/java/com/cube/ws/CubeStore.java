@@ -1506,8 +1506,8 @@ public class CubeStore {
 
         Optional<Recording> recording = rrstore.getRecording(recordingId);
         Response resp = recording.map(rec -> {
-            if(rec.recordingType == RecordingType.History
-                || rec.recordingType == RecordingType.UserGolden) {
+            if(true /*rec.recordingType == RecordingType.History
+                || rec.recordingType == RecordingType.UserGolden */) {
                 List<String> responseList = new ArrayList<>();
                 Map<String, String> traceIdMap = new HashMap<>();
                 Map<String, String> extractionMap = new HashMap<>();
