@@ -324,7 +324,6 @@ public class RealAnalyzer implements Analyzer {
 
         return builder.withService(reqEvent.service)
             .withCollection(replayId)
-            .withRunType(Event.RunType.Replay)
             .withTraceId(reqEvent.getTraceId())
             .withLimit(limit)
             .build();
