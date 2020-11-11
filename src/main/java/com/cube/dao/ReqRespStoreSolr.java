@@ -95,7 +95,7 @@ import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 
-import static io.md.constants.Constants.SCORE_FIELD;
+import static io.md.constants.Constants.*;
 
 /**
  * @author prasad
@@ -360,6 +360,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // starting from timestamp, non inclusive
         addRangeFilter(query, TIMESTAMPF, eventQuery.getTimestamp(), Optional.empty(), false, true);
 
+        addFilter(query, PAYLOAD_FIELDS_F , eventQuery.getPayloadFields());
+
+        eventQuery.getJoinQuery().ifPresent(jq->addFilter(query , jq));
+
         addSort(query , SCOREF , false);
         addSort(query, TIMESTAMPF, eventQuery.isSortOrderAsc());
         addSort(query, IDF, true);
@@ -370,6 +374,31 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         return SolrIterator.getResults(solr, query, eventQuery.getLimit(),
             this::docToEvent, eventQuery.getOffset());
+    }
+
+    private void addFilter(SolrQuery solrQuery , JoinQuery jq){
+
+        String orFilterStr = jq.getOrConds().entrySet().stream().map(e->{
+            String solrField = fieldNameSolrMap.get(e.getKey());
+            return String.format("%s:%s" , solrField , SolrIterator.escapeQueryChars(e.getValue()) );
+        }).collect(Collectors.joining(" OR "));
+
+        String andFilterStr = jq.getAndConds().entrySet().stream().map(e->{
+            String solrField = fieldNameSolrMap.get(e.getKey());
+            return String.format("%s:%s" , solrField , SolrIterator.escapeQueryChars(e.getValue()) );
+        }).collect(Collectors.joining(" AND "));
+
+        String fq = "";
+        if(!orFilterStr.isEmpty() && !andFilterStr.isEmpty()){
+            fq = String.format("(%s AND (%s))" , andFilterStr , orFilterStr);
+        }else if(!orFilterStr.isEmpty()){
+            fq = String.format("(%s)" , orFilterStr);
+        }else if(!andFilterStr.isEmpty()){
+            fq = String.format("(%s)" , andFilterStr);
+        }
+
+        String joinFQ = String.format("{!join from=%s to=%s} %s" , fieldNameSolrMap.get(jq.getJoinFrom()) , fieldNameSolrMap.get(jq.getJoinTo()) , fq);
+        solrQuery.addFilterQuery(joinFQ);
     }
 
 
@@ -395,6 +424,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String STRING_SUFFIX = "_s";
     private static final String INT_SUFFIX = "_i";
     private static final String TEXT_SUFFIX = "_t";
+    private static final String MULT_TEXT_SUFFIX = "_txt";
     private static final String DATE_SUFFIX = "_dt";
     private static final String BOOLEAN_SUFFIX = "_b";
     private static final String DOUBLE_SUFFIX = "_d";
@@ -1230,6 +1260,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String CONFIG_JSON_F = CPREFIX + Constants.CONFIG_JSON + STRING_SUFFIX;
     private static final String SCOREF = CPREFIX + SCORE_FIELD + CSUFFIX;
     private static final String PROTO_DESCRIPTOR_FILE_F = CPREFIX + Constants.PROTO_DESCRIPTOR_FILE_FIELD + NOTINDEXED_SUFFIX;
+    private static final String PAYLOAD_FIELDS_F = CPREFIX + PAYLOAD_FIELDS_FIELD + MULT_TEXT_SUFFIX;
+
+    private static final Map<String , String> fieldNameSolrMap = new HashMap<>();
+    static {
+        fieldNameSolrMap.put(Constants.EVENT_TYPE_FIELD , EVENTTYPEF);
+        fieldNameSolrMap.put(PAYLOAD_FIELDS_FIELD ,PAYLOAD_FIELDS_F);
+        fieldNameSolrMap.put(Constants.REQ_ID_FIELD , REQIDF);
+        //Todo: add the remaining when required
+    }
+
 
 
     private static String getFieldName(String fname, String fkey) {
@@ -1575,6 +1615,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             event.metaData.keySet().forEach(key -> doc.addField(EVENT_META_DATA_KEYSF, key));
         }
 
+        if(event.payloadFields!=null && !event.payloadFields.isEmpty()){
+            event.payloadFields.forEach(key->doc.addField(PAYLOAD_FIELDS_F, key));
+        }
+
         return doc;
     }
 
@@ -1598,6 +1642,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> payloadStr = getStrFieldMVFirst(doc, PAYLOADSTRF);
         Optional<Integer> payloadKey = getIntField(doc, PAYLOADKEYF);
         List<String> eventMetaDataKeys = getStrFieldMV(doc, EVENT_META_DATA_KEYSF);
+        List<String> eventPayloadFields = getStrFieldMV(doc , PAYLOAD_FIELDS_F);
         Optional<Double> score = getDblField(doc , SCOREF);
 
         Map<String, String> eventMetaDataMap = new HashMap<String, String>();
@@ -1618,7 +1663,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             , app.orElse(null), service.orElse(null), instanceId.orElse(null)
             , collection.orElse(null), new MDTraceInfo(traceid.orElse(null)
             , spanId.orElse(null), parentSpanId.orElse(null)), runType.orElse(null)
-            , timestamp, reqId.orElse(null), path.orElse(""), eType, recordingType.orElse(RecordingType.Golden)).withMetaData(eventMetaDataMap);
+            , timestamp, reqId.orElse(null), path.orElse(""), eType, recordingType.orElse(RecordingType.Golden))
+            .withMetaData(eventMetaDataMap)
+            .withPayloadFields(eventPayloadFields);
+
         runId.ifPresent(eventBuilder::withRunId);
         // TODO revisit this need to construct payload properly from type and json string
         try {
