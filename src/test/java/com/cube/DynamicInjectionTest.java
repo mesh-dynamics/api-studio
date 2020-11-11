@@ -13,6 +13,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.utils.Utils;
 import org.apache.commons.text.StringSubstitutor;
 
 import io.md.dao.CubeMetaInfo;
@@ -107,7 +108,7 @@ public class DynamicInjectionTest {
 					goldenRequestEvent.payload, config.rrstore);
 				StringSubstitutor sub = new StringSubstitutor(varResolver);
 				DataObj value;
-				String requestHttpMethod = DynamicInjector.getHttpMethod(goldenRequestEvent);
+				String requestHttpMethod = Utils.getHttpMethod(goldenRequestEvent);
 				if (extMeta.apiPath.equalsIgnoreCase(goldenRequestEvent.apiPath)
 					&& extractionMeta.method.toString().equalsIgnoreCase(requestHttpMethod)) {
 					//  TODO ADD checks for method type GET/POST & also on reset field

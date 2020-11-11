@@ -395,14 +395,14 @@ public interface ReqRespStore extends DataStore {
 	 * @param analysis
 	 * @return
 	 */
-	boolean saveAnalysis(Analysis analysis);
+	boolean saveAnalysis(Analysis analysis, String customerId);
 
 
     /**
      * @param resultAggregate
      * @return
      */
-    boolean saveMatchResultAggregate(MatchResultAggregate resultAggregate);
+    boolean saveMatchResultAggregate(MatchResultAggregate resultAggregate, String customerId);
 
 	/**
 	 * @param dynamicInjectionConfig
@@ -635,7 +635,7 @@ public interface ReqRespStore extends DataStore {
      * @param templateUpdateOperationSet Updated template update operation set
      * @return success flag
      */
-    boolean saveTemplateUpdateOperationSet(TemplateUpdateOperationSet templateUpdateOperationSet) throws Exception;
+    boolean saveTemplateUpdateOperationSet(TemplateUpdateOperationSet templateUpdateOperationSet, String customerId) throws Exception;
 
     /**
      * Fetch a template update operation set given id
@@ -710,6 +710,7 @@ public interface ReqRespStore extends DataStore {
 	boolean deleteAllRecordingData(Recording recording);
 	boolean deleteAllReplayData(List<Replay> replays);
 	boolean deleteAllAnalysisData(List<String> replays);
+	boolean deleteAllData(String customerId);
 
 
 }

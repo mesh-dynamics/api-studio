@@ -95,7 +95,7 @@ import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 
-import static io.md.constants.Constants.SCORE_FIELD;
+import static io.md.constants.Constants.*;
 
 /**
  * @author prasad
@@ -364,6 +364,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // starting from timestamp, non inclusive
         addRangeFilter(query, TIMESTAMPF, eventQuery.getTimestamp(), Optional.empty(), false, true);
 
+        addFilter(query, PAYLOAD_FIELDS_F , eventQuery.getPayloadFields());
+
+        eventQuery.getJoinQuery().ifPresent(jq->addFilter(query , jq));
+
         addSort(query , SCOREF , false);
         addSort(query, TIMESTAMPF, eventQuery.isSortOrderAsc());
         addSort(query, IDF, true);
@@ -374,6 +378,31 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         return SolrIterator.getResults(solr, query, eventQuery.getLimit(),
             this::docToEvent, eventQuery.getOffset());
+    }
+
+    private void addFilter(SolrQuery solrQuery , JoinQuery jq){
+
+        String orFilterStr = jq.getOrConds().entrySet().stream().map(e->{
+            String solrField = fieldNameSolrMap.get(e.getKey());
+            return String.format("%s:%s" , solrField , SolrIterator.escapeQueryChars(e.getValue()) );
+        }).collect(Collectors.joining(" OR "));
+
+        String andFilterStr = jq.getAndConds().entrySet().stream().map(e->{
+            String solrField = fieldNameSolrMap.get(e.getKey());
+            return String.format("%s:%s" , solrField , SolrIterator.escapeQueryChars(e.getValue()) );
+        }).collect(Collectors.joining(" AND "));
+
+        String fq = "";
+        if(!orFilterStr.isEmpty() && !andFilterStr.isEmpty()){
+            fq = String.format("(%s AND (%s))" , andFilterStr , orFilterStr);
+        }else if(!orFilterStr.isEmpty()){
+            fq = String.format("(%s)" , orFilterStr);
+        }else if(!andFilterStr.isEmpty()){
+            fq = String.format("(%s)" , andFilterStr);
+        }
+
+        String joinFQ = String.format("{!join from=%s to=%s} %s" , fieldNameSolrMap.get(jq.getJoinFrom()) , fieldNameSolrMap.get(jq.getJoinTo()) , fq);
+        solrQuery.addFilterQuery(joinFQ);
     }
 
 
@@ -399,6 +428,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String STRING_SUFFIX = "_s";
     private static final String INT_SUFFIX = "_i";
     private static final String TEXT_SUFFIX = "_t";
+    private static final String MULT_TEXT_SUFFIX = "_txt";
     private static final String DATE_SUFFIX = "_dt";
     private static final String BOOLEAN_SUFFIX = "_b";
     private static final String DOUBLE_SUFFIX = "_d";
@@ -500,7 +530,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             UUID.randomUUID().toString());
         TemplateUpdateOperationSet templateSetUpdate = new TemplateUpdateOperationSet(templateUpdateOperationSetId,
             new HashMap<>());
-        SolrInputDocument inputDoc = templateUpdateOperationSetToSolrDoc(templateSetUpdate);
+        SolrInputDocument inputDoc = templateUpdateOperationSetToSolrDoc(templateSetUpdate, customer);
         saveDoc(inputDoc);
         softcommit();
         return templateUpdateOperationSetId;
@@ -509,10 +539,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String OPERATION = CPREFIX + "operation" + STRING_SUFFIX;
     private static final String TEMPLATE_KEY = CPREFIX + "template_key" + STRINGSET_SUFFIX;
 
-    private SolrInputDocument templateUpdateOperationSetToSolrDoc(TemplateUpdateOperationSet operationSet) throws Exception {
+    private SolrInputDocument templateUpdateOperationSetToSolrDoc(TemplateUpdateOperationSet operationSet, String customerId) throws Exception {
         SolrInputDocument inputDoc = new SolrInputDocument();
         inputDoc.setField(TYPEF, Types.TemplateUpdateOperationSet.toString());
         inputDoc.setField(IDF,  operationSet.getTemplateUpdateOperationSetId());
+        inputDoc.setField(CUSTOMERIDF, customerId);
         if (operationSet.getTemplateUpdates() != null && !operationSet.getTemplateUpdates().isEmpty()) {
             inputDoc.setField(OPERATION, config.jsonMapper.writeValueAsString(operationSet.getTemplateUpdates()));
         }
@@ -520,8 +551,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public boolean saveTemplateUpdateOperationSet(TemplateUpdateOperationSet templateUpdateOperationSet) throws Exception {
-        return saveDoc(templateUpdateOperationSetToSolrDoc(templateUpdateOperationSet)) && softcommit();
+    public boolean saveTemplateUpdateOperationSet(TemplateUpdateOperationSet templateUpdateOperationSet, String customerId) throws Exception {
+        return saveDoc(templateUpdateOperationSetToSolrDoc(templateUpdateOperationSet, customerId)) && softcommit();
     }
 
     private TypeReference<HashMap<TemplateKey, SingleTemplateUpdateOperation>> typeReference =
@@ -1233,6 +1264,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String CONFIG_JSON_F = CPREFIX + Constants.CONFIG_JSON + STRING_SUFFIX;
     private static final String SCOREF = CPREFIX + SCORE_FIELD + CSUFFIX;
     private static final String PROTO_DESCRIPTOR_FILE_F = CPREFIX + Constants.PROTO_DESCRIPTOR_FILE_FIELD + NOTINDEXED_SUFFIX;
+    private static final String PAYLOAD_FIELDS_F = CPREFIX + PAYLOAD_FIELDS_FIELD + MULT_TEXT_SUFFIX;
+
+    private static final Map<String , String> fieldNameSolrMap = new HashMap<>();
+    static {
+        fieldNameSolrMap.put(Constants.EVENT_TYPE_FIELD , EVENTTYPEF);
+        fieldNameSolrMap.put(PAYLOAD_FIELDS_FIELD ,PAYLOAD_FIELDS_F);
+        fieldNameSolrMap.put(Constants.REQ_ID_FIELD , REQIDF);
+        //Todo: add the remaining when required
+    }
+
 
 
     private static String getFieldName(String fname, String fkey) {
@@ -1578,6 +1619,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             event.metaData.keySet().forEach(key -> doc.addField(EVENT_META_DATA_KEYSF, key));
         }
 
+        if(event.payloadFields!=null && !event.payloadFields.isEmpty()){
+            event.payloadFields.forEach(key->doc.addField(PAYLOAD_FIELDS_F, key));
+        }
+
         return doc;
     }
 
@@ -1601,6 +1646,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> payloadStr = getStrFieldMVFirst(doc, PAYLOADSTRF);
         Optional<Integer> payloadKey = getIntField(doc, PAYLOADKEYF);
         List<String> eventMetaDataKeys = getStrFieldMV(doc, EVENT_META_DATA_KEYSF);
+        List<String> eventPayloadFields = getStrFieldMV(doc , PAYLOAD_FIELDS_F);
         Optional<Double> score = getDblField(doc , SCOREF);
 
         Map<String, String> eventMetaDataMap = new HashMap<String, String>();
@@ -1621,7 +1667,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             , app.orElse(null), service.orElse(null), instanceId.orElse(null)
             , collection.orElse(null), new MDTraceInfo(traceid.orElse(null)
             , spanId.orElse(null), parentSpanId.orElse(null)), runType.orElse(null)
-            , timestamp, reqId.orElse(null), path.orElse(""), eType, recordingType.orElse(RecordingType.Golden)).withMetaData(eventMetaDataMap);
+            , timestamp, reqId.orElse(null), path.orElse(""), eType, recordingType.orElse(RecordingType.Golden))
+            .withMetaData(eventMetaDataMap)
+            .withPayloadFields(eventPayloadFields);
+
         runId.ifPresent(eventBuilder::withRunId);
         // TODO revisit this need to construct payload properly from type and json string
         try {
@@ -2272,8 +2321,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 
 
-    public boolean saveMatchResultAggregate(MatchResultAggregate resultAggregate) {
-        SolrInputDocument doc = matchResultAggregateToSolrDoc(resultAggregate);
+    public boolean saveMatchResultAggregate(MatchResultAggregate resultAggregate, String customerId) {
+        SolrInputDocument doc = matchResultAggregateToSolrDoc(resultAggregate, customerId);
         return saveDoc(doc) && softcommit();
     }
 
@@ -2281,7 +2330,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @param resultAggregate
      * @return
      */
-    private SolrInputDocument matchResultAggregateToSolrDoc(MatchResultAggregate resultAggregate) {
+    private SolrInputDocument matchResultAggregateToSolrDoc(MatchResultAggregate resultAggregate, String customerId) {
         final SolrInputDocument doc = new SolrInputDocument();
 
         String resultAggregateJson="";
@@ -2304,6 +2353,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // Set the fields if present else put the default value
         doc.setField(SERVICEF, resultAggregate.service.orElse(DEFAULT_EMPTY_FIELD_VALUE));
         doc.setField(PATHF, resultAggregate.path.orElse(DEFAULT_EMPTY_FIELD_VALUE));
+        doc.setField(CUSTOMERIDF, customerId);
 
         return doc;
     }
@@ -2347,8 +2397,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @see com.cube.dao.ReqRespStore#saveAnalysis(com.cube.dao.Analysis)
      */
     @Override
-    public boolean saveAnalysis(Analysis analysis) {
-        SolrInputDocument doc = analysisToSolrDoc(analysis);
+    public boolean saveAnalysis(Analysis analysis, String customerId) {
+        SolrInputDocument doc = analysisToSolrDoc(analysis, customerId);
         return saveDoc(doc) && softcommit();
     }
 
@@ -2356,7 +2406,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @param analysis
      * @return
      */
-    private SolrInputDocument analysisToSolrDoc(Analysis analysis) {
+    private SolrInputDocument analysisToSolrDoc(Analysis analysis, String customerId) {
         final SolrInputDocument doc = new SolrInputDocument();
 
         String json="";
@@ -2374,6 +2424,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(OBJJSONF, json);
         doc.setField(TYPEF, type);
         doc.setField(VERSIONF, analysis.templateVersion);
+        doc.setField(CUSTOMERIDF, customerId);
         return doc;
     }
 
@@ -2402,8 +2453,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @see com.cube.dao.ReqRespStore#saveResult(com.cube.dao.Analysis.Result)
      */
     @Override
-    public boolean saveResult(ReqRespMatchResult res) {
-        SolrInputDocument doc = resultToSolrDoc(res);
+    public boolean saveResult(ReqRespMatchResult res, String customerId) {
+        SolrInputDocument doc = resultToSolrDoc(res, customerId);
         return saveDoc(doc);
     }
 
@@ -2411,7 +2462,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @param res
      * @return
      */
-    private SolrInputDocument resultToSolrDoc(ReqRespMatchResult res) {
+    private SolrInputDocument resultToSolrDoc(ReqRespMatchResult res, String customerId) {
         final SolrInputDocument doc = new SolrInputDocument();
 
         // usually result will never be updated. But we set id field uniquely anyway
@@ -2440,6 +2491,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(NUMMATCHF, res.numMatch);
         doc.setField(RESP_COMP_RES_TYPE_F, res.respCompareRes.mt.toString());
         doc.setField(RESP_COMP_RES_META_F, res.respCompareRes.matchmeta);
+        doc.setField(CUSTOMERIDF, customerId);
         res.respCompareRes.recordedResponse.ifPresent(modifiedRecResponse -> {
             try {
                 doc.setField(MODIFIED_REC_RESP_PAYLOAD_F
@@ -2463,13 +2515,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.addChildDocuments(res.respCompareRes.diffs.stream().map(diff ->
                 diffToSolrDoc(diff, DiffType.Response, recReplayReqIdCombined
                     .concat(res.service).concat(res.path).concat(String
-                        .valueOf(counter.getAndIncrement())), res.replayId))
+                        .valueOf(counter.getAndIncrement())), res.replayId, customerId))
             .collect(Collectors.toList()));
         counter.getAndSet(0);
         doc.addChildDocuments(res.reqCompareRes.diffs.stream().map(diff ->
         diffToSolrDoc(diff, DiffType.Request, recReplayReqIdCombined
             .concat(res.service).concat(res.path).concat(String
-                .valueOf(counter.getAndIncrement())), res.replayId))
+                .valueOf(counter.getAndIncrement())), res.replayId, customerId))
             .collect(Collectors.toList()));
         doc.addField(REQ_COMP_RES_TYPE_F, res.reqCompareRes.mt.toString());
         doc.addField(REQ_COMP_RES_META_F, res.reqCompareRes.matchmeta);
@@ -2488,7 +2540,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Request, Response
     }
 
-    private SolrInputDocument diffToSolrDoc(Diff diff, DiffType type, String idPrefix, String replayId) {
+    private SolrInputDocument diffToSolrDoc(Diff diff, DiffType type, String idPrefix, String replayId, String customerId) {
         SolrInputDocument inputDocument = new SolrInputDocument();
         diff.value.ifPresent(val -> inputDocument
             .setField(DIFF_VALUE_F, val.toString()));
@@ -2504,6 +2556,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         inputDocument.setField(IDF, id);
         inputDocument.setField(TYPEF, Types.Diff.toString());
         inputDocument.setField(REPLAYIDF, replayId);
+        inputDocument.setField(CUSTOMERIDF, customerId);
         return inputDocument;
     }
 
@@ -2612,8 +2665,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Map domainBlockMap = new HashMap();
         domainBlockMap.put("blockChildren", "type_s: " + Types.ReqRespMatchResult.toString());
         Facet diffChildFacet = Facet.createTermFacetWithDomain(DIFF_RESOLUTION_F, Optional.of(domainBlockMap), Optional.empty());
+        Facet diffPathChildFacet = Facet.createTermFacetWithDomain(DIFF_PATH_F, Optional.of(domainBlockMap), Optional.empty());
         FacetQ facetq = new FacetQ();
         facetq.addFacet(DIFFRESOLUTIONFACET, diffChildFacet);
+        facetq.addFacet(DIFFPATHFACET, diffPathChildFacet);
 
         String jsonFacets="";
         try {
@@ -2626,7 +2681,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Result<ReqRespMatchResult> result = SolrIterator.getResults(solr, query, matchResQuery.numMatches,
             this::docToAnalysisMatchResult, matchResQuery.start);
         ArrayList diffResolutionFacets = result.getFacets(FACETSFIELD, DIFFRESOLUTIONFACET, BUCKETFIELD);
-
+        ArrayList diffPathFacetResults = result.getFacets(FACETSFIELD, DIFFPATHFACET, BUCKETFIELD);
 
         SolrQuery queryForServPathFacets = new SolrQuery(queryStringSansDiffFilter);
         queryForServPathFacets.setFields("*");
@@ -2648,6 +2703,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         pathf.addSubFacet(resolutionFacetsq);
 
         facetq.removeFacet(DIFFRESOLUTIONFACET);
+        facetq.removeFacet(DIFFPATHFACET);
         facetq.addFacet(SERVICEFACET, servicef);
         facetq.addFacet(PATHFACET, pathf);
 
@@ -2675,7 +2731,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 resultsServPath.solrNamedPairToMap((ArrayList)reqCompareTypeFacetMap.get(BUCKETFIELD)));
         });
 
-        return new ReqRespResultsWithFacets(result, diffResolutionFacets, serviceFacetResults, pathFacetResults);
+        return new ReqRespResultsWithFacets(result, diffResolutionFacets, serviceFacetResults, pathFacetResults, diffPathFacetResults);
     }
 
     @Override
@@ -3328,6 +3384,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return analysisDeleted;
     }
 
+    @Override
+    public boolean deleteAllData(String customerId) {
+        StringBuffer queryBuff = new StringBuffer();
+        addToQryStr(queryBuff , CUSTOMERIDF , customerId ,false);
+        return deleteDocsByQuery(queryBuff.toString());
+    }
+
     public boolean deleteReqRespMatchResults(List<String> ids) {
         try {
             solr.deleteById(ids);
@@ -3497,6 +3560,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String REQMTFACET = "reqmt_facets";
     private static final String RESPMTFACET = "respmt_facets";
     private static final String PATHFACET = "path_facets";
+    private static final String DIFFPATHFACET = "diffPath_facets";
     private static final String SERVICEFACET = "service_facets";
     private static final String TRACEIDFACET = "traceId_facets";
     private static final String INSTANCEFACET = "instance_facets";
@@ -3712,17 +3776,19 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     public class ReqRespResultsWithFacets {
         ReqRespResultsWithFacets(Result<ReqRespMatchResult> result, ArrayList diffResolFacets,
-            ArrayList serviceFacets, ArrayList pathFacets) {
+            ArrayList serviceFacets, ArrayList pathFacets, ArrayList diffPathFacets) {
              this.result = result;
              this.diffResolFacets = diffResolFacets;
              this.serviceFacets = serviceFacets;
              this.pathFacets = pathFacets;
+             this.diffPathFacets = diffPathFacets;
         }
 
         public final Result<ReqRespMatchResult> result;
         public final ArrayList diffResolFacets;
         public final ArrayList serviceFacets;
         public final ArrayList pathFacets;
+        public final ArrayList diffPathFacets;
     }
 
     static class Facet {
