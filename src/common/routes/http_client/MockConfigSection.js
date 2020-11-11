@@ -146,6 +146,8 @@ class MockConfigSection extends React.Component {
   };
 
   hideMockConfigModal = () => {
+    const {dispatch} = this.props;
+    dispatch(httpClientActions.resetMockConfigStatusText())
     this.setState({ showMockConfigModal: false });
   };
 

@@ -196,3 +196,14 @@ div.loading, div.loading button{
   background-color: #ECECE7;
   padding: 8px;
 }
+
+#proxyDialogBoxTabs .tab-content{
+  border-bottom: 1px solid #DDDDDD;
+  border-left: 1px solid #DDDDDD;
+  border-right: 1px solid #DDDDDD;
+  padding: 8px;
+}
+#proxyDialogBoxTabs {
+  margin-bottom: 10px;
+  margin-right: 10px;
+}

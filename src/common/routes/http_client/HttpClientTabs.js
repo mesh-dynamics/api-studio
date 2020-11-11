@@ -349,7 +349,7 @@ class HttpClientTabs extends Component {
             }
             let contentTypeHeader = _.isObject(parsedCurl.headers) ? getParameterCaseInsensitive(parsedCurl.headers, "content-type") : "";
             if(contentTypeHeader && contentTypeHeader.indexOf("json") > -1) {
-                rawData = JSON.stringify(JSON.parse(parsedCurl.data), undefined, 4);
+                rawData = parsedCurl.data;
                 rawDataType = "json";
                 bodyType = "rawData";
             } else if(contentTypeHeader && contentTypeHeader.indexOf("application/x-www-form-urlencoded") > -1) {
@@ -1199,6 +1199,7 @@ class HttpClientTabs extends Component {
     handleTabChange(tabKey) {
         const { dispatch } = this.props;
         dispatch(httpClientActions.setSelectedTabKey(tabKey));
+        dispatch(httpClientActions.setTabIsHighlighted(tabKey, false));
     }
 
     handleRemoveTab(key, evt) {
@@ -1458,7 +1459,7 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.setUpdatedModalUserCollectionDetails(evt.target.name, evt.target.value));
     }
 
-    formatHttpEventToReqResObject(reqId, httpEventReqResPair) {
+    formatHttpEventToReqResObject(reqId, httpEventReqResPair, isOutgoingRequest=false) {
         const httpRequestEventTypeIndex = httpEventReqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
         const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
         const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
@@ -1539,7 +1540,7 @@ class HttpClientTabs extends Component {
             showSaveBtn: true,
             outgoingRequests: [],
             showCompleteDiff: false,
-            isOutgoingRequest: false,
+            isOutgoingRequest: isOutgoingRequest,
             service: httpRequestEvent.service,
             recordingIdAddedFromClient: "",
             collectionIdAddedFromClient: httpRequestEvent.collection,
@@ -1588,14 +1589,14 @@ class HttpClientTabs extends Component {
                             const ingressReqResPair = result.objects.filter(eachReq => eachReq.apiPath === apiPath);
                             let ingressReqObj;
                             if (ingressReqResPair.length > 0) {
-                                ingressReqObj = this.formatHttpEventToReqResObject(reqId, ingressReqResPair);
+                                ingressReqObj = this.formatHttpEventToReqResObject(reqId, ingressReqResPair, false);
                             }
                             for (let eachReqId of reqIdArray) {
                                 const reqResPair = result.objects.filter(eachReq => {
                                     return (eachReq.reqId === eachReqId && eachReq.apiPath !== apiPath);
                                 });
                                 if (reqResPair.length > 0 && eachReqId !== reqId) {
-                                    let reqObject = this.formatHttpEventToReqResObject(eachReqId, reqResPair);
+                                    let reqObject = this.formatHttpEventToReqResObject(eachReqId, reqResPair, true);
                                     ingressReqObj.outgoingRequests.push(reqObject);
                                 }
                             }
@@ -1703,10 +1704,12 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.loadUserCollections());
         
         const requestIds = this.getRequestIds(), reqIdArray = Object.keys(requestIds);
-        tabs.map(eachTab => {
+        tabs.forEach(eachTab => {
             const indx = reqIdArray.findIndex((eachReq) => eachReq === eachTab.requestId);
-            if(indx > -1) reqIdArray.splice(indx, 1);
-            return eachTab; 
+            if(indx > -1) {
+                reqIdArray.splice(indx, 1);
+                dispatch(httpClientActions.setTabIsHighlighted(eachTab.id, true));
+            }
         });
         if (reqIdArray && reqIdArray.length > 0) {
             const eventTypes = [];
@@ -1836,6 +1839,7 @@ class HttpClientTabs extends Component {
             tabClassName: 'md-hc-tab',
             panelClassName: 'md-hc-tab-panel',
             hasTabChanged: hasTabDataChanged(eachTab),
+            isHighlighted: eachTab.isHighlighted,
         }));
     }
 

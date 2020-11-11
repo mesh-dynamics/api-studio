@@ -1,58 +1,69 @@
-import React, { useEffect, useState } from 'react';
-import classNames from 'classnames';
+import React, { useEffect, useState } from "react";
+import classNames from "classnames";
 export interface ISplitSliderProps {
-    slidingElement: HTMLDivElement,
-    horizontal?: boolean
+  slidingElement: HTMLDivElement;
+  horizontal?: boolean;
+  minSpace?: number; // Minimum height/width in pixels
 }
 let isMouseDown = false;
 let mousePositionDiff = 0;
-export default function SplitSlider(props:ISplitSliderProps) {
-    const sliderRef = React.createRef<HTMLDivElement>();
+export default function SplitSlider(props: ISplitSliderProps) {
+  const sliderRef = React.createRef<HTMLDivElement>();
 
-    var onMouseMove = (event: MouseEvent) => {
-        if (isMouseDown === true && props.slidingElement) {
-            if(props.horizontal){
-                props.slidingElement.style.height = (event.clientY - mousePositionDiff) + "px"
-            }else{
-                props.slidingElement.style.width = (event.clientX - mousePositionDiff) + "px"
-            }
-        } else {
-            onMouseUp()
-        }
+  const getMin = (position: number) => {
+    if (props.minSpace) {
+      position = Math.max(props.minSpace, position);
     }
-    var onMouseUp = () => {
-        isMouseDown = false;
-        document.body.removeEventListener('mouseup', onMouseUp);
-        document.body.removeEventListener('mousemove', onMouseMove);
-    }
-    var onMouseDown = (event: MouseEvent) => {
-        isMouseDown = true;
-        if (props.slidingElement) {
-            if(props.horizontal){
-                mousePositionDiff = event.clientY - props.slidingElement.offsetHeight;
-            }else{
-                mousePositionDiff = event.clientX - props.slidingElement.offsetWidth;
-            }
-        }
-        document.body.addEventListener('mousemove', onMouseMove)
-        document.body.addEventListener('mouseup', onMouseUp);
-    }
+    return position;
+  };
 
-    useEffect(() => {
-        if (sliderRef.current && props.slidingElement) {
-            sliderRef.current.addEventListener('mousedown', onMouseDown)
-        }
-        return () => {
-            document.body.removeEventListener('mouseup', onMouseUp)
-            document.body.removeEventListener('mousemove', onMouseMove);
-            if (sliderRef.current) {
-                sliderRef.current.removeEventListener('mousedown', onMouseDown)
-            }
-        }
-    }, [props.slidingElement]);
+  var onMouseMove = (event: MouseEvent) => {
+    if (isMouseDown === true && props.slidingElement) {
+      if (props.horizontal) {
+        props.slidingElement.style.height =
+          getMin(event.clientY - mousePositionDiff) + "px";
+      } else {
+        props.slidingElement.style.width =
+          getMin(event.clientX - mousePositionDiff) + "px";
+      }
+    } else {
+      onMouseUp();
+    }
+  };
+  var onMouseUp = () => {
+    isMouseDown = false;
+    document.body.removeEventListener("mouseup", onMouseUp);
+    document.body.removeEventListener("mousemove", onMouseMove);
+  };
+  var onMouseDown = (event: MouseEvent) => {
+    isMouseDown = true;
+    if (props.slidingElement) {
+      if (props.horizontal) {
+        mousePositionDiff = event.clientY - props.slidingElement.offsetHeight;
+      } else {
+        mousePositionDiff = event.clientX - props.slidingElement.offsetWidth;
+      }
+    }
+    document.body.addEventListener("mousemove", onMouseMove);
+    document.body.addEventListener("mouseup", onMouseUp);
+  };
 
-    const className = classNames({"split-slider": true, "horizontal": props.horizontal});
-    return (
-        <div className={className} ref={sliderRef}></div>
-    )
+  useEffect(() => {
+    if (sliderRef.current && props.slidingElement) {
+      sliderRef.current.addEventListener("mousedown", onMouseDown);
+    }
+    return () => {
+      document.body.removeEventListener("mouseup", onMouseUp);
+      document.body.removeEventListener("mousemove", onMouseMove);
+      if (sliderRef.current) {
+        sliderRef.current.removeEventListener("mousedown", onMouseDown);
+      }
+    };
+  }, [props.slidingElement]);
+
+  const className = classNames({
+    "split-slider": true,
+    horizontal: props.horizontal,
+  });
+  return <div className={className} ref={sliderRef}></div>;
 }
