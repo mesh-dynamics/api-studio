@@ -276,7 +276,7 @@ public class MockServiceHTTP {
         try {
             Event mockRequestEvent = io.md.utils.Utils
                 .createRequestMockNew(path, formParams, customerId, app, instanceId,
-                    service, method, body, headers, ui.getQueryParameters(), traceId, tracerMgr);
+                    service, method, body, headers, ui.getQueryParameters(), traceId , tracerMgr);
             MockResponse mockResponse = mocker.mock(mockRequestEvent, Optional.empty(),  Optional.of(collection));
             respEvent = mockResponse.response;
 
