@@ -2617,8 +2617,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Map domainBlockMap = new HashMap();
         domainBlockMap.put("blockChildren", "type_s: " + Types.ReqRespMatchResult.toString());
         Facet diffChildFacet = Facet.createTermFacetWithDomain(DIFF_RESOLUTION_F, Optional.of(domainBlockMap), Optional.empty());
+        Facet diffPathChildFacet = Facet.createTermFacetWithDomain(DIFF_PATH_F, Optional.of(domainBlockMap), Optional.empty());
         FacetQ facetq = new FacetQ();
         facetq.addFacet(DIFFRESOLUTIONFACET, diffChildFacet);
+        facetq.addFacet(DIFFPATHFACET, diffPathChildFacet);
 
         String jsonFacets="";
         try {
@@ -2631,7 +2633,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Result<ReqRespMatchResult> result = SolrIterator.getResults(solr, query, matchResQuery.numMatches,
             this::docToAnalysisMatchResult, matchResQuery.start);
         ArrayList diffResolutionFacets = result.getFacets(FACETSFIELD, DIFFRESOLUTIONFACET, BUCKETFIELD);
-
+        ArrayList diffPathFacetResults = result.getFacets(FACETSFIELD, DIFFPATHFACET, BUCKETFIELD);
 
         SolrQuery queryForServPathFacets = new SolrQuery(queryStringSansDiffFilter);
         queryForServPathFacets.setFields("*");
@@ -2653,6 +2655,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         pathf.addSubFacet(resolutionFacetsq);
 
         facetq.removeFacet(DIFFRESOLUTIONFACET);
+        facetq.removeFacet(DIFFPATHFACET);
         facetq.addFacet(SERVICEFACET, servicef);
         facetq.addFacet(PATHFACET, pathf);
 
@@ -2680,7 +2683,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 resultsServPath.solrNamedPairToMap((ArrayList)reqCompareTypeFacetMap.get(BUCKETFIELD)));
         });
 
-        return new ReqRespResultsWithFacets(result, diffResolutionFacets, serviceFacetResults, pathFacetResults);
+        return new ReqRespResultsWithFacets(result, diffResolutionFacets, serviceFacetResults, pathFacetResults, diffPathFacetResults);
     }
 
     @Override
@@ -3509,6 +3512,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String REQMTFACET = "reqmt_facets";
     private static final String RESPMTFACET = "respmt_facets";
     private static final String PATHFACET = "path_facets";
+    private static final String DIFFPATHFACET = "diffPath_facets";
     private static final String SERVICEFACET = "service_facets";
     private static final String TRACEIDFACET = "traceId_facets";
     private static final String INSTANCEFACET = "instance_facets";
@@ -3724,17 +3728,19 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     public class ReqRespResultsWithFacets {
         ReqRespResultsWithFacets(Result<ReqRespMatchResult> result, ArrayList diffResolFacets,
-            ArrayList serviceFacets, ArrayList pathFacets) {
+            ArrayList serviceFacets, ArrayList pathFacets, ArrayList diffPathFacets) {
              this.result = result;
              this.diffResolFacets = diffResolFacets;
              this.serviceFacets = serviceFacets;
              this.pathFacets = pathFacets;
+             this.diffPathFacets = diffPathFacets;
         }
 
         public final Result<ReqRespMatchResult> result;
         public final ArrayList diffResolFacets;
         public final ArrayList serviceFacets;
         public final ArrayList pathFacets;
+        public final ArrayList diffPathFacets;
     }
 
     static class Facet {
