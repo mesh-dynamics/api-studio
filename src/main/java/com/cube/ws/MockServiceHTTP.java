@@ -274,10 +274,9 @@ public class MockServiceHTTP {
 
         Optional<Event> respEvent = Optional.empty();
         try {
-            Event.RunType rType = collection.isDevtool ? Event.RunType.Mock : Event.RunType.Replay;
             Event mockRequestEvent = io.md.utils.Utils
                 .createRequestMockNew(path, formParams, customerId, app, instanceId,
-                    service, method, body, headers, ui.getQueryParameters(), traceId, rType, tracerMgr);
+                    service, method, body, headers, ui.getQueryParameters(), traceId, tracerMgr);
             MockResponse mockResponse = mocker.mock(mockRequestEvent, Optional.empty(),  Optional.of(collection));
             respEvent = mockResponse.response;
 

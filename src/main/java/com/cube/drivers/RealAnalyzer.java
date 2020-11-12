@@ -205,21 +205,21 @@ public class RealAnalyzer implements Analyzer {
 
             ReqRespMatchResult res = Analysis.createReqRespMatchResult(bestmatch, bestReqMt,
                 (int) matches.numResults, analysis.replayId);
-            rrstore.saveResult(res);
+            rrstore.saveResult(res, replay.customerId);
 
         } else {
             // TODO change it back to RecReqNoMatch
             ReqRespMatchResult res = Analysis.createReqRespMatchResult(new ReqRespMatchWithEvent(recordReq,
                 Optional.empty(), Comparator.Match.NOMATCH, Optional.empty() , Optional.empty(), Comparator.Match.DONT_CARE),
                 MatchType.NoMatch, (int)matches.numResults, analysis.replayId);
-            rrstore.saveResult(res);
+            rrstore.saveResult(res, replay.customerId);
             analysis.reqNotMatched++;
         }
 
         analysis.reqAnalyzed++;
         if (analysis.reqAnalyzed % UPDBATCHSIZE == 0) {
             LOGGER.info(String.format("Analysis of replay %s completed %d requests", analysis.replayId, analysis.reqAnalyzed));
-            rrstore.saveAnalysis(analysis);
+            rrstore.saveAnalysis(analysis, replay.customerId);
         }
     }
 
@@ -324,7 +324,6 @@ public class RealAnalyzer implements Analyzer {
 
         return builder.withService(reqEvent.service)
             .withCollection(replayId)
-            .withRunType(Event.RunType.Replay)
             .withTraceId(reqEvent.getTraceId())
             .withLimit(limit)
             .build();
@@ -398,14 +397,14 @@ public class RealAnalyzer implements Analyzer {
 
             rrstore.deleteAllAnalysisData(List.of(r.replayId));
 
-            if (!rrstore.saveAnalysis(analysis)) {
+            if (!rrstore.saveAnalysis(analysis, r.customerId)) {
                 return Optional.empty();
             }
 
             analyzeWithEvent(rrstore, result.getLeft(), r, templateVersionToUse, analysis);
 
             // update the stored analysis
-            rrstore.saveAnalysis(analysis);
+            rrstore.saveAnalysis(analysis, r.customerId);
 
 
             // Compute the aggregations here itself for all levels.
@@ -414,12 +413,12 @@ public class RealAnalyzer implements Analyzer {
 
             Collection<MatchResultAggregate> resultAggregates = rrstore.computeResultAggregate(replayId, service, bypath);
             resultAggregates.forEach( resultAggregate -> {
-                rrstore.saveMatchResultAggregate(resultAggregate);
+                rrstore.saveMatchResultAggregate(resultAggregate, r.customerId);
             } );
 
             // Everything including aggregation completed
             analysis.status = Analysis.Status.Completed;
-            if (rrstore.saveAnalysis(analysis)) {
+            if (rrstore.saveAnalysis(analysis, r.customerId)) {
                 r.analysisCompleteTimestamp = Instant.now();
                 rrstore.saveReplay(r);
             }
