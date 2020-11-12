@@ -5,6 +5,8 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
@@ -12,6 +14,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Table(name="api_access_tokens")
@@ -29,7 +33,8 @@ public class ApiAccessToken {
   @NotNull
   private String token;
 
-  @Column
-  @NotNull
-  private Long userId;
+  @OneToOne
+  @JoinColumn(name = "user_Id")
+  @OnDelete(action = OnDeleteAction.CASCADE)
+  private User user;
 }

@@ -54,3 +54,15 @@ You can change the name by modifying profile section of `pom.xml` file:
 -   Frontend `basepath` url and `activation`, `login`, `reset` url endpoints.
 -   Mail credentials
 -   Secret-key and expiry time for jwt-authentication
+
+### Things to Do after deployment
+
+-   Add personal email domains to the db of the customer. It can be achieved by running the jar:
+        cubeui-backend-personalEmailDomains-<version>-jar-with-dependencies 
+      -Requirements: json file like: src/main/resources/personalemaildomains.json
+
+-   Add customer, it can be added by following ways
+    - sign up for one user in the company:
+    - use jar : cubeui-backend-readjson-<version>-jar-with-dependencies
+       -Requirements: json files like: src/main/resources/cubeCorp.json and 
+                for instances if needed to add src/main/resources/cubeCorp-instances-dev.json
