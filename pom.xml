@@ -6,7 +6,7 @@
   <groupId>com.cube.utils</groupId>
   <packaging>jar</packaging>
   <artifactId>cubeui-backend-utils</artifactId>
-  <version>1.3</version>
+  <version>1.4</version>
   <properties>
     <version.java>8</version.java>
     <org.projectlombok.version>1.18.10</org.projectlombok.version>
@@ -47,7 +47,7 @@
                 <descriptorRefs>
                     <descriptorRef>jar-with-dependencies</descriptorRef>
                 </descriptorRefs>
-                <finalName>cubeui-backend-readJson-${version}</finalName>
+                <finalName>cubeui-backend-readJson-${project.version}</finalName>
             </configuration>
             <phase>package</phase> <!-- bind to the packaging phase -->
             <goals>
@@ -65,7 +65,7 @@
                 <descriptorRefs>
                     <descriptorRef>jar-with-dependencies</descriptorRef>
                 </descriptorRefs>
-                <finalName>cubeui-backend-personalEmailDomains-${version}</finalName>
+                <finalName>cubeui-backend-personalEmailDomains-${project.version}</finalName>
             </configuration>
             <phase>package</phase>
             <goals>
