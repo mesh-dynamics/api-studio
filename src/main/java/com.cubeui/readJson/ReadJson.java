@@ -4,6 +4,7 @@ import com.cubeui.readJson.dataModel.instances.AppData;
 import com.cubeui.readJson.dataModel.instances.AppInstanceData;
 import com.cubeui.readJson.dataModel.instances.InstanceData;
 import com.cubeui.readJson.dataModel.instances.Instances;
+import com.cubeui.utils.FetchResponse;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
@@ -29,25 +30,6 @@ import static org.springframework.http.ResponseEntity.status;
 
 public class ReadJson {
 
-    private RestTemplate restTemplate = new RestTemplate();
-
-    private ResponseEntity fetchResponse(String path, HttpMethod method, String token, String body) throws Exception{
-        ResponseEntity response;
-        try {
-            URI uri = new URI(path);
-            HttpHeaders headers = new HttpHeaders();
-            headers.add("Content-Type", "application/json");
-            headers.add("Authorization", token);
-            HttpEntity<String> entity = new HttpEntity<>(body, headers);
-            response = restTemplate.exchange(uri, method, entity, String.class);
-            return response;
-        } catch (HttpClientErrorException e){
-            response = status(e.getStatusCode()).body("HttpClientErrorException");
-            return response;
-        } catch (Exception e){
-            throw e;
-        }
-    }
     public static void main(String[] args)  throws  Exception {
         String url;
         String path;
@@ -84,9 +66,12 @@ public class ReadJson {
         }
         ReadJson readJson= new ReadJson();
         try {
-            ResponseEntity login = readJson.fetchResponse(url+"/api/login", HttpMethod.POST, "","{\"username\":\"admin@meshdynamics.io\",\"password\":\"admin\"}");
+            JSONObject json = new JSONObject();
+            json.put("username", "admin@meshdynamics.io");
+            json.put("password", "admin");
+            ResponseEntity login = FetchResponse.fetchResponse(url+"/api/login", HttpMethod.POST, "",Optional.of(json));
 
-            String access_token = readJson.getDataField(login,"access_token").toString();
+            String access_token = FetchResponse.getDataField(login,"access_token").toString();
             String token = "Bearer " + access_token;
 
             ObjectMapper  mapper = new ObjectMapper();
@@ -98,18 +83,18 @@ public class ReadJson {
             }
 
             for(Customers customer: data.getCustomers()){
-                String body =  readJson.createCustomer(customer);
-                ResponseEntity response = readJson.fetchResponse(url+"/api/customer/save", HttpMethod.POST, token,body);
-                int customerId =  Integer.parseInt(readJson.getDataField(response,"id").toString());
+                JSONObject body =  readJson.createCustomer(customer);
+                ResponseEntity response = FetchResponse.fetchResponse(url+"/api/customer/save", HttpMethod.POST, token,Optional.of(body));
+                int customerId =  Integer.parseInt(FetchResponse.getDataField(response,"id").toString());
                 body = readJson.createJiraCustomer(customer.getJiraCredentials(), customerId);
-                readJson.fetchResponse(url+"/api/jira/customer", HttpMethod.POST, token,body);
+                FetchResponse.fetchResponse(url+"/api/jira/customer", HttpMethod.POST, token, Optional.of(body));
                 Map<Integer, List<Integer>> instanceMap = new HashMap<>();
                 List<Integer> appIds = new ArrayList<>();
                 for(Apps app: customer.getApps())
                 {
                     body = readJson.createApp(app,customerId);
-                    response = readJson.fetchResponse(url+"/api/app", HttpMethod.POST, token,body);
-                    int appId = Integer.parseInt(readJson.getDataField(response,"id").toString());
+                    response = FetchResponse.fetchResponse(url+"/api/app", HttpMethod.POST, token, Optional.of(body));
+                    int appId = Integer.parseInt(FetchResponse.getDataField(response,"id").toString());
                     appIds.add(appId);
                     List<Integer> instanceIds = new ArrayList<>();
                     if(appInstanceData != null) {
@@ -118,10 +103,10 @@ public class ReadJson {
                                 customer.getName(), app.getName());
                         for (Instances instance : instances) {
                             body = readJson.createInstance(instance, appId);
-                            response = readJson
-                                .fetchResponse(url + "/api/instance", HttpMethod.POST, token, body);
+                            response = FetchResponse
+                                .fetchResponse(url + "/api/instance", HttpMethod.POST, token, Optional.of(body));
                             int instanceId = Integer
-                                .parseInt(readJson.getDataField(response, "id").toString());
+                                .parseInt(FetchResponse.getDataField(response, "id").toString());
                             instanceIds.add(instanceId);
                         }
                     }
@@ -130,18 +115,18 @@ public class ReadJson {
                     MultiValuedMap<String, Integer> pathMap = new ArrayListValuedHashMap<>();
                     for(ServiceGroups serviceGroup: app.getServiceGroups()){
                         body = readJson.createServiceGroup(serviceGroup,appId);
-                        response = readJson.fetchResponse(url+"/api/service-group", HttpMethod.POST, token,body);
-                        int serviceGroupId = Integer.parseInt(readJson.getDataField(response,"id").toString());
+                        response = FetchResponse.fetchResponse(url+"/api/service-group", HttpMethod.POST, token, Optional.of(body));
+                        int serviceGroupId = Integer.parseInt(FetchResponse.getDataField(response,"id").toString());
                         for (Services service: serviceGroup.getServices()) {
                             body = readJson.createService(service,appId,serviceGroupId);
-                            response = readJson.fetchResponse(url+"/api/service", HttpMethod.POST, token,body);
-                            int serviceId = Integer.parseInt(readJson.getDataField(response,"id").toString());
+                            response = FetchResponse.fetchResponse(url+"/api/service", HttpMethod.POST, token, Optional.of(body));
+                            int serviceId = Integer.parseInt(FetchResponse.getDataField(response,"id").toString());
                             servicesMap.put(service.getName(), serviceId);
                             if(service.getPaths() != null) {
                                 for (String paths : service.getPaths()) {
                                     body = readJson.createPath(paths, serviceId);
-                                    response = readJson.fetchResponse(url + "/api/path", HttpMethod.POST, token, body);
-                                    int pathId = Integer.parseInt(readJson.getDataField(response, "id").toString());
+                                    response = FetchResponse.fetchResponse(url + "/api/path", HttpMethod.POST, token, Optional.of(body));
+                                    int pathId = Integer.parseInt(FetchResponse.getDataField(response, "id").toString());
                                     pathMap.put(paths, pathId);
                                 }
                             }
@@ -149,56 +134,56 @@ public class ReadJson {
                     }
                     for(TestConfigs testConfig: app.getTestConfigs()) {
                         body = readJson.createTestConfig(testConfig,appId);
-                        response = readJson.fetchResponse(url+"/api/test_config", HttpMethod.POST, token,body);
-                        int testConfigId = Integer.parseInt(readJson.getDataField(response,"id").toString());
+                        response = FetchResponse.fetchResponse(url+"/api/test_config", HttpMethod.POST, token, Optional.of(body));
+                        int testConfigId = Integer.parseInt(FetchResponse.getDataField(response,"id").toString());
                         for(String service: testConfig.getServices()) {
                             int serviceId = servicesMap.get(service);
                             body = readJson.createTestService(testConfigId, serviceId);
-                            response = readJson.fetchResponse(url+"/api/test-service", HttpMethod.POST, token, body);
+                            response = FetchResponse.fetchResponse(url+"/api/test-service", HttpMethod.POST, token, Optional.of(body));
                         }
                         for(String paths: testConfig.getPaths()) {
                             Collection<Integer> pathIds = pathMap.get(paths);
                             for(Integer pathId: pathIds) {
                                 body = readJson.createTestPath(testConfigId, pathId);
-                                response = readJson
+                                response = FetchResponse
                                     .fetchResponse(url + "/api/test-path", HttpMethod.POST, token,
-                                        body);
+                                        Optional.of(body));
                             }
                         }
                         for (String testVirtualizedService: testConfig.getTest_virtualized_services()) {
                             int serviceId = servicesMap.get(testVirtualizedService);
                             body = readJson.createTestService(testConfigId, serviceId);
-                            response = readJson.fetchResponse(url + "/api/test_virtualized_service", HttpMethod.POST, token, body);
+                            response = FetchResponse.fetchResponse(url + "/api/test_virtualized_service", HttpMethod.POST, token, Optional.of(body));
                         }
                         for (String testIntermediateService: testConfig.getTest_intermediate_services()) {
                             int serviceId = servicesMap.get(testIntermediateService);
                             body = readJson.createTestService(testConfigId, serviceId);
-                            response = readJson.fetchResponse(url + "/api/test_intermediate_service", HttpMethod.POST, token, body);
+                            response = FetchResponse.fetchResponse(url + "/api/test_intermediate_service", HttpMethod.POST, token, Optional.of(body));
                         }
                     }
                     for(ServiceGraphs serviceGraph: app.getServiceGraphs()) {
                         int fromServiceId = servicesMap.get(serviceGraph.getFrom());
                         int toServiceId = servicesMap.get(serviceGraph.getTo());
                         body = readJson.createServiceGraph(fromServiceId, toServiceId, appId);
-                        response = readJson.fetchResponse(url + "/api/service_graph", HttpMethod.POST, token, body);
+                        response = FetchResponse.fetchResponse(url + "/api/service_graph", HttpMethod.POST, token, Optional.of(body));
                     }
                 }
                 for(Users user: customer.getUsers())
                 {
                     try {
                         body = readJson.createUser(user, customerId);
-                        response = readJson.fetchResponse(url + "/api/account/create-user", HttpMethod.POST, token, body);
+                        response = FetchResponse.fetchResponse(url + "/api/account/create-user", HttpMethod.POST, token, Optional.of(body));
                         if(response.getStatusCode() == HttpStatus.FORBIDDEN)
                         {
-                            response = readJson.fetchResponse(url + "/api/account/getUser/"+user.getEmail(), HttpMethod.GET, token, body);
-                            int userId = Integer.parseInt(readJson.getDataField(response,"id").toString());
+                            response = FetchResponse.fetchResponse(url + "/api/account/getUser/"+user.getEmail(), HttpMethod.GET, token, Optional.of(body));
+                            int userId = Integer.parseInt(FetchResponse.getDataField(response,"id").toString());
                             for(Integer appId: appIds) {
                                 body = readJson.createAppUser(appId,userId);
-                                response = readJson.fetchResponse(url + "/api/app-user", HttpMethod.POST, token, body);
+                                response = FetchResponse.fetchResponse(url + "/api/app-user", HttpMethod.POST, token, Optional.of(body));
                                 List<Integer> instanceIds = instanceMap.get(appId);
                                 for (Integer instanceId: instanceIds) {
                                     body = readJson.createInstanceUser(instanceId, userId);
-                                    response = readJson.fetchResponse(url + "/api/instance-user", HttpMethod.POST, token, body);
+                                    response = FetchResponse.fetchResponse(url + "/api/instance-user", HttpMethod.POST, token, Optional.of(body));
                                 }
                             }
 
@@ -212,104 +197,94 @@ public class ReadJson {
             e.printStackTrace();
         }
     }
-    private Object getDataField(ResponseEntity response, String field) throws ParseException {
-        try {
-            JSONParser parser = new JSONParser();
-            JSONObject json = (JSONObject) parser.parse(response.getBody().toString());
-            return json.get(field).toString();
-        } catch (ParseException e) {
-            e.printStackTrace();
-            throw e;
-        }
-    }
 
-    private String createCustomer(Customers customer) {
+    private JSONObject createCustomer(Customers customer) {
         JSONObject json = new JSONObject();
         json.put("name", customer.getName());
         json.put("email", customer.getEmailId());
         json.put("domainURLs", customer.getDomainUrls());
-        return json.toString();
+        return json;
     }
 
-    private String createJiraCustomer(JiraCredentials jiraCredentials, int customerId) {
+    private JSONObject createJiraCustomer(JiraCredentials jiraCredentials, int customerId) {
         JSONObject json = new JSONObject();
         json.put("userName", jiraCredentials.getUserName());
         json.put("apiKey", jiraCredentials.getApiKey());
         json.put("jiraBaseURL", jiraCredentials.getJiraBaseURL());
         json.put("customerId", customerId);
-        return json.toString();
+        return json;
     }
 
-    private String createApp(Apps app, int customerId) {
+    private JSONObject createApp(Apps app, int customerId) {
         JSONObject json = new JSONObject();
         json.put("name", app.getName());
         json.put("customerId", customerId);
-        return json.toString();
+        return json;
     }
 
-    private String createInstance(Instances instance, int appId) {
+    private JSONObject createInstance(Instances instance, int appId) {
         JSONObject json = new JSONObject();
         json.put("name", instance.getName());
         json.put("gatewayEndpoint", instance.getGatewayEndpoint());
         json.put("appId", appId);
         json.put("loggingURL", instance.getLoggingURL());
-        return json.toString();
+        return json;
     }
 
-    private String createServiceGroup(ServiceGroups serviceGroup, int appId) {
+    private JSONObject createServiceGroup(ServiceGroups serviceGroup, int appId) {
         JSONObject json = new JSONObject();
         json.put("name", serviceGroup.getName());
         json.put("appId", appId);
-        return json.toString();
+        return json;
     }
 
-    private String createService(Services service, int appId, int serviceGroupId)
+    private JSONObject createService(Services service, int appId, int serviceGroupId)
     {
         JSONObject json = new JSONObject();
         json.put("name", service.getName());
         json.put("appId", appId);
         json.put("serviceGroupId", serviceGroupId);
-        return json.toString();
+        return json;
     }
 
-    private String createPath(String path, int serviceId)
+    private JSONObject createPath(String path, int serviceId)
     {
         JSONObject json = new JSONObject();
         json.put("path", path);
         json.put("serviceId", serviceId);
-        return json.toString();
+        return json;
     }
 
-    private String createTestConfig(TestConfigs testConfig, int appId) {
+    private JSONObject createTestConfig(TestConfigs testConfig, int appId) {
         JSONObject json = new JSONObject();
         json.put("testConfigName", testConfig.getTestConfigName());
         json.put("appId", appId);
-        return json.toString();
+        return json;
     }
 
-    private String createTestPath(int testId, int pathId) {
+    private JSONObject createTestPath(int testId, int pathId) {
         JSONObject json = new JSONObject();
         json.put("testId", testId);
         json.put("pathId", pathId);
-        return json.toString();
+        return json;
     }
 
-    private String createTestService(int testId, int serviceId) {
+    private JSONObject createTestService(int testId, int serviceId) {
         JSONObject json = new JSONObject();
         json.put("testId", testId);
         json.put("serviceId", serviceId);
-        return json.toString();
+        return json;
     }
 
-    private String createServiceGraph(int fromServiceId, int toServiceId, int appId) {
+    private JSONObject createServiceGraph(int fromServiceId, int toServiceId, int appId) {
         JSONObject json = new JSONObject();
         json.put("appId", appId);
         json.put("fromServiceId", fromServiceId);
         json.put("toServiceId", toServiceId);
-        return json.toString();
+        return json;
     }
 
-    private String createUser(Users user, int customerId) {
+    private JSONObject createUser(Users user, int customerId) {
         JSONObject json = new JSONObject();
         json.put("name", user.getName());
         json.put("email", user.getEmail());
@@ -317,21 +292,21 @@ public class ReadJson {
         json.put("customerId", customerId);
         json.put("roles", user.getRoles());
         json.put("isActivated", user.isActivated());
-        return json.toString();
+        return json;
     }
 
-    private String createAppUser(int appId, int userId) {
+    private JSONObject createAppUser(int appId, int userId) {
         JSONObject json = new JSONObject();
         json.put("appId", appId);
         json.put("userId", userId);
-        return  json.toString();
+        return  json;
     }
 
-    private String createInstanceUser(int instanceId, int userId) {
+    private JSONObject createInstanceUser(int instanceId, int userId) {
         JSONObject json = new JSONObject();
         json.put("instanceId", instanceId);
         json.put("userId", userId);
-        return  json.toString();
+        return  json;
     }
 
     private List<Instances> getInstances(List<InstanceData> instanceDataList, String customerName, String appName) {
