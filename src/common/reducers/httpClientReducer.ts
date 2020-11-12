@@ -459,7 +459,8 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                     id: data.tabId,
                     tabName: data.tabName,
                     ...data.reqObject,
-                    selectedTraceTableReqTabId: data.tabId
+                    selectedTraceTableReqTabId: data.tabId,
+                    isHighlighted: true,
                 }],
                 selectedTabKey: data.selectedTabKey,
                 app: data.app
@@ -753,15 +754,17 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
         
         case httpClientConstants.CREATE_DUPLICATE_TAB: {
             let {tabs} = state;
-            const tabToClone = _.find(tabs, {id: data.tabId});
+            const tabToCloneIndex = _.findIndex(tabs, {id: data.tabId});
+            const tabToClone = tabs[tabToCloneIndex];
             const newTab = _.cloneDeep(tabToClone)!;
             newTab.id = uuidv4();
             newTab.selectedTraceTableReqTabId = newTab.id;
             newTab.abortRequest = null;
             newTab.requestRunning = false;
+            newTab.isHighlighted = true;
             return {
                 ...state,
-                tabs: [...tabs, newTab],
+                tabs: [...tabs.slice(0, tabToCloneIndex + 1), newTab, ...tabs.slice(tabToCloneIndex + 1)],
             }
         }
 
@@ -840,6 +843,20 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 tabs: tabs.map(eachTab => {
                         if (eachTab.id === data.tabId) {
                             eachTab["abortRequest"] = data.abortRequest;
+                        }
+                        return eachTab;
+                    })
+            }
+        }
+
+        case httpClientConstants.SET_TAB_IS_HIGHLIGHTED: {
+            let {tabs} = state;
+            const {tabId, isHighlighted} = data;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                        if (eachTab.id === data.tabId) {
+                            eachTab["isHighlighted"] = isHighlighted;
                         }
                         return eachTab;
                     })

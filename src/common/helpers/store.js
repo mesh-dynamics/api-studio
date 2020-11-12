@@ -16,7 +16,9 @@ const configureStore = () => {
                     const tabs = (inboundState.tabs || []).map( tab =>  ({...tab, abortRequest: null, requestRunning: false }));
                     return {
                         ...inboundState,
-                        tabs: tabs
+                        tabs: tabs,
+                        showMockConfigList: true,
+                        mockConfigStatusText : ''
                     }
                 }
                 return inboundState;

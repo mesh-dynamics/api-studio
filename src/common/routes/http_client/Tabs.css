@@ -95,3 +95,9 @@
 .RRT__removable-icon-has-changed:hover:before {
     content: "\f00d";
 }
+
+.md-hc-tab.RRT__tab--highlighted {
+    background-color: #e8e8c6;
+    border-color: #ddd #ddd #fff;
+}
+  

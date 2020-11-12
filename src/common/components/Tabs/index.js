@@ -108,7 +108,7 @@ export default class Tabs extends Component {
 
     return items.reduce(
       (result, item, index) => {
-        const { key = index, title, content, getContent, disabled, tabClassName, panelClassName, hasTabChanged } = item;
+        const { key = index, title, content, getContent, disabled, tabClassName, panelClassName, hasTabChanged, isHighlighted } = item;
 
         const selected = selectedTabKey === key;
         const payload = { tabIndex, collapsed, selected, disabled, key };
@@ -123,6 +123,7 @@ export default class Tabs extends Component {
           allowRemove: allowRemove && (!removeActiveOnly || selected),
           className: tabClassName,
           hasTabChanged,
+          isHighlighted,
         };
 
         const panelPayload = {
@@ -147,7 +148,7 @@ export default class Tabs extends Component {
     );
   };
 
-  getTabProps = ({ title, key, selected, collapsed, tabIndex, disabled, className, onRemove, allowRemove, hasTabChanged }) => ({
+  getTabProps = ({ title, key, selected, collapsed, tabIndex, disabled, className, onRemove, allowRemove, hasTabChanged, isHighlighted }) => ({
       selected,
       allowRemove,
       children: title,
@@ -165,7 +166,8 @@ export default class Tabs extends Component {
         collapsed,
         tabIndex,
         disabled,
-        className
+        className,
+        isHighlighted,
       }),
       hasTabChanged: hasTabChanged,
   });
@@ -179,7 +181,7 @@ export default class Tabs extends Component {
     classNames: this.getClassNamesFor('panel', { className })
   });
 
-  getClassNamesFor = (type, { selected, collapsed, tabIndex, disabled, className = '' }) => {
+  getClassNamesFor = (type, { selected, collapsed, tabIndex, disabled, className = '', isHighlighted=false }) => {
     const { tabClass, panelClass } = this.props;
     switch (type) {
       case 'tab':
@@ -187,7 +189,8 @@ export default class Tabs extends Component {
           'RRT__tab--first': !tabIndex,
           'RRT__tab--selected': selected,
           'RRT__tab--disabled': disabled,
-          'RRT__tab--collapsed': collapsed
+          'RRT__tab--collapsed': collapsed,
+          'RRT__tab--highlighted': isHighlighted,
         });
       case 'panel':
         return cs('RRT__panel', className, panelClass);

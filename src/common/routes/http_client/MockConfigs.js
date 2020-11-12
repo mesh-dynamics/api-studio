@@ -11,9 +11,13 @@ class MockConfigs extends Component {
             selectedEditMockConfig: {},
             selectedEditMockConfigId: null,
             addNew: false,
+            selectedTabKey : 0
         }
     }
 
+    handleSelectedTabChange = (changedKey) => {
+        this.setState({selectedTabKey: changedKey});
+    }
     
     handleMockConfigRowClick = (index) => {
         const {httpClient: {
@@ -256,19 +260,6 @@ class MockConfigs extends Component {
                 </div>}
 
                 {!showMockConfigList && <>
-                    <div style={{display: "flex", justifyContent: "space-between", marginBottom: "10px"}}>
-                        <div>
-                            <span className="cube-btn" onClick={this.handleBackMockConfig}>
-                                <i className="fa fa-arrow-circle-left"></i>
-                                &nbsp;BACK
-                            </span>
-                        </div>
-                        <div className="pull-right">
-                            {addNew ? <span className="cube-btn" onClick={this.handleSaveMockConfig}><i className="fa fa-save"></i>&nbsp;SAVE</span>
-                                    : <span className="cube-btn" onClick={this.handleUpdateMockConfig}><i className="fa fa-save"></i>&nbsp;UPDATE</span>
-                            }
-                        </div>
-                    </div>
                     <Grid>
                         <Row>
                             <Col xs={2}>
@@ -336,7 +327,7 @@ class MockConfigs extends Component {
                 </Modal.Header>
                 <Modal.Body>
                     <div style={{height: "400px", overflowY: "auto"}}>
-                        <Tabs defaultActiveKey={0} id="proxyDialogBoxTabs">
+                        <Tabs defaultActiveKey={this.state.selectedTabKey} id="proxyDialogBoxTabs" onSelect={this.handleSelectedTabChange}>
                             <Tab eventKey={0} title="Service Configurations">
                                 {this.renderMockConfig()}
                             </Tab>
@@ -348,7 +339,18 @@ class MockConfigs extends Component {
                 </Modal.Body>
                 <Modal.Footer>
                     <span className="pull-left" style={{color: mockConfigStatusIsError ? "red" : ""}}>{mockConfigStatusText}</span>
-                    <span className="cube-btn margin-left-15" onClick={this.props.hideModal}>DONE</span>
+                    {this.state.selectedTabKey == 0 && !showMockConfigList &&                         
+                        <>
+                        <span className="cube-btn margin-right-10 margin-left-15" onClick={this.handleBackMockConfig}>
+                            <i className="fa fa-arrow-circle-left"></i>
+                            &nbsp;BACK
+                        </span>
+                    
+                        { addNew ? <span className="cube-btn margin-right-10 " onClick={this.handleSaveMockConfig}><i className="fa fa-save"></i>&nbsp;SAVE</span>
+                                : <span className="cube-btn margin-right-10" onClick={this.handleUpdateMockConfig}><i className="fa fa-save"></i>&nbsp;UPDATE</span>
+                        }</>
+                    }
+                    <span className="cube-btn" onClick={this.props.hideModal}>CLOSE</span>
                     {/* {!showMockConfigList && <span className="cube-btn margin-left-15" onClick={this.handleBackMockConfig}>BACK</span>} */}
                     {/* {!showMockConfigList && addNew && <span className="cube-btn margin-left-15" onClick={this.handleSaveMockConfig}>SAVE</span>}
                     {!showMockConfigList && !addNew && <span className="cube-btn margin-left-15" onClick={this.handleUpdateMockConfig}>UPDATE</span>} */}

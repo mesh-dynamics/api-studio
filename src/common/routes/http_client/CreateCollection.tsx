@@ -12,7 +12,12 @@ import _ from "lodash";
 
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { cubeService } from "../../services";
-import { ICubeState, IHttpClientStoreState, IStoreState, IUserAuthDetails } from "../../reducers/state.types";
+import {
+  ICubeState,
+  IHttpClientStoreState,
+  IStoreState,
+  IUserAuthDetails,
+} from "../../reducers/state.types";
 
 export interface ICreateCollectionProps {
   modalButton?: boolean;
@@ -92,10 +97,16 @@ class CreateCollection extends Component<
       cube: { selectedApp },
     } = this.props;
 
-    if (
+    const collectionName = newCollectionName.trim();
+
+    if (!collectionName) {
+      this.setState({
+        modalCreateCollectionMessage: "Collection name can not be empty.",
+      });
+    } else if (
       userCollections
         .map((collection: any) => collection.name.toLowerCase())
-        .indexOf(newCollectionName.toLowerCase()) > -1
+        .indexOf(collectionName.toLowerCase()) > -1
     ) {
       this.setState({
         modalCreateCollectionMessage: "Collection name already exists.",
@@ -106,7 +117,7 @@ class CreateCollection extends Component<
       try {
         this.setState({ modalCreateCollectionMessage: "Saving.." });
         cubeService
-          .createUserCollection(user, newCollectionName, app)
+          .createUserCollection(user, collectionName, app)
           .then(() => {
             dispatch(httpClientActions.loadUserCollections());
             dispatch(

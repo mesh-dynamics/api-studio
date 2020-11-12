@@ -4,7 +4,6 @@ import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, 
 import HttpRequestMessage from "./HttpRequestMessage.tsx";
 import HttpResponseMessage from "./HttpResponseMessage.tsx";
 
-import HttpRequestMessageRO from "./HttpRequestMessageRO.tsx";
 
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import config from "../../config";
@@ -23,6 +22,7 @@ import EditableLabel from "./EditableLabel";
 import {hasTabDataChanged} from "../../utils/http_client/utils"
 import Tippy from "@tippy.js/react";
 import RequestMatchType from './RequestMatchType.tsx';
+import { HttpRequestFields } from "./HttpRequestFields";
 
 const newStyles = {
     variables: {
@@ -674,7 +674,7 @@ class HttpClient extends Component {
                 </div>
                 {!showCompleteDiff && (
                     <div>
-                        <div style={{display: "flex", marginBottom: "9px", minHeight:'20px', overflowY: 'auto'}} ref={e=> (!this.state.httpRequestRef && this.setState({httpRequestRef : e}))}>
+                        <div style={{display: "flex"}}>
                             <div style={{flex: "1", padding: "0.5rem", height:'100%'}}>
                                 <HttpRequestMessage 
                                     tabId={selectedTraceTableReqTab.id}
@@ -697,9 +697,9 @@ class HttpClient extends Component {
                                     readOnly={false}>
                                 </HttpRequestMessage>
                             </div>
-                            <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0"}}>
+                            <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0", height:'100%'}}>
                                 {selectedTraceTableReqTab && selectedTraceTableTestReqTab && (
-                                    <HttpRequestMessageRO
+                                    <HttpRequestMessage
                                         tabId={selectedTraceTableTestReqTab.id}
                                         requestId={selectedTraceTableTestReqTab.requestId}
                                         httpMethod={selectedTraceTableTestReqTab.httpMethod}
@@ -715,12 +715,66 @@ class HttpClient extends Component {
                                         updateParam={this.props.updateParam}
                                         updateAllParams={this.props.updateAllParams}
                                         updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
-                                        isOutgoingRequest={selectedTraceTableTestReqTab.isOutgoingRequest} >
-                                    </HttpRequestMessageRO>
+                                        isOutgoingRequest={selectedTraceTableTestReqTab.isOutgoingRequest}
+                                        readOnly={true}
+                                        id="test"
+                                        disabled={true} >
+                                    </HttpRequestMessage>
                                 )}
                             </div>
                         </div>
-                        <SplitSlider slidingElement={this.state.httpRequestRef} horizontal/> 
+                        <div style={{display: "flex",  minHeight: (selectedTraceTableReqTab.paramsType == "body" ?'200px': '50px'), overflowY: "auto"}} 
+                            ref={e=> (!this.state.httpRequestRef && this.setState({httpRequestRef : e}))}
+                            >
+                            <div style={{flex: "1", padding: "0.5rem", height:'100%'}}>
+                            <HttpRequestFields 
+                                // Remove not required props
+                                    tabId={selectedTraceTableReqTab.id}
+                                    requestId={selectedTraceTableReqTab.requestId}
+                                    
+                                    headers={selectedTraceTableReqTab.headers} 
+                                    queryStringParams={selectedTraceTableReqTab.queryStringParams}
+                                    bodyType={selectedTraceTableReqTab.bodyType}
+                                    formData={selectedTraceTableReqTab.formData} 
+                                    rawData={selectedTraceTableReqTab.rawData}
+                                    rawDataType={selectedTraceTableReqTab.rawDataType}
+                                    paramsType={selectedTraceTableReqTab.paramsType}
+                                    addOrRemoveParam={this.props.addOrRemoveParam} 
+                                    updateParam={this.props.updateParam}
+                                    updateAllParams={this.props.updateAllParams}
+                                    updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
+                                    isOutgoingRequest={selectedTraceTableReqTab.isOutgoingRequest} 
+                                    id="" 
+                                    readOnly={false}
+                                />
+                                </div>
+                            <div style={{flex: "1", padding: "0.5rem", height:'100%'}}>
+                            {selectedTraceTableReqTab && selectedTraceTableTestReqTab && (
+                            <HttpRequestFields 
+                                // Remove not required props
+                                    tabId={selectedTraceTableTestReqTab.id}
+                                    requestId={selectedTraceTableTestReqTab.requestId}
+                                    httpMethod={selectedTraceTableTestReqTab.httpMethod}
+                                    httpURL={selectedTraceTableTestReqTab.httpURL}
+                                    headers={selectedTraceTableTestReqTab.headers} 
+                                    queryStringParams={selectedTraceTableTestReqTab.queryStringParams}
+                                    bodyType={selectedTraceTableTestReqTab.bodyType}
+                                    formData={selectedTraceTableTestReqTab.formData} 
+                                    rawData={selectedTraceTableTestReqTab.rawData}
+                                    rawDataType={selectedTraceTableTestReqTab.rawDataType}
+                                    paramsType={selectedTraceTableReqTab.paramsType}
+                                    addOrRemoveParam={this.props.addOrRemoveParam} 
+                                    updateParam={this.props.updateParam}
+                                    updateAllParams={this.props.updateAllParams}
+                                    updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
+                                    isOutgoingRequest={selectedTraceTableTestReqTab.isOutgoingRequest} 
+                                    id="test" 
+                                    setBodyRef={this.setRequestBodyRef}
+                                    readOnly={true}
+                                />)}
+                                </div>
+                        </div>
+                        <SplitSlider slidingElement={this.state.httpRequestRef} horizontal minSpace={(selectedTraceTableReqTab.paramsType == "body" ? 200: 50)}/> 
                         <HttpResponseMessage 
                             tabId={selectedTraceTableReqTab.id}
                             /** Belongs to RHS */
