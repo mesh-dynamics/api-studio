@@ -74,6 +74,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import io.cube.agent.UtilException;
 import io.md.core.Comparator;
@@ -623,7 +625,12 @@ public class AnalyzeWS {
 	    , Optional<Event> event) {
     	return payload.map(p-> {
     		try {
-			    return jsonMapper.treeToValue(p, Payload.class);
+    			String payloadType;
+    			payloadType = event.map(e -> e.payload.getClass().getSimpleName()).orElse("HTTPResponsePayload");
+			    ArrayNode arrayNode = JsonNodeFactory.instance.arrayNode();
+			    arrayNode.insert(0, payloadType);
+			    arrayNode.insert(1, p);
+			    return jsonMapper.treeToValue(arrayNode, Payload.class);
 		    } catch (IOException e) {
 			    return null;
 		    }
