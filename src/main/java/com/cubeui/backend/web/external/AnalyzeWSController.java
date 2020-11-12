@@ -282,7 +282,12 @@ public class AnalyzeWSController {
                 JSONObject params = (JSONObject)jsonObject.get("params");
 
                 String operationSetId = params.get("operationSetId").toString();
-                String replayId = params.get("replayId").toString();
+                //Get Data for API=/updateGoldenSet from JSON post body
+                JSONObject updateGoldenSet = (JSONObject)json.get("updateGoldenSet");
+                GoldenSetRequest goldenSetRequest = mapper.readValue(updateGoldenSet.get("body").toString(), GoldenSetRequest.class);
+                Optional<String> goldenSetRequestBody = Optional.of(goldenSetRequest.toString());
+                JSONObject updateGoldenSetParams = (JSONObject)updateGoldenSet.get("params");
+                String replayId = updateGoldenSetParams.get("replayId").toString();
                 final Optional<Replay> replay =cubeServerService.getReplay(replayId);
                 if(replay.isEmpty())
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -307,16 +312,10 @@ public class AnalyzeWSController {
                     return ResponseEntity.status(response.getStatusCode()).body(new ErrorResponse(response.getBody(),"Error while calling API=/goldenUpdate/recordingOperationSet/updateMultiPath"));
                 }
 
-                //Get Data for API=/updateGoldenSet from JSON post body
-                jsonObject = (JSONObject)json.get("updateGoldenSet");
-                GoldenSetRequest goldenSetRequest = mapper.readValue(jsonObject.get("body").toString(), GoldenSetRequest.class);
-                body = Optional.of(goldenSetRequest.toString());
-                params = (JSONObject)jsonObject.get("params");
-
-                String recordingId = params.get("recordingId").toString();
-                String collectionUpdOpSetId = params.get("collectionUpdOpSetId").toString();
-                String templateUpdOpSetId = params.get("templateUpdOpSetId").toString();
-                response = cubeServerService.fetchPostResponse(request, body, "/as/updateGoldenSet/"+ recordingId+ "/"+ replayId + "/"+ collectionUpdOpSetId +"/"+templateUpdOpSetId, "application/x-www-form-urlencoded");
+                String recordingId = updateGoldenSetParams.get("recordingId").toString();
+                String collectionUpdOpSetId = updateGoldenSetParams.get("collectionUpdOpSetId").toString();
+                String templateUpdOpSetId = updateGoldenSetParams.get("templateUpdOpSetId").toString();
+                response = cubeServerService.fetchPostResponse(request, goldenSetRequestBody, "/as/updateGoldenSet/"+ recordingId+ "/"+ replayId + "/"+ collectionUpdOpSetId +"/"+templateUpdOpSetId, "application/x-www-form-urlencoded");
                 return response;
             }
         } catch (ParseException e) {
