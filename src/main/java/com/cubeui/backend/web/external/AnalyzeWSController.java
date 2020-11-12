@@ -282,7 +282,13 @@ public class AnalyzeWSController {
                 JSONObject params = (JSONObject)jsonObject.get("params");
 
                 String operationSetId = params.get("operationSetId").toString();
-                ResponseEntity response = cubeServerService.fetchPostResponse(request, body, "/as/updateTemplateOperationSet/"+operationSetId);
+                String replayId = params.get("replayId").toString();
+                final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+                if(replay.isEmpty())
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("No Replay found for replayId=" + replayId);
+                validation.validateCustomerName(authentication,replay.get().customerId);
+                ResponseEntity response = cubeServerService.fetchPostResponse(request, body, "/as/updateTemplateOperationSet/"+ replay.get().customerId + "/"+operationSetId);
                 if (response.getStatusCode() != HttpStatus.OK) {
                     log.error("Error while calling API=/updateTemplateOperationSet/"+operationSetId +", error="+response.getBody());
                     return ResponseEntity.status(response.getStatusCode()).body(new ErrorResponse(response.getBody(), "Error while calling API=/as/updateTemplateOperationSet/"));
@@ -308,14 +314,8 @@ public class AnalyzeWSController {
                 params = (JSONObject)jsonObject.get("params");
 
                 String recordingId = params.get("recordingId").toString();
-                String replayId = params.get("replayId").toString();
                 String collectionUpdOpSetId = params.get("collectionUpdOpSetId").toString();
                 String templateUpdOpSetId = params.get("templateUpdOpSetId").toString();
-                final Optional<Replay> replay =cubeServerService.getReplay(replayId);
-                if(replay.isEmpty())
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body("Error while retrieving Replay Object for replayId=" + replayId);
-                validation.validateCustomerName(authentication,replay.get().customerId);
                 response = cubeServerService.fetchPostResponse(request, body, "/as/updateGoldenSet/"+ recordingId+ "/"+ replayId + "/"+ collectionUpdOpSetId +"/"+templateUpdOpSetId, "application/x-www-form-urlencoded");
                 return response;
             }
