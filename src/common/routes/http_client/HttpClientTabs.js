@@ -1081,7 +1081,7 @@ class HttpClientTabs extends Component {
                 collectionId: userHistoryCollection.collec,
                 // recordingId: this.state.tabs[tabIndex].recordingIdAddedFromClient,
                 recordingCollectionId: tabs[tabIndex].collectionIdAddedFromClient || (mockContextLookupCollection || userHistoryCollection.collec),
-                recordingId: mockContextSaveToCollection || userHistoryCollection.id,
+                recordingId: userHistoryCollection.id,
                 traceId: tabs[tabIndex].traceIdAddedFromClient,
                 selectedApp,
                 customerName: customerId,
@@ -1090,6 +1090,7 @@ class HttpClientTabs extends Component {
                 spanId: spanId
             }
 
+            console.log("Setting mock context for this request: ", mockContext)
             ipcRenderer.send('mock_context_change', mockContext);
         }
         const { headers, queryStringParams, bodyType, rawDataType } = tabToProcess;
