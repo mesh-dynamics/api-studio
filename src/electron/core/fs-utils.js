@@ -11,6 +11,8 @@ const store = new Store();
 const packagedPathPrefix = path.join(__dirname, "../../../../");
 const devModePathPrefix = path.join(__dirname, "../../../");
 const resourceRootPath = isDev ? devModePathPrefix : packagedPathPrefix;
+const DEFAULT_HTTP_PORT = 80;
+const SECURE_HTTPS_PORT = 443;
 
 const writeTargetToConfig = (config) => {
     const configFilePath = isDev
@@ -83,16 +85,29 @@ const setupApplicationConfig = () => {
     }
 };
 
+const getDefaultPorts = (protocol) => {
+  if(protocol === 'https:') {
+    return SECURE_HTTPS_PORT;
+  }
+
+  if(protocol === 'http:') {
+    return DEFAULT_HTTP_PORT;
+  }
+
+  return SECURE_HTTPS_PORT;
+};
+
 const getApplicationConfig = () => {
     logger.info("Reading application config from store");
 
     const appDomain = store.get("domain");
+    const defaultConfiguredMockPort = store.get("mockPort");
     const parsedUrl = url.parse(appDomain);
     // const mockProtocol = store.get("mockProtocol");
     // const mockHost = store.get("mockHost");
     const mockProtocol = parsedUrl.protocol;
     const mockHost = parsedUrl.hostname;
-    const mockPort = store.get("mockPort");
+    const mockPort = parsedUrl.port || defaultConfiguredMockPort 
     const proxyPort = store.get("proxyPort");
 
     const config = {
@@ -115,20 +130,20 @@ const updateApplicationConfig = (config) => {
     // host, 
     const { 
       domain, 
-      mock: { 
-        port, 
+      mock: {
+        port, // This is mapped to UI text input which is currently not visible 
         proxyPort 
       } 
     } = config;
     
-
     logger.info("Updating application config to store", domain);
 
     store.set("domain", domain);
     const parsedUrl = url.parse(domain);
-    store.set("mockProtocol", parsedUrl.protocol);
-    store.set("mockHost", parsedUrl.hostname);
-    store.set("mockPort", port);
+    
+    store.set("mockProtocol", parsedUrl.protocol); // read as mockServerProtocol
+    store.set("mockHost", parsedUrl.hostname); // read as mockServerHost
+    store.set("mockPort", parsedUrl.port || getDefaultPorts(parsedUrl.protocol));
     store.set("proxyPort", proxyPort);
 
     logger.info("Updated store with latest config");
