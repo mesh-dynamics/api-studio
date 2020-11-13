@@ -5,9 +5,31 @@ import { FormControl, FormGroup, Modal, Glyphicon } from "react-bootstrap";
 import { httpClientActions } from "../../actions/httpClientActions";
 import CreateCollection from "./CreateCollection";
 import { cubeService } from "../../services";
+import { ICollectionDetails, IEventData, IHttpClientStoreState, IHttpClientTabDetails, IStoreState } from "../../reducers/state.types";
 
-class SaveToCollection extends React.Component {
-  constructor(props) {
+export declare type GetReqResFromTabDataHandler = (eachPair: IEventData[], tabToSave: IHttpClientTabDetails, runId: string, type: string, reqTimestamp?:string, resTimestamp?:string, urlEnvVal?: string, currentEnvironment?: string) => void;
+
+export interface ISaveToCollectionProps{
+
+  goldenList: ICollectionDetails[],
+  httpClient: IHttpClientStoreState,
+  tabId: string;
+  visible: boolean;
+  disabled: boolean;
+  getReqResFromTabData: GetReqResFromTabDataHandler;
+  dispatch: any; //Need to check proper type for dispatch
+}
+export interface ISaveToCollectionState{
+  showModal: boolean,
+  showSaveStatusModal: boolean,
+  userCollectionId: string;
+  modalErroSaveMessage: string;
+  modalErroSaveMessageIsError: boolean,
+}
+
+class SaveToCollection extends React.Component<ISaveToCollectionProps, ISaveToCollectionState> {
+  private createCollectionRef: any;
+  constructor(props: ISaveToCollectionProps) {
     super(props);
     this.state = {
       showModal: false,
@@ -22,7 +44,6 @@ class SaveToCollection extends React.Component {
       this
     );
 
-    this.handleChange = this.handleChange.bind(this);
     this.saveTabToCollection = this.saveTabToCollection.bind(this);
     this.createCollectionRef = React.createRef();
   }
@@ -35,20 +56,20 @@ class SaveToCollection extends React.Component {
     this.setState({ showSaveStatusModal: false });
   }
 
-  handleChange(evt) {
+  handleUserCollection = (evt: React.FormEvent<FormControl & HTMLInputElement>) => {    
     this.setState({
-      [evt.target.name]: evt.target.value,
+      userCollectionId: (evt.target as HTMLInputElement).value,
       modalErroSaveMessage: "",
     });
 
-    this.createCollectionRef.getWrappedInstance &&
-      this.createCollectionRef.getWrappedInstance().reset &&
-      this.createCollectionRef.getWrappedInstance().reset();
+    this.createCollectionRef &&  (this.createCollectionRef as any).getWrappedInstance &&
+      (this.createCollectionRef as any).getWrappedInstance().reset &&
+      (this.createCollectionRef as any).getWrappedInstance().reset();
   }
 
   resetMessage = () => {
     if (this.state.modalErroSaveMessage) {
-      this.setState({ modalErroSaveMessage: true });
+      this.setState({ modalErroSaveMessage: "" });
     }
   };
 
@@ -60,7 +81,7 @@ class SaveToCollection extends React.Component {
 
     const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
     const recordingId = tabs[tabIndex].recordingIdAddedFromClient;
-    if (recordingId && userHistoryCollection.id !== recordingId) {
+    if (recordingId && userHistoryCollection && userHistoryCollection.id !== recordingId) {
       this.setState(
         {
           showSaveStatusModal: true,
@@ -81,7 +102,7 @@ class SaveToCollection extends React.Component {
     }
   }
 
-  updateEachRequest(req, data, collectionId, recordingId) {
+  updateEachRequest(req: IHttpClientTabDetails, data: any, collectionId: string, recordingId: string) {
     req.requestId = data.newReqId;
     req.collectionIdAddedFromClient = collectionId;
     req.traceIdAddedFromClient = data.newTraceId;
@@ -94,12 +115,12 @@ class SaveToCollection extends React.Component {
     req.eventData[1].collection = data.collec;
   }
   //As of now it is duplicated as not a big function
-  getTabIndexGivenTabId(tabId, tabs) {
+  getTabIndexGivenTabId(tabId: string, tabs: IHttpClientTabDetails[]) {
     if (!tabs) return -1;
     return tabs.findIndex((e) => e.id === tabId);
   }
 
-  updateTabWithNewData(tabId, response, recordingId) {
+  updateTabWithNewData(tabId: string, response: any, recordingId: string) {
     const {
       httpClient: { tabs, userCollections }, goldenList
     } = this.props;
@@ -110,7 +131,7 @@ class SaveToCollection extends React.Component {
       try {
         const parsedData =
           response.data.response && response.data.response.length > 0
-            ? response.data.response.map((eachOne) => {
+            ? response.data.response.map((eachOne: string) => {
                 return JSON.parse(eachOne);
               })
             : [];
@@ -122,8 +143,8 @@ class SaveToCollection extends React.Component {
             this.updateEachRequest(
               tabToProcess,
               eachReq,
-              collection.collec,
-              collection.id
+              collection!.collec,
+              collection!.id
             );
           } else {
             tabToProcess.outgoingRequests.map((eachOutgoingReq) => {
@@ -131,8 +152,8 @@ class SaveToCollection extends React.Component {
                 this.updateEachRequest(
                   eachOutgoingReq,
                   eachReq,
-                  collection.collec,
-                  collection.id
+                  collection!.collec,
+                  collection!.id
                 );
               }
               return eachOutgoingReq;
@@ -140,7 +161,7 @@ class SaveToCollection extends React.Component {
           }
         }
       } catch (err) {
-        console.error("Error ", error);
+        console.error("Error ", err);
       }
     }
   }
@@ -228,7 +249,6 @@ class SaveToCollection extends React.Component {
     return (
       <>
         <div
-          disabled={this.props.disabled}
           className={
             this.props.disabled
               ? "btn btn-sm cube-btn text-center disabled"
@@ -292,7 +312,7 @@ class SaveToCollection extends React.Component {
                   placeholder="Select"
                   name="userCollectionId"
                   value={this.state.userCollectionId}
-                  onChange={this.handleChange}
+                  onChange={this.handleUserCollection}
                 >
                   <option value=""></option>
                   {collections &&
@@ -339,7 +359,7 @@ class SaveToCollection extends React.Component {
   }
 }
 
-function mapStateToProps(state) {
+function mapStateToProps(state: IStoreState) {
   const { httpClient, apiCatalog : {goldenList} } = state;
   return {
     httpClient,

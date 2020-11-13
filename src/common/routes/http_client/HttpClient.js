@@ -16,7 +16,7 @@ import {
     validateAndCreateDiffLayoutData  
 } from "../../utils/diff/diff-process.js";
 import { AbortRequest } from "./abortRequest";
-import SaveToCollection from './SaveToCollection';
+import SaveToCollection from './SaveToCollection.tsx';
 import SplitSlider from "../../components/SplitSlider.tsx";
 import EditableLabel from "./EditableLabel";
 import {hasTabDataChanged} from "../../utils/http_client/utils"

@@ -386,8 +386,8 @@ export interface IHttpClientTabDetails {
   httpURLShowOnly: string;
   id: string;
   isOutgoingRequest: boolean;
-  outgoingRequestIds: any[]; //2
-  outgoingRequests: any[]; //2
+  outgoingRequestIds: string[];
+  outgoingRequests: IHttpClientTabDetails[];
   paramsType: string;
   queryStringParams: IRequestParamData[];
   rawData: string;
