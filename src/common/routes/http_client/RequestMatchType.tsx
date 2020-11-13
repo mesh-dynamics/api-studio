@@ -8,6 +8,7 @@ import _ from "lodash";
 import { UpdateParamHandler } from "./HttpResponseHeaders";
 import { formatHttpEventToTabObject } from "../../utils/http_client/utils";
 import Tippy from "@tippy.js/react";
+import { HttpRequestFields } from "./HttpRequestFields";
 
 interface IRequestMatchTypeProps {
   matchType: string;
@@ -119,6 +120,7 @@ function RequestMatchType(props: IRequestMatchTypeProps) {
         <Modal.Body className={"text-center padding-15"}>
           <div className="requestMatchTypeBody">
             {apiEventsFormatted && (
+              <>
               <HttpRequestMessage
                 id="matchType"
                 httpMethod={apiEventsFormatted.httpMethod}
@@ -130,19 +132,32 @@ function RequestMatchType(props: IRequestMatchTypeProps) {
                 rawDataType={apiEventsFormatted.rawDataType}
                 paramsType={paramsType}
                 bodyType={apiEventsFormatted.bodyType}
-                showBody={false}
-                showRawData={false}
-                showFormData={true}
-                showHeaders={false}
-                showQueryParams={false}
                 updateBodyOrRawDataType={() => {}}
-                addOrRemoveParam={() => {}}
                 isOutgoingRequest={false}
                 tabId=""
-                updateAllParams={() => {}}
                 updateParam={updateParamHandler}
                 readOnly={true}
+                disabled={false}
               ></HttpRequestMessage>
+              <HttpRequestFields 
+                  tabId={""}
+                  showBody={false}
+                  showHeaders={false}
+                  showQueryParams={false}
+                  headers={apiEventsFormatted.headers} 
+                  queryStringParams={apiEventsFormatted.queryStringParams}
+                  formData={apiEventsFormatted.formData} 
+                  rawData={apiEventsFormatted.rawData}
+                  rawDataType={apiEventsFormatted.rawDataType}
+                  paramsType={paramsType}
+                  addOrRemoveParam={() => {}} 
+                  updateParam={updateParamHandler}
+                  updateAllParams={() => {}}
+                  updateBodyOrRawDataType={() => {}}
+                  isOutgoingRequest={false} 
+                  id="matchType" 
+                  readOnly={true}
+              /></>
             )}
             {errorMessage && <div style={{ color: "red" }}>{errorMessage}</div>}
           </div>
