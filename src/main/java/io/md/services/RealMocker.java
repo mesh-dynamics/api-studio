@@ -61,7 +61,7 @@ public class RealMocker implements Mocker {
             List<String> payLoadFields = Arrays.asList(String.format("%s:%s" , Constants.METHOD_PATH , Utils.getHttpMethod(reqEvent))) ;
             Optional<JoinQuery> joinQuery = mockWColl.isDevtool ? Optional.of(getSuccessResponseMatch()) : Optional.empty();
 
-            EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1), !mockWColl.isDevtool, lowerBoundForMatching, mockWColl.recordCollection , payLoadFields , joinQuery);
+            EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1), !mockWColl.isDevtool, lowerBoundForMatching, mockWColl.recordCollection , payLoadFields , joinQuery , mockWColl.isDevtool);
             DSResult<Event> res = cube.getEvents(eventQuery);
 
             final Map<String , Event> reqIdReqMapping = new HashMap<>();
@@ -76,7 +76,7 @@ public class RealMocker implements Mocker {
             if(mockWColl.isDevtool && !matchingResponse.isPresent()){
                 LOGGER.info(createMockReqErrorLogMessage(reqEvent,
                         "Did not find any valid 200 response. Giving first match resp"));
-                eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1), false , lowerBoundForMatching, mockWColl.recordCollection , payLoadFields , Optional.empty());
+                eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1), false , lowerBoundForMatching, mockWColl.recordCollection , payLoadFields , Optional.empty() , mockWColl.isDevtool);
                 res = cube.getEvents(eventQuery);
                 matchingResponse = res.getObjects().findFirst().flatMap(getRespEventForReqEvent);
             }
@@ -95,7 +95,7 @@ public class RealMocker implements Mocker {
             matchingResponse.ifPresent(di::inject);
             
             Optional<Event> matchedReq = matchingResponse.map(resp->reqIdReqMapping.get(resp.reqId));
-            Optional<Event> mockResponse = createResponseFromEvent(reqEvent, matchedReq , matchingResponse, mockWithCollection.get().runId);
+            Optional<Event> mockResponse = createResponseFromEvent(reqEvent, matchedReq , matchingResponse, mockWithCollection.get().runId, mockWColl.isDevtool);
             return new MockResponse(mockResponse, res.getNumFound());
         } else {
             String errorReason = "Invalid event or no record/replay found.";
@@ -143,15 +143,15 @@ public class RealMocker implements Mocker {
     }
 
     private static EventQuery buildRequestEventQuery(Event event, int offset, Optional<Integer> limit,
-        boolean isSortOrderAsc, Optional<Instant> lowerBoundForMatching, String collection , List<String> payloadFields , Optional<JoinQuery> joinQuery) {
+        boolean isSortOrderAsc, Optional<Instant> lowerBoundForMatching, String collection , List<String> payloadFields , Optional<JoinQuery> joinQuery , boolean isDevtoolRequest) {
         EventQuery.Builder builder =
             new EventQuery.Builder(event.customerId, event.app, event.eventType)
                 .withService(event.service)
-                .withCollection(collection , EventQuery.COLLECTION_WEIGHT)
+                .withCollection(collection , isDevtoolRequest ? EventQuery.COLLECTION_WEIGHT : null)
                 //.withInstanceId(event.instanceId)
                 .withPaths(Arrays.asList(event.apiPath))
-                .withTraceId(event.getTraceId() , EventQuery.TRACEID_WEIGHT)
-                .withPayloadKey(event.payloadKey , EventQuery.PAYLOAD_KEY_WEIGHT)
+                .withTraceId(event.getTraceId() , isDevtoolRequest ? EventQuery.TRACEID_WEIGHT : null)
+                .withPayloadKey(event.payloadKey , isDevtoolRequest ? EventQuery.PAYLOAD_KEY_WEIGHT : null)
                 .withOffset(offset)
                 .withSortOrderAsc(isSortOrderAsc)
                 .withPayloadFields(payloadFields)
@@ -223,7 +223,7 @@ public class RealMocker implements Mocker {
     }
 
     private Optional<Event> createResponseFromEvent(
-        Event mockRequestEvent, Optional<Event> matchedReq ,  Optional<Event> respEvent, String runId) {
+        Event mockRequestEvent, Optional<Event> matchedReq ,  Optional<Event> respEvent, String runId , boolean isDevtoolRequest) {
 
         Optional<Event> mockResponse = respEvent;
 
@@ -231,7 +231,7 @@ public class RealMocker implements Mocker {
 
             Optional<String> score  = matchedReq.flatMap(e->e.getMetaFieldValue(Constants.SCORE_FIELD));
             MatchType reqMatch = score.flatMap(Utils::strToFloat).map(val->{
-                return EventQuery.getEventMaxWeight() == val ? MatchType.ExactMatch : MatchType.FuzzyMatch;
+                return isDevtoolRequest ? (EventQuery.getEventMaxWeight() == val ? MatchType.ExactMatch : MatchType.FuzzyMatch) : MatchType.ExactMatch ;
             }).orElse(MatchType.NoMatch);
 
             Map<String,String> meta = new HashMap<>();
