@@ -1303,7 +1303,6 @@ class HttpClientTabs extends Component {
         let apiPath = tabToSave.httpURL;
         if(httpRequestEvent.reqId === "NA") {
             const parsedUrl = urlParser(applyEnvVarsToUrl(tabToSave.httpURL), PLATFORM_ELECTRON ? {} : true);
-            apiPath = generateApiPath(parsedUrl);
             let service = parsedUrl.host || "NA";
             httpRequestEvent = this.updateHttpEvent(apiPath, service, httpRequestEvent);
             httpResponseEvent = this.updateHttpEvent(apiPath, service, httpResponseEvent);
