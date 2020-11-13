@@ -27,6 +27,7 @@ import io.md.dao.ReqRespMatchResult;
 import io.md.dao.ReqRespUpdateOperation;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.utils.Constants;
+import io.md.utils.UtilException;
 
 import com.cube.core.ServerUtils;
 import com.cube.dao.AnalysisMatchResultQuery;
@@ -180,9 +181,9 @@ public class RecordingUpdate {
                 Event recordRequest = res.recordReqId.flatMap(config.rrstore::getRequestEvent)
                     .orElseThrow(() -> new Exception("Unable to fetch recorded request :: "
                         + res.recordReqId.orElse(Constants.NOT_PRESENT)));
-                Event recordResponse = res.recordReqId.flatMap(config.rrstore::getResponseEvent)
-                    .orElseThrow(() -> new Exception("Unable to fetch recorded response :: "
-                        + res.recordReqId.orElse(Constants.NOT_PRESENT)));
+                Optional<Event> recordResponseOpt = res.recordReqId.flatMap(config.rrstore::getResponseEvent);
+                    /*.orElseThrow(() -> new Exception("Unable to fetch recorded response :: "
+                        + res.recordReqId.orElse(Constants.NOT_PRESENT)));*/
 
                 Optional<Event> replayRequest = res.replayReqId.flatMap(config.rrstore
                     ::getRequestEvent);
@@ -202,9 +203,10 @@ public class RecordingUpdate {
                 List<ReqRespUpdateOperation> reqOperationList = operationTypeVsList.get(true);
                 List<ReqRespUpdateOperation> responseOperationList = operationTypeVsList.get(false);
 
-                String newReqId = generateReqId(recordResponse.reqId, newCollectionName);
-                Event transformedResponse = recordResponse.applyTransform(replayResponse
-                    , responseOperationList,  newCollectionName, newReqId, Optional.empty());
+                String newReqId = generateReqId(recordRequest.reqId, newCollectionName);
+                Optional<Event> transformedResponseOpt = recordResponseOpt.map(UtilException
+                    .rethrowFunction(recordResponse -> recordResponse.applyTransform(replayResponse
+                    , responseOperationList,  newCollectionName, newReqId, Optional.empty())));
 
                 TemplateKey key = new TemplateKey(newTemplateSetVersion, originalRec.customerId,
                     originalRec.app, recordRequest.service, recordRequest.apiPath,
@@ -220,20 +222,20 @@ public class RecordingUpdate {
 
                 LOGGER.debug(new ObjectMessage(Map.of(
                     Constants.MESSAGE, "Saving transformed request/response",
-                    Constants.REQ_ID_FIELD, Optional.ofNullable(transformedResponse.reqId)
+                    Constants.REQ_ID_FIELD, Optional.ofNullable(newReqId)
                         .orElse(Constants.NOT_PRESENT))));
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE
                     , "Saving transformed request/response",
                     Constants.RECORD_REQ_ID_FIELD, res.recordReqId.orElse(Constants.NOT_PRESENT)
                     , Constants.REPLAY_REQ_ID_FIELD, res.replayReqId.orElse(Constants.NOT_PRESENT),
                     Constants.REPLAY_ID_FIELD, res.replayId, Constants.REQ_ID_FIELD, Optional
-                        .ofNullable(transformedResponse.reqId).orElse(Constants.NOT_PRESENT),
+                        .ofNullable(newReqId).orElse(Constants.NOT_PRESENT),
                     Constants.RECORDING_UPDATE_OPERATION_SET_ID, recordingOperationSetId
                     /*, Constants.PAYLOAD, Optional.ofNullable(transformedResponse.rawPayloadString)
                         .orElse(Constants.NOT_PRESENT)*/)));
 
-                boolean saved = config.rrstore.save(transformedRequest) && config.rrstore
-                    .save(transformedResponse);
+                boolean saved = config.rrstore.save(transformedRequest) && transformedResponseOpt.map(
+                    config.rrstore::save).orElse(true);
                 if (!saved) {
                     LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
                         , "Error in saving transformed request/response"
@@ -241,7 +243,7 @@ public class RecordingUpdate {
                             .orElse(Constants.NOT_PRESENT), Constants.REPLAY_REQ_ID_FIELD,
                         res.replayReqId.orElse(Constants.NOT_PRESENT),
                         Constants.REPLAY_ID_FIELD, res.replayId, Constants.REQ_ID_FIELD, Optional
-                            .ofNullable(transformedResponse.reqId).orElse(Constants.NOT_PRESENT),
+                            .of(newReqId).orElse(Constants.NOT_PRESENT),
                         Constants.RECORDING_UPDATE_OPERATION_SET_ID, recordingOperationSetId/*,
                         Constants.PAYLOAD, Optional.ofNullable(transformedResponse.rawPayloadString)
                             .orElse(Constants.NOT_PRESENT)*/)));
