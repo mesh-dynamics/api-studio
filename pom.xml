@@ -62,9 +62,9 @@
                       <mainClass>com.cubeui.personalEmailDomains.AddPersonalEmailDomains</mainClass>
                    </manifest>
                 </archive>
-                <descriptorRefs>
-                    <descriptorRef>personalEmailDomains-jar-with-dependencies</descriptorRef>
-                </descriptorRefs>
+                <descriptors>
+                    <descriptor>src/main/java/assembly/personalEmailDomains.xml</descriptor>
+                </descriptors>
                 <finalName>cubeui-backend-personalEmailDomains-${project.version}</finalName>
             </configuration>
             <phase>package</phase>
