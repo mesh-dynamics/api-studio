@@ -42,12 +42,15 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -290,6 +293,7 @@ public class CustomerService {
         return Optional.of(movieInfo);
     }
 
+    @Async
     private void createSampleCollectionForCustomer(Customer customer, App app) {
         String query =  String.format("customerId=%s&app=%s&golden_name=%s&recordingType=%s&archived=%s",
             "CubeCorp", "MovieInfo", "SampleCollection", RecordingType.Golden.toString(), false);
@@ -330,7 +334,12 @@ public class CustomerService {
                        cubeServerService.fetchPostResponse(httpServletRequest, Optional.of(eventBatch), "/cs/storeEventBatch",
                             Constants.APPLICATION_X_NDJSON);
                     }
-                    cubeServerService.fetchPostResponse(httpServletRequest, Optional.empty(), "/cs/stop/"+ newRecording.getId());
+                    try {
+                        TimeUnit.SECONDS.sleep(20);
+                    } catch (InterruptedException ie) {
+                        log.error("Error while sleeping the thread", ie.getMessage());
+                    }
+                    cubeServerService.fetchPostResponse(httpServletRequest, Optional.empty(), "/cs/stop/"+ newRecording.getId(), MediaType.APPLICATION_FORM_URLENCODED);
                 });
             });
         });
