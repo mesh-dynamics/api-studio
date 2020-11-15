@@ -3339,6 +3339,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     public boolean deleteEventsByCollection(List<String> collections) {
+        if(collections.isEmpty()){
+            return false;
+        }
         StringBuffer queryBuff = new StringBuffer();
         addToQryStr(queryBuff , COLLECTIONF , collections ,false, Optional.empty());
         addToQryStr(queryBuff , TYPEF , Types.Event.name(), false);
@@ -3347,6 +3350,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public boolean deleteAllReplayData(List<Replay> replays) {
+        if(replays.isEmpty()){
+            return false;
+        }
         StringBuffer queryBuff = new StringBuffer();
         List<String> replayIds = replays.stream().map(replay -> replay.replayId).collect(Collectors.toList());
         addToQryStr(queryBuff , REPLAYIDF ,  replayIds ,false, Optional.empty());
@@ -3362,6 +3368,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public boolean deleteAllAnalysisData(List<String> replayIds) {
+        if(replayIds.isEmpty()){
+            return false;
+        }
         StringBuffer queryBuff = new StringBuffer();
         addToQryStr(queryBuff , REPLAYIDF ,  replayIds ,false, Optional.empty());
         addToQryStr(queryBuff , TYPEF ,
