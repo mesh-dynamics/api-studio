@@ -346,6 +346,7 @@ public class CustomerService {
             event.eventType, event.recordingType).withRunId(event.runId);
         eventBuilder.setPayload(event.payload);
         eventBuilder.withMetaData(event.metaData);
+        eventBuilder.withPayloadFields(event.payloadFields);
         return eventBuilder.createEvent();
     }
 }
