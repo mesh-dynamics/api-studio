@@ -49,6 +49,7 @@ public class CollectionCreationService {
       builder.withCollection(recording.collection);
       Optional<List<Event>>  responseEvents = cubeServerService.getEvents(builder.build(), httpServletRequest);
       responseEvents.ifPresent(events -> {
+        String instanceId = customer.getName().concat("-initial");
         MultiValueMap<String, String> formParams = new LinkedMultiValueMap<>();
         formParams.set("name", recording.name);
         formParams.set("label", new Date().toString());
@@ -56,7 +57,7 @@ public class CollectionCreationService {
         formParams.set("recordingType", RecordingType.Golden.toString());
         ResponseEntity responseEntity = cubeServerService
             .createRecording(httpServletRequest,
-                customer.getName(), app.getName(), customer.getName().concat("-initial"),
+                customer.getName(), app.getName(), instanceId,
                 Optional.of(formParams));
         Optional<Recording> newRecordingOptional = cubeServerService
             .getRecordingFromResponseEntity(responseEntity, query);
@@ -65,7 +66,7 @@ public class CollectionCreationService {
           String timestamp = Instant.now().toString();
           events.stream().parallel().forEach(event -> {
             try {
-              Event newEvent = createEvent(event, customer.getName(), newRecording.collection, timestamp);
+              Event newEvent = createEvent(event, customer.getName(), newRecording.collection, timestamp, instanceId);
               Map<String, Event> map = Map.of("cubeEvent",newEvent);
               eventBatchBuilder.append(jsonMapper.writeValueAsString(map)).append("\n");
             } catch (InvalidEventException e) {
@@ -84,11 +85,11 @@ public class CollectionCreationService {
     });
 
   }
-  private Event createEvent(Event event, String customerId, String collection, String timestamp)
+  private Event createEvent(Event event, String customerId, String collection, String timestamp, String instanceId)
       throws InvalidEventException {
     final String reqId = event.reqId.concat("-").concat(timestamp);
     EventBuilder eventBuilder = new EventBuilder(customerId, event.app,
-        event.service, customerId.concat("-initial"), collection,
+        event.service, instanceId, collection,
         new MDTraceInfo(event.getTraceId(), event.spanId, event.parentSpanId),
         event.getRunType(), Optional.of(Instant.now()), reqId, event.apiPath,
         event.eventType, event.recordingType).withRunId(event.runId);
