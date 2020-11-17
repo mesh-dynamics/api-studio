@@ -74,10 +74,14 @@ class TestReport extends Component {
             return;
         }
     
+        // paths to filter: we need results only for paths in the current test
         // if the exclude paths flag is true, no filter on the paths is needed since they won't be present
         const testPaths = replayStatus.excludePaths ? [] : replayStatus.paths;
+        let paths = timelineResults.timelineResults[0].results.map(r => r.path)  // current test paths
+        paths = paths.filter(p => testPaths.includes(p))
+        
         // transform the results data
-        const processedTimelineData = processTimelineData(timelineResults, testPaths); 
+        const processedTimelineData = processTimelineData(timelineResults, paths); 
         const pathTableData = generatePathTableData(processedTimelineData, replayId);
 
         this.setState({
