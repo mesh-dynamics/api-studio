@@ -1118,7 +1118,7 @@ class HttpClientTabs extends Component {
             fetchConfig["body"] = httpRequestBody;
         }
 
-        dispatch(httpClientActions.preDriveRequest(tabId, "WAITING...", false));
+        dispatch(httpClientActions.preDriveRequest(tabId, "WAITING...", false, runId));
         dispatch(httpClientActions.setReqRunning(tabId));
 
 
@@ -1157,7 +1157,7 @@ class HttpClientTabs extends Component {
             catch(error){
                 this.showErrorAlert(`${e}`); // prompt user for error in env vars
                 dispatch(httpClientActions.postErrorDriveRequest(tabId, error.message));
-                dispatch(httpClientActions.unsetReqRunning(tabId));
+                dispatch(httpClientActions.unsetReqRunning(tabId, runId));
                 return
             }
         }
@@ -1180,12 +1180,12 @@ class HttpClientTabs extends Component {
             // handle success
             dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), data));
             this.saveToHistoryAndLoadTrace(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp, httpRequestURLRendered, currentEnvironment);
-            //dispatch(httpClientActions.unsetReqRunning(tabId))
+            //dispatch(httpClientActions.unsetReqRunning(tabId, runId))
         })
         .catch((error) => {
             console.error(error);
             dispatch(httpClientActions.postErrorDriveRequest(tabId, error.message));
-            dispatch(httpClientActions.unsetReqRunning(tabId));
+            dispatch(httpClientActions.unsetReqRunning(tabId, runId));
             if(error.message !== commonConstants.USER_ABORT_MESSAGE){                
                 this.showErrorAlert(`Could not get any response. There was an error connecting: ${error}`);
             }
@@ -1443,13 +1443,13 @@ class HttpClientTabs extends Component {
                             }
                         }, 2000);
                     }, (error) => {
-                        dispatch(httpClientActions.unsetReqRunning(tabId));
+                        dispatch(httpClientActions.unsetReqRunning(tabId, runId));
                         console.error("error: ", error);
                     })
             } 
         } catch (error) {
             console.error("Error ", error);
-            dispatch(httpClientActions.unsetReqRunning(tabId));
+            dispatch(httpClientActions.unsetReqRunning(tabId, runId));
             throw new Error(error);
         }        
     }
@@ -1600,14 +1600,14 @@ class HttpClientTabs extends Component {
                                     ingressReqObj.outgoingRequests.push(reqObject);
                                 }
                             }
-                            dispatch(httpClientActions.postSuccessLoadRecordedHistory(tabId, ingressReqObj));
-                            if(!isRefetchTrace) dispatch(httpClientActions.unsetReqRunning(tabId));
+                            dispatch(httpClientActions.postSuccessLoadRecordedHistory(tabId, ingressReqObj, runId));
+                            if(!isRefetchTrace) dispatch(httpClientActions.unsetReqRunning(tabId, runId));
                         }
                     });
                 }
             }, (err) => {
                 console.error("err: ", err);
-                dispatch(httpClientActions.unsetReqRunning(tabId));
+                dispatch(httpClientActions.unsetReqRunning(tabId, runId));
             })
     }
 

@@ -413,6 +413,7 @@ export interface IHttpClientTabDetails {
   requestRunning: boolean;
   abortRequest: any; //2
   selectedTraceTableTestReqTabId: string;
+  currentRunId: string;
   hasChanged: boolean;
   isHighlighted: boolean;
 }

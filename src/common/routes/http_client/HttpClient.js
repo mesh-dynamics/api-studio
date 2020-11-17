@@ -726,7 +726,7 @@ class HttpClient extends Component {
                         <div style={{display: "flex",  minHeight: (selectedTraceTableReqTab.paramsType == "body" ?'200px': '50px'), overflowY: "auto"}} 
                             ref={e=> (!this.state.httpRequestRef && this.setState({httpRequestRef : e}))}
                             >
-                            <div style={{flex: "1", padding: "0.5rem", height:'100%'}}>
+                            <div style={{flex: "1", padding: "0.5rem", height:'100%', minWidth: "0px"}}>
                             <HttpRequestFields 
                                 // Remove not required props
                                     tabId={selectedTraceTableReqTab.id}
@@ -748,7 +748,7 @@ class HttpClient extends Component {
                                     readOnly={false}
                                 />
                                 </div>
-                            <div style={{flex: "1", padding: "0.5rem", height:'100%'}}>
+                            <div style={{flex: "1", padding: "0.5rem", height:'100%', minWidth: "0px"}}>
                             {selectedTraceTableReqTab && selectedTraceTableTestReqTab && (
                             <HttpRequestFields 
                                 // Remove not required props
