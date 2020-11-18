@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.ws.rs.core.Response;
 
+import io.cube.agent.logger.CubeDeployment;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -51,6 +52,7 @@ import io.md.tracer.MDGlobalTracer;
 import io.md.tracer.MDTextMapCodec;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
+import org.slf4j.event.Level;
 
 
 public class CommonConfig {
@@ -124,6 +126,11 @@ public class CommonConfig {
 	private CloseableHttpClient httpClient;
 	static protected ObjectMapper jsonMapper = new ObjectMapper();
 	public static Map<String, String> clientMetaDataMap = new HashMap<>();
+
+	//Websocket Logger Related
+	public static Optional<String> loggerWsUri = Optional.empty();
+	public static Optional<Boolean> loggingEnabled = Optional.empty();
+	public static Optional<String> loggingLevel = Optional.empty();
 
 	static {
 
@@ -203,6 +210,13 @@ public class CommonConfig {
 					TimeUnit.SECONDS);
 			LOGGER.info("CommonConfig fetchConfig thread scheduled!!");
 			isFetchThreadInit = true;
+
+			//Todo : completable future then
+
+			//Todo: populate loggerWsUri
+			loggerWsUri = Optional.of("ws://localhost:8083/api/logStore");
+			loggingEnabled = Optional.of(true);
+			loggingLevel = Optional.of(Level.TRACE.toString());
 
 		}
 	}
