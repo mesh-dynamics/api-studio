@@ -32,12 +32,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
                 .authorizeRequests()
-                //.antMatchers("/gaurav").permitAll()
                 .antMatchers("/api/health").permitAll()
-                .antMatchers("/api/login").permitAll()
-                .antMatchers("/api/token").permitAll()
-                .antMatchers("/api/config/get").permitAll()
-                .antMatchers("/api/account/**").permitAll()
                 .anyRequest().authenticated()
             .and()
             .apply(new JwtConfigurer(jwtTokenValidator));

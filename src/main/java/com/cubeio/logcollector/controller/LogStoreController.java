@@ -4,7 +4,6 @@ import com.cubeio.logcollector.domain.DTO.LogStoreDTO;
 import com.cubeio.logcollector.security.Validation;
 
 import com.cubeio.logcollector.utils.LogUtils;
-import org.apache.logging.log4j.message.ObjectMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,10 +12,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Map;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/logStore")
+@RequestMapping("/api")
 public class LogStoreController {
 
 
@@ -31,14 +30,14 @@ public class LogStoreController {
     return ResponseEntity.ok("LogStoreController OK");
   }
 
-  @PostMapping("/{customerId}")
+  @PostMapping("/logStore/{customerId}")
   public ResponseEntity postLogData(HttpServletRequest request, @RequestBody LogStoreDTO postBody,
       @PathVariable String customerId, Authentication authentication) {
 
     validation.validateCustomerName(authentication, customerId);
 
     postBody.customerId = customerId;
-    LogUtils.log(LOGGER , postBody);
+    LogUtils.log(LOGGER , postBody , Optional.empty());
 
     return ResponseEntity.ok("Data added");
   }

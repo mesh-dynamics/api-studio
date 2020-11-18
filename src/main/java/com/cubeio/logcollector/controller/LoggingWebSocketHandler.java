@@ -17,7 +17,7 @@ import java.util.Optional;
 @Component
 public class LoggingWebSocketHandler extends AbstractWebSocketHandler {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(LoggingWebSocketHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoggingWebSocketHandler.class);
 
     private final TextConverter textConverter = new TextConverter();
     private final BinaryMsgPackConverter msgPackConverter = new BinaryMsgPackConverter();
@@ -33,8 +33,8 @@ public class LoggingWebSocketHandler extends AbstractWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession webSocketSession) throws Exception {
 
-        LOGGER.info("Connection established %s" + webSocketSession.getId() );
-        print( "headers" , webSocketSession.getHandshakeHeaders());   //Todo
+        LOGGER.info("Connection established {} remote {}" , webSocketSession.getId(), webSocketSession.getRemoteAddress() );
+        //print( "headers" , webSocketSession.getHandshakeHeaders());
 
     }
 
@@ -59,20 +59,13 @@ public class LoggingWebSocketHandler extends AbstractWebSocketHandler {
 
     private void logDTO(LogStoreDTO dto , WebSocketSession session){
 
-
-        Object objectMessage = new ObjectMessage(Map.of("customerId", dto.customerId,
-                "app", dto.app, "instance", dto.instance, "service", dto.service,
-                "version", dto.version, "sourceType", dto.sourceType,
-                "logMessage", dto.logMessage, "clientTimeStamp", dto.clientTimeStamp,
-                "sessionId" , session.getId()));
-
-        LogUtils.log(LOGGER , dto.level , objectMessage);
-
-
+        Map<String , Object> meta = Map.of("sessionId" , session.getId() , "remote" , session.getRemoteAddress().toString());
+        LogUtils.log(LOGGER , dto , Optional.of(meta));
     }
 
     private void logString(String message , WebSocketSession session ) {
-        LOGGER.error(String.format("logMessage:%s sessionId:%s" , message , session.getId()));
+        //LOGGER.error(String.format("logMessage:%s sessionId:%s" , message , session.getId()));
+        LOGGER.error("logMessage:{} sessionId:{}" , message , session.getId());
     }
 
 
@@ -80,12 +73,14 @@ public class LoggingWebSocketHandler extends AbstractWebSocketHandler {
     public void handleTransportError(WebSocketSession webSocketSession, Throwable throwable) throws Exception {
 
         LOGGER.error("TransportError "+webSocketSession.getId() ,  throwable);
+
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession webSocketSession, CloseStatus closeStatus) throws Exception {
 
-        LOGGER.warn( String.format("Connection closed %s %s" , webSocketSession.getId() , closeStatus.toString()));
+        //LOGGER.warn( String.format("Connection closed %s %s" , ));
+        LOGGER.warn("Connection closed {} {}" , webSocketSession.getId() , closeStatus.toString());
     }
 
     @Override

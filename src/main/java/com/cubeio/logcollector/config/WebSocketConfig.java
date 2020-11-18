@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.annotation.*;
-import org.springframework.web.socket.handler.LoggingWebSocketHandlerDecorator;
 
 @Configuration
 @EnableWebSocket
@@ -21,7 +20,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
 	@Bean
 	public WebSocketHandler loggingWSHandler() {
-		return new LoggingWebSocketHandlerDecorator(new LoggingWebSocketHandler());
+		return new LoggingWebSocketHandler();
 	}
 }
 
