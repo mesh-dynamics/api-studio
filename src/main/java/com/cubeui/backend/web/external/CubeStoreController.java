@@ -249,6 +249,45 @@ public class CubeStoreController {
         @RequestParam(value="environmentName", required = false) String environmentName,
         Authentication authentication)
         throws InvalidEventException {
+        ResponseEntity responseEntity = saveReqRespEvents(request, postBody, recordingId, authentication, "/cs/afterResponse/");;
+        User user = (User) authentication.getPrincipal();
+        if(environmentName != null && responseEntity.getStatusCode() == HttpStatus.OK) {
+            Optional<DtEnvironment> dtEnvironmentOptional
+                = devtoolEnvironmentsRepository.findDtEnvironmentByUserIdAndName(user.getId(), environmentName);
+            dtEnvironmentOptional.ifPresent(dt -> {
+                Map<String, String> extractionMap = cubeServerService.getExtractionMap(responseEntity);
+                List<DtEnvVar> vars = dt.getVars();
+                Map<String, String> varsMap = new HashMap<>();
+                vars.forEach(dtEnvVar -> {
+                    varsMap.put(dtEnvVar.getKey(), dtEnvVar.getValue());
+                });
+                varsMap.putAll(extractionMap);
+                List<DtEnvVar> updatedVars = new ArrayList<>();
+                varsMap.forEach((key, value) -> {
+                    DtEnvVar dtEnvVar = new DtEnvVar();
+                    dtEnvVar.setKey(key);
+                    dtEnvVar.setValue(value);
+                    dtEnvVar.setEnvironment(dt);
+                    updatedVars.add(dtEnvVar);
+                });
+                dt.setVars(updatedVars);
+                devtoolEnvironmentsRepository.save(dt);
+            });
+
+        }
+        return responseEntity;
+    }
+
+    @PostMapping("/storeUserReqResp/{recordingId}")
+    public ResponseEntity storeUserReqResp(HttpServletRequest request,
+        @RequestBody List<UserReqRespContainer> postBody, @PathVariable String recordingId,
+        Authentication authentication) throws InvalidEventException {
+        return saveReqRespEvents(request, postBody, recordingId, authentication, "/cs/storeUserReqResp/");
+    }
+
+    private ResponseEntity saveReqRespEvents(HttpServletRequest request, List<UserReqRespContainer> postBody,
+        String recordingId, Authentication authentication, String path)
+        throws InvalidEventException {
         if(postBody == null || postBody.size() < 1) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body("post Body cannot be null or empty" + recordingId);
@@ -287,41 +326,7 @@ public class CubeStoreController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body("No Recording Object found for recordingId=" + recordingId);
         validation.validateCustomerName(authentication,recording.get().customerId);
-        ResponseEntity responseEntity = cubeServerService.fetchPostResponse(request, Optional.of(postBody), "/cs/afterResponse/" + recording.get().id);
-        if(environmentName != null && responseEntity.getStatusCode() == HttpStatus.OK) {
-            Optional<DtEnvironment> dtEnvironmentOptional
-                = devtoolEnvironmentsRepository.findDtEnvironmentByUserIdAndName(user.getId(), environmentName);
-            dtEnvironmentOptional.ifPresent(dt -> {
-                Map<String, String> extractionMap = cubeServerService.getExtractionMap(responseEntity);
-                List<DtEnvVar> vars = dt.getVars();
-                Map<String, String> varsMap = new HashMap<>();
-                vars.forEach(dtEnvVar -> {
-                    varsMap.put(dtEnvVar.getKey(), dtEnvVar.getValue());
-                });
-                varsMap.putAll(extractionMap);
-                List<DtEnvVar> updatedVars = new ArrayList<>();
-                varsMap.forEach((key, value) -> {
-                    DtEnvVar dtEnvVar = new DtEnvVar();
-                    dtEnvVar.setKey(key);
-                    dtEnvVar.setValue(value);
-                    dtEnvVar.setEnvironment(dt);
-                    updatedVars.add(dtEnvVar);
-                });
-                dt.setVars(updatedVars);
-                devtoolEnvironmentsRepository.save(dt);
-            });
-
-        }
-        return responseEntity;
-    }
-
-    @PostMapping("/storeUserReqResp/{recordingId}")
-    public ResponseEntity storeUserReqResp(HttpServletRequest request,
-        @RequestBody List<UserReqRespContainer> postBody, @PathVariable String recordingId,
-        @RequestParam(value="environmentName", required = false) String environmentName,
-        Authentication authentication)
-        throws InvalidEventException {
-        return afterResponse(request, postBody, recordingId, environmentName, authentication);
+        return  cubeServerService.fetchPostResponse(request, Optional.of(postBody), path.concat(recording.get().id));
     }
 
     @GetMapping("/status/{recordingId}")
