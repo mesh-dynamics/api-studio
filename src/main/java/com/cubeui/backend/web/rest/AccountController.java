@@ -117,7 +117,7 @@ public class AccountController {
                 customerDTO.setEmail(userDTO.getEmail());
                 customerDTO.setName(customerName);
 
-                customerOptional = Optional.of(this.customerService.save(customerDTO));
+                customerOptional = Optional.of(this.customerService.save(request, customerDTO));
             }
             Customer customer = customerOptional.orElseThrow(() -> {
                 log.error("Invalid email");
@@ -134,21 +134,7 @@ public class AccountController {
             // save user
             User saved = this.userService.save(userDTO, false, true);
 
-            MultiValueMap<String, String> formParams= new LinkedMultiValueMap<>();
-            formParams.set("name", "History-" + saved.getUsername());
-            formParams.set("label", new Date().toString());
-            formParams.set("userId", saved.getUsername());
-            formParams.set("recordingType", RecordingType.History.toString());
-
-            Optional<List<App>> appsOptional = this.appRepository.findByCustomerId(customer.getId());
-            if (appsOptional.isPresent()) {
-                List<App> apps = appsOptional.get();
-                apps.forEach(app -> {
-                    cubeServerService.createRecording(request,
-                        customerName, app.getName(),
-                        saved.getUsername(),Optional.of(formParams));
-                });
-            }
+            userService.createHistoryForEachApp(request, saved);
 
             // send activation mail
             log.info("Sending activation mail");
