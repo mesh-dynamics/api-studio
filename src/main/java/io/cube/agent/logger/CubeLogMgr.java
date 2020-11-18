@@ -48,7 +48,7 @@ public class CubeLogMgr {
             String uri = CommonConfig.loggerWsUri.get();
             token = authToken.get();
             try{
-                client = CubeWsClient.create(uri , token);
+                client = CubeWsClient.create(uri , token , CommonConfig.customerId);
                 client.connect();
 
             }catch (Exception e){
@@ -56,7 +56,7 @@ public class CubeLogMgr {
                 LOGGER.error("CubeWsClient create error ", e);
             }
             //Set the logging level
-            CommonConfig.loggingLevel.flatMap(l->LogUtils.safeExe(Level::valueOf , l)).ifPresent(level->{logLevel = level;});
+            CommonConfig.loggingLevel.map(String::toUpperCase).flatMap(l->LogUtils.safeExe(Level::valueOf , l)).ifPresent(level->{logLevel = level;});
             cubeDeployment = new CubeDeployment(CommonConfig.app , CommonConfig.instance , CommonConfig.serviceName , CommonConfig.customerId , CommonConfig.version);
         }
     }

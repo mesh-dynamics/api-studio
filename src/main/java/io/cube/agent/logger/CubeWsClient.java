@@ -1,5 +1,6 @@
 package io.cube.agent.logger;
 
+import io.cube.agent.Constants;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.enums.ReadyState;
 import org.java_websocket.handshake.ServerHandshake;
@@ -26,7 +27,7 @@ public class CubeWsClient extends WebSocketClient {
     private boolean hasConnectedOnce = false;
 
 
-    public static CubeWsClient create(String uri , String token) throws URISyntaxException {
+    public static CubeWsClient create(String uri , String token , String customerId) throws URISyntaxException {
 
         URI serverUri = new URI(uri);
         // check the protocol and other things
@@ -35,7 +36,8 @@ public class CubeWsClient extends WebSocketClient {
         }
 
         Map<String , String> authHeaders = new HashMap<>();
-        authHeaders.put(io.cube.agent.Constants.AUTHORIZATION_HEADER , token.startsWith("Bearer") ? token : "Bearer "+token);
+        authHeaders.put(Constants.AUTHORIZATION_HEADER , token.startsWith("Bearer") ? token : "Bearer "+token);
+        authHeaders.put(Constants.CUSTOMERID_HEADER , customerId);
 
         return new CubeWsClient(serverUri , authHeaders);
     }

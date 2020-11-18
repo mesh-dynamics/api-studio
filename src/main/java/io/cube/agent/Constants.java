@@ -19,9 +19,18 @@ public class Constants {
 	public static final String SAMPLER_CONF_PROP = "io.md.samplerconfig";
 	public static final String SERVICES_TO_MOCK_PROP = "io.md.mock.services";
 	public static final String AUTH_TOKEN_PROP = "io.md.authtoken";
+	public static final String CUSTOMERID_HEADER = "CustomerId";
 	public static final String AUTHORIZATION_HEADER = "Authorization";
 	public static final String RING_BUFFER_SIZE_PROP = "io.md.disruptor.size";
-	
+
+	//Logger Related
+	public static final String MD_LOGGERCONFIG_URI = "io.md.logger.uri";
+	public static final String MD_LOGGERCONFIG_ENABLE = "io.md.logger.enable";
+	public static final String MD_LOGGERCONFIG_LEVEL = "io.md.logger.level";
+
+
+
+
 	public static final String RING_BUFFER_OUTPUT_PROP = "io.md.disruptor.output.type";
 	public static final String RING_BUFFER_OUTPUT_FILE_NAME = "io.md.disruptor.output.file.name";
 	public static final String DISRUPTOR_LOG_FILE_MAX_SIZE_PROP = "io.md.disruptor.output.file.maxsizebytes";

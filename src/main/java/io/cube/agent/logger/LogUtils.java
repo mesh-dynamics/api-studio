@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Optional;
 import java.util.function.Function;
 
-class LogUtils {
+public class LogUtils {
     private static Logger LOGGER = LoggerFactory.getLogger(LogUtils.class);
 
     private static ObjectMapper mapper = ObjectMapperProvider.getInstance();

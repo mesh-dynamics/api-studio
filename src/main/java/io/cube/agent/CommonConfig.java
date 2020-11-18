@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.ws.rs.core.Response;
 
-import io.cube.agent.logger.CubeDeployment;
+import io.cube.agent.logger.LogUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -52,8 +52,8 @@ import io.md.tracer.MDGlobalTracer;
 import io.md.tracer.MDTextMapCodec;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
-import org.slf4j.event.Level;
 
+import static io.cube.agent.Constants.*;
 
 public class CommonConfig {
 
@@ -170,14 +170,14 @@ public class CommonConfig {
 		}
 
 		boolean isServerPolling = envSysStaticConf
-			.getBoolean(io.cube.agent.Constants.MD_POLLINGCONFIG_POLLSERVER);
+			.getBoolean(MD_POLLINGCONFIG_POLLSERVER);
 
 		// This is only for developer user case allowing polling properties from file
 		// When polling from file the polling from cubeio will not be enabled.
 		try {
 			String dynamicConfigFilePath = envSysStaticConf
-				.getString(io.cube.agent.Constants.MD_POLLINGCONFIG_FILEPATH);
-			int delay = envSysStaticConf.getInt(io.cube.agent.Constants.MD_POLLINGCONFIG_DELAY);
+				.getString(MD_POLLINGCONFIG_FILEPATH);
+			int delay = envSysStaticConf.getInt(MD_POLLINGCONFIG_DELAY);
 			serviceExecutor = Executors.newScheduledThreadPool(1);
 			serviceExecutor
 				.scheduleWithFixedDelay(new FileConfigUpdater(dynamicConfigFilePath), 0, delay,
@@ -195,13 +195,13 @@ public class CommonConfig {
 				.getString(Constants.MD_SERVICE_ENDPOINT_PROP));
 
 			fetchConfigApiURI = new URIBuilder(URI.create(cubeServiceEndPoint)
-				.resolve(io.cube.agent.Constants.MD_FETCH_AGENT_CONFIG_API_PATH)).toString();
+				.resolve(MD_FETCH_AGENT_CONFIG_API_PATH)).toString();
 
 			ackConfigApiURI = new URIBuilder(URI.create(cubeServiceEndPoint)
-				.resolve(io.cube.agent.Constants.MD_ACK_CONFIG_API_PATH)).toString();
+				.resolve(MD_ACK_CONFIG_API_PATH)).toString();
 
-			fetchDelay = envSysStaticConf.getInt(io.cube.agent.Constants.MD_POLLINGCONFIG_DELAY);
-			fetchConfigRetryCount = envSysStaticConf.getInt(io.cube.agent.Constants.MD_POLLINGCONFIG_RETRYCOUNT);
+			fetchDelay = envSysStaticConf.getInt(MD_POLLINGCONFIG_DELAY);
+			fetchConfigRetryCount = envSysStaticConf.getInt(MD_POLLINGCONFIG_RETRYCOUNT);
 
 			serviceExecutor = Executors.newScheduledThreadPool(1);
 			fetchConfigFuture = serviceExecutor
@@ -211,14 +211,10 @@ public class CommonConfig {
 			LOGGER.info("CommonConfig fetchConfig thread scheduled!!");
 			isFetchThreadInit = true;
 
-			//Todo : completable future then
-
-			//Todo: populate loggerWsUri
-			loggerWsUri = Optional.of("ws://localhost:8083/api/logStore");
-			loggingEnabled = Optional.of(true);
-			loggingLevel = Optional.of(Level.TRACE.toString());
-
 		}
+		loggerWsUri = LogUtils.safeExe(envSysStaticConf::getString, MD_LOGGERCONFIG_URI);
+		loggingEnabled = LogUtils.safeExe(envSysStaticConf::getBoolean, MD_LOGGERCONFIG_ENABLE);
+		loggingLevel = LogUtils.safeExe(envSysStaticConf::getString, MD_LOGGERCONFIG_LEVEL);
 	}
 
 	private static void initClientMetaDataMap() {
