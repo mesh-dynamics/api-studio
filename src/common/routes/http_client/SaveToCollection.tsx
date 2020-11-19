@@ -1,33 +1,58 @@
 import React from "react";
 import { connect } from "react-redux";
-import { FormControl, FormGroup, Modal, Glyphicon } from "react-bootstrap";
+import {
+  FormControl,
+  FormGroup,
+  Modal,
+  Glyphicon,
+  MenuItem,
+  Button,
+  Dropdown,
+} from "react-bootstrap";
 
 import { httpClientActions } from "../../actions/httpClientActions";
 import CreateCollection from "./CreateCollection";
 import { cubeService } from "../../services";
-import { ICollectionDetails, IEventData, IHttpClientStoreState, IHttpClientTabDetails, IStoreState } from "../../reducers/state.types";
+import {
+  ICollectionDetails,
+  IEventData,
+  IHttpClientStoreState,
+  IHttpClientTabDetails,
+  IStoreState,
+} from "../../reducers/state.types";
 
-export declare type GetReqResFromTabDataHandler = (eachPair: IEventData[], tabToSave: IHttpClientTabDetails, runId: string, type: string, reqTimestamp?:string, resTimestamp?:string, urlEnvVal?: string, currentEnvironment?: string) => void;
+export declare type GetReqResFromTabDataHandler = (
+  eachPair: IEventData[],
+  tabToSave: IHttpClientTabDetails,
+  runId: string,
+  type: string,
+  reqTimestamp?: string,
+  resTimestamp?: string,
+  urlEnvVal?: string,
+  currentEnvironment?: string
+) => void;
 
-export interface ISaveToCollectionProps{
-
-  goldenList: ICollectionDetails[],
-  httpClient: IHttpClientStoreState,
+export interface ISaveToCollectionProps {
+  goldenList: ICollectionDetails[];
+  httpClient: IHttpClientStoreState;
   tabId: string;
   visible: boolean;
   disabled: boolean;
   getReqResFromTabData: GetReqResFromTabDataHandler;
   dispatch: any; //Need to check proper type for dispatch
 }
-export interface ISaveToCollectionState{
-  showModal: boolean,
-  showSaveStatusModal: boolean,
+export interface ISaveToCollectionState {
+  showModal: boolean;
+  showSaveStatusModal: boolean;
   userCollectionId: string;
   modalErroSaveMessage: string;
-  modalErroSaveMessageIsError: boolean,
+  modalErroSaveMessageIsError: boolean;
 }
 
-class SaveToCollection extends React.Component<ISaveToCollectionProps, ISaveToCollectionState> {
+class SaveToCollection extends React.Component<
+  ISaveToCollectionProps,
+  ISaveToCollectionState
+> {
   private createCollectionRef: any;
   constructor(props: ISaveToCollectionProps) {
     super(props);
@@ -56,16 +81,19 @@ class SaveToCollection extends React.Component<ISaveToCollectionProps, ISaveToCo
     this.setState({ showSaveStatusModal: false });
   }
 
-  handleUserCollection = (evt: React.FormEvent<FormControl & HTMLInputElement>) => {    
+  handleUserCollection = (
+    evt: React.FormEvent<FormControl & HTMLInputElement>
+  ) => {
     this.setState({
       userCollectionId: (evt.target as HTMLInputElement).value,
       modalErroSaveMessage: "",
     });
 
-    this.createCollectionRef &&  (this.createCollectionRef as any).getWrappedInstance &&
+    this.createCollectionRef &&
+      (this.createCollectionRef as any).getWrappedInstance &&
       (this.createCollectionRef as any).getWrappedInstance().reset &&
       (this.createCollectionRef as any).getWrappedInstance().reset();
-  }
+  };
 
   resetMessage = () => {
     if (this.state.modalErroSaveMessage) {
@@ -81,7 +109,11 @@ class SaveToCollection extends React.Component<ISaveToCollectionProps, ISaveToCo
 
     const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
     const recordingId = tabs[tabIndex].recordingIdAddedFromClient;
-    if (recordingId && userHistoryCollection && userHistoryCollection.id !== recordingId) {
+    if (
+      recordingId &&
+      userHistoryCollection &&
+      userHistoryCollection.id !== recordingId
+    ) {
       this.setState(
         {
           showSaveStatusModal: true,
@@ -93,16 +125,25 @@ class SaveToCollection extends React.Component<ISaveToCollectionProps, ISaveToCo
         }
       );
     } else {
-      this.setState({
-        showModal: true,
-        userCollectionId: "",
-        modalErroSaveMessage: "",
-        modalErroSaveMessageIsError: false,
-      });
+      this.showSaveToModal();
     }
   }
 
-  updateEachRequest(req: IHttpClientTabDetails, data: any, collectionId: string, recordingId: string) {
+  showSaveToModal = () => {
+    this.setState({
+      showModal: true,
+      userCollectionId: "",
+      modalErroSaveMessage: "",
+      modalErroSaveMessageIsError: false,
+    });
+  };
+
+  updateEachRequest(
+    req: IHttpClientTabDetails,
+    data: any,
+    collectionId: string,
+    recordingId: string
+  ) {
     req.requestId = data.newReqId;
     req.collectionIdAddedFromClient = collectionId;
     req.traceIdAddedFromClient = data.newTraceId;
@@ -122,9 +163,10 @@ class SaveToCollection extends React.Component<ISaveToCollectionProps, ISaveToCo
 
   updateTabWithNewData(tabId: string, response: any, recordingId: string) {
     const {
-      httpClient: { tabs, userCollections }, goldenList
+      httpClient: { tabs, userCollections },
+      goldenList,
     } = this.props;
-    const collections = [...userCollections, ...goldenList]
+    const collections = [...userCollections, ...goldenList];
     const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
     const tabToProcess = tabs[tabIndex];
     if (response.status === "success") {
@@ -243,25 +285,45 @@ class SaveToCollection extends React.Component<ISaveToCollectionProps, ISaveToCo
 
   render() {
     const {
-      httpClient: { userCollections }, goldenList
+      httpClient: { userCollections, tabs, userHistoryCollection },
+      goldenList,
+      tabId,
     } = this.props;
     const collections = [...userCollections, ...goldenList];
+
+    const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
+    const recordingId = tabs[tabIndex].recordingIdAddedFromClient;
+    const showSaveToButton =
+      recordingId &&
+      userHistoryCollection &&
+      userHistoryCollection.id !== recordingId;
+
     return (
       <>
-        <div
-          className={
-            this.props.disabled
-              ? "btn btn-sm cube-btn text-center disabled"
-              : "btn btn-sm cube-btn text-center"
-          }
-          style={{
-            padding: "2px 10px",
-            display: this.props.visible ? "inline-block" : "none",
-          }}
-          onClick={this.showSaveModal}
-        >
-          <Glyphicon glyph="save" /> SAVE
-        </div>
+        {showSaveToButton ? (
+          <Dropdown disabled={this.props.disabled} style={{marginRight: "5px", marginBottom: "5px"}}>
+            <Button
+              disabled={this.props.disabled}
+              onClick={this.showSaveModal}
+              className="cube-btn"
+            >
+              <Glyphicon glyph="save" /> SAVE
+            </Button>
+            <Dropdown.Toggle className="cube-btn" />
+            <Dropdown.Menu>
+              <MenuItem onClick={this.showSaveToModal}> Save to... </MenuItem>
+            </Dropdown.Menu>
+          </Dropdown>
+        ) : (
+          <Button
+            title="Save"
+            onClick={this.showSaveModal}
+            disabled={this.props.disabled}
+            className="cube-btn text-center"
+          >
+            <Glyphicon glyph="save" /> SAVE
+          </Button>
+        )}
 
         <Modal
           show={this.state.showSaveStatusModal}
@@ -360,10 +422,13 @@ class SaveToCollection extends React.Component<ISaveToCollectionProps, ISaveToCo
 }
 
 function mapStateToProps(state: IStoreState) {
-  const { httpClient, apiCatalog : {goldenList} } = state;
+  const {
+    httpClient,
+    apiCatalog: { goldenList },
+  } = state;
   return {
     httpClient,
-    goldenList
+    goldenList,
   };
 }
 

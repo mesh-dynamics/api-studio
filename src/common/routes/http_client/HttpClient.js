@@ -504,18 +504,18 @@ class HttpClient extends Component {
             <div>
                 <div style={{display: "flex"}}>
                     <div style={{marginLeft: "auto", order: "2"}}>
-                        <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleClick}>
+                        <Button className="cube-btn text-center"  onClick={this.handleClick}>
                             {currentSelectedTab.requestRunning ? <><i className="fa fa-spinner fa-spin"></i> STOP</>: <><Glyphicon glyph="play" /> RUN</>} 
-                        </div>
+                        </Button>
                         <SaveToCollection 
                         disabled={currentSelectedTab.httpURL.length === 0} 
                         visible={currentSelectedTab.showSaveBtn} 
                         tabId={currentSelectedTab.id} 
                         getReqResFromTabData={this.props.getReqResFromTabData}
                         />
-                        <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleDuplicateTabClick} title="Duplicate Tab">
+                        <Button className="cube-btn text-center"  onClick={this.handleDuplicateTabClick} title="Duplicate Tab">
                             <i className="fa fa-clone"></i>
-                        </div>
+                        </Button>
                     </div>
 
                 </div>
