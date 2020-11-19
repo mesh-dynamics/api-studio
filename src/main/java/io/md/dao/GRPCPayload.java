@@ -57,7 +57,7 @@ public abstract class GRPCPayload extends HTTPPayload {
     }
 
     @Override
-    protected void unWrapBody() {
+    public void unWrapBody() {
         // Currently unwrapAsJson does both decoding and unwrapping.
         // Will cleanup and separate the functions later
         if (payloadState == HTTPPayloadState.WrappedDecoded

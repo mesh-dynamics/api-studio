@@ -7,6 +7,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.os72.protobuf.dynamic.DynamicSchema;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
@@ -21,6 +24,8 @@ public class ProtoDescriptorDAO {
 	public final String encodedFile;
 	private DynamicSchema schema;
 	private Map<String, Map<String, MethodDescriptor>> serviceDescriptorMap;
+	private static final Logger LOGGER = LoggerFactory.getLogger(ProtoDescriptorDAO.class);
+
 
 	public ProtoDescriptorDAO() {
 		this.customerId = null;
@@ -88,6 +93,7 @@ public class ProtoDescriptorDAO {
 			DynamicMessage featureDynamicMessage = DynamicMessage.parseFrom(featureMessageDescriptor, copyOfRangeFeature);
 			return Optional.of(JsonFormat.printer().print(featureDynamicMessage));
 		} catch(Exception e) {
+			LOGGER.error("Cannot convert base64 encoded binary protobuf to json", e);
 			return Optional.empty();
 		}
 	}
@@ -98,6 +104,7 @@ public class ProtoDescriptorDAO {
 			JsonFormat.parser().merge(json, featureMessageBuilder);
 			return Optional.of(featureMessageBuilder.build().toByteArray());
 		} catch (Exception e) {
+			LOGGER.error("Cannot convert json to byte string", e);
 			return Optional.empty();
 		}
 	}
