@@ -19,12 +19,14 @@ import com.cubeui.backend.web.exception.DuplicateRecordException;
 import com.cubeui.backend.web.exception.InvalidDataException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
 import io.md.dao.Recording.RecordingType;
+import io.md.utils.Constants;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.annotation.Secured;
@@ -53,6 +55,8 @@ public class AccountController {
 
     @Value("${md_cloud}")
     private boolean md_cloud = false;
+    @Value("${spring.mail.emailsender}")
+    private String emailSender;
 
     private UserService userService;
     private MailService mailService;
@@ -220,10 +224,11 @@ public class AccountController {
 
         if (user.isPresent()) {
             mailService.sendPasswordResetMail(user.get());
-            return ok("Email sent to " + user.get().getUsername());
-        } else {
-            throw new RecordNotFoundException("No user was found for with this email");
         }
+        JSONObject object =  new JSONObject();
+        object.put(Constants.MESSAGE, "Email sent to " + email);
+        object.put("sender", emailSender);
+        return ok(object.toString());
     }
 
     @PostMapping(path = "/reset-password/finish")
