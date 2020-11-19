@@ -1574,13 +1574,13 @@ public class CubeStore {
                         rec.recordingType, reqId, traceId);
 
                     if(requestEvent.payload instanceof GRPCPayload) {
+                        // Unwrap on body will be called internally after setting protoDescriptor
                         io.md.utils.Utils.setProtoDescriptorGrpcEvent(requestEvent, config.protoDescriptorCache);
-                        ((GRPCPayload) requestEvent.payload).unWrapBody();
                     }
 
                     if(responseEvent.payload instanceof GRPCPayload) {
+                        // Unwrap on body will be called internally after setting protoDescriptor
                         io.md.utils.Utils.setProtoDescriptorGrpcEvent(responseEvent, config.protoDescriptorCache);
-                        ((GRPCPayload) responseEvent.payload).unWrapBody();
                     }
 
                     if (!rrstore.save(requestEvent) || !rrstore.save(responseEvent)) {
