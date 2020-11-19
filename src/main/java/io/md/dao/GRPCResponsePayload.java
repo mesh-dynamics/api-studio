@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.md.utils.GPRCResponsePayloadDeserialzer;
 
 @JsonDeserialize(using = GPRCResponsePayloadDeserialzer.class)
-public class GRPCResponsePayload extends GRPCPayload {
+public class GRPCResponsePayload extends GRPCPayload implements ResponsePayload {
 
 
 	protected GRPCResponsePayload(MultivaluedMap<String, String> hdrs, byte[] body,
@@ -23,5 +23,11 @@ public class GRPCResponsePayload extends GRPCPayload {
 	@Override
 	boolean isRequest() {
 		return false;
+	}
+
+	// Grpc status code is always 200
+	@Override
+	public String getStatusCode() {
+		return "200";
 	}
 }
