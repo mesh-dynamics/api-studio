@@ -371,6 +371,7 @@ function clearReplayStatus() {
 function getReplayStatus(collectionId, replayId, app) {
     return async dispatch => {
         try {
+            dispatch({type: cubeConstants.FETCHING_REPLAY_STATUS})
             let replayStatus = await cubeService.checkStatusForReplay(replayId);
             dispatch(success(replayStatus, Date.now()));
         } catch (error) {
@@ -383,6 +384,7 @@ function getReplayStatus(collectionId, replayId, app) {
 function getAnalysisStatus(replayId, app) {
     return async dispatch => {
         try {
+            dispatch({type: cubeConstants.FETCHING_ANALYSIS_STATUS})
             const analysisStatus = await cubeService.fetchAnalysisStatus(replayId);
             dispatch(success(analysisStatus.data, Date.now()));
         } catch (error) {

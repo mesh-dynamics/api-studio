@@ -121,7 +121,7 @@ class Navigation extends Component{
                 // after the replay is completed stop polling and poll for analysis status
                 clearInterval(this.replayStatusInterval);
                 this.checkAnalysisStatus(replayId);
-            } else {
+            } else if (!cube.fetchingReplayStatus) {
                 checkStatus();
             }
         }, 1000);
@@ -137,7 +137,7 @@ class Navigation extends Component{
             const {cube} = this.props;
             if (cube.analysisStatusObj && (cube.analysisStatus == 'Completed' || cube.analysisStatus == 'Error')) {
                 clearInterval(this.analysisStatusInterval);
-            } else {
+            } else if(!cube.fetchingAnalysisStatus) {
                 checkStatus();
             }
         }, 1000);

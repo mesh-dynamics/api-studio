@@ -232,6 +232,8 @@ export interface ICubeState {
   replayId: any; //2
   replayStatus: string;
   replayStatusObj: any; //2
+  fetchingReplayStatus: boolean;
+  fetchingAnalysisStatus: boolean;
   report: any; //2
   ruleBook: any; //2
   selectedApp: string | null;
