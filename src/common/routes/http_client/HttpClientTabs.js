@@ -30,7 +30,7 @@ import "./Tabs.css";
 
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
-import { generateRunId, generateApiPath, getApiPathFromRequestEvent, extractParamsFromRequestEvent, selectedRequestParamData, unSelectedRequestParamData  } from "../../utils/http_client/utils"; 
+import { generateRunId, generateApiPath, getApiPathFromRequestEvent, extractParamsFromRequestEvent, selectedRequestParamData, unSelectedRequestParamData, isValidJSON, Base64Binary  } from "../../utils/http_client/utils"; 
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
 import { getParameterCaseInsensitive } from '../../../shared/utils';
 
@@ -1018,6 +1018,10 @@ class HttpClientTabs extends Component {
         return qsParams;
     }
 
+    isgRPCRequest(tabToProcess){
+       return tabToProcess.bodyType === "grpcData" && tabToProcess.grpcData && tabToProcess.grpcData.trim()
+    }
+
     async driveRequest(isOutgoingRequest, tabId) {
         const {httpClient: {tabs, selectedTabKey, userHistoryCollection, mockConfigList, selectedMockConfig, mockContextLookupCollection, mockContextSaveToCollection, selectedEnvironment  }} = this.props;
         const { cube: { selectedApp }, user } = this.props;
@@ -1064,7 +1068,16 @@ class HttpClientTabs extends Component {
             const { rawData } = tabToProcess;
             httpRequestBody = this.extractBody(rawData);
         }
-        const httpMethod = tabToProcess.httpMethod;
+        if (this.isgRPCRequest(tabToProcess)) {
+            const { grpcData } = tabToProcess;
+            if(!isValidJSON(grpcData)){
+                const errorMessage = "Grpc data should be valid JSON object";
+                alert(errorMessage);
+                throw new Error(errorMessage);
+            }
+            httpRequestBody = this.extractBody(grpcData);
+        }
+        const httpMethod = this.getHttpMethod(tabToProcess);
         const httpRequestURL = tabToProcess.httpURL;
 
         let fetchConfig = {
@@ -1119,18 +1132,24 @@ class HttpClientTabs extends Component {
                 return
             }
         }
-        const fetchUrlRendered = httpRequestURLRendered + (httpRequestQueryStringParamsRendered ? "?" + stringify(httpRequestQueryStringParamsRendered) : "");
+        let fetchUrlRendered = httpRequestURLRendered + (Object.keys(httpRequestQueryStringParamsRendered).length ? "?" + stringify(httpRequestQueryStringParamsRendered) : "");
         let fetchedResponseHeaders = {}, responseStatus = "", responseStatusText = "";
         const startDate = new Date(Date.now() - 2 * 1000).toISOString();
         fetchConfigRendered.signal = tabToProcess.abortRequest.signal;
         let resTimestamp;
-        return fetch(fetchUrlRendered, fetchConfigRendered).then((response) => {
+        return fetch(fetchUrlRendered, fetchConfigRendered).then(async(response) => {
             const resISODate = new Date().toISOString();
             resTimestamp = new Date(resISODate).getTime();
             responseStatus = response.status;
             responseStatusText = response.statusText;
             for (const header of response.headers) {
                 fetchedResponseHeaders[header[0]] = header[1];
+            }
+            if(fetchedResponseHeaders["content-type"] == "application/grpc"){
+                var reader = response.body.getReader();
+                var result = await reader.read();
+                const base64Data = Base64Binary.encode(result.value || new Uint8Array());
+                return base64Data;
             }
             return response.text();
         })
@@ -1252,14 +1271,26 @@ class HttpClientTabs extends Component {
         return jsonString;
     }
 
+    getHttpMethod(tabToSave){
+        return this.isgRPCRequest(tabToSave) ? "POST" : tabToSave.httpMethod;
+    }
+
+    getPathName(url){
+        const urlData = urlParser(url);
+        return _.trim(urlData.pathname, '/');
+    }
+
+
     getReqResFromTabData(eachPair, tabToSave, runId, type, reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment) {
+        const { headers, queryStringParams, bodyType, rawDataType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus } = tabToSave;
+
         const httpRequestEventTypeIndex = eachPair[0].eventType === "HTTPRequest" ? 0 : 1;
         const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
         let httpRequestEvent = eachPair[httpRequestEventTypeIndex];
         let httpResponseEvent = eachPair[httpResponseEventTypeIndex];
         
         // let apiPath = getApiPathFromRequestEvent(httpRequestEvent); // httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : "";
-        let apiPath = tabToSave.httpURL;
+        let apiPath = this.getPathName(applyEnvVarsToUrl(tabToSave.httpURL));
         if(httpRequestEvent.reqId === "NA") {
             const parsedUrl = urlParser(applyEnvVarsToUrl(tabToSave.httpURL), PLATFORM_ELECTRON ? {} : true);
             let service = parsedUrl.host || "NA";
@@ -1284,8 +1315,9 @@ class HttpClientTabs extends Component {
             httpRequestEvent.metaData.collectionId = tabToSave.collectionIdAddedFromClient;
             httpRequestEvent.metaData.requestId = tabToSave.requestId;
             if(urlEnvVal) {
-                httpRequestEvent.apiPath = urlEnvVal;
-                httpResponseEvent.apiPath = urlEnvVal;
+                const path = this.getPathName(urlEnvVal);
+                httpRequestEvent.apiPath = path;
+                httpResponseEvent.apiPath = path;
                 httpRequestEvent.metaData.href = urlEnvVal;
             }
             if(currentEnvironment) {
@@ -1295,7 +1327,6 @@ class HttpClientTabs extends Component {
             apiPath = renderEnvVars(apiPath);
         }
 
-        const { headers, queryStringParams, bodyType, rawDataType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus } = tabToSave;
         httpRequestEvent.metaData.hdrs = JSON.stringify(unSelectedRequestParamData(headers));
         httpRequestEvent.metaData.queryParams = JSON.stringify(unSelectedRequestParamData(queryStringParams));
         
@@ -1311,7 +1342,12 @@ class HttpClientTabs extends Component {
             const { rawData } = tabToSave;
             httpRequestBody = this.extractBodyToCubeFormat(rawData, type);
         }
-        const httpMethod = tabToSave.httpMethod;
+        if (this.isgRPCRequest(tabToSave)) {
+            const { grpcData } = tabToSave;
+            httpRequestBody = this.tryJsonParse(grpcData);  
+            httpReqestHeaders["content-type"] = ["application/grpc"];          
+        }
+        const httpMethod = this.getHttpMethod(tabToSave);
         let httpResponseHeaders, httpResponseBody, httpResponseStatus;
         if (type !== "History") {
             httpResponseHeaders = recordedResponseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : responseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : null;
@@ -1329,7 +1365,7 @@ class HttpClientTabs extends Component {
                 runId: runId,
                 runType: "DevTool",
                 payload: [
-                    "HTTPRequestPayload",
+                    this.isgRPCRequest(tabToSave) ? "GRPCRequestPayload": "HTTPRequestPayload",
                     {
                         hdrs: httpReqestHeaders,
                         queryParams: httpRequestQueryStringParams,
@@ -1337,7 +1373,8 @@ class HttpClientTabs extends Component {
                         ...(httpRequestBody && { body: httpRequestBody }),
                         method: httpMethod.toUpperCase(),
                         path: apiPath,
-                        pathSegments: apiPath.split("/")
+                        pathSegments: apiPath.split("/"),
+                        payloadState :  this.isgRPCRequest(tabToSave) ? "UnwrappedDecoded": "WrappedDecoded",
                     }
                 ]
             },
@@ -1347,12 +1384,14 @@ class HttpClientTabs extends Component {
                 runId: runId,
                 runType: "DevTool",
                 payload: [
-                    "HTTPResponsePayload",
+                    this.isgRPCRequest(tabToSave) ? "GRPCResponsePayload": "HTTPResponsePayload",
                     {
                         hdrs: httpResponseHeaders,
                         body: httpResponseBody,
                         status: httpResponseStatus,
                         statusCode: String(httpResponseStatus),
+                        path: apiPath,
+                        payloadState : "WrappedDecoded",
                     }
                 ]
             }
@@ -1387,9 +1426,15 @@ class HttpClientTabs extends Component {
                 }
                 cubeService.afterResponse(recordingId, data, apiConfig)
                     .then((serverRes) => {
-                        const jsonTraceReqData = serverRes.data.response && serverRes.data.response.length > 0 ? serverRes.data.response[0] : "";
                         try {
-                            const parsedTraceReqData = JSON.parse(jsonTraceReqData);
+                            const parsedTraceReqData = serverRes.data.response && serverRes.data.response.length > 0 ? serverRes.data.response[0] : {};
+                            const requestEvent = JSON.parse(parsedTraceReqData.requestEvent);
+                            if(requestEvent.payload[0] == "GRPCRequestPayload"){
+                                const responseEvent = JSON.parse(parsedTraceReqData.responseEvent);
+                                const eventData = [requestEvent, responseEvent];
+                                dispatch(httpClientActions.updateEventDataInSelectedTab(tabId, eventData ));                                
+                                dispatch(httpClientActions.afterResponseReceivedData(tabId, JSON.stringify(responseEvent.payload[1].body, undefined, 4)));
+                            }
                             const apiPath = _.trimStart(data[0].request.apiPath, '/');
                             this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
                             setTimeout(() => {

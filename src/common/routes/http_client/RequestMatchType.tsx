@@ -9,6 +9,7 @@ import { UpdateParamHandler } from "./HttpResponseHeaders";
 import { formatHttpEventToTabObject } from "../../utils/http_client/utils";
 import Tippy from "@tippy.js/react";
 import { HttpRequestFields } from "./HttpRequestFields";
+import { IStoreState } from "../../reducers/state.types";
 
 interface IRequestMatchTypeProps {
   matchType: string;
@@ -150,6 +151,7 @@ function RequestMatchType(props: IRequestMatchTypeProps) {
                   rawData={apiEventsFormatted.rawData}
                   rawDataType={apiEventsFormatted.rawDataType}
                   paramsType={paramsType}
+                  grpcData={apiEventsFormatted.grpcData}
                   addOrRemoveParam={() => {}} 
                   updateParam={updateParamHandler}
                   updateAllParams={() => {}}
@@ -173,7 +175,7 @@ function RequestMatchType(props: IRequestMatchTypeProps) {
   );
 }
 
-const mapStateToProps = (state) =>
+const mapStateToProps = (state: IStoreState) =>
   ({
     app: state.cube.selectedApp,
     user: state.authentication.user,

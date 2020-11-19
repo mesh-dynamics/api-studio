@@ -11,6 +11,7 @@ export interface IHttpRequestRawDataProps {
   isOutgoingRequest: boolean;
   updateParam: UpdateParamHandler;
   readOnly: boolean;
+  paramName: string;
 }
 export interface IHttpRequestRawDataState {
   showError: boolean;
@@ -36,8 +37,8 @@ class HttpRequestRawData extends Component<
       this.props.updateParam(
         isOutgoingRequest,
         tabId,
-        "rawData",
-        "rawData",
+        this.props.paramName,
+        this.props.paramName,
         value
       );
     }

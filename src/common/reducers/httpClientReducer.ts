@@ -417,6 +417,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab["responseStatus"] = data.responseStatus;
                         eachTab["showCompleteDiff"] = data.showCompleteDiff;
                         eachTab["currentRunId"] = data.runId;
+                        eachTab["progressState"] = httpClientConstants.PRE_DRIVE_REQUEST;
                     }
                     return eachTab; 
                 })
@@ -433,11 +434,40 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab["responseBody"] = data.responseBody;
                         eachTab["responseStatus"] = data.responseStatus;
                         eachTab["responseStatusText"] = data.responseStatusText;
+                        eachTab["progressState"] = httpClientConstants.POST_SUCCESS_DRIVE_REQUEST;
                     }
                     return eachTab; 
                 })
             }
         }
+        case httpClientConstants.AFTER_RESPONSE_RECEIVED_DATA: {
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab["responseBody"] = data.responseBody;
+                        eachTab["progressState"] = httpClientConstants.AFTER_RESPONSE_RECEIVED_DATA;
+                    }
+                    return eachTab; 
+                })
+            }
+        }
+
+        case httpClientConstants.UPDATE_EVENT_DATA_IN_TAB: {
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab["eventData"] = data.value
+                        // eachTab.hasChanged = true; //TODO:Check with Sid
+                    }
+                    return eachTab; 
+                })
+            }
+        }
+
 
         case httpClientConstants.POST_ERROR_DRIVE_REQUEST: {
             let {tabs} = state;

@@ -418,6 +418,7 @@ export interface IHttpClientTabDetails {
   currentRunId: string;
   hasChanged: boolean;
   isHighlighted: boolean;
+  progressState?: string;
 }
 
 export interface IUserApiTraceHistory {
