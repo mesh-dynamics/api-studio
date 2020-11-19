@@ -55,7 +55,7 @@ public class CustomerController {
                         "Customer with domain '" + domainUrl + "' already exists."));
                 }
             }
-            Customer saved = this.customerService.save(customerDTO);
+            Customer saved = this.customerService.save(request, customerDTO);
 
             Optional<JiraCustomerDefaultCredentials> jiraCustomerDefaultCredentials = jiraCustomerCredentialsRepository.findByCustomerId(saved.getId());
             if(jiraCustomerDefaultCredentials.isEmpty()) {
@@ -77,7 +77,7 @@ public class CustomerController {
     public ResponseEntity update(@RequestBody CustomerDTO customerDTO, HttpServletRequest request) {
         Optional<Customer> customer = this.customerService.getByName(customerDTO.getName());
         if (customer.isPresent()) {
-            Customer saved = this.customerService.save(customerDTO);
+            Customer saved = this.customerService.save(request, customerDTO);
             return created(
                     ServletUriComponentsBuilder
                             .fromContextPath(request)

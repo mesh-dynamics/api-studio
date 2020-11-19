@@ -14,7 +14,7 @@ import javax.validation.constraints.NotEmpty;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name="customers")
+@Table(name="customers", uniqueConstraints=@UniqueConstraint(columnNames={"name"}))
 @Data
 @Builder
 @NoArgsConstructor

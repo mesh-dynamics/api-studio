@@ -5,7 +5,6 @@ import static org.springframework.http.ResponseEntity.ok;
 import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.CustomerDTO;
-import com.cubeui.backend.domain.Instance;
 import com.cubeui.backend.domain.Path;
 import com.cubeui.backend.domain.ServiceGraph;
 import com.cubeui.backend.domain.ServiceGroup;
@@ -27,37 +26,16 @@ import com.cubeui.backend.repository.TestPathRepository;
 import com.cubeui.backend.repository.TestServiceRepository;
 import com.cubeui.backend.repository.TestVirtualizedServiceRepository;
 import com.cubeui.backend.repository.UserRepository;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.md.constants.Constants;
-import io.md.dao.Event;
-import io.md.dao.Event.EventBuilder;
-import io.md.dao.Event.EventBuilder.InvalidEventException;
-import io.md.dao.Event.EventType;
-import io.md.dao.EventQuery;
-import io.md.dao.MDTraceInfo;
-import io.md.dao.Recording;
-import io.md.dao.Recording.RecordingType;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Optional;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
 @Slf4j
 @Service
@@ -95,7 +73,7 @@ public class CustomerService {
     @Autowired
     private HttpServletRequest httpServletRequest;
     @Autowired
-    private ObjectMapper jsonMapper;
+    private CollectionCreationService collectionCreationService;
     @Autowired
     private UserRepository userRepository;
 
@@ -111,7 +89,7 @@ public class CustomerService {
         return customerRepository.findAll();
     }
 
-    public Customer save(CustomerDTO customerDTO) {
+    public Customer save(HttpServletRequest httpServletRequest, CustomerDTO customerDTO) {
         Optional<Customer> customer = customerRepository.findByName(customerDTO.getName());
         customer.ifPresent(c -> {
             Optional.ofNullable(customerDTO.getName()).ifPresent(name -> c.setName(name));
@@ -134,7 +112,7 @@ public class CustomerService {
             if(md_cloud) {
                 Optional<App> app = createMovieInfoAppForCustomer(customer.get());
                 if(app.isPresent()) {
-                    createSampleCollectionForCustomer(customer.get(), app.get());
+                    collectionCreationService.createSampleCollectionForCustomer(httpServletRequest, customer.get(), app.get());
                 }
             }
         }
@@ -293,69 +271,5 @@ public class CustomerService {
         return Optional.of(movieInfo);
     }
 
-    @Async
-    private void createSampleCollectionForCustomer(Customer customer, App app) {
-        String query =  String.format("customerId=%s&app=%s&golden_name=%s&recordingType=%s&archived=%s",
-            "CubeCorp", "MovieInfo", "SampleCollection", RecordingType.Golden.toString(), false);
-        Optional<Recording> existingRecording = cubeServerService.searchRecording(query);
-        existingRecording.ifPresent(recording -> {
-            EventQuery.Builder builder = new EventQuery.Builder("CubeCorp", "MovieInfo",
-                Arrays.asList(Event.EventType.HTTPRequest, EventType.HTTPResponse));
-            builder.withCollection(recording.collection);
-            Optional<List<Event>>  responseEvents = cubeServerService.getEvents(builder.build(), httpServletRequest);
-            responseEvents.ifPresent(events -> {
-                MultiValueMap<String, String> formParams = new LinkedMultiValueMap<>();
-                formParams.set("name", recording.name);
-                formParams.set("label", new Date().toString());
-                formParams.set("userId", customer.getEmail());
-                formParams.set("recordingType", RecordingType.Golden.toString());
-                ResponseEntity responseEntity = cubeServerService
-                    .createRecording(httpServletRequest,
-                        customer.getName(), app.getName(), recording.instanceId,
-                        Optional.of(formParams));
-                Optional<Recording> newRecordingOptional = cubeServerService
-                    .getRecordingFromResponseEntity(responseEntity, query);
-                newRecordingOptional.ifPresent(newRecording -> {
-                    StringBuilder eventBatchBuilder = new StringBuilder();
-                    String timestamp = Instant.now().toString();
-                    events.stream().parallel().forEach(event -> {
-                        try {
-                            Event newEvent = createEvent(event, customer.getName(), newRecording.collection, timestamp);
-                            Map<String, Event> map = Map.of("cubeEvent",newEvent);
-                            eventBatchBuilder.append(jsonMapper.writeValueAsString(map)).append("\n");
-                        } catch (InvalidEventException e) {
-                            log.error("Error while creating an event, message=" + e.getMessage());
-                        } catch (JsonProcessingException e) {
-                            log.error("Error while processing an event, message=" + e.getMessage());
-                        }
-                    });
-                    String eventBatch = eventBatchBuilder.toString();
-                    if(!eventBatch.isBlank()) {
-                       cubeServerService.fetchPostResponse(httpServletRequest, Optional.of(eventBatch), "/cs/storeEventBatch",
-                            Constants.APPLICATION_X_NDJSON);
-                    }
-                    try {
-                        TimeUnit.SECONDS.sleep(20);
-                    } catch (InterruptedException ie) {
-                        log.error("Error while sleeping the thread", ie.getMessage());
-                    }
-                    cubeServerService.fetchPostResponse(httpServletRequest, Optional.empty(), "/cs/stop/"+ newRecording.getId(), MediaType.APPLICATION_FORM_URLENCODED);
-                });
-            });
-        });
 
-    }
-    private Event createEvent(Event event, String customerId, String collection, String timestamp)
-        throws InvalidEventException {
-        final String reqId = event.reqId.concat("-").concat(timestamp);
-        EventBuilder eventBuilder = new EventBuilder(customerId, event.app,
-            event.service, event.instanceId, collection,
-            new MDTraceInfo(event.getTraceId(), event.spanId, event.parentSpanId),
-            event.getRunType(), Optional.of(Instant.now()), reqId, event.apiPath,
-            event.eventType, event.recordingType).withRunId(event.runId);
-        eventBuilder.setPayload(event.payload);
-        eventBuilder.withMetaData(event.metaData);
-        eventBuilder.withPayloadFields(event.payloadFields);
-        return eventBuilder.createEvent();
-    }
 }
