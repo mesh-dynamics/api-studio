@@ -108,11 +108,7 @@ const hasTabDataChanged = (tab) => {
     return false;
 }
 
-const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) => {
-    const httpRequestEventTypeIndex = httpEventReqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
-    const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
-    const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
-    const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
+const extractParamsFromRequestEvent = (httpRequestEvent) =>{
     let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "";
     for (let eachHeader in httpRequestEvent.payload[1].hdrs) {
         headers.push({
@@ -155,6 +151,57 @@ const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) =
             rawDataType = "text";
         }
     }
+
+    // Add unselected params (queryString, formData and headers) from metadata
+    if(httpRequestEvent.metaData.hdrs){
+        const hdrs = JSON.parse(httpRequestEvent.metaData.hdrs);
+        for (let eachHeader in hdrs) {
+          headers.push({
+            id: uuidv4(),
+            name: hdrs[eachHeader].name,
+            value: hdrs[eachHeader].value, //TODO check for multiple headers
+            description: "",
+            selected: false,
+          });
+        }
+      }
+      if(httpRequestEvent.metaData.queryParams){
+        const queryParamStored = JSON.parse(httpRequestEvent.metaData.queryParams);
+        for (let eachQueryParam in queryParamStored) {
+          queryParams.push({
+            id: uuidv4(),
+            name: queryParamStored[eachQueryParam].name,
+            value:
+            queryParamStored[eachQueryParam].value,
+            description: "",
+            selected: false,
+          });
+        }
+      }
+      if(httpRequestEvent.metaData.formParams){
+        const formParams = JSON.parse(httpRequestEvent.metaData.formParams);
+        for (let eachFormParam in formParams) {
+          formData.push({
+            id: uuidv4(),
+            name: formParams[eachFormParam].name,
+            value: formParams[eachFormParam].value, //Check if join is required
+            description: "",
+            selected: false,
+          });
+        }
+      }
+
+    return{
+        headers, queryParams, formData, rawData, rawDataType
+    }
+}
+
+const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) => {
+    const httpRequestEventTypeIndex = httpEventReqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
+    const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
+    const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
+    const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
+    const { headers, queryParams, formData, rawData, rawDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
     let reqObject = {
         httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
         httpURL: "{{{url}}}/" + httpRequestEvent.apiPath,
@@ -190,6 +237,13 @@ const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) =
         showTrace: null,
     };
     return reqObject;
+}
+
+const selectedRequestParamData = (paramsData)=>{
+    return paramsData.filter(param => param.selected);
+}
+const unSelectedRequestParamData = (paramsData)=>{
+    return paramsData.filter(param => !param.selected);
 }
 
 const preRequestToFetchableConfig = (preRequestResult, httpURL) => {
@@ -270,4 +324,7 @@ export {
     hasTabDataChanged,
     formatHttpEventToTabObject,
     preRequestToFetchableConfig,
+    selectedRequestParamData,
+    unSelectedRequestParamData,
+    extractParamsFromRequestEvent,
 };

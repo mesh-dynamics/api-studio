@@ -30,7 +30,7 @@ import "./Tabs.css";
 
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
-import { generateRunId, generateApiPath, getApiPathFromRequestEvent } from "../../utils/http_client/utils"; 
+import { generateRunId, generateApiPath, getApiPathFromRequestEvent, extractParamsFromRequestEvent, selectedRequestParamData, unSelectedRequestParamData  } from "../../utils/http_client/utils"; 
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
 import { getParameterCaseInsensitive } from '../../../shared/utils';
 
@@ -934,49 +934,7 @@ class HttpClientTabs extends Component {
                             const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
                             const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
                             
-                            let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "";
-                            
-                            for(let eachHeader in httpRequestEvent.payload[1].hdrs) {
-                                headers.push({
-                                    id: uuidv4(),
-                                    name: eachHeader,
-                                    value: httpRequestEvent.payload[1].hdrs[eachHeader].join(","),
-                                    description: "",
-                                    selected: true,
-                                });
-                            }
-                            for (let eachQueryParam in httpRequestEvent.payload[1].queryParams) {
-                                queryParams.push({
-                                    id: uuidv4(),
-                                    name: eachQueryParam,
-                                    value: httpRequestEvent.payload[1].queryParams[eachQueryParam][0],
-                                    description: "",
-                                    selected: true,
-                                });
-                            }
-                            for (let eachFormParam in httpRequestEvent.payload[1].formParams) {
-                                formData.push({
-                                    id: uuidv4(),
-                                    name: eachFormParam,
-                                    value: httpRequestEvent.payload[1].formParams[eachFormParam].join(","),
-                                    description: "",
-                                    selected: true,
-                                });
-                                rawDataType = "";
-                            }
-                            if (httpRequestEvent.payload[1].body) {
-                                if (!_.isString(httpRequestEvent.payload[1].body)) {
-                                    try {
-                                        rawData = JSON.stringify(httpRequestEvent.payload[1].body, undefined, 4)
-                                        rawDataType = "json";
-                                    } catch (err) {
-                                        console.error(err);
-                                    }
-                                } else {
-                                    rawData = httpRequestEvent.payload[1].body;
-                                    rawDataType = "text";
-                                }
-                            }
+                            const { headers, queryParams, formData, rawData, rawDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
                             let reqObject = {
                                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
                                 httpURL: httpRequestEvent.apiPath,
@@ -1338,12 +1296,16 @@ class HttpClientTabs extends Component {
         }
 
         const { headers, queryStringParams, bodyType, rawDataType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus } = tabToSave;
-        const httpReqestHeaders = this.extractHeadersToCubeFormat(headers, type);
-        const httpRequestQueryStringParams = this.extractQueryStringParamsToCubeFormat(queryStringParams, type);
+        httpRequestEvent.metaData.hdrs = JSON.stringify(unSelectedRequestParamData(headers));
+        httpRequestEvent.metaData.queryParams = JSON.stringify(unSelectedRequestParamData(queryStringParams));
+        
+        const httpReqestHeaders = this.extractHeadersToCubeFormat(selectedRequestParamData(headers), type);
+        const httpRequestQueryStringParams = this.extractQueryStringParamsToCubeFormat(selectedRequestParamData(queryStringParams), type);
         let httpRequestFormParams = {}, httpRequestBody = "";
         if (bodyType === "formData") {
             const { formData } = tabToSave;
-            httpRequestFormParams = this.extractBodyToCubeFormat(formData, type);
+            httpRequestEvent.metaData.formParams = JSON.stringify(unSelectedRequestParamData(formData));
+            httpRequestFormParams = this.extractBodyToCubeFormat(selectedRequestParamData(formData), type);
         }
         if (bodyType === "rawData") {
             const { rawData } = tabToSave;
@@ -1464,55 +1426,9 @@ class HttpClientTabs extends Component {
         const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
         const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
         const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
-        let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "";
-        for (let eachHeader in httpRequestEvent.payload[1].hdrs) {
-            httpRequestEvent.payload[1].hdrs[eachHeader].forEach(value=>{            
-                headers.push({
-                    id: uuidv4(),
-                    name: eachHeader,
-                    value,
-                    description: "",
-                    selected: true,
-                });
-            });
-                       
-        }
-        for (let eachQueryParam in httpRequestEvent.payload[1].queryParams) {
-            httpRequestEvent.payload[1].queryParams[eachQueryParam].forEach(value=>{    
-                queryParams.push({
-                    id: uuidv4(),
-                    name: eachQueryParam,
-                    value,
-                    description: "",
-                    selected: true,
-                });
-            });
-        }
-        for (let eachFormParam in httpRequestEvent.payload[1].formParams) {
-            httpRequestEvent.payload[1].formParams[eachFormParam].forEach(value=>{
-                formData.push({
-                    id: uuidv4(),
-                    name: eachFormParam,
-                    value,
-                    description: "",
-                    selected: true,
-                });
-            });            
-            rawDataType = "";
-        }
-        if (httpRequestEvent.payload[1].body) {
-            if (!_.isString(httpRequestEvent.payload[1].body)) {
-                try {
-                    rawData = JSON.stringify(httpRequestEvent.payload[1].body, undefined, 4)
-                    rawDataType = "json";
-                } catch (err) {
-                    console.error(err);
-                }
-            } else {
-                rawData = httpRequestEvent.payload[1].body;
-                rawDataType = "text";
-            }
-        }
+
+        const { headers, queryParams, formData, rawData, rawDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
+        
         let reqObject = {
             id: uuidv4(),
             httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),

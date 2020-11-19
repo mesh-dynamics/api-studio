@@ -207,3 +207,6 @@ div.loading, div.loading button{
   margin-bottom: 10px;
   margin-right: 10px;
 }
+.react-monaco-editor-container{
+  min-height: 80px;
+}
