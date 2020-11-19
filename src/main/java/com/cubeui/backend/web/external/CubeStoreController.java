@@ -2,6 +2,7 @@ package com.cubeui.backend.web.external;
 
 import com.cubeui.backend.domain.DtEnvVar;
 import com.cubeui.backend.domain.DtEnvironment;
+import com.cubeui.backend.domain.MultipartInputStreamFileResource;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.DevtoolEnvironmentsRepository;
 import com.cubeui.backend.security.Validation;
@@ -20,6 +21,7 @@ import io.md.dao.DefaultEvent;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
 
+import java.io.IOException;
 import java.util.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/cs")
@@ -433,5 +436,19 @@ public class CubeStoreController {
         }
         dynamicInjectionEventDao.setContextMap(contextMap);
         return cubeServerService.fetchPostResponse(request, Optional.of(dynamicInjectionEventDao));
+    }
+
+    @PostMapping("/protoDescriptorFileUpload/{customerId}/{app}")
+    public ResponseEntity protoDescriptorFileUpload(HttpServletRequest request,
+        @PathVariable String customerId, @PathVariable String app, @RequestParam("protoDescriptorFile") MultipartFile[] files,
+        Authentication authentication) throws IOException {
+        validation.validateCustomerName(authentication, customerId);
+        LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
+        for (MultipartFile file : files) {
+            if (!file.isEmpty()) {
+                map.add("protoDescriptorFile", new MultipartInputStreamFileResource(file.getInputStream(), file.getOriginalFilename()));
+            }
+        }
+        return cubeServerService.fetchPostResponse(request, Optional.of(map));
     }
 }
