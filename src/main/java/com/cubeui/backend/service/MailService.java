@@ -51,7 +51,7 @@ public class MailService {
         this.templateEngine = templateEngine;
     }
 
-    @Async
+    @Async("threadPoolTaskExecutor")
     public void sendEmail() {
         SimpleMailMessage msg = new SimpleMailMessage();
         msg.setTo("abc@gmail.com", "xyz@gmail.com", "def@yahoo.com");
@@ -61,7 +61,7 @@ public class MailService {
         javaMailSender.send(msg);
     }
 
-    @Async
+    @Async("threadPoolTaskExecutor")
     public void sendEmail(String to, String subject, String content, boolean isMultipart, boolean isHtml) {
         log.debug("Send email [multipart '{}' and html '{}'] to '{}' with subject '{}' and content={}",
                 isMultipart, isHtml, to, subject, content);
@@ -83,7 +83,7 @@ public class MailService {
         }
     }
 
-    @Async
+    @Async("threadPoolTaskExecutor")
     /* Send email from template
      * Used for multiple types of mails.
      * Email Id is passed separately since the receiver email address might be different from
@@ -102,7 +102,7 @@ public class MailService {
         sendEmail(emailId, subject, content, true, true);
     }
 
-    @Async
+    @Async("threadPoolTaskExecutor")
     public void sendActivationEmail(User user) {
         log.debug("Sending activation email to '{}'", user.getUsername());
         sendEmailFromTemplate(user, user.getUsername(), "activationEmail", "email.activation.title");
@@ -114,20 +114,20 @@ public class MailService {
         sendEmailFromTemplate(user, user.getUsername(), "creationEmail", "email.creation.title");
     }
 
-    @Async
+    @Async("threadPoolTaskExecutor")
     public void sendCreationEmailAdmin(User user) {
         String adminEmail = user.getCustomer().getEmail();
         log.debug("Sending creation notification email to admin at '{}'", adminEmail);
         sendEmailFromTemplate(user, adminEmail, "creationEmailAdmin", "email.creation.title");
     }
 
-    @Async
+    @Async("threadPoolTaskExecutor")
     public void sendPasswordResetMail(User user) {
         log.debug("Sending password reset email to '{}'", user.getUsername());
         sendEmailFromTemplate(user, user.getUsername(), "passwordResetEmail", "email.reset.title");
     }
 
-  @Async
+  @Async("threadPoolTaskExecutor")
   public void sendPasswordResetSuccessfulMail(User user) {
     log.debug("Sending password reset successful email to '{}'", user.getUsername());
     sendEmailFromTemplate(user, user.getUsername(), "passwordResetSuccessfulEmail", "email.reset.success.title");

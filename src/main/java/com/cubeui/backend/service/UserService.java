@@ -30,8 +30,12 @@ import com.cubeui.backend.web.exception.InvalidDataException;
 import com.cubeui.backend.web.exception.OldPasswordException;
 import com.cubeui.backend.web.exception.ResetPasswordException;
 import com.cubeui.backend.web.exception.UserAlreadyActivatedException;
+import io.md.dao.Recording.RecordingType;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
+import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -44,6 +48,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 /**
  * ServiceDTO class for managing users.
@@ -66,13 +72,14 @@ public class UserService {
     private final UserOldPasswordsRepository userOldPasswordsRepository;
     private final ResetPasswordConfigRepository resetPasswordConfigRepository;
     private final ResetPasswordConfiguration resetPasswordConfiguration;
+    private final CubeServerService cubeServerService;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                        CustomerService customerService, AppRepository appRepository, AppUserRepository appUserRepository,
                        InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository, JwtActivationTokenProvider jwtTokenProvider,
                        JiraCustomerCredentialsRepository jiraCustomerCredentialsRepository, JiraUserCredentialsRepository jiraUserCredentialsRepository,
                        UserOldPasswordsRepository userOldPasswordsRepository, ResetPasswordConfigRepository resetPasswordConfigRepository,
-                       ResetPasswordConfiguration resetPasswordConfiguration) {
+                       ResetPasswordConfiguration resetPasswordConfiguration, CubeServerService cubeServerService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.customerService = customerService;
@@ -86,6 +93,7 @@ public class UserService {
         this.userOldPasswordsRepository = userOldPasswordsRepository;
         this.resetPasswordConfigRepository = resetPasswordConfigRepository;
         this.resetPasswordConfiguration = resetPasswordConfiguration;
+        this.cubeServerService = cubeServerService;
     }
 
     public Optional<User> getByUsername(String username) {
@@ -337,5 +345,25 @@ public class UserService {
         user.setResetKey(null);
         user.setResetDate(null);
         return user;
+    }
+
+    @Async("threadPoolTaskExecutor")
+    public void createHistoryForEachApp (HttpServletRequest request, User saved) {
+        Customer customer = saved.getCustomer();
+        MultiValueMap<String, String> formParams= new LinkedMultiValueMap<>();
+        formParams.set("name", "History-" + saved.getUsername());
+        formParams.set("label", new Date().toString());
+        formParams.set("userId", saved.getUsername());
+        formParams.set("recordingType", RecordingType.History.toString());
+
+        Optional<List<App>> appsOptional = this.appRepository.findByCustomerId(customer.getId());
+        if (appsOptional.isPresent()) {
+            List<App> apps = appsOptional.get();
+            apps.forEach(app -> {
+                cubeServerService.createRecording(request,
+                    customer.getName(), app.getName(),
+                    saved.getUsername(),Optional.of(formParams));
+            });
+        }
     }
 }
