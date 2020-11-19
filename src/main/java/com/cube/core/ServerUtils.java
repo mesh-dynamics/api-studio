@@ -141,7 +141,10 @@ public class ServerUtils {
             pathsToBeReconstructed.add("");
             if (arrayRule.dt == DataType.Set) {
                 Optional<JsonPointer> pathPointer =
-                    arrayRule.arrayComparisionKeyPath.map(JsonPointer::compile);
+                    arrayRule.arrayComparisionKeyPath.map(arrKeyPath-> {
+                        if(!arrKeyPath.startsWith("/")) arrKeyPath="/".concat(arrKeyPath);
+                        return JsonPointer.compile(arrKeyPath);
+                    });
                 for (int i = 0 ; i < nodeAsArray.size() ; i++) {
                     JsonNode elem = nodeAsArray.get(i);
                     Optional<String> keyOptional = pathPointer.map(UtilException.rethrowFunction(pathPtr ->
@@ -204,7 +207,9 @@ public class ServerUtils {
             getByPrefix(diffMap, oldPrefix);
         diffByPrefix.values().forEach(diff -> {
             String oldPath = diff.path;
-            diff.path = oldPath.replace(oldPrefix, arrayPath.concat("/").concat(newIndex));
+            if(oldPrefix.equals(oldPath) || oldPath.startsWith(oldPrefix.concat("/"))) {
+                diff.path = oldPath.replace(oldPrefix, arrayPath.concat("/").concat(newIndex));
+            }
         });
     }
 
