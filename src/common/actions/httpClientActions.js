@@ -50,8 +50,8 @@ export const httpClientActions = {
 
     unsetHasChangedAll: (tabId) => ({type: httpClientConstants.UNSET_HAS_CHANGED_ALL, data: {tabId}}),
 
-    preDriveRequest: (tabId, responseStatus, showCompleteDiff) => {
-        return {type: httpClientConstants.PRE_DRIVE_REQUEST, data: {tabId, responseStatus, showCompleteDiff}}; 
+    preDriveRequest: (tabId, responseStatus, showCompleteDiff, runId) => {
+        return {type: httpClientConstants.PRE_DRIVE_REQUEST, data: {tabId, responseStatus, showCompleteDiff, runId}}; 
     },
 
     postSuccessDriveRequest: (tabId, responseStatus, responseStatusText, responseHeaders, responseBody) => {
@@ -99,8 +99,8 @@ export const httpClientActions = {
         return {type: httpClientConstants.DELETE_USER_COLLECTION, data: userCollectionId};
     },
 
-    postSuccessLoadRecordedHistory: (tabId, recordedHistory) => {
-        return {type: httpClientConstants.POST_SUCCESS_LOAD_RECORDED_HISTORY, data: {tabId, recordedHistory}};
+    postSuccessLoadRecordedHistory: (tabId, recordedHistory, runId) => {
+        return {type: httpClientConstants.POST_SUCCESS_LOAD_RECORDED_HISTORY, data: {tabId, recordedHistory, runId}};
     },
 
     setInactiveHistoryCursor: (historyCursor, active) => {
@@ -206,10 +206,10 @@ export const httpClientActions = {
 
     setReqRunning: (tabId) => ({type: httpClientConstants.SET_REQUEST_RUNNING, data: {tabId}}),
 
-    unsetReqRunning: (tabId) => (dispatch) => {
+    unsetReqRunning: (tabId, runId) => (dispatch) => {
         console.log("Resetting mock context");
         setDefaultMockContext()
-        dispatch({type: httpClientConstants.UNSET_REQUEST_RUNNING, data: {tabId}})
+        dispatch({type: httpClientConstants.UNSET_REQUEST_RUNNING, data: {tabId, runId}})
     },
 
     createDuplicateTab: (tabId) => ({type: httpClientConstants.CREATE_DUPLICATE_TAB, data: {tabId}}),

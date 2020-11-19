@@ -232,6 +232,8 @@ export interface ICubeState {
   replayId: any; //2
   replayStatus: string;
   replayStatusObj: any; //2
+  fetchingReplayStatus: boolean;
+  fetchingAnalysisStatus: boolean;
   report: any; //2
   ruleBook: any; //2
   selectedApp: string | null;
@@ -386,8 +388,8 @@ export interface IHttpClientTabDetails {
   httpURLShowOnly: string;
   id: string;
   isOutgoingRequest: boolean;
-  outgoingRequestIds: any[]; //2
-  outgoingRequests: any[]; //2
+  outgoingRequestIds: string[];
+  outgoingRequests: IHttpClientTabDetails[];
   paramsType: string;
   queryStringParams: IRequestParamData[];
   rawData: string;
@@ -413,6 +415,7 @@ export interface IHttpClientTabDetails {
   requestRunning: boolean;
   abortRequest: any; //2
   selectedTraceTableTestReqTabId: string;
+  currentRunId: string;
   hasChanged: boolean;
   isHighlighted: boolean;
 }

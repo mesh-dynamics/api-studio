@@ -89,7 +89,7 @@ class HttpRequestBody extends Component<IHttpRequestBodyProps, IHttpRequestBodyS
                             value="rawData" name={"bodyType"+this.props.id.trim()} checked={!this.state.showFormData} onChange={this.handleBodyOrRawDataType}/>
                             Raw Data
                     </div>
-                    <div className="" style={{display: this.state.showFormData ? "none":  "inline-block", paddingRight: "25px", fontSize: "12px"}}>
+                    <div className="" style={{display: this.state.showFormData ? "none":  "inline-block", paddingRight: "5px", fontSize: "12px"}}>
                         <FormGroup bsSize="small">
                             <FormControl componentClass="select" placeholder="Method" style={{fontSize: "12px"}} readOnly={this.props.readOnly} name="rawDataType" value={this.props.rawDataType} onChange={this.handleBodyOrRawDataType}>
                                 <option value="txt">Text</option>

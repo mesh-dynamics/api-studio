@@ -416,6 +416,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                     if (eachTab.id === data.tabId) {
                         eachTab["responseStatus"] = data.responseStatus;
                         eachTab["showCompleteDiff"] = data.showCompleteDiff;
+                        eachTab["currentRunId"] = data.runId;
                     }
                     return eachTab; 
                 })
@@ -568,7 +569,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
-                    if (eachTab.id === data.tabId) {
+                    if (eachTab.id === data.tabId  && eachTab.currentRunId == data.runId) {
                         eachTab["recordedHistory"] = data.recordedHistory;
                         eachTab["selectedTraceTableTestReqTabId"] = data.recordedHistory.id;
                     }
@@ -743,7 +744,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
-                        if (eachTab.id === data.tabId) {
+                        if (eachTab.id === data.tabId && eachTab.currentRunId === data.runId) {
                             eachTab["requestRunning"] = false;
                             eachTab["abortRequest"] = null;
                         }

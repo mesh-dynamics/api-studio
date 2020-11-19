@@ -20,6 +20,12 @@ const configureStore = () => {
                         showMockConfigList: true,
                         mockConfigStatusText : ''
                     }
+                } else if (key == "cube") {
+                    return {
+                        ...inboundState,
+                        fetchingReplayStatus: false,
+                        fetchingAnalysisStatus: false,
+                    }
                 }
                 return inboundState;
             }, null),

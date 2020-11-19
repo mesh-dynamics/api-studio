@@ -21,6 +21,7 @@ import { cubeService } from "../../services";
 import api from "../../api";
 import classNames from "classnames";
 import CreateCollection from "./CreateCollection";
+import { extractParamsFromRequestEvent } from '../../utils/http_client/utils';
 
 class SideBarTabs extends Component {
   constructor(props) {
@@ -210,61 +211,8 @@ class SideBarTabs extends Component {
                 httpRequestEventTypeIndex === 0 ? 1 : 0;
               const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
               const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
-              let headers = [],
-                queryParams = [],
-                formData = [],
-                rawData = "",
-                rawDataType = "";
-              for (let eachHeader in httpRequestEvent.payload[1].hdrs) {
-                headers.push({
-                  id: uuidv4(),
-                  name: eachHeader,
-                  value: httpRequestEvent.payload[1].hdrs[eachHeader].join(","),
-                  description: "",
-                  selected: true,
-                });
-              }
-              for (let eachQueryParam in httpRequestEvent.payload[1]
-                .queryParams) {
-                queryParams.push({
-                  id: uuidv4(),
-                  name: eachQueryParam,
-                  value:
-                    httpRequestEvent.payload[1].queryParams[eachQueryParam][0],
-                  description: "",
-                  selected: true,
-                });
-              }
-              for (let eachFormParam in httpRequestEvent.payload[1]
-                .formParams) {
-                formData.push({
-                  id: uuidv4(),
-                  name: eachFormParam,
-                  value: httpRequestEvent.payload[1].formParams[
-                    eachFormParam
-                  ].join(","),
-                  description: "",
-                  selected: true,
-                });
-                rawDataType = "";
-              }
-              if (httpRequestEvent.payload[1].body) {
-                if (!_.isString(httpRequestEvent.payload[1].body)) {
-                  try {
-                    rawData = JSON.stringify(
-                      httpRequestEvent.payload[1].body,
-                      undefined,
-                      4
-                    );
-                    rawDataType = "json";
-                  } catch (err) {
-                    console.error(err);
-                  }
-                } else {
-                  rawData = httpRequestEvent.payload[1].body;
-                  rawDataType = "text";
-                }
-              }
+              const { headers, queryParams, formData, rawData, rawDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
+    
               //TODO: Create a separate class to handle below object
               let reqObject = {
                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
