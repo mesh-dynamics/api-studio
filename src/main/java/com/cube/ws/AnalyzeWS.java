@@ -28,6 +28,7 @@ import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.Payload;
 import io.md.dao.RecordingOperationSetSP;
+import io.md.dao.RequestPayload;
 import io.md.dao.ResponsePayload;
 import io.md.dao.Analysis.ReqRespMatchWithEvent;
 import java.io.IOException;
@@ -1608,7 +1609,7 @@ public class AnalyzeWS {
 	  if(level == 0) return;
 
 	  Event responseEvent = responseEventsByReqId.get(e.reqId);
-    HTTPRequestPayload payload = (HTTPRequestPayload) e.payload;
+	  RequestPayload payload = (RequestPayload) e.payload;
 
     String status = responseEvent != null ? ((ResponsePayload) responseEvent.payload).getStatusCode() : "";
     ServiceReqRes serviceReqRes = new ServiceReqRes(e.service, e.apiPath,
