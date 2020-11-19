@@ -22,7 +22,7 @@ import {getSearchHistoryParams, updateSearchHistoryParams} from "../../utils/lib
 import statusCodeList from "../../status-code-list";
 import {resolutionsIconMap} from '../../components/Resolutions.js';
 import { cubeService } from '../../services';
-import { getParameterCaseInsensitive } from '../../../shared/utils';
+import { getParameterCaseInsensitive, isJsonOrGrpcMime } from '../../../shared/utils';
 
 const cleanEscapedString = (str) => {
     // preserve newlines, etc - use valid JSON
@@ -627,7 +627,7 @@ class ViewTrace extends Component {
         let diffLayoutData = replayList.map((item, index) => {
             let recordedData, replayedData, recordedResponseHeaders, replayedResponseHeaders, prefix = "/body",
                 recordedRequestHeaders, replayedRequestHeaders, recordedRequestQParams, replayedRequestQParams, recordedRequestFParams, replayedRequestFParams,recordedRequestBody, replayedRequestBody, reductedDiffArrayReqHeaders, reductedDiffArrayReqBody, reductedDiffArrayReqQParams, reductedDiffArrayReqFParams;
-            let isJson = true;
+            let isJsonOrGrpc = true;
             // processing Response    
             // recorded response body and headers
             if (item.recordResponse) {
@@ -635,8 +635,8 @@ class ViewTrace extends Component {
                 // check if the content type is JSON and attempt to parse it
                 let recordedResponseContentType = getParameterCaseInsensitive(recordedResponseHeaders, "content-type");
                 let recordedResponseMime = recordedResponseContentType ? (_.isArray(recordedResponseContentType) ? recordedResponseContentType[0] : recordedResponseContentType) : "";
-                isJson = recordedResponseMime.toLowerCase().indexOf("json") > -1;
-                if (item.recordResponse.body && isJson) {
+                isJsonOrGrpcMime = isJsonOrGrpcMime(recordedResponseMime);
+                if (_.isString(item.recordResponse.body) && item.recordResponse.body && isJsonOrGrpc) {
                     try {
                         recordedData = JSON.parse(item.recordResponse.body);
                     } catch (e) {
@@ -658,8 +658,8 @@ class ViewTrace extends Component {
                 // check if the content type is JSON and attempt to parse it
                 let replayedResponseContentType = getParameterCaseInsensitive(replayedResponseHeaders, "content-type");
                 let replayedResponseMime = replayedResponseContentType ? (_.isArray(replayedResponseContentType) ? replayedResponseContentType[0] : replayedResponseContentType) : "";
-                isJson = replayedResponseMime.toLowerCase().indexOf("json") > -1;
-                if (item.replayResponse.body && isJson) {
+                isJsonOrGrpc = isJsonOrGrpcMime(replayedResponseMime);
+                if (_.isString(item.replayResponse.body) && item.replayResponse.body && isJsonOrGrpc) {
                     try {
                         replayedData = JSON.parse(item.replayResponse.body);
                     } catch (e) {
@@ -693,7 +693,7 @@ class ViewTrace extends Component {
             if (diff && diff.length > 0) {
                 // skip calculating the diff array in case of non json data 
                 // pass diffArray as null so that the diff library can render it directly
-                if (isJson) { 
+                if (isJsonOrGrpc) { 
                     let reduceDiff = new ReduceDiff(prefix, actJSON, expJSON, diff);
                     reductedDiffArray = reduceDiff.computeDiffArray();
                 }
