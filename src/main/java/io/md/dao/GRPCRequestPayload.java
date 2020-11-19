@@ -1,5 +1,6 @@
 package io.md.dao;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -35,6 +36,12 @@ public class GRPCRequestPayload extends  GRPCPayload implements RequestPayload {
 			}
 		}
 		return method;
+	}
+
+	// Ideally there would be no queryparams for grpc case
+	@Override
+	public MultivaluedMap<String, String> getQueryParams() {
+		return new MultivaluedHashMap<String, String>();
 	}
 
 
