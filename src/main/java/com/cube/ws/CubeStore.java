@@ -1504,6 +1504,7 @@ public class CubeStore {
     @POST
     @Path("afterResponse/{recordingId}")
     @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
     public Response afterResponse(@Context UriInfo ui,
         @PathParam("recordingId") String recordingId,
         List<UserReqRespContainer> userReqRespContainers) {
@@ -1513,6 +1514,7 @@ public class CubeStore {
     @POST
     @Path("storeUserReqResp/{recordingId}")
     @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
     public Response storeUserReqResp(@Context UriInfo ui,
         @PathParam("recordingId") String recordingId,
         List<UserReqRespContainer> userReqRespContainers) {
@@ -1525,7 +1527,7 @@ public class CubeStore {
 
         Optional<Recording> recording = rrstore.getRecording(recordingId);
         Response resp = recording.map(rec -> {
-            List<String> responseList = new ArrayList<>();
+            List<Map> responseList = new ArrayList<>();
             Map<String, String> traceIdMap = new HashMap<>();
             Map<String, String> extractionMap = new HashMap<>();
             final String generatedTraceId = io.md.utils.Utils.generateTraceId();
@@ -1571,6 +1573,16 @@ public class CubeStore {
                     Event responseEvent = buildEvent(response, rec.collection,
                         rec.recordingType, reqId, traceId);
 
+                    if(requestEvent.payload instanceof GRPCPayload) {
+                        io.md.utils.Utils.setProtoDescriptorGrpcEvent(requestEvent, config.protoDescriptorCache);
+                        ((GRPCPayload) requestEvent.payload).unWrapBody();
+                    }
+
+                    if(responseEvent.payload instanceof GRPCPayload) {
+                        io.md.utils.Utils.setProtoDescriptorGrpcEvent(responseEvent, config.protoDescriptorCache);
+                        ((GRPCPayload) responseEvent.payload).unWrapBody();
+                    }
+
                     if (!rrstore.save(requestEvent) || !rrstore.save(responseEvent)) {
                         LOGGER.error(new ObjectMessage(
                             Map.of(Constants.MESSAGE, "Unable to store event in solr",
@@ -1579,9 +1591,19 @@ public class CubeStore {
                             buildErrorResponse(Constants.ERROR, Constants.RECORDING_ID,
                                 "Unable to store event in solr")).build();
                     }
-                    String responseString = jsonMapper.writeValueAsString(Map.of("oldReqId", request.reqId,
-                        "oldTraceId", request.getTraceId(), "newReqId", reqId, "newTraceId", traceId, "extractionMap", extractionMapString));
-                    responseList.add(responseString);
+
+
+//                    String responseString = jsonMapper.writeValueAsString(Map.of("oldReqId", request.reqId,
+//                        "oldTraceId", request.getTraceId(), "newReqId", reqId, "newTraceId", traceId, "extractionMap", extractionMapString));
+//                    responseList.add(responseString);
+
+                    Map<String, Object> responseEntry = Map.of("oldReqId", request.reqId,
+                        "oldTraceId", request.getTraceId(), "newReqId", reqId, "newTraceId",
+                        traceId, "extractionMap", extractionMapString, "requestEvent", jsonMapper.writeValueAsString(requestEvent),
+                        "responseEvent", jsonMapper.writeValueAsString(responseEvent));
+
+
+                    responseList.add(responseEntry);
 
                     if (rec.recordingType == RecordingType.History) {
                         TemplateKey templateKey = new TemplateKey(rec.templateVersion,
@@ -1627,7 +1649,7 @@ public class CubeStore {
                     LOGGER.error(new ObjectMessage(
                         Map.of(Constants.MESSAGE, "Invalid Event",
                             Constants.RECORDING_ID, recordingId)), e);
-                    return Response.status(Status.BAD_REQUEST).entity(Utils.buildErrorResponse(
+                    return Response.status(Status.BAD_REQUEST).entity(buildErrorResponse(
                         Status.BAD_REQUEST.toString(),Constants.ERROR,  e.getMessage())).build();
                 } catch (JsonProcessingException e) {
                     LOGGER.error(new ObjectMessage(
@@ -1644,7 +1666,7 @@ public class CubeStore {
                 }
             }
             rrstore.commit();
-            return Response.ok()
+            return Response.ok().type(MediaType.APPLICATION_JSON)
                 .entity(buildSuccessResponse(
                     Constants.SUCCESS, new JSONObject(
                         Map.of(
@@ -1652,7 +1674,7 @@ public class CubeStore {
                             Constants.MESSAGE, "The UserData is saved",
                             Constants.RECORDING_ID, recordingId,
                             Constants.RESPONSE, responseList)))).build();
-        }).orElse(Response.status(Response.Status.NOT_FOUND).
+        }).orElse(Response.status(Response.Status.NOT_FOUND).type(MediaType.APPLICATION_JSON).
             entity(buildErrorResponse(Constants.ERROR, Constants.RECORDING_NOT_FOUND,
                 "Recording not found for recordingId " + recordingId)).build());
         return resp;
@@ -1750,7 +1772,7 @@ public class CubeStore {
                 io.md.utils.Utils.setProtoDescriptorGrpcEvent(requestEvent, config.protoDescriptorCache);
                 // Note the state for stored event in solr will be UnwrappedDecoded if this is directly coming from devtool
                 // then the state has to be set as UnwrappedDecoded by devtool.
-                ((GRPCPayload) requestEvent.payload).wrapBody();
+                ((GRPCPayload) requestEvent.payload).wrapBodyAndEncode();
             }
 
             Optional<Recording> optionalRecording = rrstore.getRecording(recordingOrReplayId);
