@@ -1,14 +1,13 @@
 ################
 ####build####
 ###############
-FROM maven:3.6.0-jdk-11-slim AS build
+FROM cubeiocorp/cubeiobase:0.0.2 AS build
 ARG TOKEN
 COPY pom.xml ./pom.xml
 # download maven dependencies
 COPY src ./src
 COPY WebContent ./WebContent
 #Add settings.xml file for github auth
-RUN mkdir ~/.m2
 RUN echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
 RUN mvn package
 #########################################
