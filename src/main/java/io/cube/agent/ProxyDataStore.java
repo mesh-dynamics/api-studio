@@ -132,12 +132,6 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
         return Optional.empty();
     }
 
-    //@Override
-    public boolean saveResult(ReqRespMatchResult reqRespMatchResult) {
-        return cubeClient.saveResult(reqRespMatchResult).isPresent();
-    }
-    
-    //Todo
     @Override
     public boolean saveResult(ReqRespMatchResult reqRespMatchResult, String s) {
         return cubeClient.saveResult(reqRespMatchResult).isPresent();
@@ -159,9 +153,12 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
         return cubeClient.deferredDelete(replay).isPresent();
     }
 
-    //Todo
+    /*
+      Todo: This method needs to be removed from Datastore interface. After that it can be removed from here.
+     */
     @Override
     public Optional<ProtoDescriptorDAO> getLatestProtoDescriptorDAO(String s, String s1) {
-        return Optional.empty();
+
+        throw new UnsupportedOperationException("ProxyData Store getLatestProtoDescriptorDAO call is not supported");
     }
 }
