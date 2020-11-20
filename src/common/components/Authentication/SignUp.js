@@ -43,6 +43,8 @@ const SignUp = (props) => {
 
     const [requiresCaptchaValidation, setRequiresCaptchaValidation ] = useState(false);
 
+    const [isCreatingUser, setIsCreatingUser] = useState(false);
+
     const firstNameValidation = validateName(firstName, "Firstname");
 
     const lastNameValidation =  validateName(lastName, "Lastname");
@@ -111,8 +113,12 @@ const SignUp = (props) => {
             };
     
             try {
+
+                setIsCreatingUser(true);
                 
                 const status = await createUser(user);
+
+                setIsCreatingUser(false);
                 
                 setHasServerValidated(true);
 
@@ -124,6 +130,7 @@ const SignUp = (props) => {
                     setAccountCreatedSuccessfully(false);
                 }
             } catch(e) {
+                setIsCreatingUser(false);
                 setHasServerValidated(true);
                 setAccountCreatedSuccessfully(false);
             }
@@ -275,7 +282,17 @@ const SignUp = (props) => {
                 </div>
             }
             <div className="custom-fg form-group">
-                <button className="btn btn-custom-auth width-100">Create Account</button>
+                <button disabled={isCreatingUser} className="btn btn-custom-auth width-100">
+                    Create Account
+                    {
+                        isCreatingUser
+                        &&
+                        <span className="spinner-container">
+                            <i className="fa fa-spinner fa-spin"></i>
+                        </span>
+                    }
+                    
+                </button>
             </div>
             
             <div className="custom-sign-in-divider" />

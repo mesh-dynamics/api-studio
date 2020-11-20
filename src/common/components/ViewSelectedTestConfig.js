@@ -591,6 +591,11 @@ class ViewSelectedTestConfig extends React.Component {
             searchParams.set('resettag', `default${selectedApp}Noop`);
         }
 
+        // TODO: Change this to proper application config. Remove it after the demo @Sam
+        if(selectedApp === 'grpc') {
+            searchParams.set('replayType', 'GRPC');
+        }
+
         // Append dynamic injection configuration if available
         dynamicInjectionConfigVersion && searchParams.set('dynamicInjectionConfigVersion', dynamicInjectionConfigVersion);
         // Append mock services

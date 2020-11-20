@@ -121,7 +121,7 @@ class Navigation extends Component{
                 // after the replay is completed stop polling and poll for analysis status
                 clearInterval(this.replayStatusInterval);
                 this.checkAnalysisStatus(replayId);
-            } else {
+            } else if (!cube.fetchingReplayStatus) {
                 checkStatus();
             }
         }, 1000);
@@ -137,7 +137,7 @@ class Navigation extends Component{
             const {cube} = this.props;
             if (cube.analysisStatusObj && (cube.analysisStatus == 'Completed' || cube.analysisStatus == 'Error')) {
                 clearInterval(this.analysisStatusInterval);
-            } else {
+            } else if(!cube.fetchingAnalysisStatus) {
                 checkStatus();
             }
         }, 1000);
@@ -181,18 +181,24 @@ class Navigation extends Component{
                             <div title="Settings" className="link-q"><i className="fas fa-cog"></i></div> */}
                             <div title={username} className="link-q">
                                 
-                            <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=cFWmFBw2NkC9cZE-UHbkR9N-ipU4B_JMjy3zTczH9hFUM1RHRzhUSFkyM0wxVFFESU9ESk5MWlNMWC4u"
-                                target="_blank" title="">  
-                                <div title="Feedback" className="link-q">
-                                    <i className="fa fa-comment" aria-hidden="true"></i>
-                                </div></a>
-                              
-                                <div title="Help (Coming soon)" style={{marginBottom: '10px', color:'gray'}}><i className="fa fa-question" aria-hidden="true"></i></div>
+                                <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=cFWmFBw2NkC9cZE-UHbkR9N-ipU4B_JMjy3zTczH9hFUM1RHRzhUSFkyM0wxVFFESU9ESk5MWlNMWC4u"
+                                    target="_blank" title="">  
+                                    <div title="Feedback" className="link-q">
+                                        <i className="fa fa-comment" aria-hidden="true"></i>
+                                    </div>
+                                </a>
+                                <a href="https://docs.meshdynamics.io" target="_blank" title="">  
+                                    <div title="Help" className="link-q">
+                                        <i className="fa fa-question" aria-hidden="true"></i>
+                                    </div>
+                                </a>
                                 <Link to="/account">
                                     <UserAvatar size="24" name={username} className="user-avatar" color="#CCC6B0"/>
                                 </Link>
-                                </div>
-                            <div title="Sign Out" className="link-q" onClick={lo}><i className="fas fa-sign-out-alt"></i></div>
+                            </div>
+                            <div title="Sign Out" className="link-q" onClick={lo}>
+                                <i className="fas fa-sign-out-alt"></i>
+                            </div>
                         </div>
                     </div>
                     <div className={appsVisible ? "app-select" : "app-select disp-none"}>

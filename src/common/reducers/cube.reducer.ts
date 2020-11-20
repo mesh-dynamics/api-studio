@@ -52,8 +52,11 @@ const initialState : ICubeState = {
 
     replayStatus:'Fetching Replay ID',  
     replayStatusObj: null,
+    fetchingReplayStatus: false,
+    
     analysisStatus: "Not Started",
     analysisStatusObj: null,
+    fetchingAnalysisStatus: false,
 
     analysis: null,
     report: null,
@@ -258,19 +261,29 @@ export function cube (state = initialState, action: ICubeAction) {
                 replayStatus: 'Initializing'
             };
         case cubeConstants.REPLAY_STATUS_FETCHED:
-            return{
+            return {
                 ...state,
                 replayStatusObj: action.data,
                 replayStatus: action.data.status,
+                fetchingReplayStatus: false,
             };
-        
+        case cubeConstants.FETCHING_REPLAY_STATUS:
+            return {
+                ...state,
+                fetchingReplayStatus: true,
+            }
         case cubeConstants.ANALYSIS_STATUS_FETCHED:
             return{
                 ...state,
                 analysisStatusObj: action.data,
                 analysisStatus: action.data.status,
+                fetchingAnalysisStatus: false,
             };
-        
+        case cubeConstants.FETCHING_ANALYSIS_STATUS:
+            return {
+                ...state,
+                fetchingAnalysisStatus: true,
+            }
         case cubeConstants.ANALYSIS_FETCHED:
             return {
                 ...state,
