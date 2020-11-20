@@ -452,18 +452,7 @@ public class CubeStoreController {
         return cubeServerService.fetchPostResponse(request, Optional.of(map));
     }
 
-    @PostMapping("/collectionToGolden/{recordingId}")
-    public ResponseEntity collectionToGolden(HttpServletRequest request,
-        @PathVariable String recordingId, Authentication authentication, @RequestBody Optional<String> postBody) {
-        Optional<Recording> recording = cubeServerService.getRecording(recordingId);
-        if(recording.isEmpty())
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body("No Recording found for recordingId=" + recordingId);
-        validation.validateCustomerName(authentication,recording.get().customerId);
-        return cubeServerService.fetchPostResponse(request, postBody);
-    }
-
-    @PostMapping("/GoldenToCollection/{recordingId}")
+    @PostMapping("/copyRecording/{recordingId}")
     public ResponseEntity GoldenToCollection(HttpServletRequest request,
         @PathVariable String recordingId, Authentication authentication, @RequestBody Optional<String> postBody) {
         Optional<Recording> recording = cubeServerService.getRecording(recordingId);
