@@ -31,5 +31,5 @@ logging:
     level:
         org.springframework.web: INFO
         org.springframework.security: DEBUG
-        com.cubeui.backend: DEBUG
+        com.cubeio.logcollector: DEBUG
     file: app.log
