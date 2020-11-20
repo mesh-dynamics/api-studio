@@ -11,18 +11,18 @@ import io.md.dao.JsonDataObj;
 import io.md.dao.Payload;
 import io.md.injection.DynamicInjectionConfig.ExtractionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta;
+import io.md.logger.LogMgr;
 import io.md.services.DataStore;
 import io.md.utils.Utils;
 import org.apache.commons.text.StringSubstitutor;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.regex.Pattern;
 
 public class DynamicInjector {
 
-	private static Logger LOGGER = LoggerFactory.getLogger(DynamicInjector.class);
+	private static Logger LOGGER = LogMgr.getLogger(DynamicInjector.class);
 
 	protected final Optional<DynamicInjectionConfig> dynamicInjectionConfig;
 	protected final DataStore dataStore;

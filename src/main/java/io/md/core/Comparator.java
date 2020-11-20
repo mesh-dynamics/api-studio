@@ -4,8 +4,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -148,7 +148,7 @@ public interface Comparator {
 
 	class Match {
 
-		private static final Logger LOGGER = LoggerFactory.getLogger(Match.class);
+		private static final Logger LOGGER = LogMgr.getLogger(Match.class);
 
 
 		/**

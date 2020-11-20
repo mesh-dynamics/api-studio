@@ -14,9 +14,9 @@ import java.util.*;
 
 import io.md.dao.Recording.RecordingType;
 
+import io.md.logger.LogMgr;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -40,7 +40,7 @@ import io.md.dao.Event.EventBuilder.InvalidEventException;
  */
 public class Event implements MDStorable {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(Event.class);
+	private static final Logger LOGGER = LogMgr.getLogger(Event.class);
 
 	@JsonCreator
 	private Event(@JsonProperty("customerId") String customerId, @JsonProperty("app") String app,
@@ -321,7 +321,7 @@ public class Event implements MDStorable {
 
 	public static class EventBuilder {
 
-		private static final Logger LOGGER = LoggerFactory.getLogger(EventBuilder.class);
+		private static final Logger LOGGER = LogMgr.getLogger(EventBuilder.class);
 
 		private final String customerId;
 		private final String app;

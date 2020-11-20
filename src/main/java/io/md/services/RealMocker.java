@@ -16,12 +16,12 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response.Status;
 
+import io.md.logger.LogMgr;
 import org.apache.http.HttpStatus;
 import io.md.injection.DynamicInjector;
 import io.md.injection.DynamicInjectorFactory;
 import io.md.utils.CubeObjectMapperProvider;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.md.constants.Constants;
 import io.md.core.Comparator;
@@ -43,7 +43,7 @@ public class RealMocker implements Mocker {
     private DataStore cube;
     private DynamicInjectorFactory diFactory;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RealMocker.class);
+    private static final Logger LOGGER = LogMgr.getLogger(RealMocker.class);
 
     public RealMocker(DataStore cube) {
         this.cube = cube;

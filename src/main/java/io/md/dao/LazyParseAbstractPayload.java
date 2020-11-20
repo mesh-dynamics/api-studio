@@ -7,9 +7,9 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import io.md.core.WrapUnwrapContext;
+import io.md.logger.LogMgr;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -23,7 +23,7 @@ import io.md.utils.CubeObjectMapperProvider;
 
 public abstract class LazyParseAbstractPayload implements Payload {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(LazyParseAbstractPayload.class);
+	private static final Logger LOGGER = LogMgr.getLogger(LazyParseAbstractPayload.class);
 
 	@JsonIgnore
 	public JsonDataObj dataObj;

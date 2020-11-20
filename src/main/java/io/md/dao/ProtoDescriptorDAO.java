@@ -7,8 +7,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.github.os72.protobuf.dynamic.DynamicSchema;
 import com.google.protobuf.DescriptorProtos;
@@ -24,7 +24,7 @@ public class ProtoDescriptorDAO {
 	public final String encodedFile;
 	private DynamicSchema schema;
 	private Map<String, Map<String, MethodDescriptor>> serviceDescriptorMap;
-	private static final Logger LOGGER = LoggerFactory.getLogger(ProtoDescriptorDAO.class);
+	private static final Logger LOGGER = LogMgr.getLogger(ProtoDescriptorDAO.class);
 
 
 	public ProtoDescriptorDAO() {

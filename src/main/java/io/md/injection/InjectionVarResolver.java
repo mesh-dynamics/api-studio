@@ -4,11 +4,11 @@ import io.md.dao.DataObj;
 import io.md.dao.DataObj.PathNotFoundException;
 import io.md.dao.Event;
 import io.md.dao.Payload;
+import io.md.logger.LogMgr;
 import io.md.services.DataStore;
 import io.md.constants.Constants;
 import org.apache.commons.text.lookup.StringLookup;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -20,7 +20,7 @@ public class InjectionVarResolver implements StringLookup {
 	public static final String MATCHEDVAL_PLACEHOLDER = "_MATCHEDVAL";
 	public static final String PATH_PLACEHOLDER = "_PATH";
 
-	private static Logger LOGGER = LoggerFactory.getLogger(InjectionVarResolver.class);
+	private static Logger LOGGER = LogMgr.getLogger(InjectionVarResolver.class);
 
 	Event goldenRequestEvent;
 	Payload testResponsePayload;

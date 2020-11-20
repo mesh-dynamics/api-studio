@@ -9,28 +9,23 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
 import io.md.constants.Constants;
-import org.apache.commons.lang3.NotImplementedException;
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
 import io.md.core.CompareTemplate;
 import io.md.utils.HttpRequestPayloadDeserializer;
-import io.md.utils.Utils;
 
 /*
  * Created by IntelliJ IDEA.
@@ -39,7 +34,7 @@ import io.md.utils.Utils;
 @JsonDeserialize(using = HttpRequestPayloadDeserializer.class)
 public class HTTPRequestPayload extends HTTPPayload implements RequestPayload {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(HTTPRequestPayload.class);
+	private static final Logger LOGGER = LogMgr.getLogger(HTTPRequestPayload.class);
 
 	@JsonDeserialize(as=MultivaluedHashMap.class)
 	@JsonProperty("queryParams")

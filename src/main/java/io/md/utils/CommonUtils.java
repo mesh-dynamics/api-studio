@@ -20,11 +20,11 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.logger.LogMgr;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpRequest;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -57,7 +57,7 @@ import io.opentracing.tag.Tags;
 
 public class CommonUtils {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(CommonUtils.class);
+	private static final Logger LOGGER = LogMgr.getLogger(CommonUtils.class);
 
 	private static final Tracer NOOPTracer = NoopTracerFactory.create();
 

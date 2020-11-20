@@ -1,8 +1,8 @@
 package io.md.tracer.handlers;
 
 import io.md.dao.MDTraceInfo;
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.math.BigInteger;
@@ -15,7 +15,7 @@ import static io.md.utils.Utils.high;
 
 public abstract  class JaegerStyleTracerHandler implements MDTraceHandler {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(JaegerStyleTracerHandler.class);
+    private static final Logger LOGGER = LogMgr.getLogger(JaegerStyleTracerHandler.class);
 
     public abstract  String getTracekey(String app);
     public abstract String getParentSpankey(String app);

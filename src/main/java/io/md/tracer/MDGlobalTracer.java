@@ -1,8 +1,8 @@
 package io.md.tracer;
 
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.opentracing.Scope;
 import io.opentracing.ScopeManager;
@@ -14,7 +14,7 @@ import io.opentracing.noop.NoopTracerFactory;
 import io.opentracing.propagation.Format;
 
 public class MDGlobalTracer implements Tracer {
-	private static final Logger LOGGER = LoggerFactory.getLogger(MDGlobalTracer.class);
+	private static final Logger LOGGER = LogMgr.getLogger(MDGlobalTracer.class);
 	private static final MDGlobalTracer INSTANCE = new MDGlobalTracer();
 	private static volatile Tracer tracer = NoopTracerFactory.create();
 

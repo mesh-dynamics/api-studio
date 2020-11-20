@@ -8,8 +8,8 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
@@ -118,7 +118,7 @@ public class DynamicInjectionConfig {
 
 	static public class InjectionMeta {
 
-		private static final Logger LOGGER = LoggerFactory.getLogger(InjectionMeta.class);
+		private static final Logger LOGGER = LogMgr.getLogger(InjectionMeta.class);
 
 		@JsonProperty("apiPaths")
 		public final List<String> apiPaths;

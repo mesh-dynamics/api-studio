@@ -12,8 +12,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonSetter;
  */
 public class Recording {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(Recording.class);
+	private static final Logger LOGGER = LogMgr.getLogger(Recording.class);
 
 	public enum RecordingStatus {
 		Running,

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import io.md.constants.Constants;
 import io.md.core.WrapUnwrapContext;
+import io.md.logger.LogMgr;
 import io.md.utils.Utils;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -13,11 +14,10 @@ import java.util.Optional;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public abstract class GRPCPayload extends HTTPPayload {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(GRPCPayload.class);
+    private static final Logger LOGGER = LogMgr.getLogger(GRPCPayload.class);
 
     protected String path;
     protected String service;

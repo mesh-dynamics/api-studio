@@ -7,8 +7,8 @@ import javax.sql.rowset.serial.SerialBlob;
 import javax.sql.rowset.serial.SerialClob;
 import javax.sql.rowset.serial.SerialException;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonToken;
@@ -22,7 +22,7 @@ import io.md.dao.FnReqRespPayload;
 
 public class FnReqRespPayloadSerializer extends JsonSerializer<FnReqRespPayload> {
 
-	static Logger LOGGER = LoggerFactory.getLogger(FnReqRespPayloadSerializer.class);
+	static Logger LOGGER = LogMgr.getLogger(FnReqRespPayloadSerializer.class);
 	private Gson gson = MeshDGsonProvider.getInstance();
 
 	@Override
