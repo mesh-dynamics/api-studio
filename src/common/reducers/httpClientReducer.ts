@@ -468,6 +468,12 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             }
         }
 
+        case httpClientConstants.UPDATE_CONTEXT_MAP: {
+            return {
+                ...state,
+                contextMap: data.value
+            }
+        }
 
         case httpClientConstants.POST_ERROR_DRIVE_REQUEST: {
             let {tabs} = state;

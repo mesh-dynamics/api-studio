@@ -24,6 +24,10 @@ export const httpClientActions = {
         return {type: httpClientConstants.UPDATE_EVENT_DATA_IN_TAB, data: {tabId, value}};
     },
 
+    updateContextMap: (value) => {
+        return {type: httpClientConstants.UPDATE_CONTEXT_MAP, data: {value}};
+    },
+
     addParamToSelectedTab: (tabId, type) => {
         return {type: httpClientConstants.ADD_PARAM_TO_TAB, data: {tabId, type}};
     },

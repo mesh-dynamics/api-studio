@@ -294,8 +294,8 @@ export interface IPayloadData {
 export interface IQueryParams {
   [key: string]: string[];
 }
-export interface IKeyValuePairs {
-  [key: string]: string;
+export interface IKeyValuePairs<T = string> {
+  [key: string]: T;
 }
 export interface IEventData {
   apiPath: string;
@@ -419,6 +419,7 @@ export interface IHttpClientTabDetails {
   hasChanged: boolean;
   isHighlighted: boolean;
   progressState?: string;
+  contextMap: IKeyValuePairs
 }
 
 export interface IUserApiTraceHistory {

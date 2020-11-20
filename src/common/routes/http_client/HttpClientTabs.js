@@ -1023,7 +1023,7 @@ class HttpClientTabs extends Component {
     }
 
     async driveRequest(isOutgoingRequest, tabId) {
-        const {httpClient: {tabs, selectedTabKey, userHistoryCollection, mockConfigList, selectedMockConfig, mockContextLookupCollection, mockContextSaveToCollection, selectedEnvironment  }} = this.props;
+        const {httpClient: {tabs, selectedTabKey, userHistoryCollection, mockConfigList, selectedMockConfig, mockContextLookupCollection, mockContextSaveToCollection, selectedEnvironment, contextMap  }} = this.props;
         const { cube: { selectedApp }, user } = this.props;
         const { dispatch } = this.props;
         const userId = user.username;
@@ -1112,9 +1112,9 @@ class HttpClientTabs extends Component {
                 requestEvent : formattedData.request,
                 environmentName: selectedEnvironment,
                 injectionConfigVersion: `default${selectedApp}`,
-                contextMap: {}
+                contextMap: !selectedEnvironment && contextMap ? contextMap : {},
             }
-            const preRequestResult = await cubeService.fetchPreRequest(userHistoryCollection.id, runId, preRequestData, tabToProcess.abortRequest.cancelToken);
+            const preRequestResult = await cubeService.fetchPreRequest(userHistoryCollection.id, runId, preRequestData, selectedApp, tabToProcess.abortRequest.cancelToken);
         
             [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] = preRequestToFetchableConfig(preRequestResult, httpRequestURL);
 
@@ -1291,6 +1291,9 @@ class HttpClientTabs extends Component {
         
         // let apiPath = getApiPathFromRequestEvent(httpRequestEvent); // httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : "";
         let apiPath = this.getPathName(applyEnvVarsToUrl(tabToSave.httpURL));
+        httpRequestEvent.metaData.httpURL = tabToSave.httpURL;
+        httpResponseEvent.metaData.httpURL = tabToSave.httpURL;
+
         if(httpRequestEvent.reqId === "NA") {
             const parsedUrl = urlParser(applyEnvVarsToUrl(tabToSave.httpURL), PLATFORM_ELECTRON ? {} : true);
             let service = parsedUrl.host || "NA";
@@ -1403,8 +1406,10 @@ class HttpClientTabs extends Component {
         const { 
             httpClient: { 
                 historyTabState, 
-                tabs: tabsToProcess
+                tabs: tabsToProcess,
+                selectedEnvironment,                
             }, 
+            cube: { selectedApp },
             dispatch
         } = this.props;
 
@@ -1424,7 +1429,7 @@ class HttpClientTabs extends Component {
                 const apiConfig = {
                     cancelToken: tabToProcess.abortRequest.cancelToken
                 }
-                cubeService.afterResponse(recordingId, data, apiConfig)
+                cubeService.afterResponse(recordingId, data, apiConfig, selectedEnvironment, selectedApp)
                     .then((serverRes) => {
                         try {
                             const parsedTraceReqData = serverRes.data.response && serverRes.data.response.length > 0 ? serverRes.data.response[0] : {};
@@ -1440,6 +1445,10 @@ class HttpClientTabs extends Component {
                             setTimeout(() => {
                                 this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig, true);
                             }, 5000);
+
+                            if(!selectedEnvironment){
+                                dispatch(httpClientActions.updateContextMap(JSON.parse(parsedTraceReqData.extractionMap)));
+                            }
                         } catch (error) {
                             console.error("Error ", error);
                             throw new Error(error);
@@ -1477,8 +1486,8 @@ class HttpClientTabs extends Component {
         let reqObject = {
             id: uuidv4(),
             httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-            httpURL: httpRequestEvent.apiPath,
-            httpURLShowOnly: httpRequestEvent.apiPath,
+            httpURL: httpRequestEvent.metaData.httpURL || httpRequestEvent.apiPath,
+            httpURLShowOnly: httpRequestEvent.metaData.httpURL || httpRequestEvent.apiPath,
             headers: headers,
             queryStringParams: queryParams,
             bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
