@@ -28,6 +28,7 @@ import io.md.dao.HTTPRequestPayload;
 import io.md.dao.HTTPResponsePayload;
 import io.md.dao.Payload;
 import io.md.dao.RecordingOperationSetSP;
+import io.md.dao.RequestPayload;
 import io.md.dao.ResponsePayload;
 import io.md.dao.Analysis.ReqRespMatchWithEvent;
 import java.io.IOException;
@@ -74,6 +75,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import io.cube.agent.UtilException;
 import io.md.core.Comparator;
@@ -623,7 +626,12 @@ public class AnalyzeWS {
 	    , Optional<Event> event) {
     	return payload.map(p-> {
     		try {
-			    return jsonMapper.treeToValue(p, Payload.class);
+    			String payloadType;
+    			payloadType = event.map(e -> e.payload.getClass().getSimpleName()).orElse("HTTPResponsePayload");
+			    ArrayNode arrayNode = JsonNodeFactory.instance.arrayNode();
+			    arrayNode.insert(0, payloadType);
+			    arrayNode.insert(1, p);
+			    return jsonMapper.treeToValue(arrayNode, Payload.class);
 		    } catch (IOException e) {
 			    return null;
 		    }
@@ -1601,7 +1609,7 @@ public class AnalyzeWS {
 	  if(level == 0) return;
 
 	  Event responseEvent = responseEventsByReqId.get(e.reqId);
-    HTTPRequestPayload payload = (HTTPRequestPayload) e.payload;
+	  RequestPayload payload = (RequestPayload) e.payload;
 
     String status = responseEvent != null ? ((ResponsePayload) responseEvent.payload).getStatusCode() : "";
     ServiceReqRes serviceReqRes = new ServiceReqRes(e.service, e.apiPath,
