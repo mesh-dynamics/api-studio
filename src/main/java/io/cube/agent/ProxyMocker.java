@@ -13,9 +13,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.sql.rowset.serial.SerialBlob;
 import javax.sql.rowset.serial.SerialClob;
 
+import io.cube.agent.logger.CubeLoggerFactory;
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
@@ -45,7 +45,7 @@ import io.md.utils.Utils;
  */
 public class ProxyMocker implements Mocker {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ProxyMocker.class);
+	private static final Logger LOGGER = CubeLoggerFactory.getLogger(ProxyMocker.class);
 	private static Map<Integer, Instant> fnMap = new ConcurrentHashMap<>();
 	private ObjectMapper jsonMapper;
 	private Gson gson;

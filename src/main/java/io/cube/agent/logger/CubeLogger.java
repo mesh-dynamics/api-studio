@@ -39,11 +39,6 @@ public class CubeLogger implements Logger {
         log(String.format("%s : %s", message , ExceptionUtils.getStackTrace(throwable) ) , level);
     }
 
-    @Override
-    public boolean isTraceEnabled() {
-        return isLevelEnabled(Level.TRACE);
-    }
-
     private void logInt(Level level, String s ){
         if(isLevelEnabled(level)){
             log(s , level);
@@ -71,41 +66,34 @@ public class CubeLogger implements Logger {
         }
     }
 
+    @Override
+    public boolean isTraceEnabled() {
+        return isLevelEnabled(Level.TRACE);
+    }
 
     @Override
     public void trace(String s) {
-        if(isTraceEnabled()){
-            log(s , Level.TRACE);
-        }
+        logInt(Level.TRACE , s);
     }
 
     @Override
     public void trace(String s, Object o) {
-        if(isTraceEnabled()){
-            log(MessageFormatter.format(s , o).getMessage(), Level.TRACE);
-        }
+        logInt(Level.TRACE , s , o);
     }
 
     @Override
     public void trace(String s, Object o, Object o1) {
-        if(isTraceEnabled()){
-            log(MessageFormatter.format(s , o , o1).getMessage(), Level.TRACE);
-        }
+        logInt(Level.TRACE , s , o , o1);
     }
 
     @Override
     public void trace(String s, Object... objects) {
-        if(isTraceEnabled()){
-            FormattingTuple ft =  MessageFormatter.arrayFormat(s , objects);
-            log(ft.getMessage() , ft.getThrowable() , Level.TRACE);
-        }
+        logInt(Level.TRACE , s , objects);
     }
 
     @Override
     public void trace(String s, Throwable throwable) {
-        if(isTraceEnabled()){
-            log(s, throwable , Level.TRACE);
-        }
+        logInt(Level.TRACE , s , throwable);
     }
 
     @Override

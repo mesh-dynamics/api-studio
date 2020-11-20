@@ -13,16 +13,7 @@ public class LogUtils {
     private static ObjectMapper mapper = ObjectMapperProvider.getInstance();
     private static ObjectMapper msgPacker = ObjectMapperProvider.msgPacker;
 
-    public static<T,R> Optional<R> safeExe(Function< T , ? extends R >  fn , T val){
-        try{
-            return Optional.ofNullable(fn.apply(val));
-        }catch (Exception e){
-            return Optional.empty();
-        }
-    }
-
     public static String toJson(LogStoreDTO logStoreDTO){
-
         try{
             return mapper.writeValueAsString(logStoreDTO);
         }catch (Exception e){
@@ -32,11 +23,10 @@ public class LogUtils {
     }
 
     public static byte[] toMsgPack(LogStoreDTO logStoreDTO){
-
         try{
             return msgPacker.writeValueAsBytes(logStoreDTO);
         }catch (Exception e){
-            LOGGER.error("toJson error ", e);
+            LOGGER.error("toMsgPack error ", e);
             return logStoreDTO.logMessage.getBytes();
         }
     }

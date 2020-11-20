@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.ws.rs.core.Response;
 
-import io.cube.agent.logger.LogUtils;
+import io.cube.agent.logger.CubeLoggerFactory;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -35,7 +35,6 @@ import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -52,12 +51,13 @@ import io.md.tracer.MDGlobalTracer;
 import io.md.tracer.MDTextMapCodec;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
+import static io.md.utils.Utils.safeFnExecute;
 
 import static io.cube.agent.Constants.*;
 
 public class CommonConfig {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(CommonConfig.class);
+	private static final Logger LOGGER = CubeLoggerFactory.getLogger(CommonConfig.class);
 
 	/******* PROPERTIES HOLDERS ******/
 	// Cube essentials
@@ -212,9 +212,10 @@ public class CommonConfig {
 			isFetchThreadInit = true;
 
 		}
-		loggerWsUri = LogUtils.safeExe(envSysStaticConf::getString, MD_LOGGERCONFIG_URI);
-		loggingEnabled = LogUtils.safeExe(envSysStaticConf::getBoolean, MD_LOGGERCONFIG_ENABLE);
-		loggingLevel = LogUtils.safeExe(envSysStaticConf::getString, MD_LOGGERCONFIG_LEVEL);
+
+		loggerWsUri = safeFnExecute(MD_LOGGERCONFIG_URI , envSysStaticConf::getString);
+		loggingEnabled = safeFnExecute(MD_LOGGERCONFIG_ENABLE , envSysStaticConf::getBoolean);
+		loggingLevel = safeFnExecute(MD_LOGGERCONFIG_LEVEL , envSysStaticConf::getString);
 	}
 
 	private static void initClientMetaDataMap() {

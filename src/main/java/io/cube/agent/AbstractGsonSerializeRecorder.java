@@ -2,18 +2,16 @@ package io.cube.agent;
 
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Optional;
 
+import io.cube.agent.logger.CubeLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.gson.Gson;
 
 import io.md.dao.Event;
 import io.md.dao.FnReqRespPayload;
@@ -25,7 +23,7 @@ import io.md.utils.FnKey;
 
 public abstract class AbstractGsonSerializeRecorder implements Recorder {
 
-	protected final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
+	protected final Logger LOGGER = CubeLoggerFactory.getLogger(this.getClass());
 
 	protected ObjectMapper jsonMapper;
 

@@ -1,6 +1,7 @@
 package io.cube.agent.logger;
 
 import io.cube.agent.CommonConfig;
+import io.md.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
@@ -25,12 +26,12 @@ public class CubeLogMgr {
     private static Level logLevel = Level.TRACE;
     private static String token;
     public static CubeDeployment cubeDeployment;
-    public static boolean msgPackTransport = false;
+    public static boolean msgPackTransport = true;
 
     static {
 
         Optional<Boolean> logEnabled =  CommonConfig.loggingEnabled;
-        loggingEnabled = !logEnabled.isPresent() || logEnabled.get();
+        loggingEnabled = logEnabled.orElse(true);
 
         if(!CommonConfig.loggerWsUri.isPresent()){
             loggingEnabled = false;
@@ -55,8 +56,9 @@ public class CubeLogMgr {
                 loggingEnabled = false;
                 LOGGER.error("CubeWsClient create error ", e);
             }
+
             //Set the logging level
-            CommonConfig.loggingLevel.map(String::toUpperCase).flatMap(l->LogUtils.safeExe(Level::valueOf , l)).ifPresent(level->{logLevel = level;});
+            logLevel = CommonConfig.loggingLevel.map(String::toUpperCase).flatMap(l->Utils.safeFnExecute(l , Level::valueOf)).orElse(logLevel);
             cubeDeployment = new CubeDeployment(CommonConfig.app , CommonConfig.instance , CommonConfig.serviceName , CommonConfig.customerId , CommonConfig.version);
         }
     }
