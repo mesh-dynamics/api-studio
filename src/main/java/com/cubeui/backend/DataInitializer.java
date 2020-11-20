@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -40,10 +41,12 @@ public class DataInitializer implements CommandLineRunner {
 
     private PersonalEmailDomainsRepository personalEmailDomainsRepository;
 
+    private HttpServletRequest httpServletRequest;
+
     public DataInitializer(UserService userService, CustomerService customerService,
         CustomerRepository customerRepository, UserRepository userRepository,
-        EmailDomainRepository emailDomainRepository, PersonalEmailDomainsRepository personalEmailDomainsRepository
-        ) {
+        EmailDomainRepository emailDomainRepository, PersonalEmailDomainsRepository personalEmailDomainsRepository,
+        HttpServletRequest httpServletRequest) {
 
         this.userService = userService;
         this.customerService = customerService;
@@ -51,6 +54,7 @@ public class DataInitializer implements CommandLineRunner {
         this.userRepository = userRepository;
         this.emailDomainRepository = emailDomainRepository;
         this.personalEmailDomainsRepository = personalEmailDomainsRepository;
+        this.httpServletRequest = httpServletRequest;
     }
 
     @Override
@@ -63,7 +67,7 @@ public class DataInitializer implements CommandLineRunner {
             customerDTO.setName("Admin");
             customerDTO.setEmail("admin@meshdynamics.io");
             customerDTO.setDomainURLs(Set.of("admin.io"));
-            customer = Optional.of(this.customerService.save(customerDTO));
+            customer = Optional.of(this.customerService.save(httpServletRequest, customerDTO));
        }
 
         Optional<User> user = userRepository.findByUsername("admin@meshdynamics.io");
