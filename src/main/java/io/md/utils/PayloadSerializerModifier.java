@@ -2,19 +2,17 @@ package io.md.utils;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.ser.BeanSerializerModifier;
 
-import io.md.constants.Constants;
 import io.md.dao.FnReqRespPayload;
 import io.md.dao.GRPCRequestPayload;
 import io.md.dao.GRPCResponsePayload;
@@ -25,7 +23,7 @@ import io.md.dao.JsonPayload;
 
 public class PayloadSerializerModifier extends BeanSerializerModifier {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(PayloadSerializerModifier.class);
+	private static final Logger LOGGER = LogMgr.getLogger(PayloadSerializerModifier.class);
 
 	//NOTE as we implement more classes which implement payload, we'll need to add
 	//them here

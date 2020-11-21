@@ -5,8 +5,8 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -25,7 +25,7 @@ public class MeshDGsonProvider {
 		.create();
 
 
-	static Logger LOGGER = LoggerFactory.getLogger(MeshDGsonProvider.class);
+	static Logger LOGGER = LogMgr.getLogger(MeshDGsonProvider.class);
 
 	private static ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 

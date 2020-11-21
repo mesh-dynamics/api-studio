@@ -6,9 +6,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.logger.LogMgr;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -26,7 +26,7 @@ import io.md.utils.Utils;
  */
 public class HTTPPayload extends LazyParseAbstractPayload {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(HTTPPayload.class);
+	private static final Logger LOGGER = LogMgr.getLogger(HTTPPayload.class);
 	static final String BODY = "body";
 	static final String PAYLOADSTATEPATH = "/payloadState";
 

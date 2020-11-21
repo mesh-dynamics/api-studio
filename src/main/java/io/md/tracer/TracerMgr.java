@@ -2,12 +2,12 @@ package io.md.tracer;
 
 import io.md.dao.CustomerAppConfig;
 import io.md.dao.MDTraceInfo;
+import io.md.logger.LogMgr;
 import io.md.services.DataStore;
 import io.md.tracer.handlers.*;
 import io.md.utils.Utils;
 import org.apache.commons.collections4.map.PassiveExpiringMap;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.LinkedHashMap;
@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 public class TracerMgr {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TracerMgr.class);
+    private static final Logger LOGGER = LogMgr.getLogger(TracerMgr.class);
     private DataStore dStore;
 
     private static Map<Tracer , MDTraceHandler> tracehandlers;

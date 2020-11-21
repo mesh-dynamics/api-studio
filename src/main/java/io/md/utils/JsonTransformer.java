@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,7 +21,7 @@ public class JsonTransformer {
 
 
 	private final ObjectMapper jsonMapper;
-	private static final Logger LOGGER = LoggerFactory.getLogger(JsonTransformer.class);
+	private static final Logger LOGGER = LogMgr.getLogger(JsonTransformer.class);
 
 	public JsonTransformer(ObjectMapper jsonMapper) {
 		this.jsonMapper = jsonMapper;

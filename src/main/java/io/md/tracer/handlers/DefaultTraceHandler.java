@@ -1,8 +1,8 @@
 package io.md.tracer.handlers;
 
 import io.md.dao.MDTraceInfo;
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.Map;
@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class DefaultTraceHandler implements  MDTraceHandler {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultTraceHandler.class);
+    private static final Logger LOGGER = LogMgr.getLogger(DefaultTraceHandler.class);
     private static DefaultTraceHandler singleton;
 
     private final Map<Tracer , MDTraceHandler> tracehandlers;

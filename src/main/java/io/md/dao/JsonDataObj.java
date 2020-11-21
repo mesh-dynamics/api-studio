@@ -16,6 +16,7 @@ import java.util.function.Function;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 
+import io.md.logger.LogMgr;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
@@ -23,7 +24,6 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.ContentType;
 import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonPointer;
@@ -55,7 +55,7 @@ import okio.Buffer;
 
 public class JsonDataObj implements DataObj {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(JsonDataObj.class);
+	private static final Logger LOGGER = LogMgr.getLogger(JsonDataObj.class);
 
 	public static JsonDataObj createEmptyObject(ObjectMapper jsonMapper) {
 		return new JsonDataObj(MissingNode.getInstance(), jsonMapper);

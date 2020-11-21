@@ -9,8 +9,8 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.md.constants.Constants;
 
@@ -21,7 +21,7 @@ import io.md.constants.Constants;
  */
 public class JcaEncryption implements EncryptionAlgorithm {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(EncryptionAlgorithm.class);
+	private static final Logger LOGGER = LogMgr.getLogger(EncryptionAlgorithm.class);
 
 
 	public JcaEncryption(String jcaAlgorithm, String cipherKeyType, String passPhrase) {

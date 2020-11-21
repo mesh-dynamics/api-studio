@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
 
+import io.md.logger.LogMgr;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -19,7 +19,7 @@ import io.md.utils.FnReqRespPayloadDeserializer;
 @JsonDeserialize(using = FnReqRespPayloadDeserializer.class)
 public class FnReqRespPayload extends LazyParseAbstractPayload {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(FnReqRespPayload.class);
+	private static final Logger LOGGER = LogMgr.getLogger(FnReqRespPayload.class);
 
 
 	@JsonProperty("respTs")
