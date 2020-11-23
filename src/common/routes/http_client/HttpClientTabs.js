@@ -1389,7 +1389,7 @@ class HttpClientTabs extends Component {
                     .then((serverRes) => {
                         const jsonTraceReqData = serverRes.data.response && serverRes.data.response.length > 0 ? serverRes.data.response[0] : "";
                         try {
-                            const parsedTraceReqData = JSON.parse(jsonTraceReqData);
+                            const parsedTraceReqData = _.isString(jsonTraceReqData) ? JSON.parse(jsonTraceReqData): jsonTraceReqData;
                             const apiPath = _.trimStart(data[0].request.apiPath, '/');
                             this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
                             setTimeout(() => {
