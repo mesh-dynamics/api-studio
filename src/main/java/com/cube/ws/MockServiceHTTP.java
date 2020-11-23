@@ -5,10 +5,7 @@ import static io.md.core.Utils.buildErrorResponse;
 import io.md.dao.MockWithCollection;
 import io.md.dao.Recording;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -205,7 +202,8 @@ public class MockServiceHTTP {
         @PathParam("recordingId") String recordingId,
         @PathParam("traceId") String traceId,
         @PathParam("service") String service, @PathParam("method") String httpMethod,
-        String body) {
+        byte[] body) {
+	    LOGGER.info("RECEIVED BYTE BODY IN MOCK : " + Base64.getEncoder().encodeToString(body));
 	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
 	    String runId = queryParams.getFirst(Constants.RUN_ID_FIELD);
 
