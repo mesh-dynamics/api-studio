@@ -17,7 +17,9 @@ public class LogMgr {
 
     //set different log factory. called by agent to set
     public void setFactory(LoggerFactory loggerFactory){
-        if(loggerCalled) throw new UnsupportedOperationException("setFactory should be the first call to logMgr before any logger instantiation");
+        if(loggerCalled) {
+            loggerFactory.getLogger(LogMgr.class).error("LogMgr setFactory is called after Logger Instantiation. Should not happen !!!!");
+        }
         this.factory = loggerFactory;
     }
 
