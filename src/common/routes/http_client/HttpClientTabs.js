@@ -1195,6 +1195,7 @@ class HttpClientTabs extends Component {
         const newTabs = [...currentTabs.slice(0, indexToRemove), ...currentTabs.slice(indexToRemove + 1)];
 
         const nextSelectedIndex = newTabs[indexToRemove] ? indexToRemove : indexToRemove - 1;
+        newTabs[nextSelectedIndex].isHighlighted = false;
         if (!newTabs[nextSelectedIndex]) {
             alert('You can not delete the last tab!');
             return;
@@ -1582,8 +1583,8 @@ class HttpClientTabs extends Component {
     }
 
 
-    addTab(evt, reqObject, givenApp) {
-        const { dispatch, user } = this.props;
+    addTab(evt, reqObject, givenApp, isSelected = true) {
+        const { dispatch, user, httpClient: {selectedTabKey} } = this.props;
         const tabId = uuidv4();
         const requestId = uuidv4();
         const { app } = this.state;
@@ -1627,7 +1628,8 @@ class HttpClientTabs extends Component {
                 recordedHistory: null
             };
         }
-        dispatch(httpClientActions.addTab(tabId, reqObject, appAvailable, tabId, reqObject.httpURL ? reqObject.httpURL : "New"));
+        const nextSelectedTabId = isSelected ?  tabId : selectedTabKey;
+        dispatch(httpClientActions.addTab(tabId, reqObject, appAvailable, nextSelectedTabId, reqObject.httpURL ? reqObject.httpURL : "New"));
         return tabId;
     }
 
@@ -1661,7 +1663,7 @@ class HttpClientTabs extends Component {
         const { 
             dispatch,
             cube: { selectedApp },
-            httpClient: { tabs },
+            httpClient: { tabs, selectedTabKey },
             user: { customer_name: customerId },
         } = this.props;
 
@@ -1674,14 +1676,30 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.loadUserCollections());
         
         const requestIds = this.getRequestIds(), reqIdArray = Object.keys(requestIds);
-        tabs.forEach(eachTab => {
-            const indx = reqIdArray.findIndex((eachReq) => eachReq === eachTab.requestId);
-            if(indx > -1) {
-                reqIdArray.splice(indx, 1);
-                dispatch(httpClientActions.setTabIsHighlighted(eachTab.id, true));
-            }
-        });
         if (reqIdArray && reqIdArray.length > 0) {
+            /*
+                reqIdArray: string array of request IDs, which needs to be displayed at HttpClient
+                Step1: Remove all reqIdArray values which are already opened, and push them into tabsToHighlight to highlight next
+                Step2: Highlight all existing tabs if there are some reqIds, which are not currently opened/exists
+                       If there is no reqIds to be opened new, then current selected tabs should not be highlighted
+                Step3: Process all new reqIds to open a new tab
+            */
+            const tabsToHighlight = [];
+
+            tabs.forEach(eachTab => {
+                const indx = reqIdArray.findIndex((eachReq) => eachReq === eachTab.requestId);
+                if(indx > -1) {
+                    reqIdArray.splice(indx, 1);
+                    tabsToHighlight.push(eachTab.id);
+                }
+            });
+
+            tabsToHighlight.forEach( tabId => {
+                if(selectedTabKey !== tabId || reqIdArray.length > 0) {
+                    dispatch(httpClientActions.setTabIsHighlighted(tabId, true));
+                }
+            });
+
             const eventTypes = [];
             cubeService.fetchAPIEventData(customerId, selectedApp, reqIdArray, eventTypes).then((result) => {
                 if (result && result.numResults > 0) {
@@ -1689,19 +1707,20 @@ class HttpClientTabs extends Component {
                         const reqResPair = result.objects.filter(eachReq => eachReq.reqId === eachReqId);
                         if (reqResPair.length > 0) {
                             let reqObject = formatHttpEventToTabObject(eachReqId, requestIds, reqResPair);
-                            const savedTabId = this.addTab(null, reqObject, selectedApp);
+                            const savedTabId = this.addTab(null, reqObject, selectedApp, eachReqId == reqIdArray[reqIdArray.length - 1]);
                             this.showOutgoingRequests(savedTabId, reqObject.traceIdAddedFromClient, reqObject.collectionIdAddedFromClient, reqObject.recordingIdAddedFromClient);
                         }
                     }
                 }
             });
+            dispatch(apiCatalogActions.setHttpClientRequestIds([]));
         } else {
             let app = selectedApp;
             if(!app) {
                 const parsedUrlObj = urlParser(window.location.href, true);
                 app = parsedUrlObj.query.app;
             }
-            if(tabs.length === 0)this.addTab(null, null, app);
+            if(tabs.length === 0)this.addTab(null, null, app, true);
         }
 
         if(PLATFORM_ELECTRON) {

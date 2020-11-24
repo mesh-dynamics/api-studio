@@ -497,7 +497,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                     tabName: data.tabName,
                     ...data.reqObject,
                     selectedTraceTableReqTabId: data.tabId,
-                    isHighlighted: true,
+                    isHighlighted: data.tabId != data.selectedTabKey,
                 }],
                 selectedTabKey: data.selectedTabKey,
                 app: data.app

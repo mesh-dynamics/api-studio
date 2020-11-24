@@ -14,13 +14,14 @@ export default class Tab extends Component {
 
   renderRemovableTab = () => {
     const { children, onRemove, hasTabChanged } = this.props;
+    const title = hasTabChanged ? "Content has changed in this request. Save the changes before closing.": "";
     return (
       <div className="RRT__removable">
         <div className="RRT__removable-text">
           
           {children}
         </div>
-        <div className="RRT__removable-icon" onClick={onRemove}>
+        <div className="RRT__removable-icon" onClick={onRemove} title={title}>
           {hasTabChanged ? <i className="fa fa-circle fa-sm font-12 RRT__removable-icon-has-changed"></i> : <i className="fa fa-times fa-sm font-12"></i>}
         </div>
       </div>
