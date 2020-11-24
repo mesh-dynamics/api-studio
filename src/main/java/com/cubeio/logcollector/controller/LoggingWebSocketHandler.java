@@ -2,9 +2,8 @@ package com.cubeio.logcollector.controller;
 
 import com.cubeio.logcollector.data.BinaryMsgPackConverter;
 import com.cubeio.logcollector.data.TextConverter;
-import com.cubeio.logcollector.domain.DTO.LogStoreDTO;
 import com.cubeio.logcollector.utils.LogUtils;
-import org.apache.logging.log4j.message.ObjectMessage;
+import io.md.logger.LogStoreDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

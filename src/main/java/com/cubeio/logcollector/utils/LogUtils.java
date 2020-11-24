@@ -1,6 +1,6 @@
 package com.cubeio.logcollector.utils;
 
-import com.cubeio.logcollector.domain.DTO.LogStoreDTO;
+import io.md.logger.LogStoreDTO;
 import org.apache.logging.log4j.message.ObjectMessage;
 import org.slf4j.Logger;
 import org.slf4j.event.Level;

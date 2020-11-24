@@ -1,8 +1,8 @@
 package com.cubeio.logcollector.data;
 
-import com.cubeio.logcollector.domain.DTO.LogStoreDTO;
-import com.cubeio.logcollector.utils.CubeObjectMapperProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.md.logger.LogStoreDTO;
+import io.md.utils.CubeObjectMapperProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +16,7 @@ public class TextConverter {
 
     private static Logger LOGGER = LoggerFactory.getLogger(TextConverter.class);
 
-    private ObjectMapper mapper = CubeObjectMapperProvider.getInstance();  //Todo
+    private ObjectMapper mapper = CubeObjectMapperProvider.getInstance();
 
     public Optional<LogStoreDTO> toLogStore(TextMessage message) {
         try{

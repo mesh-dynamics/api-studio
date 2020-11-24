@@ -1,9 +1,9 @@
 package com.cubeio.logcollector.controller;
 
-import com.cubeio.logcollector.domain.DTO.LogStoreDTO;
 import com.cubeio.logcollector.security.Validation;
 
 import com.cubeio.logcollector.utils.LogUtils;
+import io.md.logger.LogStoreDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

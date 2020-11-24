@@ -1,8 +1,9 @@
 package com.cubeio.logcollector.data;
 
-import com.cubeio.logcollector.domain.DTO.LogStoreDTO;
-import com.cubeio.logcollector.utils.CubeObjectMapperProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.md.logger.LogStoreDTO;
+import io.md.utils.CubeObjectMapperProvider;
+import org.msgpack.jackson.dataformat.MessagePackFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.socket.BinaryMessage;
@@ -15,7 +16,7 @@ public class BinaryMsgPackConverter {
     private static Logger LOGGER = LoggerFactory.getLogger(BinaryMsgPackConverter.class);
 
     private ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
-    private ObjectMapper msgPacker = CubeObjectMapperProvider.msgPacker;
+    private ObjectMapper msgPacker = CubeObjectMapperProvider.createMapper(new MessagePackFactory());
 
     public Optional<LogStoreDTO> toLogStore(BinaryMessage message) {
 
