@@ -222,8 +222,11 @@ public class MockServiceHTTP {
                 // looks like setting some headers causes a problem, so skip them
                 // TODO: check if this is a comprehensive list
                 if (Utils.ALLOWED_HEADERS.test(fieldName) && !fieldName.startsWith(":")) {
+                    LOGGER.info("ADD HEADER MOCK :: " + fieldName + " :: " + val);
                     builder.header(fieldName, val);
                 }
+                builder.header("grpc-status" , 0);
+                builder.header("status-code" , 0);
             }));
             LOGGER.info("RETURNING RESPONSE MOCK :: "
                 + responseToSend);
