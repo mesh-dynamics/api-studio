@@ -2,10 +2,15 @@ package com.cube.ws;
 
 import static io.md.core.Utils.buildErrorResponse;
 
+import io.md.dao.GRPCResponsePayload;
 import io.md.dao.MockWithCollection;
 import io.md.dao.Recording;
 import java.time.Instant;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -203,7 +208,30 @@ public class MockServiceHTTP {
         @PathParam("traceId") String traceId,
         @PathParam("service") String service, @PathParam("method") String httpMethod,
         byte[] body) {
+	    String responseToSend = "AAAAAE8KOkJlcmtzaGlyZSBWYWxsZXkgTWFuYWdlbWVudCBBcmVhIFRyYWlsLCBKZWZmZXJzb24sIE5KLCBVU0ESEQiapozDARCWn5ic/f////8B";
 	    LOGGER.info("RECEIVED BYTE BODY IN MOCK : " + Base64.getEncoder().encodeToString(body));
+        Optional<Event> mockResponse = rrstore.getResponseEvent("route-guide-service-655316419-87e8ab09-3255-410b-ae09-6ac5590b921a");
+        LOGGER.info("RECEIVED RESPONSE FROM SOLR :: MOCK");
+        GRPCResponsePayload responsePayload;
+        try {
+            responsePayload =  (GRPCResponsePayload) mockResponse.get().payload;
+            ResponseBuilder builder = Response.status(200);
+            LOGGER.info("COPYING HEADERS  :: MOCK");
+            responsePayload.getHdrs().forEach((fieldName, fieldValList) -> fieldValList.forEach((val) -> {
+                // System.out.println(String.format("key=%s, val=%s", fieldName, val));
+                // looks like setting some headers causes a problem, so skip them
+                // TODO: check if this is a comprehensive list
+                if (Utils.ALLOWED_HEADERS.test(fieldName) && !fieldName.startsWith(":")) {
+                    builder.header(fieldName, val);
+                }
+            }));
+            LOGGER.info("RETURNING RESPONSE MOCK :: "
+                + responseToSend);
+            return builder.entity(Base64.getDecoder().decode(responseToSend)).build();
+        } catch (Exception e) {
+            LOGGER.error("EXCEPTION OCCURED MOCK  :: " + e.getMessage(), e);
+        }
+
 	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
 	    String runId = queryParams.getFirst(Constants.RUN_ID_FIELD);
 
