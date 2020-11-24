@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>New Mesh Dynamics account activated</title>
+    <title>New User account activated</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <style>
         .email-container{
@@ -54,9 +54,11 @@
         <div style="border: 1px solid #D1D1D1; border-radius: 4px">
             <div style="border: 1px solid #B3B3B3; border-radius: 3px;">
                 <div class="email-box">
-                    <h1 style="font-weight: 500; margin-top: 0">Account activated</h1>
-                    <div class="m-1"><span>Hello</span>,</div>
-                    <div class="m-1">A new Mesh Dynamics account was activated for <b><span th:text="${user.username}"></span></b></div>
+                    <h1 style="font-weight: 500; margin-top: 0">Notification from Mesh Dynamics: New account activated</h1>
+                    <div class="m-1"><span>Hello Admin</span>,</div>
+                    <div class="m-1">This is an informational notification since you are an account administrator for
+                        <b><span th:text="${domain}"></span></b>.<br>
+                        A new user account was activated for <b><span th:text="${user.username}"></span></b></div>
 <!--                    <div style="padding: 4px 24px">-->
 <!--                        <div class="m-1"><b>Email: </b><span th:text="${user.username}"></span></div>-->
 <!--                        <div class="m-1"><b>Password: </b><span th:text="${user.password}"></span></div>-->

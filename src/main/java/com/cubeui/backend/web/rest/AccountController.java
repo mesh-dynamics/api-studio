@@ -15,6 +15,7 @@ import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.service.MailService;
 import com.cubeui.backend.service.ReCaptchaAPIService;
 import com.cubeui.backend.service.UserService;
+import com.cubeui.backend.service.utils.Utils;
 import com.cubeui.backend.web.exception.DuplicateRecordException;
 import com.cubeui.backend.web.exception.InvalidDataException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
@@ -84,17 +85,6 @@ public class AccountController {
         return customerService.getByDomainUrl(domain);
     }
 
-    private String getDomainFromEmail(String email) {
-        try {
-            String[] emailSplit = email.split("@");
-            String domain = emailSplit[1];
-            return domain;
-        } catch (Exception e) {
-            log.error("The email doesn't have '@' field in it");
-            throw new InvalidDataException("The email doesn't have '@' field in it");
-        }
-    }
-
     @PostMapping("/create-user")
     public ResponseEntity createUser(@RequestBody UserDTO userDTO, HttpServletRequest request) {
         log.info("Create user called for email: " + userDTO.getEmail());
@@ -108,7 +98,7 @@ public class AccountController {
         } else {
             // validate email domain and set customer id from email
             log.info("Validating email domain");
-            String domain = getDomainFromEmail(userDTO.getEmail());
+            String domain = Utils.getDomainFromEmail(userDTO.getEmail());
             Optional<PersonalEmailDomains> personalEmailDomains = personalEmailDomainsRepository.findByDomain(domain);
             Optional<Customer> customerOptional = Optional.empty();
             if(personalEmailDomains.isEmpty()) {

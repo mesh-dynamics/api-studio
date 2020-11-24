@@ -2,6 +2,7 @@ package com.cubeui.backend.service;
 
 import com.cubeui.backend.domain.User;
 
+import com.cubeui.backend.service.utils.Utils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.mail.SimpleMailMessage;
@@ -89,7 +90,7 @@ public class MailService {
      * Email Id is passed separately since the receiver email address might be different from
      * the user's email id; like in case of sending admin mail on activating a user.
      */
-    public void sendEmailFromTemplate(User user, String emailId, String templateName, String titleKey) {
+    public void sendEmailFromTemplate(User user, String emailId, String templateName, String titleKey, String... values) {
         Locale locale = Locale.forLanguageTag(DEFAULT_LANGUAGE);
         Context context = new Context();
         context.setVariable("user", user);
@@ -97,6 +98,9 @@ public class MailService {
         context.setVariable("loginUrl", baseUrl);
         context.setVariable("resetUrl", baseUrl + resetEndpoint);
         context.setVariable("activationUrl", baseUrl + activationEndpoint);
+        if(values.length > 0 ) {
+            context.setVariable("domain", values[0]);
+        }
         String content = templateEngine.process(templateName, context);
         String subject = messageSource.getMessage(titleKey, null, locale);
         sendEmail(emailId, subject, content, true, true);
@@ -117,8 +121,9 @@ public class MailService {
     @Async("threadPoolTaskExecutor")
     public void sendCreationEmailAdmin(User user) {
         String adminEmail = user.getCustomer().getEmail();
+        String domain = Utils.getDomainFromEmail(user.getUsername());
         log.debug("Sending creation notification email to admin at '{}'", adminEmail);
-        sendEmailFromTemplate(user, adminEmail, "creationEmailAdmin", "email.creation.title");
+        sendEmailFromTemplate(user, adminEmail, "creationEmailAdmin", "email.creation.title", domain);
     }
 
     @Async("threadPoolTaskExecutor")
