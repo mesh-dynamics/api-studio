@@ -85,6 +85,13 @@ class Navigation extends Component{
         }
     }
 
+    handleHelpClick = (event) => {
+        if(PLATFORM_ELECTRON) {
+            event.preventDefault();
+            window.require('electron').shell.openExternal("https://docs.meshdynamics.io");
+        }
+    }
+
     createAppList() {
         const { cube: { appsList, appsListReqStatus, selectedApp } } = this.props;
 
@@ -187,7 +194,7 @@ class Navigation extends Component{
                                         <i className="fa fa-comment" aria-hidden="true"></i>
                                     </div>
                                 </a>
-                                <a href="https://docs.meshdynamics.io" target="_blank" title="">  
+                                <a href="https://docs.meshdynamics.io" target="_blank" title="" onClick={this.handleHelpClick}>  
                                     <div title="Help" className="link-q">
                                         <i className="fa fa-question" aria-hidden="true"></i>
                                     </div>
