@@ -462,6 +462,6 @@ public class CubeStoreController {
         validation.validateCustomerName(authentication,recording.get().customerId);
         final User user = (User) authentication.getPrincipal();
         return cubeServerService.fetchPostResponse(request, postBody,
-            request.getRequestURI().replaceFirst("^/api", "").concat("/").concat(user.getUsername()));
+            String.format("/cs/copyRecording/%s/%s", recordingId, user.getUsername()));
     }
 }
