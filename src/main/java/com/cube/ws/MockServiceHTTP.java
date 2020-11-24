@@ -208,33 +208,6 @@ public class MockServiceHTTP {
         @PathParam("traceId") String traceId,
         @PathParam("service") String service, @PathParam("method") String httpMethod,
         byte[] body) {
-	    String responseToSend = "AAAAAE8KOkJlcmtzaGlyZSBWYWxsZXkgTWFuYWdlbWVudCBBcmVhIFRyYWlsLCBKZWZmZXJzb24sIE5KLCBVU0ESEQiapozDARCWn5ic/f////8B";
-	    LOGGER.info("RECEIVED BYTE BODY IN MOCK : " + Base64.getEncoder().encodeToString(body));
-        Optional<Event> mockResponse = rrstore.getResponseEvent("route-guide-service-655316419-87e8ab09-3255-410b-ae09-6ac5590b921a");
-        LOGGER.info("RECEIVED RESPONSE FROM SOLR :: MOCK");
-        GRPCResponsePayload responsePayload;
-        try {
-            responsePayload =  (GRPCResponsePayload) mockResponse.get().payload;
-            ResponseBuilder builder = Response.status(200);
-            LOGGER.info("COPYING HEADERS  :: MOCK");
-            responsePayload.getHdrs().forEach((fieldName, fieldValList) -> fieldValList.forEach((val) -> {
-                // System.out.println(String.format("key=%s, val=%s", fieldName, val));
-                // looks like setting some headers causes a problem, so skip them
-                // TODO: check if this is a comprehensive list
-                if (Utils.ALLOWED_HEADERS.test(fieldName) && !fieldName.startsWith(":")) {
-                    LOGGER.info("ADD HEADER MOCK :: " + fieldName + " :: " + val);
-                    builder.header(fieldName, val);
-                }
-                /*builder.header("grpc-status" , 0);
-                builder.header("status-code" , 0);*/
-            }));
-            LOGGER.info("RETURNING RESPONSE MOCK :: "
-                + responseToSend);
-            return builder.entity(Base64.getDecoder().decode(responseToSend)).build();
-        } catch (Exception e) {
-            LOGGER.error("EXCEPTION OCCURED MOCK  :: " + e.getMessage(), e);
-        }
-
 	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
 	    String runId = queryParams.getFirst(Constants.RUN_ID_FIELD);
 
