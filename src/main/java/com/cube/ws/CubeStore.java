@@ -10,6 +10,7 @@ import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
 import io.md.dao.DataObj.DataObjProcessingException;
+import io.md.dao.Event.EventType;
 import io.md.injection.DynamicInjector;
 import io.md.injection.DynamicInjectorFactory;
 import java.io.ByteArrayInputStream;
@@ -1236,6 +1237,97 @@ public class CubeStore {
     }
 
     @POST
+    @Path("copyRecording/{recordingId}/{userId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response copyRecording(@Context UriInfo ui, @PathParam("recordingId") String recordingId,
+        @PathParam("userId") String userId) {
+        MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
+        Optional<String> templateVersion = Optional.ofNullable(queryParams.getFirst(Constants.VERSION_FIELD));
+        Optional<String> name = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_NAME_FIELD));
+        Optional<String> label = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_LABEL_FIELD));
+        Optional<RecordingType> recordingType =
+            Optional.ofNullable(queryParams.getFirst(Constants.RECORDING_TYPE_FIELD))
+                .flatMap(r -> Utils.valueOf(RecordingType.class, r));
+        if(recordingType.isEmpty()) {
+            return Response.status(Status.BAD_REQUEST).
+                entity(String.format("No such Recording Type found")).build();
+        }
+        RecordingType type = recordingType.get();
+        if(type== RecordingType.Golden && templateVersion.isEmpty()) {
+            return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+                .entity(String.format("version needs to be given for a golden")).build();
+        }
+        return copyRecording(recordingId, name, label, templateVersion, userId, type);
+    }
+
+    private Response copyRecording(String recordingId, Optional<String> name, Optional<String> label,
+        Optional<String> templateVersion, String userId, RecordingType type) {
+        Instant timeStamp = Instant.now();
+        String labelValue = label.orElse(timeStamp.toString());
+        Optional<Recording> recordingForId = rrstore.getRecording(recordingId);
+        return recordingForId.map(recording -> {
+            Optional<Recording> recordingWithSameName = name.flatMap(nameValue -> rrstore
+                .getRecordingByName(recording.customerId, recording.app, nameValue, Optional.of(labelValue)));
+            if(recordingWithSameName.isPresent()) {
+                return Response.status(Response.Status.CONFLICT)
+                    .entity(String.format("Collection %s already active for customer %s, app %s, for instance %s. Use different name or label",
+                        recordingWithSameName.get().collection, recording.customerId, recording.app, recordingWithSameName.get().instanceId))
+                    .build();
+            }
+            String collection = UUID.randomUUID().toString();
+            RecordingBuilder recordingBuilder = new RecordingBuilder(
+                recording.customerId, recording.app, recording.instanceId, collection)
+                .withStatus(recording.status).withTemplateSetVersion(templateVersion.orElse(recording.templateVersion))
+                .withName(name.orElse(recording.name))
+                .withUserId(userId).withTags(recording.tags).withUpdateTimestamp(timeStamp)
+                .withRootRecordingId(recording.rootRecordingId).withLabel(labelValue)
+                .withRecordingType(type).withRunId(timeStamp.toString());
+            recording.parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
+            recording.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
+            recording.branch.ifPresent(recordingBuilder::withBranch);
+            recording.gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
+            recording.collectionUpdOpSetId.ifPresent(recordingBuilder::withCollectionUpdateOpSetId);
+            recording.templateUpdOpSetId.ifPresent(recordingBuilder::withTemplateUpdateOpSetId);
+            recording.comment.ifPresent(recordingBuilder::withComment);
+            recording.dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
+            try {
+                recording.generatedClassJarPath
+                    .ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
+            } catch (Exception e) {
+                LOGGER.error(new ObjectMessage(Map.of(
+                    Constants.MESSAGE, "Error while generatedClassJarPath",
+                    Constants.CUSTOMER_ID_FIELD, recording.customerId,
+                    Constants.APP_FIELD, recording.app,
+                    Constants.INSTANCE_ID_FIELD, recording.instanceId
+                )), e);
+            }
+            Recording  updatedRecording = recordingBuilder.build();
+            if(rrstore.saveRecording(updatedRecording)) {
+                EventQuery.Builder builder = new EventQuery.Builder(recording.customerId, recording.app, Collections.emptyList());
+                builder.withCollection(recording.collection);
+                Result<Event> result = rrstore.getEvents(builder.build());
+                result.getObjects().forEach(event -> {
+                    try {
+                        final String reqId = io.md.utils.Utils.generateRequestId(
+                            event.service, event.getTraceId());
+                        Event newEvent = buildEvent(event, collection,  type, reqId, event.getTraceId(), Optional.of(timeStamp.toString()));
+                        rrstore.save(newEvent);
+                    } catch (InvalidEventException e) {
+                        LOGGER.error(new ObjectMessage(
+                            Map.of(Constants.MESSAGE, "Error while creating Event",
+                                Constants.RECORDING_ID, updatedRecording.id)), e);
+                    }
+                });
+                rrstore.commit();
+                return Response.ok().type(MediaType.APPLICATION_JSON).entity(updatedRecording).build();
+            }
+            return Response.status(Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON)
+                .entity(String.format("Error while saving recording")).build();
+        }).orElse(Response.status(Response.Status.NOT_FOUND).
+            entity(String.format("No Recording found for recordingId=%s", recordingId)).build());
+    }
+
+    @POST
     @Path("stop/{recordingid}")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public void stop(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui,
@@ -1568,10 +1660,10 @@ public class CubeStore {
                     final String reqId = io.md.utils.Utils.generateRequestId(
                         request.service, traceId);
                     Event requestEvent = buildEvent(request, rec.collection, rec.recordingType,
-                        reqId, traceId);
+                        reqId, traceId, Optional.empty());
                     requestEvent.parseAndSetKey(comparator.getCompareTemplate());
                     Event responseEvent = buildEvent(response, rec.collection,
-                        rec.recordingType, reqId, traceId);
+                        rec.recordingType, reqId, traceId, Optional.empty());
 
                     if(requestEvent.payload instanceof GRPCPayload) {
                         // Unwrap on body will be called internally after setting protoDescriptor
@@ -1807,16 +1899,16 @@ public class CubeStore {
     }
 
 
-    private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId)
+    private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId, Optional<String> runId)
         throws InvalidEventException {
         EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
             event.service, event.instanceId, collection,
             new MDTraceInfo(traceId, event.spanId, event.parentSpanId),
             event.getRunType(), Optional.of(Instant.now()), reqId, event.apiPath,
-            event.eventType, recordingType).withRunId(event.runId);
+            event.eventType, recordingType);
         eventBuilder.setPayload(event.payload);
         eventBuilder.withMetaData(event.metaData);
-        eventBuilder.withRunId(event.runId);
+        eventBuilder.withRunId(runId.orElse(event.runId));
         return eventBuilder.createEvent();
     }
 
