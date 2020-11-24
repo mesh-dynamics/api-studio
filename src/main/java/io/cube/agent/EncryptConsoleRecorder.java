@@ -2,7 +2,7 @@ package io.cube.agent;
 
 import java.util.Optional;
 
-import io.cube.agent.logger.CubeLoggerFactory;
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
 
 import io.md.dao.Event;
@@ -14,7 +14,7 @@ import io.opentracing.Span;
 
 public class EncryptConsoleRecorder {
 
-	private static final Logger LOGGER = CubeLoggerFactory.getLogger(EncryptConsoleRecorder.class);
+	private static final Logger LOGGER = LogMgr.getLogger(EncryptConsoleRecorder.class);
 
 	public boolean record(Event event) {
 		try {

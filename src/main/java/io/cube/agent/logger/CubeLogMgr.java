@@ -30,17 +30,15 @@ public class CubeLogMgr {
 
     static {
 
-        Optional<Boolean> logEnabled =  CommonConfig.loggingEnabled;
-        loggingEnabled = logEnabled.orElse(true);
+        loggingEnabled = CommonConfig.loggingEnabled.orElse(true);
 
         if(!CommonConfig.loggerWsUri.isPresent()){
             loggingEnabled = false;
             LOGGER.error("Logging websocket Url not set");
         }
 
-        CommonConfig singleton = CommonConfig.getInstance();
-        Optional<String> authToken = singleton.authToken;
-        if(authToken==null || !authToken.isPresent()){
+        Optional<String> authToken = Optional.ofNullable(CommonConfig.getEnvSysStaticConf().getString(io.cube.agent.Constants.AUTH_TOKEN_PROP));
+        if(!authToken.isPresent()){
             loggingEnabled = false;
             LOGGER.error("auth token missing. disabling logging");
         }
@@ -66,7 +64,7 @@ public class CubeLogMgr {
     protected static Logger getLogger(String className){
 
         if(!loggingEnabled) {
-            LOGGER.error("Logging is disabled");
+            LOGGER.error("Logging is disabled {}" , className);
             return NOPLogger.NOP_LOGGER;
         }
 

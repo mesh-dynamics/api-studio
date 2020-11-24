@@ -5,7 +5,7 @@ import java.util.Optional;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status.Family;
 
-import io.cube.agent.logger.CubeLoggerFactory;
+import io.md.logger.LogMgr;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 
 public class HttpUtils {
 
-	private static final Logger LOGGER = CubeLoggerFactory.getLogger(HttpUtils.class);
+	private static final Logger LOGGER = LogMgr.getLogger(HttpUtils.class);
 
 	private static CloseableHttpClient client = HttpClientBuilder.create().build();
 

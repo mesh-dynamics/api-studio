@@ -12,9 +12,7 @@ import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * This example demonstrates how to create a websocket connection to a server. Only the most
@@ -25,6 +23,7 @@ public class CubeWsClient extends WebSocketClient {
     private static Logger LOGGER = LoggerFactory.getLogger(CubeWsClient.class);
     private CountDownLatch sendLatch = new CountDownLatch(1);
     private boolean hasConnectedOnce = false;
+    private Reconnector reconnector = new ExponentialDelayReconnector();
 
 
     public static CubeWsClient create(String uri , String token , String customerId) throws URISyntaxException {
@@ -69,16 +68,17 @@ public class CubeWsClient extends WebSocketClient {
     @Override
     public void onClose(int code, String reason, boolean remote) {
         LOGGER.warn("Connection closed by " + (remote ? "remote peer" : "us") + " Code: " + code + " Reason: " + reason);
-        informGlobally();
+        informErrorGlobally();
     }
 
     @Override
     public void onError(Exception ex) {
         LOGGER.error("connection error " , ex);
-        informGlobally();
+        reconnector.addErrorHistory(System.currentTimeMillis());
+        informErrorGlobally();
     }
 
-    private void informGlobally(){
+    private void informErrorGlobally(){
         if(!hasConnectedOnce){
             if(sendLatch.getCount()>0){
                 sendLatch.countDown();
@@ -89,14 +89,29 @@ public class CubeWsClient extends WebSocketClient {
     }
 
     public void send(String message){
-        if(ensureConnect()){
-            super.send(message);
-        }
+        this.send((Object)message);
+    }
+    public void send(byte[] message){
+        this.send((Object)message);
     }
 
-    public void send(byte[] message){
+    public void send(Object message){
+
         if(ensureConnect()){
-            super.send(message);
+            try{
+
+                if(message instanceof String) super.send((String) message);
+                else if(message instanceof byte[]) super.send((byte[]) message);
+                else throw new Exception("Unsupported Message Class "+message.getClass().getName());
+
+                reconnector.clearErrorHistory();
+            }catch (Exception e){
+                LOGGER.error("Log send errror" , e);
+                reconnector.addErrorHistory(System.currentTimeMillis());
+            }
+
+        }else{
+            LOGGER.error("ws socket not connected.Ignoring msg ");
         }
     }
 
@@ -104,7 +119,7 @@ public class CubeWsClient extends WebSocketClient {
 
         if(!CubeLogMgr.isLoggingEnabled()) return false;
 
-        if(!this.isOpen()){
+        if(!this.isOpen() && reconnector.enableReconnection(System.currentTimeMillis())){
             try{
                 if(this.getReadyState() == ReadyState.NOT_YET_CONNECTED){
                     this.sendLatch.await();
@@ -119,7 +134,7 @@ public class CubeWsClient extends WebSocketClient {
                 return false;
             }
         }
-        return true;
+        return this.isOpen();
     }
 }
 

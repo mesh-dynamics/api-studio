@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
-import io.cube.agent.logger.CubeLoggerFactory;
+import io.md.logger.LogMgr;
 import io.md.utils.UtilException;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.AbstractHttpEntity;
@@ -24,7 +24,7 @@ import io.md.utils.CubeObjectMapperProvider;
 
 public class ProxyEventBatchConsumer {
 
-	private static final Logger LOGGER = CubeLoggerFactory.getLogger(ProxyEventBatchConsumer.class);
+	private static final Logger LOGGER = LogMgr.getLogger(ProxyEventBatchConsumer.class);
 
 	private List<Event> temporaryBuffer = new ArrayList<>();
 

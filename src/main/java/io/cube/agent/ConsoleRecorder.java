@@ -4,7 +4,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import io.cube.agent.logger.CubeLoggerFactory;
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
 
 import com.lmax.disruptor.BlockingWaitStrategy;
@@ -24,7 +24,7 @@ import io.opentracing.Span;
 
 public class ConsoleRecorder extends AbstractGsonSerializeRecorder {
 
-	private static final Logger LOGGER = CubeLoggerFactory.getLogger(ConsoleRecorder.class);
+	private static final Logger LOGGER = LogMgr.getLogger(ConsoleRecorder.class);
 
 	private static ConsoleRecorder singleInstance;
 

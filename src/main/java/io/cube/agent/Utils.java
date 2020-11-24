@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-import io.cube.agent.logger.CubeLoggerFactory;
+import io.md.logger.LogMgr;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -35,7 +35,7 @@ import io.opentracing.SpanContext;
 
 public class Utils {
 
-	private static final Logger LOGGER = CubeLoggerFactory.getLogger(Utils.class);
+	private static final Logger LOGGER = LogMgr.getLogger(Utils.class);
 
 	static Optional<Payload> encryptFields(CommonConfig commonConfig, Event event) {
 

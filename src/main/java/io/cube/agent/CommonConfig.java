@@ -25,7 +25,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.ws.rs.core.Response;
 
-import io.cube.agent.logger.CubeLoggerFactory;
+import io.cube.agent.logger.CubeLogMgr;
+import io.cube.agent.logger.CubeLoggerFactoryProvider;
+import io.md.logger.LogMgr;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -51,13 +53,13 @@ import io.md.tracer.MDGlobalTracer;
 import io.md.tracer.MDTextMapCodec;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
-import static io.md.utils.Utils.safeFnExecute;
+import org.slf4j.LoggerFactory;
 
 import static io.cube.agent.Constants.*;
 
 public class CommonConfig {
 
-	private static final Logger LOGGER = CubeLoggerFactory.getLogger(CommonConfig.class);
+	private static Logger LOGGER;
 
 	/******* PROPERTIES HOLDERS ******/
 	// Cube essentials
@@ -118,8 +120,13 @@ public class CommonConfig {
 	// We need to ensure that at least NOOP properties are always defined in staticConfFile
 	private static final String staticConfFile = "agent_conf.json";
 
+	public static Config getEnvSysStaticConf() {
+		return envSysStaticConf;
+	}
+
 	// Priority for default conf is envVar > sysProp > static_conf_file
 	static Config envSysStaticConf;
+
 
 	private static AtomicReference<CommonConfig> singleInstance = null;
 	static ScheduledExecutorService serviceExecutor;
@@ -134,23 +141,34 @@ public class CommonConfig {
 
 	static {
 
-		//initialize Logging
-		jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-
 		try {
 			envSysStaticConf = ConfigFactory.systemEnvironment()
-				.withFallback(ConfigFactory.systemProperties())
-				.withFallback(ConfigFactory.load(staticConfFile));
+					.withFallback(ConfigFactory.systemProperties())
+					.withFallback(ConfigFactory.load(staticConfFile));
 
 		} catch (Exception e) {
+			LOGGER = LoggerFactory.getLogger(CommonConfig.class);
 			LOGGER.error("Error while initializing config", e);
 		}
+
+		loggerWsUri = envSysStaticConf.hasPath(MD_LOGGERCONFIG_URI) ? Optional.of(envSysStaticConf.getString(MD_LOGGERCONFIG_URI)) : Optional.empty();
+		loggingEnabled = envSysStaticConf.hasPath(MD_LOGGERCONFIG_ENABLE) ? Optional.of(envSysStaticConf.getBoolean(MD_LOGGERCONFIG_ENABLE)) : Optional.empty();
+		loggingLevel = envSysStaticConf.hasPath(MD_LOGGERCONFIG_LEVEL) ? Optional.of(envSysStaticConf.getString(MD_LOGGERCONFIG_LEVEL)) : Optional.empty();
+
+		jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
 		intent = envSysStaticConf.getString(Constants.MD_INTENT_PROP);
 		customerId = envSysStaticConf.getString(Constants.MD_CUSTOMER_PROP);
 		app = envSysStaticConf.getString(Constants.MD_APP_PROP);
 		instance = envSysStaticConf.getString(Constants.MD_INSTANCE_PROP);
 		serviceName = envSysStaticConf.getString(Constants.MD_SERVICE_PROP);
+
+		//initialize Logging
+		io.md.logger.LoggerFactory factory =  CubeLoggerFactoryProvider.getLoggerFactory();
+		if(CubeLogMgr.isLoggingEnabled()){
+			LogMgr.getInstance().setFactory(factory);
+		}
+		LOGGER =  LogMgr.getLogger(CommonConfig.class);
 
 		//Note: This is deliberately called before the CommonConfig instantiation for df support
 		//because the MDTextMapCodec is initialized during CommonConfig initialization so appropriate
@@ -165,6 +183,7 @@ public class CommonConfig {
 		}
 		singleInstance = new AtomicReference<>();
 		singleInstance.set(config);
+
 		if (config != null) {
 			config.recorder = initRecorder();
 		}
@@ -212,10 +231,6 @@ public class CommonConfig {
 			isFetchThreadInit = true;
 
 		}
-
-		loggerWsUri = safeFnExecute(MD_LOGGERCONFIG_URI , envSysStaticConf::getString);
-		loggingEnabled = safeFnExecute(MD_LOGGERCONFIG_ENABLE , envSysStaticConf::getBoolean);
-		loggingLevel = safeFnExecute(MD_LOGGERCONFIG_LEVEL , envSysStaticConf::getString);
 	}
 
 	private static void initClientMetaDataMap() {

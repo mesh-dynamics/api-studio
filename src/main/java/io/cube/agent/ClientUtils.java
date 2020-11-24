@@ -16,7 +16,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import io.cube.agent.logger.CubeLoggerFactory;
+import io.md.logger.LogMgr;
 import org.apache.http.Consts;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -32,7 +32,7 @@ import io.md.core.ConfigApplicationAcknowledge;
 
 public class ClientUtils {
 
-	private static final Logger LOGGER = CubeLoggerFactory.getLogger(ClientUtils.class);
+	private static final Logger LOGGER = LogMgr.getLogger(ClientUtils.class);
 
 	private static ObjectMapper jsonMapper = new ObjectMapper();
 

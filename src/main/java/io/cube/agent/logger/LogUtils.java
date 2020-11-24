@@ -1,17 +1,17 @@
 package io.cube.agent.logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.md.logger.LogMgr;
+import io.md.logger.LogStoreDTO;
+import io.md.utils.CubeObjectMapperProvider;
+import org.msgpack.jackson.dataformat.MessagePackFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Optional;
-import java.util.function.Function;
 
 public class LogUtils {
-    private static Logger LOGGER = LoggerFactory.getLogger(LogUtils.class);
+    private static Logger LOGGER = LogMgr.getLogger(LogUtils.class);
 
-    private static ObjectMapper mapper = ObjectMapperProvider.getInstance();
-    private static ObjectMapper msgPacker = ObjectMapperProvider.msgPacker;
+    private static ObjectMapper mapper = CubeObjectMapperProvider.getInstance();
+    private static ObjectMapper msgPacker = CubeObjectMapperProvider.createMapper(new MessagePackFactory());
 
     public static String toJson(LogStoreDTO logStoreDTO){
         try{

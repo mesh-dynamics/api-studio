@@ -4,7 +4,7 @@ package io.cube.agent;
 import java.time.Instant;
 import java.util.Optional;
 
-import io.cube.agent.logger.CubeLoggerFactory;
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -23,7 +23,7 @@ import io.md.utils.FnKey;
 
 public abstract class AbstractGsonSerializeRecorder implements Recorder {
 
-	protected final Logger LOGGER = CubeLoggerFactory.getLogger(this.getClass());
+	protected final Logger LOGGER = LogMgr.getLogger(this.getClass());
 
 	protected ObjectMapper jsonMapper;
 

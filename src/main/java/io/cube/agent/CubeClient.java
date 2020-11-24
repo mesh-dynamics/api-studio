@@ -15,8 +15,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
-import io.cube.agent.logger.CubeLoggerFactory;
 import io.md.dao.*;
+import io.md.logger.LogMgr;
 import org.apache.http.Consts;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -45,7 +45,7 @@ public class CubeClient {
 	private final ObjectMapper jsonMapper;
 	private Optional<String> authToken;
 
-	private static final Logger LOGGER = CubeLoggerFactory.getLogger(CubeClient.class);
+	private static final Logger LOGGER = LogMgr.getLogger(CubeClient.class);
 
 
 	public CubeClient(ObjectMapper jsonMapper) {

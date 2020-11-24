@@ -6,10 +6,12 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CubeLoggerFactory {
+class CubeLoggerFactory implements io.md.logger.LoggerFactory {
 
     private static Map<String , Logger> classLoggers = new HashMap<>();
-    public static Logger getLogger(Class<?> clazz){
+    public static final CubeLoggerFactory singleton = new CubeLoggerFactory();
+
+    public  Logger getLogger(Class<?> clazz){
         Logger slf4jLogger = LoggerFactory.getLogger(clazz);
         Logger cubeLogger = getCubeLogger(clazz.getName());
         return new LogWrapper(slf4jLogger , cubeLogger);

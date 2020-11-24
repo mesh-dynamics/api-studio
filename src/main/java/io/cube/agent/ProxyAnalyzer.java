@@ -3,7 +3,7 @@ package io.cube.agent;
 import java.io.IOException;
 import java.util.Optional;
 
-import io.cube.agent.logger.CubeLoggerFactory;
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,7 +18,7 @@ import io.md.utils.CubeObjectMapperProvider;
  */
 public class ProxyAnalyzer implements Analyzer {
 
-    private static final Logger LOGGER = CubeLoggerFactory.getLogger(ProxyAnalyzer.class);
+    private static final Logger LOGGER = LogMgr.getLogger(ProxyAnalyzer.class);
 
     private final CubeClient cubeClient;
     private final ObjectMapper jsonMapper;

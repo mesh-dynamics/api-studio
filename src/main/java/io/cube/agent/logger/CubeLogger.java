@@ -1,5 +1,6 @@
 package io.cube.agent.logger;
 
+import io.md.logger.LogStoreDTO;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.Marker;
@@ -30,7 +31,8 @@ public class CubeLogger implements Logger {
 
     private void log(String message , Level level){
 
-        LogStoreDTO dto = new LogStoreDTO(CubeLogMgr.cubeDeployment , source , message , level);
+        CubeDeployment cubeDeply = CubeLogMgr.cubeDeployment;
+        LogStoreDTO dto = new LogStoreDTO(cubeDeply.app , cubeDeply.instance , cubeDeply.service , cubeDeply.customerId , cubeDeply.version,  source , message , level);
 
         if (!CubeLogMgr.msgPackTransport) this.wsClient.send(LogUtils.toJson(dto));
         else this.wsClient.send(LogUtils.toMsgPack(dto));

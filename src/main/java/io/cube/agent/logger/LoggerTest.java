@@ -1,12 +1,13 @@
 package io.cube.agent.logger;
 
 import io.cube.agent.CommonConfig;
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
 
 class TestThread extends Thread {
-    private static Logger logger = CubeLoggerFactory.getLogger(TestThread.class);
+    private static Logger logger = LogMgr.getLogger(TestThread.class);
     private int num;
 
     public TestThread(int num){
@@ -16,7 +17,7 @@ class TestThread extends Thread {
     public void run(){
         while(true){
             try{
-                Thread.sleep((long)(500 * Math.random()));
+                Thread.sleep((long)(20000 * 1/*Math.random()*/));
             }catch(Exception e){
                 e.printStackTrace();
             }
@@ -30,8 +31,11 @@ public class LoggerTest {
     public static void main(String[] args){
 
         //init();
+        System.out.println("Gaurav");
 
-        Logger logger = CubeLoggerFactory.getLogger(LoggerTest.class);
+        String tag = CommonConfig.tag;
+
+        Logger logger = LogMgr.getLogger(LoggerTest.class);
 
         new TestThread(1).start();
         //new TestThread(2).start();

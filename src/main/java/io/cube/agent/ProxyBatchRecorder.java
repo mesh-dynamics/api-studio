@@ -4,7 +4,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import io.cube.agent.logger.CubeLoggerFactory;
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
 
 import com.lmax.disruptor.BlockingWaitStrategy;
@@ -23,7 +23,7 @@ import io.opentracing.Span;
 
 public class ProxyBatchRecorder extends AbstractGsonSerializeRecorder {
 
-	private static final Logger LOGGER = CubeLoggerFactory.getLogger(ProxyBatchRecorder.class);
+	private static final Logger LOGGER = LogMgr.getLogger(ProxyBatchRecorder.class);
 	private static ProxyBatchRecorder singleInstance;
 
 	public Disruptor<ValueEvent> disruptor;

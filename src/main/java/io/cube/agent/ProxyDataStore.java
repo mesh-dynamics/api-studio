@@ -1,10 +1,10 @@
 package io.cube.agent;
 
-import io.cube.agent.logger.CubeLoggerFactory;
 import io.md.dao.*;
 import java.io.IOException;
 import java.util.Optional;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -24,7 +24,7 @@ import io.md.utils.CubeObjectMapperProvider;
  */
 public class ProxyDataStore extends AbstractDataStore implements DataStore {
 
-    private static final Logger LOGGER = CubeLoggerFactory.getLogger(ProxyDataStore.class);
+    private static final Logger LOGGER = LogMgr.getLogger(ProxyDataStore.class);
 
     private final CubeClient cubeClient;
     private final ObjectMapper jsonMapper;
