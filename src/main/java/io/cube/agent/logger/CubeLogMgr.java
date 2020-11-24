@@ -1,7 +1,6 @@
 package io.cube.agent.logger;
 
 import io.cube.agent.CommonConfig;
-import io.md.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
@@ -11,7 +10,7 @@ import java.util.Optional;
 
 public class CubeLogMgr {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(CubeLogMgr.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CubeLogMgr.class);
 
     public static void setLoggingEnabled(boolean loggingEnabled) {
         CubeLogMgr.loggingEnabled = loggingEnabled;
@@ -42,10 +41,10 @@ public class CubeLogMgr {
             loggingEnabled = false;
             LOGGER.error("auth token missing. disabling logging");
         }
-
         if(loggingEnabled){
             String uri = CommonConfig.loggerWsUri.get();
             token = authToken.get();
+            //LOGGER.info("token is "+token);
             try{
                 client = CubeWsClient.create(uri , token , CommonConfig.customerId);
                 client.connect();
@@ -56,7 +55,9 @@ public class CubeLogMgr {
             }
 
             //Set the logging level
-            logLevel = CommonConfig.loggingLevel.map(String::toUpperCase).flatMap(l->Utils.safeFnExecute(l , Level::valueOf)).orElse(logLevel);
+            logLevel = CommonConfig.loggingLevel.map(String::toUpperCase).map(l->{
+                try{ return Level.valueOf(l); }catch(Exception e){ return null;}
+            }).orElse(logLevel);
             cubeDeployment = new CubeDeployment(CommonConfig.app , CommonConfig.instance , CommonConfig.serviceName , CommonConfig.customerId , CommonConfig.version);
         }
     }

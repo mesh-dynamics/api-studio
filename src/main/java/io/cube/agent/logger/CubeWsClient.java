@@ -2,7 +2,9 @@ package io.cube.agent.logger;
 
 import io.cube.agent.Constants;
 import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.drafts.Draft_6455;
 import org.java_websocket.enums.ReadyState;
+import org.java_websocket.framing.Framedata;
 import org.java_websocket.handshake.ServerHandshake;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,9 +12,9 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
 
 /**
  * This example demonstrates how to create a websocket connection to a server. Only the most
@@ -20,11 +22,22 @@ import java.util.concurrent.CountDownLatch;
  */
 public class CubeWsClient extends WebSocketClient {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(CubeWsClient.class);
-    private CountDownLatch sendLatch = new CountDownLatch(1);
-    private boolean hasConnectedOnce = false;
-    private Reconnector reconnector = new ExponentialDelayReconnector();
+    private static final Logger LOGGER = LoggerFactory.getLogger(CubeWsClient.class);
 
+    private final CountDownLatch sendLatch = new CountDownLatch(1);
+
+    private boolean hasConnectedOnce = false;
+
+    private final Reconnector reconnector = new ExponentialDelayReconnector();
+
+    private final LinkedList<Framedata> framedataBuff = new LinkedList<>();
+
+    private final Draft_6455 draft = new Draft_6455();
+
+    private static final long MAX_BUFFER_SIZE = 8*1024*1024 ; //8MB
+    private static final int PRUNE_SIZE = 20; //Prune this much messages when buffer is full
+
+    private long buffSize = 0;
 
     public static CubeWsClient create(String uri , String token , String customerId) throws URISyntaxException {
 
@@ -88,21 +101,58 @@ public class CubeWsClient extends WebSocketClient {
         }
     }
 
+    @Override
     public void send(String message){
-        this.send((Object)message);
+        addToFrameBuff(draft.createFrames( message, true).get(0) , message.length());
+        this.send(Optional.empty());
     }
+    @Override
     public void send(byte[] message){
-        this.send((Object)message);
+        addToFrameBuff(draft.createFrames(ByteBuffer.wrap(message), true).get(0) , message.length);
+        this.send(Optional.empty());
     }
 
-    public void send(Object message){
+    private synchronized  void addToFrameBuff(Framedata frame , int size){
+        framedataBuff.add(frame);
+        buffSize += size;
+        if(buffSize > MAX_BUFFER_SIZE){
+            LOGGER.error("Discarding the old logs");
+            //prune the buffer
+            for(int i=0 ; i<Math.min(PRUNE_SIZE , framedataBuff.size()) ;i++){
+                Framedata discarded = framedataBuff.removeFirst();
+                buffSize -= discarded.getPayloadData().capacity();
+            }
+        }
+
+    }
+    private synchronized void clearFrameBuff(){
+        framedataBuff.clear();
+        buffSize = 0;
+    }
+
+    private synchronized List<Framedata> getFrames(){
+        //create a copy for sending
+        return (List<Framedata>)framedataBuff.clone();
+    }
+
+    public void send(Optional<Object> data){
 
         if(ensureConnect()){
             try{
 
-                if(message instanceof String) super.send((String) message);
-                else if(message instanceof byte[]) super.send((byte[]) message);
-                else throw new Exception("Unsupported Message Class "+message.getClass().getName());
+                if(data.isPresent()){
+                    Object message = data.get();
+                    if(message instanceof String) super.send((String) message);
+                    else if(message instanceof byte[]) super.send((byte[]) message);
+                    else if(message instanceof ByteBuffer) super.send((ByteBuffer) message);
+                    else if(message instanceof Framedata) super.sendFrame((Framedata)message);
+                    else if(message instanceof Collection) super.sendFrame((Collection<Framedata>)message);
+                    else throw new Exception("Unsupported Message Class "+message.getClass().getName());
+                }else{
+                    //send it from the frame buffer
+                    super.sendFrame(getFrames());
+                    clearFrameBuff();
+                }
 
                 reconnector.clearErrorHistory();
             }catch (Exception e){
@@ -134,7 +184,8 @@ public class CubeWsClient extends WebSocketClient {
                 return false;
             }
         }
-        return this.isOpen();
+
+        return this.isOpen(); //&& Math.random()<0.5;
     }
 }
 

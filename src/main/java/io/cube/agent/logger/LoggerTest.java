@@ -28,7 +28,13 @@ class TestThread extends Thread {
 }
 
 public class LoggerTest {
+    private static int k = 0;
+
+    public static int getNum(){
+        return k++;
+    }
     public static void main(String[] args){
+
 
         //init();
         System.out.println("Gaurav");
@@ -50,7 +56,7 @@ public class LoggerTest {
                 e.printStackTrace();
             }
 
-            logger.warn("My name is gk "+Math.random());
+            logger.warn("My name is gk "+getNum());
 
 
 
