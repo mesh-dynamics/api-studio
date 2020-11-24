@@ -225,8 +225,8 @@ public class MockServiceHTTP {
                     LOGGER.info("ADD HEADER MOCK :: " + fieldName + " :: " + val);
                     builder.header(fieldName, val);
                 }
-                builder.header("grpc-status" , 0);
-                builder.header("status-code" , 0);
+                /*builder.header("grpc-status" , 0);
+                builder.header("status-code" , 0);*/
             }));
             LOGGER.info("RETURNING RESPONSE MOCK :: "
                 + responseToSend);
