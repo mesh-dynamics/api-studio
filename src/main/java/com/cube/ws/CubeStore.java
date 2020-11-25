@@ -1321,10 +1321,14 @@ public class CubeStore {
                 rrstore.commit();
                 return Response.ok().type(MediaType.APPLICATION_JSON).entity(updatedRecording).build();
             }
-            return Response.status(Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON)
-                .entity(String.format("Error while saving recording")).build();
+            return Response.status(Status.INTERNAL_SERVER_ERROR)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(buildErrorResponse(Status.INTERNAL_SERVER_ERROR.toString(), Constants.ERROR, "Error while saving recording"))
+                .build();
+
         }).orElse(Response.status(Response.Status.NOT_FOUND).
-            entity(String.format("No Recording found for recordingId=%s", recordingId)).build());
+            entity(buildErrorResponse(Status.NOT_FOUND.toString(), Constants.ERROR,String.format("No Recording found for recordingId=%s", recordingId)))
+            .build());
     }
 
     @POST
