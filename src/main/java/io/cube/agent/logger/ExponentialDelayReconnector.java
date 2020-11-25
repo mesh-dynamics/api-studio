@@ -17,6 +17,7 @@ public class ExponentialDelayReconnector implements Reconnector {
     private int waitMaxCount;
 
     private LinkedList<Long> errorHistory;
+    private double suppressMillis;
 
     public ExponentialDelayReconnector() {
         waitMaxCount = getWaitMaxCount();
@@ -39,6 +40,21 @@ public class ExponentialDelayReconnector implements Reconnector {
         if (errorHistory.size() > waitMaxCount) {
             errorHistory.removeFirst();
         }
+        updateSuppressionDuration();
+    }
+
+    private void updateSuppressionDuration(){
+        int size = errorHistory.size();
+        if (size == 0) { //extra check , although will never be the case.
+            suppressMillis = 0;
+            return ;
+        }
+
+        if (size < waitMaxCount) {
+            suppressMillis = WAIT_MILLIS * Math.pow(WAIT_INCR_RATE, size - 1);
+        } else {
+            suppressMillis = WAIT_MAX_MILLIS;
+        }
     }
 
     public boolean isErrorHistoryEmpty() {
@@ -46,22 +62,15 @@ public class ExponentialDelayReconnector implements Reconnector {
     }
 
     public void clearErrorHistory() {
-        errorHistory.clear();
+        if(!errorHistory.isEmpty()){
+            errorHistory.clear();
+            suppressMillis = 0;
+        }
+
     }
 
     public boolean enableReconnection(long timestamp) {
-        int size = errorHistory.size();
-        if (size == 0) {
-            return true;
-        }
-
-        double suppressMillis;
-        if (size < waitMaxCount) {
-            suppressMillis = WAIT_MILLIS * Math.pow(WAIT_INCR_RATE, size - 1);
-        } else {
-            suppressMillis = WAIT_MAX_MILLIS;
-        }
-
+        if(errorHistory.isEmpty()) return true;
         return (timestamp - errorHistory.getLast()) >= suppressMillis;
     }
 }
