@@ -4,8 +4,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.InsufficientCapacityException;
@@ -18,13 +18,12 @@ import com.lmax.disruptor.dsl.ProducerType;
 import io.cube.agent.logging.ProxyEventBatchConsumer;
 import io.cube.agent.logging.ValueEvent;
 import io.md.dao.Event;
-import io.md.utils.CubeObjectMapperProvider;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
 public class ProxyBatchRecorder extends AbstractGsonSerializeRecorder {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ProxyBatchRecorder.class);
+	private static final Logger LOGGER = LogMgr.getLogger(ProxyBatchRecorder.class);
 	private static ProxyBatchRecorder singleInstance;
 
 	public Disruptor<ValueEvent> disruptor;

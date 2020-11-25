@@ -5,16 +5,16 @@ import java.util.Optional;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status.Family;
 
+import io.md.logger.LogMgr;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class HttpUtils {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(HttpUtils.class);
+	private static final Logger LOGGER = LogMgr.getLogger(HttpUtils.class);
 
 	private static CloseableHttpClient client = HttpClientBuilder.create().build();
 

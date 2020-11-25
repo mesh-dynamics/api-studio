@@ -1,24 +1,20 @@
 package io.cube.agent;
 
-import java.io.FileNotFoundException;
 import java.util.Optional;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.gson.Gson;
 
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Payload;
-import io.md.dao.Recording.RecordingType;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 
 public class EncryptConsoleRecorder {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(EncryptConsoleRecorder.class);
+	private static final Logger LOGGER = LogMgr.getLogger(EncryptConsoleRecorder.class);
 
 	public boolean record(Event event) {
 		try {

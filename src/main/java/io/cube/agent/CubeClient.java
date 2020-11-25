@@ -16,6 +16,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
 import io.md.dao.*;
+import io.md.logger.LogMgr;
 import org.apache.http.Consts;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -27,7 +28,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,7 +45,7 @@ public class CubeClient {
 	private final ObjectMapper jsonMapper;
 	private Optional<String> authToken;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(CubeClient.class);
+	private static final Logger LOGGER = LogMgr.getLogger(CubeClient.class);
 
 
 	public CubeClient(ObjectMapper jsonMapper) {

@@ -8,11 +8,11 @@ import java.util.Optional;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
+import io.md.logger.LogMgr;
 import io.md.utils.UtilException;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.AbstractHttpEntity;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.lmax.disruptor.EventHandler;
 
@@ -24,7 +24,7 @@ import io.md.utils.CubeObjectMapperProvider;
 
 public class ProxyEventBatchConsumer {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ProxyEventBatchConsumer.class);
+	private static final Logger LOGGER = LogMgr.getLogger(ProxyEventBatchConsumer.class);
 
 	private List<Event> temporaryBuffer = new ArrayList<>();
 

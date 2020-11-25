@@ -4,8 +4,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.InsufficientCapacityException;
@@ -24,7 +24,7 @@ import io.opentracing.Span;
 
 public class ConsoleRecorder extends AbstractGsonSerializeRecorder {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ConsoleRecorder.class);
+	private static final Logger LOGGER = LogMgr.getLogger(ConsoleRecorder.class);
 
 	private static ConsoleRecorder singleInstance;
 

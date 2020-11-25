@@ -1,13 +1,11 @@
 package io.cube.agent;
 
-import io.md.core.TemplateKey.Type;
 import io.md.dao.*;
-import io.md.dao.Event.EventType;
 import java.io.IOException;
 import java.util.Optional;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,7 +24,7 @@ import io.md.utils.CubeObjectMapperProvider;
  */
 public class ProxyDataStore extends AbstractDataStore implements DataStore {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ProxyDataStore.class);
+    private static final Logger LOGGER = LogMgr.getLogger(ProxyDataStore.class);
 
     private final CubeClient cubeClient;
     private final ObjectMapper jsonMapper;
@@ -110,7 +108,6 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
         return Optional.empty();
     }
 
-
     @Override
     public Optional<Replay> getReplay(String replayId) {
         try {
@@ -136,9 +133,10 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
     }
 
     @Override
-    public boolean saveResult(ReqRespMatchResult reqRespMatchResult) {
+    public boolean saveResult(ReqRespMatchResult reqRespMatchResult, String s) {
         return cubeClient.saveResult(reqRespMatchResult).isPresent();
     }
+
 
     @Override
     public boolean save(Event event) {
@@ -153,5 +151,14 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
     @Override
     public boolean deferredDelete(Replay replay) {
         return cubeClient.deferredDelete(replay).isPresent();
+    }
+
+    /*
+      Todo: This method needs to be removed from Datastore interface. After that it can be removed from here.
+     */
+    @Override
+    public Optional<ProtoDescriptorDAO> getLatestProtoDescriptorDAO(String s, String s1) {
+
+        throw new UnsupportedOperationException("ProxyData Store getLatestProtoDescriptorDAO call is not supported");
     }
 }

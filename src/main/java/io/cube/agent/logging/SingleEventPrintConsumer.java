@@ -5,10 +5,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.UUID;
 
+import io.md.logger.LogMgr;
 import org.clapper.util.io.RollingFileWriter;
 import org.clapper.util.io.RollingFileWriter.Compression;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -21,7 +21,7 @@ import io.cube.agent.Utils;
 import io.md.utils.CubeObjectMapperProvider;
 
 public class SingleEventPrintConsumer {
-	private static final Logger LOGGER = LoggerFactory.getLogger(SingleEventPrintConsumer.class);
+	private static final Logger LOGGER = LogMgr.getLogger(SingleEventPrintConsumer.class);
 
 
 	private ObjectWriter objectWriter;

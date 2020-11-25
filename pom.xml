@@ -5,12 +5,12 @@
   <modelVersion>4.0.0</modelVersion>
     <groupId>io.cube</groupId>
     <artifactId>agent</artifactId>
-    <version>1.0.58</version>
+    <version>1.0.59</version>
     <properties>
         <version.java>8</version.java>
         <version.httpcomponents>4.5.8</version.httpcomponents>
         <version.gson>2.8.5</version.gson>
-        <version.mdcommons>1.1.37</version.mdcommons>
+        <version.mdcommons>1.1.70.0</version.mdcommons>
         <version.jersey>2.27</version.jersey>
     </properties>
     <distributionManagement>
@@ -142,6 +142,18 @@
       <artifactId>config</artifactId>
       <version>1.4.0</version>
     </dependency>
+      <dependency>
+          <groupId>org.java-websocket</groupId>
+          <artifactId>Java-WebSocket</artifactId>
+          <version>1.5.1</version>
+      </dependency>
+      <dependency>
+          <groupId>org.msgpack</groupId>
+          <artifactId>jackson-dataformat-msgpack</artifactId>
+          <version>0.8.17</version>
+      </dependency>
+
+
 
 
   </dependencies>

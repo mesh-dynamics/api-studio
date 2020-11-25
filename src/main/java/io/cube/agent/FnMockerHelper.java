@@ -11,9 +11,9 @@ import java.util.Optional;
 import javax.sql.rowset.serial.SerialBlob;
 import javax.sql.rowset.serial.SerialClob;
 
+import io.md.logger.LogMgr;
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
@@ -38,7 +38,7 @@ import io.md.utils.Utils;
  */
 public class FnMockerHelper {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FnMockerHelper.class);
+    private static final Logger LOGGER = LogMgr.getLogger(FnMockerHelper.class);
 
     private final Mocker mocker;
     private final Gson gson;

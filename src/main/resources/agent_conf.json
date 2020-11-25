@@ -76,6 +76,11 @@
 						"rate": 0.3
 					}
 				]
+			},
+			"logger": {
+				"enable" : true ,
+				"uri" : "ws://localhost:8083/api/logStore",
+				"level" : "debug"
 			}
 		}
 	}

@@ -25,6 +25,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.ws.rs.core.Response;
 
+import io.cube.agent.logger.CubeLogMgr;
+import io.cube.agent.logger.CubeLoggerFactoryProvider;
+import io.md.logger.LogMgr;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -34,7 +37,6 @@ import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -51,11 +53,13 @@ import io.md.tracer.MDGlobalTracer;
 import io.md.tracer.MDTextMapCodec;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
+import org.slf4j.LoggerFactory;
 
+import static io.cube.agent.Constants.*;
 
 public class CommonConfig {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(CommonConfig.class);
+	private static Logger LOGGER;
 
 	/******* PROPERTIES HOLDERS ******/
 	// Cube essentials
@@ -116,8 +120,13 @@ public class CommonConfig {
 	// We need to ensure that at least NOOP properties are always defined in staticConfFile
 	private static final String staticConfFile = "agent_conf.json";
 
+	public static Config getEnvSysStaticConf() {
+		return envSysStaticConf;
+	}
+
 	// Priority for default conf is envVar > sysProp > static_conf_file
 	static Config envSysStaticConf;
+
 
 	private static AtomicReference<CommonConfig> singleInstance = null;
 	static ScheduledExecutorService serviceExecutor;
@@ -125,25 +134,40 @@ public class CommonConfig {
 	static protected ObjectMapper jsonMapper = new ObjectMapper();
 	public static Map<String, String> clientMetaDataMap = new HashMap<>();
 
-	static {
+	//Websocket Logger Related
+	public static Optional<String> loggerWsUri = Optional.empty();
+	public static Optional<Boolean> loggingEnabled = Optional.empty();
+	public static Optional<String> loggingLevel = Optional.empty();
 
-		//initialize Logging
-		jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+	static {
 
 		try {
 			envSysStaticConf = ConfigFactory.systemEnvironment()
-				.withFallback(ConfigFactory.systemProperties())
-				.withFallback(ConfigFactory.load(staticConfFile));
+					.withFallback(ConfigFactory.systemProperties())
+					.withFallback(ConfigFactory.load(staticConfFile));
 
 		} catch (Exception e) {
+			LOGGER = LoggerFactory.getLogger(CommonConfig.class);
 			LOGGER.error("Error while initializing config", e);
 		}
+
+		loggerWsUri = envSysStaticConf.hasPath(MD_LOGGERCONFIG_URI) ? Optional.of(envSysStaticConf.getString(MD_LOGGERCONFIG_URI)) : Optional.empty();
+		loggingEnabled = envSysStaticConf.hasPath(MD_LOGGERCONFIG_ENABLE) ? Optional.of(envSysStaticConf.getBoolean(MD_LOGGERCONFIG_ENABLE)) : Optional.empty();
+		loggingLevel = envSysStaticConf.hasPath(MD_LOGGERCONFIG_LEVEL) ? Optional.of(envSysStaticConf.getString(MD_LOGGERCONFIG_LEVEL)) : Optional.empty();
+
+		jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
 		intent = envSysStaticConf.getString(Constants.MD_INTENT_PROP);
 		customerId = envSysStaticConf.getString(Constants.MD_CUSTOMER_PROP);
 		app = envSysStaticConf.getString(Constants.MD_APP_PROP);
 		instance = envSysStaticConf.getString(Constants.MD_INSTANCE_PROP);
 		serviceName = envSysStaticConf.getString(Constants.MD_SERVICE_PROP);
+
+		//initialize Logging
+		if(CubeLogMgr.isLoggingEnabled()){
+			LogMgr.getInstance().setFactory(CubeLoggerFactoryProvider.getLoggerFactory());
+		}
+		LOGGER =  LogMgr.getLogger(CommonConfig.class);
 
 		//Note: This is deliberately called before the CommonConfig instantiation for df support
 		//because the MDTextMapCodec is initialized during CommonConfig initialization so appropriate
@@ -158,19 +182,20 @@ public class CommonConfig {
 		}
 		singleInstance = new AtomicReference<>();
 		singleInstance.set(config);
+
 		if (config != null) {
 			config.recorder = initRecorder();
 		}
 
 		boolean isServerPolling = envSysStaticConf
-			.getBoolean(io.cube.agent.Constants.MD_POLLINGCONFIG_POLLSERVER);
+			.getBoolean(MD_POLLINGCONFIG_POLLSERVER);
 
 		// This is only for developer user case allowing polling properties from file
 		// When polling from file the polling from cubeio will not be enabled.
 		try {
 			String dynamicConfigFilePath = envSysStaticConf
-				.getString(io.cube.agent.Constants.MD_POLLINGCONFIG_FILEPATH);
-			int delay = envSysStaticConf.getInt(io.cube.agent.Constants.MD_POLLINGCONFIG_DELAY);
+				.getString(MD_POLLINGCONFIG_FILEPATH);
+			int delay = envSysStaticConf.getInt(MD_POLLINGCONFIG_DELAY);
 			serviceExecutor = Executors.newScheduledThreadPool(1);
 			serviceExecutor
 				.scheduleWithFixedDelay(new FileConfigUpdater(dynamicConfigFilePath), 0, delay,
@@ -188,13 +213,13 @@ public class CommonConfig {
 				.getString(Constants.MD_SERVICE_ENDPOINT_PROP));
 
 			fetchConfigApiURI = new URIBuilder(URI.create(cubeServiceEndPoint)
-				.resolve(io.cube.agent.Constants.MD_FETCH_AGENT_CONFIG_API_PATH)).toString();
+				.resolve(MD_FETCH_AGENT_CONFIG_API_PATH)).toString();
 
 			ackConfigApiURI = new URIBuilder(URI.create(cubeServiceEndPoint)
-				.resolve(io.cube.agent.Constants.MD_ACK_CONFIG_API_PATH)).toString();
+				.resolve(MD_ACK_CONFIG_API_PATH)).toString();
 
-			fetchDelay = envSysStaticConf.getInt(io.cube.agent.Constants.MD_POLLINGCONFIG_DELAY);
-			fetchConfigRetryCount = envSysStaticConf.getInt(io.cube.agent.Constants.MD_POLLINGCONFIG_RETRYCOUNT);
+			fetchDelay = envSysStaticConf.getInt(MD_POLLINGCONFIG_DELAY);
+			fetchConfigRetryCount = envSysStaticConf.getInt(MD_POLLINGCONFIG_RETRYCOUNT);
 
 			serviceExecutor = Executors.newScheduledThreadPool(1);
 			fetchConfigFuture = serviceExecutor
