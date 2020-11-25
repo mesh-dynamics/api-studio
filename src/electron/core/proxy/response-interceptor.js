@@ -42,12 +42,25 @@ const responseInterceptor = (proxyRes, req, res, options) => {
 
             logger.info('storeUserReqResp call completed returning body: ', JSON.stringify(response.data));
 
+            // Set proxyRes headers to propagate up
+            Object.keys(proxyRes.headers).forEach(headerKey => res.setHeader(headerKey, proxyRes.headers[headerKey]))
+
+            res.statusMessage = proxyRes.statusMessage;
+
+            res.statusCode = proxyRes.statusCode;
+
             res.end(body);
 
         } catch (error) {
             logger.info('Error in response interceptor', error);
 
             logger.info('Response Body: ', body);
+
+            Object.keys(proxyRes.headers).forEach(headerKey => res.setHeader(headerKey, proxyRes.headers[headerKey]))
+
+            res.statusMessage = proxyRes.statusMessage;
+            
+            res.statusCode = proxyRes.statusCode;
             
             res.end(body);
         }
