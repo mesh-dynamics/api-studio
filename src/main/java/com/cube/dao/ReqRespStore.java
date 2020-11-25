@@ -3,6 +3,7 @@
  */
 package com.cube.dao;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.cube.agent.UtilException;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.dao.*;
@@ -404,7 +405,23 @@ public interface ReqRespStore extends DataStore {
      */
     boolean saveMatchResultAggregate(MatchResultAggregate resultAggregate, String customerId);
 
-	/**
+    /**
+     *
+     * @param customer
+     * @param app
+     * @param recordingIds List of recordingIds to process
+     * @param discardSingleValues Retain or discard configs based on single value reference
+     * @param format csv/json
+     * @return
+     * @throws SolrStoreException
+     */
+    String getPotentialDynamicInjectionConfigs(String customer, String app, Optional<String> instanceId,
+                                               Optional<List<String>> recordingIds,
+                                               Optional<List<String>> paths,
+                                               Optional<Boolean> discardSingleValues,
+                                               Optional<String> format) throws JsonProcessingException;
+
+    /**
 	 * @param dynamicInjectionConfig
 	 * @return
 	 */

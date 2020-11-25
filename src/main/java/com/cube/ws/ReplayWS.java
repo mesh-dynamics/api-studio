@@ -5,6 +5,9 @@ package com.cube.ws;
 
 import static io.md.core.Utils.buildErrorResponse;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +32,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -283,6 +287,49 @@ public class ReplayWS extends ReplayBasicWS {
             return Response.serverError().entity(
                 Utils.buildErrorResponse(Constants.ERROR, Constants.SOLR_STORE_FAILED, "Unable to save Replay for replayId:" + replay.replayId))
                 .build();
+        }
+    }
+
+    @GET
+    @Path("getPotentialDynamicInjectionConfigs/{customerId}/{app}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response getPotentialDynamicInjectionConfigs(@Context UriInfo uriInfo,
+                                                        @PathParam("customerId") String customerId,
+                                                        @PathParam("app") String app) {
+        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+        // TODO: Add the field as a constant
+        Optional<String> instanceId = queryParams.getFirst(Constants.INSTANCE_ID_FIELD) == null? Optional.empty()
+            :Optional.of(queryParams.getFirst(Constants.INSTANCE_ID_FIELD));
+        Optional<List<String>> recordingsList = queryParams.get(Constants.RECORDING_ID) == null? Optional.empty()
+            :Optional.of(queryParams.get(Constants.RECORDING_ID));
+        Optional<List<String>> paths = queryParams.get("paths") == null? Optional.empty()
+            :Optional.of(queryParams.get("paths"));
+        Optional<Boolean> discardSingleValues = queryParams.getFirst("discardSingleValues") == null ? Optional.empty()
+            :Optional.of(Boolean.valueOf(queryParams.getFirst("discardSingleValues")));
+        Optional<String> format = queryParams.getFirst("format") == null? Optional.empty()
+            :Optional.of(queryParams.getFirst("format"));
+
+        if (recordingsList == null)
+            recordingsList = Optional.empty();
+
+        try{
+            File csvFile = new File("/tmp/di." + format);
+            String data =  rrstore.getPotentialDynamicInjectionConfigs(customerId, app, instanceId,
+                recordingsList,paths, discardSingleValues, format);
+            FileUtils.writeStringToFile(csvFile, data, Charset.defaultCharset());
+            Response.ResponseBuilder response = Response.ok((Object)csvFile);
+            response.header("Content-Disposition", "attachment; filename=\"di_configs.csv\"");
+            return response.build();
+
+        } catch (JsonProcessingException e) {
+            LOGGER.error(String.format("Error in converting Event list to Json for customer %s, app %s",
+                customerId, app), e);
+            return Response.serverError().build();
+        } catch (IOException e){
+            LOGGER.error(String.format("Error in file creation for customer %s, app %s, ",
+                customerId, app), e);
+            return Response.serverError().build();
+
         }
     }
 

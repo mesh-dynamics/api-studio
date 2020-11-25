@@ -18,6 +18,8 @@ import io.md.dao.agent.config.ConfigDAO;
 import io.md.dao.agent.config.ConfigType;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
+import io.md.injection.DynamicInjectionConfigGenerator;
+
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -28,6 +30,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -368,9 +371,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         eventQuery.getJoinQuery().ifPresent(jq->addFilter(query , jq));
 
-        addSort(query , SCOREF , false);
+        if (!eventQuery.isIndexOrderAsc()){
+            addSort(query , SCOREF , false);
+        }
         addSort(query, TIMESTAMPF, eventQuery.isSortOrderAsc());
-        addSort(query, IDF, true);
+        if (!eventQuery.isIndexOrderAsc()){
+            addSort(query, IDF, true);
+        }
 
         if(queryBuff.length()!=0){
             query.setQuery(queryBuff.toString());
@@ -3483,6 +3490,105 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(TIMESTAMPF , dynamicInjectionConfig.timestamp.toString());
         doc.setField(TYPEF , type);
         return doc;
+    }
+
+    @Override
+    public String getPotentialDynamicInjectionConfigs(String customerId, String app, Optional<String> instanceId,
+                                                      Optional<List<String>> recordingIds,
+                                                      Optional<List<String>> paths,
+                                                      Optional<Boolean> discardSingleValues,
+                                                      Optional<String> format) throws JsonProcessingException {
+        DynamicInjectionConfigGenerator diGenerator = new DynamicInjectionConfigGenerator();
+        List<String> collectionIds;
+        if (recordingIds.isPresent()) {
+            // For each recording Id, get the corresponding collection
+            collectionIds = new ArrayList<>();
+            recordingIds.get().forEach(recording -> {
+                Optional<Recording> recordingStruct = getRecording(recording);
+                recordingStruct.ifPresent(r -> {
+                    if (r.customerId.equals(customerId) &&
+                        r.app.equals(app) &&
+                        (instanceId.map(r.instanceId::equals).orElse(true))) {
+                        collectionIds.add(r.collection);
+                    } else {
+                        LOGGER.error(String.format("No collection found for customer: %s, app: %s, instanceId: %s, recording: %s",
+                            customerId, app, instanceId.orElse("ANY"), recording));
+                    }
+                });
+            });
+        } else {
+            // Get collectionIds corresponding to all recordings of customerId, App, and Optional(instanceId)
+            collectionIds = getRecording(Optional.of(customerId), Optional.of(app), instanceId,
+                Optional.of(RecordingStatus.Completed),
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.empty(), new ArrayList<>(), Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty()).getObjects().map(r -> r.collection)
+                .collect(Collectors.toList());
+            if (collectionIds.size() == 0) {
+                LOGGER.error(String.format("No collections found for customer: %s, app: %s, instanceId: %s",
+                    customerId, app, instanceId.orElse("ANY")));
+            }
+        }
+
+
+        List<Event.EventType> requestTypes = Arrays.asList(Event.EventType.HTTPRequest, Event.EventType.HTTPResponse);
+
+        final List<String> pathList = paths.orElse(Arrays.asList("/pathSegments", "/queryParams", "/body", "/hdrs"));
+        final Optional<InjectionMeta.HTTPMethodType> fixedMethod = paths.isEmpty() ? Optional.empty() :
+            Optional.of(InjectionMeta.HTTPMethodType.POST);
+        final String methodPath = "/method";
+        Optional<InjectionMeta.HTTPMethodType> method = Optional.empty();
+        Optional<String> requestId = Optional.empty();
+
+        for (String collection : collectionIds) {
+
+            // For each collection, get all events and send them as JSON objects to DI Config Generator
+
+            EventQuery.Builder eventQueryBuilder = new EventQuery.Builder(customerId, app, requestTypes);
+
+            if (collection != null) {
+                eventQueryBuilder.withCollection(collection);
+            }
+
+            eventQueryBuilder.withSortOrderAsc(true).withIndexOrderAsc(true);
+
+            EventQuery eventQuery = eventQueryBuilder.build();
+
+            Result<Event> events = getEvents(eventQuery);
+            if (events.numFound == 0) {
+                LOGGER.error(String.format("No collections found for customer: %s, app: %s, instanceId: %s",
+                    customerId, app, instanceId.orElse("ANY")));
+            }
+
+            for (Iterator<Event> it = events.getObjects().iterator(); it.hasNext(); ) {
+                Event event = it.next();
+
+                if (fixedMethod.isPresent()) {
+                    method = fixedMethod;
+                } else {
+                    requestId = Optional.of(event.reqId);
+                    try {
+                        method = Optional.of(InjectionMeta.HTTPMethodType.valueOf(event.payload.getValAsString(methodPath)));
+                    } catch (DataObj.PathNotFoundException e) {
+                        // Can be a response payload. In that case, just send the request id.
+                        method = Optional.empty();
+                    }
+                }
+
+                for (String path : pathList) {
+                    diGenerator.processJSONObject((JsonDataObj) event.payload.getVal(path),
+                        event.apiPath,
+                        path,
+                        event.eventType,
+                        requestId,
+                        method);
+                }
+            }
+        }
+        // By default, discardSingleValues is false for a single collection, and true otherwise.
+        return diGenerator.generateConfigs(discardSingleValues.orElse(collectionIds.size() > 1),
+            format.orElse("csv"));
     }
 
 

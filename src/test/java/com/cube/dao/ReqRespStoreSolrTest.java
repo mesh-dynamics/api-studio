@@ -1,5 +1,6 @@
 package com.cube.dao;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.md.dao.RecordingOperationSetSP;
 import java.util.Arrays;
 import java.util.List;
@@ -58,5 +59,21 @@ class ReqRespStoreSolrTest {
         Assertions.assertEquals(operationsList.size(), recordingOperationSetSPStored.operationsList.size());
     }
 
-
+    @Test
+    void getPotentialDynamicInjectionConfigs() throws JsonProcessingException {
+        Config config = null;
+        try {
+            config = new Config();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.print(config.rrstore.getPotentialDynamicInjectionConfigs("Pronto",
+            "ProntoApp",
+            Optional.empty(),
+            Optional.of(Arrays.asList("Recording-965809473")),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.of("csv"))
+        );
+    }
 }
