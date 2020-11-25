@@ -164,9 +164,8 @@ public class CommonConfig {
 		serviceName = envSysStaticConf.getString(Constants.MD_SERVICE_PROP);
 
 		//initialize Logging
-		io.md.logger.LoggerFactory factory =  CubeLoggerFactoryProvider.getLoggerFactory();
 		if(CubeLogMgr.isLoggingEnabled()){
-			LogMgr.getInstance().setFactory(factory);
+			LogMgr.getInstance().setFactory(CubeLoggerFactoryProvider.getLoggerFactory());
 		}
 		LOGGER =  LogMgr.getLogger(CommonConfig.class);
 

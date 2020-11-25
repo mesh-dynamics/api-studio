@@ -18,13 +18,10 @@ public class ConstantDelayReconnector implements Reconnector {
 
     private Deque<Long> errorHistory = new LinkedList<Long>();
 
-    public ConstantDelayReconnector() {
-        errorHistory = new LinkedList<Long>();
-    }
+    public ConstantDelayReconnector() {}
 
     public ConstantDelayReconnector(int wait) {
         this.wait = wait;
-        errorHistory = new LinkedList<Long>();
     }
 
     public void addErrorHistory(long timestamp) {
