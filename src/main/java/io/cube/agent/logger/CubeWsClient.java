@@ -35,7 +35,7 @@ public class CubeWsClient extends WebSocketClient {
     private final Draft_6455 draft = new Draft_6455();
 
     private static final long MAX_BUFFER_SIZE = 8*1024*1024 ; //8MB
-    private static final int PRUNE_SIZE = 20; //Prune this much messages when buffer is full
+    private static final int PRUNE_SIZE = 200; //Prune this much messages when buffer is full
 
     private long buffSize = 0;
 
@@ -171,21 +171,25 @@ public class CubeWsClient extends WebSocketClient {
 
         if(!this.isOpen() && reconnector.enableReconnection(System.currentTimeMillis())){
             try{
+                boolean connectAgain = false;
                 if(this.getReadyState() == ReadyState.NOT_YET_CONNECTED){
                     this.sendLatch.await();
                 }else if(this.isClosing()){
                     this.closeBlocking();
-                    this.reconnectBlocking();
+                    connectAgain = true;
+                    //this.reconnectBlocking();
                 }else if(this.isClosed()){
-                    this.reconnectBlocking();
+                    connectAgain = true;
+                    //this.reconnectBlocking();
                 }
+                if(connectAgain) this.reconnect(); // This is async and does not block
             }catch(Exception e){
                 LOGGER.error("Logging ws client connection error ",e);
                 return false;
             }
         }
 
-        return this.isOpen(); //&& Math.random()<0.5;
+        return this.isOpen();
     }
 }
 
