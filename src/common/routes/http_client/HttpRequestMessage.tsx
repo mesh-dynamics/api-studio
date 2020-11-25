@@ -119,6 +119,8 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
             "request-data-label": true,
             "filled": isFormDataExists || isRawDataHighlighted
         });
+        const isgRPCData = this.props.bodyType == "grpcData" && this.props.paramsType == "showBody";
+        const httpMethod = isgRPCData ? "post" : this.props.httpMethod;
         
 
         return (
@@ -131,7 +133,7 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
                     <div style={{display: "inline-block", width: "18%", paddingRight: "15px"}}> 
                         <FormGroup bsSize="small" style={{marginBottom: "0px"}}>
                             <FormControl componentClass="select" placeholder="Method" style={{fontSize: "12px"}} name="httpMethod" 
-                            readOnly={this.props.readOnly} value={this.props.httpMethod} onChange={this.handleChange}>
+                                readOnly={this.props.readOnly || isgRPCData} value={httpMethod} onChange={this.handleChange}>
                                 <option value="get">GET</option>
                                 <option value="post">POST</option>
                                 <option value="put">PUT</option>

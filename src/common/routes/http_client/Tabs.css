@@ -18,7 +18,7 @@
     padding: 5px;
     margin-left: 8px;
     flex: 0 0 auto;
-    background-color: #ADADAD;
+    background-color: #cacaca;
     max-width: 240px;
 }
 
@@ -92,12 +92,18 @@
     font-weight: bold;
 }
 
+.RRT__removable-icon-has-changed{
+    color: #e09204;
+}
+  
 .RRT__removable-icon-has-changed:hover:before {
     content: "\f00d";
+    color: black;
 }
 
 .md-hc-tab.RRT__tab--highlighted {
     background-color: #e8e8c6;
     border-color: #ddd #ddd #fff;
+    color: #7777ec;
 }
   

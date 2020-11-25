@@ -23,6 +23,7 @@ import {hasTabDataChanged} from "../../utils/http_client/utils"
 import Tippy from "@tippy.js/react";
 import RequestMatchType from './RequestMatchType.tsx';
 import { HttpRequestFields } from "./HttpRequestFields";
+import { httpClientConstants } from "../../constants/httpClientConstants";
 
 const newStyles = {
     variables: {
@@ -500,6 +501,9 @@ class HttpClient extends Component {
                     return resolutionsIconMap[resolutionType] ? resolutionsIconMap[resolutionType].description : "(Unknown) [" + resolutionType + "]";
             }
         };
+        const isGrpc = currentSelectedTab.bodyType == "grpcData" && currentSelectedTab.paramsType == "showBody";
+        const isDataReceivedAfterResponse = currentSelectedTab.progressState === httpClientConstants.AFTER_RESPONSE_RECEIVED_DATA;
+        const responseBody = isGrpc && isDataReceivedAfterResponse ? selectedTraceTableReqTab.responseBody : "";
         return (
             <div>
                 <div style={{display: "flex"}}>
@@ -678,7 +682,6 @@ class HttpClient extends Component {
                             <div style={{flex: "1", padding: "0.5rem", height:'100%'}}>
                                 <HttpRequestMessage 
                                     tabId={selectedTraceTableReqTab.id}
-                                    requestId={selectedTraceTableReqTab.requestId}
                                     httpMethod={selectedTraceTableReqTab.httpMethod}
                                     httpURL={selectedTraceTableReqTab.httpURL}
                                     headers={selectedTraceTableReqTab.headers} 
@@ -688,9 +691,7 @@ class HttpClient extends Component {
                                     rawData={selectedTraceTableReqTab.rawData}
                                     rawDataType={selectedTraceTableReqTab.rawDataType}
                                     paramsType={selectedTraceTableReqTab.paramsType}
-                                    addOrRemoveParam={this.props.addOrRemoveParam} 
                                     updateParam={this.props.updateParam}
-                                    updateAllParams={this.props.updateAllParams}
                                     updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
                                     isOutgoingRequest={selectedTraceTableReqTab.isOutgoingRequest} 
                                     id="" 
@@ -701,7 +702,6 @@ class HttpClient extends Component {
                                 {selectedTraceTableReqTab && selectedTraceTableTestReqTab && (
                                     <HttpRequestMessage
                                         tabId={selectedTraceTableTestReqTab.id}
-                                        requestId={selectedTraceTableTestReqTab.requestId}
                                         httpMethod={selectedTraceTableTestReqTab.httpMethod}
                                         httpURL={selectedTraceTableTestReqTab.httpURL}
                                         headers={selectedTraceTableTestReqTab.headers} 
@@ -711,9 +711,7 @@ class HttpClient extends Component {
                                         rawData={selectedTraceTableTestReqTab.rawData}
                                         rawDataType={selectedTraceTableTestReqTab.rawDataType}
                                         paramsType={selectedTraceTableReqTab.paramsType}
-                                        addOrRemoveParam={this.props.addOrRemoveParam} 
                                         updateParam={this.props.updateParam}
-                                        updateAllParams={this.props.updateAllParams}
                                         updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
                                         isOutgoingRequest={selectedTraceTableTestReqTab.isOutgoingRequest}
                                         readOnly={true}
@@ -737,6 +735,7 @@ class HttpClient extends Component {
                                     bodyType={selectedTraceTableReqTab.bodyType}
                                     formData={selectedTraceTableReqTab.formData} 
                                     rawData={selectedTraceTableReqTab.rawData}
+                                    grpcData={selectedTraceTableReqTab.grpcData}
                                     rawDataType={selectedTraceTableReqTab.rawDataType}
                                     paramsType={selectedTraceTableReqTab.paramsType}
                                     addOrRemoveParam={this.props.addOrRemoveParam} 
@@ -761,6 +760,7 @@ class HttpClient extends Component {
                                     bodyType={selectedTraceTableTestReqTab.bodyType}
                                     formData={selectedTraceTableTestReqTab.formData} 
                                     rawData={selectedTraceTableTestReqTab.rawData}
+                                    grpcData={selectedTraceTableTestReqTab.grpcData}
                                     rawDataType={selectedTraceTableTestReqTab.rawDataType}
                                     paramsType={selectedTraceTableReqTab.paramsType}
                                     addOrRemoveParam={this.props.addOrRemoveParam} 
@@ -781,7 +781,7 @@ class HttpClient extends Component {
                             responseStatus={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseStatus : selectedTraceTableReqTab.responseStatus}
                             responseStatusText={""}
                             responseHeaders={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseHeaders : selectedTraceTableReqTab.responseHeaders}
-                            responseBody={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseBody : selectedTraceTableReqTab.responseBody}
+                            responseBody={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseBody : responseBody}
                             /** Belongs to LHS */
                             recordedResponseHeaders={selectedTraceTableReqTab.recordedResponseHeaders}
                             recordedResponseBody={ selectedTraceTableReqTab.recordedResponseBody}

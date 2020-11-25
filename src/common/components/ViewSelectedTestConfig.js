@@ -60,7 +60,8 @@ class ViewSelectedTestConfig extends React.Component {
                     key: "",
                     value: ""
                 }
-            }
+            },
+            fetchingRecStatus: false,
         };
         //this.statusInterval;
     }
@@ -408,8 +409,17 @@ class ViewSelectedTestConfig extends React.Component {
         );
 
     checkStatus = (statusUrl, configForHTTP) => {
-        api.get(statusUrl, configForHTTP)
-            .then(data => this.setState({ recStatus: data }));
+        this.setState(
+            {
+                fetchingRecStatus: true
+            }, () => {
+                api.get(statusUrl, configForHTTP)
+                    .then(data => this.setState({ 
+                        fetchingRecStatus: false, 
+                        recStatus: data 
+                    }))
+            }
+        )
     };
 
     resumeRecording = () => {
@@ -427,7 +437,8 @@ class ViewSelectedTestConfig extends React.Component {
                     customer_name,
                     access_token
                 } 
-            } 
+            }, 
+            dispatch 
         } = this.props;
 
         const { name: recName, label: recLabel } = testIds.find(recording => recording.id === selectedGolden);
@@ -449,11 +460,18 @@ class ViewSelectedTestConfig extends React.Component {
         api.post(resumeUrl, searchParams, configForHTTP).then((data) => {
             this.setState({ stopDisabled: false, recId: data.id, recName, recLabel });
             this.recStatusInterval = setInterval(
-                () => (
-                    !this.state.recId
-                    ? clearInterval(this.recStatusInterval) 
-                    : this.checkStatus(statusUrl, configForHTTP)
-                ), 
+                () => {
+                    if(this.state.recStatus?.status === "Completed") { // in case it's stopped externally
+                        this.setState({stopDisabled: true, stoppingStatus: false, forceStopping: false});
+                        clearInterval(this.recStatusInterval);
+                        dispatch(cubeActions.getTestIds(selectedApp));
+                        dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "Golden"));
+                    } else if(!this.state.recId) {
+                        clearInterval(this.recStatusInterval) 
+                    } else if(!this.state.fetchingRecStatus) {
+                        this.checkStatus(statusUrl, configForHTTP)
+                    }
+                }, 
                 1000);
         });
 
@@ -471,7 +489,8 @@ class ViewSelectedTestConfig extends React.Component {
                     customer_name,
                     access_token
                 } 
-            } 
+            },
+            dispatch 
         } = this.props;
         const { recName } = this.state;
         const recLabel = Date.now().toString();
@@ -498,11 +517,18 @@ class ViewSelectedTestConfig extends React.Component {
         api.post(recordUrl, searchParams, configForHTTP).then((data) => {
             this.setState({ stopDisabled: false, recId: data.id, recLabel });
             this.recStatusInterval = setInterval(
-                () => (
-                    !this.state.recId
-                    ? clearInterval(this.recStatusInterval) 
-                    : this.checkStatus(statusUrl, configForHTTP)
-                ), 
+                () => {
+                    if(this.state.recStatus?.status === "Completed") { // in case it's stopped externally
+                        this.setState({stopDisabled: true, stoppingStatus: false, forceStopping: false});
+                        clearInterval(this.recStatusInterval);
+                        dispatch(cubeActions.getTestIds(selectedApp));
+                        dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "Golden"));
+                    } else if(!this.state.recId) {
+                        clearInterval(this.recStatusInterval) 
+                    } else if(!this.state.fetchingRecStatus) {
+                        this.checkStatus(statusUrl, configForHTTP)
+                    }
+                }, 
                 1000);
         });
     };
@@ -542,8 +568,8 @@ class ViewSelectedTestConfig extends React.Component {
                         clearInterval(this.stopStatusInterval);
                         dispatch(cubeActions.getTestIds(selectedApp));
                         dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "Golden"));
-                    } else {
-                        this.checkStatus(statusUrl, configForHTTP);
+                    } else if(!this.state.fetchingRecStatus) {
+                        this.checkStatus(statusUrl, configForHTTP)
                     }
                 }, 
                 1000);

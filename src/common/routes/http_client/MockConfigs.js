@@ -176,6 +176,18 @@ class MockConfigs extends Component {
         dispatch(httpClientActions.setMockContextSaveToCollection(saveToCollection))
     }
 
+    areAllMocked = (serviceConfigs) => {
+        return _.isEmpty(serviceConfigs) ? false : serviceConfigs.reduce((acc, conf) => conf.isMocked && acc, true)
+    }
+
+    handleMockAllCheckChange = (allMocked) => {
+        let {selectedEditMockConfig} = this.state;
+        selectedEditMockConfig.serviceConfigs.forEach(config => {
+            config.isMocked = !allMocked;
+        })
+        this.setState({selectedEditMockConfig})
+    }
+
     renderMockContextConfig = () => {
         const {httpClient: {mockContextLookupCollection,mockContextSaveToCollection, userCollections}} = this.props;
         return <div className="margin-top-10">
@@ -233,6 +245,8 @@ class MockConfigs extends Component {
         const {httpClient: {
             mockConfigList, showMockConfigList
         }} = this.props;
+
+        const allMocked = this.areAllMocked(selectedEditMockConfig.serviceConfigs)
         return (<>
             <div className="margin-top-10">
                 {showMockConfigList && <div>
@@ -275,7 +289,9 @@ class MockConfigs extends Component {
                                 <b>Service</b>
                             </Col>
                             <Col xs={1}>
-                                <b>Mock</b>
+                                <Checkbox inline disabled={_.isEmpty(selectedEditMockConfig.serviceConfigs)} checked={allMocked} onChange={() => this.handleMockAllCheckChange(allMocked)}>
+                                    <b>Mock</b>
+                                </Checkbox>
                             </Col>
                             <Col xs={5}>
                                 <b>Target URL</b>

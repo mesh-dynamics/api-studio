@@ -51,6 +51,9 @@ win:
   target:
     - "nsis"
     # - "appx"
+  publisherName: "Mesh Dynamics"
+  signAndEditExecutable: true
+  rfc3161TimeStampServer: http://timestamp.digicert.com
 
 nsis:
   oneClick: true

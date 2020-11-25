@@ -53,6 +53,8 @@ export class HttpRequestFields extends React.Component<
           rawDataType={this.props.rawDataType}
           updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
           id={this.props.id}
+          grpcData = {this.props.grpcData}
+          bodyType={this.props.bodyType}
         ></HttpRequestBody>
       </>
     );

@@ -6,6 +6,7 @@ on:
       - develop
       - master
       - staging
+
   release:
     types: [published]
 
@@ -109,13 +110,22 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - run: git fetch --prune --unshallow --tags
+
       - name: Build for windows
+        shell: pwsh
         if: ${{ github.event_name == 'push'}}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+
         run: |
+          choco install yq -y
+          echo 'Decoding certificate string'
+          $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.WIN_CSC_LINK }}")
+          [IO.File]::WriteAllBytes("md-cert.pfx", $pfx_cert_byte)
           npm install
           $revision = $(git rev-list --tags --max-count=1)
           $version = $(git describe --tags $revision)
@@ -132,8 +142,14 @@ jobs:
           $CONTENT = Get-Content -Path .\tmp.txt
           Remove-Item -path .\package.json
           Add-Content -Path .\package.json -Value $CONTENT
+          yq w .\electron-builder.$BRANCH.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" > ebtmp.txt
+          $BUILDER_CONTENT = Get-Content -Path .\ebtmp.txt
+          echo $BUILDER_CONTENT
+          Remove-Item -path .\electron-builder.$BRANCH.yml
+          Add-Content -Path .\electron-builder.$BRANCH.yml -Value $BUILDER_CONTENT
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -w --config electron-builder.$BRANCH.yml --publish always
+
       - name: Build for windows(release)
         if: ${{ github.event_name == 'release'}}
         env:
@@ -141,6 +157,10 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
         run: |
+          choco install yq -y
+          echo 'Decoding certificate string'
+          $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.WIN_CSC_LINK }}")
+          [IO.File]::WriteAllBytes("md-cert.pfx", $pfx_cert_byte)
           npm install
           $revision = $(git rev-list --tags --max-count=1)
           $version = $(git describe --tags $revision)
@@ -149,5 +169,10 @@ jobs:
           Remove-Item -path .\package.json
           Add-Content -Path .\package.json -Value $CONTENT
           $Env:RELEASE_TYPE = "customer"
+          yq w .\electron-builder.$BRANCH.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" > ebtmp.txt
+          $BUILDER_CONTENT = Get-Content -Path .\ebtmp.txt
+          echo $BUILDER_CONTENT
+          Remove-Item -path .\electron-builder.$BRANCH.yml
+          Add-Content -Path .\electron-builder.$BRANCH.yml -Value $BUILDER_CONTENT
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -w --config electron-builder.yml --publish always

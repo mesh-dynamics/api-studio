@@ -10,4 +10,8 @@ const getParameterCaseInsensitive = (object, key) => {
     ];
 }
 
-module.exports = { getParameterCaseInsensitive };
+const isJsonOrGrpcMime = (contentType) => {
+    return contentType && (contentType.toLowerCase().indexOf("json") || contentType.toLowerCase().indexOf("grpc"));
+}
+
+module.exports = { getParameterCaseInsensitive, isJsonOrGrpcMime };

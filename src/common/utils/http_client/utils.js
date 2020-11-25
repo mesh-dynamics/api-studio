@@ -96,6 +96,16 @@ const getApiPathFromRequestEvent = (requestEvent) => {
     return EMPTY_STRING;
 };
 
+//Following could be used globally, can be moved to a common utility file.
+const isValidJSON = (jsonString) =>{
+    try{
+         JSON.parse(jsonString);
+    }catch(e){
+        return false;
+    }
+    return true;
+}
+
 const hasTabDataChanged = (tab) => {
     if (tab.hasChanged) {
       return true;
@@ -109,7 +119,7 @@ const hasTabDataChanged = (tab) => {
 }
 
 const extractParamsFromRequestEvent = (httpRequestEvent) =>{
-    let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "";
+    let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "", grpcData = "", grpcDataType = "";
     for (let eachHeader in httpRequestEvent.payload[1].hdrs) {
         headers.push({
             id: uuidv4(),
@@ -149,6 +159,20 @@ const extractParamsFromRequestEvent = (httpRequestEvent) =>{
         } else {
             rawData = httpRequestEvent.payload[1].body;
             rawDataType = "text";
+        }
+    }
+
+    if (httpRequestEvent.payload[1].grpcData) {
+        if (!_.isString(httpRequestEvent.payload[1].grpcData)) {
+            try {
+                grpcData = JSON.stringify(httpRequestEvent.payload[1].grpcData, undefined, 4)
+                grpcDataType = "json";
+            } catch (err) {
+                console.error(err);
+            }
+        } else {
+            grpcData = httpRequestEvent.payload[1].grpcData;
+            grpcDataType = "text";
         }
     }
 
@@ -192,7 +216,7 @@ const extractParamsFromRequestEvent = (httpRequestEvent) =>{
       }
 
     return{
-        headers, queryParams, formData, rawData, rawDataType
+        headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType
     }
 }
 
@@ -201,7 +225,7 @@ const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) =
     const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
     const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
     const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
-    const { headers, queryParams, formData, rawData, rawDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
+    const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
     let reqObject = {
         httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
         httpURL: "{{{url}}}/" + httpRequestEvent.apiPath,
@@ -211,6 +235,7 @@ const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) =
         bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
         formData: formData,
         rawData: rawData,
+        grpcData: grpcData,
         rawDataType: rawDataType,
         paramsType: "showQueryParams",
         responseStatus: "NA",
@@ -246,8 +271,107 @@ const unSelectedRequestParamData = (paramsData)=>{
     return paramsData.filter(param => !param.selected);
 }
 
+
+const Base64Binary = {
+	_keyStr : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
+	
+	/* will return a  Uint8Array type */
+	decodeArrayBuffer: function(input) {
+		var bytes = (input.length/4) * 3;
+		var ab = new ArrayBuffer(bytes);
+		this.decode(input, ab);
+		
+		return ab;
+	},
+
+	removePaddingChars: function(input){
+		var lkey = this._keyStr.indexOf(input.charAt(input.length - 1));
+		if(lkey == 64){
+			return input.substring(0,input.length - 1);
+		}
+		return input;
+	},
+
+	decode: function (input, arrayBuffer) {
+		//get last chars to see if are valid
+		input = this.removePaddingChars(input);
+		input = this.removePaddingChars(input);
+
+		var bytes = parseInt((input.length / 4) * 3, 10);
+		
+		var uarray;
+		var chr1, chr2, chr3;
+		var enc1, enc2, enc3, enc4;
+		var i = 0;
+		var j = 0;
+		
+		if (arrayBuffer)
+			uarray = new Uint8Array(arrayBuffer);
+		else
+			uarray = new Uint8Array(bytes);
+		
+		input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
+		
+		for (i=0; i<bytes; i+=3) {	
+			//get the 3 octects in 4 ascii chars
+			enc1 = this._keyStr.indexOf(input.charAt(j++));
+			enc2 = this._keyStr.indexOf(input.charAt(j++));
+			enc3 = this._keyStr.indexOf(input.charAt(j++));
+			enc4 = this._keyStr.indexOf(input.charAt(j++));
+	
+			chr1 = (enc1 << 2) | (enc2 >> 4);
+			chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+			chr3 = ((enc3 & 3) << 6) | enc4;
+	
+			uarray[i] = chr1;			
+			if (enc3 != 64) uarray[i+1] = chr2;
+			if (enc4 != 64) uarray[i+2] = chr3;
+		}
+	
+		return uarray;	
+    },
+    encode: function(dataArr){
+        var encoder = new TextEncoder("ascii");
+        var decoder = new TextDecoder("ascii");
+        var base64Table = encoder.encode(this._keyStr);
+
+        var padding = dataArr.byteLength % 3;
+        var len = dataArr.byteLength - padding;
+        padding = padding > 0 ? (3 - padding) : 0;
+        var outputLen = ((len/3) * 4) + (padding > 0 ? 4 : 0);
+        var output = new Uint8Array(outputLen);
+        var outputCtr = 0;
+        for(var i=0; i<len; i+=3){              
+            var buffer = ((dataArr[i] & 0xFF) << 16) | ((dataArr[i+1] & 0xFF) << 8) | (dataArr[i+2] & 0xFF);
+            output[outputCtr++] = base64Table[buffer >> 18];
+            output[outputCtr++] = base64Table[(buffer >> 12) & 0x3F];
+            output[outputCtr++] = base64Table[(buffer >> 6) & 0x3F];
+            output[outputCtr++] = base64Table[buffer & 0x3F];
+        }
+        if (padding == 1) {
+            var buffer = ((dataArr[len] & 0xFF) << 8) | (dataArr[len+1] & 0xFF);
+            output[outputCtr++] = base64Table[buffer >> 10];
+            output[outputCtr++] = base64Table[(buffer >> 4) & 0x3F];
+            output[outputCtr++] = base64Table[(buffer << 2) & 0x3F];
+            output[outputCtr++] = base64Table[64];
+        } else if (padding == 2) {
+            var buffer = dataArr[len] & 0xFF;
+            output[outputCtr++] = base64Table[buffer >> 2];
+            output[outputCtr++] = base64Table[(buffer << 4) & 0x3F];
+            output[outputCtr++] = base64Table[64];
+            output[outputCtr++] = base64Table[64];
+        }
+        
+        var ret = decoder.decode(output);
+        output = null;
+        dataArr = null;
+        return ret;
+    }
+}
+
 const preRequestToFetchableConfig = (preRequestResult, httpURL) => {
     const payload = preRequestResult.payload[1];
+    const isGrpc = preRequestResult.payload[0] == "GRPCRequestPayload";
     // URL
     const httpRequestURLRendered = applyEnvVarsToUrl(httpURL);
   
@@ -297,7 +421,13 @@ const preRequestToFetchableConfig = (preRequestResult, httpURL) => {
             console.error(err);
           }
         } else {
-          rawData = payload.body;
+            if(isGrpc){
+                const byteArray = Base64Binary.decode(payload.body);
+                rawData = byteArray.buffer;
+
+            }else{
+                rawData = payload.body;
+            }
         }
     }
   
@@ -327,4 +457,6 @@ export {
     selectedRequestParamData,
     unSelectedRequestParamData,
     extractParamsFromRequestEvent,
+    isValidJSON,
+    Base64Binary
 };
