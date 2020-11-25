@@ -1326,8 +1326,9 @@ public class CubeStore {
                 .entity(buildErrorResponse(Status.INTERNAL_SERVER_ERROR.toString(), Constants.ERROR, "Error while saving recording"))
                 .build();
 
-        }).orElse(Response.status(Response.Status.NOT_FOUND).
-            entity(buildErrorResponse(Status.NOT_FOUND.toString(), Constants.ERROR,String.format("No Recording found for recordingId=%s", recordingId)))
+        }).orElse(Response.status(Response.Status.NOT_FOUND)
+            .type(MediaType.APPLICATION_JSON)
+            .entity(buildErrorResponse(Status.NOT_FOUND.toString(), Constants.ERROR,String.format("No Recording found for recordingId=%s", recordingId)))
             .build());
     }
 
