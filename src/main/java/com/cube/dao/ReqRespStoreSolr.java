@@ -2441,8 +2441,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String NUMMATCHF = CPREFIX + "numMatch" + INT_SUFFIX;
     private static final String RESP_COMP_RES_TYPE_F = CPREFIX + Constants.RESP_MATCH_TYPE + STRING_SUFFIX; // match type
     private static final String RESP_COMP_RES_META_F = CPREFIX + "respMatchMetadata" + STRING_SUFFIX;
-    private static final String MODIFIED_REC_RESP_PAYLOAD_F = CPREFIX + "recRespPayload" + STRING_SUFFIX;
-    private static final String MODIFIED_REPLAY_RESP_PAYLOAD_F = CPREFIX + "replayRespPayload"  + STRING_SUFFIX;
+    private static final String MODIFIED_REC_RESP_PAYLOAD_F = CPREFIX + "recRespPayload" + NOTINDEXED_SUFFIX;
+    private static final String MODIFIED_REPLAY_RESP_PAYLOAD_F = CPREFIX + "replayRespPayload"  + NOTINDEXED_SUFFIX;
     private static final String REQ_COMP_RES_TYPE_F = CPREFIX + Constants.REQ_COMP_RES_TYPE + STRING_SUFFIX;
     private static final String REQ_COMP_RES_META_F = CPREFIX + Constants.REQ_COMP_RES_META + STRING_SUFFIX;
     private static final String DIFFF = CPREFIX + "diff" + NOTINDEXED_SUFFIX;
@@ -2946,7 +2946,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             List<Diff> respMatchDiffList =  getDiffFromChildDocs(doc, DiffType.Response);
 
             Optional<JsonNode> modifiedRecRespPayload =
-                getStrField(doc, MODIFIED_REC_RESP_PAYLOAD_F).map(modifiedRespPayloadStr ->
+                getStrFieldMVFirst(doc, MODIFIED_REC_RESP_PAYLOAD_F).map(modifiedRespPayloadStr ->
                 {
                     try {
                         return config.jsonMapper.readValue(modifiedRespPayloadStr
@@ -2959,7 +2959,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 });
 
             Optional<JsonNode> modifiedReplayRespPayload =
-                getStrField(doc, MODIFIED_REPLAY_RESP_PAYLOAD_F).map(modifiedRespPayloadStr ->
+                getStrFieldMVFirst(doc, MODIFIED_REPLAY_RESP_PAYLOAD_F).map(modifiedRespPayloadStr ->
                 {
                     try {
                         return config.jsonMapper.readValue(modifiedRespPayloadStr
@@ -3346,6 +3346,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     public boolean deleteEventsByCollection(List<String> collections) {
+        if(collections.isEmpty()){
+            return false;
+        }
         StringBuffer queryBuff = new StringBuffer();
         addToQryStr(queryBuff , COLLECTIONF , collections ,false, Optional.empty());
         addToQryStr(queryBuff , TYPEF , Types.Event.name(), false);
@@ -3354,6 +3357,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public boolean deleteAllReplayData(List<Replay> replays) {
+        if(replays.isEmpty()){
+            return false;
+        }
         StringBuffer queryBuff = new StringBuffer();
         List<String> replayIds = replays.stream().map(replay -> replay.replayId).collect(Collectors.toList());
         addToQryStr(queryBuff , REPLAYIDF ,  replayIds ,false, Optional.empty());
@@ -3369,6 +3375,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public boolean deleteAllAnalysisData(List<String> replayIds) {
+        if(replayIds.isEmpty()){
+            return false;
+        }
         StringBuffer queryBuff = new StringBuffer();
         addToQryStr(queryBuff , REPLAYIDF ,  replayIds ,false, Optional.empty());
         addToQryStr(queryBuff , TYPEF ,
