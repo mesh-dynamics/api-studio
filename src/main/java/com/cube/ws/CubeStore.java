@@ -1323,12 +1323,12 @@ public class CubeStore {
             }
             return Response.status(Status.INTERNAL_SERVER_ERROR)
                 .type(MediaType.APPLICATION_JSON)
-                .entity(buildErrorResponse(Status.INTERNAL_SERVER_ERROR.toString(), Constants.ERROR, "Error while saving recording"))
+                .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"Error while saving recording"))
                 .build();
 
         }).orElse(Response.status(Response.Status.NOT_FOUND)
             .type(MediaType.APPLICATION_JSON)
-            .entity(buildErrorResponse(Status.NOT_FOUND.toString(), Constants.ERROR,String.format("No Recording found for recordingId=%s", recordingId)))
+            .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,String.format("No Recording found for recordingId=%s", recordingId)))
             .build());
     }
 
