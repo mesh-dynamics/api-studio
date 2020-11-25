@@ -2,10 +2,12 @@ package com.cube.ws;
 
 import static io.md.core.Utils.buildErrorResponse;
 
+import io.md.dao.GRPCResponsePayload;
 import io.md.dao.MockWithCollection;
 import io.md.dao.Recording;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -205,7 +207,7 @@ public class MockServiceHTTP {
         @PathParam("recordingId") String recordingId,
         @PathParam("traceId") String traceId,
         @PathParam("service") String service, @PathParam("method") String httpMethod,
-        String body) {
+        byte[] body) {
 	    MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
 	    String runId = queryParams.getFirst(Constants.RUN_ID_FIELD);
 
@@ -223,7 +225,7 @@ public class MockServiceHTTP {
         MultivaluedMap<String, String> hdrs = headers.getRequestHeaders();
         Optional<String> dynamicInjCfgVersion = ServerUtils.getCustomHeaderValue(hdrs , Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD).or(()->recording.dynamicInjectionConfigVersion);
         Response response = getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            httpMethod , body, hdrs, new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId, dynamicInjCfgVersion, true), Optional.of(traceId));
+            httpMethod , new String(body), hdrs, new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId, dynamicInjCfgVersion, true), Optional.of(traceId));
         rrstore.commit();
         return response;
     }
