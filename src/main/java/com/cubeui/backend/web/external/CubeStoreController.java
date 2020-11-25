@@ -7,6 +7,7 @@ import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.DevtoolEnvironmentsRepository;
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.service.CubeServerService;
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.dao.DynamicInjectionEventDao;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
@@ -21,6 +22,7 @@ import io.md.dao.DefaultEvent;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
 
+import io.md.utils.Constants;
 import java.io.IOException;
 import java.util.*;
 
@@ -145,10 +147,33 @@ public class CubeStoreController {
     }
 
     @GetMapping("/searchRecording")
-    public ResponseEntity searchRecording(HttpServletRequest request, @RequestBody Optional<String> getBody, @RequestParam String customerId,
+    public ResponseEntity searchRecording(HttpServletRequest request, @RequestBody Optional<String> getBody, @RequestParam MultiValueMap<String, String> queryMap,
         Authentication authentication){
+        String customerId = queryMap.getFirst(Constants.CUSTOMER_ID_FIELD);
         validation.validateCustomerName(authentication,customerId);
-        return cubeServerService.fetchGetResponse(request, getBody);
+        String app = queryMap.getFirst(Constants.APP_FIELD);
+        User user = (User)authentication.getPrincipal();
+        ResponseEntity responseEntity = cubeServerService.fetchGetResponse(request, getBody);
+        String recordingType = queryMap.getFirst(Constants.RECORDING_TYPE_FIELD);
+        if(recordingType != null && app != null && recordingType.equals(RecordingType.History.toString())) {
+            List<Object> recordings = cubeServerService.getListData(responseEntity, request.getRequestURI(),
+                Optional.of("recordings"), new TypeReference<List<Recording>>(){}).orElse(Collections.emptyList());
+            if(recordings.isEmpty()) {
+                MultiValueMap<String, String> formParams= new LinkedMultiValueMap<>();
+                formParams.set("name", "History-" + user.getUsername());
+                formParams.set("label", new Date().toString());
+                formParams.set("userId", user.getUsername());
+                formParams.set("recordingType", RecordingType.History.toString());
+                ResponseEntity response = cubeServerService.createRecording(request,
+                    customerId, app,
+                    user.getUsername(),Optional.of(formParams));
+                Optional<Recording> recording = cubeServerService.getRecordingFromResponseEntity(response, RecordingType.History.toString());
+                if(recording.isPresent()) {
+                    return ResponseEntity.ok(Map.of("recordings", List.of(recording.get())));
+                }
+            }
+        }
+        return responseEntity;
     }
 
     @GetMapping("/currentcollection")
