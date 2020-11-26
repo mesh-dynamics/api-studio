@@ -132,6 +132,22 @@ const proxyRequestInterceptorLiveService = (proxyReq, serviceConfigObject) => {
 
     logger.info('Logging Request Headers for Live Service', proxyReq._headers);
 
+    logger.info('Removing restricted headers');
+
+    proxyReq.removeHeader('connection');
+    proxyReq.removeHeader('content-length');
+    proxyReq.removeHeader('date');
+    proxyReq.removeHeader('expect');
+    proxyReq.removeHeader('from');
+    proxyReq.removeHeader('origin');
+    proxyReq.removeHeader('referer');
+    proxyReq.removeHeader('upgrade');
+    proxyReq.removeHeader('via');
+    proxyReq.removeHeader('warning');
+    proxyReq.removeHeader('transfer-encoding');
+
+    logger.info('Logging Request Headers for Live Service after removing request headers', proxyReq._headers);
+
     logger.info('Url received in config', serviceConfigObject.url);
 
     logger.info('Rewriting Live url path');
