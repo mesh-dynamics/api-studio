@@ -39,13 +39,13 @@ public class DataInitializer implements CommandLineRunner {
 
     private EmailDomainRepository emailDomainRepository;
 
-    private PersonalEmailDomainsRepository personalEmailDomainsRepository;
+    private AppRepository appRepository;
 
     private HttpServletRequest httpServletRequest;
 
     public DataInitializer(UserService userService, CustomerService customerService,
         CustomerRepository customerRepository, UserRepository userRepository,
-        EmailDomainRepository emailDomainRepository, PersonalEmailDomainsRepository personalEmailDomainsRepository,
+        EmailDomainRepository emailDomainRepository, AppRepository appRepository,
         HttpServletRequest httpServletRequest) {
 
         this.userService = userService;
@@ -53,7 +53,7 @@ public class DataInitializer implements CommandLineRunner {
         this.customerRepository = customerRepository;
         this.userRepository = userRepository;
         this.emailDomainRepository = emailDomainRepository;
-        this.personalEmailDomainsRepository = personalEmailDomainsRepository;
+        this.appRepository = appRepository;
         this.httpServletRequest = httpServletRequest;
     }
 
@@ -83,6 +83,16 @@ public class DataInitializer implements CommandLineRunner {
             this.userService.save(userDTOAdmin, true, false);
             log.info("User with username '{}' created", userDTOAdmin.getEmail());
         }
+        /**TODO
+         * Remove in next Release
+         */
+        List<App> apps = appRepository.findAll();
+        apps.forEach(app -> {
+            if (app.getDisplayName() == null) {
+                app.setDisplayName(app.getName());
+                this.appRepository.save(app);
+            }
+        });
 
     }
 }

@@ -81,10 +81,12 @@ public class AppController {
         {
             return ok(app);
         }
+        String displayName = Optional.ofNullable(appDTO.getDisplayName()).orElse(appDTO.getName());
         App saved = this.appRepository.save(
                 App.builder()
                         .name(appDTO.getName())
                         .customer(customer.get())
+                        .displayName(displayName)
                         .build());
         Optional<List<User>> optionalUsers = this.userRepository.findByCustomerId(appDTO.getCustomerId());
         optionalUsers.ifPresent(users -> {
@@ -121,6 +123,9 @@ public class AppController {
         });
         Optional.ofNullable(appDTO.getName()).ifPresent((name -> {
             existing.get().setName(name);
+        }));
+        Optional.ofNullable(appDTO.getDisplayName()).ifPresent((displayName -> {
+            existing.get().setDisplayName(displayName);
         }));
         this.appRepository.save(existing.get());
         return created(

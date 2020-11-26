@@ -13,6 +13,8 @@ public class AppDTO {
 
     private String name;
 
+    private String displayName;
+
     private Long customerId;
 
     private LocalDateTime createdAt;
