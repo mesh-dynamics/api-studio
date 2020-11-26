@@ -18,7 +18,6 @@ import io.md.dao.agent.config.ConfigDAO;
 import io.md.dao.agent.config.ConfigType;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
-import io.md.injection.DynamicInjectionConfigGenerator;
 
 
 import java.io.IOException;
@@ -84,6 +83,9 @@ import io.md.utils.FnKey;
 import io.md.injection.DynamicInjectionConfig;
 import io.md.injection.DynamicInjectionConfig.ExtractionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta;
+import io.md.injection.DynamicInjectionConfigGenerator;
+import io.md.injection.InjectionExtractionMeta;
+
 import io.md.core.Utils;
 import io.md.utils.Constants;
 
@@ -3502,11 +3504,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public String getPotentialDynamicInjectionConfigs(String customerId, String app, Optional<String> instanceId,
+    public List<InjectionExtractionMeta> getPotentialDynamicInjectionConfigs(String customerId, String app, Optional<String> instanceId,
                                                       Optional<List<String>> recordingIds,
                                                       Optional<List<String>> paths,
-                                                      Optional<Boolean> discardSingleValues,
-                                                      Optional<String> format) throws JsonProcessingException {
+                                                      Optional<Boolean> discardSingleValues) throws JsonProcessingException {
         DynamicInjectionConfigGenerator diGenerator = new DynamicInjectionConfigGenerator();
         List<String> collectionIds;
         if (recordingIds.isPresent()) {
@@ -3596,8 +3597,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             }
         }
         // By default, discardSingleValues is false for a single collection, and true otherwise.
-        return diGenerator.generateConfigs(discardSingleValues.orElse(collectionIds.size() > 1),
-            format.orElse("csv"));
+        return diGenerator.generateConfigs(discardSingleValues.orElse(collectionIds.size() > 1));
     }
 
 

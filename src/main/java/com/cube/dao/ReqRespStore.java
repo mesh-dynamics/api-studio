@@ -43,6 +43,7 @@ import io.md.dao.Recording.RecordingStatus;
 import io.md.services.DataStore;
 import io.md.services.FnResponse;
 import io.md.injection.DynamicInjectionConfig;
+import io.md.injection.InjectionExtractionMeta;
 import io.md.utils.Constants;
 
 import com.cube.dao.ReqRespStoreImplBase.CollectionKey;
@@ -415,11 +416,10 @@ public interface ReqRespStore extends DataStore {
      * @return
      * @throws SolrStoreException
      */
-    String getPotentialDynamicInjectionConfigs(String customer, String app, Optional<String> instanceId,
+    List<InjectionExtractionMeta> getPotentialDynamicInjectionConfigs(String customer, String app, Optional<String> instanceId,
                                                Optional<List<String>> recordingIds,
                                                Optional<List<String>> paths,
-                                               Optional<Boolean> discardSingleValues,
-                                               Optional<String> format) throws JsonProcessingException;
+                                               Optional<Boolean> discardSingleValues) throws JsonProcessingException;
 
     /**
 	 * @param dynamicInjectionConfig

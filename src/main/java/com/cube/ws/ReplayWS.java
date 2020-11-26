@@ -32,6 +32,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -46,6 +49,7 @@ import io.md.dao.RecordOrReplay;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
 import io.md.injection.DynamicInjectionConfig;
+import io.md.injection.InjectionExtractionMeta;
 import io.md.services.Analyzer;
 import io.md.ws.ReplayBasicWS;
 import io.md.dao.ReplayBuilder;
@@ -306,18 +310,26 @@ public class ReplayWS extends ReplayBasicWS {
             :Optional.of(queryParams.get("paths"));
         Optional<Boolean> discardSingleValues = queryParams.getFirst("discardSingleValues") == null ? Optional.empty()
             :Optional.of(Boolean.valueOf(queryParams.getFirst("discardSingleValues")));
-        Optional<String> format = queryParams.getFirst("format") == null? Optional.empty()
-            :Optional.of(queryParams.getFirst("format"));
+        String format = queryParams.getFirst("format");
 
-        if (recordingsList == null)
-            recordingsList = Optional.empty();
+        List<InjectionExtractionMeta> finalMetaList;
+        String data="";
 
-        try{
-            File csvFile = new File("/tmp/di." + format);
-            String data =  rrstore.getPotentialDynamicInjectionConfigs(customerId, app, instanceId,
-                recordingsList,paths, discardSingleValues, format);
-            FileUtils.writeStringToFile(csvFile, data, Charset.defaultCharset());
-            Response.ResponseBuilder response = Response.ok((Object)csvFile);
+        //TODO: Return immediately if format not supported. Also add another else block afterwards
+        try {
+            finalMetaList = rrstore.getPotentialDynamicInjectionConfigs(customerId, app, instanceId,
+                recordingsList, paths, discardSingleValues);
+            if (format == null || format.toLowerCase().equals("csv")){
+                CsvMapper csvMapper = new CsvMapper();
+                csvMapper.configure(JsonGenerator.Feature.IGNORE_UNKNOWN, true);
+                CsvSchema csvSchema = csvMapper.schemaFor(InjectionExtractionMeta.class).withHeader();
+                data = csvMapper.writer(csvSchema).writeValueAsString(finalMetaList);
+            } else if (format.toLowerCase().equals("json")){
+                data = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(finalMetaList);
+            }
+            File file = new File("/tmp/di." + format);
+            FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
+            Response.ResponseBuilder response = Response.ok((Object)file);
             response.header("Content-Disposition", "attachment; filename=\"di_configs.csv\"");
             return response.build();
 

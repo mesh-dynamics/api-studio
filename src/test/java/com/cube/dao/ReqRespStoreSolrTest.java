@@ -67,13 +67,16 @@ class ReqRespStoreSolrTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.print(config.rrstore.getPotentialDynamicInjectionConfigs("Pronto",
-            "ProntoApp",
-            Optional.empty(),
-            Optional.of(Arrays.asList("Recording-965809473")),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.of("csv"))
+        System.out.print(
+            config.jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(
+                config.rrstore.getPotentialDynamicInjectionConfigs("Pronto",
+                    "ProntoApp",
+                    Optional.empty(),
+                    Optional.of(Arrays.asList("Recording-965809473")),
+                    Optional.empty(),
+                    Optional.empty()
+                )
+            )
         );
     }
 }
