@@ -58,7 +58,8 @@ public class RealMocker implements Mocker {
             DynamicInjector di = diFactory.getMgr(reqEvent.customerId , reqEvent.app , mockWColl.dynamicInjectionConfigVersion);
             di.extract(reqEvent , null);
 
-            List<String> payLoadFields = Arrays.asList(String.format("%s:%s" , Constants.METHOD_PATH , Utils.getHttpMethod(reqEvent))) ;
+            List<String> payLoadFields = (reqEvent.payload instanceof GRPCPayload) ? Collections.EMPTY_LIST
+                :  Arrays.asList(String.format("%s:%s" , Constants.METHOD_PATH , Utils.getHttpMethod(reqEvent))) ;
             Optional<JoinQuery> joinQuery = mockWColl.isDevtool ? Optional.of(getSuccessResponseMatch()) : Optional.empty();
 
             EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1), !mockWColl.isDevtool, lowerBoundForMatching, mockWColl.recordCollection , payLoadFields , joinQuery , mockWColl.isDevtool);

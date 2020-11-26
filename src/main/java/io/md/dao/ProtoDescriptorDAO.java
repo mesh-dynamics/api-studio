@@ -127,18 +127,18 @@ public class ProtoDescriptorDAO {
 					methodDescriptor.outputTypeName));
 		Optional<byte[]> modifiedBytes = originalBytesOptional.map(originalBytes -> {
 			// Need to add the 1st byte as 0 and 2nd to 5th byte as content length in case of grpc request
-			if (isRequest) {
-				int mbLength = originalBytes.length + 5;
-				byte[] mb = new byte[mbLength];
-				mb[0] = 0;
-				byte[] contentLengthBytes = ByteBuffer.allocate(4).putInt(originalBytes.length)
-					.array();
-				System.arraycopy(contentLengthBytes, 0, mb, 1, 4); // copy length
-				System.arraycopy(originalBytes, 0, mb, 5, originalBytes.length); // copy original bytes
-				return mb;
-			} else {
+			//if (isRequest) {
+			int mbLength = originalBytes.length + 5;
+			byte[] mb = new byte[mbLength];
+			mb[0] = 0;
+			byte[] contentLengthBytes = ByteBuffer.allocate(4).putInt(originalBytes.length)
+				.array();
+			System.arraycopy(contentLengthBytes, 0, mb, 1, 4); // copy length
+			System.arraycopy(originalBytes, 0, mb, 5, originalBytes.length); // copy original bytes
+			return mb;
+			/*} else {
 				return originalBytes;
-			}
+			}*/
 		});
 		return modifiedBytes;
 	}

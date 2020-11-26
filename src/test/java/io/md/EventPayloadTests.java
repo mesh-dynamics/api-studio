@@ -494,7 +494,7 @@ public class EventPayloadTests {
 		payload.wrapBodyAndEncode();
 		System.out.println("GRPC (POST WRAP) :: " +objectMapper.writeValueAsString(payload));
 		System.out.println(payload.getValAsString("/body"));
-		Assert.assertEquals(payload.getValAsString("/body"), "CjpCZXJrc2hpcmUgVmFsbGV5IE1hbmFnZW1lbnQgQXJlYSBUcmFpbCwgSmVmZmVyc29uLCBOSiwgVVNBEhEImqaMwwEQlp+YnP3/////AQ==");
+		Assert.assertEquals(payload.getValAsString("/body"), "AAAAAE8KOkJlcmtzaGlyZSBWYWxsZXkgTWFuYWdlbWVudCBBcmVhIFRyYWlsLCBKZWZmZXJzb24sIE5KLCBVU0ESEQiapozDARCWn5ic/f////8B");
 	}
 
 
