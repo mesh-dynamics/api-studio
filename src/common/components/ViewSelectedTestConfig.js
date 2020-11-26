@@ -414,10 +414,13 @@ class ViewSelectedTestConfig extends React.Component {
                 fetchingRecStatus: true
             }, () => {
                 api.get(statusUrl, configForHTTP)
-                    .then(data => this.setState({ 
-                        fetchingRecStatus: false, 
-                        recStatus: data 
-                    }))
+                    .then(
+                        data => this.setState({ 
+                            fetchingRecStatus: false, 
+                            recStatus: data 
+                        }), 
+                        (err) => this.setState({fetchingRecStatus: false})
+                    )
             }
         )
     };
