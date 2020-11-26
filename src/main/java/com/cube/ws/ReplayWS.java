@@ -7,6 +7,7 @@ import static io.md.core.Utils.buildErrorResponse;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.HashMap;
@@ -33,12 +34,14 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -310,24 +313,19 @@ public class ReplayWS extends ReplayBasicWS {
             :Optional.of(queryParams.get("paths"));
         Optional<Boolean> discardSingleValues = queryParams.getFirst("discardSingleValues") == null ? Optional.empty()
             :Optional.of(Boolean.valueOf(queryParams.getFirst("discardSingleValues")));
-        String format = queryParams.getFirst("format");
 
         List<InjectionExtractionMeta> finalMetaList;
         String data="";
 
-        //TODO: Return immediately if format not supported. Also add another else block afterwards
         try {
             finalMetaList = rrstore.getPotentialDynamicInjectionConfigs(customerId, app, instanceId,
                 recordingsList, paths, discardSingleValues);
-            if (format == null || format.toLowerCase().equals("csv")){
                 CsvMapper csvMapper = new CsvMapper();
                 csvMapper.configure(JsonGenerator.Feature.IGNORE_UNKNOWN, true);
                 CsvSchema csvSchema = csvMapper.schemaFor(InjectionExtractionMeta.class).withHeader();
                 data = csvMapper.writer(csvSchema).writeValueAsString(finalMetaList);
-            } else if (format.toLowerCase().equals("json")){
-                data = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(finalMetaList);
-            }
-            File file = new File("/tmp/di." + format);
+
+            File file = new File("/tmp/di.csv");
             FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
             Response.ResponseBuilder response = Response.ok((Object)file);
             response.header("Content-Disposition", "attachment; filename=\"di_configs.csv\"");
@@ -342,6 +340,43 @@ public class ReplayWS extends ReplayBasicWS {
                 customerId, app), e);
             return Response.serverError().build();
 
+        }
+    }
+
+    @POST
+    @Path("saveDynamicInjectionConfigFromCsv/{customerId}/{app}/{version}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response saveDynamicInjectionConfigFromCsv(@PathParam("customerId") String customerId,
+                                                      @PathParam("app") String app,
+                                                      @PathParam("version") String version,
+                                                      @FormDataParam("file") InputStream uploadedInputStream) {
+
+        CsvMapper csvMapper = new CsvMapper();
+        csvMapper.configure(JsonGenerator.Feature.IGNORE_UNKNOWN, true);
+        CsvSchema csvSchema = csvMapper.schemaFor(InjectionExtractionMeta.class).withSkipFirstDataRow(true);
+        List<InjectionExtractionMeta> injectionExtractionMetaList;
+
+        try {
+            MappingIterator<InjectionExtractionMeta> mi = csvMapper.readerFor(InjectionExtractionMeta.class).
+                with(csvSchema).readValues(uploadedInputStream);
+            injectionExtractionMetaList = mi.readAll();
+            String dynamicInjectionConfigId = rrstore.saveDynamicInjectionConfigFromCsv(customerId, app, version,
+                injectionExtractionMetaList);
+
+            return Response.ok().entity((new JSONObject(Map.of(
+                "Message", "Successfully saved Dynamic Injection Config",
+                "ID", dynamicInjectionConfigId,
+                "dynamicInjectionConfigVersion", version))).toString()).build();
+        } catch (SolrStoreException e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Unable to save Dynamic Injection Config",
+                "dynamicInjectionConfig.version", version)), e);
+            return Response.serverError().entity((
+                Utils.buildErrorResponse(Constants.ERROR, Constants.SOLR_STORE_FAILED, "Unable to save Dynamic Injection Config: " +
+                    e.getStackTrace()))).build();
+        } catch (IOException e) {
+            //TODO: Return proper response here;
+            return Response.serverError().build();
         }
     }
 

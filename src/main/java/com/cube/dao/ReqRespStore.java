@@ -412,7 +412,6 @@ public interface ReqRespStore extends DataStore {
      * @param app
      * @param recordingIds List of recordingIds to process
      * @param discardSingleValues Retain or discard configs based on single value reference
-     * @param format csv/json
      * @return
      * @throws SolrStoreException
      */
@@ -420,6 +419,18 @@ public interface ReqRespStore extends DataStore {
                                                Optional<List<String>> recordingIds,
                                                Optional<List<String>> paths,
                                                Optional<Boolean> discardSingleValues) throws JsonProcessingException;
+
+    /**
+     *
+     * @param customer
+     * @param app
+     * @param version
+     * @param injectionExtractionMetaList
+     * @return
+     */
+    String saveDynamicInjectionConfigFromCsv(String customer, String app, String version,
+                                             List<InjectionExtractionMeta> injectionExtractionMetaList)
+        throws SolrStoreException;
 
     /**
 	 * @param dynamicInjectionConfig

@@ -84,6 +84,7 @@ import io.md.injection.DynamicInjectionConfig;
 import io.md.injection.DynamicInjectionConfig.ExtractionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta;
 import io.md.injection.DynamicInjectionConfigGenerator;
+import io.md.injection.DynamicInjectionGeneratedToActualConvertor;
 import io.md.injection.InjectionExtractionMeta;
 
 import io.md.core.Utils;
@@ -3600,6 +3601,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return diGenerator.generateConfigs(discardSingleValues.orElse(collectionIds.size() > 1));
     }
 
+    @Override
+    public String saveDynamicInjectionConfigFromCsv(String customer, String app, String version,
+                                                    List<InjectionExtractionMeta> injectionExtractionMetaList)
+        throws SolrStoreException {
+
+        DynamicInjectionGeneratedToActualConvertor convertor = new DynamicInjectionGeneratedToActualConvertor();
+        return saveDynamicInjectionConfig(convertor.convertGeneratedToActualConfigs(customer, app, version,
+            injectionExtractionMetaList));
+    }
 
     @Override
     public Optional<DynamicInjectionConfig> getDynamicInjectionConfig(String customerId,
