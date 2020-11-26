@@ -1,14 +1,11 @@
 ###################
 #build#
 #################
-FROM maven:3.6.0-jdk-11-slim AS build
+FROM cubeiocorp/cubeiobase:0.0.2 AS build
 ARG TOKEN
 COPY . /
-RUN mkdir ~/.m2
+#Add settings.xml file for github auth
 RUN echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>${TOKEN}</password></server></servers></settings>" > ~/.m2/settings.xml
-#RUN mvn clean install -DskipTests \
-#&& mvn clean package -DskipTests
-#RUN ./mvnw package -DskipTests
 RUN mvn package -DskipTests
 
 ##################
