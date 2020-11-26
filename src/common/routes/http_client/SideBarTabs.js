@@ -216,8 +216,8 @@ class SideBarTabs extends Component {
               //TODO: Create a separate class to handle below object
               let reqObject = {
                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-                httpURL: httpRequestEvent.apiPath,
-                httpURLShowOnly: httpRequestEvent.apiPath,
+                httpURL: httpRequestEvent.metaData.httpURL ||httpRequestEvent.apiPath,
+                httpURLShowOnly: httpRequestEvent.metaData.httpURL ||httpRequestEvent.apiPath,
                 headers: headers,
                 queryStringParams: queryParams,
                 bodyType:

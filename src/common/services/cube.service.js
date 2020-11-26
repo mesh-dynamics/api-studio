@@ -79,8 +79,9 @@ const storeUserReqResponse = async(recordingId, data, apiConfig={}) => {
     return api.post(urlToPost, data, apiConfig);
 }
 
-const afterResponse = async(recordingId, data, apiConfig={}) => {
-    const urlToPost = `${config.apiBaseUrl}/cs/afterResponse/${recordingId}`;
+const afterResponse = async(recordingId, data, apiConfig={}, environment, app) => {
+    const envQuery = environment? `&environmentName=${environment}`: "";
+    const urlToPost = `${config.apiBaseUrl}/cs/afterResponse/${recordingId}/?dynamicInjectionConfigVersion=Default${app}${envQuery}`;
     return api.post(urlToPost, data, apiConfig);
 }
 
@@ -617,9 +618,9 @@ const forceStopRecording = async (recordingId) => {
     }
 }
 
-const fetchPreRequest = async (collectionId, runId, preRequestData, cancelToken) => {
+const fetchPreRequest = async (collectionId, runId, preRequestData, app, cancelToken) => {
 
-    const preRequestUrl = `${config.recordBaseUrl}/preRequest/${collectionId}/${runId}`;
+    const preRequestUrl = `${config.recordBaseUrl}/preRequest/${collectionId}/${runId}/?dynamicInjectionConfigVersion=Default${app}`;
     return await api.post(preRequestUrl, preRequestData, {cancelToken});
 }
 

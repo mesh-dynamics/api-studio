@@ -20,6 +20,14 @@ export const httpClientActions = {
         return {type: httpClientConstants.DELETE_PARAM_IN_TAB, data: {tabId, type, id}};
     },
 
+    updateEventDataInSelectedTab: (tabId, value) => {
+        return {type: httpClientConstants.UPDATE_EVENT_DATA_IN_TAB, data: {tabId, value}};
+    },
+
+    updateContextMap: (value) => {
+        return {type: httpClientConstants.UPDATE_CONTEXT_MAP, data: {value}};
+    },
+
     addParamToSelectedTab: (tabId, type) => {
         return {type: httpClientConstants.ADD_PARAM_TO_TAB, data: {tabId, type}};
     },
@@ -56,6 +64,10 @@ export const httpClientActions = {
 
     postSuccessDriveRequest: (tabId, responseStatus, responseStatusText, responseHeaders, responseBody) => {
         return {type: httpClientConstants.POST_SUCCESS_DRIVE_REQUEST, data: {tabId, responseStatus, responseStatusText, responseHeaders, responseBody}}; 
+    },
+
+    afterResponseReceivedData: (tabId, responseBody) => {
+        return {type: httpClientConstants.AFTER_RESPONSE_RECEIVED_DATA, data: {tabId, responseBody}}; 
     },
 
     postErrorDriveRequest: (tabId, responseStatus) => {

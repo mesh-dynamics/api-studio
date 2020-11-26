@@ -22,8 +22,9 @@ const convertFormParamsToCubeFormat = (requestDataString) => {
     return formParams;
 };
 
-const extractHeadersToCubeFormat = (headersReceived) => {
+const extractHeadersToCubeFormat = (headersReceived, context) => {
     let headers = {};
+
     if (_.isArray(headersReceived)) {
         headersReceived.forEach(each => {
             if (each.name && each.value) headers[each.name] = each.value.split(",");
@@ -35,6 +36,12 @@ const extractHeadersToCubeFormat = (headersReceived) => {
                 if(_.isString(headersReceived[eachHeader])) headers[eachHeader] = [headersReceived[eachHeader]];
             }
         })
+    }
+
+    // If traceId is not present. Add the traceId from context
+    if(context && !('x-b3-traceid' in headers)) {
+        const { traceId } = context;
+        headers['x-b3-traceid'] = [traceId];
     }
 
     return headers;
@@ -98,7 +105,7 @@ const extractQueryStringParamsToCubeFormat = (queryString) => {
 
 const extractRequestPayloadDetailsFromProxy = (proxyRes, apiPath, options) => {
     
-    const { headers, requestData } = options;
+    const { headers, requestData, mockContext } = options;
 
     const { query } = url.parse(apiPath);
 
@@ -107,7 +114,7 @@ const extractRequestPayloadDetailsFromProxy = (proxyRes, apiPath, options) => {
     const { formParams, body, payloadState } = extractRequestBodyAndFormParams(headers, requestData);
 
     return  {
-        hdrs: extractHeadersToCubeFormat(headers),
+        hdrs: extractHeadersToCubeFormat(headers, mockContext),
         body,
         formParams,
         queryParams,

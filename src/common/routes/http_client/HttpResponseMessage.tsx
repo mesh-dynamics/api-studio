@@ -75,14 +75,14 @@ class HttpResponseMessage extends Component<
         return contentType.find((header) => header.indexOf("text/html") !== -1)
           ? "html"
           : contentType.find(
-              (header) => header.indexOf("application/json") !== -1
+              (header) => header.indexOf("application/json") !== -1 ||  header.indexOf("application/grpc") !== -1
             )
           ? "json"
           : "text";
       } else if (_.isString(contentType)) {
         return contentType.indexOf("text/html") !== -1
           ? "html"
-          : contentType.indexOf("application/json") !== -1
+          : contentType.indexOf("application/json") !== -1 ||  contentType.indexOf("application/grpc") !== -1
           ? "json"
           : "text";
       }

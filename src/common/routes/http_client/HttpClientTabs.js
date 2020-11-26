@@ -30,7 +30,7 @@ import "./Tabs.css";
 
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
-import { generateRunId, generateApiPath, getApiPathFromRequestEvent, extractParamsFromRequestEvent, selectedRequestParamData, unSelectedRequestParamData  } from "../../utils/http_client/utils"; 
+import { generateRunId, generateApiPath, getApiPathFromRequestEvent, extractParamsFromRequestEvent, selectedRequestParamData, unSelectedRequestParamData, isValidJSON, Base64Binary  } from "../../utils/http_client/utils"; 
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
 import { getParameterCaseInsensitive } from '../../../shared/utils';
 
@@ -1018,8 +1018,12 @@ class HttpClientTabs extends Component {
         return qsParams;
     }
 
+    isgRPCRequest(tabToProcess){
+       return tabToProcess.bodyType === "grpcData" && tabToProcess.grpcData && tabToProcess.grpcData.trim()
+    }
+
     async driveRequest(isOutgoingRequest, tabId) {
-        const {httpClient: {tabs, selectedTabKey, userHistoryCollection, mockConfigList, selectedMockConfig, mockContextLookupCollection, mockContextSaveToCollection, selectedEnvironment  }} = this.props;
+        const {httpClient: {tabs, selectedTabKey, userHistoryCollection, mockConfigList, selectedMockConfig, mockContextLookupCollection, mockContextSaveToCollection, selectedEnvironment, contextMap  }} = this.props;
         const { cube: { selectedApp }, user } = this.props;
         const { dispatch } = this.props;
         const userId = user.username;
@@ -1064,7 +1068,16 @@ class HttpClientTabs extends Component {
             const { rawData } = tabToProcess;
             httpRequestBody = this.extractBody(rawData);
         }
-        const httpMethod = tabToProcess.httpMethod;
+        if (this.isgRPCRequest(tabToProcess)) {
+            const { grpcData } = tabToProcess;
+            if(!isValidJSON(grpcData)){
+                const errorMessage = "Grpc data should be valid JSON object";
+                alert(errorMessage);
+                throw new Error(errorMessage);
+            }
+            httpRequestBody = this.extractBody(grpcData);
+        }
+        const httpMethod = this.getHttpMethod(tabToProcess);
         const httpRequestURL = tabToProcess.httpURL;
 
         let fetchConfig = {
@@ -1099,9 +1112,9 @@ class HttpClientTabs extends Component {
                 requestEvent : formattedData.request,
                 environmentName: selectedEnvironment,
                 injectionConfigVersion: `default${selectedApp}`,
-                contextMap: {}
+                contextMap: !selectedEnvironment && contextMap ? contextMap : {},
             }
-            const preRequestResult = await cubeService.fetchPreRequest(userHistoryCollection.id, runId, preRequestData, tabToProcess.abortRequest.cancelToken);
+            const preRequestResult = await cubeService.fetchPreRequest(userHistoryCollection.id, runId, preRequestData, selectedApp, tabToProcess.abortRequest.cancelToken);
         
             [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] = preRequestToFetchableConfig(preRequestResult, httpRequestURL);
 
@@ -1119,18 +1132,24 @@ class HttpClientTabs extends Component {
                 return
             }
         }
-        const fetchUrlRendered = httpRequestURLRendered + (httpRequestQueryStringParamsRendered ? "?" + stringify(httpRequestQueryStringParamsRendered) : "");
+        let fetchUrlRendered = httpRequestURLRendered + (Object.keys(httpRequestQueryStringParamsRendered).length ? "?" + stringify(httpRequestQueryStringParamsRendered) : "");
         let fetchedResponseHeaders = {}, responseStatus = "", responseStatusText = "";
         const startDate = new Date(Date.now() - 2 * 1000).toISOString();
         fetchConfigRendered.signal = tabToProcess.abortRequest.signal;
         let resTimestamp;
-        return fetch(fetchUrlRendered, fetchConfigRendered).then((response) => {
+        return fetch(fetchUrlRendered, fetchConfigRendered).then(async(response) => {
             const resISODate = new Date().toISOString();
             resTimestamp = new Date(resISODate).getTime();
             responseStatus = response.status;
             responseStatusText = response.statusText;
             for (const header of response.headers) {
                 fetchedResponseHeaders[header[0]] = header[1];
+            }
+            if(fetchedResponseHeaders["content-type"] == "application/grpc"){
+                var reader = response.body.getReader();
+                var result = await reader.read();
+                const base64Data = Base64Binary.encode(result.value || new Uint8Array());
+                return base64Data;
             }
             return response.text();
         })
@@ -1176,6 +1195,7 @@ class HttpClientTabs extends Component {
         const newTabs = [...currentTabs.slice(0, indexToRemove), ...currentTabs.slice(indexToRemove + 1)];
 
         const nextSelectedIndex = newTabs[indexToRemove] ? indexToRemove : indexToRemove - 1;
+        newTabs[nextSelectedIndex].isHighlighted = false;
         if (!newTabs[nextSelectedIndex]) {
             alert('You can not delete the last tab!');
             return;
@@ -1252,14 +1272,29 @@ class HttpClientTabs extends Component {
         return jsonString;
     }
 
+    getHttpMethod(tabToSave){
+        return this.isgRPCRequest(tabToSave) ? "POST" : tabToSave.httpMethod;
+    }
+
+    getPathName(url){
+        const urlData = urlParser(url);
+        return _.trim(urlData.pathname, '/');
+    }
+
+
     getReqResFromTabData(eachPair, tabToSave, runId, type, reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment) {
+        const { headers, queryStringParams, bodyType, rawDataType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus } = tabToSave;
+
         const httpRequestEventTypeIndex = eachPair[0].eventType === "HTTPRequest" ? 0 : 1;
         const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
         let httpRequestEvent = eachPair[httpRequestEventTypeIndex];
         let httpResponseEvent = eachPair[httpResponseEventTypeIndex];
         
         // let apiPath = getApiPathFromRequestEvent(httpRequestEvent); // httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : "";
-        let apiPath = tabToSave.httpURL;
+        let apiPath = this.getPathName(applyEnvVarsToUrl(tabToSave.httpURL));
+        httpRequestEvent.metaData.httpURL = tabToSave.httpURL;
+        httpResponseEvent.metaData.httpURL = tabToSave.httpURL;
+
         if(httpRequestEvent.reqId === "NA") {
             const parsedUrl = urlParser(applyEnvVarsToUrl(tabToSave.httpURL), PLATFORM_ELECTRON ? {} : true);
             let service = parsedUrl.host || "NA";
@@ -1284,8 +1319,9 @@ class HttpClientTabs extends Component {
             httpRequestEvent.metaData.collectionId = tabToSave.collectionIdAddedFromClient;
             httpRequestEvent.metaData.requestId = tabToSave.requestId;
             if(urlEnvVal) {
-                httpRequestEvent.apiPath = urlEnvVal;
-                httpResponseEvent.apiPath = urlEnvVal;
+                const path = this.getPathName(urlEnvVal);
+                httpRequestEvent.apiPath = path;
+                httpResponseEvent.apiPath = path;
                 httpRequestEvent.metaData.href = urlEnvVal;
             }
             if(currentEnvironment) {
@@ -1295,7 +1331,6 @@ class HttpClientTabs extends Component {
             apiPath = renderEnvVars(apiPath);
         }
 
-        const { headers, queryStringParams, bodyType, rawDataType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus } = tabToSave;
         httpRequestEvent.metaData.hdrs = JSON.stringify(unSelectedRequestParamData(headers));
         httpRequestEvent.metaData.queryParams = JSON.stringify(unSelectedRequestParamData(queryStringParams));
         
@@ -1311,7 +1346,12 @@ class HttpClientTabs extends Component {
             const { rawData } = tabToSave;
             httpRequestBody = this.extractBodyToCubeFormat(rawData, type);
         }
-        const httpMethod = tabToSave.httpMethod;
+        if (this.isgRPCRequest(tabToSave)) {
+            const { grpcData } = tabToSave;
+            httpRequestBody = this.tryJsonParse(grpcData);  
+            httpReqestHeaders["content-type"] = ["application/grpc"];          
+        }
+        const httpMethod = this.getHttpMethod(tabToSave);
         let httpResponseHeaders, httpResponseBody, httpResponseStatus;
         if (type !== "History") {
             httpResponseHeaders = recordedResponseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : responseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : null;
@@ -1329,7 +1369,7 @@ class HttpClientTabs extends Component {
                 runId: runId,
                 runType: "DevTool",
                 payload: [
-                    "HTTPRequestPayload",
+                    this.isgRPCRequest(tabToSave) ? "GRPCRequestPayload": "HTTPRequestPayload",
                     {
                         hdrs: httpReqestHeaders,
                         queryParams: httpRequestQueryStringParams,
@@ -1337,7 +1377,8 @@ class HttpClientTabs extends Component {
                         ...(httpRequestBody && { body: httpRequestBody }),
                         method: httpMethod.toUpperCase(),
                         path: apiPath,
-                        pathSegments: apiPath.split("/")
+                        pathSegments: apiPath.split("/"),
+                        payloadState :  this.isgRPCRequest(tabToSave) ? "UnwrappedDecoded": "WrappedDecoded",
                     }
                 ]
             },
@@ -1347,12 +1388,14 @@ class HttpClientTabs extends Component {
                 runId: runId,
                 runType: "DevTool",
                 payload: [
-                    "HTTPResponsePayload",
+                    this.isgRPCRequest(tabToSave) ? "GRPCResponsePayload": "HTTPResponsePayload",
                     {
                         hdrs: httpResponseHeaders,
                         body: httpResponseBody,
                         status: httpResponseStatus,
                         statusCode: String(httpResponseStatus),
+                        path: apiPath,
+                        payloadState : "WrappedDecoded",
                     }
                 ]
             }
@@ -1364,8 +1407,10 @@ class HttpClientTabs extends Component {
         const { 
             httpClient: { 
                 historyTabState, 
-                tabs: tabsToProcess
+                tabs: tabsToProcess,
+                selectedEnvironment,                
             }, 
+            cube: { selectedApp },
             dispatch
         } = this.props;
 
@@ -1385,16 +1430,26 @@ class HttpClientTabs extends Component {
                 const apiConfig = {
                     cancelToken: tabToProcess.abortRequest.cancelToken
                 }
-                cubeService.afterResponse(recordingId, data, apiConfig)
+                cubeService.afterResponse(recordingId, data, apiConfig, selectedEnvironment, selectedApp)
                     .then((serverRes) => {
-                        const jsonTraceReqData = serverRes.data.response && serverRes.data.response.length > 0 ? serverRes.data.response[0] : "";
                         try {
-                            const parsedTraceReqData = _.isString(jsonTraceReqData) ? JSON.parse(jsonTraceReqData): jsonTraceReqData;
+                            const parsedTraceReqData = serverRes.data.response && serverRes.data.response.length > 0 ? serverRes.data.response[0] : {};
+                            const requestEvent = JSON.parse(parsedTraceReqData.requestEvent);
+                            if(requestEvent.payload[0] == "GRPCRequestPayload"){
+                                const responseEvent = JSON.parse(parsedTraceReqData.responseEvent);
+                                const eventData = [requestEvent, responseEvent];
+                                dispatch(httpClientActions.updateEventDataInSelectedTab(tabId, eventData ));                                
+                                dispatch(httpClientActions.afterResponseReceivedData(tabId, JSON.stringify(responseEvent.payload[1].body, undefined, 4)));
+                            }
                             const apiPath = _.trimStart(data[0].request.apiPath, '/');
                             this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
                             setTimeout(() => {
                                 this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig, true);
                             }, 5000);
+
+                            if(!selectedEnvironment){
+                                dispatch(httpClientActions.updateContextMap(JSON.parse(parsedTraceReqData.extractionMap)));
+                            }
                         } catch (error) {
                             console.error("Error ", error);
                             throw new Error(error);
@@ -1432,8 +1487,8 @@ class HttpClientTabs extends Component {
         let reqObject = {
             id: uuidv4(),
             httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-            httpURL: httpRequestEvent.apiPath,
-            httpURLShowOnly: httpRequestEvent.apiPath,
+            httpURL: httpRequestEvent.metaData.httpURL || httpRequestEvent.apiPath,
+            httpURLShowOnly: httpRequestEvent.metaData.httpURL || httpRequestEvent.apiPath,
             headers: headers,
             queryStringParams: queryParams,
             bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
@@ -1528,8 +1583,8 @@ class HttpClientTabs extends Component {
     }
 
 
-    addTab(evt, reqObject, givenApp) {
-        const { dispatch, user } = this.props;
+    addTab(evt, reqObject, givenApp, isSelected = true) {
+        const { dispatch, user, httpClient: {selectedTabKey} } = this.props;
         const tabId = uuidv4();
         const requestId = uuidv4();
         const { app } = this.state;
@@ -1573,7 +1628,8 @@ class HttpClientTabs extends Component {
                 recordedHistory: null
             };
         }
-        dispatch(httpClientActions.addTab(tabId, reqObject, appAvailable, tabId, reqObject.httpURL ? reqObject.httpURL : "New"));
+        const nextSelectedTabId = isSelected ?  tabId : selectedTabKey;
+        dispatch(httpClientActions.addTab(tabId, reqObject, appAvailable, nextSelectedTabId, reqObject.httpURL ? reqObject.httpURL : "New"));
         return tabId;
     }
 
@@ -1607,7 +1663,7 @@ class HttpClientTabs extends Component {
         const { 
             dispatch,
             cube: { selectedApp },
-            httpClient: { tabs },
+            httpClient: { tabs, selectedTabKey },
             user: { customer_name: customerId },
         } = this.props;
 
@@ -1620,14 +1676,30 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.loadUserCollections());
         
         const requestIds = this.getRequestIds(), reqIdArray = Object.keys(requestIds);
-        tabs.forEach(eachTab => {
-            const indx = reqIdArray.findIndex((eachReq) => eachReq === eachTab.requestId);
-            if(indx > -1) {
-                reqIdArray.splice(indx, 1);
-                dispatch(httpClientActions.setTabIsHighlighted(eachTab.id, true));
-            }
-        });
         if (reqIdArray && reqIdArray.length > 0) {
+            /*
+                reqIdArray: string array of request IDs, which needs to be displayed at HttpClient
+                Step1: Remove all reqIdArray values which are already opened, and push them into tabsToHighlight to highlight next
+                Step2: Highlight all existing tabs if there are some reqIds, which are not currently opened/exists
+                       If there is no reqIds to be opened new, then current selected tabs should not be highlighted
+                Step3: Process all new reqIds to open a new tab
+            */
+            const tabsToHighlight = [];
+
+            tabs.forEach(eachTab => {
+                const indx = reqIdArray.findIndex((eachReq) => eachReq === eachTab.requestId);
+                if(indx > -1) {
+                    reqIdArray.splice(indx, 1);
+                    tabsToHighlight.push(eachTab.id);
+                }
+            });
+
+            tabsToHighlight.forEach( tabId => {
+                if(selectedTabKey !== tabId || reqIdArray.length > 0) {
+                    dispatch(httpClientActions.setTabIsHighlighted(tabId, true));
+                }
+            });
+
             const eventTypes = [];
             cubeService.fetchAPIEventData(customerId, selectedApp, reqIdArray, eventTypes).then((result) => {
                 if (result && result.numResults > 0) {
@@ -1635,19 +1707,20 @@ class HttpClientTabs extends Component {
                         const reqResPair = result.objects.filter(eachReq => eachReq.reqId === eachReqId);
                         if (reqResPair.length > 0) {
                             let reqObject = formatHttpEventToTabObject(eachReqId, requestIds, reqResPair);
-                            const savedTabId = this.addTab(null, reqObject, selectedApp);
+                            const savedTabId = this.addTab(null, reqObject, selectedApp, eachReqId == reqIdArray[reqIdArray.length - 1]);
                             this.showOutgoingRequests(savedTabId, reqObject.traceIdAddedFromClient, reqObject.collectionIdAddedFromClient, reqObject.recordingIdAddedFromClient);
                         }
                     }
                 }
             });
+            dispatch(apiCatalogActions.setHttpClientRequestIds([]));
         } else {
             let app = selectedApp;
             if(!app) {
                 const parsedUrlObj = urlParser(window.location.href, true);
                 app = parsedUrlObj.query.app;
             }
-            if(tabs.length === 0)this.addTab(null, null, app);
+            if(tabs.length === 0)this.addTab(null, null, app, true);
         }
 
         if(PLATFORM_ELECTRON) {
