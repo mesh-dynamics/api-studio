@@ -20,8 +20,8 @@ public abstract class GRPCPayload extends HTTPPayload {
     private static final Logger LOGGER = LogMgr.getLogger(GRPCPayload.class);
 
     protected String path;
-    protected String service;
-    protected String method;
+    protected String protoService;
+    protected String methodName;
     @JsonIgnore
     private Optional<ProtoDescriptorDAO> protoDescriptor;
 
@@ -44,16 +44,17 @@ public abstract class GRPCPayload extends HTTPPayload {
 
     private void parsePath() {
         String[] pathSplits = this.path.split("/");
-        this.service = pathSplits[0];
-        if (service.contains(".")) service = service.substring(service.indexOf(".") + 1);
-        this.method = pathSplits[1];
+        this.protoService = pathSplits[0];
+        if (protoService.contains(".")) protoService = protoService
+            .substring(protoService.indexOf(".") + 1);
+        this.methodName = pathSplits[1];
     }
 
     abstract boolean isRequest();
 
     private Optional<WrapUnwrapContext> getWrapUnwrapContext() {
         return protoDescriptor.map(descriptor ->
-            new WrapUnwrapContext(descriptor, service, method, isRequest()));
+            new WrapUnwrapContext(descriptor, protoService, methodName, isRequest()));
     }
 
     @Override

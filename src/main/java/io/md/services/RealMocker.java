@@ -11,6 +11,7 @@ import io.md.dao.*;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -58,11 +59,21 @@ public class RealMocker implements Mocker {
             DynamicInjector di = diFactory.getMgr(reqEvent.customerId , reqEvent.app , mockWColl.dynamicInjectionConfigVersion);
             di.extract(reqEvent , null);
 
-            List<String> payLoadFields = (reqEvent.payload instanceof GRPCPayload) ? Collections.EMPTY_LIST
-                :  Arrays.asList(String.format("%s:%s" , Constants.METHOD_PATH , Utils.getHttpMethod(reqEvent))) ;
+            List<String> payloadFieldFilterList = mockWColl.isDevtool ? reqEvent.payloadFields.stream().map(payloadField -> {
+                    try {
+                        return String.format("%s:%s", "/".concat(payloadField),
+                         reqEvent.payload.getValAsString("/".concat(payloadField)));
+                    } catch (Exception e) {
+                        return null;
+                    }
+                }).collect(Collectors.toList()):Collections.EMPTY_LIST;
+
+
             Optional<JoinQuery> joinQuery = mockWColl.isDevtool ? Optional.of(getSuccessResponseMatch()) : Optional.empty();
 
-            EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1), !mockWColl.isDevtool, lowerBoundForMatching, mockWColl.recordCollection , payLoadFields , joinQuery , mockWColl.isDevtool);
+            EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1),
+                !mockWColl.isDevtool, lowerBoundForMatching, mockWColl.recordCollection,
+                payloadFieldFilterList , joinQuery , mockWColl.isDevtool);
             DSResult<Event> res = cube.getEvents(eventQuery);
 
             final Map<String , Event> reqIdReqMapping = new HashMap<>();
@@ -77,7 +88,9 @@ public class RealMocker implements Mocker {
             if(mockWColl.isDevtool && !matchingResponse.isPresent()){
                 LOGGER.info(createMockReqErrorLogMessage(reqEvent,
                         "Did not find any valid 200 response. Giving first match resp"));
-                eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1), false , lowerBoundForMatching, mockWColl.recordCollection , payLoadFields , Optional.empty() , mockWColl.isDevtool);
+                eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1),
+                    false , lowerBoundForMatching, mockWColl.recordCollection ,
+                    payloadFieldFilterList , Optional.empty() , mockWColl.isDevtool);
                 res = cube.getEvents(eventQuery);
                 matchingResponse = res.getObjects().findFirst().flatMap(getRespEventForReqEvent);
             }
@@ -144,7 +157,8 @@ public class RealMocker implements Mocker {
     }
 
     private static EventQuery buildRequestEventQuery(Event event, int offset, Optional<Integer> limit,
-        boolean isSortOrderAsc, Optional<Instant> lowerBoundForMatching, String collection , List<String> payloadFields , Optional<JoinQuery> joinQuery , boolean isDevtoolRequest) {
+        boolean isSortOrderAsc, Optional<Instant> lowerBoundForMatching, String collection ,
+        List<String> payloadFields , Optional<JoinQuery> joinQuery , boolean isDevtoolRequest) {
         EventQuery.Builder builder =
             new EventQuery.Builder(event.customerId, event.app, event.eventType)
                 .withService(event.service)
