@@ -34,6 +34,8 @@ public class LoggingWebSocketHandler extends AbstractWebSocketHandler {
 
         LOGGER.info("Connection established {} remote {}" , webSocketSession.getId(), webSocketSession.getRemoteAddress() );
         //print( "headers" , webSocketSession.getHandshakeHeaders());
+        webSocketSession.setBinaryMessageSizeLimit(3*1024*1024); //3MB
+        webSocketSession.setTextMessageSizeLimit(3*1024*1024); //3MB
 
     }
 
