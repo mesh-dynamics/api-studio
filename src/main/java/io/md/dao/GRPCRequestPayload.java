@@ -12,7 +12,7 @@ import io.md.utils.GRPCRequestPayloadDeserializer;
 @JsonDeserialize(using = GRPCRequestPayloadDeserializer.class)
 public class GRPCRequestPayload extends  GRPCPayload implements RequestPayload {
 
-	protected GRPCRequestPayload(MultivaluedMap<String, String> hdrs, byte[] body,
+	public GRPCRequestPayload(MultivaluedMap<String, String> hdrs, byte[] body,
 		String path) {
 		super(hdrs, body, path);
 	}
@@ -35,7 +35,7 @@ public class GRPCRequestPayload extends  GRPCPayload implements RequestPayload {
 				return null;
 			}
 		}
-		return method;
+		return methodName;
 	}
 
 	// Ideally there would be no queryparams for grpc case

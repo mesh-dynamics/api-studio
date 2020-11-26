@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
+import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.Utils;
 
 /*
@@ -107,6 +108,11 @@ public class HTTPPayload extends LazyParseAbstractPayload {
 	@Override
 	public void postParse() {
 		this.payloadState = HTTPPayloadState.WrappedEncoded;
+		//TODO this is added only for the case when a GRPCRequestPayload is constructed in mock.
+		// We would need to study its effects at other places.
+		if (this.dataObj == null) {
+			this.dataObj = new JsonDataObj(this, CubeObjectMapperProvider.getInstance());
+		}
 		if (!this.dataObj.isDataObjEmpty()) {
 			this.dataObj.getValAsObject(PAYLOADSTATEPATH, HTTPPayloadState.class)
 				.ifPresent(v -> payloadState=v);

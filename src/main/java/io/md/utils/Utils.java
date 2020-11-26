@@ -252,7 +252,7 @@ public class Utils {
 	}
 
 
-	public static Event createHTTPRequestEvent(String apiPath,
+	public static Event createMockedRequestEvent(String apiPath,
 		MultivaluedMap<String, String> queryParams,
 		MultivaluedMap<String, String> formParams,
 		MultivaluedMap<String, String> hdrs,
@@ -261,16 +261,36 @@ public class Utils {
 		RunType runType, String method, String reqId, RecordingType recordingType)
 		throws Event.EventBuilder.InvalidEventException {
 
-			HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
-				formParams, method, body , apiPath);
+		Payload mockedRequestPayload = null;
+		if (getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN).toLowerCase()
+			.startsWith(Constants.APPLICATION_GRPC)) {
+			GRPCRequestPayload grpcRequestPayload = new GRPCRequestPayload(hdrs, body, apiPath);
+			ProtoDescriptorCache protoDescriptorCache = ProtoDescriptorCacheProvider.getInstance()
+				.get();
+			Optional<ProtoDescriptorDAO> protoDescriptorDAO =
+				protoDescriptorCache.get(new ProtoDescriptorKey(customerId, app, "NA"));
+			grpcRequestPayload.setProtoDescriptor(protoDescriptorDAO);
+			try {
+				grpcRequestPayload.dataObj.put("/method",
+					new JsonDataObj(new TextNode("POST"), CubeObjectMapperProvider.getInstance()));
+			} catch (Exception e) {
+				LOGGER.error("Unable to set method as post in GRPCRequestPayload dataobj", e);
+			}
+			mockedRequestPayload = grpcRequestPayload;
 
-			Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId, app,
-				service, instance, Constants.NOT_APPLICABLE,
-				mdTraceInfo, runType, Optional.empty(),
-				reqId, apiPath, Event.EventType.HTTPRequest, recordingType);
-			eventBuilder.setPayload(httpRequestPayload);
-			Event event = eventBuilder.createEvent();
-			return event;
+		} else {
+			HTTPRequestPayload httpRequestPayload = new HTTPRequestPayload(hdrs, queryParams,
+				formParams, method, body, apiPath);
+			mockedRequestPayload = httpRequestPayload;
+		}
+
+		Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId, app,
+			service, instance, Constants.NOT_APPLICABLE,
+			mdTraceInfo, runType, Optional.empty(),
+			reqId, apiPath, Event.EventType.HTTPRequest, recordingType);
+		eventBuilder.setPayload(mockedRequestPayload);
+		Event event = eventBuilder.createEvent();
+		return event;
 	}
 
 	// TODO: This will go away once we remove storeSingleReqResp from CubeStore
@@ -547,10 +567,10 @@ public class Utils {
 
 	public static Event createRequestMockNew(String path, MultivaluedMap<String, String> formParams,
 		String customerId, String app, String instanceId, String service,
-		String method, String body,
+		String method, byte[] body,
 		MultivaluedMap<String, String> headers,
 		MultivaluedMap<String, String> queryParams,
-		Optional<String> traceIdValue , TracerMgr tracerMgr ) throws EventBuilder.InvalidEventException, JsonProcessingException {
+		Optional<String> traceIdValue , TracerMgr tracerMgr) throws EventBuilder.InvalidEventException, JsonProcessingException {
 		// At the time of mock, our lua filters don't get deployed, hence no request id is generated
 		// we can generate a new request id here in the mock service
 		String requestId = service.concat("-mock-").concat(String.valueOf(UUID.randomUUID()));
@@ -565,11 +585,12 @@ public class Utils {
 		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceIdData ,
 			spanId.orElse("NA") , parentSpanId.orElse("NA"));
 
-		byte[] bodyBytes = (body != null && (!body.isEmpty())) ?
-			body.getBytes(StandardCharsets.UTF_8) : null;
+		/*byte[] bodyBytes = (body != null && (!body.isEmpty())) ?
+			body.getBytes(StandardCharsets.UTF_8) : null;*/
 
-		return createHTTPRequestEvent(path, queryParams, formParams, headers, mdTraceInfo,
-			bodyBytes, customerId, app, service, instanceId, RunType.Mock , method, requestId, recordingType);
+		return createMockedRequestEvent(path, queryParams, formParams, headers, mdTraceInfo,
+			body, customerId, app, service, instanceId, RunType.Mock , method, requestId,
+			recordingType);
 	}
 
 	static public String convertTraceId(long traceIdHigh, long traceIdLow) {
