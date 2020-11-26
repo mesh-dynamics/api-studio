@@ -265,24 +265,22 @@ export function cube (state = initialState, action: ICubeAction) {
                 ...state,
                 replayStatusObj: action.data,
                 replayStatus: action.data.status,
-                fetchingReplayStatus: false,
             };
         case cubeConstants.FETCHING_REPLAY_STATUS:
             return {
                 ...state,
-                fetchingReplayStatus: true,
+                fetchingReplayStatus: action.data,
             }
         case cubeConstants.ANALYSIS_STATUS_FETCHED:
             return{
                 ...state,
                 analysisStatusObj: action.data,
                 analysisStatus: action.data.status,
-                fetchingAnalysisStatus: false,
             };
         case cubeConstants.FETCHING_ANALYSIS_STATUS:
             return {
                 ...state,
-                fetchingAnalysisStatus: true,
+                fetchingAnalysisStatus: action.data,
             }
         case cubeConstants.ANALYSIS_FETCHED:
             return {
