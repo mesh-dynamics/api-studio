@@ -139,7 +139,7 @@ const proxyRequestInterceptorLiveService = (proxyReq, serviceConfigObject) => {
     proxyReq.removeHeader('date');
     proxyReq.removeHeader('expect');
     proxyReq.removeHeader('from');
-    proxyReq.removeHeader('origin');
+    // proxyReq.removeHeader('origin');
     proxyReq.removeHeader('referer');
     proxyReq.removeHeader('upgrade');
     proxyReq.removeHeader('via');
