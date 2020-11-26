@@ -325,9 +325,13 @@ public class RealAnalyzer implements Analyzer {
                 .withPayloadKey(reqEvent.payloadKey);
         }
 
+        
+        if(!(reqEvent.payload instanceof GRPCPayload)) {
+            builder.withTraceId(reqEvent.getTraceId());
+        }
+
         return builder.withService(reqEvent.service)
             .withCollection(replayId)
-            .withTraceId(reqEvent.getTraceId())
             .withLimit(limit)
             .build();
     }
