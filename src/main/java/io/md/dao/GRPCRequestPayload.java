@@ -35,7 +35,7 @@ public class GRPCRequestPayload extends  GRPCPayload implements RequestPayload {
 				return null;
 			}
 		}
-		return methodName;
+		return null;
 	}
 
 	// Ideally there would be no queryparams for grpc case

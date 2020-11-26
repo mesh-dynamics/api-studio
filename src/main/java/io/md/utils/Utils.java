@@ -271,8 +271,11 @@ public class Utils {
 				protoDescriptorCache.get(new ProtoDescriptorKey(customerId, app, "NA"));
 			grpcRequestPayload.setProtoDescriptor(protoDescriptorDAO);
 			try {
-				grpcRequestPayload.dataObj.put("/method",
+				grpcRequestPayload.dataObj.put(Constants.METHOD_PATH,
 					new JsonDataObj(new TextNode("POST"), CubeObjectMapperProvider.getInstance()));
+				// Need to add path field in dataObj otherwise will error out while deserialisng
+				grpcRequestPayload.dataObj.put(Constants.PATH_PATH,
+					new JsonDataObj(new TextNode(apiPath), CubeObjectMapperProvider.getInstance()));
 			} catch (Exception e) {
 				LOGGER.error("Unable to set method as post in GRPCRequestPayload dataobj", e);
 			}
