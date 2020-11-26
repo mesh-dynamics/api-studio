@@ -145,6 +145,7 @@ const proxyRequestInterceptorLiveService = (proxyReq, serviceConfigObject) => {
     proxyReq.removeHeader('via');
     proxyReq.removeHeader('warning');
     proxyReq.removeHeader('transfer-encoding');
+    proxyReq.removeHeader('accept-encoding');
 
     logger.info('Logging Request Headers for Live Service after removing request headers', proxyReq._headers);
 
