@@ -6,6 +6,7 @@ import com.cubeui.backend.domain.DTO.Response.DTO.TestConfigDTO;
 import com.cubeui.backend.domain.DTO.Response.Mapper.TestConfigMapper;
 import com.cubeui.backend.repository.*;
 import com.cubeui.backend.service.CustomerService;
+import com.cubeui.backend.service.UserService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
 import org.springframework.http.ResponseEntity;
@@ -38,10 +39,9 @@ public class AppController {
     private CustomerService customerService;
     private InstanceRepository instanceRepository;
     private InstanceUserRepository instanceUserRepository;
-    private UserRepository userRepository;
+    private UserService userService;
     private AppUserRepository appUserRepository;
-
-    public AppController(AppRepository appRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository, CustomerService customerService, InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository, UserRepository userRepository, AppUserRepository appUserRepository) {
+    public AppController(AppRepository appRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository, CustomerService customerService, InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository, UserService userService, AppUserRepository appUserRepository) {
         this.appRepository = appRepository;
         this.serviceRepository = serviceRepository;
         this.serviceGraphRepository = serviceGraphRepository;
@@ -52,7 +52,7 @@ public class AppController {
         this.customerService = customerService;
         this.instanceRepository = instanceRepository;
         this.instanceUserRepository = instanceUserRepository;
-        this.userRepository = userRepository;
+        this.userService = userService;
         this.appUserRepository = appUserRepository;
     }
 
@@ -88,15 +88,7 @@ public class AppController {
                         .customer(customer.get())
                         .displayName(displayName)
                         .build());
-        Optional<List<User>> optionalUsers = this.userRepository.findByCustomerId(appDTO.getCustomerId());
-        optionalUsers.ifPresent(users -> {
-            users.forEach(user -> {
-                AppUser appUser = new AppUser();
-                appUser.setApp(saved);
-                appUser.setUser(user);
-                appUserRepository.save(appUser);
-            });
-        });
+        userService.createHistoryForEachUserForAnApp(request, saved);
         return created(
                 ServletUriComponentsBuilder
                         .fromContextPath(request)
