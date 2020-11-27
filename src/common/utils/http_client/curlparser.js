@@ -216,6 +216,9 @@ const parseCurlCommand = curlCommand => {
     } else if (parsedArguments['data-raw']) {
         request.data = parsedArguments['data-raw']
         request.isDataRaw = true
+    } else if (parsedArguments['data-urlencode']) {
+        request.data = parsedArguments['data-urlencode']
+        request.isDataRaw = true
     }
 
     if (parsedArguments.u) {
