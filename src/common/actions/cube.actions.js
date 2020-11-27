@@ -371,12 +371,13 @@ function clearReplayStatus() {
 function getReplayStatus(collectionId, replayId, app) {
     return async dispatch => {
         try {
-            dispatch({type: cubeConstants.FETCHING_REPLAY_STATUS})
+            dispatch({type: cubeConstants.FETCHING_REPLAY_STATUS, data: true})
             let replayStatus = await cubeService.checkStatusForReplay(replayId);
             dispatch(success(replayStatus, Date.now()));
         } catch (error) {
             console.error("Error getting replay status: " + error);
         }
+        dispatch({type: cubeConstants.FETCHING_REPLAY_STATUS, data: false})
     }
     function success(replayStatus, date) { return { type: cubeConstants.REPLAY_STATUS_FETCHED, data: replayStatus, date: date } }
 }
@@ -384,12 +385,13 @@ function getReplayStatus(collectionId, replayId, app) {
 function getAnalysisStatus(replayId, app) {
     return async dispatch => {
         try {
-            dispatch({type: cubeConstants.FETCHING_ANALYSIS_STATUS})
+            dispatch({type: cubeConstants.FETCHING_ANALYSIS_STATUS, data: true})
             const analysisStatus = await cubeService.fetchAnalysisStatus(replayId);
             dispatch(success(analysisStatus.data, Date.now()));
         } catch (error) {
             console.error("Error getting analysis status: " + error);
         }
+        dispatch({type: cubeConstants.FETCHING_ANALYSIS_STATUS, data: false})
     }
     function success(analysisStatus, date) { return { type: cubeConstants.ANALYSIS_STATUS_FETCHED, data: analysisStatus, date: date } }
 }
