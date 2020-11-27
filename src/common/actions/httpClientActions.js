@@ -604,5 +604,9 @@ export const httpClientActions = {
 
     setTabIsHighlighted: (tabId, isHighlighted) => {
         return {type: httpClientConstants.SET_TAB_IS_HIGHLIGHTED, data: {tabId, isHighlighted}};
+    },
+
+    deleteOutgoingReq: (outgoingReqTabId, tabId) => {
+        return {type: httpClientConstants.DELETE_OUTGOING_REQ, data: {outgoingReqTabId, tabId}};
     }
 }

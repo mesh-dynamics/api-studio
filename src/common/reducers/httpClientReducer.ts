@@ -900,6 +900,23 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             }
         }
 
+        case httpClientConstants.DELETE_OUTGOING_REQ: {
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    let outgoingRequests = eachTab.outgoingRequests;
+                    if(eachTab.id === data.tabId) {
+                        outgoingRequests = eachTab.outgoingRequests.filter((eachOutgoingTab) => {
+                            return eachOutgoingTab.id !== data.outgoingReqTabId;
+                        })
+                        eachTab.hasChanged = true;
+                    }
+                    return {...eachTab, outgoingRequests: [...outgoingRequests]}; 
+                })
+            }
+        }
+
         default:
             return state;
     }

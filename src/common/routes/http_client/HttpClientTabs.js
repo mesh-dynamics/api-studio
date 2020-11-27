@@ -90,6 +90,7 @@ class HttpClientTabs extends Component {
         this.handleImportedToCollectionIdChange = this.handleImportedToCollectionIdChange.bind(this);
 
         this.updateAbortRequest = this.updateAbortRequest.bind(this);
+        this.handleDeleteOutgoingReq = this.handleDeleteOutgoingReq.bind(this);
         
     }
 
@@ -1204,6 +1205,11 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.removeTab(newTabs, newTabs[nextSelectedIndex].id));
     }
 
+    handleDeleteOutgoingReq(outgoingReqTabId, tabId) {
+        const { dispatch } = this.props;
+        dispatch(httpClientActions.deleteOutgoingReq(outgoingReqTabId, tabId));
+    }
+
     getValueBySaveType(value, type) {
         const renderEnvVars = getRenderEnvVars();
         return type !== "History" ? value : renderEnvVars(value);
@@ -1819,6 +1825,7 @@ class HttpClientTabs extends Component {
                             handleDuplicateTab={this.handleDuplicateTab}
                             toggleShowTrace={this.toggleShowTrace}
                             updateAbortRequest={this.updateAbortRequest}
+                            handleDeleteOutgoingReq={this.handleDeleteOutgoingReq}
                         />
                     </div>
                 )

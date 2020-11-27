@@ -386,10 +386,25 @@ class HttpClient extends Component {
         return code;
     }
 
+    handleDeleteReq = (evt, outgoingReqTabId) => {
+        evt.stopPropagation();
+        const { currentSelectedTab } = this.props;
+        this.props.handleDeleteOutgoingReq(outgoingReqTabId, currentSelectedTab.id);
+        
+    }
+
     renderHasChangedTippy = (hasChanged) => {
         return <Tippy content={"Unsaved changes in this request"} arrow={true} placement="bottom">
             {hasChanged ? <i className="fas fa-circle" style={{fontSize: "12px", marginRight: "12px"}}></i> : <i></i>}
         </Tippy>
+    }
+
+    renderDeleteButton = (outgoingReqTabId) => {
+        return (
+            <Tippy content={"Click to delete"} arrow={true} placement="bottom">
+                <i className="fas fa-trash" style={{fontSize: "12px", marginRight: "12px"}} onClick={(evt) => this.handleDeleteReq(evt, outgoingReqTabId)}></i>
+            </Tippy>
+        );
     }
 
     render() {
@@ -407,7 +422,8 @@ class HttpClient extends Component {
         if(selectedTraceTableReqTabId === currentSelectedTab.id) {
             selectedTraceTableReqTab = currentSelectedTab;
         } else {
-            selectedTraceTableReqTab = currentSelectedTab.outgoingRequests ? currentSelectedTab.outgoingRequests.find((eachTab) => eachTab.id === selectedTraceTableReqTabId) : {};
+            selectedTraceTableReqTab = currentSelectedTab.outgoingRequests ? currentSelectedTab.outgoingRequests.find((eachTab) => eachTab.id === selectedTraceTableReqTabId) : null;
+            if(!selectedTraceTableReqTab) selectedTraceTableReqTab = currentSelectedTab;
         }
 
         if(selectedTraceTableTestReqTabId && currentSelectedTab.recordedHistory && selectedTraceTableTestReqTabId === currentSelectedTab.recordedHistory.id) {
@@ -578,7 +594,11 @@ class HttpClient extends Component {
                                                         {this.renderHasChangedTippy(eachReq.hasChanged)}
                                                     </span>
                                                 </td>
-                                                <td></td>
+                                                <td>
+                                                    <span>
+                                                        {this.renderDeleteButton(eachReq.id)}
+                                                    </span>
+                                                </td>
                                             </tr>
                                         );
                                     })}
