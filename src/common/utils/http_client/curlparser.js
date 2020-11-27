@@ -11,6 +11,9 @@ const parseCurlCommand = curlCommand => {
     // Remove extra whitespace
     curlCommand = curlCommand.replace(/\s+/g, ' ')
 
+    // Remove dollar symbol
+    curlCommand = curlCommand.replace(/[\s]+[\$]+[']/, " '")
+
     // yargs parses -XPOST as separate arguments. just prescreen for it.
     curlCommand = curlCommand.replace(/ -XPOST/, ' -X POST')
     curlCommand = curlCommand.replace(/ -XGET/, ' -X GET')
