@@ -171,12 +171,7 @@ class SaveToCollection extends React.Component<
     const tabToProcess = tabs[tabIndex];
     if (response.status === "success") {
       try {
-        const parsedData =
-          response.data.response && response.data.response.length > 0
-            ? response.data.response.map((eachOne: string) => {
-                return JSON.parse(eachOne);
-              })
-            : [];
+        const parsedData = response.data.response;
         const collection = collections.find(
           (eachCollection) => eachCollection.id === recordingId
         );
