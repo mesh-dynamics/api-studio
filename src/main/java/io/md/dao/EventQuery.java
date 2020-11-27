@@ -34,7 +34,7 @@ public class EventQuery {
     private final Optional<String> collection;
 
     private final List<String> traceIds;
-    private final Optional<Event.RunType> runType;
+    private final List<Event.RunType> runTypes;
     private final Optional<String> spanId;
     private final Optional<String> parentSpanId;
     private final Optional<Instant> timestamp;
@@ -50,7 +50,6 @@ public class EventQuery {
     private final List<String> payloadFields;
     private final Map<String , Float> orQueryWeightage;
     private final Optional<JoinQuery> joinQuery;
-    private final boolean fromMocker;
 
     public static class Builder {
         private final String customerId;
@@ -61,7 +60,7 @@ public class EventQuery {
         private String instanceId = null;
         private String collection = null;
         private List<String> traceIds = Collections.emptyList();
-        private Event.RunType runType = null;
+        private List<Event.RunType> runTypes = Collections.EMPTY_LIST;
         private String spanId = null;
         private String parentSpanId = null;
         private Instant timestamp = null;
@@ -75,7 +74,6 @@ public class EventQuery {
         private List<String> payloadFields = Collections.EMPTY_LIST;
         private Map<String , Float> orQueryWeightage = new HashMap<>();
         private Optional<JoinQuery> joinQuery = Optional.empty();
-        private boolean fromMocker = false;
 
         //@JsonCreator
         public Builder(String customerId,
@@ -172,12 +170,23 @@ public class EventQuery {
 
 
         public Builder withRunType(Event.RunType val) {
-            runType = val;
+            runTypes = Arrays.asList(val);
             return this;
         }
 
         public Builder withRunType(Event.RunType val , Float weight) {
-            runType = val;
+            runTypes = Arrays.asList(val);
+            orQueryWeightage.put(Constants.RUN_TYPE_FIELD ,weight);
+            return this;
+        }
+
+        public Builder withRunTypes(List<Event.RunType> vals) {
+            runTypes = vals;
+            return this;
+        }
+
+        public Builder withRunTypes(List<Event.RunType> vals , Float weight) {
+            runTypes = vals;
             orQueryWeightage.put(Constants.RUN_TYPE_FIELD ,weight);
             return this;
         }
@@ -304,11 +313,6 @@ public class EventQuery {
             return this;
         }
 
-        public Builder withFromMocker(boolean mocker) {
-            fromMocker = mocker;
-            return this;
-        }
-
         @JsonSetter(nulls = Nulls.FAIL , contentNulls = Nulls.FAIL)
         public Builder withPayloadFields(List<String> pyldFields){
             this.payloadFields = pyldFields;
@@ -342,7 +346,7 @@ public class EventQuery {
         instanceId = Optional.ofNullable(builder.instanceId);
         collection = Optional.ofNullable(builder.collection);
         traceIds = builder.traceIds;
-        runType = Optional.ofNullable(builder.runType);
+        runTypes = builder.runTypes;
         spanId = Optional.ofNullable(builder.spanId);
         parentSpanId = Optional.ofNullable(builder.parentSpanId);
         timestamp = Optional.ofNullable(builder.timestamp);
@@ -356,7 +360,6 @@ public class EventQuery {
         orQueryWeightage = builder.orQueryWeightage;
         payloadFields = builder.payloadFields;
         joinQuery = builder.joinQuery;
-        fromMocker = builder.fromMocker;
     }
 
     public String getCustomerId() {
@@ -395,7 +398,7 @@ public class EventQuery {
     @JsonIgnore
     public Optional<Float> getTraceIdsWeight() {return Optional.ofNullable(orQueryWeightage.get(Constants.TRACE_ID_FIELD)); }
 
-    public Optional<Event.RunType> getRunType() { return runType; }
+    public List<Event.RunType> getRunTypes() { return runTypes; }
     @JsonIgnore
     public Optional<Float> getRunTypeWeight() {return Optional.ofNullable(orQueryWeightage.get(Constants.RUN_TYPE_FIELD)); }
 
@@ -440,8 +443,6 @@ public class EventQuery {
     }
     @JsonIgnore
     public Optional<Float> getTimestampWeight() {return Optional.ofNullable(orQueryWeightage.get(Constants.TIMESTAMP_FIELD)); }
-
-    public boolean isFromMocker(){return fromMocker;}
 
     public List<String> getPayloadFields() {
         return payloadFields;

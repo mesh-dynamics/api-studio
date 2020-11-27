@@ -34,6 +34,8 @@ import io.md.services.DataStore.TemplateNotFoundException;
 import io.md.utils.UtilException;
 import io.md.utils.Utils;
 
+import static io.md.dao.Event.RunType.*;
+
 
 /*
  * Created by IntelliJ IDEA.
@@ -43,6 +45,7 @@ public class RealMocker implements Mocker {
 
     private DataStore cube;
     private DynamicInjectorFactory diFactory;
+    private static final List<Event.RunType> nonMockRunTypes = Arrays.stream(Event.RunType.values()).filter(rt->rt!=Mock).collect(Collectors.toList());
 
     private static final Logger LOGGER = LogMgr.getLogger(RealMocker.class);
 
@@ -170,7 +173,7 @@ public class RealMocker implements Mocker {
                 .withOffset(offset)
                 .withSortOrderAsc(isSortOrderAsc)
                 .withPayloadFields(payloadFields)
-                .withFromMocker(true);
+                .withRunTypes(nonMockRunTypes);
         lowerBoundForMatching.ifPresent(builder::withTimestamp);
         limit.ifPresent(builder::withLimit);
         joinQuery.ifPresent(builder::withJoinQuery);
@@ -233,7 +236,7 @@ public class RealMocker implements Mocker {
         return eventQuery
             .withService(mockRequest.service)
             .withPaths(Arrays.asList(mockRequest.apiPath))
-            .withRunType(Event.RunType.Manual)
+            .withRunType(Manual)
             .build();
     }
 
