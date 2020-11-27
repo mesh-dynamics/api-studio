@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import io.md.injection.InjectionExtractionMeta;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -60,23 +61,30 @@ class ReqRespStoreSolrTest {
     }
 
     @Test
-    void getPotentialDynamicInjectionConfigs() throws JsonProcessingException {
+    void getPotentialDynamicInjectionConfigs() throws JsonProcessingException, ReqRespStoreSolr.SolrStoreException {
         Config config = null;
         try {
             config = new Config();
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.print(
-            config.jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(
-                config.rrstore.getPotentialDynamicInjectionConfigs("Pronto",
-                    "ProntoApp",
-                    Optional.empty(),
-                    Optional.of(Arrays.asList("Recording-965809473")),
-                    Optional.empty(),
-                    Optional.empty()
-                )
-            )
-        );
+
+        String customer = "Pronto", app = "ProntoApp", version = "111";
+        Boolean discardSingleValue = true;
+
+        List<InjectionExtractionMeta> injectionExtractionMetaList = config.rrstore
+            .getPotentialDynamicInjectionConfigs(customer,
+                app,
+                Optional.empty(),
+                Optional.of(Arrays.asList("Recording-965809473")),
+                Optional.empty(),
+                Optional.of(discardSingleValue)
+            );
+
+        System.out.print(config.jsonMapper
+            .writerWithDefaultPrettyPrinter()
+            .writeValueAsString(injectionExtractionMetaList));
+
+        config.rrstore.saveDynamicInjectionConfigFromCsv(customer, app, version, injectionExtractionMetaList);
     }
 }
