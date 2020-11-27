@@ -1249,13 +1249,13 @@ public class CubeStore {
             Optional.ofNullable(queryParams.getFirst(Constants.RECORDING_TYPE_FIELD))
                 .flatMap(r -> Utils.valueOf(RecordingType.class, r));
         if(recordingType.isEmpty()) {
-            return Response.status(Status.BAD_REQUEST).
-                entity(String.format("No such Recording Type found")).build();
+            return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).
+                entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"No such Recording Type found")).build();
         }
         RecordingType type = recordingType.get();
         if(type== RecordingType.Golden && templateVersion.isEmpty()) {
             return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-                .entity(String.format("version needs to be given for a golden")).build();
+                .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"version needs to be given for a golden")).build();
         }
         return copyRecording(recordingId, name, label, templateVersion, userId, type);
     }
@@ -1270,8 +1270,8 @@ public class CubeStore {
                 .getRecordingByName(recording.customerId, recording.app, nameValue, Optional.of(labelValue)));
             if(recordingWithSameName.isPresent()) {
                 return Response.status(Response.Status.CONFLICT)
-                    .entity(String.format("Collection %s already active for customer %s, app %s, for instance %s. Use different name or label",
-                        recordingWithSameName.get().collection, recording.customerId, recording.app, recordingWithSameName.get().instanceId))
+                    .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,String.format("Collection %s already active for customer %s, app %s, for instance %s. Use different name or label",
+                        recordingWithSameName.get().collection, recording.customerId, recording.app, recordingWithSameName.get().instanceId)))
                     .build();
             }
             String collection = UUID.randomUUID().toString();
