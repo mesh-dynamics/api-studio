@@ -329,7 +329,8 @@ export const httpClientActions = {
             const fetchedUserHistoryCollection = serverRes.find((eachCollection) => (eachCollection.recordingType === "History"))
 
             if(!fetchedUserHistoryCollection) {
-                throw new Error("User history collection not present")
+                dispatch(httpClientActions.addUserHistoryCollection([]));
+                throw new Error("User history collection not present");
             } else {
                 dispatch(httpClientActions.addUserHistoryCollection(fetchedUserHistoryCollection));
             

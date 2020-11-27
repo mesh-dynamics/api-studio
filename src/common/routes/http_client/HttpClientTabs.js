@@ -1196,13 +1196,16 @@ class HttpClientTabs extends Component {
         const newTabs = [...currentTabs.slice(0, indexToRemove), ...currentTabs.slice(indexToRemove + 1)];
 
         const nextSelectedIndex = newTabs[indexToRemove] ? indexToRemove : indexToRemove - 1;
-        newTabs[nextSelectedIndex].isHighlighted = false;
+        let nextTabId = "";
         if (!newTabs[nextSelectedIndex]) {
-            alert('You can not delete the last tab!');
-            return;
+            dispatch(httpClientActions.removeTab(newTabs, nextTabId));
+            nextTabId = this.addTab(null, null, null, true)
+        }else{
+            nextTabId = newTabs[nextSelectedIndex].id;
+            newTabs[nextSelectedIndex].isHighlighted = false;
+            dispatch(httpClientActions.removeTab(newTabs, nextTabId));
         }
         
-        dispatch(httpClientActions.removeTab(newTabs, newTabs[nextSelectedIndex].id));
     }
 
     handleDeleteOutgoingReq(outgoingReqTabId, tabId) {
