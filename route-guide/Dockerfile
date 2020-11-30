@@ -2,7 +2,7 @@
 #build
 #############
 FROM maven:3.6.0-jdk-11-slim AS build
-COPY route-guide ./route-guide
+COPY ./ ./route-guide
 #Add settings.xml file for github auth
 #ARG TOKEN
 #RUN mkdir ~/.m2 && \

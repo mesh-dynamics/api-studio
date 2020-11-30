@@ -25,9 +25,12 @@ import static java.lang.Math.sqrt;
 import static java.lang.Math.toRadians;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.ServerInterceptors;
+import io.grpc.examples.routeguide.GuiderGrpc.GuiderBlockingStub;
 import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
@@ -36,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +55,12 @@ public class RouteGuideServer {
 
 	private final int port;
 	private final Server server;
+
+
+	static String BASE_URL = System.getenv("GUIDER_SERVICE_URL");
+	static String guiderServerTarget = BASE_URL != null ? BASE_URL : "localhost:9000/guider";
+	static ManagedChannel guiderServerChannel = ManagedChannelBuilder.forTarget(guiderServerTarget).usePlaintext().intercept().build();
+	static GuiderBlockingStub guiderServerBlockingStub = GuiderGrpc.newBlockingStub(guiderServerChannel);
 
 	public RouteGuideServer(int port) throws IOException {
 		this(port, RouteGuideUtil.getDefaultFeaturesFile());
@@ -147,7 +157,20 @@ public class RouteGuideServer {
 		 */
 		@Override
 		public void getFeature(Point request, StreamObserver<Feature> responseObserver) {
-			responseObserver.onNext(checkFeature(request));
+			String name = "It's a random name, " + UUID.randomUUID().toString();
+			Feature feature = Feature.newBuilder().setName(name).setLocation(request).build();
+			responseObserver.onNext(feature);
+			responseObserver.onCompleted();
+		}
+
+
+		@Override
+		public void getFeatureWithNote(Point request, StreamObserver<FeatureWithNote> responseObserver) {
+			System.out.println("Request getFeatureGuider:\n" + request.toString());
+			Feature feature = checkFeature(request);
+			FeatureWithNote featureWithNote = guiderServerBlockingStub.getFeatureWithNote(feature);
+			System.out.println("Response getFeatureGuider:\n" + featureWithNote.toString());
+			responseObserver.onNext(featureWithNote);
 			responseObserver.onCompleted();
 		}
 

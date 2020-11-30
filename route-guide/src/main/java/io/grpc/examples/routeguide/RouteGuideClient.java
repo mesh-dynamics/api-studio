@@ -65,6 +65,7 @@ public class RouteGuideClient {
 
     Feature feature;
     try {
+      System.out.println("Request getFeature:\n" + request.toString());
       feature = blockingStub.getFeature(request);
       if (testHelper != null) {
         testHelper.onMessage(feature);
@@ -87,6 +88,40 @@ public class RouteGuideClient {
           RouteGuideUtil.getLongitude(feature.getLocation()));
     }
   }
+
+  public void getFeatureWithNote(int lat, int lon) {
+    info("*** getFeatureGuider: lat={0} lon={1}", lat, lon);
+
+    Point request = Point.newBuilder().setLatitude(lat).setLongitude(lon).build();
+
+    FeatureWithNote featureWithNote;
+    try {
+      System.out.println("Request getFeatureGuider:\n" + request.toString());
+      featureWithNote = blockingStub.getFeatureWithNote(request);
+      if (testHelper != null) {
+        testHelper.onMessage(featureWithNote);
+      }
+    } catch (StatusRuntimeException e) {
+      warning("RPC failed: {0}", e.getStatus());
+      if (testHelper != null) {
+        testHelper.onRpcError(e);
+      }
+      return;
+    }
+    System.out.println("Response getFeatureGuider:\n" + featureWithNote.toString());
+
+//    if (RouteGuideUtil.exists(feature)) {
+//      info("Found feature called \"{0}\" at {1}, {2}",
+//          feature.getName(),
+//          RouteGuideUtil.getLatitude(feature.getLocation()),
+//          RouteGuideUtil.getLongitude(feature.getLocation()));
+//    } else {
+//      info("Found no feature at {0}, {1}",
+//          RouteGuideUtil.getLatitude(feature.getLocation()),
+//          RouteGuideUtil.getLongitude(feature.getLocation()));
+//    }
+  }
+
 
   /**
    * Blocking server-streaming example. Calls listFeatures with a rectangle of interest. Prints each
@@ -242,7 +277,14 @@ public class RouteGuideClient {
 
   /** Issues several different requests and then exits. */
   public static void main(String[] args) throws InterruptedException {
-    String target = "localhost:8980";
+//    String target = "localhost:8980";
+//    String target = "ae8543962e0be11ea9a68022977d7f01-457121265.us-east-2.elb.amazonaws.com:8980";
+//    String target = "staging-pm.dev.cubecorp.io:8980";
+      String target ="grpc.prod.v2.cubecorp.io:8980";
+//    String target = "staging-pm-replay.dev.cubecorp.io:8980";
+//    String target = "grpc.dev.cubecorp.io:8980";
+//    String target = "100.64.31.44/grpc:8980";
+
     if (args.length > 0) {
       if ("--help".equals(args[0])) {
         System.err.println("Usage: [target]");
@@ -264,24 +306,32 @@ public class RouteGuideClient {
     ManagedChannel channel = ManagedChannelBuilder.forTarget(target).usePlaintext().intercept().build();
     try {
       RouteGuideClient client = new RouteGuideClient(channel);
+      client.getFeature(10, -10);
+      client.getFeatureWithNote(409146138, -746188906);
+
+
+//      client.getFeature(100, -100);
+//      client.getFeatureWithNote(407838351, -746143763);
+
       // Looking for a valid feature
-      client.getFeature(409146138, -746188906);
+//      client.getFeature(409146138, -746188906);
+//      client.getFeature(10, -10);
 
-      // Feature missing.
-      client.getFeature(0, 0);
-
-      // Looking for features between 40, -75 and 42, -73.
-      client.listFeatures(400000000, -750000000, 420000000, -730000000);
-
-      // Record a few randomly selected points from the features file.
-      client.recordRoute(features, 10);
-
-      // Send and receive some notes.
-      CountDownLatch finishLatch = client.routeChat();
-
-      if (!finishLatch.await(1, TimeUnit.MINUTES)) {
-        client.warning("routeChat can not finish within 1 minutes");
-      }
+//      // Feature missing.
+//      client.getFeature(0, 0);
+//
+//      // Looking for features between 40, -75 and 42, -73.
+//      client.listFeatures(400000000, -750000000, 420000000, -730000000);
+//
+//      // Record a few randomly selected points from the features file.
+//      client.recordRoute(features, 10);
+//
+//      // Send and receive some notes.
+//      CountDownLatch finishLatch = client.routeChat();
+//
+//      if (!finishLatch.await(1, TimeUnit.MINUTES)) {
+//        client.warning("routeChat can not finish within 1 minutes");
+//      }
     } finally {
       channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
     }
