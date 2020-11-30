@@ -1873,7 +1873,7 @@ class HttpClientTabs extends Component {
                     </div>
                     <SideBarTabs onAddTab={this.addTab} showOutgoingRequests={this.showOutgoingRequests}/>
                 </aside>
-               <SplitSlider slidingElement={this.sliderRef}/>
+               <SplitSlider slidingElement={this.sliderRef} persistKey="VerticalSplitter_httpClientTabsSidebar"/>
                 <main className="content-wrapper" style={{ flex: "1", overflow: "auto", padding: "25px", margin: "0" }}>
                     {/* <div>
                         <div className="vertical-middle inline-block">

@@ -1,19 +1,57 @@
 import React, { useEffect, useState } from "react";
 import classNames from "classnames";
+import { IStoreState } from "../reducers/state.types";
+import { connect } from "react-redux";
+import { httpClientActions } from "../actions/httpClientActions";
+import _ from "lodash";
+import { cube } from "../reducers/cube.reducer";
 export interface ISplitSliderProps {
   slidingElement: HTMLDivElement;
   horizontal?: boolean;
   minSpace?: number; // Minimum height/width in pixels
+  persistKey?: string;
+  dispatch: any;
+  existingPosition: number;
 }
 let isMouseDown = false;
 let mousePositionDiff = 0;
-export default function SplitSlider(props: ISplitSliderProps) {
-  const sliderRef = React.createRef<HTMLDivElement>();
 
+export function SplitSlider(props: ISplitSliderProps) {
+  const sliderRef = React.createRef<HTMLDivElement>();
+  const [currentPosition, setPosition] = useState<number>(0);
+  
+  useEffect(() => {
+    props.existingPosition && setPosition(props.existingPosition);
+  }, [props.existingPosition]);
+
+  useEffect(() => {
+    if (props.slidingElement) {
+      if (props.horizontal) {
+        props.slidingElement.style.height = currentPosition + "px";
+      } else {
+        props.slidingElement.style.width = currentPosition + "px";
+      }
+    }
+  }, [currentPosition]);
+
+  const onPositionChange = React.useCallback(
+    _.debounce((position) => {
+      setPosition(position);
+      props.dispatch(
+        httpClientActions.setUiPreferenceKey(props.persistKey, position)
+      );
+    }, 1000),
+    []
+  );
+
+  const persistValue = (position: number) => {
+    props.persistKey && onPositionChange(position);
+  };
   const getMin = (position: number) => {
     if (props.minSpace) {
       position = Math.max(props.minSpace, position);
     }
+    persistValue(position);
     return position;
   };
 
@@ -67,3 +105,14 @@ export default function SplitSlider(props: ISplitSliderProps) {
   });
   return <div className={className} ref={sliderRef}></div>;
 }
+
+const mapStateToProps = (state: IStoreState, props: ISplitSliderProps) => ({
+  existingPosition:
+    props.persistKey && state.httpClient.uiPref
+      ? state.httpClient.uiPref[props.persistKey]
+      : 0,
+});
+
+const connectedSplitSlider = connect(mapStateToProps)(SplitSlider);
+
+export default connectedSplitSlider;

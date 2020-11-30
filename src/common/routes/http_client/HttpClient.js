@@ -82,7 +82,7 @@ class HttpClient extends Component {
             diffLayoutData: null,
             showCompleteDiff: false,
             prevSelectedTraceTableReqTabId: this.props.currentSelectedTab.selectedTraceTableReqTabId,
-            prevSelectedTraceTableTestReqTabId: this.props.currentSelectedTab.selectedTraceTableTestReqTabId,
+            prevRunId: this.props.currentSelectedTab.currentRunId,
             httpRequestRef: null,
             matchRequestShowPopup: false
         };
@@ -105,10 +105,10 @@ class HttpClient extends Component {
                 showCompleteDiff: false
             }
         }
-        if(props.currentSelectedTab.selectedTraceTableTestReqTabId != state.prevSelectedTraceTableTestReqTabId){
+        if(props.currentSelectedTab.currentRunId != state.prevRunId){
             newState = {
                 ...newState,
-                prevSelectedTraceTableTestReqTabId: props.currentSelectedTab.selectedTraceTableTestReqTabId,
+                prevRunId: props.currentSelectedTab.currentRunId,
                 showCompleteDiff: false
             }
         }
@@ -173,7 +173,6 @@ class HttpClient extends Component {
     }
 
     handleShowDiff() {
-        const { showCompleteDiff } = this.state;
         const { currentSelectedTab } = this.props;
         const selectedTraceTableReqTabId = currentSelectedTab.selectedTraceTableReqTabId;
         const selectedTraceTableTestReqTabId = currentSelectedTab.selectedTraceTableTestReqTabId;
@@ -794,7 +793,11 @@ class HttpClient extends Component {
                                 />)}
                                 </div>
                         </div>
-                        <SplitSlider slidingElement={this.state.httpRequestRef} horizontal minSpace={(selectedTraceTableReqTab.paramsType == "body" ? 200: 50)}/> 
+                        <SplitSlider 
+                            slidingElement={this.state.httpRequestRef} 
+                            horizontal 
+                            persistKey={`HorizontalSplitter_${selectedTraceTableReqTabId}`}
+                            minSpace={(selectedTraceTableReqTab.paramsType == "body" ? 200: 50)}/> 
                         <HttpResponseMessage 
                             tabId={selectedTraceTableReqTab.id}
                             /** Belongs to RHS */

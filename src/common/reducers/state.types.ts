@@ -463,6 +463,7 @@ export interface IHttpClientStoreState {
   userHistoryCollection: ICollectionDetails | null;
   mockContextLookupCollection: string;
   mockContextSaveToCollection: ICollectionDetails;
+  uiPref: IKeyValuePairs<any>;
 }
 
 // Navigation State
