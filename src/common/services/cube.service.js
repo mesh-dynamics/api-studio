@@ -4,6 +4,8 @@ import _ from 'lodash';
 import { getDefaultTraceApiFilters } from "../utils/api-catalog/api-catalog-utils";
 import arrayToTree from "array-to-tree";
 
+import {stringify} from 'query-string'
+
 // TODO: replace console log statements with logging
 const fetchAppsList = async () => {
     try {
@@ -624,6 +626,12 @@ const fetchPreRequest = async (collectionId, runId, preRequestData, app, cancelT
     return await api.post(preRequestUrl, preRequestData, {cancelToken});
 }
 
+const copyRecording = async (collectionId, copyRecordingData) => {
+
+    const copyRecordingUrl = `${config.recordBaseUrl}/copyRecording/${collectionId}?` + stringify(copyRecordingData);
+    return await api.post(copyRecordingUrl, copyRecordingData);
+}
+
 export const cubeService = {
     fetchAppsList,
     getInstanceList,
@@ -668,5 +676,6 @@ export const cubeService = {
     createUserCollection,
     storeUserReqResponse,
     fetchPreRequest,
-    afterResponse
+    afterResponse,
+    copyRecording,
 };

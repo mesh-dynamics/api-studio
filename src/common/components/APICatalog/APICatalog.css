@@ -1,0 +1,15 @@
+.cube-nav-btn,
+.cube-nav-btn:focus {
+  width: 100%;
+  margin-top: 13px;
+  color: #ffffff;
+  background: #616060;
+}
+
+.cube-nav-btn:hover {
+  background: #00b2ff;
+}
+
+.margin-left-10 {
+  margin-left: 10px;
+}

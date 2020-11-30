@@ -547,7 +547,7 @@ class HttpClient extends Component {
                     </div>
                 </div>
                     <div style={{display: showTraceV ? "flex" : "none", backgroundColor: "#ffffff", marginBottom: "9px"}}>
-                        <div style={{flex: "1", padding: "0.5rem"}}>
+                        <div style={{flex: "1", padding: "0.5rem", minWidth: "0px"}}>
                             <div>Reference</div>
                             <Table hover style={{backgroundColor: "#fff", border: "1px solid #ddd", borderSpacing: "0px", borderCollapse: "separate", marginBottom: "0px"}}>
                                 <thead>
@@ -613,7 +613,7 @@ class HttpClient extends Component {
                                 </div>
                             </div>
                         </div>
-                        <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0"}}>
+                        <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0", minWidth: "0px"}}>
                             {currentSelectedTab.recordedHistory && (
                                 <div>
                                     <div>Test</div>

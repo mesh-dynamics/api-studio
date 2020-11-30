@@ -9,6 +9,7 @@ import { apiCatalogActions } from '../../actions/api-catalog.actions';
 import classNames from 'classnames';
 import { DropdownButton, MenuItem, FormControl} from 'react-bootstrap';
 import GoldenCollectionBrowse from './GoldenCollectionBrowse';
+import ConvertCollection from './ConvertCollection';
 
 class APICatalogFilter extends Component {
 
@@ -146,9 +147,13 @@ class APICatalogFilter extends Component {
                         
 
                         {selectedSource && <div>
-                        {(selectedSource==="UserGolden" || selectedSource==="Golden") && <div>
+                        {(selectedSource==="UserGolden" || selectedSource==="Golden") && 
+                        <>
+                        <div>
                             <GoldenCollectionBrowse selectedSource={selectedSource}/> 
-                        </div>}
+                        </div>
+                            <ConvertCollection  selectedSource={selectedSource} />
+                        </>}
 
                             {selectedSource=="Capture" && <div>
                                 <div className="margin-top-10">
