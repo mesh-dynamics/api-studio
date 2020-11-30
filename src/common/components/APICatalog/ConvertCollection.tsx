@@ -16,6 +16,8 @@ import {
   IUserAuthDetails,
 } from "../../reducers/state.types";
 import { cubeService } from "../../services";
+import { apiCatalogActions } from "../../actions/api-catalog.actions";
+import { cubeActions } from "../../actions";
 
 export interface IConvertCollectionState {
   isPopupVisible: boolean;
@@ -36,6 +38,7 @@ export interface IConvertCollectionProps {
   collectionList: ICollectionDetails[];
   username: string;
   app: string;
+  dispatch: any;
 }
 
 class ConvertCollection extends Component<
@@ -178,6 +181,16 @@ class ConvertCollection extends Component<
             : "Test suite created successfully",
           isLoading: false,
         });
+
+        this.props.dispatch(cubeActions.getTestIds(app));
+
+        isGolden
+          ? this.props.dispatch(
+              apiCatalogActions.fetchGoldenCollectionList(app, "UserGolden")
+            )
+          : this.props.dispatch(
+              apiCatalogActions.fetchGoldenCollectionList(app, "Golden")
+            );
       })
       .catch((error) => {
         console.error(error);
@@ -265,7 +278,7 @@ class ConvertCollection extends Component<
               onClick={this.dismissHandler}
               className="cube-btn  margin-right-10"
             >
-              Cancel
+              Close
             </span>
             <span onClick={this.convertToTestSuite} className="cube-btn">
               Proceed
@@ -285,8 +298,7 @@ const mapStateToProps = (state: IStoreState) => {
     goldenList,
     collectionList,
   } = state.apiCatalog;
-  const username = (state.authentication.user as IUserAuthDetails)
-    .username;
+  const username = (state.authentication.user as IUserAuthDetails).username;
 
   return {
     selectedSource,
