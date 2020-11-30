@@ -161,8 +161,7 @@ public class CubeServerService {
                 ArrayNode arrayNode = (ArrayNode) responseBody;
                 arrayNode.forEach(node -> {
                     try {
-                        JsonNode nodeTree = jsonMapper.readTree(node.textValue());
-                        JsonNode extractionMapJson = jsonMapper.readTree(nodeTree.get("extractionMap").textValue());
+                        JsonNode extractionMapJson = jsonMapper.readTree(node.get("extractionMap").textValue());
                         TypeReference<HashMap<String,String>> typeRef
                             = new TypeReference<HashMap<String,String>>() {};
                         ObjectReader reader = jsonMapper.readerFor(typeRef);
