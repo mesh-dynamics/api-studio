@@ -11,8 +11,6 @@ public class AppDTO {
 
     private Long id;
 
-    private String name;
-
     private String displayName;
 
     private Long customerId;
@@ -20,5 +18,4 @@ public class AppDTO {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
-
 }

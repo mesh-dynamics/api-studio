@@ -1,26 +1,29 @@
 package com.cubeui.backend;
 
-import com.cubeui.backend.domain.*;
+import com.cubeui.backend.domain.App;
+import com.cubeui.backend.domain.AppFile;
+import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.CustomerDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
-import com.cubeui.backend.repository.*;
+import com.cubeui.backend.domain.User;
+import com.cubeui.backend.repository.AppRepository;
+import com.cubeui.backend.repository.CustomerRepository;
+import com.cubeui.backend.repository.EmailDomainRepository;
+import com.cubeui.backend.repository.UserRepository;
+import com.cubeui.backend.service.AppFileStorageService;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.service.UserService;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
-import lombok.*;
+import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-
-import java.util.Arrays;
-import java.util.Optional;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
 @Setter
 @Getter
@@ -43,10 +46,12 @@ public class DataInitializer implements CommandLineRunner {
 
     private HttpServletRequest httpServletRequest;
 
+    private AppFileStorageService appFileStorageService;
+
     public DataInitializer(UserService userService, CustomerService customerService,
         CustomerRepository customerRepository, UserRepository userRepository,
         EmailDomainRepository emailDomainRepository, AppRepository appRepository,
-        HttpServletRequest httpServletRequest) {
+        HttpServletRequest httpServletRequest, AppFileStorageService appFileStorageService) {
 
         this.userService = userService;
         this.customerService = customerService;
@@ -55,6 +60,7 @@ public class DataInitializer implements CommandLineRunner {
         this.emailDomainRepository = emailDomainRepository;
         this.appRepository = appRepository;
         this.httpServletRequest = httpServletRequest;
+        this.appFileStorageService = appFileStorageService;
     }
 
     @Override
@@ -91,6 +97,10 @@ public class DataInitializer implements CommandLineRunner {
             if (app.getDisplayName() == null) {
                 app.setDisplayName(app.getName());
                 this.appRepository.save(app);
+            }
+            Optional<AppFile> appFile = this.appFileStorageService.getFileByAppId(app.getId());
+            if(appFile.isEmpty()) {
+                this.appFileStorageService.storeFile(null, app);
             }
         });
 

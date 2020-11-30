@@ -46,4 +46,7 @@ public class App {
 
     @Column(length = 200)
     String displayName;
+
+    @Column(length = 200)
+    String userId;
 }
