@@ -30,6 +30,6 @@ security:
 logging:
     level:
         org.springframework.web: INFO
-        org.springframework.security: DEBUG
+        org.springframework.security: INFO
         com.cubeio.logcollector: DEBUG
     file: app.log
