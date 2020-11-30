@@ -75,6 +75,7 @@ public class AppFileStorageService {
     );
   }
 
+  @Transactional
   public void deleteFileByAppId(Long appId) {
     this.appFileRepository.findByAppId(appId).ifPresent(appFile -> this.appFileRepository.delete(appFile));
   }
