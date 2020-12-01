@@ -135,7 +135,7 @@ const proxyRequestInterceptorLiveService = (proxyReq, serviceConfigObject) => {
     logger.info('Removing restricted headers');
 
     proxyReq.removeHeader('connection');
-    proxyReq.removeHeader('content-length');
+    // proxyReq.removeHeader('content-length');
     proxyReq.removeHeader('date');
     proxyReq.removeHeader('expect');
     proxyReq.removeHeader('from');
