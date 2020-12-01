@@ -1652,7 +1652,8 @@ public class CubeStore {
                         rrstore.commit();
                         traceId = traceIdMap.get(request.getTraceId());
                         if(traceId == null) {
-                            traceId = io.md.utils.Utils.generateTraceId() ;
+                            //traceId = io.md.utils.Utils.generateTraceId() ;
+                            traceId = request.getTraceId();
                             traceIdMap.put(request.getTraceId(), traceId);
                         }
                     }
