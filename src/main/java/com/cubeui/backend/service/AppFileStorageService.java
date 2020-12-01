@@ -16,6 +16,7 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 public class AppFileStorageService {
 
-  private static List<String> ALLOWED_FILETYPES = List.of("image/jpeg", "image/jpg");
+  private static List<String> ALLOWED_FILETYPES = List.of("image/jpeg", "image/jpg", "image/png");
   @Autowired
   private AppFileRepository appFileRepository;
 
@@ -39,12 +40,7 @@ public class AppFileStorageService {
         multipartFile = new CustomMultipartFile(buffer, "appImage.jpg", "image/jpg");
       }
 
-      String fileName = StringUtils.cleanPath(multipartFile.getOriginalFilename());
-      // Check if the multipartFile's name contains invalid characters
-      if(fileName.contains("..")) {
-        log.error("Sorry! Filename contains invalid path sequence ", fileName);
-        throw new FileStorageException("Sorry! Filename contains invalid path sequence " + fileName);
-      }
+      String fileName = app.getName() + "-image." + FilenameUtils.getExtension(multipartFile.getOriginalFilename());
 
       if(!ALLOWED_FILETYPES.contains(multipartFile.getContentType())) {
         log.error("supported file types are jpg and jpeg only" , multipartFile.getContentType());

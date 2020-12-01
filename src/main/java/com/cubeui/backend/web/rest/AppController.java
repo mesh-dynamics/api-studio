@@ -144,11 +144,12 @@ public class AppController {
             customer = customerService.getById(appDTO.getCustomerId());
             if(customer.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("Customer with ID '" + appDTO.getCustomerId() + "' not found."));
         }
+        App existingApp = existing.get();
         customer.ifPresent(givenCustomer -> {
             if(!user.getRoles().contains(Role.ROLE_ADMIN)) {
                 validation.validateCustomerName(authentication, givenCustomer.getName());
             }
-            existing.get().setCustomer(givenCustomer);
+            existingApp.setCustomer(givenCustomer);
         });
         Optional.ofNullable(appDTO.getDisplayName()).ifPresent((displayName -> {
             Optional<App> app = this.appRepository.findByDisplayNameAndCustomerId(displayName, appDTO.getCustomerId());
@@ -156,9 +157,10 @@ public class AppController {
                 if(givenApp.getId() != appDTO.getId() ) {
                     throw new DuplicateRecordException("App with same display name exists");
                 }
-            }, () -> existing.get().setDisplayName(displayName));
+            }, () -> existingApp.setDisplayName(displayName));
         }));
-        this.appRepository.save(existing.get());
+        existingApp.setUserId(user.getUsername());
+        this.appRepository.save(existingApp);
         if(file != null) {
             this.appFileStorageService.deleteFileByAppId(appDTO.getId());
             this.appFileStorageService.storeFile(file, existing.get());

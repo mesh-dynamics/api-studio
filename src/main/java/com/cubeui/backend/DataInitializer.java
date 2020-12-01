@@ -94,8 +94,16 @@ public class DataInitializer implements CommandLineRunner {
          */
         List<App> apps = appRepository.findAll();
         apps.forEach(app -> {
+            boolean update = false;
             if (app.getDisplayName() == null) {
                 app.setDisplayName(app.getName());
+                update = true;
+            }
+            if(app.getUserId() == null) {
+                app.setUserId(app.getCustomer().getEmail());
+                update = true;
+            }
+            if(update) {
                 this.appRepository.save(app);
             }
             Optional<AppFile> appFile = this.appFileStorageService.getFileByAppId(app.getId());
