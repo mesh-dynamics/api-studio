@@ -1036,6 +1036,7 @@ class HttpClientTabs extends Component {
         // generate a new run id every time a request is run
         const runId = generateRunId();
         const mockConfig = getCurrentMockConfig(mockConfigList, selectedMockConfig);
+        const traceId = tabs[tabIndex].traceIdAddedFromClient;
         const spanId = tabToProcess.eventData[0].spanId;
 
         if(PLATFORM_ELECTRON) {
@@ -1044,7 +1045,7 @@ class HttpClientTabs extends Component {
                 // recordingId: this.state.tabs[tabIndex].recordingIdAddedFromClient,
                 recordingCollectionId: tabs[tabIndex].collectionIdAddedFromClient || (mockContextLookupCollection || userHistoryCollection.collec),
                 recordingId: userHistoryCollection.id,
-                traceId: tabs[tabIndex].traceIdAddedFromClient,
+                traceId: traceId,
                 selectedApp,
                 customerName: customerId,
                 runId: runId,
@@ -1136,6 +1137,8 @@ class HttpClientTabs extends Component {
         let fetchedResponseHeaders = {}, responseStatus = "", responseStatusText = "";
         const startDate = new Date(Date.now() - 2 * 1000).toISOString();
         fetchConfigRendered.signal = tabToProcess.abortRequest.signal;
+        // TODO: Update this to be visible from UI
+        fetchConfigRendered.headers.append('md-trace-id', encodeURIComponent(`${traceId}:${spanId}:0:1`) );
         let resTimestamp;
         return fetch(fetchUrlRendered, fetchConfigRendered).then(async(response) => {
             const resISODate = new Date().toISOString();
