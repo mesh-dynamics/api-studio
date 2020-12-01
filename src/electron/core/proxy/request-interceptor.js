@@ -124,7 +124,9 @@ const proxyRequestInterceptorMockService = (proxyReq, mockContext, user) => {
  * @param {*} proxyReq 
  * @param {*} serviceConfigObject 
  */
-const proxyRequestInterceptorLiveService = (proxyReq, serviceConfigObject) => {
+const proxyRequestInterceptorLiveService = (proxyReq, serviceConfigObject, mockContext) => {
+
+    const { traceId, spanId } = mockContext;
 
     logger.info('Method intercepted in proxy request:', proxyReq.method);
 
@@ -146,6 +148,9 @@ const proxyRequestInterceptorLiveService = (proxyReq, serviceConfigObject) => {
     proxyReq.removeHeader('warning');
     proxyReq.removeHeader('transfer-encoding');
     proxyReq.removeHeader('accept-encoding');
+
+    logger.info('Setting md-trace-id for live service', `${traceId}:${spanId}:0:1`);
+    proxyReq.setHeader('md-trace-id', encodeURIComponent(`${traceId}:${spanId}:0:1`));
 
     logger.info('Logging Request Headers for Live Service after removing request headers', proxyReq._headers);
 
