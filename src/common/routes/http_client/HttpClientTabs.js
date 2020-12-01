@@ -1138,7 +1138,7 @@ class HttpClientTabs extends Component {
         const startDate = new Date(Date.now() - 2 * 1000).toISOString();
         fetchConfigRendered.signal = tabToProcess.abortRequest.signal;
         // TODO: Update this to be visible from UI
-        fetchConfigRendered.headers.append('md-trace-id', encodeURIComponent(`${traceId}:${spanId}:0:1`) );
+        // fetchConfigRendered.headers.append('md-trace-id', encodeURIComponent(`${traceId}:${spanId}:0:1`) );
         let resTimestamp;
         return fetch(fetchUrlRendered, fetchConfigRendered).then(async(response) => {
             const resISODate = new Date().toISOString();
@@ -1587,21 +1587,32 @@ class HttpClientTabs extends Component {
 
 
     addTab(evt, reqObject, givenApp, isSelected = true) {
+        let traceId;
+        let spanId;
+        const httpRequestEventIndex = 0;
         const { dispatch, user, httpClient: {selectedTabKey} } = this.props;
         const tabId = uuidv4();
         const requestId = uuidv4();
         const { app } = this.state;
         const appAvailable = givenApp ? givenApp : app ? app : "";
         if (!reqObject) {
-            const traceId = cryptoRandomString({length: 32});
+            traceId = cryptoRandomString({length: 16});
+            spanId = cryptoRandomString({length: 16});
             const { cube: { selectedApp } } = this.props;
             const customerId = user.customer_name;
             const eventData = this.generateEventdata(selectedApp, customerId, traceId);
+            const mdTraceHeader = {
+                description: "",
+                id: uuidv4(),
+                name: "md-trace-id",
+                selected: true,
+                value: encodeURIComponent(`${traceId}:${spanId}:0:1`)
+            };
             reqObject = {
                 httpMethod: "get",
                 httpURL: "",
                 httpURLShowOnly: "",
-                headers: [],
+                headers: [mdTraceHeader],
                 queryStringParams: [],
                 bodyType: "formData",
                 formData: [],
@@ -1630,8 +1641,23 @@ class HttpClientTabs extends Component {
                 traceIdAddedFromClient: traceId,
                 recordedHistory: null
             };
+        } else {
+            traceId = reqObject.eventData[httpRequestEventIndex].traceId;
+            spanId = reqObject.eventData[httpRequestEventIndex].spanId;
+    
+            const mdTraceHeader = { 
+                description: "",
+                id: uuidv4(),
+                name: "md-trace-id",
+                selected: true,
+                value: encodeURIComponent(`${traceId}:${spanId}:0:1`) 
+            }
+            reqObject.headers.push(mdTraceHeader);
         }
+        
         const nextSelectedTabId = isSelected ?  tabId : selectedTabKey;
+        
+        
         dispatch(httpClientActions.addTab(tabId, reqObject, appAvailable, nextSelectedTabId, reqObject.httpURL ? reqObject.httpURL : "New"));
         return tabId;
     }
