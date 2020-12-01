@@ -43,4 +43,10 @@ public class App {
 
     @UpdateTimestamp
     LocalDateTime updatedAt;
+
+    @Column(length = 200)
+    String displayName;
+
+    @Column(length = 200)
+    String userId;
 }
