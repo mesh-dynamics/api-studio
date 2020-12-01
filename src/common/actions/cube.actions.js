@@ -69,6 +69,14 @@ function getApps () {
             const { selectedApp } = getState().cube;
             if(!selectedApp) {
                 let appsList = await cubeService.fetchAppsList();
+                //This is temporary fix. We need to change all usage of these variables in UI first then remove following statement of copy to parent
+                appsList.forEach(app=> {
+                    app.name = app.app.name;
+                    app.id = app.app.id;
+                    app.customer = app.app.customer;
+                    app.createdAt = app.app.createdAt;
+                    app.updatedAt = app.app.updatedAt;
+                })
                 dispatch(success(appsList, Date.now()));
                 dispatch(cubeActions.setSelectedApp(appsList[0].name));
                 dispatch(cubeActions.getGraphDataByAppId(appsList[0].id));
