@@ -103,7 +103,7 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
         logger.info(`Service : ${service} configured to be live`);
         
         logger.info('Attaching REQUEST INTERCEPTOR for live service');
-        proxy.on('proxyReq', (proxyReq) => proxyRequestInterceptorLiveService(proxyReq, serviceConfigObject));
+        proxy.on('proxyReq', (proxyReq) => proxyRequestInterceptorLiveService(proxyReq, serviceConfigObject, mockContext));
     
         logger.info('Attaching RESPONSE INTERCEPTOR for live service');
         proxy.on(
