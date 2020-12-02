@@ -76,7 +76,7 @@ const setupProxy = (mockContext, user) => {
 
             // if traceId isn't present in the mock context, generate a new one (for every request)
             // this is to avoid stored requests from getting deleted by storeUserReqResp call
-            mockContext.traceId = mockContext.traceId || cryptoRandomString({length: 32});
+            mockContext.traceId = mockContext.traceId || cryptoRandomString({length: 16});
 
             const proxyOptionParameters = {
                 user,
