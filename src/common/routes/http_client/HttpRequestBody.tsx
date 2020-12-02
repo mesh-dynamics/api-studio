@@ -109,7 +109,7 @@ class HttpRequestBody extends Component<
           className=""
           style={{
             marginBottom: "12px",
-            height: "40px",
+            minHeight: "40px",
             display: this.props.showBody ? "" : "none",
           }}
         >
@@ -199,6 +199,7 @@ class HttpRequestBody extends Component<
               <i className="fa fa-align-center" aria-hidden="true"></i> Format
             </span>
           </div>
+          <div style={{clear: "both"}}/>
         </div>
         <div
           style={{

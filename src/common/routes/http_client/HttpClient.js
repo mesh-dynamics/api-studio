@@ -708,6 +708,7 @@ class HttpClient extends Component {
                                     bodyType={selectedTraceTableReqTab.bodyType}
                                     formData={selectedTraceTableReqTab.formData} 
                                     rawData={selectedTraceTableReqTab.rawData}
+                                    grpcData={selectedTraceTableReqTab.grpcData}
                                     rawDataType={selectedTraceTableReqTab.rawDataType}
                                     paramsType={selectedTraceTableReqTab.paramsType}
                                     updateParam={this.props.updateParam}
@@ -728,6 +729,7 @@ class HttpClient extends Component {
                                         bodyType={selectedTraceTableTestReqTab.bodyType}
                                         formData={selectedTraceTableTestReqTab.formData} 
                                         rawData={selectedTraceTableTestReqTab.rawData}
+                                        grpcData={selectedTraceTableTestReqTab.grpcData}
                                         rawDataType={selectedTraceTableTestReqTab.rawDataType}
                                         paramsType={selectedTraceTableReqTab.paramsType}
                                         updateParam={this.props.updateParam}

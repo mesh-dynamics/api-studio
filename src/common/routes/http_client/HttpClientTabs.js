@@ -219,9 +219,10 @@ class HttpClientTabs extends Component {
                 queryStringParams: toBeCopiedFromData.queryStringParams,
                 bodyType: toBeCopiedFromData.bodyType,
                 formData: toBeCopiedFromData.formData,
-                rawData: toBeCopiedFromData.rawData,
                 rawDataType: toBeCopiedFromData.rawDataType,
-                paramsType: "showQueryParams",
+                rawData: toBeCopiedFromData.rawData,
+                grpcData: toBeCopiedFromData.grpcData,
+                paramsType: toBeUpdatedData.paramsType,
                 responseStatus: toBeCopiedFromData.responseStatus,
                 responseStatusText: toBeCopiedFromData.responseStatusText,
                 responseHeaders: toBeCopiedFromData.responseHeaders,
@@ -1494,7 +1495,7 @@ class HttpClientTabs extends Component {
         const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
         const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
 
-        const { headers, queryParams, formData, rawData, rawDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
+        const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
         
         let reqObject = {
             id: uuidv4(),
@@ -1503,10 +1504,12 @@ class HttpClientTabs extends Component {
             httpURLShowOnly: httpRequestEvent.metaData.httpURL || httpRequestEvent.apiPath,
             headers: headers,
             queryStringParams: queryParams,
-            bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
+            bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : grpcData && grpcData.length > 0 ? "grpcData" : "formData",
             formData: formData,
             rawData: rawData,
             rawDataType: rawDataType,
+            grpcData: grpcData,
+            grpcDataType: grpcDataType,
             paramsType: "showQueryParams",
             responseStatus: "NA",
             responseStatusText: "",
@@ -1531,7 +1534,7 @@ class HttpClientTabs extends Component {
             apiPath: httpRequestEvent.apiPath,
             requestRunning: false,
             showTrace: null,
-            metaData: httpResponseEvent.metaData
+            metaData: httpResponseEvent ? httpResponseEvent.metaData : {}
         };
         return reqObject;
     }
