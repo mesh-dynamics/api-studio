@@ -1647,12 +1647,13 @@ public class CubeStore {
                     }
                     String traceId = request.getTraceId();
                     if (rec.recordingType == RecordingType.UserGolden) {
-                        String oldTraceId = request.getTraceId();
-                        rrstore.deleteReqResByTraceId(oldTraceId, rec.collection);
-                        rrstore.commit();
                         traceId = traceIdMap.get(request.getTraceId());
                         if(traceId == null) {
-                            //traceId = io.md.utils.Utils.generateTraceId() ;
+                            String oldTraceId = request.getTraceId();
+                            rrstore.deleteReqResByTraceId(oldTraceId, rec.collection);
+                            rrstore.commit();
+
+                            //traceId = io.md.utils.Utils.generateTraceId() ; // reuse same trace id for now
                             traceId = request.getTraceId();
                             traceIdMap.put(request.getTraceId(), traceId);
                         }
