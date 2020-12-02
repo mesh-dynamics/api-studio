@@ -1306,10 +1306,16 @@ public class CubeStore {
                 EventQuery.Builder builder = new EventQuery.Builder(recording.customerId, recording.app, Collections.emptyList());
                 builder.withCollection(recording.collection);
                 Result<Event> result = rrstore.getEvents(builder.build());
+                Map<String, String> reqIdMap = new HashMap<>();
                 result.getObjects().forEach(event -> {
                     try {
-                        final String reqId = io.md.utils.Utils.generateRequestId(
-                            event.service, event.getTraceId());
+                        String reqId = reqIdMap.get(event.getReqId());
+                        if(reqId == null) {
+                            String oldReqId = event.getReqId();
+                            reqId = io.md.utils.Utils.generateRequestId(
+                                event.service, event.getTraceId());
+                            reqIdMap.put(oldReqId, reqId);
+                        }
                         Event newEvent = buildEvent(event, collection,  type, reqId, event.getTraceId(), Optional.of(timeStamp.toString()));
                         rrstore.save(newEvent);
                     } catch (InvalidEventException e) {
