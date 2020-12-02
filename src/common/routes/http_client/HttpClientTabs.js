@@ -1114,7 +1114,7 @@ class HttpClientTabs extends Component {
                 requestEvent : formattedData.request,
                 environmentName: selectedEnvironment,
                 injectionConfigVersion: `Default${selectedApp}`,
-                contextMap: !selectedEnvironment && contextMap ? contextMap : {},
+                contextMap:  contextMap || {},
             }
             const preRequestResult = await cubeService.fetchPreRequest(userHistoryCollection.id, runId, preRequestData, selectedApp, tabToProcess.abortRequest.cancelToken);
         
@@ -1309,7 +1309,7 @@ class HttpClientTabs extends Component {
 
         if(httpRequestEvent.reqId === "NA") {
             const parsedUrl = urlParser(applyEnvVarsToUrl(tabToSave.httpURL), PLATFORM_ELECTRON ? {} : true);
-            let service = parsedUrl.host || "NA";
+            let service = httpRequestEvent.service != "NA" ? httpRequestEvent.service : (parsedUrl.host || "NA");
             httpRequestEvent = this.updateHttpEvent(apiPath, service, httpRequestEvent);
             httpResponseEvent = this.updateHttpEvent(apiPath, service, httpResponseEvent);
             httpRequestEvent.metaData.typeOfRequest = "devtool";
