@@ -93,10 +93,7 @@ public class MockServiceHTTP {
                               byte[] body) {
         LOGGER.info(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s, body: %s", customerId, app, path,
             ui.toString(), body));
-        //TODO currently doing fuzzy mock matching for grpc
-        MockWithCollection mockWithCollection = io.md.utils.Utils.getMockCollection(rrstore , customerId , app , instanceId,
-            io.md.utils.Utils.getMimeType(headers.getRequestHeaders()).orElse(MediaType.TEXT_PLAIN).toLowerCase()
-            .startsWith(io.md.constants.Constants.APPLICATION_GRPC));
+        MockWithCollection mockWithCollection = io.md.utils.Utils.getMockCollection(rrstore , customerId , app , instanceId, false);
         return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service, httpMethod , body, headers.getRequestHeaders(), mockWithCollection
             , Optional.empty());
     }
