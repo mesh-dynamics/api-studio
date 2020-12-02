@@ -11,8 +11,8 @@ import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.cube.agent.CommonConfig;
 import io.md.utils.CommonUtils;
@@ -20,7 +20,7 @@ import io.md.utils.CommonUtils;
 @Priority(4001)
 public class ClientMockingFilter implements ClientRequestFilter {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ClientMockingFilter.class);
+	private static final Logger LOGGER = LogMgr.getLogger(ClientMockingFilter.class);
 
 	@Override
 	public void filter(ClientRequestContext requestContext) throws IOException {

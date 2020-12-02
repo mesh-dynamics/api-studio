@@ -17,10 +17,10 @@ import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.RuntimeDelegate;
 import javax.ws.rs.ext.RuntimeDelegate.HeaderDelegate;
 
+import io.md.logger.LogMgr;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.ContainerRequestFilter;
@@ -38,7 +38,7 @@ import io.opentracing.Span;
 public class LoggingFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
 	public static final String EMPTY = "";
-	private static final Logger LOGGER = LoggerFactory.getLogger(LoggingFilter.class);
+	private static final Logger LOGGER = LogMgr.getLogger(LoggingFilter.class);
 
 	@Override
 	public ContainerRequest filter(ContainerRequest containerRequest) {

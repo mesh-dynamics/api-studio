@@ -2,12 +2,11 @@ package io.cube.interceptor.jersey_1x.egress;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.sun.jersey.api.client.ClientHandlerException;
 import com.sun.jersey.api.client.ClientRequest;
@@ -15,12 +14,11 @@ import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.filter.ClientFilter;
 
 import io.cube.agent.CommonConfig;
-import io.md.constants.Constants;
 import io.md.utils.CommonUtils;
 
 public class ClientMockingFilter extends ClientFilter {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ClientMockingFilter.class);
+  private static final Logger LOGGER = LogMgr.getLogger(ClientMockingFilter.class);
 
   @Override
   public ClientResponse handle(ClientRequest clientRequest) throws ClientHandlerException {

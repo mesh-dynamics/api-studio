@@ -10,8 +10,8 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.md.constants.Constants;
 import io.md.utils.CommonUtils;
@@ -25,7 +25,7 @@ import io.md.utils.CommonUtils;
 @Priority(value = 4502)
 public class MDClientTracingFilter implements ClientRequestFilter {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(MDClientTracingFilter.class);
+	private static final Logger LOGGER = LogMgr.getLogger(MDClientTracingFilter.class);
 
 	@Override
 	public void filter(ClientRequestContext clientRequestContext) {

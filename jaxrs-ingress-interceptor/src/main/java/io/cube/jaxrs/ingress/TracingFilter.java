@@ -13,9 +13,9 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
+import io.md.logger.LogMgr;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.cube.agent.CommonConfig;
 import io.md.constants.Constants;
@@ -29,7 +29,7 @@ import io.opentracing.Span;
 @Priority(3000)
 public class TracingFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(TracingFilter.class);
+	private static final Logger LOGGER = LogMgr.getLogger(TracingFilter.class);
 	private static final Config config = new Config();
 
 	public static final String scopeKey

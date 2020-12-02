@@ -1,15 +1,13 @@
 package io.cube.interceptor.jersey_1x.ingress;
 
 
-import java.util.Map;
-
 import javax.annotation.Priority;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
+import io.md.logger.LogMgr;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.ContainerRequestFilter;
@@ -27,7 +25,7 @@ import io.opentracing.Span;
 public class TracingFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
 	private static Config config;
-	private static final Logger LOGGER = LoggerFactory.getLogger(TracingFilter.class);
+	private static final Logger LOGGER = LogMgr.getLogger(TracingFilter.class);
 
 	public static final String scopeKey
 			= Constants.SERVICE_FIELD.concat(Constants.MD_SCOPE);

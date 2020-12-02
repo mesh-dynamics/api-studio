@@ -12,9 +12,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.logger.LogMgr;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -33,7 +33,7 @@ import io.opentracing.Span;
 @Order(3000)
 public class TracingFilter extends OncePerRequestFilter {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(TracingFilter.class);
+	private static final Logger LOGGER = LogMgr.getLogger(TracingFilter.class);
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest httpServletRequest,

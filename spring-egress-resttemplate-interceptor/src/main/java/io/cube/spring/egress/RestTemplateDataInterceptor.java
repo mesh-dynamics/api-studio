@@ -6,16 +6,14 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.logger.LogMgr;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
@@ -46,8 +44,7 @@ import io.opentracing.SpanContext;
 @Order(2999)
 public class RestTemplateDataInterceptor implements ClientHttpRequestInterceptor {
 
-	private static final Logger LOGGER = LoggerFactory
-		.getLogger(RestTemplateDataInterceptor.class);
+	private static final Logger LOGGER = LogMgr.getLogger(RestTemplateDataInterceptor.class);
 
 	private static final MDRestTemplateConfig config;
 

@@ -21,6 +21,7 @@ import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptor;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
+import io.md.logger.LogMgr;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -30,7 +31,6 @@ import org.apache.cxf.jaxrs.impl.WriterInterceptorContextImpl;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.phase.PhaseInterceptorChain;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -52,7 +52,7 @@ import io.opentracing.Span;
 public class MDLoggingFilter implements ContainerRequestFilter, ContainerResponseFilter,
 	WriterInterceptor {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(MDLoggingFilter.class);
+	private static final Logger LOGGER = LogMgr.getLogger(MDLoggingFilter.class);
 
 	@Override
 	public void filter(ContainerRequestContext reqContext) {

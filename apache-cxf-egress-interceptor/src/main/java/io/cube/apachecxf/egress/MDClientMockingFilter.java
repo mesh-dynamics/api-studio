@@ -14,10 +14,10 @@ import javax.ws.rs.client.ClientResponseFilter;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
+import io.md.logger.LogMgr;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.phase.PhaseInterceptorChain;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.cube.agent.CommonConfig;
 import io.cube.agent.Constants;
@@ -38,7 +38,7 @@ import io.opentracing.SpanContext;
 @Priority(value = 4501)
 public class MDClientMockingFilter implements ClientRequestFilter, ClientResponseFilter {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(MDClientMockingFilter.class);
+	private static final Logger LOGGER = LogMgr.getLogger(MDClientMockingFilter.class);
 	private static final String MOCK_SPAN = "md-mock-span";
 	private static final String MOCK_SCOPE = "md-mock-scope";
 

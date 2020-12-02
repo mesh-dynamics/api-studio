@@ -24,6 +24,7 @@ import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptor;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
+import io.md.logger.LogMgr;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -33,7 +34,6 @@ import org.apache.cxf.jaxrs.impl.WriterInterceptorContextImpl;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.phase.PhaseInterceptorChain;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -54,7 +54,7 @@ import io.opentracing.SpanContext;
 @Priority(value = 4500)
 public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFilter, ClientResponseFilter {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(MDClientLoggingFilter.class);
+	private static final Logger LOGGER = LogMgr.getLogger(MDClientLoggingFilter.class);
 
 	@Override
 	public void aroundWriteTo(WriterInterceptorContext context) throws IOException {

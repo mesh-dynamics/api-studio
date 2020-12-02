@@ -8,8 +8,8 @@ import java.nio.channels.Channels;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
@@ -18,7 +18,7 @@ import reactor.core.publisher.Flux;
 
 public class ReactiveRequestDecorator extends ServerHttpRequestDecorator {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ReactiveRequestDecorator.class);
+	private static final Logger LOGGER = LogMgr.getLogger(ReactiveRequestDecorator.class);
 	private String finalUri;
 	private String cRequestId;
 	private String serviceName;

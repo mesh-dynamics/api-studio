@@ -5,8 +5,8 @@ import java.io.IOException;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
@@ -25,8 +25,7 @@ import io.md.utils.CommonUtils;
 @Order(3001)
 public class RestTemplateTracingInterceptor implements ClientHttpRequestInterceptor {
 
-	private static final Logger LOGGER = LoggerFactory
-		.getLogger(RestTemplateTracingInterceptor.class);
+	private static final Logger LOGGER = LogMgr.getLogger(RestTemplateTracingInterceptor.class);
 
 	@Override
 	public ClientHttpResponse intercept(HttpRequest httpRequest, byte[] bytes,

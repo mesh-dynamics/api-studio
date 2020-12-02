@@ -7,10 +7,8 @@ import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -19,10 +17,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 
+import io.md.logger.LogMgr;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.sun.jersey.api.client.ClientHandlerException;
 import com.sun.jersey.api.client.ClientRequest;
@@ -42,7 +40,7 @@ public class ClientLoggingFilter extends ClientFilter {
 	private static Config config;
 	private MessageBodyWorkers workers;
 	private final Annotation[] EMPTY_ANNOTATIONS = new Annotation[0];
-	private static final Logger LOGGER = LoggerFactory.getLogger(ClientLoggingFilter.class);
+	private static final Logger LOGGER = LogMgr.getLogger(ClientLoggingFilter.class);
 	private static final String EMPTY = "";
 	private static final List<String> HTTP_CONTENT_TYPE_HEADERS = Arrays
 			.asList(new String[]{"content-type",

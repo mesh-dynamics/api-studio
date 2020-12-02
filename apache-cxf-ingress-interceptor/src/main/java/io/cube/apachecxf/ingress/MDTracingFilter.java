@@ -12,9 +12,9 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
+import io.md.logger.LogMgr;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.cube.agent.CommonConfig;
 import io.md.constants.Constants;
@@ -33,7 +33,7 @@ public class MDTracingFilter implements ContainerRequestFilter, ContainerRespons
 	// config not used but required to ensure commonConfig initailised properly before
 	// filter execution
 	public static final Config config = Utils.config;
-	private static final Logger LOGGER = LoggerFactory.getLogger(MDTracingFilter.class);
+	private static final Logger LOGGER = LogMgr.getLogger(MDTracingFilter.class);
 
 	@Override
 	public void filter(ContainerRequestContext reqContext) {

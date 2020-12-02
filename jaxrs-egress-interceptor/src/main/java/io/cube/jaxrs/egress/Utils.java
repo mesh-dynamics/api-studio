@@ -8,10 +8,10 @@ import java.util.Optional;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.logger.LogMgr;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -23,7 +23,7 @@ import io.md.dao.MDTraceInfo;
 
 public class Utils {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(Utils.class);
+	private static final Logger LOGGER = LogMgr.getLogger(Utils.class);
 
 	public static final long PAYLOAD_MAX_LIMIT = 25000000; //25 MB
 

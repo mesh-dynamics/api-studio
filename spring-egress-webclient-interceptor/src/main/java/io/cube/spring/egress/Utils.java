@@ -12,10 +12,9 @@ import java.util.Set;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.logger.LogMgr;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 import org.eclipse.jetty.http.HttpFields;
 
@@ -25,10 +24,11 @@ import io.md.constants.Constants;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.MDTraceInfo;
+import org.slf4j.Logger;
 
 public class Utils {
 
-	private static final Logger LOGGER = LogManager.getLogger(Utils.class);
+	private static final Logger LOGGER = LogMgr.getLogger(Utils.class);
 
 	public static final long PAYLOAD_MAX_LIMIT = 25000000; //25 MB
 
@@ -101,12 +101,12 @@ public class Utils {
 			LOGGER.error(new ObjectMessage(
 				Map.of(Constants.MESSAGE, "Invalid Event",
 					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+					Constants.API_PATH_FIELD, apiPath)).toString());
 		} catch (JsonProcessingException e) {
 			LOGGER.error(new ObjectMessage(
 				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
 					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+					Constants.API_PATH_FIELD, apiPath)).toString());
 		}
 	}
 
@@ -123,12 +123,12 @@ public class Utils {
 			LOGGER.error(new ObjectMessage(
 				Map.of(Constants.MESSAGE, "Invalid Event",
 					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+					Constants.API_PATH_FIELD, apiPath)).toString());
 		} catch (JsonProcessingException e) {
 			LOGGER.error(new ObjectMessage(
 				Map.of(Constants.MESSAGE, "Json Processing Exception. Unable to create event!",
 					Constants.ERROR, e.getMessage(),
-					Constants.API_PATH_FIELD, apiPath)));
+					Constants.API_PATH_FIELD, apiPath)).toString());
 		}
 	}
 

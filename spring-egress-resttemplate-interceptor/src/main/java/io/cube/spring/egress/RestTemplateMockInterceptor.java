@@ -10,8 +10,8 @@ import java.util.Optional;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.logger.LogMgr;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
@@ -37,8 +37,7 @@ import io.opentracing.SpanContext;
 @Order(3000)
 public class RestTemplateMockInterceptor implements ClientHttpRequestInterceptor {
 
-	private static final Logger LOGGER = LoggerFactory
-		.getLogger(RestTemplateMockInterceptor.class);
+	private static final Logger LOGGER = LogMgr.getLogger(RestTemplateMockInterceptor.class);
 
 	@Override
 	public ClientHttpResponse intercept(HttpRequest httpRequest, byte[] bytes,

@@ -1,6 +1,7 @@
 package com.cube.interceptor.reactive_spring;
 
 import io.md.dao.MDTraceInfo;
+import io.md.logger.LogMgr;
 import io.md.utils.CommonUtils;
 import io.opentracing.Span;
 import java.io.ByteArrayOutputStream;
@@ -12,7 +13,6 @@ import java.util.Optional;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
@@ -35,7 +35,7 @@ import com.cube.interceptor.utils.Utils;
 @Component
 public class ReactiveSpringLoggingFilter implements WebFilter {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ReactiveSpringLoggingFilter.class);
+	private static final Logger LOGGER = LogMgr.getLogger(ReactiveSpringLoggingFilter.class);
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {

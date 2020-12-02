@@ -9,9 +9,9 @@ import java.util.function.Function;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.logger.LogMgr;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
@@ -21,7 +21,7 @@ import reactor.core.publisher.Mono;
 
 public class ReactiveResponseDecorator extends ServerHttpResponseDecorator {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ReactiveResponseDecorator.class);
+	private static final Logger LOGGER = LogMgr.getLogger(ReactiveResponseDecorator.class);
 	private String finalUri;
 	private MultivaluedMap<String, String> traceMetaMap;
 

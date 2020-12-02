@@ -6,12 +6,12 @@ import java.util.Optional;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.logger.LogMgr;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.slf4j.Logger;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -34,7 +34,7 @@ import io.opentracing.Span;
 @Order(3000)
 public class WebFluxDataInterceptor {
 
-	private static final Logger LOGGER = LogManager.getLogger(WebFluxDataInterceptor.class);
+	private static final Logger LOGGER = LogMgr.getLogger(WebFluxDataInterceptor.class);
 
 	private static final WebClientConfig config;
 

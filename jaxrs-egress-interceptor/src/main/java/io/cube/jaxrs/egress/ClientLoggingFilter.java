@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.util.Map;
 import java.util.Optional;
 
 import javax.annotation.Priority;
@@ -18,15 +17,14 @@ import javax.ws.rs.client.ClientResponseFilter;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
+import io.md.logger.LogMgr;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.CommonConfig;
-import io.jaegertracing.internal.JaegerSpanContext;
 import io.md.constants.Constants;
 import io.md.dao.MDTraceInfo;
 import io.md.utils.CommonUtils;
@@ -37,7 +35,7 @@ import io.opentracing.SpanContext;
 @Priority(4000)
 public class ClientLoggingFilter implements ClientRequestFilter, ClientResponseFilter {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ClientLoggingFilter.class);
+	private static final Logger LOGGER = LogMgr.getLogger(ClientLoggingFilter.class);
 
 	private static final Config config = new Config();
 
