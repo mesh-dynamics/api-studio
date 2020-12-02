@@ -1113,7 +1113,7 @@ class HttpClientTabs extends Component {
             const preRequestData = {
                 requestEvent : formattedData.request,
                 environmentName: selectedEnvironment,
-                injectionConfigVersion: `default${selectedApp}`,
+                injectionConfigVersion: `Default${selectedApp}`,
                 contextMap: !selectedEnvironment && contextMap ? contextMap : {},
             }
             const preRequestResult = await cubeService.fetchPreRequest(userHistoryCollection.id, runId, preRequestData, selectedApp, tabToProcess.abortRequest.cancelToken);
