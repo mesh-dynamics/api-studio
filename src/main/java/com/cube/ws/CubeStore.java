@@ -1277,7 +1277,7 @@ public class CubeStore {
             String collection = UUID.randomUUID().toString();
             RecordingBuilder recordingBuilder = new RecordingBuilder(
                 recording.customerId, recording.app, recording.instanceId, collection)
-                .withStatus(recording.status).withTemplateSetVersion(templateVersion.orElse(recording.templateVersion))
+                .withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateVersion.orElse(recording.templateVersion))
                 .withName(name.orElse(recording.name))
                 .withUserId(userId).withTags(recording.tags).withUpdateTimestamp(timeStamp)
                 .withRootRecordingId(recording.rootRecordingId).withLabel(labelValue)
