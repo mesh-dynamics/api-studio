@@ -39,7 +39,7 @@ public class DtEnvVar {
   @NotNull
   String key;
 
-  @Column
+  @Column(length = 5000)
   @NotNull
   String value;
 }
