@@ -1,5 +1,6 @@
 package com.cubeui.backend.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import javax.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,6 +37,7 @@ public class Instance {
     String gatewayEndpoint;
 
     @CreationTimestamp
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt;
 
     @NotEmpty

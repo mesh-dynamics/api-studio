@@ -1,5 +1,6 @@
 package com.cubeui.backend.domain.DTO.Response.DTO;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -34,8 +35,10 @@ public class TestConfigDTO {
 
     private String slackId;
 
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
 
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedAt;
 
     private String tag;

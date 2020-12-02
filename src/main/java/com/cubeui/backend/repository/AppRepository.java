@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface AppRepository extends JpaRepository<App, Long> {
     Optional<List<App>> findByCustomerId(Long customerId);
     Optional<App> findByNameAndCustomerId(String name, Long customerId);
+    Optional<App> findByDisplayNameAndCustomerId(String displayName, Long customerId);
 }

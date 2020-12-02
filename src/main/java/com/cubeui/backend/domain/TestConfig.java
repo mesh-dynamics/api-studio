@@ -1,5 +1,6 @@
 package com.cubeui.backend.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -61,9 +62,11 @@ public class TestConfig {
 //    String endpoint;
 
     @CreationTimestamp
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     LocalDateTime updatedAt;
 
     String tag;

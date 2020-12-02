@@ -1,6 +1,7 @@
 package com.cubeui.backend.domain;
 
 import com.cubeui.backend.domain.enums.ReplayStatus;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -69,11 +70,14 @@ public class Replay {
     String analysis;
 
     @CreationTimestamp
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     LocalDateTime updatedAt;
 
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     LocalDateTime completedAt;
 
     Double sampleRate;

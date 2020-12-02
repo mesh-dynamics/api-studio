@@ -1,5 +1,6 @@
 package com.cubeui.backend.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -42,8 +43,10 @@ public class EmailDomain {
     String domain;
 
     @CreationTimestamp
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     LocalDateTime updatedAt;
 }

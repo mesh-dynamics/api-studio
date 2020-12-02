@@ -1,5 +1,6 @@
 package com.cubeui.backend.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -39,8 +40,16 @@ public class App {
     Customer customer;
 
     @CreationTimestamp
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     LocalDateTime updatedAt;
+
+    @Column(length = 200)
+    String displayName;
+
+    @Column(length = 200)
+    String userId;
 }

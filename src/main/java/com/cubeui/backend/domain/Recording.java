@@ -1,6 +1,7 @@
 package com.cubeui.backend.domain;
 
 import com.cubeui.backend.domain.enums.RecordingStatus;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -52,10 +53,13 @@ public class Recording {
     RecordingStatus status;
 
     @CreationTimestamp
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     LocalDateTime updatedAt;
 
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     LocalDateTime completedAt;
 }

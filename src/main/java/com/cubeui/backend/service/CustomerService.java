@@ -107,6 +107,7 @@ public class CustomerService {
             App defaultApp = this.appRepository.save(
                 App.builder()
                     .name("Default")
+                    .displayName("Default")
                     .customer(customer.get())
                     .build());
             if(md_cloud) {
@@ -153,6 +154,7 @@ public class CustomerService {
         App movieInfo = this.appRepository.save(
             App.builder()
                 .name(existingMovieInfo.get().getName())
+                .displayName(existingMovieInfo.get().getDisplayName())
                 .customer(customer)
                 .build());
 
