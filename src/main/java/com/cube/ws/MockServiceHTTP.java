@@ -15,7 +15,6 @@ import java.util.Optional;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
-import javax.ws.rs.HttpMethod;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -29,9 +28,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.UriInfo;
 
-import io.md.injection.DynamicInjector;
-import io.md.injection.DynamicInjectorFactory;
-import io.md.tracer.TracerMgr;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -41,14 +37,22 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.FnReqResponse;
+import io.md.cache.ProtoDescriptorCache;
+import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
+import io.md.core.Utils;
 import io.md.dao.Event;
+import io.md.dao.GRPCResponsePayload;
 import io.md.dao.HTTPResponsePayload;
+import io.md.dao.MockWithCollection;
+import io.md.dao.ProtoDescriptorDAO;
+import io.md.dao.Recording;
 import io.md.services.FnResponse;
 import io.md.services.MockResponse;
 import io.md.services.Mocker;
 import io.md.services.RealMocker;
+import io.md.tracer.TracerMgr;
 import io.md.utils.Constants;
-import io.md.core.Utils;
+import io.md.utils.ProtoDescriptorCacheProvider;
 
 import com.cube.core.ServerUtils;
 import com.cube.dao.ReqRespStore;
@@ -86,10 +90,13 @@ public class MockServiceHTTP {
                               @PathParam("instanceId") String instanceId,
                               @PathParam("service") String service,
                               @PathParam("method") String httpMethod,
-                              String body) {
+                              byte[] body) {
         LOGGER.info(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s, body: %s", customerId, app, path,
             ui.toString(), body));
-        MockWithCollection mockWithCollection = io.md.utils.Utils.getMockCollection(rrstore , customerId , app , instanceId, false);
+        //TODO currently doing fuzzy mock matching for grpc
+        MockWithCollection mockWithCollection = io.md.utils.Utils.getMockCollection(rrstore , customerId , app , instanceId,
+            io.md.utils.Utils.getMimeType(headers.getRequestHeaders()).orElse(MediaType.TEXT_PLAIN).toLowerCase()
+            .startsWith(io.md.constants.Constants.APPLICATION_GRPC));
         return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service, httpMethod , body, headers.getRequestHeaders(), mockWithCollection
             , Optional.empty());
     }
@@ -225,7 +232,7 @@ public class MockServiceHTTP {
         MultivaluedMap<String, String> hdrs = headers.getRequestHeaders();
         Optional<String> dynamicInjCfgVersion = ServerUtils.getCustomHeaderValue(hdrs , Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD).or(()->recording.dynamicInjectionConfigVersion);
         Response response = getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            httpMethod , new String(body), hdrs, new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId, dynamicInjCfgVersion, true), Optional.of(traceId));
+            httpMethod , body, hdrs, new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId, dynamicInjCfgVersion, true), Optional.of(traceId));
         rrstore.commit();
         return response;
     }
@@ -240,7 +247,7 @@ public class MockServiceHTTP {
         @PathParam("traceId") String traceId,
         @PathParam("service") String service,
         @PathParam("runId") String runId , @PathParam("method") String httpMethod,
-        String body) {
+        byte[] body) {
 
         LOGGER.info(String.format(" path: %s, uriinfo: %s, body: %s, replayCollection: %s, recordingId: %s", path,
             ui.toString(), body, replayCollection, recordingId));
@@ -269,7 +276,7 @@ public class MockServiceHTTP {
 
     private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
         String customerId, String app, String instanceId,
-        String service, String method, String body, MultivaluedMap<String, String> headers,
+        String service, String method, byte[] body, MultivaluedMap<String, String> headers,
         MockWithCollection collection, Optional<String> traceId)
     {
 
@@ -302,28 +309,44 @@ public class MockServiceHTTP {
 
     private Optional<Response> createResponseFromEvent(
         Event respEventVal) {
-
-        HTTPResponsePayload responsePayload;
         try {
-            responsePayload =  (HTTPResponsePayload) respEventVal.payload;
+            if (respEventVal.payload instanceof HTTPResponsePayload) {
+                HTTPResponsePayload responsePayload =  (HTTPResponsePayload) respEventVal.payload;
+                ResponseBuilder builder = Response.status(responsePayload.getStatus());
+                responsePayload.getHdrs().forEach((fieldName, fieldValList) -> fieldValList.forEach((val) -> {
+                    // System.out.println(String.format("key=%s, val=%s", fieldName, val));
+                    // looks like setting some headers causes a problem, so skip them
+                    // TODO: check if this is a comprehensive list
+                    if (Utils.ALLOWED_HEADERS.test(fieldName) && !fieldName.startsWith(":")) {
+                        builder.header(fieldName, val);
+                    }
+                }));
+                return Optional.of(builder.entity(responsePayload.getBody()).build());
+            } else if (respEventVal.payload instanceof GRPCResponsePayload) {
+                GRPCResponsePayload responsePayload =  (GRPCResponsePayload) respEventVal.payload;
+                ResponseBuilder builder = Response.status(200);
+                responsePayload.getHdrs().forEach((fieldName, fieldValList) -> fieldValList.forEach((val) -> {
+                    // System.out.println(String.format("key=%s, val=%s", fieldName, val));
+                    // looks like setting some headers causes a problem, so skip them
+                    // TODO: check if this is a comprehensive list
+                    if (Utils.ALLOWED_HEADERS.test(fieldName) && !fieldName.startsWith(":")) {
+                        builder.header(fieldName, val);
+                    }
+                }));
+                ProtoDescriptorCache protoDescriptorCache = ProtoDescriptorCacheProvider.getInstance()
+                    .get();
+                Optional<ProtoDescriptorDAO> protoDescriptorDAO =
+                    protoDescriptorCache.get(new ProtoDescriptorKey(respEventVal.customerId, respEventVal.app, "NA"));
+                responsePayload.setProtoDescriptor(protoDescriptorDAO);
+                return Optional.of(builder.entity(responsePayload.getBody()).build());
+            }
         } catch (Exception e) {
             LOGGER.error(new ObjectMessage(Map.of(
                 Constants.MESSAGE, "Not able to deserialize response event",
                 Constants.ERROR, e.getMessage()
             )), e);
-            return Optional.empty();
         }
-
-        ResponseBuilder builder = Response.status(responsePayload.getStatus());
-        responsePayload.getHdrs().forEach((fieldName, fieldValList) -> fieldValList.forEach((val) -> {
-            // System.out.println(String.format("key=%s, val=%s", fieldName, val));
-            // looks like setting some headers causes a problem, so skip them
-            // TODO: check if this is a comprehensive list
-            if (Utils.ALLOWED_HEADERS.test(fieldName) && !fieldName.startsWith(":")) {
-                builder.header(fieldName, val);
-            }
-        }));
-        return Optional.of(builder.entity(responsePayload.getBody()).build());
+        return Optional.empty();
     }
 
 
