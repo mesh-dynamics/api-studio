@@ -1,5 +1,6 @@
 package com.cubeui.backend.domain;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedBy;
@@ -19,9 +20,11 @@ import java.time.LocalDate;
 public abstract class AbstractAuditableEntity<U, ID> extends AbstractPersistableEntity<ID> implements Serializable {
 
     @CreatedDate
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     LocalDate createdDate;
 
     @LastModifiedDate
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     LocalDate lastModifiedDate;
 
     @CreatedBy
