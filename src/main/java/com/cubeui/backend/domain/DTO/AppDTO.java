@@ -13,7 +13,7 @@ public class AppDTO {
 
     private String displayName;
 
-    private Long customerId;
+    private String customerName;
 
     private LocalDateTime createdAt;
 

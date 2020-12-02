@@ -96,16 +96,16 @@ public class AppController {
         if(appDTO.getDisplayName() == null) return status(FORBIDDEN).body(new ErrorResponse("Mandatory field Name is empty."));
         Optional<Customer> customer = Optional.empty();
         User user = (User)authentication.getPrincipal();
-        if(appDTO.getCustomerId() != null) {
-            customer = customerService.getById(appDTO.getCustomerId());
-            if(customer.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("Customer with ID '" + appDTO.getCustomerId() + "' not found."));
+        if(appDTO.getCustomerName() != null) {
+            customer = customerService.getByName(appDTO.getCustomerName());
+            if(customer.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("Customer with name '" + appDTO.getCustomerName() + "' not found."));
         } else {
-            return status(BAD_REQUEST).body(new ErrorResponse("Mandatory field Customer Id is empty."));
+            return status(BAD_REQUEST).body(new ErrorResponse("Mandatory field CustomerName is empty."));
         }
         if(!user.getRoles().contains(Role.ROLE_ADMIN)) {
             validation.validateCustomerName(authentication, customer.get().getName());
         }
-        Optional<App> app = this.appRepository.findByDisplayNameAndCustomerId(appDTO.getDisplayName(), appDTO.getCustomerId());
+        Optional<App> app = this.appRepository.findByDisplayNameAndCustomerId(appDTO.getDisplayName(), customer.get().getId());
         if (app.isPresent())
         {
             log.info("App with same display name exists");
@@ -140,9 +140,9 @@ public class AppController {
         if(existing.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("App with ID '" + appDTO.getId() + "' not found."));
         Optional<Customer> customer = Optional.empty();
         User user = (User)authentication.getPrincipal();
-        if(appDTO.getCustomerId() != null) {
-            customer = customerService.getById(appDTO.getCustomerId());
-            if(customer.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("Customer with ID '" + appDTO.getCustomerId() + "' not found."));
+        if(appDTO.getCustomerName() != null) {
+            customer = customerService.getByName(appDTO.getCustomerName());
+            if(customer.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("Customer with Name '" + appDTO.getCustomerName() + "' not found."));
         }
         App existingApp = existing.get();
         customer.ifPresent(givenCustomer -> {
@@ -151,8 +151,9 @@ public class AppController {
             }
             existingApp.setCustomer(givenCustomer);
         });
+        Long customerId = existingApp.getCustomer().getId();
         Optional.ofNullable(appDTO.getDisplayName()).ifPresent((displayName -> {
-            Optional<App> app = this.appRepository.findByDisplayNameAndCustomerId(displayName, appDTO.getCustomerId());
+            Optional<App> app = this.appRepository.findByDisplayNameAndCustomerId(displayName, customerId);
             app.ifPresentOrElse(givenApp -> {
                 if(givenApp.getId() != appDTO.getId() ) {
                     throw new DuplicateRecordException("App with same display name exists");
