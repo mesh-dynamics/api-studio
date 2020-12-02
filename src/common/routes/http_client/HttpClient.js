@@ -82,7 +82,7 @@ class HttpClient extends Component {
             diffLayoutData: null,
             showCompleteDiff: false,
             prevSelectedTraceTableReqTabId: this.props.currentSelectedTab.selectedTraceTableReqTabId,
-            prevSelectedTraceTableTestReqTabId: this.props.currentSelectedTab.selectedTraceTableTestReqTabId,
+            prevRunId: this.props.currentSelectedTab.currentRunId,
             httpRequestRef: null,
             matchRequestShowPopup: false
         };
@@ -105,10 +105,10 @@ class HttpClient extends Component {
                 showCompleteDiff: false
             }
         }
-        if(props.currentSelectedTab.selectedTraceTableTestReqTabId != state.prevSelectedTraceTableTestReqTabId){
+        if(props.currentSelectedTab.currentRunId != state.prevRunId){
             newState = {
                 ...newState,
-                prevSelectedTraceTableTestReqTabId: props.currentSelectedTab.selectedTraceTableTestReqTabId,
+                prevRunId: props.currentSelectedTab.currentRunId,
                 showCompleteDiff: false
             }
         }
@@ -173,7 +173,6 @@ class HttpClient extends Component {
     }
 
     handleShowDiff() {
-        const { showCompleteDiff } = this.state;
         const { currentSelectedTab } = this.props;
         const selectedTraceTableReqTabId = currentSelectedTab.selectedTraceTableReqTabId;
         const selectedTraceTableTestReqTabId = currentSelectedTab.selectedTraceTableTestReqTabId;
@@ -386,10 +385,25 @@ class HttpClient extends Component {
         return code;
     }
 
+    handleDeleteReq = (evt, outgoingReqTabId) => {
+        evt.stopPropagation();
+        const { currentSelectedTab } = this.props;
+        this.props.handleDeleteOutgoingReq(outgoingReqTabId, currentSelectedTab.id);
+        
+    }
+
     renderHasChangedTippy = (hasChanged) => {
         return <Tippy content={"Unsaved changes in this request"} arrow={true} placement="bottom">
             {hasChanged ? <i className="fas fa-circle" style={{fontSize: "12px", marginRight: "12px"}}></i> : <i></i>}
         </Tippy>
+    }
+
+    renderDeleteButton = (outgoingReqTabId) => {
+        return (
+            <Tippy content={"Click to delete"} arrow={true} placement="bottom">
+                <i className="fas fa-trash" style={{fontSize: "12px", marginRight: "12px"}} onClick={(evt) => this.handleDeleteReq(evt, outgoingReqTabId)}></i>
+            </Tippy>
+        );
     }
 
     render() {
@@ -407,7 +421,8 @@ class HttpClient extends Component {
         if(selectedTraceTableReqTabId === currentSelectedTab.id) {
             selectedTraceTableReqTab = currentSelectedTab;
         } else {
-            selectedTraceTableReqTab = currentSelectedTab.outgoingRequests ? currentSelectedTab.outgoingRequests.find((eachTab) => eachTab.id === selectedTraceTableReqTabId) : {};
+            selectedTraceTableReqTab = currentSelectedTab.outgoingRequests ? currentSelectedTab.outgoingRequests.find((eachTab) => eachTab.id === selectedTraceTableReqTabId) : null;
+            if(!selectedTraceTableReqTab) selectedTraceTableReqTab = currentSelectedTab;
         }
 
         if(selectedTraceTableTestReqTabId && currentSelectedTab.recordedHistory && selectedTraceTableTestReqTabId === currentSelectedTab.recordedHistory.id) {
@@ -531,7 +546,7 @@ class HttpClient extends Component {
                     </div>
                 </div>
                     <div style={{display: showTraceV ? "flex" : "none", backgroundColor: "#ffffff", marginBottom: "9px"}}>
-                        <div style={{flex: "1", padding: "0.5rem"}}>
+                        <div style={{flex: "1", padding: "0.5rem", minWidth: "0px"}}>
                             <div>Reference</div>
                             <Table hover style={{backgroundColor: "#fff", border: "1px solid #ddd", borderSpacing: "0px", borderCollapse: "separate", marginBottom: "0px"}}>
                                 <thead>
@@ -578,7 +593,11 @@ class HttpClient extends Component {
                                                         {this.renderHasChangedTippy(eachReq.hasChanged)}
                                                     </span>
                                                 </td>
-                                                <td></td>
+                                                <td>
+                                                    <span>
+                                                        {this.renderDeleteButton(eachReq.id)}
+                                                    </span>
+                                                </td>
                                             </tr>
                                         );
                                     })}
@@ -593,7 +612,7 @@ class HttpClient extends Component {
                                 </div>
                             </div>
                         </div>
-                        <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0"}}>
+                        <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0", minWidth: "0px"}}>
                             {currentSelectedTab.recordedHistory && (
                                 <div>
                                     <div>Test</div>
@@ -689,6 +708,7 @@ class HttpClient extends Component {
                                     bodyType={selectedTraceTableReqTab.bodyType}
                                     formData={selectedTraceTableReqTab.formData} 
                                     rawData={selectedTraceTableReqTab.rawData}
+                                    grpcData={selectedTraceTableReqTab.grpcData}
                                     rawDataType={selectedTraceTableReqTab.rawDataType}
                                     paramsType={selectedTraceTableReqTab.paramsType}
                                     updateParam={this.props.updateParam}
@@ -709,6 +729,7 @@ class HttpClient extends Component {
                                         bodyType={selectedTraceTableTestReqTab.bodyType}
                                         formData={selectedTraceTableTestReqTab.formData} 
                                         rawData={selectedTraceTableTestReqTab.rawData}
+                                        grpcData={selectedTraceTableTestReqTab.grpcData}
                                         rawDataType={selectedTraceTableTestReqTab.rawDataType}
                                         paramsType={selectedTraceTableReqTab.paramsType}
                                         updateParam={this.props.updateParam}
@@ -774,7 +795,11 @@ class HttpClient extends Component {
                                 />)}
                                 </div>
                         </div>
-                        <SplitSlider slidingElement={this.state.httpRequestRef} horizontal minSpace={(selectedTraceTableReqTab.paramsType == "body" ? 200: 50)}/> 
+                        <SplitSlider 
+                            slidingElement={this.state.httpRequestRef} 
+                            horizontal 
+                            persistKey={`HorizontalSplitter_${selectedTraceTableReqTabId}`}
+                            minSpace={(selectedTraceTableReqTab.paramsType == "body" ? 200: 50)}/> 
                         <HttpResponseMessage 
                             tabId={selectedTraceTableReqTab.id}
                             /** Belongs to RHS */

@@ -329,7 +329,8 @@ export const httpClientActions = {
             const fetchedUserHistoryCollection = serverRes.find((eachCollection) => (eachCollection.recordingType === "History"))
 
             if(!fetchedUserHistoryCollection) {
-                throw new Error("User history collection not present")
+                dispatch(httpClientActions.addUserHistoryCollection([]));
+                throw new Error("User history collection not present");
             } else {
                 dispatch(httpClientActions.addUserHistoryCollection(fetchedUserHistoryCollection));
             
@@ -604,5 +605,13 @@ export const httpClientActions = {
 
     setTabIsHighlighted: (tabId, isHighlighted) => {
         return {type: httpClientConstants.SET_TAB_IS_HIGHLIGHTED, data: {tabId, isHighlighted}};
+    },
+    setUiPreferenceKey : (key, value) =>{
+        return { type: httpClientConstants.UPDATE_UI_PREFERENCE, data: {key, value}};
+    },
+
+    deleteOutgoingReq: (outgoingReqTabId, tabId) => {
+        return {type: httpClientConstants.DELETE_OUTGOING_REQ, data: {outgoingReqTabId, tabId}};
+
     }
 }

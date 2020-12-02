@@ -90,6 +90,7 @@ class HttpClientTabs extends Component {
         this.handleImportedToCollectionIdChange = this.handleImportedToCollectionIdChange.bind(this);
 
         this.updateAbortRequest = this.updateAbortRequest.bind(this);
+        this.handleDeleteOutgoingReq = this.handleDeleteOutgoingReq.bind(this);
         
     }
 
@@ -218,9 +219,10 @@ class HttpClientTabs extends Component {
                 queryStringParams: toBeCopiedFromData.queryStringParams,
                 bodyType: toBeCopiedFromData.bodyType,
                 formData: toBeCopiedFromData.formData,
-                rawData: toBeCopiedFromData.rawData,
                 rawDataType: toBeCopiedFromData.rawDataType,
-                paramsType: "showQueryParams",
+                rawData: toBeCopiedFromData.rawData,
+                grpcData: toBeCopiedFromData.grpcData,
+                paramsType: toBeUpdatedData.paramsType,
                 responseStatus: toBeCopiedFromData.responseStatus,
                 responseStatusText: toBeCopiedFromData.responseStatusText,
                 responseHeaders: toBeCopiedFromData.responseHeaders,
@@ -1112,8 +1114,8 @@ class HttpClientTabs extends Component {
             const preRequestData = {
                 requestEvent : formattedData.request,
                 environmentName: selectedEnvironment,
-                injectionConfigVersion: `default${selectedApp}`,
-                contextMap: !selectedEnvironment && contextMap ? contextMap : {},
+                injectionConfigVersion: `Default${selectedApp}`,
+                contextMap:  contextMap || {},
             }
             const preRequestResult = await cubeService.fetchPreRequest(userHistoryCollection.id, runId, preRequestData, selectedApp, tabToProcess.abortRequest.cancelToken);
         
@@ -1198,13 +1200,21 @@ class HttpClientTabs extends Component {
         const newTabs = [...currentTabs.slice(0, indexToRemove), ...currentTabs.slice(indexToRemove + 1)];
 
         const nextSelectedIndex = newTabs[indexToRemove] ? indexToRemove : indexToRemove - 1;
-        newTabs[nextSelectedIndex].isHighlighted = false;
+        let nextTabId = "";
         if (!newTabs[nextSelectedIndex]) {
-            alert('You can not delete the last tab!');
-            return;
+            dispatch(httpClientActions.removeTab(newTabs, nextTabId));
+            nextTabId = this.addTab(null, null, null, true)
+        }else{
+            nextTabId = newTabs[nextSelectedIndex].id;
+            newTabs[nextSelectedIndex].isHighlighted = false;
+            dispatch(httpClientActions.removeTab(newTabs, nextTabId));
         }
         
-        dispatch(httpClientActions.removeTab(newTabs, newTabs[nextSelectedIndex].id));
+    }
+
+    handleDeleteOutgoingReq(outgoingReqTabId, tabId) {
+        const { dispatch } = this.props;
+        dispatch(httpClientActions.deleteOutgoingReq(outgoingReqTabId, tabId));
     }
 
     getValueBySaveType(value, type) {
@@ -1300,7 +1310,7 @@ class HttpClientTabs extends Component {
 
         if(httpRequestEvent.reqId === "NA") {
             const parsedUrl = urlParser(applyEnvVarsToUrl(tabToSave.httpURL), PLATFORM_ELECTRON ? {} : true);
-            let service = parsedUrl.host || "NA";
+            let service = httpRequestEvent.service != "NA" ? httpRequestEvent.service : (parsedUrl.host || "NA");
             httpRequestEvent = this.updateHttpEvent(apiPath, service, httpRequestEvent);
             httpResponseEvent = this.updateHttpEvent(apiPath, service, httpResponseEvent);
             httpRequestEvent.metaData.typeOfRequest = "devtool";
@@ -1485,7 +1495,7 @@ class HttpClientTabs extends Component {
         const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
         const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
 
-        const { headers, queryParams, formData, rawData, rawDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
+        const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
         
         let reqObject = {
             id: uuidv4(),
@@ -1494,10 +1504,12 @@ class HttpClientTabs extends Component {
             httpURLShowOnly: httpRequestEvent.metaData.httpURL || httpRequestEvent.apiPath,
             headers: headers,
             queryStringParams: queryParams,
-            bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
+            bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : grpcData && grpcData.length > 0 ? "grpcData" : "formData",
             formData: formData,
             rawData: rawData,
             rawDataType: rawDataType,
+            grpcData: grpcData,
+            grpcDataType: grpcDataType,
             paramsType: "showQueryParams",
             responseStatus: "NA",
             responseStatusText: "",
@@ -1522,7 +1534,7 @@ class HttpClientTabs extends Component {
             apiPath: httpRequestEvent.apiPath,
             requestRunning: false,
             showTrace: null,
-            metaData: httpResponseEvent.metaData
+            metaData: httpResponseEvent ? httpResponseEvent.metaData : {}
         };
         return reqObject;
     }
@@ -1848,6 +1860,7 @@ class HttpClientTabs extends Component {
                             handleDuplicateTab={this.handleDuplicateTab}
                             toggleShowTrace={this.toggleShowTrace}
                             updateAbortRequest={this.updateAbortRequest}
+                            handleDeleteOutgoingReq={this.handleDeleteOutgoingReq}
                         />
                     </div>
                 )
@@ -1892,7 +1905,7 @@ class HttpClientTabs extends Component {
                     </div>
                     <SideBarTabs onAddTab={this.addTab} showOutgoingRequests={this.showOutgoingRequests}/>
                 </aside>
-               <SplitSlider slidingElement={this.sliderRef}/>
+               <SplitSlider slidingElement={this.sliderRef} persistKey="VerticalSplitter_httpClientTabsSidebar"/>
                 <main className="content-wrapper" style={{ flex: "1", overflow: "auto", padding: "25px", margin: "0" }}>
                     {/* <div>
                         <div className="vertical-middle inline-block">

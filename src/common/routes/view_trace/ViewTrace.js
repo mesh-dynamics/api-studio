@@ -635,7 +635,7 @@ class ViewTrace extends Component {
                 // check if the content type is JSON and attempt to parse it
                 let recordedResponseContentType = getParameterCaseInsensitive(recordedResponseHeaders, "content-type");
                 let recordedResponseMime = recordedResponseContentType ? (_.isArray(recordedResponseContentType) ? recordedResponseContentType[0] : recordedResponseContentType) : "";
-                isJsonOrGrpcMime = isJsonOrGrpcMime(recordedResponseMime);
+                isJsonOrGrpc = isJsonOrGrpcMime(recordedResponseMime);
                 if (_.isString(item.recordResponse.body) && item.recordResponse.body && isJsonOrGrpc) {
                     try {
                         recordedData = JSON.parse(item.recordResponse.body);

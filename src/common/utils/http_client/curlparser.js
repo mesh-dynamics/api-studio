@@ -204,7 +204,16 @@ const parseCurlCommand = curlCommand => {
     if (parsedArguments.data) {
         request.data = parsedArguments.data
     } else if (parsedArguments['data-binary']) {
-        request.data = parsedArguments['data-binary']
+        let dataBinary = parsedArguments['data-binary']
+        if(dataBinary && typeof dataBinary === 'string' && dataBinary[0] === "$") {
+            dataBinary = dataBinary.replace(/^[\$]+[']/, "'")
+            // strings may be quoted, clean this up as we assign values.
+            // this is as per line number #541 in yargs-parser library, which we are using to parse the curl command
+            if((dataBinary[0] === "'" || dataBinary[0] === '"') && dataBinary[dataBinary.length - 1] === dataBinary[0]) {
+                dataBinary = dataBinary.substring(1, dataBinary.length - 1)
+            }
+        }
+        request.data = dataBinary
         request.isDataBinary = true
     } else if (parsedArguments.d) {
         request.data = parsedArguments.d
@@ -212,6 +221,9 @@ const parseCurlCommand = curlCommand => {
         request.data = parsedArguments['data-ascii']
     } else if (parsedArguments['data-raw']) {
         request.data = parsedArguments['data-raw']
+        request.isDataRaw = true
+    } else if (parsedArguments['data-urlencode']) {
+        request.data = parsedArguments['data-urlencode']
         request.isDataRaw = true
     }
 

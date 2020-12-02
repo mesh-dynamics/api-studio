@@ -9,6 +9,7 @@ import { apiCatalogActions } from '../../actions/api-catalog.actions';
 import classNames from 'classnames';
 import { DropdownButton, MenuItem, FormControl} from 'react-bootstrap';
 import GoldenCollectionBrowse from './GoldenCollectionBrowse';
+import ConvertCollection from './ConvertCollection';
 
 class APICatalogFilter extends Component {
 
@@ -128,7 +129,7 @@ class APICatalogFilter extends Component {
 
     render() {
         const {currentPage, cube, apiCatalog} = this.props;
-        const {diffRequestLeft, diffRequestRight, compareRequests, selectedSource, selectedService, selectedApiPath} = apiCatalog;
+        const {diffRequestLeft, diffRequestRight, compareRequests, selectedSource, selectedService, selectedApiPath, selectedCollection, selectedGolden} = apiCatalog;
         
         return (
             <div>
@@ -146,9 +147,13 @@ class APICatalogFilter extends Component {
                         
 
                         {selectedSource && <div>
-                        {(selectedSource==="UserGolden" || selectedSource==="Golden") && <div>
+                        {(selectedSource==="UserGolden" || selectedSource==="Golden") && 
+                        <>
+                        <div>
                             <GoldenCollectionBrowse selectedSource={selectedSource}/> 
-                        </div>}
+                        </div>
+                            <ConvertCollection  selectedSource={selectedSource} />
+                        </>}
 
                             {selectedSource=="Capture" && <div>
                                 <div className="margin-top-10">
@@ -167,16 +172,16 @@ class APICatalogFilter extends Component {
                                 {this.renderInstanceDropdown()}
                             </div>}
                             
-                            { selectedService && <>
+                            {((selectedSource==="UserGolden" && selectedCollection) || (selectedSource==="Golden" && selectedGolden)) && <>
                                 <div className="selected-items margin-top-10">
                                     <div>
                                         <span style={{ fontWeight: 300 }}>Service</span>
-                                        <p><b>{selectedService}</b></p>
+                                        <p><b>{selectedService || "All"}</b></p>
                                     </div>
                                         
                                     <div>
                                         <span style={{ fontWeight: 300 }}>API</span>
-                                        <p><b>{selectedApiPath}</b></p>
+                                        <p><b>{selectedApiPath || "All"}</b></p>
                                     </div>                    
                                 </div>
                                 </>}

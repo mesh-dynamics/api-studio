@@ -79,7 +79,7 @@ class APICatalog extends Component {
             currentPage={currentPage}
           />
         </div>
-        <SplitSlider slidingElement={this.sliderTarget}/>
+        <SplitSlider slidingElement={this.sliderTarget} persistKey="VerticalSplitter_apiCatalog"/>
         <div className="content-wrapper" style={{ flex: "1 1 0%", overflow: "scroll" }}>
           {/* <div>
           <div className="api-catalog-title-container">

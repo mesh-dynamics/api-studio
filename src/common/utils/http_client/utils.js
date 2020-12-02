@@ -120,6 +120,7 @@ const hasTabDataChanged = (tab) => {
 
 const extractParamsFromRequestEvent = (httpRequestEvent) =>{
     let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "", grpcData = "", grpcDataType = "";
+    const isGrpc = httpRequestEvent.payload[0] =="GRPCRequestPayload";
     for (let eachHeader in httpRequestEvent.payload[1].hdrs) {
         headers.push({
             id: uuidv4(),
@@ -151,28 +152,27 @@ const extractParamsFromRequestEvent = (httpRequestEvent) =>{
     if (httpRequestEvent.payload[1].body) {
         if (!_.isString(httpRequestEvent.payload[1].body)) {
             try {
-                rawData = JSON.stringify(httpRequestEvent.payload[1].body, undefined, 4)
-                rawDataType = "json";
+                const data = JSON.stringify(httpRequestEvent.payload[1].body, undefined, 4)
+                const dataType = "json";
+                if(isGrpc){
+                    grpcData = data;
+                    grpcDataType = dataType;
+                }else{
+                    rawData = data;
+                    rawDataType = dataType;
+                }
             } catch (err) {
                 console.error(err);
             }
         } else {
-            rawData = httpRequestEvent.payload[1].body;
-            rawDataType = "text";
-        }
-    }
-
-    if (httpRequestEvent.payload[1].grpcData) {
-        if (!_.isString(httpRequestEvent.payload[1].grpcData)) {
-            try {
-                grpcData = JSON.stringify(httpRequestEvent.payload[1].grpcData, undefined, 4)
+            if(isGrpc){
+                grpcData = httpRequestEvent.payload[1].body;
                 grpcDataType = "json";
-            } catch (err) {
-                console.error(err);
+            }else{
+
+                rawData = httpRequestEvent.payload[1].body;
+                rawDataType = "text";
             }
-        } else {
-            grpcData = httpRequestEvent.payload[1].grpcData;
-            grpcDataType = "text";
         }
     }
 
