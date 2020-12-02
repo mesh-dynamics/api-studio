@@ -319,18 +319,14 @@ public class RealAnalyzer implements Analyzer {
         // Also don't match based on the payload key as the request body might change
         // on injection at body level causing different payload key.
 
-        // TODO: Remove GRPC relaxation once the trace propagation is in place
-        if (!replayedReqs.containsKey(reqEvent.reqId) || reqEvent.payload instanceof GRPCPayload) {
+        if (!replayedReqs.containsKey(reqEvent.reqId)) {
             builder.withPath(reqEvent.apiPath)
                 .withPayloadKey(reqEvent.payloadKey);
         }
 
-        
-        if(!(reqEvent.payload instanceof GRPCPayload)) {
-            builder.withTraceId(reqEvent.getTraceId());
-        }
 
         return builder.withService(reqEvent.service)
+            .withTraceId(reqEvent.getTraceId())
             .withCollection(replayId)
             .withLimit(limit)
             .build();
