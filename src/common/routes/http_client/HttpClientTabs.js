@@ -1460,9 +1460,7 @@ class HttpClientTabs extends Component {
                                 this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig, true);
                             }, 5000);
 
-                            if(!selectedEnvironment){
-                                dispatch(httpClientActions.updateContextMap(JSON.parse(parsedTraceReqData.extractionMap)));
-                            }
+                            dispatch(httpClientActions.updateContextMap(JSON.parse(parsedTraceReqData.extractionMap)));
                         } catch (error) {
                             console.error("Error ", error);
                             throw new Error(error);
