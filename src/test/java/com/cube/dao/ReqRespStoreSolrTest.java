@@ -1,6 +1,8 @@
 package com.cube.dao;
 
+import com.cube.learning.DynamicInjectionRulesLearner;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.md.dao.Event;
 import io.md.dao.RecordingOperationSetSP;
 import java.util.Arrays;
 import java.util.List;
@@ -60,31 +62,36 @@ class ReqRespStoreSolrTest {
         Assertions.assertEquals(operationsList.size(), recordingOperationSetSPStored.operationsList.size());
     }
 
-    @Test
-    void getPotentialDynamicInjectionConfigs() throws JsonProcessingException, ReqRespStoreSolr.SolrStoreException {
-        Config config = null;
-        try {
-            config = new Config();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//    @Test
+    void getPotentialDynamicInjectionConfigs() throws Exception {
+        final Config config = new Config();
 
-        String customer = "Pronto", app = "ProntoApp", version = "111";
-        Boolean discardSingleValue = true;
+        String customerId = "Pronto", app = "ProntoApp", version = "111";
+        Optional<Boolean> discardSingleValues = Optional.empty();
+        Optional<List<String>> paths = Optional.empty();
+        Optional<List<String>> recordingsList = Optional.of(Arrays.asList(("Recording-965809473")));
+        Optional<String> instanceId = Optional.empty();
 
-        List<InjectionExtractionMeta> injectionExtractionMetaList = config.rrstore
-            .getPotentialDynamicInjectionConfigs(customer,
-                app,
-                Optional.empty(),
-                Optional.of(Arrays.asList("Recording-965809473")),
-                Optional.empty(),
-                Optional.of(discardSingleValue)
-            );
+        DynamicInjectionRulesLearner diLearner = new DynamicInjectionRulesLearner(paths);
+
+        recordingsList.ifPresentOrElse(recIdList -> recIdList.forEach(recId -> {
+            Result<Event> events = config.rrstore
+                .getReqRespEventsInTimestampOrder(customerId, app, instanceId,
+                    Optional.ofNullable(recId));
+            diLearner.processEvents(events);
+
+        }), () -> {
+            Result<Event> events = config.rrstore
+                .getReqRespEventsInTimestampOrder(customerId, app, instanceId, Optional.empty());
+            diLearner.processEvents(events);
+        });
+
+        List<InjectionExtractionMeta> finalMetaList = diLearner.generateRules(discardSingleValues);
 
         System.out.print(config.jsonMapper
             .writerWithDefaultPrettyPrinter()
-            .writeValueAsString(injectionExtractionMetaList));
+            .writeValueAsString(finalMetaList));
 
-        config.rrstore.saveDynamicInjectionConfigFromCsv(customer, app, version, injectionExtractionMetaList);
+//        config.rrstore.saveDynamicInjectionConfigFromCsv(customerId, app, version, finalMetaList);
     }
 }

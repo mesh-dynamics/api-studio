@@ -408,17 +408,15 @@ public interface ReqRespStore extends DataStore {
 
     /**
      *
-     * @param customer
+     * @param customerId
      * @param app
-     * @param recordingIds List of recordingIds to process
-     * @param discardSingleValues Retain or discard configs based on single value reference
+     * @param instanceId
+     * @param recordingId
      * @return
-     * @throws SolrStoreException
      */
-    List<InjectionExtractionMeta> getPotentialDynamicInjectionConfigs(String customer, String app, Optional<String> instanceId,
-                                               Optional<List<String>> recordingIds,
-                                               Optional<List<String>> paths,
-                                               Optional<Boolean> discardSingleValues) throws JsonProcessingException;
+    Result<Event> getReqRespEventsInTimestampOrder(String customerId, String app,
+        Optional<String> instanceId,
+        Optional<String> recordingId);
 
     /**
      *
