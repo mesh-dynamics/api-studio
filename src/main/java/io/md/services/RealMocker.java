@@ -67,7 +67,7 @@ public class RealMocker implements Mocker {
                         return String.format("%s:%s", "/".concat(payloadField),
                          reqEvent.payload.getValAsString("/".concat(payloadField)));
                     } catch (Exception e) {
-                        return null;
+                        return payloadField;
                     }
                 }).collect(Collectors.toList()):Collections.EMPTY_LIST;
 
