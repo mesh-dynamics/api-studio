@@ -373,10 +373,6 @@ public class UserService {
         Optional<List<User>> optionalUsers = this.userRepository.findByCustomerId(customer.getId());
         optionalUsers.ifPresent(users -> {
             users.forEach(user -> {
-                AppUser appUser = new AppUser();
-                appUser.setApp(app);
-                appUser.setUser(user);
-                appUserRepository.save(appUser);
                 MultiValueMap<String, String> formParams= new LinkedMultiValueMap<>();
                 formParams.set("name", "History-" + user.getUsername());
                 formParams.set("label", new Date().toString());
