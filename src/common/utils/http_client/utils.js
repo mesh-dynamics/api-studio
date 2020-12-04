@@ -74,7 +74,7 @@ const generateApiPath = (parsedUrl) => {
 
     // Handle if no protocol is detected
     if(!parsedUrl.protocol) {
-        return parsedUrl.pathname.split('/').filter(Boolean).slice(1).join('/');
+        return parsedUrl.pathname.split('/').filter(Boolean).join('/');
     }
 
     return parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
