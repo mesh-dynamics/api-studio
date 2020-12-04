@@ -376,14 +376,14 @@ const preRequestToFetchableConfig = (preRequestResult, httpURL) => {
     const httpRequestURLRendered = applyEnvVarsToUrl(httpURL);
   
     //Headers
-    const headers = new Headers();
+    const headers = {};
     const preRequestheaders = payload.hdrs;
     Object.entries(preRequestheaders).forEach(([headerName, headerValues]) => {
         headerValues.forEach((headerValue) => {
         if (headerName && headerValue && headerName.indexOf(":") < 0)
-          headers.append(headerName, headerValue);
+          headers[headerName] = headerValue;
         if (headerName === "x-b3-spanid" && headerValue)
-          headers.append("baggage-parent-span-id", headerValue);
+          headers["baggage-parent-span-id"] = headerValue;
       });
     });
   

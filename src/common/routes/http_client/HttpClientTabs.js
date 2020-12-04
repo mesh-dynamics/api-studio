@@ -90,6 +90,7 @@ class HttpClientTabs extends Component {
         this.handleImportedToCollectionIdChange = this.handleImportedToCollectionIdChange.bind(this);
 
         this.updateAbortRequest = this.updateAbortRequest.bind(this);
+        this.initiateAbortRequest = this.initiateAbortRequest.bind(this);
         this.handleDeleteOutgoingReq = this.handleDeleteOutgoingReq.bind(this);
         
     }
@@ -984,14 +985,13 @@ class HttpClientTabs extends Component {
     }
 
     extractHeaders(httpReqestHeaders) {
-        let headers = new Headers();
-        headers.delete('Content-Type');
+        let headers = {};
         httpReqestHeaders
             .filter((header) => header.selected)
             .forEach(each => {
-                if(each.name && each.value && each.name.indexOf(":") < 0) headers.append(each.name, each.value);
+                if(each.name && each.value && each.name.indexOf(":") < 0) headers[each.name] = each.value;
                 // ideally for ingress requests
-                if(each.name === "x-b3-spanid" && each.value) headers.append("baggage-parent-span-id", each.value);
+                if(each.name === "x-b3-spanid" && each.value) headers["baggage-parent-span-id"] = each.value;
             })
         return headers;
     }
@@ -1142,41 +1142,98 @@ class HttpClientTabs extends Component {
         // TODO: Update this to be visible from UI
         // fetchConfigRendered.headers.append('md-trace-id', encodeURIComponent(`${traceId}:${spanId}:0:1`) );
         let resTimestamp;
-        return fetch(fetchUrlRendered, fetchConfigRendered).then(async(response) => {
-            const resISODate = new Date().toISOString();
-            resTimestamp = new Date(resISODate).getTime();
-            responseStatus = response.status;
-            responseStatusText = response.statusText;
-            for (const header of response.headers) {
-                fetchedResponseHeaders[header[0]] = header[1];
-            }
-            if(fetchedResponseHeaders["content-type"] == "application/grpc"){
-                var reader = response.body.getReader();
-                var result = await reader.read();
-                const base64Data = Base64Binary.encode(result.value || new Uint8Array());
-                return base64Data;
-            }
-            return response.text();
-        })
-        .then((data) => {
-            // handle success
-            dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), data));
-            this.saveToHistoryAndLoadTrace(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp, httpRequestURLRendered, currentEnvironment);
-            //dispatch(httpClientActions.unsetReqRunning(tabId, runId))
-        })
-        .catch((error) => {
-            console.error(error);
-            dispatch(httpClientActions.postErrorDriveRequest(tabId, error.message));
-            dispatch(httpClientActions.unsetReqRunning(tabId, runId));
-            if(error.message !== commonConstants.USER_ABORT_MESSAGE){                
-                this.showErrorAlert(`Could not get any response. There was an error connecting: ${error}`);
-            }
-        });
+
+        if(PLATFORM_ELECTRON) {
+            ipcRenderer.on('drive_request_error', (event, reqTabId, reqRunId, reqError) => {
+                if(reqTabId === tabId && reqRunId === runId) {
+                    console.error("Electron request error: ", reqError);
+                    dispatch(httpClientActions.postErrorDriveRequest(reqTabId, reqError.message));
+                    dispatch(httpClientActions.unsetReqRunning(reqTabId, reqRunId));
+                }
+            });
+            ipcRenderer.on('drive_request_completed', (event, reqTabId, reqRunId, resTimestamp, fetchedResponseHeaders, responseStatus, responseStatusText, body) => {
+                if(reqTabId === tabId && reqRunId === runId) {
+                    try {
+                        const data = body;
+                        dispatch(httpClientActions.postSuccessDriveRequest(reqTabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), data));
+                        this.saveToHistoryAndLoadTrace(reqTabId, userHistoryCollection.id, reqRunId, reqTimestamp, resTimestamp, httpRequestURLRendered, currentEnvironment, currentEnvironmentVars);
+                    } catch (err) {
+                        dispatch(httpClientActions.postErrorDriveRequest(tabId, err.message));
+                        dispatch(httpClientActions.unsetReqRunning(reqTabId, reqRunId));   
+                    }
+                }
+            });
+            ipcRenderer.send('drive_request_initiate', {
+                tabId,
+                runId,
+                method: fetchConfigRendered.method,
+                url: fetchUrlRendered,
+                headers: JSON.stringify(fetchConfigRendered.headers),
+                ...( !(fetchConfigRendered.method == "GET" || fetchConfigRendered.method == "HEAD") && {body: bodyType === "formData" ? fetchConfigRendered.body.toString() : JSON.stringify(fetchConfigRendered.body)})
+            });
+        } else {
+            fetchConfigRendered.signal = tabToProcess.abortRequest.signal;
+            return fetch(fetchUrlRendered, fetchConfigRendered).then(async(response) => {
+                const resISODate = new Date().toISOString();
+                resTimestamp = new Date(resISODate).getTime();
+                responseStatus = response.status;
+                responseStatusText = response.statusText;
+                for (const header of response.headers) {
+                    fetchedResponseHeaders[header[0]] = header[1];
+                }
+                if(fetchedResponseHeaders["content-type"] == "application/grpc"){
+                    var reader = response.body.getReader();
+                    var result = await reader.read();
+                    const base64Data = Base64Binary.encode(result.value || new Uint8Array());
+                    return base64Data;
+                }
+                return response.text();
+            })
+            .then((data) => {
+                // handle success
+                dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), data));
+                this.saveToHistoryAndLoadTrace(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp, httpRequestURLRendered, currentEnvironment);
+                //dispatch(httpClientActions.unsetReqRunning(tabId, runId))
+            })
+            .catch((error) => {
+                console.error(error);
+                dispatch(httpClientActions.postErrorDriveRequest(tabId, error.message));
+                dispatch(httpClientActions.unsetReqRunning(tabId, runId));
+                if(error.message !== commonConstants.USER_ABORT_MESSAGE){                
+                    this.showErrorAlert(`Could not get any response. There was an error connecting: ${error}`);
+                }
+            });
+        }        
     }
 
     updateAbortRequest(tabId, abortRequest) {
         const { dispatch } = this.props;
         dispatch(httpClientActions.updateAbortRequest(tabId, abortRequest));
+    }
+
+    initiateAbortRequest(tabId, runId) {
+        const { 
+            httpClient: {
+                tabs: tabsToProcess
+            }, 
+            dispatch
+        } = this.props;
+
+        const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
+        const tabToProcess = tabsToProcess[tabIndex];
+        tabToProcess.abortRequest?.stopRequest();
+        if(PLATFORM_ELECTRON) {
+            ipcRenderer.on('request_aborted', (event, isAborted, abortedTabId, abortedRunId) => {
+                if(isAborted && tabId === abortedTabId && abortedRunId === runId) {
+                    dispatch(httpClientActions.unsetReqRunning(tabId, abortedRunId));
+                }
+            });
+            ipcRenderer.send('request_abort', {
+                tabId,
+                runId
+            });
+            // dispatch(httpClientActions.unsetReqRunning(tabId, runId));
+        }
     }
 
     handleTabChange(tabKey) {
@@ -1858,6 +1915,7 @@ class HttpClientTabs extends Component {
                             handleDuplicateTab={this.handleDuplicateTab}
                             toggleShowTrace={this.toggleShowTrace}
                             updateAbortRequest={this.updateAbortRequest}
+                            initiateAbortRequest={this.initiateAbortRequest}
                             handleDeleteOutgoingReq={this.handleDeleteOutgoingReq}
                         />
                     </div>
