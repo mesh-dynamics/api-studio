@@ -4,13 +4,24 @@ import com.cubeui.backend.domain.*;
 import com.cubeui.backend.domain.DTO.AppDTO;
 import com.cubeui.backend.domain.DTO.Response.DTO.TestConfigDTO;
 import com.cubeui.backend.domain.DTO.Response.Mapper.TestConfigMapper;
+import com.cubeui.backend.domain.enums.Role;
 import com.cubeui.backend.repository.*;
+import com.cubeui.backend.security.Validation;
+import com.cubeui.backend.service.AppFileStorageService;
 import com.cubeui.backend.service.CustomerService;
+import com.cubeui.backend.service.UserService;
 import com.cubeui.backend.web.ErrorResponse;
+import com.cubeui.backend.web.exception.DuplicateRecordException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
@@ -25,7 +36,7 @@ import static org.springframework.http.ResponseEntity.*;
 
 @RestController
 @RequestMapping("/api/app")
-//@Secured({"ROLE_USER"})
+@Slf4j
 public class AppController {
 
     private AppRepository appRepository;
@@ -38,10 +49,18 @@ public class AppController {
     private CustomerService customerService;
     private InstanceRepository instanceRepository;
     private InstanceUserRepository instanceUserRepository;
-    private UserRepository userRepository;
+    private UserService userService;
     private AppUserRepository appUserRepository;
-
-    public AppController(AppRepository appRepository, ServiceRepository serviceRepository, ServiceGraphRepository serviceGraphRepository, TestConfigRepository testConfigRepository, TestIntermediateServiceRepository testIntermediateServiceRepository, TestVirtualizedServiceRepository testVirtualizedServiceRepository, TestPathRepository testPathRepository, CustomerService customerService, InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository, UserRepository userRepository, AppUserRepository appUserRepository) {
+    private Validation validation;
+    private AppFileStorageService appFileStorageService;
+    public AppController(AppRepository appRepository, ServiceRepository serviceRepository,
+        ServiceGraphRepository serviceGraphRepository, TestConfigRepository testConfigRepository,
+        TestIntermediateServiceRepository testIntermediateServiceRepository,
+        TestVirtualizedServiceRepository testVirtualizedServiceRepository,
+        TestPathRepository testPathRepository, CustomerService customerService,
+        InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository,
+        UserService userService, AppUserRepository appUserRepository, Validation validation,
+        AppFileStorageService appFileStorageService) {
         this.appRepository = appRepository;
         this.serviceRepository = serviceRepository;
         this.serviceGraphRepository = serviceGraphRepository;
@@ -52,49 +71,56 @@ public class AppController {
         this.customerService = customerService;
         this.instanceRepository = instanceRepository;
         this.instanceUserRepository = instanceUserRepository;
-        this.userRepository = userRepository;
+        this.userService = userService;
         this.appUserRepository = appUserRepository;
+        this.validation = validation;
+        this.appFileStorageService = appFileStorageService;
     }
 
     @GetMapping("")
     public ResponseEntity all(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         Optional<List<AppUser>> appUsers = this.appUserRepository.findByUserId(user.getId());
-        return ok(appUsers.get().stream().map(AppUser::getApp).collect(Collectors.toList()));
+        List<App> apps = appUsers.get().stream().map(AppUser::getApp).collect(Collectors.toList());
+        List<Long> appIds = apps.stream().map(App::getId).collect(Collectors.toList());
+        List<AppFile> files = this.appFileStorageService.getFilesFoAppIds(appIds);
+        return ResponseEntity.ok(files);
     }
 
     @PostMapping("")
-    public ResponseEntity save(@RequestBody AppDTO appDTO, HttpServletRequest request) {
+    public ResponseEntity save(@RequestParam("app") AppDTO appDTO, HttpServletRequest request, Authentication authentication,
+        @RequestParam(value = "file", required = false) MultipartFile file) throws IOException {
         if (appDTO.getId() != null) {
             return status(FORBIDDEN).body(new ErrorResponse("App with ID '" + appDTO.getId() +"' already exists."));
         }
-        if(appDTO.getName() == null) return status(FORBIDDEN).body(new ErrorResponse("Mandatory field Name is empty."));
+        if(appDTO.getDisplayName() == null) return status(FORBIDDEN).body(new ErrorResponse("Mandatory field Name is empty."));
         Optional<Customer> customer = Optional.empty();
-        if(appDTO.getCustomerId() != null) {
-            customer = customerService.getById(appDTO.getCustomerId());
-            if(customer.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("Customer with ID '" + appDTO.getCustomerId() + "' not found."));
+        User user = (User)authentication.getPrincipal();
+        if(appDTO.getCustomerName() != null) {
+            customer = customerService.getByName(appDTO.getCustomerName());
+            if(customer.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("Customer with name '" + appDTO.getCustomerName() + "' not found."));
         } else {
-            return status(BAD_REQUEST).body(new ErrorResponse("Mandatory field Customer Id is empty."));
+            return status(BAD_REQUEST).body(new ErrorResponse("Mandatory field CustomerName is empty."));
         }
-        Optional<App> app = this.appRepository.findByNameAndCustomerId(appDTO.getName(), appDTO.getCustomerId());
+        if(!user.getRoles().contains(Role.ROLE_ADMIN)) {
+            validation.validateCustomerName(authentication, customer.get().getName());
+        }
+        Optional<App> app = this.appRepository.findByDisplayNameAndCustomerId(appDTO.getDisplayName(), customer.get().getId());
         if (app.isPresent())
         {
+            log.info("App with same display name exists");
             return ok(app);
         }
+        String name = UUID.randomUUID().toString();
         App saved = this.appRepository.save(
                 App.builder()
-                        .name(appDTO.getName())
+                        .name(name)
                         .customer(customer.get())
+                        .displayName(appDTO.getDisplayName())
+                        .userId(user.getUsername())
                         .build());
-        Optional<List<User>> optionalUsers = this.userRepository.findByCustomerId(appDTO.getCustomerId());
-        optionalUsers.ifPresent(users -> {
-            users.forEach(user -> {
-                AppUser appUser = new AppUser();
-                appUser.setApp(saved);
-                appUser.setUser(user);
-                appUserRepository.save(appUser);
-            });
-        });
+        this.appFileStorageService.storeFile(file, saved);
+        userService.createHistoryForEachUserForAnApp(request, saved);
         return created(
                 ServletUriComponentsBuilder
                         .fromContextPath(request)
@@ -105,24 +131,41 @@ public class AppController {
     }
 
     @PutMapping("")
-    public ResponseEntity update(@RequestBody AppDTO appDTO, HttpServletRequest request) {
+    public ResponseEntity update(@RequestParam("app") AppDTO appDTO, HttpServletRequest request, Authentication authentication,
+        @RequestParam(value = "file", required = false) MultipartFile file) throws IOException {
         if (appDTO.getId() == null) {
             return status(FORBIDDEN).body(new ErrorResponse("App id not provided"));
         }
         Optional<App> existing = appRepository.findById(appDTO.getId());
         if(existing.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("App with ID '" + appDTO.getId() + "' not found."));
         Optional<Customer> customer = Optional.empty();
-        if(appDTO.getCustomerId() != null) {
-            customer = customerService.getById(appDTO.getCustomerId());
-            if(customer.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("Customer with ID '" + appDTO.getCustomerId() + "' not found."));
+        User user = (User)authentication.getPrincipal();
+        if(appDTO.getCustomerName() != null) {
+            customer = customerService.getByName(appDTO.getCustomerName());
+            if(customer.isEmpty()) return status(BAD_REQUEST).body(new ErrorResponse("Customer with Name '" + appDTO.getCustomerName() + "' not found."));
         }
+        App existingApp = existing.get();
         customer.ifPresent(givenCustomer -> {
-            existing.get().setCustomer(givenCustomer);
+            if(!user.getRoles().contains(Role.ROLE_ADMIN)) {
+                validation.validateCustomerName(authentication, givenCustomer.getName());
+            }
+            existingApp.setCustomer(givenCustomer);
         });
-        Optional.ofNullable(appDTO.getName()).ifPresent((name -> {
-            existing.get().setName(name);
+        Long customerId = existingApp.getCustomer().getId();
+        Optional.ofNullable(appDTO.getDisplayName()).ifPresent((displayName -> {
+            Optional<App> app = this.appRepository.findByDisplayNameAndCustomerId(displayName, customerId);
+            app.ifPresentOrElse(givenApp -> {
+                if(givenApp.getId() != appDTO.getId() ) {
+                    throw new DuplicateRecordException("App with same display name exists");
+                }
+            }, () -> existingApp.setDisplayName(displayName));
         }));
-        this.appRepository.save(existing.get());
+        existingApp.setUserId(user.getUsername());
+        this.appRepository.save(existingApp);
+        if(file != null) {
+            this.appFileStorageService.deleteFileByAppId(appDTO.getId());
+            this.appFileStorageService.storeFile(file, existing.get());
+        }
         return created(
                 ServletUriComponentsBuilder
                         .fromContextPath(request)
@@ -211,13 +254,28 @@ public class AppController {
 
     @GetMapping("/{id}")
     public ResponseEntity get(@PathVariable("id") Long id) {
-        return ok(this.appRepository.findById(id));
+        Optional<App> existing = this.appRepository.findById(id);
+        return existing.map(app -> {
+            Optional<AppFile> appFile = this.appFileStorageService.getFileByAppId(app.getId());
+            return appFile.map(af -> ResponseEntity.ok(af)).orElseThrow(() -> new RecordNotFoundException("There is no app image found for given id"));
+        }).orElseThrow(() -> new RecordNotFoundException("There is no app found for given id"));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity delete(@PathVariable("id") Long id) {
-        Optional<App> existed = this.appRepository.findById(id);
-        existed.ifPresent((app) -> this.appRepository.delete(app));
-        return noContent().build();
+
+    @DeleteMapping("deleteByDisplayName/{customerId}/{displayName}")
+    public ResponseEntity deleteByDisplayName(@PathVariable String customerId,
+        @PathVariable String displayName, Authentication authentication) {
+        User user = (User)authentication.getPrincipal();
+        if(!user.getRoles().contains(Role.ROLE_ADMIN)) {
+            validation.validateCustomerName(authentication, customerId);
+        }
+        Optional<Customer> customer = this.customerService.getByName(customerId);
+        return customer.map(givenCustomer -> {
+            Optional<App> existed = this.appRepository.findByDisplayNameAndCustomerId(displayName, givenCustomer.getId());
+            return existed.map((app) -> {
+                this.appRepository.delete(app);
+                return ResponseEntity.ok(app);
+            }).orElseThrow(() -> new RecordNotFoundException("There is no app found for given name"));
+        }).orElseThrow(() -> new RecordNotFoundException("There is no customer found for given name"));
     }
 }
