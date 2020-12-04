@@ -56,6 +56,8 @@ import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.Pair;
 
+import com.cube.learning.DynamicInjectionGeneratedToActualConvertor;
+import com.cube.learning.InjectionExtractionMeta;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -83,9 +85,7 @@ import io.md.utils.FnKey;
 import io.md.injection.DynamicInjectionConfig;
 import io.md.injection.DynamicInjectionConfig.ExtractionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta;
-import io.md.injection.DynamicInjectionConfigGenerator;
-import io.md.injection.DynamicInjectionGeneratedToActualConvertor;
-import io.md.injection.InjectionExtractionMeta;
+
 
 import io.md.core.Utils;
 import io.md.utils.Constants;

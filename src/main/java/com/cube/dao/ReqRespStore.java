@@ -43,7 +43,7 @@ import io.md.dao.Recording.RecordingStatus;
 import io.md.services.DataStore;
 import io.md.services.FnResponse;
 import io.md.injection.DynamicInjectionConfig;
-import io.md.injection.InjectionExtractionMeta;
+import com.cube.learning.InjectionExtractionMeta;
 import io.md.utils.Constants;
 
 import com.cube.dao.ReqRespStoreImplBase.CollectionKey;
