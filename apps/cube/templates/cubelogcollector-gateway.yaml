@@ -1,7 +1,7 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: {{namespace}}-gateway
+  name: {{namespace}}-logcollector-gateway
   namespace: {{namespace}}
 spec:
   selector:
@@ -12,7 +12,7 @@ spec:
       name: http
       protocol: HTTP
     hosts:
-    - "{{namespace_host}}"
+    - "logcollector.dev.cubecorp.io"
     tls:
       httpsRedirect: true
   - port:
@@ -20,4 +20,4 @@ spec:
       name: https
       protocol: HTTP
     hosts:
-    - "{{namespace_host}}"
+    - "logcollector.dev.cubecorp.io"

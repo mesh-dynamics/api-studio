@@ -33,15 +33,15 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: cube
+  name: cube-logcollector
   namespace: {{namespace}}
   labels:
     app: cube
 spec:
   gateways:
-  - {{namespace}}-gateway
+  - {{namespace}}-logcollector-gateway
   hosts:
-  - "{{namespace_host}}"
+  - "logcollector.dev.cubecorp.io"
   http:
   - match:
     - uri:
