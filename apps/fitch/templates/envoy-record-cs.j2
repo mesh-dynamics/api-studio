@@ -28,6 +28,24 @@ spec:
         typed_config:
           "@type": "type.googleapis.com/envoy.config.filter.http.lua.v2.Lua"
           inlineCode: |
+            local ffi = require("ffi")
+            ffi.cdef[[
+              typedef long time_t;
+              typedef struct timeval {
+                time_t tv_sec;
+                time_t tv_usec;
+              } timeval;
+
+              int gettimeofday(struct timeval* t, void* tzp);
+            ]]
+
+            local t = ffi.new("timeval")
+            local function getEpochTime()
+              ffi.C.gettimeofday(t, nil)
+              local res = tonumber(t.tv_sec) + tonumber(t.tv_usec)/1.0e6
+              return res
+            end
+
             local random = math.random
             math.randomseed((os.time()+os.clock())*1000000)
             function uuid()
@@ -172,7 +190,7 @@ spec:
               cubeResp["recordingType"] = "{{recording_type}}"
                -- "{{run_type}}"
               cubeResp["eventType"] = "HTTPResponse"
-              cubeResp["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
+              cubeResp["timestamp"] = getEpochTime()
 
               if (crequestid) then cubeResp["reqId"] = crequestid end
               if (traceId) then cubeResp["traceId"] = traceId end
@@ -217,7 +235,7 @@ spec:
               if parentSpanId then cubeReq["parentSpanId"] = parentSpanId end
               cubeReq["reqId"] = crequestid
               cubeReq["eventType"] = "HTTPRequest"
-              cubeReq["timestamp"] = os.date("%Y-%m-%dT%H:%M:%SZ")
+              cubeReq["timestamp"] = getEpochTime()
 
               request_handle:logErr("Request id: " .. crequestid)
 
