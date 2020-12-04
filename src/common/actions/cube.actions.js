@@ -306,7 +306,7 @@ function getTestIds (app) {
         const { user } = getState().authentication;
         dispatch(request());
         try {
-            const data = await cubeService.fetchCollectionList(user, app);
+            const data = await cubeService.fetchCollectionList(user, app, "Golden");
             const collections = data.recordings;
             dispatch(success(collections, Date.now()));
         } catch (error) {
