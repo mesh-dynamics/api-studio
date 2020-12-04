@@ -166,7 +166,7 @@ const initialState : IHttpClientStoreState = {
     isCollectionLoading: false,
     mockContextLookupCollection: "",
     mockContextSaveToCollection: {},
-    
+    uiPref:{}
 }
 
 const getTabIndexGivenTabId = (tabId:string, tabs: IHttpClientTabDetails[]) => {
@@ -897,6 +897,31 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         }
                         return eachTab;
                     })
+            }
+        }
+
+        case httpClientConstants.UPDATE_UI_PREFERENCE: {
+            let {tabs} = state;
+            const {tabId, isHighlighted} = data;
+            return {
+                ...state,
+                uiPref: {...state.uiPref, [data.key]: data.value}
+            } as IHttpClientStoreState
+        }
+        case httpClientConstants.DELETE_OUTGOING_REQ: {
+            let {tabs} = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    let outgoingRequests = eachTab.outgoingRequests;
+                    if(eachTab.id === data.tabId) {
+                        outgoingRequests = eachTab.outgoingRequests.filter((eachOutgoingTab) => {
+                            return eachOutgoingTab.id !== data.outgoingReqTabId;
+                        })
+                        eachTab.hasChanged = true;
+                    }
+                    return {...eachTab, outgoingRequests: [...outgoingRequests]}; 
+                })
             }
         }
 

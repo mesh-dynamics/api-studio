@@ -48,14 +48,14 @@ export interface IApiCatalogState {
   apiPaths: any[]; //2
   apiTrace: any; //2
   apiTraceLoading: boolean;
-  collectionList: any[]; //2
+  collectionList: ICollectionDetails[];
   compareRequests: any[]; //2
   diffRequestLeft: any; //2
   diffRequestRight: any; //2
   diffResponseLeft: any; //2
   diffResponseRight: any; //2
   endTime: string; //1
-  goldenList: any[]; //2
+  goldenList: ICollectionDetails[];
   httpClientRequestIds: any; //2
   instances: any[]; //2
   resizedColumns: any[]; //2
@@ -139,33 +139,6 @@ export interface ITestConfigDetails {
   updatedAt: number[]; // 3
 }
 
-export interface ITestDetails {
-  app: string;
-  archived: boolean;
-  branch: any; //2
-  codeVersion: any; //2
-  collec: string;
-  collectionUpdOpSetId: any; //2
-  comment: any; //2
-  cust: string;
-  dynamicInjectionConfigVersion: any; //2
-  gitCommitId: any; //2
-  id: string;
-  instance: string;
-  jarPath: any; //2
-  label: string;
-  name: string;
-  prntRcrdngId: any; //2
-  recordingType: string;
-  rootRcrdngId: string;
-  status: string;
-  tags: any[]; //2
-  templateUpdOpSetId: any; //2
-  templateVer: string;
-  timestmp: number; //Spelling mistake
-  userId: string;
-}
-
 export interface ITimelineDataResult {
   app: string;
   mockReqNotMatched: number;
@@ -245,7 +218,7 @@ export interface ICubeState {
   templateOperationSetObject: any; //2
   testConfig: ITestConfigDetails | null;
   testConfigList: ITestConfigDetails[];
-  testIds: ITestDetails[]; //should be better renamed
+  testIds: ICollectionDetails[]; //should be better renamed
   testIdsReqErr: string;
   testIdsReqStatus: string;
   timelineData: ITimelineData[];
@@ -448,6 +421,7 @@ export interface ICollectionDetails {
   prntRcrdngId: any; //2
   recordingType: string;
   rootRcrdngId: string;
+  runId: string;
   status: string;
   tags: any[]; //2
   templateUpdOpSetId: any; //2
@@ -489,6 +463,7 @@ export interface IHttpClientStoreState {
   userHistoryCollection: ICollectionDetails | null;
   mockContextLookupCollection: string;
   mockContextSaveToCollection: ICollectionDetails;
+  uiPref: IKeyValuePairs<any>;
 }
 
 // Navigation State

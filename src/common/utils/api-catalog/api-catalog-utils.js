@@ -7,15 +7,27 @@ const getServiceList = (apiFacets) => {
 }
 
 const getIncomingAPIList = (apiFacets, service) => {
-    const filter = service ? { val: service } : {};
-    const serviceObject = _.find(apiFacets.serviceFacets, filter)
-    if (_.isEmpty(serviceObject)) {
-        return [];
-    }
+    if(service){
+        const serviceObject = _.find(apiFacets.serviceFacets, { val: service })
+        if (_.isEmpty(serviceObject)) {
+            return [];
+        }
 
-    return _.chain(serviceObject.path_facets)
-        .map(e => { return { val: e.val, count: e.count } })
-        .value()
+        return _.chain(serviceObject.path_facets)
+            .map(e => { return { val: e.val, count: e.count } })
+            .value();
+    }else{
+        const apiPaths = [];
+        apiFacets.serviceFacets.forEach( service => {
+            service.path_facets.forEach(pathFacet => {
+                if(!_.find(apiPaths, {val: pathFacet.val} )){
+                    apiPaths.push({ val: pathFacet.val, count: pathFacet.count });
+                }
+            })
+            
+        });
+        return apiPaths;
+    }
 }
 
 const getInstanceList = (apiFacets, service, apiPath) => {

@@ -211,7 +211,7 @@ class SideBarTabs extends Component {
                 httpRequestEventTypeIndex === 0 ? 1 : 0;
               const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
               const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
-              const { headers, queryParams, formData, rawData, rawDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
+              const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
     
               //TODO: Create a separate class to handle below object
               let reqObject = {
@@ -225,11 +225,13 @@ class SideBarTabs extends Component {
                     ? "formData"
                     : rawData && rawData.length > 0
                     ? "rawData"
-                    : "formData",
+                    : grpcData && grpcData.length ? "grpcData" : "formData",
                 formData: formData,
                 rawData: rawData,
                 rawDataType: rawDataType,
-                paramsType: "showQueryParams",
+                grpcData,
+                grpcDataType,
+                paramsType: grpcData && grpcData.length ? "showBody": "showQueryParams",
                 responseStatus: "NA",
                 responseStatusText: "",
                 responseHeaders: "",
