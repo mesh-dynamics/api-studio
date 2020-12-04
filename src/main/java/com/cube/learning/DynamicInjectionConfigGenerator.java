@@ -27,7 +27,7 @@ public class DynamicInjectionConfigGenerator {
 
     // This map keeps track of which all values are already seen in requests, to avoid creating
     // extraction configs for them.
-    private final Set<String> valuesAlreadySeenInRequestMap = new HashSet<>();
+    private final Set<String> valuesAlreadySeenInRequestSet = new HashSet<>();
 
     // Insertion Order of configs is important, hence using a linked hash for some maps.
 
@@ -129,7 +129,7 @@ public class DynamicInjectionConfigGenerator {
                     stringValue);
 
                 extractionConfigListForThisValue.or(() -> {
-                    if (!valuesAlreadySeenInRequestMap.contains(stringValue)) {
+                    if (!valuesAlreadySeenInRequestSet.contains(stringValue)) {
                         return Optional.of(createExtractionSetForValue(stringValue));
                     } else {
                         return Optional.empty();
@@ -147,28 +147,16 @@ public class DynamicInjectionConfigGenerator {
             } else if (eventType == Event.EventType.HTTPRequest) {
                 // Add to map to keep track of values
                 // already spotted in requests
-                String injConfigApiPath = apiPath;
-                valuesAlreadySeenInRequestMap.add(stringValue);
+                String modifiedApiPath = apiPath;
+                valuesAlreadySeenInRequestSet.add(stringValue);
                 if (keyPath.contains("pathSegments")) {
-                    injConfigApiPath = apiPath.replace(stringValue, ".+");
+                    modifiedApiPath = apiPath.replace(stringValue, ".+");
                 }
 
-                InjectionConfig injectionConfig = getInjectionConfigInstance(
-                    injConfigApiPath, keyPath,
-                    method);
-
-                if (injectionConfig.values.contains(stringValue)) {
-                    // The extraction set for a previously seen value is already processed
-                    return;
-                }
-
-                injectionConfig.values.add(stringValue);
-                injectionConfig.instanceCount++;
+                final String finalApiPath = modifiedApiPath;
 
                 Optional<LinkedHashSet<ExtractionConfig>> extractionConfigsForPresentValue = getExtractionSetForValue(
                     stringValue);
-                Optional<LinkedHashSet<ExtractionConfig>> existingSet = getExtractionSetForInjection(
-                    injectionConfig);
 
                 // If no extraction set exists for the present injection, create a new set with
                 // the first extraction in the set for the present value (which is also the place of value's first appearance).
@@ -183,6 +171,22 @@ public class DynamicInjectionConfigGenerator {
                 // in which case the second injection config will kick-in.
 
                 extractionConfigsForPresentValue.ifPresent(esForValue -> {
+
+                    InjectionConfig injectionConfig = getInjectionConfigInstance(
+                        finalApiPath, keyPath,
+                        method);
+
+                    if (injectionConfig.values.contains(stringValue)) {
+                        // The extraction set for a previously seen value is already processed
+                        return;
+                    }
+
+                    injectionConfig.values.add(stringValue);
+                    injectionConfig.instanceCount++;
+
+                    Optional<LinkedHashSet<ExtractionConfig>> existingSet = getExtractionSetForInjection(
+                        injectionConfig);
+
                     // Use only the first extraction, keeping others as its equivalence set candidates
                     // and record their count
                     ExtractionConfig firstExtractionConfig = esForValue.iterator().next();
@@ -217,7 +221,7 @@ public class DynamicInjectionConfigGenerator {
 
                 });
 
-                valuesAlreadySeenInRequestMap.add(stringValue);
+                valuesAlreadySeenInRequestSet.add(stringValue);
 
             } else {
                 LOGGER.error("Found unhandled requestType: " + eventType.toString());

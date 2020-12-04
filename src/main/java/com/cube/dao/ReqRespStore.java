@@ -3,7 +3,6 @@
  */
 package com.cube.dao;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.cube.agent.UtilException;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.dao.*;
@@ -405,18 +404,6 @@ public interface ReqRespStore extends DataStore {
      * @return
      */
     boolean saveMatchResultAggregate(MatchResultAggregate resultAggregate, String customerId);
-
-    /**
-     *
-     * @param customerId
-     * @param app
-     * @param instanceId
-     * @param recordingId
-     * @return
-     */
-    Result<Event> getReqRespEventsInTimestampOrder(String customerId, String app,
-        Optional<String> instanceId,
-        Optional<String> recordingId);
 
     /**
      *

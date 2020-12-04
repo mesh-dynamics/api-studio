@@ -1,8 +1,5 @@
 package com.cube.dao;
 
-import com.cube.learning.DynamicInjectionRulesLearner;
-import com.cube.learning.InjectionExtractionMeta;
-import io.md.dao.Event;
 import io.md.dao.RecordingOperationSetSP;
 import java.util.Arrays;
 import java.util.List;
@@ -61,36 +58,5 @@ class ReqRespStoreSolrTest {
         Assertions.assertEquals(operationsList.size(), recordingOperationSetSPStored.operationsList.size());
     }
 
-//    @Test
-    void getPotentialDynamicInjectionConfigs() throws Exception {
-        final Config config = new Config();
 
-        String customerId = "Pronto", app = "ProntoApp", version = "111";
-        Optional<Boolean> discardSingleValues = Optional.empty();
-        Optional<List<String>> paths = Optional.empty();
-        Optional<List<String>> recordingsList = Optional.of(Arrays.asList(("Recording-965809473")));
-        Optional<String> instanceId = Optional.empty();
-
-        DynamicInjectionRulesLearner diLearner = new DynamicInjectionRulesLearner(paths);
-
-        recordingsList.ifPresentOrElse(recIdList -> recIdList.forEach(recId -> {
-            Result<Event> events = config.rrstore
-                .getReqRespEventsInTimestampOrder(customerId, app, instanceId,
-                    Optional.ofNullable(recId));
-            diLearner.processEvents(events);
-
-        }), () -> {
-            Result<Event> events = config.rrstore
-                .getReqRespEventsInTimestampOrder(customerId, app, instanceId, Optional.empty());
-            diLearner.processEvents(events);
-        });
-
-        List<InjectionExtractionMeta> finalMetaList = diLearner.generateRules(discardSingleValues);
-
-        System.out.print(config.jsonMapper
-            .writerWithDefaultPrettyPrinter()
-            .writeValueAsString(finalMetaList));
-
-//        config.rrstore.saveDynamicInjectionConfigFromCsv(customerId, app, version, finalMetaList);
-    }
 }

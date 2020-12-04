@@ -19,7 +19,6 @@ import io.md.dao.agent.config.ConfigType;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
 
-
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -29,7 +28,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -85,8 +83,6 @@ import io.md.utils.FnKey;
 import io.md.injection.DynamicInjectionConfig;
 import io.md.injection.DynamicInjectionConfig.ExtractionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta;
-
-
 import io.md.core.Utils;
 import io.md.utils.Constants;
 
@@ -337,13 +333,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         addToFilterOrQuery(query , queryBuff , SERVICEF , eventQuery.getServices() , true , eventQuery.getServicesWeight());
 
-        if(eventQuery.getCollection().orElse("").equalsIgnoreCase("NA")){
+        if(!eventQuery.getCollections().isEmpty() && eventQuery.getCollections().get(0).equalsIgnoreCase("NA")){
             LOGGER.info(String.format("Solr getEvents Applying the recodingType weightage for NA collection %s  %s" , eventQuery.getCustomerId() , eventQuery.getApp() ) );
             recordingTypeWeights.forEach((type , weight)->{
                 addToQryStr(queryBuff , RECORDING_TYPE_F , type.toString() , true, Optional.of(weight) );
             });
         }else{
-            addToFilterOrQuery(query , queryBuff , COLLECTIONF , eventQuery.getCollection() , true , eventQuery.getCollectionWeight());
+            addToFilterOrQuery(query , queryBuff , COLLECTIONF , eventQuery.getCollections() , true , eventQuery.getCollectionWeight());
         }
 
         List<String> traceIds = eventQuery.getTraceIds();
@@ -3504,39 +3500,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(TIMESTAMPF , dynamicInjectionConfig.timestamp.toString());
         doc.setField(TYPEF , type);
         return doc;
-    }
-
-    @Override
-    public Result<Event> getReqRespEventsInTimestampOrder(String customerId, String app,
-        Optional<String> instanceId,
-        Optional<String> recordingId) {
-
-        Optional<String> collectionId = recordingId.map(recId -> {
-            // For each recording Id, get the corresponding collection
-            Optional<Recording> recordingStruct = getRecording(recId);
-            return Optional.ofNullable(recordingStruct.map(r -> {
-                if (instanceId.map(r.instanceId::equals).orElse(true)) {
-                    return r.collection;
-                } else {
-                    return null;
-                }
-            }).orElse(null));
-        }).orElse(Optional.empty());
-
-
-        List<Event.EventType> requestTypes = Arrays.asList(Event.EventType.HTTPRequest, Event.EventType.HTTPResponse);
-
-
-        EventQuery.Builder eventQueryBuilder = new EventQuery.Builder(customerId, app,
-            requestTypes);
-
-        eventQueryBuilder.withIndexOrderAsc(true);
-
-        collectionId.ifPresent(collId -> eventQueryBuilder.withCollection(collId));
-
-        EventQuery eventQuery = eventQueryBuilder.build();
-
-        return getEvents(eventQuery);
     }
 
     @Override

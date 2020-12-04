@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import io.md.dao.Event;
+import io.md.dao.EventQuery;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -298,37 +299,27 @@ public class ReplayWS extends ReplayBasicWS {
         }
     }
 
-    @GET
-    @Path("getPotentialDynamicInjectionConfigs/{customerId}/{app}")
+    @POST
+    @Path("getPotentialDynamicInjectionConfigs")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
     public Response getPotentialDynamicInjectionConfigs(@Context UriInfo uriInfo,
-                                                        @PathParam("customerId") String customerId,
-                                                        @PathParam("app") String app) {
+        EventQuery eventQuery) {
         MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 
-        Optional<String> instanceId = Optional.ofNullable(queryParams.getFirst(Constants.INSTANCE_ID_FIELD));
-        Optional<List<String>> recordingsList = Optional.ofNullable(queryParams.get(Constants.RECORDING_ID));
-        Optional<List<String>> paths = Optional.ofNullable(queryParams.get("paths"));
+        Optional<List<String>> paths = Optional.ofNullable(queryParams.get("path"));
         Optional<Boolean> discardSingleValues = Optional.of(Boolean.valueOf(
             queryParams.getFirst("discardSingleValues")));
 
         DynamicInjectionRulesLearner diLearner = new DynamicInjectionRulesLearner(paths);
 
-        recordingsList.ifPresentOrElse(recIdList -> recIdList.forEach(recId -> {
-            Result<Event> events = rrstore
-                .getReqRespEventsInTimestampOrder(customerId, app, instanceId,
-                    Optional.ofNullable(recId));
-            diLearner.processEvents(events);
-
-        }), () -> {
-            Result<Event> events = rrstore
-                .getReqRespEventsInTimestampOrder(customerId, app, instanceId, Optional.empty());
-            diLearner.processEvents(events);
-        });
+        Result<Event> events = rrstore.getEvents(eventQuery);
+        diLearner.processEvents(events);
 
         try {
 
-            List<InjectionExtractionMeta> finalMetaList = diLearner.generateRules(discardSingleValues);
+            List<InjectionExtractionMeta> finalMetaList = diLearner
+                .generateRules(discardSingleValues);
 
             CsvSchema csvSchema = csvMapper.schemaFor(InjectionExtractionMeta.class).withHeader();
             String data = csvMapper.writer(csvSchema).writeValueAsString(finalMetaList);
@@ -341,19 +332,26 @@ public class ReplayWS extends ReplayBasicWS {
 
         } catch (JsonProcessingException e) {
             LOGGER.error(
-                String.format("Error in converting Event list to Json for customer %s, app %s",
-                    customerId, app), e);
+                String.format(
+                    "Error in converting Event list to Json for customer %s, app %s, collections: %s",
+                    eventQuery.getCustomerId(), eventQuery.getApp(), eventQuery.getCollections()),
+                e);
             return Response.serverError().entity(
                 Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
-                    String.format("Error in converting Event list to Json for customer %s, app %s",
-                        customerId, app))).build();
+                    String.format(
+                        "Error in converting Event list to Json for customer %s, app %s, collections: %s",
+                        eventQuery.getCustomerId(), eventQuery.getApp(),
+                        eventQuery.getCollections()))).build();
         } catch (IOException e) {
-            LOGGER.error(String.format("Error in file creation for customer %s, app %s, ",
-                customerId, app), e);
+            LOGGER.error(
+                String.format("Error in file creation for customer %s, app %s, collections: %s",
+                    eventQuery.getCustomerId(), eventQuery.getApp(), eventQuery.getCollections()),
+                e);
             return Response.serverError().entity(
                 Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
-                    String.format("Error in file creation for customer %s, app %s",
-                        customerId, app))).build();
+                    String.format("Error in file creation for customer %s, app %s, collections: %s",
+                        eventQuery.getCustomerId(), eventQuery.getApp(),
+                        eventQuery.getCollections()))).build();
         }
     }
 
@@ -362,34 +360,39 @@ public class ReplayWS extends ReplayBasicWS {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public Response saveDynamicInjectionConfigFromCsv(@PathParam("customerId") String customerId,
-                                                      @PathParam("app") String app,
-                                                      @PathParam("version") String version,
-                                                      @FormDataParam("file") InputStream uploadedInputStream) {
+        @PathParam("app") String app,
+        @PathParam("version") String version,
+        @FormDataParam("file") InputStream uploadedInputStream) {
 
-
-        CsvSchema csvSchema = csvMapper.schemaFor(InjectionExtractionMeta.class).withSkipFirstDataRow(true);
+        CsvSchema csvSchema = csvMapper.schemaFor(InjectionExtractionMeta.class)
+            .withSkipFirstDataRow(true);
         List<InjectionExtractionMeta> injectionExtractionMetaList;
 
         try {
-            MappingIterator<InjectionExtractionMeta> mi = csvMapper.readerFor(InjectionExtractionMeta.class).
-                with(csvSchema).readValues(uploadedInputStream);
+            MappingIterator<InjectionExtractionMeta> mi = csvMapper
+                .readerFor(InjectionExtractionMeta.class).
+                    with(csvSchema).readValues(uploadedInputStream);
             injectionExtractionMetaList = mi.readAll();
-            String dynamicInjectionConfigId = rrstore.saveDynamicInjectionConfigFromCsv(customerId, app, version,
-                injectionExtractionMetaList);
+            String dynamicInjectionConfigId = rrstore
+                .saveDynamicInjectionConfigFromCsv(customerId, app, version,
+                    injectionExtractionMetaList);
 
             return Response.ok().entity((new JSONObject(Map.of(
                 "Message", "Successfully saved Dynamic Injection Config",
                 "ID", dynamicInjectionConfigId,
                 "dynamicInjectionConfigVersion", version))).toString()).build();
         } catch (SolrStoreException e) {
-            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Unable to save Dynamic Injection Config",
-                "dynamicInjectionConfig.version", version)), e);
+            LOGGER.error(new ObjectMessage(
+                Map.of(Constants.MESSAGE, "Unable to save Dynamic Injection Config",
+                    "dynamicInjectionConfig.version", version)), e);
             return Response.serverError().entity((
-                Utils.buildErrorResponse(Constants.ERROR, Constants.SOLR_STORE_FAILED, "Unable to save Dynamic Injection Config: " +
-                    e.getStackTrace()))).build();
+                Utils.buildErrorResponse(Constants.ERROR, Constants.SOLR_STORE_FAILED,
+                    "Unable to save Dynamic Injection Config: " +
+                        e.getStackTrace()))).build();
         } catch (IOException e) {
-            LOGGER.error(String.format("Error in reading CSV file for customer %s, app %s, version %s",
-                customerId, app, version), e);
+            LOGGER.error(
+                String.format("Error in reading CSV file for customer %s, app %s, version %s",
+                    customerId, app, version), e);
             return Response.serverError().entity(
                 Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
                     String.format("Error in reading CSV file for customer %s, app %s, version: %s",

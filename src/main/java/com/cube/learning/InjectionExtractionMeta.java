@@ -41,9 +41,9 @@ public class InjectionExtractionMeta implements Comparable{
     public Float extractionUniquenessScore;
 
     public static float valueCountScoreWeight = 0.5f;
-    public static float extractionMethodScoreWeight = 0.5f/3;
-    public static float valueQualityScoreWeight = 0.5f/3;
-    public static float extractionUniquenessScoreWeight = 0.5f/3;
+    public static float extractionMethodScoreWeight = 0.2f;
+    public static float valueQualityScoreWeight = 0.2f;
+    public static float extractionUniquenessScoreWeight = 0.1f;
 
 
     @JsonIgnore
@@ -175,12 +175,16 @@ public class InjectionExtractionMeta implements Comparable{
     }
 
     private static Float getStringScore(String str){
-        if (str.matches("[a-z A-Z,]+") || str.contains(":")){
-            // Only alphabets, <space>, and <comma> are least rank
-            return 0f;
-        }else{
-            // Alphanumerics are higher rank
+        if (str.matches("[-0-9]+")){
+            // Only numbers are highest rank
             return 1f;
+        }else if (str.matches("[a-z A-Z,_]+") || str.contains(":")){
+            // Only <alphabets>, <space>, <comma> and <underscore> are least rank
+            // ':' caters to timestamps
+            return 0f;
+        }else {
+            // Others are middle rank
+            return 0.5f;
         }
 
     }
