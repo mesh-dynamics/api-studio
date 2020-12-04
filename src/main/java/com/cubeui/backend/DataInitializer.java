@@ -8,7 +8,6 @@ import com.cubeui.backend.domain.DTO.UserDTO;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.CustomerRepository;
-import com.cubeui.backend.repository.EmailDomainRepository;
 import com.cubeui.backend.repository.UserRepository;
 import com.cubeui.backend.service.AppFileStorageService;
 import com.cubeui.backend.service.CustomerService;
@@ -40,8 +39,6 @@ public class DataInitializer implements CommandLineRunner {
 
     private UserRepository userRepository;
 
-    private EmailDomainRepository emailDomainRepository;
-
     private AppRepository appRepository;
 
     private HttpServletRequest httpServletRequest;
@@ -50,14 +47,13 @@ public class DataInitializer implements CommandLineRunner {
 
     public DataInitializer(UserService userService, CustomerService customerService,
         CustomerRepository customerRepository, UserRepository userRepository,
-        EmailDomainRepository emailDomainRepository, AppRepository appRepository,
-        HttpServletRequest httpServletRequest, AppFileStorageService appFileStorageService) {
+        HttpServletRequest httpServletRequest, AppRepository appRepository,
+        AppFileStorageService appFileStorageService) {
 
         this.userService = userService;
         this.customerService = customerService;
         this.customerRepository = customerRepository;
         this.userRepository = userRepository;
-        this.emailDomainRepository = emailDomainRepository;
         this.appRepository = appRepository;
         this.httpServletRequest = httpServletRequest;
         this.appFileStorageService = appFileStorageService;
