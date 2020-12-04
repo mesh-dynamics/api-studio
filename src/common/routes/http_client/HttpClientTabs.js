@@ -1361,12 +1361,13 @@ class HttpClientTabs extends Component {
         let httpResponseEvent = eachPair[httpResponseEventTypeIndex];
         
         // let apiPath = getApiPathFromRequestEvent(httpRequestEvent); // httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : "";
-        let apiPath = this.getPathName(applyEnvVarsToUrl(tabToSave.httpURL));
+        // let apiPath = this.getPathName(applyEnvVarsToUrl(tabToSave.httpURL));
+        const parsedUrl = urlParser(applyEnvVarsToUrl(tabToSave.httpURL), PLATFORM_ELECTRON ? {} : true);
+        let apiPath = _.trim(generateApiPath(parsedUrl), '/');
         httpRequestEvent.metaData.httpURL = tabToSave.httpURL;
         httpResponseEvent.metaData.httpURL = tabToSave.httpURL;
 
         if(httpRequestEvent.reqId === "NA") {
-            const parsedUrl = urlParser(applyEnvVarsToUrl(tabToSave.httpURL), PLATFORM_ELECTRON ? {} : true);
             let service = httpRequestEvent.service != "NA" ? httpRequestEvent.service : (parsedUrl.host || "NA");
             httpRequestEvent = this.updateHttpEvent(apiPath, service, httpRequestEvent);
             httpResponseEvent = this.updateHttpEvent(apiPath, service, httpResponseEvent);
