@@ -1249,13 +1249,13 @@ public class CubeStore {
             Optional.ofNullable(queryParams.getFirst(Constants.RECORDING_TYPE_FIELD))
                 .flatMap(r -> Utils.valueOf(RecordingType.class, r));
         if(recordingType.isEmpty()) {
-            return Response.status(Status.BAD_REQUEST).
-                entity(String.format("No such Recording Type found")).build();
+            return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).
+                entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"No such Recording Type found")).build();
         }
         RecordingType type = recordingType.get();
         if(type== RecordingType.Golden && templateVersion.isEmpty()) {
             return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-                .entity(String.format("version needs to be given for a golden")).build();
+                .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"version needs to be given for a golden")).build();
         }
         return copyRecording(recordingId, name, label, templateVersion, userId, type);
     }
@@ -1270,14 +1270,14 @@ public class CubeStore {
                 .getRecordingByName(recording.customerId, recording.app, nameValue, Optional.of(labelValue)));
             if(recordingWithSameName.isPresent()) {
                 return Response.status(Response.Status.CONFLICT)
-                    .entity(String.format("Collection %s already active for customer %s, app %s, for instance %s. Use different name or label",
-                        recordingWithSameName.get().collection, recording.customerId, recording.app, recordingWithSameName.get().instanceId))
+                    .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,String.format("Collection %s already active for customer %s, app %s, for instance %s. Use different name or label",
+                        recordingWithSameName.get().collection, recording.customerId, recording.app, recordingWithSameName.get().instanceId)))
                     .build();
             }
             String collection = UUID.randomUUID().toString();
             RecordingBuilder recordingBuilder = new RecordingBuilder(
                 recording.customerId, recording.app, recording.instanceId, collection)
-                .withStatus(recording.status).withTemplateSetVersion(templateVersion.orElse(recording.templateVersion))
+                .withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateVersion.orElse(recording.templateVersion))
                 .withName(name.orElse(recording.name))
                 .withUserId(userId).withTags(recording.tags).withUpdateTimestamp(timeStamp)
                 .withRootRecordingId(recording.rootRecordingId).withLabel(labelValue)
@@ -1306,10 +1306,16 @@ public class CubeStore {
                 EventQuery.Builder builder = new EventQuery.Builder(recording.customerId, recording.app, Collections.emptyList());
                 builder.withCollection(recording.collection);
                 Result<Event> result = rrstore.getEvents(builder.build());
+                Map<String, String> reqIdMap = new HashMap<>();
                 result.getObjects().forEach(event -> {
                     try {
-                        final String reqId = io.md.utils.Utils.generateRequestId(
-                            event.service, event.getTraceId());
+                        String reqId = reqIdMap.get(event.getReqId());
+                        if(reqId == null) {
+                            String oldReqId = event.getReqId();
+                            reqId = io.md.utils.Utils.generateRequestId(
+                                event.service, event.getTraceId());
+                            reqIdMap.put(oldReqId, reqId);
+                        }
                         Event newEvent = buildEvent(event, collection,  type, reqId, event.getTraceId(), Optional.of(timeStamp.toString()));
                         rrstore.save(newEvent);
                     } catch (InvalidEventException e) {
@@ -1647,12 +1653,14 @@ public class CubeStore {
                     }
                     String traceId = request.getTraceId();
                     if (rec.recordingType == RecordingType.UserGolden) {
-                        String oldTraceId = request.getTraceId();
-                        rrstore.deleteReqResByTraceId(oldTraceId, rec.collection);
-                        rrstore.commit();
                         traceId = traceIdMap.get(request.getTraceId());
                         if(traceId == null) {
-                            traceId = io.md.utils.Utils.generateTraceId() ;
+                            String oldTraceId = request.getTraceId();
+                            rrstore.deleteReqResByTraceId(oldTraceId, rec.collection);
+                            rrstore.commit();
+
+                            //traceId = io.md.utils.Utils.generateTraceId() ; // reuse same trace id for now
+                            traceId = request.getTraceId();
                             traceIdMap.put(request.getTraceId(), traceId);
                         }
                     }
@@ -1914,6 +1922,7 @@ public class CubeStore {
         eventBuilder.setPayload(event.payload);
         eventBuilder.withMetaData(event.metaData);
         eventBuilder.withRunId(runId.orElse(event.runId));
+        eventBuilder.setPayloadKey(event.payloadKey);
         return eventBuilder.createEvent();
     }
 

@@ -40,6 +40,7 @@ import io.md.dao.Analysis.ReqRespMatchWithEvent;
 import io.md.dao.DataObj.PathNotFoundException;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
+import io.md.dao.GRPCPayload;
 import io.md.dao.Replay;
 import io.md.dao.ReqRespMatchResult;
 import io.md.services.Analyzer;
@@ -317,14 +318,16 @@ public class RealAnalyzer implements Analyzer {
         // since the dynamic injection could change the path leading to mismatch
         // Also don't match based on the payload key as the request body might change
         // on injection at body level causing different payload key.
+
         if (!replayedReqs.containsKey(reqEvent.reqId)) {
             builder.withPath(reqEvent.apiPath)
                 .withPayloadKey(reqEvent.payloadKey);
         }
 
+
         return builder.withService(reqEvent.service)
-            .withCollection(replayId)
             .withTraceId(reqEvent.getTraceId())
+            .withCollection(replayId)
             .withLimit(limit)
             .build();
     }
