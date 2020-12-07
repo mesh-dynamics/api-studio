@@ -47,7 +47,7 @@ public class TemplateEntry {
 	 * @param customization
 	 */
 	// Adding appropriate annotations for json serialization/deserialization
-	@JsonCreator
+
 	public TemplateEntry(@JsonProperty("path") String path,
 		@JsonProperty("dt") CompareTemplate.DataType dt,
 		@JsonProperty("pt") CompareTemplate.PresenceType pt,
@@ -55,6 +55,20 @@ public class TemplateEntry {
 		@JsonProperty("em") CompareTemplate.ExtractionMethod em,
 		@JsonProperty("customization") Optional<String> customization,
 		@JsonProperty("arrayCompKeyPath") Optional<String> arrayComparisionKeyPath) {
+		this(path, dt, pt, ct, em, customization, arrayComparisionKeyPath, Optional.empty(), false);
+	}
+
+
+	@JsonCreator
+	public TemplateEntry(@JsonProperty("path") String path,
+		@JsonProperty("dt") CompareTemplate.DataType dt,
+		@JsonProperty("pt") CompareTemplate.PresenceType pt,
+		@JsonProperty("ct") CompareTemplate.ComparisonType ct,
+		@JsonProperty("em") CompareTemplate.ExtractionMethod em,
+		@JsonProperty("customization") Optional<String> customization,
+		@JsonProperty("arrayCompKeyPath") Optional<String> arrayComparisionKeyPath,
+		@JsonProperty("parentPath") Optional<String> parentPath,
+		@JsonProperty("isGlobalRule") boolean isGlobalRule) {
 		super();
 		this.path = path;
 		this.dt = (dt != null) ? dt : Default;
@@ -70,6 +84,8 @@ public class TemplateEntry {
 			regex = Optional.empty();
 		}
 		this.arrayComparisionKeyPath = arrayComparisionKeyPath;
+		this.parentPath = parentPath;
+		this.isGlobalRule = isGlobalRule;
 	}
 
 	/**
@@ -113,6 +129,10 @@ public class TemplateEntry {
 	public Optional<Pattern> regex; // compiled form of regex if ct == CustomRegex
 	@JsonIgnore
 	public boolean isParentArray = false;
+	@JsonProperty("parentPath")
+	public Optional<String> parentPath;
+	@JsonProperty("isGlobalRule")
+	public boolean isGlobalRule;
 
 	/*
 	 * Assuming compare type is not ignore or default
