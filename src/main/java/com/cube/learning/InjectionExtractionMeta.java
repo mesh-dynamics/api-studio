@@ -40,10 +40,10 @@ public class InjectionExtractionMeta implements Comparable{
     @JsonProperty("extractionUniquenessScore")
     public Float extractionUniquenessScore;
 
-    public static float valueCountScoreWeight = 0.5f;
-    public static float extractionMethodScoreWeight = 0.2f;
-    public static float valueQualityScoreWeight = 0.2f;
-    public static float extractionUniquenessScoreWeight = 0.1f;
+    public final static float valueCountScoreWeight = 0.5f;
+    public final static float extractionMethodScoreWeight = 0.2f;
+    public final static float valueQualityScoreWeight = 0.2f;
+    public final static float extractionUniquenessScoreWeight = 0.1f;
 
 
     @JsonIgnore
