@@ -98,6 +98,7 @@ class SideBarTabs extends Component {
         cubeService.loadCollectionTraces(customerId, selectedCollectionId, app, selectedCollection.id).then(
           (apiTraces) => {
             selectedCollection.apiTraces = apiTraces;
+            selectedCollection.isLoading = false;
             dispatch(httpClientActions.addUserCollections(userCollections));
           },
           (err) => {
@@ -109,6 +110,19 @@ class SideBarTabs extends Component {
       console.error("Error ", error);
       throw new Error("Error");
     }
+  }
+
+  onRefreshCollectionBtnClick = (event) => {
+    event.stopPropagation();
+    const collectionId = event.target.getAttribute("data-collection-collec");
+    let {httpClient: {userCollections}, dispatch} = this.props;
+    let selectedCollection = _.find(userCollections, {collec: collectionId})
+    if (selectedCollection.isLoading) {
+      return
+    }
+    selectedCollection.isLoading = true
+    dispatch(httpClientActions.addUserCollections(userCollections))
+    this.handlePanelClick(collectionId, true)
   }
 
   onDeleteBtnClick = (event) => {
@@ -356,6 +370,7 @@ class SideBarTabs extends Component {
                 data-cubehistory={props.node.isCubeRunHistory === true}
                 data-type="request"
                 onClick={this.onDeleteBtnClick}
+                style={{marginRight: "5px"}}
               />
             </div>
           </div>
@@ -620,6 +635,10 @@ class SideBarTabs extends Component {
               <CreateCollection modalButton={true} />
               {userCollections &&
                 userCollections.map((eachCollec) => {
+                  const refreshBtnClassNames = classNames({
+                    "fas fa-sync-alt pointer margin-right-10": true, 
+                    "fa-spin": eachCollec.isLoading 
+                  })
                   return (
                     <Panel
                       id="collapsible-panel-example-2"
@@ -641,6 +660,12 @@ class SideBarTabs extends Component {
                           {eachCollec.name}
                         </Panel.Title>
                         <div className="collection-options">
+                          {eachCollec.apiTraces && <i
+                            className={refreshBtnClassNames}
+                            data-collection-collec={eachCollec.collec}
+                            title="Refresh collection"
+                            onClick={this.onRefreshCollectionBtnClick}
+                          />}
                           <i
                             className="fas fa-trash pointer"
                             data-id={eachCollec.rootRcrdngId}
@@ -648,6 +673,7 @@ class SideBarTabs extends Component {
                             title="Delete"
                             data-type="collection"
                             onClick={this.onDeleteBtnClick}
+                            style={{marginRight: "9px"}}
                           />
                         </div>
                       </Panel.Heading>
