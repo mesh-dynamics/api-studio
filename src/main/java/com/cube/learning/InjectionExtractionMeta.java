@@ -175,15 +175,15 @@ public class InjectionExtractionMeta implements Comparable{
     }
 
     private static Float getStringScore(String str){
-        if (str.matches("[-0-9]+")){
-            // Only numbers are highest rank
+        if (str.matches("[-xX0-9a-fA-F]+")){
+            // Hex and <hyphen> are the highest score
             return 1f;
         }else if (str.matches("[a-z A-Z,_]+") || str.contains(":")){
-            // Only <alphabets>, <space>, <comma> and <underscore> are least rank
+            // Only <alphabets>, <space>, <comma> and <underscore> are least score
             // ':' caters to timestamps
             return 0f;
         }else {
-            // Others are middle rank
+            // Others are middle score
             return 0.5f;
         }
 
