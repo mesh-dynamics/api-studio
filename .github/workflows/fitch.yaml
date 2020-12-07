@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'version number of the build'
+        description: 'Enter build version'
         required: true
-        default: '1.0.0'
+        default: 'v1.0.71'
 
 jobs:
   buildmacOS:
@@ -30,9 +30,64 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
         run: |
           version=${{ github.event.inputs.version }}
-          echo $version
+          git checkout $version
           npm install
           export RELEASE_TYPE=customer
           jq --arg version "${version}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.customer-fitch.yml --publish always
+
+  buildlinux:
+    name: Build devTool for linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - run: git fetch --prune --unshallow --tags
+      - name: Build for linux(manual)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
+        run: |
+          version=${{ github.event.inputs.version }}
+          git checkout $version
+          npm install
+          export RELEASE_TYPE=customer
+          jq --arg version "${version}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
+          npx webpack --mode production --display minimal --config webpack.electron.config.js
+          npx electron-builder build -l --config electron-builder.customer-fitch.yml --publish always
+
+  buildwindows:
+    name: Build devTool for windows
+    runs-on: windows-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - run: git fetch --prune --unshallow --tags
+
+      - name: Build for windows(manual)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
+        run: |
+          choco install yq -y
+          echo 'Decoding certificate string'
+          $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.WIN_CSC_LINK }}")
+          [IO.File]::WriteAllBytes("md-cert.pfx", $pfx_cert_byte)
+          npm install
+          $version = $(github.event.inputs.version)
+          git checkout $version
+          jq --arg version $version '.version = $version' package.json > .\tmp.txt
+          $CONTENT = Get-Content -Path .\tmp.txt
+          Remove-Item -path .\package.json
+          Add-Content -Path .\package.json -Value $CONTENT
+          $Env:RELEASE_TYPE = "customer"
+          yq w .\electron-builder.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" > ebtmp.txt
+          $BUILDER_CONTENT = Get-Content -Path .\ebtmp.txt
+          echo $BUILDER_CONTENT
+          Remove-Item -path .\electron-builder.yml
+          Add-Content -Path .\electron-builder.yml -Value $BUILDER_CONTENT
+          npx webpack --mode production --display minimal --config webpack.electron.config.js
+          npx electron-builder build -w --config electron-builder.customer-fitch.yml --publish always
