@@ -237,14 +237,14 @@ public class CompareTemplate {
 					LOGGER.error("Internal logical error - ComparisonType/PresenceType is explicitly set to Default");
 					return Optional.empty();
 				} else {
-					return Optional.of(new TemplateEntry(origPath, DataType.Default, rule.pt, rule.ct
+					return Optional.of(new TemplateEntryAsRule(origPath, DataType.Default, rule.pt, rule.ct
 						, CompareTemplate.ExtractionMethod.Default, Optional.empty(), Optional.empty()
 						, Optional.of(parentPointer.toString()), false));
 				}
-			}).orElseGet(() -> getInheritedRule(parentPointer, origPath));
+			}).orElseGet(() -> (TemplateEntryAsRule) getInheritedRule(parentPointer, origPath));
 		} else {
-			return new TemplateEntry(origPath, DataType.Default, PresenceType.Default, ComparisonType.Default);
-
+			return new TemplateEntryAsRule(new TemplateEntry(origPath, DataType.Default, PresenceType.Default, ComparisonType.Default)
+				, Optional.empty(), false) ;
 		}
 	}
 
@@ -307,8 +307,7 @@ public class CompareTemplate {
 				return appLevelAttributeRuleMap.flatMap(map ->
 					map.getRule(pathv.toString()));
 			}).map(templateEntry1 -> {
-				templateEntry1.isGlobalRule =true;
-				return templateEntry1;
+				return new TemplateEntryAsRule(templateEntry1, Optional.empty(), true);
 			});
 		}
 		return templateEntry;
