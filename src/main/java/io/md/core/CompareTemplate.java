@@ -227,7 +227,7 @@ public class CompareTemplate {
 	/*
 	 * Equality and Ignore compare rules can be inherited from the nearest ancestor
 	 */
-	private TemplateEntry getInheritedRule(JsonPointer pathPointer, String origPath) {
+	private TemplateEntryAsRule getInheritedRule(JsonPointer pathPointer, String origPath) {
 		JsonPointer parentPointer = pathPointer.head();
 		if (parentPointer!=null) {
 			return get(parentPointer).flatMap(rule -> {
@@ -241,7 +241,7 @@ public class CompareTemplate {
 						, CompareTemplate.ExtractionMethod.Default, Optional.empty(), Optional.empty()
 						, Optional.of(parentPointer.toString()), false));
 				}
-			}).orElseGet(() -> (TemplateEntryAsRule) getInheritedRule(parentPointer, origPath));
+			}).orElseGet(() -> getInheritedRule(parentPointer, origPath));
 		} else {
 			return new TemplateEntryAsRule(new TemplateEntry(origPath, DataType.Default, PresenceType.Default, ComparisonType.Default)
 				, Optional.empty(), false) ;
