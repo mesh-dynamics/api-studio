@@ -16,7 +16,7 @@ import {
   IStoreState,
   IUserAuthDetails,
 } from "../../reducers/state.types";
-import classNames from "classNames";
+import classNames from "classnames";
 import { cubeService } from "../../services";
 import _ from "lodash";
 
