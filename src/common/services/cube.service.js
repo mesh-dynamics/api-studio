@@ -16,6 +16,41 @@ const fetchAppsList = async () => {
     }
 }
 
+const addNewApp = async(formData) =>{
+    try {
+        return await api.post(`${config.apiBaseUrl}/app`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+              }
+        });
+    } catch(error) {
+        console.log("Error adding new App \n", error);
+        throw new Error("Error adding new App");
+    }
+}
+const updateApp = async(formData) =>{
+    try {
+        return await api.put(`${config.apiBaseUrl}/app`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+              }
+        });
+    } catch(error) {
+        const message = e1.response?.data?.message;
+        console.log("Error renaming App \n", error);
+        throw new Error(message || "Error renaming App");
+    }
+}
+
+const removeAnApp = async(appDisplayName, customerName) =>{
+    try {
+        return await api.delete(`${config.apiBaseUrl}/app/deleteByDisplayName/${customerName}/${appDisplayName}`);
+    } catch(error) {
+        console.log("Error deleting App \n", error);
+        throw new Error("Error deleting App");
+    }
+}
+
 const getGraphDataByAppId = async (appId) => {
     try {
         return await api.get(`${config.apiBaseUrl}/app/${appId}/service-graphs`);
@@ -634,6 +669,9 @@ const copyRecording = async (collectionId, copyRecordingData) => {
 
 export const cubeService = {
     fetchAppsList,
+    addNewApp,
+    updateApp,
+    removeAnApp,
     getInstanceList,
     getGraphData,
     getTestConfigByAppId,

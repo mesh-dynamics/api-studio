@@ -19,15 +19,17 @@ export function getApi() {
     // Default auth header for get and post
     api.defaults.headers.get["Authorization"] = `Bearer ${token}`;
     api.defaults.headers.post["Authorization"] = `Bearer ${token}`;
+    api.defaults.headers.put["Authorization"] = `Bearer ${token}`;
+    api.defaults.headers.delete["Authorization"] = `Bearer ${token}`;
   };
 
   store.subscribe(handleTokenChange);
 
-  // Default Get Headers
+  // Default Headers
   api.defaults.headers.get["Content-Type"] = "application/json";
-
-  // Default POST Headers
   api.defaults.headers.post["Content-Type"] = "application/json";
+  api.defaults.headers.put["Content-Type"] = "application/json";
+  api.defaults.headers.delete["Content-Type"] = "application/json";
 
   api.interceptors.request.use(
     (config) => {

@@ -10,6 +10,7 @@ import classNames from 'classnames';
 import { DropdownButton, MenuItem, FormControl} from 'react-bootstrap';
 import GoldenCollectionBrowse from './GoldenCollectionBrowse';
 import ConvertCollection from './ConvertCollection';
+import AppManager from '../Navigation/AppManager';
 
 class APICatalogFilter extends Component {
 
@@ -133,10 +134,7 @@ class APICatalogFilter extends Component {
         
         return (
             <div>
-                <div>
-                    <div className="label-n">APPLICATION</div>
-                    <div className="application-name">{cube.selectedApp}</div>
-                </div>
+                <AppManager />
                 {
                     currentPage==="api" && 
                     <div className="filters">

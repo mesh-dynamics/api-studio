@@ -15,6 +15,8 @@ import urlParser from 'url-parse';
 import * as URL from "url";
 import { Collection } from 'postman-collection';
 
+import AppManager from '../../components/Navigation/AppManager.tsx';
+
 import { cubeActions } from "../../actions";
 import { cubeService } from "../../services";
 import api from '../../api';
@@ -1958,10 +1960,12 @@ class HttpClientTabs extends Component {
             <div className="http-client" style={{ display: "flex", height: "100%" }}>
                 <aside className="" ref={e=> (this.sliderRef = e)}
                 style={{ "width": "250px", "height": "100%", "background": "#EAEAEA", "padding": "10px", "display": "flex", "flexDirection": "column", overflow: "auto" }}>
-                    <div style={{ marginTop: "10px", marginBottom: "10px" }}>
+                    
+ {/* <div style={{ marginTop: "10px", marginBottom: "10px" }}>
                         <div className="label-n">APPLICATION</div>
                         <div className="application-name">{app}</div>
-                    </div>
+                    </div> */}
+                    <AppManager />
                     <SideBarTabs onAddTab={this.addTab} showOutgoingRequests={this.showOutgoingRequests}/>
                 </aside>
                <SplitSlider slidingElement={this.sliderRef} persistKey="VerticalSplitter_httpClientTabsSidebar"/>
