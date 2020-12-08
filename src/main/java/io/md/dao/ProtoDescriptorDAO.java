@@ -1,5 +1,7 @@
 package io.md.dao;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Base64;
@@ -8,8 +10,12 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.md.logger.LogMgr;
+import io.md.utils.CubeObjectMapperProvider;
+
 import org.slf4j.Logger;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.os72.protobuf.dynamic.DynamicSchema;
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
@@ -49,13 +55,17 @@ public class ProtoDescriptorDAO {
 
 	public static class MethodDescriptor {
 
-		public MethodDescriptor(String inputTypeName, String outputTypeName) {
+		public MethodDescriptor(String inputTypeName, String outputTypeName, Boolean clientStreaming, Boolean serverStreaming) {
 			this.inputTypeName = inputTypeName;
 			this.outputTypeName = outputTypeName;
+			this.clientStreaming = clientStreaming;
+			this.serverStreaming = serverStreaming;
 		}
 
 		public String inputTypeName;
 		public String outputTypeName;
+		public Boolean clientStreaming;
+		public Boolean serverStreaming;
 	}
 
 	private void initialize() throws IOException, Descriptors.DescriptorValidationException {
@@ -71,7 +81,9 @@ public class ProtoDescriptorDAO {
 				DescriptorProtos.MethodDescriptorProto methodDescriptorProto = serviceDescriptorProto.getMethod(j);
 				methodDescriptorMap.put(methodDescriptorProto.getName(),
 					new MethodDescriptor(methodDescriptorProto.getInputType().substring(1),
-						methodDescriptorProto.getOutputType().substring(1)));
+						methodDescriptorProto.getOutputType().substring(1),
+						methodDescriptorProto.getClientStreaming(),
+						methodDescriptorProto.getServerStreaming()));
 			}
 		}
 	}
@@ -85,27 +97,63 @@ public class ProtoDescriptorDAO {
 			map(methodDescriptorMap -> methodDescriptorMap.get(method));
 	}
 
-	private Optional<String> convertToJson(String encodedByteStream, String typeName)  {
+	private Optional<String> convertToJson(String encodedByteStream, String typeName, Boolean isStreaming)  {
 		try {
+			StringBuilder finalJson = new StringBuilder();
 			Descriptors.Descriptor featureMessageDescriptor = schema.newMessageBuilder(typeName).getDescriptorForType();
+
 			byte[] decodedFeature = Base64.getDecoder().decode(encodedByteStream);
-			byte[] copyOfRangeFeature = Arrays.copyOfRange(decodedFeature, 5, decodedFeature.length);
-			DynamicMessage featureDynamicMessage = DynamicMessage.parseFrom(featureMessageDescriptor, copyOfRangeFeature);
-			return Optional.of(JsonFormat.printer().print(featureDynamicMessage));
+
+			if(isStreaming) {
+				finalJson.append("[");
+			}
+			int i=0;
+			while (i<decodedFeature.length) {
+				if(decodedFeature[i]!=0) {
+					break;
+				}
+				byte[] bodyLengthBytes = Arrays.copyOfRange(decodedFeature, i + 1, i + 5);
+				ByteBuffer wrapped = ByteBuffer.wrap(bodyLengthBytes);
+				int bodyLength = wrapped.getInt();
+				int startInd = i+5;
+				byte[] copyOfRangeFeatureList = Arrays.copyOfRange(decodedFeature , startInd , startInd+bodyLength);
+				DynamicMessage featureDynamicMessage = DynamicMessage.parseFrom(featureMessageDescriptor, copyOfRangeFeatureList);
+				if(i!=0) {
+					finalJson.append(",");
+				}
+				JsonFormat.printer().appendTo(featureDynamicMessage, finalJson);
+				i=startInd+bodyLength;
+			}
+			if(isStreaming && finalJson.length() > 1) {
+				finalJson.append("]");
+			}
+			return finalJson.length() < 2 ? Optional.empty() : Optional.of(
+				finalJson.toString());
 		} catch(Exception e) {
 			LOGGER.error("Cannot convert base64 encoded binary protobuf to json", e);
 			return Optional.empty();
 		}
 	}
 
-	private Optional<byte[]> convertToByteString(String json, String typeName) {
+	private void convertToByteArraySingleObject(String json, String typeName, OutputStream outputStream)
+		throws IOException {
 		try {
 			DynamicMessage.Builder featureMessageBuilder  = schema.newMessageBuilder(typeName);
 			JsonFormat.parser().merge(json, featureMessageBuilder);
-			return Optional.of(featureMessageBuilder.build().toByteArray());
-		} catch (Exception e) {
-			LOGGER.error("Cannot convert json to byte string", e);
-			return Optional.empty();
+			byte[] originalBytes = featureMessageBuilder.build().toByteArray();
+				// Need to add the 1st byte as 0 and 2nd to 5th byte as content length in case of grpc requests/responses
+				int mbLength = originalBytes.length + 5;
+				byte[] mb = new byte[mbLength];
+				mb[0] = 0;
+				byte[] contentLengthBytes = ByteBuffer.allocate(4).putInt(originalBytes.length)
+					.array();
+				System.arraycopy(contentLengthBytes, 0, mb, 1, 4); // copy length
+				System.arraycopy(originalBytes, 0, mb, 5, originalBytes.length); // copy original bytes
+				outputStream.write(mb);
+			}
+		 catch (Exception e) {
+			LOGGER.error("Cannot convert json to byte array", e);
+			throw e;
 		}
 	}
 
@@ -115,32 +163,47 @@ public class ProtoDescriptorDAO {
 		return findMethodDescriptor(serviceName, methodName)
 			.flatMap(methodDescriptor ->
 				convertToJson(encodedByteStream, isRequest? methodDescriptor.inputTypeName
-					: methodDescriptor.outputTypeName));
+					: methodDescriptor.outputTypeName, isRequest? methodDescriptor.clientStreaming
+					: methodDescriptor.serverStreaming));
 	}
 
-	public Optional<byte[]> convertJsonToByteString(String serviceName, String methodName
+
+	public Optional<byte[]> convertJsonToByteArray(String serviceName, String methodName
 		, String json, boolean isRequest) {
 
 		Optional<byte[]> originalBytesOptional = findMethodDescriptor(serviceName, methodName)
-			.flatMap(methodDescriptor ->
-				convertToByteString(json, isRequest ? methodDescriptor.inputTypeName :
-					methodDescriptor.outputTypeName));
-		Optional<byte[]> modifiedBytes = originalBytesOptional.map(originalBytes -> {
-			// Need to add the 1st byte as 0 and 2nd to 5th byte as content length in case of grpc request
-			//if (isRequest) {
-			int mbLength = originalBytes.length + 5;
-			byte[] mb = new byte[mbLength];
-			mb[0] = 0;
-			byte[] contentLengthBytes = ByteBuffer.allocate(4).putInt(originalBytes.length)
-				.array();
-			System.arraycopy(contentLengthBytes, 0, mb, 1, 4); // copy length
-			System.arraycopy(originalBytes, 0, mb, 5, originalBytes.length); // copy original bytes
-			return mb;
-			/*} else {
-				return originalBytes;
-			}*/
-		});
-		return modifiedBytes;
+			.flatMap(methodDescriptor -> {
+
+				try {
+					Boolean isStreaming = isRequest ? methodDescriptor.clientStreaming :
+						methodDescriptor.serverStreaming;
+					ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+					if (isStreaming) {
+						ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
+						JsonNode jsonArrayNode = jsonMapper.readTree(json);
+						if (jsonArrayNode.isArray()) {
+							for (JsonNode jsonNode : jsonArrayNode) {
+								convertToByteArraySingleObject(
+									jsonNode.toString(),
+									isRequest ? methodDescriptor.inputTypeName :
+										methodDescriptor.outputTypeName, outputStream);
+							}
+						}
+					} else {
+						convertToByteArraySingleObject(json,
+							isRequest ? methodDescriptor.inputTypeName :
+								methodDescriptor.outputTypeName, outputStream);
+					}
+					byte finalOutput[] = outputStream.toByteArray();
+					return Optional.ofNullable(finalOutput);
+				} catch (Exception e) {
+					LOGGER.error("Cannot convert json to byte array for streaming case", e);
+					return Optional.empty();
+				}
+			});
+
+		return originalBytesOptional;
 	}
 
 
