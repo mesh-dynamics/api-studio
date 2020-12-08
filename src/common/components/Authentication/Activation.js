@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { Link } from 'react-router-dom';
 import { verifyActivationToken } from '../../services/auth.service';
 import "./Activation.css";
@@ -48,15 +48,27 @@ const Activation = (props) => {
         </div>
     );
 
+    const renderRedirectionResources = () => (
+        <Fragment>
+            <span className="activation-success-content">
+                <Link to="/login" className="activation-link">Click here</Link> to login to Test Studio.
+            </span>
+            <div className='activation-launch-button-container'>
+                <a className="activation-launch-app-button" href='meshd://api-studio'>Launch API Studio</a>
+            </div>
+            <span className="activation-success-content">
+                Don't have API Studio? Download <a className='activation-link' href='https://www.meshdynamics.io/download' target='_blank'>here</a>
+            </span>
+        </Fragment>
+    );
+
     const renderActivationSuccess = () => (
         <div className="activation-message-container">
             <div className="activation-message flex-column">
-                <span>
-                    Your account has been activated. You will be automatically redirected to login page.
+                <span className="activation-success-header">
+                    Your account has been activated.
                 </span>
-                <span>
-                    <Link to="/login" className="activation-link">Click here</Link> to continue manually.
-                </span>
+                {renderRedirectionResources()}
             </div>
         </div>
     );
@@ -67,12 +79,10 @@ const Activation = (props) => {
                 statusErrorCode === STATUS_ERROR_CODE.ACCOUNT_ACTIVATED 
                 ?
                 <div className="activation-message flex-column">
-                    <span>
+                    <span className="activation-success-header">
                         Account already activated.
                     </span>
-                    <span>
-                        <Link className="activation-link" to="/login">Click here</Link> to login.
-                    </span>
+                    {renderRedirectionResources()}
                 </div>
                 :
                 <div className="activation-message flex-column">
@@ -108,11 +118,12 @@ const Activation = (props) => {
 
     }, [search, activationState]);
 
-    useEffect(() => {
-        if(activationState === ACTIVATION.SUCCESS) {
-            setTimeout(() => history.push("/login"), 8000);
-        }
-    }, [activationState]);
+    // Keep for now just in case its needed
+    // useEffect(() => {
+        // if(activationState === ACTIVATION.SUCCESS) {
+            // setTimeout(() => history.push("/login"), 8000);
+    //     }
+    // }, [activationState]);
 
     return (
         <div className="activation-root">

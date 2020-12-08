@@ -8,6 +8,10 @@ asar: true
 
 copyright: Copyright © 2020 Mesh Dynamics
 
+protocols:
+  name: electron-deep-linking
+  schemes: ["meshd"]
+
 extraMetadata:
   main: "dist/electron/electron-main.js"
 

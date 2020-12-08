@@ -11,14 +11,14 @@ const path = require('path');
 const aws4 = require('aws4');
 const os = require('os');
 const menu = require('./menu');
-const { resourceRootPath, updateApplicationConfig, getApplicationConfig } = require('./fs-utils');
-const { useGetLatest } = require('react-table');
+const { updateApplicationConfig, getApplicationConfig } = require('./fs-utils');
 
 autoUpdater.autoInstallOnAppQuit = true;
 autoUpdater.autoDownload = false; 
 autoUpdater.channel = 'latest';
 
 let mainWindow;
+let deeplinkingUrl;
 let releaseDirectory = '/'; // Default is root of bucket
 let downloadInfo = null;
 const reqMap = {};
@@ -83,6 +83,11 @@ const setupListeners = (mockContext, user, replayContext) => {
             mainWindow = null;
         });
 
+        if (process.platform == 'win32') {
+            // Keep only command line / deep linked arguments
+            deeplinkingUrl = process.argv.slice(1)
+        }
+
         // Set up menu
         Menu.setApplicationMenu(menu.createMenuTemplate(mainWindow));
     }
@@ -128,6 +133,20 @@ const setupListeners = (mockContext, user, replayContext) => {
         if (mainWindow === null) {
             createWindow();
         }
+    });
+    
+    if (!app.isDefaultProtocolClient('meshd')) {
+        // Define custom protocol handler. Deep linking works on packaged versions of the application!
+        app.setAsDefaultProtocolClient('meshd')
+    }
+
+    app.on('will-finish-launching', () => {
+        // Protocol handler for osx
+        app.on('open-url', (event, url) => {
+            event.preventDefault();
+            deeplinkingUrl = url;
+            logger.info('open-url# ' + deeplinkingUrl)
+        })
     });
 
 
