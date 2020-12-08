@@ -224,7 +224,11 @@ public class UserService {
                     }
                     return false;
                 })
-                .map(user -> updatePasswordDataForUser(user, newPassword));
+                .map(user -> {
+                    User updated = updatePasswordDataForUser(user, newPassword);
+                    this.userRepository.save(updated);
+                    return updated;
+                });
     }
 
     public Optional<User> requestPasswordReset(String mail) {
