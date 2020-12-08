@@ -30,9 +30,9 @@ import "./Tabs.css";
 
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
-import { generateRunId, generateApiPath, getApiPathFromRequestEvent, extractParamsFromRequestEvent, selectedRequestParamData, unSelectedRequestParamData, isValidJSON, Base64Binary  } from "../../utils/http_client/utils"; 
+import { generateRunId, generateApiPath, getApiPathFromRequestEvent, extractParamsFromRequestEvent, selectedRequestParamData, unSelectedRequestParamData, isValidJSON  } from "../../utils/http_client/utils"; 
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
-import { getParameterCaseInsensitive } from '../../../shared/utils';
+import { getParameterCaseInsensitive, Base64Binary } from '../../../shared/utils';
 
 import SplitSlider  from '../../components/SplitSlider.tsx';
 
@@ -1063,6 +1063,7 @@ class HttpClientTabs extends Component {
 
         const httpRequestQueryStringParams = this.extractQueryStringParams(queryStringParams);
         let httpRequestBody;
+        const isGrpc = this.isgRPCRequest(tabToProcess);
         if (bodyType === "formData") {
             const { formData } = tabToProcess;
             httpRequestBody = this.extractBody(formData);
@@ -1071,7 +1072,7 @@ class HttpClientTabs extends Component {
             const { rawData } = tabToProcess;
             httpRequestBody = this.extractBody(rawData);
         }
-        if (this.isgRPCRequest(tabToProcess)) {
+        if (isGrpc) {
             const { grpcData } = tabToProcess;
             if(!isValidJSON(grpcData)){
                 const errorMessage = "Grpc data should be valid JSON object";
@@ -1143,7 +1144,7 @@ class HttpClientTabs extends Component {
         // fetchConfigRendered.headers.append('md-trace-id', encodeURIComponent(`${traceId}:${spanId}:0:1`) );
         let resTimestamp;
 
-        if(PLATFORM_ELECTRON) {
+        if(PLATFORM_ELECTRON && !isGrpc) {
             ipcRenderer.on('drive_request_error', (event, reqTabId, reqRunId, reqError) => {
                 if(reqTabId === tabId && reqRunId === runId) {
                     console.error("Electron request error: ", reqError);
@@ -1168,6 +1169,7 @@ class HttpClientTabs extends Component {
                 runId,
                 method: fetchConfigRendered.method,
                 url: fetchUrlRendered,
+                bodyType,
                 headers: JSON.stringify(fetchConfigRendered.headers),
                 ...( !(fetchConfigRendered.method == "GET" || fetchConfigRendered.method == "HEAD") && {body: bodyType === "formData" ? fetchConfigRendered.body.toString() : JSON.stringify(fetchConfigRendered.body)})
             });

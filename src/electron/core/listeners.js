@@ -11,6 +11,7 @@ const path = require('path');
 const aws4 = require('aws4');
 const os = require('os');
 const menu = require('./menu');
+const {Base64Binary} = require('../../shared/utils')
 const { updateApplicationConfig, getApplicationConfig } = require('./fs-utils');
 
 autoUpdater.autoInstallOnAppQuit = true;
@@ -288,6 +289,7 @@ const setupListeners = (mockContext, user, replayContext) => {
         const { net, session } = require('electron');
         const method = args.method, url = args.url, headers = JSON.parse(args.headers);
         let body = "";
+        const isGrpc = args.bodyType == "grpcData";
         if(args.body) body = args.body;
         let fetchedResponseHeaders = {}, responseStatus, responseStatusText, resTimestamp, responseBody = "";
         console.log(JSON.stringify({
@@ -384,7 +386,12 @@ const setupListeners = (mockContext, user, replayContext) => {
         });
         if(method && method.toLowerCase() !== "get" && method.toLowerCase() !== "head") {
             console.log("Request Body Added ",  body);
-            request.write(body);
+            // if(isGrpc){
+            //     const byteArray = Base64Binary.decode(body);
+            //     request.write(byteArray);
+            // }else{
+                request.write(body);
+            // }
         }
         request.end();
     });
