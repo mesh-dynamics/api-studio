@@ -10,6 +10,13 @@ on:
   release:
     types: [published]
 
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'version number of the build'
+        required: true
+        default: '1.0.0'
+
 jobs:
   buildmacOS:
     name: Build devTool for macOS
@@ -60,6 +67,22 @@ jobs:
           jq --arg version "${version}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.yml --publish always
+      - name: Build for macOS(manual)
+        if: ${{ github.event_name == 'workflow_dispatch'}}
+        env:
+          APPLE_ID: ${{ secrets.AC_USERNAME }}
+          APPLE_ID_PASSWORD: ${{ secrets.AC_PASSWORD }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
+        run: |
+          version=${{ github.event.inputs.version }}
+          echo $version
+          npm install
+          export RELEASE_TYPE=customer
+          jq --arg version "${version}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
+          npx webpack --mode production --display minimal --config webpack.electron.config.js
+          npx electron-builder build -m --config electron-builder.customer-fitch.yml --publish always
 
   buildlinux:
     name: Build devTool for linux
