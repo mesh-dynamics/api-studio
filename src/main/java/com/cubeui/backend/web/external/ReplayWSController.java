@@ -1,20 +1,25 @@
 package com.cubeui.backend.web.external;
 
+import com.cubeui.backend.domain.MultipartInputStreamFileResource;
+import io.md.dao.EventQuery;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
 import io.md.injection.DynamicInjectionConfig;
 
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.service.CubeServerService;
+import java.io.IOException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 
 import java.util.Optional;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/rs")
@@ -148,5 +153,26 @@ public class ReplayWSController {
     @PostMapping("/cache/flushall")
     public ResponseEntity cacheFlushAll(HttpServletRequest request, @RequestBody Optional<String> postBody) {
         return cubeServerService.fetchPostResponse(request, postBody);
+    }
+
+    @PostMapping("/getPotentialDynamicInjectionConfigs")
+    public ResponseEntity getPotentialDynamicInjectionConfigs(HttpServletRequest request, @RequestBody
+        EventQuery eventQuery, Authentication authentication) {
+        validation.validateCustomerName(authentication, eventQuery.getCustomerId());
+        return cubeServerService.fetchPostResponse(request,Optional.of(eventQuery));
+    }
+
+    @PostMapping("/saveDynamicInjectionConfigFromCsv/{customerId}/{app}/{version}")
+    public  ResponseEntity saveDynamicInjectionConfigFromCsv(HttpServletRequest request,
+        @PathVariable String customerId, @PathVariable String app, @PathVariable String version,
+        @RequestParam(value = "file") MultipartFile[] files, Authentication authentication) throws IOException {
+        validation.validateCustomerName(authentication, customerId);
+        LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
+        for (MultipartFile file : files) {
+            if (!file.isEmpty()) {
+                map.add("file", new MultipartInputStreamFileResource(file.getInputStream(), file.getOriginalFilename()));
+            }
+        }
+        return cubeServerService.fetchPostResponse(request, Optional.of(map));
     }
 }
