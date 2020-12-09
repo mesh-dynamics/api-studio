@@ -3,7 +3,7 @@ import PageContent, { Menu } from "../routes";
 import { connect } from "react-redux";
 
 import authActions from '../actions/auth.actions'
-import Navigation from "./Navigation/Navigation";
+import Navigation from "./Navigation/Navigation.tsx";
 import AuthTimer from "./Authentication/AuthTimer";
 class App extends Component {
     constructor (props) {

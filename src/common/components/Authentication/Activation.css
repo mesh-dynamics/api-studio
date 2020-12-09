@@ -50,3 +50,27 @@
 .flex-column {
     flex-direction: column;
 }
+
+.activation-success-header {
+    font-size: 22px;
+}
+
+.activation-success-content {
+    font-size: 18px;
+    margin-top: 20px;
+}
+
+.activation-launch-app-button {
+    background-color: rgb(199 199 199);
+    padding: 10px;
+    border: 1px solid;
+    color: rgb(255 255 255);
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.activation-launch-button-container {
+    padding-top: 30px;
+    padding-bottom: 10px;
+}

@@ -237,7 +237,8 @@ class HttpClient extends Component {
     handleClick(evt) {
         const { currentSelectedTab } = this.props;
         if(currentSelectedTab.requestRunning){
-            currentSelectedTab.abortRequest?.stopRequest();
+            this.props.initiateAbortRequest(currentSelectedTab.id, currentSelectedTab.currentRunId);
+            // currentSelectedTab.abortRequest?.stopRequest();
         }else{
             this.props.updateAbortRequest(currentSelectedTab.id, new AbortRequest());
             this.props.driveRequest(false, currentSelectedTab.id);

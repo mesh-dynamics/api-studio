@@ -10,20 +10,34 @@ import AddTestConfig from "../AddTestConfig";
 import ViewSelectedTestConfig from "../ViewSelectedTestConfig";
 import config from '../../config';
 import { ipcRenderer } from '../../helpers/ipc-renderer';
+import AppManager from './AppManager';
+import { ICubeState, IStoreState, IUserAuthDetails } from '../../reducers/state.types';
 
-class Navigation extends Component{
-    constructor (props) {
+export interface INavigationProps{
+    dispatch: any;
+    user: IUserAuthDetails;
+    cube: ICubeState;
+    lo: ()=> void;
+}
+export interface INavigationState{
+    appsVisible: boolean,
+    gphFS: boolean,
+    tcFS: boolean
+}
+
+class Navigation extends Component<INavigationProps,INavigationState> {
+    private replayStatusInterval: number;
+    private analysisStatusInterval:number;
+    constructor (props: INavigationProps) {
         super(props)
         this.state = {
             appsVisible: false,
             gphFS: false,
             tcFS: false
         };
-        this.pieRef = React.createRef();
-        this.handleShowHideApps = this.handleShowHideApps.bind(this);
-        this.handleChangeForApps = this.handleChangeForApps.bind(this);
-        this.replayStatusInterval;
-        this.analysisStatusInterval;
+        // this.pieRef = React.createRef();
+        // this.replayStatusInterval;
+        // this.analysisStatusInterval;
     }
 
     componentWillMount() {
@@ -56,73 +70,17 @@ class Navigation extends Component{
         }
     }
 
-    // componentWillUnmount() {
-    //     if(isElectron()) {
-    //         ipcRenderer.removeAllListeners('get_config');
-    //     }
-    // }
-
-    handleShowHideApps() {
-        const {appsVisible} = this.state;
-        this.setState({appsVisible: !appsVisible});
-    }
-
-    handleChangeForApps (e) {
-        const { dispatch } = this.props;
-        const {cube} = this.props;
-        if (e !== cube.selectedApp) {
-            dispatch(cubeActions.setSelectedApp(e));
-            setTimeout(() => {
-                const {cube} = this.props;
-                dispatch(cubeActions.clearGolden());
-                dispatch(cubeActions.clearTimeline());
-                dispatch(cubeActions.getGraphDataByAppId(cube.selectedAppObj.id));
-                dispatch(cubeActions.getTimelineData(e));
-                dispatch(cubeActions.getTestConfigByAppId(cube.selectedAppObj.id));
-                dispatch(cubeActions.getTestIds(e));
-                dispatch(cubeActions.setSelectedTestIdAndVersion('', ''));
-            });
-        }
-    }
-
     handleHelpClick = (event) => {
         if(PLATFORM_ELECTRON) {
             event.preventDefault();
             window.require('electron').shell.openExternal("https://docs.meshdynamics.io");
         }
     }
-
-    createAppList() {
-        const { cube: { appsList, appsListReqStatus, selectedApp } } = this.props;
-
-        if(appsList.length === 0 && appsListReqStatus === cubeConstants.REQ_LOADING) {
-            return 'Loading...'
-        }
-
-        return (
-            <Fragment>
-            {
-                appsList.map(item => 
-                    (
-                        <div key={item.id} className="app-wrapper" onClick={() => this.handleChangeForApps(item.name)}>
-                            <div className="app-img">
-                                <img src={"https://app.meshdynamics.io/assets/images/" + item.name + "-app.png"} alt=""/>
-                                {/* <img src={"./assets/images/" + item.name + "-app.png"} alt=""/> */}
-                            </div>
-                            <div className={selectedApp == item.name ? "app-name selected" : "app-name"}>
-                                {item.name}
-                            </div>
-                        </div>
-                    )
-                )
-            }
-            </Fragment>
-        );
-    }
+    
 
     checkReplayStatus = (replayId) => {
         const { dispatch, cube } = this.props;
-        this.replayStatusInterval = setInterval(() => {
+        this.replayStatusInterval = window.setInterval(() => {
             const {cube} = this.props;
             if (cube.replayStatusObj && (cube.replayStatus == 'Completed' || cube.replayStatus == 'Error')) {
                 // after the replay is completed stop polling and poll for analysis status
@@ -140,7 +98,7 @@ class Navigation extends Component{
 
     checkAnalysisStatus = (replayId) => {
         const { dispatch, cube } = this.props;
-        this.analysisStatusInterval = setInterval(() => {
+        this.analysisStatusInterval = window.setInterval(() => {
             const {cube} = this.props;
             if (cube.analysisStatusObj && (cube.analysisStatus == 'Completed' || cube.analysisStatus == 'Error')) {
                 clearInterval(this.analysisStatusInterval);
@@ -208,25 +166,11 @@ class Navigation extends Component{
                             </div>
                         </div>
                     </div>
-                    <div className={appsVisible ? "app-select" : "app-select disp-none"}>
-                        <h4 className="applic">Applications</h4>
-                        <div className="app-list">
-                            {this.createAppList()}
-                        </div>
-                    </div>
-                    <div className="app-s-b">
-                        <div className="sh-cont" onClick={this.handleShowHideApps}>
-                            <i className={appsVisible ? "fa fa-angle-left" : "fa fa-angle-right"}></i>
-                        </div>
-                    </div>
                     
                     {!window.location.pathname.includes("http_client") && !window.location.pathname.includes("api_catalog")
                      && !window.location.pathname.includes("/account") && 
                     <div className="info-wrapper">
-                        <div>
-                            <div className="label-n">APPLICATION</div>
-                            <div className="application-name">{cube.selectedApp ? cube.selectedApp : "N/A"}</div>
-                        </div>
+                        <AppManager />
                         <div className={!cube.hideTestConfig && cube.testConfig ? "info-div" : "hidden"}>
                             <div className="div-label">
                                 Test Configuration
@@ -288,7 +232,7 @@ class Navigation extends Component{
     }
 }
 
-function mapStateToProps(state) {
+function mapStateToProps(state: IStoreState) {
     const { user } = state.authentication;
     const cube = state.cube;
     return {

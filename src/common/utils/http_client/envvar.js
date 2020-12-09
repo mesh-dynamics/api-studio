@@ -54,7 +54,7 @@ const applyEnvVarsToUrl = (url) => {
 const applyEnvVars = (httpRequestURL, httpRequestQueryStringParams, fetchConfig) => {
   const headers = fetchConfig.headers;
   const body = fetchConfig.body;
-  let headersRendered = new Headers(), bodyRendered = "";
+  let headersRendered = {}, bodyRendered = "";
 
   // define method to check and render Mustache template
   const renderEnvVars = initEnvVars();
@@ -70,7 +70,7 @@ const applyEnvVars = (httpRequestURL, httpRequestQueryStringParams, fetchConfig)
 
   if (headers) {
       for (let pair of headers.entries()) {
-          headersRendered.append(renderEnvVars(pair[0]), renderEnvVars(pair[1]))
+          headersRendered[renderEnvVars(pair[0])] = renderEnvVars(pair[1])
       }
   }
 
