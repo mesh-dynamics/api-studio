@@ -84,10 +84,10 @@ jobs:
           Remove-Item -path .\package.json
           Add-Content -Path .\package.json -Value $CONTENT
           $Env:RELEASE_TYPE = "customer/fitch"
-          yq w .\electron-builder.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" > ebtmp.txt
+          yq w .\electron-builder.customer-fitch.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" > ebtmp.txt
           $BUILDER_CONTENT = Get-Content -Path .\ebtmp.txt
           echo $BUILDER_CONTENT
-          Remove-Item -path .\electron-builder.yml
-          Add-Content -Path .\electron-builder.yml -Value $BUILDER_CONTENT
+          Remove-Item -path .\electron-builder.customer-fitch.yml
+          Add-Content -Path .\electron-builder.customer-fitch.yml -Value $BUILDER_CONTENT
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -w --config electron-builder.customer-fitch.yml --publish always
