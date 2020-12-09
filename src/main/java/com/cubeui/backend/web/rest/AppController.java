@@ -164,12 +164,11 @@ public class AppController {
         });
         Long customerId = existingApp.getCustomer().getId();
         Optional.ofNullable(appDTO.getDisplayName()).ifPresent((displayName -> {
-            Optional<App> app = this.appRepository.findByDisplayNameAndCustomerId(displayName, customerId);
-            app.ifPresentOrElse(givenApp -> {
-                if(givenApp.getId() != appDTO.getId() ) {
-                    throw new DuplicateRecordException("App with same display name exists");
-                }
-            }, () -> existingApp.setDisplayName(displayName));
+            Optional<App> app = this.appRepository.findByDisplayNameAndCustomerIdAndIdNot(displayName, customerId, appDTO.getId());
+            if(app.isPresent()){
+                throw new DuplicateRecordException("App with same display name exists");
+            }
+            existingApp.setDisplayName(displayName);
         }));
         existingApp.setUserId(user.getUsername());
         this.appRepository.save(existingApp);
