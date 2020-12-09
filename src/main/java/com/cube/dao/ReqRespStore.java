@@ -42,6 +42,7 @@ import io.md.dao.Recording.RecordingStatus;
 import io.md.services.DataStore;
 import io.md.services.FnResponse;
 import io.md.injection.DynamicInjectionConfig;
+import com.cube.learning.InjectionExtractionMeta;
 import io.md.utils.Constants;
 
 import com.cube.dao.ReqRespStoreImplBase.CollectionKey;
@@ -404,7 +405,19 @@ public interface ReqRespStore extends DataStore {
      */
     boolean saveMatchResultAggregate(MatchResultAggregate resultAggregate, String customerId);
 
-	/**
+    /**
+     *
+     * @param customer
+     * @param app
+     * @param version
+     * @param injectionExtractionMetaList
+     * @return
+     */
+    String saveDynamicInjectionConfigFromCsv(String customer, String app, String version,
+                                             List<InjectionExtractionMeta> injectionExtractionMetaList)
+        throws SolrStoreException;
+
+    /**
 	 * @param dynamicInjectionConfig
 	 * @return
 	 */

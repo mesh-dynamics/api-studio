@@ -54,6 +54,8 @@ import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.Pair;
 
+import com.cube.learning.DynamicInjectionGeneratedToActualConvertor;
+import com.cube.learning.InjectionExtractionMeta;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -331,13 +333,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         addToFilterOrQuery(query , queryBuff , SERVICEF , eventQuery.getServices() , true , eventQuery.getServicesWeight());
 
-        if(eventQuery.getCollection().orElse("").equalsIgnoreCase("NA")){
+        if(!eventQuery.getCollections().isEmpty() && eventQuery.getCollections().get(0).equalsIgnoreCase("NA")){
             LOGGER.info(String.format("Solr getEvents Applying the recodingType weightage for NA collection %s  %s" , eventQuery.getCustomerId() , eventQuery.getApp() ) );
             recordingTypeWeights.forEach((type , weight)->{
                 addToQryStr(queryBuff , RECORDING_TYPE_F , type.toString() , true, Optional.of(weight) );
             });
         }else{
-            addToFilterOrQuery(query , queryBuff , COLLECTIONF , eventQuery.getCollection() , true , eventQuery.getCollectionWeight());
+            addToFilterOrQuery(query , queryBuff , COLLECTIONF , eventQuery.getCollections() , true , eventQuery.getCollectionWeight());
         }
 
         List<String> traceIds = eventQuery.getTraceIds();
@@ -364,9 +366,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         eventQuery.getJoinQuery().ifPresent(jq->addFilter(query , jq));
 
-        addSort(query , SCOREF , false);
-        addSort(query, TIMESTAMPF, eventQuery.isSortOrderAsc());
-        addSort(query, IDF, true);
+        if (!eventQuery.isIndexOrderAsc()){
+            addSort(query , SCOREF , false);
+        }
+        // Force timestamp order asc if index order asc is true
+        addSort(query, TIMESTAMPF, eventQuery.isIndexOrderAsc() ? Optional.of(true) : eventQuery.isSortOrderAsc());
+
+        if (!eventQuery.isIndexOrderAsc()) {
+            addSort(query, IDF, true);
+        }
 
         if(queryBuff.length()!=0){
             query.setQuery(queryBuff.toString());
@@ -3490,6 +3498,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return doc;
     }
 
+    @Override
+    public String saveDynamicInjectionConfigFromCsv(String customer, String app, String version,
+                                                    List<InjectionExtractionMeta> injectionExtractionMetaList)
+        throws SolrStoreException {
+
+        DynamicInjectionGeneratedToActualConvertor convertor = new DynamicInjectionGeneratedToActualConvertor();
+        return saveDynamicInjectionConfig(convertor.convertGeneratedToActualConfigs(customer, app, version,
+            injectionExtractionMetaList));
+    }
 
     @Override
     public Optional<DynamicInjectionConfig> getDynamicInjectionConfig(String customerId,
