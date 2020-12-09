@@ -53,6 +53,7 @@ public class AppController {
     private AppUserRepository appUserRepository;
     private Validation validation;
     private AppFileStorageService appFileStorageService;
+    private final UserRepository userRepository;
     public AppController(AppRepository appRepository, ServiceRepository serviceRepository,
         ServiceGraphRepository serviceGraphRepository, TestConfigRepository testConfigRepository,
         TestIntermediateServiceRepository testIntermediateServiceRepository,
@@ -60,7 +61,7 @@ public class AppController {
         TestPathRepository testPathRepository, CustomerService customerService,
         InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository,
         UserService userService, AppUserRepository appUserRepository, Validation validation,
-        AppFileStorageService appFileStorageService) {
+        AppFileStorageService appFileStorageService, UserRepository userRepository) {
         this.appRepository = appRepository;
         this.serviceRepository = serviceRepository;
         this.serviceGraphRepository = serviceGraphRepository;
@@ -75,6 +76,7 @@ public class AppController {
         this.appUserRepository = appUserRepository;
         this.validation = validation;
         this.appFileStorageService = appFileStorageService;
+        this.userRepository = userRepository;
     }
 
     @GetMapping("")
@@ -120,6 +122,15 @@ public class AppController {
                         .userId(user.getUsername())
                         .build());
         this.appFileStorageService.storeFile(file, saved);
+        Optional<List<User>> optionalUsers = this.userRepository.findByCustomerId(customer.get().getId());
+        optionalUsers.ifPresent(users -> {
+            users.forEach(u -> {
+                AppUser appUser = new AppUser();
+                appUser.setApp(saved);
+                appUser.setUser(u);
+                appUserRepository.save(appUser);
+            });
+        });
         userService.createHistoryForEachUserForAnApp(request, saved);
         return created(
                 ServletUriComponentsBuilder

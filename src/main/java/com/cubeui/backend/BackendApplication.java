@@ -94,7 +94,8 @@ public class BackendApplication {
                 } catch (IOException e) {
                     log.info("Allowed Origins File Content Exception");
                 }
-                registry.addMapping("/**").allowedOrigins(allowedOrigins.toArray(String[]::new));
+                registry.addMapping("/**").allowedOrigins(allowedOrigins.toArray(String[]::new))
+                    .allowedMethods("*");
             }
         };
     }
