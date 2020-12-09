@@ -32,7 +32,7 @@ jobs:
           version=${{ github.event.inputs.version }}
           git checkout $version
           npm install
-          export RELEASE_TYPE=customer
+          export RELEASE_TYPE=customer/fitch
           jq --arg version "${version}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.customer-fitch.yml --publish always
@@ -53,7 +53,7 @@ jobs:
           version=${{ github.event.inputs.version }}
           git checkout $version
           npm install
-          export RELEASE_TYPE=customer
+          export RELEASE_TYPE=customer/fitch
           jq --arg version "${version}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -l --config electron-builder.customer-fitch.yml --publish always
@@ -83,7 +83,7 @@ jobs:
           $CONTENT = Get-Content -Path .\tmp.txt
           Remove-Item -path .\package.json
           Add-Content -Path .\package.json -Value $CONTENT
-          $Env:RELEASE_TYPE = "customer"
+          $Env:RELEASE_TYPE = "customer/fitch"
           yq w .\electron-builder.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" > ebtmp.txt
           $BUILDER_CONTENT = Get-Content -Path .\ebtmp.txt
           echo $BUILDER_CONTENT
