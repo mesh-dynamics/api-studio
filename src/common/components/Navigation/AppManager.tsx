@@ -349,6 +349,7 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
       appModalType: "UpdateApp",
       savingMessage: "",
       loading: false,
+      isAddAppDisabled: false
     });
   };
   onAppUpdateBtnClick = () => {
