@@ -1824,21 +1824,30 @@ public class AnalyzeWS {
             this.respCompDiff = diff;
             this.reqCompDiff = reqCompDiff;
             this.reqCompResType = reqCompResType;
+
             this.recordRequest = recordRequest;
             this.replayRequest = replayRequest;
+
             this.recordResponse = recordResponse;
             this.replayResponse = replayResponse;
+
             this.recordTraceId = recordTraceId;
             this.replayTraceId = replayTraceId;
+
             this.recordedSpanId = recordedSpanId;
             this.recordedParentSpanId = recordedParentSpanId;
+
             this.replayedSpanId = replayedSpanId;
             this.replayedParentSpanId = replayedParentSpanId;
+
             this.recordReqTime = recordReqTime;
-		    this.recordRespTime = recordReqTime;
-		    this.replayReqTime = recordReqTime;
-		    this.replayRespTime = recordReqTime;
+		    this.recordRespTime = recordRespTime;
+
+		    this.replayReqTime = replayReqTime;
+		    this.replayRespTime = replayRespTime;
+
 		    this.instanceId = instanceId;
+
 		    this.recordResponseTruncated = recordResponseTruncated;
 		    this.replayResponseTruncated = replayResponseTruncated;
 	    }
