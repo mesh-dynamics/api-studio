@@ -1288,18 +1288,22 @@ class HttpClientTabs extends Component {
         if (_.isArray(headersReceived)) {
             headersReceived.forEach(each => {
                 if (each.name && each.value) {
-                    if(headers[each.name]){
-                        headers[each.name] = [...headers[each.name], this.getValueBySaveType(each.value, type)];
+                    const nameRendered = this.getValueBySaveType(each.name, type)
+                    const valueRendered = this.getValueBySaveType(each.value, type)
+                    if(headers[nameRendered]){
+                        headers[nameRendered] = [...headers[nameRendered], valueRendered];
                     }else{
-                        headers[each.name] = [this.getValueBySaveType(each.value, type)];
+                        headers[nameRendered] = [valueRendered];
                     }
                 }
             });
         } else if (_.isObject(headersReceived)) {
             Object.keys(headersReceived).map((eachHeader) => {
                 if (eachHeader && headersReceived[eachHeader]) {
-                    if(_.isArray(headersReceived[eachHeader])) headers[eachHeader] = this.getValueBySaveType(headersReceived[eachHeader], type);
-                    if(_.isString(headersReceived[eachHeader])) headers[eachHeader] = [this.getValueBySaveType(headersReceived[eachHeader], type)];
+                    const nameRendered = this.getValueBySaveType(eachHeader, type)
+                    const valueRendered = this.getValueBySaveType(headersReceived[eachHeader], type);
+                    if(_.isArray(headersReceived[eachHeader])) headers[nameRendered] = valueRendered;
+                    if(_.isString(headersReceived[eachHeader])) headers[nameRendered] = [valueRendered];
                 }
             })
         }
@@ -1311,10 +1315,12 @@ class HttpClientTabs extends Component {
         let qsParams = {};
         httpRequestQueryStringParams.forEach(each => {
             if (each.name && each.value) {
-                if(qsParams[each.name]){
-                    qsParams[each.name] = [...qsParams[each.name], this.getValueBySaveType(each.value, type)];
-                }else{
-                    qsParams[each.name] = [this.getValueBySaveType(each.value, type)];
+                const nameRendered = this.getValueBySaveType(each.name, type)
+                const valueRendered = this.getValueBySaveType(each.value, type)
+                if (qsParams[nameRendered]) {
+                    qsParams[nameRendered] = [...qsParams[nameRendered], valueRendered];
+                } else {
+                    qsParams[nameRendered] = [valueRendered];
                 }
             }
         })
@@ -1326,10 +1332,12 @@ class HttpClientTabs extends Component {
         if (_.isArray(httpRequestBody)) {
             httpRequestBody.forEach(each => {
                 if (each.name && each.value) {
-                    if(formData[each.name]){
-                        formData[each.name] = [...formData[each.name], this.getValueBySaveType(each.value, type)];
+                    const nameRendered = this.getValueBySaveType(each.name, type)
+                    const valueRendered = this.getValueBySaveType(each.value, type)
+                    if(formData[nameRendered]){
+                        formData[nameRendered] = [...formData[nameRendered], valueRendered];
                     }else{
-                        formData[each.name] = [this.getValueBySaveType(each.value, type)];
+                        formData[nameRendered] = [valueRendered];
                     }
                 }
             })
