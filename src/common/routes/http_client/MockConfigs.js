@@ -88,6 +88,7 @@ class MockConfigs extends Component {
     handleRemoveServiceConfig = (index) => {
         let {selectedEditMockConfig} = this.state;
         selectedEditMockConfig.serviceConfigs.splice(index, 1)
+        this.setMockConfigStatusText("", false)
         this.setState({selectedEditMockConfig})
     }
 
