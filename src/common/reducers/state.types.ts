@@ -42,6 +42,14 @@ export interface IApiCatalogTableState {
   oldPagesData: any[]; //2
 }
 
+export interface IApiCatalogCompareRequest{
+  parentRequest: IApiTrace,
+  outgoingRequests: IApiTrace[],
+  parentReqId: string,
+  instance: string,
+  checked: boolean,
+}
+
 export interface IApiCatalogState {
   apiCatalogTableState: IApiCatalogTableState;
   apiFacets: any; //2
@@ -49,7 +57,7 @@ export interface IApiCatalogState {
   apiTrace: any; //2
   apiTraceLoading: boolean;
   collectionList: ICollectionDetails[];
-  compareRequests: any[]; //2
+  compareRequests: IApiCatalogCompareRequest[];
   diffRequestLeft: any; //2
   diffRequestRight: any; //2
   diffResponseLeft: any; //2
