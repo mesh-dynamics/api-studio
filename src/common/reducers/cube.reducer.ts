@@ -187,7 +187,7 @@ export function cube (state = initialState, action: ICubeAction) {
             let appObj = null;
             if (state.appsList) {
                 for (const app of state.appsList) {
-                    if (app.name == action.data) {
+                    if (app.app.name == action.data) {
                         appObj = app;
                         break;
                     }

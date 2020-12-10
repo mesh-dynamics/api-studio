@@ -87,13 +87,24 @@ export interface IAppDetailsCustomer {
   updatedAt: number[]; // 3
 }
 
-export interface IAppDetails {
+export interface IAppInfo {
   createdAt: number[]; // 3
-  customer: IAppDetailsCustomer;
-  id: number;
   name: string;
   updatedAt: number[]; // 3
+  id: number;
+  customer: IAppDetailsCustomer;
+  displayName: string;
+  userid: string;
 }
+
+export interface IAppDetails {
+  //From actual API call some data has been moved to 'app'.
+  data: string;
+  fileName: string;
+  fileType: string;
+  app: IAppInfo;
+}
+
 export interface IServiceDetails {
   app: IAppDetails;
   createdAt: number[]; // 3
@@ -118,6 +129,10 @@ export interface IInstanceDetails {
   name: string;
 }
 
+export interface ITestConfigGatewayService {
+  name: string;
+}
+
 export interface ITestConfigDetails {
   appId: number;
   appName: string;
@@ -137,6 +152,8 @@ export interface ITestConfigDetails {
   testPaths: string[];
   testServices: any; //2
   updatedAt: number[]; // 3
+  gatewayService: ITestConfigGatewayService;
+  criteria: string;
 }
 
 export interface ITimelineDataResult {
@@ -392,7 +409,7 @@ export interface IHttpClientTabDetails {
   hasChanged: boolean;
   isHighlighted: boolean;
   progressState?: string;
-  contextMap: IKeyValuePairs
+  contextMap: IKeyValuePairs;
 }
 
 export interface IUserApiTraceHistory {
@@ -478,12 +495,12 @@ export interface INavigationState {
   top: any; //2
 }
 
-export interface IStoreState{
-  cube: ICubeState,
+export interface IStoreState {
+  cube: ICubeState;
   httpClient: IHttpClientStoreState;
-  authentication: IAuthenticationState,
-  navigation: INavigationState,
-  golden: IGoldenState,
-  
-  apiCatalog: IApiCatalogState
+  authentication: IAuthenticationState;
+  navigation: INavigationState;
+  golden: IGoldenState;
+
+  apiCatalog: IApiCatalogState;
 }

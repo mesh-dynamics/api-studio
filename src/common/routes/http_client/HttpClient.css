@@ -129,12 +129,12 @@
   top: 0px;
 }
 
-i.fas.fa-trash.pointer {
+i.fas.pointer {
   font-size: 11px;
   align-self: center;
   color: #7d7c7c;
 }
-i.fas.fa-trash.pointer:hover {
+i.fas.pointer:hover {
   color: #333333;
 }
 .panel-heading .collection-options {

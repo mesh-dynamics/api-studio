@@ -81,16 +81,6 @@
     border-bottom: none;
 }
 
-.app-select{
-    width: 250px;
-    height: 100%;
-    overflow-y: auto;
-    background: #D5D5D5;
-    display: inline-block;
-    visibility:visible;
-    transition:0.5s;
-    -webkit-transition:0.5s;
-}
 .info-wrapper {
     width: 250px;
     height: 100%;
@@ -115,63 +105,18 @@
     font-weight: 400;
     font-size: 16px;
 }
-.app-s-b {
-    position: relative;
-    height: 100%;
-    width: 15px;
-    background: #D5D5D5;
-    display: inline-block;
-    cursor: pointer;
-}
-.app-s-b .sh-cont {
-    padding: 5px 4px;
-    background: #545454;
-    color: #FFFFFF;
-    position: absolute;
-    top: 25px;
-}
-.disp-none {
-    visibility:hidden;
-    width:0px;
-    overflow:hidden;
-    transition:0.5s;
-    -webkit-transition:0.5s;
-}
-.applic {
-    margin-top: 20px;
-    font-weight: 500;
-    font-size: 16px;
-    padding: 5px 15px;
-}
-.app-list {
-    width: 100%;
-    padding-left: 15px;
-    overflow-y: auto;
-}
-.app-wrapper{
-    background: #EAEAEA;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    cursor: pointer;
-}
 .app-img {
     padding: 10px;
     height: 120px;
 }
 .app-name {
+    padding: 8px 0px 8px 5px;
+
     text-align: center;
-    padding: 10px 0;
-    font-weight: bold;
-    background: #CCCCCC;
-    border-bottom-left-radius: 10px;
-    border-bottom-right-radius: 10px;
+    font-weight: 500;
+    background-color: #cacaca;
 }
-.app-wrapper:hover .app-name {
-    background: #FFBE00;
-}
-.app-name.selected {
-    background: #FFBE00;
-}
+
 
 .info-div{
     padding-top: 10px;
@@ -250,4 +195,60 @@ aside .nav-tabs>li>a {
 .link-q path:hover{
     fill:#00B2FF;
     pointer-events:all;
+}
+
+.app-selector:hover{
+    background-color: white;
+    border-color: #636363;
+}
+.app-selector{
+    padding: 5px;
+    border: #c5bfbf 1px solid;
+    background-color: #f1f1f1;
+    border-radius: 4px;
+    /* margin-top: 15px; */
+    position: relative;
+}
+.app-box.selected{
+    border-color: #1abafb;;
+}
+.app-box.selected .app-name{
+    background-color: #1abafb;
+}
+.app-box{
+    padding: 2px;
+    border: #ddd 1px solid;
+    border-radius: 4px;
+    margin-top: 5px;
+    position: relative;
+    color: #333;
+    background-color: #f5f5f5;
+}
+.app-actions{
+    position: absolute;
+    right: 5px;
+    display: none;
+    top: 0px;
+    margin-top: 10px;
+}
+.app-actions i{
+    margin-left: 5px;
+}
+.app-box:hover .app-actions{
+    display: inline-block;
+}
+
+.errorMessage{
+    color: red;
+}
+.app-box:hover {
+    border-color: #191986;
+    background-color: #c8e5ff;
+}
+.app-navigator.is-open{
+    background-color: #cac6c6;
+}
+.app-navigator{
+    padding: 5px;
+    border-radius: 7px;
 }

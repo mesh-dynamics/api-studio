@@ -1,12 +1,30 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
 import classNames from "classnames";
-import Modal from "react-bootstrap/es/Modal";
+import {Modal} from "react-bootstrap";
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import "./APICatalog.scss";
+import { IApiCatalogState, ICollectionDetails, ICubeState, IStoreState } from "../../reducers/state.types";
 
-class GoldenCollectionBrowse extends Component {
-  constructor(props) {
+export interface IGoldenCollectionBrowseProps{
+  dispatch:any,
+  apiCatalog: IApiCatalogState;
+  cube: ICubeState;
+  selectedSource: string;
+}
+export interface IGoldenCollectionBrowseState{
+  showBrowseGoldenCollectionModal: boolean,
+      selectedGoldenCollectionFromModal: string,
+      nameFilter: string
+      labelFilter: string
+      idFilter:string
+      createdByFilter: string
+}
+
+declare type FilterTypes = "nameFilter" | "labelFilter" | "idFilter" | "createdByFilter";
+
+class GoldenCollectionBrowse extends Component<IGoldenCollectionBrowseProps, IGoldenCollectionBrowseState> {
+  constructor(props: IGoldenCollectionBrowseProps) {
     super(props);
     this.state = {
       showBrowseGoldenCollectionModal: false,
@@ -18,7 +36,7 @@ class GoldenCollectionBrowse extends Component {
     };
   }
 
-  handleFilterChange = (metadata, value) => {
+  handleFilterChange = (metadata: string, value: string) => {
     const { dispatch } = this.props;
     dispatch(apiCatalogActions.handleFilterChange(metadata, value));
   };
@@ -47,7 +65,7 @@ class GoldenCollectionBrowse extends Component {
     const {
       apiCatalog: { collectionList, selectedCollection },
     } = this.props;
-    const handleCollectionDropDownChange = (event) =>
+    const handleCollectionDropDownChange = (event: React.ChangeEvent<HTMLSelectElement>) =>
       this.handleFilterChange("selectedCollection", event.target.value);
 
     const ddlClass = classNames("r-att form-control", {
@@ -80,7 +98,7 @@ class GoldenCollectionBrowse extends Component {
     const {
       apiCatalog: { goldenList, selectedGolden },
     } = this.props;
-    const handleGoldenDropDownChange = (event) =>
+    const handleGoldenDropDownChange = (event: React.ChangeEvent<HTMLSelectElement>) =>
       this.handleFilterChange("selectedGolden", event.target.value);
 
     const ddlClass = classNames("r-att form-control", {
@@ -113,18 +131,18 @@ class GoldenCollectionBrowse extends Component {
     const { dispatch, cube: { selectedApp }, selectedSource } = this.props;
 
     dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, selectedSource));
-    this.setState({ showBrowseGoldenCollectionModal: true });
+    this.setState({ showBrowseGoldenCollectionModal: true,  nameFilter: "", labelFilter:"", idFilter:"", createdByFilter:""  });
   };
 
   hideGoldenCollectionModal = () => {
     this.setState({ showBrowseGoldenCollectionModal: false });
   };
 
-  selectGoldenCollectionFromModal = (collec) => {
+  selectGoldenCollectionFromModal = (collec: string) => {
     this.setState({ selectedGoldenCollectionFromModal: collec });
   };
 
-  filterGoldenCollectionList = (goldenCollectionList) => {
+  filterGoldenCollectionList = (goldenCollectionList: ICollectionDetails[]) => {
     const { nameFilter, labelFilter, idFilter, createdByFilter } = this.state;
 
     if (nameFilter) {
@@ -176,7 +194,7 @@ class GoldenCollectionBrowse extends Component {
     ) {
       return (
         <tr>
-          <td colSpan="2" className="text-center">
+          <td colSpan={2} className="text-center">
             NO DATA FOUND
           </td>
         </tr>
@@ -213,7 +231,7 @@ class GoldenCollectionBrowse extends Component {
           {filteredGoldenCollectionList.map((item) => (
             <tr
               key={item.collec}
-              value={item.collec}
+              // value={item.collec}
               className={
                 this.state.selectedGoldenCollectionFromModal === item.collec
                   ? "selected-g-row"
@@ -233,8 +251,8 @@ class GoldenCollectionBrowse extends Component {
     );
   }
 
-  applyGoldenFilter = (filter, event) => {
-    this.setState({ [filter]: event.target.value });
+  applyGoldenFilter = (filter: FilterTypes, event: React.ChangeEvent<HTMLInputElement> ) => {    
+      this.setState({ [filter]: event.target.value }  as Pick<IGoldenCollectionBrowseState, FilterTypes> );
   };
 
   renderGoldenCollectionFilters = () => {
@@ -305,7 +323,7 @@ class GoldenCollectionBrowse extends Component {
     const { selectedSource, apiCatalog: { goldenCollectionLoading }  } = this.props;
 
     return (
-      <Modal show={this.state.showBrowseGoldenCollectionModal} size="xl">
+      <Modal show={this.state.showBrowseGoldenCollectionModal}  bsSize="large" onHide={this.hideGoldenCollectionModal}>
         <Modal.Header>
           <Modal.Title>
             {`Browse ${
@@ -382,7 +400,7 @@ class GoldenCollectionBrowse extends Component {
   }
 }
 
-const mapStateToProps = (state) => ({
+const mapStateToProps = (state : IStoreState) => ({
   cube: state.cube,
   apiCatalog: state.apiCatalog,
 });

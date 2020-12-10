@@ -1,9 +1,17 @@
 import React, { Component, useEffect, useState } from 'react'
 
-import { ListGroup, Item, ListGroupItem } from 'react-bootstrap';
+import { ListGroup, ListGroupItem } from 'react-bootstrap';
 import classNames from 'classnames';
 
-export default function (props) {
+export interface IMultiselectProps{
+    value: string;
+    title: string;
+    placeholder: string;
+    options: any[];
+    onChange: (value: string) => void;
+}
+
+export default function (props: IMultiselectProps) {
 
     const [value, setValue] = useState(props.value);
     const [options, setOptions] = useState(props.options);
@@ -16,15 +24,16 @@ export default function (props) {
     useEffect(()=>{
         setValue(props.value);
     },[props.value]);
-    const onItemClick = (e, a) => {
-        if (!e.target.classList.contains('disabled')) {
-            const value = e.target.getAttribute('value');
-            setValue(value);
-            props.onChange && props.onChange(value);
+    const onItemClick = (event: React.MouseEvent<ListGroup, MouseEvent>) => {
+        const target = (event.target as HTMLLIElement);
+        if (!target.classList.contains('disabled')) {
+            const value = target.getAttribute('value');
+            setValue(value!);
+            props.onChange && props.onChange(value!);
         }
     }
 
-    const onFilterTextChange = (event) => {
+    const onFilterTextChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFilterText(event.currentTarget.value);
         setOptions(props.options.filter(u => u.val.toLowerCase().indexOf(event.currentTarget.value) != -1));
     }

@@ -4552,7 +4552,7 @@ table thead .checkbox.radio { margin-top:-7px;margin-top:-21px; }
 .full-height{
     height:100%;
 }
-.cube-btn {
+.cube-btn, .cube-btn:focus {
     padding: 5px 10px;
     color: #FFFFFF;
     background: #616060;

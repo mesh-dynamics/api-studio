@@ -5,6 +5,7 @@ import { httpClientActions } from "./httpClientActions";
 
 export const cubeActions = {
     getApps,
+    refreshAppList,
     setSelectedApp,
     getInstances,
     getTestIds,
@@ -61,6 +62,23 @@ function clear() {
         return { type: cubeConstants.CLEAR_PREVIOUS_DATA, data: null };
     }
 }
+async function getAppList(){
+    let appsList = await cubeService.fetchAppsList();
+    //This is temporary fix. We need to change all usage of these variables in UI first then remove following statement of copy to parent
+    appsList.forEach(app=> {
+        app.name = app.app.name;
+        app.displayName = app.app.displayName;
+        app.id = app.app.id;
+        app.customer = app.app.customer;
+    });
+    return appsList;
+}
+function refreshAppList(){
+    return async (dispatch, getState) => {
+        const appsList = await getAppList();
+        dispatch({ type: cubeConstants.APPS_SUCCESS, data: appsList, date: Date.now() }); 
+    }
+}
 
 function getApps () {
     return async (dispatch, getState) => {
@@ -68,15 +86,8 @@ function getApps () {
         try {
             const { selectedApp } = getState().cube;
             if(!selectedApp) {
-                let appsList = await cubeService.fetchAppsList();
-                //This is temporary fix. We need to change all usage of these variables in UI first then remove following statement of copy to parent
-                appsList.forEach(app=> {
-                    app.name = app.app.name;
-                    app.id = app.app.id;
-                    app.customer = app.app.customer;
-                    app.createdAt = app.app.createdAt;
-                    app.updatedAt = app.app.updatedAt;
-                })
+                
+                const appsList = await getAppList();
                 dispatch(success(appsList, Date.now()));
                 dispatch(cubeActions.setSelectedApp(appsList[0].name));
                 dispatch(cubeActions.getGraphDataByAppId(appsList[0].id));
@@ -306,7 +317,7 @@ function getTestIds (app) {
         const { user } = getState().authentication;
         dispatch(request());
         try {
-            const data = await cubeService.fetchCollectionList(user, app);
+            const data = await cubeService.fetchCollectionList(user, app, "Golden");
             const collections = data.recordings;
             dispatch(success(collections, Date.now()));
         } catch (error) {
