@@ -405,6 +405,13 @@ const setupListeners = (mockContext, user, replayContext) => {
         }
     });
 
+    ipcMain.on('clear_local_storage_complete', () => {
+        logger.info('Clearing local storage success');
+
+        app.relaunch();
+        app.exit();
+    });
+
 
     /**
      * AUTO Updater events
