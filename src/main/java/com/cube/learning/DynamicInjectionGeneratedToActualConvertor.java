@@ -11,7 +11,8 @@ public class DynamicInjectionGeneratedToActualConvertor {
     List<DynamicInjectionConfig.ExtractionMeta> actualExtractionConfigList = new ArrayList<>();
     List<DynamicInjectionConfig.InjectionMeta> actualInjectionConfigList = new ArrayList<>();
 
-    private Random random = new Random();
+    //Fixed seed to ensure reproducibility of config
+    private Random random = new Random(1);
 
     private String getNameSuffix(String apiPath, String jsonPath) {
         String[] apiPathList = apiPath.split("/");
