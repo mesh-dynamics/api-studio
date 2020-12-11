@@ -530,7 +530,7 @@ public class MovieRentals {
 					+ " where email = ? and password = ?";
 			JSONArray params = new JSONArray();
 			RestOverSql.addStringParam(params, userName);
-			RestOverSql.addStringParam(params, encodePassword(password));
+			RestOverSql.addIntegerParam(params, encodePassword(password));
 			JSONArray rs = ros.executeQuery(storesQuery, params);
 			if (rs == null || rs.length() < 1) {
 				return false;
@@ -542,12 +542,12 @@ public class MovieRentals {
 		return false;
 	}
 
-	private String encodePassword(String password) {
-    	return Base64.getEncoder().encodeToString(password.getBytes());
-	}
-
-	private String decodePassword(String encodedPassword) {
-    	return new String(Base64.getDecoder().decode(encodedPassword));
+	private int encodePassword(String password) {
+    	int hash = 23;
+    	for(int i=0; i<password.length(); i++) {
+    		hash = hash * 23 + password.charAt(i);
+			}
+    	return hash;
 	}
     /*
     
