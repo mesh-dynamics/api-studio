@@ -75,7 +75,7 @@ public class ReplayUpdate {
 
 	private static DSResult<Event> getEventResult(DataStore dataStore, Replay replay) {
 		EventQuery eventQuery = new EventQuery.Builder(replay.customerId, replay.app, EventType.fromReplayType(replay.replayType))
-			.withRunType(Event.RunType.Record).withReqIds(replay.reqIds).withPaths(replay.paths)
+			/*.withRunType(Event.RunType.Record)*/.withReqIds(replay.reqIds).withPaths(replay.paths)
             .withExcludePaths(replay.excludePaths)
 			.withCollection(replay.collection)
 			.withServices(replay.service).withSortOrderAsc(true).build();
