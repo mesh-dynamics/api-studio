@@ -145,7 +145,10 @@ public class AnalyzeWS {
             .flatMap(vals -> vals.stream().findFirst())
             .orElse(Constants.DEFAULT_TRACE_FIELD);
 
-        Optional<io.md.dao.Analysis> analysis = analyzer.analyze(replayId);
+        Optional<String> templateVersion = Optional.ofNullable(formParams.get("version")).
+	        flatMap(vals -> vals.stream().findFirst());
+
+        Optional<io.md.dao.Analysis> analysis = analyzer.analyze(replayId , templateVersion);
 
         return analysis.map(av -> {
             String json;
@@ -158,6 +161,11 @@ public class AnalyzeWS {
             }
         }).orElse(Response.serverError().build());
     }
+/*
+	@POST
+	@Path("analyze/{replayId}")
+	@Consumes("application/x-www-form-urlencoded")
+	public Response analyzeWithUpdates()*/
 
 
 	@GET
