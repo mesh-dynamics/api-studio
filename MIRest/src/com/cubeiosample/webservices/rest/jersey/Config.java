@@ -12,7 +12,7 @@ import org.apache.log4j.Logger;
 public class Config {
 
   final static Logger LOGGER = Logger.getLogger(Config.class);
-    private static final String CONFFILE = "/MIRest.conf";
+    private static final String CONFFILE = "/MIRest-devtool.conf";
 
 	final Properties properties;
 			
