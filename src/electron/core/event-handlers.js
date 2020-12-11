@@ -15,7 +15,14 @@ const reloadClickHandler = (mainWindow) => {
     mainWindow.loadURL(`file://${path.join(__dirname, `../../../dist/index.html`)}`);
 };
 
+const resetClickHandler = (mainWindow) => {
+    logger.info('User clicked on reset');
+
+    mainWindow.webContents.send('clear_local_storage');
+}
+
 module.exports = {
     settingsClickHandler,
-    reloadClickHandler
+    reloadClickHandler,
+    resetClickHandler
 };

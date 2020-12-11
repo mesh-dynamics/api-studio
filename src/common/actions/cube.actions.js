@@ -84,9 +84,8 @@ function getApps () {
     return async (dispatch, getState) => {
         dispatch(request());
         try {
-            const { selectedApp } = getState().cube;
-            if(!selectedApp) {
-                
+            const { selectedApp , selectedAppObj} = getState().cube;
+            if(!selectedApp ||  !selectedAppObj || !selectedAppObj.app) {
                 const appsList = await getAppList();
                 dispatch(success(appsList, Date.now()));
                 dispatch(cubeActions.setSelectedApp(appsList[0].name));

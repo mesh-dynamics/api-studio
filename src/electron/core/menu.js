@@ -80,6 +80,12 @@ const menutemplate = (mainWindow) => [
                 role: 'togglefullscreen'
             },
             {
+                label: 'Reset',
+                click() {
+                    events.resetClickHandler(mainWindow);
+                }
+            },
+            {
                 label: 'Restart',
                 click() {
                     app.relaunch()

@@ -287,24 +287,25 @@ const setupListeners = (mockContext, user, replayContext) => {
 
     ipcMain.on('drive_request_initiate', (event, args) => {
         const { net, session } = require('electron');
-        const method = args.method, url = args.url, headers = JSON.parse(args.headers);
+        const method = args.method, url = args.url, headers = JSON.parse(args.headers), bodyType = args.bodyType;
         let body = "";
-        const isGrpc = args.bodyType == "grpcData";
+        const isGrpc = bodyType == "grpcData";
         if(args.body) body = args.body;
         let fetchedResponseHeaders = {}, responseStatus, responseStatusText, resTimestamp, responseBody = "";
-        console.log(JSON.stringify({
+        logger.info({
             url,
             method,
             headers,
+            bodyType,
             ...(body && {body})
-        }, undefined, 4));
+        });
         
         /* 
         session.defaultSession.cookies.get({})
             .then((cookies) => {
-                console.log(cookies)
+                logger.info(cookies)
             }).catch((error) => {
-                console.log(error)
+                logger.info(error)
             });
 
         const cookie = { url: 'http://www.github.com', name: 'dummy_name', value: 'dummy' };
@@ -317,9 +318,9 @@ const setupListeners = (mockContext, user, replayContext) => {
 
         session.defaultSession.cookies.get({ url: 'http://www.github.com' })
             .then((cookies) => {
-                console.log(cookies)
+                logger.info(cookies)
             }).catch((error) => {
-                console.log(error)
+                logger.info(error)
             });
         */
 
@@ -336,10 +337,10 @@ const setupListeners = (mockContext, user, replayContext) => {
             request.setHeader(eachHeader, headers[eachHeader]);
         }
 
-        console.log(`Request Initiated`);
+        logger.info(`Request Initiated`);
         request.on('response', (response) => {
-            console.log(`RESPONSE STATUS: ${response.statusCode}`);
-            console.log(`RESPONSE HEADERS: ${JSON.stringify(response.headers)}`);
+            logger.info(`RESPONSE STATUS: ${response.statusCode}`);
+            logger.info(`RESPONSE HEADERS: ${JSON.stringify(response.headers)}`);
 
             const resISODate = new Date().toISOString();
             resTimestamp = new Date(resISODate).getTime();
@@ -352,12 +353,12 @@ const setupListeners = (mockContext, user, replayContext) => {
             }
 
             response.on('aborted', (error) => {
-                console.log('RESPONSE ABORTED: ', error);
+                logger.info('RESPONSE ABORTED: ', error);
                 event.sender.send('request_aborted', true, args.tabId, args.runId);
             });
 
             response.on('error', (error) => {
-                console.log('RESPONSE ERROR: ', error) ;
+                logger.info('RESPONSE ERROR: ', error) ;
             });
 
             response.on('data', (chunk) => {
@@ -365,27 +366,27 @@ const setupListeners = (mockContext, user, replayContext) => {
             });
 
             response.on('end', () => {
-                console.log('RESPONSE END');
+                logger.info('RESPONSE END');
                 event.sender.send('drive_request_completed', args.tabId, args.runId, resTimestamp, fetchedResponseHeaders, responseStatus, responseStatusText, responseBody);
             });
         });
 
         request.on('finish', (error) => { 
-            console.log('Request is Finished: ', error);
+            logger.info('Request is Finished: ', error);
         }); 
         request.on('abort', (error) => { 
-            console.log('Request is Aborted: ', error);
+            logger.info('Request is Aborted: ', error);
         }); 
         request.on('error', (error) => {
-            console.log('Request ERROR: ', error);
+            logger.info('Request ERROR: ', error);
             event.sender.send('drive_request_error', args.tabId, args.runId, error);
         }); 
         request.on('close', (error) => { 
-            console.log('Last Transaction has occured: ', error);
+            logger.info('Last Transaction has occured: ', error);
             delete reqMap[args.tabId];
         });
         if(method && method.toLowerCase() !== "get" && method.toLowerCase() !== "head") {
-            console.log("Request Body Added ",  body);
+            logger.info("Request Body Added: ",  body);
             // if(isGrpc){
             //     const byteArray = Base64Binary.decode(body);
             //     request.write(byteArray);
@@ -403,6 +404,13 @@ const setupListeners = (mockContext, user, replayContext) => {
         } else {
             event.sender.send('request_aborted', false, args.tabId, args.runId);
         }
+    });
+
+    ipcMain.on('clear_local_storage_complete', () => {
+        logger.info('Clearing local storage success');
+
+        app.relaunch();
+        app.exit();
     });
 
 

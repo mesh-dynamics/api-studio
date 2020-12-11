@@ -19,6 +19,8 @@ import {
 import classNames from "classnames";
 import { cubeService } from "../../services";
 import _ from "lodash";
+import ErrorBoundary from "../ErrorHandling/ErrorBoundary";
+import authActions from "../../actions/auth.actions";
 
 export interface IAppManagerState {
   isNewAppModalVisible: boolean;
@@ -126,10 +128,7 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
           </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button
-            onClick={this.proceedToDelete}
-            className="cube-btn"
-          >
+          <Button onClick={this.proceedToDelete} className="cube-btn">
             Confirm
           </Button>
           <Button onClick={this.cancelDeletion} className="cube-btn">
@@ -313,10 +312,7 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
           </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button
-            onClick={this.hideNewAppPopup}
-            className="cube-btn"
-          >
+          <Button onClick={this.hideNewAppPopup} className="cube-btn">
             Close
           </Button>
           {isNewAppModal ? (
@@ -349,6 +345,7 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
       appModalType: "UpdateApp",
       savingMessage: "",
       loading: false,
+      isAddAppDisabled: false,
     });
   };
   onAppUpdateBtnClick = () => {
@@ -397,15 +394,8 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
 
   createAppList = () => {
     const {
-      cube: { appsList, appsListReqStatus, selectedApp },
+      cube: { appsList, selectedApp },
     } = this.props;
-
-    if (
-      appsList.length === 0 &&
-      appsListReqStatus === cubeConstants.REQ_LOADING
-    ) {
-      return "Loading...";
-    }
 
     return (
       <>
@@ -440,6 +430,9 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
       "fa-angle-down": !this.state.isMenuVisible,
       "fa-angle-up": this.state.isMenuVisible,
     });
+    const {
+      cube: { appsList, appsListReqStatus },
+    } = this.props;
     return (
       <div className={navigatorClass}>
         <div onClick={this.toggleMenu} className="app-selector">
@@ -451,6 +444,11 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
           <div className="application-name">
             {this.props.cube.selectedAppObj?.app.displayName}
           </div>
+
+          {appsList.length === 0 &&
+            appsListReqStatus === cubeConstants.REQ_LOADING && (
+              <div style={{ fontStyle: "italic" }}>Loading..</div>
+            )}
         </div>
         {this.state.isMenuVisible && this.createAppList()}
         {this.newAppModal()}
@@ -459,6 +457,31 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
       </div>
     );
   }
+}
+
+function errorBoundedAppManager(props: IAppManagerProps) {
+  const logout = React.useCallback(() => {
+    props.dispatch(authActions.logout());
+  }, []);
+  const fallBackModal = (
+    <Modal onHide={logout} show={true}>
+      <Modal.Header>An error occurred</Modal.Header>
+      <Modal.Body>
+        Please logout and login to try resolving the issue. If the error
+        persists, please contact us.
+      </Modal.Body>
+      <Modal.Footer>
+        <Button className="cube-btn " onClick={logout}>
+          Logout
+        </Button>
+      </Modal.Footer>
+    </Modal>
+  );
+  return (
+    <ErrorBoundary fallbackUI={fallBackModal}>
+      <AppManager {...props} />
+    </ErrorBoundary>
+  );
 }
 
 function mapStateToProps(state: IStoreState) {
@@ -470,6 +493,6 @@ function mapStateToProps(state: IStoreState) {
   };
 }
 
-const connectedAppManager = connect(mapStateToProps)(AppManager);
+const connectedAppManager = connect(mapStateToProps)(errorBoundedAppManager);
 
 export default connectedAppManager;
