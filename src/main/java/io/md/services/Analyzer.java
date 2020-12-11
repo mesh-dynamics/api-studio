@@ -13,5 +13,5 @@ public interface Analyzer {
 	 * @param replayId
 	 * @return
 	 */
-	public Optional<Analysis> analyze(String replayId);
+	public Optional<Analysis> analyze(String replayId, Optional<String> templateVersion);
 }
