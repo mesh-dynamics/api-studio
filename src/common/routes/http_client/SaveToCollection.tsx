@@ -52,7 +52,7 @@ export interface ISaveToCollectionState {
 class SaveToCollection extends React.Component<
   ISaveToCollectionProps,
   ISaveToCollectionState
-> {
+  > {
   private createCollectionRef: any;
   constructor(props: ISaveToCollectionProps) {
     super(props);
@@ -224,9 +224,28 @@ class SaveToCollection extends React.Component<
     try {
       if (reqResPair.length > 0) {
         const data = [];
-        data.push(
-          this.props.getReqResFromTabData(reqResPair, tabToProcess, runId, type)
-        );
+
+        // TODO: Quick fix to rectify mock failure where status is empty string
+        // Proper fix is to make status on LHS editable
+
+        /** Fix Start */
+        const reqResData = this.props.getReqResFromTabData(reqResPair, tabToProcess, runId, type)
+
+        const { response: { payload: httpResponsePayload } } = reqResData;
+
+        const responsePayloadObject = httpResponsePayload[1];
+
+        const statusBeforeSave = responsePayloadObject['status'];
+
+        if (!statusBeforeSave) {
+          responsePayloadObject['status'] = 200;
+          reqResData.response.payload[1] = responsePayloadObject;
+        }
+
+
+        data.push(reqResData);
+
+        /** Fix End */
 
         tabToProcess.outgoingRequests.forEach((eachOutgoingTab) => {
           if (
@@ -296,7 +315,7 @@ class SaveToCollection extends React.Component<
     return (
       <>
         {showSaveToButton ? (
-          <Dropdown disabled={this.props.disabled} style={{marginRight: "5px", marginBottom: "5px"}}>
+          <Dropdown disabled={this.props.disabled} style={{ marginRight: "5px", marginBottom: "5px" }}>
             <Button
               disabled={this.props.disabled}
               onClick={this.showSaveModal}
@@ -310,15 +329,15 @@ class SaveToCollection extends React.Component<
             </Dropdown.Menu>
           </Dropdown>
         ) : (
-          <Button
-            title="Save"
-            onClick={this.showSaveModal}
-            disabled={this.props.disabled}
-            className="cube-btn text-center"
-          >
-            <Glyphicon glyph="save" /> SAVE
-          </Button>
-        )}
+            <Button
+              title="Save"
+              onClick={this.showSaveModal}
+              disabled={this.props.disabled}
+              className="cube-btn text-center"
+            >
+              <Glyphicon glyph="save" /> SAVE
+            </Button>
+          )}
 
         <Modal
           show={this.state.showSaveStatusModal}

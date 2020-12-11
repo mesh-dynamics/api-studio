@@ -1166,6 +1166,16 @@ class HttpClientTabs extends Component {
                     }
                 }
             });
+            let bodyData = {};
+            if (!(fetchConfigRendered.method == "GET" || fetchConfigRendered.method == "HEAD")){
+                if(bodyType === "formData") {
+                    bodyData = {body: fetchConfigRendered.body.toString()}
+                } else if(!_.isString(fetchConfigRendered.body)) {
+                    bodyData = {body: JSON.stringify(fetchConfigRendered.body)}
+                } else {
+                    bodyData = {body: fetchConfigRendered.body}
+                }
+            }
             ipcRenderer.send('drive_request_initiate', {
                 tabId,
                 runId,
@@ -1173,7 +1183,7 @@ class HttpClientTabs extends Component {
                 url: fetchUrlRendered,
                 bodyType,
                 headers: JSON.stringify(fetchConfigRendered.headers),
-                ...( !(fetchConfigRendered.method == "GET" || fetchConfigRendered.method == "HEAD") && {body: bodyType === "formData" ? fetchConfigRendered.body.toString() : JSON.stringify(fetchConfigRendered.body)})
+                ...bodyData
             });
         } else {
             fetchConfigRendered.signal = tabToProcess.abortRequest.signal;
