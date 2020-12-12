@@ -166,6 +166,7 @@ public class ReplayBasicWS {
 
         // Request transformations - for injecting tokens and such
         Optional<String> xfms = Optional.ofNullable(formParams.getFirst(Constants.TRANSFORMS_FIELD));
+        boolean tracePropagation = Utils.strToBool(formParams.getFirst(Constants.TRACE_PROPAGATION)).orElse(true);
 
         if (userId == null) {
             throw new ParameterException("userId Not Specified");
@@ -198,6 +199,7 @@ public class ReplayBasicWS {
         dynamicInjectionConfigVersion.ifPresent(replayBuilder::withDynamicInjectionConfigVersion);
         staticInjectionMap.ifPresent(replayBuilder::withStaticInjectionMap);
         replayBuilder.withRunId(replayBuilder.getReplayId() + " " + Instant.now().toString());
+        replayBuilder.withTracePropogation(tracePropagation);
 
         try {
             recording.generatedClassJarPath

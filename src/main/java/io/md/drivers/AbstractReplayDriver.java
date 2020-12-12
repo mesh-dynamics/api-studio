@@ -15,6 +15,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.md.dao.*;
 import io.md.injection.DynamicInjectorFactory;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -26,17 +27,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.md.injection.DynamicInjector;
 import io.md.constants.ReplayStatus;
-import io.md.dao.DataObj;
-import io.md.dao.Event;
-import io.md.dao.JsonDataObj;
-import io.md.dao.RecordOrReplay;
-import io.md.dao.Replay;
-import io.md.dao.ResponsePayload;
 import io.md.services.DataStore;
 import io.md.utils.CubeObjectMapperProvider;
 
 import io.md.core.Utils;
-import io.md.dao.ReplayUpdate;
 import io.md.utils.Constants;
 
 public abstract class AbstractReplayDriver {
@@ -145,12 +139,19 @@ public abstract class AbstractReplayDriver {
 		// TODO: add support for matrix params
 
 		try {
+			Map<String , Event> reqIdEventMap = new HashMap<>();
+			if(!replay.tracePropogation){
+				Stream<Event> respEventStream = ReplayUpdate.getResponseEvents(dataStore , replay);
+				reqIdEventMap = respEventStream.collect(Collectors.toMap(e->e.reqId , e->e));
+			}
+
 			Pair<Stream<List<Event>>, Long> batchedResult = ReplayUpdate
 				.getRequestBatchesUsingEvents(BATCHSIZE, dataStore, replay);
 			replay.reqcnt = batchedResult.getRight().intValue();
 			// NOTE: converting long to int, should be ok, since we
 			// never replay so many requests
 
+			Map<String, Event> finalReqIdEventMap = reqIdEventMap;
 			batchedResult.getLeft().forEach(requests -> {
 
 				// replay.reqcnt += requests.size();
@@ -186,7 +187,7 @@ public abstract class AbstractReplayDriver {
 				});
 
 				List<String> respcodes = replay.async ? sendReqAsync(reqs.stream()) :
-					sendReqSync(reqs.stream());
+					sendReqSync(reqs.stream() , finalReqIdEventMap);
 
 				// count number of errors
 				replay.reqfailed += respcodes.stream()
@@ -257,13 +258,19 @@ public abstract class AbstractReplayDriver {
 		}
 	}
 
-	private List<String> sendReqSync(Stream<Event> requests) {
+	private List<String> sendReqSync(Stream<Event> requests , Map<String , Event> reqIdRespEventMap) {
 
 		return requests.map(request -> {
 			try {
 				replay.reqsent++;
 				logUpdate();
 				diMgr.inject(request);
+				if(!replay.tracePropogation){
+					Optional<Event> resp = Optional.ofNullable(reqIdRespEventMap.get(request.getReqId()));
+					Optional<ReplayContext> replayCtx = resp.map(e->new ReplayContext(request.getTraceId() ,request.timestamp , e.timestamp ));
+					replay.replayContext = replayCtx;
+					dataStore.saveReplay(replay);
+				}
 				ResponsePayload responsePayload = client.send(request, replay);
 				// Extract variables in extractionMap
 				diMgr.extract(request, responsePayload);

@@ -69,12 +69,22 @@ public class ReplayUpdate {
 	@JsonIgnore
 	public static Pair<Stream<List<Event>>, Long> getRequestBatchesUsingEvents(int batchSize, DataStore dataStore,
                                                                                Replay replay) {
-        DSResult<Event> requests = getEventResult(dataStore, replay);
+        DSResult<Event> requests = getEventResult(dataStore, replay , false);
         return Pair.of(BatchingIterator.batchedStreamOf(requests.getObjects(), batchSize), requests.getNumFound());
     }
 
-	private static DSResult<Event> getEventResult(DataStore dataStore, Replay replay) {
-		EventQuery eventQuery = new EventQuery.Builder(replay.customerId, replay.app, EventType.fromReplayType(replay.replayType))
+	@JsonIgnore
+	public static Stream<Event> getResponseEvents(DataStore dataStore,
+																			   Replay replay) {
+		DSResult<Event> response = getEventResult(dataStore, replay , true);
+		return response.getObjects();
+	}
+
+
+
+	private static DSResult<Event> getEventResult(DataStore dataStore, Replay replay , boolean requireResponse) {
+		EventType eventType = EventType.mapType(EventType.fromReplayType(replay.replayType) , requireResponse);
+		EventQuery eventQuery = new EventQuery.Builder(replay.customerId, replay.app, eventType)
 			/*.withRunType(Event.RunType.Record)*/.withReqIds(replay.reqIds).withPaths(replay.paths)
             .withExcludePaths(replay.excludePaths)
 			.withCollection(replay.collection)
