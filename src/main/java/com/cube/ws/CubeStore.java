@@ -9,6 +9,7 @@ import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
 import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
+import com.cube.sequence.SeqMgr;
 import io.md.dao.DataObj.DataObjProcessingException;
 import io.md.dao.Event.EventType;
 import io.md.injection.DynamicInjector;
@@ -18,15 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -1303,11 +1296,15 @@ public class CubeStore {
             }
             Recording  updatedRecording = recordingBuilder.build();
             if(rrstore.saveRecording(updatedRecording)) {
-                EventQuery.Builder builder = new EventQuery.Builder(recording.customerId, recording.app, Collections.emptyList());
-                builder.withCollection(recording.collection);
+                EventQuery.Builder builder = new EventQuery.Builder(recording.customerId, recording.app, Collections.emptyList())
+                                            .withCollection(recording.collection)
+                                            .withoutScoreOrder()
+                                            .withSeqIdAsc(true)
+                                            .withTimestampAsc(true);
+
                 Result<Event> result = rrstore.getEvents(builder.build());
                 Map<String, String> reqIdMap = new HashMap<>();
-                result.getObjects().forEach(event -> {
+                Stream<Event> eventStream =  result.getObjects().map(event -> {
                     try {
                         String reqId = reqIdMap.get(event.getReqId());
                         if(reqId == null) {
@@ -1316,16 +1313,20 @@ public class CubeStore {
                                 event.service, event.getTraceId());
                             reqIdMap.put(oldReqId, reqId);
                         }
-                        Event newEvent = buildEvent(event, collection,  type, reqId, event.getTraceId(), Optional.of(timeStamp.toString()));
-                        rrstore.save(newEvent);
+                        return buildEvent(event, collection,  type, reqId, event.getTraceId(), Optional.of(timeStamp.toString()));
                     } catch (InvalidEventException e) {
                         LOGGER.error(new ObjectMessage(
                             Map.of(Constants.MESSAGE, "Error while creating Event",
                                 Constants.RECORDING_ID, updatedRecording.id)), e);
                     }
-                });
-                rrstore.commit();
-                return Response.ok().type(MediaType.APPLICATION_JSON).entity(updatedRecording).build();
+                    return null;
+                }).filter(Objects::nonNull);
+
+                Event[] newEvents =  SeqMgr.createSeqId(eventStream , result.numFound).toArray(Event[]::new);
+                boolean success =  rrstore.save(newEvents) && rrstore.commit();
+                if(success) Response.ok().type(MediaType.APPLICATION_JSON).entity(updatedRecording).build();
+
+                LOGGER.error("Error while saving batch events");
             }
             return Response.status(Status.INTERNAL_SERVER_ERROR)
                 .type(MediaType.APPLICATION_JSON)

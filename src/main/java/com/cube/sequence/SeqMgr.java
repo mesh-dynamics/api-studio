@@ -2,7 +2,9 @@ package com.cube.sequence;
 
 import io.md.dao.Event;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.stream.Stream;
 
 public class SeqMgr {
@@ -13,8 +15,13 @@ public class SeqMgr {
         SequenceGenerator gen = new SequenceGenerator(size);
 
         Iterator<String> seqItr = gen.iterator();
+        Map<String, String> seqIdMap = new HashMap<>();
         return goldenEvents.map(e->{
-            String seqId = seqItr.next();
+            String seqId = seqIdMap.get(e.getReqId());
+            if(seqId ==null){
+                seqId = seqItr.next();
+                seqIdMap.put(e.getReqId() , seqId);
+            }
             e.setSeqId(seqId);
             return e;
         });
@@ -42,8 +49,14 @@ public class SeqMgr {
         Iterator<String> seqItr = gen.iterator();
         final String finalBasePadding = basePadding;
         final boolean padding = !finalBasePadding.isEmpty();
+        Map<String, String> seqIdMap = new HashMap<>();
+
         return movedEventsBatch.map(e->{
-            String seqId = padding ? finalBasePadding + seqItr.next() : seqItr.next();
+            String seqId = seqIdMap.get(e.getReqId());
+            if(seqId ==null){
+                seqId = padding ? finalBasePadding + seqItr.next() : seqItr.next();
+                seqIdMap.put(e.getReqId() , seqId);
+            }
             e.setSeqId(seqId);
             return e;
         });

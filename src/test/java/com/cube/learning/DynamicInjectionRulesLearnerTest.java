@@ -26,7 +26,10 @@ class DynamicInjectionRulesLearnerTest {
         List<String> collections = Arrays.asList("a7dc081c-830d-4f67-ab77-db6cbc8855d5");
 
         EventQuery eventQuery = new EventQuery.Builder(customerId, app, eventTypes)
-            .withIndexOrderAsc(true).withCollections(collections).build();
+            .withoutScoreOrder()
+            .withTimestampAsc(true)
+            .withIndexAsc(true)
+            .withCollections(collections).build();
 
         DynamicInjectionRulesLearner diLearner = new DynamicInjectionRulesLearner(paths);
 
