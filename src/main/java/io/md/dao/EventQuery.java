@@ -37,7 +37,8 @@ public class EventQuery {
     private final List<Event.RunType> runTypes;
     private final Optional<String> spanId;
     private final Optional<String> parentSpanId;
-    private final Optional<Instant> timestamp;
+    private final Optional<Instant> startTimestamp;
+    private final Optional<Instant> endTimestamp;
 
     private final List<String> reqIds;
     private final List<String> paths;
@@ -64,7 +65,8 @@ public class EventQuery {
         private List<Event.RunType> runTypes = Collections.EMPTY_LIST;
         private String spanId = null;
         private String parentSpanId = null;
-        private Instant timestamp = null;
+        private Instant startTimestamp = null;
+        private Instant endTimestamp = null;
         private List<String> reqIds = Collections.emptyList();
         private List<String> paths = Collections.emptyList();
         private boolean excludePaths = false;
@@ -228,14 +230,25 @@ public class EventQuery {
             return this;
         }
 
-        public Builder withTimestamp(Instant val) {
-            timestamp = val;
+        public Builder withStartTimestamp(Instant val) {
+            startTimestamp = val;
             return this;
         }
 
-        public Builder withTimestamp(Instant val ,Float weight) {
-            timestamp = val;
-            orQueryWeightage.put(Constants.TIMESTAMP_FIELD , weight);
+        public Builder withEndTimestamp(Instant val) {
+            endTimestamp = val;
+            return this;
+        }
+
+        public Builder withStartTimestamp(Instant val ,Float weight) {
+            startTimestamp = val;
+            orQueryWeightage.put(Constants.START_TIMESTAMP_FIELD , weight);
+            return this;
+        }
+
+        public Builder withEndTimestamp(Instant val , Float weight) {
+            endTimestamp = val;
+            orQueryWeightage.put(Constants.END_TIMESTAMP_FIELD , weight);
             return this;
         }
 
@@ -369,7 +382,8 @@ public class EventQuery {
         runTypes = builder.runTypes;
         spanId = Optional.ofNullable(builder.spanId);
         parentSpanId = Optional.ofNullable(builder.parentSpanId);
-        timestamp = Optional.ofNullable(builder.timestamp);
+        startTimestamp = Optional.ofNullable(builder.startTimestamp);
+        endTimestamp = Optional.ofNullable(builder.endTimestamp);
         reqIds = builder.reqIds;
         paths = builder.paths;
         excludePaths = builder.excludePaths;
@@ -463,9 +477,14 @@ public class EventQuery {
         return indexOrderAsc;
     }
 
-    public Optional<Instant> getTimestamp() {
-        return timestamp;
+    public Optional<Instant> getStartTimestamp() {
+        return startTimestamp;
     }
+
+    public Optional<Instant> getEndTimestamp() {
+        return endTimestamp;
+    }
+
     @JsonIgnore
     public Optional<Float> getTimestampWeight() {return Optional.ofNullable(orQueryWeightage.get(Constants.TIMESTAMP_FIELD)); }
 
