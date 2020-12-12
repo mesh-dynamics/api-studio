@@ -40,6 +40,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import io.md.dao.RecordOrReplay;
 import io.md.services.DataStore;
 import io.md.utils.Constants;
+import io.md.utils.Utils;
 
 
 /**
@@ -81,56 +82,31 @@ public class Utils {
 	 * @return
 	 */
 	public static Optional<Integer> strToInt(String intStr) {
-		try {
-			return Optional.ofNullable(intStr).map(Integer::valueOf);
-		} catch (Exception e) {
-			LOGGER.error("Error while parsing int",e);
-			return Optional.empty();
-		}
+		return io.md.utils.Utils.strToInt(intStr);
 	}
 
 
 	public static Optional<Double> strToDouble(String dblStr) {
-		try {
-			return Optional.ofNullable(dblStr).map(Double::valueOf);
-		} catch (Exception e) {
-			return Optional.empty();
-		}
+        return io.md.utils.Utils.strToDouble(dblStr);
 	}
 
 
     public static Optional<Long> strToLong(String longStr) {
-        try {
-            return Optional.ofNullable(longStr).map(Long::valueOf);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
+        return io.md.utils.Utils.strToLong(longStr);
     }
 
     public static Optional<Instant> strToTimeStamp(String val) {
-        try {
-            return Optional.of(Instant.parse(val)); // parse cannot return null
-        } catch (Exception e) {
-            return Optional.empty();
-        }
+        return io.md.utils.Utils.strToTimeStamp(val);
     }
 
 
     public static Optional<Instant> msStrToTimeStamp(String val) {
-	    try {
-	        return strToLong(val).map(Instant::ofEpochMilli);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
+	    return io.md.utils.Utils.strToTimeStamp(val);
     }
 
 
     public static Optional<Boolean> strToBool(String boolStr) {
-        try {
-            return Optional.ofNullable(boolStr).map(BooleanUtils::toBoolean);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
+        return io.md.utils.Utils.strToBool(boolStr);
     }
 
 	public static <T> CompletableFuture<List<T>> sequence(List<CompletableFuture<T>> futures) {

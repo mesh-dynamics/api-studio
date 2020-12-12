@@ -1,6 +1,7 @@
 package io.md.drivers;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -139,10 +140,10 @@ public abstract class AbstractReplayDriver {
 		// TODO: add support for matrix params
 
 		try {
-			Map<String , Event> reqIdEventMap = new HashMap<>();
+			Map<String , Instant> reqIdRespTsMap = Map.of();
 			if(!replay.tracePropogation){
 				Stream<Event> respEventStream = ReplayUpdate.getResponseEvents(dataStore , replay);
-				reqIdEventMap = respEventStream.collect(Collectors.toMap(e->e.reqId , e->e));
+				reqIdRespTsMap = respEventStream.collect(Collectors.toMap(e->e.reqId , e->e.timestamp));
 			}
 
 			Pair<Stream<List<Event>>, Long> batchedResult = ReplayUpdate
@@ -151,7 +152,7 @@ public abstract class AbstractReplayDriver {
 			// NOTE: converting long to int, should be ok, since we
 			// never replay so many requests
 
-			Map<String, Event> finalReqIdEventMap = reqIdEventMap;
+			Map<String, Instant> finalReqIdRespTsMap = reqIdRespTsMap;
 			batchedResult.getLeft().forEach(requests -> {
 
 				// replay.reqcnt += requests.size();
@@ -187,7 +188,7 @@ public abstract class AbstractReplayDriver {
 				});
 
 				List<String> respcodes = replay.async ? sendReqAsync(reqs.stream()) :
-					sendReqSync(reqs.stream() , finalReqIdEventMap);
+					sendReqSync(reqs.stream() , finalReqIdRespTsMap);
 
 				// count number of errors
 				replay.reqfailed += respcodes.stream()
@@ -258,7 +259,7 @@ public abstract class AbstractReplayDriver {
 		}
 	}
 
-	private List<String> sendReqSync(Stream<Event> requests , Map<String , Event> reqIdRespEventMap) {
+	private List<String> sendReqSync(Stream<Event> requests , Map<String , Instant> reqIdRespTsMap) {
 
 		return requests.map(request -> {
 			try {
@@ -266,8 +267,8 @@ public abstract class AbstractReplayDriver {
 				logUpdate();
 				diMgr.inject(request);
 				if(!replay.tracePropogation){
-					Optional<Event> resp = Optional.ofNullable(reqIdRespEventMap.get(request.getReqId()));
-					Optional<ReplayContext> replayCtx = resp.map(e->new ReplayContext(request.getTraceId() ,request.timestamp , e.timestamp ));
+					Optional<Instant> respTs = Optional.ofNullable(reqIdRespTsMap.get(request.getReqId()));
+					Optional<ReplayContext> replayCtx = respTs.map(ts->new ReplayContext(request.getTraceId() ,request.timestamp , ts ));
 					replay.replayContext = replayCtx;
 					dataStore.saveReplay(replay);
 				}
