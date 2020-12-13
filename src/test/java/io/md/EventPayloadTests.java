@@ -4,6 +4,7 @@ package io.md;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
+import io.md.core.CollectionKey;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateKey.Type;
 import io.md.dao.*;
@@ -165,6 +166,9 @@ public class EventPayloadTests {
 				public boolean deferredDelete(Replay replay) {
 					return false;
 				}
+
+				@Override
+				public void populateCache(CollectionKey collectionKey, RecordOrReplay rr) { }
 
 				@Override
 				public Optional<ProtoDescriptorDAO> getLatestProtoDescriptorDAO(String customer, String app) {
