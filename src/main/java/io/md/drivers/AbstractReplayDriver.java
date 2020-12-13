@@ -143,7 +143,7 @@ public abstract class AbstractReplayDriver {
 			Map<String , Instant> reqIdRespTsMap = Map.of();
 			if(!replay.tracePropogation){
 				Stream<Event> respEventStream = ReplayUpdate.getResponseEvents(dataStore , replay);
-				reqIdRespTsMap = respEventStream.collect(Collectors.toMap(e->e.reqId , e->e.timestamp));
+				reqIdRespTsMap = respEventStream.collect(Collectors.toMap(e->e.reqId , e->Instant.ofEpochSecond(e.timestamp.getEpochSecond() , e.timestamp.getNano()) ));
 			}
 
 			Pair<Stream<List<Event>>, Long> batchedResult = ReplayUpdate
