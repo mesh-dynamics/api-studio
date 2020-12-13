@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.md.core.CollectionKey;
 import io.md.dao.*;
 import io.md.injection.DynamicInjectorFactory;
 import org.apache.commons.lang3.tuple.Pair;
@@ -276,8 +277,7 @@ public abstract class AbstractReplayDriver {
 					Optional<Instant> respTs = Optional.ofNullable(reqIdRespTsMap.get(request.getReqId()));
 					Optional<ReplayContext> replayCtx = respTs.map(ts->new ReplayContext(request.getTraceId() ,request.timestamp , ts ));
 					replay.replayContext = replayCtx;
-					// TODO: populateCache(RecordOrReplay.createFromReplay(replay));
-					dataStore.saveReplay(replay);
+					dataStore.populateCache(new CollectionKey(replay.customerId, replay.app , replay.instanceId) , RecordOrReplay.createFromReplay(replay));
 				}
 				ResponsePayload responsePayload = client.send(request, replay);
 				// Extract variables in extractionMap
