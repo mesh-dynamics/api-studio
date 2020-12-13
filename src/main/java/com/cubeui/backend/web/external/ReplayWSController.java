@@ -132,11 +132,17 @@ public class ReplayWSController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @PostMapping("/saveDynamicInjectionConfig")
-    public ResponseEntity getDynamicInjectionConfig(HttpServletRequest request,
-        @RequestBody DynamicInjectionConfig dynamicInjectionConfig, Authentication authentication) {
-        validation.validateCustomerName(authentication, dynamicInjectionConfig.customerId);
-        return cubeServerService.fetchPostResponse(request, Optional.of(dynamicInjectionConfig));
+    @PostMapping("/saveDynamicInjectionConfigFromJson")
+    public ResponseEntity saveDynamicInjectionConfigFromJson(HttpServletRequest request,
+        @RequestParam(value = "file") MultipartFile[] files , Authentication authentication)
+        throws IOException {
+        LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
+        for (MultipartFile file : files) {
+            if (!file.isEmpty()) {
+                map.add("file", new MultipartInputStreamFileResource(file.getInputStream(), file.getOriginalFilename()));
+            }
+        }
+        return cubeServerService.fetchPostResponse(request, Optional.of(map));
     }
 
     @PostMapping("/deferredDeleteReplay/{replayId}/{status}")
