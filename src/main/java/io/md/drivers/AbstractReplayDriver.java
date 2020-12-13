@@ -128,6 +128,9 @@ public abstract class AbstractReplayDriver {
 		if (!dataStore.saveReplay(replay)) {
 			return;
 		}
+
+		// TODO: create CollectionKey
+
 		// This is a dummy lookup, just to get the Replay running status into Redis, so that
 		// deferred delete  can be applied when replay ends. This is needed for very small replays
 		Optional<RecordOrReplay> recordOrReplay =
@@ -140,11 +143,6 @@ public abstract class AbstractReplayDriver {
 		// TODO: add support for matrix params
 
 		try {
-			Map<String , Instant> reqIdRespTsMap = Map.of();
-			if(!replay.tracePropogation){
-				Stream<Event> respEventStream = ReplayUpdate.getResponseEvents(dataStore , replay);
-				reqIdRespTsMap = respEventStream.collect(Collectors.toMap(e->e.reqId , e->Instant.ofEpochSecond(e.timestamp.getEpochSecond() , e.timestamp.getNano()) ));
-			}
 
 			Pair<Stream<List<Event>>, Long> batchedResult = ReplayUpdate
 				.getRequestBatchesUsingEvents(BATCHSIZE, dataStore, replay);
@@ -152,7 +150,6 @@ public abstract class AbstractReplayDriver {
 			// NOTE: converting long to int, should be ok, since we
 			// never replay so many requests
 
-			Map<String, Instant> finalReqIdRespTsMap = reqIdRespTsMap;
 			batchedResult.getLeft().forEach(requests -> {
 
 				// replay.reqcnt += requests.size();
@@ -187,8 +184,16 @@ public abstract class AbstractReplayDriver {
 					}
 				});
 
+				Map<String , Instant> reqIdRespTsMap = Map.of();
+				if(!replay.tracePropogation){
+					Stream<Event> respEventStream = ReplayUpdate.getResponseEvents(dataStore, replay,
+							reqs.stream().map(Event::getReqId).collect(Collectors.toList()));
+					reqIdRespTsMap = respEventStream.collect(Collectors.toMap(e->e.reqId , e->Instant.ofEpochSecond(e.timestamp.getEpochSecond() , e.timestamp.getNano()) ));
+				}
+				Map<String, Instant> finalReqIdRespTsMap = reqIdRespTsMap;
+
 				List<String> respcodes = replay.async ? sendReqAsync(reqs.stream()) :
-					sendReqSync(reqs.stream() , finalReqIdRespTsMap);
+					sendReqSync(reqs.stream(), finalReqIdRespTsMap);
 
 				// count number of errors
 				replay.reqfailed += respcodes.stream()
@@ -259,7 +264,8 @@ public abstract class AbstractReplayDriver {
 		}
 	}
 
-	private List<String> sendReqSync(Stream<Event> requests , Map<String , Instant> reqIdRespTsMap) {
+	private List<String> sendReqSync(Stream<Event> requests, Map<String, Instant> reqIdRespTsMap
+	  /*TODO: , CollectionKey collectionKey*/) {
 
 		return requests.map(request -> {
 			try {
@@ -270,6 +276,7 @@ public abstract class AbstractReplayDriver {
 					Optional<Instant> respTs = Optional.ofNullable(reqIdRespTsMap.get(request.getReqId()));
 					Optional<ReplayContext> replayCtx = respTs.map(ts->new ReplayContext(request.getTraceId() ,request.timestamp , ts ));
 					replay.replayContext = replayCtx;
+					// TODO: populateCache(RecordOrReplay.createFromReplay(replay));
 					dataStore.saveReplay(replay);
 				}
 				ResponsePayload responsePayload = client.send(request, replay);
