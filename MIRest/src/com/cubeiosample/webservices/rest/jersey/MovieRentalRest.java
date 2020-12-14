@@ -405,7 +405,7 @@ public class MovieRentalRest {
 
 	@GET
 	@Path("/getMovieList")
-	//@Secured
+	@Secured
 	public Response getMovies(@Context HttpHeaders httpHeaders, @Context SecurityContext securityContext, @Context UriInfo uriInfo) {
 		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "getMovies")) {
 			scope.span().setTag("getMovies", "getMovies");
@@ -422,6 +422,19 @@ public class MovieRentalRest {
 			return Response.ok().type(MediaType.APPLICATION_JSON).entity(movies.toString()).build();
 		} catch (Exception e) {
 			LOGGER.error("Error while getting movies");
+			return Response.serverError().type(MediaType.APPLICATION_JSON).entity(Map.of("error", e.toString())).build();
+		}
+	}
+
+	@GET
+	@Path("/categories")
+	@Secured
+	public Response getCategories(@Context HttpHeaders httpHeaders, @Context SecurityContext securityContext) {
+		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "getCategories")) {
+			scope.span().setTag("getCategories", "getCategories");
+			return Response.ok().type(MediaType.APPLICATION_JSON).entity(mv.getAllCategories().toString()).build();
+		} catch (Exception e) {
+			LOGGER.error("Error while fetching the categories ");
 			return Response.serverError().type(MediaType.APPLICATION_JSON).entity(Map.of("error", e.toString())).build();
 		}
 	}
