@@ -404,7 +404,7 @@ public class MovieRentals {
 	public JSONArray getCategoriesByNames(List<String> categories) {
 		String query = "Select category_id, name from category where name In (";
 		JSONArray params = new JSONArray();
-		for(int i=0; i< categories.size(); i++) {
+		for(int i=0; i< categories.size() && i < 60; i++) {
 			query = query + "?";
 			if (i < categories.size()-1)
 				query = query + ",";
@@ -418,7 +418,7 @@ public class MovieRentals {
 	public JSONArray getCategoriesByIds(List<Integer> categories) {
 		String query = "Select category_id, name from category where category_id In (";
 		JSONArray params = new JSONArray();
-		for(int i=0; i< categories.size(); i++) {
+		for(int i=0; i< categories.size() && i < 60; i++) {
 			query = query + "?";
 			if (i < categories.size()-1)
 				query = query + ",";
@@ -518,44 +518,11 @@ public class MovieRentals {
     	return ros.executeQuery(query, params);
 	}
 
-	public JSONArray getMoviesForIds(List<Integer> filmIds) {
-		String query = "select * from film where film_id IN (";
-		JSONArray params = new JSONArray();
-		for(int i=0; i< filmIds.size(); i++) {
-			query = query + "?";
-			if (i < filmIds.size() - 1)
-				query = query + ",";
-			if (i == filmIds.size() - 1)
-				query = query + ")";
-			RestOverSql.addIntegerParam(params, filmIds.get(i));
-		}
-		return ros.executeQuery(query, params);
-	}
-
-	public List<Integer> getFilmIdsForCategoryIds(List<Integer> categoryIds) {
-		String query = "Select film_id from film_category where category_id IN (";
-		JSONArray params = new JSONArray();
-		for(int i=0; i< categoryIds.size(); i++) {
-			query = query + "?";
-			if (i < categoryIds.size() - 1)
-				query = query + ",";
-			if (i == categoryIds.size() - 1)
-				query = query + ")";
-			RestOverSql.addIntegerParam(params, categoryIds.get(i));
-		}
-		JSONArray rs = ros.executeQuery(query, params);
-		List<Integer> ids = new ArrayList<>();
-		for(Object obj:rs) {
-			JSONObject json = (JSONObject)obj;
-			ids.add(json.getInt("film_id"));
-		}
-		return ids;
-	}
-
 	public JSONArray getMoviesForGroup(int genreGroupId) {
-    	List<Integer> categoryIds = getCategoryIdsForGenreGroup(genreGroupId);
-    	List<Integer> filmIds = getFilmIdsForCategoryIds(categoryIds);
-    	return getMoviesForIds(filmIds);
+    	String query = "Select * from film where film_id  IN (select film_id from film_category where category_id IN(select category_id from genre_group_category where genre_group_id =?))";
+    	JSONArray params = new JSONArray();
+    	RestOverSql.addIntegerParam(params, genreGroupId);
+    	return ros.executeQuery(query, params);
 	}
 
 
