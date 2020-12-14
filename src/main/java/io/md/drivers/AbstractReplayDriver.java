@@ -192,9 +192,9 @@ public abstract class AbstractReplayDriver {
 					reqIdRespTsMap = respEventStream.collect(Collectors.toMap(e->e.reqId , e->Instant.ofEpochSecond(e.timestamp.getEpochSecond() , e.timestamp.getNano()) ));
 				}
 				Map<String, Instant> finalReqIdRespTsMap = reqIdRespTsMap;
-
+				CollectionKey replayCollKey = new CollectionKey(replay.customerId, replay.app , replay.instanceId);
 				List<String> respcodes = replay.async ? sendReqAsync(reqs.stream()) :
-					sendReqSync(reqs.stream(), finalReqIdRespTsMap);
+					sendReqSync(reqs.stream(), finalReqIdRespTsMap, replayCollKey);
 
 				// count number of errors
 				replay.reqfailed += respcodes.stream()
@@ -265,8 +265,8 @@ public abstract class AbstractReplayDriver {
 		}
 	}
 
-	private List<String> sendReqSync(Stream<Event> requests, Map<String, Instant> reqIdRespTsMap
-	  /*TODO: , CollectionKey collectionKey*/) {
+	private List<String> sendReqSync(Stream<Event> requests, Map<String, Instant> reqIdRespTsMap,
+	  CollectionKey replayCollKey) {
 
 		return requests.map(request -> {
 			try {
@@ -277,7 +277,7 @@ public abstract class AbstractReplayDriver {
 					Optional<Instant> respTs = Optional.ofNullable(reqIdRespTsMap.get(request.getReqId()));
 					Optional<ReplayContext> replayCtx = respTs.map(ts->new ReplayContext(request.getTraceId() ,request.timestamp , ts ));
 					replay.replayContext = replayCtx;
-					dataStore.populateCache(new CollectionKey(replay.customerId, replay.app , replay.instanceId) , RecordOrReplay.createFromReplay(replay));
+					dataStore.populateCache(replayCollKey, RecordOrReplay.createFromReplay(replay));
 				}
 				ResponsePayload responsePayload = client.send(request, replay);
 				// Extract variables in extractionMap
