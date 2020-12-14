@@ -353,7 +353,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addToFilterIntOrQuery(query , queryBuff , PAYLOADKEYF , eventQuery.getPayloadKey(), true , eventQuery.getPayloadKeyWeight());
 
         // starting from timestamp, non inclusive
-        addRangeFilter(query, TIMESTAMPF, eventQuery.getStartTimestamp(), eventQuery.getEndTimestamp(), false, true);
+        addRangeFilter(query, TIMESTAMPF, eventQuery.getStartTimestamp(), eventQuery.getEndTimestamp(), eventQuery.getEndTimestamp().isPresent() , true);
 
         addFilter(query, PAYLOAD_FIELDS_F , eventQuery.getPayloadFields());
 
