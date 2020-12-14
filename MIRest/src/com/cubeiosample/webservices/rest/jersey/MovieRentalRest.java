@@ -1,6 +1,7 @@
 package com.cubeiosample.webservices.rest.jersey;
 // TODO: change the package name to com.cubeio.samples.MIRest
 
+import java.util.Map;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
@@ -14,6 +15,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.SecurityContext;
 
 import org.apache.log4j.BasicConfigurator;
@@ -89,26 +91,25 @@ public class MovieRentalRest {
 
 	// TODO: createuser API
 	
-	@Path("/authenticate")
+	@Path("/login")
 	@POST
   @Produces(MediaType.APPLICATION_JSON)
   @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
   public Response authenticateUser(@FormParam("username") String username,
                                    @FormParam("password") String password, @Context HttpHeaders httpHeaders) {
-	  try (Scope scope = Tracing.startServerSpan(tracer, httpHeaders , "authenticate")) {
-      scope.span().setTag("authenticate", username);
-      
-	    Authenticator.authenticate(username, password);
+	  try (Scope scope = Tracing.startServerSpan(tracer, httpHeaders , "login")) {
+      scope.span().setTag("login", username);
+
+	    Authenticator.authenticate(username, password, mv);
 
 	    String token = Authenticator.issueToken(username);
 
-	    return Response.ok().header(HttpHeaders.AUTHORIZATION, "Bearer " + token).build();
+	    return Response.ok().entity(Map.of("token", "Bearer " + token)).build();
 	    
 	  } catch (Exception e) {
-	    return Response.status(Response.Status.FORBIDDEN).build();
+	    return Response.status(Status.BAD_REQUEST).entity(Map.of("error", e.getMessage())).build();
     } 
   }
-
 	
 	// User flow: Rent a movie
 	// Find movies by title/keyword/genre/actor
@@ -118,7 +119,7 @@ public class MovieRentalRest {
 	// Return a movie
 	@Path("/listmovies")
 	@GET
-	//@Secured
+	@Secured
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response listMovies(@QueryParam("filmName") String filmname,
 							               @QueryParam("keyword") String keyword,
@@ -157,7 +158,7 @@ public class MovieRentalRest {
 	
 	@Path("/liststores")
 	@GET
-	//@Secured
+	@Secured
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response findStoreswithFilm(@QueryParam("filmId") Integer filmId,
 	                                   @Context HttpHeaders httpHeaders) {
@@ -180,7 +181,7 @@ public class MovieRentalRest {
 	
 	@POST
 	@Path("/rentmovie")
-	//@Secured
+	@Secured
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response rentMovie(String rentalInfoStr,
@@ -220,7 +221,7 @@ public class MovieRentalRest {
 	// Pay and return movies
   @Path("/returnmovie")
   @POST
-  //@Secured
+  @Secured
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
   public Response ReturnMovie(String returnInfoStr, @Context HttpHeaders httpHeaders) {
@@ -247,7 +248,7 @@ public class MovieRentalRest {
 	// Check due rentals
 	@Path("/overduerentals")
 	@GET
-	//@Secured
+	@Secured
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response OverdueRentals(@QueryParam("userid") int userId) {
 		JSONArray dues = new JSONArray();
@@ -262,6 +263,7 @@ public class MovieRentalRest {
 
 	@Path("/reviewslist")
 	@GET
+	@Secured
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response listReviews (@QueryParam("count") Integer reviewsCount) {
 		long starttime = System.currentTimeMillis();
@@ -314,6 +316,7 @@ public class MovieRentalRest {
 
 	@POST
 	@Path("/updateInventory/{number}")
+	@Secured
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response updateInventory(@PathParam("number") int number, @Context HttpHeaders httpHeaders) {
 		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "updateInventory")) {
@@ -329,6 +332,7 @@ public class MovieRentalRest {
 
 	@DELETE
 	@Path("deleteRental")
+	@Secured
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response deleteRental(@Context HttpHeaders httpHeaders) {
 		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "deleteRental")) {

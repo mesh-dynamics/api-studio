@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -42,6 +43,7 @@ public class MovieRentals {
 	    try {
 	    	LOGGER.debug("MV tracer: " + tracer.toString());
 	    	ros = new RestOverSql(this.tracer, config);
+
 
 	    	if (this.config.GET_BOOK_REVIEWS) {
 	    		bookInfo = new BookInfo(tracer, config);
@@ -520,6 +522,32 @@ public class MovieRentals {
 		JSONArray params = new JSONArray();
 		JSONObject rs = ros.executeUpdate(inventoryQuery, params);
 		return rs.getInt("num_updates");
+	}
+
+	public boolean validateUserAndPassword(String userName, String password) {
+		try {
+			String storesQuery = "select * from customer "
+					+ " where email = ? and password = ?";
+			JSONArray params = new JSONArray();
+			RestOverSql.addStringParam(params, userName);
+			RestOverSql.addIntegerParam(params, encodePassword(password));
+			JSONArray rs = ros.executeQuery(storesQuery, params);
+			if (rs == null || rs.length() < 1) {
+				return false;
+			}
+			return true;
+		} catch (Exception e) {
+			LOGGER.error("No user found for  user=" + userName + "; " + e.toString());
+		}
+		return false;
+	}
+
+	private int encodePassword(String password) {
+    	int hash = 23;
+    	for(int i=0; i<password.length(); i++) {
+    		hash = hash * 23 + password.charAt(i);
+			}
+    	return hash;
 	}
     /*
     
