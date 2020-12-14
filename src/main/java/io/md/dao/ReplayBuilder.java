@@ -60,6 +60,9 @@ public class ReplayBuilder {
 	public Optional<String> staticInjectionMap;
 	public Instant analysisCompleteTimestamp;
 	public String runId;
+	public boolean tracePropogation = true;
+	public Optional<ReplayContext> replayContext = Optional.empty();
+
 
 	public ReplayBuilder(String endpoint, String customerId, String app, String instanceId,
                          String collection, String userId) {
@@ -113,12 +116,14 @@ public class ReplayBuilder {
 	}
 
 	public Replay build() {
-		return new Replay(replayEndpoint, customerId, app, instanceId, collection, userId,
-			reqIdsToReplay, replayId, async, templateSetVersion, replayStatus, pathsToReplay,
-            excludePaths, reqCnt , reqSent , reqFailed, creationTimestamp, sampleRate, intermediateServices,
-			generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, mockServices
-	            , testConfigName, goldenName, recordingId, archived,dynamicInjectionConfigVersion,
+		Replay replay = new Replay(replayEndpoint, customerId, app, instanceId, collection, userId,
+				reqIdsToReplay, replayId, async, templateSetVersion, replayStatus, pathsToReplay,
+				excludePaths, reqCnt , reqSent , reqFailed, creationTimestamp, sampleRate, intermediateServices,
+				generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, mockServices
+				, testConfigName, goldenName, recordingId, archived,dynamicInjectionConfigVersion,
 				analysisCompleteTimestamp, staticInjectionMap, runId);
+		replay.tracePropogation = this.tracePropogation;
+		return replay;
 	}
 
 	public ReplayBuilder withPaths(List<String> paths) {
@@ -247,6 +252,11 @@ public class ReplayBuilder {
 
 	public ReplayBuilder withRunId(String runId) {
 		this.runId = runId;
+		return this;
+	}
+
+	public ReplayBuilder withTracePropogation(boolean tracePropogation){
+		this.tracePropogation = tracePropogation;
 		return this;
 	}
 

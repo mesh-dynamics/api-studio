@@ -142,6 +142,7 @@ public class Constants {
     public static final String INTERM_SERVICE_FIELD = "intermService";
     public static final String TRANSFORMS_FIELD = "transforms";
     public static final String ANALYZE_FIELD = "analyze";
+    public static final String TRACE_PROPAGATION = "tracePropagation";
 
     public static final String GENERATED_CLASS_JAR_PATH_FIELD ="generated_class_jar_path"  ;
     public static final String TEMPLATE_KEY_FIELD = "templateKey";

@@ -8,7 +8,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,17 +23,12 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import io.md.dao.RecordOrReplay;
@@ -81,56 +75,31 @@ public class Utils {
 	 * @return
 	 */
 	public static Optional<Integer> strToInt(String intStr) {
-		try {
-			return Optional.ofNullable(intStr).map(Integer::valueOf);
-		} catch (Exception e) {
-			LOGGER.error("Error while parsing int",e);
-			return Optional.empty();
-		}
+		return io.md.utils.Utils.strToInt(intStr);
 	}
 
 
 	public static Optional<Double> strToDouble(String dblStr) {
-		try {
-			return Optional.ofNullable(dblStr).map(Double::valueOf);
-		} catch (Exception e) {
-			return Optional.empty();
-		}
+        return io.md.utils.Utils.strToDouble(dblStr);
 	}
 
 
     public static Optional<Long> strToLong(String longStr) {
-        try {
-            return Optional.ofNullable(longStr).map(Long::valueOf);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
+        return io.md.utils.Utils.strToLong(longStr);
     }
 
     public static Optional<Instant> strToTimeStamp(String val) {
-        try {
-            return Optional.of(Instant.parse(val)); // parse cannot return null
-        } catch (Exception e) {
-            return Optional.empty();
-        }
+        return io.md.utils.Utils.strToTimeStamp(val);
     }
 
 
     public static Optional<Instant> msStrToTimeStamp(String val) {
-	    try {
-	        return strToLong(val).map(Instant::ofEpochMilli);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
+	    return io.md.utils.Utils.strToTimeStamp(val);
     }
 
 
     public static Optional<Boolean> strToBool(String boolStr) {
-        try {
-            return Optional.ofNullable(boolStr).map(BooleanUtils::toBoolean);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
+        return io.md.utils.Utils.strToBool(boolStr);
     }
 
 	public static <T> CompletableFuture<List<T>> sequence(List<CompletableFuture<T>> futures) {
