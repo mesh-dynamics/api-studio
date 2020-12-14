@@ -78,7 +78,6 @@ jobs:
           [IO.File]::WriteAllBytes("md-cert.pfx", $pfx_cert_byte)
           npm install
           $version = ${{ github.event.inputs.version }}
-          git checkout $version
           jq --arg version $version '.version = $version' package.json > .\tmp.txt
           $CONTENT = Get-Content -Path .\tmp.txt
           Remove-Item -path .\package.json
