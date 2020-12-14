@@ -316,7 +316,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         query.addField("*");
         query.addField("score");
 
-        StringBuffer queryBuff = new StringBuffer();
+        //We don't have strict match query (always with weights).
+        //if query param is without weight (strict) , we will have to revise the logic
+        StringBuffer queryBuff = new StringBuffer("*:*");
 
         addFilter(query, TYPEF, Types.Event.toString());
         addFilter(query, CUSTOMERIDF, eventQuery.getCustomerId());
@@ -367,9 +369,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             addSort(query, IDF, true);
         }
 
-        if(queryBuff.length()!=0){
-            query.setQuery(queryBuff.toString());
-        }
+        query.setQuery(queryBuff.toString());
 
         return SolrIterator.getResults(solr, query, eventQuery.getLimit(),
             this::docToEvent, eventQuery.getOffset());
