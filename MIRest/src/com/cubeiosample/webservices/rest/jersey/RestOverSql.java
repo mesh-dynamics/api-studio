@@ -85,7 +85,7 @@ public class RestOverSql {
 		  }
 	  }
 	  // empty array.
-	  return new JSONArray("[{}]");
+	  return new JSONArray("[]");
   }
   
   
