@@ -58,6 +58,7 @@ public class Config {
     public String VERSION = "v1";
     public double TIME_BETWEEN_RUNS = 60000;
     public boolean COMPACT_FORMAT = false;
+    public static boolean DUMMY_AUTHENTICATION = false;
 	
 	public Config() {
 		LOGGER.info("Creating config");
@@ -227,6 +228,17 @@ public class Config {
 
         if (USE_KUBE) {
         	overrideConfigWithKubeSettings();
+        }
+
+        //DUMMY_AUTHENTICATION
+        String dummyAuth = System.getenv("DUMMY_AUTHENTICATION");
+        LOGGER.info("value for DUMMY_AUTHENTICATION  is :: " + dummyAuth);
+        if (dummyAuth != null) {
+          if (dummyAuth.equalsIgnoreCase("true")) {
+            DUMMY_AUTHENTICATION = true;
+          } else {
+            DUMMY_AUTHENTICATION = false;
+          }
         }
 
         LOGGER.info("final value for concat bug is :: " + CONCAT_BUG);
