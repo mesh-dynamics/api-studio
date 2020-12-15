@@ -1946,28 +1946,27 @@ public class CubeStore {
     @Path("getAppConfigurations/{customerId}")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getAppConfigurations(@Context UriInfo uriInfo,
+    public void getAppConfigurations(@Suspended AsyncResponse asyncResponse,
                                         @PathParam("customerId") String customerId, List<String> apps) {
-        Map<String , CompletableFuture<CustomerAppConfig>> appCfgsFuturesMap = new HashMap<>();
         //default app config without any tracer
         CustomerAppConfig defaultAppCfgNoTracer= new CustomerAppConfig.Builder()/*.withTracer(Tracer.MeshD.toString())*/.build();
+
+        Map<String , CompletableFuture<CustomerAppConfig>> appCfgsFuturesMap = new HashMap<>();
         for(String app : apps){
             CompletableFuture<CustomerAppConfig> cf = CompletableFuture.supplyAsync(()->rrstore.getAppConfiguration(customerId, app).orElse(defaultAppCfgNoTracer));
             appCfgsFuturesMap.put(app , cf);
         }
 
-        Map<String , CustomerAppConfig> appCfgs = appCfgsFuturesMap.entrySet().stream().collect(Collectors.toMap(
-            e->e.getKey() , e-> {
-                try {
-                    return e.getValue().get();
-                } catch (Exception ex) {
-                    LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE , "could not get app config for app:"+e.getKey())) , ex);
-                }
-                return defaultAppCfgNoTracer;
-            }
-            )
-        );
-        return Response.ok(appCfgs , MediaType.APPLICATION_JSON).build();
+        CompletableFuture./*allOf(appCfgsFuturesMap.values().toArray(CompletableFuture[]::new)).thenRunAsync*/runAsync(()->{
+            Map<String , CustomerAppConfig> appCfgs = appCfgsFuturesMap.entrySet().stream().collect(Collectors.toMap(
+                e->e.getKey() , e-> UtilException.uncheck(()->e.getValue().get()))
+            );
+            asyncResponse.resume(Response.ok(appCfgs , MediaType.APPLICATION_JSON).build());
+        }).exceptionally(e->{
+            asyncResponse.resume(Response.status(Status.INTERNAL_SERVER_ERROR)
+                .entity(String.format("Server error: " + e.getMessage())).build());
+            return null;
+        }) ;
     }
 
     /**
