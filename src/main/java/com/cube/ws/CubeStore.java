@@ -1947,11 +1947,11 @@ public class CubeStore {
     public Response getAppConfigurations(@Context UriInfo uriInfo,
                                         @PathParam("customerId") String customerId, List<String> apps) {
         Map<String , CustomerAppConfig> appCfgs = new HashMap<>();
-        //default app config with meshd tracer
-        CustomerAppConfig defaultAppCfgMeshDTracer = new CustomerAppConfig.Builder().withTracer(Tracer.MeshD.toString()).build();
+        //default app config without any tracer
+        CustomerAppConfig defaultAppCfgNoTracer= new CustomerAppConfig.Builder()/*.withTracer(Tracer.MeshD.toString())*/.build();
         for(String app : apps){
             Optional<CustomerAppConfig> custAppConfig = rrstore.getAppConfiguration(customerId, app);
-            appCfgs.put(app , custAppConfig.orElse(defaultAppCfgMeshDTracer) );
+            appCfgs.put(app , custAppConfig.orElse(defaultAppCfgNoTracer) );
         }
         return Response.ok(appCfgs , MediaType.APPLICATION_JSON).build();
     }
