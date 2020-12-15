@@ -1957,7 +1957,8 @@ public class CubeStore {
             appCfgsFuturesMap.put(app , cf);
         }
 
-        CompletableFuture./*allOf(appCfgsFuturesMap.values().toArray(CompletableFuture[]::new)).thenRunAsync*/runAsync(()->{
+
+        CompletableFuture.allOf(appCfgsFuturesMap.values().toArray(CompletableFuture[]::new)).thenRun(()->{
             Map<String , CustomerAppConfig> appCfgs = appCfgsFuturesMap.entrySet().stream().collect(Collectors.toMap(
                 e->e.getKey() , e-> UtilException.uncheck(()->e.getValue().get()))
             );
