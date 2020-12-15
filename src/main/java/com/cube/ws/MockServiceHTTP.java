@@ -7,7 +7,6 @@ import io.md.dao.MockWithCollection;
 import io.md.dao.Recording;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -39,13 +38,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cube.agent.FnReqResponse;
 import io.md.cache.ProtoDescriptorCache;
 import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
-import io.md.core.Utils;
+import io.md.utils.Utils;
 import io.md.dao.Event;
-import io.md.dao.GRPCResponsePayload;
 import io.md.dao.HTTPResponsePayload;
-import io.md.dao.MockWithCollection;
 import io.md.dao.ProtoDescriptorDAO;
-import io.md.dao.Recording;
 import io.md.services.FnResponse;
 import io.md.services.MockResponse;
 import io.md.services.Mocker;
@@ -126,7 +122,7 @@ public class MockServiceHTTP {
         try {
             MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
             Optional<Instant> lowerBound =
-                Optional.ofNullable(queryParams.getFirst(io.md.constants.Constants.LOWER_BOUND)).flatMap(Utils::msStrToTimeStamp);
+                Optional.ofNullable(queryParams.getFirst(io.md.constants.Constants.LOWER_BOUND)).flatMap(Utils::strToTimeStamp);
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(mocker.mock(event, lowerBound, Optional.empty()))
                 .build();
         } catch (Mocker.MockerException e) {
