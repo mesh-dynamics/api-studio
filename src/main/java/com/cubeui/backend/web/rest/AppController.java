@@ -8,16 +8,17 @@ import com.cubeui.backend.domain.enums.Role;
 import com.cubeui.backend.repository.*;
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.service.AppFileStorageService;
+import com.cubeui.backend.service.CubeServerService;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.service.UserService;
 import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.DuplicateRecordException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
+import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -54,6 +55,7 @@ public class AppController {
     private Validation validation;
     private AppFileStorageService appFileStorageService;
     private final UserRepository userRepository;
+    private final CubeServerService cubeServerService;
     public AppController(AppRepository appRepository, ServiceRepository serviceRepository,
         ServiceGraphRepository serviceGraphRepository, TestConfigRepository testConfigRepository,
         TestIntermediateServiceRepository testIntermediateServiceRepository,
@@ -61,7 +63,7 @@ public class AppController {
         TestPathRepository testPathRepository, CustomerService customerService,
         InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository,
         UserService userService, AppUserRepository appUserRepository, Validation validation,
-        AppFileStorageService appFileStorageService, UserRepository userRepository) {
+        AppFileStorageService appFileStorageService, UserRepository userRepository, CubeServerService cubeServerService) {
         this.appRepository = appRepository;
         this.serviceRepository = serviceRepository;
         this.serviceGraphRepository = serviceGraphRepository;
@@ -77,16 +79,23 @@ public class AppController {
         this.validation = validation;
         this.appFileStorageService = appFileStorageService;
         this.userRepository = userRepository;
+        this.cubeServerService = cubeServerService;
     }
 
     @GetMapping("")
-    public ResponseEntity all(Authentication authentication) {
+    public ResponseEntity all(HttpServletRequest request, Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         Optional<List<AppUser>> appUsers = this.appUserRepository.findByUserId(user.getId());
         List<App> apps = appUsers.get().stream().map(AppUser::getApp).collect(Collectors.toList());
         List<Long> appIds = apps.stream().map(App::getId).collect(Collectors.toList());
+        List<String> appNames = apps.stream().map(App::getName).collect(Collectors.toList());
+        ResponseEntity responseEntity = cubeServerService.fetchPostResponse(request, Optional.of(appNames),  "/cs/getAppConfigurations/" + user.getCustomer().getName(),
+            MediaType.APPLICATION_JSON);
         List<AppFile> files = this.appFileStorageService.getFilesFoAppIds(appIds);
-        return ResponseEntity.ok(files);
+        if(responseEntity.getStatusCode() == HttpStatus.OK) {
+           return  ResponseEntity.ok(cubeServerService.getAppFileResponse(responseEntity, files));
+        }
+        return responseEntity;
     }
 
     @PostMapping("")
