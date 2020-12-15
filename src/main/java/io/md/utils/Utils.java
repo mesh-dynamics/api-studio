@@ -83,7 +83,7 @@ public class Utils {
 		treeSet.addAll(new HashSet<>(Arrays.asList("connection", "content-length",
 			"date", "expect", "from", "host", "origin",
 			/*"referer",*/ "upgrade",
-			"via", "warning", "transfer-encoding")));
+			"via", "warning", "transfer-encoding" , "content-encoding")));
 		DISALLOWED_HEADERS_SET = Collections.unmodifiableSet(treeSet);
 	}
 
