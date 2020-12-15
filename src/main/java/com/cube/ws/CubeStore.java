@@ -1951,23 +1951,16 @@ public class CubeStore {
         //default app config without any tracer
         CustomerAppConfig defaultAppCfgNoTracer= new CustomerAppConfig.Builder()/*.withTracer(Tracer.MeshD.toString())*/.build();
 
-        Map<String , CompletableFuture<CustomerAppConfig>> appCfgsFuturesMap = new HashMap<>();
-        for(String app : apps){
-            CompletableFuture<CustomerAppConfig> cf = CompletableFuture.supplyAsync(()->rrstore.getAppConfiguration(customerId, app).orElse(defaultAppCfgNoTracer));
-            appCfgsFuturesMap.put(app , cf);
-        }
+        List<CompletableFuture<CustomerAppConfig>> futures =  apps.stream().map(app->CompletableFuture.supplyAsync(()->rrstore.getAppConfiguration(customerId, app).orElse(defaultAppCfgNoTracer))).collect(Collectors.toList());
 
-
-        CompletableFuture.allOf(appCfgsFuturesMap.values().toArray(CompletableFuture[]::new)).thenRun(()->{
-            Map<String , CustomerAppConfig> appCfgs = appCfgsFuturesMap.entrySet().stream().collect(Collectors.toMap(
-                e->e.getKey() , e-> UtilException.uncheck(()->e.getValue().get()))
-            );
-            asyncResponse.resume(Response.ok(appCfgs , MediaType.APPLICATION_JSON).build());
-        }).exceptionally(e->{
-            asyncResponse.resume(Response.status(Status.INTERNAL_SERVER_ERROR)
-                .entity(String.format("Server error: " + e.getMessage())).build());
-            return null;
-        }) ;
+        Utils.sequence(futures).thenApply(appConfigs->{
+            Map<String , CustomerAppConfig> appCfgs = new HashMap<>();
+            for(int i=0 ; i<apps.size() ; i++){
+                appCfgs.put(apps.get(i) , appConfigs.get(i));
+            }
+            return asyncResponse.resume(Response.ok(appCfgs , MediaType.APPLICATION_JSON).build());
+        }).exceptionally(e-> asyncResponse.resume(Response.status(Status.INTERNAL_SERVER_ERROR)
+            .entity(String.format("Server error: " + e.getMessage())).build()));
     }
 
     /**
