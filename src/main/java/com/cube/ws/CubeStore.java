@@ -50,6 +50,8 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import io.md.dao.*;
+import io.md.tracer.TracerMgr;
+import io.md.tracer.handlers.Tracer;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -1938,7 +1940,21 @@ public class CubeStore {
         return resp;
     }
 
-
+    @POST
+    @Path("getAppConfigurations/{customerId}")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAppConfigurations(@Context UriInfo uriInfo,
+                                        @PathParam("customerId") String customerId, List<String> apps) {
+        Map<String , CustomerAppConfig> appCfgs = new HashMap<>();
+        //default app config with meshd tracer
+        CustomerAppConfig defaultAppCfgMeshDTracer = new CustomerAppConfig.Builder().withTracer(Tracer.MeshD.toString()).build();
+        for(String app : apps){
+            Optional<CustomerAppConfig> custAppConfig = rrstore.getAppConfiguration(customerId, app);
+            appCfgs.put(app , custAppConfig.orElse(defaultAppCfgMeshDTracer) );
+        }
+        return Response.ok(appCfgs , MediaType.APPLICATION_JSON).build();
+    }
 
     /**
 	 * @param config
