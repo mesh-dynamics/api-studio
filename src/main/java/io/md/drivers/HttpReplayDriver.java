@@ -53,6 +53,8 @@ import io.md.dao.ResponsePayload;
 import io.md.services.DataStore;
 import io.md.utils.Constants;
 
+import static io.md.utils.Utils.ALLOWED_HEADERS;
+
 /*
  * Created by IntelliJ IDEA.
  * Date: 2019-03-08
@@ -264,7 +266,7 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 				// some headers are restricted and cannot be set on the request
 				// lua adds ':' to some headers which we filter as they are invalid
 				// and not needed for our requests.
-				if (Utils.ALLOWED_HEADERS.test(k) && !k.startsWith(":")) {
+				if (ALLOWED_HEADERS.test(k) && !k.startsWith(":")) {
 					vlist.forEach(value -> reqbuilder.header(k, value));
 				}
 			});
