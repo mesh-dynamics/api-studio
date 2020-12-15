@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 import java.util.stream.Stream;
@@ -1946,13 +1948,25 @@ public class CubeStore {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAppConfigurations(@Context UriInfo uriInfo,
                                         @PathParam("customerId") String customerId, List<String> apps) {
-        Map<String , CustomerAppConfig> appCfgs = new HashMap<>();
+        Map<String , CompletableFuture<CustomerAppConfig>> appCfgsFuturesMap = new HashMap<>();
         //default app config without any tracer
         CustomerAppConfig defaultAppCfgNoTracer= new CustomerAppConfig.Builder()/*.withTracer(Tracer.MeshD.toString())*/.build();
         for(String app : apps){
-            Optional<CustomerAppConfig> custAppConfig = rrstore.getAppConfiguration(customerId, app);
-            appCfgs.put(app , custAppConfig.orElse(defaultAppCfgNoTracer) );
+            CompletableFuture<CustomerAppConfig> cf = CompletableFuture.supplyAsync(()->rrstore.getAppConfiguration(customerId, app).orElse(defaultAppCfgNoTracer));
+            appCfgsFuturesMap.put(app , cf);
         }
+
+        Map<String , CustomerAppConfig> appCfgs = appCfgsFuturesMap.entrySet().stream().collect(Collectors.toMap(
+            e->e.getKey() , e-> {
+                try {
+                    return e.getValue().get();
+                } catch (Exception ex) {
+                    LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE , "could not get app config for app:"+e.getKey())) , ex);
+                }
+                return defaultAppCfgNoTracer;
+            }
+            )
+        );
         return Response.ok(appCfgs , MediaType.APPLICATION_JSON).build();
     }
 
