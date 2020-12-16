@@ -1,5 +1,7 @@
 package com.cubeui.backend.service;
 
+import com.cubeui.backend.domain.AppFile;
+import com.cubeui.backend.domain.DTO.Response.AppFileResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -126,6 +128,27 @@ public class CubeServerService {
         final String path  = cubeServerBaseUrlRecord + "/cs/status/" + recordingId;
         final ResponseEntity  response = fetchGetResponse(path, null);
         return getData(response, path, Recording.class);
+    }
+
+    public List<AppFileResponse> getAppFileResponse(ResponseEntity responseEntity, List<AppFile> files) {
+        List<AppFileResponse> response = new ArrayList<>();
+        try {
+            String body = responseEntity.getBody().toString();
+            JsonNode json = jsonMapper.readTree(body);
+            for (AppFile appFile: files) {
+                AppFileResponse appFileResponse = new AppFileResponse();
+                appFileResponse.setFileName(appFile.getFileName());
+                appFileResponse.setFileType(appFile.getFileType());
+                appFileResponse.setData(appFile.getData());
+                appFileResponse.setApp(appFile.getApp());
+                JsonNode responseBody = json.get(appFile.getApp().getName());
+                appFileResponse.setConfiguration(responseBody);
+                response.add(appFileResponse);
+            }
+        }catch (Exception e) {
+            log.info(String.format("Error in converting Json to Map for message= %s", e.getMessage()));
+        }
+        return response;
     }
 
     public <T> Optional<List<T>> getListData(ResponseEntity response, String request, Optional<String> getField, TypeReference typeReference) {
