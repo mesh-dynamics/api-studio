@@ -396,7 +396,6 @@ public class MovieRentalRest {
 		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "deleteGenreGroup")) {
 			scope.span().setTag("deleteGenreGroup", "deleteGenreGroup");
 			mv.deleteGenreGroup(id);
-			mv.deleteGenreGroupCategoryMapping(id);
 			return Response.ok().type(MediaType.APPLICATION_JSON).entity(Map.of("response", String.format("Genre group is deleted"))).build();
 		} catch (Exception e) {
 			LOGGER.error("Error while deleting the genreGroup ");
