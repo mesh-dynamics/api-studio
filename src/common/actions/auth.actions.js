@@ -12,6 +12,7 @@ import { httpClientActions } from './httpClientActions';
 import { goldenActions } from './golden.actions';
 import config from '../config';
 import { getRefreshToken} from "../utils/lib/common-utils";
+import userPref from './userPrefs';
 
 const authActions = {
     beginFetch: () => ({ type: authConstants.REQUEST_BEGIN }),
@@ -51,6 +52,7 @@ const authActions = {
             }
             
             history.push("/")
+            dispatch(userPref.loadUserPreference(username));
         } catch(e) {
             dispatch(authActions.fetchFailure(e));
         }
@@ -58,6 +60,7 @@ const authActions = {
     },
 
     logout: () => (dispatch) => {
+        dispatch(userPref.saveUserPreferences());
         dispatch(apiCatalogActions.resetApiCatalogToInitialState());
         dispatch(cubeActions.resetCubeToInitialState());
         dispatch(httpClientActions.resetHttpClientToInitialState());
