@@ -212,7 +212,6 @@ public abstract class ReqRespStoreImplBase extends AbstractDataStore implements 
         return getComparator(tkey, eventType).getCompareTemplate();
     }*/
 
-
 	// map from (cust, app, instance) -> collection. collection is empty if there is no current recording or replay
 	//private ConcurrentHashMap<CollectionKey, RecordOrReplay> currentCollectionMap = new ConcurrentHashMap<>();
 }
