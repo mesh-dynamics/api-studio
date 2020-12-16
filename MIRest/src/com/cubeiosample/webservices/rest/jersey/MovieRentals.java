@@ -341,6 +341,190 @@ public class MovieRentals {
 	    	return returnRental(inventoryId, customerId, staffId, rent);
     }
 
+	public int getCustomerId(String userName) throws Exception {
+		String query = "select customer_id from customer where email = ?";
+		JSONArray params = new JSONArray();
+		RestOverSql.addStringParam(params, userName);
+		JSONArray rs =  ros.executeQuery(query, params);
+		if (rs == null || rs.length() < 1) {
+			throw new Exception(String.format("No Customer found for the userName:%s", userName));
+		}
+		JSONObject json = rs.getJSONObject(0);
+		return json.getInt("customer_id");
+	}
+
+	public JSONObject getGenreGroupById(Integer id) throws Exception {
+		String genreGroupQuery = "select * from genre_group "
+				+ " where genre_group_id = ?";
+		JSONArray params = new JSONArray();
+		RestOverSql.addIntegerParam(params, id);
+		JSONArray rs =  ros.executeQuery(genreGroupQuery, params);
+		if (rs == null || rs.length() < 1) {
+			throw new Exception(String.format("No genre group found for the id:%s", id));
+		}
+		return  rs.getJSONObject(0);
+	}
+
+	public JSONObject getGenreGroupByName(String name) throws Exception {
+		String genreGroupQuery = "select * from genre_group "
+				+ " where name = ?";
+		JSONArray params = new JSONArray();
+		RestOverSql.addStringParam(params, name);
+		JSONArray rs =  ros.executeQuery(genreGroupQuery, params);
+		if (rs == null || rs.length() < 1) {
+			LOGGER.error(String.format("No genre group found for the name:%s", name));
+			return null;
+		}
+		return  rs.getJSONObject(0);
+	}
+
+	public JSONObject updateGenreGroupName(String name , int id) {
+		String query = "Update genre_group SET name=? where genre_group_id = ?";
+		JSONArray params = new JSONArray();
+		RestOverSql.addStringParam(params, name);
+		RestOverSql.addIntegerParam(params, id);
+		return ros.executeUpdate(query, params);
+	}
+
+	public JSONObject createGenreGroup(String name, int customerId) {
+		String query = "INSERT INTO genre_group (name, customer_id) VALUES (?, ?)";
+		JSONArray params = new JSONArray();
+		RestOverSql.addStringParam(params, name);
+		RestOverSql.addIntegerParam(params, customerId);
+		return ros.executeUpdate(query, params);
+	}
+
+	public JSONArray getAllCategories() {
+		String query = "Select category_id, name from category";
+		JSONArray params = new JSONArray();
+		Map<String, Integer>  categoryIdValues = new HashMap<>();
+		return ros.executeQuery(query, params);
+	}
+
+	public JSONArray getCategoriesByNames(List<String> categories) {
+		String query = "Select category_id, name from category where name In (";
+		JSONArray params = new JSONArray();
+		for(int i=0; i< categories.size() && i < 60; i++) {
+			query = query + "?";
+			if (i < categories.size()-1)
+				query = query + ",";
+			if(i == categories.size()-1)
+				query = query + ")";
+			RestOverSql.addStringParam(params, categories.get(i));
+		}
+		return ros.executeQuery(query, params);
+	}
+
+	public JSONArray getCategoriesByIds(List<Integer> categories) {
+		String query = "Select category_id, name from category where category_id In (";
+		JSONArray params = new JSONArray();
+		for(int i=0; i< categories.size() && i < 60; i++) {
+			query = query + "?";
+			if (i < categories.size()-1)
+				query = query + ",";
+			if(i == categories.size()-1)
+				query = query + ")";
+			RestOverSql.addIntegerParam(params, categories.get(i));
+		}
+		return ros.executeQuery(query, params);
+	}
+
+	private Map<String, Integer> categoryNameIdMap(List<String> categories) {
+		Map<String, Integer>  nameIdMap = new HashMap<>();
+		JSONArray rs = getCategoriesByNames(categories);
+		for(Object obj: rs) {
+			JSONObject jsonObject = (JSONObject)obj;
+			nameIdMap.put(jsonObject.getString("name"), jsonObject.getInt("category_id"));
+		}
+		return  nameIdMap;
+	}
+
+	public void deleteGenreGroupCategoryMapping(int genreGroupId) {
+		String genreGroupQuery = "delete from genre_group_category "
+				+ " where genre_group_id = ?";
+		JSONArray params = new JSONArray();
+		RestOverSql.addIntegerParam(params, genreGroupId);
+		ros.executeUpdate(genreGroupQuery, params);
+	}
+
+	public void deleteGenreGroup(int genreGroupId) {
+		String genreGroupQuery = "delete from genre_group "
+				+ " where genre_group_id = ?";
+		JSONArray params = new JSONArray();
+		RestOverSql.addIntegerParam(params, genreGroupId);
+		ros.executeUpdate(genreGroupQuery, params);
+	}
+
+	public boolean genre_group_category_mapping(List<String> categories, int genreGroupId) {
+		try {
+
+			deleteGenreGroupCategoryMapping(genreGroupId);
+			Map<String, Integer>  categoryNameIdMap = categoryNameIdMap(categories);
+			String query = "INSERT INTO genre_group_category (genre_group_id, category_id) VALUES ";
+			JSONArray params = new JSONArray();
+			for (int i=0; i<categories.size();i++) {
+				if (categoryNameIdMap.containsKey(categories.get(i))) {
+					query = query + "(?, ?)";
+					if (i < categories.size() - 1)
+						query = query + ",";
+					RestOverSql.addIntegerParam(params, genreGroupId);
+					RestOverSql.addIntegerParam(params, categoryNameIdMap.get(categories.get(i)));
+				}
+			}
+			LOGGER.debug(query + "; " + params.toString());
+			ros.executeUpdate(query, params);
+			return true;
+		}catch (Exception e) {
+			LOGGER.error("Couldn't update genre group category mapping, error: " + e.toString());
+			throw e;
+		}
+	}
+
+	public List<Integer> getCategoryIdsForGenreGroup(int genreGroupId) {
+		String query = "Select category_id from genre_group_category where genre_group_id = ?";
+		JSONArray params = new JSONArray();
+		RestOverSql.addIntegerParam(params, genreGroupId);
+		JSONArray rs = ros.executeQuery(query, params);
+		List<Integer> ids = new ArrayList<>();
+		for(Object obj:rs) {
+			JSONObject json = (JSONObject)obj;
+			ids.add(json.getInt("category_id"));
+		}
+		return ids;
+	}
+
+	public JSONArray getAllCategoriesForGroup(int genreGroupId) {
+    	return getCategoriesByIds(getCategoryIdsForGenreGroup(genreGroupId));
+	}
+
+	public JSONArray getAllGenreGroupsForCustomer(int customerId) {
+		String query = "select name, genre_group_id  from genre_group "
+				+ " where customer_id = ?";
+		JSONArray params = new JSONArray();
+		RestOverSql.addIntegerParam(params, customerId);
+		JSONArray rs =  ros.executeQuery(query, params);
+		JSONArray response = new JSONArray();
+		for(Object obj:rs) {
+			JSONObject json = (JSONObject)obj;
+			json.put("categories", getAllCategoriesForGroup(json.getInt("genre_group_id")));
+			response.put(json);
+		}
+		return response;
+	}
+
+	public JSONArray getAllMovies() {
+    	String query = "select * from film";
+    	JSONArray params = new JSONArray();
+    	return ros.executeQuery(query, params);
+	}
+
+	public JSONArray getMoviesForGroup(int genreGroupId) {
+    	String query = "Select * from film where film_id  IN (select film_id from film_category where category_id IN(select category_id from genre_group_category where genre_group_id =?))";
+    	JSONArray params = new JSONArray();
+    	RestOverSql.addIntegerParam(params, genreGroupId);
+    	return ros.executeQuery(query, params);
+	}
+
 
 //    public boolean IsBookBased(String title) {
 //    	return ExistsFilm(title);

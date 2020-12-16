@@ -2,6 +2,7 @@ package com.cubeiosample.webservices.rest.jersey;
 // TODO: change the package name to com.cubeio.samples.MIRest
 
 import java.util.Map;
+import java.util.Optional;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
@@ -18,6 +19,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.SecurityContext;
 
+import javax.ws.rs.core.UriInfo;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
@@ -327,6 +329,114 @@ public class MovieRentalRest {
 			e.printStackTrace();
 			LOGGER.error("Error while updating the inventory table");
 			return Response.serverError().type(MediaType.APPLICATION_JSON).entity("{\"error\":\"" + e.toString() + "\"}").build();
+		}
+	}
+
+	@POST
+	@Path("/genre-group")
+	@Secured
+	public Response createUpdateGenreGroup(GenreGroupDTO genreGroupDTO, @Context HttpHeaders httpHeaders, @Context SecurityContext securityContext) {
+		String username = securityContext.getUserPrincipal().getName();
+		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "createGenreGroup")) {
+			scope.span().setTag("createGenreGroup", "createGenreGroup");
+			int customerId = mv.getCustomerId(username);
+			JSONObject obj;
+			/**
+			 * If will be used for put
+			 */
+			if(genreGroupDTO.id != null) {
+				obj = mv.getGenreGroupById(genreGroupDTO.id);
+				if(genreGroupDTO.name != null) {
+					obj = mv.getGenreGroupByName(genreGroupDTO.name);
+					if(obj != null & obj.getInt("genre_group_id") != genreGroupDTO.id) {
+						throw new Exception("Genre Group with same name already exists");
+					}
+					mv.updateGenreGroupName(genreGroupDTO.name, genreGroupDTO.id);
+				}
+			} else {
+				if(genreGroupDTO.name == null) {
+					throw new Exception("Genre Group name is Mandatory");
+				}
+				obj = mv.getGenreGroupByName(genreGroupDTO.name);
+				if(obj != null) {
+					throw new Exception("Genre Group with same name already exists");
+				}
+				mv.createGenreGroup(genreGroupDTO.name, customerId);
+				obj = mv.getGenreGroupByName(genreGroupDTO.name);
+			}
+			int genreGroupId = obj.getInt("genre_group_id");
+			mv.genre_group_category_mapping(genreGroupDTO.categories, genreGroupId);
+			return Response.ok().type(MediaType.APPLICATION_JSON).entity(obj.toString()).build();
+		} catch (Exception e) {
+			LOGGER.error("Error while creat/update the categoryGroup table");
+			return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(Map.of("error", e.toString())).build();
+		}
+	}
+
+	@GET
+	@Path("/genre-groups")
+	@Secured
+	public Response getGenreGroups(@Context HttpHeaders httpHeaders, @Context SecurityContext securityContext) {
+		String username = securityContext.getUserPrincipal().getName();
+		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "getGenreGroups")) {
+			scope.span().setTag("getGenreGroups", "getGenreGroups");
+			int customerId = mv.getCustomerId(username);
+			return Response.ok().type(MediaType.APPLICATION_JSON).entity(mv.getAllGenreGroupsForCustomer(customerId).toString()).build();
+		} catch (Exception e) {
+			LOGGER.error("Error while fetching the genreGroups ");
+			return Response.serverError().type(MediaType.APPLICATION_JSON).entity(Map.of("error", e.toString())).build();
+		}
+	}
+
+	@DELETE
+	@Path("/delete-genre-group/{id}")
+	@Secured
+	public Response deleteGenreGroup(@Context HttpHeaders httpHeaders, @Context SecurityContext securityContext,
+			@PathParam("id") int id) {
+		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "deleteGenreGroup")) {
+			scope.span().setTag("deleteGenreGroup", "deleteGenreGroup");
+			mv.deleteGenreGroup(id);
+			mv.deleteGenreGroupCategoryMapping(id);
+			return Response.ok().type(MediaType.APPLICATION_JSON).entity(Map.of("response", String.format("Genre group is deleted"))).build();
+		} catch (Exception e) {
+			LOGGER.error("Error while deleting the genreGroup ");
+			return Response.serverError().type(MediaType.APPLICATION_JSON).entity(Map.of("error", e.toString())).build();
+		}
+	}
+
+	@GET
+	@Path("/getMovieList")
+	@Secured
+	public Response getMovies(@Context HttpHeaders httpHeaders, @Context SecurityContext securityContext, @Context UriInfo uriInfo) {
+		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "getMovies")) {
+			scope.span().setTag("getMovies", "getMovies");
+			Optional<String> genreName =
+					Optional.ofNullable(uriInfo.getQueryParameters().getFirst("genreName"));
+			JSONArray movies = null;
+			if(genreName.isPresent()) {
+				JSONObject object = mv.getGenreGroupByName(genreName.get());
+				int genreGroupId = object.getInt("genre_group_id");
+				movies = mv.getMoviesForGroup(genreGroupId);
+			} else {
+				movies = mv.getAllMovies();
+			}
+			return Response.ok().type(MediaType.APPLICATION_JSON).entity(movies.toString()).build();
+		} catch (Exception e) {
+			LOGGER.error("Error while getting movies");
+			return Response.serverError().type(MediaType.APPLICATION_JSON).entity(Map.of("error", e.toString())).build();
+		}
+	}
+
+	@GET
+	@Path("/categories")
+	@Secured
+	public Response getCategories(@Context HttpHeaders httpHeaders, @Context SecurityContext securityContext) {
+		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "getCategories")) {
+			scope.span().setTag("getCategories", "getCategories");
+			return Response.ok().type(MediaType.APPLICATION_JSON).entity(mv.getAllCategories().toString()).build();
+		} catch (Exception e) {
+			LOGGER.error("Error while fetching the categories ");
+			return Response.serverError().type(MediaType.APPLICATION_JSON).entity(Map.of("error", e.toString())).build();
 		}
 	}
 

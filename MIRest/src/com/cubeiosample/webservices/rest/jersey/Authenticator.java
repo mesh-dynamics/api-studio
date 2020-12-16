@@ -9,7 +9,6 @@ import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 import java.util.Date;
 
-import java.util.Map;
 import org.apache.log4j.Logger;
 
 
@@ -21,7 +20,6 @@ public class Authenticator {
   final static long TIME_LAX = 260000;  // 6 months for testing/demo
   
   // TODO: figure out how we can get this value either from conf file or from ISTIO flags
-  final static boolean DUMMY_AUTHENTICATION = true;
   
   public static boolean authenticate(String username, String password, MovieRentals mv) throws Exception {
     if(mv.validateUserAndPassword(username, password)) {
@@ -49,7 +47,7 @@ public class Authenticator {
     // key is needed to parse jwt. If successful, this token is valid.
     try {
       Jws<Claims> claims = Jwts.parser().setSigningKey(key).parseClaimsJws(jws);
-      if (!claims.getBody().getExpiration().before(new Date())) {
+      if (Config.DUMMY_AUTHENTICATION || !claims.getBody().getExpiration().before(new Date())) {
         String subject = claims.getBody().getSubject();
         return subject;
       }
