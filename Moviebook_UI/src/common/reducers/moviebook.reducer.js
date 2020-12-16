@@ -23,6 +23,11 @@ export function moviebook(state = initialState, action) {
 				...state,
 				movieList: action.data,
 			};
+		case moviebookConstants.SET_DEFAULT_CATEGORY:
+			return {
+				...state,
+				selectedCategoryGroup: defaultCategoryGroup,
+			};
 		case moviebookConstants.UPDATE_SELECTED_CATEGORY:
 			return {
 				...state,

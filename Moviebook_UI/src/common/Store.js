@@ -9,6 +9,7 @@ const configureStore = () => {
 	const persistConfig = {
 		key: "root",
 		storage,
+		blacklist: ["moviebook"],
 	};
 
 	const persistedReducer = persistReducer(persistConfig, rootReducer);

@@ -8,6 +8,10 @@ const moviebookActions = {
 		date,
 	}),
 
+	setDefaultCategory: () => ({
+		type: moviebookConstants.SET_DEFAULT_CATEGORY,
+	}),
+
 	updateSelectedCategory: (payload) => ({
 		type: moviebookConstants.UPDATE_SELECTED_CATEGORY,
 		payload,
@@ -94,7 +98,9 @@ const moviebookActions = {
 			},
 		} = getState();
 		try {
-			const response = await moviebookService.fetchAllCategoryGroups();
+			const response = await moviebookService.fetchAllCategoryGroups(
+				token
+			);
 
 			dispatch(moviebookActions.loadAllCategoryGroups(response.data));
 		} catch (error) {
@@ -115,12 +121,16 @@ const moviebookActions = {
 		const { name } = category;
 
 		try {
-			const response = await moviebookService.fetchMovieListByCategoryGroup(
-				token,
-				name
-			);
+			if (name === "All") {
+				dispatch(moviebookActions.getMovieList());
+			} else {
+				const response = await moviebookService.fetchMovieListByCategoryGroup(
+					token,
+					name
+				);
 
-			dispatch(moviebookActions.loadMovieList(response.data));
+				dispatch(moviebookActions.loadMovieList(response.data));
+			}
 		} catch (error) {
 			console.log("Error fetching movielist by category", error);
 		}
@@ -154,8 +164,8 @@ const moviebookActions = {
 				token,
 				genreGroupId
 			);
-
-			dispatch(moviebookActions.loadAllCategories(response.data));
+			dispatch(moviebookActions.getAllCategoryGroups());
+			// dispatch(moviebookActions.loadAllCategories(response.data));
 		} catch (error) {
 			console.log("Error Deleting Categories", error);
 		}
@@ -217,7 +227,18 @@ const moviebookActions = {
 			);
 
 			dispatch(moviebookActions.getAllCategoryGroups());
-			dispatch(moviebookActions.getMovieList());
+
+			dispatch(
+				moviebookActions.getMovieForSelectedCategoryGroup(
+					updateCategoryGroup
+				)
+			);
+
+			dispatch(
+				moviebookActions.updateSelectedCategory(updateCategoryGroup)
+			);
+
+			// dispatch(moviebookActions.getMovieList());
 		} catch (error) {
 			console.log("Error updating category group.", error);
 			dispatch(
