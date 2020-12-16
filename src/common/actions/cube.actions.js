@@ -70,6 +70,7 @@ async function getAppList(){
         app.displayName = app.app.displayName;
         app.id = app.app.id;
         app.customer = app.app.customer;
+        app.tracer = (app.configuration?.tracer || "meshd").toLowerCase() // default to meshd tracer
     });
     return appsList;
 }
