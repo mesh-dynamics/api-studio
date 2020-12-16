@@ -73,3 +73,5 @@ local.properties
 .sts4-cache/
 
 # End of https://www.gitignore.io/api/eclipse
+/Moviebook_UI/node_modules
+/.idea

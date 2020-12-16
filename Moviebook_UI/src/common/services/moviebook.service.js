@@ -1,70 +1,96 @@
-import config from '../config';
-import axios from 'axios';
+import config from "../config";
+import axios from "axios";
 
-const getMovieList = async (keywords) => {
-    const url = `${config.apiBaseUrl}/listmovies?filmName=${keywords}`;
-    const requestHeaders = {
-        headers: {
+// TODO: Remove mocky once confirmed
+const getMovieDetails = async (token, keywords) => {
+	const url = `${config.apiBaseUrl}/listmovies?filmName=${keywords}`;
 
-        }
-    };
-    let data;
+	const headers = {
+		"Content-Type": "application/json",
+		Authorization: `${token}`,
+	};
 
-    await axios.get(url, requestHeaders)
-        .then(response => {
-            data = response.data;
-        })
-        .catch(function(error){
-            alert(error);
-            throw (error.response);
-        });
-
-    return data;
+	return await axios.get(url, { headers });
 };
 
-const rentMovie = async (filmId, storeId, duration, custId, staffId) => {
-    const url = `${config.apiBaseUrl}/rentmovie`;
-    const headers = {
-        'Access-Control-Allow-Origin': '*',
-        "Content-Type": "application/x-www-form-urlencoded",
-    };
-    await axios.post(url, {
-        "filmId": filmId,
-        "storeId": storeId,
-        "duration": duration,
-        "customerId": custId,
-        "staffId": staffId
-    },{
-        headers: headers
-    }).then(function(response){
-        return response;
-    }).catch(function(error){
-        throw (error.response);
-    });
+const fetchAllCategoryGroups = async (token) => {
+	const url = `${config.apiBaseUrl}/genre-groups`;
+	// const url = "https://run.mocky.io/v3/59b51440-bcc0-41b6-a3e5-223336dbd062";
+
+	const headers = {
+		"Content-Type": "application/json",
+		Authorization: `${token}`,
+	};
+
+	return await axios.get(url, { headers });
 };
 
-const returnMovie = async (inventoryId, rent, userId, staffId) => {
-    const url = `${config.apiBaseUrl}/returnmovie`;
-    const headers = {
-        'Access-Control-Allow-Origin': '*',
-        "Content-Type": "application/x-www-form-urlencoded",
-    };
-    await axios.post(url, {
-        "inventoryId": inventoryId,
-        "rent": rent,
-        "userId": userId,
-        "staffId": staffId
-    },{
-        headers: headers
-    }).then(function(response){
-        return response;
-    }).catch(function(error){
-        throw (error.response);
-    });
+const fetchMovieListByCategoryGroup = async (token, genreName) => {
+	const url = `${config.apiBaseUrl}/getMovieList?genreName=${genreName}`;
+
+	// const url = `https://run.mocky.io/v3/0afce8e2-4f08-4a91-80c1-8b4aead88151?genreName=${genreName}`;
+
+	const headers = {
+		"Content-Type": "application/json",
+		Authorization: `${token}`,
+	};
+
+	return await axios.get(url, { headers });
+};
+
+const fetchMovieList = async (token) => {
+	const url = `${config.apiBaseUrl}/getMovieList`;
+	// const url = "https://run.mocky.io/v3/0afce8e2-4f08-4a91-80c1-8b4aead88151";
+
+	const headers = {
+		"Content-Type": "application/json",
+		Authorization: `${token}`,
+	};
+
+	return await axios.get(url, { headers });
+};
+
+const fetchAllCategories = async (token) => {
+	const url = `${config.apiBaseUrl}/categories'`;
+	// const url = "https://run.mocky.io/v3/7d0d59dc-a002-401a-a038-241ed02c8a96";
+
+	const headers = {
+		"Content-Type": "application/json",
+		Authorization: `${token}`,
+	};
+
+	return await axios.get(url, { headers });
+};
+
+const createNewCategory = async (token, newCategoryGroup) => {
+	const url = `${config.apiBaseUrl}/genre-group`;
+	// const url = "https://run.mocky.io/v3/8daff231-11ee-4105-ab15-5ca0e4578f00";
+
+	const headers = {
+		"Content-Type": "application/json",
+		Authorization: `${token}`,
+	};
+
+	return await axios.post(url, newCategoryGroup, { headers });
+};
+
+const deleteCategoryGroup = async (token, genreGroupId) => {
+	const url = `${config.apiBaseUrl}/delete-genre-group/${genreGroupId}`;
+	// const url = "https://run.mocky.io/v3/b2624689-2649-4adf-8934-83ab2a66a239";
+
+	const headers = {
+		Authorization: `${token}`,
+	};
+
+	return await axios.delete(url, { headers });
 };
 
 export const moviebookService = {
-    getMovieList,
-    rentMovie,
-    returnMovie
+	fetchMovieListByCategoryGroup,
+	fetchAllCategoryGroups,
+	deleteCategoryGroup,
+	fetchAllCategories,
+	createNewCategory,
+	getMovieDetails,
+	fetchMovieList,
 };

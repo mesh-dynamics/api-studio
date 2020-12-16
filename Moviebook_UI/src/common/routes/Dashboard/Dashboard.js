@@ -1,51 +1,62 @@
-import React, { Component } from 'react';
-import movieList from "./test-data";
+import React, { Component } from "react";
 import "./Dashboard.css";
-import {connect} from "react-redux";
+import { connect } from "react-redux";
+import { moviebookActions } from "../../actions";
 
 class Dashboard extends Component {
-    goToMovieDetails = (mov) => {
-        const { history } = this.props;
-        history.push(`/movie?film=${mov.title}`);
-    };
+  componentDidMount() {
+    this.props.getMovieList();
+  }
 
-    populateGrid = () => {
-        let jsxContent = movieList.map((item, index) => {
-            return (
-                <div key={item.title + index} className="grid-content" onClick={() => this.goToMovieDetails(item)}>
-                    <div className={"g-head"}>
-                        {item.title}
-                    </div>
+  goToMovieDetails = (mov) => {
+    const { history } = this.props;
+    history.push(`/movie?film=${mov.title}`);
+  };
 
-                    <div className="g-body">
-                        <div>Author: <b>{"Will S."}</b></div>
-                        <div>Reviews: <b>{"12"}</b></div>
-                    </div>
-                </div>
-            );
-        });
+  populateGrid = () => {
+    const {
+      moviebook: { movieList },
+    } = this.props;
 
-        return jsxContent;
-    };
+    let jsxContent = movieList.map((item, index) => {
+      return (
+        <div
+          key={item.title + index}
+          className="grid-content"
+          onClick={() => this.goToMovieDetails(item)}
+        >
+          <div className={"g-head"}>{item.title}</div>
 
-    render() {
-        return (
-            <div style={{padding: "20px"}}>
-                <div className="mov-grid">
-                    {this.populateGrid()}
-                </div>
+          <div className="g-body">
+            <div>
+              Author: <b>{"Will S."}</b>
             </div>
-        );
-    }
+            <div>
+              Reviews: <b>{"12"}</b>
+            </div>
+          </div>
+        </div>
+      );
+    });
+
+    return jsxContent;
+  };
+
+  render() {
+    return (
+      <div style={{ padding: "20px" }}>
+        <div className="mov-grid">{this.populateGrid()}</div>
+      </div>
+    );
+  }
 }
 
-function mapStateToProps(state) {
-    const moviebook = state.moviebook;
-    return {
-        moviebook
-    }
-}
+const mapStateToProps = (state) => ({
+  moviebook: state.moviebook,
+});
 
-const connectedDashboard = connect(mapStateToProps)(Dashboard);
+const mapDispatchToProps = (dispatch) => ({
+  getMovieList: () => dispatch(moviebookActions.getMovieList()),
+});
 
-export default connectedDashboard;
+export default connect(mapStateToProps, mapDispatchToProps)(Dashboard);

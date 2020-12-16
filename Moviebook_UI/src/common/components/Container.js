@@ -1,22 +1,24 @@
-import React, { Component } from 'react';
-import { connect } from 'react-redux';
-import {moviebookActions} from "../actions";
-import RouterComponent from "../routes";
+import React, { Component } from "react";
+import { connect } from "react-redux";
 import Navigation from "./Navigation/Navigation";
-
 class Container extends Component {
-    render() {
-        return (
-            <div className="body">
-                <Navigation />
-                <RouterComponent />
-            </div>
-        );
-    }
+  render() {
+    return (
+      <div className="body">
+        <Navigation />
+      </div>
+    );
+  }
 }
 
-const mapStateToProps = state => ({
-    ...state
+const mapStateToProps = (state) => ({
+  ...state,
 });
 
 export default connect(mapStateToProps)(Container);
+
+// import { moviebookActions } from "../actions";
+// import { RouterComponent } from "../routes";
+{
+  /* <RouterComponent /> */
+}

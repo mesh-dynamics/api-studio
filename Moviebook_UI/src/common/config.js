@@ -1,5 +1,5 @@
 const config = {
-    apiBaseUrl: "/minfo",
+  apiBaseUrl: "/minfo",
 };
 
 export default config;
