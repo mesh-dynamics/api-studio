@@ -352,7 +352,7 @@ const Navigation = (props) => {
 								<Dropdown.Item
 									onClick={() => setShowEditModal(true)}
 								>
-									Update Categories
+									Manage Category Group
 								</Dropdown.Item>
 								<Dropdown.Item onClick={handleLogoutClick}>
 									Logout
