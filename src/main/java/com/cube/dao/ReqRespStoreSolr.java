@@ -7,6 +7,7 @@ import static io.md.core.TemplateKey.*;
 
 import io.md.constants.ReplayStatus;
 import io.md.core.BatchingIterator;
+import io.md.core.CollectionKey;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.TemplateKey;
 import io.md.core.ValidateAgentStore;
@@ -136,7 +137,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    void removeCollectionKey(ReqRespStoreImplBase.CollectionKey collectionKey) {
+    void removeCollectionKey(CollectionKey collectionKey) {
         if (config.intentResolver.isIntentToMock()) return;
         try (Jedis jedis = config.jedisPool.getResource()) {
             //jedis.del(collectionKey.toString());
@@ -360,7 +361,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addToFilterIntOrQuery(query , queryBuff , PAYLOADKEYF , eventQuery.getPayloadKey(), true , eventQuery.getPayloadKeyWeight());
 
         // starting from timestamp, non inclusive
-        addRangeFilter(query, TIMESTAMPF, eventQuery.getTimestamp(), Optional.empty(), false, true);
+        addRangeFilter(query, TIMESTAMPF, eventQuery.getStartTimestamp(), Optional.empty(), false, true);
 
         addFilter(query, PAYLOAD_FIELDS_F , eventQuery.getPayloadFields());
 

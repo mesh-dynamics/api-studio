@@ -4,6 +4,7 @@
 package com.cube.dao;
 
 import io.cube.agent.UtilException;
+import io.md.core.CollectionKey;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.dao.*;
 import io.md.dao.Event.EventType;
@@ -45,7 +46,6 @@ import io.md.injection.DynamicInjectionConfig;
 import com.cube.learning.InjectionExtractionMeta;
 import io.md.utils.Constants;
 
-import com.cube.dao.ReqRespStoreImplBase.CollectionKey;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.golden.TemplateSet;
@@ -148,8 +148,6 @@ public interface ReqRespStore extends DataStore {
 	boolean updateAgentConfigTag(AgentConfigTagInfo tagInfo);
 
 	boolean saveAgentConfigAcknowledge(ConfigApplicationAcknowledge confApplicationAck);
-
-	public void populateCache(CollectionKey collectionKey, RecordOrReplay rr);
 
 	Pair<Result<ConfigApplicationAcknowledge> , List>getLatestAgentConfigAcknowledge(
 		io.md.dao.CubeMetaInfo cubeMetaInfo, boolean facetOnNodeSelected, int forLastNsec);

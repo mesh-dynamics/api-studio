@@ -688,8 +688,8 @@ public class AnalyzeWS {
                 // empty reqId list would lead to returning of all requests, so check for it
                 Result<Event> requestResult = rrstore
                     .getRequests(replay.customerId, replay.app, replay.collection,
-                        reqIds, Collections.emptyList(), Collections.emptyList(), Optional.of(
-		                    RunType.Record));
+                        reqIds, Collections.emptyList(), Collections.emptyList(), /*Optional.of(
+		                    RunType.Record)*/Optional.empty());
                 requestResult.getObjects().forEach(req -> requestMap.put(req.reqId, req));
             }
 

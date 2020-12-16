@@ -229,7 +229,7 @@ public class MockServiceHTTP {
         MultivaluedMap<String, String> hdrs = headers.getRequestHeaders();
         Optional<String> dynamicInjCfgVersion = ServerUtils.getCustomHeaderValue(hdrs , Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD).or(()->recording.dynamicInjectionConfigVersion);
         Response response = getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            httpMethod , body, hdrs, new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId, dynamicInjCfgVersion, true), Optional.of(traceId));
+            httpMethod , body, hdrs, new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId, dynamicInjCfgVersion, true , Optional.empty()), Optional.of(traceId));
         rrstore.commit();
         return response;
     }
@@ -264,7 +264,7 @@ public class MockServiceHTTP {
         LOGGER.debug(String.format("MockWithRunId Passing collection %s for recordingType %s dynamicInjCfgVersion %s" , recCollection , recording.recordingType.toString(), dynamicInjCfgVersion.orElse(null)  ));
 
         Response response = getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            httpMethod , body, hdrs, new MockWithCollection(replayCollection, recCollection, recording.templateVersion, runId, dynamicInjCfgVersion, true), Optional.of(traceId));
+            httpMethod , body, hdrs, new MockWithCollection(replayCollection, recCollection, recording.templateVersion, runId, dynamicInjCfgVersion, true, Optional.empty()), Optional.of(traceId));
         rrstore.commit();
         return response;
     }
