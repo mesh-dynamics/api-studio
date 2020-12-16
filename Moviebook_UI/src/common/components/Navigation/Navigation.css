@@ -1,16 +1,21 @@
 .nav-dropdown-menu {
-  margin-left: 12px;
+	margin-left: 12px;
 }
 
 .nav-dropdown-toggle {
-  display: flex;
-  align-items: center;
+	display: flex;
+	align-items: center;
 }
 
 .nav-right-menu {
-  display: flex;
+	display: flex;
 }
 
 .nav-search-input {
-  padding-left: 10px;
+	padding-left: 10px;
+}
+
+.nav-brand-text {
+	color: white !important;
+	cursor: pointer;
 }

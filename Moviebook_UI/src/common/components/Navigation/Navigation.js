@@ -47,8 +47,10 @@ const Navigation = (props) => {
 		createNewCategoryGroup,
 		getAllCategoryGroups,
 		deleteCategoryGroup,
+		setDefaultCategory,
 		getAllCategories,
 		getMovieDetails,
+		getMovieList,
 		logout,
 	} = props;
 
@@ -59,6 +61,8 @@ const Navigation = (props) => {
 	const [categoryNameAtCreate, setCategoryNameAtCreate] = useState("");
 
 	const [categoryListAtCreate, setCategoryListAtCreate] = useState([]);
+
+	const [categoryIdAtEdit, setCategoryIdAtEdit] = useState(null);
 
 	const [categoryNameAtEdit, setCategoryNameAtEdit] = useState();
 
@@ -85,9 +89,15 @@ const Navigation = (props) => {
 		logout();
 	};
 
+	const handleAppNameClick = () => {
+		setDefaultCategory();
+		getMovieList();
+		history.push("/");
+	};
+
 	const handleCategoryEditClick = (categoryGroup) => {
 		setSelectedCategoryAction(CATEGORY_MODAL_ACTION.EDIT);
-
+		setCategoryIdAtEdit(categoryGroup.genre_group_id);
 		setCategoryNameAtEdit(categoryGroup.name);
 		setCategoryListAtEdit(
 			transformCategoryToOptions(categoryGroup.categories)
@@ -97,6 +107,7 @@ const Navigation = (props) => {
 	const handleEditCategorySaveClick = () => {
 		const categories = categoryListAtEdit.map((category) => category.value);
 		const updateCategoryGroup = {
+			id: categoryIdAtEdit,
 			name: categoryNameAtEdit,
 			categories,
 		};
@@ -110,7 +121,7 @@ const Navigation = (props) => {
 		);
 
 		const newCategoryGroup = {
-			id: uuidv4(),
+			// id: uuidv4(),
 			name: categoryNameAtCreate,
 			categories,
 		};
@@ -283,7 +294,10 @@ const Navigation = (props) => {
 	return (
 		<div>
 			<nav className="navbar fixed-top navbar-dark bg-dark">
-				<a href="/" className="navbar-brand">
+				<a
+					onClick={handleAppNameClick}
+					className="navbar-brand nav-brand-text"
+				>
 					MOVIEBOOK
 				</a>
 				<div className="nav-right-menu">
@@ -392,11 +406,15 @@ const mapStateToProps = (state) => ({
 const mapDispatchToProps = (dispatch) => ({
 	logout: () => dispatch(authActions.logout()),
 
+	getMovieList: () => dispatch(moviebookActions.getMovieList()),
+
 	getMovieDetails: (keywords) =>
 		dispatch(moviebookActions.getMovieDetails(keywords)),
 
 	updateSelectedCategory: (genreGroupId) =>
 		dispatch(moviebookActions.updateSelectedCategory(genreGroupId)),
+
+	setDefaultCategory: () => dispatch(moviebookActions.setDefaultCategory()),
 
 	getAllCategoryGroups: () =>
 		dispatch(moviebookActions.getAllCategoryGroups()),
