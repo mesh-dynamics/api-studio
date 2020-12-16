@@ -1243,7 +1243,7 @@ public class CubeStore {
     @POST
     @Path("copyRecording/{recordingId}/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response copyRecording(@Context UriInfo ui, @PathParam("recordingId") String recordingId,
+    public void copyRecording(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui, @PathParam("recordingId") String recordingId,
         @PathParam("userId") String userId) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
         Optional<String> templateVersion = Optional.ofNullable(queryParams.getFirst(Constants.VERSION_FIELD));
@@ -1253,18 +1253,20 @@ public class CubeStore {
             Optional.ofNullable(queryParams.getFirst(Constants.RECORDING_TYPE_FIELD))
                 .flatMap(r -> Utils.valueOf(RecordingType.class, r));
         if(recordingType.isEmpty()) {
-            return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).
-                entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"No such Recording Type found")).build();
+            asyncResponse.resume(Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).
+                entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"No such Recording Type found")).build());
+            return;
         }
         RecordingType type = recordingType.get();
         if(type== RecordingType.Golden && templateVersion.isEmpty()) {
-            return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-                .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"version needs to be given for a golden")).build();
+            asyncResponse.resume(Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+                .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"version needs to be given for a golden")).build());
+            return;
         }
-        return copyRecording(recordingId, name, label, templateVersion, userId, type);
+        copyRecording(recordingId, name, label, templateVersion, userId, type).thenApply(v -> asyncResponse.resume(v));
     }
 
-    private Response copyRecording(String recordingId, Optional<String> name, Optional<String> label,
+    private CompletableFuture<Response> copyRecording(String recordingId, Optional<String> name, Optional<String> label,
         Optional<String> templateVersion, String userId, RecordingType type) {
         Instant timeStamp = Instant.now();
         String labelValue = label.orElse(timeStamp.toString());
@@ -1273,73 +1275,53 @@ public class CubeStore {
             Optional<Recording> recordingWithSameName = name.flatMap(nameValue -> rrstore
                 .getRecordingByName(recording.customerId, recording.app, nameValue, Optional.of(labelValue)));
             if(recordingWithSameName.isPresent()) {
-                return Response.status(Response.Status.CONFLICT)
+                return CompletableFuture.completedFuture(Response.status(Response.Status.CONFLICT)
                     .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,String.format("Collection %s already active for customer %s, app %s, for instance %s. Use different name or label",
                         recordingWithSameName.get().collection, recording.customerId, recording.app, recordingWithSameName.get().instanceId)))
-                    .build();
+                    .build());
             }
-            String collection = UUID.randomUUID().toString();
-            RecordingBuilder recordingBuilder = new RecordingBuilder(
-                recording.customerId, recording.app, recording.instanceId, collection)
-                .withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateVersion.orElse(recording.templateVersion))
-                .withName(name.orElse(recording.name))
-                .withUserId(userId).withTags(recording.tags).withUpdateTimestamp(timeStamp)
-                .withRootRecordingId(recording.rootRecordingId).withLabel(labelValue)
-                .withRecordingType(type).withRunId(timeStamp.toString());
-            recording.parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
-            recording.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
-            recording.branch.ifPresent(recordingBuilder::withBranch);
-            recording.gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
-            recording.collectionUpdOpSetId.ifPresent(recordingBuilder::withCollectionUpdateOpSetId);
-            recording.templateUpdOpSetId.ifPresent(recordingBuilder::withTemplateUpdateOpSetId);
-            recording.comment.ifPresent(recordingBuilder::withComment);
-            recording.dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
-            try {
-                recording.generatedClassJarPath
-                    .ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
-            } catch (Exception e) {
-                LOGGER.error(new ObjectMessage(Map.of(
-                    Constants.MESSAGE, "Error while generatedClassJarPath",
-                    Constants.CUSTOMER_ID_FIELD, recording.customerId,
-                    Constants.APP_FIELD, recording.app,
-                    Constants.INSTANCE_ID_FIELD, recording.instanceId
-                )), e);
-            }
-            Recording  updatedRecording = recordingBuilder.build();
+
+            Recording  updatedRecording = createRecordingObjectFrom(recording, templateVersion,
+                name, Optional.of(userId), timeStamp, labelValue, type);
             if(rrstore.saveRecording(updatedRecording)) {
-                EventQuery.Builder builder = new EventQuery.Builder(recording.customerId, recording.app, Collections.emptyList());
-                builder.withCollection(recording.collection);
-                Result<Event> result = rrstore.getEvents(builder.build());
-                Map<String, String> reqIdMap = new HashMap<>();
-                result.getObjects().forEach(event -> {
-                    try {
-                        String reqId = reqIdMap.get(event.getReqId());
-                        if(reqId == null) {
-                            String oldReqId = event.getReqId();
-                            reqId = io.md.utils.Utils.generateRequestId(
-                                event.service, event.getTraceId());
-                            reqIdMap.put(oldReqId, reqId);
-                        }
-                        Event newEvent = buildEvent(event, collection,  type, reqId, event.getTraceId(), Optional.of(timeStamp.toString()));
-                        rrstore.save(newEvent);
-                    } catch (InvalidEventException e) {
-                        LOGGER.error(new ObjectMessage(
-                            Map.of(Constants.MESSAGE, "Error while creating Event",
-                                Constants.RECORDING_ID, updatedRecording.id)), e);
-                    }
-                });
-                rrstore.commit();
-                return Response.ok().type(MediaType.APPLICATION_JSON).entity(updatedRecording).build();
+                return CompletableFuture.runAsync(() -> copyEvents(recording, updatedRecording, timeStamp)).thenApply(v ->
+                 Response.ok().type(MediaType.APPLICATION_JSON).entity(updatedRecording).build());
             }
-            return Response.status(Status.INTERNAL_SERVER_ERROR)
+            return CompletableFuture.completedFuture(Response.status(Status.INTERNAL_SERVER_ERROR)
                 .type(MediaType.APPLICATION_JSON)
                 .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"Error while saving recording"))
-                .build();
+                .build());
 
-        }).orElse(Response.status(Response.Status.NOT_FOUND)
+        }).orElse(CompletableFuture.completedFuture(Response.status(Response.Status.NOT_FOUND)
             .type(MediaType.APPLICATION_JSON)
             .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,String.format("No Recording found for recordingId=%s", recordingId)))
-            .build());
+            .build()));
+    }
+
+
+    public void copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp) {
+        EventQuery.Builder builder = new EventQuery.Builder(fromRecording.customerId, fromRecording.app, Collections.emptyList());
+        builder.withCollection(fromRecording.collection);
+        Result<Event> result = rrstore.getEvents(builder.build());
+        Map<String, String> reqIdMap = new HashMap<>();
+        result.getObjects().forEach(event -> {
+            try {
+                String reqId = reqIdMap.get(event.getReqId());
+                if(reqId == null) {
+                    String oldReqId = event.getReqId();
+                    reqId = io.md.utils.Utils.generateRequestId(
+                        event.service, event.getTraceId());
+                    reqIdMap.put(oldReqId, reqId);
+                }
+                Event newEvent = buildEvent(event, toRecording.collection,  toRecording.recordingType, reqId, event.getTraceId(), Optional.of(timeStamp.toString()));
+                rrstore.save(newEvent);
+            } catch (InvalidEventException e) {
+                LOGGER.error(new ObjectMessage(
+                    Map.of(Constants.MESSAGE, "Error while creating Event",
+                        Constants.RECORDING_ID, toRecording.id)), e);
+            }
+        });
+        rrstore.commit();
     }
 
     @POST
@@ -1949,18 +1931,95 @@ public class CubeStore {
     public void getAppConfigurations(@Suspended AsyncResponse asyncResponse,
                                         @PathParam("customerId") String customerId, List<String> apps) {
         //default app config without any tracer
-        CustomerAppConfig defaultAppCfgNoTracer= new CustomerAppConfig.Builder()/*.withTracer(Tracer.MeshD.toString())*/.build();
+        CustomerAppConfig defaultAppCfgNoTracer = new CustomerAppConfig.Builder()/*.withTracer(Tracer.MeshD.toString())*/
+            .build();
 
-        List<CompletableFuture<CustomerAppConfig>> futures =  apps.stream().map(app->CompletableFuture.supplyAsync(()->rrstore.getAppConfiguration(customerId, app).orElse(defaultAppCfgNoTracer))).collect(Collectors.toList());
+        List<CompletableFuture<CustomerAppConfig>> futures = apps.stream().map(
+            app -> CompletableFuture.supplyAsync(
+                () -> rrstore.getAppConfiguration(customerId, app).orElse(defaultAppCfgNoTracer)))
+            .collect(Collectors.toList());
 
-        Utils.sequence(futures).thenApply(appConfigs->{
-            Map<String , CustomerAppConfig> appCfgs = new HashMap<>();
-            for(int i=0 ; i<apps.size() ; i++){
-                appCfgs.put(apps.get(i) , appConfigs.get(i));
+        Utils.sequence(futures).thenApply(appConfigs -> {
+            Map<String, CustomerAppConfig> appCfgs = new HashMap<>();
+            for (int i = 0; i < apps.size(); i++) {
+                appCfgs.put(apps.get(i), appConfigs.get(i));
             }
-            return asyncResponse.resume(Response.ok(appCfgs , MediaType.APPLICATION_JSON).build());
-        }).exceptionally(e-> asyncResponse.resume(Response.status(Status.INTERNAL_SERVER_ERROR)
+            return asyncResponse.resume(Response.ok(appCfgs, MediaType.APPLICATION_JSON).build());
+        }).exceptionally(e -> asyncResponse.resume(Response.status(Status.INTERNAL_SERVER_ERROR)
             .entity(String.format("Server error: " + e.getMessage())).build()));
+    }
+
+    @Path("mergeRecordings/{firstRecordingId}/{secondRecordingId}")
+    public void mergeRecordings(@Suspended AsyncResponse asyncResponse, @Context UriInfo uriInfo,
+        @PathParam("firstRecordingId") String firstRecordingId, @PathParam("secondRecordingId") String secondRecordingId) {
+        Optional<Recording> firstRecordingOptional = rrstore.getRecording(firstRecordingId);
+        Optional<Recording> secondRecordingOptional = rrstore.getRecording(secondRecordingId);
+        Optional<RecordingType> newType =
+            Optional.ofNullable(uriInfo.getQueryParameters().getFirst(Constants.RECORDING_TYPE_FIELD))
+                .flatMap(r -> Utils.valueOf(RecordingType.class, r));
+
+        if(firstRecordingOptional.isEmpty()) {
+            asyncResponse.resume(Response.status(Response.Status.NOT_FOUND).entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
+                String.format("Recording object not found for recordingId=%s", firstRecordingId))).build());
+            return;
+        }
+        if(secondRecordingOptional.isEmpty()) {
+            asyncResponse.resume(Response.status(Response.Status.NOT_FOUND).entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
+                String.format("Recording object not found for recordingId=%s", secondRecordingId))).build());
+            return;
+        }
+
+        Recording firstRecording = firstRecordingOptional.get();
+        Recording secondRecording = secondRecordingOptional.get();
+        Recording thirdRecording ;
+        Instant timeStamp = Instant.now();
+        if(firstRecording.recordingType == RecordingType.UserGolden && newType.isEmpty()) {
+            thirdRecording = firstRecording;
+            CompletableFuture.runAsync(() -> copyEvents(secondRecording, thirdRecording, timeStamp))
+                .thenApply(v -> asyncResponse.resume(Response.ok().type(MediaType.APPLICATION_JSON).entity(thirdRecording).build()));
+        } else {
+            thirdRecording = createRecordingObjectFrom(firstRecording, Optional.empty(),
+                Optional.of(firstRecording.name + "-" + timeStamp.toString()), Optional.empty(),
+                timeStamp, timeStamp.toString(), newType.orElse(RecordingType.UserGolden));
+            if(rrstore.saveRecording(thirdRecording)) {
+                CompletableFuture.runAsync(() -> {
+                    copyEvents(firstRecording, thirdRecording, timeStamp);
+                    copyEvents(secondRecording, thirdRecording, timeStamp);
+                }).thenApply(v -> asyncResponse.resume(Response.ok().type(MediaType.APPLICATION_JSON).entity(thirdRecording).build()));
+            }
+        }
+    }
+
+    private Recording createRecordingObjectFrom(Recording recording, Optional<String> templateVersion,
+        Optional<String> name, Optional<String> userId, Instant timeStamp, String labelValue, RecordingType type) {
+        String collection = UUID.randomUUID().toString();
+        RecordingBuilder recordingBuilder = new RecordingBuilder(
+            recording.customerId, recording.app, recording.instanceId, collection)
+            .withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateVersion.orElse(recording.templateVersion))
+            .withName(name.orElse(recording.name))
+            .withUserId(userId.orElse(recording.userId)).withTags(recording.tags).withUpdateTimestamp(timeStamp)
+            .withRootRecordingId(recording.rootRecordingId).withLabel(labelValue)
+            .withRecordingType(type).withRunId(timeStamp.toString());
+        recording.parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
+        recording.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
+        recording.branch.ifPresent(recordingBuilder::withBranch);
+        recording.gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
+        recording.collectionUpdOpSetId.ifPresent(recordingBuilder::withCollectionUpdateOpSetId);
+        recording.templateUpdOpSetId.ifPresent(recordingBuilder::withTemplateUpdateOpSetId);
+        recording.comment.ifPresent(recordingBuilder::withComment);
+        recording.dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
+        try {
+            recording.generatedClassJarPath
+                .ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
+        } catch (Exception e) {
+            LOGGER.error(new ObjectMessage(Map.of(
+                Constants.MESSAGE, "Error while generatedClassJarPath",
+                Constants.CUSTOMER_ID_FIELD, recording.customerId,
+                Constants.APP_FIELD, recording.app,
+                Constants.INSTANCE_ID_FIELD, recording.instanceId
+            )), e);
+        }
+        return recordingBuilder.build();
     }
 
     /**

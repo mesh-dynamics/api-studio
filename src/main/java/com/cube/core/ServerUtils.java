@@ -12,6 +12,7 @@ import io.md.dao.Recording.RecordingType;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -22,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -205,8 +207,8 @@ public class ServerUtils {
         String oldPrefix = arrayPath.concat("/").concat(oldIndex);
         SortedMap<String , Diff> diffByPrefix =
             getByPrefix(diffMap, oldPrefix);
-        diffByPrefix.values().forEach(diff -> {
-            String oldPath = diff.path;
+        diffByPrefix.forEach( (key, diff) -> {
+            String oldPath = key;
             if(oldPrefix.equals(oldPath) || oldPath.startsWith(oldPrefix.concat("/"))) {
                 diff.path = oldPath.replace(oldPrefix, arrayPath.concat("/").concat(newIndex));
             }
@@ -231,10 +233,31 @@ public class ServerUtils {
             rightArrayMap = convertObjectToMap((ObjectNode) rightNode, jsonMapper);
         }
 
-        Set<String> leftKeys =  new HashSet<>(leftArrayMap.keySet());
-        Set<String> rightKeys = new HashSet<>(rightArrayMap.keySet());
+        Comparator<String> sortedComparator = new Comparator<String>() {
+            @Override
+            public int compare(String o1, String o2) {
+                try {
+                    return Integer.valueOf(o1).compareTo(Integer.valueOf(o2));
+                }
+                catch (Exception e)
+                {
+                    return o1.compareTo(o2);
+                }
+            }
 
-        Set<String> intersection  = new HashSet<>(leftKeys);
+            @Override
+            public boolean equals(Object obj) {
+                return false;
+            }
+        };
+
+        Set<String> leftKeys =  new TreeSet<String>(sortedComparator);
+        leftKeys.addAll(leftArrayMap.keySet());
+        Set<String> rightKeys = new TreeSet<>(sortedComparator);
+        rightKeys.addAll(rightArrayMap.keySet());
+
+        Set<String> intersection  = new TreeSet<>(sortedComparator);
+        intersection.addAll(leftKeys);
         intersection.retainAll(rightKeys);
         leftKeys.removeAll(intersection);
         rightKeys.removeAll(intersection);
