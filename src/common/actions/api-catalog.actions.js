@@ -83,6 +83,12 @@ export const apiCatalogActions = {
             });
     },
 
+    refreshApiCatalogCollections:() =>(dispatch, getState)=>{
+        const {cube: { selectedApp }} = getState();
+        dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "UserGolden"));
+        dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "Golden"));    
+    },
+
     handleFilterChange: (metadata, value) => (dispatch, getState) => {
         const state = getState();
         const { selectedApp } = state.cube;

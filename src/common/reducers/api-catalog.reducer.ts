@@ -126,6 +126,7 @@ export const apiCatalog : Reducer<IApiCatalogState> = (state = initialState, { t
                 apiPaths: data.apiPaths,
                 services: data.services,
                 instances: data.instances,
+                apiTrace: {}
             }
         }
 

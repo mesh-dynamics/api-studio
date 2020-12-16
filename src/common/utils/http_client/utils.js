@@ -233,12 +233,16 @@ const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) =
         httpURLShowOnly: httpRequestEvent.apiPath,
         headers: headers,
         queryStringParams: queryParams,
-        bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
+        bodyType:   formData?.length > 0
+            ? "formData"
+            : rawData?.length > 0
+            ? "rawData"
+            : grpcData?.length ? "grpcData" : "formData",
         formData: formData,
         rawData: rawData,
         grpcData: grpcData,
         rawDataType: rawDataType,
-        paramsType: "showQueryParams",
+        paramsType: grpcData && grpcData.length ? "showBody": "showQueryParams",
         responseStatus: "NA",
         responseStatusText: "",
         responseHeaders: "",
