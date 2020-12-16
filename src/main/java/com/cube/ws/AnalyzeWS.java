@@ -112,6 +112,7 @@ import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.golden.transform.TemplateSetTransformer;
 import com.cube.golden.transform.TemplateUpdateOperationSetTransformer;
 import com.cube.queue.StoreUtils;
+import com.cube.utils.AnalysisUtils;
 
 /**
  * @author prasad
@@ -161,11 +162,8 @@ public class AnalyzeWS {
             }
         }).orElse(Response.serverError().build());
     }
-/*
-	@POST
-	@Path("analyze/{replayId}")
-	@Consumes("application/x-www-form-urlencoded")
-	public Response analyzeWithUpdates()*/
+
+
 
 
 	@GET
@@ -944,6 +942,46 @@ public class AnalyzeWS {
         }
     }
 
+	@POST
+	@Path("analyze/{replayId}")
+	@Consumes("application/x-www-form-urlencoded")
+	public Response analyzeWithUpdates(@Context UriInfo uriInfo, @PathParam("replayId") String replayId,
+		String templateUpdateOperations) {
+		TypeReference<HashMap<TemplateKey, SingleTemplateUpdateOperation>> typeReference =
+			new TypeReference<>() {};
+		try {
+			Replay replay = rrstore.getReplay(replayId).orElseThrow(() ->
+				new Exception("Unable to fetch replay object for id " + replayId));
+			Optional<Analysis> analysis = rrstore.getAnalysis(replayId);
+			String previousTemplateVersion = analysis.map(analysis1 -> analysis1.templateVersion)
+				.orElse(replay.templateVersion);
+			String operationSetID = rrstore.createTemplateUpdateOperationSet(replay.customerId,
+				replay.app, previousTemplateVersion);
+			AnalysisUtils.updateTemplateUpdateOperationSet(replay.customerId, operationSetID
+				, templateUpdateOperations, jsonMapper, rrstore);
+
+
+			TemplateSetTransformer transformer = new TemplateSetTransformer();
+			// transform the template set based on the operations specified
+			TemplateSet updated = templateSetOpt.flatMap(UtilException.rethrowFunction(
+				templateSet -> updateOperationSetOpt.map(UtilException.rethrowFunction(
+					updateOperationSet ->
+						transformer.updateTemplateSet(templateSet, updateOperationSet,
+							rrstore)))))
+				.orElseThrow(
+					() -> new Exception("Missing template set or template update operation set"));
+			// Validate updated template set
+			ValidateCompareTemplate validTemplate = ServerUtils.validateTemplateSet(updated);
+			if(!validTemplate.isValid()) {
+				return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
+			}
+
+		} catch (Exception e) {
+
+		}
+	}
+
+
     /**
      * Update operation set for modification of a template set (add new rules)
      * @param uriInfo Context
@@ -961,20 +999,7 @@ public class AnalyzeWS {
         TypeReference<HashMap<TemplateKey, SingleTemplateUpdateOperation>> typeReference =
             new TypeReference<>() {};
         try {
-            // deserialize new operations to be added
-            Map<TemplateKey, SingleTemplateUpdateOperation> updates = jsonMapper.readValue(templateUpdateOperations,
-                typeReference);
-            // get existing operation set against the id specified
-            Optional<TemplateUpdateOperationSet> updateOperationSetOpt = rrstore.getTemplateUpdateOperationSet(operationSetId);
-            TemplateUpdateOperationSetTransformer transformer = new TemplateUpdateOperationSetTransformer();
-            // merge operations
-            TemplateUpdateOperationSet transformed = updateOperationSetOpt.flatMap(updateOperationSet -> Optional.of
-                (transformer.updateTemplateOperationSet(updateOperationSet , updates)))
-                .orElseThrow(() -> new Exception("Missing template update operation set for given id"));
-            // save the merged operation set
-            rrstore.saveTemplateUpdateOperationSet(transformed, customerId);
-            LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully updated template "
-	            + "rules update op set", Constants.TEMPLATE_UPD_OP_SET_ID_FIELD, operationSetId)));
+	        AnalysisUtils.updateTemplateUpdateOperationSet(customerId, operationSetId, templateUpdateOperations, jsonMapper, rrstore);
             return Response.ok().entity("{\"Message\" :  \"Successfully updated Template update operation set\" , \"ID\" : \"" +
                 operationSetId + "\"}").build();
         } catch (Exception e) {
