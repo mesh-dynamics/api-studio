@@ -439,20 +439,19 @@ public class MovieRentals {
 		return  nameIdMap;
 	}
 
-	public void deleteGenreGroupCategoryMapping(int genreGroupId) {
+	public JSONObject deleteGenreGroupCategoryMapping(int genreGroupId) {
 		String genreGroupQuery = "delete from genre_group_category "
 				+ " where genre_group_id = ?";
 		JSONArray params = new JSONArray();
 		RestOverSql.addIntegerParam(params, genreGroupId);
-		ros.executeUpdate(genreGroupQuery, params);
+		return ros.executeUpdate(genreGroupQuery, params);
 	}
 
-	public void deleteGenreGroup(int genreGroupId) {
-		String genreGroupQuery = "delete from genre_group "
-				+ " where genre_group_id = ?";
+	public JSONObject deleteGenreGroup(int genreGroupId) {
+		String genreGroupQuery = "delete from genre_group where genre_group_id= ?";
 		JSONArray params = new JSONArray();
 		RestOverSql.addIntegerParam(params, genreGroupId);
-		ros.executeUpdate(genreGroupQuery, params);
+		return ros.executeUpdate(genreGroupQuery, params);
 	}
 
 	public boolean genre_group_category_mapping(List<String> categories, int genreGroupId) {
