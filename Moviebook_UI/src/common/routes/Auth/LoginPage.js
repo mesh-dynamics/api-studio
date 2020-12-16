@@ -15,9 +15,9 @@ const LoginPage = (props) => {
 		login,
 	} = props;
 
-	const [username, setUsername] = useState("MARY.SMITH@sakilacustomer.org");
+	const [username, setUsername] = useState(EMPTY_STRING);
 
-	const [password, setPassword] = useState("password123@");
+	const [password, setPassword] = useState(EMPTY_STRING);
 
 	const [loginErrorMessage, setLoginErrorMessage] = useState(EMPTY_STRING);
 
