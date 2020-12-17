@@ -33,9 +33,9 @@ public class ProxyAnalyzer implements Analyzer {
     }
 
     @Override
-    public Optional<Analysis> analyze(String replayId) {
+    public Optional<Analysis> analyze(String replayId, Optional<String> templateVersion) {
         try {
-            return cubeClient.analyze(replayId)
+            return cubeClient.analyze(replayId, templateVersion)
                     .map(UtilException.rethrowFunction(config -> jsonMapper.readValue(config,
                             Analysis.class)));
         } catch (IOException e) {
