@@ -26,6 +26,12 @@ export default class Tabs extends Component {
   componentDidMount() {
     this.setScrollPosition();
   }
+  
+  static getDerivedStateFromProps(props,state) {
+    if (props.selectedTabKey != state.selectedTabKey) {
+      return { selectedTabKey:  props.selectedTabKey }
+    }
+  } 
 
   shouldComponentUpdate(nextProps, nextState) {
     const { selectedTabKey } = this.state;
