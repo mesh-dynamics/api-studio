@@ -6,11 +6,7 @@ package com.cube.dao;
 import static io.md.core.TemplateKey.*;
 
 import io.md.constants.ReplayStatus;
-import io.md.core.BatchingIterator;
-import io.md.core.ConfigApplicationAcknowledge;
-import io.md.core.TemplateKey;
-import io.md.core.ValidateAgentStore;
-import io.md.core.ValidateProtoDescriptorDAO;
+import io.md.core.*;
 import io.md.dao.ProtoDescriptorDAO;
 import io.md.dao.*;
 import io.md.dao.agent.config.AgentConfigTagInfo;
@@ -66,14 +62,10 @@ import com.google.protobuf.Descriptors.DescriptorValidationException;
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.FnResponseObj;
 import io.cube.agent.UtilException;
-import io.md.core.AttributeRuleMap;
-import io.md.core.Comparator;
 import io.md.core.Comparator.Diff;
 import io.md.core.Comparator.Match;
 import io.md.core.Comparator.Resolution;
-import io.md.core.CompareTemplate;
 import io.md.core.CompareTemplate.ComparisonType;
-import io.md.core.ReplayTypeEnum;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventType;
 import io.md.dao.Event.RunType;
@@ -83,7 +75,6 @@ import io.md.utils.FnKey;
 import io.md.injection.DynamicInjectionConfig;
 import io.md.injection.DynamicInjectionConfig.ExtractionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta;
-import io.md.core.Utils;
 import io.md.utils.Constants;
 
 import redis.clients.jedis.Jedis;
@@ -136,7 +127,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
 
     @Override
-    void removeCollectionKey(ReqRespStoreImplBase.CollectionKey collectionKey) {
+    void removeCollectionKey(CollectionKey collectionKey) {
         if (config.intentResolver.isIntentToMock()) return;
         try (Jedis jedis = config.jedisPool.getResource()) {
             //jedis.del(collectionKey.toString());
@@ -325,7 +316,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         query.addField("*");
         query.addField("score");
 
-        StringBuffer queryBuff = new StringBuffer();
+        //We don't have strict match query (always with weights).
+        //if query param is without weight (strict) , we will have to revise the logic
+        StringBuffer queryBuff = new StringBuffer("*:*");
 
         addFilter(query, TYPEF, Types.Event.toString());
         addFilter(query, CUSTOMERIDF, eventQuery.getCustomerId());
@@ -360,7 +353,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addToFilterIntOrQuery(query , queryBuff , PAYLOADKEYF , eventQuery.getPayloadKey(), true , eventQuery.getPayloadKeyWeight());
 
         // starting from timestamp, non inclusive
-        addRangeFilter(query, TIMESTAMPF, eventQuery.getTimestamp(), Optional.empty(), false, true);
+        addRangeFilter(query, TIMESTAMPF, eventQuery.getStartTimestamp(), eventQuery.getEndTimestamp(), eventQuery.getEndTimestamp().isPresent() , true);
 
         addFilter(query, PAYLOAD_FIELDS_F , eventQuery.getPayloadFields());
 
@@ -376,9 +369,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             addSort(query, IDF, true);
         }
 
-        if(queryBuff.length()!=0){
-            query.setQuery(queryBuff.toString());
-        }
+        query.setQuery(queryBuff.toString());
 
         return SolrIterator.getResults(solr, query, eventQuery.getLimit(),
             this::docToEvent, eventQuery.getOffset());

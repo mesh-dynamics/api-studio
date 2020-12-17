@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 import java.util.stream.Stream;
@@ -50,6 +52,8 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import io.md.dao.*;
+import io.md.tracer.TracerMgr;
+import io.md.tracer.handlers.Tracer;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -1918,6 +1922,31 @@ public class CubeStore {
             .orElse(Response.status(Response.Status.NOT_FOUND).entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
                 "CustomerAppConfig object not found")).build());
         return resp;
+    }
+
+    @POST
+    @Path("getAppConfigurations/{customerId}")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
+    public void getAppConfigurations(@Suspended AsyncResponse asyncResponse,
+                                        @PathParam("customerId") String customerId, List<String> apps) {
+        //default app config without any tracer
+        CustomerAppConfig defaultAppCfgNoTracer = new CustomerAppConfig.Builder()/*.withTracer(Tracer.MeshD.toString())*/
+            .build();
+
+        List<CompletableFuture<CustomerAppConfig>> futures = apps.stream().map(
+            app -> CompletableFuture.supplyAsync(
+                () -> rrstore.getAppConfiguration(customerId, app).orElse(defaultAppCfgNoTracer)))
+            .collect(Collectors.toList());
+
+        Utils.sequence(futures).thenApply(appConfigs -> {
+            Map<String, CustomerAppConfig> appCfgs = new HashMap<>();
+            for (int i = 0; i < apps.size(); i++) {
+                appCfgs.put(apps.get(i), appConfigs.get(i));
+            }
+            return asyncResponse.resume(Response.ok(appCfgs, MediaType.APPLICATION_JSON).build());
+        }).exceptionally(e -> asyncResponse.resume(Response.status(Status.INTERNAL_SERVER_ERROR)
+            .entity(String.format("Server error: " + e.getMessage())).build()));
     }
 
     @POST
