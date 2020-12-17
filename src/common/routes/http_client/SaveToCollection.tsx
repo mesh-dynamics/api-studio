@@ -21,7 +21,7 @@ import {
   IStoreState,
 } from "../../reducers/state.types";
 import _ from 'lodash';
-import {generateTraceId, generateSpanId} from "../../utils/http_client/utils"
+import {generateTraceId, generateSpanId, generateSpecialParentSpanId} from "../../utils/http_client/utils"
 
 export declare type GetReqResFromTabDataHandler = (
   eachPair: IEventData[],
@@ -231,7 +231,7 @@ class SaveToCollection extends React.Component<
       if (reqResPair.length > 0) {
         const data = [];
         const {tracer} = _.find(appsList, {name: selectedApp})
-        const rootParentSpanId = generateSpanId(tracer);
+        const rootParentSpanId = generateSpecialParentSpanId(tracer);
         const rootSpanId = generateSpanId(tracer);
         const traceId = generateTraceId(tracer, rootSpanId);
 
