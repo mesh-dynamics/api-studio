@@ -1,8 +1,8 @@
 import _ from 'lodash';
 import { v4 as uuidv4 } from "uuid";
 import {Base64Binary} from '../../../shared/utils'
-
 import {applyEnvVarsToUrl} from './envvar';
+import cryptoRandomString from 'crypto-random-string';
 
 const generateRunId = () => {
     return new Date(Date.now()).toISOString()
@@ -351,7 +351,23 @@ const preRequestToFetchableConfig = (preRequestResult, httpURL) => {
       httpRequestQueryStringParamsRendered,
       fetchConfigRendered,
     ];
-  };
+};
+
+const generateTraceId = (tracer, spanId) => {
+    const traceId = cryptoRandomString({length:16})
+    if (tracer==="meshd" || tracer==="jaeger") {
+        if (!spanId)
+            throw new Error("Error generating traceId: spanId not present")
+        
+        return encodeURIComponent(`${traceId}:${spanId}:0:1`);
+    } else {
+        return traceId;
+    }
+}
+
+const generateSpanId = (tracer) => {
+    return cryptoRandomString({length:16})
+}
 
 export { 
     generateRunId,
@@ -367,5 +383,7 @@ export {
     unSelectedRequestParamData,
     extractParamsFromRequestEvent,
     isValidJSON,
-    Base64Binary
+    Base64Binary,
+    generateTraceId,
+    generateSpanId,
 };

@@ -20,6 +20,8 @@ import {
   IHttpClientTabDetails,
   IStoreState,
 } from "../../reducers/state.types";
+import _ from 'lodash';
+import {generateTraceId, generateSpanId} from "../../utils/http_client/utils"
 
 export declare type GetReqResFromTabDataHandler = (
   eachPair: IEventData[],
@@ -40,6 +42,8 @@ export interface ISaveToCollectionProps {
   disabled: boolean;
   getReqResFromTabData: GetReqResFromTabDataHandler;
   dispatch: any; //Need to check proper type for dispatch
+  selectedApp: string;
+  appsList: Array<App> // todo
 }
 export interface ISaveToCollectionState {
   showModal: boolean;
@@ -121,7 +125,7 @@ class SaveToCollection extends React.Component<
           userCollectionId: recordingId,
         },
         () => {
-          this.saveTabToCollection();
+          this.saveTabToCollection(false);
         }
       );
     } else {
@@ -203,12 +207,14 @@ class SaveToCollection extends React.Component<
     }
   }
 
-  saveTabToCollection() {
+  saveTabToCollection(generateSpanTraceId=false) {
     const recordingId = this.state.userCollectionId;
     const {
       httpClient: { tabs: tabsToProcess },
       dispatch,
       tabId,
+      selectedApp, 
+      appsList
     } = this.props;
     const runId = "";
 
@@ -224,12 +230,26 @@ class SaveToCollection extends React.Component<
     try {
       if (reqResPair.length > 0) {
         const data = [];
+        const {tracer} = _.find(appsList, {name: selectedApp})
+        const rootParentSpanId = generateSpanId(tracer);
+        const rootSpanId = generateSpanId(tracer);
+        const traceId = generateTraceId(tracer, rootSpanId);
 
         // TODO: Quick fix to rectify mock failure where status is empty string
         // Proper fix is to make status on LHS editable
 
         /** Fix Start */
-        const reqResData = this.props.getReqResFromTabData(reqResPair, tabToProcess, runId, type)
+        let reqResData;
+        if (generateSpanTraceId) 
+        reqResData = this.props.getReqResFromTabData(reqResPair, tabToProcess, runId, type, 
+          null, null, null, null,
+          tracer,
+          traceId,
+          rootParentSpanId,
+          rootSpanId)
+          else {
+            reqResData = this.props.getReqResFromTabData(reqResPair, tabToProcess, runId, type)
+          }
 
         const { response: { payload: httpResponsePayload } } = reqResData;
 
@@ -252,14 +272,29 @@ class SaveToCollection extends React.Component<
             eachOutgoingTab.eventData &&
             eachOutgoingTab.eventData.length > 0
           ) {
-            data.push(
-              this.props.getReqResFromTabData(
-                eachOutgoingTab.eventData,
-                eachOutgoingTab,
-                runId,
-                type
-              )
-            );
+            const spanId = generateSpanId(tracer);
+            let reqResData;
+            if(generateSpanTraceId) {
+                reqResData = this.props.getReqResFromTabData(
+                  eachOutgoingTab.eventData,
+                  eachOutgoingTab,
+                  runId,
+                  type,
+                  null, null, null, null,
+                  tracer,
+                  traceId,
+                  rootSpanId,
+                  spanId,
+                )
+              } else {
+                reqResData = this.props.getReqResFromTabData(
+                  eachOutgoingTab.eventData,
+                  eachOutgoingTab,
+                  runId,
+                  type
+                )
+              }
+            data.push(reqResData);
           }
         });
 
@@ -290,7 +325,7 @@ class SaveToCollection extends React.Component<
     } catch (error) {
       console.error("Error ", error);
       this.setState({
-        modalErroSaveMessage: "Error: Invalid JSON body",
+        modalErroSaveMessage: error,
         modalErroSaveMessageIsError: true,
       });
       throw new Error("Error");
@@ -417,7 +452,7 @@ class SaveToCollection extends React.Component<
           </Modal.Body>
           <Modal.Footer>
             <div
-              onClick={this.saveTabToCollection}
+              onClick={() => this.saveTabToCollection(true)}
               className="btn btn-sm cube-btn text-center"
             >
               Save
@@ -438,11 +473,12 @@ class SaveToCollection extends React.Component<
 function mapStateToProps(state: IStoreState) {
   const {
     httpClient,
-    apiCatalog: { goldenList },
+    apiCatalog: { goldenList }, cube :{ selectedApp, appsList}
   } = state;
   return {
     httpClient,
     goldenList,
+    selectedApp, appsList,
   };
 }
 

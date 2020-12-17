@@ -1377,7 +1377,7 @@ class HttpClientTabs extends Component {
     }
 
 
-    getReqResFromTabData(eachPair, tabToSave, runId, type, reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment) {
+    getReqResFromTabData(eachPair, tabToSave, runId, type, reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment, tracer, traceId, parentSpanId, spanId) {
         const { headers, queryStringParams, bodyType, rawDataType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus } = tabToSave;
 
         const httpRequestEventTypeIndex = eachPair[0].eventType === "HTTPRequest" ? 0 : 1;
@@ -1413,6 +1413,21 @@ class HttpClientTabs extends Component {
 
         if(httpRequestEvent.spanId === null) {
             httpRequestEvent.spanId = "NA"
+        }
+
+        if(traceId) {
+            httpRequestEvent.traceId = traceId
+            httpResponseEvent.traceId = traceId
+        }
+
+        if (parentSpanId) {
+            httpRequestEvent.parentSpanId = parentSpanId
+            httpResponseEvent.parentSpanId = parentSpanId
+        }
+
+        if(spanId) {
+            httpRequestEvent.spanId = spanId
+            httpResponseEvent.spanId = spanId
         }
 
         if(type === "History") {
@@ -1451,6 +1466,48 @@ class HttpClientTabs extends Component {
             httpRequestBody = this.tryJsonParse(grpcData);  
             httpReqestHeaders["content-type"] = ["application/grpc"];          
         }
+
+        let traceIdKey, spanIdKey, parentSpanIdKey;
+        switch (tracer) {
+            case "meshd":
+                traceIdKey = "md-trace-id";
+                parentSpanIdKey = ["mdctxmd-parent-span"];
+                // no span id key
+                break;
+            case "jaeger":
+                traceIdKey = "uber-trace-id"
+                parentSpanIdKey = ["uberctx-parent-span-id"]
+                // no span id key
+                break
+            case "zipkin":
+                traceIdKey = "x-b3-traceid"
+                parentSpanIdKey = ["baggage-parent-span-id", "x-b3-parentspanid"]
+                spanIdKey = "x-b3-spanid"
+                break;
+            case "datadog":
+                traceIdKey = "x-datadog-trace-id"
+                parentSpanIdKey = ["ot-baggage-parent-span-id"]
+                spanIdKey = "x-datadog-parent-id"
+                break
+            default:
+                // todo: commented this out because not passing a tracer is a valid case which will be handled next
+                //throw new Error("Tracer not supported: ", tracer)
+        }
+
+        if(traceId) {
+            httpReqestHeaders[traceIdKey] = [traceId]
+        }
+
+        if (parentSpanId) {
+            parentSpanIdKey.forEach((key) => {
+                httpReqestHeaders[key] = [parentSpanId]
+            })
+        }
+        
+        if (spanId && spanIdKey) {
+            httpReqestHeaders[spanIdKey] = [spanId]
+        }
+
         const httpMethod = this.getHttpMethod(tabToSave);
         let httpResponseHeaders, httpResponseBody, httpResponseStatus;
         if (type !== "History") {
