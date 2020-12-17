@@ -83,7 +83,7 @@ public class Utils {
 		treeSet.addAll(new HashSet<>(Arrays.asList("connection", "content-length",
 			"date", "expect", "from", "host", "origin",
 			/*"referer",*/ "upgrade",
-			"via", "warning", "transfer-encoding")));
+			"via", "warning", "transfer-encoding" , "content-encoding")));
 		DISALLOWED_HEADERS_SET = Collections.unmodifiableSet(treeSet);
 	}
 
@@ -649,7 +649,7 @@ public class Utils {
 		Optional<String> optionalRunId = runningReplay.map(r->r.runId);
 		Optional<String> dynamicInjectionCfgVersion = recordOrReplay.getDynamicInjectionConfigVersion();
 
-		return new MockWithCollection(replayCollection, collection, templateVersion, optionalRunId.orElse(null) , dynamicInjectionCfgVersion, devtool);
+		return new MockWithCollection(replayCollection, collection, templateVersion, optionalRunId.orElse(null) , dynamicInjectionCfgVersion, devtool , runningReplay);
 	}
 
 	public static void setProtoDescriptorGrpcEvent(Event e, ProtoDescriptorCache protoDescriptorCache) {

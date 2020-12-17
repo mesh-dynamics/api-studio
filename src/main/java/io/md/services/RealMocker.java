@@ -67,16 +67,20 @@ public class RealMocker implements Mocker {
                         return String.format("%s:%s", "/".concat(payloadField),
                          reqEvent.payload.getValAsString("/".concat(payloadField)));
                     } catch (Exception e) {
-                        return null;
+                        return payloadField;
                     }
                 }).collect(Collectors.toList()):Collections.EMPTY_LIST;
 
 
             Optional<JoinQuery> joinQuery = mockWColl.isDevtool ? Optional.of(getSuccessResponseMatch()) : Optional.empty();
+            Optional<ReplayContext> replayCtx = mockWColl.replay.flatMap(r->r.replayContext);
+            if(replayCtx.isPresent()){
+                reqEvent.setTraceId(replayCtx.get().reqTraceId);
+            }
 
             EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1),
                 !mockWColl.isDevtool, lowerBoundForMatching, mockWColl.recordCollection,
-                payloadFieldFilterList , joinQuery , mockWColl.isDevtool);
+                payloadFieldFilterList , joinQuery , mockWColl.isDevtool , replayCtx);
             DSResult<Event> res = cube.getEvents(eventQuery);
 
             final Map<String , Event> reqIdReqMapping = new HashMap<>();
@@ -93,7 +97,7 @@ public class RealMocker implements Mocker {
                         "Did not find any valid 200 response. Giving first match resp"));
                 eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1),
                     false , lowerBoundForMatching, mockWColl.recordCollection ,
-                    payloadFieldFilterList , Optional.empty() , mockWColl.isDevtool);
+                    payloadFieldFilterList , Optional.empty() , mockWColl.isDevtool , Optional.empty());
                 res = cube.getEvents(eventQuery);
                 matchingResponse = res.getObjects().findFirst().flatMap(getRespEventForReqEvent);
             }
@@ -161,20 +165,26 @@ public class RealMocker implements Mocker {
 
     private static EventQuery buildRequestEventQuery(Event event, int offset, Optional<Integer> limit,
         boolean isSortOrderAsc, Optional<Instant> lowerBoundForMatching, String collection ,
-        List<String> payloadFields , Optional<JoinQuery> joinQuery , boolean isDevtoolRequest) {
+        List<String> payloadFields , Optional<JoinQuery> joinQuery , boolean isDevtoolRequest , Optional<ReplayContext> replayContext) {
         EventQuery.Builder builder =
             new EventQuery.Builder(event.customerId, event.app, event.eventType)
                 .withService(event.service)
                 .withCollection(collection , isDevtoolRequest ? EventQuery.COLLECTION_WEIGHT : null)
                 //.withInstanceId(event.instanceId)
                 .withPaths(Arrays.asList(event.apiPath))
-                .withTraceId(event.getTraceId() , isDevtoolRequest ? EventQuery.TRACEID_WEIGHT : null)
+                .withTraceId(event.getTraceId() , (isDevtoolRequest || replayContext.isPresent()) ? EventQuery.TRACEID_WEIGHT : null)
                 .withPayloadKey(event.payloadKey , isDevtoolRequest ? EventQuery.PAYLOAD_KEY_WEIGHT : null)
                 .withOffset(offset)
                 .withSortOrderAsc(isSortOrderAsc)
                 .withPayloadFields(payloadFields)
                 .withRunTypes(nonMockRunTypes);
-        lowerBoundForMatching.ifPresent(builder::withTimestamp);
+        if(replayContext.isPresent()){
+            ReplayContext rCtx = replayContext.get();
+            builder.withStartTimestamp(rCtx.reqStartTs).withEndTimestamp(rCtx.reqEndTs);
+        }else{
+            lowerBoundForMatching.ifPresent(builder::withStartTimestamp);
+        }
+
         limit.ifPresent(builder::withLimit);
         joinQuery.ifPresent(builder::withJoinQuery);
 

@@ -8,6 +8,7 @@ package io.md.services;
 
 import java.util.Optional;
 
+import io.md.core.CollectionKey;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateKey.Type;
 import io.md.dao.*;
@@ -77,6 +78,8 @@ public interface DataStore {
      * @return
      */
     boolean deferredDelete(Replay replay);
+
+    void populateCache(CollectionKey collectionKey, RecordOrReplay rr);
 
 
 //    Optional<ProtoDescriptor> getProtoDescriptor(String customer, String app);

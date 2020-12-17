@@ -57,7 +57,7 @@ public class HTTPResponsePayload extends HTTPPayload implements ResponsePayload 
 	public HTTPResponsePayload(JsonNode node) {
 		super(node);
 		this.status =  this.dataObj.getValAsObject("/".concat("status"),
-			Integer.class).orElse(-1);
+			Integer.class).orElse(200);
 		//this.body = null;
 		postParse();
 	}
@@ -74,7 +74,7 @@ public class HTTPResponsePayload extends HTTPPayload implements ResponsePayload 
 	public Integer getStatus() {
 		if (this.dataObj != null && !this.dataObj.isDataObjEmpty()) {
 			return this.dataObj.getValAsObject("/".concat("status"),
-				Integer.class).orElse(-1);
+				Integer.class).orElse(200);
 		}
 		return status;
 	}

@@ -31,13 +31,14 @@ public class EventQuery {
 
     private final List<String> services;
     private final Optional<String> instanceId;
-    private final Optional<String> collection;
+    private final List<String> collections;
 
     private final List<String> traceIds;
     private final List<Event.RunType> runTypes;
     private final Optional<String> spanId;
     private final Optional<String> parentSpanId;
-    private final Optional<Instant> timestamp;
+    private final Optional<Instant> startTimestamp;
+    private final Optional<Instant> endTimestamp;
 
     private final List<String> reqIds;
     private final List<String> paths;
@@ -46,6 +47,7 @@ public class EventQuery {
     private final Optional<Integer> offset;
     private final Optional<Integer> limit;
     private final Optional<Boolean> sortOrderAsc;
+    private final boolean indexOrderAsc;
 
     private final List<String> payloadFields;
     private final Map<String , Float> orQueryWeightage;
@@ -58,12 +60,13 @@ public class EventQuery {
 
         private List<String> services = Collections.emptyList();
         private String instanceId = null;
-        private String collection = null;
+        private List<String> collections = Collections.emptyList();
         private List<String> traceIds = Collections.emptyList();
         private List<Event.RunType> runTypes = Collections.EMPTY_LIST;
         private String spanId = null;
         private String parentSpanId = null;
-        private Instant timestamp = null;
+        private Instant startTimestamp = null;
+        private Instant endTimestamp = null;
         private List<String> reqIds = Collections.emptyList();
         private List<String> paths = Collections.emptyList();
         private boolean excludePaths = false;
@@ -71,6 +74,7 @@ public class EventQuery {
         private Integer offset = null;
         private Integer limit = null;
         private Boolean sortOrderAsc = null;
+        private boolean indexOrderAsc = false;
         private List<String> payloadFields = Collections.EMPTY_LIST;
         private Map<String , Float> orQueryWeightage = new HashMap<>();
         private Optional<JoinQuery> joinQuery = Optional.empty();
@@ -131,13 +135,26 @@ public class EventQuery {
         }
 
 
+        @JsonSetter(value = "collection", nulls = Nulls.FAIL)
         public Builder withCollection(String val) {
-            collection = val;
+            collections = Arrays.asList(val);
             return this;
         }
 
         public Builder withCollection(String val , Float weight) {
-            collection = val;
+            collections = Arrays.asList(val);
+            orQueryWeightage.put(Constants.COLLECTION_FIELD , weight);
+            return this;
+        }
+
+        @JsonSetter(nulls = Nulls.FAIL , contentNulls = Nulls.FAIL)
+        public Builder withCollections(List<String> val) {
+            collections = val;
+            return this;
+        }
+
+        public Builder withCollections(List<String> val , Float weight) {
+            collections = val;
             orQueryWeightage.put(Constants.COLLECTION_FIELD , weight);
             return this;
         }
@@ -213,14 +230,25 @@ public class EventQuery {
             return this;
         }
 
-        public Builder withTimestamp(Instant val) {
-            timestamp = val;
+        public Builder withStartTimestamp(Instant val) {
+            startTimestamp = val;
             return this;
         }
 
-        public Builder withTimestamp(Instant val ,Float weight) {
-            timestamp = val;
-            orQueryWeightage.put(Constants.TIMESTAMP_FIELD , weight);
+        public Builder withEndTimestamp(Instant val) {
+            endTimestamp = val;
+            return this;
+        }
+
+        public Builder withStartTimestamp(Instant val ,Float weight) {
+            startTimestamp = val;
+            orQueryWeightage.put(Constants.START_TIMESTAMP_FIELD , weight);
+            return this;
+        }
+
+        public Builder withEndTimestamp(Instant val , Float weight) {
+            endTimestamp = val;
+            orQueryWeightage.put(Constants.END_TIMESTAMP_FIELD , weight);
             return this;
         }
 
@@ -313,6 +341,11 @@ public class EventQuery {
             return this;
         }
 
+        public Builder withIndexOrderAsc(boolean val) {
+            indexOrderAsc = val;
+            return this;
+        }
+
         @JsonSetter(nulls = Nulls.FAIL , contentNulls = Nulls.FAIL)
         public Builder withPayloadFields(List<String> pyldFields){
             this.payloadFields = pyldFields;
@@ -344,12 +377,13 @@ public class EventQuery {
         eventTypes = builder.eventTypes;
         services = builder.services;
         instanceId = Optional.ofNullable(builder.instanceId);
-        collection = Optional.ofNullable(builder.collection);
+        collections = builder.collections;
         traceIds = builder.traceIds;
         runTypes = builder.runTypes;
         spanId = Optional.ofNullable(builder.spanId);
         parentSpanId = Optional.ofNullable(builder.parentSpanId);
-        timestamp = Optional.ofNullable(builder.timestamp);
+        startTimestamp = Optional.ofNullable(builder.startTimestamp);
+        endTimestamp = Optional.ofNullable(builder.endTimestamp);
         reqIds = builder.reqIds;
         paths = builder.paths;
         excludePaths = builder.excludePaths;
@@ -357,6 +391,7 @@ public class EventQuery {
         offset = Optional.ofNullable(builder.offset);
         limit = Optional.ofNullable(builder.limit);
         sortOrderAsc = Optional.ofNullable(builder.sortOrderAsc);
+        indexOrderAsc = builder.indexOrderAsc;
         orQueryWeightage = builder.orQueryWeightage;
         payloadFields = builder.payloadFields;
         joinQuery = builder.joinQuery;
@@ -374,8 +409,8 @@ public class EventQuery {
         return eventTypes;
     }
 
-    public Optional<String> getCollection() {
-        return collection;
+    public List<String> getCollections() {
+        return collections;
     }
     @JsonIgnore
     public Optional<Float> getCollectionWeight() { return Optional.ofNullable(orQueryWeightage.get(Constants.COLLECTION_FIELD)) ; }
@@ -438,9 +473,18 @@ public class EventQuery {
         return sortOrderAsc;
     }
 
-    public Optional<Instant> getTimestamp() {
-        return timestamp;
+    public boolean isIndexOrderAsc() {
+        return indexOrderAsc;
     }
+
+    public Optional<Instant> getStartTimestamp() {
+        return startTimestamp;
+    }
+
+    public Optional<Instant> getEndTimestamp() {
+        return endTimestamp;
+    }
+
     @JsonIgnore
     public Optional<Float> getTimestampWeight() {return Optional.ofNullable(orQueryWeightage.get(Constants.TIMESTAMP_FIELD)); }
 

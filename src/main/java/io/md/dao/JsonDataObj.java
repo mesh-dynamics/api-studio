@@ -5,7 +5,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -480,7 +479,7 @@ public class JsonDataObj implements DataObj {
 					}
 					Optional<byte[]> optionalBytes = wrapContext
 						.flatMap(UtilException.rethrowFunction(context ->
-							context.protoDescriptor.convertJsonToByteString(context.service,
+							context.protoDescriptor.convertJsonToByteArray(context.service,
 								context.method, original.toString(), context.isRequest)));
 					if (!optionalBytes.isPresent()) {
 						throw new Exception("Unable to get bytes from json");
