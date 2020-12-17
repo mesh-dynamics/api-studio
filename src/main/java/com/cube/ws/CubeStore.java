@@ -1949,6 +1949,7 @@ public class CubeStore {
             .entity(String.format("Server error: " + e.getMessage())).build()));
     }
 
+    @POST
     @Path("mergeRecordings/{firstRecordingId}/{secondRecordingId}")
     public void mergeRecordings(@Suspended AsyncResponse asyncResponse, @Context UriInfo uriInfo,
         @PathParam("firstRecordingId") String firstRecordingId, @PathParam("secondRecordingId") String secondRecordingId) {
