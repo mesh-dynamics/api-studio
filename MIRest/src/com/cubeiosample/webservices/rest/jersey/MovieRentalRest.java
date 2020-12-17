@@ -409,13 +409,11 @@ public class MovieRentalRest {
 	public Response getMovies(@Context HttpHeaders httpHeaders, @Context SecurityContext securityContext, @Context UriInfo uriInfo) {
 		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "getMovies")) {
 			scope.span().setTag("getMovies", "getMovies");
-			Optional<String> genreName =
-					Optional.ofNullable(uriInfo.getQueryParameters().getFirst("genreName"));
+			Optional<Integer> genreGroupId =
+					Optional.ofNullable(uriInfo.getQueryParameters().getFirst("genreGroupId")).map(Integer::valueOf);
 			JSONArray movies = null;
-			if(genreName.isPresent()) {
-				JSONObject object = mv.getGenreGroupByName(genreName.get());
-				int genreGroupId = object.getInt("genre_group_id");
-				movies = mv.getMoviesForGroup(genreGroupId);
+			if(genreGroupId.isPresent()) {
+				movies = mv.getMoviesForGroup(genreGroupId.get());
 			} else {
 				movies = mv.getAllMovies();
 			}
