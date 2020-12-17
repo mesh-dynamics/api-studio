@@ -82,7 +82,7 @@ class HttpClient extends Component {
             diffLayoutData: null,
             showCompleteDiff: false,
             prevSelectedTraceTableReqTabId: this.props.currentSelectedTab.selectedTraceTableReqTabId,
-            prevRunId: this.props.currentSelectedTab.currentRunId,
+            prevSelectedTraceTableTestReqTabId: this.props.currentSelectedTab.selectedTraceTableTestReqTabId,
             httpRequestRef: null,
             matchRequestShowPopup: false
         };
@@ -105,10 +105,10 @@ class HttpClient extends Component {
                 showCompleteDiff: false
             }
         }
-        if(props.currentSelectedTab.currentRunId != state.prevRunId){
+        if(props.currentSelectedTab.selectedTraceTableTestReqTabId != state.prevSelectedTraceTableTestReqTabId){
             newState = {
                 ...newState,
-                prevRunId: props.currentSelectedTab.currentRunId,
+                prevSelectedTraceTableTestReqTabId: props.currentSelectedTab.selectedTraceTableTestReqTabId,
                 showCompleteDiff: false
             }
         }

@@ -648,10 +648,10 @@ const deleteMockConfig = async (id: string) => {
     }
 }
 
-const forceStopRecording = async (recordingId: string) => {
+const forceStopRecording = async (recordingId: string, searchParams: URLSearchParams) => {
     try {
         const url = `${config.recordBaseUrl}/forcestop/${recordingId}`
-        return await api.post(url);
+        return await api.post(url, searchParams);
     } catch (e) {
         console.error("Error force stopping recording")
         throw e;

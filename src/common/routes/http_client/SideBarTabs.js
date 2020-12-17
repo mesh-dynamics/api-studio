@@ -212,11 +212,20 @@ class SideBarTabs extends Component {
               (eachReq) => eachReq.reqId === eachReqId
             );
             if (reqResPair.length === 1) {
-              reqResPair.push(
-                result.objects.find(
-                  (eachReq) => eachReq.eventType === "HTTPResponse"
-                )
+              const existingResponseEvent = result.objects.find(
+                (eachReq) => eachReq.eventType === "HTTPResponse"
               );
+              if(existingResponseEvent){
+                reqResPair.push(existingResponseEvent);
+              }else{
+                //Adding a initial state of response data, else we won't be able to run the request properly. 
+                const {customerId ,app ,service ,instanceId ,collection ,traceId ,parentSpanId ,runType ,timestamp ,reqId ,apiPath ,recordingType ,runId} = reqResPair[0];
+                reqResPair.push({customerId ,app ,service ,instanceId ,collection ,traceId ,parentSpanId ,
+                  runType ,timestamp ,reqId ,apiPath ,recordingType ,runId, eventType : "HTTPResponse",
+                  payload:["HTTPResponsePayload", {hdrs:{}, body:{}}]
+                });
+              }
+              
             }
             if (reqResPair.length > 0) {
               const httpRequestEventTypeIndex =
