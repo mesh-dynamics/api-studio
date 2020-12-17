@@ -118,7 +118,7 @@ const moviebookActions = {
 			},
 		} = getState();
 
-		const { name } = category;
+		const { name, genre_group_id } = category;
 
 		try {
 			if (name === "All") {
@@ -126,7 +126,7 @@ const moviebookActions = {
 			} else {
 				const response = await moviebookService.fetchMovieListByCategoryGroup(
 					token,
-					name
+					genre_group_id
 				);
 
 				dispatch(moviebookActions.loadMovieList(response.data));
@@ -229,9 +229,10 @@ const moviebookActions = {
 			dispatch(moviebookActions.getAllCategoryGroups());
 
 			dispatch(
-				moviebookActions.getMovieForSelectedCategoryGroup(
-					updateCategoryGroup
-				)
+				moviebookActions.getMovieForSelectedCategoryGroup({
+					...updateCategoryGroup,
+					genre_group_id: updateCategoryGroup.id,
+				})
 			);
 
 			dispatch(

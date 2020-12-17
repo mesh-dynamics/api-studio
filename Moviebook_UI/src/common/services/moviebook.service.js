@@ -25,8 +25,8 @@ const fetchAllCategoryGroups = async (token) => {
 	return await axios.get(url, { headers });
 };
 
-const fetchMovieListByCategoryGroup = async (token, genreName) => {
-	const url = `${config.apiBaseUrl}/getMovieList?genreName=${genreName}`;
+const fetchMovieListByCategoryGroup = async (token, genreGroupId) => {
+	const url = `${config.apiBaseUrl}/getMovieList?genreGroupId=${genreGroupId}`;
 
 	const headers = {
 		"Content-Type": "application/json",
