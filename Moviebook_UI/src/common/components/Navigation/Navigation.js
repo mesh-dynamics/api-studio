@@ -127,6 +127,8 @@ const Navigation = (props) => {
 		};
 
 		createNewCategoryGroup(newCategoryGroup);
+		setCategoryNameAtCreate("");
+		setCategoryListAtCreate([]);
 	};
 
 	const handleCategoryDeleteClick = (categoryGroup) => {
