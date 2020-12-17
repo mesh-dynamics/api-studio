@@ -504,6 +504,7 @@ spec:
         volumeMounts:
         - mountPath: "/usr/local/tomcat/webCorsAllowedOrigins.txt"
           name: cubeui-backend-config
+          subPath: webCorsAllowedOrigins.txt
       volumes:
       - name: cubeui-backend-config
         configMap:
