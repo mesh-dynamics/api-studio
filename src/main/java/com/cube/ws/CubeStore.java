@@ -1923,6 +1923,31 @@ public class CubeStore {
     }
 
     @POST
+    @Path("getAppConfigurations/{customerId}")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
+    public void getAppConfigurations(@Suspended AsyncResponse asyncResponse,
+                                        @PathParam("customerId") String customerId, List<String> apps) {
+        //default app config without any tracer
+        CustomerAppConfig defaultAppCfgNoTracer = new CustomerAppConfig.Builder()/*.withTracer(Tracer.MeshD.toString())*/
+            .build();
+
+        List<CompletableFuture<CustomerAppConfig>> futures = apps.stream().map(
+            app -> CompletableFuture.supplyAsync(
+                () -> rrstore.getAppConfiguration(customerId, app).orElse(defaultAppCfgNoTracer)))
+            .collect(Collectors.toList());
+
+        Utils.sequence(futures).thenApply(appConfigs -> {
+            Map<String, CustomerAppConfig> appCfgs = new HashMap<>();
+            for (int i = 0; i < apps.size(); i++) {
+                appCfgs.put(apps.get(i), appConfigs.get(i));
+            }
+            return asyncResponse.resume(Response.ok(appCfgs, MediaType.APPLICATION_JSON).build());
+        }).exceptionally(e -> asyncResponse.resume(Response.status(Status.INTERNAL_SERVER_ERROR)
+            .entity(String.format("Server error: " + e.getMessage())).build()));
+    }
+
+    @POST
     @Path("mergeRecordings/{firstRecordingId}/{secondRecordingId}")
     public void mergeRecordings(@Suspended AsyncResponse asyncResponse, @Context UriInfo uriInfo,
         @PathParam("firstRecordingId") String firstRecordingId, @PathParam("secondRecordingId") String secondRecordingId) {
@@ -1994,26 +2019,6 @@ public class CubeStore {
             )), e);
         }
         return recordingBuilder.build();
-    }
-
-    @Path("getAppConfigurations/{customerId}")
-    @Consumes({MediaType.APPLICATION_JSON})
-    @Produces(MediaType.APPLICATION_JSON)
-    public void getAppConfigurations(@Suspended AsyncResponse asyncResponse,
-                                        @PathParam("customerId") String customerId, List<String> apps) {
-        //default app config without any tracer
-        CustomerAppConfig defaultAppCfgNoTracer= new CustomerAppConfig.Builder()/*.withTracer(Tracer.MeshD.toString())*/.build();
-
-        List<CompletableFuture<CustomerAppConfig>> futures =  apps.stream().map(app->CompletableFuture.supplyAsync(()->rrstore.getAppConfiguration(customerId, app).orElse(defaultAppCfgNoTracer))).collect(Collectors.toList());
-
-        Utils.sequence(futures).thenApply(appConfigs->{
-            Map<String , CustomerAppConfig> appCfgs = new HashMap<>();
-            for(int i=0 ; i<apps.size() ; i++){
-                appCfgs.put(apps.get(i) , appConfigs.get(i));
-            }
-            return asyncResponse.resume(Response.ok(appCfgs , MediaType.APPLICATION_JSON).build());
-        }).exceptionally(e-> asyncResponse.resume(Response.status(Status.INTERNAL_SERVER_ERROR)
-            .entity(String.format("Server error: " + e.getMessage())).build()));
     }
 
     /**
