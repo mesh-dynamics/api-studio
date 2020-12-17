@@ -229,9 +229,10 @@ const moviebookActions = {
 			dispatch(moviebookActions.getAllCategoryGroups());
 
 			dispatch(
-				moviebookActions.getMovieForSelectedCategoryGroup(
-					updateCategoryGroup
-				)
+				moviebookActions.getMovieForSelectedCategoryGroup({
+					...updateCategoryGroup,
+					genre_group_id: updateCategoryGroup.id,
+				})
 			);
 
 			dispatch(
