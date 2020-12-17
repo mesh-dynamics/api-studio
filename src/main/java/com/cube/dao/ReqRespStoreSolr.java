@@ -3108,7 +3108,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, TRACEIDF, apiTraceFacetQuery.traceIds);
         if (addPathServiceFilter) {
             if(apiTraceFacetQuery.service.isEmpty() && apiTraceFacetQuery.apiPath.isEmpty()) {
-                addToFilterOrQuery(query , new StringBuffer() , PARENT_SPAN_ID_F , Arrays.asList("NA", ""), true , Optional.empty());
+                addToFilterOrQuery(query , new StringBuffer() , PARENT_SPAN_ID_F , Arrays.asList("NA","ffffffffffffffff",  ""), true , Optional.empty());
             }
             addFilter(query, PATHF, apiTraceFacetQuery.apiPath);
             addFilter(query, SERVICEF, apiTraceFacetQuery.service);
