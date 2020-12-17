@@ -1602,6 +1602,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(EVENTTYPEF, event.eventType.toString());
         doc.setField(RECORDING_TYPE_F, event.recordingType.toString());
         doc.setField(RUNIDF, event.runId);
+        doc.setField(SEQIDEF , event.getSeqId());
         try {
             doc.setField(PAYLOADSTRF, config.jsonMapper.writeValueAsString(event.payload));
         } catch (JsonProcessingException e) {
@@ -1646,6 +1647,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         List<String> eventMetaDataKeys = getStrFieldMV(doc, EVENT_META_DATA_KEYSF);
         List<String> eventPayloadFields = getStrFieldMV(doc , PAYLOAD_FIELDS_F);
         Optional<Double> score = getDblField(doc , SCOREF);
+        Optional<String> seqId = getStrField(doc , SEQIDEF);
 
         Map<String, String> eventMetaDataMap = new HashMap<String, String>();
         score.ifPresent(dblScore->{
@@ -1670,6 +1672,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             .withPayloadFields(eventPayloadFields);
 
         runId.ifPresent(eventBuilder::withRunId);
+        seqId.ifPresent(eventBuilder::withSeqId);
         // TODO revisit this need to construct payload properly from type and json string
         try {
             payloadStr.ifPresent(UtilException.rethrowConsumer(payload ->

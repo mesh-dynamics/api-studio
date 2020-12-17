@@ -11,7 +11,6 @@ import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
 import com.cube.sequence.SeqMgr;
 import io.md.dao.DataObj.DataObjProcessingException;
-import io.md.dao.Event.EventType;
 import io.md.injection.DynamicInjector;
 import io.md.injection.DynamicInjectorFactory;
 import java.io.ByteArrayInputStream;
@@ -21,8 +20,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 import java.util.stream.Stream;
@@ -1298,8 +1295,10 @@ public class CubeStore {
     public boolean copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp) {
         EventQuery.Builder builder = new EventQuery.Builder(fromRecording.customerId, fromRecording.app, Collections.emptyList());
         builder.withCollection(fromRecording.collection);
+        builder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
         Result<Event> result = rrstore.getEvents(builder.build());
         Map<String, String> reqIdMap = new HashMap<>();
+        final boolean[] eventCreationFailure = new boolean[1];
         Stream<Event> eventStream = result.getObjects().map(event -> {
             try {
                 String reqId = reqIdMap.get(event.getReqId());
@@ -1311,12 +1310,17 @@ public class CubeStore {
                 }
                 return buildEvent(event, toRecording.collection,  toRecording.recordingType, reqId, event.getTraceId(), Optional.of(timeStamp.toString()));
             } catch (InvalidEventException e) {
+                eventCreationFailure[0] = true;
                 LOGGER.error(new ObjectMessage(
                     Map.of(Constants.MESSAGE, "Error while creating Event",
                         Constants.RECORDING_ID, toRecording.id)), e);
             }
             return null;
-        }).filter(Objects::nonNull);
+        });/*.filter(Objects::nonNull)*/;
+        if(eventCreationFailure[0]){
+            LOGGER.error("Event Creation Failure ");
+            return false;
+        }
 
         Event[] newEvents =  SeqMgr.createSeqId(eventStream , result.numFound).toArray(Event[]::new);
         return rrstore.save(newEvents) && rrstore.commit();
@@ -1922,28 +1926,25 @@ public class CubeStore {
         return resp;
     }
 
+
     @POST
     @Path("getAppConfigurations/{customerId}")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
     public void getAppConfigurations(@Suspended AsyncResponse asyncResponse,
-                                        @PathParam("customerId") String customerId, List<String> apps) {
+        @PathParam("customerId") String customerId, List<String> apps) {
         //default app config without any tracer
-        CustomerAppConfig defaultAppCfgNoTracer = new CustomerAppConfig.Builder()/*.withTracer(Tracer.MeshD.toString())*/
-            .build();
+        CustomerAppConfig defaultAppCfgNoTracer= new CustomerAppConfig.Builder()/*.withTracer(Tracer.MeshD.toString())*/.build();
 
-        List<CompletableFuture<CustomerAppConfig>> futures = apps.stream().map(
-            app -> CompletableFuture.supplyAsync(
-                () -> rrstore.getAppConfiguration(customerId, app).orElse(defaultAppCfgNoTracer)))
-            .collect(Collectors.toList());
+        List<CompletableFuture<CustomerAppConfig>> futures =  apps.stream().map(app->CompletableFuture.supplyAsync(()->rrstore.getAppConfiguration(customerId, app).orElse(defaultAppCfgNoTracer))).collect(Collectors.toList());
 
-        Utils.sequence(futures).thenApply(appConfigs -> {
-            Map<String, CustomerAppConfig> appCfgs = new HashMap<>();
-            for (int i = 0; i < apps.size(); i++) {
-                appCfgs.put(apps.get(i), appConfigs.get(i));
+        Utils.sequence(futures).thenApply(appConfigs->{
+            Map<String , CustomerAppConfig> appCfgs = new HashMap<>();
+            for(int i=0 ; i<apps.size() ; i++){
+                appCfgs.put(apps.get(i) , appConfigs.get(i));
             }
-            return asyncResponse.resume(Response.ok(appCfgs, MediaType.APPLICATION_JSON).build());
-        }).exceptionally(e -> asyncResponse.resume(Response.status(Status.INTERNAL_SERVER_ERROR)
+            return asyncResponse.resume(Response.ok(appCfgs , MediaType.APPLICATION_JSON).build());
+        }).exceptionally(e-> asyncResponse.resume(Response.status(Status.INTERNAL_SERVER_ERROR)
             .entity(String.format("Server error: " + e.getMessage())).build()));
     }
 
@@ -2045,9 +2046,7 @@ public class CubeStore {
 
 	private Optional<String> getCurrentCollectionIfEmpty(Optional<String> collection,
 			Optional<String> customerId, Optional<String> app, Optional<String> instanceId) {
-		return collection.or(() -> {
-			return rrstore.getCurrentCollection(customerId, app, instanceId);
-		});
+		return collection.or(() -> rrstore.getCurrentCollection(customerId, app, instanceId));
 	}
 
 }
