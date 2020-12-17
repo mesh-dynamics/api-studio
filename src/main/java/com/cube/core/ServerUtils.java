@@ -207,11 +207,19 @@ public class ServerUtils {
         String oldPrefix = arrayPath.concat("/").concat(oldIndex);
         SortedMap<String , Diff> diffByPrefix =
             getByPrefix(diffMap, oldPrefix);
+        Map<String, String> tempDiffMap = new HashMap<>();
         diffByPrefix.forEach( (key, diff) -> {
-            String oldPath = key;
+            String oldPath = key.split(":")[0];
             if(oldPrefix.equals(oldPath) || oldPath.startsWith(oldPrefix.concat("/"))) {
                 diff.path = oldPath.replace(oldPrefix, arrayPath.concat("/").concat(newIndex));
+                tempDiffMap.put(key, diff.path);
             }
+        });
+
+        // Replacing old keys [old path] with [modified diff path: operation] so that repititve paths don't overwrite
+        tempDiffMap.forEach((oldKey,newKey) -> {
+            Diff val = diffMap.remove(oldKey);
+            diffMap.put(newKey+":"+val.op, val);
         });
     }
 
