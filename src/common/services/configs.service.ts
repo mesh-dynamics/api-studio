@@ -7,8 +7,10 @@ export interface IDownloadRuleArgs {
   customerId: string;
   app: string;
   eventTypes: any[];
-  collections: any[];
+  collections: string[];
   version: string;
+  indexOrderAsc?: string;
+  services?: string[];
 }
 
 export interface IUpoadRuleArgs {
@@ -32,6 +34,8 @@ const getPotentialDynamicInjectionConfigs = async (
     app: args.app,
     eventTypes: args.eventTypes,
     collections: args.collections,
+    indexOrderAsc: args.indexOrderAsc,
+    services: args.services,
   };
 
   try {
@@ -42,7 +46,9 @@ const getPotentialDynamicInjectionConfigs = async (
   }
 };
 
-const saveDynamicInjectionConfigFromJson = async (uploadArgs: IUpoadRuleArgs) => {
+const saveDynamicInjectionConfigFromJson = async (
+  uploadArgs: IUpoadRuleArgs
+) => {
   let apiEventURL = `${config.replayBaseUrl}/saveDynamicInjectionConfigFromJson`;
 
   try {
@@ -65,9 +71,7 @@ const saveDynamicInjectionConfigFromCsv = async (
   }
 };
 
-const getDynamicInjectionConfig = async (
-  args: IDownloadRuleArgs
-) => {
+const getDynamicInjectionConfig = async (args: IDownloadRuleArgs) => {
   let apiEventURL = `${config.replayBaseUrl}/getDynamicInjectionConfig/${args.customerId}/${args.app}/${args.version}`;
 
   try {

@@ -42,12 +42,12 @@ export interface IApiCatalogTableState {
   oldPagesData: any[]; //2
 }
 
-export interface IApiCatalogCompareRequest{
-  parentRequest: IApiTrace,
-  outgoingRequests: IApiTrace[],
-  parentReqId: string,
-  instance: string,
-  checked: boolean,
+export interface IApiCatalogCompareRequest {
+  parentRequest: IApiTrace;
+  outgoingRequests: IApiTrace[];
+  parentReqId: string;
+  instance: string;
+  checked: boolean;
 }
 
 export interface IApiCatalogState {
@@ -258,6 +258,43 @@ export interface IRequestContract {
 export interface IResponseContract {
   body: any; //2
 }
+export interface IPathFacets {
+  count: number;
+  val: string;
+}
+export interface IServiceFacets {
+  count: number;
+  val: string;
+  path_facets: IPathFacets[];
+}
+export interface IGoldenState_SelectedGolden {
+  app: string;
+  archived: boolean;
+  branch: null;
+  codeVersion: null;
+  collec: string;
+  collectionUpdOpSetId: null;
+  comment: null;
+  cust: string;
+  dynamicInjectionConfigVersion: null;
+  gitCommitId: null;
+  id: string;
+  instance: string;
+  jarPath: null;
+  label: string;
+  name: string;
+  prntRcrdngId: null;
+  recordingType: string;
+  rootRcrdngId: string;
+  runId: string;
+  serviceFacets: IServiceFacets[];
+  status: string;
+  tags: string[];
+  templateUpdOpSetId: string | null;
+  templateVer: string;
+  timestmp: number;
+  userId: string;
+}
 export interface IGoldenState {
   fetchComplete: boolean;
   isFetching: boolean;
@@ -267,7 +304,7 @@ export interface IGoldenState {
   responseContract: IResponseContract;
   responseExamples: IResponseContract;
   selectedApi: string;
-  selectedGolden: any; //2
+  selectedGolden: IGoldenState_SelectedGolden;
   selectedService: string;
 }
 
