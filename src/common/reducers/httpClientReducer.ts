@@ -3,6 +3,7 @@ import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import cryptoRandomString from 'crypto-random-string';
 import { ICollectionDetails, ICubeRunHistory, IHttpClientStoreState, IHttpClientTabDetails } from "./state.types";
+import { generateTraceId } from "../utils/http_client/utils";
 
 
 export interface IHttpClientAction{
@@ -799,6 +800,13 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             newTab.abortRequest = null;
             newTab.requestRunning = false;
             newTab.isHighlighted = true;
+            newTab.recordingIdAddedFromClient = ""
+            newTab.collectionIdAddedFromClient = ""
+            
+            newTab.outgoingRequests.forEach((request) => {
+                request.recordingIdAddedFromClient = ""
+                request.collectionIdAddedFromClient = ""
+            })
             return {
                 ...state,
                 tabs: [...tabs.slice(0, tabToCloneIndex + 1), newTab, ...tabs.slice(tabToCloneIndex + 1)],
