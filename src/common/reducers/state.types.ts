@@ -378,10 +378,10 @@ export interface ICubeRunHistory {
 export interface IEnvironmentConfigVars {
   key: string;
   value: string;
-  id: number;
+  id?: number;
 }
 export interface IEnvironmentConfig {
-  id: number;
+  id?: number;
   name: string;
   vars: IEnvironmentConfigVars;
 }
@@ -492,6 +492,18 @@ export interface ICollectionDetails {
   userId: string;
 }
 
+export interface IMockConfig{
+  app: string;
+  authenticate: boolean;
+  configType: string;
+  customer: string;
+  id:  number;
+  key:string;
+  service: null
+  userId: string;
+  value: string;
+}
+
 export interface IHttpClientStoreState {
   active: boolean;
   app: string;
@@ -504,7 +516,7 @@ export interface IHttpClientStoreState {
   historyTabState: IHistoryTabData;
   isCollectionLoading: boolean;
   isHistoryLoading: boolean;
-  mockConfigList: any[]; //2
+  mockConfigList: IMockConfig[];
   mockConfigStatusIsError: boolean;
   mockConfigStatusText: string;
   mockReqApiPath: string;
