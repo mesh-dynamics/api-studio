@@ -130,7 +130,7 @@ public class AppController {
         }
         App saved = this.appRepository.save(
                 App.builder()
-                        .name(appDTO.getDisplayName())
+                        .name(appDTO.getDisplayName().replaceAll(" ", ""))
                         .customer(customer.get())
                         .displayName(appDTO.getDisplayName())
                         .userId(user.getUsername())
