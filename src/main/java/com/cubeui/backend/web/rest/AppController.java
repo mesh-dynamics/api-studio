@@ -122,7 +122,8 @@ public class AppController {
             log.info("App with same display name exists");
             return ok(app);
         }
-        app = this.appRepository.findByNameAndCustomerId(appDTO.getDisplayName(), customer.get().getId());
+        String name = appDTO.getDisplayName().replaceAll("\\s+", "");
+        app = this.appRepository.findByNameAndCustomerId(name, customer.get().getId());
         if (app.isPresent())
         {
             log.info("App with same name exists");
@@ -130,7 +131,7 @@ public class AppController {
         }
         App saved = this.appRepository.save(
                 App.builder()
-                        .name(appDTO.getDisplayName().replaceAll(" ", ""))
+                        .name(name)
                         .customer(customer.get())
                         .displayName(appDTO.getDisplayName())
                         .userId(user.getUsername())
