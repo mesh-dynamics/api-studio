@@ -1,31 +1,32 @@
 import React, { Component } from 'react'
 import DatePicker from 'react-datepicker';
-import Modal from "react-bootstrap/es/Modal";
 import './APICatalog.scss';
 import { history } from '../../helpers';
 import { connect } from "react-redux";
 import _ from "lodash";
 import { apiCatalogActions } from '../../actions/api-catalog.actions';
 import classNames from 'classnames';
-import { DropdownButton, MenuItem, FormControl} from 'react-bootstrap';
 import GoldenCollectionBrowse from './GoldenCollectionBrowse';
 import ConvertCollection from './ConvertCollection';
 import AppManager from '../Navigation/AppManager';
+import { IApiCatalogCompareRequest, IApiCatalogState, ICubeState, IStoreState } from '../../reducers/state.types';
 
-class APICatalogFilter extends Component {
+export interface IAPICatalogFilterProps{
+    cube: ICubeState;
+    apiCatalog: IApiCatalogState;
+    dispatch: any;
+    currentPage: string
+}
+class APICatalogFilter extends Component<IAPICatalogFilterProps> {
 
-    constructor(props) {
-        super(props)
-    }
-
-    handleFilterChange = (metadata, value) => {
+    handleFilterChange = (metadata: string, value: any) => {
         const {dispatch} = this.props;
         dispatch(apiCatalogActions.handleFilterChange(metadata, value));
     }
 
     renderSourceDropdown = () => {
         const {apiCatalog: {selectedSource}, dispatch} = this.props;
-        const handleSourceDropDownChange = (event) => this.handleFilterChange("selectedSource", event.target.value);
+        const handleSourceDropDownChange = (event: React.ChangeEvent<HTMLSelectElement>) => this.handleFilterChange("selectedSource", event.target.value);
         const sources = [
             {value: "Capture", text: "Capture"}, 
             {value: "UserGolden", text: "Collection"}, 
@@ -67,7 +68,6 @@ class APICatalogFilter extends Component {
         return <DatePicker
         className="form-control"
         selected={new Date(endTime)}
-            className="form-control"
             showTimeSelect
             timeFormat="HH:mm"
             timeIntervals={15}
@@ -79,7 +79,7 @@ class APICatalogFilter extends Component {
 
     renderInstanceDropdown = () => {
         const {dispatch,apiCatalog: {selectedService, selectedInstance, instances}} = this.props;
-        const handleInstanceDropDownChange = (event) => this.handleFilterChange("selectedInstance", event.target.value);
+        const handleInstanceDropDownChange = (event: React.ChangeEvent<HTMLSelectElement>) => this.handleFilterChange("selectedInstance", event.target.value);
 
         return <select className="r-att form-control" placeholder="Select Instance" value={selectedInstance} onChange={handleInstanceDropDownChange} disabled={!selectedService}>
             {instances.map(instance => <option key={instance.val} value={instance.val}>{instance.val}</option>)}
@@ -107,7 +107,7 @@ class APICatalogFilter extends Component {
         ));
     }
   
-    handleCompareReqRemove = (reqData) => {
+    handleCompareReqRemove = (reqData: IApiCatalogCompareRequest) => {
         const {dispatch} = this.props;
         dispatch(apiCatalogActions.unpinCompareRequest(reqData));
     }
@@ -117,7 +117,7 @@ class APICatalogFilter extends Component {
         dispatch(apiCatalogActions.resetCompareRequest());
     }
 
-    handleCompareSubmit = (app) => {
+    handleCompareSubmit = (app: string) => {
         const {apiCatalog : {
             compareRequests
         }} = this.props;
@@ -150,7 +150,7 @@ class APICatalogFilter extends Component {
                         <div>
                             <GoldenCollectionBrowse selectedSource={selectedSource}/> 
                         </div>
-                            <ConvertCollection  selectedSource={selectedSource} />
+                            <ConvertCollection />
                         </>}
 
                             {selectedSource=="Capture" && <div>
@@ -191,7 +191,7 @@ class APICatalogFilter extends Component {
                                 {this.renderCompareData()}
                                 {compareRequests.length==2 &&
                                     <div style={{display: "flex", flexDirection: "row"}}>
-                                        <div className="cube-btn text-center width-50" style={{margin: "0 5px 0 0"}} onClick={()=> this.handleCompareSubmit(cube.selectedApp)}>COMPARE</div>
+                                        <div className="cube-btn text-center width-50" style={{margin: "0 5px 0 0"}} onClick={()=> this.handleCompareSubmit(cube.selectedApp!)}>COMPARE</div>
                                         <div className="cube-btn text-center width-50" style={{margin: "0 0 0 5px"}} onClick={this.handleCompareReset}>RESET</div>
                                     </div>
                                 }
@@ -219,7 +219,7 @@ class APICatalogFilter extends Component {
     }
 }
 
-const mapStateToProps = (state) => ({
+const mapStateToProps = (state: IStoreState) => ({
     cube: state.cube,
     apiCatalog: state.apiCatalog,
 });

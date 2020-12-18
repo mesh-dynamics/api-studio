@@ -4,7 +4,11 @@ import { UpdateParamHandler } from "./HttpResponseHeaders";
 import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
 import "./diff.css";
 import _ from "lodash";
+import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 
+export interface IHttpResponseBodyState {
+  isFormattingError: boolean;
+}
 export interface IHttpResponseBodyProps {
   responseBody: string;
   responseBodyType: string;
@@ -14,16 +18,26 @@ export interface IHttpResponseBodyProps {
   tabId: string;
   updateParam: UpdateParamHandler;
   maximizeEditorHeight: boolean;
+  isFormattingError: boolean;
 }
 
-class HttpResponseBody extends Component<IHttpResponseBodyProps> {
+class HttpResponseBody extends Component<
+  IHttpResponseBodyProps,
+  IHttpResponseBodyState
+> {
   private lhsEditor: monacoEditor.editor.IStandaloneCodeEditor;
   constructor(props: IHttpResponseBodyProps) {
     super(props);
     this.formatHandler = this.formatHandler.bind(this);
+    this.state = {
+      isFormattingError: false,
+    };
   }
 
-  shouldComponentUpdate(nextProps: IHttpResponseBodyProps) {
+  shouldComponentUpdate(
+    nextProps: IHttpResponseBodyProps,
+    nextState: IHttpResponseBodyState
+  ) {
     if (
       this.props.responseBody != nextProps.responseBody ||
       this.props.responseBodyType != nextProps.responseBodyType ||
@@ -31,28 +45,31 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
       this.props.showBody != nextProps.showBody ||
       this.props.isOutgoingRequest != nextProps.isOutgoingRequest ||
       this.props.tabId != nextProps.tabId ||
-      this.props.maximizeEditorHeight != nextProps.maximizeEditorHeight
+      this.props.maximizeEditorHeight != nextProps.maximizeEditorHeight ||
+      this.state.isFormattingError != nextState.isFormattingError
     ) {
       return true;
     }
     return false;
   }
 
-
   formatHandler() {
+    this.setState({ isFormattingError: false });
     if (this.props.responseBodyType === "json") {
       //In case of json action.run() doesn't work, hence needs to format json manually. This is mostly due to jsonworker error.
       try {
         this.lhsEditor.setValue(
           JSON.stringify(JSON.parse(this.lhsEditor.getValue()), null, "\t")
         );
-      } catch (error) {}
-    }else{
-
+      } catch (error) {
+        this.setState({ isFormattingError: true });
+        console.error("Error in formatting", error);
+      }
+    } else {
       this.lhsEditor
-      .getAction("editor.action.formatDocument")
-      ?.run()
-      .then(() => {});
+        .getAction("editor.action.formatDocument")
+        ?.run()
+        .then(() => {});
     }
   }
 
@@ -71,7 +88,7 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
     const value =
       this.props.responseBodyType !== "json"
         ? JSON.stringify(editorValue)
-        : editorValue; 
+        : editorValue;
     if (value !== this.props.recordedResponseBody) {
       this.props.updateParam(
         this.props.isOutgoingRequest,
@@ -80,6 +97,7 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
         "recordedResponseBody",
         value
       );
+      this.setState({ isFormattingError: false });
     }
   };
 
@@ -94,6 +112,9 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
     }
     return jsonString;
   }
+  hideError = () => {
+    this.setState({ isFormattingError: false });
+  };
 
   render() {
     const { showBody, tabId } = this.props;
@@ -101,6 +122,12 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
       this.props.responseBodyType == "js"
         ? "javascript"
         : this.props.responseBodyType;
+    if (this.lhsEditor) {
+      const model = this.lhsEditor.getModel();
+      if (model) {
+        monaco.editor.setModelLanguage(model, language);
+      }
+    }
     const recordedResponseBody =
       language !== "json"
         ? this.tryParseStringToHTML(this.props.recordedResponseBody)
@@ -113,6 +140,17 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
     return showBody ? (
       <div style={{ width: "100%", display: "flex" }}>
         <div style={{ width: "50%", paddingRight: "10px" }}>
+          {this.state.isFormattingError && (
+            <div style={{ color: "red" }}>
+              Couldn't format. Please validate the document for any errors.
+              <i
+                className="fa fa-times"
+                title="Hide error"
+                aria-hidden="true"
+                onClick={this.hideError}
+              ></i>
+            </div>
+          )}
           <MonacoEditor
             value={recordedResponseBody}
             language={language}
@@ -125,7 +163,7 @@ class HttpResponseBody extends Component<IHttpResponseBodyProps> {
               wordWrap: "bounded",
               wordWrapMinified: true,
               colorDecorators: true,
-
+              folding:true,
               minimap: { enabled: false },
               scrollBeyondLastLine: false,
               scrollbar: {

@@ -18,6 +18,7 @@ import {
 import { cubeService } from "../../services";
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { cubeActions } from "../../actions";
+import classNames from "classnames";
 
 export interface IConvertCollectionState {
   isPopupVisible: boolean;
@@ -274,15 +275,15 @@ class ConvertCollection extends Component<
             </div>
           </Modal.Body>
           <Modal.Footer>
-            <span
+            <Button
               onClick={this.dismissHandler}
-              className="cube-btn  margin-right-10"
+              className={classNames("cube-btn", "margin-right-5", {"disabled": this.state.isLoading})}
             >
               Close
-            </span>
-            <span onClick={this.convertToTestSuite} className="cube-btn">
-              Proceed
-            </span>
+            </Button>
+            <Button onClick={this.convertToTestSuite} className={classNames("cube-btn", {"disabled": this.state.isLoading})}>
+              Save
+            </Button>
           </Modal.Footer>
         </Modal>
       </div>

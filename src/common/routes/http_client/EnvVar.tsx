@@ -3,12 +3,21 @@ import { connect } from "react-redux";
 import {Modal,Grid, Row, Col } from 'react-bootstrap';
 import { httpClientActions } from '../../actions/httpClientActions';
 import _ from "lodash";
-
-class EnvVar extends Component {
+import { IHttpClientStoreState, IEnvironmentConfig, IStoreState } from '../../reducers/state.types';
+export interface IEnvVarState{
+    selectedEnv: IEnvironmentConfig,
+    addNew: boolean,
+}
+export interface IEnvVarProps{
+    httpClient: IHttpClientStoreState;
+    dispatch:any;
+    hideModal: ()=> void;
+}
+class EnvVar extends Component <IEnvVarProps, IEnvVarState>{
     constructor(props) {
         super(props)
         this.state = {
-            selectedEnv: {},
+            selectedEnv: {name:"", vars: []},
             addNew: false,
         }
     }
@@ -134,7 +143,7 @@ class EnvVar extends Component {
                             <table className="table table-hover">
                                 <tbody>
                                     {environmentList.map((environment, index) => (
-                                        <tr>
+                                        <tr key={index}>
                                             <td style={{cursor: "pointer"}} onClick={() => this.handleEnvRowClick(index)}>
                                                 {environment.name}
                                             </td>
@@ -159,7 +168,7 @@ class EnvVar extends Component {
                                     <label style={{ marginTop: "8px" }}>Environment Name: </label>
                                 </Col>
                                 <Col xs={6}>
-                                    <input value={selectedEnv["name"]} onChange={this.handleSelectedEnvNameChange} class="form-control"/>
+                                    <input value={selectedEnv["name"]} onChange={this.handleSelectedEnvNameChange} className="form-control"/>
                                 </Col>  
                             </Row>
                             
@@ -173,14 +182,14 @@ class EnvVar extends Component {
                                 </Row>
                                 {(selectedEnv.vars || [])
                                     .map(({key, value}, index) => (
-                                            <Row className="show-grid margin-top-10">
+                                            <Row className="show-grid margin-top-10" key={index}>
                                                 <Col xs={5}>
-                                                    <input value={key} onChange={(e) => this.handleEnvVarKeyChange(e, index)} class="form-control"/>
+                                                    <input value={key} onChange={(e) => this.handleEnvVarKeyChange(e, index)} className="form-control"/>
                                                 </Col>
                                                 <Col xs={6}>
-                                                    <input value={value} onChange={(e) => this.handleEnvVarValueChange(e, index)} class="form-control"/>
+                                                    <input value={value} onChange={(e) => this.handleEnvVarValueChange(e, index)} className="form-control"/>
                                                 </Col>
-                                                <Col xs style={{marginTop: "5px"}}>
+                                                <Col xs={1} style={{marginTop: "5px"}}>
                                                     <span  onClick={() => this.handleRemoveEnvVariable(index)}>
                                                         <i className="fas fa-times pointer"/>
                                                     </span>
@@ -211,7 +220,7 @@ class EnvVar extends Component {
     }
 }
 
-const mapStateToProps = (state) =>  ({httpClient: state.httpClient});
+const mapStateToProps = (state: IStoreState) =>  ({httpClient: state.httpClient});
 
 export default connect(mapStateToProps)(EnvVar);
 

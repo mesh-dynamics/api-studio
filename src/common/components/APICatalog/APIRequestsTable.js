@@ -361,7 +361,7 @@ class APIRequestsTable extends Component {
 
   render() {
     const { apiCatalog: {apiTraceLoading, apiFacets, selectedService, selectedApiPath, selectedInstance, apiTrace} } = this.props;
-    const apiCount = apiTrace.numFound;
+    const apiCount = apiTrace.numFound || 0;
     return (
       <div>
         <div className="header-container">

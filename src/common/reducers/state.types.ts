@@ -42,6 +42,14 @@ export interface IApiCatalogTableState {
   oldPagesData: any[]; //2
 }
 
+export interface IApiCatalogCompareRequest {
+  parentRequest: IApiTrace;
+  outgoingRequests: IApiTrace[];
+  parentReqId: string;
+  instance: string;
+  checked: boolean;
+}
+
 export interface IApiCatalogState {
   apiCatalogTableState: IApiCatalogTableState;
   apiFacets: any; //2
@@ -49,7 +57,7 @@ export interface IApiCatalogState {
   apiTrace: any; //2
   apiTraceLoading: boolean;
   collectionList: ICollectionDetails[];
-  compareRequests: any[]; //2
+  compareRequests: IApiCatalogCompareRequest[];
   diffRequestLeft: any; //2
   diffRequestRight: any; //2
   diffResponseLeft: any; //2
@@ -250,6 +258,43 @@ export interface IRequestContract {
 export interface IResponseContract {
   body: any; //2
 }
+export interface IPathFacets {
+  count: number;
+  val: string;
+}
+export interface IServiceFacets {
+  count: number;
+  val: string;
+  path_facets: IPathFacets[];
+}
+export interface IGoldenState_SelectedGolden {
+  app: string;
+  archived: boolean;
+  branch: null;
+  codeVersion: null;
+  collec: string;
+  collectionUpdOpSetId: null;
+  comment: null;
+  cust: string;
+  dynamicInjectionConfigVersion: null;
+  gitCommitId: null;
+  id: string;
+  instance: string;
+  jarPath: null;
+  label: string;
+  name: string;
+  prntRcrdngId: null;
+  recordingType: string;
+  rootRcrdngId: string;
+  runId: string;
+  serviceFacets: IServiceFacets[];
+  status: string;
+  tags: string[];
+  templateUpdOpSetId: string | null;
+  templateVer: string;
+  timestmp: number;
+  userId: string;
+}
 export interface IGoldenState {
   fetchComplete: boolean;
   isFetching: boolean;
@@ -259,7 +304,7 @@ export interface IGoldenState {
   responseContract: IResponseContract;
   responseExamples: IResponseContract;
   selectedApi: string;
-  selectedGolden: any; //2
+  selectedGolden: IGoldenState_SelectedGolden;
   selectedService: string;
 }
 
@@ -333,10 +378,10 @@ export interface ICubeRunHistory {
 export interface IEnvironmentConfigVars {
   key: string;
   value: string;
-  id: number;
+  id?: number;
 }
 export interface IEnvironmentConfig {
-  id: number;
+  id?: number;
   name: string;
   vars: IEnvironmentConfigVars;
 }
@@ -447,6 +492,18 @@ export interface ICollectionDetails {
   userId: string;
 }
 
+export interface IMockConfig{
+  app: string;
+  authenticate: boolean;
+  configType: string;
+  customer: string;
+  id:  number;
+  key:string;
+  service: null
+  userId: string;
+  value: string;
+}
+
 export interface IHttpClientStoreState {
   active: boolean;
   app: string;
@@ -459,7 +516,7 @@ export interface IHttpClientStoreState {
   historyTabState: IHistoryTabData;
   isCollectionLoading: boolean;
   isHistoryLoading: boolean;
-  mockConfigList: any[]; //2
+  mockConfigList: IMockConfig[];
   mockConfigStatusIsError: boolean;
   mockConfigStatusText: string;
   mockReqApiPath: string;

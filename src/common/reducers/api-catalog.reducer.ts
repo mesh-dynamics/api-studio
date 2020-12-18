@@ -126,6 +126,7 @@ export const apiCatalog : Reducer<IApiCatalogState> = (state = initialState, { t
                 apiPaths: data.apiPaths,
                 services: data.services,
                 instances: data.instances,
+                apiTrace: {}
             }
         }
 
@@ -197,6 +198,13 @@ export const apiCatalog : Reducer<IApiCatalogState> = (state = initialState, { t
         }
         case apiCatalogConstants.RESET_API_CATALOG_TO_INITIAL_STATE: {
             return initialState;
+        }
+
+        case apiCatalogConstants.MERGE_STATE: {
+            return {
+                ...state,
+                ...data
+            }
         }
         default:
             return state;

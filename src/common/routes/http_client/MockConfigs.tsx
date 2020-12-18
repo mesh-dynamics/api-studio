@@ -3,8 +3,20 @@ import { connect } from "react-redux";
 import { Modal, Grid, Row, Col, Checkbox, Tabs, Tab, FormGroup, FormControl, ControlLabel, Form} from 'react-bootstrap';
 import { httpClientActions } from '../../actions/httpClientActions';
 import _ from "lodash";
-
-class MockConfigs extends Component {
+import { IHttpClientStoreState, IStoreState, IUserAuthDetails, IMockConfig } from '../../reducers/state.types';
+export interface IMockConfigsState{
+    selectedEditMockConfig: any, //Need to verify type: {name: string; serviceConfigs: []}
+    selectedEditMockConfigId: number | null,
+    addNew: boolean,
+    selectedTabKey : number;
+}
+export interface IMockConfigsProps{
+    httpClient: IHttpClientStoreState;
+    user: IUserAuthDetails;
+    dispatch:any;
+    hideModal: ()=>void;
+}
+class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
     constructor(props) {
         super(props)
         this.state = {
@@ -88,6 +100,7 @@ class MockConfigs extends Component {
     handleRemoveServiceConfig = (index) => {
         let {selectedEditMockConfig} = this.state;
         selectedEditMockConfig.serviceConfigs.splice(index, 1)
+        this.setMockConfigStatusText("", false)
         this.setState({selectedEditMockConfig})
     }
 
@@ -376,7 +389,7 @@ class MockConfigs extends Component {
     }
 }
 
-const mapStateToProps = (state) => ({
+const mapStateToProps = (state: IStoreState) => ({
     httpClient: state.httpClient,
     user: state.authentication.user
 });
