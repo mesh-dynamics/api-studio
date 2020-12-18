@@ -207,7 +207,7 @@ class HttpClientTabs extends Component {
             let httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
             let httpResponseEvent = eventData[httpResponseEventTypeIndex];
             let httpRequestEvent = eventData[httpRequestEventTypeIndex];
-            if(httpResponseEvent)
+            if(httpResponseEvent && refHttpResponseEvent)
             {
                 httpResponseEvent.payload = refHttpResponseEvent.payload;
             }
