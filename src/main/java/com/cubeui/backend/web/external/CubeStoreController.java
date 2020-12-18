@@ -489,4 +489,22 @@ public class CubeStoreController {
         return cubeServerService.fetchPostResponse(request, postBody,
             String.format("/cs/copyRecording/%s/%s", recordingId, user.getUsername()));
     }
+
+    @PostMapping("/mergeRecordings/{firstRecordingId}/{secondRecordingId}")
+    public  ResponseEntity mergeRecordings(HttpServletRequest request,
+        @PathVariable String firstRecordingId, @PathVariable String secondRecordingId,
+        Authentication authentication, @RequestBody Optional<String> postBody) {
+        Optional<Recording> recording = cubeServerService.getRecording(firstRecordingId);
+        if(recording.isEmpty())
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("No Recording found for recordingId=" + firstRecordingId);
+        validation.validateCustomerName(authentication,recording.get().customerId);
+
+        recording = cubeServerService.getRecording(secondRecordingId);
+        if(recording.isEmpty())
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("No Recording found for recordingId=" + secondRecordingId);
+        validation.validateCustomerName(authentication,recording.get().customerId);
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
 }
