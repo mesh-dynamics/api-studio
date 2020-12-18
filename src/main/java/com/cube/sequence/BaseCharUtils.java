@@ -16,6 +16,7 @@ class BaseCharUtils {
     private static String VALID_SEQ_CHARS = numericLetters + alphabetsCapitalLetters + alphabetsSmallLetters ;
     public static final String BASE_CHARS = VALID_SEQ_CHARS.chars().distinct().sorted().mapToObj(c->Character.valueOf((char)c).toString()).collect(Collectors.joining());
     public static final int BASE_LEN = BASE_CHARS.length();
+    public static final String PADDING_CHAR = String.valueOf(BASE_CHARS.charAt(0));
     private static final Map<Character , Integer> BASE_CHARS_POSITIONS;// = BASE_CHARS.chars().mapToObj(c->(char)c).collect(Collectors.toMap(c->c , c->BASE_CHARS.indexOf(c)));
 
     private static final Map<Integer , String> paddingCache = new HashMap<>();
@@ -50,13 +51,13 @@ class BaseCharUtils {
         return val;
     }
 
-    private static String padding(int length){
+    public static String padding(int length){
 
         if(length==0) return "";
 
         String padding = paddingCache.get(length);
         if(padding==null){
-            padding = String.valueOf(BASE_CHARS.charAt(0)).repeat(length);
+            padding = PADDING_CHAR.repeat(length);
             paddingCache.put(length , padding);
         }
         return padding;

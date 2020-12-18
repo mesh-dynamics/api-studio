@@ -11,6 +11,8 @@ import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
 import com.cube.sequence.SeqMgr;
 import io.md.dao.DataObj.DataObjProcessingException;
+import io.md.dao.Event.EventType;
+import io.md.dao.EventQuery.Builder;
 import io.md.injection.DynamicInjector;
 import io.md.injection.DynamicInjectorFactory;
 import java.io.ByteArrayInputStream;
@@ -20,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
 import java.util.stream.Stream;
@@ -1322,8 +1325,91 @@ public class CubeStore {
             return false;
         }
 
-        Event[] newEvents =  SeqMgr.createSeqId(eventStream , result.numFound).toArray(Event[]::new);
-        return rrstore.save(newEvents) && rrstore.commit();
+        // unique requests will be almost half. 0.6 to be on safe side
+        long estimatedReqSize = (long)(result.numResults*0.6) +1;
+        //check whether num of results and numFound are same
+        Event[] newEvents =  SeqMgr.createSeqId(eventStream , estimatedReqSize).toArray(Event[]::new);
+        boolean batchSaveResult = rrstore.save(newEvents) && rrstore.commit();
+        return batchSaveResult;
+    }
+
+    @POST
+    @Path("moveEvents/{recordingId}")
+    @Consumes("application/x-www-form-urlencoded")
+    @Produces(MediaType.APPLICATION_JSON)
+    public void moveEvents(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui, @PathParam("recordingId") String recordingId , MultivaluedMap<String, String> formParams ) {
+
+        Optional<String> insertAfterEventSeqId = Optional.ofNullable(formParams.getFirst(Constants.INSERT_AFTER_SEQ_ID));
+        List<String> moveEventIds = Optional.ofNullable(formParams.get(Constants.REQ_IDS_FIELD)).orElse(new ArrayList<>());
+
+        Optional<Recording>  recordingType =  rrstore.getRecording(recordingId);
+        if(recordingType.isEmpty() || moveEventIds.isEmpty()){
+            String errorMsg = recordingType.isEmpty() ? "No such Recording Type found. RecordingId : "+recordingId : "Move Events Ids are not provided";
+            asyncResponse.resume(Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).
+                entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE, errorMsg)).build());
+            return;
+        }
+
+        Recording recording = recordingType.get();
+        Optional<String> insertBeforeEventSeqId = getNextSeqIdEvent(recording , insertAfterEventSeqId).map(e->e.getSeqId());
+        if(insertBeforeEventSeqId.isEmpty() && insertAfterEventSeqId.isEmpty()){
+            String errorMsg = "Invalid insert before SeqId";
+            asyncResponse.resume(Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).
+                entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE, errorMsg)).build());
+            return;
+        }
+
+        CompletableFuture.supplyAsync(()->{
+            try{
+                Map<String , String> newReqIdSeqIdMap =  insertEvents(recording , insertAfterEventSeqId , insertBeforeEventSeqId , moveEventIds);
+                Response response = Response.ok().type(MediaType.APPLICATION_JSON).entity(newReqIdSeqIdMap).build()
+                return asyncResponse.resume(response);
+            }catch (Exception e){
+                throw new CompletionException(e);
+            }
+        }).exceptionally(throwable -> {
+            LOGGER.error("Error "+throwable.getMessage());
+            Response response = Response.status(Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON).entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"Error while inserting events events" + throwable.getMessage())).build();
+            return asyncResponse.resume(response);
+        });
+    }
+
+    private Map<String , String> insertEvents(Recording recording , Optional<String> insertAfterEventSeqId , Optional<String> insertBeforeEventSeqId ,   List<String> moveEventIds) throws Exception{
+        EventQuery.Builder builder = new EventQuery.Builder(recording.customerId , recording.app , Collections.EMPTY_LIST);
+        builder.withCollection(recording.collection).withSeqIdAsc(true).withReqIds(moveEventIds);
+
+        Result<Event> result = rrstore.getEvents(builder.build());
+        if(result.numFound!=moveEventIds.size()*2){
+            throw new Exception("Did not get all the events for reqIds. Found:"+result.numFound + " expected:"+moveEventIds.size());
+        }
+
+        List<Event> moveEvents = result.getObjects().collect(Collectors.toList());
+        //check whether insertAfter & insertbefore seqId range is valid
+
+        boolean invalidRange = moveEvents.stream().filter(e->e.eventType==EventType.HTTPRequest).anyMatch(event -> {
+            String seqId = event.getSeqId();
+            return insertAfterEventSeqId.map(id->id.equals(seqId)).orElse(false) || insertBeforeEventSeqId.map(id->id.equals(seqId)).orElse(false);
+        });
+        if(invalidRange){
+            throw new Exception("Invalid Range for MoveEvents");
+        }
+
+        Event[] newEvents =  SeqMgr.insertBetween(insertAfterEventSeqId , insertBeforeEventSeqId , moveEvents.stream() , moveEventIds.size()).toArray(Event[]::new);
+        boolean batchSaveResult = rrstore.save(newEvents) && rrstore.commit();
+        if(!batchSaveResult){
+            throw new Exception("Error saving the batch events");
+        }
+        return Arrays.stream(newEvents).filter(e->e.eventType==EventType.HTTPRequest).collect(Collectors.toMap(e->e.reqId , e->e.getSeqId()));
+    }
+
+
+    private Optional<Event> getNextSeqIdEvent(Recording recording , Optional<String> insertAfterEventSeqId){
+
+        EventQuery.Builder builder = new EventQuery.Builder(recording.customerId , recording.app , EventType.HTTPRequest);
+        builder.withCollection(recording.collection).withSeqIdAsc(true).withLimit(1);
+        insertAfterEventSeqId.ifPresent(builder::withStartSeqId);
+
+        return rrstore.getSingleEvent(builder.build());
     }
 
     @POST

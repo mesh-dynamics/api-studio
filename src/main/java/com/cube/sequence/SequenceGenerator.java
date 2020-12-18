@@ -57,8 +57,9 @@ public class SequenceGenerator implements Iterable<String> {
 
     public static void main(String[] args){
 
-        SequenceGenerator gen1 = new SequenceGenerator(62);
-        SequenceGenerator gen2 = new SequenceGenerator(50 , 2000 , 2 , 15 );
+        SequenceGenerator gen1 = new SequenceGenerator(100);
+        //SequenceGenerator gen2 = new SequenceGenerator(50 , 2000 , 2 , 15 );
+        SequenceGenerator gen2 = new SequenceGenerator(50 , 2400 , 2 , 15 );
         for(String val : gen2){
 
             System.out.println(val + " : " +convertToNumber(val) );

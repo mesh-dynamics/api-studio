@@ -108,6 +108,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private static final Logger LOGGER = LogManager.getLogger(ReqRespStoreSolr.class);
 
+    public static final int EVENT_BATCH_SIZE = 200;
+
 /*
     @Override
     public void invalidateCacheFromTemplateSet(TemplateSet templateSet)
@@ -132,8 +134,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public boolean save(Event... events) {
         if(events.length==1) return saveDocs(eventToSolrDoc(events[0]));
 
-        SolrInputDocument[] docs = Arrays.stream(events).map(this::eventToSolrDoc).toArray(SolrInputDocument[]::new);
-        return saveDocs(docs);
+        //save in a batch of size EVENT_BATCH_SIZE
+        boolean failure =  BatchingIterator.batchedStreamOf(Arrays.stream(events).map(this::eventToSolrDoc) , EVENT_BATCH_SIZE).map(solrInputDocuments -> {
+            SolrInputDocument[] docs = solrInputDocuments.toArray(SolrInputDocument[]::new);
+            return saveDocs(docs);
+        }).anyMatch(result->!result);
+
+        return !failure;
     }
 
     @Override
@@ -362,8 +369,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         addToFilterIntOrQuery(query , queryBuff , PAYLOADKEYF , eventQuery.getPayloadKey(), true , eventQuery.getPayloadKeyWeight());
 
-        // starting from timestamp, non inclusive
-        addRangeFilter(query, TIMESTAMPF, eventQuery.getStartTimestamp(), eventQuery.getEndTimestamp(), eventQuery.getEndTimestamp().isPresent() , true);
+        if(eventQuery.getStartTimestamp().isPresent() || eventQuery.getEndTimestamp().isPresent()){
+            // starting from timestamp, non inclusive
+            addDateRangeFilter(query, TIMESTAMPF, eventQuery.getStartTimestamp(), eventQuery.getEndTimestamp(), eventQuery.getEndTimestamp().isPresent() , true);
+        }
+
+        if(eventQuery.getStartSeqId().isPresent() || eventQuery.getEndSeqId().isPresent()){
+            addRangeFilter(query , SEQIDEF , eventQuery.getStartSeqId() , eventQuery.getEndSeqId() , false , false);
+        }
 
         addFilter(query, PAYLOAD_FIELDS_F , eventQuery.getPayloadFields());
 
@@ -968,7 +981,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, INSTANCEIDF, cubeMetaInfo.instance);
         addFilter(query, SERVICEF, cubeMetaInfo.serviceName);
         Instant startTimeStamp = Instant.now().minusSeconds(forLastNsec);
-        addRangeFilter(query, TIMESTAMPF, Optional.of(startTimeStamp), Optional.empty(), true, true);
+        addDateRangeFilter(query, TIMESTAMPF, Optional.of(startTimeStamp), Optional.empty(), true, true);
 //        addSort(query, TIMESTAMPF, false);
 
         if(facetOnNodeSelected) {
@@ -1435,7 +1448,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         query.addFilterQuery(prefix + " ( " + filter + " ) ");
     }
 
-    private static String getRangeFilterString(String fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive, boolean endInclusive) {
+    private static String getDateRangeFilterString(String fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive, boolean endInclusive) {
         // epoch millis of 0 is a special case. convert back to * to cover full range
         String startDateVal = startDate.isPresent() && startDate.get().toEpochMilli() > 0 ?
             SolrIterator.escapeQueryChars(startDate.get().toString()) :
@@ -1445,15 +1458,30 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return String.format(queryFmt, fieldname, startDateVal, endDateVal);
     }
 
+    private static String getRangeFilterString(String fieldname, Optional<String> start, Optional<String> end, boolean startInclusive, boolean endInclusive) {
+
+        String startVal = start.isPresent() ? start.get() : "*";
+        String endVal = end.isPresent() ? end.get() : "*";
+        String queryFmt = "%s:" + (startInclusive ? "[": "{") + "%s TO %s" + (endInclusive ? "]" : "}");
+        return String.format(queryFmt, fieldname, startVal, endVal);
+    }
+
+
     private static void addOrRangeFilter(SolrQuery query, List<String> fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive,
             boolean endInclusive) {
-        String rangeQuery = fieldname.stream().map(v -> getRangeFilterString(v, startDate, endDate, startInclusive, endInclusive))
+        String rangeQuery = fieldname.stream().map(v -> getDateRangeFilterString(v, startDate, endDate, startInclusive, endInclusive))
             .collect(Collectors.joining(" OR ", "( ", " )"));
         query.addFilterQuery(rangeQuery);
     }
 
-    private static void addRangeFilter(SolrQuery query,String fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive, boolean endInclusive) {
-        query.addFilterQuery(getRangeFilterString(fieldname, startDate, endDate, startInclusive, endInclusive));
+    private static void addDateRangeFilter(SolrQuery query,String fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive, boolean endInclusive) {
+        query.addFilterQuery(
+            getDateRangeFilterString(fieldname, startDate, endDate, startInclusive, endInclusive));
+    }
+
+    private static void addRangeFilter(SolrQuery query,String fieldname, Optional<String> startSeqId, Optional<String> endSeqId, boolean startInclusive, boolean endInclusive) {
+        query.addFilterQuery(
+            getRangeFilterString(fieldname, startSeqId, endSeqId, startInclusive, endInclusive));
     }
 
     private static void addWeightedPathFilter(SolrQuery query , String fieldName , String originalPath) {
@@ -3072,7 +3100,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, CUSTOMERIDF, apiTraceFacetQuery.customerId);
         addFilter(query, APPF, apiTraceFacetQuery.appId);
         addFilter(query, INSTANCEIDF, apiTraceFacetQuery.instanceId);
-        addRangeFilter(query, TIMESTAMPF, apiTraceFacetQuery.startDate,
+        addDateRangeFilter(query, TIMESTAMPF, apiTraceFacetQuery.startDate,
             apiTraceFacetQuery.endDate, true, false);
         boolean includeEmpty = apiTraceFacetQuery.recordingType
                 .map(v -> v.equals(RecordingType.Golden.toString()))
