@@ -122,7 +122,13 @@ public class AppController {
             log.info("App with same display name exists");
             return ok(app);
         }
-        String name = UUID.randomUUID().toString();
+        String name = appDTO.getDisplayName().replaceAll("\\s+", "");
+        app = this.appRepository.findByNameAndCustomerId(name, customer.get().getId());
+        if (app.isPresent())
+        {
+            log.info("App with same name exists");
+            return ok(app);
+        }
         App saved = this.appRepository.save(
                 App.builder()
                         .name(name)

@@ -76,6 +76,8 @@ public class CustomerService {
     private CollectionCreationService collectionCreationService;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private AppFileStorageService appFileStorageService;
 
     public Optional<Customer> getByName(String name) {
         return customerRepository.findByName(name);
@@ -110,9 +112,11 @@ public class CustomerService {
                     .displayName("Default")
                     .customer(customer.get())
                     .build());
+            this.appFileStorageService.storeFile(null, defaultApp);
             if(md_cloud) {
                 Optional<App> app = createMovieInfoAppForCustomer(customer.get());
                 if(app.isPresent()) {
+                    this.appFileStorageService.storeFile(null, app.get());
                     collectionCreationService.createSampleCollectionForCustomer(httpServletRequest, customer.get(), app.get());
                 }
             }
