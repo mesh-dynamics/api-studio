@@ -19,6 +19,7 @@ import {
 import classNames from "classnames";
 import { cubeService } from "../../services";
 import _ from "lodash";
+import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import ErrorBoundary from "../ErrorHandling/ErrorBoundary";
 import authActions from "../../actions/auth.actions";
 
@@ -180,6 +181,7 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
         dispatch(cubeActions.getTestConfigByAppId(cube.selectedAppObj!.app.id));
         dispatch(cubeActions.getTestIds(selectedApp.app.name));
         dispatch(cubeActions.setSelectedTestIdAndVersion("", ""));
+        dispatch(apiCatalogActions.refreshApiCatalogCollections());
       });
     }
   };

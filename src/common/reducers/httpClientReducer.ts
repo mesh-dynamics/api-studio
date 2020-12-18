@@ -393,6 +393,13 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             }
         }
 
+        case httpClientConstants.MERGE_STATE: {
+            return {
+                ...state,
+                ...data
+            }
+        }
+
         case httpClientConstants.UNSET_HAS_CHANGED_ALL: {
             let {tabs} = state;
             return {

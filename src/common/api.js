@@ -9,6 +9,8 @@ import auth from "./actions/auth.actions";
 import { getAccesToken } from "./utils/lib/common-utils";
 import createAuthRefreshInterceptor from "axios-auth-refresh";
 import { refreshAuthLogic, retryRequest } from "./services/auth.service";
+import commonUtils from "./utils/commonUtils";
+import _ from "lodash";
 
 export function getApi() {
   const api = axios.create();
@@ -47,7 +49,22 @@ export function getApi() {
   });
 
   api.interceptors.response.use(
-    (response) => response.data,
+    (response) => {
+      const contentHeader = response.headers["content-disposition"];
+      if (contentHeader) {
+        let fileName = "file name here";
+        const fileNameAt = contentHeader.indexOf("filename=");
+        if (fileNameAt > -1) {
+          fileName = _.trim(contentHeader.substr(fileNameAt + 9), " \";='");
+        }
+        const data = _.isString(response.data) ? response.data : JSON.stringify(response.data);
+        commonUtils.downloadAFileToClient(fileName, data);
+        return {
+          isFileDownloaded: true,
+        };
+      }
+      return response.data;
+    },
     (error) => {
       const status = error.response ? error.response.status : null;
       if ((status === 401 || status == 403) && window.authRefeshInProgress) {

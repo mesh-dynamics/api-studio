@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Tabs, Tab } from 'react-bootstrap';
 import AgentConfig from "../../components/Configs/Agent-Config/AgentConfig";
 import TestConfig from "../../components/Configs/Test-Config/TestConfig";
-
+import ContextPropagationRules from '../../components/Configs/ContextPropagationRules/ContextPropagationRules';
 
 class Config extends Component {
 
@@ -23,6 +23,11 @@ class Config extends Component {
                     <Tab eventKey={2} title="Agent Configurations">
                         <div className="margin-top-20">
                             <AgentConfig />
+                        </div>
+                    </Tab>
+                    <Tab eventKey={3} title="Context Propagation Rules">
+                        <div className="margin-top-20">
+                            <ContextPropagationRules />
                         </div>
                     </Tab>
                 </Tabs>

@@ -1,10 +1,14 @@
 import React, { Component } from 'react'
 import { connect } from "react-redux";
-import { APICountTable } from './APICountTable'
 import { APIRequestsTable } from './APIRequestsTable'
 import './APICatalog.scss';
-
-class APICatalogAPIView extends Component {
+import { IApiCatalogState, IStoreState } from '../../reducers/state.types';
+export interface IAPICatalogAPIViewProps{
+    setCurrentPage: (page:string) => void;
+    app: string; //This can be removed from props passed but can be taken from redux
+    apiCatalog: IApiCatalogState;
+}
+class APICatalogAPIView extends Component<IAPICatalogAPIViewProps> {
     componentDidMount() {
         this.props.setCurrentPage("api");
     }
@@ -23,7 +27,7 @@ class APICatalogAPIView extends Component {
     }
 }
 
-const mapStateToProps = (state) => ({
+const mapStateToProps = (state: IStoreState) => ({
     apiCatalog: state.apiCatalog
 });
 

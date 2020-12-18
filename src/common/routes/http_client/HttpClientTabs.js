@@ -207,14 +207,16 @@ class HttpClientTabs extends Component {
             let httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
             let httpResponseEvent = eventData[httpResponseEventTypeIndex];
             let httpRequestEvent = eventData[httpRequestEventTypeIndex];
-
-            httpResponseEvent.payload = refHttpResponseEvent.payload;
+            if(httpResponseEvent)
+            {
+                httpResponseEvent.payload = refHttpResponseEvent.payload;
+            }
             httpRequestEvent.payload = refHttpRequestEvent.payload;
 
             let tabData = {
                 id: toBeUpdatedData.id,
                 tabName: toBeUpdatedData.tabName,
-                requestId: toBeUpdatedData.requestId, // from the original request. diff fails in case of setAsReference
+                requestId: toBeCopiedFromData.requestId,
                 httpMethod: toBeCopiedFromData.httpMethod,
                 httpURL: toBeCopiedFromData.httpURL,
                 httpURLShowOnly: toBeCopiedFromData.httpURLShowOnly,
@@ -277,8 +279,9 @@ class HttpClientTabs extends Component {
             }
         })
         copiedTab.outgoingRequests = [...tabToBeProcessed.outgoingRequests, ...outgoingRequests];
-        copiedTab.selectedTraceTableReqTabId = copiedTab.id
-        copiedTab.selectedTraceTableTestReqTabId = recordedHistory.id
+        copiedTab.selectedTraceTableReqTabId = copiedTab.id;
+        copiedTab.selectedTraceTableTestReqTabId = recordedHistory.id;
+        copiedTab.requestId = recordedHistory.requestId;
         return copiedTab;
     }
 
@@ -289,7 +292,7 @@ class HttpClientTabs extends Component {
         const tabToBeUpdated = tabs[tabIndex];
 
         let updatedTab = this.setAsReferenceForEachRequest(tabToBeUpdated);
-        updatedTab = JSON.parse(JSON.stringify(updatedTab));
+        updatedTab = _.cloneDeep(updatedTab);
         dispatch(httpClientActions.setAsReference(tabId, updatedTab));
         setTimeout(() => {
             // this.saveToCollection(false, tabId, tabToBeUpdated.recordingIdAddedFromClient, "UserGolden");
@@ -1298,18 +1301,22 @@ class HttpClientTabs extends Component {
         if (_.isArray(headersReceived)) {
             headersReceived.forEach(each => {
                 if (each.name && each.value) {
-                    if(headers[each.name]){
-                        headers[each.name] = [...headers[each.name], this.getValueBySaveType(each.value, type)];
+                    const nameRendered = this.getValueBySaveType(each.name, type)
+                    const valueRendered = this.getValueBySaveType(each.value, type)
+                    if(headers[nameRendered]){
+                        headers[nameRendered] = [...headers[nameRendered], valueRendered];
                     }else{
-                        headers[each.name] = [this.getValueBySaveType(each.value, type)];
+                        headers[nameRendered] = [valueRendered];
                     }
                 }
             });
         } else if (_.isObject(headersReceived)) {
             Object.keys(headersReceived).map((eachHeader) => {
                 if (eachHeader && headersReceived[eachHeader]) {
-                    if(_.isArray(headersReceived[eachHeader])) headers[eachHeader] = this.getValueBySaveType(headersReceived[eachHeader], type);
-                    if(_.isString(headersReceived[eachHeader])) headers[eachHeader] = [this.getValueBySaveType(headersReceived[eachHeader], type)];
+                    const nameRendered = this.getValueBySaveType(eachHeader, type)
+                    const valueRendered = this.getValueBySaveType(headersReceived[eachHeader], type);
+                    if(_.isArray(headersReceived[eachHeader])) headers[nameRendered] = valueRendered;
+                    if(_.isString(headersReceived[eachHeader])) headers[nameRendered] = [valueRendered];
                 }
             })
         }
@@ -1321,10 +1328,12 @@ class HttpClientTabs extends Component {
         let qsParams = {};
         httpRequestQueryStringParams.forEach(each => {
             if (each.name && each.value) {
-                if(qsParams[each.name]){
-                    qsParams[each.name] = [...qsParams[each.name], this.getValueBySaveType(each.value, type)];
-                }else{
-                    qsParams[each.name] = [this.getValueBySaveType(each.value, type)];
+                const nameRendered = this.getValueBySaveType(each.name, type)
+                const valueRendered = this.getValueBySaveType(each.value, type)
+                if (qsParams[nameRendered]) {
+                    qsParams[nameRendered] = [...qsParams[nameRendered], valueRendered];
+                } else {
+                    qsParams[nameRendered] = [valueRendered];
                 }
             }
         })
@@ -1336,10 +1345,12 @@ class HttpClientTabs extends Component {
         if (_.isArray(httpRequestBody)) {
             httpRequestBody.forEach(each => {
                 if (each.name && each.value) {
-                    if(formData[each.name]){
-                        formData[each.name] = [...formData[each.name], this.getValueBySaveType(each.value, type)];
+                    const nameRendered = this.getValueBySaveType(each.name, type)
+                    const valueRendered = this.getValueBySaveType(each.value, type)
+                    if(formData[nameRendered]){
+                        formData[nameRendered] = [...formData[nameRendered], valueRendered];
                     }else{
-                        formData[each.name] = [this.getValueBySaveType(each.value, type)];
+                        formData[nameRendered] = [valueRendered];
                     }
                 }
             })
@@ -1378,8 +1389,6 @@ class HttpClientTabs extends Component {
         // let apiPath = this.getPathName(applyEnvVarsToUrl(tabToSave.httpURL));
         const parsedUrl = urlParser(applyEnvVarsToUrl(tabToSave.httpURL), PLATFORM_ELECTRON ? {} : true);
         let apiPath = _.trim(generateApiPath(parsedUrl), '/');
-        httpRequestEvent.metaData.httpURL = tabToSave.httpURL;
-        httpResponseEvent.metaData.httpURL = tabToSave.httpURL;
 
         if(httpRequestEvent.reqId === "NA") {
             let service = httpRequestEvent.service != "NA" ? httpRequestEvent.service : (parsedUrl.host || "NA");
@@ -1391,6 +1400,12 @@ class HttpClientTabs extends Component {
             httpRequestEvent = this.updateHttpEvent(apiPath, "", httpRequestEvent);
             httpResponseEvent = this.updateHttpEvent(apiPath, "", httpResponseEvent);
         }
+
+        if(!httpResponseEvent.metaData){
+            httpResponseEvent.metaData = {};
+        }
+        httpRequestEvent.metaData.httpURL = tabToSave.httpURL;
+        httpResponseEvent.metaData.httpURL = tabToSave.httpURL;
 
         if(httpRequestEvent.parentSpanId === null) {
             httpRequestEvent.parentSpanId = "NA"
@@ -1616,7 +1631,7 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.setUpdatedModalUserCollectionDetails(evt.target.name, evt.target.value));
     }
 
-    formatHttpEventToReqResObject(reqId, httpEventReqResPair, isOutgoingRequest=false) {
+    formatHttpEventToReqResObject(reqId, httpEventReqResPair, isOutgoingRequest, existingId) {
         const httpRequestEventTypeIndex = httpEventReqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
         const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
         const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
@@ -1625,7 +1640,7 @@ class HttpClientTabs extends Component {
         const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
         
         let reqObject = {
-            id: uuidv4(),
+            id: existingId || uuidv4(),
             httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
             httpURL: httpRequestEvent.metaData.httpURL || httpRequestEvent.apiPath,
             httpURLShowOnly: httpRequestEvent.metaData.httpURL || httpRequestEvent.apiPath,
@@ -1698,18 +1713,32 @@ class HttpClientTabs extends Component {
                 if (reqIdArray && reqIdArray.length > 0) {
                     const eventTypes = [];
                     cubeService.fetchAPIEventData(customerId, app, reqIdArray, eventTypes, apiConfig).then((result) => {
+                        
+                        const { httpClient: {tabs} } = this.props;
+                        const currentTabRecordedHistory = tabs.find(tab => tab.id == tabId).recordedHistory;
                         if(result && result.numResults > 0) {
                             const ingressReqResPair = result.objects.filter(eachReq => eachReq.apiPath === apiPath);
                             let ingressReqObj;
                             if (ingressReqResPair.length > 0) {
-                                ingressReqObj = this.formatHttpEventToReqResObject(reqId, ingressReqResPair, false);
+                                let existingId = "";
+                                if(isRefetchTrace && currentTabRecordedHistory && currentTabRecordedHistory.requestId == reqId){
+                                    existingId = currentTabRecordedHistory.id;
+                                }
+                                ingressReqObj = this.formatHttpEventToReqResObject(reqId, ingressReqResPair, false, existingId);
                             }
                             for (let eachReqId of reqIdArray) {
                                 const reqResPair = result.objects.filter(eachReq => {
                                     return (eachReq.reqId === eachReqId && eachReq.apiPath !== apiPath);
                                 });
                                 if (reqResPair.length > 0 && eachReqId !== reqId) {
-                                    let reqObject = this.formatHttpEventToReqResObject(eachReqId, reqResPair, true);
+                                    let existingId = "";
+                                    if(currentTabRecordedHistory && isRefetchTrace && currentTabRecordedHistory.outgoingRequests){
+                                        const matchigRequest = _.find(currentTabRecordedHistory.outgoingRequests, { requestId : eachReqId});
+                                        if(matchigRequest){
+                                            existingId = matchigRequest.id;
+                                        }
+                                    }
+                                    let reqObject = this.formatHttpEventToReqResObject(eachReqId, reqResPair, true, existingId);
                                     ingressReqObj.outgoingRequests.push(reqObject);
                                 }
                             }

@@ -1,4 +1,4 @@
-import React, { Component, Fragment, createContext } from "react";
+import React, { Fragment } from "react";
 import EnvVar from "./EnvVar";
 import { connect } from "react-redux";
 import { getCurrentEnvironment } from "../../utils/http_client/envvar";
@@ -6,20 +6,26 @@ import { httpClientActions } from "../../actions/httpClientActions";
 import _ from "lodash";
 
 //Remove unused Components later
+import { FormControl, FormGroup, Modal } from "react-bootstrap";
 import {
-  FormControl,
-  FormGroup,
-  Tabs,
-  Tab,
-  Panel,
-  Label,
-  Modal,
-  Button,
-  ControlLabel,
-  Glyphicon,
-} from "react-bootstrap";
+  IEnvironmentConfig,
+  IStoreState,
+} from "../../reducers/state.types";
 
-class EnvironmentSection extends React.Component {
+export interface IEnvironmentSectionState {
+  showEnvVarModal: boolean;
+  showSelectedEnvModal: boolean;
+}
+export interface IEnvironmentSectionProps {
+  environmentList: IEnvironmentConfig[];
+  selectedEnvironment: string;
+  dispatch: any;
+}
+
+class EnvironmentSection extends React.Component<
+  IEnvironmentSectionProps,
+  IEnvironmentSectionState
+> {
   constructor(props) {
     super(props);
     this.state = {
@@ -29,9 +35,7 @@ class EnvironmentSection extends React.Component {
   }
 
   renderEnvListDD = () => {
-    const {
-      httpClient: { environmentList, selectedEnvironment },
-    } = this.props;
+    const { environmentList, selectedEnvironment } = this.props;
     return (
       <FormGroup bsSize="small" style={{ marginBottom: "0px" }}>
         <FormControl
@@ -42,7 +46,9 @@ class EnvironmentSection extends React.Component {
           onChange={this.handleEnvChange}
           className="btn-sm"
         >
-          <option value="NONE" disabled>Select Environment</option>
+          <option value="NONE" disabled>
+            Select Environment
+          </option>
           <option value="">No Environment</option>
           {environmentList.length &&
             environmentList.map((env) => (
@@ -62,7 +68,7 @@ class EnvironmentSection extends React.Component {
 
   renderSelectedEnvModal = () => {
     const {
-      httpClient: { environmentList, selectedEnvironment },
+      environmentList, selectedEnvironment
     } = this.props;
 
     const currentEnvironment = getCurrentEnvironment(
@@ -160,12 +166,14 @@ class EnvironmentSection extends React.Component {
   }
 }
 
-function mapStateToProps(state) {
-  const { cube, apiCatalog, httpClient } = state;
+function mapStateToProps(state: IStoreState) {
+  const {
+    httpClient: { environmentList, selectedEnvironment },
+  } = state;
+
   return {
-    cube,
-    apiCatalog,
-    httpClient,
+    environmentList,
+    selectedEnvironment,
   };
 }
 

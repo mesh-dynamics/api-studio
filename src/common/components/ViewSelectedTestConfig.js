@@ -561,8 +561,11 @@ class ViewSelectedTestConfig extends React.Component {
                 "Authorization": `Bearer ${access_token}`
             }
         };
+        const searchParams = new URLSearchParams();
+        searchParams.set('resettag', `default${selectedApp}Noop`);
+
         // axios.post(stopUrl, {}, configForHTTP)
-        api.post(stopUrl, {}, configForHTTP).then(() => {
+        api.post(stopUrl, searchParams, configForHTTP).then(() => {
             this.setState({ recId: null, stoppingStatus: true});
             this.stopStatusInterval = setInterval(
                 () => { 
@@ -681,7 +684,14 @@ class ViewSelectedTestConfig extends React.Component {
     
     handleForceStopRecording = (recordingId) => {
         try {
-            cubeService.forceStopRecording(recordingId)
+
+            const {cube: { 
+                selectedApp, 
+            }} = this.props;
+            const searchParams = new URLSearchParams();
+            searchParams.set('resettag', `default${selectedApp}Noop`);
+
+            cubeService.forceStopRecording(recordingId, searchParams)
         } catch (error) {
             console.error("Unable to force stop recording: " + error)
             alert("Unable to force stop recording")
