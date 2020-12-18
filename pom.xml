@@ -6,7 +6,7 @@
   <groupId>com.cube.utils</groupId>
   <packaging>jar</packaging>
   <artifactId>cubeui-backend-utils</artifactId>
-  <version>1.4</version>
+  <version>1.5</version>
   <properties>
     <version.java>8</version.java>
     <org.projectlombok.version>1.18.10</org.projectlombok.version>

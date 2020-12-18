@@ -24,6 +24,7 @@ import java.util.Optional;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.*;
 import org.springframework.http.*;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import static org.springframework.http.ResponseEntity.status;
@@ -86,14 +87,19 @@ public class ReadJson {
                 JSONObject body =  readJson.createCustomer(customer);
                 ResponseEntity response = FetchResponse.fetchResponse(url+"/api/customer/save", HttpMethod.POST, token,Optional.of(body));
                 int customerId =  Integer.parseInt(FetchResponse.getDataField(response,"id").toString());
+                String customerName = FetchResponse.getDataField(response,"name").toString();
                 body = readJson.createJiraCustomer(customer.getJiraCredentials(), customerId);
                 FetchResponse.fetchResponse(url+"/api/jira/customer", HttpMethod.POST, token, Optional.of(body));
                 Map<Integer, List<Integer>> instanceMap = new HashMap<>();
                 List<Integer> appIds = new ArrayList<>();
                 for(Apps app: customer.getApps())
                 {
-                    body = readJson.createApp(app,customerId);
-                    response = FetchResponse.fetchResponse(url+"/api/app", HttpMethod.POST, token, Optional.of(body));
+                    body = readJson.createApp(app,customerName);
+                    LinkedMultiValueMap<String, String> bodyForApp = new LinkedMultiValueMap<>();
+                    List list = new ArrayList<>();
+                    list.add(body.toString());
+                    bodyForApp.put("app", list);
+                    response = FetchResponse.fetchResponse(url+"/api/app", HttpMethod.POST, token, Optional.of(bodyForApp), MediaType.MULTIPART_FORM_DATA_VALUE.toString());
                     int appId = Integer.parseInt(FetchResponse.getDataField(response,"id").toString());
                     appIds.add(appId);
                     List<Integer> instanceIds = new ArrayList<>();
@@ -215,10 +221,10 @@ public class ReadJson {
         return json;
     }
 
-    private JSONObject createApp(Apps app, int customerId) {
+    private JSONObject createApp(Apps app, String customerName) {
         JSONObject json = new JSONObject();
-        json.put("name", app.getName());
-        json.put("customerId", customerId);
+        json.put("displayName", app.getName());
+        json.put("customerName", customerName);
         return json;
     }
 

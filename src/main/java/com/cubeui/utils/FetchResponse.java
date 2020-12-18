@@ -17,16 +17,15 @@ import org.springframework.web.client.RestTemplate;
 public class FetchResponse {
   private static RestTemplate restTemplate= new RestTemplate();
 
-  public static <T> ResponseEntity fetchResponse(String path, HttpMethod method, String token, Optional<T> requestBody) throws Exception{
+  public static <T> ResponseEntity fetchResponse(String path, HttpMethod method, String token, Optional<T> requestBody, String... args) throws Exception{
     ResponseEntity response;
     try {
       URI uri = new URI(path);
       HttpHeaders headers = new HttpHeaders();
-      headers.add("Content-Type", "application/json");
+      headers.add("Content-Type", args.length > 0 ? args[0] : "application/json");
       headers.add("Authorization", token);
       HttpEntity<T> entity = requestBody.map(body -> new HttpEntity<>(body, headers)).orElseGet(() -> new HttpEntity<>(headers));
-      response = restTemplate.exchange(uri, method, entity, String.class);
-      return response;
+      return restTemplate.exchange(uri, method, entity, String.class);
     } catch (HttpClientErrorException e){
       response = status(e.getStatusCode()).body("HttpClientErrorException");
       return response;
