@@ -51,7 +51,7 @@ class APIRequestsTable extends Component {
             filters = {...filters, apiPath: selectedApiPath}
           }
           if(!(selectedService || selectedApiPath)){
-            filters = {parentSpanId: "NA"};
+            filters = function(req){ return req.parentSpanId== "NA" || req.parentSpanId == "ffffffffffffffff"};
           }
           const parentRequest = _.find(requests, filters);
           if (!parentRequest) {
