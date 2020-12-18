@@ -369,6 +369,10 @@ const generateSpanId = (tracer) => {
     return cryptoRandomString({length:16})
 }
 
+const generateSpecialParentSpanId = (tracer) => {
+    return "ffffffffffffffff"    
+}
+
 export { 
     generateRunId,
     getStatusColor,
@@ -386,4 +390,5 @@ export {
     Base64Binary,
     generateTraceId,
     generateSpanId,
+    generateSpecialParentSpanId,
 };
