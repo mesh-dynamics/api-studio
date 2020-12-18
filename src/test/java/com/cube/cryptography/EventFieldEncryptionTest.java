@@ -16,6 +16,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.md.cryptography.EncryptionAlgorithm;
 import io.md.cryptography.EncryptionAlgorithmFactory;
 import io.md.cryptography.JcaEncryption;
@@ -78,10 +80,13 @@ public class EventFieldEncryptionTest {
 	{
 		try {
 			Config config = new Config();
-			Optional<Event> eventOptional = config.rrstore
-				.getResponseEvent("restwrapjdbc-mock-314cffbc-d7c2-4893-8381-328cfa3ce118");
-			Assertions.assertNotEquals(Optional.empty(), eventOptional);
-			Event event = eventOptional.get();
+			ObjectMapper jsonMapper = config.jsonMapper;
+//			Optional<Event> eventOptional = config.rrstore
+//				.getResponseEvent("movieinfo-3ab8628aae25e01455101a63baecb427-9557461b-ecbc-4f94-a012-6ada0087378c");
+//			Assertions.assertNotEquals(Optional.empty(), eventOptional);
+//			Event event = eventOptional.get();
+			String eventAsJson = "{\"customerId\":\"CubeCorp\",\"app\":\"MovieInfo\",\"service\":\"movieinfo\",\"instanceId\":\"a88ae53fe879d0d8ccd05a4ddc1c7b7cbd446ed4\",\"collection\":\"904f4351-5f87-4b5d-95f9-095b6c04b617-86bd7053-2078-4bc7-b018-aae2627323df\",\"traceId\":\"3ab8628aae25e01455101a63baecb427\",\"spanId\":null,\"parentSpanId\":\"NA\",\"runType\":\"Replay\",\"timestamp\":1607087667.111000000,\"reqId\":\"movieinfo-3ab8628aae25e01455101a63baecb427-9557461b-ecbc-4f94-a012-6ada0087378c\",\"apiPath\":\"minfo/rentmovie\",\"eventType\":\"HTTPResponse\",\"payload\":[\"HTTPResponsePayload\",{\"hdrs\":{\":status\":[\"200\"],\"content-length\":[\"50\"],\"content-type\":[\"application/json\"],\"date\":[\"Fri, 04 Dec 2020 13:14:17 GMT\"],\"x-envoy-upstream-service-time\":[\"1022\"]},\"status\":200,\"body\":{\"inventory_id\":19759,\"rent\":1.98,\"num_updates\":1},\"payloadState\":\"UnwrappedDecoded\",\"payloadFields\":[\"/status:200\"]}],\"recordingType\":\"Replay\",\"metaData\":{\"score\":\"1.0\"},\"runId\":\"904f4351-5f87-4b5d-95f9-095b6c04b617-86bd7053-2078-4bc7-b018-aae2627323df 2020-12-04T13:14:02.098586Z\",\"payloadFields\":[\"/status:200\"]}";
+			Event event = jsonMapper.readValue(eventAsJson, Event.class);
 			JSONObject services = object.getJSONObject("services");
 			String passPhrase = object.getString("passPhrase");
 			if(services.has(event.service)) {
