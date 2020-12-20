@@ -6,12 +6,17 @@ import org.java_websocket.drafts.Draft_6455;
 import org.java_websocket.enums.ReadyState;
 import org.java_websocket.framing.Framedata;
 import org.java_websocket.handshake.ServerHandshake;
+import org.java_websocket.server.DefaultSSLWebSocketServerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
@@ -96,7 +101,7 @@ public class CubeWsClient extends WebSocketClient {
             if(sendLatch.getCount()>0){
                 sendLatch.countDown();
             }
-            LOGGER.warn("disabling ws logging");
+            LOGGER.error("disabling cube ws logging");
             CubeLogMgr.setLoggingEnabled(false);
         }
     }
@@ -156,7 +161,7 @@ public class CubeWsClient extends WebSocketClient {
 
                 reconnector.clearErrorHistory();
             }catch (Exception e){
-                LOGGER.error("Log send errror" , e);
+                LOGGER.error("Log send error" , e);
                 reconnector.addErrorHistory(System.currentTimeMillis());
             }
 
@@ -173,13 +178,17 @@ public class CubeWsClient extends WebSocketClient {
             try{
                 boolean connectAgain = false;
                 if(this.getReadyState() == ReadyState.NOT_YET_CONNECTED){
-                    this.sendLatch.await();
+                    LOGGER.warn("waiting for connection to connect");
+                    //this.sendLatch.await();
                 }else if(this.isClosing()){
-                    this.closeBlocking();
-                    connectAgain = true;
+                    LOGGER.warn("waiting for connection to close");
+                    this.close();
+                    //this.closeBlocking();
+                    //connectAgain = true;
                     //this.reconnectBlocking();
                 }else if(this.isClosed()){
                     connectAgain = true;
+                    LOGGER.warn("connection is closed. Connecting again");
                     //this.reconnectBlocking();
                 }
                 if(connectAgain) this.reconnect(); // This is async and does not block
