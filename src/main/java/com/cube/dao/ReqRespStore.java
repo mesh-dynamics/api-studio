@@ -4,7 +4,7 @@
 package com.cube.dao;
 
 import io.cube.agent.UtilException;
-import io.md.core.ConfigApplicationAcknowledge;
+import io.md.core.*;
 import io.md.dao.*;
 import io.md.dao.Event.EventType;
 import io.md.dao.ProtoDescriptorDAO;
@@ -33,18 +33,14 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import io.cube.agent.FnReqResponse;
 import io.md.constants.ReplayStatus;
-import io.md.core.AttributeRuleMap;
-import io.md.core.Comparator;
-import io.md.core.CompareTemplate;
-import io.md.core.TemplateKey;
 import io.md.dao.Event.RunType;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.services.DataStore;
 import io.md.services.FnResponse;
 import io.md.injection.DynamicInjectionConfig;
+import com.cube.learning.InjectionExtractionMeta;
 import io.md.utils.Constants;
 
-import com.cube.dao.ReqRespStoreImplBase.CollectionKey;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.golden.TemplateSet;
@@ -147,8 +143,6 @@ public interface ReqRespStore extends DataStore {
 	boolean updateAgentConfigTag(AgentConfigTagInfo tagInfo);
 
 	boolean saveAgentConfigAcknowledge(ConfigApplicationAcknowledge confApplicationAck);
-
-	public void populateCache(CollectionKey collectionKey, RecordOrReplay rr);
 
 	Pair<Result<ConfigApplicationAcknowledge> , List>getLatestAgentConfigAcknowledge(
 		io.md.dao.CubeMetaInfo cubeMetaInfo, boolean facetOnNodeSelected, int forLastNsec);
@@ -404,7 +398,19 @@ public interface ReqRespStore extends DataStore {
      */
     boolean saveMatchResultAggregate(MatchResultAggregate resultAggregate, String customerId);
 
-	/**
+    /**
+     *
+     * @param customer
+     * @param app
+     * @param version
+     * @param injectionExtractionMetaList
+     * @return
+     */
+    String saveDynamicInjectionConfigFromCsv(String customer, String app, String version,
+                                             List<InjectionExtractionMeta> injectionExtractionMetaList)
+        throws SolrStoreException;
+
+    /**
 	 * @param dynamicInjectionConfig
 	 * @return
 	 */
