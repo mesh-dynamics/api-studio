@@ -671,8 +671,9 @@ public class AnalyzeWS {
 		    facetMap.put(Constants.DIFF_PATH_FACET, resultWithFacets.diffPathFacets);
 
 		    numFound[0] = result.numFound;
+		    Optional<Analysis> analysisOpt = rrstore.getAnalysis(replayId);
             app[0] = replay.app;
-            app[1] = replay.templateVersion;
+            app[1] = analysisOpt.map(analysis -> analysis.templateVersion).orElse(replay.templateVersion);
             List<ReqRespMatchResult> res = result.getObjects()
                 .collect(Collectors.toList());
             List<String> reqIds = res.stream().map(r -> r.recordReqId).flatMap(Optional::stream)
