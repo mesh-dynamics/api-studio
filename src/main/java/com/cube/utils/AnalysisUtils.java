@@ -37,9 +37,7 @@ public class AnalysisUtils {
 		String updateOperations, ObjectMapper jsonMapper, ReqRespStore rrStore) throws Exception {
 
 		TypeReference<HashMap<TemplateKey, SingleTemplateUpdateOperation>> typeReference =
-			new TypeReference<>() {
-			};
-
+			new TypeReference<>() {};
 		Map<TemplateKey, SingleTemplateUpdateOperation> updates = jsonMapper
 			.readValue(updateOperations,
 				typeReference);

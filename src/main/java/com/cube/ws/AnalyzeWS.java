@@ -932,8 +932,9 @@ public class AnalyzeWS {
     }
 
 	@POST
-	@Path("analyze/{replayId}")
-	@Consumes("application/x-www-form-urlencoded")
+	@Path("analyzeWithUpdates/{replayId}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response analyzeWithUpdates(@Context UriInfo uriInfo, @PathParam("replayId") String replayId,
 		String templateUpdateOperations) {
 		TypeReference<HashMap<TemplateKey, SingleTemplateUpdateOperation>> typeReference =
