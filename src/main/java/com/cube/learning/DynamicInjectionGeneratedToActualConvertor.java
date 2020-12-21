@@ -2,12 +2,14 @@ package com.cube.learning;
 
 import com.cube.learning.InjectionExtractionMeta.ExtractionConfig;
 import io.md.injection.DynamicInjectionConfig;
-import com.cube.learning.InjectionExtractionMeta;
 import java.util.*;
 
 public class DynamicInjectionGeneratedToActualConvertor {
 
-    HashSet<InjectionExtractionMeta.ExtractionConfig> generatedExtractionConfigHashSet = new HashSet<>();
+    // Not using static vars as a single instance is expected to be created of this class.
+
+    // This map holds Master extraction config object pointers to avoid duplicate extraction configs.
+    HashMap<InjectionExtractionMeta.ExtractionConfig, InjectionExtractionMeta.ExtractionConfig> generatedExtractionConfigHashMap = new HashMap<>();
     List<DynamicInjectionConfig.ExtractionMeta> actualExtractionConfigList = new ArrayList<>();
     List<DynamicInjectionConfig.InjectionMeta> actualInjectionConfigList = new ArrayList<>();
 
@@ -28,11 +30,17 @@ public class DynamicInjectionGeneratedToActualConvertor {
 
         for (InjectionExtractionMeta injectionExtractionMeta : injectionExtractionMetaList) {
             // Make sure only unique extraction configs survive
-            if (!generatedExtractionConfigHashSet.contains(injectionExtractionMeta.extractionConfig)){
-                injectionExtractionMeta.extractionConfig.nameSuffix = getNameSuffix(
+
+            ExtractionConfig extractionConfig = generatedExtractionConfigHashMap.get(injectionExtractionMeta.extractionConfig);
+
+            if (extractionConfig == null) {
+                // This is the first instance, and henceforth the Master instance
+                extractionConfig = injectionExtractionMeta.extractionConfig;
+                extractionConfig.nameSuffix = getNameSuffix(
                     injectionExtractionMeta.extractionConfig.apiPath,
                     injectionExtractionMeta.extractionConfig.jsonPath);
-                generatedExtractionConfigHashSet.add(injectionExtractionMeta.extractionConfig);
+                // Put this extraction config as the reference for all subsequent injections using this
+                generatedExtractionConfigHashMap.put(extractionConfig, extractionConfig);
             }
 
             DynamicInjectionConfig.InjectionMeta actualInjectionConfig = new DynamicInjectionConfig.InjectionMeta(
@@ -40,7 +48,7 @@ public class DynamicInjectionGeneratedToActualConvertor {
                 injectionExtractionMeta.injectionConfig.jsonPath,
                 false,
                 String.format("${Golden.Request: %s}" +
-                        injectionExtractionMeta.extractionConfig.nameSuffix,
+                        extractionConfig.nameSuffix,
                     injectionExtractionMeta.injectionConfig.jsonPath),
                 null,
                 injectionExtractionMeta.injectionConfig.method,
@@ -49,7 +57,7 @@ public class DynamicInjectionGeneratedToActualConvertor {
             actualInjectionConfigList.add(actualInjectionConfig);
         }
 
-        for (ExtractionConfig extractionConfig : generatedExtractionConfigHashSet) {
+        for (ExtractionConfig extractionConfig : generatedExtractionConfigHashMap.values()) {
             // Uniqueness in injection configs is assumed to be ensured in the imported csv
             DynamicInjectionConfig.ExtractionMeta actualExtractionConfig = new DynamicInjectionConfig.ExtractionMeta(
                 extractionConfig.apiPath,
