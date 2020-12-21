@@ -52,7 +52,7 @@ public class Event implements MDStorable {
 			@JsonProperty("eventType") EventType eventType, @JsonProperty("payload") Payload payload,
 			@JsonProperty("payloadKey") int payloadKey, @JsonProperty("recordingType") RecordingType recordingType,
 			@JsonProperty("metaData") Map<String, String> metaData, @JsonProperty("runId") String runId,
-			@JsonProperty("payloadFields") List<String> payloadFields) {
+			@JsonProperty("payloadFields") List<String> payloadFields, @JsonProperty("seqId") String seqId) {
 		this.customerId = customerId;
 		this.app = app;
 		this.service = service;
@@ -72,6 +72,7 @@ public class Event implements MDStorable {
 		this.metaData = metaData;
 		this.runId = runId != null ? runId : this.traceId;
 		this.payloadFields = payloadFields!=null && !payloadFields.isEmpty() ? payloadFields : payload != null ? payload.getPayloadFields() : Collections.EMPTY_LIST;
+		if(seqId!=null) this.seqId = seqId;
 	}
 
 	public static List<EventType> getRequestEventTypes() {
@@ -113,6 +114,7 @@ public class Event implements MDStorable {
 			Validate.notNull(payload);
 			Validate.isTrue(!payload.isRawPayloadEmpty());
 			Validate.notNull(payloadFields);
+			Validate.notNull(seqId);
 		} catch (Exception ex) {
 			throw new InvalidEventException("Invalid Event Object " + ex.getMessage(), ex);
 		}
@@ -280,6 +282,7 @@ public class Event implements MDStorable {
 	public RecordingType recordingType;
 	public final Map<String, String> metaData;
 	public final List<String> payloadFields;
+	private String seqId = "";
 
 	@JsonIgnore
 	public int payloadKey;
@@ -319,6 +322,15 @@ public class Event implements MDStorable {
 		metaData.put(field , val);
 	}
 
+	public String getSeqId() {
+		return seqId;
+	}
+
+	public void setSeqId(String seqId) {
+		this.seqId = seqId;
+	}
+
+
 	public static class EventBuilder {
 
 		private static final Logger LOGGER = LogMgr.getLogger(EventBuilder.class);
@@ -342,6 +354,7 @@ public class Event implements MDStorable {
 		private Map<String, String> metaData = new HashMap<>(0);
 		private String runId;
 		private List<String> payloadFields = Collections.EMPTY_LIST;
+		private String seqId = "";
 
 		public EventBuilder(String customerId, String app, String service, String instanceId,
 			String collection, MDTraceInfo mdTraceInfo,
@@ -407,11 +420,16 @@ public class Event implements MDStorable {
 			return this;
 		}
 
+		public EventBuilder withSeqId(String nSeqId){
+			this.seqId = nSeqId;
+			return this;
+		}
+
 
 		public Event createEvent() throws io.md.dao.Event.EventBuilder.InvalidEventException {
 			Event event = new Event(customerId, app, service, instanceId, collection, traceId
 				, spanId, parentSpanId, runType, timestamp.orElse(Instant.now()), reqId, apiPath,
-				eventType , payload, payloadKey, recordingType, metaData, runId , payloadFields);
+				eventType , payload, payloadKey, recordingType, metaData, runId , payloadFields , seqId);
 			if (event.validate()) {
 				return event;
 			} else {

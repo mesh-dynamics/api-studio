@@ -164,7 +164,7 @@ public class RealMocker implements Mocker {
     }
 
     private static EventQuery buildRequestEventQuery(Event event, int offset, Optional<Integer> limit,
-        boolean isSortOrderAsc, Optional<Instant> lowerBoundForMatching, String collection ,
+        boolean isTimestampSortOrderAsc, Optional<Instant> lowerBoundForMatching, String collection ,
         List<String> payloadFields , Optional<JoinQuery> joinQuery , boolean isDevtoolRequest , Optional<ReplayContext> replayContext) {
         EventQuery.Builder builder =
             new EventQuery.Builder(event.customerId, event.app, event.eventType)
@@ -175,7 +175,7 @@ public class RealMocker implements Mocker {
                 .withTraceId(event.getTraceId() , (isDevtoolRequest || replayContext.isPresent()) ? EventQuery.TRACEID_WEIGHT : null)
                 .withPayloadKey(event.payloadKey , isDevtoolRequest ? EventQuery.PAYLOAD_KEY_WEIGHT : null)
                 .withOffset(offset)
-                .withSortOrderAsc(isSortOrderAsc)
+                .withTimestampAsc(isTimestampSortOrderAsc)
                 .withPayloadFields(payloadFields)
                 .withRunTypes(nonMockRunTypes);
         if(replayContext.isPresent()){

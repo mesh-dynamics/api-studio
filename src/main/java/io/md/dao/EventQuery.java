@@ -40,15 +40,18 @@ public class EventQuery {
     private final Optional<Instant> startTimestamp;
     private final Optional<Instant> endTimestamp;
 
+    private final Optional<String> startSeqId ;
+    private final Optional<String> endSeqId;
+
+
     private final List<String> reqIds;
     private final List<String> paths;
     private final boolean excludePaths;
     private final Optional<Integer> payloadKey;
     private final Optional<Integer> offset;
     private final Optional<Integer> limit;
-    private final Optional<Boolean> sortOrderAsc;
-    private final boolean indexOrderAsc;
 
+    private final LinkedHashMap<String , Boolean> sortingOrder;
     private final List<String> payloadFields;
     private final Map<String , Float> orQueryWeightage;
     private final Optional<JoinQuery> joinQuery;
@@ -67,17 +70,24 @@ public class EventQuery {
         private String parentSpanId = null;
         private Instant startTimestamp = null;
         private Instant endTimestamp = null;
+        private String startSeqId = null;
+        private String endSeqId   = null;
         private List<String> reqIds = Collections.emptyList();
         private List<String> paths = Collections.emptyList();
         private boolean excludePaths = false;
         private Integer payloadKey = null;
         private Integer offset = null;
         private Integer limit = null;
-        private Boolean sortOrderAsc = null;
-        private boolean indexOrderAsc = false;
+
+        private LinkedHashMap<String , Boolean> sortingOrder = new LinkedHashMap<>();
         private List<String> payloadFields = Collections.EMPTY_LIST;
         private Map<String , Float> orQueryWeightage = new HashMap<>();
         private Optional<JoinQuery> joinQuery = Optional.empty();
+
+        {
+            // By default score field is first priority with desc order
+            sortingOrder.put(Constants.SCORE_FIELD , false);
+        }
 
         //@JsonCreator
         public Builder(String customerId,
@@ -252,6 +262,17 @@ public class EventQuery {
             return this;
         }
 
+        public Builder withStartSeqId(String seqId) {
+            startSeqId = seqId;
+            return this;
+        }
+
+        public Builder withEndSeqId(String seqId) {
+            endSeqId = seqId;
+            return this;
+        }
+
+
         @JsonSetter(nulls = Nulls.FAIL)
         public Builder withReqId(String val) {
             reqIds = Arrays.asList(val);
@@ -336,13 +357,34 @@ public class EventQuery {
             return this;
         }
 
-        public Builder withSortOrderAsc(Boolean val) {
-            sortOrderAsc = val;
+        public Builder withSortingOrder(LinkedHashMap<String, Boolean> order) {
+            sortingOrder = order;
             return this;
         }
 
-        public Builder withIndexOrderAsc(boolean val) {
-            indexOrderAsc = val;
+        /*
+        public Builder withIndexAsc(boolean asc){
+            sortingOrder.clear();
+            return withTimestampAsc(asc);
+        }*/
+
+        public Builder withTimestampAsc(boolean asc){
+            sortingOrder.put(Constants.TIMESTAMP_FIELD , asc);
+            return this;
+        }
+        public Builder withScoreAsc(boolean asc){
+            sortingOrder.put(Constants.SCORE_FIELD , asc);
+            return this;
+        }
+
+        // Remove the default scoring order
+        public Builder withoutScoreOrder(){
+            sortingOrder.remove(Constants.SCORE_FIELD);
+            return this;
+        }
+
+        public Builder withSeqIdAsc(boolean asc){
+            sortingOrder.put(Constants.SEQID_FIELD , asc);
             return this;
         }
 
@@ -351,14 +393,6 @@ public class EventQuery {
             this.payloadFields = pyldFields;
             return this;
         }
-
-        /*
-        public Builder withPayloadFields(List<String> pyldFields , Float weight){
-            this.payloadFields = pyldFields;
-            orQueryWeightage.put(Constants.PAYLOAD_FIELDS_FIELD, weight);
-            return this;
-        }
-        */
 
         public Builder withJoinQuery(JoinQuery joinQuery){
             this.joinQuery = Optional.ofNullable(joinQuery);
@@ -390,11 +424,12 @@ public class EventQuery {
         payloadKey = Optional.ofNullable(builder.payloadKey);
         offset = Optional.ofNullable(builder.offset);
         limit = Optional.ofNullable(builder.limit);
-        sortOrderAsc = Optional.ofNullable(builder.sortOrderAsc);
-        indexOrderAsc = builder.indexOrderAsc;
+        sortingOrder = builder.sortingOrder;
         orQueryWeightage = builder.orQueryWeightage;
         payloadFields = builder.payloadFields;
         joinQuery = builder.joinQuery;
+        startSeqId = Optional.ofNullable(builder.startSeqId);
+        endSeqId = Optional.ofNullable(builder.endSeqId);
     }
 
     public String getCustomerId() {
@@ -469,20 +504,20 @@ public class EventQuery {
         return limit;
     }
 
-    public Optional<Boolean> isSortOrderAsc() {
-        return sortOrderAsc;
+    public LinkedHashMap<String, Boolean> getSortingOrder() {
+        return sortingOrder;
     }
 
-    public boolean isIndexOrderAsc() {
-        return indexOrderAsc;
-    }
-
-    public Optional<Instant> getStartTimestamp() {
-        return startTimestamp;
-    }
+    public Optional<Instant> getStartTimestamp() { return startTimestamp; }
 
     public Optional<Instant> getEndTimestamp() {
         return endTimestamp;
+    }
+
+    public Optional<String> getStartSeqId() { return startSeqId; }
+
+    public Optional<String> getEndSeqId() {
+        return endSeqId;
     }
 
     @JsonIgnore

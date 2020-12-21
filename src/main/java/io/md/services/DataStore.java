@@ -6,6 +6,7 @@
 
 package io.md.services;
 
+import java.util.Collection;
 import java.util.Optional;
 
 import io.md.core.CollectionKey;
@@ -69,7 +70,7 @@ public interface DataStore {
      */
     boolean saveResult(ReqRespMatchResult res, String customerId);
 
-    boolean save(Event event);
+    boolean save(Event... events);
 
     boolean saveReplay(Replay replay);
 

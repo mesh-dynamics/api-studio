@@ -160,6 +160,9 @@ public class Constants {
 	public static final String IS_NODE_SELECTED = "isNodeSelected";
 	public static final String RECORDING_TYPE_FIELD = "recordingType";
 	public static final String SCORE_FIELD = "score";
+	public static final String SEQID_FIELD = "seqId";
+	public static final String ID_FIELD = "id";
+
 
 	public static final String ROOT_RECORDING_FIELD = "root_recording_id";
 	public static final String PARENT_RECORDING_FIELD = "parent_recording_id";
