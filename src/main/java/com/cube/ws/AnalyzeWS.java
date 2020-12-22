@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -56,6 +57,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -140,16 +143,17 @@ public class AnalyzeWS {
 	@POST
     @Path("analyze/{replayId}")
     @Consumes("application/x-www-form-urlencoded")
-    public Response analyze(@Context UriInfo ui, @PathParam("replayId") String replayId,
-                            MultivaluedMap<String, String> formParams) {
-        String tracefield = Optional.ofNullable(formParams.get("tracefield"))
-            .flatMap(vals -> vals.stream().findFirst())
-            .orElse(Constants.DEFAULT_TRACE_FIELD);
+	public Response analyze(@Context UriInfo ui, @PathParam("replayId") String replayId,
+		MultivaluedMap<String, String> formParams) {
+		String tracefield = Optional.ofNullable(formParams.get("tracefield"))
+			.flatMap(vals -> vals.stream().findFirst())
+			.orElse(Constants.DEFAULT_TRACE_FIELD);
 
-        Optional<String> templateVersion = Optional.ofNullable(formParams.get("version")).
-	        flatMap(vals -> vals.stream().findFirst());
+		Optional<String> templateVersion = Optional
+			.ofNullable(formParams.get(io.md.constants.Constants.TEMPLATE_VERSION_FIELD)).
+				flatMap(vals -> vals.stream().findFirst());
 		return AnalysisUtils.runAnalyze(analyzer, jsonMapper, replayId, templateVersion);
-    }
+	}
 
 
 
@@ -936,34 +940,41 @@ public class AnalyzeWS {
 	@Path("analyzeWithUpdates/{replayId}")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response analyzeWithUpdates(@Context UriInfo uriInfo, @PathParam("replayId") String replayId,
+	public void analyzeWithUpdates(@Suspended AsyncResponse asyncResponse,
+		@Context UriInfo uriInfo, @PathParam("replayId") String replayId,
 		String templateUpdateOperations) {
 		TypeReference<HashMap<TemplateKey, SingleTemplateUpdateOperation>> typeReference =
-			new TypeReference<>() {};
-		try {
-			Replay replay = rrstore.getReplay(replayId).orElseThrow(() ->
-				new Exception("Unable to fetch replay object for id " + replayId));
-			Optional<Analysis> analysis = rrstore.getAnalysis(replayId);
-			String previousTemplateVersion = analysis.map(analysis1 -> analysis1.templateVersion)
-				.orElse(replay.templateVersion);
-			String operationSetID = rrstore.createTemplateUpdateOperationSet(replay.customerId,
-				replay.app, previousTemplateVersion);
-			AnalysisUtils.updateTemplateUpdateOperationSet(replay.customerId, operationSetID
-				, templateUpdateOperations, jsonMapper, rrstore);
+			new TypeReference<>() {
+			};
+		CompletableFuture.supplyAsync(() -> {
+			try {
+				Replay replay = rrstore.getReplay(replayId).orElseThrow(() ->
+					new Exception("Unable to fetch replay object for id " + replayId));
+				Optional<Analysis> analysis = rrstore.getAnalysis(replayId);
+				String previousTemplateVersion = analysis
+					.map(analysis1 -> analysis1.templateVersion)
+					.orElse(replay.templateVersion);
+				String operationSetID = rrstore.createTemplateUpdateOperationSet(replay.customerId,
+					replay.app, previousTemplateVersion);
+				AnalysisUtils.updateTemplateUpdateOperationSet(replay.customerId, operationSetID
+					, templateUpdateOperations, jsonMapper, rrstore);
 
-			Optional<TemplateSet> originalTemplateSet = rrstore.getTemplateSet(replay.customerId
-				, replay.app, previousTemplateVersion);
-			String updatedTemplateSetVersion =
-				AnalysisUtils.updateTemplateSet(operationSetID, originalTemplateSet, rrstore);
+				Optional<TemplateSet> originalTemplateSet = rrstore.getTemplateSet(replay.customerId
+					, replay.app, previousTemplateVersion);
+				String updatedTemplateSetVersion =
+					AnalysisUtils.updateTemplateSet(operationSetID, originalTemplateSet, rrstore);
 
-			return AnalysisUtils.runAnalyze(analyzer, jsonMapper, replayId, Optional.of(updatedTemplateSetVersion));
+				return AnalysisUtils
+					.runAnalyze(analyzer, jsonMapper, replayId,
+						Optional.of(updatedTemplateSetVersion));
+			} catch (Exception e) {
+				return CompletableFuture
+					.completedFuture(Response.serverError().entity(new JSONObject(Map.of("Message"
+						, "Unable to run analyze with updated template set ", "replayId"
+						, replayId, "Error", e.getMessage()))).build());
+			}
 
-		} catch (Exception e) {
-			LOGGER.error("Error while running analyze with updated template set :: replayId :: " + replayId);
-			return Response.serverError().entity(new JSONObject(Map.of("Message"
-				, "Unable to run analyze with updated template set ", "replayId"
-				, replayId,  "Error", e.getMessage()))).build();
-		}
+		}).thenApply(response -> asyncResponse.resume(response));
 	}
 
 

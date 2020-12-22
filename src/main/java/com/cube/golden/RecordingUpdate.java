@@ -330,17 +330,17 @@ public class RecordingUpdate {
         return true;
     }
 
-    private Event copyEvent(String newCollectionName, Event recordResponse, String newReqId,
+    private Event copyEvent(String newCollectionName, Event recordEvent, String newReqId,
         String traceId) throws EventBuilder.InvalidEventException {
-        Event eventCopy = new EventBuilder(recordResponse.customerId
-            , recordResponse.app, recordResponse.service, recordResponse.instanceId
+        Event eventCopy = new EventBuilder(recordEvent.customerId
+            , recordEvent.app, recordEvent.service, recordEvent.instanceId
             , "", new MDTraceInfo(traceId, null
-            , null), recordResponse.getRunType()
-            , Optional.of(recordResponse.timestamp), newReqId, recordResponse.apiPath
-            , recordResponse.eventType, recordResponse.recordingType).withRunId(recordResponse.runId)
-            .setPayload(recordResponse.payload)
+            , null), recordEvent.getRunType()
+            , Optional.of(recordEvent.timestamp), newReqId, recordEvent.apiPath
+            , recordEvent.eventType, recordEvent.recordingType).withRunId(recordEvent.runId)
+            .setPayload(recordEvent.payload)
             /*.setRawPayloadString(recordResponse.rawPayloadString)*/
-            .setPayloadKey(recordResponse.payloadKey)
+            .setPayloadKey(recordEvent.payloadKey)
             .createEvent();
 
         eventCopy.setCollection(newCollectionName);
