@@ -1,10 +1,14 @@
 package io.cube.agent;
 
+import io.md.core.CollectionKey;
 import io.md.dao.*;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Optional;
 
 import io.md.logger.LogMgr;
+
+import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -137,9 +141,15 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
         return cubeClient.saveResult(reqRespMatchResult).isPresent();
     }
 
-
     @Override
-    public boolean save(Event event) {
+    public boolean save(Event... events) {
+        return Arrays.stream(events).map(event ->
+            save(event)).reduce((a,b) -> Boolean.logicalAnd(a,b)).orElse(false);
+
+    }
+
+
+    private boolean save(Event event) {
         return cubeClient.storeEvent(event).isPresent();
     }
 
@@ -151,6 +161,11 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
     @Override
     public boolean deferredDelete(Replay replay) {
         return cubeClient.deferredDelete(replay).isPresent();
+    }
+
+    @Override
+    public void populateCache(CollectionKey collectionKey, RecordOrReplay recordOrReplay) {
+        throw new NotImplementedException("Populate cache needs to be implemented for proxy data store");
     }
 
     /*
