@@ -53,6 +53,7 @@ import io.md.tracer.MDGlobalTracer;
 import io.md.tracer.MDTextMapCodec;
 import io.md.utils.CommonUtils;
 import io.opentracing.Tracer;
+
 import org.slf4j.LoggerFactory;
 
 import static io.cube.agent.Constants.*;
@@ -139,6 +140,10 @@ public class CommonConfig {
 	public static Optional<Boolean> loggingEnabled = Optional.empty();
 	public static Optional<String> loggingLevel = Optional.empty();
 
+	public static boolean onPrem = false;
+
+	public static String externalIdField;
+
 	static {
 
 		try {
@@ -162,6 +167,7 @@ public class CommonConfig {
 		app = envSysStaticConf.getString(Constants.MD_APP_PROP);
 		instance = envSysStaticConf.getString(Constants.MD_INSTANCE_PROP);
 		serviceName = envSysStaticConf.getString(Constants.MD_SERVICE_PROP);
+		externalIdField = envSysStaticConf.getString(Constants.MD_EXTERNAL_ID_FIELD); //ID to use instead of traceId
 
 		//initialize Logging
 		if(CubeLogMgr.isLoggingEnabled()){
@@ -359,15 +365,28 @@ public class CommonConfig {
 				}
 
 			} catch (Exception e) {
-				//This exception stack floods the logs, the stack trace does not provide any
-				//additional information as this exception is likely thrown within this thread,
-				// hence only printing the getMessage
-				LOGGER.error("Error in updating common config object in thread : " + e.getMessage());
-				LOGGER.info("Resetting client to NORMAL mode!");
-				//Not able to fetch config from MD server. Set the intent to normal.
-				//Polling still continues, so when the MD server is reachable, it
-				//will get the latest config.
-				resetClient();
+				try {
+					ClientUtils.lock.readLock().lock();
+					if (CommonConfig.onPrem && !fetchConfigApiURI
+						.startsWith(CommonConfig.fetchConfigApiURI)) {
+						LOGGER.info("On Prem installation, skipping the fetch from demo.dev");
+						//For onPrem we shouldn't have to call demo.dev. Could be a delayed response
+						return;
+					}
+
+					//This exception stack floods the logs, the stack trace does not provide any
+					//additional information as this exception is likely thrown within this thread,
+					// hence only printing the getMessage
+					LOGGER.error(
+						"Error in updating common config object in thread : " + e.getMessage());
+					LOGGER.info("Resetting client to NORMAL mode!");
+					//Not able to fetch config from MD server. Set the intent to normal.
+					//Polling still continues, so when the MD server is reachable, it
+					//will get the latest config.
+					resetClient();
+				} finally {
+					ClientUtils.lock.readLock().unlock();
+				}
 			}
 		}
 	}

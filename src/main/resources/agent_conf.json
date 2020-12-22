@@ -81,7 +81,8 @@
 				"enable" : true ,
 				"uri" : "wss://logcollector.dev.cubecorp.io/api/logStore",
 				"level" : "debug"
-			}
+			},
+			"externalIdField" : "WM_QOS.CORRELATION_ID"
 		}
 	}
 }

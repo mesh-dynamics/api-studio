@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -36,19 +38,28 @@ public class ClientUtils {
 
 	private static ObjectMapper jsonMapper = new ObjectMapper();
 
+	public static ReadWriteLock lock =new ReentrantReadWriteLock();
+
 	public static void initialize(Map<String, String> attributeMap) {
 		try {
 
-			//Need to set before Node Selection decision
-			CommonConfig.clientMetaDataMap.putAll(attributeMap);
+			try {
+				lock.writeLock().lock();
 
-			//set any CommonConfig variables if specified.
-			setCustomerAttributesAndSchedulePolling(attributeMap);
+				//Need to set before Node Selection decision
+				CommonConfig.clientMetaDataMap.putAll(attributeMap);
 
-			addNodeSelectionDecision(attributeMap);
+				//set any CommonConfig variables if specified.
+				setCustomerAttributesAndSchedulePolling(attributeMap);
 
-			//call cube server API to send the attributeMap and sampling decision
-			sendAckToCubeServer();
+				addNodeSelectionDecision(attributeMap);
+
+				//call cube server API to send the attributeMap and sampling decision
+				sendAckToCubeServer();
+
+			} finally {
+				lock.writeLock().unlock();
+			}
 		} catch (Exception e) {
 			LOGGER.error("Error in initialising client ", e);
 		} finally {
@@ -68,6 +79,10 @@ public class ClientUtils {
 			.ifPresent(val -> CommonConfig.serviceName = val);
 		Optional.ofNullable(attributeMap.get(Constants.MD_POLLINGCONFIG_RETRYCOUNT))
 			.ifPresent(val -> CommonConfig.fetchConfigRetryCount = Integer.valueOf(val));
+		Optional.ofNullable(attributeMap.get(Constants.AUTH_TOKEN_PROP))
+			.ifPresent(val -> CommonConfig.getInstance().authToken = Optional.of(val));
+		Optional.ofNullable(attributeMap.get(io.md.constants.Constants.MD_EXTERNAL_ID_FIELD))
+			.ifPresent(val -> CommonConfig.externalIdField = val);
 
 		Optional.ofNullable(attributeMap
 			.get(io.md.constants.Constants.MD_SERVICE_ENDPOINT_PROP)).ifPresent(val -> {
@@ -79,6 +94,10 @@ public class ClientUtils {
 			CommonConfig.ackConfigApiURI = new URIBuilder(
 				URI.create(cubeServiceEndPoint)
 					.resolve(Constants.MD_ACK_CONFIG_API_PATH)).toString();
+
+			//To avoid the default agent config fetch failure
+			//corrupt the valid config fetch after setting customer attributes.
+			CommonConfig.onPrem = true;
 
 			//stop the already scheduled task through common config
 			stopPolling();
@@ -92,9 +111,6 @@ public class ClientUtils {
 			//schedule with the customer provided URI info
 			schedulePolling();
 		});
-
-		Optional.ofNullable(attributeMap.get(Constants.AUTH_TOKEN_PROP))
-			.ifPresent(val -> CommonConfig.getInstance().authToken = Optional.of(val));
 	}
 
 	public static void sendAckToCubeServer() {
