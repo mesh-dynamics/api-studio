@@ -303,12 +303,12 @@ public class CubeClient {
 		return getResponse(reqBuilder);
 	}
 
-	public Optional<String> analyze(String replayId) {
+	public Optional<String> analyze(String replayId, Optional<String> templateVersion) {
 		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_REPLAY_SERVICE_URI)
 				.segment("as", "analyze", replayId)
 				.build();
-
-		HttpPost reqBuilder = createPostRequest(uri);
+		HttpPost reqBuilder = templateVersion.map(version ->
+			createPostRequest(uri, Constants.TEMPLATE_VERSION_FIELD , version)).orElse(createPostRequest(uri));
 		return getResponse(reqBuilder);
 	}
 
