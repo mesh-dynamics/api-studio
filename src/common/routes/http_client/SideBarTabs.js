@@ -680,7 +680,7 @@ class SideBarTabs extends Component {
                           />}
                           <i
                             className="fas fa-trash pointer"
-                            data-id={eachCollec.rootRcrdngId}
+                            data-id={eachCollec.id}
                             data-name={eachCollec.name}
                             title="Delete"
                             data-type="collection"
