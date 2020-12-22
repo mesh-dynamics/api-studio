@@ -176,6 +176,7 @@ public class Constants {
 	public static final String TEMPLATE_UPD_OP_SET_ID_FIELD = "template_upd_op_set_id";
 	public static final String GOLDEN_COMMENT_FIELD = "golden_comment";
 	public static final String TEMPLATE_VERSION_FIELD = "version";
+	public static final String MD_EXTERNAL_ID_FIELD = "io.md.externalIdField";
 
 
 	public static final String ROOT_PATH = "";
@@ -209,6 +210,7 @@ public class Constants {
 	public static final String MD_STATUS_PROP = "io.md.status";
 	public static final String MD_BODY_PROP = "io.md.body";
 	public static final String MD_LOG_STREAM_PROP = "io.md.logStream";
+
 	//Sampling Related
 	public static final String MD_SAMPLE_REQUEST = "io.md.sampleRequest";
 	public static final String MD_SAMPLER_TYPE = "io.md.sampler.type";

@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -65,6 +66,8 @@ public class CommonUtils {
 		return EnumSet.allOf(clazz).stream().filter(v -> v.name().equals(name))
 			.findAny();
 	}
+
+	public static Map<String, Span> externalIdToSpan = new ConcurrentHashMap<>();
 
 	private static final JaegerSpanContext defSpanContext;
 	private static final MDTraceInfo defTraceInfo;
