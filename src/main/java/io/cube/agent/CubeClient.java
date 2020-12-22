@@ -308,7 +308,7 @@ public class CubeClient {
 				.segment("as", "analyze", replayId)
 				.build();
 		HttpPost reqBuilder = templateVersion.map(version ->
-			createPostRequest(uri, "version" , version)).orElse(createPostRequest(uri));
+			createPostRequest(uri, Constants.TEMPLATE_VERSION_FIELD , version)).orElse(createPostRequest(uri));
 		return getResponse(reqBuilder);
 	}
 
