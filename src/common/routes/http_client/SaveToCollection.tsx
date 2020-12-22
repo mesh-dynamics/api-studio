@@ -329,10 +329,9 @@ class SaveToCollection extends React.Component<
     } catch (error) {
       console.error("Error ", error);
       this.setState({
-        modalErroSaveMessage: error,
+        modalErroSaveMessage: "Error saving: " + error,
         modalErroSaveMessageIsError: true,
       });
-      throw new Error("Error");
     }
   }
 
