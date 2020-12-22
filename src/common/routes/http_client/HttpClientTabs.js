@@ -1575,6 +1575,7 @@ class HttpClientTabs extends Component {
         const tabToProcess = tabsToProcess[tabIndex];
         
         if (!tabToProcess.eventData) {
+            dispatch(httpClientActions.unsetReqRunning(tabId, runId));
             return;
         }
         
@@ -1618,6 +1619,8 @@ class HttpClientTabs extends Component {
                         dispatch(httpClientActions.unsetReqRunning(tabId, runId));
                         console.error("error: ", error);
                     })
+            }else{
+                dispatch(httpClientActions.unsetReqRunning(tabId, runId));
             } 
         } catch (error) {
             console.error("Error ", error);
@@ -1744,8 +1747,12 @@ class HttpClientTabs extends Component {
                             }
                             dispatch(httpClientActions.postSuccessLoadRecordedHistory(tabId, ingressReqObj, runId));
                             if(!isRefetchTrace) dispatch(httpClientActions.unsetReqRunning(tabId, runId));
+                        }else if(isRefetchTrace) {
+                            dispatch(httpClientActions.unsetReqRunning(tabId, runId));
                         }
                     });
+                }else{
+                    dispatch(httpClientActions.unsetReqRunning(tabId, runId));
                 }
             }, (err) => {
                 console.error("err: ", err);

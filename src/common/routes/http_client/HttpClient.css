@@ -210,3 +210,68 @@ div.loading, div.loading button{
 .react-monaco-editor-container{
   min-height: 80px;
 }
+
+.service-rows .fas.pointer{
+  visibility: hidden;
+}
+
+.service-rows:hover .fas.pointer{
+  visibility: visible;
+}
+
+/* Start: Parameters (Query String, Headers, Form Data) table of inputs */
+.params-input{
+  font-size: 12px;
+}
+.params-input .header label{
+  font-size: 11px;
+  font-weight: normal !important;
+}
+.params-input .row input[type="text"]{
+  font-size: 12px;
+   border: 0px;
+    border-top: 1px solid #ccc;
+}
+.params-input input[type='checkbox']{
+  margin-top: 0px;
+   padding: 5px
+}
+.params-input .row{
+  margin: 0px 0px 1px 0px;
+}
+.params-input .form-group{
+  margin-bottom: 0px;
+}
+.params-input .cell{
+  display: inline-block;
+  padding-right: 9px
+}
+.params-input .cell-1{
+  width: 3%;
+}
+.params-input .cell-2{
+  width: 35%;
+}
+.params-input .cell-3{
+  width: 55%;
+}
+.params-input .cell-4{
+  width: 7%;
+}
+.params-input .cell-4 .glyphicon{
+  font-size: 16px;
+  top: 5px;
+  color: gray;
+  display: none;
+  cursor: pointer;
+}
+.params-input .row:hover .cell-4 .glyphicon{
+  display: inline-block;
+}
+
+.params-input .cell-4:hover .glyphicon{
+  color: black;
+}
+
+
+/* END */
