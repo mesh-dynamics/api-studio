@@ -1343,8 +1343,8 @@ public class CubeStore {
         List<String> moveEventIds = Optional.ofNullable(formParams.get(Constants.REQ_IDS_FIELD)).orElse(new ArrayList<>());
 
         Optional<Recording>  recordingType =  rrstore.getRecording(recordingId);
-        if(recordingType.isEmpty() || moveEventIds.isEmpty()){
-            String errorMsg = recordingType.isEmpty() ? "No such Recording Type found. RecordingId : "+recordingId : "Move Events Ids are not provided";
+        if(recordingType.isEmpty() || moveEventIds.isEmpty() || moveEventIds.size()>100){
+            String errorMsg = recordingType.isEmpty() ? "No such Recording Type found. RecordingId : "+recordingId : moveEventIds.isEmpty() ? "Move Events Ids are not provided" : "Move Events more then 100 are not allowed";
             asyncResponse.resume(Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).
                 entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE, errorMsg)).build());
             return;
@@ -1362,7 +1362,7 @@ public class CubeStore {
         CompletableFuture.supplyAsync(()->{
             try{
                 Map<String , String> newReqIdSeqIdMap =  insertEvents(recording , insertAfterEventSeqId , insertBeforeEventSeqId , moveEventIds);
-                Response response = Response.ok().type(MediaType.APPLICATION_JSON).entity(newReqIdSeqIdMap).build()
+                Response response = Response.ok().type(MediaType.APPLICATION_JSON).entity(newReqIdSeqIdMap).build();
                 return asyncResponse.resume(response);
             }catch (Exception e){
                 throw new CompletionException(e);
@@ -1379,14 +1379,15 @@ public class CubeStore {
         builder.withCollection(recording.collection).withSeqIdAsc(true).withReqIds(moveEventIds);
 
         Result<Event> result = rrstore.getEvents(builder.build());
+        /*
         if(result.numFound!=moveEventIds.size()*2){
             throw new Exception("Did not get all the events for reqIds. Found:"+result.numFound + " expected:"+moveEventIds.size());
-        }
+        }*/
 
         List<Event> moveEvents = result.getObjects().collect(Collectors.toList());
         //check whether insertAfter & insertbefore seqId range is valid
 
-        boolean invalidRange = moveEvents.stream().filter(e->e.eventType==EventType.HTTPRequest).anyMatch(event -> {
+        boolean invalidRange = moveEvents.stream().anyMatch(event -> {
             String seqId = event.getSeqId();
             return insertAfterEventSeqId.map(id->id.equals(seqId)).orElse(false) || insertBeforeEventSeqId.map(id->id.equals(seqId)).orElse(false);
         });

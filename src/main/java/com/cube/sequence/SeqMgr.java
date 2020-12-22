@@ -2,6 +2,7 @@ package com.cube.sequence;
 
 import io.md.dao.Event;
 
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -15,13 +16,19 @@ public class SeqMgr {
 
         SequenceGenerator gen = new SequenceGenerator(size);
 
-        return populateSeqId(goldenEvents , gen , "");
+        return populateSeqId(goldenEvents , gen);
 
     }
 
     // assuming the movedEventsBatch are in right sorted order
     public static Stream<Event> insertBetween(Optional<String> insertAfterSeqIdOpt , Optional<String> insertBeforeSeqIdOpt , Stream<Event> movedEventsBatch , long size) {
 
+        SequenceGenerator gen = getGenerator(insertAfterSeqIdOpt , insertBeforeSeqIdOpt ,size);
+
+        return populateSeqId(movedEventsBatch , gen);
+    }
+
+    static SequenceGenerator getGenerator(Optional<String> insertAfterSeqIdOpt , Optional<String> insertBeforeSeqIdOpt ,  long size){
         int SeqIdlen = Math.max(insertAfterSeqIdOpt.orElse("").length() , insertBeforeSeqIdOpt.orElse("").length());
 
         String insertAfterSeqId = insertAfterSeqIdOpt.orElse((BaseCharUtils.PADDING_CHAR));
@@ -29,39 +36,30 @@ public class SeqMgr {
         if(insertAfterSeqId.length()<SeqIdlen){
             insertAfterSeqId = insertAfterSeqId + BaseCharUtils.padding(SeqIdlen-insertAfterSeqId.length());
         }
-        if(insertBeforeSeqIdOpt.isPresent() && insertBeforeSeqIdOpt.get().length()<SeqIdlen){
-            String temp = insertBeforeSeqIdOpt.get();
-            insertBeforeSeqIdOpt = Optional.of(temp + BaseCharUtils.padding(SeqIdlen-temp.length()));
-        }
+        insertBeforeSeqIdOpt = insertBeforeSeqIdOpt.map(v->v+BaseCharUtils.padding(Math.max(0 , SeqIdlen - v.length())));
 
-        long prevSeq =  BaseCharUtils.convertToNumber(insertAfterSeqId);
-        long nextSeq =  insertBeforeSeqIdOpt.map(BaseCharUtils::convertToNumber).orElse((long) Math.pow(BaseCharUtils.BASE_LEN, SeqIdlen ));
+        BigInteger prevSeq =  BaseCharUtils.convertToNumber(insertAfterSeqId);
+        BigInteger nextSeq =  insertBeforeSeqIdOpt.map(BaseCharUtils::convertToNumber).orElse(BaseCharUtils.BASE_LEN_BI.pow(SeqIdlen));
 
         SequenceGenerator gen = null;
-        String basePadding = null;
-        if((nextSeq - prevSeq) > size){
+        if(nextSeq.subtract(prevSeq).compareTo(BigInteger.valueOf(size)) > 0){
             // can be fitted in between
-            gen = new SequenceGenerator(prevSeq+1 , nextSeq , SeqIdlen , size);
-            basePadding = "";
+            gen = new SequenceGenerator(prevSeq.add(BigInteger.ONE) , nextSeq , SeqIdlen , size);
         }else{
-            // it has to be padded to  insertAfter seqId
-            gen = new SequenceGenerator(size);
-            basePadding = insertAfterSeqId;
+            int nd = (int) Math.ceil(Math.log ((size+1)/(nextSeq.subtract(prevSeq).longValueExact()))/Math.log (BaseCharUtils.BASE_LEN));
+            gen = new SequenceGenerator(prevSeq.multiply(BaseCharUtils.BASE_LEN_BI.pow(nd))  , nextSeq.multiply(BaseCharUtils.BASE_LEN_BI.pow(nd)) , SeqIdlen+nd , size );
         }
-
-        return populateSeqId(movedEventsBatch , gen , basePadding);
+        return gen;
     }
 
-    private static Stream<Event> populateSeqId(Stream<Event> movedEventsBatch , SequenceGenerator generator , String basePadding){
+    private static Stream<Event> populateSeqId(Stream<Event> movedEventsBatch , SequenceGenerator generator){
         Iterator<String> seqItr = generator.iterator();
-        final String finalBasePadding = basePadding;
-        final boolean padding = !finalBasePadding.isEmpty();
         Map<String, String> seqIdMap = new HashMap<>();
 
         return movedEventsBatch.map(e->{
             String seqId = seqIdMap.get(e.getReqId());
             if(seqId ==null){
-                seqId = padding ? finalBasePadding + seqItr.next() : seqItr.next();
+                seqId = seqItr.next();
                 seqIdMap.put(e.getReqId() , seqId);
             }
             e.setSeqId(seqId);

@@ -132,6 +132,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public boolean save(Event... events) {
+        if(events.length==0) return true;
         if(events.length==1) return saveDocs(eventToSolrDoc(events[0]));
 
         //save in a batch of size EVENT_BATCH_SIZE
@@ -369,14 +370,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         addToFilterIntOrQuery(query , queryBuff , PAYLOADKEYF , eventQuery.getPayloadKey(), true , eventQuery.getPayloadKeyWeight());
 
-        if(eventQuery.getStartTimestamp().isPresent() || eventQuery.getEndTimestamp().isPresent()){
             // starting from timestamp, non inclusive
-            addDateRangeFilter(query, TIMESTAMPF, eventQuery.getStartTimestamp(), eventQuery.getEndTimestamp(), eventQuery.getEndTimestamp().isPresent() , true);
-        }
+        addDateRangeFilter(query, TIMESTAMPF, eventQuery.getStartTimestamp(), eventQuery.getEndTimestamp(), eventQuery.getEndTimestamp().isPresent() , true);
 
-        if(eventQuery.getStartSeqId().isPresent() || eventQuery.getEndSeqId().isPresent()){
-            addRangeFilter(query , SEQIDEF , eventQuery.getStartSeqId() , eventQuery.getEndSeqId() , false , false);
-        }
+        addRangeFilter(query , SEQIDEF , eventQuery.getStartSeqId() , eventQuery.getEndSeqId() , false , false);
 
         addFilter(query, PAYLOAD_FIELDS_F , eventQuery.getPayloadFields());
 
@@ -387,6 +384,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             Objects.requireNonNull(solrField);
             addSort(query , solrField , entry.getValue());
         }
+        addSort(query , IDF , true);
 
         query.setQuery(queryBuff.toString());
 
@@ -1450,24 +1448,21 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private static String getDateRangeFilterString(String fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive, boolean endInclusive) {
         // epoch millis of 0 is a special case. convert back to * to cover full range
-        String startDateVal = startDate.isPresent() && startDate.get().toEpochMilli() > 0 ?
-            SolrIterator.escapeQueryChars(startDate.get().toString()) :
-            "*";
-        String endDateVal = endDate.isPresent() ? SolrIterator.escapeQueryChars(endDate.get().toString()) : "*";
-        String queryFmt = "%s:" + (startInclusive ? "[": "{") + "%s TO %s" + (endInclusive ? "]" : "}");
-        return String.format(queryFmt, fieldname, startDateVal, endDateVal);
+        Optional<String> startDateVal = startDate.flatMap(sd -> (sd.toEpochMilli() > 0) ? Optional.of(sd.toString()) : Optional.empty());
+        Optional<String> endDateVal = endDate.map(sd -> endDate.toString());
+        return getRangeFilterString(fieldname , startDateVal , endDateVal , startInclusive , endInclusive);
     }
 
     private static String getRangeFilterString(String fieldname, Optional<String> start, Optional<String> end, boolean startInclusive, boolean endInclusive) {
 
-        String startVal = start.isPresent() ? start.get() : "*";
-        String endVal = end.isPresent() ? end.get() : "*";
+        String startVal = start.isPresent() ? SolrIterator.escapeQueryChars(start.get()) : "*" ;
+        String endVal = end.isPresent() ? SolrIterator.escapeQueryChars(end.get()) : "*";
         String queryFmt = "%s:" + (startInclusive ? "[": "{") + "%s TO %s" + (endInclusive ? "]" : "}");
         return String.format(queryFmt, fieldname, startVal, endVal);
     }
 
 
-    private static void addOrRangeFilter(SolrQuery query, List<String> fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive,
+    private static void addOrDateRangeFilter(SolrQuery query, List<String> fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive,
             boolean endInclusive) {
         String rangeQuery = fieldname.stream().map(v -> getDateRangeFilterString(v, startDate, endDate, startInclusive, endInclusive))
             .collect(Collectors.joining(" OR ", "( ", " )"));
@@ -1475,13 +1470,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private static void addDateRangeFilter(SolrQuery query,String fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive, boolean endInclusive) {
-        query.addFilterQuery(
-            getDateRangeFilterString(fieldname, startDate, endDate, startInclusive, endInclusive));
+        if(startDate.isPresent() || endDate.isPresent()){
+            query.addFilterQuery(getDateRangeFilterString(fieldname, startDate, endDate, startInclusive, endInclusive));
+        }
     }
 
     private static void addRangeFilter(SolrQuery query,String fieldname, Optional<String> startSeqId, Optional<String> endSeqId, boolean startInclusive, boolean endInclusive) {
-        query.addFilterQuery(
-            getRangeFilterString(fieldname, startSeqId, endSeqId, startInclusive, endInclusive));
+        if(startSeqId.isPresent() || endSeqId.isPresent()){
+            query.addFilterQuery(getRangeFilterString(fieldname, startSeqId, endSeqId, startInclusive, endInclusive));
+        }
     }
 
     private static void addWeightedPathFilter(SolrQuery query , String fieldName , String originalPath) {
@@ -1815,6 +1812,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private FnKey saveFuncKey;
 
     private boolean saveDocs(SolrInputDocument... docs){
+        if(docs.length==0) return true;
+
         String runId = Instant.now().toString();
         SolrInputDocument doc = docs[0];
         boolean singleDoc = docs.length ==1 ;
@@ -1961,7 +1960,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         fieldNameSolrMap.put(PAYLOAD_FIELDS_FIELD ,PAYLOAD_FIELDS_F);
         fieldNameSolrMap.put(Constants.REQ_ID_FIELD , REQIDF);
 
-        fieldNameSolrMap.put(ID_FIELD , IDF);
+        //fieldNameSolrMap.put(ID_FIELD , IDF);
         fieldNameSolrMap.put(TIMESTAMP_FIELD , TIMESTAMPF);
 
         fieldNameSolrMap.put(SCORE_FIELD , SCOREF);
@@ -2353,7 +2352,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
          * the filter is based on two fields(updationTimestamp and creationTimestamp)
          *Once all the replays will be having the updationTimeStamp, we can remove addOrRange and use addRangeFilter with UPDATIONTIMESTAMPF
          */
-        addOrRangeFilter(query, Arrays.asList(ANALYSISCOMPLETETIMESTAMPF, CREATIONTIMESTAMPF), startDate, endDate, true, true);
+        addOrDateRangeFilter(query, Arrays.asList(ANALYSISCOMPLETETIMESTAMPF, CREATIONTIMESTAMPF), startDate, endDate, true, true);
         // Heuristic: getting the latest replayid if there are multiple.
         /**TODO: what happens if there are multiple replays running for the
          * the sort will based on updationTimestamp once each replay will be having it
