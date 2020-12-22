@@ -1947,8 +1947,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     // field names in Solr for compare template (stored as json)
     private static final String COMPARETEMPLATEJSON = CPREFIX + "comparetemplate" + STRING_SUFFIX;
     private static final String ATTRIBUTE_RULE_TEMPLATE_JSON = CPREFIX + "attribute_rule_template" + STRING_SUFFIX;
-    private static final String EXTRACTION_METAS_JSON = CPREFIX + Constants.EXTRACTION_METAS_JSON_FIELD + STRING_SUFFIX;
-    private static final String INJECTION_METAS_JSON = CPREFIX + Constants.INJECTION_METAS_JSON_FIELD + STRING_SUFFIX;
+    private static final String EXTRACTION_METAS_STR_JSON = CPREFIX + Constants.EXTRACTION_METAS_JSON_FIELD + STRING_SUFFIX;
+    private static final String EXTRACTION_METAS_TXT_JSON = CPREFIX + Constants.EXTRACTION_METAS_JSON_FIELD + TEXT_SUFFIX;
+    private static final String INJECTION_METAS_STR_JSON = CPREFIX + Constants.INJECTION_METAS_JSON_FIELD + STRING_SUFFIX;
+    private static final String INJECTION_METAS_TXT_JSON = CPREFIX + Constants.INJECTION_METAS_JSON_FIELD + TEXT_SUFFIX;
     private static final String PARTIALMATCH = CPREFIX + "partialmatch" + STRING_SUFFIX;
 
 
@@ -3539,8 +3541,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         String id = type.concat("-").concat(String.valueOf(Objects.hash(
             dynamicInjectionConfig.customerId, dynamicInjectionConfig.app , dynamicInjectionConfig.version)));
         doc.setField(IDF , id);
-        doc.setField(EXTRACTION_METAS_JSON , extractionMetas);
-        doc.setField(INJECTION_METAS_JSON , injectionMetas);
+        doc.setField(EXTRACTION_METAS_TXT_JSON, extractionMetas);
+        doc.setField(INJECTION_METAS_TXT_JSON, injectionMetas);
         doc.setField(APPF , dynamicInjectionConfig.app);
         doc.setField(CUSTOMERIDF , dynamicInjectionConfig.customerId);
         doc.setField(DYNAMIC_INJECTION_CONFIG_VERSIONF, dynamicInjectionConfig.version);
@@ -3574,30 +3576,27 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     private Optional<DynamicInjectionConfig> docToDynamicInjectionConfig(SolrDocument doc) {
-        Optional<List<ExtractionMeta>> extractionMetas = getStrField(doc, EXTRACTION_METAS_JSON).flatMap(em -> {
+
+        // TODO: The original String Injection and Extraction meta fields are for backward compatibility
+        // Eventually only the Text field should be retained in Solr.
+        Optional<List<ExtractionMeta>> extractionMetas = getStrField(doc, EXTRACTION_METAS_TXT_JSON)
+            .or(() -> getStrField(doc, EXTRACTION_METAS_STR_JSON)).flatMap(em -> {
             try {
                 return Optional.of(config.jsonMapper.readValue(em, new TypeReference<List<ExtractionMeta>>(){}));
-            } catch (IOException e) {
+            } catch (Exception e) {
                 LOGGER.error("Error while reading ExtractionMeta object from json :: " + getIntField(doc , IDF).orElse(-1),e);
                 return Optional.empty();
             }
-            catch (Exception e) {
-                LOGGER.error("Error while reading ExtractionMeta object from json :: " + getIntField(doc , IDF).orElse(-1),e);
-                return Optional.empty();
-            }
-        });
-        Optional<List<InjectionMeta>> injectionMetas = getStrField(doc, INJECTION_METAS_JSON).flatMap(im -> {
+            });
+        Optional<List<InjectionMeta>> injectionMetas = getStrField(doc, INJECTION_METAS_TXT_JSON)
+            .or(() -> getStrField(doc, INJECTION_METAS_STR_JSON)).flatMap(im -> {
             try {
                 return Optional.of(config.jsonMapper.readValue(im, new TypeReference<List<InjectionMeta>>(){}));
-            } catch (IOException e) {
+            } catch (Exception e) {
                 LOGGER.error("Error while reading InjectionMeta object from json :: " + getIntField(doc , IDF).orElse(-1),e);
                 return Optional.empty();
             }
-            catch (Exception e) {
-                LOGGER.error("Error while reading InjectionMeta object from json :: " + getIntField(doc , IDF).orElse(-1),e);
-                return Optional.empty();
-            }
-        });
+            });
 
         Optional<DynamicInjectionConfig> dynamicInjectionConfig = Optional.empty();
         Optional<String> app = getStrField(doc, APPF);
