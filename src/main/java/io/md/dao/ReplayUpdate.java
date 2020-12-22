@@ -85,7 +85,10 @@ public class ReplayUpdate {
 			/*.withRunType(Event.RunType.Record)*/.withReqIds(reqIds).withPaths(replay.paths)
             .withExcludePaths(replay.excludePaths)
 			.withCollection(replay.collection)
-			.withServices(replay.service).withSortOrderAsc(true).build();
+			.withServices(replay.service)
+			.withoutScoreOrder()
+			.withTimestampAsc(true)
+			.build();
 		return dataStore.getEvents(eventQuery);
 	}
 
