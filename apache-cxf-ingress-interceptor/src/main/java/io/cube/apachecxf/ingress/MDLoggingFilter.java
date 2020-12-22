@@ -21,6 +21,7 @@ import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptor;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
+import io.cube.agent.CommonConfig;
 import io.md.logger.LogMgr;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -40,6 +41,7 @@ import io.md.utils.CommonUtils;
 import io.md.utils.UtilException;
 import io.opentracing.Scope;
 import io.opentracing.Span;
+import io.opentracing.SpanContext;
 
 /**
  * Priority is to specify in which order the filters are to be executed.
@@ -88,7 +90,7 @@ public class MDLoggingFilter implements ContainerRequestFilter, ContainerRespons
 					reqContext.setProperty(Constants.MD_TRACE_INFO, mdTraceInfo);
 
 					logRequest(reqContext, apiPath, traceMetaMap.getFirst(Constants.DEFAULT_REQUEST_ID),
-						queryParams, mdTraceInfo);
+						queryParams, mdTraceInfo, span);
 
 					// Setting parent span
 					span.setBaggageItem(Constants.MD_PARENT_SPAN, span.context().toSpanId());
@@ -177,12 +179,28 @@ public class MDLoggingFilter implements ContainerRequestFilter, ContainerRespons
 	}
 
 	private void logRequest(ContainerRequestContext reqContext, String apiPath,
-		String cRequestId, MultivaluedMap<String, String> queryParams, MDTraceInfo mdTraceInfo)
+		String cRequestId, MultivaluedMap<String, String> queryParams, MDTraceInfo mdTraceInfo, Span currentSpan)
 		throws IOException {
 		Span span = io.cube.agent.Utils.createPerformanceSpan(Constants.PROCESS_REQUEST_INGRESS);
 		try (Scope scope = io.cube.agent.Utils.activatePerformanceSpan(span)) {
 			//hdrs
 			MultivaluedMap<String, String> requestHeaders = reqContext.getHeaders();
+
+			SpanContext spanContext = currentSpan.context();
+			Span newClientSpan = CommonUtils
+				.startClientSpan(Constants.MD_CHILD_SPAN, spanContext, false);
+
+			if (mdTraceInfo.traceId != null && mdTraceInfo.spanId != null && CommonConfig.externalIdField != null) {
+				String externalIdField = requestHeaders.getFirst(CommonConfig.externalIdField);
+				if (externalIdField == null) {
+					requestHeaders.add(CommonConfig.externalIdField, mdTraceInfo.traceId);
+					CommonUtils.externalIdToSpan.put(mdTraceInfo.traceId, newClientSpan);
+					reqContext.setProperty(CommonConfig.externalIdField, mdTraceInfo.traceId);
+				} else {
+					CommonUtils.externalIdToSpan.put(externalIdField, newClientSpan);
+					reqContext.setProperty(CommonConfig.externalIdField, externalIdField);
+				}
+			}
 
 			//meta
 			MultivaluedMap<String, String> meta = Utils
@@ -251,6 +269,11 @@ public class MDLoggingFilter implements ContainerRequestFilter, ContainerRespons
 		context.removeProperty(Constants.MD_STATUS_PROP);
 		context.removeProperty(Constants.MD_SAMPLE_REQUEST);
 		context.removeProperty(Constants.MD_TRACE_INFO);
+		String externalIdField = (String) context.getProperty(CommonConfig.externalIdField);
+		if (externalIdField != null) {
+			CommonUtils.externalIdToSpan.remove(externalIdField);
+			context.removeProperty(CommonConfig.externalIdField);
+		}
 	}
 
 	private MultivaluedMap<String, String> getTraceInfoMetaMap(ContainerRequestContext reqContext,

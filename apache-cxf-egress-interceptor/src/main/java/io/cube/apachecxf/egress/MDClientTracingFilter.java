@@ -1,5 +1,8 @@
 package io.cube.apachecxf.egress;
 
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -10,16 +13,15 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
-import io.md.logger.LogMgr;
 import org.slf4j.Logger;
 
 import io.md.constants.Constants;
+import io.md.logger.LogMgr;
 import io.md.utils.CommonUtils;
 
 /**
- * Priority is to specify in which order the filters are to be executed.
- * Lower the order, early the filter is executed.
- * We want Client filter to execute before Tracing Filter.
+ * Priority is to specify in which order the filters are to be executed. Lower the order, early the
+ * filter is executed. We want Client filter to execute before Tracing Filter.
  **/
 @Provider
 @Priority(value = 4502)
@@ -30,7 +32,7 @@ public class MDClientTracingFilter implements ClientRequestFilter {
 	@Override
 	public void filter(ClientRequestContext clientRequestContext) {
 		try {
-			LOGGER.info("Inside Egress tracing filter");
+			LOGGER.info("Inside Egress tracing filter : " + clientRequestContext.getUri());
 			MultivaluedMap<String, String> mdTraceHeaders = new MultivaluedHashMap<>();
 			CommonUtils.injectContext(mdTraceHeaders);
 			MultivaluedMap<String, Object> clientHeaders = clientRequestContext.getHeaders();
@@ -41,9 +43,9 @@ public class MDClientTracingFilter implements ClientRequestFilter {
 			}
 		} catch (Exception e) {
 			LOGGER.error(
-					io.md.constants.Constants.MESSAGE + ":Error occurred in Mocking filter\n" +
+				io.md.constants.Constants.MESSAGE + ":Error occurred in Mocking filter\n" +
 					Constants.EXCEPTION_STACK, e
-				);
+			);
 		}
 	}
 }

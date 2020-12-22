@@ -57,6 +57,7 @@ public class MDClientMockingFilter implements ClientRequestFilter, ClientRespons
 
 			//mockURI is already set through app. Not able to set the URI in interceptor
 			//for apache cxf 2.7.7
+			LOGGER.info("MOCK URI : " + originalUri);
 			if (originalUri != null && originalUri.toString()
 				.startsWith(new URI(commonConfig.CUBE_MOCK_SERVICE_URI).toString())) {
 				Optional<Span> ingressSpan = CommonUtils.getCurrentSpan();
