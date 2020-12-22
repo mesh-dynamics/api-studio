@@ -57,6 +57,7 @@ export interface IApiCatalogState {
   apiTrace: any; //2
   apiTraceLoading: boolean;
   collectionList: ICollectionDetails[];
+  lastCollectionListLoaded: string;
   compareRequests: IApiCatalogCompareRequest[];
   diffRequestLeft: any; //2
   diffRequestRight: any; //2
@@ -64,6 +65,7 @@ export interface IApiCatalogState {
   diffResponseRight: any; //2
   endTime: string; //1
   goldenList: ICollectionDetails[];
+  lastGoldenListLoaded: string;
   httpClientRequestIds: any; //2
   instances: any[]; //2
   resizedColumns: any[]; //2
@@ -415,6 +417,7 @@ export interface IRecordedHistory {
 export interface IHttpClientTabDetails {
   bodyType: string;
   collectionIdAddedFromClient: string;
+  collectionNameAddedFromClient: string;
   eventData: IEventData[];
   formData: IRequestParamData[];
   headers: IRequestParamData[];

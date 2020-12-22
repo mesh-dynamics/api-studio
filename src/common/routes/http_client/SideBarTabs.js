@@ -235,7 +235,9 @@ class SideBarTabs extends Component {
               const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
               const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
               const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
-    
+
+              const collectionDetails = _.find(this.props.httpClient.userCollections, {collec: node.collectionIdAddedFromClient});
+              const collectionName = collectionDetails?.name || "";
               //TODO: Create a separate class to handle below object
               let reqObject = {
                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
@@ -289,6 +291,7 @@ class SideBarTabs extends Component {
                 showSaveBtn: true,
                 recordingIdAddedFromClient: node.recordingIdAddedFromClient,
                 collectionIdAddedFromClient: node.collectionIdAddedFromClient,
+                collectionNameAddedFromClient: collectionName,
                 traceIdAddedFromClient: node.traceIdAddedFromClient,
                 outgoingRequests: [],
                 showCompleteDiff: false,
