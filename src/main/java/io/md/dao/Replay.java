@@ -44,7 +44,8 @@ public class Replay {
 	public Optional<String> staticInjectionMap;
 	public Instant analysisCompleteTimestamp;
 	public String runId;
-	public boolean tracePropogation = true;
+	public boolean tracePropagation = true;
+	public boolean storeToDatastore = false;
 	public Optional<ReplayContext> replayContext = Optional.empty();
 
 	public Replay(String endpoint, String customerId, String app, String instanceId,
