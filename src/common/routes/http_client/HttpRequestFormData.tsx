@@ -18,8 +18,6 @@ class HttpRequestFormData extends Component<IHttpRequestFormDataProps> {
     constructor(props: IHttpRequestFormDataProps) {
         super(props);
         this.handleAdd = this.handleAdd.bind(this);
-        this.handleDelete = this.handleDelete.bind(this);
-        this.handleChange = this.handleChange.bind(this);
     }
 
     handleAdd() {
@@ -27,17 +25,17 @@ class HttpRequestFormData extends Component<IHttpRequestFormDataProps> {
         this.props.addOrRemoveParam(isOutgoingRequest, tabId, "formData", "add");
     }
 
-    handleDelete(id) {
+    handleDelete(id: string) {
         const { tabId, isOutgoingRequest } = this.props;
         this.props.addOrRemoveParam(isOutgoingRequest, tabId, "formData", "delete", id);
     }
 
-    handleChange(id, evt) {
+    handleChange(id: string, evt: React.ChangeEvent<HTMLInputElement>) {
         const { tabId, isOutgoingRequest } = this.props;
         this.props.updateParam(isOutgoingRequest, tabId, "formData", evt.target.name, evt.target.value, id);
     }
 
-    handleCheckChange = (id, currentChecked) => {
+    handleCheckChange = (id: string, currentChecked: boolean) => {
         const { tabId, isOutgoingRequest } = this.props;
         this.props.updateParam(isOutgoingRequest, tabId, "formData", "selected", !currentChecked, id);
     }
@@ -46,7 +44,7 @@ class HttpRequestFormData extends Component<IHttpRequestFormDataProps> {
         return this.props.formData.reduce((acc, param) => (acc = acc && param.selected), true)
     }
 
-    handleAllCheckChange = (e) => {
+    handleAllCheckChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { tabId, isOutgoingRequest } = this.props;
         this.props.updateAllParams(isOutgoingRequest, tabId, "formData", "selected", e.target.checked);
     }
@@ -56,23 +54,23 @@ class HttpRequestFormData extends Component<IHttpRequestFormDataProps> {
             <div style={{display: this.props.showFormData === true ? "" : "none"}} className="params-input">
                 {this.props.formData.length > 0 && (
                     <div className="header">
-                        <div className="cell cell1"> 
+                        <div className="cell cell-1"> 
                             <FormGroup bsSize="small">
                                 <input type="checkbox" checked={this.allSelected()} 
                                 disabled={this.props.readOnly} onChange={this.handleAllCheckChange}/>
                             </FormGroup>
                         </div>
-                        <div className="cell cell2"> 
+                        <div className="cell cell-2"> 
                             <FormGroup>
                                 <ControlLabel>NAME</ControlLabel>
                             </FormGroup>
                         </div>
-                        <div className="cell cell3">
+                        <div className="cell cell-3">
                             <FormGroup bsSize="small">
                                 <ControlLabel>VALUE</ControlLabel>
                             </FormGroup>
                         </div>
-                        <div className="cell cell4">
+                        <div className="cell cell-4">
                             <FormGroup bsSize="small">
                                 <ControlLabel></ControlLabel>
                             </FormGroup>
@@ -81,27 +79,27 @@ class HttpRequestFormData extends Component<IHttpRequestFormDataProps> {
                 )}
                 {this.props.formData.map(eachParam => {return (
                     <div className="row" key={eachParam.id}>
-                        <div className="cell cell1"> 
+                        <div className="cell cell-1"> 
                             <FormGroup>
                             <input type="checkbox" checked={eachParam.selected} 
                             disabled={this.props.readOnly} 
                                 onChange={() => this.handleCheckChange(eachParam.id, eachParam.selected)}/>
                             </FormGroup>
                         </div>
-                        <div className="cell cell2"> 
+                        <div className="cell cell-2"> 
                             <FormGroup>
                                 <FormControl type="text" placeholder="" 
                                 readOnly={this.props.readOnly} 
                                 value={eachParam.name} name="name" onChange={this.handleChange.bind(this, eachParam.id)}/>
                             </FormGroup>
                         </div>
-                        <div className="cell cell3">
+                        <div className="cell cell-3">
                             <FormGroup>
                                 <FormControl type="text" placeholder="" 
                                 readOnly={this.props.readOnly} value={eachParam.value} name="value" onChange={this.handleChange.bind(this, eachParam.id)} />
                             </FormGroup>
                         </div>
-                        <div className="cell cell4" onClick={this.handleDelete.bind(this, eachParam.id)} > 
+                        <div className="cell cell-4" onClick={this.handleDelete.bind(this, eachParam.id)} > 
                             <FormGroup>
                                 <Glyphicon glyph="remove-sign" title="Remove" /> 
                             </FormGroup>

@@ -17,11 +17,9 @@ export interface IHttpRequestQueryStringProps{
 }
 
 class HttpRequestQueryString extends Component<IHttpRequestQueryStringProps> {
-    constructor(props) {
+    constructor(props: IHttpRequestQueryStringProps) {
         super(props);
         this.handleAdd = this.handleAdd.bind(this);
-        this.handleDelete = this.handleDelete.bind(this);
-        this.handleChange = this.handleChange.bind(this);
     }
 
     handleAdd() {
@@ -29,17 +27,17 @@ class HttpRequestQueryString extends Component<IHttpRequestQueryStringProps> {
         this.props.addOrRemoveParam(isOutgoingRequest, tabId, "queryStringParams", "add");
     }
 
-    handleDelete(id) {
+    handleDelete(id: string) {
         const { tabId, isOutgoingRequest } = this.props;
         this.props.addOrRemoveParam(isOutgoingRequest, tabId, "queryStringParams", "delete", id);
     }
 
-    handleChange(id, evt) {
+    handleChange(id: string, evt: React.ChangeEvent<HTMLInputElement>) {
         const { tabId, isOutgoingRequest } = this.props;
         this.props.updateParam(isOutgoingRequest, tabId, "queryStringParams", evt.target.name, evt.target.value, id);
     }
 
-    handleCheckChange = (id, currentChecked) => {
+    handleCheckChange = (id: string, currentChecked: boolean) => {
         const { tabId, isOutgoingRequest } = this.props;
         this.props.updateParam(isOutgoingRequest, tabId, "queryStringParams", "selected", !currentChecked, id);
     }
@@ -48,7 +46,7 @@ class HttpRequestQueryString extends Component<IHttpRequestQueryStringProps> {
         return this.props.queryStringParams.reduce((acc, param) => (acc = acc && param.selected), true)
     }
 
-    handleAllCheckChange = (e) => {
+    handleAllCheckChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { tabId, isOutgoingRequest } = this.props;
         this.props.updateAllParams(isOutgoingRequest, tabId, "queryStringParams", "selected", e.target.checked);
     }
@@ -58,23 +56,23 @@ class HttpRequestQueryString extends Component<IHttpRequestQueryStringProps> {
             <div style={{display: this.props.showQueryParams === true ? "" : "none"}} className="params-input">
                 {this.props.queryStringParams.length > 0 && (
                     <div className="header">
-                        <div className="cell cell1"> 
+                        <div className="cell cell-1"> 
                             <FormGroup bsSize="small">
                                 <input type="checkbox" checked={this.allSelected()}
                                 disabled={this.props.readOnly}  onChange={this.handleAllCheckChange}/>
                             </FormGroup>
                         </div>
-                        <div className="cell cell2"> 
+                        <div className="cell cell-2"> 
                             <FormGroup>
                                 <ControlLabel>NAME</ControlLabel>
                             </FormGroup>
                         </div>
-                        <div className="cell cell3">
+                        <div className="cell cell-3">
                             <FormGroup bsSize="small">
                                 <ControlLabel>VALUE</ControlLabel>
                             </FormGroup>
                         </div>
-                        <div className="cell cell4">
+                        <div className="cell cell-4">
                             <FormGroup bsSize="small">
                                 <ControlLabel></ControlLabel>
                             </FormGroup>
@@ -83,27 +81,27 @@ class HttpRequestQueryString extends Component<IHttpRequestQueryStringProps> {
                 )}
                 {this.props.queryStringParams.map(eachParam => {return (
                     <div className="row" key={eachParam.id}>
-                        <div className="cell cell1"> 
+                        <div className="cell cell-1"> 
                             <FormGroup>
                                 <input type="checkbox" checked={eachParam.selected} 
                                 disabled={this.props.readOnly} 
                                 onChange={() => this.handleCheckChange(eachParam.id, eachParam.selected)}/>
                             </FormGroup>
                         </div>
-                        <div className="cell cell2"> 
+                        <div className="cell cell-2"> 
                             <FormGroup>
                                 <FormControl type="text" placeholder="" 
                                 readOnly={this.props.readOnly} 
                                 value={eachParam.name} name="name" onChange={this.handleChange.bind(this, eachParam.id)}/>
                             </FormGroup>
                         </div>
-                        <div className="cell cell3">
+                        <div className="cell cell-3">
                             <FormGroup>
                                 <FormControl type="text"
                                 readOnly={this.props.readOnly}  placeholder="" value={eachParam.value} name="value" onChange={this.handleChange.bind(this, eachParam.id)} />
                             </FormGroup>
                         </div>
-                        <div className="cell cell4" onClick={this.handleDelete.bind(this, eachParam.id)} > 
+                        <div className="cell cell-4" onClick={this.handleDelete.bind(this, eachParam.id)} > 
                             <FormGroup>
                                 <Glyphicon glyph="remove-sign" title="Remove" /> 
                             </FormGroup>

@@ -246,30 +246,30 @@ div.loading, div.loading button{
   display: inline-block;
   padding-right: 9px
 }
-.params-input .cell1{
+.params-input .cell-1{
   width: 3%;
 }
-.params-input .cell2{
+.params-input .cell-2{
   width: 35%;
 }
-.params-input .cell3{
+.params-input .cell-3{
   width: 55%;
 }
-.params-input .cell4{
+.params-input .cell-4{
   width: 7%;
 }
-.params-input .cell4 .glyphicon{
+.params-input .cell-4 .glyphicon{
   font-size: 16px;
   top: 5px;
   color: gray;
   display: none;
   cursor: pointer;
 }
-.params-input .row:hover .cell4 .glyphicon{
+.params-input .row:hover .cell-4 .glyphicon{
   display: inline-block;
 }
 
-.params-input .cell4:hover .glyphicon{
+.params-input .cell-4:hover .glyphicon{
   color: black;
 }
 
