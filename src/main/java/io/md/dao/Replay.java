@@ -59,7 +59,8 @@ public class Replay {
 		List<String> mockServices,
 		Optional<String> testConfigName, Optional<String> goldenName, Optional<String> recordingId,
 		boolean archived, Optional<String> dynamicInjectionConfigVersion,
-		Instant analysisCompleteTimestamp, Optional<String> staticInjectionMap, String runId) {
+		Instant analysisCompleteTimestamp, Optional<String> staticInjectionMap, String runId,
+		boolean tracePropagation , boolean storeToDatastore ) {
 		this.endpoint = endpoint;
 		this.customerId = customerId;
 		this.app = app;
@@ -93,6 +94,8 @@ public class Replay {
 		this.analysisCompleteTimestamp = analysisCompleteTimestamp;
 		this.staticInjectionMap = staticInjectionMap;
 		this.runId = runId != null ? runId : this.replayId;
+		this.tracePropagation = tracePropagation;
+		this.storeToDatastore = storeToDatastore;
 	}
 
 	//for deserialization
