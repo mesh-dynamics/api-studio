@@ -72,7 +72,7 @@ public class DataInitializer implements CommandLineRunner {
             customer = Optional.of(this.customerService.save(httpServletRequest, customerDTO));
        }
 
-        Optional<User> user = userRepository.findByUsername("admin@meshdynamics.io");
+        Optional<User> user = userRepository.findByUsernameIgnoreCase("admin@meshdynamics.io");
         if (user.isEmpty()) {
             UserDTO userDTOAdmin = new UserDTO();
             //userDTO.setId(3L);

@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 
-import com.cubeui.backend.domain.Customer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -147,7 +146,7 @@ public class JwtTokenProvider {
                     log.trace("Found that the token is of type API token");
                     long customerId = claims.getBody().get("customer_id", Long.class);
                     //The token is of type personal access token, so check the DB to confirm that it is not revoked
-                    Optional<List<ApiAccessToken>> accessToken = userRepository.findByUsernameAndCustomerId(getUsername(token, secretKey), customerId)
+                    Optional<List<ApiAccessToken>> accessToken = userRepository.findByUsernameIgnoreCaseAndCustomerId(getUsername(token, secretKey), customerId)
                         .map(User::getId).flatMap(apiAccessTokenRepository::findByUserId);
                     value =  accessToken.flatMap(list -> list.stream().findFirst())
                         .map(ApiAccessToken::getToken)
