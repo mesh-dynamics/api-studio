@@ -143,20 +143,16 @@ public class AnalyzeWS {
 	@POST
     @Path("analyze/{replayId}")
     @Consumes("application/x-www-form-urlencoded")
-	public Response analyze(@Context UriInfo ui, @PathParam("replayId") String replayId,
+	public void analyze(@Suspended AsyncResponse asyncResponse,
+		@Context UriInfo ui, @PathParam("replayId") String replayId,
 		MultivaluedMap<String, String> formParams) {
-		String tracefield = Optional.ofNullable(formParams.get("tracefield"))
-			.flatMap(vals -> vals.stream().findFirst())
-			.orElse(Constants.DEFAULT_TRACE_FIELD);
-
-		Optional<String> templateVersion = Optional
-			.ofNullable(formParams.get(io.md.constants.Constants.TEMPLATE_VERSION_FIELD)).
-				flatMap(vals -> vals.stream().findFirst());
-		return AnalysisUtils.runAnalyze(analyzer, jsonMapper, replayId, templateVersion);
-	}
-
-
-
+		CompletableFuture.supplyAsync(() -> {
+			Optional<String> templateVersion = Optional
+				.ofNullable(formParams.get(io.md.constants.Constants.TEMPLATE_VERSION_FIELD)).
+					flatMap(vals -> vals.stream().findFirst());
+			return AnalysisUtils.runAnalyze(analyzer, jsonMapper, replayId, templateVersion);
+		}).thenApply(response -> asyncResponse.resume(response));
+    }
 
 
 	@GET
