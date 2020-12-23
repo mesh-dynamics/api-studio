@@ -1449,7 +1449,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static String getDateRangeFilterString(String fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive, boolean endInclusive) {
         // epoch millis of 0 is a special case. convert back to * to cover full range
         Optional<String> startDateVal = startDate.flatMap(sd -> (sd.toEpochMilli() > 0) ? Optional.of(sd.toString()) : Optional.empty());
-        Optional<String> endDateVal = endDate.map(sd -> endDate.toString());
+        Optional<String> endDateVal = endDate.map(sd -> sd.toString());
         return getRangeFilterString(fieldname , startDateVal , endDateVal , startInclusive , endInclusive);
     }
 
