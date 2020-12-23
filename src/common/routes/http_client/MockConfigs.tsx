@@ -45,24 +45,28 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
         const {selectedEditMockConfig} = this.state;
         selectedEditMockConfig.serviceConfigs[index].service = e.target.value;
         this.setState({selectedEditMockConfig})
+        this.setMockConfigStatusText("", false)
     }
 
     handleTargetURLChange = (e, index) => {
         const {selectedEditMockConfig} = this.state;
         selectedEditMockConfig.serviceConfigs[index].url = e.target.value;
         this.setState({selectedEditMockConfig})
+        this.setMockConfigStatusText("", false)
     }
 
     handleIsMockedCheckChange = (index) => {
         const {selectedEditMockConfig} = this.state;
         selectedEditMockConfig.serviceConfigs[index].isMocked = !selectedEditMockConfig.serviceConfigs[index].isMocked;
         this.setState({selectedEditMockConfig})
+        this.setMockConfigStatusText("", false)
     }
 
     handleSelectedMockConfigNameChange = (e) => {
         const {selectedEditMockConfig} = this.state;
         selectedEditMockConfig.name = e.target.value;
         this.setState({selectedEditMockConfig})
+        this.setMockConfigStatusText("", false)
     }
 
     handleAddNewMockConfig = () => {
@@ -87,6 +91,7 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
             isMocked: false,
         })
         this.setState({selectedEditMockConfig})
+        this.setMockConfigStatusText("", false)
     }
 
     handleRemoveMockConfig = (index) => {
@@ -199,6 +204,7 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
             config.isMocked = !allMocked;
         })
         this.setState({selectedEditMockConfig})
+        this.setMockConfigStatusText("", false)
     }
 
     renderMockContextConfig = () => {

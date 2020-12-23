@@ -402,7 +402,7 @@ class HttpClient extends Component {
     renderDeleteButton = (outgoingReqTabId) => {
         return (
             <Tippy content={"Click to delete"} arrow={true} placement="bottom">
-                <i className="fas fa-trash" style={{fontSize: "12px", marginRight: "12px"}} onClick={(evt) => this.handleDeleteReq(evt, outgoingReqTabId)}></i>
+                <i className="fas fa-trash pointer" style={{fontSize: "12px", marginRight: "12px"}} onClick={(evt) => this.handleDeleteReq(evt, outgoingReqTabId)}></i>
             </Tippy>
         );
     }
@@ -577,7 +577,7 @@ class HttpClient extends Component {
                                     </tr>
                                     {outgoingRequests && outgoingRequests.length > 0 && outgoingRequests.map((eachReq) => {
                                         return (
-                                            <tr key={eachReq.id} style={{cursor: "pointer", backgroundColor: selectedTraceTableReqTab.id === eachReq.id ? "#ccc" : "#fff"}} onClick={() => this.handleRowClick(true, eachReq.id)}>
+                                            <tr className="service-rows" key={eachReq.id} style={{cursor: "pointer", backgroundColor: selectedTraceTableReqTab.id === eachReq.id ? "#ccc" : "#fff"}} onClick={() => this.handleRowClick(true, eachReq.id)}>
                                                 <td style={{ display: "inline-flex", width: "100%" }}>
                                                     <span style={{marginRight: "30px", width: "25px"}}></span>
                                                     <span>
