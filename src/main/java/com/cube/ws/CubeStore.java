@@ -9,8 +9,10 @@ import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
 import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
+import com.cube.sequence.SeqMgr;
 import io.md.dao.DataObj.DataObjProcessingException;
 import io.md.dao.Event.EventType;
+import io.md.dao.EventQuery.Builder;
 import io.md.injection.DynamicInjector;
 import io.md.injection.DynamicInjectorFactory;
 import java.io.ByteArrayInputStream;
@@ -18,18 +20,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
 import java.util.stream.Stream;
@@ -1284,8 +1277,11 @@ public class CubeStore {
             Recording  updatedRecording = createRecordingObjectFrom(recording, templateVersion,
                 name, Optional.of(userId), timeStamp, labelValue, type);
             if(rrstore.saveRecording(updatedRecording)) {
-                return CompletableFuture.runAsync(() -> copyEvents(recording, updatedRecording, timeStamp)).thenApply(v ->
-                 Response.ok().type(MediaType.APPLICATION_JSON).entity(updatedRecording).build());
+                return CompletableFuture.supplyAsync(() -> copyEvents(recording, updatedRecording, timeStamp)).thenApply(success ->
+                    success ? Response.ok().type(MediaType.APPLICATION_JSON).entity(updatedRecording).build() : Response.status(Status.INTERNAL_SERVER_ERROR)
+                        .type(MediaType.APPLICATION_JSON)
+                        .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"Error while copying events"))
+                        .build());
             }
             return CompletableFuture.completedFuture(Response.status(Status.INTERNAL_SERVER_ERROR)
                 .type(MediaType.APPLICATION_JSON)
@@ -1299,12 +1295,14 @@ public class CubeStore {
     }
 
 
-    public void copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp) {
+    public boolean copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp) {
         EventQuery.Builder builder = new EventQuery.Builder(fromRecording.customerId, fromRecording.app, Collections.emptyList());
         builder.withCollection(fromRecording.collection);
+        builder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
         Result<Event> result = rrstore.getEvents(builder.build());
         Map<String, String> reqIdMap = new HashMap<>();
-        result.getObjects().forEach(event -> {
+        final boolean[] eventCreationFailure = new boolean[1];
+        Stream<Event> eventStream = result.getObjects().map(event -> {
             try {
                 String reqId = reqIdMap.get(event.getReqId());
                 if(reqId == null) {
@@ -1313,15 +1311,106 @@ public class CubeStore {
                         event.service, event.getTraceId());
                     reqIdMap.put(oldReqId, reqId);
                 }
-                Event newEvent = buildEvent(event, toRecording.collection,  toRecording.recordingType, reqId, event.getTraceId(), Optional.of(timeStamp.toString()));
-                rrstore.save(newEvent);
+                return buildEvent(event, toRecording.collection,  toRecording.recordingType, reqId, event.getTraceId(), Optional.of(timeStamp.toString()));
             } catch (InvalidEventException e) {
+                eventCreationFailure[0] = true;
                 LOGGER.error(new ObjectMessage(
                     Map.of(Constants.MESSAGE, "Error while creating Event",
                         Constants.RECORDING_ID, toRecording.id)), e);
             }
+            return null;
+        });/*.filter(Objects::nonNull)*/;
+        if(eventCreationFailure[0]){
+            LOGGER.error("Event Creation Failure ");
+            return false;
+        }
+
+        // unique requests will be almost half. 0.6 to be on safe side
+        long estimatedReqSize = (long)(result.numResults*0.6) +1;
+        //check whether num of results and numFound are same
+        Event[] newEvents =  SeqMgr.createSeqId(eventStream , estimatedReqSize).toArray(Event[]::new);
+        boolean batchSaveResult = rrstore.save(newEvents) && rrstore.commit();
+        return batchSaveResult;
+    }
+
+    @POST
+    @Path("moveEvents/{recordingId}")
+    @Consumes("application/x-www-form-urlencoded")
+    @Produces(MediaType.APPLICATION_JSON)
+    public void moveEvents(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui, @PathParam("recordingId") String recordingId , MultivaluedMap<String, String> formParams ) {
+
+        Optional<String> insertAfterEventSeqId = Optional.ofNullable(formParams.getFirst(Constants.INSERT_AFTER_SEQ_ID));
+        List<String> moveEventIds = Optional.ofNullable(formParams.get(Constants.REQ_IDS_FIELD)).orElse(new ArrayList<>());
+
+        Optional<Recording>  recordingType =  rrstore.getRecording(recordingId);
+        if(recordingType.isEmpty() || moveEventIds.isEmpty() || moveEventIds.size()>100){
+            String errorMsg = recordingType.isEmpty() ? "No such Recording Type found. RecordingId : "+recordingId : moveEventIds.isEmpty() ? "Move Events Ids are not provided" : "Move Events more then 100 are not allowed";
+            asyncResponse.resume(Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).
+                entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE, errorMsg)).build());
+            return;
+        }
+
+        Recording recording = recordingType.get();
+        Optional<String> insertBeforeEventSeqId = getNextSeqIdEvent(recording , insertAfterEventSeqId).map(e->e.getSeqId());
+        if(insertBeforeEventSeqId.isEmpty() && insertAfterEventSeqId.isEmpty()){
+            String errorMsg = "Invalid insert before SeqId";
+            asyncResponse.resume(Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).
+                entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE, errorMsg)).build());
+            return;
+        }
+
+        CompletableFuture.supplyAsync(()->{
+            try{
+                Map<String , String> newReqIdSeqIdMap =  insertEvents(recording , insertAfterEventSeqId , insertBeforeEventSeqId , moveEventIds);
+                Response response = Response.ok().type(MediaType.APPLICATION_JSON).entity(newReqIdSeqIdMap).build();
+                return asyncResponse.resume(response);
+            }catch (Exception e){
+                throw new CompletionException(e);
+            }
+        }).exceptionally(throwable -> {
+            LOGGER.error("Error "+throwable.getMessage());
+            Response response = Response.status(Status.INTERNAL_SERVER_ERROR).type(MediaType.APPLICATION_JSON).entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"Error while inserting events events" + throwable.getMessage())).build();
+            return asyncResponse.resume(response);
         });
-        rrstore.commit();
+    }
+
+    private Map<String , String> insertEvents(Recording recording , Optional<String> insertAfterEventSeqId , Optional<String> insertBeforeEventSeqId ,   List<String> moveEventIds) throws Exception{
+        EventQuery.Builder builder = new EventQuery.Builder(recording.customerId , recording.app , Collections.EMPTY_LIST);
+        builder.withCollection(recording.collection).withSeqIdAsc(true).withReqIds(moveEventIds);
+
+        Result<Event> result = rrstore.getEvents(builder.build());
+        /*
+        if(result.numFound!=moveEventIds.size()*2){
+            throw new Exception("Did not get all the events for reqIds. Found:"+result.numFound + " expected:"+moveEventIds.size());
+        }*/
+
+        List<Event> moveEvents = result.getObjects().collect(Collectors.toList());
+        //check whether insertAfter & insertbefore seqId range is valid
+
+        boolean invalidRange = moveEvents.stream().anyMatch(event -> {
+            String seqId = event.getSeqId();
+            return insertAfterEventSeqId.map(id->id.equals(seqId)).orElse(false) || insertBeforeEventSeqId.map(id->id.equals(seqId)).orElse(false);
+        });
+        if(invalidRange){
+            throw new Exception("Invalid Range for MoveEvents");
+        }
+
+        Event[] newEvents =  SeqMgr.insertBetween(insertAfterEventSeqId , insertBeforeEventSeqId , moveEvents.stream() , moveEventIds.size()).toArray(Event[]::new);
+        boolean batchSaveResult = rrstore.save(newEvents) && rrstore.commit();
+        if(!batchSaveResult){
+            throw new Exception("Error saving the batch events");
+        }
+        return Arrays.stream(newEvents).filter(e->e.eventType==EventType.HTTPRequest).collect(Collectors.toMap(e->e.reqId , e->e.getSeqId()));
+    }
+
+
+    private Optional<Event> getNextSeqIdEvent(Recording recording , Optional<String> insertAfterEventSeqId){
+
+        EventQuery.Builder builder = new EventQuery.Builder(recording.customerId , recording.app , EventType.HTTPRequest);
+        builder.withCollection(recording.collection).withSeqIdAsc(true).withLimit(1);
+        insertAfterEventSeqId.ifPresent(builder::withStartSeqId);
+
+        return rrstore.getSingleEvent(builder.build());
     }
 
     @POST
@@ -1924,28 +2013,25 @@ public class CubeStore {
         return resp;
     }
 
+
     @POST
     @Path("getAppConfigurations/{customerId}")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
     public void getAppConfigurations(@Suspended AsyncResponse asyncResponse,
-                                        @PathParam("customerId") String customerId, List<String> apps) {
+        @PathParam("customerId") String customerId, List<String> apps) {
         //default app config without any tracer
-        CustomerAppConfig defaultAppCfgNoTracer = new CustomerAppConfig.Builder()/*.withTracer(Tracer.MeshD.toString())*/
-            .build();
+        CustomerAppConfig defaultAppCfgNoTracer= new CustomerAppConfig.Builder()/*.withTracer(Tracer.MeshD.toString())*/.build();
 
-        List<CompletableFuture<CustomerAppConfig>> futures = apps.stream().map(
-            app -> CompletableFuture.supplyAsync(
-                () -> rrstore.getAppConfiguration(customerId, app).orElse(defaultAppCfgNoTracer)))
-            .collect(Collectors.toList());
+        List<CompletableFuture<CustomerAppConfig>> futures =  apps.stream().map(app->CompletableFuture.supplyAsync(()->rrstore.getAppConfiguration(customerId, app).orElse(defaultAppCfgNoTracer))).collect(Collectors.toList());
 
-        Utils.sequence(futures).thenApply(appConfigs -> {
-            Map<String, CustomerAppConfig> appCfgs = new HashMap<>();
-            for (int i = 0; i < apps.size(); i++) {
-                appCfgs.put(apps.get(i), appConfigs.get(i));
+        Utils.sequence(futures).thenApply(appConfigs->{
+            Map<String , CustomerAppConfig> appCfgs = new HashMap<>();
+            for(int i=0 ; i<apps.size() ; i++){
+                appCfgs.put(apps.get(i) , appConfigs.get(i));
             }
-            return asyncResponse.resume(Response.ok(appCfgs, MediaType.APPLICATION_JSON).build());
-        }).exceptionally(e -> asyncResponse.resume(Response.status(Status.INTERNAL_SERVER_ERROR)
+            return asyncResponse.resume(Response.ok(appCfgs , MediaType.APPLICATION_JSON).build());
+        }).exceptionally(e-> asyncResponse.resume(Response.status(Status.INTERNAL_SERVER_ERROR)
             .entity(String.format("Server error: " + e.getMessage())).build()));
     }
 
@@ -2047,9 +2133,7 @@ public class CubeStore {
 
 	private Optional<String> getCurrentCollectionIfEmpty(Optional<String> collection,
 			Optional<String> customerId, Optional<String> app, Optional<String> instanceId) {
-		return collection.or(() -> {
-			return rrstore.getCurrentCollection(customerId, app, instanceId);
-		});
+		return collection.or(() -> rrstore.getCurrentCollection(customerId, app, instanceId));
 	}
 
 }
