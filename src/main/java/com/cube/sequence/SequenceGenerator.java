@@ -87,7 +87,7 @@ public class SequenceGenerator implements Iterable<String> {
             startPos = startPos.add(BigInteger.valueOf(gap));
 
 
-        return new SeqIterator(startPos, gap, strLen, size);
+        return new SeqIterator(startPos, gap, Math.random() /* todo */ , strLen,  size);
     }
 
     /*
