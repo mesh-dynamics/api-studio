@@ -113,16 +113,20 @@ public class AppController {
         } else {
             return status(BAD_REQUEST).body(new ErrorResponse("Mandatory field CustomerName is empty."));
         }
-        if(!user.getRoles().contains(Role.ROLE_ADMIN)) {
-            validation.validateCustomerName(authentication, customer.get().getName());
-        }
+        validation.validateCustomerName(authentication, customer.get().getName());
         Optional<App> app = this.appRepository.findByDisplayNameAndCustomerId(appDTO.getDisplayName(), customer.get().getId());
         if (app.isPresent())
         {
             log.info("App with same display name exists");
             return ok(app);
         }
-        String name = UUID.randomUUID().toString();
+        String name = appDTO.getDisplayName().replaceAll("\\s+", "");
+        app = this.appRepository.findByNameAndCustomerId(name, customer.get().getId());
+        if (app.isPresent())
+        {
+            log.info("App with same name exists");
+            return ok(app);
+        }
         App saved = this.appRepository.save(
                 App.builder()
                         .name(name)
@@ -166,9 +170,7 @@ public class AppController {
         }
         App existingApp = existing.get();
         customer.ifPresent(givenCustomer -> {
-            if(!user.getRoles().contains(Role.ROLE_ADMIN)) {
-                validation.validateCustomerName(authentication, givenCustomer.getName());
-            }
+            validation.validateCustomerName(authentication, givenCustomer.getName());
             existingApp.setCustomer(givenCustomer);
         });
         Long customerId = existingApp.getCustomer().getId();
@@ -285,9 +287,7 @@ public class AppController {
     public ResponseEntity deleteByDisplayName(@PathVariable String customerId,
         @PathVariable String displayName, Authentication authentication) {
         User user = (User)authentication.getPrincipal();
-        if(!user.getRoles().contains(Role.ROLE_ADMIN)) {
-            validation.validateCustomerName(authentication, customerId);
-        }
+        validation.validateCustomerName(authentication, customerId);
         Optional<Customer> customer = this.customerService.getByName(customerId);
         return customer.map(givenCustomer -> {
             Optional<App> existed = this.appRepository.findByDisplayNameAndCustomerId(displayName, givenCustomer.getId());
