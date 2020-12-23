@@ -14,6 +14,11 @@ import static io.md.services.DataStore.TemplateNotFoundException;
 import com.cube.core.ServerUtils;
 import com.cube.dao.ApiTraceFacetQuery;
 
+import com.cube.learning.CompareTemplatesLearner;
+import com.cube.learning.TemplateEntryMeta;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import io.md.cache.ProtoDescriptorCache;
 import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.core.Comparator.Diff;
@@ -31,7 +36,9 @@ import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.RequestPayload;
 import io.md.dao.ResponsePayload;
 import io.md.dao.Analysis.ReqRespMatchWithEvent;
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -67,6 +74,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -341,6 +349,61 @@ public class AnalyzeWS {
 		    .orElse(Response.serverError().entity(new JSONObject(Map.of(Constants.MESSAGE
 			    , "Template type not specified correctly"))).build());
     }
+
+    @GET
+    @Path("getPotentialCompareTemplates")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response getPotentialCompareTemplates(@Context UriInfo uriInfo) {
+
+        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+
+        String replayId = queryParams.getFirst("replayId");
+
+        if (replayId == null){
+            return Response.serverError().entity(
+                Utils.buildErrorResponse(Constants.ERROR, Constants.NOT_PRESENT,
+                    "Missing query parameter replayId")).build();
+        }
+
+        AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(replayId,
+            new MultivaluedHashMap<>());
+
+        ReqRespResultsWithFacets resultWithFacets = rrstore
+            .getAnalysisMatchResults(analysisMatchResultQuery);
+
+        CompareTemplatesLearner ctLearner = new CompareTemplatesLearner();
+
+        List<TemplateEntryMeta> finalMetaList = ctLearner.learnCompareTemplates(
+            resultWithFacets.result.getObjects());
+
+        try {
+
+            CsvSchema csvSchema = csvMapper.schemaFor(TemplateEntryMeta.class).withHeader();
+            String data = csvMapper.writer(csvSchema).writeValueAsString(finalMetaList);
+
+            final String fileName = "learned_comparison_rules", ext = ".csv";
+
+            File file = new File(
+                "/tmp/" + fileName + "-" + (replayId + Instant.now()).hashCode() + ext);
+
+            FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
+            Response.ResponseBuilder response = Response.ok((Object) file);
+            response
+                .header("Content-Disposition", "attachment; filename=\"" + fileName + ext + "\"");
+            response.header("Access-Control-Expose-Headers",
+                "Content-Disposition, X-Suggested-Filename");
+
+            return response.build();
+
+        } catch (IOException e) {
+            String errorString =  String.format("Error in file creation for replay=%s", replayId);
+            LOGGER.error(errorString, e);
+            return Response.serverError().entity(
+                Utils.buildErrorResponse(Constants.ERROR, Constants.IO_EXCEPTION,
+                    errorString)).build();
+        }
+    }
+
 
 
     public Response getCompareTemplate(UriInfo urlInfo, String appId,
@@ -1787,7 +1850,11 @@ public class AnalyzeWS {
 		super();
 		this.rrstore = config.rrstore;
 		this.jsonMapper = config.jsonMapper;
-		this.config = config;
+
+        this.csvMapper = new CsvMapper();
+        csvMapper.configure(JsonGenerator.Feature.IGNORE_UNKNOWN, true);
+
+        this.config = config;
 		this.recordingUpdate = new RecordingUpdate(config);
         analyzer = new RealAnalyzer(rrstore);
     }
@@ -1795,6 +1862,7 @@ public class AnalyzeWS {
 
 	ReqRespStore rrstore;
 	ObjectMapper jsonMapper;
+    CsvMapper csvMapper;
 	Config config;
     private final RecordingUpdate recordingUpdate;
 
