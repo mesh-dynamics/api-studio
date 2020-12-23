@@ -384,7 +384,7 @@ public class RealAnalyzer implements Analyzer {
      * @param replayId
      * @return
      */
-    public Optional<Analysis> analyze(String replayId) {
+    public Optional<Analysis> analyze(String replayId, Optional<String> templateVersion) {
 
         Optional<Replay> replay = rrstore.getReplay(replayId);
 
@@ -394,7 +394,7 @@ public class RealAnalyzer implements Analyzer {
             Pair<Stream<List<Event>> , Long> result = ReplayUpdate
                 .getRequestBatchesUsingEvents(TRACEBATCHSIZE , rrstore, r);
 
-            String templateVersionToUse = r.templateVersion;
+            String templateVersionToUse = templateVersion.orElse(r.templateVersion);
 
             Analysis analysis = new Analysis(replayId, result.getRight().intValue(), templateVersionToUse);
 
