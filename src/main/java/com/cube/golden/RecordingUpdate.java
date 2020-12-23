@@ -29,7 +29,6 @@ import io.md.dao.RecordingOperationSetSP;
 import io.md.utils.Constants;
 import io.md.utils.UtilException;
 
-import com.cube.core.ServerUtils;
 import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.RecordingOperationSetMeta;
 
@@ -284,34 +283,14 @@ public class RecordingUpdate {
 
                 String newReqId = generateReqId(recordResponse.reqId, newCollectionName);
 
-                Event transformedResponse = new EventBuilder(recordResponse.customerId
-                    , recordResponse.app, recordResponse.service, recordResponse.instanceId
-                    , "", new MDTraceInfo(recordResponse.getTraceId(), null
-                    , null), recordResponse.getRunType()
-                    , Optional.of(recordResponse.timestamp), newReqId, recordResponse.apiPath
-                    , recordResponse.eventType, recordResponse.recordingType).withRunId(recordResponse.runId)
-                    .setPayload(recordResponse.payload)
-                    /*.setRawPayloadString(recordResponse.rawPayloadString)*/
-                    .setPayloadKey(recordResponse.payloadKey)
-                    .createEvent();
-
-                transformedResponse.setCollection(newCollectionName);
+                Event transformedResponse = copyEvent(newCollectionName, recordResponse, newReqId,
+                    recordResponse.getTraceId());
 
                 LOGGER.debug("Changing the reqid and collection name in the response for "
                     + "the sanitized collection");
 
-                Event transformedRequest = new EventBuilder(recordRequest.customerId
-                    , recordRequest.app, recordRequest.service, recordRequest.instanceId
-                    , "", new MDTraceInfo(recordResponse.getTraceId(), null
-                    , null), recordRequest.getRunType()
-                    , Optional.of(recordRequest.timestamp), newReqId, recordRequest.apiPath
-                    , recordRequest.eventType, recordRequest.recordingType).withRunId(recordRequest.runId)
-                    .setPayload(recordRequest.payload)
-                    /*.setRawPayloadString(recordRequest.rawPayloadString)*/
-                    .setPayloadKey(recordRequest.payloadKey)
-                    .createEvent();
-
-                transformedRequest.setCollection(newCollectionName);
+                Event transformedRequest = copyEvent(newCollectionName, recordRequest, newReqId,
+                    recordResponse.getTraceId());
 
                 LOGGER.debug("saving request/response with reqid: " + newReqId);
                 boolean saved = config.rrstore.save(transformedRequest) && config.rrstore
@@ -351,8 +330,26 @@ public class RecordingUpdate {
         return true;
     }
 
+    private Event copyEvent(String newCollectionName, Event recordEvent, String newReqId,
+        String traceId) throws EventBuilder.InvalidEventException {
+        Event eventCopy = new EventBuilder(recordEvent.customerId
+            , recordEvent.app, recordEvent.service, recordEvent.instanceId
+            , "", new MDTraceInfo(traceId, null
+            , null), recordEvent.getRunType()
+            , Optional.of(recordEvent.timestamp), newReqId, recordEvent.apiPath
+            , recordEvent.eventType, recordEvent.recordingType).withRunId(recordEvent.runId)
+            .setPayload(recordEvent.payload)
+            /*.setRawPayloadString(recordResponse.rawPayloadString)*/
+            .setPayloadKey(recordEvent.payloadKey)
+            .createEvent();
 
-     private Stream<ReqRespMatchResult> getReqRespMatchResultStream(String replayId
+        eventCopy.setCollection(newCollectionName);
+
+        return eventCopy;
+    }
+
+
+    private Stream<ReqRespMatchResult> getReqRespMatchResultStream(String replayId
          /*, RecordingOperationSetSP recordingOperationSetSP*/) {
         Result<ReqRespMatchResult> matchResults = (Result<ReqRespMatchResult>) config.rrstore.getAnalysisMatchResults(
             new AnalysisMatchResultQuery(replayId)
