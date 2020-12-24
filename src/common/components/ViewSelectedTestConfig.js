@@ -762,10 +762,10 @@ class ViewSelectedTestConfig extends React.Component {
         if(cube.selectedInstance == "other"){
             return <input type="text" onChange={this.onOtherInstanceValueChange} value={this.state.otherInstanceEndPoint}  style={{width: "100%"}} />
         }else{
-            const selectedInstance = cube.instances.filter(item => {
+            const selectedInstance = cube.instances.find(item => {
                 return item.app.name == cube.selectedApp && item.name == cube.selectedInstance;
             });
-            const currentEndpoint = selectedInstance && selectedInstance.length > 0 ? selectedInstance[0].gatewayEndpoint : "";
+            const currentEndpoint = selectedInstance ? selectedInstance.gatewayEndpoint : "";
             return  <input disabled type="text" value={currentEndpoint} style={{width: "100%"}} />
         }
     }
