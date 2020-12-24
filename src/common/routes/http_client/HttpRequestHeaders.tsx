@@ -18,8 +18,6 @@ class HttpRequestHeaders extends Component<IHttpRequestHeadersProps> {
     constructor(props) {
         super(props);
         this.handleAdd = this.handleAdd.bind(this);
-        this.handleDelete = this.handleDelete.bind(this);
-        this.handleChange = this.handleChange.bind(this);
     }
 
     handleAdd() {
@@ -27,17 +25,17 @@ class HttpRequestHeaders extends Component<IHttpRequestHeadersProps> {
         this.props.addOrRemoveParam(isOutgoingRequest, tabId, "headers", "add");
     }
 
-    handleDelete(id) {
+    handleDelete(id: string) {
         const { tabId, isOutgoingRequest } = this.props;
         this.props.addOrRemoveParam(isOutgoingRequest, tabId, "headers", "delete", id);
     }
 
-    handleChange(id, evt) {
+    handleChange(id: string, evt: React.ChangeEvent<HTMLInputElement>) {
         const { tabId, isOutgoingRequest } = this.props;
         this.props.updateParam(isOutgoingRequest, tabId, "headers", evt.target.name, evt.target.value, id);
     }
 
-    handleCheckChange = (id, currentChecked) => {
+    handleCheckChange = (id: string, currentChecked: boolean) => {
         const { tabId, isOutgoingRequest } = this.props;
         this.props.updateParam(isOutgoingRequest, tabId, "headers", "selected", !currentChecked, id);
     }
@@ -46,75 +44,64 @@ class HttpRequestHeaders extends Component<IHttpRequestHeadersProps> {
         return this.props.headers.reduce((acc, param) => (acc = acc && param.selected), true)
     }
 
-    handleAllCheckChange = (e) => {
+    handleAllCheckChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { tabId, isOutgoingRequest } = this.props;
         this.props.updateAllParams(isOutgoingRequest, tabId, "headers", "selected", e.target.checked);
     }
 
     render() {
         return (
-            <div style={{display: this.props.showHeaders === true ? "" : "none"}}>
+            <div style={{display: this.props.showHeaders === true ? "" : "none"}} className="params-input">
                 {this.props.headers.length > 0 && (
-                    <div style={{marginBottom: "1px"}}>
-                        <div style={{display: "inline-block", width: "3%", paddingRight: "9px"}}> 
-                            <FormGroup bsSize="small" style={{marginBottom: "0px", textAlign: "center"}}>
-                                <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} disabled={this.props.readOnly} checked={this.allSelected()} onChange={this.handleAllCheckChange}/>
+                    <div className="header">
+                        <div className="cell cell-1"> 
+                            <FormGroup bsSize="small">
+                                <input type="checkbox" disabled={this.props.readOnly} checked={this.allSelected()} onChange={this.handleAllCheckChange}/>
                             </FormGroup>
                         </div>
-                        <div style={{display: "inline-block", width: "35%", paddingRight: "9px"}}> 
-                            <FormGroup style={{marginBottom: "0px"}}>
-                                <ControlLabel style={{fontWeight: "normal", fontSize: "11px"}}>NAME</ControlLabel>
+                        <div className="cell cell-2"> 
+                            <FormGroup>
+                                <ControlLabel>NAME</ControlLabel>
                             </FormGroup>
                         </div>
-                        <div style={{display: "inline-block", width: "55%", paddingRight: "9px"}}>
-                            <FormGroup bsSize="small" style={{marginBottom: "0px"}}>
-                                <ControlLabel style={{fontWeight: "normal", fontSize: "11px"}}>VALUE</ControlLabel>
+                        <div className="cell cell-3">
+                            <FormGroup bsSize="small">
+                                <ControlLabel>VALUE</ControlLabel>
                             </FormGroup>
                         </div>
-                        {/* <div style={{display: "inline-block", width: "54%", paddingRight: "9px"}}>
-                            <FormGroup bsSize="small" style={{marginBottom: "0px"}}>
-                                <ControlLabel style={{fontWeight: "normal", fontSize: "11px"}}>DESCRIPTION</ControlLabel>
-                            </FormGroup>
-                        </div> */}
-                        <div style={{display: "inline-block", width: "7%", paddingRight: "9px"}}>
-                            <FormGroup bsSize="small" style={{marginBottom: "0px"}}>
-                                <ControlLabel style={{fontWeight: "normal", fontSize: "11px"}}></ControlLabel>
+                        <div className="cell cell-4">
+                            <FormGroup bsSize="small">
+                                <ControlLabel></ControlLabel>
                             </FormGroup>
                         </div>
                     </div>
                 )}
                 {this.props.headers.map(eachHeader => {return (
-                    <div style={{marginBottom: "1px"}} key={eachHeader.id}>
-                        <div style={{display: "inline-block", width: "3%", paddingRight: "9px"}}> 
-                            <FormGroup style={{marginBottom: "0px", backgroundColor: "none", textAlign: "center"}}>
-                                <input type="checkbox" style={{marginTop: "0px", padding: "5px"}} checked={eachHeader.selected} 
+                    <div  className="row" key={eachHeader.id}>
+                        <div className="cell cell-1"> 
+                            <FormGroup>
+                                <input type="checkbox" checked={eachHeader.selected} 
                                 disabled={this.props.readOnly} 
                                 onChange={() => this.handleCheckChange(eachHeader.id, eachHeader.selected)}/>                            
                             </FormGroup>
                         </div>
-                        <div style={{display: "inline-block", width: "35%", paddingRight: "9px"}}> 
-                            <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
-                                <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="" 
+                        <div className="cell cell-2"> 
+                            <FormGroup>
+                                <FormControl type="text" placeholder="" 
                                 readOnly={this.props.readOnly} 
                                 value={eachHeader.name} name="name" onChange={this.handleChange.bind(this, eachHeader.id)}/>
                             </FormGroup>
                         </div>
-                        <div style={{display: "inline-block", width: "55%", paddingRight: "9px"}}>
-                            <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
-                                <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}}
+                        <div className="cell cell-3">
+                            <FormGroup>
+                                <FormControl
                                 readOnly={this.props.readOnly}  type="text" placeholder="" value={eachHeader.value} name="value" onChange={this.handleChange.bind(this, eachHeader.id)} />
                             </FormGroup>
                         </div>
-                        {/* <div style={{display: "inline-block", width: "54%", paddingRight: "9px"}}>
-                            <FormGroup style={{marginBottom: "0px", fontSize: "12px"}}>
-                                <FormControl style={{fontSize: "12px", border: "0px", borderTop: "1px solid #ccc"}} type="text" placeholder="optional" 
-                                value={eachHeader.description} name="description" onChange={this.handleChange.bind(this, eachHeader.id)} />
-                            </FormGroup>
-                        </div> */}
-                        <div style={{display: "inline-block", width: "7%", paddingRight: "9px"}} 
+                        <div className="cell cell-4"
                                 onClick={this.handleDelete.bind(this, eachHeader.id)} > 
-                            <FormGroup style={{marginBottom: "0px", backgroundColor: "#ffffff", textAlign: "center", padding: "5px"}}>
-                                <Glyphicon style={{fontSize: "16px", top: "5px"}} glyph="remove-sign" /> 
+                            <FormGroup>
+                                <Glyphicon glyph="remove-sign" title="Remove" /> 
                             </FormGroup>
                         </div>
                     </div>

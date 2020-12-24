@@ -63,7 +63,10 @@ class GoldenCollectionBrowse extends Component<IGoldenCollectionBrowseProps, IGo
 
   renderCollectionDropdown = () => {
     const {
-      apiCatalog: { collectionList, selectedCollection },
+      apiCatalog: { collectionList, selectedCollection, lastCollectionListLoaded, selectedSource, goldenCollectionLoading }, dispatch,
+      cube: { 
+        selectedApp
+      }
     } = this.props;
     const handleCollectionDropDownChange = (event: React.ChangeEvent<HTMLSelectElement>) =>
       this.handleFilterChange("selectedCollection", event.target.value);
@@ -71,6 +74,17 @@ class GoldenCollectionBrowse extends Component<IGoldenCollectionBrowseProps, IGo
     const ddlClass = classNames("r-att form-control", {
       "select-indicator": !selectedCollection,
     });
+    if(!lastCollectionListLoaded && !goldenCollectionLoading){
+      dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, selectedSource));
+    }
+    else if(lastCollectionListLoaded && collectionList.length == 0 && !goldenCollectionLoading){
+      //If loaded before 15 minutes and collection liats is empty and load it again
+      const lastUpdated = new Date(lastCollectionListLoaded);
+      const diffTime = new Date().getTime() - lastUpdated.getTime();
+      if(diffTime  >  (1000 * 60 * 15)){ 
+        dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, selectedSource));
+      }
+    }
     return (
       <div>
         <select
@@ -96,10 +110,25 @@ class GoldenCollectionBrowse extends Component<IGoldenCollectionBrowseProps, IGo
 
   renderGoldenDropdown = () => {
     const {
-      apiCatalog: { goldenList, selectedGolden },
+      apiCatalog: { goldenList, selectedGolden, lastGoldenListLoaded, selectedSource, goldenCollectionLoading }, dispatch,
+      cube: { 
+        selectedApp
+      }
     } = this.props;
     const handleGoldenDropDownChange = (event: React.ChangeEvent<HTMLSelectElement>) =>
       this.handleFilterChange("selectedGolden", event.target.value);
+
+    if(!lastGoldenListLoaded && !goldenCollectionLoading){
+      dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, selectedSource));
+    }
+    else if(lastGoldenListLoaded && goldenList.length == 0 && !goldenCollectionLoading){
+      //If loaded before 15 minutes and collection liats is empty and load it again
+      const lastUpdated = new Date(lastGoldenListLoaded);
+      const diffTime = new Date().getTime() - lastUpdated.getTime();
+      if(diffTime  >  (1000 * 60 * 15)){ 
+        dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, selectedSource));
+      }
+    }
 
     const ddlClass = classNames("r-att form-control", {
       "select-indicator": !selectedGolden,

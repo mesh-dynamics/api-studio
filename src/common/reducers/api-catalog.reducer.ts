@@ -141,6 +141,7 @@ export const apiCatalog : Reducer<IApiCatalogState> = (state = initialState, { t
             return {
                 ...state,
                 collectionList: data,
+                lastCollectionListLoaded: new Date(),
                 goldenCollectionLoading: false,
             }
         }
@@ -149,6 +150,7 @@ export const apiCatalog : Reducer<IApiCatalogState> = (state = initialState, { t
             return {
                 ...state,
                 goldenList: data,
+                lastGoldenListLoaded: new Date(),
                 goldenCollectionLoading: false,
             }
         }

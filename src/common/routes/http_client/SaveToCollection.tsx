@@ -14,6 +14,7 @@ import { httpClientActions } from "../../actions/httpClientActions";
 import CreateCollection from "./CreateCollection";
 import { cubeService } from "../../services";
 import {
+  IAppDetails,
   ICollectionDetails,
   IEventData,
   IHttpClientStoreState,
@@ -43,7 +44,7 @@ export interface ISaveToCollectionProps {
   getReqResFromTabData: GetReqResFromTabDataHandler;
   dispatch: any; //Need to check proper type for dispatch
   selectedApp: string;
-  appsList: Array<App> // todo
+  appsList: IAppDetails[];
 }
 export interface ISaveToCollectionState {
   showModal: boolean;
@@ -298,8 +299,11 @@ class SaveToCollection extends React.Component<
           }
         });
 
+        const collectionNameAddedFromClient = tabToProcess.collectionNameAddedFromClient;
+        const message = collectionNameAddedFromClient ? `Saving to collection "${collectionNameAddedFromClient}"` : "Saving...";
+
         this.setState({
-          modalErroSaveMessage: "Saving..",
+          modalErroSaveMessage: message,
           modalErroSaveMessageIsError: false,
         });
 
@@ -325,10 +329,9 @@ class SaveToCollection extends React.Component<
     } catch (error) {
       console.error("Error ", error);
       this.setState({
-        modalErroSaveMessage: error,
+        modalErroSaveMessage: "Error saving: " + error,
         modalErroSaveMessageIsError: true,
       });
-      throw new Error("Error");
     }
   }
 
@@ -342,6 +345,7 @@ class SaveToCollection extends React.Component<
 
     const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
     const recordingId = tabs[tabIndex].recordingIdAddedFromClient;
+    
     const showSaveToButton =
       recordingId &&
       userHistoryCollection &&
@@ -350,7 +354,7 @@ class SaveToCollection extends React.Component<
     return (
       <>
         {showSaveToButton ? (
-          <Dropdown disabled={this.props.disabled} style={{ marginRight: "5px", marginBottom: "5px" }}>
+          <Dropdown disabled={this.props.disabled} style={{ marginRight: "5px", marginBottom: "5px" }} id="saveDdl">
             <Button
               disabled={this.props.disabled}
               onClick={this.showSaveModal}

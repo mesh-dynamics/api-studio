@@ -587,10 +587,10 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
         case httpClientConstants.DELETE_USER_COLLECTION: {
             let deletedCollection: ICollectionDetails;
             const userCollections = state.userCollections.filter( collection => { 
-                if(collection.rootRcrdngId === data){
+                if(collection.id === data){
                     deletedCollection = collection;
                 } 
-                return collection.rootRcrdngId !== data;
+                return collection.id !== data;
             });
             const tabs = state.tabs.map( tab => {
                 if(deletedCollection && tab.collectionIdAddedFromClient === deletedCollection.collec){
