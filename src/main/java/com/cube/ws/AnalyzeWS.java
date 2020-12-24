@@ -14,6 +14,11 @@ import static io.md.services.DataStore.TemplateNotFoundException;
 import com.cube.core.ServerUtils;
 import com.cube.dao.ApiTraceFacetQuery;
 
+import com.cube.learning.CompareTemplatesLearner;
+import com.cube.learning.TemplateEntryMeta;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import io.md.cache.ProtoDescriptorCache;
 import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.core.Comparator.Diff;
@@ -31,7 +36,9 @@ import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.RequestPayload;
 import io.md.dao.ResponsePayload;
 import io.md.dao.Analysis.ReqRespMatchWithEvent;
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -45,6 +52,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -56,6 +64,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -64,6 +74,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -112,6 +123,7 @@ import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.golden.transform.TemplateSetTransformer;
 import com.cube.golden.transform.TemplateUpdateOperationSetTransformer;
 import com.cube.queue.StoreUtils;
+import com.cube.utils.AnalysisUtils;
 
 /**
  * @author prasad
@@ -139,24 +151,15 @@ public class AnalyzeWS {
 	@POST
     @Path("analyze/{replayId}")
     @Consumes("application/x-www-form-urlencoded")
-    public Response analyze(@Context UriInfo ui, @PathParam("replayId") String replayId,
-                            MultivaluedMap<String, String> formParams) {
-        String tracefield = Optional.ofNullable(formParams.get("tracefield"))
-            .flatMap(vals -> vals.stream().findFirst())
-            .orElse(Constants.DEFAULT_TRACE_FIELD);
-
-        Optional<io.md.dao.Analysis> analysis = analyzer.analyze(replayId);
-
-        return analysis.map(av -> {
-            String json;
-            try {
-                json = jsonMapper.writeValueAsString(av);
-                return Response.ok(json, MediaType.APPLICATION_JSON).build();
-            } catch (JsonProcessingException e) {
-                LOGGER.error(String.format("Error in converting Analysis object to Json for replayid %s", replayId), e);
-                return Response.serverError().build();
-            }
-        }).orElse(Response.serverError().build());
+	public void analyze(@Suspended AsyncResponse asyncResponse,
+		@Context UriInfo ui, @PathParam("replayId") String replayId,
+		MultivaluedMap<String, String> formParams) {
+		CompletableFuture.supplyAsync(() -> {
+			Optional<String> templateVersion = Optional
+				.ofNullable(formParams.get(io.md.constants.Constants.TEMPLATE_VERSION_FIELD)).
+					flatMap(vals -> vals.stream().findFirst());
+			return AnalysisUtils.runAnalyze(analyzer, jsonMapper, replayId, templateVersion);
+		}).thenApply(response -> asyncResponse.resume(response));
     }
 
 
@@ -346,6 +349,61 @@ public class AnalyzeWS {
 		    .orElse(Response.serverError().entity(new JSONObject(Map.of(Constants.MESSAGE
 			    , "Template type not specified correctly"))).build());
     }
+
+    @GET
+    @Path("getPotentialCompareTemplates")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response getPotentialCompareTemplates(@Context UriInfo uriInfo) {
+
+        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+
+        String replayId = queryParams.getFirst("replayId");
+
+        if (replayId == null){
+            return Response.serverError().entity(
+                Utils.buildErrorResponse(Constants.ERROR, Constants.NOT_PRESENT,
+                    "Missing query parameter replayId")).build();
+        }
+
+        AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(replayId,
+            new MultivaluedHashMap<>());
+
+        ReqRespResultsWithFacets resultWithFacets = rrstore
+            .getAnalysisMatchResults(analysisMatchResultQuery);
+
+        CompareTemplatesLearner ctLearner = new CompareTemplatesLearner();
+
+        List<TemplateEntryMeta> finalMetaList = ctLearner.learnCompareTemplates(
+            resultWithFacets.result.getObjects());
+
+        try {
+
+            CsvSchema csvSchema = csvMapper.schemaFor(TemplateEntryMeta.class).withHeader();
+            String data = csvMapper.writer(csvSchema).writeValueAsString(finalMetaList);
+
+            final String fileName = "learned_comparison_rules", ext = ".csv";
+
+            File file = new File(
+                "/tmp/" + fileName + "-" + (replayId + Instant.now()).hashCode() + ext);
+
+            FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
+            Response.ResponseBuilder response = Response.ok((Object) file);
+            response
+                .header("Content-Disposition", "attachment; filename=\"" + fileName + ext + "\"");
+            response.header("Access-Control-Expose-Headers",
+                "Content-Disposition, X-Suggested-Filename");
+
+            return response.build();
+
+        } catch (IOException e) {
+            String errorString =  String.format("Error in file creation for replay=%s", replayId);
+            LOGGER.error(errorString, e);
+            return Response.serverError().entity(
+                Utils.buildErrorResponse(Constants.ERROR, Constants.IO_EXCEPTION,
+                    errorString)).build();
+        }
+    }
+
 
 
     public Response getCompareTemplate(UriInfo urlInfo, String appId,
@@ -676,8 +734,9 @@ public class AnalyzeWS {
 		    facetMap.put(Constants.DIFF_PATH_FACET, resultWithFacets.diffPathFacets);
 
 		    numFound[0] = result.numFound;
+		    Optional<Analysis> analysisOpt = rrstore.getAnalysis(replayId);
             app[0] = replay.app;
-            app[1] = replay.templateVersion;
+            app[1] = analysisOpt.map(analysis -> analysis.templateVersion).orElse(replay.templateVersion);
             List<ReqRespMatchResult> res = result.getObjects()
                 .collect(Collectors.toList());
             List<String> reqIds = res.stream().map(r -> r.recordReqId).flatMap(Optional::stream)
@@ -935,45 +994,84 @@ public class AnalyzeWS {
         }
     }
 
-    /**
-     * Update operation set for modification of a template set (add new rules)
-     * @param uriInfo Context
-     * @param operationSetId The id of the existing update operation set
-     * @param templateUpdateOperations The new operations to be added to the set
-     *                                 (a map of template key, vs update operations for the particular template)
-     * @return Appropriate Response
-     */
-    @POST
-    @Path("updateTemplateOperationSet/{customerId}/{operationSetId}")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response updateTemplateOperationSet(@Context UriInfo uriInfo, @PathParam("operationSetId") String operationSetId,
-        @PathParam("customerId") String customerId, String templateUpdateOperations) {
-        TypeReference<HashMap<TemplateKey, SingleTemplateUpdateOperation>> typeReference =
-            new TypeReference<>() {};
-        try {
-            // deserialize new operations to be added
-            Map<TemplateKey, SingleTemplateUpdateOperation> updates = jsonMapper.readValue(templateUpdateOperations,
-                typeReference);
-            // get existing operation set against the id specified
-            Optional<TemplateUpdateOperationSet> updateOperationSetOpt = rrstore.getTemplateUpdateOperationSet(operationSetId);
-            TemplateUpdateOperationSetTransformer transformer = new TemplateUpdateOperationSetTransformer();
-            // merge operations
-            TemplateUpdateOperationSet transformed = updateOperationSetOpt.flatMap(updateOperationSet -> Optional.of
-                (transformer.updateTemplateOperationSet(updateOperationSet , updates)))
-                .orElseThrow(() -> new Exception("Missing template update operation set for given id"));
-            // save the merged operation set
-            rrstore.saveTemplateUpdateOperationSet(transformed, customerId);
-            LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully updated template "
-	            + "rules update op set", Constants.TEMPLATE_UPD_OP_SET_ID_FIELD, operationSetId)));
-            return Response.ok().entity("{\"Message\" :  \"Successfully updated Template update operation set\" , \"ID\" : \"" +
-                operationSetId + "\"}").build();
-        } catch (Exception e) {
-            LOGGER.error("Error while reading template update operation list from json string :: " + e.getMessage());
-            return Response.serverError().entity("{\"Message\" :  \"Unable to update template update operation set\" , \"Error\" : \"" +
-                e.getMessage() + "\"}").build();
-        }
-    }
+	@POST
+	@Path("analyzeWithUpdates/{replayId}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public void analyzeWithUpdates(@Suspended AsyncResponse asyncResponse,
+		@Context UriInfo uriInfo, @PathParam("replayId") String replayId,
+		String templateUpdateOperations) {
+		TypeReference<HashMap<TemplateKey, SingleTemplateUpdateOperation>> typeReference =
+			new TypeReference<>() {
+			};
+		CompletableFuture.supplyAsync(() -> {
+			try {
+				Replay replay = rrstore.getReplay(replayId).orElseThrow(() ->
+					new Exception("Unable to fetch replay object for id " + replayId));
+				Optional<Analysis> analysis = rrstore.getAnalysis(replayId);
+				String previousTemplateVersion = analysis
+					.map(analysis1 -> analysis1.templateVersion)
+					.orElse(replay.templateVersion);
+				String operationSetID = rrstore.createTemplateUpdateOperationSet(replay.customerId,
+					replay.app, previousTemplateVersion);
+				AnalysisUtils.updateTemplateUpdateOperationSet(replay.customerId, operationSetID
+					, templateUpdateOperations, jsonMapper, rrstore);
+
+				Optional<TemplateSet> originalTemplateSet = rrstore.getTemplateSet(replay.customerId
+					, replay.app, previousTemplateVersion);
+				String updatedTemplateSetVersion =
+					AnalysisUtils.updateTemplateSet(operationSetID, originalTemplateSet, rrstore);
+
+				return AnalysisUtils
+					.runAnalyze(analyzer, jsonMapper, replayId,
+						Optional.of(updatedTemplateSetVersion));
+			} catch (Exception e) {
+				return CompletableFuture
+					.completedFuture(Response.serverError().entity(new JSONObject(Map.of("Message"
+						, "Unable to run analyze with updated template set ", "replayId"
+						, replayId, "Error", e.getMessage()))).build());
+			}
+
+		}).thenApply(response -> asyncResponse.resume(response));
+	}
+
+
+	/**
+	 * Update operation set for modification of a template set (add new rules)
+	 *
+	 * @param uriInfo                  Context
+	 * @param operationSetId           The id of the existing update operation set
+	 * @param templateUpdateOperations The new operations to be added to the set (a map of template
+	 *                                 key, vs update operations for the particular template)
+	 * @return Appropriate Response
+	 */
+	@POST
+	@Path("updateTemplateOperationSet/{customerId}/{operationSetId}")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response updateTemplateOperationSet(@Context UriInfo uriInfo,
+		@PathParam("operationSetId") String operationSetId,
+		@PathParam("customerId") String customerId, String templateUpdateOperations) {
+		TypeReference<HashMap<TemplateKey, SingleTemplateUpdateOperation>> typeReference =
+			new TypeReference<>() {
+			};
+		try {
+			AnalysisUtils.updateTemplateUpdateOperationSet(customerId, operationSetId,
+				templateUpdateOperations, jsonMapper, rrstore);
+			return Response.ok().entity(
+				"{\"Message\" :  \"Successfully updated Template update operation set\" , \"ID\" : \""
+					+
+					operationSetId + "\"}").build();
+		} catch (Exception e) {
+			LOGGER.error(
+				"Error while reading template update operation list from json string :: " + e
+					.getMessage());
+			return Response.serverError().entity(
+				"{\"Message\" :  \"Unable to update template update operation set\" , \"Error\" : \""
+					+
+					e.getMessage() + "\"}").build();
+		}
+	}
 
     /**
      * Update an existing template set, based on the operations specified in an update set
@@ -984,40 +1082,23 @@ public class AnalyzeWS {
     @GET
     @Path("updateTemplateSet/{templateSetId}/{operationSetId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateTemplateSet(@PathParam("templateSetId") String templateSetId, @PathParam("operationSetId")
-        String templateUpdateOperationSetId) {
-        try{
-            // Get template set and update operation set from solr
-            Optional<TemplateSet> templateSetOpt = rrstore.getTemplateSet(templateSetId);
-            Optional<TemplateUpdateOperationSet> updateOperationSetOpt = rrstore.getTemplateUpdateOperationSet(templateUpdateOperationSetId);
-            TemplateSetTransformer transformer = new TemplateSetTransformer();
-            // transform the template set based on the operations specified
-	        TemplateSet updated = templateSetOpt.flatMap(UtilException.rethrowFunction(
-		        templateSet -> updateOperationSetOpt.map(UtilException.rethrowFunction(
-			        updateOperationSet ->
-				        transformer.updateTemplateSet(templateSet, updateOperationSet,
-					        rrstore)))))
-		        .orElseThrow(
-			        () -> new Exception("Missing template set or template update operation set"));
-            // Validate updated template set
-            ValidateCompareTemplate validTemplate = ServerUtils.validateTemplateSet(updated);
-            if(!validTemplate.isValid()) {
-                return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
-            }
-            // save the new template set (and return the new version as a part of the response)
-	        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully updated template set",
-		        Constants.OLD_TEMPLATE_SET_ID, templateSetId, Constants.NEW_TEMPLATE_SET_VERSION, updated.version,
-		        Constants.CUSTOMER_ID_FIELD, updated.customer, Constants.APP_FIELD
-		        , updated.app, Constants.TEMPLATE_UPD_OP_SET_ID_FIELD, templateUpdateOperationSetId)));
-            rrstore.saveTemplateSet(updated);
-            return Response.ok().entity("{\"Message\" :  \"Template Set successfully updated\" , \"ID\" : \"" +
-                updated.version + "\"}").build();
-        } catch (Exception e) {
-            LOGGER.error("Error while updating template set :: " + templateSetId + " :: with operation set id :: "
-                + templateUpdateOperationSetId);
-            return Response.serverError().entity("{\"Message\" :  \"Unable to update template set\" , \"Error\" : \"" +
-                e.getMessage() + "\"}").build();
-        }
+    public Response updateTemplateSet(@PathParam("templateSetId") String templateSetId,
+	    @PathParam("operationSetId")
+		    String templateUpdateOperationSetId) {
+	    try {
+		    // Get template set and update operation set from solr
+		    Optional<TemplateSet> templateSetOpt = rrstore.getTemplateSet(templateSetId);
+		    String updatedVersion = AnalysisUtils
+			    .updateTemplateSet(templateUpdateOperationSetId, templateSetOpt, rrstore);
+		    return Response.ok().entity(new JSONObject(Map.of("Message"
+			    , "Template Set successfully updated", "ID", updatedVersion))).build();
+	    } catch (Exception e) {
+		    LOGGER.error("Error while updating template set :: " + templateSetId
+			    + " :: with operation set id :: "
+			    + templateUpdateOperationSetId);
+		    return Response.serverError().entity(new JSONObject(Map.of("Message"
+			    , "Unable to update template set", "Error", e.getMessage()))).build();
+	    }
     }
 
 
@@ -1035,97 +1116,96 @@ public class AnalyzeWS {
     @Consumes("application/x-www-form-urlencoded")
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateGoldenSet(@PathParam("recordingId") String recordingId,
-                                    @PathParam("replayId") String replayId,
-                                    @PathParam("collectionUpdOpSetId") String collectionUpdateOpSetId,
-                                    @PathParam("templateUpdOpSetId") String templateUpdOpSetId,
-                                    MultivaluedMap<String, String> formParams) {
-        try {
-            Recording originalRec = rrstore.getRecording(recordingId).orElseThrow(() ->
-                new Exception("Unable to find recording object for the given id"));
+	    @PathParam("replayId") String replayId,
+	    @PathParam("collectionUpdOpSetId") String collectionUpdateOpSetId,
+	    @PathParam("templateUpdOpSetId") String templateUpdOpSetId,
+	    MultivaluedMap<String, String> formParams) {
+	    try {
+		    Recording originalRec = rrstore.getRecording(recordingId).orElseThrow(() ->
+			    new Exception("Unable to find recording object for the given id"));
 
-            String name = formParams.getFirst("name");
-            String label = formParams.getFirst("label");
+		    String name = formParams.getFirst("name");
+		    String label = formParams.getFirst("label");
 
-            if (name==null || label==null) {
-                throw new Exception("Name or label not specified for golden");
-            }
+		    if (name == null || label == null) {
+			    throw new Exception("Name or label not specified for golden");
+		    }
 
-            String userId = formParams.getFirst("userId");
+		    String userId = formParams.getFirst("userId");
 
+		    if (userId == null) {
+			    throw new Exception("userId not specified for golden");
+		    }
 
-            if (userId==null ) {
-                throw new Exception("userId not specified for golden");
-            }
+		    // Ensure name is unique for a customer and app
+		    Optional<Recording> recWithSameName = rrstore
+			    .getRecordingByName(originalRec.customerId, originalRec.app, name,
+				    Optional.ofNullable(label));
+		    if (recWithSameName.isPresent()) {
+			    throw new Exception("Golden already present for name - " + name + "/" + label
+				    + ".Specify unique name/label");
+		    }
 
-            // Ensure name is unique for a customer and app
-            Optional<Recording> recWithSameName = rrstore.getRecordingByName(originalRec.customerId, originalRec.app, name, Optional.ofNullable(label));
-            if (recWithSameName.isPresent()) {
-                throw new Exception("Golden already present for name - " + name + "/" + label + ".Specify unique name/label");
-            }
+		    Optional<Analysis> analysis = rrstore.getAnalysis(replayId);
+		    // creating a new temporary empty template set against the old version
+		    // (if one doesn't exist already)
+		    TemplateSet templateSet = rrstore
+			    .getTemplateSet(originalRec.customerId, originalRec.app, analysis.map(a ->
+				    a.templateVersion).orElse(originalRec.templateVersion))
+			    .orElse(new TemplateSet(originalRec.templateVersion, originalRec.customerId,
+				    originalRec.app, Instant.now(), Collections.emptyList(), Optional.empty()));
 
-            // creating a new temporary empty template set against the old version
-	        // (if one doesn't exist already)
-            TemplateSet templateSet = rrstore.getTemplateSet(originalRec.customerId, originalRec.app, originalRec
-                .templateVersion)
-                .orElse(new TemplateSet(originalRec.templateVersion, originalRec.customerId,
-	                originalRec.app, Instant.now(), Collections.emptyList(), Optional.empty()));
-            TemplateUpdateOperationSet templateUpdateOperationSet = rrstore
-                .getTemplateUpdateOperationSet(templateUpdOpSetId).orElseThrow(() ->
-                    new Exception("Unable to find Template Update Operation Set of specified id"));
-            TemplateSetTransformer setTransformer = new TemplateSetTransformer();
-            TemplateSet updatedTemplateSet = setTransformer.updateTemplateSet(
-            	templateSet, templateUpdateOperationSet, config.rrstore);
+		    String updatedTemplateSetVersion = AnalysisUtils.updateTemplateSet(templateUpdOpSetId,
+			    Optional.of(templateSet), rrstore);
 
-	        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Successfully updated template set",
-		        Constants.OLD_TEMPLATE_SET_VERSION, templateSet.version, Constants.NEW_TEMPLATE_SET_VERSION, updatedTemplateSet.version,
-		        Constants.CUSTOMER_ID_FIELD, updatedTemplateSet.customer, Constants.APP_FIELD
-		        , updatedTemplateSet.app, Constants.TEMPLATE_UPD_OP_SET_ID_FIELD,
-		        templateUpdOpSetId , Constants.RECORDING_ID, recordingId, Constants.REPLAY_ID_FIELD, replayId)));
+		    // TODO With similar update logic find the updated collection id
+		    String newCollectionName = UUID.randomUUID().toString();
+		    boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName
+			    , collectionUpdateOpSetId, originalRec, updatedTemplateSetVersion);
+		    if (!b) {
+			    throw new Exception("Unable to create an updated collection from existing golden");
+		    }
 
-            // Validate updated template set
-            ValidateCompareTemplate validTemplate = ServerUtils.validateTemplateSet(updatedTemplateSet);
-            if(!validTemplate.isValid()) {
-                return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
-            }
+		    Optional<String> codeVersion = Optional.ofNullable(formParams.getFirst("codeVersion"));
+		    Optional<String> branch = Optional.ofNullable(formParams.getFirst("branch"));
+		    Optional<String> gitCommitId = Optional.ofNullable(formParams.getFirst("gitCommitId"));
+		    List<String> tags = Optional.ofNullable(formParams.get("tags"))
+			    .orElse(new ArrayList<String>());
+		    Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
 
-            String updatedTemplateSetId = rrstore.saveTemplateSet(updatedTemplateSet);
-            // TODO With similar update logic find the updated collection id
-            String newCollectionName = UUID.randomUUID().toString();
-            boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName
-	            , collectionUpdateOpSetId, originalRec, updatedTemplateSet.version);
-            if (!b) throw new Exception("Unable to create an updated collection from existing golden");
+		    RecordingBuilder recordingBuilder = new RecordingBuilder(
+			    originalRec.customerId, originalRec.app, originalRec.instanceId, newCollectionName)
+			    .withStatus(RecordingStatus.Completed)
+			    .withTemplateSetVersion(updatedTemplateSetVersion)
+			    .withParentRecordingId(originalRec.getId())
+			    .withRootRecordingId(originalRec.rootRecordingId)
+			    .withName(name).withLabel(label).withTags(tags)
+			    .withCollectionUpdateOpSetId(collectionUpdateOpSetId)
+			    .withTemplateUpdateOpSetId(templateUpdOpSetId).withUserId(userId)
+			    .withRecordingType(originalRec.recordingType).withRunId(originalRec.runId);
+		    codeVersion.ifPresent(recordingBuilder::withCodeVersion);
+		    branch.ifPresent(recordingBuilder::withBranch);
+		    gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
+		    comment.ifPresent(recordingBuilder::withComment);
+		    originalRec.generatedClassJarPath.ifPresent(UtilException
+			    .rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
+		    originalRec.dynamicInjectionConfigVersion
+			    .ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
 
+		    Recording updatedRecording = recordingBuilder.build();
 
-            Optional<String> codeVersion = Optional.ofNullable(formParams.getFirst("codeVersion"));
-            Optional<String> branch = Optional.ofNullable(formParams.getFirst("branch"));
-            Optional<String> gitCommitId = Optional.ofNullable(formParams.getFirst("gitCommitId"));
-            List<String> tags = Optional.ofNullable(formParams.get("tags")).orElse(new ArrayList<String>());
-            Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
-
-            RecordingBuilder recordingBuilder = new RecordingBuilder(
-            	originalRec.customerId, originalRec.app, originalRec.instanceId, newCollectionName)
-                .withStatus(RecordingStatus.Completed).withTemplateSetVersion(updatedTemplateSet.version)
-	            .withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
-                .withName(name).withLabel(label).withTags(tags).withCollectionUpdateOpSetId(collectionUpdateOpSetId)
-	            .withTemplateUpdateOpSetId(templateUpdOpSetId).withUserId(userId).withRecordingType(originalRec.recordingType).withRunId(originalRec.runId);
-            codeVersion.ifPresent(recordingBuilder::withCodeVersion);
-            branch.ifPresent(recordingBuilder::withBranch);
-            gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
-            comment.ifPresent(recordingBuilder::withComment);
-	        originalRec.generatedClassJarPath.ifPresent(UtilException
-		        .rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
-	        originalRec.dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
-
-            Recording updatedRecording = recordingBuilder.build();
-
-            rrstore.saveRecording(updatedRecording);
-            return Response.ok().entity("{\"Message\" :  \"Successfully created new recording with specified original recording " +
-                "and set of operations\" , \"ID\" : \"" + updatedRecording.getId() + "\"}").build();
-        } catch (Exception e) {
-            LOGGER.error("Error while updating golden set :: "  + e.getMessage());
-            return Response.serverError().entity("{\"Message\" :  \"Error while updating recording\" , \"Error\" : \"" +
-                e.getMessage() + "\"}").build();
-        }
+		    rrstore.saveRecording(updatedRecording);
+		    return Response.ok().entity(
+			    "{\"Message\" :  \"Successfully created new recording with specified original recording "
+				    +
+				    "and set of operations\" , \"ID\" : \"" + updatedRecording.getId() + "\"}")
+			    .build();
+	    } catch (Exception e) {
+		    LOGGER.error("Error while updating golden set :: " + e.getMessage());
+		    return Response.serverError()
+			    .entity("{\"Message\" :  \"Error while updating recording\" , \"Error\" : \"" +
+				    e.getMessage() + "\"}").build();
+	    }
     }
 
     @POST
@@ -1769,7 +1849,11 @@ public class AnalyzeWS {
 		super();
 		this.rrstore = config.rrstore;
 		this.jsonMapper = config.jsonMapper;
-		this.config = config;
+
+        this.csvMapper = new CsvMapper();
+        csvMapper.configure(JsonGenerator.Feature.IGNORE_UNKNOWN, true);
+
+        this.config = config;
 		this.recordingUpdate = new RecordingUpdate(config);
         analyzer = new RealAnalyzer(rrstore);
     }
@@ -1777,6 +1861,7 @@ public class AnalyzeWS {
 
 	ReqRespStore rrstore;
 	ObjectMapper jsonMapper;
+    CsvMapper csvMapper;
 	Config config;
     private final RecordingUpdate recordingUpdate;
 
