@@ -167,6 +167,7 @@ public class ReplayBasicWS {
         // Request transformations - for injecting tokens and such
         Optional<String> xfms = Optional.ofNullable(formParams.getFirst(Constants.TRANSFORMS_FIELD));
         boolean tracePropagation = Utils.strToBool(formParams.getFirst(Constants.TRACE_PROPAGATION)).orElse(true);
+        boolean storeToDatastore = Utils.strToBool(formParams.getFirst(Constants.STORE_TO_DATASTORE)).orElse(false);
 
         if (userId == null) {
             throw new ParameterException("userId Not Specified");
@@ -199,7 +200,8 @@ public class ReplayBasicWS {
         dynamicInjectionConfigVersion.ifPresent(replayBuilder::withDynamicInjectionConfigVersion);
         staticInjectionMap.ifPresent(replayBuilder::withStaticInjectionMap);
         replayBuilder.withRunId(replayBuilder.getReplayId() + " " + Instant.now().toString());
-        replayBuilder.withTracePropogation(tracePropagation);
+        replayBuilder.withTracePropagation(tracePropagation);
+        replayBuilder.withStoreToDatastore(storeToDatastore);
 
         try {
             recording.generatedClassJarPath
@@ -268,7 +270,7 @@ public class ReplayBasicWS {
                         , replay.replayId)));
             }
         }
-        analyzerOpt.ifPresent(analyzer -> analyzer.analyze(replay.replayId));
+        analyzerOpt.ifPresent(analyzer -> analyzer.analyze(replay.replayId , Optional.empty()));
     }
 
 

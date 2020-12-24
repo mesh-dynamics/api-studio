@@ -144,6 +144,7 @@ public class Constants {
     public static final String ANALYZE_FIELD = "analyze";
     public static final String TRACE_PROPAGATION = "tracePropagation";
     public static final String INSERT_AFTER_SEQ_ID = "insertAfterSeqId";
+    public static final String STORE_TO_DATASTORE = "storeToDatastore";
 
 
     public static final String GENERATED_CLASS_JAR_PATH_FIELD ="generated_class_jar_path"  ;

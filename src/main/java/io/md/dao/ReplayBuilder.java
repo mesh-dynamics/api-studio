@@ -60,8 +60,9 @@ public class ReplayBuilder {
 	public Optional<String> staticInjectionMap;
 	public Instant analysisCompleteTimestamp;
 	public String runId;
-	public boolean tracePropogation = true;
+	public boolean tracePropagation = true;
 	public Optional<ReplayContext> replayContext = Optional.empty();
+	public boolean storeToDatastore = false;
 
 
 	public ReplayBuilder(String endpoint, String customerId, String app, String instanceId,
@@ -121,8 +122,7 @@ public class ReplayBuilder {
 				excludePaths, reqCnt , reqSent , reqFailed, creationTimestamp, sampleRate, intermediateServices,
 				generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, mockServices
 				, testConfigName, goldenName, recordingId, archived,dynamicInjectionConfigVersion,
-				analysisCompleteTimestamp, staticInjectionMap, runId);
-		replay.tracePropogation = this.tracePropogation;
+				analysisCompleteTimestamp, staticInjectionMap, runId, tracePropagation , storeToDatastore);
 		return replay;
 	}
 
@@ -255,10 +255,17 @@ public class ReplayBuilder {
 		return this;
 	}
 
-	public ReplayBuilder withTracePropogation(boolean tracePropogation){
-		this.tracePropogation = tracePropogation;
+	public ReplayBuilder withTracePropagation(boolean tracePropagation){
+		this.tracePropagation = tracePropagation;
 		return this;
 	}
+
+	public ReplayBuilder withStoreToDatastore(boolean store){
+		this.storeToDatastore = store;
+		return this;
+	}
+	//storeToDatastore
+
 
 	public String getReplayId() {
 		return this.replayId;

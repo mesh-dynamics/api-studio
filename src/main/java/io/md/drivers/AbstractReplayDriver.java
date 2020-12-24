@@ -12,12 +12,18 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.md.core.CollectionKey;
 import io.md.dao.*;
+import io.md.dao.Event.EventBuilder;
+import io.md.dao.Event.EventBuilder.InvalidEventException;
+import io.md.dao.Event.EventType;
+import io.md.dao.Event.RunType;
+import io.md.dao.Recording.RecordingType;
 import io.md.injection.DynamicInjectorFactory;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -186,16 +192,24 @@ public abstract class AbstractReplayDriver {
 				});
 
 				Map<String , Instant> reqIdRespTsMap = Map.of();
-				if(!replay.tracePropogation){
+				if(!replay.tracePropagation){
 					Stream<Event> respEventStream = ReplayUpdate.getResponseEvents(dataStore, replay,
 							reqs.stream().map(Event::getReqId).collect(Collectors.toList()));
 					reqIdRespTsMap = respEventStream.collect(Collectors.toMap(e->e.reqId , e->Instant.ofEpochSecond(e.timestamp.getEpochSecond() , e.timestamp.getNano()) ));
 				}
 				Map<String, Instant> finalReqIdRespTsMap = reqIdRespTsMap;
 				CollectionKey replayCollKey = new CollectionKey(replay.customerId, replay.app , replay.instanceId);
-				List<String> respcodes = replay.async ? sendReqAsync(reqs.stream()) :
-					sendReqSync(reqs.stream(), finalReqIdRespTsMap, replayCollKey);
+				List<Event> storeEvents = new ArrayList<>();
+				List<String> respcodes = replay.async ? sendReqAsync(reqs.stream() , storeEvents) :
+					sendReqSync(reqs.stream(), finalReqIdRespTsMap, replayCollKey , storeEvents);
 
+				if(replay.storeToDatastore){
+					boolean success= dataStore.save(storeEvents.toArray(Event[]::new));
+					if(!success){
+						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+							"Error during saving storeToDatastore", Constants.REPLAY_ID_FIELD, replay.replayId)));
+					}
+				}
 				// count number of errors
 				replay.reqfailed += respcodes.stream()
 					.filter(s -> (!client.isSuccessStatusCode(s))).count();
@@ -228,17 +242,26 @@ public abstract class AbstractReplayDriver {
 	}
 
 
-	private List<String> sendReqAsync(Stream<Event> replayRequests) {
+	private List<String> sendReqAsync(Stream<Event> replayRequests , List<Event> storeEvents) {
 		// exceptions are converted to status code indicating error
 		List<CompletableFuture<String>> respcodes = replayRequests.map(request -> {
 			replay.reqsent++;
 			logUpdate();
 			diMgr.inject(request);
+			Instant requestTime = Instant.now();
 			CompletableFuture<ResponsePayload> responsePayloadCompletableFuture = client
 				.sendAsync(request, replay);
 
 			return responsePayloadCompletableFuture.thenApply(responsePayload -> {
+				Instant respTime = Instant.now();
 				diMgr.extract(request, responsePayload);
+				if (replay.storeToDatastore) {
+					try {
+						storeEvents(storeEvents, request, requestTime, respTime, responsePayload);
+					} catch (InvalidEventException e) {
+						throw new CompletionException(e);
+					}
+				}
 				return responsePayload.getStatusCode();
 			}).handle((ret, e) -> {
 				if (e != null) {
@@ -265,24 +288,56 @@ public abstract class AbstractReplayDriver {
 		}
 	}
 
+	private void storeEvents(List<Event> storeEvents , Event goldenReq , Instant reqTime , Instant respTime, ResponsePayload responsePayload )
+		throws InvalidEventException {
+
+		String reqid = io.md.utils.Utils.generateRequestId(goldenReq.service , goldenReq.getTraceId());
+		MDTraceInfo traceInfo = new MDTraceInfo(goldenReq.getTraceId() , goldenReq.getSpanId() , goldenReq.getParentSpanId());
+		EventBuilder reqBuilder = new EventBuilder(goldenReq.customerId , goldenReq.app , goldenReq.service , replay.instanceId , replay.replayId ,
+			traceInfo , RunType.Replay , Optional.of(reqTime) , reqid ,
+			goldenReq.apiPath , goldenReq.eventType , RecordingType.Replay);
+		reqBuilder.setPayload(goldenReq.payload);
+		reqBuilder.setPayloadKey(goldenReq.payloadKey);
+		reqBuilder.withMetaData(goldenReq.metaData);
+		reqBuilder.withRunId(replay.runId);
+		reqBuilder.withPayloadFields(goldenReq.payloadFields);
+		reqBuilder.withSeqId(goldenReq.getSeqId()); // both will be empty. in case they are populated in future
+
+		storeEvents.add(reqBuilder.createEvent());
+
+		EventBuilder respBuilder = new EventBuilder(goldenReq.customerId , goldenReq.app , goldenReq.service , replay.instanceId , replay.replayId ,
+			traceInfo , RunType.Replay , Optional.of(respTime) , reqid ,
+			goldenReq.apiPath , EventType.mapType(goldenReq.eventType , true)  , RecordingType.Replay);
+		respBuilder.setPayload(responsePayload);
+		respBuilder.withRunId(replay.runId);
+		respBuilder.withSeqId(goldenReq.getSeqId());
+
+		storeEvents.add(respBuilder.createEvent());
+	}
+
 	private List<String> sendReqSync(Stream<Event> requests, Map<String, Instant> reqIdRespTsMap,
-	  CollectionKey replayCollKey) {
+	  CollectionKey replayCollKey , List<Event> storeEvents) {
 
 		return requests.map(request -> {
 			try {
 				replay.reqsent++;
 				logUpdate();
 				diMgr.inject(request);
-				if(!replay.tracePropogation){
+				if(!replay.tracePropagation){
 					Optional<Instant> respTs = Optional.ofNullable(reqIdRespTsMap.get(request.getReqId()));
 					Optional<ReplayContext> replayCtx = respTs.map(ts->new ReplayContext(request.getTraceId() ,request.timestamp , ts ));
 					replay.replayContext = replayCtx;
 					dataStore.populateCache(replayCollKey, RecordOrReplay.createFromReplay(replay));
 				}
+				Instant requestTime = Instant.now();
 				ResponsePayload responsePayload = client.send(request, replay);
+				Instant respTime = Instant.now();
 				// Extract variables in extractionMap
 				diMgr.extract(request, responsePayload);
 				String statusCode = responsePayload.getStatusCode();
+				if(replay.storeToDatastore){
+					storeEvents(storeEvents , request , requestTime, respTime, responsePayload);
+				}
 
 				// for debugging - can remove later
 				if (!client.isSuccessStatusCode(statusCode)) {
