@@ -97,7 +97,7 @@ public class UserService {
     }
 
     public Optional<User> getByUsername(String username) {
-        return userRepository.findByUsername(username);
+        return userRepository.findByUsernameIgnoreCase(username);
     }
 
     public Optional<User> getById(Long id) {
@@ -120,7 +120,7 @@ public class UserService {
                     .collect(Collectors.toSet());
         }
         final Set<String> finalRoles = roles;
-        Optional<User> user = userRepository.findByUsername(userDTO.getEmail());
+        Optional<User> user = userRepository.findByUsernameIgnoreCase(userDTO.getEmail());
         Optional<Customer> customer = customerService.getById(userDTO.getCustomerId());
         if(user.isPresent()) {
             // if user already exists, update the fields
@@ -205,7 +205,7 @@ public class UserService {
     }
 
     public boolean deleteUser(String email) {
-        Optional<User> existed = this.userRepository.findByUsername(email);
+        Optional<User> existed = this.userRepository.findByUsernameIgnoreCase(email);
         if (existed.isPresent()) {
             this.userRepository.delete(existed.get());
             return true;
@@ -232,7 +232,7 @@ public class UserService {
     }
 
     public Optional<User> requestPasswordReset(String mail) {
-        return userRepository.findByUsername(mail)
+        return userRepository.findByUsernameIgnoreCase(mail)
                 .filter(user -> {
                     if(user.isEnabled()) {
                         LocalDateTime dateTime = LocalDateTime.now().minusSeconds(resetPasswordConfiguration.getPasswordResetRequestDays()*86400);
@@ -252,7 +252,7 @@ public class UserService {
     }
 
     public void changePassword(ChangePasswordDTO changePasswordDTO, String username) {
-        Optional<User> optionalUser = userRepository.findByUsername(username);
+        Optional<User> optionalUser = userRepository.findByUsernameIgnoreCase(username);
         CharSequence oldPassword = changePasswordDTO.getOldPassword();
         if (optionalUser.isPresent()) {
             if (!passwordEncoder.matches(oldPassword, optionalUser.get().getPassword())) {
@@ -272,7 +272,7 @@ public class UserService {
         // verify that the token hasn't expired, and extract the user email from it
         String userEmail = jwtTokenProvider.validateToken(key);
         if(userEmail != null) {
-            return userRepository.findByUsername(userEmail)
+            return userRepository.findByUsernameIgnoreCase(userEmail)
               .map(user -> {
                   if(user.isActivated()) {
                     throw new UserAlreadyActivatedException("User already activated");
@@ -289,7 +289,7 @@ public class UserService {
     }
 
     public Optional<User> resendActivationMail(String email) {
-        Optional<User> userOptional = userRepository.findByUsername(email);
+        Optional<User> userOptional = userRepository.findByUsernameIgnoreCase(email);
         if (userOptional.isPresent()) {
             User user = userOptional.get();
             if (!user.isActivated()) {
