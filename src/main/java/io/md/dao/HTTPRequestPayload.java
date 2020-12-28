@@ -123,7 +123,7 @@ public class HTTPRequestPayload extends HTTPPayload implements RequestPayload {
 	public String getPath() {
 		if (this.dataObj != null && !this.dataObj.isDataObjEmpty()) {
 			try {
-				return this.dataObj.getValAsString("/path");
+				return CompareTemplate.normaliseAPIPath(this.dataObj.getValAsString("/path"));
 			} catch (PathNotFoundException e) {
 				return null;
 			}
@@ -136,7 +136,9 @@ public class HTTPRequestPayload extends HTTPPayload implements RequestPayload {
     	super.postParse();
 		if (!this.dataObj.isDataObjEmpty()) {
 			try {
-				String[] pathSplits = this.dataObj.getValAsString("/path").split("/" , -1);
+				String path = this.getPath();
+				if (path==null) throw new PathNotFoundException();
+				String[] pathSplits = path.split("/" , -1);
 				ObjectNode root = (ObjectNode) this.dataObj.objRoot;
 				ArrayNode pathArrayNode = JsonNodeFactory.instance.arrayNode();
 				Arrays.stream(pathSplits).forEach(pathSegment ->
