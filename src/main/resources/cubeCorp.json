@@ -17,28 +17,28 @@
               "name": "GLOBAL",
               "services": [
                 {
-                  "name": "reviews",
+                  "name": "Reviews",
                   "paths": [
                     "/health",
                     "/reviews/*"
                   ]
                 },
                 {
-                  "name": "ratings",
+                  "name": "Ratings",
                   "paths": [
                     "/health",
                     "/ratings/*"
                   ]
                 },
                 {
-                  "name": "details",
+                  "name": "Details",
                   "paths": [
                     "/health",
                     "/details/*"
                   ]
                 },
                 {
-                  "name": "restwrapjdbc",
+                  "name": "RestWrapJDBC",
                   "paths": [
                     "/health",
                     "/initialize",
@@ -47,28 +47,35 @@
                   ]
                 },
                 {
-                  "name": "movieinfo",
+                  "name": "MovieInfo",
                   "paths": [
                     "minfo/rentmovie",
                     "minfo/returnmovie",
                     "minfo/listmovies",
-                    "minfo/liststores"
+                    "minfo/liststores",
+                    "minfo/login",
+                    "minfo/genre-group",
+                    "minfo/genre-groups",
+                    "minfo/delete-genre-group/*",
+                    "minfo/getMovieList",
+                    "minfo/categories",
+                    "minfo/deleteRental"
                   ]
                 },
                 {
-                  "name": "postgres",
+                  "name": "Postgres",
                   "paths": null
                 },
                 {
-                  "name": "mysql",
+                  "name": "Mysql",
                   "paths": null
                 },
                 {
-                  "name": "mongodb",
+                  "name": "MongoDB",
                   "paths": null
                 },
                 {
-                  "name": "google api",
+                  "name": "Google API",
                   "paths": null
                 }
               ]
@@ -78,54 +85,61 @@
             {
               "testConfigName": "MovieInfo-List",
               "services": [
-                "movieinfo"
+                "MovieInfo"
               ],
               "paths": [
                 "minfo/rentmovie",
                 "minfo/returnmovie",
                 "minfo/listmovies",
-                "minfo/liststores"
+                "minfo/liststores",
+                "minfo/login",
+                "minfo/genre-group",
+                "minfo/genre-groups",
+                "minfo/delete-genre-group/*",
+                "minfo/getMovieList",
+                "minfo/categories",
+                "minfo/deleteRental"
               ],
               "test_virtualized_services": [
-                "restwrapjdbc",
-                "reviews",
-                "ratings"
+                "RestWrapJDBC",
+                "Reviews",
+                "Ratings"
               ],
               "test_intermediate_services": []
             }
           ],
           "serviceGraphs": [
             {
-              "from": "movieinfo",
-              "to": "restwrapjdbc"
+              "from": "MovieInfo",
+              "to": "RestWrapJDBC"
             },
             {
-              "from": "restwrapjdbc",
-              "to": "postgres"
+              "from": "RestWrapJDBC",
+              "to": "Postgres"
             },
             {
-              "from": "movieinfo",
-              "to": "reviews"
+              "from": "MovieInfo",
+              "to": "Reviews"
             },
             {
-              "from": "movieinfo",
-              "to": "ratings"
+              "from": "MovieInfo",
+              "to": "Ratings"
             },
             {
-              "from": "movieinfo",
-              "to": "details"
+              "from": "MovieInfo",
+              "to": "Details"
             },
             {
-              "from": "details",
-              "to": "google api"
+              "from": "Details",
+              "to": "Google API"
             },
             {
-              "from": "ratings",
-              "to": "mysql"
+              "from": "Ratings",
+              "to": "Mysql"
             },
             {
-              "from": "ratings",
-              "to": "mongodb"
+              "from": "Ratings",
+              "to": "MongoDB"
             }
           ]
         },
