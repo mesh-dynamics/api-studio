@@ -8,8 +8,10 @@ import java.net.URI;
 import java.nio.charset.UnsupportedCharsetException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -222,7 +224,18 @@ public class CubeClient {
 			.segment("cs").segment("storeEventBatch")
 			.build();
 
+		/*
+		String eventsJsons = Arrays.stream(events).map(e->{
+			try{
+				return jsonMapper.writeValueAsString(e);
+			}catch (Exception ex){
+				return null;
+			}
+		}).collect(Collectors.joining("\r\n"));
 		return getResponse(recordURI, events, Constants.APPLICATION_X_NDJSON);
+
+		 */
+		return getResponse(recordURI, events, MediaType.APPLICATION_JSON);
 	}
 
 	public Optional<String> getEvents(EventQuery eventQuery) {
