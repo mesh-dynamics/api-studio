@@ -179,20 +179,15 @@ public class Utils {
                                                            Optional<String> userId) {
         Optional<RecordOrReplay> recordOrReplay = dataStore.getCurrentRecordOrReplay(customerId, app,
             instanceId);
-        Optional<String> rrcollection = recordOrReplay.flatMap(rr -> rr.getRecordingCollection());
-        Optional<String> replayId = recordOrReplay.flatMap(rr -> rr.getReplayId());
-        Optional<String> recordingId = recordOrReplay.flatMap(rr -> rr.getRecordingId());
-        String runType = recordOrReplay.map(rr -> rr.isRecording() ? "Recording" : "Replay").orElse("None");
 
-        return rrcollection.map(collection -> {
+        return recordOrReplay.map(rr -> {
             // TODO: use constant strings from Ashok's PR once its merged
-            Map<String, String> respObj = Map.of("message", runType + " ongoing",
+            Map<String, Object> respObj = Map.of("message", rr.isRecording() ? "Recording" : "Replay" + " ongoing",
                 "customerId", customerId,
                 "app", app,
                 "instance", instanceId,
-                "collection", collection,
-                "replayId", replayId.orElse("None"),
-	            "recordingId", recordingId.orElse("None"),
+                "collection", rr.getCollection(),
+                 "recordOrReplay", rr,
                 "userId", userId.orElse("None"));
             return Response.status(Response.Status.CONFLICT)
                 .type(MediaType.APPLICATION_JSON)
