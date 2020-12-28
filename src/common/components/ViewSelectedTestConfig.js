@@ -196,6 +196,16 @@ class ViewSelectedTestConfig extends React.Component {
 
     handleRecordButtonClick = () => {
         const { recordingMode } = this.state;
+        const { cube } = this.props;
+
+        if(!cube.selectedInstance) {
+            this.showInstanceWarningModal();
+            return;
+        } 
+        if(cube.selectedInstance == "other") {
+            this.showPredefinedInstanceWarningModal();
+            return;
+        } 
 
         const mode = {
             new: () => this.showRecordModal(),
@@ -218,6 +228,14 @@ class ViewSelectedTestConfig extends React.Component {
         userAlertMessage: {
             header: "Alert",
             message: "Select an Instance to proceed."
+        }
+    });
+
+    showPredefinedInstanceWarningModal = () => this.setState({ 
+        instanceWarningModalVisible: true,
+        userAlertMessage: {
+            header: "Alert",
+            message: "Select a predefined instance to proceed."
         }
     });
 
