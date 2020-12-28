@@ -1449,7 +1449,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static String getDateRangeFilterString(String fieldname, Optional<Instant> startDate, Optional<Instant> endDate, boolean startInclusive, boolean endInclusive) {
         // epoch millis of 0 is a special case. convert back to * to cover full range
         Optional<String> startDateVal = startDate.flatMap(sd -> (sd.toEpochMilli() > 0) ? Optional.of(sd.toString()) : Optional.empty());
-        Optional<String> endDateVal = endDate.map(sd -> endDate.toString());
+        Optional<String> endDateVal = endDate.map(sd -> sd.toString());
         return getRangeFilterString(fieldname , startDateVal , endDateVal , startInclusive , endInclusive);
     }
 
@@ -3169,7 +3169,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, TRACEIDF, apiTraceFacetQuery.traceIds);
         if (addPathServiceFilter) {
             if(apiTraceFacetQuery.service.isEmpty() && apiTraceFacetQuery.apiPath.isEmpty()) {
-                addToFilterOrQuery(query , new StringBuffer() , PARENT_SPAN_ID_F , Arrays.asList("NA", ""), true , Optional.empty());
+                addToFilterOrQuery(query , new StringBuffer() , PARENT_SPAN_ID_F , Arrays.asList("NA","ffffffffffffffff",  ""), true , Optional.empty());
             }
             addFilter(query, PATHF, apiTraceFacetQuery.apiPath);
             addFilter(query, SERVICEF, apiTraceFacetQuery.service);
