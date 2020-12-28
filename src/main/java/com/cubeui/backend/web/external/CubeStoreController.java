@@ -507,4 +507,9 @@ public class CubeStoreController {
         validation.validateCustomerName(authentication,recording.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
     }
+
+    @PostMapping("/populateCache")
+    public ResponseEntity populateCache(HttpServletRequest request, @RequestBody Optional<String> recordOrReplay) {
+        return cubeServerService.fetchPostResponse(request, recordOrReplay);
+    }
 }
