@@ -102,8 +102,43 @@ spec:
                   buf[#buf+1] = ']'
                   delim = ', '
                 end
+                function callStoreEvent(handle, data)
+                  local hhdr, hbody = handle:httpCall(
+                  "{{cube_host}}",
+                    {
+                        [":method"] = "POST",
+                        [":path"] = "/api/cs/storeEvent",
+                        [":authority"] = "cube",
+                        ["Content-Type"] = "application/json",
+                        ["Authorization"] = "Bearer {{auth_token}}"
+                    },
+                    data,
+                    5000)
+                    if hbody then
+                        handle:logErr("Response from cube : ".. hbody)
+                    end
+                end
+                function logToCube(handle, data)
+                  -- handle:logErr(data)
+                  local logMessage = '{ "customerId" : "{{customer}}" , "app" : "{{cube_application}}" , "instanceId" : "{{cube_instanceid}}" , "logMessage" : "' .. esc_str_opt(data) .. '"}'
+                  local hhdr, hbody = handle:httpCall(
+                    "outbound|8080||cubelogcollector.cube.svc.cluster.local",
+                    {
+                      [":method"] = "POST",
+                      [":path"] = "/api/logStore/{{customer}}",
+                      [":authority"] = "cube",
+                      ["Content-Type"] = "application/json",
+                      ["Authorization"] = "Bearer {{auth_token}}"
+                    },
+                    logMessage,
+                    5000,
+                    true)
+                   if hbody then
+                    handle:logErr("Response from cube backend for log : ".. hbody)
+                   end
+                end
                 function logHdrBody(handle, meta)
-                  local starttime = os.clock()
+                  local starttime = getEpochTime()
                   handle:logErr('logHdrBody Start time ' .. starttime)
                   local r = {['"'] = '\\"', ['\\'] = '\\\\'}
                   local p = '["\\]'
@@ -128,16 +163,16 @@ spec:
                   handle:logErr('optimized escaping 1')
                   buf[#buf+1] = '}'
                   data = table.concat(buf)
-                  local logStartTime = os.clock()
-                  handle:logErr('[cube]' .. data)
-                  local logEndTime = os.clock()
+                  local logStartTime = getEpochTime()
+                  callStoreEvent(handle , data)
+                  local logEndTime = getEpochTime()
                   handle:logErr('log write time ' .. (logEndTime - logStartTime))
-                  local endtime = os.clock()
+                  local endtime = getEpochTime()
                   handle:logErr('logHdrBody End time ' .. endtime)
                   handle:logErr('logHdrBody time ' .. (endtime - starttime))
                 end
                 function envoy_on_response(response_handle)
-                  local starttime = os.clock()
+                  local starttime = getEpochTime()
                   local meta = {}
                   meta["type"] = "response"
                   meta["status"] = response_handle:headers():get(":status") or ""
@@ -155,7 +190,7 @@ spec:
                   if (xb3parentspanid) then meta["x-b3-parentspanid"] = xb3parentspanid end
                   if (apiPath) then meta["apiPath"] = apiPath end
                   logHdrBody(response_handle, meta)
-                  local endtime = os.clock()
+                  local endtime = getEpochTime()
                   response_handle:logErr('End time ' .. endtime)
                   response_handle:logErr('envoy_on_response time ' .. (endtime - starttime))
                 end

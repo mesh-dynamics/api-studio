@@ -93,11 +93,27 @@ spec:
                   end)
                   return outstr
                 end
-                function logToCubeBackend(handle, data)
+                function callStoreEvent(handle, data)
+                  local hhdr, hbody = handle:httpCall(
+                  "{{cube_host}}",
+                    {
+                        [":method"] = "POST",
+                        [":path"] = "/api/cs/storeEvent",
+                        [":authority"] = "cube",
+                        ["Content-Type"] = "application/json",
+                        ["Authorization"] = "Bearer {{auth_token}}"
+                    },
+                    data,
+                    5000)
+                    if hbody then
+                        handle:logErr("Response from cube : ".. hbody)
+                    end
+                end
+                function logToCube(handle, data)
                   -- handle:logErr(data)
                   local logMessage = '{ "customerId" : "{{customer}}" , "app" : "{{cube_application}}" , "instanceId" : "{{cube_instanceid}}" , "logMessage" : "' .. esc_str_opt(data) .. '"}'
                   local hhdr, hbody = handle:httpCall(
-                    "outbound|8080||cubews-record.staging.svc.cluster.local",
+                    "outbound|8080||cubelogcollector.cube.svc.cluster.local",
                     {
                       [":method"] = "POST",
                       [":path"] = "/api/logStore/{{customer}}",
@@ -106,7 +122,8 @@ spec:
                       ["Authorization"] = "Bearer {{auth_token}}"
                     },
                     logMessage,
-                    5000)
+                    5000,
+                    true)
                    if hbody then
                     handle:logErr("Response from cube backend for log : ".. hbody)
                    end
@@ -122,8 +139,8 @@ spec:
                   delim = ', '
                 end
                 function logHdrBody(handle, meta)
-                  local starttime = os.clock()
-                  logToCubeBackend(handle, 'logHdrBody Start time ' .. starttime)
+                  local starttime = getEpochTime()
+                  logToCube(handle, 'logHdrBody Start time ' .. starttime)
                   local r = {['"'] = '\\"', ['\\'] = '\\\\'}
                   local p = '["\\]'
                   local hdrs = handle:headers()
@@ -144,19 +161,19 @@ spec:
                   -- buf[#buf+1] = delim .. '"body":"' .. escape_str(b) .. '"'
                   buf[#buf+1] = delim .. '"body":"' .. esc_str_opt(b) .. '"'
                   -- buf[#buf+1] = delim .. '"body":"' .. esc_str_opt2(b) .. '"'
-                  logToCubeBackend(handle, 'optimized escaping 1')
+                  logToCube(handle, 'optimized escaping 1')
                   buf[#buf+1] = '}'
                   data = table.concat(buf)
-                  local logStartTime = os.clock()
-                  logToCubeBackend(handle, '[cube]' .. data)
-                  local logEndTime = os.clock()
-                  logToCubeBackend(handle, 'log write time ' .. (logEndTime - logStartTime))
-                  local endtime = os.clock()
-                  logToCubeBackend(handle, 'logHdrBody End time ' .. endtime)
-                  logToCubeBackend(handle, 'logHdrBody time ' .. (endtime - starttime))
+                  local logStartTime = getEpochTime()
+                  callStoreEvent(handle , data)
+                  local logEndTime = getEpochTime()
+                  logToCube(handle, 'log write time ' .. (logEndTime - logStartTime))
+                  local endtime = getEpochTime()
+                  logToCube(handle, 'logHdrBody End time ' .. endtime)
+                  logToCube(handle, 'logHdrBody time ' .. (endtime - starttime))
                 end
                 function envoy_on_response(response_handle)
-                  local starttime = os.clock()
+                  local starttime = getEpochTime()
                   local meta = {}
                   meta["type"] = "response"
                   meta["status"] = response_handle:headers():get(":status") or ""
@@ -174,9 +191,9 @@ spec:
                   if (xb3parentspanid) then meta["x-b3-parentspanid"] = xb3parentspanid end
                   if (apiPath) then meta["apiPath"] = apiPath end
                   logHdrBody(response_handle, meta)
-                  local endtime = os.clock()
-                  logToCubeBackend(response_handle, 'End time ' .. endtime)
-                  logToCubeBackend(response_handle, 'envoy_on_response time ' .. (endtime - starttime))
+                  local endtime = getEpochTime()
+                  logToCube(response_handle, 'End time ' .. endtime)
+                  logToCube(response_handle, 'envoy_on_response time ' .. (endtime - starttime))
                 end
                 function envoy_on_request(request_handle)
                   local service = "{{service_name}}"
@@ -189,7 +206,7 @@ spec:
                   apiPath = request_handle:headers():get(":path") or "/"
                   crequestid = service .. "-" .. xb3traceid .. "-" .. uuid()
                   meta["c-request-id"] = crequestid
-                  logToCubeBackend(request_handle, "Request id: " .. crequestid)
+                  logToCube(request_handle, "Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
                   meta["timestamp"] = getEpochTime()
                   -- meta["collection"] = "testc1"
@@ -198,9 +215,9 @@ spec:
                   meta["app"] = "{{cube_application}}"
                   meta["instanceId"] = "{{cube_instanceid}}"
                   meta["service"] = "{{service_name}}"
-                  logToCubeBackend(request_handle, "Span id : " .. xb3spanid)
+                  logToCube(request_handle, "Span id : " .. xb3spanid)
                   baggageParentId = request_handle:headers():get("baggage-parent-span-id")
-                  if (baggageParentId) then logToCubeBackend(request_handle, "Baggage Parent id : " .. baggageParentId) end
+                  if (baggageParentId) then logToCube(request_handle, "Baggage Parent id : " .. baggageParentId) end
                   if (xb3spanid) then meta["x-b3-spanid"] = xb3spanid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
                   if baggageParentId then
