@@ -14,6 +14,7 @@ import classNames from "classnames";
 import { cubeService } from '../services';
 import { apiCatalogActions } from '../actions/api-catalog.actions';
 import MDLoading from '../../../public/assets/images/md-loading.gif';
+import {isURL} from 'validator';
 // import { history } from "../helpers";
 // import { Glyphicon } from 'react-bootstrap';
 
@@ -62,6 +63,7 @@ class ViewSelectedTestConfig extends React.Component {
                 }
             },
             fetchingRecStatus: false,
+            otherInstanceEndPoint: "",
         };
         //this.statusInterval;
     }
@@ -194,6 +196,16 @@ class ViewSelectedTestConfig extends React.Component {
 
     handleRecordButtonClick = () => {
         const { recordingMode } = this.state;
+        const { cube } = this.props;
+
+        if(!cube.selectedInstance) {
+            this.showInstanceWarningModal();
+            return;
+        } 
+        if(cube.selectedInstance == "other") {
+            this.showPredefinedInstanceWarningModal();
+            return;
+        } 
 
         const mode = {
             new: () => this.showRecordModal(),
@@ -219,11 +231,35 @@ class ViewSelectedTestConfig extends React.Component {
         }
     });
 
+    showPredefinedInstanceWarningModal = () => this.setState({ 
+        instanceWarningModalVisible: true,
+        userAlertMessage: {
+            header: "Alert",
+            message: "Select a predefined instance to proceed."
+        }
+    });
+
     showGoldenWarningForRunTest =  () => this.setState({
         goldenSelectWarningModalVisible: true,
         userAlertMessage: {
             header: "Alert",
             message: "Select a Golden to Run Test."
+        }
+    });
+
+    showGatewayEndPointUnavailable =  () => this.setState({
+        goldenSelectWarningModalVisible: true,
+        userAlertMessage: {
+            header: "Alert",
+            message: "Gateway endpoint is unavailable."
+        }
+    });
+
+    showGatewayEndPointInvalid =  () => this.setState({
+        goldenSelectWarningModalVisible: true,
+        userAlertMessage: {
+            header: "Alert",
+            message: "Gateway endpoint is invalid url."
         }
     });
 
@@ -377,17 +413,25 @@ class ViewSelectedTestConfig extends React.Component {
             this.showGoldenWarningForRunTest();
             return;
         }
-
-        if(instancesForSelectedApp.length === 0) {
-            // TODO: Should be put in modal. 
-            alert('Gateway endpoint is unavailable');
+        let gatewayEndpoint = "";
+        if(instancesForSelectedApp.length !== 0) {
+            gatewayEndpoint = instancesForSelectedApp[0].gatewayEndpoint;            
+        }else if(cube.selectedInstance == "other" && this.state.otherInstanceEndPoint){
+            if(isURL(this.state.otherInstanceEndPoint)){
+                gatewayEndpoint = this.state.otherInstanceEndPoint;
+            }else{
+                this.showGatewayEndPointInvalid();
+                return;
+            }
+        }else{
+            this.showGatewayEndPointUnavailable();
             return;
         }
 
         // When the conditions above are met
         // then trigger replay
         this.setState({ showReplayModal: true });
-        this.replay(instancesForSelectedApp);
+        this.replay(gatewayEndpoint);
     };
 
     handleReplayErrorCatchAll = (message, statusText) => {
@@ -583,7 +627,7 @@ class ViewSelectedTestConfig extends React.Component {
 
     };
 
-    replay = async (instancesForSelectedApp) => {
+    replay = async (gatewayEndpoint) => {
         const { 
             cube: {
                 selectedInstance,
@@ -611,8 +655,8 @@ class ViewSelectedTestConfig extends React.Component {
 
         const searchParams = new URLSearchParams();
 
-        searchParams.set('endPoint', instancesForSelectedApp[0].gatewayEndpoint);
-        searchParams.set('instanceId', selectedInstance);
+        searchParams.set('endPoint', gatewayEndpoint);
+        searchParams.set('instanceId', selectedInstance == "other" ? gatewayEndpoint : selectedInstance);
         searchParams.set('templateSetVer', collectionTemplateVersion);
         searchParams.set('userId', username);
         searchParams.set('transforms', transforms);
@@ -716,6 +760,7 @@ class ViewSelectedTestConfig extends React.Component {
                 <select id="ddlInstance" className="r-att" onChange={this.handleChangeForInstance} value={cube.selectedInstance || ""} placeholder={'Select...'}>
                     <option value="">Select Instance</option>
                     {options}
+                    <option value="other">Other</option>
                 </select>
             </div>
         } else {
@@ -725,6 +770,22 @@ class ViewSelectedTestConfig extends React.Component {
         }
 
         return jsxContent;
+    }
+
+    onOtherInstanceValueChange = (event)=>{
+        this.setState({otherInstanceEndPoint: event.target.value});
+    }
+
+    renderEndPoint(cube) {
+        if(cube.selectedInstance == "other"){
+            return <input type="text" onChange={this.onOtherInstanceValueChange} value={this.state.otherInstanceEndPoint}  style={{width: "100%"}} />
+        }else{
+            const selectedInstance = cube.instances.find(item => {
+                return item.app.name == cube.selectedApp && item.name == cube.selectedInstance;
+            });
+            const currentEndpoint = selectedInstance ? selectedInstance.gatewayEndpoint : "";
+            return  <input disabled type="text" value={currentEndpoint} style={{width: "100%"}} />
+        }
     }
 
     renderCollectionTable() {
@@ -884,6 +945,13 @@ class ViewSelectedTestConfig extends React.Component {
                     <div className="label-n">SELECT TEST INSTANCE</div>
                     <div className="value-n">
                         {this.renderInstances(cube)}
+                    </div>
+                </div>
+
+                <div className="margin-top-10">
+                    <div className="label-n">GATEWAY END POINT</div>
+                    <div className="value-n">
+                        {this.renderEndPoint(cube)}
                     </div>
                 </div>
 
