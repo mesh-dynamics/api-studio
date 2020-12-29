@@ -56,11 +56,13 @@ public class CubeStoreController {
     }
 
     @PostMapping("/start/{customerId}/{app}/{instanceId}/{templateSetVersion}")
-    public ResponseEntity start(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String customerId,
+    public ResponseEntity start(HttpServletRequest request, @RequestBody MultiValueMap<String, String> postBody, @PathVariable String customerId,
                                   @PathVariable String app, @PathVariable String instanceId,
                                   @PathVariable String templateSetVersion, Authentication authentication) {
         validation.validateCustomerName(authentication,customerId);
-        return cubeServerService.fetchPostResponse(request, postBody);
+        User user = (User) authentication.getPrincipal();
+        postBody.put(Constants.USER_ID_FIELD, List.of(user.getUsername()));
+        return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 
     @PostMapping("/stop/{recordingId}")
