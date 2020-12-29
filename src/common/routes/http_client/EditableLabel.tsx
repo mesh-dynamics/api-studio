@@ -7,7 +7,9 @@ declare type HandleEditComplete = (updatedLabelString: string) => void;
 
 interface EditableLabelProps {
     label: string
-    handleEditComplete: HandleEditComplete
+    handleEditComplete: HandleEditComplete;
+    /** To remotely control the edit mode set this else default is undefined */
+    allowEdit?: boolean; 
 }
 
 const EMPTY_STRING: string = "";
@@ -17,7 +19,12 @@ const EditableLabel: FC<EditableLabelProps> = (props) => {
 
     const { label, handleEditComplete } = props;
 
-    const [allowEdit, setAllowEdit] = useState(false);
+    const [allowEdit, setAllowEdit] = useState(props.allowEdit || false);
+    useEffect(()=>{
+        if(props.allowEdit != undefined){
+            setAllowEdit(props.allowEdit);
+        }
+    }, [props.allowEdit]);
 
     const [labelString, setLabelString] = useState(label);
 
@@ -64,7 +71,7 @@ const EditableLabel: FC<EditableLabelProps> = (props) => {
                         onKeyDown={handleKeyDown}
                         ref={ref => textInput = ref}
                         onChange={(event: ChangeEvent<HTMLInputElement>) => setLabelString((event.target as HTMLInputElement).value)}
-                    /> 
+                    /> &nbsp;
                     <Tippy content="Press ENTER to save, ESC to reset" arrow={true} placement="bottom">
                         <span className="margin-right-15"><i className="fa fa-info-circle"></i></span>
                     </Tippy>
@@ -74,7 +81,7 @@ const EditableLabel: FC<EditableLabelProps> = (props) => {
                         className="editable-label-text"
                     >
                         {label}
-                        <i className="far fa-edit editable-label-icon"  onClick={() => setAllowEdit(true)}></i>
+                        {props.allowEdit == undefined && <i className="far fa-edit editable-label-icon"  onClick={() => setAllowEdit(true)}></i>}
                     </span>
             }
         </div>

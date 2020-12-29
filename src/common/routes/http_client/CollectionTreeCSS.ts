@@ -1,4 +1,6 @@
-export default {
+import { TreeTheme } from "react-treebeard";
+
+const treeTheme: TreeTheme = {
     tree: {
         base: {
             listStyle: 'none',
@@ -75,3 +77,5 @@ export default {
         }
     }
 };
+
+export default treeTheme;

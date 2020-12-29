@@ -170,19 +170,6 @@ class APICatalogFilter extends Component<IAPICatalogFilterProps> {
                                 {this.renderInstanceDropdown()}
                             </div>}
                             
-                            {((selectedSource==="UserGolden" && selectedCollection) || (selectedSource==="Golden" && selectedGolden)) && <>
-                                <div className="selected-items margin-top-10">
-                                    <div>
-                                        <span style={{ fontWeight: 300 }}>Service</span>
-                                        <p><b>{selectedService || "All"}</b></p>
-                                    </div>
-                                        
-                                    <div>
-                                        <span style={{ fontWeight: 300 }}>API</span>
-                                        <p><b>{selectedApiPath || "All"}</b></p>
-                                    </div>                    
-                                </div>
-                                </>}
                         </div>}
                         </div>
                         

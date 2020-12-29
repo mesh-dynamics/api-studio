@@ -31,6 +31,7 @@ export default class Tabs extends Component {
     if (props.selectedTabKey != state.selectedTabKey) {
       return { selectedTabKey:  props.selectedTabKey }
     }
+    return null;
   } 
 
   shouldComponentUpdate(nextProps, nextState) {

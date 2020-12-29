@@ -57,8 +57,27 @@ const postGoldenMeta = async (goldenDetails: any) => {
     }
 };
 
+const updateGoldenName = async (id: string, goldenName: string ) => {
+    const urlencoded = new URLSearchParams();
+    urlencoded.append("golden_name", goldenName);
+
+    const requestOptions = {
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+    };
+
+    try {
+        return await api.post(`${config.recordBaseUrl}/updateGoldenFields/${id}`, urlencoded, requestOptions);
+    } catch (error) {
+        console.log("Error updating golden", error);
+        throw new Error("Error Updating Golden Details");
+    }
+};
+
 export {
     fetchGoldenMeta,
     postGoldenMeta,
+    updateGoldenName,
     fetchGoldenInsights
 };
