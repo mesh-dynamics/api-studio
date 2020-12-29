@@ -652,7 +652,6 @@ public class AnalyzeWS {
                     + "\" , \"collection\" : \"" + recording.collection
                     + "\" , \"templateVer\" : \"" + recording.templateVersion
                     + "\", \"goldenName\" : \"" + recording.name
-                    + "\", \"userName\" : \"" + recording.userId
                     + "\", \"goldenLabel\" : \"" + recording.label;
             }
 
@@ -663,7 +662,7 @@ public class AnalyzeWS {
             StringBuilder jsonBuilder = new StringBuilder();
             String json;
             jsonBuilder.append("{ \"replayId\" : \"" + replayId + "\" , \"timestamp\" : \"" + timeStamp.toString()
-                + "\" , \"testConfigName\" : \"" +  testConfigNameValue + recordingInfo +  "\" , \"results\" : ");
+								+ "\", \"userName\" : \"" + replay.userId + "\" , \"testConfigName\" : \"" +  testConfigNameValue + recordingInfo +  "\" , \"results\" : ");
             try {
                 json = jsonMapper.writeValueAsString(res);
                 jsonBuilder.append(json);
