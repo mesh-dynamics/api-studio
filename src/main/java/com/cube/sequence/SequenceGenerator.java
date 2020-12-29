@@ -13,21 +13,18 @@ import org.apache.commons.math3.fraction.Fraction;
 public class SequenceGenerator implements Iterable<String> {
 
     private final long size;
+    //start is inclusive
     private final BigInteger start;
+    //end is non-inclusive
     private final BigInteger end ;
     private final int stringLength;
 
-    public SequenceGenerator(SequenceGenerator gen){
-        this.size = gen.size;
-        this.start = gen.start;
-        this.end = gen.end;
-        this.stringLength = gen.stringLength;
-    }
     public SequenceGenerator(long size){
         this.size = size;
         this.start = BigInteger.ZERO;
-        this.end = BigInteger.valueOf(-1);
-        this.stringLength = -1;
+        this.stringLength = (size == 1) ? 1 : (int) Math.ceil(Math.log(size) / Math.log(BASE_LEN));
+        this.end = BASE_LEN_BI.pow(stringLength);
+
     }
     public SequenceGenerator(BigInteger start , BigInteger end , int stringLength , long size ){
         this.size = size;
@@ -38,16 +35,16 @@ public class SequenceGenerator implements Iterable<String> {
 
     private Iterator<String> getSeqIterator() {
 
-        int strLen = stringLength == -1 ? (size == 1 ? 1 : (int) Math.ceil(Math.log(size) / Math.log(BASE_LEN))) : stringLength;
-        BigInteger max = end.equals(BigInteger.valueOf(-1)) ? BASE_LEN_BI.pow(strLen) : end;
 
-        BigInteger[] gapRes = max.subtract(start).subtract(BigInteger.valueOf(size)).divideAndRemainder(BigInteger.valueOf(size + 1));
+        BigInteger[] gapRes = end.subtract(start).subtract(BigInteger.valueOf(size)).divideAndRemainder(BigInteger.valueOf(size + 1));
         long gap = gapRes[0].longValueExact() ;
 
 
         Fraction extraPerItem = new Fraction(gapRes[1].intValueExact() , (int)size+1);
 
-        return new SeqIterator(start, gap, extraPerItem , strLen,  size);
+        //Gap for the first time = Gap
+        //Gap remaining times = Gap+1
+        return new SeqIterator(start.add(BigInteger.valueOf(gap)), gap+1, extraPerItem , stringLength,  size);
     }
 
     @Override
@@ -55,10 +52,11 @@ public class SequenceGenerator implements Iterable<String> {
         return getSeqIterator();
     }
 
+
     /*
     public static void main(String[] args){
 
-        SequenceGenerator gen1 = new SequenceGenerator(2);
+        SequenceGenerator gen1 = new SequenceGenerator(8);
         //SequenceGenerator gen2 = new SequenceGenerator(50 , 2000 , 2 , 15 );
 
         SequenceGenerator gen2 = new SequenceGenerator(BigInteger.valueOf(50) , BigInteger.valueOf(58) , 1 , 4 );
