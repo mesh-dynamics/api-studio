@@ -23,8 +23,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import io.md.core.CompareTemplate;
+import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.HttpRequestPayloadDeserializer;
 
 /*
@@ -123,7 +125,8 @@ public class HTTPRequestPayload extends HTTPPayload implements RequestPayload {
 	public String getPath() {
 		if (this.dataObj != null && !this.dataObj.isDataObjEmpty()) {
 			try {
-				return CompareTemplate.normaliseAPIPath(this.dataObj.getValAsString("/path"));
+				// Ideally normalised path would've been set by postParse so returning the path directly without normalisation here
+				return this.dataObj.getValAsString(Constants.PATH_PATH);
 			} catch (PathNotFoundException e) {
 				return null;
 			}
@@ -136,9 +139,13 @@ public class HTTPRequestPayload extends HTTPPayload implements RequestPayload {
     	super.postParse();
 		if (!this.dataObj.isDataObjEmpty()) {
 			try {
-				String path = this.getPath();
+				String path = this.dataObj.getValAsString(Constants.PATH_PATH);
 				if (path==null) throw new PathNotFoundException();
-				String[] pathSplits = path.split("/" , -1);
+				String normalisedPath = CompareTemplate.normaliseAPIPath(path);
+				// Set the normalised path back in dataObj
+				dataObj.put(Constants.PATH_PATH, new JsonDataObj(new TextNode(normalisedPath), CubeObjectMapperProvider
+					.getInstance()));
+				String[] pathSplits = normalisedPath.split("/" , -1);
 				ObjectNode root = (ObjectNode) this.dataObj.objRoot;
 				ArrayNode pathArrayNode = JsonNodeFactory.instance.arrayNode();
 				Arrays.stream(pathSplits).forEach(pathSegment ->
