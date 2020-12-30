@@ -365,11 +365,12 @@ public class MovieRentals {
 		return  rs.getJSONObject(0);
 	}
 
-	public JSONObject getGenreGroupByName(String name) throws Exception {
+	public JSONObject getGenreGroupForCustomerByName(String name, int customerId) throws Exception {
 		String genreGroupQuery = "select * from genre_group "
-				+ " where name = ?";
+				+ " where name = ? and customer_id = ?";
 		JSONArray params = new JSONArray();
 		RestOverSql.addStringParam(params, name);
+		RestOverSql.addIntegerParam(params, customerId);
 		JSONArray rs =  ros.executeQuery(genreGroupQuery, params);
 		if (rs == null || rs.length() < 1) {
 			LOGGER.error(String.format("No genre group found for the name:%s", name));
