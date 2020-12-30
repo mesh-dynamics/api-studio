@@ -18,6 +18,7 @@ declare type SelectedSourceType = "UserGolden" | "Golden";
 export interface IGoldenCollectionBrowseProps {
     cube: ICubeState;
     dropdownLabel: string;
+    ddlClassNames?: string;
     showDeleteOption?: boolean;
     showVisibilityOption?: boolean;
     gcbrowse: IGoldenCollectionBrowseState;
@@ -40,6 +41,7 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
             isCollectionLoading,
             messages,
         },
+        ddlClassNames,
         dropdownLabel,
         selectedSource,
         showDeleteOption,
@@ -63,6 +65,10 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
     const [idFilter, setIdFilter] = useState('');
 
     const [versionFilter, setVersionFilter] = useState('');
+
+    const ddlClass = classNames("r-att", ddlClassNames, {
+        "select-indicator": !selectedCollectionItem.id,
+    });
 
     /**
     * Utility functions are here
@@ -153,7 +159,7 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
         return (
             <select
                 id="ddlTestId"
-                className="r-att"
+                className={ddlClass}
                 onChange={handleDropdownOptionChange}
                 value={selectedCollectionItem.collec || "DEFAULT"}
                 placeholder={'Select...'}
