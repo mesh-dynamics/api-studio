@@ -1,10 +1,17 @@
 import React, {PureComponent} from 'react';
-import PropTypes from 'prop-types';
 import {VelocityComponent} from 'velocity-react';
 
-class TreeNodeContainer extends PureComponent {
+export interface ITreeNodeContainerProps{
+    style: any,
+    decorators: any,
+    terminal: boolean,
+    onClick: ()=>void,
+    animations: boolean | any,
+    node: any
+}
+class TreeNodeContainer extends PureComponent<ITreeNodeContainerProps> {
     renderToggle() {
-        const {animations, onClick} = this.props;
+        const {animations} = this.props;
 
         if (!animations) {
             return this.renderToggleDecorator();
@@ -26,7 +33,7 @@ class TreeNodeContainer extends PureComponent {
     }
 
     render() {
-        const {style, decorators, terminal, onClick, node} = this.props;
+        const {style, decorators, terminal, node} = this.props;
         return (
             <div
                 style={node.active ? {...style.container} : {...style.link}}
@@ -38,16 +45,5 @@ class TreeNodeContainer extends PureComponent {
     }
 }
 
-TreeNodeContainer.propTypes = {
-    style: PropTypes.object.isRequired,
-    decorators: PropTypes.object.isRequired,
-    terminal: PropTypes.bool.isRequired,
-    onClick: PropTypes.func.isRequired,
-    animations: PropTypes.oneOfType([
-        PropTypes.object,
-        PropTypes.bool
-    ]).isRequired,
-    node: PropTypes.object.isRequired
-};
 
 export default TreeNodeContainer;
