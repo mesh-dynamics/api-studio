@@ -148,26 +148,26 @@ class ViewSelectedTestConfig extends React.Component {
         this.setState({ customHeaders });
     };
 
-    // handleChangeForTestIds = (e) => {
-    //     const { dispatch, cube } = this.props;
-    //     cube.selectedTestId = e.target.value;
-    //     if (e) {
-    //         dispatch(cubeActions.clear());
-    //         let version = null;
-    //         let golden = null;
-    //         let name = "";
-    //         for (const collec of cube.testIds) {
-    //             if (collec.collec == e.target.value) {
-    //                 golden = collec.id
-    //                 version = collec.templateVer;
-    //                 name = collec.name;
-    //                 break;
-    //             }
-    //         }
-    //         //dispatch(cubeActions.getGraphData(cube.selectedApp));
-    //         dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version, golden, name));
-    //     }
-    // };
+    handleChangeForTestIds = (e) => {
+        const { dispatch, cube } = this.props;
+        cube.selectedTestId = e.target.value;
+        if (e) {
+            dispatch(cubeActions.clear());
+            let version = null;
+            let golden = null;
+            let name = "";
+            for (const collec of cube.testIds) {
+                if (collec.collec == e.target.value) {
+                    golden = collec.id
+                    version = collec.templateVer;
+                    name = collec.name;
+                    break;
+                }
+            }
+            //dispatch(cubeActions.getGraphData(cube.selectedApp));
+            dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version, golden, name));
+        }
+    };
 
     // handleChangeForTestIds = (collectionId) => {
     //     const { dispatch, cube } = this.props;
@@ -198,21 +198,9 @@ class ViewSelectedTestConfig extends React.Component {
 
     handleClose = () => {
         const {cube} = this.props;
-        // this.handleChangeForTestIds({target: {value: cube.selectedTestId}});
+        this.handleChangeForTestIds({target: {value: cube.selectedTestId}});
         this.setState({ showReplayModal: false, showCT: false });
     };
-
-    // getFormattedDate(date) {
-    //     var year = date.getFullYear();
-
-    //     var month = (1 + date.getMonth()).toString();
-    //     month = month.length > 1 ? month : '0' + month;
-
-    //     var day = date.getDate().toString();
-    //     day = day.length > 1 ? day : '0' + day;
-
-    //     return month + '/' + day + '/' + year;
-    // }
 
     selectGoldenFromFilter = (g) => {
         this.setState({selectedGoldenFromFilter: g});
@@ -351,29 +339,9 @@ class ViewSelectedTestConfig extends React.Component {
         dispatch(goldenActions.resetGoldenVisibilityDetails());
     };
 
-    // showGoldenFilter = () => {
-    //     const { cube: { selectedApp }, dispatch } = this.props;
-
-    //     this.setState({
-    //         goldenNameFilter: "",
-    //         goldenIdFilter: "",
-    //         goldenBranchFilter: "",
-    //         goldenVersionFilter: "",
-    //         selectedGoldenFromFilter: "",
-    //         showGoldenFilter: true
-    //     });
-
-    //     dispatch(cubeActions.getTestIds(selectedApp));
-    // };
-
     hideGoldenFilter = () => {
         this.setState({showGoldenFilter: false});
     };
-
-    // selectHighlighted = () => {
-    //     this.handleChangeForTestIds({target: {value: this.state.selectedGoldenFromFilter}});
-    //     this.hideGoldenFilter();
-    // };
 
     handleDismissCallBack = () => {
         const { recordingMode } = this.state;
@@ -729,33 +697,6 @@ class ViewSelectedTestConfig extends React.Component {
             this.handleReplayError(data, status, statusText, username);
         }
     };
-
-    // showDeleteGoldenConfirm = () => {
-    //     this.setState({
-    //         showDeleteGoldenConfirmation: true,
-    //     });
-    //     this.handleChangeForTestIds({target: {value: this.state.selectedGoldenFromFilter}});
-    // }
-
-    // closeDeleteGoldenConfirm = () => {
-    //     this.setState({
-    //         showDeleteGoldenConfirmation: false,
-    //     });
-    // }
-
-    // deleteGolden = async ()  => {
-    //     const { cube, dispatch} = this.props;
-    //     try {
-    //         await cubeService.deleteGolden(cube.selectedGolden);
-    //         dispatch(cubeActions.removeSelectedGoldenFromTestIds(cube.selectedGolden));
-    //     } catch (error) {
-    //         console.error("Error caught in softDelete Golden: " + error);
-    //     }
-    //     this.setState({
-    //         showDeleteGoldenConfirmation: false,
-    //         selectedGoldenFromFilter:"",
-    //     });
-    // }
     
     handleForceStopRecording = (recordingId) => {
         try {
@@ -803,69 +744,6 @@ class ViewSelectedTestConfig extends React.Component {
         return jsxContent;
     }
 
-    // renderCollectionTable() {
-    //     const {cube} = this.props;
-    //     let collectionList = cube.testIds;
-
-    //     if (this.state.goldenNameFilter) {
-    //         collectionList = collectionList.filter(item => item.name.toLowerCase().includes(this.state.goldenNameFilter.toLowerCase()));
-    //     }
-
-    //     if (this.state.goldenBranchFilter) {
-    //         collectionList = collectionList.filter(item => item.branch && item.branch.toLowerCase().includes(this.state.goldenBranchFilter.toLowerCase()));
-    //     }
-
-    //     if (this.state.goldenVersionFilter) {
-    //         collectionList = collectionList.filter(item => item.codeVersion && item.codeVersion.toLowerCase().includes(this.state.goldenVersionFilter.toLowerCase()));
-    //     }
-
-    //     if (this.state.goldenIdFilter) {
-    //         collectionList = collectionList.filter(item => item.id.toLowerCase().includes(this.state.goldenIdFilter.toLowerCase()));
-    //     }
-
-    //     if (!collectionList || collectionList.length == 0) {
-    //         return <tr><td colSpan="5">NO DATA FOUND</td></tr>
-    //         return;
-    //     }
-
-    //     let trList = collectionList.map(item => (<tr key={item.collec} value={item.collec} className={this.state.selectedGoldenFromFilter == item.collec ? "selected-g-row" : ""} onClick={() => this.selectGoldenFromFilter(item.collec)}><td>{item.name}</td><td>{item.label}</td><td>{item.id}</td><td>{this.getFormattedDate(new Date(item.timestmp*1000))}</td><td>{item.userId}</td><td>{item.prntRcrdngId}</td></tr>));
-    //     return trList;
-    // }
-
-    // renderCollectionDD ( cube ) {
-    //     if (cube.testIdsReqStatus != cubeConstants.REQ_SUCCESS || cube.testIdsReqStatus == cubeConstants.REQ_NOT_DONE)
-    //         return <select id="ddlTestId" className="r-att" disabled value={cube.selectedTestId} placeholder={'Select...'}>
-    //             <option value="">No App Selected</option>
-    //         </select>;
-    //     let options = [];
-    //     if (cube.testIdsReqStatus == cubeConstants.REQ_SUCCESS) {
-    //         options = cube.testIds.map((item, index) => {
-    //             if (index < 8)
-    //                 return (<option key={item.collec + index} value={item.collec}>{`${item.name} ${item.label}`}</option>);
-
-    //             else
-    //                 return (<option className="hidden" key={item.collec + index} value={item.collec}>{`${item.name} ${item.label}`}</option>);
-    //         });
-    //     }
-    //     let jsxContent = '';
-    //     if (options.length) {
-    //         let selectedTestIdObj = '';
-    //         if (cube.selectedTestId)
-    //             selectedTestIdObj = { label: cube.selectedTestId, value: cube.selectedTestId};
-    //         jsxContent = <div>
-    //             <select id="ddlTestId" className="r-att" onChange={this.handleChangeForTestIds} value={cube.selectedTestId || ""} placeholder={'Select...'}>
-    //                 <option value="">Select Golden</option>
-    //                 {options}
-    //             </select>
-    //         </div>
-    //     }
-    //     if (cube.testIdsReqStatus == cubeConstants.REQ_LOADING)
-    //         jsxContent = <div><br/>Loading...</div>
-    //     if (cube.testIdsReqStatus == cubeConstants.REQ_FAILURE)
-    //         jsxContent = <div><br/>Request failed!</div>
-
-    //     return jsxContent;
-    // };
     onOtherInstanceValueChange = (event)=>{
         this.setState({otherInstanceEndPoint: event.target.value});
     }
@@ -881,7 +759,7 @@ class ViewSelectedTestConfig extends React.Component {
             return  <input disabled type="text" value={currentEndpoint} style={{width: "100%"}} />
         }
     }
-    
+
     renderRecordingInfo = () => {
         const { cube: { selectedGolden, testIds }} = this.props;
 
@@ -1002,7 +880,9 @@ class ViewSelectedTestConfig extends React.Component {
                     showDeleteOption
                     selectedSource="Golden" 
                     dropdownLabel="SELECT GOLDEN"
+                    handleViewGoldenClick={this.handleViewGoldenClick}
                     handleChangeCallback={this.handleChangeInBrowseCollection}
+                    showVisibilityOption={(!recStatus || recStatus.status !== "Running")}
                 />
                 <div style={{ fontSize: "12px" }} className="margin-top-10 row">
                     <span  className="label-link col-sm-12 pointer" onClick={this.showAddCustomHeaderModal}>
@@ -1197,77 +1077,6 @@ class ViewSelectedTestConfig extends React.Component {
                         <span onClick={this.handleFCDone} className="cube-btn pull-right">Done</span>
                     </Modal.Footer>
                 </Modal>
-
-                {/* <Modal show={showGoldenFilter} bsSize="large">
-                    <Modal.Header>
-                        <Modal.Title>Browse Golden <small style={{color: "white"}}>({cube.selectedApp})</small></Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <div className="margin-bottom-10" style={{padding: "10px 25px", border: "1px dashed #ddd"}}>
-                            <div className="row margin-bottom-10">
-                                <div className="col-md-5">
-                                    <div className="label-n">NAME</div>
-                                    <div className="value-n">
-                                        <input onChange={(event) => this.applyGoldenFilter("goldenNameFilter", event)} className="width-100 h-20px" type="text"/>
-                                    </div>
-                                </div>
-
-                                <div className="col-md-2"></div>
-
-                                <div className="col-md-5">
-                                    <div className="label-n">BRANCH</div>
-                                    <div className="value-n">
-                                        <input onChange={(event) => this.applyGoldenFilter("goldenBranchFilter", event)} className="width-100 h-20px" type="text"/>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="row margin-bottom-10">
-                                <div className="col-md-5">
-                                    <div className="label-n">RECORDING ID</div>
-                                    <div className="value-n">
-                                        <input onChange={(event) => this.applyGoldenFilter("goldenIdFilter", event)} className="width-100 h-20px" type="text"/>
-                                    </div>
-                                </div>
-
-                                <div className="col-md-2"></div>
-
-                                <div className="col-md-5">
-                                    <div className="label-n">CODE VERSION</div>
-                                    <div className="value-n">
-                                        <input onChange={(event) => this.applyGoldenFilter("goldenVersionFilter", event)} className="width-100 h-20px" type="text"/>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style={{height: "300px", overflowY: "auto"}}>
-                            <table className="table table-condensed table-hover table-striped">
-                                <thead>
-                                <tr>
-                                    <td className="bold">Name</td>
-                                    <td className="bold" style={{ minWidth: "100px" }}>Label</td>
-                                    <td className="bold" style={{ minWidth: "175px" }}>ID</td>
-                                    <td className="bold">Date</td>
-                                    <td className="bold">Created By</td>
-                                    <td className="bold">Parent ID</td>
-                                </tr>
-                                </thead>
-
-                                <tbody>
-                                {this.renderCollectionTable()}
-                                </tbody>
-                            </table>
-                        </div>
-
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <span onClick={this.selectHighlighted} className={selectedGoldenFromFilter ? "cube-btn" : "disabled cube-btn"}>Select</span>&nbsp;&nbsp;
-                        <span onClick={this.showDeleteGoldenConfirm} className={selectedGoldenFromFilter ? "cube-btn" : "disabled cube-btn"}>Delete</span>&nbsp;&nbsp;
-                        <span onClick={this.hideGoldenFilter} className="cube-btn">Cancel</span>
-                    </Modal.Footer>
-                </Modal>
-                 */}
                 <Modal show={showAddCustomHeader} bsSize="large">
                     <Modal.Header>
                         <Modal.Title>Add Custom Headers</Modal.Title>
@@ -1303,20 +1112,6 @@ class ViewSelectedTestConfig extends React.Component {
                         <span onClick={this.cancelAddCustomHeaderModal} className="cube-btn margin-left-15">Cancel</span>
                     </Modal.Footer>
                 </Modal>
-                {/* <Modal show={showDeleteGoldenConfirmation}>
-                    <Modal.Body>
-                        <div style={{ display: "flex", flex: 1, justifyContent: "center"}}>
-                            <div className="margin-right-10" style={{ display: "flex", flexDirection: "column", fontSize:20 }}>
-                                This will delete the {cube.selectedGoldenName}. Please confirm.
-                            </div>
-                            <div style={{ display: "flex", alignItems: "flex-start" }}>
-                                    <span className="cube-btn margin-right-10" onClick={() => this.deleteGolden()}>Confirm</span>
-                                    <span className="cube-btn" onClick={() => this.closeDeleteGoldenConfirm()}>No</span>
-                            </div>
-                        </div>
-                    </Modal.Body>
-                </Modal>
-             */}
             </div>
         );
     }

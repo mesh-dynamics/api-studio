@@ -158,7 +158,6 @@ class APICatalogFilter extends Component<IAPICatalogFilterProps> {
                                     <>
                                         <div>
                                             <GoldenCollectionBrowse
-                                                showDeleteOption={false}
                                                 selectedSource={selectedSource}
                                                 dropdownLabel={selectedSource === "UserGolden" ? "COLLECTION" : "GOLDEN"}
                                                 handleChangeCallback={this.handleChangeInBrowseCollection}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, ReactEventHandler, SyntheticEvent } from 'react';
 import { connect } from 'react-redux';
 import { Modal } from 'react-bootstrap';
+import { Link } from "react-router-dom";
 import classNames from 'classnames';
 
 import {
@@ -12,21 +13,21 @@ import {
 import gcbrowseActions from '../../actions/gcbrowse.actions';
 import './GoldenCollectionBrowse.css';
 
-declare type FilterTypes = "nameFilter" | "labelFilter" | "idFilter" | "createdByFilter";
-
 declare type SelectedSourceType = "UserGolden" | "Golden";
 
 export interface IGoldenCollectionBrowseProps {
     cube: ICubeState;
-    dropdownLabel: string,
-    gcbrowse: IGoldenCollectionBrowseState
+    dropdownLabel: string;
+    showDeleteOption?: boolean;
+    showVisibilityOption?: boolean;
+    gcbrowse: IGoldenCollectionBrowseState;
     selectedSource: SelectedSourceType;
-    showDeleteOption: boolean,
-    clearSelectedGoldenCollection(): void,
-    deleteGolden(selectedItemId: string, selectedSource: string): void,
-    fetchGoldensCollections(selectedSource: SelectedSourceType): void;
-    updateSelectedGoldenCollection(selectedItem: ICollectionDetails): void;
-    handleChangeCallback(selectedItem: ICollectionDetails): void;
+    handleViewGoldenClick?: () => void;
+    clearSelectedGoldenCollection: () => void;
+    deleteGolden: (selectedItemId: string, selectedSource: string) => void,
+    fetchGoldensCollections: (selectedSource: SelectedSourceType) => void;
+    updateSelectedGoldenCollection: (selectedItem: ICollectionDetails) => void;
+    handleChangeCallback: (selectedItem: ICollectionDetails) => void;
 }
 
 const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
@@ -42,8 +43,10 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
         dropdownLabel,
         selectedSource,
         showDeleteOption,
+        showVisibilityOption,
         deleteGolden,
         handleChangeCallback,
+        handleViewGoldenClick,
         fetchGoldensCollections,
         clearSelectedGoldenCollection,
         updateSelectedGoldenCollection
@@ -228,6 +231,20 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
                     title={`Browse ${selectedSource === "UserGolden" ? "Collection" : "Golden"}`}
                     className="link fas fa-folder-open pull-right font-15"
                 ></i>
+                {
+                    selectedCollectionItem.collec
+                    && showVisibilityOption
+                    && (
+                        <Link to={{
+                            pathname: "/test_config_view/golden_visibility",
+                            search: `recordingId=${selectedCollectionItem.id}`
+                        }}>
+                            <span className="pull-right gcd-view-golden-icon-container" onClick={handleViewGoldenClick}>
+                                <i className="fas fa-eye margin-right-10 gcd-view-golden-icon" aria-hidden="true"></i>
+                            </span>
+                        </Link>
+                    )
+                }
             </div>
             <div className="value-n">
                 {renderDropdownOptions()}
