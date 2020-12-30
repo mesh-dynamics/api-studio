@@ -55,7 +55,7 @@ public class RedisPubSub extends JedisPubSub {
 			LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Received Key Expiry Message",
 				"CHANNEL", channel, "MESSAGE" , message)));
 			try (Jedis jedis = jedisPool.getResource()) {
-			    String actualKey = message.split(":")[1];
+			    String actualKey = message.replaceFirst("^"+Constants.REDIS_SHADOW_KEY_PREFIX, "");
                 String existingRecordOrReplay = jedis.get(actualKey);
 				if (existingRecordOrReplay != null  && !existingRecordOrReplay.equals("nil")) {
 					RecordOrReplay recordOrReplay = jsonMapper.readValue(existingRecordOrReplay,
