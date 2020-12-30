@@ -8,6 +8,9 @@ import config from "../config";
 import {getTransformHeaders} from "../utils/lib/url-utils";
 import api from "../api";
 import {GoldenMeta} from "./Golden-Visibility";
+import {GoldenCollectionBrowse} from "./GoldenCollectionBrowse";
+// import {GoldenCollectionBrowse} from "./APICatalog";
+// import {GoldenCollectionDropdown} from "./GoldenCollectionDropdown";
 import {goldenActions} from '../actions/golden.actions'
 import {validateGoldenName} from "../utils/lib/golden-utils";
 import classNames from "classnames";
@@ -143,46 +146,71 @@ class ViewSelectedTestConfig extends React.Component {
         this.setState({ customHeaders });
     };
 
-    handleChangeForTestIds = (e) => {
-        const { dispatch, cube } = this.props;
-        cube.selectedTestId = e.target.value;
-        if (e) {
-            dispatch(cubeActions.clear());
-            let version = null;
-            let golden = null;
-            let name = "";
-            for (const collec of cube.testIds) {
-                if (collec.collec == e.target.value) {
-                    golden = collec.id
-                    version = collec.templateVer;
-                    name = collec.name;
-                    break;
-                }
-            }
-            //dispatch(cubeActions.getGraphData(cube.selectedApp));
-            dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version, golden, name));
-        }
+    // handleChangeForTestIds = (e) => {
+    //     const { dispatch, cube } = this.props;
+    //     cube.selectedTestId = e.target.value;
+    //     if (e) {
+    //         dispatch(cubeActions.clear());
+    //         let version = null;
+    //         let golden = null;
+    //         let name = "";
+    //         for (const collec of cube.testIds) {
+    //             if (collec.collec == e.target.value) {
+    //                 golden = collec.id
+    //                 version = collec.templateVer;
+    //                 name = collec.name;
+    //                 break;
+    //             }
+    //         }
+    //         //dispatch(cubeActions.getGraphData(cube.selectedApp));
+    //         dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version, golden, name));
+    //     }
+    // };
+
+    // handleChangeForTestIds = (collectionId) => {
+    //     const { dispatch, cube } = this.props;
+    //     dispatch(cubeActions.clear());
+
+    //     const selectedCollection = cube.testIds.find(collection => collectionId === collection.collec);
+
+    //     if(selectedCollection) {
+    //         const { id: golden, templateVer: version, name } = selectedCollection;
+    //         dispatch(cubeActions.setSelectedTestIdAndVersion(collectionId, version, golden, name));
+    //     }
+    // };
+
+    handleChangeInBrowseCollection = (selectedCollectionObject) => {
+        const { dispatch } = this.props;
+        const { 
+            name,
+            id: golden,
+            templateVer: version,
+            collec: collectionId 
+        } = selectedCollectionObject;
+
+        dispatch(cubeActions.clear());
+        dispatch(cubeActions.setSelectedTestIdAndVersion(collectionId, version, golden, name));
     };
     
     showCT = () => this.setState({showCT: true});
 
     handleClose = () => {
         const {cube} = this.props;
-        this.handleChangeForTestIds({target: {value: cube.selectedTestId}});
+        // this.handleChangeForTestIds({target: {value: cube.selectedTestId}});
         this.setState({ showReplayModal: false, showCT: false });
     };
 
-    getFormattedDate(date) {
-        var year = date.getFullYear();
+    // getFormattedDate(date) {
+    //     var year = date.getFullYear();
 
-        var month = (1 + date.getMonth()).toString();
-        month = month.length > 1 ? month : '0' + month;
+    //     var month = (1 + date.getMonth()).toString();
+    //     month = month.length > 1 ? month : '0' + month;
 
-        var day = date.getDate().toString();
-        day = day.length > 1 ? day : '0' + day;
+    //     var day = date.getDate().toString();
+    //     day = day.length > 1 ? day : '0' + day;
 
-        return month + '/' + day + '/' + year;
-    }
+    //     return month + '/' + day + '/' + year;
+    // }
 
     selectGoldenFromFilter = (g) => {
         this.setState({selectedGoldenFromFilter: g});
@@ -287,26 +315,29 @@ class ViewSelectedTestConfig extends React.Component {
         dispatch(goldenActions.resetGoldenVisibilityDetails());
     };
 
-    showGoldenFilter = () => {
-        this.setState({
-            goldenNameFilter: "",
-            goldenIdFilter: "",
-            goldenBranchFilter: "",
-            goldenVersionFilter: "",
-            selectedGoldenFromFilter: "",
-            showGoldenFilter: true
-        });
+    // showGoldenFilter = () => {
+    //     const { cube: { selectedApp }, dispatch } = this.props;
 
-    };
+    //     this.setState({
+    //         goldenNameFilter: "",
+    //         goldenIdFilter: "",
+    //         goldenBranchFilter: "",
+    //         goldenVersionFilter: "",
+    //         selectedGoldenFromFilter: "",
+    //         showGoldenFilter: true
+    //     });
+
+    //     dispatch(cubeActions.getTestIds(selectedApp));
+    // };
 
     hideGoldenFilter = () => {
         this.setState({showGoldenFilter: false});
     };
 
-    selectHighlighted = () => {
-        this.handleChangeForTestIds({target: {value: this.state.selectedGoldenFromFilter}});
-        this.hideGoldenFilter();
-    };
+    // selectHighlighted = () => {
+    //     this.handleChangeForTestIds({target: {value: this.state.selectedGoldenFromFilter}});
+    //     this.hideGoldenFilter();
+    // };
 
     handleDismissCallBack = () => {
         const { recordingMode } = this.state;
@@ -655,32 +686,32 @@ class ViewSelectedTestConfig extends React.Component {
         }
     };
 
-    showDeleteGoldenConfirm = () => {
-        this.setState({
-            showDeleteGoldenConfirmation: true,
-        });
-        this.handleChangeForTestIds({target: {value: this.state.selectedGoldenFromFilter}});
-    }
+    // showDeleteGoldenConfirm = () => {
+    //     this.setState({
+    //         showDeleteGoldenConfirmation: true,
+    //     });
+    //     this.handleChangeForTestIds({target: {value: this.state.selectedGoldenFromFilter}});
+    // }
 
-    closeDeleteGoldenConfirm = () => {
-        this.setState({
-            showDeleteGoldenConfirmation: false,
-        });
-    }
+    // closeDeleteGoldenConfirm = () => {
+    //     this.setState({
+    //         showDeleteGoldenConfirmation: false,
+    //     });
+    // }
 
-    deleteGolden = async ()  => {
-        const { cube, dispatch} = this.props;
-        try {
-            await cubeService.deleteGolden(cube.selectedGolden);
-            dispatch(cubeActions.removeSelectedGoldenFromTestIds(cube.selectedGolden));
-        } catch (error) {
-            console.error("Error caught in softDelete Golden: " + error);
-        }
-        this.setState({
-            showDeleteGoldenConfirmation: false,
-            selectedGoldenFromFilter:"",
-        });
-    }
+    // deleteGolden = async ()  => {
+    //     const { cube, dispatch} = this.props;
+    //     try {
+    //         await cubeService.deleteGolden(cube.selectedGolden);
+    //         dispatch(cubeActions.removeSelectedGoldenFromTestIds(cube.selectedGolden));
+    //     } catch (error) {
+    //         console.error("Error caught in softDelete Golden: " + error);
+    //     }
+    //     this.setState({
+    //         showDeleteGoldenConfirmation: false,
+    //         selectedGoldenFromFilter:"",
+    //     });
+    // }
     
     handleForceStopRecording = (recordingId) => {
         try {
@@ -727,69 +758,69 @@ class ViewSelectedTestConfig extends React.Component {
         return jsxContent;
     }
 
-    renderCollectionTable() {
-        const {cube} = this.props;
-        let collectionList = cube.testIds;
+    // renderCollectionTable() {
+    //     const {cube} = this.props;
+    //     let collectionList = cube.testIds;
 
-        if (this.state.goldenNameFilter) {
-            collectionList = collectionList.filter(item => item.name.toLowerCase().includes(this.state.goldenNameFilter.toLowerCase()));
-        }
+    //     if (this.state.goldenNameFilter) {
+    //         collectionList = collectionList.filter(item => item.name.toLowerCase().includes(this.state.goldenNameFilter.toLowerCase()));
+    //     }
 
-        if (this.state.goldenBranchFilter) {
-            collectionList = collectionList.filter(item => item.branch && item.branch.toLowerCase().includes(this.state.goldenBranchFilter.toLowerCase()));
-        }
+    //     if (this.state.goldenBranchFilter) {
+    //         collectionList = collectionList.filter(item => item.branch && item.branch.toLowerCase().includes(this.state.goldenBranchFilter.toLowerCase()));
+    //     }
 
-        if (this.state.goldenVersionFilter) {
-            collectionList = collectionList.filter(item => item.codeVersion && item.codeVersion.toLowerCase().includes(this.state.goldenVersionFilter.toLowerCase()));
-        }
+    //     if (this.state.goldenVersionFilter) {
+    //         collectionList = collectionList.filter(item => item.codeVersion && item.codeVersion.toLowerCase().includes(this.state.goldenVersionFilter.toLowerCase()));
+    //     }
 
-        if (this.state.goldenIdFilter) {
-            collectionList = collectionList.filter(item => item.id.toLowerCase().includes(this.state.goldenIdFilter.toLowerCase()));
-        }
+    //     if (this.state.goldenIdFilter) {
+    //         collectionList = collectionList.filter(item => item.id.toLowerCase().includes(this.state.goldenIdFilter.toLowerCase()));
+    //     }
 
-        if (!collectionList || collectionList.length == 0) {
-            return <tr><td colSpan="5">NO DATA FOUND</td></tr>
-            return;
-        }
+    //     if (!collectionList || collectionList.length == 0) {
+    //         return <tr><td colSpan="5">NO DATA FOUND</td></tr>
+    //         return;
+    //     }
 
-        let trList = collectionList.map(item => (<tr key={item.collec} value={item.collec} className={this.state.selectedGoldenFromFilter == item.collec ? "selected-g-row" : ""} onClick={() => this.selectGoldenFromFilter(item.collec)}><td>{item.name}</td><td>{item.label}</td><td>{item.id}</td><td>{this.getFormattedDate(new Date(item.timestmp*1000))}</td><td>{item.userId}</td><td>{item.prntRcrdngId}</td></tr>));
-        return trList;
-    }
+    //     let trList = collectionList.map(item => (<tr key={item.collec} value={item.collec} className={this.state.selectedGoldenFromFilter == item.collec ? "selected-g-row" : ""} onClick={() => this.selectGoldenFromFilter(item.collec)}><td>{item.name}</td><td>{item.label}</td><td>{item.id}</td><td>{this.getFormattedDate(new Date(item.timestmp*1000))}</td><td>{item.userId}</td><td>{item.prntRcrdngId}</td></tr>));
+    //     return trList;
+    // }
 
-    renderCollectionDD ( cube ) {
-        if (cube.testIdsReqStatus != cubeConstants.REQ_SUCCESS || cube.testIdsReqStatus == cubeConstants.REQ_NOT_DONE)
-            return <select id="ddlTestId" className="r-att" disabled value={cube.selectedTestId} placeholder={'Select...'}>
-                <option value="">No App Selected</option>
-            </select>;
-        let options = [];
-        if (cube.testIdsReqStatus == cubeConstants.REQ_SUCCESS) {
-            options = cube.testIds.map((item, index) => {
-                if (index < 8)
-                    return (<option key={item.collec + index} value={item.collec}>{`${item.name} ${item.label}`}</option>);
+    // renderCollectionDD ( cube ) {
+    //     if (cube.testIdsReqStatus != cubeConstants.REQ_SUCCESS || cube.testIdsReqStatus == cubeConstants.REQ_NOT_DONE)
+    //         return <select id="ddlTestId" className="r-att" disabled value={cube.selectedTestId} placeholder={'Select...'}>
+    //             <option value="">No App Selected</option>
+    //         </select>;
+    //     let options = [];
+    //     if (cube.testIdsReqStatus == cubeConstants.REQ_SUCCESS) {
+    //         options = cube.testIds.map((item, index) => {
+    //             if (index < 8)
+    //                 return (<option key={item.collec + index} value={item.collec}>{`${item.name} ${item.label}`}</option>);
 
-                else
-                    return (<option className="hidden" key={item.collec + index} value={item.collec}>{`${item.name} ${item.label}`}</option>);
-            });
-        }
-        let jsxContent = '';
-        if (options.length) {
-            let selectedTestIdObj = '';
-            if (cube.selectedTestId)
-                selectedTestIdObj = { label: cube.selectedTestId, value: cube.selectedTestId};
-            jsxContent = <div>
-                <select id="ddlTestId" className="r-att" onChange={this.handleChangeForTestIds} value={cube.selectedTestId || ""} placeholder={'Select...'}>
-                    <option value="">Select Golden</option>
-                    {options}
-                </select>
-            </div>
-        }
-        if (cube.testIdsReqStatus == cubeConstants.REQ_LOADING)
-            jsxContent = <div><br/>Loading...</div>
-        if (cube.testIdsReqStatus == cubeConstants.REQ_FAILURE)
-            jsxContent = <div><br/>Request failed!</div>
+    //             else
+    //                 return (<option className="hidden" key={item.collec + index} value={item.collec}>{`${item.name} ${item.label}`}</option>);
+    //         });
+    //     }
+    //     let jsxContent = '';
+    //     if (options.length) {
+    //         let selectedTestIdObj = '';
+    //         if (cube.selectedTestId)
+    //             selectedTestIdObj = { label: cube.selectedTestId, value: cube.selectedTestId};
+    //         jsxContent = <div>
+    //             <select id="ddlTestId" className="r-att" onChange={this.handleChangeForTestIds} value={cube.selectedTestId || ""} placeholder={'Select...'}>
+    //                 <option value="">Select Golden</option>
+    //                 {options}
+    //             </select>
+    //         </div>
+    //     }
+    //     if (cube.testIdsReqStatus == cubeConstants.REQ_LOADING)
+    //         jsxContent = <div><br/>Loading...</div>
+    //     if (cube.testIdsReqStatus == cubeConstants.REQ_FAILURE)
+    //         jsxContent = <div><br/>Request failed!</div>
 
-        return jsxContent;
-    };
+    //     return jsxContent;
+    // };
 
     renderRecordingInfo = () => {
         const { cube: { selectedGolden, testIds }} = this.props;
@@ -900,30 +931,12 @@ class ViewSelectedTestConfig extends React.Component {
                         </select>
                     </div>
                 </div>
-
-                <div className="margin-top-10">
-                    <div className="label-n">SELECT GOLDEN&nbsp;
-                        <i onClick={this.showGoldenFilter} title="Browse Golden" className="link fas fa-folder-open pull-right font-15"></i>
-                        {
-                            cube.selectedTestId 
-                            && (!recStatus || recStatus.status !== "Running") 
-                            && (
-                                <Link to={{
-                                    pathname: "/test_config_view/golden_visibility",
-                                    search: `recordingId=${cube.selectedGolden}`
-                                }}>
-                                    <span className="pull-right" onClick={this.handleViewGoldenClick} style={{ marginLeft: "5px", cursor: "pointer" }}>
-                                        <i className="fas fa-eye margin-right-10" style={{ fontSize: "12px", color: "#757575"}} aria-hidden="true"></i>
-                                    </span>
-                                </Link>
-                            )
-                        }
-                    </div>
-                    <div className="value-n">
-                        {this.renderCollectionDD(cube)}
-                    </div>
-                </div>
-
+                <GoldenCollectionBrowse 
+                    showDeleteOption
+                    selectedSource="Golden" 
+                    dropdownLabel="SELECT GOLDEN"
+                    handleChangeCallback={this.handleChangeInBrowseCollection}
+                />
                 <div style={{ fontSize: "12px" }} className="margin-top-10 row">
                     <span  className="label-link col-sm-12 pointer" onClick={this.showAddCustomHeaderModal}>
                         <i className="fas fa-plus" style={{ color: "#333333", marginRight: "5px" }} aria-hidden="true"></i>
@@ -1118,7 +1131,7 @@ class ViewSelectedTestConfig extends React.Component {
                     </Modal.Footer>
                 </Modal>
 
-                <Modal show={showGoldenFilter} bsSize="large">
+                {/* <Modal show={showGoldenFilter} bsSize="large">
                     <Modal.Header>
                         <Modal.Title>Browse Golden <small style={{color: "white"}}>({cube.selectedApp})</small></Modal.Title>
                     </Modal.Header>
@@ -1187,7 +1200,7 @@ class ViewSelectedTestConfig extends React.Component {
                         <span onClick={this.hideGoldenFilter} className="cube-btn">Cancel</span>
                     </Modal.Footer>
                 </Modal>
-                
+                 */}
                 <Modal show={showAddCustomHeader} bsSize="large">
                     <Modal.Header>
                         <Modal.Title>Add Custom Headers</Modal.Title>
@@ -1223,7 +1236,7 @@ class ViewSelectedTestConfig extends React.Component {
                         <span onClick={this.cancelAddCustomHeaderModal} className="cube-btn margin-left-15">Cancel</span>
                     </Modal.Footer>
                 </Modal>
-                <Modal show={showDeleteGoldenConfirmation}>
+                {/* <Modal show={showDeleteGoldenConfirmation}>
                     <Modal.Body>
                         <div style={{ display: "flex", flex: 1, justifyContent: "center"}}>
                             <div className="margin-right-10" style={{ display: "flex", flexDirection: "column", fontSize:20 }}>
@@ -1236,6 +1249,7 @@ class ViewSelectedTestConfig extends React.Component {
                         </div>
                     </Modal.Body>
                 </Modal>
+             */}
             </div>
         );
     }
