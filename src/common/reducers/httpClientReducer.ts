@@ -1,9 +1,7 @@
 import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
-import cryptoRandomString from 'crypto-random-string';
 import { ICollectionDetails, ICubeRunHistory, IHttpClientStoreState, IHttpClientTabDetails } from "./state.types";
-import { generateTraceId } from "../utils/http_client/utils";
 
 
 export interface IHttpClientAction{
