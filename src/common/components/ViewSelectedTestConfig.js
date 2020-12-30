@@ -66,6 +66,7 @@ class ViewSelectedTestConfig extends React.Component {
             ongoingRecStatus: {},
             forceStopped: false,
             otherInstanceEndPoint: "",
+            storeToDatastore: true,
         };
         //this.statusInterval;
     }
@@ -672,6 +673,9 @@ class ViewSelectedTestConfig extends React.Component {
         searchParams.set('transforms', transforms);
         searchParams.set('testConfigName', testConfigName);
         searchParams.set('analyze', true);
+        if(selectedInstance == "other"){
+            searchParams.set('storeToDatastore', this.state.storeToDatastore.toString());
+        }
         if(tag){
             searchParams.set('tag', tag);
             searchParams.set('resettag', `default${selectedApp}Noop`);
@@ -801,6 +805,22 @@ class ViewSelectedTestConfig extends React.Component {
             });
             const currentEndpoint = selectedInstance ? selectedInstance.gatewayEndpoint : "";
             return  <input disabled type="text" value={currentEndpoint} style={{width: "100%"}} />
+        }
+    }
+
+    onStoreToDatabaseChange = (event) =>{
+        this.setState({storeToDatastore: event.target.checked});
+    }
+
+    renderStoreToDatastore(cube){
+        if(cube.selectedInstance == "other"){
+            return <div className="margin-top-10">
+                <label className="label-n"><input type="checkbox" onChange={this.onStoreToDatabaseChange} checked={this.state.storeToDatastore}/>
+                &nbsp; STORE TO DATASTORE </label>
+                
+            </div>
+        }else{
+            return <></>
         }
     }
 
@@ -971,6 +991,8 @@ class ViewSelectedTestConfig extends React.Component {
                     </div>
                 </div>
 
+                {this.renderStoreToDatastore(cube)}
+                
                 <div className="margin-top-10">
                     <div className="label-n">SELECT RECORD MODE&nbsp;
                         <select  id="ddlRecordMode" 
