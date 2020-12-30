@@ -1,6 +1,7 @@
 package com.cubeui.backend.web.external;
 
 import com.cubeui.backend.domain.MultipartInputStreamFileResource;
+import com.cubeui.backend.domain.User;
 import io.md.dao.EventQuery;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
@@ -8,12 +9,15 @@ import io.md.injection.DynamicInjectionConfig;
 
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.service.CubeServerService;
+import io.md.utils.Constants;
 import java.io.IOException;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -41,13 +45,15 @@ public class ReplayWSController {
     }
 
     @PostMapping("/start/{recordingId}")
-    public ResponseEntity start(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId, Authentication authentication) {
+    public ResponseEntity start(HttpServletRequest request, @RequestBody MultiValueMap<String, String> postBody, @PathVariable String recordingId, Authentication authentication) {
         Optional<Recording> recording = cubeServerService.getRecording(recordingId);
         if(recording.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Error while retrieving Recording Object for recordingId=" + recordingId);
         validation.validateCustomerName(authentication,recording.get().customerId);
-        return cubeServerService.fetchPostResponse(request, postBody);
+        User user = (User) authentication.getPrincipal();
+        postBody.put(Constants.USER_ID_FIELD, List.of(user.getUsername()));
+        return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 
     @PostMapping("/transforms/{customerId}/{app}/{collection}/{replayId}")
