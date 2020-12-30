@@ -347,7 +347,7 @@ public class MovieRentalRest {
 			if(genreGroupDTO.id != null) {
 				obj = mv.getGenreGroupById(genreGroupDTO.id);
 				if(genreGroupDTO.name != null) {
-					obj = mv.getGenreGroupByName(genreGroupDTO.name);
+					obj = mv.getGenreGroupForCustomerByName(genreGroupDTO.name, customerId);
 					if(obj != null & obj.getInt("genre_group_id") != genreGroupDTO.id) {
 						throw new Exception("Genre Group with same name already exists");
 					}
@@ -357,12 +357,12 @@ public class MovieRentalRest {
 				if(genreGroupDTO.name == null) {
 					throw new Exception("Genre Group name is Mandatory");
 				}
-				obj = mv.getGenreGroupByName(genreGroupDTO.name);
+				obj = mv.getGenreGroupForCustomerByName(genreGroupDTO.name, customerId);
 				if(obj != null) {
 					throw new Exception("Genre Group with same name already exists");
 				}
 				mv.createGenreGroup(genreGroupDTO.name, customerId);
-				obj = mv.getGenreGroupByName(genreGroupDTO.name);
+				obj = mv.getGenreGroupForCustomerByName(genreGroupDTO.name, customerId);
 			}
 			int genreGroupId = obj.getInt("genre_group_id");
 			mv.genre_group_category_mapping(genreGroupDTO.categories, genreGroupId);
