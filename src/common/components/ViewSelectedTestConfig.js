@@ -444,11 +444,11 @@ class ViewSelectedTestConfig extends React.Component {
 
     handleReplayError = (data, status, statusText, username) => 
         (
-            status && status === 409 && data["replayId"] !== "None"
+            status && status === 409 && data.recordOrReplay?.replay
             ?
                 this.setState({ 
-                    fcId: data["replayId"], 
-                    fcEnabled: (data["userId"] === username), 
+                    fcId: data.recordOrReplay.replay.replayId, 
+                    fcEnabled: (data.recordOrReplay.replay.userId === username), 
                     showReplayModal: false
                 })
                 
