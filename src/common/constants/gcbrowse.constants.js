@@ -1,4 +1,4 @@
-export const gcbrowseConstants = {
+const gcbrowseConstants = {
     REQUEST_BEGIN: "gcbrowse/REQUEST_BEGIN",
     REQUEST_SUCCESS: "gcbrowse/REQUEST_SUCCESS",
     REQUEST_FAILURE: "gcbrowse/REQUEST_FAILURE",
@@ -11,3 +11,37 @@ export const gcbrowseConstants = {
     SET_MESSAGE: "gcbrowse/SET_MESSAGE",
     CLEAR_MESSAGE: "gcbrowse/CLEAR_MESSAGE",
 };
+
+const defaultCollectionItem = {
+    app: '',
+    archived: false,
+    branch: '',
+    codeVersion: '',
+    collec: '',
+    collectionUpdOpSetId: '',
+    comment: '',
+    cust: '',
+    dynamicInjectionConfigVersion: '',
+    gitCommitId: '',
+    id: '',
+    instance: '',
+    jarPath: '',
+    label: '',
+    name: '',
+    prntRcrdngId: '',
+    recordingType: '',
+    rootRcrdngId: '',
+    runId: '',
+    status: '',
+    tags: [],
+    templateUpdOpSetId: '',
+    templateVer: '',
+    timestmp: 0,
+    userId: '',
+    apiTraces: []
+};
+
+export {
+    gcbrowseConstants,
+    defaultCollectionItem
+}

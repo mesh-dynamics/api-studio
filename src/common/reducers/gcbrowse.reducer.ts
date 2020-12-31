@@ -1,5 +1,4 @@
-import { stat } from 'fs';
-import { gcbrowseConstants } from '../constants';
+import { gcbrowseConstants, defaultCollectionItem } from '../constants';
 import { IGoldenCollectionBrowseState } from './state.types';
 
 interface IGCBrowseAction {
@@ -9,33 +8,7 @@ interface IGCBrowseAction {
 
 const initialState: IGoldenCollectionBrowseState = {
     currentCollectionType: '',
-    selectedCollectionItem: {
-        app: '',
-        archived: false,
-        branch: '',
-        codeVersion: '',
-        collec: '',
-        collectionUpdOpSetId: '',
-        comment: '',
-        cust: '',
-        dynamicInjectionConfigVersion: '',
-        gitCommitId: '',
-        id: '',
-        instance: '',
-        jarPath: '',
-        label: '',
-        name: '',
-        prntRcrdngId: '',
-        recordingType: '',
-        rootRcrdngId: '',
-        runId: '',
-        status: '',
-        tags: [],
-        templateUpdOpSetId: '',
-        templateVer: '',
-        timestmp: 0,
-        userId: '',
-    },
+    selectedCollectionItem: defaultCollectionItem,
     actualGoldens: {
         numFound: 0,
         recordings: []
@@ -103,5 +76,6 @@ const gcbrowseReducer = (state = initialState, action: IGCBrowseAction) => {
 
 export {
     IGCBrowseAction,
-    gcbrowseReducer as gcbrowse
+    gcbrowseReducer as gcbrowse,
+    defaultCollectionItem
 }

@@ -19,6 +19,8 @@ import { apiCatalogActions } from '../actions/api-catalog.actions';
 import MDLoading from '../../../public/assets/images/md-loading.gif';
 import Tippy from '@tippy.js/react'
 import {isURL} from 'validator';
+import gcbrowseActions from '../actions/gcbrowse.actions';
+import { defaultCollectionItem } from "../constants";
 
 class ViewSelectedTestConfig extends React.Component {
     constructor(props) {
@@ -31,7 +33,6 @@ class ViewSelectedTestConfig extends React.Component {
             replayId: null,
             showReplayModal: false,
             showCT: false,
-            showDeleteGoldenConfirmation:false,
             showAddCustomHeader: false,
             showGoldenMeta: false,
             showGoldenFilter: false,
@@ -91,6 +92,7 @@ class ViewSelectedTestConfig extends React.Component {
     handleFC = () => {
         const { dispatch, cube } = this.props;
         dispatch(cubeActions.forceCompleteReplay(this.state.fcId));
+        dispatch(gcbrowseActions.updateSelectedGoldenCollection(defaultCollectionItem))
         setTimeout(() => {
             this.setState({fcId: null});
         });
@@ -151,26 +153,6 @@ class ViewSelectedTestConfig extends React.Component {
         this.setState({ customHeaders });
     };
 
-    handleChangeForTestIds = (e) => {
-        const { dispatch, cube } = this.props;
-        cube.selectedTestId = e.target.value;
-        if (e) {
-            dispatch(cubeActions.clearPreviousData());
-            let version = null;
-            let golden = null;
-            let name = "";
-            for (const collec of cube.testIds) {
-                if (collec.collec == e.target.value) {
-                    golden = collec.id
-                    version = collec.templateVer;
-                    name = collec.name;
-                    break;
-                }
-            }
-            //dispatch(cubeActions.getGraphData(cube.selectedApp));
-            dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version, golden, name));
-        }
-    };
 
     handleChangeInBrowseCollection = (selectedCollectionObject) => {
         const { dispatch } = this.props;
@@ -187,9 +169,18 @@ class ViewSelectedTestConfig extends React.Component {
     
     showCT = () => this.setState({showCT: true});
 
-    handleClose = () => {
-        const {cube} = this.props;
-        this.handleChangeForTestIds({target: {value: cube.selectedTestId}});
+    handleCloseOnReplayModal = () => {
+        const { gcbrowse: { selectedCollectionItem }, dispatch } = this.props;
+
+        const {
+            name,
+            id: golden,
+            templateVer: version,
+            collec: collectionId 
+        } = selectedCollectionItem;
+        
+        dispatch(cubeActions.clearPreviousData());
+        dispatch(cubeActions.setSelectedTestIdAndVersion(collectionId, version, golden, name));
         this.setState({ showReplayModal: false, showCT: false });
     };
 
@@ -614,8 +605,9 @@ class ViewSelectedTestConfig extends React.Component {
                     if(this.state.recStatus.status === "Completed") {
                         this.setState({stopDisabled: true, stoppingStatus: false, forceStopping: false});
                         clearInterval(this.stopStatusInterval);
-                        dispatch(cubeActions.getTestIds(selectedApp));
-                        dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "Golden"));
+                        dispatch(cubeActions.getTestIds(selectedApp)); // TODO: Get rid of this
+                        dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "Golden")); // Probably this too
+                        dispatch(gcbrowseActions.fetchGoldensCollections("Golden"));
                     } else if(!this.state.fetchingRecStatus) {
                         this.checkStatus(statusUrl, configForHTTP)
                     }
@@ -973,7 +965,7 @@ class ViewSelectedTestConfig extends React.Component {
             recName, stopDisabled, stoppingStatus, recStatus, showAddCustomHeader,
             goldenNameErrorMessage, fcEnabled, resumeModalVisible,
             dbWarningModalVisible, instanceWarningModalVisible, 
-            goldenSelectWarningModalVisible, showDeleteGoldenConfirmation, forceStopping, forceStopped, ongoingRecStatus
+            goldenSelectWarningModalVisible, forceStopping, forceStopped, ongoingRecStatus
         } = this.state;
 
         const replayDone = (cube.replayStatus === "Completed" || cube.replayStatus === "Error");
@@ -1081,12 +1073,12 @@ class ViewSelectedTestConfig extends React.Component {
                     <Modal.Footer >
                         {analysisDone ? 
                         <Link to="/test_results">
-                            <span onClick={this.handleClose} id="btnRunTestViewResults" className="cube-btn">View Results</span>&nbsp;&nbsp;
+                            <span onClick={this.handleCloseOnReplayModal} id="btnRunTestViewResults" className="cube-btn">View Results</span>&nbsp;&nbsp;
                         </Link>
                     :
                     <span className="modal-footer-text">The results will be available on the test results page once the test completes</span>
                     }
-                        <span onClick={this.handleClose} className="cube-btn">Close</span>
+                        <span onClick={this.handleCloseOnReplayModal} className="cube-btn">Close</span>
                     </Modal.Footer>
                 </Modal>
                 
@@ -1138,19 +1130,6 @@ class ViewSelectedTestConfig extends React.Component {
                         <span onClick={this.closeAddCustomHeaderModal} className="cube-btn">Add</span>
                         <span onClick={this.cancelAddCustomHeaderModal} className="cube-btn margin-left-15">Cancel</span>
                     </Modal.Footer>
-                </Modal>
-                <Modal show={showDeleteGoldenConfirmation}>
-                    <Modal.Body>
-                        <div style={{ display: "flex", flex: 1, justifyContent: "center"}}>
-                            <div className="margin-right-10" style={{ display: "flex", flexDirection: "column", fontSize:20 }}>
-                                This will delete the {cube.selectedGoldenName}. Please confirm.
-                            </div>
-                            <div style={{ display: "flex", alignItems: "flex-start" }}>
-                                    <span className="cube-btn margin-right-10" onClick={() => this.deleteGolden()}>Confirm</span>
-                                    <span className="cube-btn" onClick={() => this.closeDeleteGoldenConfirm()}>No</span>
-                            </div>
-                        </div>
-                    </Modal.Body>
                 </Modal>
                 <Modal show={this.state.showOngoingRecModal}>
                     <Modal.Header>

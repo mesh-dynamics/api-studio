@@ -244,7 +244,7 @@ function getInstances () {
 function forceCompleteReplay(fcId) {
     return async dispatch => {
         try {
-            let isComplete = await cubeService.forceCompleteReplay(fcId);
+            await cubeService.forceCompleteReplay(fcId);
             dispatch(success(fcId), Date.now());
         } catch (error) {
             console.error(error);
