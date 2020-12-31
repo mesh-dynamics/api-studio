@@ -924,12 +924,19 @@ public class CubeStore {
       Optional<RecordingType> recordingType =
           Optional.ofNullable(formParams.getFirst(Constants.RECORDING_TYPE_FIELD))
               .flatMap(r -> Utils.valueOf(RecordingType.class, r)).or(() -> Optional.of(RecordingType.Golden));
+      String userId = formParams.getFirst(Constants.USER_ID_FIELD);
+      if (userId==null) {
+          asyncResponse.resume(Response.status(Status.BAD_REQUEST)
+              .entity("userId should be specified for a golden")
+              .build());
+          return;
+      }
       Optional<Response> errResp = recordingType.flatMap(rt -> {
           if(rt == RecordingType.History || rt == RecordingType.UserGolden) {
               return Optional.empty();
           } else {
               return Utils.checkActiveCollection(rrstore, customerId, app,
-                  instanceId, Optional.empty());
+                  instanceId, Optional.of(userId));
           }
       });
         if (errResp.isPresent()) {
@@ -938,7 +945,6 @@ public class CubeStore {
         }
 
         String name = formParams.getFirst("name");
-        String userId = formParams.getFirst(Constants.USER_ID_FIELD);
         String label = formParams.getFirst(Constants.GOLDEN_LABEL_FIELD);
 
         Optional<String> jarPath = Optional.ofNullable(formParams.getFirst(Constants.JAR_PATH_FIELD));
@@ -946,13 +952,6 @@ public class CubeStore {
         if (name==null) {
             asyncResponse.resume(Response.status(Status.BAD_REQUEST)
                 .entity("Name needs to be given for a golden")
-                .build());
-            return;
-        }
-
-        if (userId==null) {
-            asyncResponse.resume(Response.status(Status.BAD_REQUEST)
-                .entity("userId should be specified for a golden")
                 .build());
             return;
         }
