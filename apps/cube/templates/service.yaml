@@ -43,15 +43,15 @@ spec:
         imagePullPolicy: Always
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "100m"
-          limits:
             memory: "1024Mi"
             cpu: "1000m"
+          limits:
+            memory: "2048Mi"
+            cpu: "2000m"
         ports:
         - containerPort: 8080
         livenessProbe:
-          failureThreshold: 3
+          failureThreshold: 5
           httpGet:
             path: /cs/health
             port: 8080
@@ -61,12 +61,12 @@ spec:
           successThreshold: 1
           timeoutSeconds: 1
         readinessProbe:
-          failureThreshold: 3
+          failureThreshold: 5
           httpGet:
             path: /cs/health
             port: 8080
             scheme: HTTP
-          initialDelaySeconds: 5
+          initialDelaySeconds: 20
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
@@ -166,15 +166,15 @@ spec:
         imagePullPolicy: Always
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "100m"
-          limits:
             memory: "1024Mi"
             cpu: "1000m"
+          limits:
+            memory: "2048Mi"
+            cpu: "2000m"
         ports:
         - containerPort: 8080
         livenessProbe:
-          failureThreshold: 3
+          failureThreshold: 5
           httpGet:
             path: /ms/health
             port: 8080
@@ -184,12 +184,12 @@ spec:
           successThreshold: 1
           timeoutSeconds: 1
         readinessProbe:
-          failureThreshold: 3
+          failureThreshold: 5
           httpGet:
             path: /ms/health
             port: 8080
             scheme: HTTP
-          initialDelaySeconds: 5
+          initialDelaySeconds: 20
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
@@ -289,15 +289,15 @@ spec:
         imagePullPolicy: Always
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "100m"
-          limits:
             memory: "1024Mi"
-            cpu: "1000m"
+            cpu: "500m"
+          limits:
+            memory: "2048Mi"
+            cpu: "2000m"
         ports:
         - containerPort: 8080
         livenessProbe:
-          failureThreshold: 3
+          failureThreshold: 5
           httpGet:
             path: /rs/health
             port: 8080
@@ -307,12 +307,12 @@ spec:
           successThreshold: 1
           timeoutSeconds: 1
         readinessProbe:
-          failureThreshold: 3
+          failureThreshold: 5
           httpGet:
             path: /rs/health
             port: 8080
             scheme: HTTP
-          initialDelaySeconds: 5
+          initialDelaySeconds: 20
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 1
@@ -504,6 +504,7 @@ spec:
         volumeMounts:
         - mountPath: "/usr/local/tomcat/webCorsAllowedOrigins.txt"
           name: cubeui-backend-config
+          subPath: webCorsAllowedOrigins.txt
       volumes:
       - name: cubeui-backend-config
         configMap:
