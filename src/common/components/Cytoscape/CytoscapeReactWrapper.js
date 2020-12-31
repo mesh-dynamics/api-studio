@@ -65,7 +65,7 @@ export class CytoscapeReactWrapper extends React.Component {
     componentDidUpdate() {
         const {cube, dispatch} = this.props;
         if (cube.graphDataReqStatus == cubeConstants.REQ_SUCCESS) {
-            dispatch(cubeActions.clear());
+            dispatch(cubeActions.clearPreviousData());
             this.build();
         }
     }

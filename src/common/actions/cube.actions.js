@@ -26,7 +26,7 @@ export const cubeActions = {
     hideTestConfig,
     showTCSetup,
     showTCInfo,
-    clear,
+    clearPreviousData,
     clearGolden,
     setPathResultsParams,
     getCollectionUpdateOperationSet,
@@ -53,7 +53,7 @@ export const cubeActions = {
     resetCubeToInitialState
 };
 
-function clear() {
+function clearPreviousData() {
     return async dispatch => {
         dispatch(clearPrev());
     };

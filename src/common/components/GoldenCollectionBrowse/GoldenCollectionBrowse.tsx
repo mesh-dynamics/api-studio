@@ -1,15 +1,15 @@
 import React, { useState, useEffect, ReactEventHandler, SyntheticEvent } from 'react';
 import { connect } from 'react-redux';
 import { Modal } from 'react-bootstrap';
-import { Link } from "react-router-dom";
+import { Link } from 'react-router-dom';
 import classNames from 'classnames';
-
 import {
     IStoreState,
     ICubeState,
     ICollectionDetails,
     IGoldenCollectionBrowseState
 } from '../../reducers/state.types';
+import commonUtils from '../../utils/commonUtils';
 import gcbrowseActions from '../../actions/gcbrowse.actions';
 import './GoldenCollectionBrowse.css';
 
@@ -70,22 +70,6 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
         "select-indicator": !selectedCollectionItem.id,
     });
 
-    /**
-    * Utility functions are here
-    */
-    const getFormattedDate = (date: any) => {
-        // TODO: Fix this garbage
-        let year = date.getFullYear();
-
-        let month = (1 + date.getMonth()).toString();
-        month = month.length > 1 ? month : '0' + month;
-
-        let day = date.getDate().toString();
-        day = day.length > 1 ? day : '0' + day;
-
-        return month + '/' + day + '/' + year;
-    }
-
     const findSelectedObjectForCollectionId = (selectedCollectionId: string) => {
         if (selectedSource === 'UserGolden') {
             return userGoldens.recordings.find(item => item.collec === selectedCollectionId);
@@ -97,7 +81,6 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
 
         return null;
     }
-    // End of utils
 
     /**
      * Handler are here
@@ -114,7 +97,7 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
     };
 
     const handleClickFromFilter = (selectedCollectionId: string) => {
-        const selectedObject: any = findSelectedObjectForCollectionId(selectedCollectionId);
+        const selectedObject = findSelectedObjectForCollectionId(selectedCollectionId);
 
         if (selectedObject) {
             updateSelectedGoldenCollection(selectedObject);
@@ -124,7 +107,7 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
     const handleDropdownOptionChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedCollectionId = event.target.value;
 
-        const selectedObject: any = findSelectedObjectForCollectionId(selectedCollectionId);
+        const selectedObject = findSelectedObjectForCollectionId(selectedCollectionId);
 
         if (selectedObject) {
             updateSelectedGoldenCollection(selectedObject);
@@ -217,7 +200,7 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
                 <td>{item.name}</td>
                 <td>{item.label}</td>
                 <td>{item.id}</td>
-                <td>{getFormattedDate(new Date(item.timestmp * 1000))}</td>
+                <td>{commonUtils.getFormattedDate(new Date(item.timestmp * 1000))}</td>
                 <td>{item.userId}</td>
                 <td>{item.prntRcrdngId}</td>
             </tr>
@@ -269,7 +252,6 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
                                 <div className="label-n">NAME</div>
                                 <div className="value-n">
                                     <input value={nameFilter} onChange={(event) => setNameFilter(event.target.value)} className="width-100 h-20px" type="text" />
-                                    {/* <input onChange={(event) => handleInputChange("goldenNameFilter", event)} className="width-100 h-20px" type="text"/> */}
                                 </div>
                             </div>
                             <div className="col-md-2"></div>
@@ -277,7 +259,6 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
                                 <div className="label-n">BRANCH</div>
                                 <div className="value-n">
                                     <input value={branchFilter} onChange={(event) => setBranchFilter(event.target.value)} className="width-100 h-20px" type="text" />
-                                    {/* <input onChange={(event) => handleInputChange("goldenBranchFilter", event)} className="width-100 h-20px" type="text"/> */}
                                 </div>
                             </div>
                         </div>
@@ -286,7 +267,6 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
                                 <div className="label-n">RECORDING ID</div>
                                 <div className="value-n">
                                     <input value={idFilter} onChange={(event) => setIdFilter(event.target.value)} className="width-100 h-20px" type="text" />
-                                    {/* <input onChange={(event) => handleInputChange("goldenIdFilter", event)} className="width-100 h-20px" type="text"/> */}
                                 </div>
                             </div>
                             <div className="col-md-2"></div>
@@ -294,7 +274,6 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
                                 <div className="label-n">CODE VERSION</div>
                                 <div className="value-n">
                                     <input value={versionFilter} onChange={(event) => setVersionFilter(event.target.value)} className="width-100 h-20px" type="text" />
-                                    {/* <input onChange={(event) => handleInputChange("goldenVersionFilter", event)} className="width-100 h-20px" type="text"/> */}
                                 </div>
                             </div>
                         </div>

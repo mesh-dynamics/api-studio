@@ -73,7 +73,7 @@ class ViewSelectedTestConfig extends React.Component {
 
     componentDidMount() {
         const { dispatch } = this.props;
-        dispatch(cubeActions.clear());
+        dispatch(cubeActions.clearPreviousData());
     }
 
     handleRecordingModeChange = (value) => this.setState({ recordingMode: value, goldenNameErrorMessage: "" });
@@ -152,7 +152,7 @@ class ViewSelectedTestConfig extends React.Component {
         const { dispatch, cube } = this.props;
         cube.selectedTestId = e.target.value;
         if (e) {
-            dispatch(cubeActions.clear());
+            dispatch(cubeActions.clearPreviousData());
             let version = null;
             let golden = null;
             let name = "";
@@ -169,18 +169,6 @@ class ViewSelectedTestConfig extends React.Component {
         }
     };
 
-    // handleChangeForTestIds = (collectionId) => {
-    //     const { dispatch, cube } = this.props;
-    //     dispatch(cubeActions.clear());
-
-    //     const selectedCollection = cube.testIds.find(collection => collectionId === collection.collec);
-
-    //     if(selectedCollection) {
-    //         const { id: golden, templateVer: version, name } = selectedCollection;
-    //         dispatch(cubeActions.setSelectedTestIdAndVersion(collectionId, version, golden, name));
-    //     }
-    // };
-
     handleChangeInBrowseCollection = (selectedCollectionObject) => {
         const { dispatch } = this.props;
         const { 
@@ -190,7 +178,7 @@ class ViewSelectedTestConfig extends React.Component {
             collec: collectionId 
         } = selectedCollectionObject;
 
-        dispatch(cubeActions.clear());
+        dispatch(cubeActions.clearPreviousData());
         dispatch(cubeActions.setSelectedTestIdAndVersion(collectionId, version, golden, name));
     };
     
@@ -761,10 +749,11 @@ class ViewSelectedTestConfig extends React.Component {
     }
 
     renderRecordingInfo = () => {
-        const { cube: { selectedGolden, testIds }} = this.props;
+        const { cube: { selectedGolden, testIds }, gcbrowse: { actualGoldens }} = this.props;
 
         if (selectedGolden && testIds.length !== 0) {
-            const { id, label, name } = testIds.find(test => test.id === selectedGolden);
+            const { id, label, name } = testIds.find(test => test.id === selectedGolden) 
+                                        || actualGoldens.recordings.find(test => test.id === selectedGolden);
 
             return(
                 <div className="resume-modal-info-container">
@@ -1119,6 +1108,7 @@ class ViewSelectedTestConfig extends React.Component {
 
 const mapStateToProps = (state) => ({
     cube: state.cube,
+    gcbrowse: state.gcbrowse,
     authentication: state.authentication
 });
 

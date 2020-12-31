@@ -41,7 +41,7 @@ const gcbrowseActions = {
         }
     },
 
-    deleteGolden: (selectedItemId, selectedSource) => async () => {
+    deleteGolden: (selectedItemId, selectedSource) => async (dispatch) => {
         try {
             await cubeService.deleteGolden(selectedItemId);
             dispatch(cubeActions.removeSelectedGoldenFromTestIds(selectedItemId));
@@ -53,18 +53,3 @@ const gcbrowseActions = {
 };
 
 export default gcbrowseActions;
-
-        /* Delete this */
-        // deleteGolden = async ()  => {
-        //     const { cube, dispatch} = this.props;
-        //     try {
-        //         await cubeService.deleteGolden(cube.selectedGolden);
-        //         dispatch(cubeActions.removeSelectedGoldenFromTestIds(cube.selectedGolden));
-        //     } catch (error) {
-        //         console.error("Error caught in softDelete Golden: " + error);
-        //     }
-        //     this.setState({
-        //         showDeleteGoldenConfirmation: false,
-        //         selectedGoldenFromFilter:"",
-        //     });
-        // }
