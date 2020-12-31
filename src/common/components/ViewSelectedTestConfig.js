@@ -17,9 +17,8 @@ import classNames from "classnames";
 import { cubeService } from '../services';
 import { apiCatalogActions } from '../actions/api-catalog.actions';
 import MDLoading from '../../../public/assets/images/md-loading.gif';
+import Tippy from '@tippy.js/react'
 import {isURL} from 'validator';
-// import { history } from "../helpers";
-// import { Glyphicon } from 'react-bootstrap';
 
 class ViewSelectedTestConfig extends React.Component {
     constructor(props) {
@@ -66,7 +65,11 @@ class ViewSelectedTestConfig extends React.Component {
                 }
             },
             fetchingRecStatus: false,
+            showOngoingRecModal: false,
+            ongoingRecStatus: {},
+            forceStopped: false,
             otherInstanceEndPoint: "",
+            storeToDatastore: true,
         };
         //this.statusInterval;
     }
@@ -428,11 +431,11 @@ class ViewSelectedTestConfig extends React.Component {
 
     handleReplayError = (data, status, statusText, username) => 
         (
-            status && status === 409 && data["replayId"] !== "None"
+            status && status === 409 && data.recordOrReplay?.replay
             ?
                 this.setState({ 
-                    fcId: data["replayId"], 
-                    fcEnabled: (data["userId"] === username), 
+                    fcId: data.recordOrReplay.replay.replayId, 
+                    fcEnabled: (data.recordOrReplay.replay.userId === username), 
                     showReplayModal: false
                 })
                 
@@ -548,7 +551,8 @@ class ViewSelectedTestConfig extends React.Component {
         searchParams.set('resettag', `default${selectedApp}Noop`);
 
         // axios.post(recordUrl, searchParams, configForHTTP
-        api.post(recordUrl, searchParams, configForHTTP).then((data) => {
+        api.post(recordUrl, searchParams, configForHTTP)
+        .then((data) => {
             this.setState({ stopDisabled: false, recId: data.id, recLabel });
             this.recStatusInterval = setInterval(
                 () => {
@@ -564,7 +568,14 @@ class ViewSelectedTestConfig extends React.Component {
                     }
                 }, 
                 1000);
-        });
+            }, (error) => {
+                if(error.response.status==409) {
+                    const ongoingRecStatus = error.response.data
+                    this.setState({ongoingRecStatus, showOngoingRecModal: true})
+                } else {
+                    console.error("Errror starting recording" ,error);
+                }
+            });
     };
 
     stopRecord = () => {
@@ -649,6 +660,9 @@ class ViewSelectedTestConfig extends React.Component {
         searchParams.set('transforms', transforms);
         searchParams.set('testConfigName', testConfigName);
         searchParams.set('analyze', true);
+        if(selectedInstance == "other"){
+            searchParams.set('storeToDatastore', this.state.storeToDatastore.toString());
+        }
         if(tag){
             searchParams.set('tag', tag);
             searchParams.set('resettag', `default${selectedApp}Noop`);
@@ -686,25 +700,31 @@ class ViewSelectedTestConfig extends React.Component {
         }
     };
     
-    handleForceStopRecording = (recordingId) => {
+    handleForceStopRecording = async (recordingId) => {
         try {
 
             const {cube: { 
                 selectedApp, 
-            }} = this.props;
+            }, dispatch} = this.props;
             const searchParams = new URLSearchParams();
             searchParams.set('resettag', `default${selectedApp}Noop`);
 
-            cubeService.forceStopRecording(recordingId, searchParams)
+            this.setState({forceStopping: true})
+            await cubeService.forceStopRecording(recordingId, searchParams)
+            this.setState({forceStopped: true, forceStopping: false})
+            dispatch(cubeActions.getTestIds(selectedApp));
+            dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "Golden"));
         } catch (error) {
             console.error("Unable to force stop recording: " + error)
             alert("Unable to force stop recording")
             this.setState({forceStopping: false})
         }
-
-        this.setState({forceStopping: true})
     }
 
+    handleCloseOngoingRecModal = () => {
+        this.setState({showOngoingRecModal: false, forceStopped: false})
+    }
+    
     renderInstances(cube) {
         if (!cube.instances) {
             return ''
@@ -745,6 +765,22 @@ class ViewSelectedTestConfig extends React.Component {
             });
             const currentEndpoint = selectedInstance ? selectedInstance.gatewayEndpoint : "";
             return  <input disabled type="text" value={currentEndpoint} style={{width: "100%"}} />
+        }
+    }
+
+    onStoreToDatabaseChange = (event) =>{
+        this.setState({storeToDatastore: event.target.checked});
+    }
+
+    renderStoreToDatastore(cube){
+        if(cube.selectedInstance == "other"){
+            return <div className="margin-top-10">
+                <label className="label-n"><input type="checkbox" onChange={this.onStoreToDatabaseChange} checked={this.state.storeToDatastore}/>
+                &nbsp; STORE TO DATASTORE </label>
+                
+            </div>
+        }else{
+            return <></>
         }
     }
 
@@ -852,6 +888,8 @@ class ViewSelectedTestConfig extends React.Component {
                     </div>
                 </div>
 
+                {this.renderStoreToDatastore(cube)}
+                
                 <div className="margin-top-10">
                     <div className="label-n">SELECT RECORD MODE&nbsp;
                         <select  id="ddlRecordMode" 
@@ -935,12 +973,12 @@ class ViewSelectedTestConfig extends React.Component {
             recName, stopDisabled, stoppingStatus, recStatus, showAddCustomHeader,
             goldenNameErrorMessage, fcEnabled, resumeModalVisible,
             dbWarningModalVisible, instanceWarningModalVisible, 
-            goldenSelectWarningModalVisible, showDeleteGoldenConfirmation, forceStopping
+            goldenSelectWarningModalVisible, showDeleteGoldenConfirmation, forceStopping, forceStopped, ongoingRecStatus
         } = this.state;
 
         const replayDone = (cube.replayStatus === "Completed" || cube.replayStatus === "Error");
         const analysisDone = (cube.analysisStatus === "Completed" || cube.analysisStatus === "Error");
-
+        const ongoingRecording = ongoingRecStatus.recordOrReplay?.recording || {}
         return (
             <div>
                 {this.renderLeftPanelInfo()}
@@ -1099,6 +1137,45 @@ class ViewSelectedTestConfig extends React.Component {
                     <Modal.Footer>
                         <span onClick={this.closeAddCustomHeaderModal} className="cube-btn">Add</span>
                         <span onClick={this.cancelAddCustomHeaderModal} className="cube-btn margin-left-15">Cancel</span>
+                    </Modal.Footer>
+                </Modal>
+                <Modal show={showDeleteGoldenConfirmation}>
+                    <Modal.Body>
+                        <div style={{ display: "flex", flex: 1, justifyContent: "center"}}>
+                            <div className="margin-right-10" style={{ display: "flex", flexDirection: "column", fontSize:20 }}>
+                                This will delete the {cube.selectedGoldenName}. Please confirm.
+                            </div>
+                            <div style={{ display: "flex", alignItems: "flex-start" }}>
+                                    <span className="cube-btn margin-right-10" onClick={() => this.deleteGolden()}>Confirm</span>
+                                    <span className="cube-btn" onClick={() => this.closeDeleteGoldenConfirm()}>No</span>
+                            </div>
+                        </div>
+                    </Modal.Body>
+                </Modal>
+                <Modal show={this.state.showOngoingRecModal}>
+                    <Modal.Header>
+                        Ongoing recording
+                    </Modal.Header>
+                    <Modal.Body>
+                        <p>
+                            There is an ongoing recording in the selected instance. Please select another instance or wait for the recording to complete and try again later.
+                        </p>
+                        <div style={{display: "flex", flexDirection: "column"}}>
+                        <span><label>Golden Name: </label><span>&nbsp;{ongoingRecording?.name || "N/A"}</span></span>
+                        <span><label>Started by: </label><span>&nbsp;{ongoingRecording?.userId || "N/A"}</span></span>
+                        <span><label>Recording ID: </label><span>&nbsp;{ongoingRecording?.id || "N/A"}</span></span>
+                        </div>
+                    </Modal.Body>
+                    <Modal.Footer>
+                            <div className="pull-left">
+                                <Tippy content="Please coordinate with the owner of the recording before force stopping" arrow={true} placement="6">
+                                    <span onClick={() => this.handleForceStopRecording(ongoingRecording.id)} className={classNames("cube-btn", {"disabled" : forceStopping || forceStopped})}>
+                                        <i className={classNames("fa", !forceStopping ? "fa-exclamation-triangle" : "fa-spinner fa-spin")}></i>
+                                        &nbsp; {!forceStopped ? "FORCE STOP" : "STOPPED"}
+                                    </span>
+                                </Tippy>
+                            </div>
+                        <span onClick={this.handleCloseOngoingRecModal} className="cube-btn">CLOSE</span>
                     </Modal.Footer>
                 </Modal>
             </div>
