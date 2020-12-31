@@ -1,6 +1,6 @@
 const url = require('url');
 const logger = require('electron-log');
-const cryptoRandomString = require('crypto-random-string');
+const {generateTraceKeys} = require('./trace-utils');
 
 // Alt Mock With Collection API: /api/ms/mockWithCollection??
 const mockApiPrefix = '/api/msc/mockWithRunId';
@@ -86,8 +86,7 @@ const rewriteLivePath = (serviceConfigObject, receivedPathInProxy) => {
  */
 const proxyRequestInterceptorMockService = (proxyReq, mockContext, user) => {
     const { accessToken, tokenType } = user;
-    const { spanId, traceId, selectedApp } = mockContext;
-    const randomSpanId = cryptoRandomString({length: 16});
+    const { spanId, traceId, selectedApp, parentSpanId, tracer } = mockContext;
     const token = `${tokenType} ${accessToken}`;
 
     logger.info('Mock Request Intercepted. Removing Header <Origin>');
@@ -96,21 +95,26 @@ const proxyRequestInterceptorMockService = (proxyReq, mockContext, user) => {
     logger.info('Setting authorization header authorization:', token);
     proxyReq.setHeader('authorization', token);
 
-    logger.info('Setting x-b3-spanid: ', randomSpanId);
-    proxyReq.setHeader('x-b3-spanid', randomSpanId);
+    const {traceIdKey, spanIdKey, parentSpanIdKeys} = generateTraceKeys(tracer)
 
-    logger.info('Setting x-b3-parentspanid: ', spanId);
-    proxyReq.setHeader('x-b3-parentspanid', spanId);
+    if (spanIdKey) {
+        logger.info(`Setting spanId (${spanIdKey}): `, spanId);
+        proxyReq.setHeader(spanIdKey, spanId);
+    }
 
-    logger.info('Setting baggage-parent-span-id: ', spanId);
-    proxyReq.setHeader('baggage-parent-span-id', spanId);
+    parentSpanIdKeys.forEach((key) => {
+        logger.info(`Setting parentSpanId (${key}): `, parentSpanId);
+        proxyReq.setHeader(key, parentSpanId);
+    })
+
+    if (traceIdKey) {
+        logger.info(`Setting traceId (${traceIdKey}): `, traceId);
+        proxyReq.setHeader(traceIdKey, traceId);
+    }
 
     logger.info('Setting dynamicInjectionConfigVersion', `Default${selectedApp}`);
     proxyReq.setHeader('dynamicInjectionConfigVersion', `Default${selectedApp}`);
 
-    logger.info('Setting x-b3-traceid: ', traceId);
-    proxyReq.setHeader('x-b3-traceid', traceId);
-    
     // rewrite request url
     logger.info('Rewriting url...');
     proxyReq.path = rewriteMockPath(proxyReq.path, mockContext);
@@ -126,7 +130,7 @@ const proxyRequestInterceptorMockService = (proxyReq, mockContext, user) => {
  */
 const proxyRequestInterceptorLiveService = (proxyReq, serviceConfigObject, mockContext) => {
 
-    const { traceId, spanId } = mockContext;
+    const { traceId, spanId, parentSpanId, tracer } = mockContext;
 
     logger.info('Method intercepted in proxy request:', proxyReq.method);
 
@@ -149,8 +153,22 @@ const proxyRequestInterceptorLiveService = (proxyReq, serviceConfigObject, mockC
     proxyReq.removeHeader('transfer-encoding');
     proxyReq.removeHeader('accept-encoding');
 
-    logger.info('Setting md-trace-id for live service', `${traceId}:${spanId}:0:1`);
-    proxyReq.setHeader('md-trace-id', encodeURIComponent(`${traceId}:${spanId}:0:1`));
+    const {traceIdKey, spanIdKey, parentSpanIdKeys} = generateTraceKeys(tracer)
+
+    if (spanIdKey) {
+        logger.info(`Setting spanId (${spanIdKey}): `, spanId);
+        proxyReq.setHeader(spanIdKey, spanId);
+    }
+
+    parentSpanIdKeys.forEach((key) => {
+        logger.info(`Setting parentSpanId (${key}): `, parentSpanId);
+        proxyReq.setHeader(key, parentSpanId);
+    })
+
+    if (traceIdKey) {
+        logger.info(`Setting traceId (${traceIdKey}): `, traceId);
+        proxyReq.setHeader(traceIdKey, traceId);
+    }
 
     logger.info('Logging Request Headers for Live Service after removing request headers', proxyReq._headers);
 

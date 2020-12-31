@@ -32,7 +32,7 @@ import "./Tabs.css";
 
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
-import { generateRunId, generateApiPath, getApiPathFromRequestEvent, extractParamsFromRequestEvent, selectedRequestParamData, unSelectedRequestParamData, isValidJSON, generateTraceKeys, getTraceDetailsForCurrentApp } from "../../utils/http_client/utils"; 
+import { generateRunId, generateApiPath, getApiPathFromRequestEvent, extractParamsFromRequestEvent, selectedRequestParamData, unSelectedRequestParamData, isValidJSON, generateTraceKeys, getTraceDetailsForCurrentApp, getTracerForCurrentApp } from "../../utils/http_client/utils"; 
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
 import { getParameterCaseInsensitive, Base64Binary } from '../../../shared/utils';
 
@@ -1044,8 +1044,8 @@ class HttpClientTabs extends Component {
         const runId = generateRunId();
         const mockConfig = getCurrentMockConfig(mockConfigList, selectedMockConfig);
         const traceId = tabs[tabIndex].traceIdAddedFromClient;
-        const spanId = tabToProcess.eventData[0].spanId;
-
+        const parentSpanId = tabToProcess.eventData[0].spanId;
+        const tracer = getTracerForCurrentApp()
         if(PLATFORM_ELECTRON) {
             const mockContext = {
                 collectionId: userHistoryCollection.collec,
@@ -1057,7 +1057,8 @@ class HttpClientTabs extends Component {
                 customerName: customerId,
                 runId: runId,
                 config: mockConfig,
-                spanId: spanId
+                parentSpanId: parentSpanId, // parent spanId for egress requests
+                tracer: tracer,
             }
 
             console.log("Setting mock context for this request: ", mockContext)
