@@ -9,13 +9,9 @@ const logger = require('electron-log');
 const { getApplicationConfig } = require('../fs-utils');
 const { 
     getServiceNameFromUrl, 
-    selectProxyTargetForService,
+    selectProxyTargetForService
 } = require('./proxy-utils');
-const {
-    generateSpanId, 
-    generateSpecialParentSpanId,
-    generateTraceId,
-} = require("./trace-utils")
+const cryptoRandomString = require('crypto-random-string');
 
 /**
  * This function will setup the proxy server
@@ -80,10 +76,7 @@ const setupProxy = (mockContext, user) => {
 
             // if traceId isn't present in the mock context, generate a new one (for every request)
             // this is to avoid stored requests from getting deleted by storeUserReqResp call
-            const tracer = mockContext.tracer
-            mockContext.parentSpanId = mockContext.parentSpanId || generateSpecialParentSpanId(tracer)
-            mockContext.spanId = generateSpanId(tracer);
-            mockContext.traceId = mockContext.traceId || generateTraceId(tracer, mockContext.spanId)
+            mockContext.traceId = mockContext.traceId || cryptoRandomString({length: 16});
 
             const proxyOptionParameters = {
                 user,

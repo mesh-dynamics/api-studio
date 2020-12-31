@@ -201,7 +201,7 @@ const setupListeners = (mockContext, user, replayContext) => {
         const { 
             recordingId, collectionId, traceId, selectedApp, 
             customerName, recordingCollectionId, runId, spanId,
-            config, tracer, parentSpanId,
+            config
         } = arg;
 
         logger.info('Current mock context :', JSON.stringify(mockContext));
@@ -216,8 +216,6 @@ const setupListeners = (mockContext, user, replayContext) => {
         mockContext.spanId = spanId;
         mockContext.recordingId = recordingId;
         mockContext.config = config;
-        mockContext.tracer = tracer;
-        mockContext.parentSpanId = parentSpanId;
         
         logger.info('Updated context is : ', JSON.stringify(mockContext));
     });
@@ -234,8 +232,6 @@ const setupListeners = (mockContext, user, replayContext) => {
         mockContext.recordingId ='sample-recording-id';
         mockContext.runId = 'sample-recording-collection-id';
         mockContext.config = {}
-        mockContext.tracer = 'meshd'
-        mockContext.parentSpanId = 'sample-parent-span-id'
     });
 
     ipcMain.on('restart_app', () => {
