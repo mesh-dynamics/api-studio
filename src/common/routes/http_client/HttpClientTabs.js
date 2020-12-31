@@ -1292,6 +1292,9 @@ class HttpClientTabs extends Component {
     }
 
     getValueBySaveType(value, type) {
+        if(!_.isString(value)){
+            return value;
+        }
         const renderEnvVars = getRenderEnvVars();
         return type !== "History" ? value : renderEnvVars(value);
     }
