@@ -1,0 +1,48 @@
+.gcbrowse-view-golden-icon-container {
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+.gcbrowse-view-golden-icon {
+    font-size: 12px;
+    color: #757575;    
+}
+
+.gcbrowse-modal-heading-color {
+    color: white;
+    margin-left: 5px;
+}
+
+.gcbrowse-modal-body-container {
+    padding: 10px 25px; 
+    border: 1px dashed #ddd
+}
+
+.gcbrowse-modal-body-table-container {
+    height: 300px;
+    overflow-y: auto;
+}
+
+.gcbrowse-spinner-root {
+    height: 300px;
+    overflow-y: auto;
+    display: flex;
+    justify-content: center;
+}
+    
+.gcbrowse-spinner-inner {
+    display: flex; 
+    align-items: center;
+}
+
+.gcbrowse-delete-body-container {
+    display: flex;
+    flex: 1;
+    justify-content: center;
+}
+
+.gcbrowse-delete-body-content {
+    display: flex;
+    flex-direction: column; 
+    font-size: 20;
+}

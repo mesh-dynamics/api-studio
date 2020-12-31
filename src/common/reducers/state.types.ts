@@ -499,13 +499,13 @@ export interface ICollectionDetails {
   apiTraces: IApiTrace[];
 }
 
-export interface IMockConfig{
+export interface IMockConfig {
   app: string;
   authenticate: boolean;
   configType: string;
   customer: string;
-  id:  number;
-  key:string;
+  id: number;
+  key: string;
   service: null
   userId: string;
   value: string;
@@ -559,12 +559,28 @@ export interface INavigationState {
   top: any; //2
 }
 
+export interface IGoldenCollectionBrowseSearchResults {
+  numFound: number,
+  recordings: ICollectionDetails[]
+}
+
+export interface IGoldenCollectionBrowseState {
+  currentCollectionType: string,
+  selectedCollectionItem: ICollectionDetails,
+  actualGoldens: IGoldenCollectionBrowseSearchResults,
+  userGoldens: IGoldenCollectionBrowseSearchResults,
+  isCollectionLoading: boolean,
+  messages: string[]
+}
+
 export interface IStoreState {
   cube: ICubeState;
   httpClient: IHttpClientStoreState;
   authentication: IAuthenticationState;
   navigation: INavigationState;
   golden: IGoldenState;
-
+  gcbrowse: IGoldenCollectionBrowseState;
   apiCatalog: IApiCatalogState;
 }
+
+
