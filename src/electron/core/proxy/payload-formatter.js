@@ -38,12 +38,6 @@ const extractHeadersToCubeFormat = (headersReceived, context) => {
         })
     }
 
-    // If traceId is not present. Add the traceId from context
-    if(context && !('md-trace-id' in headers)) {
-        const { traceId, spanId } = context;
-        headers['md-trace-id'] = [encodeURIComponent(`${traceId}:${spanId}:0:1`)];
-    }
-
     return headers;
 }
 
