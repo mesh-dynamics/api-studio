@@ -32,7 +32,7 @@ import "./Tabs.css";
 
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
-import { generateRunId, generateApiPath, getApiPathFromRequestEvent, extractParamsFromRequestEvent, selectedRequestParamData, unSelectedRequestParamData, isValidJSON  } from "../../utils/http_client/utils"; 
+import { generateRunId, generateApiPath, getApiPathFromRequestEvent, extractParamsFromRequestEvent, selectedRequestParamData, unSelectedRequestParamData, isValidJSON, generateTraceKeys, getTraceDetailsForCurrentApp } from "../../utils/http_client/utils"; 
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
 import { getParameterCaseInsensitive, Base64Binary } from '../../../shared/utils';
 
@@ -1292,6 +1292,9 @@ class HttpClientTabs extends Component {
     }
 
     getValueBySaveType(value, type) {
+        if(!_.isString(value)){
+            return value;
+        }
         const renderEnvVars = getRenderEnvVars();
         return type !== "History" ? value : renderEnvVars(value);
     }
@@ -1467,39 +1470,14 @@ class HttpClientTabs extends Component {
             httpReqestHeaders["content-type"] = ["application/grpc"];          
         }
 
-        let traceIdKey, spanIdKey, parentSpanIdKey;
-        switch (tracer) {
-            case "meshd":
-                traceIdKey = "md-trace-id";
-                parentSpanIdKey = ["mdctxmd-parent-span"];
-                // no span id key
-                break;
-            case "jaeger":
-                traceIdKey = "uber-trace-id"
-                parentSpanIdKey = ["uberctx-parent-span-id"]
-                // no span id key
-                break
-            case "zipkin":
-                traceIdKey = "x-b3-traceid"
-                parentSpanIdKey = ["baggage-parent-span-id", "x-b3-parentspanid"]
-                spanIdKey = "x-b3-spanid"
-                break;
-            case "datadog":
-                traceIdKey = "x-datadog-trace-id"
-                parentSpanIdKey = ["ot-baggage-parent-span-id"]
-                spanIdKey = "x-datadog-parent-id"
-                break
-            default:
-                // todo: commented this out because not passing a tracer is a valid case which will be handled next
-                //throw new Error("Tracer not supported: ", tracer)
-        }
+        const {traceIdKey, spanIdKey, parentSpanIdKeys} = generateTraceKeys(tracer)
 
         if(traceId) {
             httpReqestHeaders[traceIdKey] = [traceId]
         }
 
         if (parentSpanId) {
-            parentSpanIdKey.forEach((key) => {
+            parentSpanIdKeys.forEach((key) => {
                 httpReqestHeaders[key] = [parentSpanId]
             })
         }
@@ -1762,32 +1740,54 @@ class HttpClientTabs extends Component {
 
 
     addTab(evt, reqObject, givenApp, isSelected = true) {
-        let traceId;
-        let spanId;
         const httpRequestEventIndex = 0;
         const { dispatch, user, httpClient: {selectedTabKey} } = this.props;
         const tabId = uuidv4();
         const requestId = uuidv4();
         const { app } = this.state;
         const appAvailable = givenApp ? givenApp : app ? app : "";
+        const traceDetails = getTraceDetailsForCurrentApp()
+        let {traceKeys, traceId, spanId, parentSpanId} = traceDetails;
         if (!reqObject) {
-            traceId = cryptoRandomString({length: 16});
-            spanId = cryptoRandomString({length: 16});
             const { cube: { selectedApp } } = this.props;
             const customerId = user.customer_name;
             const eventData = this.generateEventdata(selectedApp, customerId, traceId);
-            const mdTraceHeader = {
+            const traceHeaders = []
+            traceHeaders.push({
                 description: "",
                 id: uuidv4(),
-                name: "md-trace-id",
+                name: traceKeys.traceIdKey,
                 selected: true,
-                value: encodeURIComponent(`${traceId}:${spanId}:0:1`)
-            };
+                value: traceId
+            })
+
+            if(traceKeys.spanIdKey) {
+                traceHeaders.push({
+                    description: "",
+                    id: uuidv4(),
+                    name: traceKeys.spanIdKey,
+                    selected: true,
+                    value: spanId
+                })
+            }
+            
+            const parentSpanIdHeaders = traceKeys.parentSpanIdKeys.map((key) => (
+                {
+                    description: "",
+                    id: uuidv4(),
+                    name: key,
+                    selected: true,
+                    value: parentSpanId
+                }
+            ))
+            
+            traceHeaders.push(...parentSpanIdHeaders)
+
             reqObject = {
                 httpMethod: "get",
                 httpURL: "",
                 httpURLShowOnly: "",
-                headers: [mdTraceHeader],
+                headers: [...traceHeaders],
                 queryStringParams: [],
                 bodyType: "formData",
                 formData: [],
@@ -1817,17 +1817,38 @@ class HttpClientTabs extends Component {
                 recordedHistory: null
             };
         } else {
-            traceId = reqObject.eventData[httpRequestEventIndex].traceId;
-            spanId = reqObject.eventData[httpRequestEventIndex].spanId;
-    
-            const mdTraceHeader = { 
-                description: "",
-                id: uuidv4(),
-                name: "md-trace-id",
-                selected: true,
-                value: encodeURIComponent(`${traceId}:${spanId}:0:1`) 
+            // add trace headers if not present
+            if(!_.find(reqObject.headers, {name: traceKeys.traceIdKey})) {
+                reqObject.headers.push({
+                    description: "",
+                    id: uuidv4(),
+                    name: traceKeys.traceIdKey,
+                    selected: true,
+                    value: traceId
+                })
             }
-            reqObject.headers.push(mdTraceHeader);
+
+            if(traceKeys.spanIdKey && !_.find(reqObject.headers, {name: traceKeys.spanIdKey})) {
+                reqObject.headers.push({
+                    description: "",
+                    id: uuidv4(),
+                    name: traceKeys.spanIdKey,
+                    selected: true,
+                    value: spanId
+                })
+            }
+
+            traceKeys.parentSpanIdKeys.forEach((key) => {
+                if(!_.find(reqObject.headers, {name: key})) {
+                    reqObject.headers.push({
+                        description: "",
+                        id: uuidv4(),
+                        name: key,
+                        selected: true,
+                        value: parentSpanId
+                    })
+                }
+            })
         }
         
         const nextSelectedTabId = isSelected ?  tabId : selectedTabKey;

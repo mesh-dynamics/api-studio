@@ -319,13 +319,15 @@ export interface ICollectionTabState {
 }
 
 export interface IPayloadData {
-  formParams: any; //2
-  hdrs: any; //2
+  formParams?: any; //2
+  hdrs?: any; //2
   method: string; //enum
-  path: string;
-  pathSegments: string[];
-  payloadState: string;
-  queryParams: any; //2
+  path?: string;
+  pathSegments?: string[];
+  payloadState?: string;
+  queryParams?: any; //2
+  body: any;
+  status?:number;
 }
 
 export interface IQueryParams {
@@ -343,13 +345,14 @@ export interface IEventData {
   instanceId: string;
   metaData: IKeyValuePairs; //2
   parentSpanId: string;
-  payload: [IPayloadData | string][];
+  payload: [string, IPayloadData];
   recordingType: string;
   reqId: string;
   runId: string; //Could be Date
+  seqId?: string;
   runType: string;
   service: string;
-  spanId: string;
+  spanId?: string;
   timestamp: number;
   traceId: string;
 }
@@ -493,6 +496,7 @@ export interface ICollectionDetails {
   templateVer: string;
   timestmp: number;
   userId: string;
+  apiTraces: IApiTrace[];
 }
 
 export interface IMockConfig{
