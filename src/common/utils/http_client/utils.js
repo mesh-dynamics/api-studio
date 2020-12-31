@@ -406,6 +406,9 @@ const generateSpecialParentSpanId = (tracer) => {
 
 const getTracerForCurrentApp = () => {
     const {cube: {selectedApp, appsList}} = store.getState()
+    if (!selectedApp || !appsList?.length) {
+        return ""
+    }
     const {tracer} = _.find(appsList, {name: selectedApp})
     return tracer
 }
