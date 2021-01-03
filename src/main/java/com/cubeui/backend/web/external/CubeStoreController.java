@@ -11,6 +11,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.dao.DynamicInjectionEventDao;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
+import io.md.dao.RecordOrReplay;
 import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingType;
 import io.md.dao.Replay;
@@ -509,7 +510,9 @@ public class CubeStoreController {
     }
 
     @PostMapping("/populateCache")
-    public ResponseEntity populateCache(HttpServletRequest request, @RequestBody Optional<String> recordOrReplay) {
-        return cubeServerService.fetchPostResponse(request, recordOrReplay);
+    public ResponseEntity populateCache(HttpServletRequest request, @RequestBody RecordOrReplay recordOrReplay , Authentication authentication) {
+        String customerId = recordOrReplay.isRecording() ? recordOrReplay.recording.map(r->r.customerId).orElse(null) : recordOrReplay.replay.map(r->r.customerId).orElse(null);
+        validation.validateCustomerName(authentication,customerId);
+        return cubeServerService.fetchPostResponse(request, Optional.of(recordOrReplay));
     }
 }
