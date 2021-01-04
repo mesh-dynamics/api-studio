@@ -511,8 +511,7 @@ public class CubeStoreController {
 
     @PostMapping("/populateCache")
     public ResponseEntity populateCache(HttpServletRequest request, @RequestBody RecordOrReplay recordOrReplay , Authentication authentication) {
-        String customerId = recordOrReplay.isRecording() ? recordOrReplay.recording.map(r->r.customerId).orElse(null) : recordOrReplay.replay.map(r->r.customerId).orElse(null);
-        validation.validateCustomerName(authentication,customerId);
+        validation.validateCustomerName(authentication,recordOrReplay.getCustomerId().orElse(null));
         return cubeServerService.fetchPostResponse(request, Optional.of(recordOrReplay));
     }
 }
