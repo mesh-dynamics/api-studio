@@ -47,13 +47,9 @@ spec:
                   end)
                 end
                 -- taken from https://gist.github.com/tylerneylon/59f4bcf316be525b30ab#file-json-lua-L66
-                local function escape_str(s)
-                  local in_char  = {'\\', '"', '/', '\b', '\f', '\n', '\r', '\t'}
-                  local out_char = {'\\', '"', '/',  'b',  'f',  'n',  'r',  't'}
-                  for i, c in ipairs(in_char) do
-                    s = s:gsub(c, '\\' .. out_char[i])
-                  end
-                  return s
+                local function generateTrace()
+                  -- return random(0, 9223372036854775807)
+                  return random (0 ,2147483647)
                 end
                 local function esc_str_opt(str)
                   local charmap = {['\\']='\\\\', ['"']='\\"', ['/']='\\/', ['\b']='\\b', ['\f']='\\f', ['\n']='\\n', ['\r']='\\r', ['\t']='\\t'}
@@ -66,90 +62,102 @@ spec:
                   end
                   return table.concat(buf)
                 end
-                local function esc_str_opt1(str)
-                  local in_char  = {'\\', '"', '/', '\b', '\f', '\n', '\r', '\t'}
-                  local out_char = {'\\\\', '\\"', '\\/',  '\\b',  '\\f',  '\\n',  '\\r',  '\\t'}
-                  local buf = {}
-                  for i = 1, #str do
-                    local inp = string.sub(str, i, i)
-                    local out = inp
-                    for i, c in ipairs(in_char) do
-                      if (c == inp) then out = out_char[i] end
-                    end
-                    buf[#buf+1] = out
-                  end
-                  return table.concat(buf)
+                local function starts_with(str, start)
+                  return str:sub(1, #start) == start
                 end
-                local function esc_str_opt2(str)
-                  local in_char  = {'\\', '"', '/', '\b', '\f', '\n', '\r', '\t'}
-                  local out_char = {'\\\\', '\\"', '\\/',  '\\b',  '\\f',  '\\n',  '\\r',  '\\t'}
-                  local outstr = string.gsub(str, '[\\"/\b\f\n\r\t]', function (inp)
-                    local out = inp
-                    for i, c in ipairs(in_char) do
-                      if (c == inp) then out = out_char[i] end
-                    end
-                    return out
-                  end)
-                  return outstr
-                end
-                function addToBuf(buf, tbl, delim, fieldname)
-                  buf[#buf+1] = delim .. string.format("%q", fieldname) .. ': ['
-                  local listdelim=''
+                function addJsonObjToBuffer(buf, tbl)
+                  local listdelim = ''
                   for key, value in pairs(tbl) do
-                    buf[#buf+1] = listdelim .. string.format("{ %q : %q }", key, value)
+                    buf[#buf + 1] = listdelim .. string.format(" %q : %q ", key, value)
                     listdelim = ', '
                   end
-                  buf[#buf+1] = ']'
+                end
+                function addMultiValuedMapToBuffer(buf, tbl, start_delim, fieldname)
+                  buf[#buf+1] = start_delim .. string.format("%q", fieldname) .. ': {'
+                  local listdelim = ''
+                  for key, value in pairs(tbl) do
+                    buf[#buf + 1] = listdelim .. string.format(" %q : [%q] ", key, value)
+                    listdelim = ', '
+                  end
+                  buf[#buf+1] = '}'
                   delim = ', '
+                end
+                function addQueryParamsToBuffer(buf, queryParamsStr, start_delim)
+                  buf[#buf+1] = start_delim .. '"queryParams" : { '
+                  local queryParamsMap = {}
+                  if not isempty(queryParamsStr) then
+                    for key,value in queryParamsStr:gmatch "([^=%?&]+)=([^=&]+)" do
+                      if queryParamsMap[key] ~= nil then
+                        queryParamsMap[key] = queryParamsMap[key] .. ', ' .. string.format("%q" , value)
+                      else
+                        queryParamsMap[key] = string.format("%q", value)
+                      end
+                    end
+                  end
+                  local listdelim = ''
+                  for key, value in pairs(queryParamsMap) do
+                    buf[#buf + 1] = listdelim .. string.format("%q", key) .. ' : [' .. value .. ']'
+                    listdelim = ', '
+                  end
+                  buf[#buf+1] = '}'
+                  delim = ', '
+                end
+                function isempty(s)
+                  return s == nil or s == ''
+                end
+                function logRequest(handle, cubeEvent)
+                  local buf = {'{'}
+                  local listdelim = ', '
+                  local fullPath = cubeEvent["apiPath"]
+                  local path = string.match(fullPath ,  "[^%?]+")
+                  -- set the event apiPath & global apiPath to path without the query params
+                  cubeEvent["apiPath"] = path
+                  apiPath = path
+
+                  logEvent(buf,handle,cubeEvent, 'HTTPRequestPayload')
+                  buf[#buf+1] = listdelim .. string.format('"method":%q', handle:headers():get(":method") or "")
+                  local queryParamsStr = string.match(fullPath , "%?.+")
+                  -- handle:logErr('path : ' .. path)
+                  -- handle:logErr('queryParam : ' .. queryParamsStr)
+                  addQueryParamsToBuffer(buf, queryParamsStr, ', ')
+                  buf[#buf+1] = listdelim .. string.format('"path":%q', path)
+                  buf[#buf+1] = ' } ] }'
+                  data = table.concat(buf)
+                  callStoreEvent(handle, data)
+                  handle:logErr('[cube req]' .. data)
                 end
                 function callStoreEvent(handle, data)
                   local hhdr, hbody = handle:httpCall(
-                  "outbound|8080||cubeui-backend.cube.svc.cluster.local",
-                    {
-                        [":method"] = "POST",
-                        [":path"] = "/api/cs/storeEvent",
-                        [":authority"] = "cube",
-                        ["Content-Type"] = "application/json",
-                        ["Authorization"] = "Bearer {{auth_token}}"
-                    },
-                    data,
-                    5000)
-                    if hbody then
-                        handle:logErr("Response from cube : ".. hbody)
-                    end
-                end
-                function logToCube(handle, data)
-                  -- handle:logErr(data)
-                  local logMessage = '{ "customerId" : "{{customer}}" , "app" : "{{cube_application}}" , "instanceId" : "{{cube_instanceid}}" , "logMessage" : "' .. esc_str_opt(data) .. '"}'
-                  local hhdr, hbody = handle:httpCall(
-                    "outbound|8080||cubelogcollector.cube.svc.cluster.local",
+                    ""outbound|8080||cubeui-backend.cube.svc.cluster.local",
                     {
                       [":method"] = "POST",
-                      [":path"] = "/api/logStore/{{customer}}",
+                      [":path"] = "/api/cs/storeEvent",
                       [":authority"] = "cube",
                       ["Content-Type"] = "application/json",
                       ["Authorization"] = "Bearer {{auth_token}}"
                     },
-                    logMessage,
-                    5000,
-                    true)
+                    data,
+                    5000)
                    if hbody then
-                    handle:logErr("Response from cube backend for log : ".. hbody)
+                    handle:logErr("Response from cube : ".. hbody)
                    end
                 end
-                function logHdrBody(handle, meta)
-                  local starttime = getEpochTime()
-                  handle:logErr('logHdrBody Start time ' .. starttime)
-                  local r = {['"'] = '\\"', ['\\'] = '\\\\'}
-                  local p = '["\\]'
-                  local hdrs = handle:headers()
-                  local path = hdrs:get(":path") or "/"
+                function logResponse(handle, cubeEvent)
                   local buf = {'{'}
-                  buf[#buf+1] = string.format('"path":%q', path)
-                  local delim = ', '
-                  first = true
-                  addToBuf(buf, meta, delim, "meta")
-                  addToBuf(buf, hdrs, delim, "hdrs")
+                  local listdelim = ', '
+                  logEvent(buf,handle,cubeEvent, 'HTTPResponsePayload')
+                  buf[#buf+1] = listdelim .. string.format('"status":%q', handle:headers():get(":status") or "")
+                  buf[#buf+1] = ' } ] }'
+                  data = table.concat(buf)
+                  callStoreEvent(handle, data)
+                  handle:logErr('[cube resp]' .. data)
+                end
+                function logEvent(buf, handle, cubeEvent, payloadType)
+                  addJsonObjToBuffer(buf, cubeEvent)
+                  local listdelim = ', '
+                  buf[#buf + 1] = listdelim .. ' "payload" : [ "'.. payloadType ..'", { '
+                  local hdrs = handle:headers()
+                  addMultiValuedMapToBuffer(buf, hdrs, '', "hdrs")
                   local body = handle:body()
                   local b = ''
                   if body then
@@ -157,72 +165,72 @@ spec:
                     b = body:getBytes(0, len)
                     -- b = "Hello World"
                   end
-                  -- buf[#buf+1] = delim .. '"body":"' .. escape_str(b) .. '"'
-                  buf[#buf+1] = delim .. '"body":"' .. esc_str_opt(b) .. '"'
-                  -- buf[#buf+1] = delim .. '"body":"' .. esc_str_opt2(b) .. '"'
-                  handle:logErr('optimized escaping 1')
-                  buf[#buf+1] = '}'
-                  data = table.concat(buf)
-                  local logStartTime = getEpochTime()
-                  callStoreEvent(handle , data)
-                  local logEndTime = getEpochTime()
-                  handle:logErr('log write time ' .. (logEndTime - logStartTime))
-                  local endtime = getEpochTime()
-                  handle:logErr('logHdrBody End time ' .. endtime)
-                  handle:logErr('logHdrBody time ' .. (endtime - starttime))
+                  buf[#buf+1] = listdelim .. '"body":"' .. esc_str_opt(b) .. '"'
+                  buf[#buf+1] = listdelim .. ' "payloadState" : "WrappedDecoded" '
                 end
                 function envoy_on_response(response_handle)
-                  local starttime = getEpochTime()
-                  local meta = {}
-                  meta["type"] = "response"
-                  meta["status"] = response_handle:headers():get(":status") or ""
-                  meta["timestamp"] = getEpochTime()
-                  -- meta["collection"] = "test-movieinfo-c1"
-                  meta["runType"] = "Replay"
-                  meta["customerId"] = "{{customer}}"
-                  meta["app"] = "{{cube_application}}"
-                  meta["instanceId"] = "{{cube_instanceid}}"
-                  meta["service"] = "{{service_name}}"
-                  if (crequestid) then meta["c-request-id"] = crequestid end
-                  if (xrequestid) then meta["x-request-id"] = xrequestid end
-                  if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
-                  if (xb3spanid) then meta["x-b3-spanid"] = xb3spanid end
-                  if (xb3parentspanid) then meta["x-b3-parentspanid"] = xb3parentspanid end
-                  if (apiPath) then meta["apiPath"] = apiPath end
-                  logHdrBody(response_handle, meta)
-                  local endtime = getEpochTime()
+                  local starttime = os.clock()
+                  local cubeResp = {}
+
+                  cubeResp["customerId"] = "{{customer}}"
+                  cubeResp["app"] = "{{cube_application}}"
+                  cubeResp["instanceId"] = "{{cube_instanceid}}"
+                  cubeResp["service"] = "{{service_name}}"
+                  cubeResp["run_type"] = "{{run_type}}"
+                  -- "Record"
+                  cubeResp["recordingType"] = "{{recording_type}}"
+                   -- "{{run_type}}"
+                  cubeResp["eventType"] = "HTTPResponse"
+                  cubeResp["timestamp"] = getEpochTime()
+
+                  if (crequestid) then cubeResp["reqId"] = crequestid end
+                  if (traceId) then cubeResp["traceId"] = traceId end
+                  if (spanId) then cubeResp["spanId"] = spanId end
+                  if (parentSpanId) then cubeResp["parentSpanId"] = parentSpanId end
+                  if (apiPath) then cubeResp["apiPath"] = apiPath end
+
+                  logResponse(response_handle, cubeResp)
+                  local endtime = os.clock()
                   response_handle:logErr('End time ' .. endtime)
                   response_handle:logErr('envoy_on_response time ' .. (endtime - starttime))
                 end
                 function envoy_on_request(request_handle)
                   local service = "{{service_name}}"
-                  local meta = {}
-                  meta["type"] = "request"
+                  local cubeReq = {}
                   xrequestid = request_handle:headers():get("x-request-id")
-                  xb3traceid = request_handle:headers():get("x-b3-traceid")
-                  xb3spanid = request_handle:headers():get("x-b3-spanid")
-                  xb3parentspanid = request_handle:headers():get("x-b3-parentspanid")
-                  apiPath = request_handle:headers():get(":path") or "/"
-                  crequestid = service .. "-" .. xb3traceid .. "-" .. uuid()
-                  meta["c-request-id"] = crequestid
-                  request_handle:logErr("Request id: " .. crequestid)
-                  meta["method"] = request_handle:headers():get(":method") or ""
-                  meta["timestamp"] = getEpochTime()
-                  -- meta["collection"] = "test-movieinfo-c1"
-                  meta["runType"] = "Replay"
-                  meta["customerId"] = "{{customer}}"
-                  meta["app"] = "{{cube_application}}"
-                  meta["instanceId"] = "{{cube_instanceid}}"
-                  meta["service"] = "{{service_name}}"
-                  request_handle:logErr("Span id : " .. xb3spanid)
-                  baggageParentId = request_handle:headers():get("baggage-parent-span-id")
-                  if (baggageParentId) then request_handle:logErr("Baggage Parent id : " .. baggageParentId) end
-                  if (xb3spanid) then meta["x-b3-spanid"] = xb3spanid end
-                  if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
-                  if baggageParentId then
-                    meta["x-b3-parentspanid"] = baggageParentId
+                  traceId = request_handle:headers():get("x-b3-traceid")
+                  if not (traceId) then
+                    traceId = generateTrace()
+                    request_handle:logErr("Generated TRACE : " .. traceId)
+                    request_handle:headers():add("x-b3-traceid", traceId)
                   end
-                  logHdrBody(request_handle, meta)
-                  request_handle:headers():remove("baggage-parent-span-id")
-                  request_handle:headers():add("baggage-parent-span-id", xb3spanid)
+                  spanId = request_handle:headers():get("x-b3-spanid")
+                  parentspanid = request_handle:headers():get("x-b3-parentspanid")
+
+                  apiPath = request_handle:headers():get(":path") or "/"
+                  if starts_with(apiPath, "/") and apiPath ~= "/" then
+                      apiPath = apiPath:sub(2, #apiPath)
+                  end
+                  crequestid = service .. "-" .. traceId .. "-" .. uuid()
+                  -- crequestid = service .. "-" .. uuid()
+
+                  cubeReq["customerId"] = "{{customer}}"
+                  cubeReq["app"] = "{{cube_application}}"
+                  cubeReq["instanceId"] = "{{cube_instanceid}}"
+                  cubeReq["service"] = "{{service_name}}"
+                  cubeReq["run_type"] = "{{run_type}}"
+                  cubeReq["recordingType"] = "{{recording_type}}"
+                  cubeReq["apiPath"] = apiPath
+                  cubeReq["traceId"] = traceId
+                  if spanId then cubeReq["spanId"] = spanId end
+                  if parentSpanId then cubeReq["parentSpanId"] = parentSpanId end
+                  cubeReq["reqId"] = crequestid
+                  cubeReq["eventType"] = "HTTPRequest"
+                  cubeReq["timestamp"] = getEpochTime()
+
+                  request_handle:logErr("Request id: " .. crequestid)
+
+                  logRequest(request_handle, cubeReq)
+                  request_handle:headers():remove("ot-baggage-md-parent-id")
+                  request_handle:headers():add("ot-baggage-md-parent-id", spanId)
                 end
