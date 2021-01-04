@@ -43,8 +43,8 @@ public class SeqIterator implements Iterator<String> {
     public String next() {
         totalGap = totalGap.add(gap);
 
-        long gapToAdd = totalGap.longValue();
-        next = next.add(BigInteger.valueOf(gapToAdd));
+        BigInteger gapToAdd = totalGap.getNumerator().divide(totalGap.getDenominator());
+        next = next.add(gapToAdd);
 
         totalGap = totalGap.subtract(gapToAdd);
         count++;
