@@ -5,6 +5,7 @@ import java.util.Iterator;
 
 import static com.cube.sequence.BaseCharUtils.convertToSeqId;
 
+import org.apache.commons.math3.fraction.BigFraction;
 import org.apache.commons.math3.fraction.Fraction;
 
 
@@ -12,27 +13,25 @@ public class SeqIterator implements Iterator<String> {
 
     private BigInteger next;
     private final long times;
-    private final BigInteger gap;
+    private final BigFraction gap;
+    private BigFraction totalGap;
 
     private final int stringLength;
     private int count =0;
-    private final Fraction extraPerItem;
-    private Fraction totalExtra;
 
-    public SeqIterator(BigInteger start , long gap , Fraction extraPerItem ,  int stringLength , long times){
-        this.gap = BigInteger.valueOf(gap) ;
+    public SeqIterator(BigInteger start , BigFraction gap , int stringLength , long times){
+        this.gap = gap;
         this.stringLength = stringLength;
         this.times = times;
         this.next = start;
-        this.extraPerItem = extraPerItem;
-        this.totalExtra = extraPerItem;
+        this.totalGap = new BigFraction(0);
         //System.out.println(this);
     }
 
     @Override
     public String toString(){
         //debugging
-        return String.format("SeqIterator start:%s,gap:%s,fraction:%s,stringLength:%s,times:%s",next , gap ,  extraPerItem.toString() , stringLength , times);
+        return String.format("SeqIterator start:%s,gap:%s,stringLength:%s,times:%s",next , gap , stringLength , times);
     }
 
     @Override
@@ -42,21 +41,17 @@ public class SeqIterator implements Iterator<String> {
 
     @Override
     public String next() {
-        BigInteger oldNext = next ;
-        next = next.add(gap);
+        totalGap = totalGap.add(gap);
 
-        totalExtra = totalExtra.add(extraPerItem);
-        int extraPad = 0;
-        if(totalExtra.compareTo(Fraction.ONE) >= 0){
-            extraPad = totalExtra.intValue();
-            totalExtra = totalExtra.subtract(extraPad) ;
-            next = next.add(BigInteger.valueOf(extraPad));
-        }
+        long gapToAdd = totalGap.longValue();
+        next = next.add(BigInteger.valueOf(gapToAdd));
+
+        totalGap = totalGap.subtract(gapToAdd);
         count++;
         if(count > times){
             throw new UnsupportedOperationException("iterator next max limit reached "+ String.format("next:%s gap:%s times:%s", next , gap , times));
         }
-        return convertToSeqId(oldNext , stringLength);
+        return convertToSeqId(next , stringLength);
     }
 
 
