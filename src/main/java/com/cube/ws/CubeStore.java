@@ -10,9 +10,10 @@ import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
 import com.cube.sequence.SeqMgr;
+
+import io.md.core.CollectionKey;
 import io.md.dao.DataObj.DataObjProcessingException;
 import io.md.dao.Event.EventType;
-import io.md.dao.EventQuery.Builder;
 import io.md.injection.DynamicInjector;
 import io.md.injection.DynamicInjectorFactory;
 import java.io.ByteArrayInputStream;
@@ -45,8 +46,6 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import io.md.dao.*;
-import io.md.tracer.TracerMgr;
-import io.md.tracer.handlers.Tracer;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -351,6 +350,16 @@ public class CubeStore {
                                 "success", numSuccess
                                 )));
                         return Response.ok(jsonResp).type(MediaType.APPLICATION_JSON_TYPE).build();
+                    case MediaType.APPLICATION_JSON:
+                        try{
+                            Event[] events = jsonMapper.readValue(messageBytes , Event[].class);
+                            return rrstore.save(events) ?  Response.ok().build() : Response.serverError().entity("Bulk save error").build();
+                        }catch (Exception e){
+                            LOGGER.error(new ObjectMessage(
+                                Map.of(Constants.MESSAGE, "Error while parsing the events json")), e
+                            );
+                            return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
+                        }
                     default :
                         return Response.serverError().entity("Content type not recognized :: " + ct).build();
                 }
@@ -2107,6 +2116,20 @@ public class CubeStore {
         }
         return recordingBuilder.build();
     }
+
+    @POST
+    @Path("/populateCache")
+    public Response populateCache(@Context UriInfo uriInfo, RecordOrReplay recordOrReplay) {
+
+        CollectionKey key = recordOrReplay.getCollectionKey();
+        LOGGER.debug(new ObjectMessage(
+            Map.of(Constants.MESSAGE, "populateCache for collectionKey :"+key + " recordorReplay :"+recordOrReplay)));
+
+        rrstore.populateCache(key , recordOrReplay);
+
+        return Response.ok().build();
+    }
+
 
     /**
 	 * @param config
