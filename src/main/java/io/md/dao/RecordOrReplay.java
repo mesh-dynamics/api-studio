@@ -143,14 +143,11 @@ public class RecordOrReplay {
 
 	@JsonIgnore
 	public CollectionKey getCollectionKey(){
-		if(isRecording()){
-			Recording record = recording.get();
-			return new CollectionKey(record.customerId, record.app, record.instanceId);
-
-		}else{
-			Replay repl = replay.get();
-			return new CollectionKey(repl.customerId , repl.app , repl.instanceId);
-		}
+		return recording.map(record->new CollectionKey(record.customerId, record.app, record.instanceId)).orElseGet(
+			()->replay.map(repl->new CollectionKey(repl.customerId , repl.app , repl.instanceId)).orElseGet (
+				()->new CollectionKey("NA" , "NA" , "NA")
+			)
+		);
 	}
 
 	@JsonIgnore
