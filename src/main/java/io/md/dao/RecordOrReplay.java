@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.md.constants.Constants;
+import io.md.core.CollectionKey;
 import io.md.dao.Event.RunType;
 import io.md.dao.Recording.RecordingType;
 
@@ -139,6 +140,26 @@ public class RecordOrReplay {
 			return recording.map(recording -> recording.runId);
 		}
 	}
+
+	@JsonIgnore
+	public CollectionKey getCollectionKey(){
+		if(isRecording()){
+			Recording record = recording.get();
+			return new CollectionKey(record.customerId, record.app, record.instanceId);
+
+		}else{
+			Replay repl = replay.get();
+			return new CollectionKey(repl.customerId , repl.app , repl.instanceId);
+		}
+	}
+
+	@JsonIgnore
+	public Optional<String> getCustomerId(){
+		return isRecording() ? recording.map(r->r.customerId) : replay.map(r->r.customerId);
+	}
+
+
+
 
 	@JsonProperty("recording")
 	public final Optional<Recording> recording;
