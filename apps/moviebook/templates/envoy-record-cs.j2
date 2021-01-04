@@ -128,7 +128,7 @@ spec:
                 end
                 function callStoreEvent(handle, data)
                   local hhdr, hbody = handle:httpCall(
-                    ""outbound|8080||cubeui-backend.cube.svc.cluster.local",
+                    "outbound|8080||cubeui-backend.cube.svc.cluster.local",
                     {
                       [":method"] = "POST",
                       [":path"] = "/api/cs/storeEvent",
@@ -176,9 +176,9 @@ spec:
                   cubeResp["app"] = "{{cube_application}}"
                   cubeResp["instanceId"] = "{{cube_instanceid}}"
                   cubeResp["service"] = "{{service_name}}"
-                  cubeResp["run_type"] = "{{run_type}}"
+                  cubeResp["run_type"] = "Record"
                   -- "Record"
-                  cubeResp["recordingType"] = "{{recording_type}}"
+                  cubeResp["recordingType"] = "Golden"
                    -- "{{run_type}}"
                   cubeResp["eventType"] = "HTTPResponse"
                   cubeResp["timestamp"] = getEpochTime()
@@ -218,8 +218,8 @@ spec:
                   cubeReq["app"] = "{{cube_application}}"
                   cubeReq["instanceId"] = "{{cube_instanceid}}"
                   cubeReq["service"] = "{{service_name}}"
-                  cubeReq["run_type"] = "{{run_type}}"
-                  cubeReq["recordingType"] = "{{recording_type}}"
+                  cubeReq["run_type"] = "Record"
+                  cubeReq["recordingType"] = "Golden"
                   cubeReq["apiPath"] = apiPath
                   cubeReq["traceId"] = traceId
                   if spanId then cubeReq["spanId"] = spanId end
@@ -227,7 +227,6 @@ spec:
                   cubeReq["reqId"] = crequestid
                   cubeReq["eventType"] = "HTTPRequest"
                   cubeReq["timestamp"] = getEpochTime()
-
                   request_handle:logErr("Request id: " .. crequestid)
 
                   logRequest(request_handle, cubeReq)
