@@ -36,7 +36,7 @@ public class SequenceGenerator implements Iterable<String> {
 
     private Iterator<String> getSeqIterator() {
 
-        BigFraction gap = new BigFraction(end.subtract(start).longValue() , size+1);
+        BigFraction gap = new BigFraction(end.subtract(start) ,  BigInteger.valueOf(size+1));
 
         return new SeqIterator(start, gap , stringLength,  size);
     }
