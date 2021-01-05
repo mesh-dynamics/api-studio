@@ -511,6 +511,16 @@ public class CubeStoreController {
         return cubeServerService.fetchPostResponse(request, postBody);
     }
 
+    @PostMapping("/deduplicate/{recordingId}")
+    public ResponseEntity deduplication(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId, Authentication authentication) {
+        Optional<Recording> recording = cubeServerService.getRecording(recordingId);
+        if(recording.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("No Recording Object found for recordingId=" + recordingId);
+        validation.validateCustomerName(authentication,recording.get().customerId);
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
+    
     @PostMapping("/populateCache")
     public ResponseEntity populateCache(HttpServletRequest request, @RequestBody RecordOrReplay recordOrReplay , Authentication authentication) {
         validation.validateCustomerName(authentication,recordOrReplay.getCustomerId().orElse(null));
