@@ -3,6 +3,7 @@ package io.md.tracer;
 import io.md.dao.CustomerAppConfig;
 import io.md.dao.MDTraceInfo;
 import io.md.logger.LogMgr;
+import io.md.services.CustAppConfigCache;
 import io.md.services.DataStore;
 import io.md.tracer.handlers.*;
 import io.md.utils.Utils;
@@ -59,12 +60,11 @@ public class TracerMgr {
     }
 
     private Optional<Tracer> getTracerFromAppConfig(String customer, String app){
-        Optional<CustomerAppConfig> config =  this.dStore.getAppConfiguration(customer ,app);
+        Optional<CustomerAppConfig> config = CustAppConfigCache.getInstance(dStore).getCustomerAppConfig(customer , app);
 
         return config.flatMap(appCfg->{
-            String tracer = appCfg.tracer;
-            LOGGER.info("Tracer config key for customer: "+ customer + " app :" + app +":" + tracer);
-            return Utils.valueOf(Tracer.class , tracer);
+            LOGGER.info("Tracer config key for customer: "+ customer + " app :" + app +":" + appCfg.tracer);
+            return appCfg.tracer.flatMap(tracer->Utils.valueOf(Tracer.class , tracer));
         });
     }
 
