@@ -142,7 +142,7 @@ public class ComparatorCache {
                         Constants.MESSAGE, "Unable to find template in cache, using default",
                         "key", key,
                         Constants.REASON, e.getMessage())));
-                    Comparator defaultComparator = getDefaultComparator(eventType, key);
+                    Comparator defaultComparator = getDefaultComparator(eventType, key.getReqOrResp());
                     return createCopyWithAttributeRules(defaultComparator, key);
                 }
             });
@@ -154,11 +154,11 @@ public class ComparatorCache {
         }
     }
 
-    public Comparator getDefaultComparator(EventType eventType, TemplateKey key)  throws
+    public Comparator getDefaultComparator(EventType eventType, TemplateKey.Type templateKeyType)  throws
         TemplateNotFoundException {
         switch (eventType) {
             case HTTPRequest:
-                if(key.getReqOrResp() == Type.RequestMatch) {
+                if(templateKeyType == Type.RequestMatch) {
                     return defaultHTTPRequestMatchComparator;
                 } else {
                     return JsonComparator.EMPTY_COMPARATOR;
@@ -176,7 +176,7 @@ public class ComparatorCache {
             default:
                 LOGGER.error(new ObjectMessage(Map.of(
                     "message", "No default template found",
-                    "key", key
+                    "templateKeyType", templateKeyType
                 )));
                 throw new TemplateNotFoundException();
         }

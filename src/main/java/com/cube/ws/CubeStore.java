@@ -24,6 +24,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import java.util.stream.Stream;
@@ -2083,6 +2085,95 @@ public class CubeStore {
                 }).thenApply(v -> asyncResponse.resume(Response.ok().type(MediaType.APPLICATION_JSON).entity(thirdRecording).build()));
             }
         }
+    }
+
+    @Path("deduplicate/{recordingId}")
+    @POST
+    public Response deDuplicate(@Context UriInfo uriInfo, @PathParam("recordingId") String recordingId) {
+        Optional<Recording> recording = rrstore.getRecording(recordingId);
+        boolean delete = Optional.ofNullable(uriInfo.getQueryParameters().getFirst("delete")).flatMap(Utils::strToBool).orElse(false);
+        return recording.map(r -> {
+                Instant timeStamp = Instant.now();
+                Recording newRecording = createRecordingObjectFrom(r, Optional.empty(),
+                    Optional.empty(), Optional.empty(), timeStamp, timeStamp.toString(), r.recordingType);
+                rrstore.saveRecording(newRecording);
+                EventQuery query = createEventQuery(r);
+                Result<Event> result =  rrstore.getEvents(query);
+                List<Event> pending = new ArrayList<>();
+                AtomicReference<String> prevReqId = new AtomicReference<>("");
+                result.getObjects().forEach(event -> {
+                    if(!event.isRequestType()) {
+                        TemplateKey key = new TemplateKey(newRecording.templateVersion, event.customerId, event.app, event.service,
+                            event.apiPath, Type.ResponseCompare);
+                        try {
+                            Comparator comparator = rrstore.getComparator(key, event.eventType);
+//                            Comparator comparator = rrstore.getDefaultComparator(event.eventType, Type.ResponseCompare);
+                            /**
+                             * Setting payload key of response event to enable deduplication of events.
+                             *  based on the default template for response comparison
+                             */
+                            event.parseAndSetKey(comparator.getCompareTemplate());
+                        } catch (TemplateNotFoundException e) {
+                            LOGGER.error(new ObjectMessage(Map.of(
+                                Constants.MESSAGE, "Comparator not found",
+                                Constants.REQ_ID_FIELD, event.reqId
+                            )), e);
+                        }
+                    }
+                    if(!event.reqId.equals(prevReqId.get())) {
+                        processPendingEvents(pending, newRecording.collection, newRecording.recordingType, prevReqId.get());
+                    }
+                    pending.add(event);
+                    prevReqId.set(event.reqId);
+                });
+                processPendingEvents(pending, newRecording.collection, newRecording.recordingType, prevReqId.get());
+                if(delete) {
+                    try {
+                        ReqRespStore.softDeleteRecording(r, rrstore);
+                        LOGGER.info(new ObjectMessage(
+                            Map.of(Constants.MESSAGE, "Soft deleting recording", "RecordingId",
+                                r.id)));
+                    } catch (RecordingSaveFailureException e) {
+                        LOGGER.error(new ObjectMessage(
+                            Map.of(Constants.MESSAGE, "Error while Soft deleting recording", "RecordingId",
+                                r.id)));
+                    }
+                }
+                return Response.ok().type(MediaType.APPLICATION_JSON).entity(newRecording)
+                    .build();
+        }).orElse(Response.status(Response.Status.NOT_FOUND).entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
+            String.format("Recording object not found for recordingId=%s", recordingId))).build());
+    }
+
+    private void processPendingEvents(final List<Event> pending, String collection, RecordingType recordingType, String reqId) {
+        int payloadHash = 0;
+        List<Integer> payloadKeys = pending.stream().map(e -> e.payloadKey).collect(Collectors.toList());
+        for(Integer payloadKey: payloadKeys) {
+            payloadHash ^= payloadKey;
+        }
+        int finalPayloadHash = payloadHash;
+        pending.forEach(event -> {
+            String newReqId = "Update-" + finalPayloadHash;
+            try {
+                Event newEvent = buildEvent(event, collection, recordingType, newReqId, newReqId, Optional.empty());
+                rrstore.save(newEvent);
+            } catch (InvalidEventException e) {
+                LOGGER.error(new ObjectMessage(Map.of(
+                    Constants.MESSAGE, "Invalid Event",
+                    Constants.REQ_ID_FIELD, reqId
+                )), e);
+            }
+        });
+        pending.clear();
+    }
+
+    private EventQuery createEventQuery(Recording recording) {
+        EventQuery.Builder builder = new EventQuery.Builder(recording.customerId, recording.app, Collections.emptyList());
+        builder.withCollection(recording.collection);
+        LinkedHashMap sortingOrder = new LinkedHashMap();
+        sortingOrder.put(Constants.REQ_ID_FIELD, true);
+        builder.withSortingOrder(sortingOrder);
+        return builder.build();
     }
 
     private Recording createRecordingObjectFrom(Recording recording, Optional<String> templateVersion,

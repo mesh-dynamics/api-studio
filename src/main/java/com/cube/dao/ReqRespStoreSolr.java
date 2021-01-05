@@ -1607,7 +1607,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private SolrInputDocument eventToSolrDoc(Event event) {
         final SolrInputDocument doc = new SolrInputDocument();
-        String id = event.eventType.toString().concat("-").concat(event.apiPath).concat("-")
+        String id = event.eventType.toString().concat("-").concat(event.service).concat("-").concat(event.apiPath).concat("-")
             .concat(event.reqId);
 
         doc.setField(IDF, id);
@@ -2044,6 +2044,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(VERSIONF, key.getVersion());
         key.getMethod().ifPresent(method -> doc.setField(METHODF, method));
         return doc;
+    }
+
+    public Comparator getDefaultComparator(EventType eventType, TemplateKey.Type templateKeyType)
+        throws TemplateNotFoundException {
+        return comparatorCache.getDefaultComparator(eventType, templateKeyType);
     }
 
 
