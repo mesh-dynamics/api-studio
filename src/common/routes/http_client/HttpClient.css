@@ -173,9 +173,6 @@ i.fas.pointer:hover {
 div.loading, div.loading button{
   cursor: progress !important;
 }
-.react-monaco-editor-container{
-  min-height: 50px;
-}
 .request-data-label{
   display: inline-block;
   padding-right: 25px;
@@ -207,10 +204,6 @@ div.loading, div.loading button{
   margin-bottom: 10px;
   margin-right: 10px;
 }
-.react-monaco-editor-container{
-  min-height: 80px;
-}
-
 .service-rows .fas.pointer{
   visibility: hidden;
 }
@@ -276,7 +269,10 @@ div.loading, div.loading button{
 
 /* END */
 
-
+.react-codemirror2, .CodeMirror{
+  height: 100%;
+  min-height: 75px;
+}
 .dropdown-menu-right {
   right: 0;
   left: auto !important;

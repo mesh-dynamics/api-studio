@@ -3,6 +3,7 @@
 declare var PLATFORM_ELECTRON : boolean;
 declare var authRefeshInProgress: boolean;
 declare var authRefreshPromise: any;
+declare module 'jsonlint-mod'
 declare module 'velocity-react';
 declare module "react-treebeard" {
     import React from "react"

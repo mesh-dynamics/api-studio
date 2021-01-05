@@ -834,7 +834,7 @@ class ViewSelectedTestConfig extends React.Component {
                 <div className="div-label">
                     Test Configuration
                     <Link to="/configs">
-                        <i className="fas fa-link pull-right link"></i>
+                        <i className="fas fa-edit pull-right link"></i>
                     </Link>
                 </div>
                 <div className="margin-top-10">
