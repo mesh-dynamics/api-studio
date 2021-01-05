@@ -8,6 +8,7 @@ package io.md.services;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import io.md.core.CollectionKey;
 import io.md.core.CompareTemplate;
@@ -71,6 +72,8 @@ public interface DataStore {
     boolean saveResult(ReqRespMatchResult res, String customerId);
 
     boolean save(Event... events);
+
+    boolean save(Stream<Event> eventStream);
 
     boolean saveReplay(Replay replay);
 
