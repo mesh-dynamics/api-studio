@@ -1,5 +1,7 @@
 package io.md.core;
 
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -7,7 +9,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.collections4.map.PassiveExpiringMap;
 import org.slf4j.Logger;
 
-import io.md.dao.CustomerAppConfig;
 import io.md.logger.LogMgr;
 import io.md.services.CustAppConfigCache;
 import io.md.services.DataStore;
@@ -16,12 +17,12 @@ public class ApiGenPathMgr {
 
 	private static class ApiPathRegex{
 
-		private final String regex;
-		private final Pattern pattern ;
+		public final String pathRegex;
+		public final Pattern pattern ;
 
 		//Todo : validation
 		ApiPathRegex(String name){
-			this.regex = name ;
+			this.pathRegex = name ;
 			this.pattern = getPattern(name);
 		}
 
@@ -41,7 +42,8 @@ public class ApiGenPathMgr {
 	private final CustAppConfigCache appConfigCache;
 	private static ApiGenPathMgr singleton;
 
-	private static PassiveExpiringMap<String , Optional<ApiPathRegex[]> > serviceApiGenPaths = new PassiveExpiringMap<>(30 , TimeUnit.MINUTES);
+	private static PassiveExpiringMap<String , Optional<ApiPathRegex[]> > serviceApiPathPatterns = new PassiveExpiringMap<>(30 , TimeUnit.MINUTES);
+	private static PassiveExpiringMap<String , String> serviceApiGenPaths = new PassiveExpiringMap<>(30 , TimeUnit.MINUTES);
 
 	private ApiGenPathMgr(DataStore dataStore){
 		this.dStore = dataStore;
@@ -59,14 +61,38 @@ public class ApiGenPathMgr {
 		return singleton;
 	}
 
-	public String getGenericPath(String customerId , String app , String service , String apiPath){
+	public String getGenericPath(String customerId, String app, String service, String apiPath) {
 
-		String key = String.format("%s-%s-%s" , customerId , app , service);
+		String apiPathKey = String.format("%s-%s-%s-%s", customerId, app, service, apiPath);
+		String genPath = serviceApiGenPaths.get(apiPathKey);
+		if (genPath != null) {
+			return genPath;
+		}
+		genPath = generateGenericPath(customerId, app, service, apiPath);
+		serviceApiGenPaths.put(apiPathKey , genPath);
+		return genPath;
+	}
 
-		// nahi mila in local cache
-		Optional<CustomerAppConfig> appCfg =   appConfigCache.getCustomerAppConfig(customerId, app);
-		//todo
-		return "";
+	private String generateGenericPath(String customerId, String app, String service, String apiPath){
+		String key = String.format("%s-%s-%s", customerId, app, service);
+		Optional<ApiPathRegex[]> apiPathRegexes = serviceApiPathPatterns.get(key);
+		if(apiPathRegexes==null){
+			Optional<Map<String, String[]>> serviceMap = appConfigCache
+				.getCustomerAppConfig(customerId, app).flatMap(cfg -> cfg.apiGenericPaths);
+			apiPathRegexes = serviceMap.map(m -> m.get(service)).map(paths -> Arrays.stream(paths).map(ApiPathRegex::new).toArray(ApiPathRegex[]::new));
+			serviceApiPathPatterns.put(key , apiPathRegexes);
+		}
+
+		if (!apiPathRegexes.isPresent()) {
+			return apiPath;
+		}
+
+		for (ApiPathRegex pathRegex : apiPathRegexes.get()) {
+			if (pathRegex.pattern.matcher(apiPath).matches()) {
+				return pathRegex.pathRegex;
+			}
+		}
+		return apiPath;
 	}
 
 
