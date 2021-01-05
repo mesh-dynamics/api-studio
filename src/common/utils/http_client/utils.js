@@ -438,16 +438,16 @@ const extractBodyToCubeFormat = (httpRequestBody, type) => {
     } else {
         return getValueBySaveType(httpRequestBody, type);
     }
-}
- getValueBySaveType(value, type) {
+};
+const getValueBySaveType = (value, type) => {
         if(!_.isString(value)){
             return value;
         }
         const renderEnvVars = getRenderEnvVars();
         return type !== "History" ? value : renderEnvVars(value);
-    }
+}
 
-    extractHeadersToCubeFormat(headersReceived, type="") {
+const extractHeadersToCubeFormat = (headersReceived, type="")=> {
         let headers = {};
         if (_.isArray(headersReceived)) {
             headersReceived.forEach(each => {
@@ -473,7 +473,8 @@ const extractBodyToCubeFormat = (httpRequestBody, type) => {
         }
 
     return headers;
-    }
+}
+
 const getTracerForCurrentApp = () => {
     const {cube: {selectedApp, appsList}} = store.getState()
     if (!selectedApp || !appsList?.length) {
