@@ -20,6 +20,7 @@ import java.util.Base64;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -150,6 +151,11 @@ public class EventPayloadTests {
 
 				@Override
 				public boolean save(Event... event) {
+					return false;
+				}
+
+				@Override
+				public boolean save(Stream<Event> eventStream) {
 					return false;
 				}
 

@@ -7,7 +7,9 @@
 package io.md.services;
 
 import java.util.Optional;
+import java.util.stream.Stream;
 
+import io.md.core.BatchingIterator;
 import io.md.dao.Event;
 import io.md.dao.Event.EventType;
 import io.md.dao.EventQuery;
@@ -18,6 +20,8 @@ import io.md.dao.EventQuery;
  * Date: 15/05/20
  */
 public abstract class AbstractDataStore implements DataStore {
+
+    public final int BATCH_SIZE = 200;
 
     @Override
     public Optional<Event> getSingleEvent(EventQuery eventQuery) {
@@ -48,6 +52,11 @@ public abstract class AbstractDataStore implements DataStore {
         builder.withReqId(reqId).withLimit(1);
 
         return getSingleEvent(builder.build());
+    }
+
+    @Override
+    public boolean save(Stream<Event> eventStream){
+        return BatchingIterator.batchedStreamOf(eventStream , BATCH_SIZE).map(listofEvents-> save(listofEvents.stream().toArray(Event[]::new))).reduce(Boolean::logicalAnd).orElse(false);
     }
 
 
