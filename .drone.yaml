@@ -14,10 +14,10 @@ steps:
     resources:
       requests:
         cpu: 0.1
-        memory: "1500Mi"
+        memory: "2048Mi"
       limits:
         cpu: 2
-        memory: "2048Mi"
+        memory: "3072Mi"
     when:
       branch:
       - master
