@@ -8,7 +8,6 @@ import com.cubeui.utils.FetchResponse;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -22,11 +21,9 @@ import com.cubeui.readJson.dataModel.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Optional;
 import org.json.simple.JSONObject;
-import org.json.simple.parser.*;
 import org.springframework.http.*;
 import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
+
 import static org.springframework.http.ResponseEntity.status;
 
 public class ReadJson {
@@ -127,6 +124,8 @@ public class ReadJson {
                             body = readJson.createService(service,appId,serviceGroupId);
                             response = FetchResponse.fetchResponse(url+"/api/service", HttpMethod.POST, token, Optional.of(body));
                             int serviceId = Integer.parseInt(FetchResponse.getDataField(response,"id").toString());
+                            body = readJson.createServicePrefixes(serviceId,service.getPrefixes());
+                            FetchResponse.fetchResponse(url+"/api/path-prefix", HttpMethod.POST, token, Optional.of(body));
                             servicesMap.put(service.getName(), serviceId);
                             if(service.getPaths() != null) {
                                 for (String paths : service.getPaths()) {
@@ -250,6 +249,14 @@ public class ReadJson {
         json.put("name", service.getName());
         json.put("appId", appId);
         json.put("serviceGroupId", serviceGroupId);
+        return json;
+    }
+
+    private JSONObject createServicePrefixes(int serviceId, List<String> prefixes)
+    {
+        JSONObject json = new JSONObject();
+        json.put("prefixes", prefixes);
+        json.put("serviceId", serviceId);
         return json;
     }
 

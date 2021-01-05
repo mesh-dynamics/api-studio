@@ -9,5 +9,6 @@ import java.util.List;
 @Setter
 public class Services {
     String name;
+    List<String> prefixes;
     List<String> paths;
 }
