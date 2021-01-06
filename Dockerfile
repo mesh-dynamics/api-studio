@@ -18,6 +18,9 @@ FROM tomcat:9-jre11 AS prod
 RUN rm -rf /usr/local/tomcat/webapps/ROOT
 COPY server.xml /usr/local/tomcat/conf/server.xml
 COPY ca.cer ca.cer
+COPY sectigo.cer sectigo.cer
+RUN echo yes | keytool -importcert -alias sectigo -keystore \
+    /docker-java-home/lib/security/cacerts -storepass changeit -file sectigo.cer
 RUN echo yes | keytool -importcert -alias startssl -keystore \
     /docker-java-home/lib/security/cacerts -storepass changeit -file ca.cer
 COPY --from=build target/cubews-V1-SNAPSHOT.war /usr/local/tomcat/webapps/ROOT.war
