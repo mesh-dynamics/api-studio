@@ -71,7 +71,7 @@ public interface DataStore {
      */
     boolean saveResult(ReqRespMatchResult res, String customerId);
 
-    boolean save(Event... events);
+    boolean save(Event event);
 
     boolean save(Stream<Event> eventStream);
 
