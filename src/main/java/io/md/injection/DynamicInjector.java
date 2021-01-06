@@ -134,7 +134,7 @@ public class DynamicInjector {
 				String.format("Extraction variable in Key not found at API path. Reusing golden. " +
 						"Key %s %s %s %s %s",
 					extractionMeta.name, Constants.API_PATH_FIELD, extractionMeta.apiPath,
-					Constants.REQ_ID_FIELD, goldenRequestEvent.reqId), e);
+					Constants.REQ_ID_FIELD, goldenRequestEvent.reqId));
 			nameResolved = null;
 		}
 
@@ -155,7 +155,7 @@ public class DynamicInjector {
 				LOGGER.error(String.format("Extraction variable in Value not found at API path. " +
 						"Reusing golden. Value %s %s %s %s %s",
 					extractionMeta.value, Constants.API_PATH_FIELD, extractionMeta.apiPath,
-					Constants.REQ_ID_FIELD, goldenRequestEvent.reqId), e);
+					Constants.REQ_ID_FIELD, goldenRequestEvent.reqId));
 				value = null;
 			}
 		}
@@ -177,8 +177,8 @@ public class DynamicInjector {
 				boolean isResponse = !Event.isReqType(request.eventType);
 				String requestHttpMethod = isResponse ? "" : Utils.getHttpMethod(request);
 				boolean apiPathMatch = apiPathMatch(injectionMeta.apiPaths, request.apiPath);
-				if ((injectionMeta.injectAllPaths || apiPathMatch) && (isResponse || injectionMeta.method
-					.toString().equalsIgnoreCase(requestHttpMethod))) {
+				if (injectionMeta.injectAllPaths || (apiPathMatch && (isResponse || injectionMeta.method
+					.toString().equalsIgnoreCase(requestHttpMethod)))) {
 					Utils.ifPresentOrElse(injectionMeta.forEach , forEachStruct -> {
 						Payload sourceForNamePayload = varResolver
 							.getPayload(forEachStruct.sourceForName);
