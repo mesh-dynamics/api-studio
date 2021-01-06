@@ -2,14 +2,11 @@ import React, { Component } from 'react';
 import { FormGroup, FormControl, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import _ from 'lodash';
 import classNames from 'classnames';
-
-// import "./styles_here.css";
-
 import Tippy from '@tippy.js/react';
 import 'tippy.js/themes/light.css';
 import { applyEnvVarsToUrl } from "../../utils/http_client/envvar";
-import { UpdateBodyOrRawDataTypeHandler, UpdateParamHandler } from './HttpResponseHeaders';
-
+import { UpdateBodyOrRawDataTypeHandler, UpdateParamHandler, ReplaceAllParamsHandler } from './HttpResponseHeaders';
+import {generateUrlWithQueryParams, extractURLQueryParams} from "./../../utils/http_client/utils"
 export interface IHttpRequestMessageProps {
     bodyType: string;
     httpMethod: string;
@@ -27,6 +24,7 @@ export interface IHttpRequestMessageProps {
     formData: any[];
     queryStringParams: any[];
     updateParam: UpdateParamHandler;
+    replaceAllParams: ReplaceAllParamsHandler;
     disabled: boolean;
 }
 
@@ -95,13 +93,23 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
         return;
     };
 
+    handleURLChange = (evt) => {
+        const { tabId, isOutgoingRequest, queryStringParams } = this.props;
+        const {httpURL, queryParamsFromUrl} = extractURLQueryParams(evt.target.value)
+        const queryStringParamsUnselected = _.filter(queryStringParams, {selected: false})
+        const queryParams = queryStringParamsUnselected.concat(queryParamsFromUrl)
+        this.props.updateParam(isOutgoingRequest, tabId, "httpURL", "httpURL", httpURL);
+        this.props.replaceAllParams(isOutgoingRequest, tabId, "queryStringParams", queryParams)
+    }
 
     render() {
-        const urlRendered = this.generateUrlTooltip(this.props.httpURL);
+        const {httpURL, queryStringParams} = this.props;
+        const urlWithQueryParams = generateUrlWithQueryParams(httpURL, queryStringParams)
+        const urlRendered = this.generateUrlTooltip(urlWithQueryParams);
         
         const urlTextBox = <div style={{display: "inline-block", width: "82%"}}>
             <FormGroup bsSize="small" style={{marginBottom: "0px", fontSize: "12px"}}>
-                <FormControl type="text" placeholder="https://...." style={{fontSize: "12px"}} readOnly={this.props.readOnly} disabled={this.props.disabled} name="httpURL" value={this.props.httpURL} onChange={this.handleChange}/>
+                <FormControl type="text" placeholder="https://...." style={{fontSize: "12px"}} readOnly={this.props.readOnly} disabled={this.props.disabled} name="httpURL" value={urlWithQueryParams} onChange={this.handleURLChange}/>
             </FormGroup>
         </div>
 

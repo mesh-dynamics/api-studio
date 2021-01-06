@@ -34,7 +34,7 @@ import "./Tabs.css";
 
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
-import { generateRunId, generateApiPath, getApiPathFromRequestEvent, extractParamsFromRequestEvent, selectedRequestParamData, unSelectedRequestParamData, isValidJSON, generateTraceKeys, getTraceDetailsForCurrentApp, getTracerForCurrentApp } from "../../utils/http_client/utils"; 
+import { generateRunId, generateApiPath, getApiPathFromRequestEvent, extractParamsFromRequestEvent, selectedRequestParamData, unSelectedRequestParamData, isValidJSON, generateTraceKeys, getTraceDetailsForCurrentApp, getTracerForCurrentApp, extractURLQueryParams } from "../../utils/http_client/utils"; 
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
 import { getParameterCaseInsensitive, Base64Binary } from '../../../shared/utils';
 
@@ -918,6 +918,15 @@ class HttpClientTabs extends Component {
         } 
     }
 
+    replaceAllParams = (isOutgoingRequest, tabId, type, params) => {
+        const {dispatch} = this.props;
+        if(isOutgoingRequest) {
+            dispatch(httpClientActions.replaceAllParamsInSelectedOutgoingTab(tabId, type, params));
+        } else {
+            dispatch(httpClientActions.replaceAllParamsInSelectedTab(tabId, type, params));
+        }
+    }
+
     showOutgoingRequests(tabId, traceId, collectionId, recordingId) {    
         const { 
             dispatch,
@@ -1780,6 +1789,10 @@ class HttpClientTabs extends Component {
                     })
                 }
             })
+
+            const {httpURL, queryParamsFromUrl} = extractURLQueryParams(reqObject.httpURL)
+            reqObject.httpURL = httpURL
+            reqObject.queryStringParams = queryParamsFromUrl
         }
         
         const nextSelectedTabId = isSelected ?  tabId : selectedTabKey;
@@ -1965,6 +1978,7 @@ class HttpClientTabs extends Component {
                             updateParam={this.updateParam}
                             updateAllParams={this.updateAllParams}
                             updateBodyOrRawDataType={this.updateBodyOrRawDataType}
+                            replaceAllParams={this.replaceAllParams}
                             driveRequest={this.driveRequest}
                             getReqResFromTabData={this.getReqResFromTabData.bind(this)}
                             handleRowClick={this.handleRowClick}

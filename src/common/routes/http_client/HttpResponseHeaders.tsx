@@ -31,6 +31,14 @@ export declare type UpdateBodyOrRawDataTypeHandler = (
   type: string,
   value: string
 ) => void;
+
+export declare type ReplaceAllParamsHandler = (
+  isOutgoingRequest: boolean,
+  tabId: string,
+  type: string,
+  params: any,
+) => void;
+
 export interface IFormData {
   id: string;
   name: string;

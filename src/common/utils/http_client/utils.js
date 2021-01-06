@@ -452,8 +452,8 @@ const extractHeadersToCubeFormat = (headersReceived, type="")=> {
         if (_.isArray(headersReceived)) {
             headersReceived.forEach(each => {
                 if (each.name && each.value) {
-                    const nameRendered = this.getValueBySaveType(each.name, type)
-                    const valueRendered = this.getValueBySaveType(each.value, type)
+                    const nameRendered = getValueBySaveType(each.name, type)
+                    const valueRendered = getValueBySaveType(each.value, type)
                     if(headers[nameRendered]){
                         headers[nameRendered] = [...headers[nameRendered], valueRendered];
                     }else{
@@ -464,8 +464,8 @@ const extractHeadersToCubeFormat = (headersReceived, type="")=> {
         } else if (_.isObject(headersReceived)) {
             Object.keys(headersReceived).map((eachHeader) => {
                 if (eachHeader && headersReceived[eachHeader]) {
-                    const nameRendered = this.getValueBySaveType(eachHeader, type)
-                    const valueRendered = this.getValueBySaveType(headersReceived[eachHeader], type);
+                    const nameRendered = getValueBySaveType(eachHeader, type)
+                    const valueRendered = getValueBySaveType(headersReceived[eachHeader], type);
                     if(_.isArray(headersReceived[eachHeader])) headers[nameRendered] = valueRendered;
                     if(_.isString(headersReceived[eachHeader])) headers[nameRendered] = [valueRendered];
                 }
@@ -498,6 +498,41 @@ const getTraceDetailsForCurrentApp = () => {
     }
 }
 
+const generateUrlWithQueryParams = (httpURL, queryStringParams) => {
+    const urlSearch = queryStringParams.filter(queryParam => queryParam.selected)
+        .map(({name, value}) => (value == undefined ? `${name}`: `${name}=${value}`))        
+        .join("&");
+    return urlSearch ? `${httpURL}?${urlSearch}`: httpURL;
+}
+
+const extractURLQueryParams = (url) => {
+    let httpURL = url
+    let queryParamsFromUrl = []
+
+    const parsedURLParts = url.split("?")
+    if(parsedURLParts[1]) {
+        httpURL = parsedURLParts[0]
+        queryParamsFromUrl = parsedURLParts[1].split("&").map((part) => {
+            let indexOfEqual = part.indexOf("=");
+            let value = undefined;
+            let key = part;
+            if(indexOfEqual !== -1){
+                key = part.substr(0, indexOfEqual);
+                value = part.substr(indexOfEqual + 1);
+            }
+            return {
+                name: key,
+                value: value, 
+                selected: true,
+                id: uuidv4(),
+                description: "",
+            }
+        })
+    }
+        
+    return {httpURL, queryParamsFromUrl}
+}
+
 export { 
     generateRunId,
     getStatusColor,
@@ -522,4 +557,6 @@ export {
     generateTraceKeys,
     getTracerForCurrentApp,
     getTraceDetailsForCurrentApp,
+    generateUrlWithQueryParams,
+    extractURLQueryParams,
 };
