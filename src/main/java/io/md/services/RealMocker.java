@@ -6,6 +6,7 @@
 
 package io.md.services;
 
+import io.md.core.ApiGenPathMgr;
 import io.md.dao.*;
 
 import java.time.Instant;
@@ -43,8 +44,9 @@ import static io.md.dao.Event.RunType.*;
  */
 public class RealMocker implements Mocker {
 
-    private DataStore cube;
-    private DynamicInjectorFactory diFactory;
+    private final  DataStore cube;
+    private final DynamicInjectorFactory diFactory;
+    private final ApiGenPathMgr apiGenPathMgr;
     private static final List<Event.RunType> nonMockRunTypes = Arrays.stream(Event.RunType.values()).filter(rt->rt!=Mock).collect(Collectors.toList());
 
     private static final Logger LOGGER = LogMgr.getLogger(RealMocker.class);
@@ -52,6 +54,7 @@ public class RealMocker implements Mocker {
     public RealMocker(DataStore cube) {
         this.cube = cube;
         this.diFactory = new DynamicInjectorFactory(cube , CubeObjectMapperProvider.getInstance());
+        this.apiGenPathMgr = ApiGenPathMgr.getInstance(cube);
     }
 
     @Override
@@ -163,7 +166,7 @@ public class RealMocker implements Mocker {
             Constants.REPLAY_ID_FIELD, reqEvent.getCollection());
     }
 
-    private static EventQuery buildRequestEventQuery(Event event, int offset, Optional<Integer> limit,
+    private EventQuery buildRequestEventQuery(Event event, int offset, Optional<Integer> limit,
         boolean isTimestampSortOrderAsc, Optional<Instant> lowerBoundForMatching, String collection ,
         List<String> payloadFields , Optional<JoinQuery> joinQuery , boolean isDevtoolRequest , Optional<ReplayContext> replayContext) {
         EventQuery.Builder builder =
