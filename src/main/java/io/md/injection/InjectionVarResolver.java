@@ -167,7 +167,7 @@ public class InjectionVarResolver implements StringLookup {
 				}
 			}
 		} catch (PathNotFoundException e) {
-			LOGGER.error("Cannot find JSONPath" + extractionInfo.jsonPath + " in source", e);
+			LOGGER.error("Cannot find JSONPath" + extractionInfo.jsonPath + " in source");
 			return null;
 		}
 		return value;
