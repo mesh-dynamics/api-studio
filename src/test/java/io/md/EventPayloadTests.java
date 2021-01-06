@@ -150,10 +150,10 @@ public class EventPayloadTests {
 				}
 
 				@Override
-				public boolean save(Event... event) {
+				public boolean save(Event event) {
 					return false;
 				}
-
+				
 				@Override
 				public boolean save(Stream<Event> eventStream) {
 					return false;

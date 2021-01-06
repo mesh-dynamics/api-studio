@@ -21,7 +21,7 @@ import io.md.dao.EventQuery;
  */
 public abstract class AbstractDataStore implements DataStore {
 
-    public final int BATCH_SIZE = 200;
+    public final int EVENT_BATCH_SIZE = 200;
 
     @Override
     public Optional<Event> getSingleEvent(EventQuery eventQuery) {
@@ -54,9 +54,11 @@ public abstract class AbstractDataStore implements DataStore {
         return getSingleEvent(builder.build());
     }
 
+    public abstract boolean save(Event... events);
+
     @Override
     public boolean save(Stream<Event> eventStream){
-        return BatchingIterator.batchedStreamOf(eventStream , BATCH_SIZE).map(listofEvents-> save(listofEvents.stream().toArray(Event[]::new))).reduce(Boolean::logicalAnd).orElse(false);
+        return BatchingIterator.batchedStreamOf(eventStream , EVENT_BATCH_SIZE).map(listofEvents-> save(listofEvents.stream().toArray(Event[]::new))).reduce(Boolean::logicalAnd).orElse(false);
     }
 
 
