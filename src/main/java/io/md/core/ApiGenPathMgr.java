@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.collections4.map.PassiveExpiringMap;
 import org.slf4j.Logger;
 
+import io.md.dao.Event;
 import io.md.logger.LogMgr;
 import io.md.services.CustAppConfigCache;
 import io.md.services.DataStore;
@@ -93,6 +94,10 @@ public class ApiGenPathMgr {
 			}
 		}
 		return singleton;
+	}
+
+	public Optional<String> getGenericPath(Event event){
+		return getGenericPath(event.customerId , event.app, event.service, event.apiPath);
 	}
 
 	public Optional<String> getGenericPath(String customerId, String app, String service, String apiPath) {

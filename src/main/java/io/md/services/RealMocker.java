@@ -46,7 +46,6 @@ public class RealMocker implements Mocker {
 
     private final  DataStore cube;
     private final DynamicInjectorFactory diFactory;
-    private final ApiGenPathMgr apiGenPathMgr;
     private static final List<Event.RunType> nonMockRunTypes = Arrays.stream(Event.RunType.values()).filter(rt->rt!=Mock).collect(Collectors.toList());
 
     private static final Logger LOGGER = LogMgr.getLogger(RealMocker.class);
@@ -54,7 +53,6 @@ public class RealMocker implements Mocker {
     public RealMocker(DataStore cube) {
         this.cube = cube;
         this.diFactory = new DynamicInjectorFactory(cube , CubeObjectMapperProvider.getInstance());
-        this.apiGenPathMgr = ApiGenPathMgr.getInstance(cube);
     }
 
     @Override
