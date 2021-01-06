@@ -67,6 +67,7 @@ public class Config {
 		
 		try {
 			String conffile = fromEnvOrSystemProperties("CONFFILE").orElse(CONFFILE);
+			LOGGER.info("CONF FILE BEING USED : " + conffile);
             properties.load(this.getClass().getClassLoader().
                     getResourceAsStream(conffile));
 		} catch(Exception eta){
