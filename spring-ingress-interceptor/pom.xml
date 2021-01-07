@@ -6,7 +6,7 @@
 
   <groupId>io.cube</groupId>
   <artifactId>md-spring-ingress-interceptor</artifactId>
-  <version>1.2.15</version>
+  <version>1.2.16</version>
   <packaging>jar</packaging>
 
   <name>spring-ingress-interceptor</name>
@@ -78,7 +78,19 @@
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>agent</artifactId>
-      <version>1.0.64</version>
+      <version>1.0.65</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.11.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.5.13</version>
     </dependency>
 
   </dependencies>

@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.cube</groupId>
   <artifactId>md-springboot-resttemplate-interceptor</artifactId>
-  <version>1.2.15</version>
+  <version>1.2.16</version>
   <packaging>jar</packaging>
 
   <distributionManagement>
@@ -19,16 +19,34 @@
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>md-spring-ingress-interceptor</artifactId>
-      <version>1.2.15</version>
+      <version>1.2.16</version>
     </dependency>
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>md-spring-egress-resttemplate-interceptor</artifactId>
-      <version>1.2.16</version>
+      <version>1.2.17</version>
     </dependency>
   </dependencies>
   <build>
     <plugins>
+<!--      <plugin>-->
+<!--        <groupId>org.owasp</groupId>-->
+<!--        <artifactId>dependency-check-maven</artifactId>-->
+<!--        <version>6.0.5</version>-->
+<!--        <configuration>-->
+<!--          <skip>false</skip>-->
+<!--          <skipTestScope>false</skipTestScope>-->
+<!--          <skipProvidedScope>false</skipProvidedScope>-->
+<!--          <skipRuntimeScope>false</skipRuntimeScope>-->
+<!--        </configuration>-->
+<!--        <executions>-->
+<!--          <execution>-->
+<!--            <goals>-->
+<!--              <goal>check</goal>-->
+<!--            </goals>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--      </plugin>-->
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.0</version>
