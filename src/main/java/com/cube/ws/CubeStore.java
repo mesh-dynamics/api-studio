@@ -355,7 +355,7 @@ public class CubeStore {
                     case MediaType.APPLICATION_JSON:
                         try{
                             Event[] events = jsonMapper.readValue(messageBytes , Event[].class);
-                            return rrstore.save(Arrays.stream(events)) ?  Response.ok().build() : Response.serverError().entity("Bulk save error").build();
+                            return rrstore.save(Arrays.stream(events)) && rrstore.commit() ?  Response.ok().build() : Response.serverError().entity("Bulk save error").build();
                         }catch (Exception e){
                             LOGGER.error(new ObjectMessage(
                                 Map.of(Constants.MESSAGE, "Error while parsing the events json")), e
