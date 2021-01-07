@@ -204,7 +204,7 @@ public abstract class AbstractReplayDriver {
 					sendReqSync(reqs.stream(), finalReqIdRespTsMap, replayCollKey , storeEvents);
 
 				if(replay.storeToDatastore){
-					boolean success= dataStore.save(storeEvents.toArray(Event[]::new));
+					boolean success= dataStore.save(storeEvents.stream());
 					if(!success){
 						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
 							"Error during saving storeToDatastore", Constants.REPLAY_ID_FIELD, replay.replayId)));
