@@ -6,7 +6,7 @@
 
   <groupId>io.cube</groupId>
   <artifactId>md-spring-egress-resttemplate-interceptor</artifactId>
-  <version>1.2.15</version>
+  <version>1.2.16</version>
   <packaging>jar</packaging>
 
   <name>spring-egress-resttemplate-interceptor</name>
@@ -61,7 +61,7 @@
     <dependency>
       <groupId>io.cube</groupId>
       <artifactId>agent</artifactId>
-      <version>1.0.60</version>
+      <version>1.0.64</version>
     </dependency>
 
   </dependencies>
