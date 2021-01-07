@@ -45,6 +45,8 @@ const setDefaultMockContext = (args) => {
       config: mockConfig, // mock config
       parentSpanId: "",
       tracer: tracer,
+      strictMock: false,
+      replayInstance: "",
     };
 
     console.log("Setting default mock context: ", mockContext);
@@ -53,4 +55,17 @@ const setDefaultMockContext = (args) => {
   }
 };
 
-export { setDefaultMockContext };
+const setStrictMock = (strictMock, replayInstance="", replayCollection="") => {
+  if(PLATFORM_ELECTRON) {
+    const args = {
+        strictMock,
+        replayInstance,
+        replayCollection,
+    }
+
+    console.log("Setting strict mocking: ", args)
+    ipcRenderer.send('set_strict_mock', args);
+  }
+}
+
+export { setDefaultMockContext, setStrictMock };

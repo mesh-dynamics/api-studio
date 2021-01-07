@@ -12,6 +12,7 @@ import config from '../../config';
 import { ipcRenderer } from '../../helpers/ipc-renderer';
 import AppManager from './AppManager';
 import { ICubeState, IStoreState, IUserAuthDetails } from '../../reducers/state.types';
+import {setStrictMock} from '../../helpers/httpClientHelpers'
 
 export interface INavigationProps{
     dispatch: any;
@@ -78,13 +79,16 @@ class Navigation extends Component<INavigationProps,INavigationState> {
     }
     
 
-    checkReplayStatus = (replayId) => {
+    checkReplayStatus = (replayId: string, otherInstanceSelected: boolean) => {
         const { dispatch, cube } = this.props;
         this.replayStatusInterval = window.setInterval(() => {
             const {cube} = this.props;
             if (cube.replayStatusObj && (cube.replayStatus == 'Completed' || cube.replayStatus == 'Error')) {
                 // after the replay is completed stop polling and poll for analysis status
                 clearInterval(this.replayStatusInterval);
+                if(otherInstanceSelected) {
+                    setStrictMock(false)
+                }
                 this.checkAnalysisStatus(replayId);
             } else if (!cube.fetchingReplayStatus) {
                 checkStatus();
