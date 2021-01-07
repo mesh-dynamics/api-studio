@@ -15,4 +15,7 @@ public class DtEnvironmentDTO {
   String name;
 
   List<DtEnvVarDTO> vars = new ArrayList<>();
+  List<DtEnvServiceHostDTO> dtEnvServiceHosts = new ArrayList<>();
+  List<DtEnvServiceCollectionDTO> dtEnvServiceCollections = new ArrayList<>();
+  boolean global=false;
 }

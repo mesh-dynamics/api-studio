@@ -1,23 +1,17 @@
 package com.cubeui.backend.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.IdClass;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
-import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -47,14 +41,31 @@ public class DtEnvironment {
   @JsonIgnore
   @ManyToOne
   @OnDelete(action = OnDeleteAction.CASCADE)
-  @JoinColumn(name = "user_id", nullable = false)
+  @JoinColumn(name = "user_id", nullable = true)
   User user;
+
+  @JsonIgnore
+  @ManyToOne
+  @OnDelete(action = OnDeleteAction.CASCADE)
+  @JoinColumn(name = "app_id", nullable = false)
+  App app;
 
   @Column
   @NotNull
   String name;
 
+  @Column(columnDefinition = "boolean default false")
+  Boolean global;
+
   @OneToMany(mappedBy = "environment", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
   @OnDelete(action = OnDeleteAction.CASCADE)
   List<DtEnvVar> vars;
+
+  @OneToMany(mappedBy = "environment", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+  @OnDelete(action = OnDeleteAction.CASCADE)
+  List<DtEnvServiceHost> dtEnvServiceHosts;
+
+  @OneToMany(mappedBy = "environment", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+  @OnDelete(action = OnDeleteAction.CASCADE)
+  List<DtEnvServiceCollection> dtEnvServiceCollections;
 }

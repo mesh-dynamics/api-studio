@@ -1,10 +1,12 @@
 package com.cubeui.backend.web.rest;
 
+import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.DTO.DtEnvVarDTO;
 import com.cubeui.backend.domain.DTO.DtEnvironmentDTO;
 import com.cubeui.backend.domain.DtEnvVar;
 import com.cubeui.backend.domain.DtEnvironment;
 import com.cubeui.backend.domain.User;
+import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.DevtoolEnvironmentsRepository;
 import com.cubeui.backend.web.exception.EnvironmentNameExitsException;
 import com.cubeui.backend.web.exception.EnvironmentNotFoundException;
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotEmpty;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,15 +30,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/dtEnvironment")
 public class DevtoolEnvironmentsController {
 
+  @Autowired
   private DevtoolEnvironmentsRepository devtoolEnvironmentsRepository;
-
-  public DevtoolEnvironmentsController(DevtoolEnvironmentsRepository devtoolEnvironmentsRepository) {
-    this.devtoolEnvironmentsRepository = devtoolEnvironmentsRepository;
-  }
+  @Autowired
+  private AppRepository appRepository;
 
   @PostMapping("/insert")
   public ResponseEntity insertEnvironments(@RequestBody DtEnvironmentDTO environment, Authentication authentication) {
     User user = (User) authentication.getPrincipal();
+    Optional<DtEnvironment> dtEnvironmentOptional = Optional.empty();
+    if(environment.isGlobal()) {
+      Optional<List<App>> apps = appRepository.findByCustomerId(user.getCustomer().getId())
+      dtEnvironmentOptional = devtoolEnvironmentsRepository.findDtEnvironmentByNameAndAppIds()
+    }
     Optional<DtEnvironment> dtEnvironmentOptional
         = devtoolEnvironmentsRepository
         .findDtEnvironmentByUserIdAndName(user.getId(), environment.getName());
