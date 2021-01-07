@@ -134,11 +134,13 @@ public class ApiGenPathMgr {
 		return Optional.empty();
 	}
 
-	public static void main(String[] args){
+	//
+	//public static void main(String[] args){
 
-		ApiPathRegex pathRegex = new ApiPathRegex("*/*/*/*/rrrr/dd");
-		System.out.println(pathRegex.matches("gk/*/pk/ss/rrrr/dd"));
-	}
+		//ApiPathRegex pathRegex = new ApiPathRegex("*/*/*/*/rrrr/dd");
+		//System.out.println(pathRegex.matches("gk/*/pk/ss/rrrr/dd"));
+	//}
+
 
 
 
