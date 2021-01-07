@@ -26,6 +26,9 @@ const mockContext = {
     config: {},
     tracer: 'meshd',
     parentSpanId: 'sample-parent-span-id',
+    strictMock: false,
+    replayInstance: 'sample-replay-instance',
+    replayCollection: 'sample-replay-collection'
 };
 
 /**

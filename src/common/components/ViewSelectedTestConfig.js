@@ -21,7 +21,7 @@ import Tippy from '@tippy.js/react'
 import {isURL} from 'validator';
 import gcbrowseActions from '../actions/gcbrowse.actions';
 import { defaultCollectionItem } from "../constants";
-
+import {setStrictMock} from "./../helpers/httpClientHelpers"
 class ViewSelectedTestConfig extends React.Component {
     constructor(props) {
         super(props)
@@ -30,7 +30,7 @@ class ViewSelectedTestConfig extends React.Component {
             testIdPrefix: '',
             fcId: null,
             fcEnabled: false,
-            replayId: null,
+            replay: null,
             showReplayModal: false,
             showCT: false,
             showAddCustomHeader: false,
@@ -642,17 +642,18 @@ class ViewSelectedTestConfig extends React.Component {
         const replayStartUrl = `${config.replayBaseUrl}/start/${selectedGolden}`;
 
         const transforms = JSON.stringify(getTransformHeaders(this.state.customHeaders));
-
+        const otherInstanceSelected = (selectedInstance == "other")
+        const gatewayEndpointNoProtocol = encodeURIComponent(gatewayEndpoint.replace(/^\/\/|^.*?:(\/\/)?/, '')); // drop the protocol
+        
         const searchParams = new URLSearchParams();
-
         searchParams.set('endPoint', gatewayEndpoint);
-        searchParams.set('instanceId', selectedInstance == "other" ? gatewayEndpoint : selectedInstance);
+        searchParams.set('instanceId', otherInstanceSelected ? gatewayEndpointNoProtocol : selectedInstance);
         searchParams.set('templateSetVer', collectionTemplateVersion);
         searchParams.set('userId', username);
         searchParams.set('transforms', transforms);
         searchParams.set('testConfigName', testConfigName);
         searchParams.set('analyze', true);
-        if(selectedInstance == "other"){
+        if(otherInstanceSelected){
             searchParams.set('storeToDatastore', this.state.storeToDatastore.toString());
         }
         if(tag){
@@ -681,14 +682,22 @@ class ViewSelectedTestConfig extends React.Component {
         };
 
         try {
-            const data = await api.post(replayStartUrl, searchParams, configForHTTP);
-            this.setState({ replayId: data });
+            const replay = await api.post(replayStartUrl, searchParams, configForHTTP);
+            const {replayId} = replay
+            // set strict mocking for replay on IDE
+            if (otherInstanceSelected) {
+                setStrictMock(true, gatewayEndpointNoProtocol, replayId)
+            }
+            this.setState({ replay });
             // check replay status periodically and call analyze at the end; and update timeline
             // this method is run in the parent component (Navigation)
-            checkReplayStatus(this.state.replayId.replayId);
+            checkReplayStatus(replayId, otherInstanceSelected);
         } catch(error) {
             const { data, status, statusText } = error.response;
             this.handleReplayError(data, status, statusText, username);
+            if (otherInstanceSelected) {
+                setStrictMock(false)
+            }
         }
     };
     

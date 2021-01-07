@@ -1,6 +1,6 @@
 const url = require('url');
 const logger = require('electron-log');
-const proxyResponseInterceptor = require('./response-interceptor');
+const {proxyLiveResponseInterceptor, proxyMockResponseInterceptor} = require('./response-interceptor');
 // const { parseMultipart } = require('./multipart-parser');
 const { proxyRequestInterceptorMockService, proxyRequestInterceptorLiveService } = require('./request-interceptor');
 
@@ -110,7 +110,7 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
         proxy.on(
                 'proxyRes', 
                 (proxyRes, req, res) => 
-                    proxyResponseInterceptor(
+                    proxyLiveResponseInterceptor(
                         proxyRes, 
                         req, 
                         res, 
@@ -131,7 +131,25 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
     logger.info('Attaching REQUEST INTERCEPTOR for config injection');
 
     // Attach request interceptors to inject additional values for mocking
-    proxy.on('proxyReq', (proxyReq) => proxyRequestInterceptorMockService(proxyReq, mockContext, user, traceDetails));
+    proxy.on('proxyReq', (proxyReq) => proxyRequestInterceptorMockService(proxyReq, mockContext, user, traceDetails, service));
+
+    logger.info('Attaching RESPONSE INTERCEPTOR for mocked service');
+        proxy.on(
+                'proxyRes', 
+                (proxyRes, req, res) => 
+                    proxyMockResponseInterceptor(
+                        proxyRes, 
+                        req, 
+                        res, 
+                        { 
+                            user,
+                            service, 
+                            headers, 
+                            mockContext, 
+                            requestData,
+                            traceDetails
+                        })
+            );
 
     // and return default options
     return defaultProxyOptions;  

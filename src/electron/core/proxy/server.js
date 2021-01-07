@@ -15,6 +15,7 @@ const {
     generateSpanId, 
     generateSpecialParentSpanId,
     generateTraceId,
+    generateTraceKeys,
 } = require("./trace-utils")
 
 /**
@@ -81,10 +82,25 @@ const setupProxy = (mockContext, user) => {
             // if traceId isn't present in the mock context, generate a new one (for every request)
             // this is to avoid stored requests from getting deleted by storeUserReqResp call
             const tracer = mockContext.tracer
-            const parentSpanId = mockContext.parentSpanId || generateSpecialParentSpanId(tracer)
-            const spanId = generateSpanId(tracer);
-            const traceId = mockContext.traceId || generateTraceId(tracer, mockContext.spanId)
-            const traceDetails = {tracer, traceId, spanId, parentSpanId}
+            const traceKeys = generateTraceKeys(tracer)
+            const {traceIdKey, spanIdKey, parentSpanIdKeys} = traceKeys;
+            
+            let parentSpanId = mockContext.parentSpanId
+            if(!parentSpanId) {
+                for(const key of parentSpanIdKeys) {
+                    parentSpanId = headers[key]
+                    if (parentSpanId)
+                        break;
+                }
+            }
+
+            if (!parentSpanId) {
+                parentSpanId = generateSpecialParentSpanId(tracer)
+            }
+
+            const spanId = headers[spanIdKey] || generateSpanId(tracer);
+            const traceId = mockContext.traceId || headers[traceIdKey] || generateTraceId(tracer, mockContext.spanId)
+            const traceDetails = {tracer, traceKeys, traceId, spanId, parentSpanId}
             const proxyOptionParameters = {
                 user,
                 proxy,

@@ -1,10 +1,9 @@
 const url = require('url');
 const logger = require('electron-log');
-const {generateTraceKeys} = require('./trace-utils');
 
 // Alt Mock With Collection API: /api/ms/mockWithCollection??
 const mockApiPrefix = '/api/msc/mockWithRunId';
-
+const strictMockApiPrefix = '/api/ms'
 /**
  * Exclude the service name from API path
  * @param {*} apiPath - api path that contains service name as first path variable
@@ -30,7 +29,7 @@ const stripServiceNameFromOutgoingProxyPath = (apiPath) => {
  * @param {*} resourcePath 
  * @param {*} mockContext 
  */
-const rewriteMockPath = (resourcePath, mockContext, traceDetails) => {
+const rewriteMockPath = (resourcePath, mockContext, traceDetails, service) => {
     // Pure function. Do not modify parameters // recordingId 
     const {
         runId,
@@ -38,6 +37,8 @@ const rewriteMockPath = (resourcePath, mockContext, traceDetails) => {
         collectionId, 
         customerName,
         recordingCollectionId,
+        strictMock,
+        replayInstance,
     } = mockContext;
     const {traceId} = traceDetails;
 
@@ -47,7 +48,13 @@ const rewriteMockPath = (resourcePath, mockContext, traceDetails) => {
     // const path = `${mockApiPrefix}/${collectionId}/${recordingId}${resourcePath}`;
 
     // Path for mock
-    const path = `${mockApiPrefix}/${collectionId}/${recordingCollectionId}/${customerName}/${selectedApp}/${traceId}/${runId}${resourcePath}`;
+    let path = ""
+    if(strictMock) {
+        const strippedResourcePath = resourcePath.replace(`/${service}`, "")
+        path = `${strictMockApiPrefix}/${customerName}/${selectedApp}/${replayInstance}/${service}${strippedResourcePath}`
+    } else {
+        path = `${mockApiPrefix}/${collectionId}/${recordingCollectionId}/${customerName}/${selectedApp}/${traceId}/${runId}${resourcePath}`;
+    }
 
     logger.info('Updated Resource URI : ', path);
     logger.info("Detected RunId", runId);
@@ -84,10 +91,10 @@ const rewriteLivePath = (serviceConfigObject, receivedPathInProxy) => {
  * @param {*} mockContext 
  * @param {*} user 
  */
-const proxyRequestInterceptorMockService = (proxyReq, mockContext, user, traceDetails) => {
+const proxyRequestInterceptorMockService = (proxyReq, mockContext, user, traceDetails, service) => {
     const { accessToken, tokenType } = user;
     const { selectedApp } = mockContext;
-    const {tracer, spanId, traceId, parentSpanId} = traceDetails
+    const {traceKeys, spanId, traceId, parentSpanId} = traceDetails
     const token = `${tokenType} ${accessToken}`;
 
     logger.info('Mock Request Intercepted. Removing Header <Origin>');
@@ -96,7 +103,7 @@ const proxyRequestInterceptorMockService = (proxyReq, mockContext, user, traceDe
     logger.info('Setting authorization header authorization:', token);
     proxyReq.setHeader('authorization', token);
 
-    const {traceIdKey, spanIdKey, parentSpanIdKeys} = generateTraceKeys(tracer)
+    const {traceIdKey, spanIdKey, parentSpanIdKeys} = traceKeys;
 
     if (spanIdKey) {
         logger.info(`Setting spanId (${spanIdKey}): `, spanId);
@@ -118,7 +125,7 @@ const proxyRequestInterceptorMockService = (proxyReq, mockContext, user, traceDe
 
     // rewrite request url
     logger.info('Rewriting url...');
-    proxyReq.path = rewriteMockPath(proxyReq.path, mockContext, traceDetails);
+    proxyReq.path = rewriteMockPath(proxyReq.path, mockContext, traceDetails, service);
 
     logger.info('Method intercepted in proxy request:', proxyReq.method);
     logger.info('Logging Request Headers\n', proxyReq._headers);
@@ -130,7 +137,7 @@ const proxyRequestInterceptorMockService = (proxyReq, mockContext, user, traceDe
  * @param {*} serviceConfigObject 
  */
 const proxyRequestInterceptorLiveService = (proxyReq, serviceConfigObject, mockContext, traceDetails) => {
-    const {tracer, traceId, spanId, parentSpanId} = traceDetails
+    const {traceKeys, traceId, spanId, parentSpanId} = traceDetails
 
     logger.info('Method intercepted in proxy request:', proxyReq.method);
 
@@ -153,7 +160,7 @@ const proxyRequestInterceptorLiveService = (proxyReq, serviceConfigObject, mockC
     proxyReq.removeHeader('transfer-encoding');
     proxyReq.removeHeader('accept-encoding');
 
-    const {traceIdKey, spanIdKey, parentSpanIdKeys} = generateTraceKeys(tracer)
+    const {traceIdKey, spanIdKey, parentSpanIdKeys} = traceKeys;
 
     if (spanIdKey && !(spanIdKey in proxyReq._headers)) {
         logger.info(`Setting spanId (${spanIdKey}): `, spanId);
