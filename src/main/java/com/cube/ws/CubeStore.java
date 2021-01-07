@@ -9,6 +9,7 @@ import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
 import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
+import com.cube.queue.StoreUtils;
 import com.cube.sequence.SeqMgr;
 
 import io.md.core.CollectionKey;
@@ -355,8 +356,11 @@ public class CubeStore {
                     case MediaType.APPLICATION_JSON:
                         try{
                             Event[] events = jsonMapper.readValue(messageBytes , Event[].class);
-                            return rrstore.save(Arrays.stream(events)) && rrstore.commit() ?  Response.ok().build() : Response.serverError().entity("Bulk save error").build();
-                        }catch (Exception e){
+                            StoreUtils.processEvents(Arrays.stream(events), rrstore,
+                                Optional.of(config.protoDescriptorCache));
+                            return rrstore.commit() ?  Response.ok().build()
+                                : Response.serverError().entity("Bulk save error").build();
+                        } catch (Exception e){
                             LOGGER.error(new ObjectMessage(
                                 Map.of(Constants.MESSAGE, "Error while parsing the events json")), e
                             );
