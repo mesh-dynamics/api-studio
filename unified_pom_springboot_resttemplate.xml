@@ -125,7 +125,7 @@
     		</filters>
               <promoteTransitiveDependencies>false</promoteTransitiveDependencies>
 		<artifactSet>
-			<excludes>	
+			<excludes>
 				<exclude>org.springframework.boot:*</exclude>
 				<exclude>org.springframework:*</exclude>
 				<exclude>org.springframework.security:*</exclude>
@@ -134,14 +134,13 @@
 				<exclude>org.apache.tomcat.embed:tomcat-embed-core</exclude>
 				<exclude>org.springframework.security.oauth.boot:spring-security-oauth2-autoconfigure</exclude>
 				<exclude>org.springframework.security.oauth:spring-security-oauth2</exclude>
-				<exclude>org.slf4j:slf4j-jdk14</exclude>	
+				<exclude>org.slf4j:slf4j-jdk14</exclude>
 		</excludes>
 		</artifactSet>
             </configuration>
           </execution>
         </executions>
       </plugin>
-
     </plugins>
   </build>
 
