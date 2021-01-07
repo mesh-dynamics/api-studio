@@ -149,7 +149,7 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
     }
 
 
-    private boolean save(Event event) {
+    public boolean save(Event event) {
         return cubeClient.storeEvent(event).isPresent();
     }
 
