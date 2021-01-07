@@ -277,3 +277,12 @@ div.loading, div.loading button{
   right: 0;
   left: auto !important;
 }
+
+
+/** Theme similar to VSCode **/
+.CodeMirror .cm-string {
+	color: #0451a5;
+}
+.CodeMirror .cm-property {
+  color: #a31515;
+}
