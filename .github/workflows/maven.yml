@@ -24,20 +24,12 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 12
-    - name: Build apachecxf interceptor
+    - name: Build springboot interceptor
+      if: ${{ github.event.push.paths == 'unified_pom_springboot_resttemplate.xml' }}
       env:
         TOKEN: ${{ secrets.TOKEN }}
       run: |
         echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>$TOKEN</password></server></servers></settings>" > ~/.m2/settings.xml
-        cd apache-cxf-ingress-interceptor && mvn install && cd ..
-        cd apache-cxf-egress-interceptor && mvn install && cd ..
-        mvn package -f unified_pom_apache_cxf.xml
-        mvn deploy -f unified_pom_apache_cxf.xml -Dregistry=https://maven.pkg.github.com/cube-io-corp
-        #build jaxrs interceptor
-        cd jaxrs-ingress-interceptor && mvn install && cd ..
-        cd jaxrs-egress-interceptor && mvn install && cd ..
-        mvn package -f unified_pom_jaxrs.xml
-        mvn deploy -f unified_pom_jaxrs.xml -Dregistry=https://maven.pkg.github.com/cube-io-corp
         #build spring interceptor
         cd spring-ingress-interceptor && mvn install && cd ..
         cd spring-egress-resttemplate-interceptor && mvn install && cd ..
@@ -46,3 +38,24 @@ jobs:
         #git config --global user.email "ethicalaakash@gmail.com"
         #git config --global user.name "Aakash Singhal"
         #cd apache-cxf-ingress-interceptor && python helper.py
+    - name: build apache-cxf interceptor
+      if: ${{ github.event.push.paths == 'unified_pom_apache_cxf.xml' }}
+      env:
+        TOKEN: ${{ secrets.TOKEN }}
+      run: |
+        echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>$TOKEN</password></server></servers></settings>" > ~/.m2/settings.xml
+        cd apache-cxf-ingress-interceptor && mvn install && cd ..
+        cd apache-cxf-egress-interceptor && mvn install && cd ..
+        mvn package -f unified_pom_apache_cxf.xml
+        mvn deploy -f unified_pom_apache_cxf.xml -Dregistry=https://maven.pkg.github.com/cube-io-corp
+    - name: build apache-cxf interceptor
+      if: ${{ github.event.push.paths == 'unified_pom_jaxrs.xml' }}
+      env:
+        TOKEN: ${{ secrets.TOKEN }}
+      run: |
+        #build jaxrs interceptor
+        echo "<settings><servers><server><id>github</id><username>x-access-token</username><password>$TOKEN</password></server></servers></settings>" > ~/.m2/settings.xml
+        cd jaxrs-ingress-interceptor && mvn install && cd ..
+        cd jaxrs-egress-interceptor && mvn install && cd ..
+        mvn package -f unified_pom_jaxrs.xml
+        mvn deploy -f unified_pom_jaxrs.xml -Dregistry=https://maven.pkg.github.com/cube-io-corp
