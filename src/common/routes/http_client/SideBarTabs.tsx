@@ -25,24 +25,25 @@ import classNames from "classnames";
 import CreateCollection from "./CreateCollection";
 import { extractParamsFromRequestEvent } from '../../utils/http_client/utils';
 import EditableLabel from "./EditableLabel";
-import {updateGoldenName} from '../../services/golden.service';
+import { updateGoldenName } from '../../services/golden.service';
 import { IApiCatalogState, IApiTrace, ICollectionDetails, ICubeState, IHttpClientStoreState, IKeyValuePairs, IPayloadData, IStoreState, IUserAuthDetails } from "../../reducers/state.types";
 import { IGetEventsApiResponse } from "../../apiResponse.types";
+import gcbrowseActions from "../../actions/gcbrowse.actions";
 
-interface ITreeNodeHeader<T>{
+interface ITreeNodeHeader<T> {
   node: T,
   style: any;
 }
-export interface ISideBarTabsProps{
+export interface ISideBarTabsProps {
   dispatch: any;
   cube: ICubeState,
   apiCatalog: IApiCatalogState,
   httpClient: IHttpClientStoreState,
   user: IUserAuthDetails;
-  showOutgoingRequests: (tabId: string, traceId: string, collectionId: string, recordingId: string)=>void;
-  onAddTab: (evt: any, reqObject: any, givenApp: string, isSelected?:boolean)=>string; //reqObject can be properly defined
+  showOutgoingRequests: (tabId: string, traceId: string, collectionId: string, recordingId: string) => void;
+  onAddTab: (evt: any, reqObject: any, givenApp: string, isSelected?: boolean) => string; //reqObject can be properly defined
 }
-export interface ISideBarTabsState{
+export interface ISideBarTabsState {
   showDeleteGoldenConfirmation: boolean,
   itemToDelete: {
     requestType?: string;
@@ -52,8 +53,8 @@ export interface ISideBarTabsState{
     collectionId?: string;
     isCubeHistory?: boolean;
   },
-  collectionIdInEditMode:string,
-  editingCollectionName:string,
+  collectionIdInEditMode: string,
+  editingCollectionName: string,
   loadingCollections: IKeyValuePairs<boolean>,
 }
 class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
@@ -63,8 +64,8 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     this.state = {
       showDeleteGoldenConfirmation: false,
       itemToDelete: {},
-      collectionIdInEditMode:"",
-      editingCollectionName:"",
+      collectionIdInEditMode: "",
+      editingCollectionName: "",
       loadingCollections: {},
     };
 
@@ -97,6 +98,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
       if (itemToDelete.requestType == "collection") {
         await cubeService.deleteGolden(itemToDelete.id!);
         dispatch(httpClientActions.deleteUserCollection(itemToDelete.id));
+        dispatch(gcbrowseActions.clearSelectedGoldenCollection());
       } else if (itemToDelete.requestType == "request") {
         if (itemToDelete.isParent) {
           await cubeService.deleteEventByTraceId(customerId, itemToDelete.id!, itemToDelete.collectionId!);
@@ -132,15 +134,15 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     const apiTracesForACollection = selectedCollection!.apiTraces;
     try {
       if (!apiTracesForACollection || forceLoad) {
-        this.setState({loadingCollections: {...this.state.loadingCollections, [selectedCollection!.id] : true}});
+        this.setState({ loadingCollections: { ...this.state.loadingCollections, [selectedCollection!.id]: true } });
         cubeService.loadCollectionTraces(customerId, selectedCollectionId, app!, selectedCollection!.id).then(
           (apiTraces) => {
             selectedCollection!.apiTraces = apiTraces;
-            this.setState({loadingCollections: {...this.state.loadingCollections, [selectedCollection!.id] : false}});
+            this.setState({ loadingCollections: { ...this.state.loadingCollections, [selectedCollection!.id]: false } });
             dispatch(httpClientActions.addUserCollections(userCollections));
           },
           (err) => {
-            this.setState({loadingCollections: {...this.state.loadingCollections, [selectedCollection!.id] : false}});
+            this.setState({ loadingCollections: { ...this.state.loadingCollections, [selectedCollection!.id]: false } });
             console.error("err: ", err);
           }
         );
@@ -154,12 +156,12 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
   onRefreshCollectionBtnClick = (event: React.MouseEvent<HTMLSpanElement, MouseEvent>) => {
     event.stopPropagation();
     const collectionId = (event.target as HTMLDivElement).getAttribute("data-collection-collec")!;
-    let {httpClient: {userCollections}, dispatch} = this.props;
-    let selectedCollection = _.find(userCollections, {collec: collectionId}) as ICollectionDetails;
-    if(this.state.loadingCollections[selectedCollection.id]){
+    let { httpClient: { userCollections }, dispatch } = this.props;
+    let selectedCollection = _.find(userCollections, { collec: collectionId }) as ICollectionDetails;
+    if (this.state.loadingCollections[selectedCollection.id]) {
       return;
     }
-    this.setState({loadingCollections: {...this.state.loadingCollections, [selectedCollection.id] : true}});
+    this.setState({ loadingCollections: { ...this.state.loadingCollections, [selectedCollection.id]: true } });
     dispatch(httpClientActions.addUserCollections(userCollections))
     this.handlePanelClick(collectionId, true)
   }
@@ -192,22 +194,22 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     event.stopPropagation();
     const id = (event.target as HTMLLIElement).getAttribute("data-id")!;
     const name = (event.target as HTMLLIElement).getAttribute("data-name")!;
-    this.setState({collectionIdInEditMode: id, editingCollectionName: name})
+    this.setState({ collectionIdInEditMode: id, editingCollectionName: name })
   };
 
-  handleEditCollection = (text: string)=>{
-    if(this.state.editingCollectionName != text){
-      updateGoldenName(this.state.collectionIdInEditMode, text).then((response )=>{
-        
-         this.onFirstPageClickCollectionTab();
-         this.setState({collectionIdInEditMode: "", editingCollectionName: ""})
-       }).catch(error=>{
-         console.error(error);
-         this.setState({collectionIdInEditMode: "", editingCollectionName: ""})
-       })
-    }else{
+  handleEditCollection = (text: string) => {
+    if (this.state.editingCollectionName != text) {
+      updateGoldenName(this.state.collectionIdInEditMode, text).then((response) => {
 
-      this.setState({collectionIdInEditMode: "", editingCollectionName: ""})
+        this.onFirstPageClickCollectionTab();
+        this.setState({ collectionIdInEditMode: "", editingCollectionName: "" })
+      }).catch(error => {
+        console.error(error);
+        this.setState({ collectionIdInEditMode: "", editingCollectionName: "" })
+      })
+    } else {
+
+      this.setState({ collectionIdInEditMode: "", editingCollectionName: "" })
     }
 
   }
@@ -240,10 +242,10 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
   }
 
   handleTreeNodeClick(node: IApiTrace) {
-    const {httpClient: {tabs}, dispatch} = this.props;
-    const existingTab = _.find(tabs, {requestId: node.requestEventId});
+    const { httpClient: { tabs }, dispatch } = this.props;
+    const existingTab = _.find(tabs, { requestId: node.requestEventId });
     // if the request is already open in a tab, switch to it, and don't create a new tab
-    if (existingTab){
+    if (existingTab) {
       dispatch(httpClientActions.setSelectedTabKey(existingTab.id))
       return
     }
@@ -269,7 +271,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
         paths: [node.apiPath],
         collection: node.collectionIdAddedFromClient,
       };
-      api.post(apiEventURL, body).then((response : unknown) => {
+      api.post(apiEventURL, body).then((response: unknown) => {
         const result = response as IGetEventsApiResponse;
         if (result && result.numResults > 0) {
           for (let eachReqId of reqIdArray) {
@@ -280,18 +282,19 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
               const existingResponseEvent = result.objects.find(
                 (eachReq) => eachReq.eventType === "HTTPResponse"
               );
-              if(existingResponseEvent){
+              if (existingResponseEvent) {
                 reqResPair.push(existingResponseEvent);
-              }else{
+              } else {
                 //Adding a initial state of response data, else we won't be able to run the request properly. 
-                const {customerId ,app ,service ,instanceId ,collection ,traceId ,parentSpanId ,runType ,timestamp ,reqId ,apiPath ,recordingType ,runId} = reqResPair[0];
-                const responsePayload:IPayloadData = {hdrs:{}, body:{}, method:"", path:"", pathSegments:[]};
-                reqResPair.push({customerId ,app ,service ,instanceId ,collection ,traceId ,parentSpanId ,
-                  runType ,timestamp ,reqId ,apiPath ,recordingType ,runId, eventType : "HTTPResponse", metaData:{},
-                  payload:["HTTPResponsePayload", responsePayload]
+                const { customerId, app, service, instanceId, collection, traceId, parentSpanId, runType, timestamp, reqId, apiPath, recordingType, runId } = reqResPair[0];
+                const responsePayload: IPayloadData = { hdrs: {}, body: {}, method: "", path: "", pathSegments: [] };
+                reqResPair.push({
+                  customerId, app, service, instanceId, collection, traceId, parentSpanId,
+                  runType, timestamp, reqId, apiPath, recordingType, runId, eventType: "HTTPResponse", metaData: {},
+                  payload: ["HTTPResponsePayload", responsePayload]
                 });
               }
-              
+
             }
             if (reqResPair.length > 0) {
               const httpRequestEventTypeIndex =
@@ -300,47 +303,47 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                 httpRequestEventTypeIndex === 0 ? 1 : 0;
               const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
               const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
-              const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
+              const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType } = extractParamsFromRequestEvent(httpRequestEvent);
 
-              const collectionDetails = _.find(this.props.httpClient.userCollections, {collec: node.collectionIdAddedFromClient});
+              const collectionDetails = _.find(this.props.httpClient.userCollections, { collec: node.collectionIdAddedFromClient });
               const collectionName = collectionDetails?.name || "";
               //TODO: Create a separate class to handle below object
               let reqObject = {
                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-                httpURL: httpRequestEvent.metaData.httpURL ||httpRequestEvent.apiPath,
-                httpURLShowOnly: httpRequestEvent.metaData.httpURL ||httpRequestEvent.apiPath,
+                httpURL: httpRequestEvent.metaData.httpURL || httpRequestEvent.apiPath,
+                httpURLShowOnly: httpRequestEvent.metaData.httpURL || httpRequestEvent.apiPath,
                 headers: headers,
                 queryStringParams: queryParams,
                 bodyType:
                   formData && formData.length > 0
                     ? "formData"
                     : rawData && rawData.length > 0
-                    ? "rawData"
-                    : grpcData && grpcData.length ? "grpcData" : "formData",
+                      ? "rawData"
+                      : grpcData && grpcData.length ? "grpcData" : "formData",
                 formData: formData,
                 rawData: rawData,
                 rawDataType: rawDataType,
                 grpcData,
                 grpcDataType,
-                paramsType: grpcData && grpcData.length ? "showBody": "showQueryParams",
+                paramsType: grpcData && grpcData.length ? "showBody" : "showQueryParams",
                 responseStatus: "NA",
                 responseStatusText: "",
                 responseHeaders: "",
                 responseBody: "",
                 recordedResponseHeaders: httpResponseEvent
                   ? JSON.stringify(
-                      httpResponseEvent.payload[1].hdrs,
-                      undefined,
-                      4
-                    )
+                    httpResponseEvent.payload[1].hdrs,
+                    undefined,
+                    4
+                  )
                   : "",
                 recordedResponseBody: httpResponseEvent
                   ? httpResponseEvent.payload[1].body
                     ? JSON.stringify(
-                        httpResponseEvent.payload[1].body,
-                        undefined,
-                        4
-                      )
+                      httpResponseEvent.payload[1].body,
+                      undefined,
+                      4
+                    )
                     : ""
                   : "",
                 recordedResponseStatus: httpResponseEvent
@@ -385,7 +388,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     }
   }
 
-  renderTreeNodeHeader(props:ITreeNodeHeader<IApiTrace>) {
+  renderTreeNodeHeader(props: ITreeNodeHeader<IApiTrace>) {
     const isParent = props.node.isCubeRunHistory
       ? !!(props.node.children && props.node.children.length > 0)
       : props.node.parentSpanId == "NA";
@@ -422,7 +425,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                 style={{
                   paddingLeft: "5px",
                   marginLeft: "5px",
-                  borderLeft: "2px solid #fc6c0a",                  
+                  borderLeft: "2px solid #fc6c0a",
                   whiteSpace: "initial",
                   textOverflow: "ellipsis",
                   overflow: "hidden",
@@ -448,7 +451,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                 data-cubehistory={props.node.isCubeRunHistory === true}
                 data-type="request"
                 onClick={this.onDeleteBtnClick}
-                style={{marginRight: "5px"}}
+                style={{ marginRight: "5px" }}
               />
             </div>
           </div>
@@ -481,7 +484,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     if (
       !(
         (historyTabState.currentPage + 1) * historyTabState.numResults >=
-          historyTabState.count || isHistoryLoading
+        historyTabState.count || isHistoryLoading
       )
     ) {
       dispatch(httpClientActions.historyTabNextPage());
@@ -525,8 +528,8 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
           {historyTabState.currentPage == 0 ? (
             <i className="fas fa-sync-alt"></i>
           ) : (
-            <i className="fas fa-step-backward"></i>
-          )}
+              <i className="fas fa-step-backward"></i>
+            )}
         </div>
         <div
           className="btn btn-sm cube-btn text-center"
@@ -540,7 +543,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
           className="btn btn-sm cube-btn text-center"
           disabled={
             (historyTabState.currentPage + 1) * historyTabState.numResults >=
-              historyTabState.count || isHistoryLoading
+            historyTabState.count || isHistoryLoading
           }
           title="Next Page"
           onClick={this.onNextPageClickHistoryTab}
@@ -569,7 +572,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     if (
       !(
         (collectionTabState.currentPage + 1) * collectionTabState.numResults >=
-          collectionTabState.count || isCollectionLoading
+        collectionTabState.count || isCollectionLoading
       )
     ) {
       dispatch(httpClientActions.collectionTabNextPage());
@@ -613,8 +616,8 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
           {collectionTabState.currentPage == 0 ? (
             <i className="fas fa-sync-alt"></i>
           ) : (
-            <i className="fas fa-step-backward"></i>
-          )}
+              <i className="fas fa-step-backward"></i>
+            )}
         </div>
         <div
           className="btn btn-sm cube-btn text-center"
@@ -628,8 +631,8 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
           className="btn btn-sm cube-btn text-center"
           disabled={
             (collectionTabState.currentPage + 1) *
-              collectionTabState.numResults >=
-              collectionTabState.count || isCollectionLoading
+            collectionTabState.numResults >=
+            collectionTabState.count || isCollectionLoading
           }
           title="Next Page"
           onClick={this.onNextPageClickCollectionTab}
@@ -640,7 +643,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     );
   };
 
-  hideDeleteGoldenDialog = ()=>{
+  hideDeleteGoldenDialog = () => {
     this.setState({
       showDeleteGoldenConfirmation: false,
       itemToDelete: {},
@@ -722,8 +725,8 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
               {userCollections &&
                 userCollections.map((eachCollec) => {
                   const refreshBtnClassNames = classNames({
-                    "fas fa-sync-alt pointer margin-right-10": true, 
-                    "fa-spin": !!this.state.loadingCollections[eachCollec.id] 
+                    "fas fa-sync-alt pointer margin-right-10": true,
+                    "fa-spin": !!this.state.loadingCollections[eachCollec.id]
                   })
                   return (
                     <Panel
@@ -743,11 +746,11 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                           style={{ fontSize: "13px" }}
                           data-unique-id={eachCollec.collec}
                         >
-                          <EditableLabel 
-                          label={eachCollec.name}
-                           handleEditComplete={this.handleEditCollection} 
-                           allowEdit={eachCollec.id == this.state.collectionIdInEditMode}
-                           />
+                          <EditableLabel
+                            label={eachCollec.name}
+                            handleEditComplete={this.handleEditCollection}
+                            allowEdit={eachCollec.id == this.state.collectionIdInEditMode}
+                          />
                         </Panel.Title>
                         <div className="collection-options">
                           {(eachCollec.apiTraces || this.state.loadingCollections[eachCollec.id]) && <i
@@ -756,35 +759,35 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                             title="Refresh collection"
                             onClick={this.onRefreshCollectionBtnClick}
                           />}
-                         
-                          <Dropdown id="dropdownCollectionActions" pullRight={true} className="margin-right-5" onClick={(e)=> e.stopPropagation()}>
+
+                          <Dropdown id="dropdownCollectionActions" pullRight={true} className="margin-right-5" onClick={(e) => e.stopPropagation()}>
                             {/* bsRole is required for toggle feature on icon click */}
-                             <i className="fas fa-ellipsis-v pointer" bsRole="toggle"></i>
+                            <i className="fas fa-ellipsis-v pointer" bsRole="toggle"></i>
                             <Dropdown.Menu>
                               <MenuItem eventKey="1"
-                                  data-id={eachCollec.id}
-                                  data-name={eachCollec.name}
-                                  title="Edit"
-                                  onClick={this.onEditCollectionName}
-                                  >
-                              <i
+                                data-id={eachCollec.id}
+                                data-name={eachCollec.name}
+                                title="Edit"
+                                onClick={this.onEditCollectionName}
+                              >
+                                <i
                                   className="fas fa-edit pointer"
                                 /> Edit
                               </MenuItem>
-                              <MenuItem eventKey="2" 
-                                  data-id={eachCollec.id}
-                                  data-name={eachCollec.name}
-                                  title="Delete"
-                                  data-type="collection"
-                                  onClick={this.onDeleteBtnClick}
-                                  >
+                              <MenuItem eventKey="2"
+                                data-id={eachCollec.id}
+                                data-name={eachCollec.name}
+                                title="Delete"
+                                data-type="collection"
+                                onClick={this.onDeleteBtnClick}
+                              >
                                 <i
                                   className="fas fa-trash pointer"
                                 /> Delete
                               </MenuItem>
                             </Dropdown.Menu>
                           </Dropdown>
-                          
+
                         </div>
                       </Panel.Heading>
                       <Panel.Collapse>
@@ -793,7 +796,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                             eachCollec.apiTraces.map((eachApiTrace) => {
                               if (
                                 this.persistPanelState[
-                                  eachApiTrace.requestEventId
+                                eachApiTrace.requestEventId
                                 ]
                               ) {
                                 eachApiTrace.toggled = true;

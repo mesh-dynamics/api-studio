@@ -8,6 +8,9 @@ import config from "../config";
 import {getTransformHeaders} from "../utils/lib/url-utils";
 import api from "../api";
 import {GoldenMeta} from "./Golden-Visibility";
+import {GoldenCollectionBrowse} from "./GoldenCollectionBrowse";
+// import {GoldenCollectionBrowse} from "./APICatalog";
+// import {GoldenCollectionDropdown} from "./GoldenCollectionDropdown";
 import {goldenActions} from '../actions/golden.actions'
 import {validateGoldenName} from "../utils/lib/golden-utils";
 import classNames from "classnames";
@@ -16,6 +19,8 @@ import { apiCatalogActions } from '../actions/api-catalog.actions';
 import MDLoading from '../../../public/assets/images/md-loading.gif';
 import Tippy from '@tippy.js/react'
 import {isURL} from 'validator';
+import gcbrowseActions from '../actions/gcbrowse.actions';
+import { defaultCollectionItem } from "../constants";
 
 class ViewSelectedTestConfig extends React.Component {
     constructor(props) {
@@ -28,7 +33,6 @@ class ViewSelectedTestConfig extends React.Component {
             replayId: null,
             showReplayModal: false,
             showCT: false,
-            showDeleteGoldenConfirmation:false,
             showAddCustomHeader: false,
             showGoldenMeta: false,
             showGoldenFilter: false,
@@ -73,7 +77,7 @@ class ViewSelectedTestConfig extends React.Component {
 
     componentDidMount() {
         const { dispatch } = this.props;
-        dispatch(cubeActions.clear());
+        dispatch(cubeActions.clearPreviousData());
     }
 
     handleRecordingModeChange = (value) => this.setState({ recordingMode: value, goldenNameErrorMessage: "" });
@@ -88,6 +92,7 @@ class ViewSelectedTestConfig extends React.Component {
     handleFC = () => {
         const { dispatch, cube } = this.props;
         dispatch(cubeActions.forceCompleteReplay(this.state.fcId));
+        dispatch(gcbrowseActions.updateSelectedGoldenCollection(defaultCollectionItem))
         setTimeout(() => {
             this.setState({fcId: null});
         });
@@ -148,46 +153,36 @@ class ViewSelectedTestConfig extends React.Component {
         this.setState({ customHeaders });
     };
 
-    handleChangeForTestIds = (e) => {
-        const { dispatch, cube } = this.props;
-        cube.selectedTestId = e.target.value;
-        if (e) {
-            dispatch(cubeActions.clear());
-            let version = null;
-            let golden = null;
-            let name = "";
-            for (const collec of cube.testIds) {
-                if (collec.collec == e.target.value) {
-                    golden = collec.id
-                    version = collec.templateVer;
-                    name = collec.name;
-                    break;
-                }
-            }
-            //dispatch(cubeActions.getGraphData(cube.selectedApp));
-            dispatch(cubeActions.setSelectedTestIdAndVersion(e.target.value, version, golden, name));
-        }
+
+    handleChangeInBrowseCollection = (selectedCollectionObject) => {
+        const { dispatch } = this.props;
+        const { 
+            name,
+            id: golden,
+            templateVer: version,
+            collec: collectionId 
+        } = selectedCollectionObject;
+
+        dispatch(cubeActions.clearPreviousData());
+        dispatch(cubeActions.setSelectedTestIdAndVersion(collectionId, version, golden, name));
     };
     
     showCT = () => this.setState({showCT: true});
 
-    handleClose = () => {
-        const {cube} = this.props;
-        this.handleChangeForTestIds({target: {value: cube.selectedTestId}});
+    handleCloseOnReplayModal = () => {
+        const { gcbrowse: { selectedCollectionItem }, dispatch } = this.props;
+
+        const {
+            name,
+            id: golden,
+            templateVer: version,
+            collec: collectionId 
+        } = selectedCollectionItem;
+        
+        dispatch(cubeActions.clearPreviousData());
+        dispatch(cubeActions.setSelectedTestIdAndVersion(collectionId, version, golden, name));
         this.setState({ showReplayModal: false, showCT: false });
     };
-
-    getFormattedDate(date) {
-        var year = date.getFullYear();
-
-        var month = (1 + date.getMonth()).toString();
-        month = month.length > 1 ? month : '0' + month;
-
-        var day = date.getDate().toString();
-        day = day.length > 1 ? day : '0' + day;
-
-        return month + '/' + day + '/' + year;
-    }
 
     selectGoldenFromFilter = (g) => {
         this.setState({selectedGoldenFromFilter: g});
@@ -326,25 +321,8 @@ class ViewSelectedTestConfig extends React.Component {
         dispatch(goldenActions.resetGoldenVisibilityDetails());
     };
 
-    showGoldenFilter = () => {
-        this.setState({
-            goldenNameFilter: "",
-            goldenIdFilter: "",
-            goldenBranchFilter: "",
-            goldenVersionFilter: "",
-            selectedGoldenFromFilter: "",
-            showGoldenFilter: true
-        });
-
-    };
-
     hideGoldenFilter = () => {
         this.setState({showGoldenFilter: false});
-    };
-
-    selectHighlighted = () => {
-        this.handleChangeForTestIds({target: {value: this.state.selectedGoldenFromFilter}});
-        this.hideGoldenFilter();
     };
 
     handleDismissCallBack = () => {
@@ -627,8 +605,9 @@ class ViewSelectedTestConfig extends React.Component {
                     if(this.state.recStatus.status === "Completed") {
                         this.setState({stopDisabled: true, stoppingStatus: false, forceStopping: false});
                         clearInterval(this.stopStatusInterval);
-                        dispatch(cubeActions.getTestIds(selectedApp));
-                        dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "Golden"));
+                        dispatch(cubeActions.getTestIds(selectedApp)); // TODO: Get rid of this
+                        dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "Golden")); // Probably this too
+                        dispatch(gcbrowseActions.fetchGoldensCollections("Golden"));
                     } else if(!this.state.fetchingRecStatus) {
                         this.checkStatus(statusUrl, configForHTTP)
                     }
@@ -712,33 +691,6 @@ class ViewSelectedTestConfig extends React.Component {
             this.handleReplayError(data, status, statusText, username);
         }
     };
-
-    showDeleteGoldenConfirm = () => {
-        this.setState({
-            showDeleteGoldenConfirmation: true,
-        });
-        this.handleChangeForTestIds({target: {value: this.state.selectedGoldenFromFilter}});
-    }
-
-    closeDeleteGoldenConfirm = () => {
-        this.setState({
-            showDeleteGoldenConfirmation: false,
-        });
-    }
-
-    deleteGolden = async ()  => {
-        const { cube, dispatch} = this.props;
-        try {
-            await cubeService.deleteGolden(cube.selectedGolden);
-            dispatch(cubeActions.removeSelectedGoldenFromTestIds(cube.selectedGolden));
-        } catch (error) {
-            console.error("Error caught in softDelete Golden: " + error);
-        }
-        this.setState({
-            showDeleteGoldenConfirmation: false,
-            selectedGoldenFromFilter:"",
-        });
-    }
     
     handleForceStopRecording = async (recordingId) => {
         try {
@@ -824,75 +776,12 @@ class ViewSelectedTestConfig extends React.Component {
         }
     }
 
-    renderCollectionTable() {
-        const {cube} = this.props;
-        let collectionList = cube.testIds;
-
-        if (this.state.goldenNameFilter) {
-            collectionList = collectionList.filter(item => item.name.toLowerCase().includes(this.state.goldenNameFilter.toLowerCase()));
-        }
-
-        if (this.state.goldenBranchFilter) {
-            collectionList = collectionList.filter(item => item.branch && item.branch.toLowerCase().includes(this.state.goldenBranchFilter.toLowerCase()));
-        }
-
-        if (this.state.goldenVersionFilter) {
-            collectionList = collectionList.filter(item => item.codeVersion && item.codeVersion.toLowerCase().includes(this.state.goldenVersionFilter.toLowerCase()));
-        }
-
-        if (this.state.goldenIdFilter) {
-            collectionList = collectionList.filter(item => item.id.toLowerCase().includes(this.state.goldenIdFilter.toLowerCase()));
-        }
-
-        if (!collectionList || collectionList.length == 0) {
-            return <tr><td colSpan="5">NO DATA FOUND</td></tr>
-            return;
-        }
-
-        let trList = collectionList.map(item => (<tr key={item.collec} value={item.collec} className={this.state.selectedGoldenFromFilter == item.collec ? "selected-g-row" : ""} onClick={() => this.selectGoldenFromFilter(item.collec)}><td>{item.name}</td><td>{item.label}</td><td>{item.id}</td><td>{this.getFormattedDate(new Date(item.timestmp*1000))}</td><td>{item.userId}</td><td>{item.prntRcrdngId}</td></tr>));
-        return trList;
-    }
-
-    renderCollectionDD ( cube ) {
-        if (cube.testIdsReqStatus != cubeConstants.REQ_SUCCESS || cube.testIdsReqStatus == cubeConstants.REQ_NOT_DONE)
-            return <select id="ddlTestId" className="r-att" disabled value={cube.selectedTestId} placeholder={'Select...'}>
-                <option value="">No App Selected</option>
-            </select>;
-        let options = [];
-        if (cube.testIdsReqStatus == cubeConstants.REQ_SUCCESS) {
-            options = cube.testIds.map((item, index) => {
-                if (index < 8)
-                    return (<option key={item.collec + index} value={item.collec}>{`${item.name} ${item.label}`}</option>);
-
-                else
-                    return (<option className="hidden" key={item.collec + index} value={item.collec}>{`${item.name} ${item.label}`}</option>);
-            });
-        }
-        let jsxContent = '';
-        if (options.length) {
-            let selectedTestIdObj = '';
-            if (cube.selectedTestId)
-                selectedTestIdObj = { label: cube.selectedTestId, value: cube.selectedTestId};
-            jsxContent = <div>
-                <select id="ddlTestId" className="r-att" onChange={this.handleChangeForTestIds} value={cube.selectedTestId || ""} placeholder={'Select...'}>
-                    <option value="">Select Golden</option>
-                    {options}
-                </select>
-            </div>
-        }
-        if (cube.testIdsReqStatus == cubeConstants.REQ_LOADING)
-            jsxContent = <div><br/>Loading...</div>
-        if (cube.testIdsReqStatus == cubeConstants.REQ_FAILURE)
-            jsxContent = <div><br/>Request failed!</div>
-
-        return jsxContent;
-    };
-
     renderRecordingInfo = () => {
-        const { cube: { selectedGolden, testIds }} = this.props;
+        const { cube: { selectedGolden, testIds }, gcbrowse: { actualGoldens }} = this.props;
 
         if (selectedGolden && testIds.length !== 0) {
-            const { id, label, name } = testIds.find(test => test.id === selectedGolden);
+            const { id, label, name } = testIds.find(test => test.id === selectedGolden) 
+                                        || actualGoldens.recordings.find(test => test.id === selectedGolden);
 
             return(
                 <div className="resume-modal-info-container">
@@ -945,7 +834,7 @@ class ViewSelectedTestConfig extends React.Component {
                 <div className="div-label">
                     Test Configuration
                     <Link to="/configs">
-                        <i className="fas fa-link pull-right link"></i>
+                        <i className="fas fa-edit pull-right link"></i>
                     </Link>
                 </div>
                 <div className="margin-top-10">
@@ -1006,30 +895,14 @@ class ViewSelectedTestConfig extends React.Component {
                         </select>
                     </div>
                 </div>
-
-                <div className="margin-top-10">
-                    <div className="label-n">SELECT GOLDEN&nbsp;
-                        <i onClick={this.showGoldenFilter} title="Browse Golden" className="link fas fa-folder-open pull-right font-15"></i>
-                        {
-                            cube.selectedTestId 
-                            && (!recStatus || recStatus.status !== "Running") 
-                            && (
-                                <Link to={{
-                                    pathname: "/test_config_view/golden_visibility",
-                                    search: `recordingId=${cube.selectedGolden}`
-                                }}>
-                                    <span className="pull-right" onClick={this.handleViewGoldenClick} style={{ marginLeft: "5px", cursor: "pointer" }}>
-                                        <i className="fas fa-eye margin-right-10" style={{ fontSize: "12px", color: "#757575"}} aria-hidden="true"></i>
-                                    </span>
-                                </Link>
-                            )
-                        }
-                    </div>
-                    <div className="value-n">
-                        {this.renderCollectionDD(cube)}
-                    </div>
-                </div>
-
+                <GoldenCollectionBrowse 
+                    showDeleteOption
+                    selectedSource="Golden" 
+                    dropdownLabel="SELECT GOLDEN"
+                    handleViewGoldenClick={this.handleViewGoldenClick}
+                    handleChangeCallback={this.handleChangeInBrowseCollection}
+                    showVisibilityOption={(!recStatus || recStatus.status !== "Running")}
+                />
                 <div style={{ fontSize: "12px" }} className="margin-top-10 row">
                     <span  className="label-link col-sm-12 pointer" onClick={this.showAddCustomHeaderModal}>
                         <i className="fas fa-plus" style={{ color: "#333333", marginRight: "5px" }} aria-hidden="true"></i>
@@ -1092,7 +965,7 @@ class ViewSelectedTestConfig extends React.Component {
             recName, stopDisabled, stoppingStatus, recStatus, showAddCustomHeader,
             goldenNameErrorMessage, fcEnabled, resumeModalVisible,
             dbWarningModalVisible, instanceWarningModalVisible, 
-            goldenSelectWarningModalVisible, showDeleteGoldenConfirmation, forceStopping, forceStopped, ongoingRecStatus
+            goldenSelectWarningModalVisible, forceStopping, forceStopped, ongoingRecStatus
         } = this.state;
 
         const replayDone = (cube.replayStatus === "Completed" || cube.replayStatus === "Error");
@@ -1200,12 +1073,12 @@ class ViewSelectedTestConfig extends React.Component {
                     <Modal.Footer >
                         {analysisDone ? 
                         <Link to="/test_results">
-                            <span onClick={this.handleClose} id="btnRunTestViewResults" className="cube-btn">View Results</span>&nbsp;&nbsp;
+                            <span onClick={this.handleCloseOnReplayModal} id="btnRunTestViewResults" className="cube-btn">View Results</span>&nbsp;&nbsp;
                         </Link>
                     :
                     <span className="modal-footer-text">The results will be available on the test results page once the test completes</span>
                     }
-                        <span onClick={this.handleClose} className="cube-btn">Close</span>
+                        <span onClick={this.handleCloseOnReplayModal} className="cube-btn">Close</span>
                     </Modal.Footer>
                 </Modal>
                 
@@ -1223,77 +1096,6 @@ class ViewSelectedTestConfig extends React.Component {
                         <span onClick={this.handleFCDone} className="cube-btn pull-right">Done</span>
                     </Modal.Footer>
                 </Modal>
-
-                <Modal show={showGoldenFilter} bsSize="large">
-                    <Modal.Header>
-                        <Modal.Title>Browse Golden <small style={{color: "white"}}>({cube.selectedApp})</small></Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <div className="margin-bottom-10" style={{padding: "10px 25px", border: "1px dashed #ddd"}}>
-                            <div className="row margin-bottom-10">
-                                <div className="col-md-5">
-                                    <div className="label-n">NAME</div>
-                                    <div className="value-n">
-                                        <input onChange={(event) => this.applyGoldenFilter("goldenNameFilter", event)} className="width-100 h-20px" type="text"/>
-                                    </div>
-                                </div>
-
-                                <div className="col-md-2"></div>
-
-                                <div className="col-md-5">
-                                    <div className="label-n">BRANCH</div>
-                                    <div className="value-n">
-                                        <input onChange={(event) => this.applyGoldenFilter("goldenBranchFilter", event)} className="width-100 h-20px" type="text"/>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="row margin-bottom-10">
-                                <div className="col-md-5">
-                                    <div className="label-n">RECORDING ID</div>
-                                    <div className="value-n">
-                                        <input onChange={(event) => this.applyGoldenFilter("goldenIdFilter", event)} className="width-100 h-20px" type="text"/>
-                                    </div>
-                                </div>
-
-                                <div className="col-md-2"></div>
-
-                                <div className="col-md-5">
-                                    <div className="label-n">CODE VERSION</div>
-                                    <div className="value-n">
-                                        <input onChange={(event) => this.applyGoldenFilter("goldenVersionFilter", event)} className="width-100 h-20px" type="text"/>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style={{height: "300px", overflowY: "auto"}}>
-                            <table className="table table-condensed table-hover table-striped">
-                                <thead>
-                                <tr>
-                                    <td className="bold">Name</td>
-                                    <td className="bold" style={{ minWidth: "100px" }}>Label</td>
-                                    <td className="bold" style={{ minWidth: "175px" }}>ID</td>
-                                    <td className="bold">Date</td>
-                                    <td className="bold">Created By</td>
-                                    <td className="bold">Parent ID</td>
-                                </tr>
-                                </thead>
-
-                                <tbody>
-                                {this.renderCollectionTable()}
-                                </tbody>
-                            </table>
-                        </div>
-
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <span onClick={this.selectHighlighted} className={selectedGoldenFromFilter ? "cube-btn" : "disabled cube-btn"}>Select</span>&nbsp;&nbsp;
-                        <span onClick={this.showDeleteGoldenConfirm} className={selectedGoldenFromFilter ? "cube-btn" : "disabled cube-btn"}>Delete</span>&nbsp;&nbsp;
-                        <span onClick={this.hideGoldenFilter} className="cube-btn">Cancel</span>
-                    </Modal.Footer>
-                </Modal>
-                
                 <Modal show={showAddCustomHeader} bsSize="large">
                     <Modal.Header>
                         <Modal.Title>Add Custom Headers</Modal.Title>
@@ -1329,19 +1131,6 @@ class ViewSelectedTestConfig extends React.Component {
                         <span onClick={this.cancelAddCustomHeaderModal} className="cube-btn margin-left-15">Cancel</span>
                     </Modal.Footer>
                 </Modal>
-                <Modal show={showDeleteGoldenConfirmation}>
-                    <Modal.Body>
-                        <div style={{ display: "flex", flex: 1, justifyContent: "center"}}>
-                            <div className="margin-right-10" style={{ display: "flex", flexDirection: "column", fontSize:20 }}>
-                                This will delete the {cube.selectedGoldenName}. Please confirm.
-                            </div>
-                            <div style={{ display: "flex", alignItems: "flex-start" }}>
-                                    <span className="cube-btn margin-right-10" onClick={() => this.deleteGolden()}>Confirm</span>
-                                    <span className="cube-btn" onClick={() => this.closeDeleteGoldenConfirm()}>No</span>
-                            </div>
-                        </div>
-                    </Modal.Body>
-                </Modal>
                 <Modal show={this.state.showOngoingRecModal}>
                     <Modal.Header>
                         Ongoing recording
@@ -1375,6 +1164,7 @@ class ViewSelectedTestConfig extends React.Component {
 
 const mapStateToProps = (state) => ({
     cube: state.cube,
+    gcbrowse: state.gcbrowse,
     authentication: state.authentication
 });
 

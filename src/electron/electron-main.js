@@ -23,7 +23,9 @@ const mockContext = {
     recordingCollectionId: 'sample-recording-collection-id',
     recordingId: 'sample-recording-id',
     runId: 'sample-recording-collection-id',
-    config: {}
+    config: {},
+    tracer: 'meshd',
+    parentSpanId: 'sample-parent-span-id',
 };
 
 /**

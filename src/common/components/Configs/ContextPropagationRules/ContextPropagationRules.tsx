@@ -212,7 +212,7 @@ function ContextPropagationRules(props: IContextPropagationRulesProps) {
         eventTypes: [],
         collections: [collectionId],
         version: `Default${props.app}`,
-        indexOrderAsc: "true",
+        sortingOrder: {"timestamp": true},
         services: [selectedServices],
       })
       .then((response: any) => {

@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 import { FormControl, FormGroup, Tabs, Tab, Panel, Label, Modal, Button, ControlLabel, Glyphicon } from 'react-bootstrap';
 
-import { preRequestToFetchableConfig, getCurrentMockConfig } from "../../utils/http_client/utils";
+import { preRequestToFetchableConfig, getCurrentMockConfig,
+    extractQueryStringParamsToCubeFormat,
+    extractBodyToCubeFormat, extractHeadersToCubeFormat } from "../../utils/http_client/utils";
 import { applyEnvVars, getCurrentEnvironment, getRenderEnvVars, getCurrentEnvVars } from "../../utils/http_client/envvar";
 import EnvironmentSection from './EnvironmentSection';
 import MockConfigSection from './MockConfigSection';
@@ -32,7 +34,7 @@ import "./Tabs.css";
 
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
-import { generateRunId, generateApiPath, getApiPathFromRequestEvent, extractParamsFromRequestEvent, selectedRequestParamData, unSelectedRequestParamData, isValidJSON, generateTraceKeys, getTraceDetailsForCurrentApp } from "../../utils/http_client/utils"; 
+import { generateRunId, generateApiPath, getApiPathFromRequestEvent, extractParamsFromRequestEvent, selectedRequestParamData, unSelectedRequestParamData, isValidJSON, generateTraceKeys, getTraceDetailsForCurrentApp, getTracerForCurrentApp, extractURLQueryParams } from "../../utils/http_client/utils"; 
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
 import { getParameterCaseInsensitive, Base64Binary } from '../../../shared/utils';
 
@@ -916,6 +918,15 @@ class HttpClientTabs extends Component {
         } 
     }
 
+    replaceAllParams = (isOutgoingRequest, tabId, type, params) => {
+        const {dispatch} = this.props;
+        if(isOutgoingRequest) {
+            dispatch(httpClientActions.replaceAllParamsInSelectedOutgoingTab(tabId, type, params));
+        } else {
+            dispatch(httpClientActions.replaceAllParamsInSelectedTab(tabId, type, params));
+        }
+    }
+
     showOutgoingRequests(tabId, traceId, collectionId, recordingId) {    
         const { 
             dispatch,
@@ -1044,8 +1055,8 @@ class HttpClientTabs extends Component {
         const runId = generateRunId();
         const mockConfig = getCurrentMockConfig(mockConfigList, selectedMockConfig);
         const traceId = tabs[tabIndex].traceIdAddedFromClient;
-        const spanId = tabToProcess.eventData[0].spanId;
-
+        const parentSpanId = tabToProcess.eventData[0].spanId;
+        const tracer = getTracerForCurrentApp()
         if(PLATFORM_ELECTRON) {
             const mockContext = {
                 collectionId: userHistoryCollection.collec,
@@ -1057,7 +1068,8 @@ class HttpClientTabs extends Component {
                 customerName: customerId,
                 runId: runId,
                 config: mockConfig,
-                spanId: spanId
+                parentSpanId: parentSpanId, // parent spanId for egress requests
+                tracer: tracer,
             }
 
             console.log("Setting mock context for this request: ", mockContext)
@@ -1291,78 +1303,6 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.deleteOutgoingReq(outgoingReqTabId, tabId));
     }
 
-    getValueBySaveType(value, type) {
-        if(!_.isString(value)){
-            return value;
-        }
-        const renderEnvVars = getRenderEnvVars();
-        return type !== "History" ? value : renderEnvVars(value);
-    }
-
-    extractHeadersToCubeFormat(headersReceived, type="") {
-        let headers = {};
-        if (_.isArray(headersReceived)) {
-            headersReceived.forEach(each => {
-                if (each.name && each.value) {
-                    const nameRendered = this.getValueBySaveType(each.name, type)
-                    const valueRendered = this.getValueBySaveType(each.value, type)
-                    if(headers[nameRendered]){
-                        headers[nameRendered] = [...headers[nameRendered], valueRendered];
-                    }else{
-                        headers[nameRendered] = [valueRendered];
-                    }
-                }
-            });
-        } else if (_.isObject(headersReceived)) {
-            Object.keys(headersReceived).map((eachHeader) => {
-                if (eachHeader && headersReceived[eachHeader]) {
-                    const nameRendered = this.getValueBySaveType(eachHeader, type)
-                    const valueRendered = this.getValueBySaveType(headersReceived[eachHeader], type);
-                    if(_.isArray(headersReceived[eachHeader])) headers[nameRendered] = valueRendered;
-                    if(_.isString(headersReceived[eachHeader])) headers[nameRendered] = [valueRendered];
-                }
-            })
-        }
-
-        return headers;
-    }
-
-    extractQueryStringParamsToCubeFormat(httpRequestQueryStringParams, type) {
-        let qsParams = {};
-        httpRequestQueryStringParams.forEach(each => {
-            if (each.name && each.value) {
-                const nameRendered = this.getValueBySaveType(each.name, type)
-                const valueRendered = this.getValueBySaveType(each.value, type)
-                if (qsParams[nameRendered]) {
-                    qsParams[nameRendered] = [...qsParams[nameRendered], valueRendered];
-                } else {
-                    qsParams[nameRendered] = [valueRendered];
-                }
-            }
-        })
-        return qsParams;
-    }
-
-    extractBodyToCubeFormat(httpRequestBody, type) {
-        let formData = {};
-        if (_.isArray(httpRequestBody)) {
-            httpRequestBody.forEach(each => {
-                if (each.name && each.value) {
-                    const nameRendered = this.getValueBySaveType(each.name, type)
-                    const valueRendered = this.getValueBySaveType(each.value, type)
-                    if(formData[nameRendered]){
-                        formData[nameRendered] = [...formData[nameRendered], valueRendered];
-                    }else{
-                        formData[nameRendered] = [valueRendered];
-                    }
-                }
-            })
-            return formData;
-        } else {
-            return this.getValueBySaveType(httpRequestBody, type);
-        }
-    }
-
     tryJsonParse(jsonString){
         try{
             return JSON.parse(jsonString);
@@ -1452,17 +1392,17 @@ class HttpClientTabs extends Component {
         httpRequestEvent.metaData.hdrs = JSON.stringify(unSelectedRequestParamData(headers));
         httpRequestEvent.metaData.queryParams = JSON.stringify(unSelectedRequestParamData(queryStringParams));
         
-        const httpReqestHeaders = this.extractHeadersToCubeFormat(selectedRequestParamData(headers), type);
-        const httpRequestQueryStringParams = this.extractQueryStringParamsToCubeFormat(selectedRequestParamData(queryStringParams), type);
+        const httpReqestHeaders = extractHeadersToCubeFormat(selectedRequestParamData(headers), type);
+        const httpRequestQueryStringParams = extractQueryStringParamsToCubeFormat(selectedRequestParamData(queryStringParams), type);
         let httpRequestFormParams = {}, httpRequestBody = "";
         if (bodyType === "formData") {
             const { formData } = tabToSave;
             httpRequestEvent.metaData.formParams = JSON.stringify(unSelectedRequestParamData(formData));
-            httpRequestFormParams = this.extractBodyToCubeFormat(selectedRequestParamData(formData), type);
+            httpRequestFormParams = extractBodyToCubeFormat(selectedRequestParamData(formData), type);
         }
         if (bodyType === "rawData") {
             const { rawData } = tabToSave;
-            httpRequestBody = this.extractBodyToCubeFormat(rawData, type);
+            httpRequestBody = extractBodyToCubeFormat(rawData, type);
         }
         if (this.isgRPCRequest(tabToSave)) {
             const { grpcData } = tabToSave;
@@ -1489,11 +1429,11 @@ class HttpClientTabs extends Component {
         const httpMethod = this.getHttpMethod(tabToSave);
         let httpResponseHeaders, httpResponseBody, httpResponseStatus;
         if (type !== "History") {
-            httpResponseHeaders = recordedResponseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : responseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : null;
+            httpResponseHeaders = recordedResponseHeaders ? extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : responseHeaders ? extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : null;
             httpResponseBody = recordedResponseBody ? this.tryJsonParse(recordedResponseBody) : responseBody ? this.tryJsonParse(responseBody) : null;
             httpResponseStatus = httpResponseEvent.payload[1].status
         } else {
-            httpResponseHeaders = responseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : recordedResponseHeaders ? this.extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : null;
+            httpResponseHeaders = responseHeaders ? extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : recordedResponseHeaders ? extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : null;
             httpResponseBody = responseBody ? this.tryJsonParse(responseBody) : recordedResponseBody ? this.tryJsonParse(recordedResponseBody) : null;
             httpResponseStatus = responseStatus;
         }
@@ -1849,6 +1789,10 @@ class HttpClientTabs extends Component {
                     })
                 }
             })
+
+            const {httpURL, queryParamsFromUrl} = extractURLQueryParams(reqObject.httpURL)
+            reqObject.httpURL = httpURL
+            reqObject.queryStringParams = queryParamsFromUrl
         }
         
         const nextSelectedTabId = isSelected ?  tabId : selectedTabKey;
@@ -2034,6 +1978,7 @@ class HttpClientTabs extends Component {
                             updateParam={this.updateParam}
                             updateAllParams={this.updateAllParams}
                             updateBodyOrRawDataType={this.updateBodyOrRawDataType}
+                            replaceAllParams={this.replaceAllParams}
                             driveRequest={this.driveRequest}
                             getReqResFromTabData={this.getReqResFromTabData.bind(this)}
                             handleRowClick={this.handleRowClick}

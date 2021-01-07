@@ -4,7 +4,6 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const { DefinePlugin } = require('webpack');
-const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 const config = {
     node: {
@@ -178,9 +177,6 @@ const config = {
             patterns: [
                 { from: path.resolve(__dirname, 'public'), to: '' }
             ],
-        }),
-        new MonacoWebpackPlugin({
-            languages: ['json', 'html', 'javascript', 'typescript']
         }),
         new MiniCssExtractPlugin({
             filename: '[name].css',

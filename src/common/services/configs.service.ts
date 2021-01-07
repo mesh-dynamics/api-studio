@@ -9,7 +9,9 @@ export interface IDownloadRuleArgs {
   eventTypes: any[];
   collections: string[];
   version: string;
-  indexOrderAsc?: string;
+  sortingOrder?: {
+    "timestamp": boolean
+  };
   services?: string[];
 }
 
@@ -34,7 +36,7 @@ const getPotentialDynamicInjectionConfigs = async (
     app: args.app,
     eventTypes: args.eventTypes,
     collections: args.collections,
-    indexOrderAsc: args.indexOrderAsc,
+    sortingOrder: args.sortingOrder,
     services: args.services,
   };
 

@@ -29,6 +29,7 @@ export class HttpRequestFields extends React.Component<
           updateAllParams={this.props.updateAllParams}
           isOutgoingRequest={this.props.isOutgoingRequest}
           readOnly={this.props.readOnly}
+          isResponse={false}
         ></HttpRequestHeaders>
         <HttpRequestQueryString
           tabId={this.props.tabId}

@@ -26,7 +26,7 @@ export const cubeActions = {
     hideTestConfig,
     showTCSetup,
     showTCInfo,
-    clear,
+    clearPreviousData,
     clearGolden,
     setPathResultsParams,
     getCollectionUpdateOperationSet,
@@ -53,7 +53,7 @@ export const cubeActions = {
     resetCubeToInitialState
 };
 
-function clear() {
+function clearPreviousData() {
     return async dispatch => {
         dispatch(clearPrev());
     };
@@ -244,7 +244,7 @@ function getInstances () {
 function forceCompleteReplay(fcId) {
     return async dispatch => {
         try {
-            let isComplete = await cubeService.forceCompleteReplay(fcId);
+            await cubeService.forceCompleteReplay(fcId);
             dispatch(success(fcId), Date.now());
         } catch (error) {
             console.error(error);

@@ -69,7 +69,8 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
         service, 
         mockContext,
         requestData,
-        defaultProxyOptions, 
+        defaultProxyOptions,
+        traceDetails,
     } = proxyOptionParameters;
 
     const { config:  { serviceConfigs } } = mockContext;
@@ -103,7 +104,7 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
         logger.info(`Service : ${service} configured to be live`);
         
         logger.info('Attaching REQUEST INTERCEPTOR for live service');
-        proxy.on('proxyReq', (proxyReq) => proxyRequestInterceptorLiveService(proxyReq, serviceConfigObject, mockContext));
+        proxy.on('proxyReq', (proxyReq) => proxyRequestInterceptorLiveService(proxyReq, serviceConfigObject, mockContext, traceDetails));
     
         logger.info('Attaching RESPONSE INTERCEPTOR for live service');
         proxy.on(
@@ -118,7 +119,8 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
                             service, 
                             headers, 
                             mockContext, 
-                            requestData
+                            requestData,
+                            traceDetails
                         })
             );
     
@@ -129,7 +131,7 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
     logger.info('Attaching REQUEST INTERCEPTOR for config injection');
 
     // Attach request interceptors to inject additional values for mocking
-    proxy.on('proxyReq', (proxyReq) => proxyRequestInterceptorMockService(proxyReq, mockContext, user));
+    proxy.on('proxyReq', (proxyReq) => proxyRequestInterceptorMockService(proxyReq, mockContext, user, traceDetails));
 
     // and return default options
     return defaultProxyOptions;  
