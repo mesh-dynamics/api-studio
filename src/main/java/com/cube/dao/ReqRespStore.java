@@ -722,6 +722,7 @@ public interface ReqRespStore extends DataStore {
 	boolean deleteAllReplayData(List<Replay> replays);
 	boolean deleteAllAnalysisData(List<String> replays);
 	boolean deleteAllData(String customerId);
+	Comparator getDefaultComparator(EventType eventType, TemplateKey.Type templateKeyType) throws TemplateNotFoundException;
 
 
 }

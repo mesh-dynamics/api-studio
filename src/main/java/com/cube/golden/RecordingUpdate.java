@@ -40,6 +40,7 @@ public class RecordingUpdate {
     private final Config config;
     private static final Logger LOGGER = LogManager.getLogger(RecordingUpdate.class);
 
+
     public RecordingUpdate(Config config) {
         this.config = config;
     }
@@ -169,7 +170,7 @@ public class RecordingUpdate {
                 .collect(Collectors.toMap(set -> set.path
                     , Function.identity()));
         Stream<ReqRespMatchResult> results = getReqRespMatchResultStream(replayId);
-        results.forEach(res -> {
+        Stream<Event> events =  results.flatMap(res -> {
             try {
                 LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE
                     , "Applying Recording Update", Constants.RECORD_REQ_ID_FIELD
@@ -233,20 +234,9 @@ public class RecordingUpdate {
                     /*, Constants.PAYLOAD, Optional.ofNullable(transformedResponse.rawPayloadString)
                         .orElse(Constants.NOT_PRESENT)*/)));
 
-                boolean saved = config.rrstore.save(transformedRequest) && transformedResponseOpt.map(
-                    config.rrstore::save).orElse(true);
-                if (!saved) {
-                    LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
-                        , "Error in saving transformed request/response"
-                        , Constants.RECORD_REQ_ID_FIELD, res.recordReqId
-                            .orElse(Constants.NOT_PRESENT), Constants.REPLAY_REQ_ID_FIELD,
-                        res.replayReqId.orElse(Constants.NOT_PRESENT),
-                        Constants.REPLAY_ID_FIELD, res.replayId, Constants.REQ_ID_FIELD, Optional
-                            .of(newReqId).orElse(Constants.NOT_PRESENT),
-                        Constants.RECORDING_UPDATE_OPERATION_SET_ID, recordingOperationSetId/*,
-                        Constants.PAYLOAD, Optional.ofNullable(transformedResponse.rawPayloadString)
-                            .orElse(Constants.NOT_PRESENT)*/)));
-                }
+
+                return transformedResponseOpt.map(resp->Stream.of(transformedRequest , resp)).orElseGet(()->Stream.of(transformedRequest));
+
             } catch (Exception e) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
                     , "Exception Occurred while transforming request/response",
@@ -255,8 +245,14 @@ public class RecordingUpdate {
                     Constants.REPLAY_ID_FIELD, res.replayId,
                     Constants.RECORDING_UPDATE_OPERATION_SET_ID, recordingOperationSetId)), e);
             }
-
+            return Stream.empty();
         });
+
+        if (!config.rrstore.save(events)) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
+                , "Error in saving transformed request/response"
+                , Constants.RECORDING_UPDATE_OPERATION_SET_ID, recordingOperationSetId)));
+        }
 
         /* This should no longer be needed. TODO: Remove once java function recording path is tested
         config.rrstore.saveFnReqRespNewCollec(originalRec.customerId, originalRec.app,
@@ -272,7 +268,7 @@ public class RecordingUpdate {
         Stream<ReqRespMatchResult> results = getReqRespMatchResultStream(replayId);
 
         //1. Create a new collection with all the Req/Responses
-        results.forEach(res -> {
+        Stream<Event> events =  results.flatMap(res -> {
             try {
                 Event recordRequest = res.recordReqId.flatMap(config.rrstore::getRequestEvent)
                     .orElseThrow(() -> new Exception("Unable to fetch recorded request :: "
@@ -293,18 +289,19 @@ public class RecordingUpdate {
                     recordResponse.getTraceId());
 
                 LOGGER.debug("saving request/response with reqid: " + newReqId);
-                boolean saved = config.rrstore.save(transformedRequest) && config.rrstore
-                    .save(transformedResponse);
 
-                if(!saved) {
-                    LOGGER.debug("request/response not saved");
-                    throw new Exception ("Unable to persist new sanitized collection");
-                }
+                return Stream.of(transformedRequest , transformedResponse );
+
             } catch (Exception e) {
                 LOGGER.error("Error occurred creating new collection while sanitizing :: "
                     + e.getMessage(), e);
             }
+            return Stream.empty();
         });
+
+        if(!config.rrstore.save(events)) {
+            LOGGER.error("request/response bulk saved failed");
+        }
 
         config.rrstore.commit();
 

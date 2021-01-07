@@ -10,9 +10,10 @@ import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
 import com.cube.sequence.SeqMgr;
+
+import io.md.core.CollectionKey;
 import io.md.dao.DataObj.DataObjProcessingException;
 import io.md.dao.Event.EventType;
-import io.md.dao.EventQuery.Builder;
 import io.md.injection.DynamicInjector;
 import io.md.injection.DynamicInjectorFactory;
 import java.io.ByteArrayInputStream;
@@ -23,6 +24,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import java.util.stream.Stream;
@@ -45,8 +48,6 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import io.md.dao.*;
-import io.md.tracer.TracerMgr;
-import io.md.tracer.handlers.Tracer;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -351,6 +352,16 @@ public class CubeStore {
                                 "success", numSuccess
                                 )));
                         return Response.ok(jsonResp).type(MediaType.APPLICATION_JSON_TYPE).build();
+                    case MediaType.APPLICATION_JSON:
+                        try{
+                            Event[] events = jsonMapper.readValue(messageBytes , Event[].class);
+                            return rrstore.save(Arrays.stream(events)) ?  Response.ok().build() : Response.serverError().entity("Bulk save error").build();
+                        }catch (Exception e){
+                            LOGGER.error(new ObjectMessage(
+                                Map.of(Constants.MESSAGE, "Error while parsing the events json")), e
+                            );
+                            return Response.serverError().entity("Error while processing :: " + e.getMessage()).build();
+                        }
                     default :
                         return Response.serverError().entity("Content type not recognized :: " + ct).build();
                 }
@@ -1327,8 +1338,8 @@ public class CubeStore {
         // unique requests will be almost half. 0.6 to be on safe side
         long estimatedReqSize = (long)(result.numResults*0.6) +1;
         //check whether num of results and numFound are same
-        Event[] newEvents =  SeqMgr.createSeqId(eventStream , estimatedReqSize).toArray(Event[]::new);
-        boolean batchSaveResult = rrstore.save(newEvents) && rrstore.commit();
+        var eventsStream =  SeqMgr.createSeqId(eventStream , estimatedReqSize);
+        boolean batchSaveResult = rrstore.save(eventsStream) && rrstore.commit();
         return batchSaveResult;
     }
 
@@ -1394,12 +1405,20 @@ public class CubeStore {
             throw new Exception("Invalid Range for MoveEvents");
         }
 
-        Event[] newEvents =  SeqMgr.insertBetween(insertAfterEventSeqId , insertBeforeEventSeqId , moveEvents.stream() , moveEventIds.size()).toArray(Event[]::new);
-        boolean batchSaveResult = rrstore.save(newEvents) && rrstore.commit();
+        var eventsStream =  SeqMgr.insertBetween(insertAfterEventSeqId , insertBeforeEventSeqId , moveEvents.stream() , moveEventIds.size());
+        final Map<String , String> response = new HashMap<>();
+        eventsStream = eventsStream.map(e->{
+
+            if(e.eventType==EventType.HTTPRequest){
+                response.put(e.getReqId() , e.getSeqId());
+            }
+            return e;
+        });
+        boolean batchSaveResult = rrstore.save(eventsStream) && rrstore.commit();
         if(!batchSaveResult){
             throw new Exception("Error saving the batch events");
         }
-        return Arrays.stream(newEvents).filter(e->e.eventType==EventType.HTTPRequest).collect(Collectors.toMap(e->e.reqId , e->e.getSeqId()));
+        return response;
     }
 
 
@@ -1708,6 +1727,7 @@ public class CubeStore {
             Map<String, String> traceIdMap = new HashMap<>();
             Map<String, String> extractionMap = new HashMap<>();
             final String generatedTraceId = io.md.utils.Utils.generateTraceId();
+            List<Event> reqRespEvents = new ArrayList<>();
             for (UserReqRespContainer userReqRespContainer : userReqRespContainers) {
                 // NOTE - Check if response needs to be modified in grpc/binary cases.
                 // Ideally deserialisation and serialisation should take care of it.
@@ -1762,14 +1782,8 @@ public class CubeStore {
                         io.md.utils.Utils.setProtoDescriptorGrpcEvent(responseEvent, config.protoDescriptorCache);
                     }
 
-                    if (!rrstore.save(requestEvent) || !rrstore.save(responseEvent)) {
-                        LOGGER.error(new ObjectMessage(
-                            Map.of(Constants.MESSAGE, "Unable to store event in solr",
-                                Constants.RECORDING_ID, recordingId)));
-                        return Response.serverError().entity(
-                            buildErrorResponse(Constants.ERROR, Constants.RECORDING_ID,
-                                "Unable to store event in solr")).build();
-                    }
+                    reqRespEvents.add(requestEvent);
+                    reqRespEvents.add(responseEvent);
 
 
 //                    String responseString = jsonMapper.writeValueAsString(Map.of("oldReqId", request.reqId,
@@ -1844,6 +1858,15 @@ public class CubeStore {
                         + e.getMessage()).build();
                 }
             }
+            if (!rrstore.save(reqRespEvents.stream()))  {
+                LOGGER.error(new ObjectMessage(
+                    Map.of(Constants.MESSAGE, "Unable to store events in solr",
+                        Constants.RECORDING_ID, recordingId)));
+                return Response.serverError().entity(
+                    buildErrorResponse(Constants.ERROR, Constants.RECORDING_ID,
+                        "Unable to store event in solr")).build();
+            }
+
             rrstore.commit();
             return Response.ok().type(MediaType.APPLICATION_JSON)
                 .entity(buildSuccessResponse(
@@ -2076,6 +2099,99 @@ public class CubeStore {
         }
     }
 
+    @Path("deduplicate/{recordingId}")
+    @POST
+    public Response deDuplicate(@Context UriInfo uriInfo, @PathParam("recordingId") String recordingId) {
+        Optional<Recording> recording = rrstore.getRecording(recordingId);
+        boolean delete = Optional.ofNullable(uriInfo.getQueryParameters().getFirst("delete")).flatMap(Utils::strToBool).orElse(false);
+        return recording.map(r -> {
+                Instant timeStamp = Instant.now();
+                Recording newRecording = createRecordingObjectFrom(r, Optional.empty(),
+                    Optional.empty(), Optional.empty(), timeStamp, timeStamp.toString(), r.recordingType);
+                rrstore.saveRecording(newRecording);
+                EventQuery query = createEventQuery(r);
+                Result<Event> result =  rrstore.getEvents(query);
+                List<Event> pending = new ArrayList<>();
+                AtomicReference<String> prevReqId = new AtomicReference<>("");
+                result.getObjects().forEach(event -> {
+                    if(!event.isRequestType()) {
+                        TemplateKey key = new TemplateKey(newRecording.templateVersion, event.customerId, event.app, event.service,
+                            event.apiPath, Type.ResponseCompare);
+                        try {
+                            Comparator comparator = rrstore.getComparator(key, event.eventType);
+//                            Comparator comparator = rrstore.getDefaultComparator(event.eventType, Type.ResponseCompare);
+                            /**
+                             * Setting payload key of response event to enable deduplication of events.
+                             *  based on the default template for response comparison
+                             */
+                            event.parseAndSetKey(comparator.getCompareTemplate());
+                        } catch (TemplateNotFoundException e) {
+                            LOGGER.error(new ObjectMessage(Map.of(
+                                Constants.MESSAGE, "Comparator not found",
+                                Constants.REQ_ID_FIELD, event.reqId
+                            )), e);
+                        }
+                    }
+                    if(!event.reqId.equals(prevReqId.get())) {
+                        processPendingEvents(pending, newRecording.collection, newRecording.recordingType, prevReqId.get());
+                    }
+                    pending.add(event);
+                    prevReqId.set(event.reqId);
+                });
+                processPendingEvents(pending, newRecording.collection, newRecording.recordingType, prevReqId.get());
+                if(delete) {
+                    try {
+                        ReqRespStore.softDeleteRecording(r, rrstore);
+                        LOGGER.info(new ObjectMessage(
+                            Map.of(Constants.MESSAGE, "Soft deleting recording", "RecordingId",
+                                r.id)));
+                    } catch (RecordingSaveFailureException e) {
+                        LOGGER.error(new ObjectMessage(
+                            Map.of(Constants.MESSAGE, "Error while Soft deleting recording", "RecordingId",
+                                r.id)));
+                    }
+                }
+                return Response.ok().type(MediaType.APPLICATION_JSON).entity(newRecording)
+                    .build();
+        }).orElse(Response.status(Response.Status.NOT_FOUND).entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
+            String.format("Recording object not found for recordingId=%s", recordingId))).build());
+    }
+
+    private void processPendingEvents(final List<Event> pending, String collection, RecordingType recordingType, String reqId) {
+        int payloadHash = 0;
+        List<Integer> payloadKeys = pending.stream().map(e -> e.payloadKey).collect(Collectors.toList());
+        for(Integer payloadKey: payloadKeys) {
+            payloadHash ^= payloadKey;
+        }
+        int finalPayloadHash = payloadHash;
+        var newEventsStream =   pending.stream().map(event -> {
+            String newReqId = "Update-" + finalPayloadHash;
+            try {
+                Event newEvent = buildEvent(event, collection, recordingType, newReqId, newReqId, Optional.empty());
+                return newEvent;
+            } catch (InvalidEventException e) {
+                LOGGER.error(new ObjectMessage(Map.of(
+                    Constants.MESSAGE, "Invalid Event",
+                    Constants.REQ_ID_FIELD, reqId
+                )), e);
+            }
+            return null;
+        }).filter(Objects::nonNull);
+
+        rrstore.save(newEventsStream);
+
+        pending.clear();
+    }
+
+    private EventQuery createEventQuery(Recording recording) {
+        EventQuery.Builder builder = new EventQuery.Builder(recording.customerId, recording.app, Collections.emptyList());
+        builder.withCollection(recording.collection);
+        LinkedHashMap sortingOrder = new LinkedHashMap();
+        sortingOrder.put(Constants.REQ_ID_FIELD, true);
+        builder.withSortingOrder(sortingOrder);
+        return builder.build();
+    }
+
     private Recording createRecordingObjectFrom(Recording recording, Optional<String> templateVersion,
         Optional<String> name, Optional<String> userId, Instant timeStamp, String labelValue, RecordingType type) {
         String collection = UUID.randomUUID().toString();
@@ -2107,6 +2223,20 @@ public class CubeStore {
         }
         return recordingBuilder.build();
     }
+
+    @POST
+    @Path("/populateCache")
+    public Response populateCache(@Context UriInfo uriInfo, RecordOrReplay recordOrReplay) {
+
+        CollectionKey key = recordOrReplay.getCollectionKey();
+        LOGGER.debug(new ObjectMessage(
+            Map.of(Constants.MESSAGE, "populateCache for collectionKey :"+key + " recordorReplay :"+recordOrReplay)));
+
+        rrstore.populateCache(key , recordOrReplay);
+
+        return Response.ok().build();
+    }
+
 
     /**
 	 * @param config
