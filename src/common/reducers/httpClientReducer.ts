@@ -14,7 +14,7 @@ export interface IHttpClientAction{
   */
 
  export type IHttpClientTabDetailsFieldNames = 
- "eventData" | "formData" | "headers" | "outgoingRequestIds"
+ "eventData" | "formData" | "multipartData" | "headers" | "outgoingRequestIds"
  | "outgoingRequests" | "queryStringParams";
 
 /* const tabId = uuidv4();
@@ -200,12 +200,15 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                     if(eachTab.id === selectedTabKey) {
                         eachTab.outgoingRequests.map((eachOutgoingTab) => {
                             if (eachOutgoingTab.id === data.tabId) {
-                                eachOutgoingTab[data.type] = [...eachOutgoingTab[data.type], {
+                                const type =( data.type === "multipartDataFile" ? "multipartData": data.type);
+                                const isFile = data.type === "multipartDataFile";
+                                eachOutgoingTab[type] = [...eachOutgoingTab[type], {
                                     id: uuidv4(),
                                     name: "",
                                     value: "",
                                     description: "",
                                     selected: true,
+                                    isFile
                                 }];
                             }
                         })
@@ -235,12 +238,15 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 ...state,
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
-                        eachTab[data.type  as IHttpClientTabDetailsFieldNames] = [...eachTab[data.type  as IHttpClientTabDetailsFieldNames], {
+                        const type =( data.type === "multipartDataFile" ? "multipartData": data.type);
+                        const isFile = data.type === "multipartDataFile";
+                        eachTab[type  as IHttpClientTabDetailsFieldNames] = [...eachTab[type  as IHttpClientTabDetailsFieldNames], {
                             id: uuidv4(),
                             name: "",
                             value: "",
                             description: "",
                             selected: true,
+                            isFile
                         }];
                     }
                     return eachTab; 

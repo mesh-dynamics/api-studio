@@ -423,6 +423,7 @@ export interface IHttpClientTabDetails {
   collectionNameAddedFromClient: string;
   eventData: IEventData[];
   formData: IRequestParamData[];
+  multipartData: IRequestParamData[];
   headers: IRequestParamData[];
   httpMethod: string;
   httpURL: string;

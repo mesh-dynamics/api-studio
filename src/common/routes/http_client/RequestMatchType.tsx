@@ -129,6 +129,8 @@ function RequestMatchType(props: IRequestMatchTypeProps) {
                 headers={apiEventsFormatted.headers}
                 queryStringParams={apiEventsFormatted.queryStringParams}
                 formData={apiEventsFormatted.formData}
+                multipartData={apiEventsFormatted.multipartData}
+                grpcData={apiEventsFormatted.grpcData}
                 rawData={apiEventsFormatted.rawData} //Check
                 rawDataType={apiEventsFormatted.rawDataType}
                 paramsType={paramsType}
@@ -148,6 +150,7 @@ function RequestMatchType(props: IRequestMatchTypeProps) {
                   headers={apiEventsFormatted.headers} 
                   queryStringParams={apiEventsFormatted.queryStringParams}
                   formData={apiEventsFormatted.formData} 
+                  multipartData={apiEventsFormatted.multipartData} 
                   rawData={apiEventsFormatted.rawData}
                   rawDataType={apiEventsFormatted.rawDataType}
                   paramsType={paramsType}

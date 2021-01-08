@@ -277,3 +277,16 @@ div.loading, div.loading button{
   right: 0;
   left: auto !important;
 }
+
+.fileListParam{
+  display:inline-block;
+  background-color: #d8d8d8;
+  padding:2px
+}
+
+.fileListParam:hover{ 
+  background-color: #afafaf;
+}
+.fileListParam span{
+  margin-right: 5px;
+}

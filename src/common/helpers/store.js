@@ -13,7 +13,7 @@ const configureStore = () => {
             // Add the required fields default values for reset purpose.
             createTransform((inboundState, key) => {
                 if(key == "httpClient"){
-                    const tabs = (inboundState.tabs || []).map( tab =>  ({...tab, abortRequest: null, requestRunning: false }));
+                    const tabs = (inboundState.tabs || []).map( tab =>  ({...tab, abortRequest: null, requestRunning: false, multipartData: tab.multipartData || [] }));
                     return {
                         ...inboundState,
                         tabs: tabs,
