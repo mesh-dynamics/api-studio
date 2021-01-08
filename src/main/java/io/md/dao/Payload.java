@@ -30,6 +30,7 @@ public interface Payload extends DataObj, RawPayload {
 	ConvertEventPayloadResponse checkAndConvertResponseToString(boolean wrapForDisplay
 		, List<String> pathsToKeep, long size, String path);
 	String getPayloadAsJsonString(boolean wrapForDisplay);
+	@JsonIgnore
 	default  List<String> getPayloadFields(){
 		return Collections.EMPTY_LIST;
 	}
