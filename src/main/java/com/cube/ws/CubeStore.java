@@ -18,8 +18,12 @@ import io.md.dao.Event.EventType;
 import io.md.injection.DynamicInjector;
 import io.md.injection.DynamicInjectorFactory;
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
@@ -57,6 +61,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.solr.common.util.Pair;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.json.JSONObject;
 import org.msgpack.core.MessagePack;
@@ -1966,7 +1971,8 @@ public class CubeStore {
     @Produces(MediaType.APPLICATION_JSON)
     public Response protoDescriptorFileUpload(@PathParam("customerId") String customerId,
         @PathParam("app") String app,
-        @FormDataParam("protoDescriptorFile") InputStream uploadedInputStream) {
+        @FormDataParam("protoDescriptorFile") InputStream uploadedInputStream,
+        @FormDataParam("protoDescriptorFile") FormDataContentDisposition fileDetail) {
 
         if(uploadedInputStream==null) {
             return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
@@ -1979,16 +1985,36 @@ public class CubeStore {
         boolean status = false;
         byte[] encodedFileBytes;
         try {
-            encodedFileBytes = Base64.getEncoder().encode(uploadedInputStream.readAllBytes());
+            String tmpDir = "/tmp";
+            String fileName = fileDetail.getFileName();
+            File targetFile = new File(tmpDir + "/" + fileName);
+            OutputStream outStream = new FileOutputStream(targetFile);
+            outStream.write(uploadedInputStream.readAllBytes());
+
+            ProcessBuilder builder = new ProcessBuilder();
+            builder.directory(new File(tmpDir));
+            // Need to ensure protoc compiler is installed in the docker container env
+            builder.command("protoc", "--descriptor_set_out=tmp.desc", fileName);
+            Process process = builder.start();
+            int exitCode = process.waitFor();
+            assert exitCode == 0;
+
+            InputStream initialStream = new FileInputStream(
+                new File("/tmp/tmp.desc"));
+            byte[] buffer = new byte[initialStream.available()];
+            initialStream.read(buffer);
+
+            encodedFileBytes = Base64.getEncoder().encode(buffer);
             ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app, new String(encodedFileBytes, StandardCharsets.UTF_8));
             status = rrstore.storeProtoDescriptorFile(protoDescriptorDAO);
-        } catch (IOException | DescriptorValidationException e) {
+        } catch (IOException | DescriptorValidationException | InterruptedException e) {
             LOGGER.error("Cannot encode uploaded proto descriptor file",e);
             return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
                 Map.of("Message", "Cannot encode uploaded proto descriptor file",
                     "Error", e.getMessage())).toString())).build();
         }
-        return status ? Response.ok().build() : Response.serverError().entity(Map.of("Error", "Cannot store proto descriptor file")).build();
+        return status ? Response.ok().type(MediaType.APPLICATION_JSON)
+            .entity("The protofile is successfully saved in Solr").build() : Response.serverError().entity(Map.of("Error", "Cannot store proto descriptor file")).build();
     }
 
     @POST

@@ -23,6 +23,17 @@ RUN useradd tomcat
 RUN chown -R tomcat /usr/local/tomcat/newrelic/logs
 ADD ./src/main/resources/newrelic.jar /usr/local/tomcat/newrelic/newrelic.jar
 ADD ./src/main/resources/newrelic.yml /usr/local/tomcat/newrelic/newrelic.yml
+
+#For protoc compiler
+# Install protoc (cf. http://google.github.io/proto-lens/installing-protoc.html)
+ENV PROTOC_ZIP=protoc-3.13.0-linux-x86_64.zip
+RUN apt-get update && apt-get install -y curl
+RUN apt-get update && apt-get install -y unzip
+RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v3.13.0/$PROTOC_ZIP \
+    && unzip -o $PROTOC_ZIP -d /usr/local bin/protoc \
+    && unzip -o $PROTOC_ZIP -d /usr/local 'include/*' \
+    && rm -f $PROTOC_ZIP
+
 # adding line below to speedup tomcat startup
 # see https://github.com/theotherp/nzbhydra2/issues/42
 # reduced time from 360 s to 6s!
@@ -40,3 +51,14 @@ RUN useradd tomcat
 RUN chown -R tomcat /usr/local/tomcat/newrelic/logs
 ADD ./src/main/resources/newrelic.jar /usr/local/tomcat/newrelic/newrelic.jar
 ADD ./src/main/resources/newrelic.yml /usr/local/tomcat/newrelic/newrelic.yml
+
+#For protoc compiler
+# Install protoc (cf. http://google.github.io/proto-lens/installing-protoc.html)
+ENV PROTOC_ZIP=protoc-3.13.0-linux-x86_64.zip
+RUN apt-get update && apt-get install -y curl
+RUN apt-get update && apt-get install -y unzip
+RUN curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v3.13.0/$PROTOC_ZIP \
+    && unzip -o $PROTOC_ZIP -d /usr/local bin/protoc \
+    && unzip -o $PROTOC_ZIP -d /usr/local 'include/*' \
+    && rm -f $PROTOC_ZIP
+
