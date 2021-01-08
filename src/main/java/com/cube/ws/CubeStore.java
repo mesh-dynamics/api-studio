@@ -9,6 +9,7 @@ import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
 import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
+import com.cube.queue.StoreUtils;
 import com.cube.sequence.SeqMgr;
 
 import io.md.core.CollectionKey;
@@ -31,11 +32,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
@@ -277,9 +280,22 @@ public class CubeStore {
     }
 
 
+    /**
+     *
+     * @param headers
+     * @param messageBytes
+     * @param direct
+     * @return
+     * This api is used mostly by agents to store events. It write events to a queue. The consumer dequeues and
+     * writes the events after setting some fields based on current running recording or replay
+     * When contentType is MediaType.APPLICATION_JSON, the behavior is different. This writes the events directly
+     * without putting into queue (sync mode). Further, When direct is true, store directly to rrstore without any
+     * change in event and when direct is false, set payloadKey and other fields (but not the collection)
+     */
     @POST
     @Path("/storeEventBatch")
-    public Response storeEventBatch(@Context HttpHeaders headers, byte[] messageBytes) {
+    public Response storeEventBatch(@Context HttpHeaders headers, byte[] messageBytes,
+                                    @DefaultValue("false") @QueryParam("direct") boolean direct) {
         Optional<String> contentType = Optional.ofNullable(headers.getRequestHeaders().getFirst(Constants.CONTENT_TYPE));
         LOGGER.info(new ObjectMessage(
             Map.of(
@@ -354,9 +370,24 @@ public class CubeStore {
                         return Response.ok(jsonResp).type(MediaType.APPLICATION_JSON_TYPE).build();
                     case MediaType.APPLICATION_JSON:
                         try{
+
                             Event[] events = jsonMapper.readValue(messageBytes , Event[].class);
-                            return rrstore.save(Arrays.stream(events)) ?  Response.ok().build() : Response.serverError().entity("Bulk save error").build();
-                        }catch (Exception e){
+                            boolean success = true;
+                            if (direct) {
+                                success = rrstore.save(Arrays.stream(events));
+                            } else {
+                                if (events.length > 0) {
+                                    Event event = events[0];
+                                    Optional<RecordOrReplay> recordOrReplay =
+                                        rrstore.getRecordOrReplayFromCollection(event.customerId, event.app,
+                                            event.getCollection());
+                                    StoreUtils.processEvents(Arrays.stream(events), rrstore,
+                                        Optional.of(config.protoDescriptorCache), recordOrReplay);
+                                }
+                            }
+                            return success && rrstore.commit() ?  Response.ok().build()
+                                : Response.serverError().entity("Bulk save error").build();
+                        } catch (Exception e){
                             LOGGER.error(new ObjectMessage(
                                 Map.of(Constants.MESSAGE, "Error while parsing the events json")), e
                             );
@@ -373,7 +404,8 @@ public class CubeStore {
     @POST
     @Path("/storeEvent")
     @Consumes({MediaType.APPLICATION_JSON})
-    public Response storeEvent(Event event) {
+    public Response storeEvent(Event event,
+                               @DefaultValue("false") @QueryParam("direct") boolean direct) {
 	    try {
 	        event.validateEvent();
       } catch (InvalidEventException e) {
@@ -382,7 +414,11 @@ public class CubeStore {
           return Response.status(Status.BAD_REQUEST).entity(Utils.buildErrorResponse(
               Status.BAD_REQUEST.toString(),Constants.ERROR,  e.getMessage())).build();
       }
-	    eventQueue.enqueue(event);
+	    boolean success = true;
+	    if (direct) {
+	        success = rrstore.save(event) && rrstore.commit();
+        } else {
+            eventQueue.enqueue(event);
 	    /*
         try {
             StoreUtils.processEvent(event, config.rrstore);
@@ -391,8 +427,10 @@ public class CubeStore {
                 "Error while storing event/rr in solr")), e);
         }
 	    */
-        logStoreInfo("Enqueued Event", new CubeEventMetaInfo(event), true);
-            return Response.ok().build();
+            logStoreInfo("Enqueued Event", new CubeEventMetaInfo(event), true);
+        }
+        return success  ?  Response.ok().build()
+            : Response.serverError().entity("Event save error").build();
     }
 
     @POST

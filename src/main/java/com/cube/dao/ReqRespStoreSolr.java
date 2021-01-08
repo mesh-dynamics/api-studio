@@ -1012,6 +1012,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
     }
 
+    @Override
+    public Optional<RecordOrReplay> getRecordOrReplayFromCollection(String customerId, String app, String collection) {
+
+        return getRecordingByCollectionAndTemplateVer(customerId, app, collection, Optional.empty())
+            .map(RecordOrReplay::createFromRecording)
+            .or(() -> getReplay(collection).map(RecordOrReplay::createFromReplay));
+        // collection for a replay is its replayId
+
+    }
+
 
     private Optional<ConfigApplicationAcknowledge> docToAgentConfigAcknowledge(SolrDocument doc) {
 
