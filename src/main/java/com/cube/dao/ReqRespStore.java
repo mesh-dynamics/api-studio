@@ -152,7 +152,9 @@ public interface ReqRespStore extends DataStore {
 	Pair<Result<ConfigApplicationAcknowledge> , List>getLatestAgentConfigAcknowledge(
 		io.md.dao.CubeMetaInfo cubeMetaInfo, boolean facetOnNodeSelected, int forLastNsec);
 
-	class ReqResp {
+    Optional<RecordOrReplay> getRecordOrReplayFromCollection(String customerId, String app, String collection);
+
+    class ReqResp {
 
 
 		/**

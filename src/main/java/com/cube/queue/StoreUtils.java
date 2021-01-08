@@ -3,10 +3,7 @@ package com.cube.queue;
 import static io.md.utils.Utils.createHTTPRequestEvent;
 
 import io.md.cache.ProtoDescriptorCache;
-import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.dao.GRPCPayload;
-import io.md.dao.ProtoDescriptorDAO;
-import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingType;
 import io.md.dao.Replay;
 import java.net.URISyntaxException;
@@ -40,12 +37,10 @@ import io.md.services.DataStore.TemplateNotFoundException;
 import io.md.utils.Constants;
 import io.md.core.Utils;
 import io.md.utils.UtilException;
-import jdk.jshell.execution.Util;
 
 import com.cube.core.ServerUtils;
 import com.cube.dao.CubeEventMetaInfo;
 import com.cube.dao.ReqRespStore;
-import com.cube.ws.Config;
 import com.cube.ws.CubeStore.CubeStoreException;
 
 public class StoreUtils {
@@ -219,7 +214,7 @@ public class StoreUtils {
 	// return error string (Optional<String>)
 	public static void processEvent(Event event, ReqRespStore rrstore, Optional<ProtoDescriptorCache> protoDescriptorCacheOptional) throws CubeStoreException {
 
-		boolean saveResult = rrstore.save(checkAndTransformEvent(event, rrstore, protoDescriptorCacheOptional));
+		boolean saveResult = rrstore.save(checkAndTransformEvent(event, rrstore, protoDescriptorCacheOptional, Optional.empty()));
 		if (!saveResult) {
 			throw new CubeStoreException(null, "Unable to store event in solr", event);
 		}
@@ -228,34 +223,41 @@ public class StoreUtils {
 
     // process and store Event - stream version
     public static void processEvents(Stream<Event> events, ReqRespStore rrstore,
-                                    Optional<ProtoDescriptorCache> protoDescriptorCacheOptional) throws CubeStoreException {
+                                     Optional<ProtoDescriptorCache> protoDescriptorCacheOptional,
+                                     Optional<RecordOrReplay> recordOrReplay) throws CubeStoreException {
 
         boolean saveResult = rrstore.save(events.map(UtilException.rethrowFunction(event -> checkAndTransformEvent(event, rrstore,
-            protoDescriptorCacheOptional))));
+            protoDescriptorCacheOptional, recordOrReplay))));
         if (!saveResult) {
             throw new CubeStoreException(null, "Unable to store events in solr", new CubeEventMetaInfo());
         }
 
     }
 
+    /*
+     * If recordOrReplay is empty - fetch from current running recording or replay and update collection accordingly,
+     *  else use given recordOrReplay and don't update collection
+     * This will also set the payloadKey in either case
+     */
     private static Event checkAndTransformEvent(Event event, ReqRespStore rrstore,
-                               Optional<ProtoDescriptorCache> protoDescriptorCacheOptional) throws CubeStoreException {
+                               Optional<ProtoDescriptorCache> protoDescriptorCacheOptional, Optional<RecordOrReplay> recordOrReplay) throws CubeStoreException {
         if (event == null) {
             throw new CubeStoreException(null, "Event is null", new CubeEventMetaInfo());
         }
 
-        Optional<String> collection;
-
-        event.setCollection("NA"); // so that validate doesn't fail
-
+        if (recordOrReplay.isEmpty()) {
+           event.setCollection("NA"); // so that validate doesn't fail
+        }
         if (!event.validate()) {
             throw new CubeStoreException(null, "some required field missing,"
                 + " or both binary and string payloads set", event);
         }
 
-        Optional<RecordOrReplay> recordOrReplay =
-            rrstore.getCurrentRecordOrReplay(Optional.of(event.customerId),
-                Optional.of(event.app), Optional.of(event.instanceId), false);
+        Optional<String> collection = Optional.empty();
+        if (recordOrReplay.isEmpty()) {
+            recordOrReplay = rrstore.getCurrentRecordOrReplay(Optional.of(event.customerId), Optional.of(event.app),
+                Optional.of(event.instanceId), false);
+        }
 
         if (recordOrReplay.isEmpty()) {
             throw new CubeStoreException(null, "No current record/replay!", event);
