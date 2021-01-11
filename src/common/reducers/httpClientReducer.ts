@@ -1,11 +1,7 @@
 import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
-import cryptoRandomString from 'crypto-random-string';
 import { ICollectionDetails, ICubeRunHistory, IHttpClientStoreState, IHttpClientTabDetails } from "./state.types";
-import { generateTraceId } from "../utils/http_client/utils";
-
-
 export interface IHttpClientAction{
     type: string,
     data:any;
@@ -390,6 +386,43 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                     }
                     return eachTab; 
                 })
+            }
+        }
+
+        case httpClientConstants.REPLACE_ALL_PARAMS_IN_TAB: {
+            let {tabs} = state;
+            const tabIndex = tabs.findIndex(tab => tab.id === data.tabId);
+            if(tabIndex < 0) return state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab[data.type as IHttpClientTabDetailsFieldNames] = data.params;
+                        eachTab.hasChanged = true;
+                    }
+                    return eachTab; 
+                })
+            }
+        }
+
+        case httpClientConstants.REPLACE_ALL_PARAMS_IN_OUTGOING_TAB: {
+            let {tabs, selectedTabKey} = state;
+            const selectedTabIndex = tabs.findIndex(tab => tab.id === selectedTabKey);
+            const selectedOutgoingTabIndex = tabs[selectedTabIndex]["outgoingRequests"].findIndex(tab => tab.id === data.tabId);
+            if(selectedOutgoingTabIndex < 0) return state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if(eachTab.id === selectedTabKey) {
+                        eachTab.outgoingRequests.map((eachOutgoingTab) => {
+                            if (eachOutgoingTab.id === data.tabId) {
+                                eachOutgoingTab[data.type] = data.params;
+                                eachOutgoingTab.hasChanged = true;
+                            }
+                        })
+                    }
+                    return eachTab; 
+                }),
             }
         }
 

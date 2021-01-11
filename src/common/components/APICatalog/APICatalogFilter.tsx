@@ -6,12 +6,13 @@ import { connect } from "react-redux";
 import _ from "lodash";
 import { apiCatalogActions } from '../../actions/api-catalog.actions';
 import classNames from 'classnames';
-import GoldenCollectionBrowse from './GoldenCollectionBrowse';
+import { GoldenCollectionBrowse } from "../../components/GoldenCollectionBrowse";
+// import GoldenCollectionBrowse from './GoldenCollectionBrowse';
 import ConvertCollection from './ConvertCollection';
 import AppManager from '../Navigation/AppManager';
-import { IApiCatalogCompareRequest, IApiCatalogState, ICubeState, IStoreState } from '../../reducers/state.types';
+import { IApiCatalogCompareRequest, IApiCatalogState, ICubeState, IStoreState, ICollectionDetails } from '../../reducers/state.types';
 
-export interface IAPICatalogFilterProps{
+export interface IAPICatalogFilterProps {
     cube: ICubeState;
     apiCatalog: IApiCatalogState;
     dispatch: any;
@@ -20,37 +21,37 @@ export interface IAPICatalogFilterProps{
 class APICatalogFilter extends Component<IAPICatalogFilterProps> {
 
     handleFilterChange = (metadata: string, value: any) => {
-        const {dispatch} = this.props;
+        const { dispatch } = this.props;
         dispatch(apiCatalogActions.handleFilterChange(metadata, value));
     }
 
     renderSourceDropdown = () => {
-        const {apiCatalog: {selectedSource}, dispatch} = this.props;
+        const { apiCatalog: { selectedSource }, dispatch } = this.props;
         const handleSourceDropDownChange = (event: React.ChangeEvent<HTMLSelectElement>) => this.handleFilterChange("selectedSource", event.target.value);
         const sources = [
-            {value: "Capture", text: "Capture"}, 
-            {value: "UserGolden", text: "Collection"}, 
-            {value: "Golden", text: "Golden"}, 
+            { value: "Capture", text: "Capture" },
+            { value: "UserGolden", text: "Collection" },
+            { value: "Golden", text: "Golden" },
         ]
         const ddlClass = classNames({
             "r-att form-control": true,
             'select-indicator': !selectedSource
         });
         return (
-        <div>
-            <select className={ddlClass} placeholder="Select Source" value={selectedSource || "DEFAULT"} onChange={handleSourceDropDownChange}>   
-                <option value="DEFAULT" disabled>Select Source</option>
-                {sources.map(source => 
-                    <option key={source.value} value={source.value}>
-                        {source.text}
-                    </option>)
-                }
-            </select>
-        </div>);
+            <div>
+                <select className={ddlClass} placeholder="Select Source" value={selectedSource || "DEFAULT"} onChange={handleSourceDropDownChange}>
+                    <option value="DEFAULT" disabled>Select Source</option>
+                    {sources.map(source =>
+                        <option key={source.value} value={source.value}>
+                            {source.text}
+                        </option>)
+                    }
+                </select>
+            </div>);
     }
 
     renderStartTime = () => {
-        const {apiCatalog: {startTime}, dispatch} = this.props;
+        const { apiCatalog: { startTime }, dispatch } = this.props;
         return <DatePicker
             className="form-control"
             selected={new Date(startTime)}
@@ -59,26 +60,26 @@ class APICatalogFilter extends Component<IAPICatalogFilterProps> {
             timeIntervals={15}
             timeCaption="time"
             dateFormat="yyyy/MM/dd HH:mm"
-            onChange={dateTime => this.handleFilterChange("startTime",dateTime)}
+            onChange={dateTime => this.handleFilterChange("startTime", dateTime)}
         />;
     }
 
     renderEndTime = () => {
-        const {apiCatalog: {endTime}, dispatch} = this.props;
+        const { apiCatalog: { endTime }, dispatch } = this.props;
         return <DatePicker
-        className="form-control"
-        selected={new Date(endTime)}
+            className="form-control"
+            selected={new Date(endTime)}
             showTimeSelect
             timeFormat="HH:mm"
             timeIntervals={15}
             timeCaption="time"
             dateFormat="yyyy/MM/dd HH:mm"
-            onChange={dateTime => this.handleFilterChange("endTime",dateTime)}
+            onChange={dateTime => this.handleFilterChange("endTime", dateTime)}
         />;
     }
 
     renderInstanceDropdown = () => {
-        const {dispatch,apiCatalog: {selectedService, selectedInstance, instances}} = this.props;
+        const { dispatch, apiCatalog: { selectedService, selectedInstance, instances } } = this.props;
         const handleInstanceDropDownChange = (event: React.ChangeEvent<HTMLSelectElement>) => this.handleFilterChange("selectedInstance", event.target.value);
 
         return <select className="r-att form-control" placeholder="Select Instance" value={selectedInstance} onChange={handleInstanceDropDownChange} disabled={!selectedService}>
@@ -87,40 +88,40 @@ class APICatalogFilter extends Component<IAPICatalogFilterProps> {
     }
 
     renderCompareData = () => {
-        const {apiCatalog : {
+        const { apiCatalog: {
             compareRequests
-        }} = this.props;
+        } } = this.props;
 
         return compareRequests.map((reqData, index) => (
-            <div key={index} style={{display: "flex", flexDirection: "row", margin: "5px"}}>
-                <div style={{display: "flex", flexDirection: "column"}}>
-                    <div style={{display: "flex", flexDirection: "row"}}>
-                        <span style={{fontWeight: 300}}>INSTANCE: </span>
-                        <span style={{marginLeft: "5px"}}>{reqData.instance}</span>
+            <div key={index} style={{ display: "flex", flexDirection: "row", margin: "5px" }}>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                    <div style={{ display: "flex", flexDirection: "row" }}>
+                        <span style={{ fontWeight: 300 }}>INSTANCE: </span>
+                        <span style={{ marginLeft: "5px" }}>{reqData.instance}</span>
                     </div>
                     <span>{new Date(reqData.parentRequest.reqTimestamp * 1000).toLocaleString()}</span>
                 </div>
-                <div style={{display: "flex", flexDirection: "column", justifyContent: "center", margin: "15px"}}>
-                    <i className="fa fa-times" style={{cursor: "pointer"}} onClick={() => this.handleCompareReqRemove(reqData)}></i>
+                <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", margin: "15px" }}>
+                    <i className="fa fa-times" style={{ cursor: "pointer" }} onClick={() => this.handleCompareReqRemove(reqData)}></i>
                 </div>
             </div>
         ));
     }
-  
+
     handleCompareReqRemove = (reqData: IApiCatalogCompareRequest) => {
-        const {dispatch} = this.props;
+        const { dispatch } = this.props;
         dispatch(apiCatalogActions.unpinCompareRequest(reqData));
     }
 
     handleCompareReset = () => {
-        const {dispatch} = this.props;
+        const { dispatch } = this.props;
         dispatch(apiCatalogActions.resetCompareRequest());
     }
 
     handleCompareSubmit = (app: string) => {
-        const {apiCatalog : {
+        const { apiCatalog: {
             compareRequests
-        }} = this.props;
+        } } = this.props;
 
         history.push({
             pathname: "diff",
@@ -128,89 +129,102 @@ class APICatalogFilter extends Component<IAPICatalogFilterProps> {
         })
     }
 
+    handleChangeInBrowseCollection = (selectedCollectionObject: ICollectionDetails) => {
+        const { apiCatalog: { selectedSource } } = this.props;
+
+        const metaData = selectedSource === "UserGolden" ? "selectedCollection" : "selectedGolden";
+
+        this.handleFilterChange(metaData, selectedCollectionObject.collec)
+    };
+
     render() {
-        const {currentPage, cube, apiCatalog} = this.props;
-        const {diffRequestLeft, diffRequestRight, compareRequests, selectedSource, selectedService, selectedApiPath, selectedCollection, selectedGolden} = apiCatalog;
-        
+        const { currentPage, cube, apiCatalog } = this.props;
+        const { diffRequestLeft, diffRequestRight, compareRequests, selectedSource, selectedService, selectedApiPath, selectedCollection, selectedGolden } = apiCatalog;
+
         return (
             <div>
                 <AppManager />
                 {
-                    currentPage==="api" && 
+                    currentPage === "api" &&
                     <div className="filters">
-                        <div><div className="margin-top-10" style={{borderBottom: "1px solid grey", paddingBottom: "10px"}}>
+                        <div><div className="margin-top-10" style={{ borderBottom: "1px solid grey", paddingBottom: "10px" }}>
                             <div className="label-n">SOURCE</div>
                             {this.renderSourceDropdown()}
                         </div>
-                        
 
-                        {selectedSource && <div>
-                        {(selectedSource==="UserGolden" || selectedSource==="Golden") && 
-                        <>
-                        <div>
-                            <GoldenCollectionBrowse selectedSource={selectedSource}/> 
-                        </div>
-                            <ConvertCollection />
-                        </>}
 
-                            {selectedSource=="Capture" && <div>
-                                <div className="margin-top-10">
-                                    <div className="label-n">START TIME</div>
-                                    {this.renderStartTime()}
-                                </div>
+                            {selectedSource && <div>
+                                {(selectedSource === "UserGolden" || selectedSource === "Golden") &&
+                                    <>
+                                        <div>
+                                            <GoldenCollectionBrowse
+                                                ddlClassNames="form-control"
+                                                selectedSource={selectedSource}
+                                                dropdownLabel={selectedSource === "UserGolden" ? "COLLECTION" : "GOLDEN"}
+                                                handleChangeCallback={this.handleChangeInBrowseCollection}
+                                            />
+                                        </div>
+                                        <ConvertCollection />
+                                    </>}
 
-                                <div className="margin-top-10">
-                                    <div className="label-n">END TIME</div>
-                                    {this.renderEndTime()}
-                                </div>
-                            </div>}
-
-                            {selectedSource=="Capture" && <div className="margin-top-10">
-                                <div className="label-n">SOURCE INSTANCE</div>
-                                {this.renderInstanceDropdown()}
-                            </div>}
-                            
-                            {((selectedSource==="UserGolden" && selectedCollection) || (selectedSource==="Golden" && selectedGolden)) && <>
-                                <div className="selected-items margin-top-10">
-                                    <div>
-                                        <span style={{ fontWeight: 300 }}>Service</span>
-                                        <p><b>{selectedService || "All"}</b></p>
+                                {selectedSource == "Capture" && <div>
+                                    <div className="margin-top-10">
+                                        <div className="label-n">START TIME</div>
+                                        {this.renderStartTime()}
                                     </div>
-                                        
-                                    <div>
-                                        <span style={{ fontWeight: 300 }}>API</span>
-                                        <p><b>{selectedApiPath || "All"}</b></p>
-                                    </div>                    
-                                </div>
+
+                                    <div className="margin-top-10">
+                                        <div className="label-n">END TIME</div>
+                                        {this.renderEndTime()}
+                                    </div>
+                                </div>}
+
+                                {selectedSource == "Capture" && <div className="margin-top-10">
+                                    <div className="label-n">SOURCE INSTANCE</div>
+                                    {this.renderInstanceDropdown()}
+                                </div>}
+
+                                {((selectedSource === "UserGolden" && selectedCollection) || (selectedSource === "Golden" && selectedGolden)) && <>
+                                    <div className="selected-items margin-top-10">
+                                        <div>
+                                            <span style={{ fontWeight: 300 }}>Service</span>
+                                            <p><b>{selectedService || "All"}</b></p>
+                                        </div>
+
+                                        <div>
+                                            <span style={{ fontWeight: 300 }}>API</span>
+                                            <p><b>{selectedApiPath || "All"}</b></p>
+                                        </div>
+                                    </div>
                                 </>}
-                        </div>}
+                            </div>}
                         </div>
-                        
-                        <div className="margin-top-10" style={{borderTop: "1px solid grey", minHeight: "20%"}}>
+
+                        <div className="margin-top-10" style={{ borderTop: "1px solid grey", minHeight: "20%" }}>
                             <div className="label-n">COMPARE REQUESTS (any two):</div>
-                                {this.renderCompareData()}
-                                {compareRequests.length==2 &&
-                                    <div style={{display: "flex", flexDirection: "row"}}>
-                                        <div className="cube-btn text-center width-50" style={{margin: "0 5px 0 0"}} onClick={()=> this.handleCompareSubmit(cube.selectedApp!)}>COMPARE</div>
-                                        <div className="cube-btn text-center width-50" style={{margin: "0 0 0 5px"}} onClick={this.handleCompareReset}>RESET</div>
-                                    </div>
-                                }
+                            {this.renderCompareData()}
+                            {compareRequests.length == 2 &&
+                                <div style={{ display: "flex", flexDirection: "row" }}>
+                                    <div className="cube-btn text-center width-50" style={{ margin: "0 5px 0 0" }} onClick={() => this.handleCompareSubmit(cube.selectedApp!)}>COMPARE</div>
+                                    <div className="cube-btn text-center width-50" style={{ margin: "0 0 0 5px" }} onClick={this.handleCompareReset}>RESET</div>
+                                </div>
+                            }
                         </div>
                     </div>
                 }
                 {
-                    currentPage==="diff" && 
-                    <div style={{display: "flex", flexDirection: "column"}} className="margin-top-10">
+                    currentPage === "diff" &&
+                    <div style={{ display: "flex", flexDirection: "column" }} className="margin-top-10">
                         <p>REQUESTS</p>
-                        <div style={{display: "flex", flexDirection: "column"}}>
-                            <span style={{fontWeight: 300}}>LEFT</span>
+                        <div style={{ display: "flex", flexDirection: "column" }}>
+                            <span style={{ fontWeight: 300 }}>LEFT</span>
                             <span>INSTANCE: {diffRequestLeft.instanceId}</span>
-                            <span>{new Date(diffRequestLeft.timestamp  * 1000).toLocaleString()}</span>
+                            <span>{new Date(diffRequestLeft.timestamp * 1000).toLocaleString()}</span>
                         </div>
-                        <div className="margin-top-10" style={{display: "flex", flexDirection: "column"}}>
-                            <span style={{fontWeight: 300}}>RIGHT</span>
+                        <div className="margin-top-10" style={{ display: "flex", flexDirection: "column" }}>
+                            <span style={{ fontWeight: 300 }}>RIGHT</span>
                             <span>INSTANCE: {diffRequestRight.instanceId}</span>
-                            <span>{new Date(diffRequestRight.timestamp  * 1000).toLocaleString()}</span>
+                            <span>{new Date(diffRequestRight.timestamp * 1000).toLocaleString()}</span>
                         </div>
                     </div>
                 }
@@ -227,4 +241,4 @@ const mapStateToProps = (state: IStoreState) => ({
 const connectedAPICatalogFilter = connect(mapStateToProps)(APICatalogFilter);
 
 export default connectedAPICatalogFilter;
-export {connectedAPICatalogFilter as APICatalogFilter}
+export { connectedAPICatalogFilter as APICatalogFilter }

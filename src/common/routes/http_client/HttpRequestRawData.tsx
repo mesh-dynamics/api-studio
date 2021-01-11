@@ -1,9 +1,6 @@
 import React, { Component } from "react";
-import MonacoEditor from "react-monaco-editor";
 import { UpdateParamHandler } from "./HttpResponseHeaders";
-import * as monacoEditor from "monaco-editor/esm/vs/editor/editor.api";
-// import "./styles_here.css";
-
+import Editor from "../../components/Editor/Editor";
 export interface IHttpRequestRawDataProps {
   showRawData: boolean;
   rawData: string;
@@ -21,7 +18,7 @@ class HttpRequestRawData extends Component<
   IHttpRequestRawDataProps,
   IHttpRequestRawDataState
 > {
-  private editor: monacoEditor.editor.IStandaloneCodeEditor;
+  private editorRef : CodeMirror.Editor;
   constructor(props: IHttpRequestRawDataProps) {
     super(props);
     this.state = {
@@ -44,22 +41,14 @@ class HttpRequestRawData extends Component<
     }
   }
   formatHandler = () => {
-    //Ideally following statement should work. Need to check later if this bug is resolved in any updates.
-    // this.editor.getAction('editor.action.formatDocument').run().then(()=>{});
     this.setState({ showError: false });
     try {
-      this.editor.setValue(
-        JSON.stringify(JSON.parse(this.editor.getValue()), null, "\t")
-      );
+      this.editorRef &&  (this.editorRef as any).format();
     } catch (error) {
       this.setState({ showError: true });
     }
   };
 
-  editorDidMount = (editor: monacoEditor.editor.IStandaloneCodeEditor) => {
-    this.editor = editor;
-    editor.layout();
-  };
   hideError = () => {
     this.setState({ showError: false });
   };
@@ -91,25 +80,12 @@ class HttpRequestRawData extends Component<
           )}
         </div>
         <div style={{ height: "100%" }}>
-          <MonacoEditor
+        <Editor
             value={this.props.rawData}
-            language="json"
-            key="rawData"
-            width="100%"
-            height="100%"
             onChange={this.handleChange}
-            options={{
-              minimap: { enabled: false },
-              scrollBeyondLastLine: false,
-              scrollbar: {
-                alwaysConsumeMouseWheel: false,
-              },
-              automaticLayout: true,
-              formatOnPaste: true,
-              contextmenu: false,
-              readOnly: this.props.readOnly,
-            }}
-            editorDidMount={this.editorDidMount}
+            language="json"
+            getEditorRef = {(editor)=> this.editorRef = editor}
+            readonly={ this.props.readOnly}
           />
         </div>
       </div>

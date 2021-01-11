@@ -11,6 +11,7 @@ export interface IHttpRequestHeadersProps{
     updateParam: UpdateParamHandler;
     updateAllParams: UpdateParamHandler;
     readOnly: boolean;
+    isResponse: boolean;
     headers: any[]; //TODO: Get proper interface from HttpClientTabs
 }
 
@@ -55,9 +56,9 @@ class HttpRequestHeaders extends Component<IHttpRequestHeadersProps> {
                 {this.props.headers.length > 0 && (
                     <div className="header">
                         <div className="cell cell-1"> 
-                            <FormGroup bsSize="small">
+                            {!this.props.isResponse && <FormGroup bsSize="small">
                                 <input type="checkbox" disabled={this.props.readOnly} checked={this.allSelected()} onChange={this.handleAllCheckChange}/>
-                            </FormGroup>
+                            </FormGroup>}
                         </div>
                         <div className="cell cell-2"> 
                             <FormGroup>
@@ -79,11 +80,11 @@ class HttpRequestHeaders extends Component<IHttpRequestHeadersProps> {
                 {this.props.headers.map(eachHeader => {return (
                     <div  className="row" key={eachHeader.id}>
                         <div className="cell cell-1"> 
-                            <FormGroup>
+                          {!this.props.isResponse && <FormGroup>
                                 <input type="checkbox" checked={eachHeader.selected} 
                                 disabled={this.props.readOnly} 
                                 onChange={() => this.handleCheckChange(eachHeader.id, eachHeader.selected)}/>                            
-                            </FormGroup>
+                            </FormGroup>}
                         </div>
                         <div className="cell cell-2"> 
                             <FormGroup>

@@ -1,8 +1,9 @@
 import _ from 'lodash';
 import { v4 as uuidv4 } from "uuid";
 import {Base64Binary} from '../../../shared/utils'
-import {applyEnvVarsToUrl} from './envvar';
+import {applyEnvVarsToUrl, getRenderEnvVars } from './envvar';
 import cryptoRandomString from 'crypto-random-string';
+import { store } from '../../helpers';
 
 const generateRunId = () => {
     return new Date(Date.now()).toISOString()
@@ -361,6 +362,36 @@ const preRequestToFetchableConfig = (preRequestResult, httpURL) => {
     ];
 };
 
+const generateTraceKeys = (tracer) => {
+    let traceIdKey, spanIdKey, parentSpanIdKeys = [];
+    switch (tracer) {
+        case "jaeger":
+            traceIdKey = "uber-trace-id"
+            parentSpanIdKeys = ["uberctx-parent-span-id"]
+            // no span id key
+            break
+            
+        case "zipkin":
+            traceIdKey = "x-b3-traceid"
+            parentSpanIdKeys = ["baggage-parent-span-id", "x-b3-parentspanid"]
+            spanIdKey = "x-b3-spanid"
+            break;
+
+        case "datadog":
+            traceIdKey = "x-datadog-trace-id"
+            parentSpanIdKeys = ["ot-baggage-parent-span-id"]
+            spanIdKey = "x-datadog-parent-id"
+            break
+
+        case "meshd": // default to meshd
+        default:
+            traceIdKey = "md-trace-id";
+            parentSpanIdKeys = ["mdctxmd-parent-span"];
+            // no span id key    
+    }
+    return {traceIdKey, spanIdKey, parentSpanIdKeys}
+}
+
 const generateTraceId = (tracer, spanId) => {
     const traceId = cryptoRandomString({length:16})
     if (tracer==="meshd" || tracer==="jaeger") {
@@ -381,6 +412,135 @@ const generateSpecialParentSpanId = (tracer) => {
     return "ffffffffffffffff"    
 }
 
+const extractQueryStringParamsToCubeFormat = (httpRequestQueryStringParams, type)=> {
+    let qsParams = {};
+    httpRequestQueryStringParams.forEach(each => {
+        if (each.name && each.value) {
+            const nameRendered = getValueBySaveType(each.name, type)
+            const valueRendered = getValueBySaveType(each.value, type)
+            if (qsParams[nameRendered]) {
+                qsParams[nameRendered] = [...qsParams[nameRendered], valueRendered];
+            } else {
+                qsParams[nameRendered] = [valueRendered];
+            }
+        }
+    })
+    return qsParams;
+}
+
+const extractBodyToCubeFormat = (httpRequestBody, type) => {
+    let formData = {};
+    if (_.isArray(httpRequestBody)) {
+        httpRequestBody.forEach(each => {
+            if (each.name && each.value) {
+                const nameRendered = getValueBySaveType(each.name, type)
+                const valueRendered = getValueBySaveType(each.value, type)
+                if(formData[nameRendered]){
+                    formData[nameRendered] = [...formData[nameRendered], valueRendered];
+                }else{
+                    formData[nameRendered] = [valueRendered];
+                }
+            }
+        })
+        return formData;
+    } else {
+        return getValueBySaveType(httpRequestBody, type);
+    }
+};
+const getValueBySaveType = (value, type) => {
+        if(!_.isString(value)){
+            return value;
+        }
+        const renderEnvVars = getRenderEnvVars();
+        return type !== "History" ? value : renderEnvVars(value);
+}
+
+const extractHeadersToCubeFormat = (headersReceived, type="")=> {
+        let headers = {};
+        if (_.isArray(headersReceived)) {
+            headersReceived.forEach(each => {
+                if (each.name && each.value) {
+                    const nameRendered = getValueBySaveType(each.name, type)
+                    const valueRendered = getValueBySaveType(each.value, type)
+                    if(headers[nameRendered]){
+                        headers[nameRendered] = [...headers[nameRendered], valueRendered];
+                    }else{
+                        headers[nameRendered] = [valueRendered];
+                    }
+                }
+            });
+        } else if (_.isObject(headersReceived)) {
+            Object.keys(headersReceived).map((eachHeader) => {
+                if (eachHeader && headersReceived[eachHeader]) {
+                    const nameRendered = getValueBySaveType(eachHeader, type)
+                    const valueRendered = getValueBySaveType(headersReceived[eachHeader], type);
+                    if(_.isArray(headersReceived[eachHeader])) headers[nameRendered] = valueRendered;
+                    if(_.isString(headersReceived[eachHeader])) headers[nameRendered] = [valueRendered];
+                }
+            })
+        }
+
+    return headers;
+}
+
+const getTracerForCurrentApp = () => {
+    const {cube: {selectedApp, appsList}} = store.getState()
+    if (!selectedApp || !appsList?.length) {
+        return ""
+    }
+    const {tracer} = _.find(appsList, {name: selectedApp})
+    return tracer
+}
+
+const getTraceDetailsForCurrentApp = () => {
+    const tracer = getTracerForCurrentApp()
+    const traceKeys = generateTraceKeys(tracer)
+    const spanId = generateSpanId(tracer)
+    const parentSpanId = generateSpecialParentSpanId(tracer)
+    const traceId = generateTraceId(tracer, spanId)
+    return {
+        traceId,
+        spanId,
+        parentSpanId,
+        traceKeys,
+    }
+}
+
+const generateUrlWithQueryParams = (httpURL, queryStringParams) => {
+    const urlSearch = queryStringParams.filter(queryParam => queryParam.selected)
+        .map(({name, value}) => (value == undefined ? `${name}`: `${name}=${value}`))        
+        .join("&");
+    return urlSearch ? `${httpURL}?${urlSearch}`: httpURL;
+}
+
+const extractURLQueryParams = (url) => {
+    let httpURL = url
+    let queryParamsFromUrl = []
+
+    const parsedURLParts = url.split("?")
+    if(parsedURLParts[1]) {
+        httpURL = parsedURLParts[0]
+        queryParamsFromUrl = parsedURLParts[1].split("&").map((part) => {
+            let indexOfEqual = part.indexOf("=");
+            let value = undefined;
+            let key = part;
+            if(indexOfEqual !== -1){
+                key = part.substr(0, indexOfEqual);
+                value = part.substr(indexOfEqual + 1);
+            }
+            return {
+                name: key,
+                value: value, 
+                selected: true,
+                id: uuidv4(),
+                description: "",
+            }
+        })
+    }
+        
+    return {httpURL, queryParamsFromUrl}
+}
+
 export { 
     generateRunId,
     getStatusColor,
@@ -399,4 +559,12 @@ export {
     generateTraceId,
     generateSpanId,
     generateSpecialParentSpanId,
+    extractQueryStringParamsToCubeFormat,
+    extractBodyToCubeFormat,
+    extractHeadersToCubeFormat,
+    generateTraceKeys,
+    getTracerForCurrentApp,
+    getTraceDetailsForCurrentApp,
+    generateUrlWithQueryParams,
+    extractURLQueryParams,
 };

@@ -58,7 +58,6 @@ const setupElectronListeners = () => {
 
         ipcRenderer.on('clear_local_storage', () => {
           ipcRenderer.removeAllListeners('clear_local_storage');
-          localStorage.clear();
           ipcRenderer.send('clear_local_storage_complete');
         });
     

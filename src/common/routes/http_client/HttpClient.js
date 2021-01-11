@@ -713,6 +713,7 @@ class HttpClient extends Component {
                                     rawDataType={selectedTraceTableReqTab.rawDataType}
                                     paramsType={selectedTraceTableReqTab.paramsType}
                                     updateParam={this.props.updateParam}
+                                    replaceAllParams={this.props.replaceAllParams}
                                     updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
                                     isOutgoingRequest={selectedTraceTableReqTab.isOutgoingRequest} 
                                     id="" 
@@ -734,6 +735,7 @@ class HttpClient extends Component {
                                         rawDataType={selectedTraceTableTestReqTab.rawDataType}
                                         paramsType={selectedTraceTableReqTab.paramsType}
                                         updateParam={this.props.updateParam}
+                                        replaceAllParams={this.props.replaceAllParams}
                                         updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
                                         isOutgoingRequest={selectedTraceTableTestReqTab.isOutgoingRequest}
                                         readOnly={true}

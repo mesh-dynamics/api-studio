@@ -1,4 +1,4 @@
-import { generateRunId, getCurrentMockConfig } from "../utils/http_client/utils";
+import { generateRunId, getCurrentMockConfig, getTracerForCurrentApp } from "../utils/http_client/utils";
 import { ipcRenderer } from "./ipc-renderer";
 import { store } from "../../common/helpers"
 
@@ -32,6 +32,8 @@ const setDefaultMockContext = (args) => {
     const collectionId = saveToCollection?.collec || (mockContextSaveToCollection?.collec || userHistoryCollection.collec);
     const recordingId = saveToCollection?.id || (mockContextSaveToCollection?.id || userHistoryCollection.id);
 
+    const tracer = getTracerForCurrentApp()
+
     const mockContext = {
       collectionId: collectionId, // where to store the mocked captured requests [mockWithRunId]
       recordingId: recordingId, // where to store the live captured requests [storeReqResp]
@@ -41,7 +43,10 @@ const setDefaultMockContext = (args) => {
       customerName: customerId, // constant
       runId: runId, // timestamp
       config: mockConfig, // mock config
-      spanId: "NA",
+      parentSpanId: "",
+      tracer: tracer,
+      strictMock: false,
+      replayInstance: "",
     };
 
     console.log("Setting default mock context: ", mockContext);
@@ -50,4 +55,17 @@ const setDefaultMockContext = (args) => {
   }
 };
 
-export { setDefaultMockContext };
+const setStrictMock = (strictMock, replayInstance="", replayCollection="") => {
+  if(PLATFORM_ELECTRON) {
+    const args = {
+        strictMock,
+        replayInstance,
+        replayCollection,
+    }
+
+    console.log("Setting strict mocking: ", args)
+    ipcRenderer.send('set_strict_mock', args);
+  }
+}
+
+export { setDefaultMockContext, setStrictMock };

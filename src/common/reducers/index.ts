@@ -6,6 +6,7 @@ import { golden } from './golden.reducer';
 import { cube } from './cube.reducer';
 import { apiCatalog } from './api-catalog.reducer';
 import { httpClient } from './httpClientReducer';
+import { gcbrowse } from './gcbrowse.reducer';
 
 const rootReducer = combineReducers({
   authentication,
@@ -14,6 +15,7 @@ const rootReducer = combineReducers({
   cube,
   apiCatalog,
   httpClient,
+  gcbrowse
 });
 
 export default rootReducer;

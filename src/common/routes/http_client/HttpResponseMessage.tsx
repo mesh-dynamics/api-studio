@@ -30,7 +30,6 @@ class HttpResponseMessage extends Component<
   IHttpResponseMessageState
 > {
   private childRefHttpResponseBody: React.RefObject<HttpResponseBody>;
-  private childRefHttpResponseHeaders: React.RefObject<HttpResponseHeaders>;
   private isResponseBodyTypeManuallySet: boolean = false;
   constructor(props: IHttpResponseMessageProps) {
     super(props);
@@ -42,10 +41,8 @@ class HttpResponseMessage extends Component<
       maximizeEditorHeight: false,
     };
     this.childRefHttpResponseBody = React.createRef<HttpResponseBody>();
-    this.childRefHttpResponseHeaders = React.createRef<HttpResponseHeaders>();
     this.onChangeValue = this.onChangeValue.bind(this);
     this.handleChange = this.handleChange.bind(this);
-    this.onFormatIconClick = this.onFormatIconClick.bind(this);
     this.onMaxHeightIconClick = this.onMaxHeightIconClick.bind(this);
   }
 
@@ -56,16 +53,12 @@ class HttpResponseMessage extends Component<
     });
   }
 
-  onFormatIconClick() {
-    if (this.state.showHeaders) {
-      this.childRefHttpResponseHeaders.current &&
-        this.childRefHttpResponseHeaders.current.formatHandler();
-    } else {
+  onFormatIconClick = () => {
+    if (!this.state.showHeaders) {
       this.childRefHttpResponseBody.current &&
         this.childRefHttpResponseBody.current.formatHandler();
     }
   }
-
   //Move this to utilities
 
   getContentTypeToLanguage(headers: string) {
@@ -145,15 +138,13 @@ class HttpResponseMessage extends Component<
       () => {
         if (this.state.maximizeEditorHeight) {
           const contentWrapper = document.querySelector(".content-wrapper");
-          const monacoDiffEditor = document.querySelector(
-            ".diffEditors .react-monaco-editor-container"
-          ) as HTMLDivElement;
-          if (contentWrapper && monacoDiffEditor) {
+          const editorDiv = document.querySelector(".diffEditors") as HTMLDivElement;
+          if (contentWrapper && editorDiv) {
             contentWrapper.scroll({
               behavior: "smooth",
               top:
                 contentWrapper.scrollHeight -
-                monacoDiffEditor.offsetHeight -
+                editorDiv.offsetHeight -
                 85,
             });
           }
@@ -309,7 +300,7 @@ class HttpResponseMessage extends Component<
                   )}
                 </span>
               </div>
-              <div style={{ float: "right" }}>
+              {this.state.showBody && <div style={{ float: "right" }}>
                 <span
                   className="btn btn-sm cube-btn text-center"
                   style={{ padding: "2px 10px", display: "inline-block" }}
@@ -319,20 +310,18 @@ class HttpResponseMessage extends Component<
                   <i className="fa fa-align-center" aria-hidden="true"></i>{" "}
                   Format
                 </span>
-              </div>
+              </div>}
             </Col>
           </Row>
         </Grid>
         <div className="diffEditors">
           <HttpResponseHeaders
-            ref={this.childRefHttpResponseHeaders}
             tabId={this.props.tabId}
             showHeaders={this.state.showHeaders}
             responseHeaders={this.props.responseHeaders}
             recordedResponseHeaders={this.props.recordedResponseHeaders}
             updateParam={this.props.updateParam}
             isOutgoingRequest={this.props.isOutgoingRequest}
-            maximizeEditorHeight={this.state.maximizeEditorHeight}
           ></HttpResponseHeaders>
           <HttpResponseBody
             ref={this.childRefHttpResponseBody}

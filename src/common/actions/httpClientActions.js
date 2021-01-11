@@ -56,6 +56,14 @@ export const httpClientActions = {
         return {type: httpClientConstants.UPDATE_BODY_OR_RAWA_DATA_TYPE_IN_TAB, data: {tabId, type, value}};
     },
 
+    replaceAllParamsInSelectedTab: (tabId, type, params) => {
+        return {type: httpClientConstants.REPLACE_ALL_PARAMS_IN_TAB, data: {tabId, type, params}}
+    },
+
+    replaceAllParamsInSelectedOutgoingTab: (tabId, type, params) => {
+        return {type: httpClientConstants.REPLACE_ALL_PARAMS_IN_OUTGOING_TAB, data: {tabId, type, params}}
+    },
+
     unsetHasChangedAll: (tabId) => ({type: httpClientConstants.UNSET_HAS_CHANGED_ALL, data: {tabId}}),
 
     preDriveRequest: (tabId, responseStatus, showCompleteDiff, runId) => {
