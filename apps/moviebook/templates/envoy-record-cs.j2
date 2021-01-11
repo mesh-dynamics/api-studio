@@ -228,12 +228,7 @@ spec:
                   cubeReq["reqId"] = crequestid
                   cubeReq["eventType"] = "HTTPRequest"
                   cubeReq["timestamp"] = getEpochTime()
-<<<<<<< HEAD
-                  request_handle:logErr("Request id: " .. crequestid)
-=======
-
                   request_handle:logErr("envoy_on_request Request id: " .. crequestid)
->>>>>>> develop
 
                   logRequest(request_handle, cubeReq)
                   request_handle:headers():remove("ot-baggage-md-parent-id")
