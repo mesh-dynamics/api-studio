@@ -278,14 +278,6 @@ div.loading, div.loading button{
   left: auto !important;
 }
 
-
-/** Theme similar to VSCode **/
-.CodeMirror .cm-string {
-	color: #0451a5;
-}
-.CodeMirror .cm-property {
-  color: #a31515;
-}
 .fileListParam{
   display:inline-block;
   background-color: #d8d8d8;
