@@ -124,7 +124,6 @@ spec:
                   buf[#buf+1] = ' } ] }'
                   data = table.concat(buf)
                   callStoreEvent(handle, data)
-                  handle:logErr('[cube req]' .. data)
                 end
                 function callStoreEvent(handle, data)
                   local hhdr, hbody = handle:httpCall(
@@ -150,7 +149,6 @@ spec:
                   buf[#buf+1] = ' } ] }'
                   data = table.concat(buf)
                   callStoreEvent(handle, data)
-                  handle:logErr('[cube resp]' .. data)
                 end
                 function logEvent(buf, handle, cubeEvent, payloadType)
                   handle:logErr('Trying to store event : Req ID : ' .. cubeEvent["reqId"] .. ' Trace Id :  ' .. cubeEvent["traceId"] .. ' Span Id : ' .. cubeEvent["spanId"] .. ' API Path : ' .. cubeEvent["apiPath"] )
