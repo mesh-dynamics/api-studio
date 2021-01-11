@@ -156,7 +156,7 @@ const setupListeners = (mockContext, user, replayContext) => {
 
     app.on('window-all-closed', async function () {
         try {
-            const { mock: { proxyPort }} = config;
+            const { proxyPort } = config;
 
             const proxyPortList = await find('port', proxyPort);
             

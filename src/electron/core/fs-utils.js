@@ -46,13 +46,10 @@ const readConfig = () => {
 };
 
 const setupApplicationConfig = () => {
-    const { domain, mock } = readConfig();
+    const { domain, proxyPort } = readConfig();
 
     const appDomain = store.get("domain");
-    const mockProtocol = store.get("mockProtocol");
-    const mockHost = store.get("mockHost");
-    const mockPort = store.get("mockPort");
-    const proxyPort = store.get("proxyPort");
+    const appProxyPort = store.get("proxyPort")
 
     // If domain is not set
     if (!appDomain) {
@@ -60,29 +57,16 @@ const setupApplicationConfig = () => {
       store.set("domain", domain);
     }
 
-    // If protocol for mock server is not set
-    if (!mockProtocol) {
-      logger.info("Setting protocol for mock as :", mock.protocol);
-      store.set("mockProtocol", mock.protocol);
-    }
-
-    // If host for mock server is not defined
-    if (!mockHost) {
-      logger.info("Setting host for mock as :", mock.host);
-      store.set("mockHost", mock.host);
-    }
-
-    // If port for mock server is not set
-    if (!mockPort) {
-      logger.info("Setting port for mock as :", mock.port);
-      store.set("mockPort", mock.port);
-    }
-
     // If proxy port is not already set
     if (!proxyPort) {
-      logger.info("Setting port for proxy server to listen at:", mock.proxyPort);
-      store.set("proxyPort", mock.proxyPort);
+      logger.info("Setting port for proxy server to listen at:", appProxyPort);
+      store.set("proxyPort", appProxyPort);
     }
+
+    // To remove any previous traces of old configuration
+    store.delete('mockProtocol');
+    store.delete('mockHost');
+    store.delete('mockPort');
 };
 
 const getDefaultPorts = (protocol) => {
@@ -98,6 +82,63 @@ const getDefaultPorts = (protocol) => {
 };
 
 const getApplicationConfig = () => {
+    logger.info("Reading application config from store");
+
+    const appDomain = store.get("domain");
+    const proxyPort = store.get("proxyPort");
+    const parsedUrl = url.parse(appDomain);
+
+    const proxyDestinationServerProtocol = parsedUrl.protocol;
+    const proxyDestinationServerHost = parsedUrl.hostname;
+    const proxyDestinationServerPort = parsedUrl.port || getDefaultPorts(parsedUrl.protocol);     
+
+    const config = {
+      domain: appDomain,
+      proxyPort,
+      proxyDestination: {
+        protocol: proxyDestinationServerProtocol,
+        host: proxyDestinationServerHost,
+        port: proxyDestinationServerPort,
+      },
+    };
+
+    logger.info("Returning config from store :", config);
+
+    return config;
+};
+
+const updateApplicationConfig = (config) => {
+    const { domain, proxyPort } = config;
+    
+    logger.info("Updating application config to store", domain);
+
+    store.set("domain", domain);
+    store.set("proxyPort", proxyPort);
+
+    logger.info("Updated store with latest config");
+};
+
+module.exports = {
+    updateApplicationConfig,
+    setupApplicationConfig,
+    getApplicationConfig,
+    writeTargetToConfig,
+    resourceRootPath,
+    readConfig,
+    store,
+};
+
+// Leave this here for now just in case 
+// its needed to debug
+// protocol, 
+// host, 
+// const parsedUrl = url.parse(domain);
+// store.set("mockProtocol", parsedUrl.protocol); // read as mockServerProtocol
+// store.set("mockHost", parsedUrl.hostname); // read as mockServerHost
+// store.set("mockPort", parsedUrl.port || getDefaultPorts(parsedUrl.protocol));
+
+/**
+ * const getApplicationConfig = () => {
     logger.info("Reading application config from store");
 
     const appDomain = store.get("domain");
@@ -124,37 +165,4 @@ const getApplicationConfig = () => {
 
     return config;
 };
-
-const updateApplicationConfig = (config) => {
-    // protocol, 
-    // host, 
-    const { 
-      domain, 
-      mock: {
-        port, // This is mapped to UI text input which is currently not visible 
-        proxyPort 
-      } 
-    } = config;
-    
-    logger.info("Updating application config to store", domain);
-
-    store.set("domain", domain);
-    const parsedUrl = url.parse(domain);
-    
-    store.set("mockProtocol", parsedUrl.protocol); // read as mockServerProtocol
-    store.set("mockHost", parsedUrl.hostname); // read as mockServerHost
-    store.set("mockPort", parsedUrl.port || getDefaultPorts(parsedUrl.protocol));
-    store.set("proxyPort", proxyPort);
-
-    logger.info("Updated store with latest config");
-};
-
-module.exports = {
-    updateApplicationConfig,
-    setupApplicationConfig,
-    getApplicationConfig,
-    writeTargetToConfig,
-    resourceRootPath,
-    readConfig,
-    store,
-};
+ */
