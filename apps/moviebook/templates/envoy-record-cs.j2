@@ -127,6 +127,7 @@ spec:
                   handle:logErr('[cube req]' .. data)
                 end
                 function callStoreEvent(handle, data)
+                  handle:logErr('Trying to store event : Req ID : ' .. data["reqId"] .. ' Trace Id :  ' .. data["traceId"] .. ' Span Id : ' .. data["spanId"] .. ' API Path : ' .. data["apiPath"] )
                   local hhdr, hbody = handle:httpCall(
                     ""outbound|8080||cubeui-backend.cube.svc.cluster.local",
                     {
@@ -192,7 +193,7 @@ spec:
                   logResponse(response_handle, cubeResp)
                   local endtime = os.clock()
                   response_handle:logErr('End time ' .. endtime)
-                  response_handle:logErr('envoy_on_response time ' .. (endtime - starttime))
+                  response_handle:logErr('envoy_on_response time ' .. (endtime - starttime) .. " Req Id : " .. crequestid)
                 end
                 function envoy_on_request(request_handle)
                   local service = "{{service_name}}"
@@ -228,7 +229,7 @@ spec:
                   cubeReq["eventType"] = "HTTPRequest"
                   cubeReq["timestamp"] = getEpochTime()
 
-                  request_handle:logErr("Request id: " .. crequestid)
+                  request_handle:logErr("envoy_on_request Request id: " .. crequestid)
 
                   logRequest(request_handle, cubeReq)
                   request_handle:headers():remove("ot-baggage-md-parent-id")
