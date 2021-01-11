@@ -2,6 +2,7 @@ const axios = require('axios');
 const logger = require('electron-log');
 const { transformForCollection } = require('./collection-utils');
 const { store } = require('../fs-utils');
+const url = require("url");
 
 const proxyLiveResponseInterceptor = (proxyRes, req, res, options) => {
     let body = [];
@@ -14,7 +15,7 @@ const proxyLiveResponseInterceptor = (proxyRes, req, res, options) => {
         const { user, mockContext } = options;
 
         const domain = store.get('domain');
-        const host = store.get('mockHost');
+        const parsedUrl = url.parse(domain);
 
         try {
             // Transform the body of response to be stored in a collection
@@ -26,7 +27,7 @@ const proxyLiveResponseInterceptor = (proxyRes, req, res, options) => {
             const requestOptions = {
                 headers: {
                     'Authorization': `${user.tokenType} ${user.accessToken}`,
-                    'Host': `${host}`,
+                    'Host': `${parsedUrl.hostname}`,
                     'Content-Type': 'application/json'
                 },
                 
