@@ -7,18 +7,15 @@ const strictMockApiPrefix = '/api/ms'
 /**
  * Exclude the service name from API path
  * @param {*} apiPath - api path that contains service name as first path variable
+ * @param {*} serviceConfigObject
  */
-const stripServiceNameFromOutgoingProxyPath = (apiPath) => {
+const stripServiceNameFromOutgoingProxyPath = (apiPath, {service, includeServicePrefix}) => {
     if(apiPath) {
-        
-        // Exclude the service part from url
-        const apiPathParts = apiPath.split('/').filter(Boolean).slice(1);
-        logger.info('Api Path Parts :', apiPathParts);
-        
-        const updatedPath = apiPathParts.join('/');
-        
-        // Must include trailing slashes
-        return apiPath.endsWith('/') ? `${updatedPath}/` : updatedPath;
+        if (includeServicePrefix) {
+            return apiPath.slice(1) // remove starting slash
+        } else {
+            return apiPath.slice(service.length + 2) // accounting for slashes
+        }
     }
 
     return '';
@@ -74,7 +71,7 @@ const rewriteLivePath = (serviceConfigObject, receivedPathInProxy) => {
 
     logger.info('Parsed Config Url ', parsedConfigUrl);
 
-    const outgoingProxyApiPath = stripServiceNameFromOutgoingProxyPath(receivedPathInProxy);
+    const outgoingProxyApiPath = stripServiceNameFromOutgoingProxyPath(receivedPathInProxy, serviceConfigObject);
 
     const constructedApiPath = parsedConfigUrl.path === '/' 
                                 ? `/${outgoingProxyApiPath}` // If path is just '/' return the outgoing proxy path 
@@ -143,23 +140,6 @@ const proxyRequestInterceptorLiveService = (proxyReq, serviceConfigObject, mockC
 
     logger.info('Resource Url Path Recieved for Live Service', proxyReq.path);
 
-    logger.info('Logging Request Headers for Live Service', proxyReq._headers);
-
-    logger.info('Removing restricted headers');
-
-    proxyReq.removeHeader('connection');
-    // proxyReq.removeHeader('content-length');
-    proxyReq.removeHeader('date');
-    proxyReq.removeHeader('expect');
-    proxyReq.removeHeader('from');
-    // proxyReq.removeHeader('origin');
-    proxyReq.removeHeader('referer');
-    proxyReq.removeHeader('upgrade');
-    proxyReq.removeHeader('via');
-    proxyReq.removeHeader('warning');
-    proxyReq.removeHeader('transfer-encoding');
-    proxyReq.removeHeader('accept-encoding');
-
     const {traceIdKey, spanIdKey, parentSpanIdKeys} = traceKeys;
 
     if (spanIdKey && !(spanIdKey in proxyReq._headers)) {
@@ -179,9 +159,9 @@ const proxyRequestInterceptorLiveService = (proxyReq, serviceConfigObject, mockC
         proxyReq.setHeader(traceIdKey, traceId);
     }
 
-    logger.info('Logging Request Headers for Live Service after removing request headers', proxyReq._headers);
-
     logger.info('Url received in config', serviceConfigObject.url);
+
+    logger.info('Logging Request Headers for Live Service', proxyReq._headers);
 
     logger.info('Rewriting Live url path');
     proxyReq.path = rewriteLivePath(serviceConfigObject, proxyReq.path);
