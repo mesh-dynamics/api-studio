@@ -341,7 +341,6 @@ export default class DiffResultsList extends Component {
         }
         
         return diffLayoutData.map((item, index) => {
-            const method = item.recordRequest?.method || "";
             return (<div key={item.recordReqId + "_" + index} style={{ borderBottom: "1px solid #eee", display: "block" }}>
                 <div style={{ backgroundColor: "#EAEAEA", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px" }}>
                     <div style={{display: "inline-block"}}>{item.path}</div>
@@ -373,7 +372,7 @@ export default class DiffResultsList extends Component {
                                 filterPaths={item.filterPaths}
                                 searchFilterPath={this.state.searchFilterPath}
                                 enableClientSideDiff={true}
-                                method={method}
+                                method={item.recordRequest.method}
                             />
                         </div>
                     </div>
@@ -395,7 +394,7 @@ export default class DiffResultsList extends Component {
                                 filterPaths={item.filterPaths}
                                 searchFilterPath={this.state.searchFilterPath}
                                 enableClientSideDiff={true}
-                                method={method}
+                                method={item.recordRequest.method}
                             />
                         </div>
                     </div>
@@ -417,7 +416,7 @@ export default class DiffResultsList extends Component {
                                 filterPaths={item.filterPaths}
                                 searchFilterPath={this.state.searchFilterPath}
                                 enableClientSideDiff={true}
-                                method={method}
+                                method={item.recordRequest.method}
                             />
                         </div>
                     </div>
@@ -439,7 +438,7 @@ export default class DiffResultsList extends Component {
                                 filterPaths={item.filterPaths}
                                 searchFilterPath={this.state.searchFilterPath}
                                 enableClientSideDiff={true}
-                                method={method}
+                                method={item.recordRequest.method}
                             />
                         </div>
                     </div>
@@ -462,7 +461,7 @@ export default class DiffResultsList extends Component {
                                 filterPaths={item.filterPaths}
                                 inputElementRef={this.inputElementRef}
                                 enableClientSideDiff={true}
-                                method={method}
+                                method={item.recordRequest.method}
                             />
                         </div>
                     </div>
@@ -488,7 +487,7 @@ export default class DiffResultsList extends Component {
                             item.missedRequiredFields.length > 0 &&
                             <DiffResultsMissingItems 
                                 missedRequiredFields={item.missedRequiredFields} 
-                                method={method}
+                                method={item.recordRequest.method}
                             />
                         }
                         {(item.recordedData || item.replayedData) && (
@@ -508,7 +507,7 @@ export default class DiffResultsList extends Component {
                                     handleCollapseLength={this.increaseCollapseLength}
                                     handleMaxLinesLength={this.increaseCollapseLength}
                                     enableClientSideDiff={this.state.enableClientSideDiff}
-                                    method={method}
+                                    method={item.recordRequest.method}
                                 />
                             </div>
                         )}
