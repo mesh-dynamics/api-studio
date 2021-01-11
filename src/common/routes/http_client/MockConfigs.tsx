@@ -62,6 +62,12 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
         this.setMockConfigStatusText("", false)
     }
 
+    handleIncludeServicePrefixChange = (index) => {
+        const {selectedEditMockConfig} = this.state;
+        selectedEditMockConfig.serviceConfigs[index].includeServicePrefix = !selectedEditMockConfig.serviceConfigs[index].includeServicePrefix;
+        this.setState({selectedEditMockConfig})
+    }
+
     handleSelectedMockConfigNameChange = (e) => {
         const {selectedEditMockConfig} = this.state;
         selectedEditMockConfig.name = e.target.value;
@@ -89,6 +95,7 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
             service: "", 
             url: "", 
             isMocked: false,
+            includeServicePrefix: false,
         })
         this.setState({selectedEditMockConfig})
         this.setMockConfigStatusText("", false)
@@ -304,13 +311,16 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
                         </Row>
                         
                         <Row className="show-grid margin-top-15">
-                            <Col xs={5}>
-                                <b>Service</b>
+                            <Col xs={4}>
+                                <b>Service Prefix</b>
                             </Col>
                             <Col xs={1}>
                                 <Checkbox inline disabled={_.isEmpty(selectedEditMockConfig.serviceConfigs)} checked={allMocked} onChange={() => this.handleMockAllCheckChange(allMocked)}>
                                     <b>Mock</b>
                                 </Checkbox>
+                            </Col>
+                            <Col xs={1}>
+                                <b>Include service prefix</b>
                             </Col>
                             <Col xs={5}>
                                 <b>Target URL</b>
@@ -318,13 +328,16 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
                             <Col xs={1}></Col>
                         </Row>
                         {(selectedEditMockConfig.serviceConfigs || [])
-                            .map(({service, url, isMocked}, index) => (
+                            .map(({service, url, isMocked, includeServicePrefix}, index) => (
                                     <Row className="show-grid margin-top-10" key={index}>
-                                        <Col xs={5}>
+                                        <Col xs={4}>
                                             <input value={service} onChange={(e) => this.handleServiceChange(e, index)} className="form-control"/>
                                         </Col>
                                         <Col xs={1} style={{}}>
                                             <Checkbox inline checked={isMocked} onChange={() => this.handleIsMockedCheckChange(index)}/>
+                                        </Col>
+                                        <Col xs={1} style={{}}>
+                                            <Checkbox inline checked={includeServicePrefix} onChange={() => this.handleIncludeServicePrefixChange(index)} disabled={isMocked}/>
                                         </Col>
                                         <Col xs={5}>
                                             <input value={url} onChange={(e) => this.handleTargetURLChange(e, index)} className="form-control" disabled={isMocked}/>
