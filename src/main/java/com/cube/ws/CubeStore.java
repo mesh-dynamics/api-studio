@@ -61,6 +61,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.solr.common.util.Pair;
+import org.glassfish.jersey.media.multipart.BodyPartEntity;
+import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.json.JSONObject;
@@ -1971,10 +1973,10 @@ public class CubeStore {
     @Produces(MediaType.APPLICATION_JSON)
     public Response protoDescriptorFileUpload(@PathParam("customerId") String customerId,
         @PathParam("app") String app,
-        @FormDataParam("protoDescriptorFile") InputStream uploadedInputStream,
-        @FormDataParam("protoDescriptorFile") FormDataContentDisposition fileDetail) {
+        @FormDataParam("protoDescriptorFile") List<FormDataBodyPart>  bodyParts) {
+//        @FormDataParam("protoDescriptorFile") FormDataContentDisposition fileDetail) {
 
-        if(uploadedInputStream==null) {
+        if(bodyParts==null) {
             return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
                 Map.of("Message",
                     "Uploaded file stream null. Ensure the variable name is \"protoDescriptorFile\" for the file")
@@ -1986,21 +1988,29 @@ public class CubeStore {
         byte[] encodedFileBytes;
         try {
             String tmpDir = "/tmp";
-            String fileName = fileDetail.getFileName();
-            File targetFile = new File(tmpDir + "/" + fileName);
-            OutputStream outStream = new FileOutputStream(targetFile);
-            outStream.write(uploadedInputStream.readAllBytes());
+            String descFileName = "tmp.desc";
+            List<String> commandList = new ArrayList<>();
+            commandList.add("protoc");
+            commandList.add("--descriptor_set_out=" + descFileName);
+            for (FormDataBodyPart bodyPart : bodyParts) {
 
+                BodyPartEntity bodyPartEntity = (BodyPartEntity) bodyPart.getEntity();
+                String fileName = bodyPart.getContentDisposition().getFileName();
+                commandList.add(fileName);
+                File targetFile = new File(tmpDir + "/" + fileName);
+                OutputStream outStream = new FileOutputStream(targetFile);
+                outStream.write(bodyPartEntity.getInputStream().readAllBytes());
+            }
             ProcessBuilder builder = new ProcessBuilder();
             builder.directory(new File(tmpDir));
             // Need to ensure protoc compiler is installed in the docker container env
-            builder.command("protoc", "--descriptor_set_out=tmp.desc", fileName);
+            builder.command(commandList);
             Process process = builder.start();
             int exitCode = process.waitFor();
             assert exitCode == 0;
 
             InputStream initialStream = new FileInputStream(
-                new File("/tmp/tmp.desc"));
+                new File(tmpDir + "/" + descFileName));
             byte[] buffer = new byte[initialStream.available()];
             initialStream.read(buffer);
 
