@@ -355,6 +355,7 @@ export interface IEventData {
   spanId?: string;
   timestamp: number;
   traceId: string;
+  payloadFields:[];
 }
 export interface IApiTrace {
   apiPath: string;

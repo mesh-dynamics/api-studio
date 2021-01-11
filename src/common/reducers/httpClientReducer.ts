@@ -734,7 +734,16 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 ...state,
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
-                        eachTab["recordedHistory"] = null
+                        eachTab["recordedHistory"] = null;
+                        //Reset the fields here, which should not persist from prev run
+                        const httpRequestEvent = _.find(eachTab.eventData, {eventType: "HTTPRequest"});
+                        const httpResponseEvent = _.find(eachTab.eventData, {eventType: "HTTPResponse"});
+                        if(httpRequestEvent){
+                            httpRequestEvent.payloadFields = [];
+                        }
+                        if(httpResponseEvent){
+                            httpResponseEvent.payloadFields = [];
+                        }
                     }
                     return eachTab;
                 })

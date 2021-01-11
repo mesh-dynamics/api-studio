@@ -1389,8 +1389,9 @@ class HttpClientTabs extends Component {
             if(urlEnvVal) {
                 const path = this.getPathName(urlEnvVal);
                 httpRequestEvent.apiPath = path;
-                httpResponseEvent.apiPath = path;
-                httpRequestEvent.metaData.href = urlEnvVal;
+                httpResponseEvent.apiPath = path;                
+            }else{
+                httpRequestEvent.metaData.href = "";
             }
             if(currentEnvironment) {
                 httpRequestEvent.metaData.currentEnvironment = currentEnvironment;
@@ -1446,11 +1447,11 @@ class HttpClientTabs extends Component {
         let httpResponseHeaders, httpResponseBody, httpResponseStatus;
         if (type !== "History") {
             httpResponseHeaders = recordedResponseHeaders ? extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : responseHeaders ? extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : null;
-            httpResponseBody = recordedResponseBody ? this.tryJsonParse(recordedResponseBody) : responseBody ? this.tryJsonParse(responseBody) : null;
+            httpResponseBody = this.tryJsonParse(recordedResponseBody);
             httpResponseStatus = httpResponseEvent.payload[1].status
         } else {
             httpResponseHeaders = responseHeaders ? extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : recordedResponseHeaders ? extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : null;
-            httpResponseBody = responseBody ? this.tryJsonParse(responseBody) : recordedResponseBody ? this.tryJsonParse(recordedResponseBody) : null;
+            httpResponseBody = this.tryJsonParse(responseBody);
             httpResponseStatus = responseStatus;
         }
         const reqResCubeFormattedData = {   
