@@ -46,6 +46,7 @@ import java.util.stream.Stream;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -108,7 +109,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private static final Logger LOGGER = LogManager.getLogger(ReqRespStoreSolr.class);
 
-    public static final int EVENT_BATCH_SIZE = 200;
 
 /*
     @Override
@@ -131,17 +131,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
+    public boolean save(Event event) {
+        return saveDocs(eventToSolrDoc(event));
+    }
+
+
+    @Override
     public boolean save(Event... events) {
         if(events.length==0) return true;
-        if(events.length==1) return saveDocs(eventToSolrDoc(events[0]));
+        if(events.length==1) return save(events[0]);
 
-        //save in a batch of size EVENT_BATCH_SIZE
-        boolean failure =  BatchingIterator.batchedStreamOf(Arrays.stream(events).map(this::eventToSolrDoc) , EVENT_BATCH_SIZE).map(solrInputDocuments -> {
-            SolrInputDocument[] docs = solrInputDocuments.toArray(SolrInputDocument[]::new);
-            return saveDocs(docs);
-        }).anyMatch(result->!result);
-
-        return !failure;
+        return saveDocs(Arrays.stream(events).map(this::eventToSolrDoc).toArray(SolrInputDocument[]::new));
     }
 
     @Override
@@ -1012,6 +1012,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
     }
 
+    @Override
+    public Optional<RecordOrReplay> getRecordOrReplayFromCollection(String customerId, String app, String collection) {
+
+        return getRecordingByCollectionAndTemplateVer(customerId, app, collection, Optional.empty())
+            .map(RecordOrReplay::createFromRecording)
+            .or(() -> getReplay(collection).map(RecordOrReplay::createFromReplay));
+        // collection for a replay is its replayId
+
+    }
+
 
     private Optional<ConfigApplicationAcknowledge> docToAgentConfigAcknowledge(SolrDocument doc) {
 
@@ -1607,7 +1617,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private SolrInputDocument eventToSolrDoc(Event event) {
         final SolrInputDocument doc = new SolrInputDocument();
-        String id = event.eventType.toString().concat("-").concat(event.apiPath).concat("-")
+        String id = event.eventType.toString().concat("-").concat(event.service).concat("-").concat(event.apiPath).concat("-")
             .concat(event.reqId);
 
         doc.setField(IDF, id);
@@ -2044,6 +2054,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(VERSIONF, key.getVersion());
         key.getMethod().ifPresent(method -> doc.setField(METHODF, method));
         return doc;
+    }
+
+    public Comparator getDefaultComparator(EventType eventType, TemplateKey.Type templateKeyType)
+        throws TemplateNotFoundException {
+        return comparatorCache.getDefaultComparator(eventType, templateKeyType);
     }
 
 

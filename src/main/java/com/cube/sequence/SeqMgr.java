@@ -44,7 +44,8 @@ public class SeqMgr {
         SequenceGenerator gen = null;
         if(nextSeq.subtract(prevSeq).compareTo(BigInteger.valueOf(size)) > 0){
             // can be fitted in between
-            gen = new SequenceGenerator(prevSeq.add(BigInteger.ONE) , nextSeq , SeqIdlen , size);
+            // prevSeq and nextSeq both are non inclusive
+            gen = new SequenceGenerator(prevSeq , nextSeq , SeqIdlen , size);
         }else{
             int nd = (int) Math.ceil(Math.log ((size+1)/(nextSeq.subtract(prevSeq).longValueExact()))/Math.log (BaseCharUtils.BASE_LEN));
             gen = new SequenceGenerator(prevSeq.multiply(BaseCharUtils.BASE_LEN_BI.pow(nd))  , nextSeq.multiply(BaseCharUtils.BASE_LEN_BI.pow(nd)) , SeqIdlen+nd , size );
