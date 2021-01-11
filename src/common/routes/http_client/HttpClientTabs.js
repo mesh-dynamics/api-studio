@@ -1388,7 +1388,14 @@ class HttpClientTabs extends Component {
         // let apiPath = getApiPathFromRequestEvent(httpRequestEvent); // httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : "";
         // let apiPath = this.getPathName(applyEnvVarsToUrl(tabToSave.httpURL));
         const parsedUrl = urlParser(applyEnvVarsToUrl(tabToSave.httpURL), PLATFORM_ELECTRON ? {} : true);
-        let apiPath = _.trim(generateApiPath(parsedUrl), '/');
+
+        let apiPath = generateApiPath(parsedUrl);
+
+        if(bodyType === "grpcData") {
+            // Trim the all slashes in case of gRPC
+            apiPath = _.trim(apiPath, '/');
+        }
+        
 
         if(httpRequestEvent.reqId === "NA") {
             let service = httpRequestEvent.service != "NA" ? httpRequestEvent.service : (parsedUrl.host || "NA");
