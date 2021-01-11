@@ -8,18 +8,15 @@ const mockApiPrefix = '/api/msc/mockWithRunId';
 /**
  * Exclude the service name from API path
  * @param {*} apiPath - api path that contains service name as first path variable
+ * @param {*} serviceConfigObject
  */
-const stripServiceNameFromOutgoingProxyPath = (apiPath) => {
+const stripServiceNameFromOutgoingProxyPath = (apiPath, {service, includeServicePrefix}) => {
     if(apiPath) {
-        
-        // Exclude the service part from url
-        const apiPathParts = apiPath.split('/').filter(Boolean).slice(1);
-        logger.info('Api Path Parts :', apiPathParts);
-        
-        const updatedPath = apiPathParts.join('/');
-        
-        // Must include trailing slashes
-        return apiPath.endsWith('/') ? `${updatedPath}/` : updatedPath;
+        if (includeServicePrefix) {
+            return apiPath.slice(1) // remove starting slash
+        } else {
+            return apiPath.slice(service.length + 2) // accounting for slashes
+        }
     }
 
     return '';
@@ -67,7 +64,7 @@ const rewriteLivePath = (serviceConfigObject, receivedPathInProxy) => {
 
     logger.info('Parsed Config Url ', parsedConfigUrl);
 
-    const outgoingProxyApiPath = stripServiceNameFromOutgoingProxyPath(receivedPathInProxy);
+    const outgoingProxyApiPath = stripServiceNameFromOutgoingProxyPath(receivedPathInProxy, serviceConfigObject);
 
     const constructedApiPath = parsedConfigUrl.path === '/' 
                                 ? `/${outgoingProxyApiPath}` // If path is just '/' return the outgoing proxy path 

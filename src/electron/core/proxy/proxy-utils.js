@@ -44,12 +44,18 @@ const getServiceNameFromUrl = (resourceUrl) => {
 /**
  * 
  * @param {*} serviceConfig  List of service configurations
- * @param {*} service The name service for which configuration needs to be looked up
+ * @param {*} url The URL from which to get the config using prefix match
  */
-const getServiceConfig = (serviceConfigs, service) => {
-    
-    if(serviceConfigs && service) {        
-        return serviceConfigs.find(item => item.service === service);
+const getServiceConfig = (serviceConfigs, url) => {
+    if(url.startsWith("/")) {
+        url = url.substring(1)
+    }
+
+    if(serviceConfigs && url) {        
+        return serviceConfigs.find(item => {
+            const service = item.service
+            return url.startsWith(service.startsWith('/') ? service.substring(1) : service)
+        });
     }
     
     return null;
@@ -66,15 +72,19 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
         user,
         proxy,
         headers,
-        service, 
         mockContext,
         requestData,
-        defaultProxyOptions, 
+        defaultProxyOptions,
+        url: inputUrl, 
     } = proxyOptionParameters;
 
     const { config:  { serviceConfigs } } = mockContext;
 
-    const serviceConfigObject = getServiceConfig(serviceConfigs, service); // serviceConfigs.find(item => item.service === service);
+    const serviceConfigObject = getServiceConfig(serviceConfigs, inputUrl);
+
+    const service = serviceConfigObject?.service
+
+    logger.info("Matched service prefix: ", service)
 
     logger.info('Selected service config object :', serviceConfigObject);
 

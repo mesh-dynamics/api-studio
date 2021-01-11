@@ -64,12 +64,11 @@ const setupProxy = (mockContext, user) => {
             
             req.bodyStream = bufferStream;
             
-            const service = getServiceNameFromUrl(url);
+            //const service = getServiceNameFromUrl(url);
 
             logger.info(`Request Details at proxy 
                             URL: ${url} 
-                            METHOD: ${method} 
-                            SERVICE: ${service} 
+                            METHOD: ${method}  
                             HEADERS: ${JSON.stringify(headers, undefined, 4)} 
                             REQUEST BODY: ${buffer}
                         `);
@@ -96,11 +95,11 @@ const setupProxy = (mockContext, user) => {
             const proxyOptionParameters = {
                 user,
                 proxy,
-                service,
                 headers,
                 mockContext,
                 requestData: buffer,
                 defaultProxyOptions,
+                url,
             };
 
             logger.info('Configuring Target...');
