@@ -1359,7 +1359,8 @@ public class CubeStore {
                         event.service, event.getTraceId());
                     reqIdMap.put(oldReqId, reqId);
                 }
-                return buildEvent(event, toRecording.collection,  toRecording.recordingType, reqId, event.getTraceId(), Optional.of(timeStamp.toString()));
+                return buildEvent(event, toRecording.collection,  toRecording.recordingType, reqId, event.getTraceId(),
+                    Optional.of(timeStamp.toString()), event.timestamp);
             } catch (InvalidEventException e) {
                 eventCreationFailure[0] = true;
                 LOGGER.error(new ObjectMessage(
@@ -2046,13 +2047,18 @@ public class CubeStore {
         }
     }
 
-
     private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId, Optional<String> runId)
+        throws InvalidEventException {
+        return buildEvent(event, collection, recordingType, reqId, traceId, runId, Instant.now());
+    }
+
+
+    private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId, Optional<String> runId, Instant timeStamp)
         throws InvalidEventException {
         EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
             event.service, event.instanceId, collection,
             new MDTraceInfo(traceId, event.spanId, event.parentSpanId),
-            event.getRunType(), Optional.of(Instant.now()), reqId, event.apiPath,
+            event.getRunType(), Optional.of(timeStamp), reqId, event.apiPath,
             event.eventType, recordingType);
         eventBuilder.setPayload(event.payload);
         eventBuilder.withMetaData(event.metaData);
@@ -2205,7 +2211,7 @@ public class CubeStore {
         var newEventsStream =   pending.stream().map(event -> {
             String newReqId = "Update-" + finalPayloadHash;
             try {
-                Event newEvent = buildEvent(event, collection, recordingType, newReqId, newReqId, Optional.empty());
+                Event newEvent = buildEvent(event, collection, recordingType, newReqId, newReqId, Optional.empty(), event.timestamp);
                 return newEvent;
             } catch (InvalidEventException e) {
                 LOGGER.error(new ObjectMessage(Map.of(
