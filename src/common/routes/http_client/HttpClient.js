@@ -4,7 +4,7 @@ import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, 
 import HttpRequestMessage from "./HttpRequestMessage.tsx";
 import HttpResponseMessage from "./HttpResponseMessage.tsx";
 
-
+import ErrorBoundary from '../../components/ErrorHandling/ErrorBoundary';
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import config from "../../config";
 import statusCodeList from "../../status-code-list";
@@ -708,6 +708,7 @@ class HttpClient extends Component {
                                     queryStringParams={selectedTraceTableReqTab.queryStringParams}
                                     bodyType={selectedTraceTableReqTab.bodyType}
                                     formData={selectedTraceTableReqTab.formData} 
+                                    multipartData={selectedTraceTableReqTab.multipartData} 
                                     rawData={selectedTraceTableReqTab.rawData}
                                     grpcData={selectedTraceTableReqTab.grpcData}
                                     rawDataType={selectedTraceTableReqTab.rawDataType}
@@ -730,6 +731,7 @@ class HttpClient extends Component {
                                         queryStringParams={selectedTraceTableTestReqTab.queryStringParams}
                                         bodyType={selectedTraceTableTestReqTab.bodyType}
                                         formData={selectedTraceTableTestReqTab.formData} 
+                                        multipartData={selectedTraceTableTestReqTab.multipartData} 
                                         rawData={selectedTraceTableTestReqTab.rawData}
                                         grpcData={selectedTraceTableTestReqTab.grpcData}
                                         rawDataType={selectedTraceTableTestReqTab.rawDataType}
@@ -758,6 +760,7 @@ class HttpClient extends Component {
                                     queryStringParams={selectedTraceTableReqTab.queryStringParams}
                                     bodyType={selectedTraceTableReqTab.bodyType}
                                     formData={selectedTraceTableReqTab.formData} 
+                                    multipartData={selectedTraceTableReqTab.multipartData || []}
                                     rawData={selectedTraceTableReqTab.rawData}
                                     grpcData={selectedTraceTableReqTab.grpcData}
                                     rawDataType={selectedTraceTableReqTab.rawDataType}
@@ -783,6 +786,7 @@ class HttpClient extends Component {
                                     queryStringParams={selectedTraceTableTestReqTab.queryStringParams}
                                     bodyType={selectedTraceTableTestReqTab.bodyType}
                                     formData={selectedTraceTableTestReqTab.formData} 
+                                    multipartData={selectedTraceTableTestReqTab.multipartData || []}
                                     rawData={selectedTraceTableTestReqTab.rawData}
                                     grpcData={selectedTraceTableTestReqTab.grpcData}
                                     rawDataType={selectedTraceTableTestReqTab.rawDataType}
@@ -1027,4 +1031,25 @@ class HttpClient extends Component {
     }
 }
 
-export default HttpClient;
+
+
+function errorBoundedHttpClient(props) {
+    const fallBackMessage = (
+      <div>
+        <h3>An error occurred</h3>
+        <p>
+          Please close this tab to resolve the issue. If the error
+          persists, please contact us.
+        </p>
+      </div>
+    );
+    return (
+      <ErrorBoundary fallbackUI={fallBackMessage}>
+        <HttpClient {...props} />
+      </ErrorBoundary>
+    );
+  }
+  
+
+
+export default errorBoundedHttpClient;

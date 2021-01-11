@@ -5,7 +5,7 @@ import { FormControl, FormGroup, Tabs, Tab, Panel, Label, Modal, Button, Control
 
 import { preRequestToFetchableConfig, getCurrentMockConfig,
     extractQueryStringParamsToCubeFormat,
-    extractBodyToCubeFormat, extractHeadersToCubeFormat } from "../../utils/http_client/utils";
+    extractBodyToCubeFormat, extractHeadersToCubeFormat, multipartDataToCubeFormat } from "../../utils/http_client/utils";
 import { applyEnvVars, getCurrentEnvironment, getRenderEnvVars, getCurrentEnvVars } from "../../utils/http_client/envvar";
 import EnvironmentSection from './EnvironmentSection';
 import MockConfigSection from './MockConfigSection';
@@ -167,6 +167,7 @@ class HttpClientTabs extends Component {
                 queryStringParams: toBeCopiedFromData.queryStringParams,
                 bodyType: toBeCopiedFromData.bodyType,
                 formData: toBeCopiedFromData.formData,
+                multipartData: toBeCopiedFromData.multipartData,
                 rawData: toBeCopiedFromData.rawData,
                 rawDataType: toBeCopiedFromData.rawDataType,
                 paramsType: "showQueryParams",
@@ -226,6 +227,7 @@ class HttpClientTabs extends Component {
                 queryStringParams: toBeCopiedFromData.queryStringParams,
                 bodyType: toBeCopiedFromData.bodyType,
                 formData: toBeCopiedFromData.formData,
+                multipartData: toBeCopiedFromData.multipartData,
                 rawDataType: toBeCopiedFromData.rawDataType,
                 rawData: toBeCopiedFromData.rawData,
                 grpcData: toBeCopiedFromData.grpcData,
@@ -329,7 +331,7 @@ class HttpClientTabs extends Component {
             const traceId = cryptoRandomString({length: 32});
             const customerId = user.customer_name;
             const eventData = this.generateEventdata(app, customerId, traceId, service, apiPath);
-            let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "", bodyType = "";
+            let headers = [], queryParams = [], formData = [],multipartData=[], rawData = "", rawDataType = "", bodyType = "";
             for (let eachHeader in parsedCurl.headers) {
                 headers.push({
                     id: uuidv4(),
@@ -390,6 +392,7 @@ class HttpClientTabs extends Component {
                 queryStringParams: queryParams,
                 bodyType: bodyType,
                 formData: formData,
+                multipartData: multipartData,
                 rawData: rawData,
                 rawDataType: rawDataType,
                 paramsType: "showQueryParams",
@@ -539,6 +542,7 @@ class HttpClientTabs extends Component {
                 queryStringParams: [],
                 bodyType: "formData",
                 formData: [],
+                multipartData: [],
                 rawData: "",
                 rawDataType: "json",
                 paramsType: "showQueryParams",
@@ -953,15 +957,16 @@ class HttpClientTabs extends Component {
                             const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
                             const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
                             
-                            const { headers, queryParams, formData, rawData, rawDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
+                            const { headers, queryParams, formData, rawData, rawDataType, multipartData }  = extractParamsFromRequestEvent(httpRequestEvent);
                             let reqObject = {
                                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
                                 httpURL: httpRequestEvent.apiPath,
                                 httpURLShowOnly: httpRequestEvent.apiPath,
                                 headers: headers,
                                 queryStringParams: queryParams,
-                                bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
+                                bodyType: multipartData && multipartData.length > 0 ? "multipartData" :formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData", //multipart
                                 formData: formData,
+                                multipartData,
                                 rawData: rawData,
                                 rawDataType: rawDataType,
                                 paramsType: "showQueryParams",
@@ -1037,8 +1042,39 @@ class HttpClientTabs extends Component {
     }
 
     isgRPCRequest(tabToProcess){
-       return tabToProcess.bodyType === "grpcData" && tabToProcess.grpcData && tabToProcess.grpcData.trim()
+        return tabToProcess.bodyType === "grpcData" && tabToProcess.grpcData && tabToProcess.grpcData.trim()
     }
+ 
+     async driveRequestHandleResponse(response, tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, fetchedResponseHeaders){
+         const {httpClient: { userHistoryCollection}, dispatch} = this.props;
+         const resISODate = new Date().toISOString();
+         const resTimestamp = new Date(resISODate).getTime();
+         const responseStatus = response.status;
+         const responseStatusText = response.statusText;
+         let data = "";
+         
+         if(fetchedResponseHeaders["content-type"] == "application/grpc"){
+             var reader = response.body.getReader();
+             var result = await reader.read();
+             const base64Data = Base64Binary.encode(result.value || new Uint8Array());
+             data =  base64Data;
+         }
+         else{
+             data= await response.text();
+         }
+     
+         dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), data));
+         this.saveToHistoryAndLoadTrace(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp, httpRequestURLRendered, currentEnvironment);
+     }
+     async driveRequestHandleError(error, tabId, runId){
+         const {dispatch} = this.props;
+         console.error(error);
+         dispatch(httpClientActions.postErrorDriveRequest(tabId, error.message));
+         dispatch(httpClientActions.unsetReqRunning(tabId, runId));
+         if(error.message !== commonConstants.USER_ABORT_MESSAGE && error.message !== commonConstants.USER_ABORT_ELECTRON){                
+             this.showErrorAlert(`Could not get any response. There was an error connecting: ${error}`);
+         }
+     }
 
     async driveRequest(isOutgoingRequest, tabId) {
         const {httpClient: {tabs, selectedTabKey, userHistoryCollection, mockConfigList, selectedMockConfig, mockContextLookupCollection, mockContextSaveToCollection, selectedEnvironment, contextMap  }} = this.props;
@@ -1160,77 +1196,56 @@ class HttpClientTabs extends Component {
         // TODO: Update this to be visible from UI
         // fetchConfigRendered.headers.append('md-trace-id', encodeURIComponent(`${traceId}:${spanId}:0:1`) );
         let resTimestamp;
-
-        if(PLATFORM_ELECTRON && !isGrpc) {
+        
+        if(PLATFORM_ELECTRON) {
+            const requestApi = window.require('electron').remote.getGlobal("requestApi");
+            const filePaths = {}; //this can be removed
+            if(bodyType == "multipartData"){
+                tabToProcess.formData.forEach((param)=>{
+                    if(param.isFile && param.selected){
+                        filePaths[param.name] = param.value;
+                    }                   
+                });
+            }
+            requestApi.push(tabId + runId, {fetchConfigRendered, filePaths});
             ipcRenderer.on('drive_request_error', (event, reqTabId, reqRunId, reqError) => {
                 if(reqTabId === tabId && reqRunId === runId) {
-                    console.error("Electron request error: ", reqError);
-                    dispatch(httpClientActions.postErrorDriveRequest(reqTabId, reqError.message));
-                    dispatch(httpClientActions.unsetReqRunning(reqTabId, reqRunId));
+                    this.driveRequestHandleError(reqError, tabId, runId);
+                    responseApi.remove(tabId + runId);
                 }
             });
-            ipcRenderer.on('drive_request_completed', (event, reqTabId, reqRunId, resTimestamp, fetchedResponseHeaders, responseStatus, responseStatusText, body) => {
+            ipcRenderer.on('drive_request_completed', (event, reqTabId, reqRunId ) => {
                 if(reqTabId === tabId && reqRunId === runId) {
                     try {
-                        const data = body;
-                        dispatch(httpClientActions.postSuccessDriveRequest(reqTabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), data));
-                        this.saveToHistoryAndLoadTrace(reqTabId, userHistoryCollection.id, reqRunId, reqTimestamp, resTimestamp, httpRequestURLRendered, currentEnvironment, currentEnvironmentVars);
-                    } catch (err) {
-                        dispatch(httpClientActions.postErrorDriveRequest(tabId, err.message));
-                        dispatch(httpClientActions.unsetReqRunning(reqTabId, reqRunId));   
+                        const responseApi = window.require('electron').remote.getGlobal("responseApi");
+                        let response = responseApi.get(tabId + runId);
+                        responseApi.remove(tabId + runId);
+                        response.headers.forEach((value, key) => {
+                            fetchedResponseHeaders[key] = value;
+                        });
+                        this.driveRequestHandleResponse(response, tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, fetchedResponseHeaders);
+                    } catch (error) {
+                        this.driveRequestHandleError(error, tabId, runId);
                     }
                 }
             });
-            let bodyData = {};
-            if (!(fetchConfigRendered.method == "GET" || fetchConfigRendered.method == "HEAD")){
-                if(bodyType === "formData") {
-                    bodyData = {body: fetchConfigRendered.body.toString()}
-                } else if(!_.isString(fetchConfigRendered.body)) {
-                    bodyData = {body: JSON.stringify(fetchConfigRendered.body)}
-                } else {
-                    bodyData = {body: fetchConfigRendered.body}
-                }
-            }
             ipcRenderer.send('drive_request_initiate', {
                 tabId,
                 runId,
-                method: fetchConfigRendered.method,
                 url: fetchUrlRendered,
                 bodyType,
-                headers: JSON.stringify(fetchConfigRendered.headers),
-                ...bodyData
             });
         } else {
             fetchConfigRendered.signal = tabToProcess.abortRequest.signal;
             return fetch(fetchUrlRendered, fetchConfigRendered).then(async(response) => {
-                const resISODate = new Date().toISOString();
-                resTimestamp = new Date(resISODate).getTime();
-                responseStatus = response.status;
-                responseStatusText = response.statusText;
                 for (const header of response.headers) {
                     fetchedResponseHeaders[header[0]] = header[1];
                 }
-                if(fetchedResponseHeaders["content-type"] == "application/grpc"){
-                    var reader = response.body.getReader();
-                    var result = await reader.read();
-                    const base64Data = Base64Binary.encode(result.value || new Uint8Array());
-                    return base64Data;
-                }
-                return response.text();
-            })
-            .then((data) => {
-                // handle success
-                dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), data));
-                this.saveToHistoryAndLoadTrace(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp, httpRequestURLRendered, currentEnvironment);
-                //dispatch(httpClientActions.unsetReqRunning(tabId, runId))
+                this.driveRequestHandleResponse(response, tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, fetchedResponseHeaders);
+            
             })
             .catch((error) => {
-                console.error(error);
-                dispatch(httpClientActions.postErrorDriveRequest(tabId, error.message));
-                dispatch(httpClientActions.unsetReqRunning(tabId, runId));
-                if(error.message !== commonConstants.USER_ABORT_MESSAGE){                
-                    this.showErrorAlert(`Could not get any response. There was an error connecting: ${error}`);
-                }
+                this.driveRequestHandleError(error, tabId, runId);                
             });
         }        
     }
@@ -1239,6 +1254,7 @@ class HttpClientTabs extends Component {
         const { dispatch } = this.props;
         dispatch(httpClientActions.updateAbortRequest(tabId, abortRequest));
     }
+
 
     initiateAbortRequest(tabId, runId) {
         const { 
@@ -1252,16 +1268,10 @@ class HttpClientTabs extends Component {
         const tabToProcess = tabsToProcess[tabIndex];
         tabToProcess.abortRequest?.stopRequest();
         if(PLATFORM_ELECTRON) {
-            ipcRenderer.on('request_aborted', (event, isAborted, abortedTabId, abortedRunId) => {
-                if(isAborted && tabId === abortedTabId && abortedRunId === runId) {
-                    dispatch(httpClientActions.unsetReqRunning(tabId, abortedRunId));
-                }
-            });
             ipcRenderer.send('request_abort', {
                 tabId,
                 runId
             });
-            // dispatch(httpClientActions.unsetReqRunning(tabId, runId));
         }
     }
 
@@ -1391,6 +1401,7 @@ class HttpClientTabs extends Component {
 
         httpRequestEvent.metaData.hdrs = JSON.stringify(unSelectedRequestParamData(headers));
         httpRequestEvent.metaData.queryParams = JSON.stringify(unSelectedRequestParamData(queryStringParams));
+        httpRequestEvent.metaData.bodyType = bodyType;
         
         const httpReqestHeaders = extractHeadersToCubeFormat(selectedRequestParamData(headers), type);
         const httpRequestQueryStringParams = extractQueryStringParamsToCubeFormat(selectedRequestParamData(queryStringParams), type);
@@ -1398,7 +1409,12 @@ class HttpClientTabs extends Component {
         if (bodyType === "formData") {
             const { formData } = tabToSave;
             httpRequestEvent.metaData.formParams = JSON.stringify(unSelectedRequestParamData(formData));
-            httpRequestFormParams = extractBodyToCubeFormat(selectedRequestParamData(formData), type);
+            httpRequestBody = extractBodyToCubeFormat(selectedRequestParamData(formData), type);
+        }
+        if (bodyType === "multipartData") {
+            const { multipartData } = tabToSave;
+            httpRequestEvent.metaData.multipartData = JSON.stringify(unSelectedRequestParamData(multipartData));
+            httpRequestBody = multipartDataToCubeFormat(selectedRequestParamData(multipartData), type);
         }
         if (bodyType === "rawData") {
             const { rawData } = tabToSave;
@@ -1448,7 +1464,7 @@ class HttpClientTabs extends Component {
                     {
                         hdrs: httpReqestHeaders,
                         queryParams: httpRequestQueryStringParams,
-                        formParams: httpRequestFormParams,
+                         formParams: [], //This can be removed after few releases. Backward compatibility.
                         ...(httpRequestBody && { body: httpRequestBody }),
                         method: httpMethod.toUpperCase(),
                         path: apiPath,
@@ -1558,7 +1574,7 @@ class HttpClientTabs extends Component {
         const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
         const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
 
-        const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
+        const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType, multipartData }  = extractParamsFromRequestEvent(httpRequestEvent);
         
         let reqObject = {
             id: existingId || uuidv4(),
@@ -1567,8 +1583,9 @@ class HttpClientTabs extends Component {
             httpURLShowOnly: httpRequestEvent.metaData.httpURL || httpRequestEvent.apiPath,
             headers: headers,
             queryStringParams: queryParams,
-            bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : grpcData && grpcData.length > 0 ? "grpcData" : "formData",
+            bodyType: multipartData && multipartData.length > 0 ? "multipartData" : formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : grpcData && grpcData.length > 0 ? "grpcData" : "formData",
             formData: formData,
+            multipartData,
             rawData: rawData,
             rawDataType: rawDataType,
             grpcData: grpcData,
@@ -1731,6 +1748,7 @@ class HttpClientTabs extends Component {
                 queryStringParams: [],
                 bodyType: "formData",
                 formData: [],
+                multipartData: [],
                 rawData: "",
                 rawDataType: "json",
                 paramsType: "showQueryParams",

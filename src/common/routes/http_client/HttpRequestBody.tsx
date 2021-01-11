@@ -1,9 +1,8 @@
-import React, { ChangeEvent, Component } from "react";
-import { Glyphicon } from "react-bootstrap";
+import React, { ChangeEvent, Component, FormEvent } from "react";
 
 import HttpRequestFormData from "./HttpRequestFormData";
+import HttpRequestMultipartData, { IMultipartData } from "./HttpRequestMultipartData";
 import HttpRequestRawData from "./HttpRequestRawData";
-import HttpRequestBinaryData from "./HttpRequestBinaryData";
 
 import { FormGroup, FormControl } from "react-bootstrap";
 
@@ -29,6 +28,7 @@ export interface IHttpRequestBodyProps {
   addOrRemoveParam: AddOrRemoveHandler;
   updateAllParams: UpdateParamHandler;
   formData: IFormData[];
+  multipartData: IMultipartData[];
   id: string;
   rawDataType: string;
   updateBodyOrRawDataType: UpdateBodyOrRawDataTypeHandler;
@@ -43,7 +43,7 @@ class HttpRequestBody extends Component<
   IHttpRequestBodyProps,
   IHttpRequestBodyState
 > {
-  private bodyDataTypes = ["formData", "grpcData", "rawData"];
+  private bodyDataTypes = ["formData","multipartData", "grpcData", "rawData"];
   constructor(props: IHttpRequestBodyProps) {
     super(props);
     this.state = {
@@ -53,22 +53,25 @@ class HttpRequestBody extends Component<
     };
   }
 
-  handleBodyOrRawDataType = (event: ChangeEvent<HTMLInputElement>) => {
+  handleBodyOrRawDataType = (
+    event: FormEvent<FormControl> | ChangeEvent<HTMLInputElement>
+  ) => {
     const { tabId, isOutgoingRequest } = this.props;
+    const target = event.target as HTMLInputElement;
     const typeToUpdate =
-      event.target.name === "bodyType" + this.props.id.trim()
+      target.name === "bodyType" + this.props.id.trim()
         ? "bodyType"
         : "rawDataType";
     this.props.updateBodyOrRawDataType(
       isOutgoingRequest,
       tabId,
       typeToUpdate === "bodyType" ? "bodyType" : "rawDataType",
-      event.target.value
+      target.value
     );
     if (typeToUpdate === "bodyType") {
-      if (this.bodyDataTypes.indexOf(event.target.value) !== -1) {
+      if (this.bodyDataTypes.indexOf(target.value) !== -1) {
         this.setState({
-          bodyDataType: event.target.value,
+          bodyDataType: target.value,
         });
       }
     }
@@ -77,7 +80,9 @@ class HttpRequestBody extends Component<
     const isRawData = this.state.bodyDataType == "rawData";
     const isGrpcData = this.state.bodyDataType == "grpcData";
     isRawData && this.state.rawDataRef && this.state.rawDataRef.formatHandler();
-    isGrpcData && this.state.grpcDataRef && this.state.grpcDataRef.formatHandler();
+    isGrpcData &&
+      this.state.grpcDataRef &&
+      this.state.grpcDataRef.formatHandler();
   };
   render() {
     const isRawDataHighlighted =
@@ -87,19 +92,28 @@ class HttpRequestBody extends Component<
       filled: isRawDataHighlighted,
     });
     const isGrpcDataHighlighted =
-    this.props.grpcData && this.props.grpcData.trim();
-  const grpcDataLabelClass = classNames({
-    "request-data-label": true,
-    filled: isGrpcDataHighlighted,
-  });
+      this.props.grpcData && this.props.grpcData.trim();
+    const grpcDataLabelClass = classNames({
+      "request-data-label": true,
+      filled: isGrpcDataHighlighted,
+    });
     const isFormDataExists =
       this.props.formData.findIndex((header) => header.name !== "") > -1;
-    const formDataLabelClass = classNames({
-      "request-data-label": true,
-      filled: isFormDataExists,
-    });
+    const isMultipartDataExists =
+      this.props.multipartData.findIndex((data) => data.name !== "") > -1;
 
+      const formDataLabelClass = classNames({
+        "request-data-label": true,
+        filled: isFormDataExists,
+      });
+
+      const multipartDataLabelClass = classNames({
+        "request-data-label": true,
+        filled: isMultipartDataExists,
+      });
+    
     const isFormData = this.state.bodyDataType == "formData";
+    const isMultipartData = this.state.bodyDataType == "multipartData";
     const isRawData = this.state.bodyDataType == "rawData";
     const isGrpcData = this.state.bodyDataType == "grpcData";
 
@@ -135,6 +149,16 @@ class HttpRequestBody extends Component<
             />
             x-www-form-urlencoded
           </div>
+          <div className={multipartDataLabelClass}>
+            <input
+              type="radio"
+              value="multipartData"
+              name={"bodyType" + this.props.id.trim()}
+              checked={isMultipartData}
+              onChange={this.handleBodyOrRawDataType}
+            />
+            Form Data
+          </div>
           <div className={rawDataLabelClass}>
             <input
               type="radio"
@@ -158,7 +182,7 @@ class HttpRequestBody extends Component<
           <div
             className=""
             style={{
-              display: isRawData ? "inline-block":  "none" ,
+              display: isRawData ? "inline-block" : "none",
               paddingRight: "5px",
               fontSize: "12px",
             }}
@@ -185,9 +209,7 @@ class HttpRequestBody extends Component<
             style={{
               float: "right",
               display:
-                isFormData || this.props.readOnly
-                  ? "none"
-                  : "inline-block",
+                isFormData || isMultipartData || this.props.readOnly ? "none" : "inline-block",
             }}
           >
             <span
@@ -199,7 +221,7 @@ class HttpRequestBody extends Component<
               <i className="fa fa-align-center" aria-hidden="true"></i> Format
             </span>
           </div>
-          <div style={{clear: "both"}}/>
+          <div style={{ clear: "both" }} />
         </div>
         <div
           style={{
@@ -218,6 +240,16 @@ class HttpRequestBody extends Component<
             updateAllParams={this.props.updateAllParams}
             readOnly={this.props.readOnly}
           ></HttpRequestFormData>
+          <HttpRequestMultipartData
+            tabId={this.props.tabId}
+            showMultipartData={isMultipartData}
+            multipartData={this.props.multipartData}
+            addOrRemoveParam={this.props.addOrRemoveParam}
+            updateParam={this.props.updateParam}
+            isOutgoingRequest={this.props.isOutgoingRequest}
+            updateAllParams={this.props.updateAllParams}
+            readOnly={this.props.readOnly}
+          ></HttpRequestMultipartData>
           <HttpRequestRawData
             tabId={this.props.tabId}
             showRawData={isRawData}
