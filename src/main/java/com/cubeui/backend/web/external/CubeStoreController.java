@@ -11,6 +11,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.dao.DynamicInjectionEventDao;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
+import io.md.dao.RecordOrReplay;
 import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingType;
 import io.md.dao.Replay;
@@ -56,11 +57,13 @@ public class CubeStoreController {
     }
 
     @PostMapping("/start/{customerId}/{app}/{instanceId}/{templateSetVersion}")
-    public ResponseEntity start(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String customerId,
+    public ResponseEntity start(HttpServletRequest request, @RequestBody MultiValueMap<String, String> postBody, @PathVariable String customerId,
                                   @PathVariable String app, @PathVariable String instanceId,
                                   @PathVariable String templateSetVersion, Authentication authentication) {
         validation.validateCustomerName(authentication,customerId);
-        return cubeServerService.fetchPostResponse(request, postBody);
+        User user = (User) authentication.getPrincipal();
+        postBody.put(Constants.USER_ID_FIELD, List.of(user.getUsername()));
+        return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 
     @PostMapping("/stop/{recordingId}")
@@ -506,5 +509,21 @@ public class CubeStoreController {
                 .body("No Recording found for recordingId=" + secondRecordingId);
         validation.validateCustomerName(authentication,recording.get().customerId);
         return cubeServerService.fetchPostResponse(request, postBody);
+    }
+
+    @PostMapping("/deduplicate/{recordingId}")
+    public ResponseEntity deduplication(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String recordingId, Authentication authentication) {
+        Optional<Recording> recording = cubeServerService.getRecording(recordingId);
+        if(recording.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("No Recording Object found for recordingId=" + recordingId);
+        validation.validateCustomerName(authentication,recording.get().customerId);
+        return cubeServerService.fetchPostResponse(request, postBody);
+    }
+    
+    @PostMapping("/populateCache")
+    public ResponseEntity populateCache(HttpServletRequest request, @RequestBody RecordOrReplay recordOrReplay , Authentication authentication) {
+        validation.validateCustomerName(authentication,recordOrReplay.getCustomerId().orElse(null));
+        return cubeServerService.fetchPostResponse(request, Optional.of(recordOrReplay));
     }
 }
