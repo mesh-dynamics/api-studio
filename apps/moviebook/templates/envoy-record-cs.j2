@@ -127,7 +127,6 @@ spec:
                   handle:logErr('[cube req]' .. data)
                 end
                 function callStoreEvent(handle, data)
-                  handle:logErr('Trying to store event : Req ID : ' .. data["reqId"] .. ' Trace Id :  ' .. data["traceId"] .. ' Span Id : ' .. data["spanId"] .. ' API Path : ' .. data["apiPath"] )
                   local hhdr, hbody = handle:httpCall(
                     "outbound|8080||cubeui-backend.cube.svc.cluster.local",
                     {
@@ -154,6 +153,7 @@ spec:
                   handle:logErr('[cube resp]' .. data)
                 end
                 function logEvent(buf, handle, cubeEvent, payloadType)
+                  handle:logErr('Trying to store event : Req ID : ' .. cubeEvent["reqId"] .. ' Trace Id :  ' .. cubeEvent["traceId"] .. ' Span Id : ' .. cubeEvent["spanId"] .. ' API Path : ' .. cubeEvent["apiPath"] )
                   addJsonObjToBuffer(buf, cubeEvent)
                   local listdelim = ', '
                   buf[#buf + 1] = listdelim .. ' "payload" : [ "'.. payloadType ..'", { '
