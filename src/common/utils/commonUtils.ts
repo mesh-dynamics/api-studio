@@ -22,9 +22,14 @@ function getFormattedDate(date: any) {
   return month + '/' + day + '/' + year;
 }
 
+function isCSVMimeType(type:string){
+  return ["text/csv", "application/x-csv", "application/csv", "text/x-comma-separated-values", "text/comma-separated-values", "application/vnd.ms-excel"].indexOf(type.toLowerCase().trim())> -1;
+}
+
 const commonUtils = {
   downloadAFileToClient,
   getFormattedDate,
+  isCSVMimeType
 };
 
 export default commonUtils;
