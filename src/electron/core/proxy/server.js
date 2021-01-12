@@ -93,8 +93,9 @@ const setupProxy = (mockContext, user) => {
 
             logger.info('Logging request headers after removing restricted headers', JSON.stringify(headers, undefined, 4));
 
-            // if traceId isn't present in the mock context, generate a new one (for every request)
-            // this is to avoid stored requests from getting deleted by storeUserReqResp call
+            // if traceId & spanId isn't present in the mock context, 
+            // check in the incoming request headers
+            // if not present in the headers, generate new values
             const tracer = mockContext.tracer
             const traceKeys = generateTraceKeys(tracer)
             const {traceIdKey, spanIdKey, parentSpanIdKeys} = traceKeys;
