@@ -8,6 +8,7 @@ import {
   FormGroup,
   FormControl,
 } from "react-bootstrap";
+import commonUtils from '../../../utils/commonUtils';
 import classNames from "classnames";
 import { connect } from "react-redux";
 import {
@@ -112,8 +113,7 @@ function ContextPropagationRules(props: IContextPropagationRulesProps) {
         apiConfig,
         formData,
       };
-      switch (type) {
-        case "text/csv":
+      if (commonUtils.isCSVMimeType(type)) {
           //It is Learnt rules upload
 
           configsService
@@ -132,9 +132,7 @@ function ContextPropagationRules(props: IContextPropagationRulesProps) {
                 isError: true,
               });
             });
-
-          break;
-        case "application/json":
+      } else if (type == "application/json") {
           //It is Existing rules upload
           configsService
             .saveDynamicInjectionConfigFromJson(uploadArgs)
@@ -152,14 +150,12 @@ function ContextPropagationRules(props: IContextPropagationRulesProps) {
                 isError: true,
               });
             });
-          break;
-        default:
+      } else {
           setMessage({
             message:
               "Only CSV and JSON files are supported. Please select required file type.",
             isError: true,
           });
-          break;
       }
     } else {
       setMessage({ message: "File is not selected", isError: true });
@@ -212,7 +208,7 @@ function ContextPropagationRules(props: IContextPropagationRulesProps) {
         eventTypes: [],
         collections: [collectionId],
         version: `Default${props.app}`,
-        sortingOrder: {"timestamp": true},
+        sortingOrder: { timestamp: true },
         services: [selectedServices],
       })
       .then((response: any) => {
