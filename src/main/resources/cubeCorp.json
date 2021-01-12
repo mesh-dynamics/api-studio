@@ -18,6 +18,7 @@
               "services": [
                 {
                   "name": "Reviews",
+                  "prefixes": ["reviews"],
                   "paths": [
                     "/health",
                     "/reviews/*"
@@ -25,6 +26,7 @@
                 },
                 {
                   "name": "Ratings",
+                  "prefixes": ["ratings"],
                   "paths": [
                     "/health",
                     "/ratings/*"
@@ -32,6 +34,7 @@
                 },
                 {
                   "name": "Details",
+                  "prefixes": ["details"],
                   "paths": [
                     "/health",
                     "/details/*"
@@ -39,6 +42,7 @@
                 },
                 {
                   "name": "RestWrapJDBC",
+                  "prefixes": ["restsql"],
                   "paths": [
                     "/health",
                     "/initialize",
@@ -48,6 +52,7 @@
                 },
                 {
                   "name": "MovieInfo",
+                  "prefixes": ["minfo"],
                   "paths": [
                     "minfo/rentmovie",
                     "minfo/returnmovie",
@@ -64,18 +69,22 @@
                 },
                 {
                   "name": "Postgres",
+                  "prefixes": [],
                   "paths": null
                 },
                 {
                   "name": "Mysql",
+                  "prefixes": [],
                   "paths": null
                 },
                 {
                   "name": "MongoDB",
+                  "prefixes": [],
                   "paths": null
                 },
                 {
                   "name": "Google API",
+                  "prefixes": [],
                   "paths": null
                 }
               ]
@@ -151,117 +160,36 @@
               "services": [
                 {
                   "name": "Mock",
+                  "prefixes": ["ms"],
                   "paths": [
                     "/ms/health",
                     "/ms/*"
                   ]
                 },
                 {
-                  "name": "Postgres",
-                  "paths": null
-                },
-                {
-                  "name": "Solr",
-                  "paths": null
-                }
-              ]
-            },
-            {
-              "name": "UI",
-              "services": [
-                {
-                  "name": "Account/User",
-                  "paths": null
-                },
-                {
-                  "name": "App",
-                  "paths": null
-                },
-                {
-                  "name": "Instance",
-                  "paths": null
-                },
-                {
-                  "name": "Service/Graph",
-                  "paths": null
-                },
-                {
-                  "name": "TestConfig",
-                  "paths": null
-                },
-                {
                   "name": "Record",
-                  "paths": null
-                },
-                {
-                  "name": "Replay",
-                  "paths": null
-                },
-                {
-                  "name": "Analyze",
-                  "paths": null
-                },
-                {
-                  "name": "Customer",
-                  "paths": null
-                }
-              ]
-            },
-            {
-              "name": "Record",
-              "services": [
-                {
-                  "name": "Record/SetDefault",
+                  "prefixes": ["cs"],
                   "paths": [
                     "/cs/health",
-                    "/cs/setdefault/*"
-                  ]
-                },
-                {
-                  "name": "Record/HTTP",
-                  "paths": [
+                    "/cs/setdefault/*",
                     "/cs/req",
                     "/cs/res",
-                    "/cs/rr/*"
-                  ]
-                },
-                {
-                  "name": "Record/Java",
-                  "paths": [
-                    "/cs/fr"
-                  ]
-                },
-                {
-                  "name": "Record/Record",
-                  "paths": [
+                    "/cs/rr/*",
+                    "/cs/fr",
                     "/cs/start/*",
                     "/cs/status/*",
-                    "/cs/stop/*"
-                  ]
-                },
-                {
-                  "name": "Record/Collections",
-                  "paths": [
+                    "/cs/stop/*",
                     "/cs/recordings",
                     "/cs/currentcollection",
                     "/cs/requests"
                   ]
-                }
-              ]
-            },
-            {
-              "name": "Replay",
-              "services": [
-                {
-                  "name": "Replay/SetDefault",
-                  "paths": [
-                    "/rs/transforms/*",
-                    "/rs/health"
-                  ]
                 },
                 {
-                  "name": "Replay/Replay",
+                  "name": "Replay",
+                  "prefixes": ["rs"],
                   "paths": [
+                    "/rs/transforms/*",
+                    "/rs/health",
                     "/rs/init/*",
                     "/rs/status/*",
                     "/rs/forcecomplete/*",
@@ -270,40 +198,41 @@
                   ]
                 },
                 {
-                  "name": "Analyze/Setup",
+                  "name": "Analyze",
+                  "prefixes": ["as"],
                   "paths": [
                     "/as/registerTemplateApp/*",
                     "/as/registerTemplate/*",
-                    "/as/health"
-                  ]
-                },
-                {
-                  "name": "Analyze/Retrieval",
-                  "paths": [
+                    "/as/health",
                     "/as/aggrresult/*",
                     "/as/replayRes/*",
                     "/as/analysisRes/*",
                     "/as/timelineres/*",
                     "/as/analysisResByPath/*",
-                    "/as/analysisResByReq/*"
-                  ]
-                },
-                {
-                  "name": "Analyze/Analysis",
-                  "paths": [
+                    "/as/analysisResByReq/*",
                     "/as/registerTemplateApp/*",
                     "/as/registerTemplate/*",
                     "/as/health"
                   ]
+                },
+                {
+                  "name": "CubeUI-Backend",
+                  "prefixes": ["api"],
+                  "paths": null
+                },
+                {
+                  "name": "Solr",
+                  "prefixes": ["solr"],
+                  "paths": null
                 }
               ]
             }
           ],
           "testConfigs": [
             {
-              "testConfigName": "Cube-Analyze/Retrieval",
+              "testConfigName": "Cube-Analyze",
               "services": [
-                "Analyze/Retrieval"
+                "Analyze"
               ],
               "paths": [
                 "/as/timelineres/*",
@@ -321,108 +250,32 @@
               "to": "Solr"
             },
             {
-              "from": "Record/SetDefault",
-              "to": "Solr"
-            },
-            {
-              "from": "Record/HTTP",
-              "to": "Solr"
-            },
-            {
-              "from": "Record/Java",
-              "to": "Solr"
-            },
-            {
-              "from": "Record/Record",
-              "to": "Solr"
-            },
-            {
-              "from": "Record/Collections",
-              "to": "Solr"
-            },
-            {
-              "from": "Replay/SetDefault",
-              "to": "Solr"
-            },
-            {
-              "from": "Replay/Replay",
-              "to": "Solr"
-            },
-            {
-              "from": "Analyze/Setup",
-              "to": "Solr"
-            },
-            {
-              "from": "Analyze/Retrieval",
-              "to": "Solr"
-            },
-            {
-              "from": "Analyze/Analysis",
-              "to": "Solr"
-            },
-            {
-              "from": "Account/User",
-              "to": "Postgres"
-            },
-            {
-              "from": "App",
-              "to": "Postgres"
-            },
-            {
-              "from": "Instance",
-              "to": "Postgres"
-            },
-            {
-              "from": "Service/Graph",
-              "to": "Postgres"
-            },
-            {
-              "from": "TestConfig",
-              "to": "Postgres"
-            },
-            {
-              "from": "Customer",
-              "to": "Postgres"
-            },
-            {
               "from": "Record",
-              "to": "Record/SetDefault"
-            },
-            {
-              "from": "Record",
-              "to": "Record/HTTP"
-            },
-            {
-              "from": "Record",
-              "to": "Record/Java"
-            },
-            {
-              "from": "Record",
-              "to": "Record/Record"
-            },
-            {
-              "from": "Record",
-              "to": "Record/Collections"
+              "to": "Solr"
             },
             {
               "from": "Replay",
-              "to": "Replay/SetDefault"
-            },
-            {
-              "from": "Replay",
-              "to": "Replay/Replay"
+              "to": "Solr"
             },
             {
               "from": "Analyze",
-              "to": "Analyze/Setup"
+              "to": "Solr"
             },
             {
-              "from": "Analyze",
-              "to": "Analyze/Retrieval"
+              "from": "CubeUI-Backend",
+              "to": "Record"
             },
             {
-              "from": "Analyze",
-              "to": "Analyze/Analysis"
+              "from": "CubeUI-Backend",
+              "to": "Replay"
+            },
+            {
+              "from": "CubeUI-Backend",
+              "to": "Mock"
+            },
+            {
+              "from": "CubeUI-Backend",
+              "to": "Analyze"
             }
           ]
         },
@@ -434,12 +287,14 @@
               "services": [
                 {
                   "name": "EmpService",
+                  "prefixes": ["emp"],
                   "paths": [
                     "/emp/emp/getEmp"
                   ]
                 },
                 {
                   "name": "Department",
+                  "prefixes": ["dept"],
                   "paths": [
                     "/dept/dept/getDept"
                   ]
@@ -475,10 +330,12 @@
               "services": [
                 {
                   "name": "course1",
+                  "prefixes": ["meshd/courses"],
                   "paths": []
                 },
                 {
                   "name": "Student",
+                  "prefixes": ["meshd/students"],
                   "paths": []
                 }
               ]
@@ -512,6 +369,7 @@
               "services": [
                 {
                   "name": "Reviews",
+                  "prefixes": ["reviews"],
                   "paths": [
                     "/health",
                     "/reviews/*"
@@ -519,6 +377,7 @@
                 },
                 {
                   "name": "Ratings",
+                  "prefixes": ["ratings"],
                   "paths": [
                     "/health",
                     "/ratings/*"
@@ -526,6 +385,7 @@
                 },
                 {
                   "name": "Details",
+                  "prefixes": ["details"],
                   "paths": [
                     "/health",
                     "/details/*"
@@ -533,6 +393,7 @@
                 },
                 {
                   "name": "RestWrapJDBC",
+                  "prefixes": ["restsql"],
                   "paths": [
                     "/health",
                     "/initialize",
@@ -542,43 +403,33 @@
                 },
                 {
                   "name": "Postgres",
+                  "prefixes": [],
                   "paths": null
                 },
                 {
                   "name": "Mysql",
+                  "prefixes": [],
                   "paths": null
                 },
                 {
                   "name": "MongoDB",
+                  "prefixes": [],
                   "paths": null
                 },
                 {
                   "name": "Google API",
+                  "prefixes": [],
                   "paths": null
-                }
-              ]
-            },
-            {
-              "name": "MovieInfo",
-              "services": [
+                },
                 {
-                  "name": "Auth",
+                  "name": "MovieInfo",
+                  "prefixes": ["minfo"],
                   "paths": [
                     "/authenticate",
-                    "/health"
-                  ]
-                },
-                {
-                  "name": "Actions",
-                  "paths": [
+                    "/health",
                     "minfo/rentmovie",
                     "minfo/returnmovie",
-                    "/overduerental"
-                  ]
-                },
-                {
-                  "name": "List",
-                  "paths": [
+                    "/overduerental",
                     "minfo/listmovies",
                     "minfo/liststores"
                   ]
@@ -590,7 +441,7 @@
             {
               "testConfigName": "MovieInfo-List",
               "services": [
-                "List"
+                "MovieInfo"
               ],
               "paths": [
                 "minfo/listmovies",
@@ -604,15 +455,15 @@
           ],
           "serviceGraphs": [
             {
-              "from": "Auth",
+              "from": "MovieInfo",
               "to": "RestWrapJDBC"
             },
             {
-              "from": "Actions",
+              "from": "MovieInfo",
               "to": "RestWrapJDBC"
             },
             {
-              "from": "List",
+              "from": "MovieInfo",
               "to": "RestWrapJDBC"
             },
             {
@@ -620,11 +471,11 @@
               "to": "Postgres"
             },
             {
-              "from": "List",
+              "from": "MovieInfo",
               "to": "Reviews"
             },
             {
-              "from": "List",
+              "from": "MovieInfo",
               "to": "Details"
             },
             {

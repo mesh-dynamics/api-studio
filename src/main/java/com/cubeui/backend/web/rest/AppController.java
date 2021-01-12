@@ -1,11 +1,40 @@
 package com.cubeui.backend.web.rest;
 
-import com.cubeui.backend.domain.*;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.ResponseEntity.created;
+import static org.springframework.http.ResponseEntity.ok;
+import static org.springframework.http.ResponseEntity.status;
+
+import com.cubeui.backend.domain.App;
+import com.cubeui.backend.domain.AppFile;
+import com.cubeui.backend.domain.AppUser;
+import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.AppDTO;
+import com.cubeui.backend.domain.DTO.Response.AppServiceResponse;
 import com.cubeui.backend.domain.DTO.Response.DTO.TestConfigDTO;
 import com.cubeui.backend.domain.DTO.Response.Mapper.TestConfigMapper;
-import com.cubeui.backend.domain.enums.Role;
-import com.cubeui.backend.repository.*;
+import com.cubeui.backend.domain.Instance;
+import com.cubeui.backend.domain.InstanceUser;
+import com.cubeui.backend.domain.PathPrefix;
+import com.cubeui.backend.domain.Service;
+import com.cubeui.backend.domain.TestConfig;
+import com.cubeui.backend.domain.TestIntermediateService;
+import com.cubeui.backend.domain.TestPath;
+import com.cubeui.backend.domain.TestVirtualizedService;
+import com.cubeui.backend.domain.User;
+import com.cubeui.backend.repository.AppRepository;
+import com.cubeui.backend.repository.AppUserRepository;
+import com.cubeui.backend.repository.InstanceRepository;
+import com.cubeui.backend.repository.InstanceUserRepository;
+import com.cubeui.backend.repository.PathPrefixRepository;
+import com.cubeui.backend.repository.ServiceGraphRepository;
+import com.cubeui.backend.repository.ServiceRepository;
+import com.cubeui.backend.repository.TestConfigRepository;
+import com.cubeui.backend.repository.TestIntermediateServiceRepository;
+import com.cubeui.backend.repository.TestPathRepository;
+import com.cubeui.backend.repository.TestVirtualizedServiceRepository;
+import com.cubeui.backend.repository.UserRepository;
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.service.AppFileStorageService;
 import com.cubeui.backend.service.CubeServerService;
@@ -15,25 +44,27 @@ import com.cubeui.backend.web.ErrorResponse;
 import com.cubeui.backend.web.exception.DuplicateRecordException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
 import java.io.IOException;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.FORBIDDEN;
-import static org.springframework.http.ResponseEntity.*;
 
 @RestController
 @RequestMapping("/api/app")
@@ -56,6 +87,7 @@ public class AppController {
     private AppFileStorageService appFileStorageService;
     private final UserRepository userRepository;
     private final CubeServerService cubeServerService;
+    private final PathPrefixRepository pathPrefixRepository;
     public AppController(AppRepository appRepository, ServiceRepository serviceRepository,
         ServiceGraphRepository serviceGraphRepository, TestConfigRepository testConfigRepository,
         TestIntermediateServiceRepository testIntermediateServiceRepository,
@@ -63,7 +95,8 @@ public class AppController {
         TestPathRepository testPathRepository, CustomerService customerService,
         InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository,
         UserService userService, AppUserRepository appUserRepository, Validation validation,
-        AppFileStorageService appFileStorageService, UserRepository userRepository, CubeServerService cubeServerService) {
+        AppFileStorageService appFileStorageService, UserRepository userRepository, CubeServerService cubeServerService,
+        PathPrefixRepository pathPrefixRepository) {
         this.appRepository = appRepository;
         this.serviceRepository = serviceRepository;
         this.serviceGraphRepository = serviceGraphRepository;
@@ -80,6 +113,7 @@ public class AppController {
         this.appFileStorageService = appFileStorageService;
         this.userRepository = userRepository;
         this.cubeServerService = cubeServerService;
+        this.pathPrefixRepository = pathPrefixRepository;
     }
 
     @GetMapping("")
@@ -200,7 +234,15 @@ public class AppController {
     public ResponseEntity getServices(@PathVariable("id") Long id) {
         Optional<App> selectedApp = appRepository.findById(id);
         if(selectedApp.isPresent()) {
-            return ok(this.serviceRepository.findByAppId(id));
+            Optional<List<Service>> optionalServices = this.serviceRepository.findByAppId(id);
+            List<AppServiceResponse> response = optionalServices.map(services ->
+                services.stream().map(service -> {
+                    Optional<List<PathPrefix>> pathPrefixes = this.pathPrefixRepository
+                        .findByServiceId(service.getId());
+                    List<String> prefixes = pathPrefixes.map(pp -> pp.stream().map(p -> p.getPrefix()).collect(Collectors.toList())).orElse(Collections.emptyList());
+                     return new AppServiceResponse(service, prefixes);
+                }).collect(Collectors.toList())).orElse(Collections.emptyList());
+            return ok(response);
         } else {
             throw new RecordNotFoundException("App with ID '" + id + "' not found.");
         }
