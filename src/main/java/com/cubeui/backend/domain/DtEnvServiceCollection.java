@@ -25,6 +25,12 @@ import org.hibernate.annotations.OnDeleteAction;
 @AllArgsConstructor
 public class DtEnvServiceCollection {
 
+  public DtEnvServiceCollection(DtEnvironment environment, Service service, String preferredCollection) {
+    this.environment = environment;
+    this.service = service;
+    this.preferredCollection = preferredCollection;
+  }
+
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   Long id;

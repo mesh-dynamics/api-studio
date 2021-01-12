@@ -17,5 +17,6 @@ public class DtEnvironmentDTO {
   List<DtEnvVarDTO> vars = new ArrayList<>();
   List<DtEnvServiceHostDTO> dtEnvServiceHosts = new ArrayList<>();
   List<DtEnvServiceCollectionDTO> dtEnvServiceCollections = new ArrayList<>();
+  Long appId;
   boolean global=false;
 }

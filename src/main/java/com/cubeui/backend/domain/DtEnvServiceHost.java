@@ -25,6 +25,12 @@ import org.hibernate.annotations.OnDeleteAction;
 @AllArgsConstructor
 public class DtEnvServiceHost {
 
+  public DtEnvServiceHost(DtEnvironment environment, Service service, String hostName) {
+    this.environment = environment;
+    this.service = service;
+    this.hostName = hostName;
+  }
+
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   Long id;

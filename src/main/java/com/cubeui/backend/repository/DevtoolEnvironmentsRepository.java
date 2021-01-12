@@ -13,5 +13,9 @@ public interface DevtoolEnvironmentsRepository extends JpaRepository<DtEnvironme
   Optional<DtEnvironment> findDtEnvironmentById(Long id);
   Optional<DtEnvironment> findDtEnvironmentByUserIdAndName(Long userId, String name);
   Optional<DtEnvironment> findDtEnvironmentByUserIdAndNameAndIdNot(Long userId, String name, Long id);
-  List<Optional<DtEnvironment>> findDtEnvironmentByNameAndAppIds(String Name, List<Long> appIds);
+  List<DtEnvironment> findDtEnvironmentByNameAndAppIdsAndGlobal(String Name, List<Long> appIds, boolean global);
+  List<DtEnvironment> findDtEnvironmentByNameAndAppIdsAndGlobalAndIdNot(String Name, List<Long> appIds, boolean global, Long id);
+  List<DtEnvironment> findDtEnvironmentByAppIdsOrUserId(List<Long> appIds, Long userId);
+  List<DtEnvironment> findDtEnvironmentByAppIdsOrUserIdAndGlobal(List<Long> appIds, Long userId, boolean global);
+
 }
