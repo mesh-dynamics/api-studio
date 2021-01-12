@@ -69,15 +69,29 @@ const setupProxy = (mockContext, user) => {
             
             req.bodyStream = bufferStream;
             
-            const service = getServiceNameFromUrl(url);
+            //const service = getServiceNameFromUrl(url);
 
             logger.info(`Request Details at proxy 
                             URL: ${url} 
-                            METHOD: ${method} 
-                            SERVICE: ${service} 
-                            HEADERS: ${JSON.stringify(headers)} 
+                            METHOD: ${method}  
+                            HEADERS: ${JSON.stringify(headers, undefined, 4)} 
                             REQUEST BODY: ${buffer}
                         `);
+
+            logger.info('Removing restricted headers at proxy server');
+
+            delete headers['connection'];
+            delete headers['date'];
+            delete headers['expect'];
+            delete headers['from'];
+            delete headers['referer'];
+            delete headers['upgrade'];
+            delete headers['via'];
+            delete headers['warning'];
+            delete headers['transfer-encoding'];
+            delete headers['accept-encoding'];
+
+            logger.info('Logging request headers after removing restricted headers', JSON.stringify(headers, undefined, 4));
 
             // if traceId isn't present in the mock context, generate a new one (for every request)
             // this is to avoid stored requests from getting deleted by storeUserReqResp call
@@ -104,12 +118,12 @@ const setupProxy = (mockContext, user) => {
             const proxyOptionParameters = {
                 user,
                 proxy,
-                service,
                 headers,
                 mockContext,
                 requestData: buffer,
                 defaultProxyOptions,
                 traceDetails,
+                url,
             };
 
             logger.info('Configuring Target...');

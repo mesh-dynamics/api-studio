@@ -96,18 +96,20 @@ class MockConfigSection extends React.Component {
                     <table className="table table-bordered table-hover">
                       <thead>
                         <tr>
-                          <th style={{ width: "20%" }}>Service</th>
+                          <th style={{ width: "20%" }}>Service Prefix</th>
                           <th>Target</th>
+                          <th>Include service prefix</th>
                         </tr>
                       </thead>
                       <tbody>
                         {currentMockConfig.serviceConfigs.map(
-                          ({ service, url, isMocked }) => (
+                          ({ service, url, isMocked, includeServicePrefix }) => (
                             <tr key={service}>
                               <td>{service}</td>
                               <td style={{ wordBreak: "break-all" }}>
                                 {isMocked ? "MOCKED" : url}
                               </td>
+                              <td>{isMocked ? "N/A" : (includeServicePrefix ? "True" : "False")}</td>
                             </tr>
                           )
                         )}
