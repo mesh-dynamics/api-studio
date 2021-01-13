@@ -69,20 +69,23 @@ const getCurrentMockConfig = (mockConfigList, selectedMockConfig) => {
 };
 
 const generateApiPath = (parsedUrl) => {
-    let generatedApiPath = '';
+    let generatedApiPath = parsedUrl.pathname;
+    let isModified = false;
     // Handle if 'file' protocol is detected
     if(parsedUrl.protocol.includes('file')) {
         // clean up the double slashes in between and starting slash
         generatedApiPath = parsedUrl.pathname.split('/').filter(Boolean).slice(2).join('/'); 
+        isModified = true;
     }
 
-    // Handle if no protocol is detected
+    // Handle if no protocol is detected // todo
     if(!parsedUrl.protocol) {
         // clean up the double slashes in between and starting slash
         generatedApiPath = parsedUrl.pathname.split('/').filter(Boolean).join('/');
+        isModified = true;
     }
 
-    if(parsedUrl.pathname.endsWith("/")) {
+    if(parsedUrl.pathname.endsWith("/") && isModified) {
         // Append trailing slash
         generatedApiPath = `${generatedApiPath}/`;
     }
