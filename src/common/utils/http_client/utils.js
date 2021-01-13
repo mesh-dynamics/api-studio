@@ -149,6 +149,19 @@ const extractParamsFromRequestEvent = (httpRequestEvent) =>{
             selected: true,
         });
     }
+
+    let {httpURL, queryParamsFromUrl} = extractURLQueryParams(httpRequestEvent.apiPath)
+    queryParamsFromUrl.forEach(param => {
+        const existingQueryParam = _.find(queryParams, {name: param.name})
+        if(existingQueryParam?.value != param.value) {
+            queryParams.push(param)
+        } else if(!existingQueryParam) {
+            queryParams.push(param)
+        }
+    })
+
+    httpURL = httpRequestEvent.metaData.httpURL || httpURL; 
+
     for (let eachFormParam in httpRequestEvent.payload[1].formParams) {
         formData.push({
             id: uuidv4(),
@@ -226,7 +239,7 @@ const extractParamsFromRequestEvent = (httpRequestEvent) =>{
       }
 
     return{
-        headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType
+        headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType, httpURL
     }
 }
 
