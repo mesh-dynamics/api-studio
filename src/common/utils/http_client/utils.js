@@ -259,7 +259,7 @@ const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) =
         responseStatusText: "",
         responseHeaders: "",
         responseBody: "",
-        recordedResponseHeaders: httpResponseEvent ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
+        recordedResponseHeaders: (httpResponseEvent && httpResponseEvent.payload[1].hdrs) ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
         recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
         recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
         responseBodyType: "json",
