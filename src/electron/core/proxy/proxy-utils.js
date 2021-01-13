@@ -53,8 +53,9 @@ const getServiceConfig = (serviceConfigs, url) => {
 
     if(serviceConfigs && url) {        
         return serviceConfigs.find(item => {
-            const service = item.service
-            return url.startsWith(service.startsWith('/') ? service.substring(1) : service)
+            const servicePrefix = item.servicePrefix || item.service
+            const servicePrefixNormalized = servicePrefix.startsWith('/') ? servicePrefix.substring(1) : servicePrefix
+            return url.startsWith(servicePrefixNormalized)
         });
     }
     
@@ -82,10 +83,10 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
     const { config:  { serviceConfigs } } = mockContext;
 
     const serviceConfigObject = getServiceConfig(serviceConfigs, inputUrl);
+    logger.info("Matched service prefix: ", serviceConfigObject ? (serviceConfigObject.servicePrefix || serviceConfigObject.service) : "(none, mocked)")
 
-    const service = serviceConfigObject?.service
-
-    logger.info("Matched service prefix: ", service)
+    const service = serviceConfigObject?.service || getServiceNameFromUrl(inputUrl)
+    logger.info("Matched service: ", service)
 
     logger.info('Selected service config object :', serviceConfigObject);
 
@@ -141,7 +142,7 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
     logger.info('Attaching REQUEST INTERCEPTOR for config injection');
 
     // Attach request interceptors to inject additional values for mocking
-    proxy.on('proxyReq', (proxyReq) => proxyRequestInterceptorMockService(proxyReq, mockContext, user, traceDetails, service));
+    proxy.on('proxyReq', (proxyReq) => proxyRequestInterceptorMockService(proxyReq, mockContext, user, traceDetails, service, serviceConfigObject));
 
     logger.info('Attaching RESPONSE INTERCEPTOR for mocked service');
         proxy.on(
