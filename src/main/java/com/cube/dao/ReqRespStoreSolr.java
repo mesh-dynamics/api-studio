@@ -46,7 +46,6 @@ import java.util.stream.Stream;
 
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -133,6 +132,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     @Override
     public boolean save(Event event) {
         return saveDocs(eventToSolrDoc(event));
+    }
+
+    @Override
+    public boolean saveConfig(CustomerAppConfig cfg) {
+        return saveDocs(customerAppConfigToDoc(cfg));
     }
 
 
@@ -3222,6 +3226,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         return Optional.of(builder.build());
     }
+
+    private SolrInputDocument customerAppConfigToDoc(CustomerAppConfig cfg) {
+        SolrInputDocument doc = new SolrInputDocument();
+
+        return doc;
+    }
+
     private Optional<Recording> docToRecording(SolrDocument doc) {
 
         Optional<String> id = getStrField(doc, IDF);

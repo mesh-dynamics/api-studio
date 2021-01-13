@@ -2102,6 +2102,17 @@ public class CubeStore {
     }
 
     @POST
+    @Path("setAppConfiguration/{customerId}/{app}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response setAppConfiguration(@Context UriInfo uriInfo,
+        @PathParam("customerId") String customerId, @PathParam("app") String app , CustomerAppConfig custAppCfg ) {
+
+        rrstore.saveConfig(custAppCfg);
+        return Response.ok(Map.of("status" , "success")).type(MediaType.APPLICATION_JSON).build();
+    }
+
+    @POST
     @Path("mergeRecordings/{firstRecordingId}/{secondRecordingId}")
     public void mergeRecordings(@Suspended AsyncResponse asyncResponse, @Context UriInfo uriInfo,
         @PathParam("firstRecordingId") String firstRecordingId, @PathParam("secondRecordingId") String secondRecordingId) {
