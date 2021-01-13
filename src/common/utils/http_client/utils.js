@@ -156,9 +156,7 @@ const extractParamsFromRequestEvent = (httpRequestEvent) =>{
     let {httpURL, queryParamsFromUrl} = extractURLQueryParams(httpRequestEvent.apiPath)
     queryParamsFromUrl.forEach(param => {
         const existingQueryParam = _.find(queryParams, {name: param.name})
-        if(existingQueryParam?.value != param.value) {
-            queryParams.push(param)
-        } else if(!existingQueryParam) {
+        if((existingQueryParam?.value != param.value) || (!existingQueryParam)) {
             queryParams.push(param)
         }
     })
