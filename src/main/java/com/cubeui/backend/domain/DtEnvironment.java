@@ -18,6 +18,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -57,15 +59,18 @@ public class DtEnvironment {
   @Column(columnDefinition = "boolean default false")
   Boolean global;
 
-  @OneToMany(mappedBy = "environment", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "environment", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
   @OnDelete(action = OnDeleteAction.CASCADE)
+  @LazyCollection(LazyCollectionOption.FALSE)
   List<DtEnvVar> vars;
 
-  @OneToMany(mappedBy = "environment", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "environment", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
   @OnDelete(action = OnDeleteAction.CASCADE)
+  @LazyCollection(LazyCollectionOption.FALSE)
   List<DtEnvServiceHost> dtEnvServiceHosts;
 
-  @OneToMany(mappedBy = "environment", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "environment", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
   @OnDelete(action = OnDeleteAction.CASCADE)
+  @LazyCollection(LazyCollectionOption.FALSE)
   List<DtEnvServiceCollection> dtEnvServiceCollections;
 }

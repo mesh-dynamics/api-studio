@@ -14,6 +14,8 @@ import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.DevtoolEnvironmentsRepository;
 import com.cubeui.backend.repository.ServiceRepository;
+import com.cubeui.backend.security.Validation;
+import com.cubeui.backend.web.exception.AppServiceMappingException;
 import com.cubeui.backend.web.exception.EnvironmentNameExitsException;
 import com.cubeui.backend.web.exception.EnvironmentNotFoundException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
@@ -23,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotEmpty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -46,6 +47,8 @@ public class DevtoolEnvironmentsController {
   private AppRepository appRepository;
   @Autowired
   private ServiceRepository serviceRepository;
+  @Autowired
+  private Validation validation;
 
   @PostMapping("/insert")
   public ResponseEntity insertEnvironments(@RequestBody DtEnvironmentDTO environment, Authentication authentication) {
@@ -57,7 +60,7 @@ public class DevtoolEnvironmentsController {
     List<Long> appIds = apps.map(aps -> aps.stream().map(app -> app.getId()).collect(
           Collectors.toList())).orElse(Collections.emptyList());
     List<DtEnvironment> dtEnvironments=
-        devtoolEnvironmentsRepository.findDtEnvironmentByNameAndAppIdsAndGlobal(environment.getName(), appIds, true);
+        devtoolEnvironmentsRepository.findDtEnvironmentByNameAndGlobalAndAppIdIn(environment.getName(), true, appIds);
     if(dtEnvironments.size() > 0) {
       throw new EnvironmentNameExitsException(environment.getName());
     }
@@ -72,6 +75,10 @@ public class DevtoolEnvironmentsController {
     }
     try {
       DtEnvironment dtEnvironment = new DtEnvironment(environment.getName());
+      Optional<App> optionalApp = appRepository.findById(environment.getAppId());
+      App app = optionalApp.orElseThrow(() -> new RecordNotFoundException("No app found for given app id"));
+      validation.validateCustomerName(authentication, app.getCustomer().getName());
+      dtEnvironment.setApp(app);
       List<DtEnvVar> envVarsList = new ArrayList<>(environment.getVars().size());
       for (DtEnvVarDTO envVarDTO : environment.getVars()) {
         DtEnvVar dtEnvVar = new DtEnvVar();
@@ -88,6 +95,7 @@ public class DevtoolEnvironmentsController {
       for(DtEnvServiceHostDTO dtEnvServiceHostDTO : environment.getDtEnvServiceHosts()) {
         Optional<Service> existingService = serviceRepository.findById(dtEnvServiceHostDTO.getServiceId());
         existingService.ifPresent(service -> {
+          validateAppServiceMapping(app.getId(), service.getApp().getId());
           DtEnvServiceHost dtEnvServiceHost = new DtEnvServiceHost(dtEnvironment, service, dtEnvServiceHostDTO.getHostName());
           dtEnvServiceHosts.add(dtEnvServiceHost);
         });
@@ -98,13 +106,12 @@ public class DevtoolEnvironmentsController {
       for(DtEnvServiceCollectionDTO dtEnvServiceCollectionDTO : environment.getDtEnvServiceCollections()) {
         Optional<Service> existingService = serviceRepository.findById(dtEnvServiceCollectionDTO.getServiceId());
         existingService.ifPresent(service -> {
+          validateAppServiceMapping(app.getId(), service.getApp().getId());
           DtEnvServiceCollection dtEnvServiceCollection = new DtEnvServiceCollection(dtEnvironment, service, dtEnvServiceCollectionDTO.getPreferredCollection());
           dtEnvServiceCollections.add(dtEnvServiceCollection);
         });
       }
       dtEnvironment.setDtEnvServiceCollections(dtEnvServiceCollections);
-      Optional<App> app = appRepository.findById(environment.getAppId());
-      app.ifPresent(ap -> dtEnvironment.setApp(ap));
       DtEnvironment dtEnvironmentSaved = devtoolEnvironmentsRepository.save(dtEnvironment);
       return ResponseEntity.ok().body(Map.of("id", dtEnvironmentSaved.getId()));
     } catch (Exception e) {
@@ -125,6 +132,7 @@ public class DevtoolEnvironmentsController {
     }
 
     DtEnvironment dtEnvironmentById = dtEnvironmentOptional.get();
+    validation.validateCustomerName(authentication, dtEnvironmentById.getUser().getCustomer().getName());
     /**
      * check if some other global environment has the same name
      */
@@ -133,7 +141,7 @@ public class DevtoolEnvironmentsController {
     List<Long> appIds = apps.map(aps -> aps.stream().map(app -> app.getId()).collect(
         Collectors.toList())).orElse(Collections.emptyList());
     List<DtEnvironment> dtEnvironments=
-        devtoolEnvironmentsRepository.findDtEnvironmentByNameAndAppIdsAndGlobalAndIdNot(environment.getName(), appIds, true, dtEnvironmentById.getId());
+        devtoolEnvironmentsRepository.findDtEnvironmentByNameAndAppIdInAndGlobalAndIdNot(environment.getName(), appIds, true, dtEnvironmentById.getId());
     if(dtEnvironments.size() > 0) {
       throw new EnvironmentNameExitsException(environment.getName());
     }
@@ -145,6 +153,11 @@ public class DevtoolEnvironmentsController {
     if(dtEnvironmentNameCheckOptional.isPresent()) {
       throw new EnvironmentNameExitsException(environment.getName());
     }
+
+    Optional<App> optionalApp = appRepository.findById(environment.getAppId());
+    App app = optionalApp.orElseThrow(() -> new RecordNotFoundException("No app found for given app id"));
+    validation.validateCustomerName(authentication, app.getCustomer().getName());
+    dtEnvironmentById.setApp(app);
 
     dtEnvironmentById.setName(environment.getName());
     List<DtEnvVar> envVarsList = new ArrayList<>(environment.getVars().size());
@@ -162,6 +175,7 @@ public class DevtoolEnvironmentsController {
     for(DtEnvServiceHostDTO dtEnvServiceHostDTO : environment.getDtEnvServiceHosts()) {
       Optional<Service> existingService = serviceRepository.findById(dtEnvServiceHostDTO.getServiceId());
       existingService.ifPresent(service -> {
+        validateAppServiceMapping(app.getId(), service.getApp().getId());
         DtEnvServiceHost dtEnvServiceHost = new DtEnvServiceHost(dtEnvironmentById, service, dtEnvServiceHostDTO.getHostName());
         dtEnvServiceHosts.add(dtEnvServiceHost);
       });
@@ -172,13 +186,12 @@ public class DevtoolEnvironmentsController {
     for(DtEnvServiceCollectionDTO dtEnvServiceCollectionDTO : environment.getDtEnvServiceCollections()) {
       Optional<Service> existingService = serviceRepository.findById(dtEnvServiceCollectionDTO.getServiceId());
       existingService.ifPresent(service -> {
+        validateAppServiceMapping(app.getId(), service.getApp().getId());
         DtEnvServiceCollection dtEnvServiceCollection = new DtEnvServiceCollection(dtEnvironmentById, service, dtEnvServiceCollectionDTO.getPreferredCollection());
         dtEnvServiceCollections.add(dtEnvServiceCollection);
       });
     }
     dtEnvironmentById.setDtEnvServiceCollections(dtEnvServiceCollections);
-    Optional<App> app = appRepository.findById(environment.getAppId());
-    app.ifPresent(ap -> dtEnvironmentById.setApp(ap));
     devtoolEnvironmentsRepository.save(dtEnvironmentById);
     return ResponseEntity.ok().build();
   }
@@ -191,6 +204,7 @@ public class DevtoolEnvironmentsController {
         .findDtEnvironmentById(id);
     return dtEnvironmentOptional
         .map(dtEnvironment ->  {
+          validation.validateCustomerName(authentication, dtEnvironment.getUser().getCustomer().getName());
           devtoolEnvironmentsRepository.delete(dtEnvironment);
           return ResponseEntity.ok("Environment deleted");
         })
@@ -213,17 +227,17 @@ public class DevtoolEnvironmentsController {
           Collectors.toList())).orElse(Collections.emptyList()));
     }
     if(environmentType.equalsIgnoreCase("ALL")) {
-      return ResponseEntity.ok(devtoolEnvironmentsRepository.findDtEnvironmentByAppIdsOrUserId(appIds, user.getId()));
+      return ResponseEntity.ok(devtoolEnvironmentsRepository.findDtEnvironmentByAppIdInOrUserId(appIds, user.getId()));
     }else if(environmentType.equalsIgnoreCase("GLOBAL")) {
-      return ResponseEntity.ok(devtoolEnvironmentsRepository.findDtEnvironmentByAppIdsOrUserIdAndGlobal(appIds, user.getId(), true));
+      return ResponseEntity.ok(devtoolEnvironmentsRepository.findDtEnvironmentByUserIdOrAppIdInAndGlobal(user.getId(), appIds, true));
     }
-    return ResponseEntity.ok(devtoolEnvironmentsRepository.findDtEnvironmentByAppIdsOrUserIdAndGlobal(appIds, user.getId(), false));
+    return ResponseEntity.ok(devtoolEnvironmentsRepository.findDtEnvironmentByUserIdOrAppIdInAndGlobal(user.getId(), appIds, false));
+  }
 
-//    Optional<List<DtEnvironment>> environmentOptional = devtoolEnvironmentsRepository
-//        .findDtEnvironmentsByUserId((user.getId()));
-//    return environmentOptional
-//        .map(ResponseEntity::ok)
-//        .orElse(ResponseEntity.ok().body(Collections.emptyList()));
+  private void validateAppServiceMapping(Long appId, Long serviceAppId) {
+    if(serviceAppId != appId) {
+      throw new AppServiceMappingException(String.format("App id=%s not matching app id of service is=%s", appId, serviceAppId));
+    }
   }
 
 }

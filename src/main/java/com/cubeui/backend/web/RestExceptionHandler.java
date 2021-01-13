@@ -3,6 +3,7 @@ package com.cubeui.backend.web;
 import com.cubeui.backend.security.jwt.InvalidJwtAuthenticationException;
 import com.cubeui.backend.service.exception.FileRetrievalException;
 import com.cubeui.backend.service.exception.FileStorageException;
+import com.cubeui.backend.web.exception.AppServiceMappingException;
 import com.cubeui.backend.web.exception.ConfigExistsException;
 import com.cubeui.backend.web.exception.CustomerIdException;
 import com.cubeui.backend.web.exception.DuplicateRecordException;
@@ -110,5 +111,11 @@ public class RestExceptionHandler {
     public ResponseEntity invalidData(FileRetrievalException ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse<String>("Error while retrieving the file", ex.getMessage(), INTERNAL_SERVER_ERROR.value());
         return status(INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    @ExceptionHandler(value = {AppServiceMappingException.class})
+    public ResponseEntity appServiceMappingException(AppServiceMappingException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse<String>("Service app mapping error", ex.getMessage(), BAD_REQUEST.value());
+        return status(BAD_REQUEST).body(errorResponse);
     }
 }
