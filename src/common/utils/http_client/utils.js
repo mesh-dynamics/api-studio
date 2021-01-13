@@ -69,20 +69,23 @@ const getCurrentMockConfig = (mockConfigList, selectedMockConfig) => {
 };
 
 const generateApiPath = (parsedUrl) => {
-    let generatedApiPath = '';
+    let generatedApiPath = parsedUrl.pathname;
+    let isModified = false;
     // Handle if 'file' protocol is detected
     if(parsedUrl.protocol.includes('file')) {
         // clean up the double slashes in between and starting slash
         generatedApiPath = parsedUrl.pathname.split('/').filter(Boolean).slice(2).join('/'); 
+        isModified = true;
     }
 
-    // Handle if no protocol is detected
+    // Handle if no protocol is detected // todo
     if(!parsedUrl.protocol) {
         // clean up the double slashes in between and starting slash
         generatedApiPath = parsedUrl.pathname.split('/').filter(Boolean).join('/');
+        isModified = true;
     }
 
-    if(parsedUrl.pathname.endsWith("/")) {
+    if(parsedUrl.pathname.endsWith("/") && isModified) {
         // Append trailing slash
         generatedApiPath = `${generatedApiPath}/`;
     }
@@ -149,6 +152,17 @@ const extractParamsFromRequestEvent = (httpRequestEvent) =>{
             selected: true,
         });
     }
+
+    let {httpURL, queryParamsFromUrl} = extractURLQueryParams(httpRequestEvent.apiPath)
+    queryParamsFromUrl.forEach(param => {
+        const existingQueryParam = _.find(queryParams, {name: param.name})
+        if((existingQueryParam?.value != param.value) || (!existingQueryParam)) {
+            queryParams.push(param)
+        }
+    })
+
+    httpURL = httpRequestEvent.metaData.httpURL || httpURL; 
+
     for (let eachFormParam in httpRequestEvent.payload[1].formParams) {
         formData.push({
             id: uuidv4(),
@@ -226,7 +240,7 @@ const extractParamsFromRequestEvent = (httpRequestEvent) =>{
       }
 
     return{
-        headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType
+        headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType, httpURL
     }
 }
 
@@ -256,7 +270,7 @@ const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) =
         responseStatusText: "",
         responseHeaders: "",
         responseBody: "",
-        recordedResponseHeaders: httpResponseEvent ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
+        recordedResponseHeaders: (httpResponseEvent && httpResponseEvent.payload[1].hdrs) ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
         recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
         recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
         responseBodyType: "json",
