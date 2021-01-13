@@ -953,11 +953,11 @@ class HttpClientTabs extends Component {
                             const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
                             const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
                             
-                            const { headers, queryParams, formData, rawData, rawDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
+                            const { headers, queryParams, formData, rawData, rawDataType, httpURL }  = extractParamsFromRequestEvent(httpRequestEvent);
                             let reqObject = {
                                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-                                httpURL: httpRequestEvent.apiPath,
-                                httpURLShowOnly: httpRequestEvent.apiPath,
+                                httpURL: httpURL,
+                                httpURLShowOnly: httpURL,
                                 headers: headers,
                                 queryStringParams: queryParams,
                                 bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData",
@@ -1565,13 +1565,13 @@ class HttpClientTabs extends Component {
         const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
         const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
 
-        const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
+        const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType, httpURL }  = extractParamsFromRequestEvent(httpRequestEvent);
         
         let reqObject = {
             id: existingId || uuidv4(),
             httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-            httpURL: httpRequestEvent.metaData.httpURL || httpRequestEvent.apiPath,
-            httpURLShowOnly: httpRequestEvent.metaData.httpURL || httpRequestEvent.apiPath,
+            httpURL: httpURL,
+            httpURLShowOnly: httpURL,
             headers: headers,
             queryStringParams: queryParams,
             bodyType: formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : grpcData && grpcData.length > 0 ? "grpcData" : "formData",
@@ -1797,9 +1797,6 @@ class HttpClientTabs extends Component {
                 }
             })
 
-            const {httpURL, queryParamsFromUrl} = extractURLQueryParams(reqObject.httpURL)
-            reqObject.httpURL = httpURL
-            reqObject.queryStringParams = queryParamsFromUrl
         }
         
         const nextSelectedTabId = isSelected ?  tabId : selectedTabKey;
