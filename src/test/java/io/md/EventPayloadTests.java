@@ -17,8 +17,8 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Optional;
-import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -182,7 +182,8 @@ public class EventPayloadTests {
 						String filePath = "src/test/resources/route_guide.desc";
 						try {
 							String content = new String(Base64.getEncoder().encode( Files.readAllBytes(Paths.get(filePath))));
-							return Optional.of(new ProtoDescriptorDAO(customer, app, content));
+							return Optional.of(new ProtoDescriptorDAO(customer, app, content,
+								new HashMap<>()));
 						} catch (IOException e) {
 							e.printStackTrace();
 						} catch (DescriptorValidationException e) {

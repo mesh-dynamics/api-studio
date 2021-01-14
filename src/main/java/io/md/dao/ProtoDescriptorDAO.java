@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.md.dao.ApiTraceResponse.ServiceReqRes;
 import io.md.logger.LogMgr;
 import io.md.utils.CubeObjectMapperProvider;
 
@@ -30,6 +31,7 @@ public class ProtoDescriptorDAO {
 	public final String customerId;
 	public final String app;
 	public final String encodedFile;
+	public final Map<String, String> protoFileMap;
 	private DynamicSchema schema;
 	private Map<String, Map<String, MethodDescriptor>> serviceDescriptorMap;
 	private static final Logger LOGGER = LogMgr.getLogger(ProtoDescriptorDAO.class);
@@ -40,13 +42,16 @@ public class ProtoDescriptorDAO {
 		this.version = null;
 		this.app = null;
 		this.encodedFile = null;
+		this.protoFileMap = null;
 	}
 
-	public ProtoDescriptorDAO(String customerId, String app, String encodedFile)
+	public ProtoDescriptorDAO(String customerId, String app, String encodedFile,
+		Map<String, String> protoFileMap)
 		throws IOException, DescriptorValidationException {
 		this.customerId = customerId;
 		this.app = app;
 		this.encodedFile = encodedFile;
+		this.protoFileMap = protoFileMap;
 		initialize();
 	}
 
