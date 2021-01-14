@@ -110,8 +110,8 @@ public class CubeStoreController {
         return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 
-    @PostMapping("/deleteEventByReqId/{reqId}")
-    public ResponseEntity deleteEventByReqId(HttpServletRequest request, @RequestBody Event postBody , @PathVariable String reqId, Authentication authentication){
+    @PostMapping("/deleteEventByReqId")
+    public ResponseEntity deleteEventByReqId(HttpServletRequest request, @RequestBody Event postBody , Authentication authentication){
 
         validation.validateCustomerName(authentication, postBody.customerId);
 
@@ -123,8 +123,8 @@ public class CubeStoreController {
         return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 
-    @PostMapping("/deleteEventByTraceId/{traceId}")
-    public ResponseEntity deleteEventByTraceId(HttpServletRequest request, @RequestBody Event postBody , @PathVariable String traceId, Authentication authentication){
+    @PostMapping("/deleteEventByTraceId")
+    public ResponseEntity deleteEventByTraceId(HttpServletRequest request, @RequestBody Event postBody , Authentication authentication){
 
         validation.validateCustomerName(authentication, postBody.customerId);
 
