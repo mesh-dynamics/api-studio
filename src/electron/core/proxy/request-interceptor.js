@@ -9,9 +9,9 @@ const strictMockApiPrefix = '/api/ms'
  * @param {*} apiPath - api path that contains service name as first path variable
  * @param {*} serviceConfigObject
  */
-const stripServiceNameFromOutgoingProxyPath = (apiPath, {service, includeServicePrefix}) => {
+const stripServiceNameFromOutgoingProxyPath = (apiPath, {service, servicePrefix}) => {
     if(apiPath) {
-        if (includeServicePrefix) {
+        if (servicePrefix) {
             return apiPath.slice(1) // remove starting slash
         } else {
             return apiPath.slice(service.length + 2) // accounting for slashes
@@ -26,7 +26,7 @@ const stripServiceNameFromOutgoingProxyPath = (apiPath, {service, includeService
  * @param {*} resourcePath 
  * @param {*} mockContext 
  */
-const rewriteMockPath = (resourcePath, mockContext, traceDetails, service) => {
+const rewriteMockPath = (resourcePath, mockContext, traceDetails, service, serviceConfigObject) => {
     // Pure function. Do not modify parameters // recordingId 
     const {
         runId,
@@ -45,12 +45,18 @@ const rewriteMockPath = (resourcePath, mockContext, traceDetails, service) => {
     // const path = `${mockApiPrefix}/${collectionId}/${recordingId}${resourcePath}`;
 
     // Path for mock
-    let path = ""
+    let path = "", strippedResourcePath = resourcePath.substring(1); // remove leading slash
+
+    // strip service name if no prefix is provided in service config OR if 'All services mocked' is selected
+    if(serviceConfigObject && !serviceConfigObject.servicePrefix || !serviceConfigObject) {
+        strippedResourcePath = strippedResourcePath.substring(`${service}/`.length)
+    }
+    logger.info("Stripped resource path: ", strippedResourcePath)
+
     if(strictMock) {
-        const strippedResourcePath = resourcePath.replace(`/${service}`, "")
-        path = `${strictMockApiPrefix}/${customerName}/${selectedApp}/${replayInstance}/${service}${strippedResourcePath}`
+        path = `${strictMockApiPrefix}/${customerName}/${selectedApp}/${replayInstance}/${service}/${strippedResourcePath}`
     } else {
-        path = `${mockApiPrefix}/${collectionId}/${recordingCollectionId}/${customerName}/${selectedApp}/${traceId}/${runId}${resourcePath}`;
+        path = `${mockApiPrefix}/${collectionId}/${recordingCollectionId}/${customerName}/${selectedApp}/${traceId}/${runId}/${service}/${strippedResourcePath}`;
     }
 
     logger.info('Updated Resource URI : ', path);
@@ -88,7 +94,7 @@ const rewriteLivePath = (serviceConfigObject, receivedPathInProxy) => {
  * @param {*} mockContext 
  * @param {*} user 
  */
-const proxyRequestInterceptorMockService = (proxyReq, mockContext, user, traceDetails, service) => {
+const proxyRequestInterceptorMockService = (proxyReq, mockContext, user, traceDetails, service, serviceConfigObject) => {
     const { accessToken, tokenType } = user;
     const { selectedApp } = mockContext;
     const {traceKeys, spanId, traceId, parentSpanId} = traceDetails
@@ -122,7 +128,7 @@ const proxyRequestInterceptorMockService = (proxyReq, mockContext, user, traceDe
 
     // rewrite request url
     logger.info('Rewriting url...');
-    proxyReq.path = rewriteMockPath(proxyReq.path, mockContext, traceDetails, service);
+    proxyReq.path = rewriteMockPath(proxyReq.path, mockContext, traceDetails, service, serviceConfigObject);
 
     logger.info('Method intercepted in proxy request:', proxyReq.method);
     logger.info('Logging Request Headers\n', proxyReq._headers);
