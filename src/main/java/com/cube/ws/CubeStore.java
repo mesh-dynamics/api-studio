@@ -20,11 +20,14 @@ import io.md.injection.DynamicInjectorFactory;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -1973,17 +1976,19 @@ public class CubeStore {
     @Produces(MediaType.APPLICATION_JSON)
     public Response protoDescriptorFileUpload(@PathParam("customerId") String customerId,
         @PathParam("app") String app,
-        @FormDataParam("protoDescriptorFile") List<FormDataBodyPart>  bodyParts) {
+        @FormDataParam("protoDescriptorFile") List<FormDataBodyPart>  bodyParts,
+        @DefaultValue("false") @QueryParam("appendExisting") boolean appendExisting) {
 //        @FormDataParam("protoDescriptorFile") FormDataContentDisposition fileDetail) {
 
-        if(bodyParts==null) {
+
+        if(bodyParts==null || bodyParts.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
                 Map.of("Message",
                     "Uploaded file stream null. Ensure the variable name is \"protoDescriptorFile\" for the file")
             )).toString()).build();
         }
 
-
+        Map<String, String> protoFileMap = new HashMap<>();
         boolean status = false;
         byte[] encodedFileBytes;
         try {
@@ -1992,15 +1997,42 @@ public class CubeStore {
             List<String> commandList = new ArrayList<>();
             commandList.add("protoc");
             commandList.add("--descriptor_set_out=" + descFileName);
+
+            // If appending add existing protos for compiler
+            if(appendExisting) {
+                Optional<ProtoDescriptorDAO> existingProtoDescriptorDAOOptional = rrstore
+                    .getLatestProtoDescriptorDAO(customerId, app);
+                existingProtoDescriptorDAOOptional.map(UtilException.rethrowFunction(existingProtoDescriptorDAO ->
+                {
+                    existingProtoDescriptorDAO.protoFileMap.forEach(UtilException.rethrowBiConsumer(
+                        (uniqueFileName,fileContent) -> {
+                            File targetFile = new File(tmpDir + "/" + uniqueFileName);
+                            OutputStream outStream = new FileOutputStream(targetFile);
+                            byte[] fileBytes = fileContent.getBytes(StandardCharsets.UTF_8);
+                            outStream.write(fileBytes);
+                            //Add to new fileMap and list of commands
+                            protoFileMap.put(uniqueFileName, fileContent);
+                            commandList.add(uniqueFileName);
+                        }));
+                    return existingProtoDescriptorDAO;
+                }));
+            }
+
+            // Add newly uploaded protos
             for (FormDataBodyPart bodyPart : bodyParts) {
 
                 BodyPartEntity bodyPartEntity = (BodyPartEntity) bodyPart.getEntity();
                 String fileName = bodyPart.getContentDisposition().getFileName();
-                commandList.add(fileName);
-                File targetFile = new File(tmpDir + "/" + fileName);
+                String uniqueFileName = "TAG_" + UUID.randomUUID() + "_" + fileName;
+                byte[] fileBytes = bodyPartEntity.getInputStream().readAllBytes();
+                protoFileMap.put(uniqueFileName, new String(fileBytes, StandardCharsets.UTF_8));
+                commandList.add(uniqueFileName);
+                File targetFile = new File(tmpDir + "/" + uniqueFileName);
                 OutputStream outStream = new FileOutputStream(targetFile);
-                outStream.write(bodyPartEntity.getInputStream().readAllBytes());
+                outStream.write(fileBytes);
             }
+
+            Files.deleteIfExists(Paths.get(tmpDir + "/" + descFileName));
             ProcessBuilder builder = new ProcessBuilder();
             builder.directory(new File(tmpDir));
             // Need to ensure protoc compiler is installed in the docker container env
@@ -2015,12 +2047,17 @@ public class CubeStore {
             initialStream.read(buffer);
 
             encodedFileBytes = Base64.getEncoder().encode(buffer);
-            ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app, new String(encodedFileBytes, StandardCharsets.UTF_8));
+            ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app, new String(encodedFileBytes, StandardCharsets.UTF_8), protoFileMap);
             status = rrstore.storeProtoDescriptorFile(protoDescriptorDAO);
         } catch (IOException | DescriptorValidationException | InterruptedException e) {
+            String message = "Cannot encode uploaded proto descriptor file";
+            if(e instanceof FileNotFoundException) {
+                message = "Cannot compile descriptor file from protos using protoc compiler."
+                    + " Make sure the files are not duplicated in case of appending to existing protos";
+            }
             LOGGER.error("Cannot encode uploaded proto descriptor file",e);
             return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
-                Map.of("Message", "Cannot encode uploaded proto descriptor file",
+                Map.of("Message", message,
                     "Error", e.getMessage())).toString())).build();
         }
         return status ? Response.ok().type(MediaType.APPLICATION_JSON)
