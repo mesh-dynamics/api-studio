@@ -434,29 +434,30 @@ public class CubeStore {
     }
 
     @POST
-    @Path("/deleteEventByReqId/{reqId}")
+    @Path("/deleteEventByReqId")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Response deleteEventByReqId(Event event , @PathParam("reqId") String reqId) throws ParameterException {
+    public Response deleteEventByReqId(Event event) throws ParameterException {
 
 	    if(event.customerId == null) throw new ParameterException("customerId is not present in the request");
+	    if(event.getReqId() == null) throw new ParameterException("ReqId is not present in the request");
 
-
-	    boolean deletionSuccess = rrstore.deleteReqResByReqId(reqId , event.customerId , Optional.ofNullable(event.eventType));
+	    boolean deletionSuccess = rrstore.deleteReqResByReqId(event.getReqId() , event.customerId , Optional.ofNullable(event.eventType));
 	    return Response.ok().type(MediaType.APPLICATION_JSON).
             entity(buildSuccessResponse(Constants.SUCCESS , new JSONObject(Map.of("deletion_success" , deletionSuccess)) )).build();
     }
 
     @POST
-    @Path("/deleteEventByTraceId/{traceId}")
+    @Path("/deleteEventByTraceId")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Response deleteEventByTraceId(Event event , @PathParam("traceId") String traceId) throws ParameterException {
+    public Response deleteEventByTraceId(Event event) throws ParameterException {
 
         if(event.customerId == null) throw new ParameterException("customerId is not present in the request");
         if(event.getCollection() == null) throw new ParameterException("collection is not present in the request");
+        if(event.getTraceId() == null) throw new ParameterException("TraceId is not present in the request");
 
-        boolean deletionSuccess = rrstore.deleteReqResByTraceId(traceId , event.customerId , event.getCollection(), Optional.ofNullable(event.eventType));
+        boolean deletionSuccess = rrstore.deleteReqResByTraceId(event.getTraceId() , event.customerId , event.getCollection(), Optional.ofNullable(event.eventType));
         return Response.ok().type(MediaType.APPLICATION_JSON).
             entity(buildSuccessResponse(Constants.SUCCESS , new JSONObject(Map.of("deletion_success" , deletionSuccess)) )).build();
     }
