@@ -360,14 +360,14 @@ public class AnalyzeWSController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @GetMapping("/getPotentialCompareTemplates")
-    public ResponseEntity getPotentialCompareTemplates(HttpServletRequest request, @RequestBody Optional<String> body,
+    @GetMapping("/learnCompareTemplates")
+    public ResponseEntity learnCompareTemplates(HttpServletRequest request, @RequestBody Optional<String> body,
         Authentication authentication, @QueryParam("replayId") String replayId) {
         final Optional<Replay> replay =cubeServerService.getReplay(replayId);
         if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("No Replay found for replayId=" + replayId);
         validation.validateCustomerName(authentication,replay.get().customerId);
-        return cubeServerService.fetchGetResponse(request, body);
+        return cubeServerService.fetchGetResponse(request, body, "/as/getPotentialCompareTemplates");
     }
 }
