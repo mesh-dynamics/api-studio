@@ -461,8 +461,7 @@ class HttpClientTabs extends Component {
                 runId = gatewayHttpRequestEvent.runId,
                 instanceId = gatewayHttpRequestEvent.instanceId,
                 collection = gatewayHttpRequestEvent.collectionId,
-                isoDate = new Date().toISOString(),
-                timestamp = new Date(isoDate).getTime();
+                timestamp = Date.now();
 
             let outgoingRequests = [];
             
@@ -577,8 +576,7 @@ class HttpClientTabs extends Component {
     }
 
     generateEventdata(app, customerId, traceId, service, apiPath, method, requestHeaders, requestQueryParams, requestFormParams, rawData) {
-        const isoDate = new Date().toISOString();
-        const timestamp = new Date(isoDate).getTime();
+        const timestamp = Date.now();
         let path = apiPath ? apiPath.replace(/^\/|\/$/g, '') : "";
         
         let httpResponseEvent = {
@@ -1122,8 +1120,7 @@ class HttpClientTabs extends Component {
         currentEnvironment = getCurrentEnvironment();
         currentEnvironmentVars = getCurrentEnvVars();
 
-        const reqISODate = new Date().toISOString();
-        const reqTimestamp = new Date(reqISODate).getTime();
+        const reqTimestamp = Date.now();
 
         try {
             
@@ -1203,8 +1200,7 @@ class HttpClientTabs extends Component {
         } else {
             fetchConfigRendered.signal = tabToProcess.abortRequest.signal;
             return fetch(fetchUrlRendered, fetchConfigRendered).then(async(response) => {
-                const resISODate = new Date().toISOString();
-                resTimestamp = new Date(resISODate).getTime();
+                resTimestamp = Date.now();
                 responseStatus = response.status;
                 responseStatusText = response.statusText;
                 for (const header of response.headers) {

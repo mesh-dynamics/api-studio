@@ -144,22 +144,20 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
     proxy.on('proxyReq', (proxyReq) => proxyRequestInterceptorMockService(proxyReq, mockContext, user, traceDetails, service));
 
     logger.info('Attaching RESPONSE INTERCEPTOR for mocked service');
-        proxy.on(
-                'proxyRes', 
-                (proxyRes, req, res) => 
-                    proxyMockResponseInterceptor(
-                        proxyRes, 
-                        req, 
-                        res, 
-                        { 
-                            user,
-                            service, 
-                            headers, 
-                            mockContext, 
-                            requestData,
-                            traceDetails
-                        })
-            );
+    proxy.on('proxyRes', (proxyRes, req, res) => 
+                proxyMockResponseInterceptor(
+                    proxyRes, 
+                    req, 
+                    res, 
+                    { 
+                        user,
+                        service, 
+                        headers, 
+                        mockContext, 
+                        requestData,
+                        traceDetails
+                    })
+        );
 
     // and return default options
     return defaultProxyOptions;  
