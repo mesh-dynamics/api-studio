@@ -139,7 +139,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return saveDocs(customerAppConfigToDoc(cfg));
     }
 
-
     @Override
     public boolean save(Event... events) {
         if(events.length==0) return true;
@@ -3219,9 +3218,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String GENERATED_CLASS_JAR_PATH = CPREFIX +  Constants.GENERATED_CLASS_JAR_PATH_FIELD + STRING_SUFFIX;
 
     private Optional<CustomerAppConfig> docToCustomerAppConfig(SolrDocument doc){
+        final String customerId = getStrField(doc , CUSTOMERIDF).orElseThrow();
+        final String app = getStrField(doc , APPF).orElseThrow();
         final Optional<String> tracer = getStrField(doc, TRACERF);
 
-        CustomerAppConfig.Builder builder = new CustomerAppConfig.Builder();
+        CustomerAppConfig.Builder builder = new CustomerAppConfig.Builder(customerId , app);
         tracer.ifPresent(builder::withTracer);
 
         return Optional.of(builder.build());
@@ -3229,7 +3230,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private SolrInputDocument customerAppConfigToDoc(CustomerAppConfig cfg) {
         SolrInputDocument doc = new SolrInputDocument();
-
+        doc.setField(TYPEF, Types.CustomerAppConfig.toString());
+        doc.setField(CUSTOMERIDF, cfg.customerId);
+        doc.setField(APPF, cfg.app);
+        cfg.tracer.ifPresent(tracer->doc.setField(TRACERF , tracer));
         return doc;
     }
 
