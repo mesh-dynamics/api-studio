@@ -434,29 +434,30 @@ public class CubeStore {
     }
 
     @POST
-    @Path("/deleteEventByReqId/{reqId}")
+    @Path("/deleteEventByReqId")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Response deleteEventByReqId(Event event , @PathParam("reqId") String reqId) throws ParameterException {
+    public Response deleteEventByReqId(Event event) throws ParameterException {
 
 	    if(event.customerId == null) throw new ParameterException("customerId is not present in the request");
+	    if(event.getReqId() == null) throw new ParameterException("ReqId is not present in the request");
 
-
-	    boolean deletionSuccess = rrstore.deleteReqResByReqId(reqId , event.customerId , Optional.ofNullable(event.eventType));
+	    boolean deletionSuccess = rrstore.deleteReqResByReqId(event.getReqId() , event.customerId , Optional.ofNullable(event.eventType));
 	    return Response.ok().type(MediaType.APPLICATION_JSON).
             entity(buildSuccessResponse(Constants.SUCCESS , new JSONObject(Map.of("deletion_success" , deletionSuccess)) )).build();
     }
 
     @POST
-    @Path("/deleteEventByTraceId/{traceId}")
+    @Path("/deleteEventByTraceId")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Response deleteEventByTraceId(Event event , @PathParam("traceId") String traceId) throws ParameterException {
+    public Response deleteEventByTraceId(Event event) throws ParameterException {
 
         if(event.customerId == null) throw new ParameterException("customerId is not present in the request");
         if(event.getCollection() == null) throw new ParameterException("collection is not present in the request");
+        if(event.getTraceId() == null) throw new ParameterException("TraceId is not present in the request");
 
-        boolean deletionSuccess = rrstore.deleteReqResByTraceId(traceId , event.customerId , event.getCollection(), Optional.ofNullable(event.eventType));
+        boolean deletionSuccess = rrstore.deleteReqResByTraceId(event.getTraceId() , event.customerId , event.getCollection(), Optional.ofNullable(event.eventType));
         return Response.ok().type(MediaType.APPLICATION_JSON).
             entity(buildSuccessResponse(Constants.SUCCESS , new JSONObject(Map.of("deletion_success" , deletionSuccess)) )).build();
     }
@@ -1359,7 +1360,8 @@ public class CubeStore {
                         event.service, event.getTraceId());
                     reqIdMap.put(oldReqId, reqId);
                 }
-                return buildEvent(event, toRecording.collection,  toRecording.recordingType, reqId, event.getTraceId(), Optional.of(timeStamp.toString()));
+                return buildEvent(event, toRecording.collection,  toRecording.recordingType, reqId, event.getTraceId(),
+                    Optional.of(timeStamp.toString()), event.timestamp);
             } catch (InvalidEventException e) {
                 eventCreationFailure[0] = true;
                 LOGGER.error(new ObjectMessage(
@@ -2046,13 +2048,18 @@ public class CubeStore {
         }
     }
 
-
     private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId, Optional<String> runId)
+        throws InvalidEventException {
+        return buildEvent(event, collection, recordingType, reqId, traceId, runId, Instant.now());
+    }
+
+
+    private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId, Optional<String> runId, Instant timeStamp)
         throws InvalidEventException {
         EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
             event.service, event.instanceId, collection,
             new MDTraceInfo(traceId, event.spanId, event.parentSpanId),
-            event.getRunType(), Optional.of(Instant.now()), reqId, event.apiPath,
+            event.getRunType(), Optional.of(timeStamp), reqId, event.apiPath,
             event.eventType, recordingType);
         eventBuilder.setPayload(event.payload);
         eventBuilder.withMetaData(event.metaData);
@@ -2205,7 +2212,7 @@ public class CubeStore {
         var newEventsStream =   pending.stream().map(event -> {
             String newReqId = "Update-" + finalPayloadHash;
             try {
-                Event newEvent = buildEvent(event, collection, recordingType, newReqId, newReqId, Optional.empty());
+                Event newEvent = buildEvent(event, collection, recordingType, newReqId, newReqId, Optional.empty(), event.timestamp);
                 return newEvent;
             } catch (InvalidEventException e) {
                 LOGGER.error(new ObjectMessage(Map.of(
