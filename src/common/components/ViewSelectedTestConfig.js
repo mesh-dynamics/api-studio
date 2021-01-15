@@ -22,6 +22,7 @@ import {isURL} from 'validator';
 import gcbrowseActions from '../actions/gcbrowse.actions';
 import { defaultCollectionItem } from "../constants";
 import {setStrictMock} from "./../helpers/httpClientHelpers"
+import { fetchGoldenMeta } from "../services/golden.service";
 class ViewSelectedTestConfig extends React.Component {
     constructor(props) {
         super(props)
@@ -71,13 +72,18 @@ class ViewSelectedTestConfig extends React.Component {
             forceStopped: false,
             otherInstanceEndPoint: "",
             storeToDatastore: true,
+            servicesForSelectedGolden : [],
+            selectedService : ""
         };
         //this.statusInterval;
     }
 
     componentDidMount() {
-        const { dispatch } = this.props;
+        const { dispatch, gcbrowse: { selectedCollectionItem } } = this.props;
         dispatch(cubeActions.clearPreviousData());
+        if(!this.props.cube.testConfig && selectedCollectionItem){
+            this.fetchServicesForGoldenSelected(selectedCollectionItem.id);
+        }
     }
 
     handleRecordingModeChange = (value) => this.setState({ recordingMode: value, goldenNameErrorMessage: "" });
@@ -86,6 +92,29 @@ class ViewSelectedTestConfig extends React.Component {
         const { dispatch } = this.props;
         if (e && e.target.value) {
             dispatch(cubeActions.setSelectedInstance(e.target.value));
+        }
+    }
+  
+    handleChangeForServices= (e) => {
+        if (e && e.target.value) {
+            this.setState({selectedService:e.target.value});
+        }
+    }
+
+    handleChangeForTestConfig = (e) => {
+        const { dispatch, cube: { testConfigList }, gcbrowse: { selectedCollectionItem }  } = this.props;
+        if (e && e.target.value) {
+            if(e.target.value == "other"){
+                dispatch(cubeActions.setTestConfig(null));
+                dispatch(cubeActions.setSelectedInstance("other"));
+                if(selectedCollectionItem){
+                    this.fetchServicesForGoldenSelected(selectedCollectionItem.id);
+                }
+
+            }else{
+                const selectedConfig = testConfigList.find(config => config.id == e.target.value)
+                dispatch(cubeActions.setTestConfig(selectedConfig));
+            }
         }
     }
 
@@ -153,9 +182,26 @@ class ViewSelectedTestConfig extends React.Component {
         this.setState({ customHeaders });
     };
 
+    fetchServicesForGoldenSelected = (recordingId) =>{
+        //If test config is not defined, fetch services for current selected Golden and list into dropdown
+        if (recordingId) {
+            fetchGoldenMeta(recordingId).then((metaData) => {
+                const serviceList = metaData.serviceFacets.map(
+                    (service) => service.val
+                );
+                this.setState({servicesForSelectedGolden:  serviceList, selectedService: ""});
+            })
+            .catch((error) => {
+                console.error(error);
+                this.setState({servicesForSelectedGolden:  [], selectedService: ""});
+            });
+        } else {
+            this.setState({servicesForSelectedGolden:  [], selectedService: ""});
+        }
+    }
 
     handleChangeInBrowseCollection = (selectedCollectionObject) => {
-        const { dispatch } = this.props;
+        const { dispatch, cube } = this.props;
         const { 
             name,
             id: golden,
@@ -165,13 +211,16 @@ class ViewSelectedTestConfig extends React.Component {
 
         dispatch(cubeActions.clearPreviousData());
         dispatch(cubeActions.setSelectedTestIdAndVersion(collectionId, version, golden, name));
+        if(!cube.testConfig){
+            this.fetchServicesForGoldenSelected(golden);
+        }
     };
     
     showCT = () => this.setState({showCT: true});
-
+    
     handleCloseOnReplayModal = () => {
         const { gcbrowse: { selectedCollectionItem }, dispatch } = this.props;
-
+        
         const {
             name,
             id: golden,
@@ -181,6 +230,9 @@ class ViewSelectedTestConfig extends React.Component {
         
         dispatch(cubeActions.clearPreviousData());
         dispatch(cubeActions.setSelectedTestIdAndVersion(collectionId, version, golden, name));
+        if(!this.props.cube.testConfig){
+            this.fetchServicesForGoldenSelected(golden);
+        }
         this.setState({ showReplayModal: false, showCT: false });
     };
 
@@ -202,6 +254,10 @@ class ViewSelectedTestConfig extends React.Component {
         } 
         if(cube.selectedInstance == "other") {
             this.showPredefinedInstanceWarningModal();
+            return;
+        } 
+        if(!cube.testConfig) {
+            this.showPredefinedTestConfigWarningModal();
             return;
         } 
 
@@ -234,6 +290,14 @@ class ViewSelectedTestConfig extends React.Component {
         userAlertMessage: {
             header: "Alert",
             message: "Select a predefined instance to proceed."
+        }
+    });
+
+    showPredefinedTestConfigWarningModal = () => this.setState({ 
+        instanceWarningModalVisible: true,
+        userAlertMessage: {
+            header: "Alert",
+            message:  "Recording is un-available for selected test config."
         }
     });
 
@@ -455,10 +519,7 @@ class ViewSelectedTestConfig extends React.Component {
             cube: { 
                 testIds,
                 selectedApp, 
-                selectedGolden,
-                testConfig: { 
-                    tag
-                }
+                selectedGolden
             }, 
             authentication: { 
                 user: {
@@ -624,13 +685,7 @@ class ViewSelectedTestConfig extends React.Component {
                 collectionTemplateVersion,
                 selectedGolden,
                 selectedApp, 
-                testConfig: { 
-                    testPaths, 
-                    testMockServices, 
-                    testConfigName,
-                    dynamicInjectionConfigVersion,
-                    tag
-                }
+                testConfig
             }, 
             authentication: { 
                 user: { 
@@ -640,6 +695,21 @@ class ViewSelectedTestConfig extends React.Component {
             checkReplayStatus 
         } = this.props;
         const replayStartUrl = `${config.replayBaseUrl}/start/${selectedGolden}`;
+        const { 
+            testPaths, 
+            testMockServices, 
+            testConfigName,
+            services,
+            dynamicInjectionConfigVersion,
+            tag
+        } = testConfig || {
+            testPaths: [], 
+            testMockServices: [],
+            services: [this.state.selectedService], 
+            testConfigName: "Other",
+            dynamicInjectionConfigVersion: `Default${selectedApp}`,
+            tag: undefined
+        };
 
         const transforms = JSON.stringify(getTransformHeaders(this.state.customHeaders));
         const otherInstanceSelected = (selectedInstance == "other")
@@ -673,8 +743,11 @@ class ViewSelectedTestConfig extends React.Component {
             testMockServices.map(testMockService => searchParams.append('mockServices',testMockService))
         // Append Test Paths, If not specified, it will run all paths
         testPaths && testPaths.length !== 0 &&
-            testPaths.map(path => searchParams.append("paths", path))
-
+            testPaths.map(path => searchParams.append("paths", path));
+            
+        services && services.length !== 0 &&
+            services.map(service => searchParams.append("services", service));
+            
         const configForHTTP = {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -833,6 +906,69 @@ class ViewSelectedTestConfig extends React.Component {
         );
     };
 
+    renderTestConfigSelector = () => {
+        const { cube, authentication: { user: { username } } } = this.props;
+        
+        let options = cube.testConfigList.map(item => {
+                return (<option key={item.id} value={item.id}>{item.testConfigName}</option>);
+        });
+        const jsxContent  = <div className="margin-top-10">
+                <div className="label-n">SELECT TEST CONFIG</div>
+                <select id="ddlTestConfigs" className="r-att" onChange={this.handleChangeForTestConfig} value={cube.testConfig ? cube.testConfig.id : "other"} placeholder={'Select...'}>
+                    {options}
+                    <option value="other">Other</option>
+                </select>
+            </div>
+         
+        return(
+        <>  
+            {jsxContent}
+            {cube.testConfig && <>
+            <div className={cube.golden ? "margin-top-10" : "hidden"}>
+                <div className="label-n">GOLDEN</div>
+                <div className="value-n">{cube.golden ? cube.golden : ''}</div>
+            </div>
+            <div className={cube.testConfig && cube.testConfig.gatewayService ? "margin-top-10" : "hidden"}>
+                <div className="label-n">GATEWAY</div>
+                <div className="value-n">{cube.testConfig && cube.testConfig.gatewayService ? cube.testConfig.gatewayService.name : ''}</div>
+            </div>
+            <div className={cube.testConfig && cube.testConfig.criteria ? "margin-top-10" : "hidden"}>
+                <div className="label-n">CRITERIA</div>
+                <div className="value-n">{cube.testConfig && cube.testConfig.criteria ? cube.testConfig.criteria : ''}</div>
+            </div>
+            <div className={cube.testConfig && cube.testConfig.mocks ? "margin-top-10" : "hidden"}>
+                <div className="label-n">MOCK(S)</div>
+                <div className="value-n">{cube.testConfig && cube.testConfig.mocks ? cube.testConfig.mocks.join(",") : ''}</div>
+            </div>
+            <div className="test-config-divider" />
+            </>}
+        </>
+
+        )
+    }
+
+    renderSelectedGoldenServices = () => {
+        const { cube } = this.props;
+        let options = this.state.servicesForSelectedGolden.map(item => {
+            return (<option key={item} value={item}>{item}</option>);
+        });
+        if(!cube.testConfig){
+            return(
+                <div className="margin-top-10">
+                    <div className="label-n">SELECT SERVICE</div>
+                    <select id="ddlGoldenServices" className="r-att" onChange={this.handleChangeForServices} value={this.state.selectedService} placeholder={'Select...'}>
+                        <option value="">{this.state.servicesForSelectedGolden.length == 0 ? "No service available": "Select Service"}</option>
+                        {options}
+                    </select>
+                </div>
+            )
+        }        
+        
+        return(
+            <></>
+        )
+    }
+
 
     renderTestInfo = () => {
         const { cube, authentication: { user: { username } } } = this.props;
@@ -846,28 +982,7 @@ class ViewSelectedTestConfig extends React.Component {
                         <i className="fas fa-edit pull-right link"></i>
                     </Link>
                 </div>
-                <div className="margin-top-10">
-                    <div className="label-n">TEST NAME</div>
-                    <div className="value-n">{cube.testConfig ? cube.testConfig.testConfigName : ''}</div>
-                </div>
-                <div className={cube.golden ? "margin-top-10" : "hidden"}>
-                    <div className="label-n">GOLDEN</div>
-                    <div className="value-n">{cube.golden ? cube.golden : ''}</div>
-                </div>
-                <div className={cube.testConfig && cube.testConfig.gatewayService ? "margin-top-10" : "hidden"}>
-                    <div className="label-n">GATEWAY</div>
-                    <div className="value-n">{cube.testConfig && cube.testConfig.gatewayService ? cube.testConfig.gatewayService.name : ''}</div>
-                </div>
-                <div className={cube.testConfig && cube.testConfig.criteria ? "margin-top-10" : "hidden"}>
-                    <div className="label-n">CRITERIA</div>
-                    <div className="value-n">{cube.testConfig && cube.testConfig.criteria ? cube.testConfig.criteria : ''}</div>
-                </div>
-                <div className={cube.testConfig && cube.testConfig.mocks ? "margin-top-10" : "hidden"}>
-                    <div className="label-n">MOCK(S)</div>
-                    <div className="value-n">{cube.testConfig && cube.testConfig.mocks ? cube.testConfig.mocks.join(",") : ''}</div>
-                </div>
-                <div className="test-config-divider" />
-
+                {this.renderTestConfigSelector()}
                 {/* 
                 // Hiding this for now. Maybe used later
                 <div className="margin-top-10">
@@ -912,6 +1027,9 @@ class ViewSelectedTestConfig extends React.Component {
                     handleChangeCallback={this.handleChangeInBrowseCollection}
                     showVisibilityOption={(!recStatus || recStatus.status !== "Running")}
                 />
+
+                {this.renderSelectedGoldenServices()}
+
                 <div style={{ fontSize: "12px" }} className="margin-top-10 row">
                     <span  className="label-link col-sm-12 pointer" onClick={this.showAddCustomHeaderModal}>
                         <i className="fas fa-plus" style={{ color: "#333333", marginRight: "5px" }} aria-hidden="true"></i>

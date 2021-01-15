@@ -86,11 +86,11 @@ class TestConfig extends Component {
                     <Breadcrumb crumbs={[{label: "Application", value: "MovieInfo"}, {label: "Service", value: "List"},
                         {label: "Logical Service", value: "Reviews"}, {label: "API", value: "IMDb"}]}></Breadcrumb>
                 </div>*/}
-                <div>
+                {/* <div>
                     <Link to="/test_config_setup">
                         <span className="cube-btn">CONFIGURE NEW TEST</span>
                     </Link>
-                </div>
+                </div> */}
 
                 <div className="tc-grid">
                     {this.createTestConfig(cube)}
