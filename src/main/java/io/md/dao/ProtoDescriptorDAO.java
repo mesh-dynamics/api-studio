@@ -37,7 +37,7 @@ public class ProtoDescriptorDAO {
 	private static final Logger LOGGER = LogMgr.getLogger(ProtoDescriptorDAO.class);
 
 
-	public ProtoDescriptorDAO() {
+	private ProtoDescriptorDAO() {
 		this.customerId = null;
 		this.version = null;
 		this.app = null;
