@@ -667,7 +667,7 @@ class ViewSelectedTestConfig extends React.Component {
         }
 
         // Append dynamic injection configuration if available
-        dynamicInjectionConfigVersion && searchParams.set('dynamicInjectionConfigVersion', dynamicInjectionConfigVersion);
+        searchParams.set('dynamicInjectionConfigVersion', dynamicInjectionConfigVersion || `Default${selectedApp}`);
         // Append mock services
         testMockServices && testMockServices.length != 0 &&
             testMockServices.map(testMockService => searchParams.append('mockServices',testMockService))
