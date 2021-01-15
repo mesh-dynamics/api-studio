@@ -2,6 +2,9 @@
  * This file is set up proxy and listeners
  */
 const { app, BrowserWindow, ipcMain, Menu, dialog } = require('electron');
+const fetch = require('electron-fetch');
+var FormData = require('form-data');
+const AbortController = require("abort-controller");
 const { autoUpdater } = require('electron-updater');
 autoUpdater.logger = require('electron-log')
 const isDev = require('electron-is-dev');
@@ -9,9 +12,9 @@ const logger = require('electron-log');
 const find = require('find-process');
 const path = require('path');
 const aws4 = require('aws4');
+const { URLSearchParams } = require('url');
 const os = require('os');
 const menu = require('./menu');
-const {Base64Binary} = require('../../shared/utils')
 const { updateApplicationConfig, getApplicationConfig } = require('./fs-utils');
 
 autoUpdater.autoInstallOnAppQuit = true;
@@ -31,6 +34,50 @@ const browserWindowOptions = {
     nodeIntegration: true,
     },
 };
+
+if(!global.fetchRequest){
+    global.fetchRequest = [];
+}
+if(!global.requestResponse){
+    global.requestResponse = [];
+}
+
+global.requestApi = {
+    push: (name, value)=>{
+        global.fetchRequest[name] = value;
+    },
+    get: (name)=>{
+        return global.fetchRequest[name];
+    },
+    remove:(name)=>{
+        delete global.fetchRequest[name];
+    },
+}
+global.responseApi = {
+    push: (name, value)=>{
+        global.requestResponse[name] = value;
+    },
+    get: (name)=>{
+        return global.requestResponse[name];
+    },
+    remove: (name)=>{
+        delete global.requestResponse[name];
+    }
+}
+
+const formatMultipartData = (key, param, bodyFormParams)=>{
+    switch(param.type){
+        case "file":
+            if(param && param.value && param.value && param.value.split(',').length > 1){
+                var decodedFile = Buffer.from(param.value.split(',')[1], 'base64');
+                bodyFormParams.append(key, decodedFile, param.filename);
+            }
+            break;
+        case "field":
+        default:
+            bodyFormParams.append(key, param.value);    
+    }
+}
 
 const releaseMetaDataFile = (releaseType) => {
     const platform = os.platform();
@@ -109,7 +156,7 @@ const setupListeners = (mockContext, user, replayContext) => {
 
     app.on('window-all-closed', async function () {
         try {
-            const { mock: { proxyPort }} = config;
+            const { proxyPort } = config;
 
             const proxyPortList = await find('port', proxyPort);
             
@@ -300,123 +347,59 @@ const setupListeners = (mockContext, user, replayContext) => {
         autoUpdater.downloadUpdate();
     });
 
+  
     ipcMain.on('drive_request_initiate', (event, args) => {
-        const { net, session } = require('electron');
-        const method = args.method, url = args.url, headers = JSON.parse(args.headers), bodyType = args.bodyType;
-        let body = "";
-        const isGrpc = bodyType == "grpcData";
-        if(args.body) body = args.body;
-        let fetchedResponseHeaders = {}, responseStatus, responseStatusText, resTimestamp, responseBody = "";
-        logger.info({
-            url,
-            method,
-            headers,
-            bodyType,
-            ...(body && {body})
-        });
+        const bodyType = args.bodyType;
+        const data = global.fetchRequest[args.tabId + args.runId];
+        logger.info(`Request received at ipc `,   data.fetchConfigRendered, bodyType);
         
-        /* 
-        session.defaultSession.cookies.get({})
-            .then((cookies) => {
-                logger.info(cookies)
-            }).catch((error) => {
-                logger.info(error)
+        if(bodyType == "formData" && data.fetchConfigRendered.body){
+           const bodyFormParams = new URLSearchParams();
+            Object.entries(JSON.parse(data.fetchConfigRendered.body)).forEach(([key, paramValues]) => { 
+                paramValues.forEach((value) => {
+                    bodyFormParams.append(key, value);
+                });
             });
-
-        const cookie = { url: 'http://www.github.com', name: 'dummy_name', value: 'dummy' };
-        session.defaultSession.cookies.set(cookie)
-            .then(() => {
-                // success
-            }, (error) => {
-                console.error(error)
+            data.fetchConfigRendered.headers["Content-Type"] = "application/x-www-form-urlencoded";
+            data.fetchConfigRendered.body = bodyFormParams;
+        }else if(bodyType == "multipartData" && data.fetchConfigRendered.body){
+            const bodyFormParams = new FormData();
+            Object.entries(JSON.parse(data.fetchConfigRendered.body)).forEach(([key, paramValues]) => { 
+                if(Array.isArray(paramValues.value)){
+                    paramValues.value.forEach((value) => {
+                        formatMultipartData(key, value, bodyFormParams);
+                    });
+                }else{  
+                    formatMultipartData(key, paramValues, bodyFormParams);            
+                }
             });
-
-        session.defaultSession.cookies.get({ url: 'http://www.github.com' })
-            .then((cookies) => {
-                logger.info(cookies)
-            }).catch((error) => {
-                logger.info(error)
-            });
-        */
-
-        const request = net.request({
-            url: args.url,
-            method: method
-            // useSessionCookies: true,
-            // session: session.defaultSession
-        });
-        reqMap[args.tabId + args.runId] = request;
-
-        for(let eachHeader in headers) {
-            if(eachHeader.toLowerCase() === "content-length") continue;
-            request.setHeader(eachHeader, headers[eachHeader]);
+            data.fetchConfigRendered.body = bodyFormParams;
         }
 
-        logger.info(`Request Initiated`);
-        request.on('response', (response) => {
+        const fetchCall = bodyType == "grpcData" ? require("./http2fetch.js").fetch :  fetch.default;
+        const abortController = new AbortController();
+        reqMap[args.tabId + args.runId] = abortController;
+        data.fetchConfigRendered.signal = abortController.signal;
+
+        fetchCall(args.url, data.fetchConfigRendered).then(response=>{
+
             logger.info(`RESPONSE STATUS: ${response.statusCode}`);
-            logger.info(`RESPONSE HEADERS: ${JSON.stringify(response.headers)}`);
-
-            resTimestamp = Date.now() / 1000;
             
-            responseStatus = response.statusCode;
-            responseStatusText = response.statusMessage;
+            global.requestResponse[args.tabId + args.runId] = response;
+            delete global.fetchRequest[args.tabId + args.runId];
+            event.sender.send('drive_request_completed', args.tabId, args.runId);
 
-            for (const header in response.headers) {
-                fetchedResponseHeaders[header] = response.headers[header];
-            }
 
-            response.on('aborted', (error) => {
-                logger.info('RESPONSE ABORTED: ', error);
-                event.sender.send('request_aborted', true, args.tabId, args.runId);
-            });
-
-            response.on('error', (error) => {
-                logger.info('RESPONSE ERROR: ', error) ;
-            });
-
-            response.on('data', (chunk) => {
-                responseBody += chunk.toString();
-            });
-
-            response.on('end', () => {
-                logger.info('RESPONSE END');
-                event.sender.send('drive_request_completed', args.tabId, args.runId, resTimestamp, fetchedResponseHeaders, responseStatus, responseStatusText, responseBody);
-            });
-        });
-
-        request.on('finish', (error) => { 
-            logger.info('Request is Finished: ', error);
-        }); 
-        request.on('abort', (error) => { 
-            logger.info('Request is Aborted: ', error);
-        }); 
-        request.on('error', (error) => {
+        }).catch(error=>{
             logger.info('Request ERROR: ', error);
             event.sender.send('drive_request_error', args.tabId, args.runId, error);
-        }); 
-        request.on('close', (error) => { 
-            logger.info('Last Transaction has occured: ', error);
-            delete reqMap[args.tabId];
         });
-        if(method && method.toLowerCase() !== "get" && method.toLowerCase() !== "head") {
-            logger.info("Request Body Added: ",  body);
-            // if(isGrpc){
-            //     const byteArray = Base64Binary.decode(body);
-            //     request.write(byteArray);
-            // }else{
-                request.write(body);
-            // }
-        }
-        request.end();
     });
 
     ipcMain.on('request_abort', (event, args) => {
-        const netRequest = reqMap[args.tabId + args.runId]; 
-        if(netRequest) {
-            netRequest.abort();
-        } else {
-            event.sender.send('request_aborted', false, args.tabId, args.runId);
+        const abortController = reqMap[args.tabId + args.runId];
+        if(abortController) {
+            abortController.abort();
         }
     });
 

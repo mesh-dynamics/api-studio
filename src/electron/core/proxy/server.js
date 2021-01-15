@@ -25,13 +25,13 @@ const {
  */
 const setupProxy = (mockContext, user) => {
 
-    const { mock } = getApplicationConfig();
+    const { proxyDestination, proxyPort } = getApplicationConfig();
 
     const defaultProxyOptions = {
         target: {
-            protocol: mock.protocol, //`${mock.protocol}:`, // Do not forget the darn colon
-            host: mock.host,
-            port: mock.port,
+            protocol: proxyDestination.protocol, //`${mock.protocol}:`, // Do not forget the darn colon
+            host: proxyDestination.host,
+            port: proxyDestination.port,
         },
         changeOrigin: true,
     };
@@ -93,8 +93,9 @@ const setupProxy = (mockContext, user) => {
 
             logger.info('Logging request headers after removing restricted headers', JSON.stringify(headers, undefined, 4));
 
-            // if traceId isn't present in the mock context, generate a new one (for every request)
-            // this is to avoid stored requests from getting deleted by storeUserReqResp call
+            // if traceId & spanId isn't present in the mock context, 
+            // check in the incoming request headers
+            // if not present in the headers, generate new values
             const tracer = mockContext.tracer
             const traceKeys = generateTraceKeys(tracer)
             const {traceIdKey, spanIdKey, parentSpanIdKeys} = traceKeys;
@@ -141,14 +142,14 @@ const setupProxy = (mockContext, user) => {
     /**
      * Cleanup and Setup Proxy Listening
      */
-    find('port', mock.proxyPort)
+    find('port', proxyPort)
         .then((pList) => {
             pList.map((item) => {
                 logger.info('Killing Process...', item.pid);
                 process.kill(item.pid);
                 logger.info('Killed process...', item.pid);
             });
-            setTimeout(() => server.listen(mock.proxyPort), 3000);
+            setTimeout(() => server.listen(proxyPort), 3000);
         })
 };
 
