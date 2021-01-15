@@ -6,9 +6,11 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.md.dao.ApiTraceResponse.ServiceReqRes;
 import io.md.logger.LogMgr;
 import io.md.utils.CubeObjectMapperProvider;
 
@@ -18,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.os72.protobuf.dynamic.DynamicSchema;
 import com.google.protobuf.DescriptorProtos;
+import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 import com.google.protobuf.DynamicMessage;
@@ -28,6 +31,7 @@ public class ProtoDescriptorDAO {
 	public final String customerId;
 	public final String app;
 	public final String encodedFile;
+	public final Map<String, String> protoFileMap;
 	private DynamicSchema schema;
 	private Map<String, Map<String, MethodDescriptor>> serviceDescriptorMap;
 	private static final Logger LOGGER = LogMgr.getLogger(ProtoDescriptorDAO.class);
@@ -38,13 +42,16 @@ public class ProtoDescriptorDAO {
 		this.version = null;
 		this.app = null;
 		this.encodedFile = null;
+		this.protoFileMap = null;
 	}
 
-	public ProtoDescriptorDAO(String customerId, String app, String encodedFile)
+	public ProtoDescriptorDAO(String customerId, String app, String encodedFile,
+		Map<String, String> protoFileMap)
 		throws IOException, DescriptorValidationException {
 		this.customerId = customerId;
 		this.app = app;
 		this.encodedFile = encodedFile;
+		this.protoFileMap = protoFileMap;
 		initialize();
 	}
 
@@ -71,19 +78,26 @@ public class ProtoDescriptorDAO {
 	private void initialize() throws IOException, Descriptors.DescriptorValidationException {
 		serviceDescriptorMap = new HashMap<>();
 		schema = DynamicSchema.parseFrom(Base64.getDecoder().decode(encodedFile));
-		DescriptorProtos.FileDescriptorProto fileDescriptorProto = schema.getFileDescriptorSet().getFile(0);
-		for (int i=0 ; i < fileDescriptorProto.getServiceCount() ; i ++) {
-			DescriptorProtos.ServiceDescriptorProto serviceDescriptorProto = fileDescriptorProto.getService(i);
-			Map<String, MethodDescriptor> methodDescriptorMap = new HashMap<>();
-			serviceDescriptorMap.put(serviceDescriptorProto.getName(), methodDescriptorMap);
-			int methodCount = serviceDescriptorProto.getMethodCount();
-			for (int j = 0 ; j < methodCount ; j++) {
-				DescriptorProtos.MethodDescriptorProto methodDescriptorProto = serviceDescriptorProto.getMethod(j);
-				methodDescriptorMap.put(methodDescriptorProto.getName(),
-					new MethodDescriptor(methodDescriptorProto.getInputType().substring(1),
-						methodDescriptorProto.getOutputType().substring(1),
-						methodDescriptorProto.getClientStreaming(),
-						methodDescriptorProto.getServerStreaming()));
+		List<FileDescriptorProto> fileDescriptorProtos = schema
+			.getFileDescriptorSet().getFileList();
+//		DescriptorProtos.FileDescriptorProto fileDescriptorProto = schema.getFileDescriptorSet().getFile(0);
+		for (int fileInd=0; fileInd<fileDescriptorProtos.size(); fileInd++) {
+			DescriptorProtos.FileDescriptorProto fileDescriptorProto = schema.getFileDescriptorSet().getFile(fileInd);
+			for (int i = 0; i < fileDescriptorProto.getServiceCount(); i++) {
+				DescriptorProtos.ServiceDescriptorProto serviceDescriptorProto = fileDescriptorProto
+					.getService(i);
+				Map<String, MethodDescriptor> methodDescriptorMap = new HashMap<>();
+				serviceDescriptorMap.put(serviceDescriptorProto.getName(), methodDescriptorMap);
+				int methodCount = serviceDescriptorProto.getMethodCount();
+				for (int j = 0; j < methodCount; j++) {
+					DescriptorProtos.MethodDescriptorProto methodDescriptorProto = serviceDescriptorProto
+						.getMethod(j);
+					methodDescriptorMap.put(methodDescriptorProto.getName(),
+						new MethodDescriptor(methodDescriptorProto.getInputType().substring(1),
+							methodDescriptorProto.getOutputType().substring(1),
+							methodDescriptorProto.getClientStreaming(),
+							methodDescriptorProto.getServerStreaming()));
+				}
 			}
 		}
 	}
