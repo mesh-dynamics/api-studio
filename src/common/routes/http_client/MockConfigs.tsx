@@ -4,6 +4,7 @@ import { Modal, Grid, Row, Col, Checkbox, Tabs, Tab, FormGroup, FormControl, Con
 import { httpClientActions } from '../../actions/httpClientActions';
 import _ from "lodash";
 import { IHttpClientStoreState, IStoreState, IUserAuthDetails, IMockConfig } from '../../reducers/state.types';
+import Tippy from '@tippy.js/react';
 export interface IMockConfigsState{
     selectedEditMockConfig: any, //Need to verify type: {name: string; serviceConfigs: []}
     selectedEditMockConfigId: number | null,
@@ -62,10 +63,11 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
         this.setMockConfigStatusText("", false)
     }
 
-    handleIncludeServicePrefixChange = (index) => {
+    handleServicePrefixChange = (e, index) => {
         const {selectedEditMockConfig} = this.state;
-        selectedEditMockConfig.serviceConfigs[index].includeServicePrefix = !selectedEditMockConfig.serviceConfigs[index].includeServicePrefix;
+        selectedEditMockConfig.serviceConfigs[index].servicePrefix = e.target.value;
         this.setState({selectedEditMockConfig})
+        this.setMockConfigStatusText("", false)
     }
 
     handleSelectedMockConfigNameChange = (e) => {
@@ -93,9 +95,9 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
         let {selectedEditMockConfig} = this.state;
         selectedEditMockConfig.serviceConfigs.push({
             service: "", 
+            servicePrefix: "", 
             url: "", 
             isMocked: false,
-            includeServicePrefix: false,
         })
         this.setState({selectedEditMockConfig})
         this.setMockConfigStatusText("", false)
@@ -311,35 +313,37 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
                         </Row>
                         
                         <Row className="show-grid margin-top-15">
-                            <Col xs={4}>
-                                <b>Service Prefix</b>
+                            <Col xs={3}>
+                                <b>Service</b>
+                            </Col>
+                            <Col xs={3}>
+                                <b>Prefix</b>
                             </Col>
                             <Col xs={1}>
                                 <Checkbox inline disabled={_.isEmpty(selectedEditMockConfig.serviceConfigs)} checked={allMocked} onChange={() => this.handleMockAllCheckChange(allMocked)}>
                                     <b>Mock</b>
                                 </Checkbox>
                             </Col>
-                            <Col xs={1}>
-                                <b>Include service prefix</b>
-                            </Col>
-                            <Col xs={5}>
+                            <Col xs={4}>
                                 <b>Target URL</b>
                             </Col>
                             <Col xs={1}></Col>
                         </Row>
                         {(selectedEditMockConfig.serviceConfigs || [])
-                            .map(({service, url, isMocked, includeServicePrefix}, index) => (
+                            .map(({service, url, isMocked, servicePrefix}, index) => (
                                     <Row className="show-grid margin-top-10" key={index}>
-                                        <Col xs={4}>
+                                        <Col xs={3}>
                                             <input value={service} onChange={(e) => this.handleServiceChange(e, index)} className="form-control"/>
+                                        </Col>
+                                        <Col xs={3}>
+                                        <Tippy content={"The path prefix to use. If not specified, will default to the service name, which will also be stripped before lookup and saving the request."} placement="bottom"  arrow={true}>
+                                            <input value={servicePrefix} onChange={(e) => this.handleServicePrefixChange(e, index)} className="form-control"/>
+                                        </Tippy>
                                         </Col>
                                         <Col xs={1} style={{}}>
                                             <Checkbox inline checked={isMocked} onChange={() => this.handleIsMockedCheckChange(index)}/>
                                         </Col>
-                                        <Col xs={1} style={{}}>
-                                            <Checkbox inline checked={includeServicePrefix} onChange={() => this.handleIncludeServicePrefixChange(index)} disabled={isMocked}/>
-                                        </Col>
-                                        <Col xs={5}>
+                                        <Col xs={4}>
                                             <input value={url} onChange={(e) => this.handleTargetURLChange(e, index)} className="form-control" disabled={isMocked}/>
                                         </Col>
                                         <Col xs={1}>

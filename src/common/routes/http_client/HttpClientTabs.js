@@ -464,8 +464,7 @@ class HttpClientTabs extends Component {
                 runId = gatewayHttpRequestEvent.runId,
                 instanceId = gatewayHttpRequestEvent.instanceId,
                 collection = gatewayHttpRequestEvent.collectionId,
-                isoDate = new Date().toISOString(),
-                timestamp = new Date(isoDate).getTime();
+                timestamp = Date.now();
 
             let outgoingRequests = [];
             
@@ -581,8 +580,7 @@ class HttpClientTabs extends Component {
     }
 
     generateEventdata(app, customerId, traceId, service, apiPath, method, requestHeaders, requestQueryParams, requestFormParams, rawData) {
-        const isoDate = new Date().toISOString();
-        const timestamp = new Date(isoDate).getTime();
+        const timestamp = Date.now();
         let path = apiPath ? apiPath.replace(/^\/|\/$/g, '') : "";
         
         let httpResponseEvent = {
@@ -957,11 +955,11 @@ class HttpClientTabs extends Component {
                             const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
                             const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
                             
-                            const { headers, queryParams, formData, rawData, rawDataType, multipartData }  = extractParamsFromRequestEvent(httpRequestEvent);
+                            const { headers, queryParams, formData, rawData, rawDataType, multipartData, httpURL }  = extractParamsFromRequestEvent(httpRequestEvent);
                             let reqObject = {
                                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-                                httpURL: httpRequestEvent.apiPath,
-                                httpURLShowOnly: httpRequestEvent.apiPath,
+                                httpURL: httpURL,
+                                httpURLShowOnly: httpURL,
                                 headers: headers,
                                 queryStringParams: queryParams,
                                 bodyType: multipartData && multipartData.length > 0 ? "multipartData" :formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData", //multipart
@@ -974,7 +972,7 @@ class HttpClientTabs extends Component {
                                 responseStatusText: "",
                                 responseHeaders: "",
                                 responseBody: "",
-                                recordedResponseHeaders: httpResponseEvent ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
+                                recordedResponseHeaders: (httpResponseEvent && httpResponseEvent.payload[1].hdrs) ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
                                 recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
                                 recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
                                 responseBodyType: "json",
@@ -1158,8 +1156,7 @@ class HttpClientTabs extends Component {
         currentEnvironment = getCurrentEnvironment();
         currentEnvironmentVars = getCurrentEnvVars();
 
-        const reqISODate = new Date().toISOString();
-        const reqTimestamp = new Date(reqISODate).getTime();
+        const reqTimestamp = Date.now();
 
         try {
             
@@ -1582,13 +1579,13 @@ class HttpClientTabs extends Component {
         const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
         const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
 
-        const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType, multipartData }  = extractParamsFromRequestEvent(httpRequestEvent);
+        const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType, multipartData, httpURL }  = extractParamsFromRequestEvent(httpRequestEvent);
         
         let reqObject = {
             id: existingId || uuidv4(),
             httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-            httpURL: httpRequestEvent.metaData.httpURL || httpRequestEvent.apiPath,
-            httpURLShowOnly: httpRequestEvent.metaData.httpURL || httpRequestEvent.apiPath,
+            httpURL: httpURL,
+            httpURLShowOnly: httpURL,
             headers: headers,
             queryStringParams: queryParams,
             bodyType: multipartData && multipartData.length > 0 ? "multipartData" : formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : grpcData && grpcData.length > 0 ? "grpcData" : "formData",
@@ -1603,7 +1600,7 @@ class HttpClientTabs extends Component {
             responseStatusText: "",
             responseHeaders: "",
             responseBody: "",
-            recordedResponseHeaders: httpResponseEvent ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
+            recordedResponseHeaders: (httpResponseEvent && httpResponseEvent.payload[1].hdrs) ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
             recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
             recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
             responseBodyType: "json",
@@ -1816,9 +1813,6 @@ class HttpClientTabs extends Component {
                 }
             })
 
-            const {httpURL, queryParamsFromUrl} = extractURLQueryParams(reqObject.httpURL)
-            reqObject.httpURL = httpURL
-            reqObject.queryStringParams = queryParamsFromUrl
         }
         
         const nextSelectedTabId = isSelected ?  tabId : selectedTabKey;

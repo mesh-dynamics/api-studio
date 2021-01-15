@@ -27,7 +27,7 @@ const constructEventDetails = (mockContext, traceDetails, service, apiPath, even
         recordingType: strictMock ? 'Replay' : 'History', // Hardcoded for live request // todo: change to UserGolden if collection type isn't history
         reqId: requestId,//'NA', // Hardcoded for live request
         runType: 'DevToolProxy', // Hardcoded for live request 
-        timestamp: new Date().valueOf(), // Calculated dynamically for each req/res
+        timestamp: Date.now() / 1000, // Calculated dynamically for each req/res
     }
     return event
 };

@@ -114,7 +114,7 @@ const setupProxy = (mockContext, user) => {
             }
 
             const spanId = headers[spanIdKey] || generateSpanId(tracer);
-            const traceId = mockContext.traceId || headers[traceIdKey] || generateTraceId(tracer, mockContext.spanId)
+            const traceId = mockContext.traceId || headers[traceIdKey] || generateTraceId(tracer, spanId)
             const traceDetails = {tracer, traceKeys, traceId, spanId, parentSpanId}
             const proxyOptionParameters = {
                 user,

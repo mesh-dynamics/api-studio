@@ -82,11 +82,11 @@ const proxyMockResponseInterceptor = (proxyRes, req, res, options) => {
     const handleResponseOnEnd = async () => {
         body = Buffer.concat(body).toString();
 
-        logger.info('Received body in response: ', body.length ? body : "(empty)");
+        logger.info('Response body: ', body.length ? body : "(empty)");
 
         try {
             // Set proxyRes headers to propagate up
-            //Object.keys(proxyRes.headers).forEach(headerKey => res.setHeader(headerKey, proxyRes.headers[headerKey])) // fixme
+            Object.keys(proxyRes.headers).forEach(headerKey => res.setHeader(headerKey, proxyRes.headers[headerKey]))
 
             res.statusMessage = proxyRes.statusMessage;
 
@@ -96,18 +96,6 @@ const proxyMockResponseInterceptor = (proxyRes, req, res, options) => {
 
         } catch (error) {
             logger.info('Error in response interceptor', error);
-
-            logger.info('Response Body: ', body);
-
-            //Object.keys(proxyRes.headers).forEach(headerKey => res.setHeader(headerKey, proxyRes.headers[headerKey])) // fixme
-
-            res.statusMessage = proxyRes.statusMessage;
-            
-            res.statusCode = proxyRes.statusCode;
-            
-            res.end(body);
-        } finally {
-
         }
     }
     
