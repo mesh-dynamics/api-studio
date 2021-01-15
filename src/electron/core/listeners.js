@@ -357,8 +357,7 @@ const setupListeners = (mockContext, user, replayContext) => {
             logger.info(`RESPONSE STATUS: ${response.statusCode}`);
             logger.info(`RESPONSE HEADERS: ${JSON.stringify(response.headers)}`);
 
-            const resISODate = new Date().toISOString();
-            resTimestamp = new Date(resISODate).getTime();
+            resTimestamp = Date.now() / 1000;
             
             responseStatus = response.statusCode;
             responseStatusText = response.statusMessage;
