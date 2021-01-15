@@ -138,12 +138,15 @@ class Navigation extends Component<INavigationProps,INavigationState> {
                             <Link to={`/api_catalog/api?app=${cube.selectedApp}`}> 
                                 <div title="API Catalog" className="link-q"><i className="fas fa-indent"></i></div>
                             </Link>
-                            <Link to={`/configs?app=${cube.selectedApp}`}>
+                            <Link to={`/test_config_view`}>
                                 <div title="Test Runner" className="link-q"><i className="fas fa-caret-square-right"></i></div>
                             </Link>
                             <Link to="/test_results">
                                 <div title="Test Results" className="link-q"><i className="fas fa-chart-bar"></i></div>
-                            </Link>                            
+                            </Link>  
+                            <Link to={`/configs?app=${cube.selectedApp}`}>
+                                <div title="Settings" className="link-q"><i className="fas fa-cog"></i></div> 
+                            </Link>                          
                         </div>
                         <div className="q-links">
                             {/* <div title="Notification" className="link-q"><i className="fas fa-bell"></i></div>
