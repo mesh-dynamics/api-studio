@@ -94,6 +94,11 @@ export function cube (state = initialState, action: ICubeAction) {
                 ...state,
                 testConfigList: action.data
             };
+        case cubeConstants.TEST_CONFIG_FAILURE:
+            return {
+                ...state,
+                testConfigList: []
+            };
         case cubeConstants.NEW_GOLDEN_ADDED:
             return {
                 ...state,
