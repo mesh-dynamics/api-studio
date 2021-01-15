@@ -1994,8 +1994,8 @@ public class CubeStore {
         boolean status = false;
         byte[] encodedFileBytes;
         try {
-            String tmpDir = "/tmp";
-            String descFileName = "tmp.desc";
+            String tmpDir = io.md.constants.Constants.TEMP_DIR;
+            String descFileName = "tmp_" + UUID.randomUUID() +  ".desc";
             List<String> commandList = new ArrayList<>();
             commandList.add("protoc");
             commandList.add("--descriptor_set_out=" + descFileName);
@@ -2004,7 +2004,7 @@ public class CubeStore {
             if(appendExisting) {
                 Optional<ProtoDescriptorDAO> existingProtoDescriptorDAOOptional = rrstore
                     .getLatestProtoDescriptorDAO(customerId, app);
-                existingProtoDescriptorDAOOptional.map(UtilException.rethrowFunction(existingProtoDescriptorDAO ->
+                existingProtoDescriptorDAOOptional.ifPresent(UtilException.rethrowConsumer(existingProtoDescriptorDAO ->
                 {
                     existingProtoDescriptorDAO.protoFileMap.forEach(UtilException.rethrowBiConsumer(
                         (uniqueFileName,fileContent) -> {
@@ -2016,7 +2016,6 @@ public class CubeStore {
                             protoFileMap.put(uniqueFileName, fileContent);
                             commandList.add(uniqueFileName);
                         }));
-                    return existingProtoDescriptorDAO;
                 }));
             }
 
@@ -2041,7 +2040,9 @@ public class CubeStore {
             builder.command(commandList);
             Process process = builder.start();
             int exitCode = process.waitFor();
-            assert exitCode == 0;
+            if(exitCode == 0) {
+                throw new Exception("Cannot initiate process to compile descriptor from protos");
+            }
 
             InputStream initialStream = new FileInputStream(
                 new File(tmpDir + "/" + descFileName));
@@ -2051,7 +2052,7 @@ public class CubeStore {
             encodedFileBytes = Base64.getEncoder().encode(buffer);
             ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app, new String(encodedFileBytes, StandardCharsets.UTF_8), protoFileMap);
             status = rrstore.storeProtoDescriptorFile(protoDescriptorDAO);
-        } catch (IOException | DescriptorValidationException | InterruptedException e) {
+        } catch (Exception e) {
             String message = "Cannot encode uploaded proto descriptor file";
             if(e instanceof FileNotFoundException) {
                 message = "Cannot compile descriptor file from protos using protoc compiler."
