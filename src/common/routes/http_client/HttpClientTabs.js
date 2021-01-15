@@ -1043,27 +1043,27 @@ class HttpClientTabs extends Component {
         return tabToProcess.bodyType === "grpcData" && tabToProcess.grpcData && tabToProcess.grpcData.trim()
     }
  
-     async driveRequestHandleResponse(response, tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, fetchedResponseHeaders){
-         const {httpClient: { userHistoryCollection}, dispatch} = this.props;
-         const resISODate = new Date().toISOString();
-         const resTimestamp = new Date(resISODate).getTime();
-         const responseStatus = response.status;
-         const responseStatusText = response.statusText;
-         let data = "";
-         
-         if(fetchedResponseHeaders["content-type"] == "application/grpc"){
-             var reader = response.body.getReader();
-             var result = await reader.read();
-             const base64Data = Base64Binary.encode(result.value || new Uint8Array());
-             data =  base64Data;
-         }
-         else{
-             data= await response.text();
-         }
-     
-         dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), data));
-         this.saveToHistoryAndLoadTrace(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp, httpRequestURLRendered, currentEnvironment);
-     }
+    async driveRequestHandleResponse(response, tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, fetchedResponseHeaders){
+        const {httpClient: { userHistoryCollection}, dispatch} = this.props;
+        const resISODate = new Date().toISOString();
+        const resTimestamp = new Date(resISODate).getTime();
+        const responseStatus = response.status;
+        const responseStatusText = response.statusText;
+        let data = "";
+        
+        if(fetchedResponseHeaders["content-type"] == "application/grpc"){
+           //  var reader = response.body.getReader();
+           //  var result = await reader.read();
+            const base64Data = Base64Binary.encode(response.body || new Uint8Array());
+            data =  base64Data;
+        }
+        else{
+            data= await response.text();
+        }
+    
+        dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), data));
+        this.saveToHistoryAndLoadTrace(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp, httpRequestURLRendered, currentEnvironment);
+    }
      async driveRequestHandleError(error, tabId, runId){
          const {dispatch} = this.props;
          console.error(error);
@@ -1217,9 +1217,13 @@ class HttpClientTabs extends Component {
                         const responseApi = window.require('electron').remote.getGlobal("responseApi");
                         let response = responseApi.get(tabId + runId);
                         responseApi.remove(tabId + runId);
-                        response.headers.forEach((value, key) => {
-                            fetchedResponseHeaders[key] = value;
-                        });
+                        if(_.isArray(response.headers)){
+                            response.headers.forEach((value, key) => {
+                                fetchedResponseHeaders[key] = value;
+                            });
+                        }else{
+                            fetchedResponseHeaders = response.headers || {};
+                        }
                         this.driveRequestHandleResponse(response, tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, fetchedResponseHeaders);
                     } catch (error) {
                         this.driveRequestHandleError(error, tabId, runId);

@@ -376,11 +376,13 @@ const setupListeners = (mockContext, user, replayContext) => {
             data.fetchConfigRendered.body = bodyFormParams;
         }
 
+        const fetchCall = bodyType == "grpcData" ? require("./http2fetch.js").fetch :  fetch.default;
         const abortController = new AbortController();
         reqMap[args.tabId + args.runId] = abortController;
         data.fetchConfigRendered.signal = abortController.signal;
 
-        fetch.default(args.url, data.fetchConfigRendered).then(response=>{
+        fetchCall(args.url, data.fetchConfigRendered).then(response=>{
+
             logger.info(`RESPONSE STATUS: ${response.statusCode}`);
             
             global.requestResponse[args.tabId + args.runId] = response;
