@@ -389,9 +389,10 @@ const deleteGolden = async (recordingId: string) => {
 const deleteEventByRequestId = async (customerId: string, requestId: string) => {
     try {
         let body = {
-            "customerId": customerId
+            "customerId": customerId,
+            "reqId": requestId
         }
-        return await api.post(`${config.recordBaseUrl}/deleteEventByReqId/${requestId}`, body);
+        return await api.post(`${config.recordBaseUrl}/deleteEventByReqId`, body);
     } catch (error) {
         console.log("Error deleting Collection request \n", error);
         throw error;
@@ -402,9 +403,10 @@ const deleteEventByTraceId = async (customerId: string, traceId: string, collect
     try {
         const body = {
             "customerId": customerId,
-            "collection": collectionId
+            "collection": collectionId,
+            "traceId": traceId
         };
-        return await api.post(`${config.recordBaseUrl}/deleteEventByTraceId/${traceId}`, body);
+        return await api.post(`${config.recordBaseUrl}/deleteEventByTraceId`, body);
     } catch (error) {
         console.log("Error deleting Collection request \n", error);
         throw error;
