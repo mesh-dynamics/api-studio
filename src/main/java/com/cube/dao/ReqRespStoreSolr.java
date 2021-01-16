@@ -2806,12 +2806,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public ArrayList getServicePathHierarchicalFacets(String collectionId, RunType runType) {
+    public ArrayList getServicePathHierarchicalFacets(String collectionId) {
         SolrQuery query = new SolrQuery("*:*");
         query.setFields("*");
         addFilter(query, TYPEF, Types.Event.toString());
         addFilter(query, COLLECTIONF, collectionId);
-        addFilter(query, RRTYPEF, runType.toString());
 
         FacetQ facetq = new FacetQ();
 

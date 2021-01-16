@@ -596,7 +596,7 @@ public interface ReqRespStore extends DataStore {
 	 * @param runType
 	 * @return
 	 */
-    ArrayList getServicePathHierarchicalFacets(String collectionId, RunType runType);
+    ArrayList getServicePathHierarchicalFacets(String collectionId);
 
     /**
      * Deletes the Requests and Responses from the passed collection that has the given trace id
