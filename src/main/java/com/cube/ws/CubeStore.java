@@ -2013,7 +2013,11 @@ public class CubeStore {
                 // Note the state for stored event in solr will be UnwrappedDecoded if this is directly coming from devtool
                 // then the state has to be set as UnwrappedDecoded by devtool.
                 ((GRPCPayload) requestEvent.payload).wrapBodyAndEncode();
+            } else if (requestEvent.payload instanceof HTTPPayload) {
+                // dummy call to getBody to wrap body
+                ((HTTPPayload) requestEvent.payload).getBody();
             }
+
 
             Optional<Recording> optionalRecording = rrstore.getRecording(recordingOrReplayId);
             Optional<String> recordOrReplayRunId = optionalRecording.map(recording -> {
