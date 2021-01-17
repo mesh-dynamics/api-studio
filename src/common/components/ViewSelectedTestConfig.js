@@ -746,7 +746,7 @@ class ViewSelectedTestConfig extends React.Component {
             testPaths.map(path => searchParams.append("paths", path));
             
         services && services.length !== 0 &&
-            services.map(service => searchParams.append("services", service));
+            services.map(service => searchParams.append("service", service));
             
         const configForHTTP = {
             headers: {
