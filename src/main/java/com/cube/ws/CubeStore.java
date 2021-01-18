@@ -1980,7 +1980,8 @@ public class CubeStore {
         byte[] encodedFileBytes;
         try {
             encodedFileBytes = Base64.getEncoder().encode(uploadedInputStream.readAllBytes());
-            ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app, new String(encodedFileBytes, StandardCharsets.UTF_8));
+            ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app,
+                new String(encodedFileBytes, StandardCharsets.UTF_8), new HashMap<>());
             status = rrstore.storeProtoDescriptorFile(protoDescriptorDAO);
         } catch (IOException | DescriptorValidationException e) {
             LOGGER.error("Cannot encode uploaded proto descriptor file",e);
@@ -2013,7 +2014,11 @@ public class CubeStore {
                 // Note the state for stored event in solr will be UnwrappedDecoded if this is directly coming from devtool
                 // then the state has to be set as UnwrappedDecoded by devtool.
                 ((GRPCPayload) requestEvent.payload).wrapBodyAndEncode();
+            } else if (requestEvent.payload instanceof HTTPPayload) {
+                // dummy call to getBody to wrap body
+                ((HTTPPayload) requestEvent.payload).getBody();
             }
+
 
             Optional<Recording> optionalRecording = rrstore.getRecording(recordingOrReplayId);
             Optional<String> recordOrReplayRunId = optionalRecording.map(recording -> {

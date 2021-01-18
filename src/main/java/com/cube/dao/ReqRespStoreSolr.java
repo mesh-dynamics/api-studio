@@ -2914,7 +2914,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> encodedFile = getStrFieldMVFirst(doc,PROTO_DESCRIPTOR_FILE_F);
         try {
             ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId.orElse(null),
-                app.orElse(null), encodedFile.orElse(null));
+                app.orElse(null), encodedFile.orElse(null), new HashMap<>());
             protoDescriptorDAO.setVersion(version.orElse(0));
             ValidateProtoDescriptorDAO.validate(protoDescriptorDAO);
             return Optional.of(protoDescriptorDAO);
