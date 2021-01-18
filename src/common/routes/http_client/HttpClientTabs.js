@@ -161,7 +161,7 @@ class HttpClientTabs extends Component {
 
             let tabData = {
                 id: uuidv4(),
-                requestId: toBeCopiedFromData.reqId,
+                requestId: toBeCopiedFromData.requestId,
                 httpMethod: toBeCopiedFromData.httpMethod,
                 httpURL: toBeCopiedFromData.httpURL,
                 httpURLShowOnly: toBeCopiedFromData.httpURLShowOnly,
