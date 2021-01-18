@@ -35,31 +35,20 @@ public class ApiGenPathMgr {
 
 			String[] paths = apiPathRegex.split("/");
 			int len = paths.length;
-			if(len<=1 || apiPathRegex.indexOf('*')==-1) throw new IllegalArgumentException("Not a valid apiPathRegex "+apiPathRegex);
+			if(len<1 || apiPathRegex.indexOf('*')==-1) throw new IllegalArgumentException("Not a valid apiPathRegex "+apiPathRegex);
+			if(len==1 && !apiPathRegex.equals("*")) throw new IllegalArgumentException("Not a valid apiPathRegex "+apiPathRegex);
 			for(String path : paths){
 				if(path.length()>1 && path.indexOf('*')!=-1) throw new IllegalArgumentException("Not a valid apiPathRegex "+apiPathRegex);
 			}
 
-			//start
-			if(paths[0].equals("*")){
-
-				paths[0] = "^[^/]+"; //start with any characters except '/'
-			}else{
-				paths[0] = "^"+paths[0];
-			}
-
-			//end
-			if(paths[len-1].equals("*")){
-				paths[len-1] = "[^/]+$";   //ends with any characters except '/'
-			}else{
-				paths[len-1] = paths[len-1] + "$";
-			}
-			//middle
-			for(int i=1 ; i<len-1 ; i++){
+			for(int i=0 ; i<len ; i++){
 				if(paths[i].equals("*")){
 					paths[i] = "[^/]+";
 				}
 			}
+			paths[0] = "^"+paths[0];
+			paths[len-1] = paths[len-1] + "$";
+
 			return Pattern.compile(String.join("/" , paths));
 		}
 
@@ -107,8 +96,10 @@ public class ApiGenPathMgr {
 		if (genPath != null) {
 			return genPath;
 		}
-		genPath = generateGenericPath(customerId, app, service, apiPath);
-		serviceApiGenPaths.put(apiPathKey , genPath);
+		genPath =  generateGenericPath(customerId, app, service, apiPath);
+		synchronized (this){
+			serviceApiGenPaths.put(apiPathKey , genPath);
+		}
 		return genPath;
 	}
 
@@ -116,10 +107,17 @@ public class ApiGenPathMgr {
 		String key = String.format("%s-%s-%s", customerId, app, service);
 		Optional<ApiPathRegex[]> apiPathRegexes = serviceApiPathPatterns.get(key);
 		if(apiPathRegexes==null){
-			Optional<Map<String, String[]>> serviceMap = appConfigCache
-				.getCustomerAppConfig(customerId, app).flatMap(cfg -> cfg.apiGenericPaths);
-			apiPathRegexes = serviceMap.map(m -> m.get(service)).map(paths -> Arrays.stream(paths).map(ApiPathRegex::new).toArray(ApiPathRegex[]::new));
-			serviceApiPathPatterns.put(key , apiPathRegexes);
+			synchronized (this){
+				apiPathRegexes = serviceApiPathPatterns.get(key);
+				if(apiPathRegexes==null){
+					Optional<Map<String, String[]>> serviceMap = appConfigCache
+						.getCustomerAppConfig(customerId, app).flatMap(cfg -> cfg.apiGenericPaths);
+					apiPathRegexes = serviceMap.map(m -> m.get(service)).map(paths -> Arrays.stream(paths).map(ApiPathRegex::new).toArray(ApiPathRegex[]::new));
+					serviceApiPathPatterns.put(key , apiPathRegexes);
+				}
+
+			}
+
 		}
 
 		if (!apiPathRegexes.isPresent()) {
@@ -127,7 +125,7 @@ public class ApiGenPathMgr {
 		}
 
 		for (ApiPathRegex pathRegex : apiPathRegexes.get()) {
-			if (pathRegex.pattern.matcher(apiPath).matches()) {
+			if (pathRegex.matches (apiPath)) {
 				return Optional.of(pathRegex.pathRegex);
 			}
 		}
