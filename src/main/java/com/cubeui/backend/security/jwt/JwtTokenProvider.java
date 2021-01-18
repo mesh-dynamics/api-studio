@@ -94,7 +94,7 @@ public class JwtTokenProvider {
             .compact();
     }
 
-    Authentication getAuthentication(String token) {
+    public Authentication getAuthentication(String token) {
         UserDetails userDetails = this.userDetailsService.loadUserByUsername(getUsername(token, secretKey));
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
@@ -128,7 +128,7 @@ public class JwtTokenProvider {
         return this.userDetailsService.loadUserByUsername(getUsername(token, refreshSecretKey));
     }
 
-    Pair<String, Boolean> validateToken(List<String> tokens) {
+    public Pair<String, Boolean> validateToken(List<String> tokens) {
         return  validate(tokens, secretKey);
     }
 
