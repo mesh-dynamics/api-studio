@@ -13,7 +13,7 @@ export declare type UpdateParamHandler = (
   tabId: string,
   type: string,
   key: string,
-  value: string | boolean,
+  value: string | boolean| FileList | null,
   id?: any
 ) => void;
 

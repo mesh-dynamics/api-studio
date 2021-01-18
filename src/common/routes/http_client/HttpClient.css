@@ -286,3 +286,15 @@ div.loading, div.loading button{
 .CodeMirror .cm-property {
   color: #a31515;
 }
+.fileListParam{
+  display:inline-block;
+  background-color: #d8d8d8;
+  padding:2px
+}
+
+.fileListParam:hover{ 
+  background-color: #afafaf;
+}
+.fileListParam span{
+  margin-right: 5px;
+}

@@ -940,8 +940,8 @@ class ViewSelectedTestConfig extends React.Component {
                 <div className="label-n">MOCK(S)</div>
                 <div className="value-n">{cube.testConfig && cube.testConfig.mocks ? cube.testConfig.mocks.join(",") : ''}</div>
             </div>
-            <div className="test-config-divider" />
             </>}
+            <div className="test-config-divider" />
         </>
 
         )

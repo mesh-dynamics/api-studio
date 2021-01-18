@@ -1,4 +1,4 @@
-import React, { Component, useEffect } from 'react';
+import React, { Component } from 'react';
 import { Modal, Button } from 'react-bootstrap';
 import DomainSettings from './DomainSettings';
 import MockSettings from './MockSettings';
@@ -11,12 +11,7 @@ class Settings extends Component {
         mockSettingsModalVisible: false,
         config: {
             domain: '',
-            mock: {
-                port: '',
-                proxyPort: '',
-                protocol: '',
-                host: '',
-            }
+            proxyPort: '',
         }
     };
 
@@ -62,11 +57,8 @@ class Settings extends Component {
 
         this.setState({
             config: { 
-                ...this.state.config, 
-                mock: {
-                    ...this.state.config.mock,
-                    [name]: value
-                }  
+                ...this.state.config,
+                proxyPort: value
             } 
         });
     }
@@ -85,12 +77,7 @@ class Settings extends Component {
         const { 
             config: {
                 domain,
-                mock: {
-                    port,
-                    proxyPort,
-                    protocol,
-                    host,
-                }
+                proxyPort
             }, 
             domainSettingsModalVisible, 
             mockSettingsModalVisible,
@@ -115,10 +102,7 @@ class Settings extends Component {
                         handleSaveDomainClick={this.handleSaveDomainClick}
                     />
                     <MockSettings
-                        port={port}
                         proxyPort={proxyPort}
-                        protocol={protocol}
-                        host={host}
                         handleMockSettingsChange={this.handleMockSettingsChange}
                         handleSaveMockSettingsClick={this.handleSaveMockSettingsClick}
                     />

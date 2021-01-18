@@ -63,7 +63,6 @@ const transformForCollection = (proxyRes, options, responseBody) => {
         }
     ]
 
-    // Note wrapped in an array - intentional
     return requestResponseFormattedData;
 };
 
