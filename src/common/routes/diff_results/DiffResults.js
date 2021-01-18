@@ -254,9 +254,7 @@ class DiffResults extends Component {
 
     updateResults = (isNextPage, index) => {
         this.updatePageResults(isNextPage, index)
-        .then(
-            () => this.updateUrlPathWithFilters(isNextPage)
-        )
+        this.updateUrlPathWithFilters(isNextPage)
     };
 
     updateUrlPathWithFilters = (isNextPage) => {
