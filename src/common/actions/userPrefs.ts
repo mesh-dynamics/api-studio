@@ -18,7 +18,7 @@ const userPref = {
     const currentState: IStoreState = getState();
     const {
       httpClient: { selectedMockConfig, selectedEnvironment },
-      apiCatalog: { selectedSource },
+      apiCatalog: { selectedSource, startTime, endTime },
       authentication: { user },
     } = currentState;
     const currentUserState = {
@@ -28,6 +28,8 @@ const userPref = {
       },
       apiCatalog: {
         selectedSource,
+        startTime,
+        endTime
       }
     } as Partial<IStoreState>;
     const savedState = {

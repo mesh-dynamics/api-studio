@@ -550,15 +550,15 @@ const generateTraceKeys = (tracer) => {
     return {traceIdKey, spanIdKey, parentSpanIdKeys}
 }
 
-const generateTraceId = (tracer, spanId) => {
+const generateTraceIdDetails = (tracer, spanId) => {
     const traceId = cryptoRandomString({length:16})
-    if (tracer==="meshd" || tracer==="jaeger") {
+    if (tracer==="meshd" || tracer==="jaeger" || !tracer) {
         if (!spanId)
             throw new Error("Error generating traceId: spanId not present")
         
-        return encodeURIComponent(`${traceId}:${spanId}:0:1`);
+        return {traceId:`${traceId}:${spanId}:0:1`, traceIdForEvent: traceId}; // full and only traceId part for event
     } else {
-        return traceId;
+        return {traceId, traceIdForEvent: traceId}; // both same
     }
 }
 
@@ -655,9 +655,9 @@ const getTraceDetailsForCurrentApp = () => {
     const traceKeys = generateTraceKeys(tracer)
     const spanId = generateSpanId(tracer)
     const parentSpanId = generateSpecialParentSpanId(tracer)
-    const traceId = generateTraceId(tracer, spanId)
+    const traceIdDetails = generateTraceIdDetails(tracer, spanId)
     return {
-        traceId,
+        traceIdDetails,
         spanId,
         parentSpanId,
         traceKeys,
@@ -714,7 +714,7 @@ export {
     extractParamsFromRequestEvent,
     isValidJSON,
     Base64Binary,
-    generateTraceId,
+    generateTraceIdDetails,
     generateSpanId,
     generateSpecialParentSpanId,
     extractQueryStringParamsToCubeFormat,
