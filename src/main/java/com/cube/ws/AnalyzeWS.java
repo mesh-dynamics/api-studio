@@ -351,6 +351,33 @@ public class AnalyzeWS {
     }
 
     @GET
+    @Path("getTemplateSet/{customerId}/{appId}/{templateVersion}/")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getTemplateSet(@Context UriInfo urlInfo, @PathParam("appId") String appId,
+        @PathParam("customerId") String customerId, @PathParam("templateVersion") String templateVersion) {
+
+        return rrstore.getTemplateSet(customerId, appId, templateVersion).map(templateSet -> {
+            String resp;
+            try {
+                resp = jsonMapper.writeValueAsString(templateSet);
+                return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
+                    .entity(resp).build();
+            } catch (JsonProcessingException e) {
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(Map.of(Constants.ERROR
+                        , "Unable to convert template rules to json")).build();
+            }
+        })
+            .orElse(Response.serverError()
+                .entity(Utils.buildErrorResponse(Constants.ERROR, Constants.NOT_PRESENT,
+                    String
+                        .format("Unable to find templateSet for customer: %s, app: %s, version: %s",
+                            customerId, appId, templateVersion))).build());
+    }
+
+
+    @GET
     @Path("getPotentialCompareTemplates")
     @Produces(MediaType.TEXT_PLAIN)
     public Response getPotentialCompareTemplates(@Context UriInfo uriInfo) {
