@@ -14,8 +14,8 @@ const {
 const {
     generateSpanId, 
     generateSpecialParentSpanId,
-    generateTraceId,
     generateTraceKeys,
+    generateTraceIdDetails,
 } = require("./trace-utils")
 
 /**
@@ -113,8 +113,17 @@ const setupProxy = (mockContext, user) => {
             }
 
             const spanId = headers[spanIdKey] || generateSpanId(tracer);
-            const traceId = mockContext.traceId || headers[traceIdKey] || generateTraceId(tracer, spanId)
-            const traceDetails = {tracer, traceKeys, traceId, spanId, parentSpanId}
+            
+            let traceIdDetails = {} 
+            if(mockContext.traceId) {
+                traceIdDetails = {traceId: mockContext.traceId, traceIdForEvent: mockContext.traceId}
+            } else if(headers[traceIdKey]) {
+                traceIdDetails = {traceId: headers[traceIdKey], traceIdForEvent: headers[traceIdKey]}
+            } else {
+                traceIdDetails = generateTraceIdDetails(tracer, spanId)
+            }
+
+            const traceDetails = {tracer, traceKeys, traceIdDetails, spanId, parentSpanId}
             const proxyOptionParameters = {
                 user,
                 proxy,

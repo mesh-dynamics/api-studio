@@ -10,10 +10,12 @@ const cryptoRandomString = require('crypto-random-string');
 const constructEventDetails = (mockContext, traceDetails, service, apiPath, eventName, requestId) => {
     const {selectedApp, customerName, collectionId, runId, strictMock, replayInstance, replayCollection} = mockContext;
     const parsedApiPath = url.parse(apiPath);
-    const {traceId, spanId, parentSpanId} = traceDetails
+    const {traceIdDetails, spanId, parentSpanId} = traceDetails
+    const {traceIdForEvent} = traceIdDetails
+
     const event = {
         runId, // context
-        traceId, 
+        traceId: traceIdForEvent, 
         service, // picked from request
         spanId, 
         parentSpanId,
