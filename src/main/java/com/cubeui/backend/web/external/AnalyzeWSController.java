@@ -370,4 +370,11 @@ public class AnalyzeWSController {
         validation.validateCustomerName(authentication,replay.get().customerId);
         return cubeServerService.fetchGetResponse(request, body, "/as/getPotentialCompareTemplates");
     }
+
+    @GetMapping("/getTemplateSet/{customerId}/{appId}/{templateVersion}")
+    public ResponseEntity getTemplateSet(HttpServletRequest request, @RequestBody Optional<String> body,
+        Authentication authentication, @PathVariable String customerId, @PathVariable String appId, @PathVariable String templateVersion) {
+        validation.validateCustomerName(authentication,customerId);
+        return cubeServerService.fetchGetResponse(request, body);
+    }
 }
