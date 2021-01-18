@@ -164,7 +164,7 @@ public class Constants {
 	public static final String ID_FIELD = "id";
 	public static final String TRACER_FIELD = "tracer";
 	public static final String API_GEN_PATHS_FIELD = "apiGenericPaths";
-
+	public static final String PROTO_FILE_MAP_FIELD ="protoFileMap";
 
 
 	public static final String ROOT_RECORDING_FIELD = "root_recording_id";
@@ -299,5 +299,7 @@ public class Constants {
 	public static final String GOLDEN_RESPONSE = "Golden.Response";
 	public static final String TESTSET_REQUEST = "TestSet.Request";
 	public static final String TESTSET_RESPONSE = "TestSet.Response";
+	public static final String TEMP_DIR = "/tmp";
+
 
 }

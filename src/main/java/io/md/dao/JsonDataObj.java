@@ -18,6 +18,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import io.md.logger.LogMgr;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.ContentType;
@@ -287,6 +288,13 @@ public class JsonDataObj implements DataObj {
 			} else if (Utils.startsWithIgnoreCase(mimeType, MediaType.APPLICATION_FORM_URLENCODED)) {
 				List<NameValuePair> pairs = URLEncodedUtils
 					.parse(getValAsString(original), StandardCharsets.UTF_8);
+				// This is to handle the case when devtool stores this request
+				// body comes as an escaped json
+				if (pairs.size() == 1 && (pairs.get(0).getValue() == null ||
+					pairs.get(0).getValue().isEmpty())) {
+					return Optional.of(jsonMapper.readTree(StringEscapeUtils
+						.unescapeJson(getValAsString(original))));
+				}
 				MultivaluedHashMap<String, String> formMap = new MultivaluedHashMap<>();
 				pairs.forEach(nameValuePair ->
 					formMap.add(nameValuePair.getName(), nameValuePair.getValue()));
