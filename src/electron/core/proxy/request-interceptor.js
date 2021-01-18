@@ -37,7 +37,7 @@ const rewriteMockPath = (resourcePath, mockContext, traceDetails, service, servi
         strictMock,
         replayInstance,
     } = mockContext;
-    const {traceId} = traceDetails;
+    const {traceIdDetails: {traceIdForEvent}} = traceDetails;
 
     logger.info('Intercepted Resource URI :', resourcePath);
 
@@ -56,7 +56,7 @@ const rewriteMockPath = (resourcePath, mockContext, traceDetails, service, servi
     if(strictMock) {
         path = `${strictMockApiPrefix}/${customerName}/${selectedApp}/${replayInstance}/${service}/${strippedResourcePath}`
     } else {
-        path = `${mockApiPrefix}/${collectionId}/${recordingCollectionId}/${customerName}/${selectedApp}/${traceId}/${runId}/${service}/${strippedResourcePath}`;
+        path = `${mockApiPrefix}/${collectionId}/${recordingCollectionId}/${customerName}/${selectedApp}/${traceIdForEvent}/${runId}/${service}/${strippedResourcePath}`;
     }
 
     logger.info('Updated Resource URI : ', path);
@@ -96,10 +96,11 @@ const rewriteLivePath = (serviceConfigObject, receivedPathInProxy) => {
  */
 const proxyRequestInterceptorMockService = (proxyReq, mockContext, user, traceDetails, service, serviceConfigObject) => {
     const { accessToken, tokenType } = user;
-    const { selectedApp, strictMock } = mockContext;
-    const {traceKeys, spanId, traceId, parentSpanId} = traceDetails
+    const { selectedApp, strictMock  } = mockContext;
+    const {traceKeys, spanId, traceIdDetails, parentSpanId} = traceDetails
     const token = `${tokenType} ${accessToken}`;
-
+    const {traceId} = traceIdDetails
+    
     logger.info('Mock Request Intercepted. Removing Header <Origin>');
     proxyReq.removeHeader('Origin');
 
@@ -109,17 +110,17 @@ const proxyRequestInterceptorMockService = (proxyReq, mockContext, user, traceDe
     const {traceIdKey, spanIdKey, parentSpanIdKeys} = traceKeys;
 
     if (spanIdKey) {
-        logger.info(`Setting spanId (${spanIdKey}): `, spanId);
+        logger.info(`Setting spanId header (${spanIdKey}): `, spanId);
         proxyReq.setHeader(spanIdKey, spanId);
     }
 
     parentSpanIdKeys.forEach((key) => {
-        logger.info(`Setting parentSpanId (${key}): `, parentSpanId);
+        logger.info(`Setting parentSpanId header (${key}): `, parentSpanId);
         proxyReq.setHeader(key, parentSpanId);
     })
 
     if (traceIdKey) {
-        logger.info(`Setting traceId (${traceIdKey}): `, traceId);
+        logger.info(`Setting traceId header (${traceIdKey}): `, traceId);
         proxyReq.setHeader(traceIdKey, traceId);
     }
 
@@ -142,7 +143,8 @@ const proxyRequestInterceptorMockService = (proxyReq, mockContext, user, traceDe
  * @param {*} serviceConfigObject 
  */
 const proxyRequestInterceptorLiveService = (proxyReq, serviceConfigObject, mockContext, traceDetails) => {
-    const {traceKeys, traceId, spanId, parentSpanId} = traceDetails
+    const {traceKeys, traceIdDetails, spanId, parentSpanId} = traceDetails
+    const {traceId} = traceIdDetails
 
     logger.info('Method intercepted in proxy request:', proxyReq.method);
 
@@ -151,19 +153,19 @@ const proxyRequestInterceptorLiveService = (proxyReq, serviceConfigObject, mockC
     const {traceIdKey, spanIdKey, parentSpanIdKeys} = traceKeys;
 
     if (spanIdKey && !(spanIdKey in proxyReq._headers)) {
-        logger.info(`Setting spanId (${spanIdKey}): `, spanId);
+        logger.info(`Setting spanId header (${spanIdKey}): `, spanId);
         proxyReq.setHeader(spanIdKey, spanId);
     }
 
     parentSpanIdKeys.forEach((key) => {
         if(!(key in proxyReq._headers)) {
-            logger.info(`Setting parentSpanId (${key}): `, parentSpanId);
+            logger.info(`Setting parentSpanId header (${key}): `, parentSpanId);
             proxyReq.setHeader(key, parentSpanId);
         }
     })
 
     if (traceIdKey && !(traceIdKey in proxyReq._headers)) {
-        logger.info(`Setting traceId (${traceIdKey}): `, traceId);
+        logger.info(`Setting traceId header (${traceIdKey}): `, traceId);
         proxyReq.setHeader(traceIdKey, traceId);
     }
 

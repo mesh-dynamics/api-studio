@@ -22,7 +22,7 @@ import {
   IStoreState,
 } from "../../reducers/state.types";
 import _ from 'lodash';
-import {generateTraceId, generateSpanId, generateSpecialParentSpanId} from "../../utils/http_client/utils"
+import {generateTraceIdDetails, generateSpanId, generateSpecialParentSpanId} from "../../utils/http_client/utils"
 
 export declare type GetReqResFromTabDataHandler = (
   eachPair: IEventData[],
@@ -234,7 +234,7 @@ class SaveToCollection extends React.Component<
         const {tracer} = _.find(appsList, {name: selectedApp})
         const rootParentSpanId = generateSpecialParentSpanId(tracer);
         const rootSpanId = generateSpanId(tracer);
-        const traceId = generateTraceId(tracer, rootSpanId);
+        const traceIdDetails = generateTraceIdDetails(tracer, rootSpanId);
 
         // TODO: Quick fix to rectify mock failure where status is empty string
         // Proper fix is to make status on LHS editable
@@ -245,7 +245,7 @@ class SaveToCollection extends React.Component<
         reqResData = this.props.getReqResFromTabData(reqResPair, tabToProcess, runId, type, 
           null, null, null, null,
           tracer,
-          traceId,
+          traceIdDetails,
           rootParentSpanId,
           rootSpanId)
           else {
@@ -283,7 +283,7 @@ class SaveToCollection extends React.Component<
                   type,
                   null, null, null, null,
                   tracer,
-                  traceId,
+                  traceIdDetails,
                   rootSpanId,
                   spanId,
                 )
@@ -301,6 +301,7 @@ class SaveToCollection extends React.Component<
 
         const collectionNameAddedFromClient = tabToProcess.collectionNameAddedFromClient;
         const message = collectionNameAddedFromClient ? `Saving to collection "${collectionNameAddedFromClient}"` : "Saving...";
+        const successMessage = collectionNameAddedFromClient ? `Saved Successfully to "${collectionNameAddedFromClient}"` : "Saved Successfully!";
 
         this.setState({
           modalErroSaveMessage: message,
@@ -312,7 +313,7 @@ class SaveToCollection extends React.Component<
             dispatch(httpClientActions.unsetHasChangedAll(tabId));
             this.updateTabWithNewData(tabId, serverRes, recordingId);
             this.setState({
-              modalErroSaveMessage: "Saved Successfully!",
+              modalErroSaveMessage: successMessage,
               modalErroSaveMessageIsError: false,
             });
             dispatch(httpClientActions.loadCollectionTrace(recordingId));

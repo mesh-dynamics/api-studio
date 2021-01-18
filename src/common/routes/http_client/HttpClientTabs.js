@@ -34,7 +34,7 @@ import "./Tabs.css";
 
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
-import { generateRunId, generateApiPath, getApiPathFromRequestEvent, extractParamsFromRequestEvent, selectedRequestParamData, unSelectedRequestParamData, isValidJSON, generateTraceKeys, getTraceDetailsForCurrentApp, getTracerForCurrentApp, extractURLQueryParams } from "../../utils/http_client/utils"; 
+import { generateRunId, generateApiPath, getApiPathFromRequestEvent, extractParamsFromRequestEvent, selectedRequestParamData, unSelectedRequestParamData, isValidJSON, generateTraceKeys, getTraceDetailsForCurrentApp, getTracerForCurrentApp, extractURLQueryParams, generateSpanId } from "../../utils/http_client/utils"; 
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
 import { getParameterCaseInsensitive, Base64Binary } from '../../../shared/utils';
 
@@ -102,6 +102,8 @@ class HttpClientTabs extends Component {
     createRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFromData) {
         let referenceEventData = toBeCopiedFromData ? toBeCopiedFromData.eventData : null;
         let eventData = toBeUpdatedData.eventData;
+        const tracer = getTracerForCurrentApp()
+        const spanId = generateSpanId(tracer)
         if(referenceEventData && referenceEventData.length > 0) {
             let refHttpRequestEventTypeIndex = referenceEventData[0].eventType === "HTTPRequest" ? 0 : 1;
             let refHttpResponseEventTypeIndex = refHttpRequestEventTypeIndex === 0 ? 1 : 0;
@@ -144,7 +146,7 @@ class HttpClientTabs extends Component {
                 instanceId: refRequestEventData.instanceId,
                 collection: toBeUpdatedData.collectionIdAddedFromClient,
                 traceId: toBeUpdatedData.traceIdAddedFromClient,
-                spanId: cryptoRandomString({length: 16}),
+                spanId: spanId,
                 parentSpanId: eventData[httpRequestEventTypeIndex].spanId,
                 runType: refHttpRequestEvent.runType,
                 runId: null,
@@ -328,10 +330,11 @@ class HttpClientTabs extends Component {
             const parsedUrl = URL.parse(url);
             let apiPath = parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
             let service = parsedUrl.host ? parsedUrl.host : "NA";
-            const traceId = cryptoRandomString({length: 32});
+            const traceDetails = getTraceDetailsForCurrentApp()
+            let {traceKeys, traceIdDetails: {traceId, traceIdForEvent}, spanId, parentSpanId} = traceDetails;
             const customerId = user.customer_name;
-            const eventData = this.generateEventdata(app, customerId, traceId, service, apiPath);
-            let headers = [], queryParams = [], formData = [],multipartData=[], rawData = "", rawDataType = "", bodyType = "";
+            const eventData = this.generateEventdata(app, customerId, traceDetails, service, apiPath);
+            let headers = [], queryParams = [], formData = [], multipartData=[], rawData = "", rawDataType = "", bodyType = "";
             for (let eachHeader in parsedCurl.headers) {
                 headers.push({
                     id: uuidv4(),
@@ -579,19 +582,19 @@ class HttpClientTabs extends Component {
         this.handleAddMockReqModalClose();
     }
 
-    generateEventdata(app, customerId, traceId, service, apiPath, method, requestHeaders, requestQueryParams, requestFormParams, rawData) {
+    generateEventdata(app, customerId, traceDetails, service, apiPath, method, requestHeaders, requestQueryParams, requestFormParams, rawData) {
         const timestamp = Date.now();
         let path = apiPath ? apiPath.replace(/^\/|\/$/g, '') : "";
-        
+        let {traceKeys, traceIdDetails: {traceId, traceIdForEvent}, spanId, parentSpanId} = traceDetails;
         let httpResponseEvent = {
             customerId: customerId,
             app: app,
             service: service ? service : "NA",
             instanceId: "devtool",
             collection: "NA",
-            traceId: traceId,
-            spanId: "NA",
-            parentSpanId: "NA",
+            traceId: traceIdForEvent,
+            spanId: spanId,
+            parentSpanId: parentSpanId,
             runType: "DevTool",
             runId: generateRunId(),
             timestamp: timestamp,
@@ -619,9 +622,9 @@ class HttpClientTabs extends Component {
             service: service ? service : "NA",
             instanceId: "devtool",
             collection: "NA",
-            traceId: traceId,
-            spanId: cryptoRandomString({length: 16}),
-            parentSpanId: "NA",
+            traceId: traceIdForEvent,
+            spanId: spanId,
+            parentSpanId: parentSpanId,
             runType: "DevTool",
             runId: generateRunId(),
             timestamp: timestamp,
@@ -805,7 +808,8 @@ class HttpClientTabs extends Component {
                     parsedQueryParams = parse(parsedUrl.search);
                 let apiPath = parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
                 let service = parsedUrl.host ? parsedUrl.host : "NA";
-                const traceId = cryptoRandomString({length: 32});
+                const traceDetails = getTraceDetailsForCurrentApp()
+                let {traceKeys, traceIdDetails: {traceId, traceIdForEvent}, spanId, parentSpanId} = traceDetails;
                 const customerId = user.customer_name;
                 
                 let headers = {}, queryParams = {}, formData = {}, rawData = "";
@@ -840,7 +844,7 @@ class HttpClientTabs extends Component {
                         rawData = requestBody.raw;
                     }
                 }
-                const eventData = this.generateEventdata(app, customerId, traceId, service, unescape(apiPath), method, headers, queryParams, formData, rawData);
+                const eventData = this.generateEventdata(app, customerId, traceDetails, service, unescape(apiPath), method, headers, queryParams, formData, rawData);
                 httpEventPairs.push({
                     request: eventData[0],
                     response: eventData[1]
@@ -1009,8 +1013,6 @@ class HttpClientTabs extends Component {
             .filter((header) => header.selected)
             .forEach(each => {
                 if(each.name && each.value && each.name.indexOf(":") < 0) headers[each.name] = each.value;
-                // ideally for ingress requests
-                if(each.name === "x-b3-spanid" && each.value) headers["baggage-parent-span-id"] = each.value;
             })
         return headers;
     }
@@ -1331,7 +1333,7 @@ class HttpClientTabs extends Component {
     }
 
 
-    getReqResFromTabData(eachPair, tabToSave, runId, type, reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment, tracer, traceId, parentSpanId, spanId) {
+    getReqResFromTabData(eachPair, tabToSave, runId, type, reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment, tracer, traceDetails, parentSpanId, spanId) {
         const { headers, queryStringParams, bodyType, rawDataType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus } = tabToSave;
 
         const httpRequestEventTypeIndex = eachPair[0].eventType === "HTTPRequest" ? 0 : 1;
@@ -1376,9 +1378,9 @@ class HttpClientTabs extends Component {
             httpRequestEvent.spanId = "NA"
         }
 
-        if(traceId) {
-            httpRequestEvent.traceId = traceId
-            httpResponseEvent.traceId = traceId
+        if(traceDetails?.traceIdForEvent) {
+            httpRequestEvent.traceId = traceDetails.traceIdForEvent
+            httpResponseEvent.traceId = traceDetails.traceIdForEvent
         }
 
         if (parentSpanId) {
@@ -1437,8 +1439,8 @@ class HttpClientTabs extends Component {
 
         const {traceIdKey, spanIdKey, parentSpanIdKeys} = generateTraceKeys(tracer)
 
-        if(traceId) {
-            httpReqestHeaders[traceIdKey] = [traceId]
+        if(traceDetails?.traceId) {
+            httpReqestHeaders[traceIdKey] = [traceDetails.traceId]
         }
 
         if (parentSpanId) {
@@ -1713,11 +1715,11 @@ class HttpClientTabs extends Component {
         const { app } = this.state;
         const appAvailable = givenApp ? givenApp : app ? app : "";
         const traceDetails = getTraceDetailsForCurrentApp()
-        let {traceKeys, traceId, spanId, parentSpanId} = traceDetails;
+        let {traceKeys, traceIdDetails: {traceId, traceIdForEvent}, spanId, parentSpanId} = traceDetails;
         if (!reqObject) {
             const { cube: { selectedApp } } = this.props;
             const customerId = user.customer_name;
-            const eventData = this.generateEventdata(selectedApp, customerId, traceId);
+            const eventData = this.generateEventdata(selectedApp, customerId, traceDetails);
             const traceHeaders = []
             traceHeaders.push({
                 description: "",
@@ -1780,7 +1782,7 @@ class HttpClientTabs extends Component {
                 service: "",
                 recordingIdAddedFromClient: "",
                 collectionIdAddedFromClient: "",
-                traceIdAddedFromClient: traceId,
+                traceIdAddedFromClient: traceIdForEvent,
                 recordedHistory: null
             };
         } else {

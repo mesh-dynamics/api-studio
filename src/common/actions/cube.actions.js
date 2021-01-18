@@ -265,6 +265,8 @@ function getTestConfigByAppId(appId) {
             dispatch(success(gd, Date.now()));
             dispatch(cubeActions.setTestConfig(gd[0]));
         } catch (error) {
+            console.error(error);
+            dispatch(cubeActions.setTestConfig(null));
             dispatch(failure("Failed to getTestConfigByAppId", Date.now()));
         }
     };
