@@ -1980,7 +1980,8 @@ public class CubeStore {
         byte[] encodedFileBytes;
         try {
             encodedFileBytes = Base64.getEncoder().encode(uploadedInputStream.readAllBytes());
-            ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app, new String(encodedFileBytes, StandardCharsets.UTF_8));
+            ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app,
+                new String(encodedFileBytes, StandardCharsets.UTF_8), new HashMap<>());
             status = rrstore.storeProtoDescriptorFile(protoDescriptorDAO);
         } catch (IOException | DescriptorValidationException e) {
             LOGGER.error("Cannot encode uploaded proto descriptor file",e);
