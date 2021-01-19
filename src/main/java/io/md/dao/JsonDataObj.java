@@ -140,6 +140,9 @@ public class JsonDataObj implements DataObj {
 
 	@Override
 	public String serializeDataObj() throws DataObjProcessingException {
+		if(objRoot.isTextual()) {
+			return objRoot.asText();
+		}
 		try {
 			return jsonMapper.writeValueAsString(objRoot);
 		} catch (JsonProcessingException e) {
