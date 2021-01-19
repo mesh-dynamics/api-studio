@@ -258,16 +258,10 @@ public class JsonDataObj implements DataObj {
 				String key = fileItem.getFieldName();
 				if (multipartParent.has(key)) {
 					JsonNode existingNode = multipartParent.get(key);
-					if (existingNode instanceof ArrayNode) {
-						((ArrayNode) existingNode).add(objectNode);
-					} else {
-						ObjectNode existing = (ObjectNode) existingNode;
-						ArrayNode arrayNode = JsonNodeFactory.instance.arrayNode();
-						arrayNode.add(existing);
-						arrayNode.add(objectNode);
-						multipartParent.set(key, arrayNode);
-					}
+					((ArrayNode) existingNode).add(objectNode);
 				} else {
+					ArrayNode arrayNode = JsonNodeFactory.instance.arrayNode();
+					arrayNode.add(objectNode);
 					multipartParent.set(key, objectNode);
 				}
 			}
@@ -440,15 +434,15 @@ public class JsonDataObj implements DataObj {
 				while (fieldNames.hasNext()) {
 					String fieldName = fieldNames.next();
 					JsonNode fieldObjects = bodyAsObject.get(fieldName);
-					if (fieldObjects instanceof ObjectNode)
-						addObjectNodeToMultipartRequest(builder, (ObjectNode) fieldObjects,
-							wrapContext, fieldName);
-					else {
+					try {
 						ArrayNode fieldObjectsArray = (ArrayNode)  fieldObjects;
 						for (JsonNode object : fieldObjectsArray) {
 							addObjectNodeToMultipartRequest(builder, (ObjectNode) object,
 								wrapContext, fieldName);
 						}
+					} catch (Exception e) {
+						addObjectNodeToMultipartRequest(builder, (ObjectNode) fieldObjects,
+							wrapContext, fieldName);
 					}
 				}
 			}
