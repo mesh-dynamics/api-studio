@@ -1288,6 +1288,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String SEQIDEF = CPREFIX + SEQID_FIELD + STRING_SUFFIX;
 
     private static final String PROTO_DESCRIPTOR_FILE_F = CPREFIX + Constants.PROTO_DESCRIPTOR_FILE_FIELD + NOTINDEXED_SUFFIX;
+    private static final String PROTO_FILE_MAP_F = CPREFIX + PROTO_FILE_MAP_FIELD + NOTINDEXED_SUFFIX;
     private static final String PAYLOAD_FIELDS_F = CPREFIX + PAYLOAD_FIELDS_FIELD + MULT_TEXT_SUFFIX;
 
     private static final Map<String , String> fieldNameSolrMap = new HashMap<>();
@@ -2900,11 +2901,20 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private SolrInputDocument protoDescriptorDAOToSolrDoc(ProtoDescriptorDAO protoDescriptorDAO) {
         final SolrInputDocument doc = new SolrInputDocument();
+        String protoFileMapString;
+        try {
+            protoFileMapString = this.config.jsonMapper.writeValueAsString(protoDescriptorDAO.protoFileMap);
+        } catch (Exception e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                "Unable to convert protoFileMap to string")), e);
+            return doc;
+        }
         doc.setField(TYPEF, Types.ProtoDescriptor.toString());
         doc.setField(INT_VERSION_F, protoDescriptorDAO.version);
         doc.setField(CUSTOMERIDF, protoDescriptorDAO.customerId);
         doc.setField(APPF, protoDescriptorDAO.app);
         doc.setField(PROTO_DESCRIPTOR_FILE_F, protoDescriptorDAO.encodedFile);
+        doc.setField(PROTO_FILE_MAP_F, protoFileMapString);
         return doc;
     }
 
@@ -2913,9 +2923,19 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> app = getStrField(doc, APPF);
         Optional<Integer> version = getIntField(doc, INT_VERSION_F);
         Optional<String> encodedFile = getStrFieldMVFirst(doc,PROTO_DESCRIPTOR_FILE_F);
+
+        Optional<Map<String,String>> protoFileMap = getStrFieldMVFirst(doc, PROTO_FILE_MAP_F)
+            .flatMap(pfm -> {
+                try {
+                    return Optional.of(config.jsonMapper.readValue(pfm, new TypeReference<Map<String, String>>(){}));
+                } catch (Exception e) {
+                    LOGGER.error("Error while reading protoFileMap object from json :: " + getIntField(doc , IDF).orElse(-1),e);
+                    return Optional.empty();
+                }
+            });
         try {
             ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId.orElse(null),
-                app.orElse(null), encodedFile.orElse(null));
+                app.orElse(null), encodedFile.orElse(null), protoFileMap.orElse(new HashMap<>()));
             protoDescriptorDAO.setVersion(version.orElse(0));
             ValidateProtoDescriptorDAO.validate(protoDescriptorDAO);
             return Optional.of(protoDescriptorDAO);
