@@ -8,13 +8,16 @@ import java.net.URI;
 import java.nio.charset.UnsupportedCharsetException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
+import io.md.core.CollectionKey;
 import io.md.dao.*;
 import io.md.logger.LogMgr;
 import org.apache.http.Consts;
@@ -216,6 +219,25 @@ public class CubeClient {
 		return getResponse(recordURI, event, MediaType.APPLICATION_JSON);
 	}
 
+	public Optional<String> storeEvents(Event... events) {
+		URI recordURI = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.segment("cs").segment("storeEventBatch")
+			.build();
+
+		/*
+		String eventsJsons = Arrays.stream(events).map(e->{
+			try{
+				return jsonMapper.writeValueAsString(e);
+			}catch (Exception ex){
+				return null;
+			}
+		}).collect(Collectors.joining("\r\n"));
+		return getResponse(recordURI, events, Constants.APPLICATION_X_NDJSON);
+
+		 */
+		return getResponse(recordURI, events, MediaType.APPLICATION_JSON);
+	}
+
 	public Optional<String> getEvents(EventQuery eventQuery) {
 		URI recordURI = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
 				.segment("cs").segment("getEvents")
@@ -328,6 +350,14 @@ public class CubeClient {
 		CommonUtils.addTraceHeaders(httpGet, "GET");
 
 		return getResponse(httpGet);
+	}
+
+	public Optional<String> populateCache(CollectionKey collectionKey, RecordOrReplay recordOrReplay) {
+		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.segment("cs", "populateCache")
+			.build();
+		//Collection key can be reconstructed from recordOrReplay
+		return getResponse(uri, recordOrReplay, MediaType.APPLICATION_JSON);
 	}
 
 }

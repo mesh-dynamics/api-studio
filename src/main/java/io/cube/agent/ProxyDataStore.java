@@ -143,9 +143,10 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
 
     @Override
     public boolean save(Event... events) {
-        return Arrays.stream(events).map(event ->
-            save(event)).reduce((a,b) -> Boolean.logicalAnd(a,b)).orElse(false);
+        if(events.length==0) return true;
+        if(events.length==1) return save(events[0]);
 
+        return cubeClient.storeEvents(events).isPresent();
     }
 
 
@@ -166,7 +167,7 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
 
     @Override
     public void populateCache(CollectionKey collectionKey, RecordOrReplay recordOrReplay) {
-        throw new NotImplementedException("Populate cache needs to be implemented for proxy data store");
+        cubeClient.populateCache(collectionKey , recordOrReplay);
     }
 
     /*
