@@ -74,10 +74,6 @@ public class RealMocker implements Mocker {
 
             Optional<JoinQuery> joinQuery = mockWColl.isDevtool ? Optional.of(getSuccessResponseMatch()) : Optional.empty();
             Optional<ReplayContext> replayCtx = mockWColl.replay.flatMap(r->r.replayContext);
-            if(replayCtx.isPresent()){
-                reqEvent.setTraceId(replayCtx.get().reqTraceId);
-            }
-
             EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1),
                 !mockWColl.isDevtool, lowerBoundForMatching, mockWColl.recordCollection,
                 payloadFieldFilterList , joinQuery , mockWColl.isDevtool , replayCtx);
@@ -199,12 +195,16 @@ public class RealMocker implements Mocker {
         Optional<String> collection = Optional.of(mockWithCollection.recordCollection);
         Optional<String> templateVersion = Optional.of(mockWithCollection.templateVersion);
         Optional<String> optionalRunId = Optional.of(mockWithCollection.runId);
+        Optional<ReplayContext> replayCtx = mockWithCollection.replay.flatMap(r->r.replayContext);
+
 
         // check collection, validate, fetch template for request, set key and store. If error at any point stop
         if (collection.isPresent() && replayCollection.isPresent() && templateVersion.isPresent()) {
             String runId = optionalRunId.orElse(event.getTraceId());
             mockWithCollection.runId = runId;
             event.setCollection(replayCollection.get());
+            replayCtx.ifPresent(ctx->event.setTraceId(ctx.reqTraceId));
+
             try {
                 event.parseAndSetKey(cube.getTemplate(event.customerId, event.app, event.service,
                     event.apiPath, templateVersion.get(), Type.RequestMatch
