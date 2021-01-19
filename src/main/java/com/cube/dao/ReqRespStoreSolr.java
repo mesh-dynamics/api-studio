@@ -46,7 +46,6 @@ import java.util.stream.Stream;
 
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -135,6 +134,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return saveDocs(eventToSolrDoc(event));
     }
 
+    @Override
+    public boolean saveConfig(CustomerAppConfig cfg) {
+        return saveDocs(customerAppConfigToDoc(cfg));
+    }
 
     @Override
     public boolean save(Event... events) {
@@ -3235,13 +3238,29 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String GENERATED_CLASS_JAR_PATH = CPREFIX +  Constants.GENERATED_CLASS_JAR_PATH_FIELD + STRING_SUFFIX;
 
     private Optional<CustomerAppConfig> docToCustomerAppConfig(SolrDocument doc){
+        final Optional<String> customerId = getStrField(doc , CUSTOMERIDF);
+        final Optional<String> app = getStrField(doc , APPF);
+        if(customerId.isEmpty() || app.isEmpty()){
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Did not find customerId/app in the SolrDocument" , Constants.ERROR , doc.toString())));
+            return Optional.empty();
+        }
         final Optional<String> tracer = getStrField(doc, TRACERF);
 
-        CustomerAppConfig.Builder builder = new CustomerAppConfig.Builder();
+        CustomerAppConfig.Builder builder = new CustomerAppConfig.Builder(customerId.get() , app.get());
         tracer.ifPresent(builder::withTracer);
 
         return Optional.of(builder.build());
     }
+
+    private SolrInputDocument customerAppConfigToDoc(CustomerAppConfig cfg) {
+        SolrInputDocument doc = new SolrInputDocument();
+        doc.setField(TYPEF, Types.CustomerAppConfig.toString());
+        doc.setField(CUSTOMERIDF, cfg.customerId);
+        doc.setField(APPF, cfg.app);
+        cfg.tracer.ifPresent(tracer->doc.setField(TRACERF , tracer));
+        return doc;
+    }
+
     private Optional<Recording> docToRecording(SolrDocument doc) {
 
         Optional<String> id = getStrField(doc, IDF);
