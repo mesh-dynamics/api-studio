@@ -6,7 +6,6 @@
 
 package io.md.services;
 
-import io.md.core.ApiGenPathMgr;
 import io.md.dao.*;
 
 import java.time.Instant;

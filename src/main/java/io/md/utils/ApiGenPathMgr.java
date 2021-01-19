@@ -1,4 +1,4 @@
-package io.md.core;
+package io.md.utils;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -36,7 +36,6 @@ public class ApiGenPathMgr {
 			String[] paths = apiPathRegex.split("/");
 			int len = paths.length;
 			if(len<1 || apiPathRegex.indexOf('*')==-1) throw new IllegalArgumentException("Not a valid apiPathRegex "+apiPathRegex);
-			if(len==1 && !apiPathRegex.equals("*")) throw new IllegalArgumentException("Not a valid apiPathRegex "+apiPathRegex);
 			for(String path : paths){
 				if(path.length()>1 && path.indexOf('*')!=-1) throw new IllegalArgumentException("Not a valid apiPathRegex "+apiPathRegex);
 			}
