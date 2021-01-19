@@ -166,7 +166,7 @@ public class ReplayBasicWS {
 
         // Request transformations - for injecting tokens and such
         Optional<String> xfms = Optional.ofNullable(formParams.getFirst(Constants.TRANSFORMS_FIELD));
-        boolean tracePropagation = Utils.strToBool(formParams.getFirst(Constants.TRACE_PROPAGATION)).orElse(true);
+        boolean tracePropagation = Utils.strToBool(formParams.getFirst(Constants.TRACE_PROPAGATION)).orElseGet(()-> dataStore.getAppConfiguration(recording.customerId, recording.app).map(cfg->cfg.tracer).isPresent());
         boolean storeToDatastore = Utils.strToBool(formParams.getFirst(Constants.STORE_TO_DATASTORE)).orElse(false);
 
         if (userId == null) {
