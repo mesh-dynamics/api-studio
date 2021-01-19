@@ -154,9 +154,16 @@ public class Config {
 		         */
 		        @Override
 		        public void run() {
-			        Jedis jedis = jedisPool.getResource();
-			        jedis.configSet("notify-keyspace-events" , "Ex");
-			        jedis.psubscribe(new RedisPubSub(rrstore, jsonMapper, jedisPool), "__key*__:*");
+		        	while(true){
+		        		try{
+					        Jedis jedis = jedisPool.getResource();
+					        jedis.configSet("notify-keyspace-events" , "Ex");
+					        jedis.psubscribe(new RedisPubSub(rrstore, jsonMapper, jedisPool), "__key*__:*");
+				        }catch (Throwable th){
+		        			LOGGER.error("Redis PubSub Worker error "+th.getMessage() , th);
+				        }
+			        }
+
 		        }
 	        };
 	        new Thread(subscribeThread).start();
