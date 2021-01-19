@@ -126,7 +126,6 @@ const extractResponsePayloadDetailsFromProxy = (proxyRes, responseBody) => {
         hdrs: extractHeadersToCubeFormat(proxyRes.headers),
         body: responseBody,
         status: proxyRes.statusCode,
-        statusCode: String(proxyRes.statusMessage),
     }
 }
 

@@ -97,7 +97,6 @@ const initialState : IHttpClientStoreState = {
                         hdrs: {},
                         body: {},
                         status: "",
-                        statusCode: ""
                     }
                 ],
                 recordingType: "UserGolden",
