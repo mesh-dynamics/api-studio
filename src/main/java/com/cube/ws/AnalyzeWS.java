@@ -1602,6 +1602,7 @@ public class AnalyzeWS {
 	    traceCollectionMap.forEach((traceCollectionKey, events) -> {
 	      List<Event> parentRequestEvents = apiTraceFacetQuery.apiPath.map(path -> {
 	          // get parent events based on apiPath filter if it is non-empty
+					//TODO Use ApiPathRegex
 							String updatedPath = path.replace("*", ".*");
               return events.stream()
                   .filter(e -> e.apiPath.matches(updatedPath) && apiTraceFacetQuery.service.map(e.service::equals).orElse(true))
