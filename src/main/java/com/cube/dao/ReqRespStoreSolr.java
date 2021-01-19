@@ -3214,13 +3214,20 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String GENERATED_CLASS_JAR_PATH = CPREFIX +  Constants.GENERATED_CLASS_JAR_PATH_FIELD + STRING_SUFFIX;
 
     private Optional<CustomerAppConfig> docToCustomerAppConfig(SolrDocument doc){
+        final Optional<String> customerId = getStrField(doc , CUSTOMERIDF);
+        final Optional<String> app = getStrField(doc , APPF);
+        if(customerId.isEmpty() || app.isEmpty()){
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Did not find customerId/app in the SolrDocument" , Constants.ERROR , doc.toString())));
+            return Optional.empty();
+        }
         final Optional<String> tracer = getStrField(doc, TRACERF);
 
-        CustomerAppConfig.Builder builder = new CustomerAppConfig.Builder();
+        CustomerAppConfig.Builder builder = new CustomerAppConfig.Builder(customerId.get() , app.get());
         tracer.ifPresent(builder::withTracer);
 
         return Optional.of(builder.build());
     }
+
     private Optional<Recording> docToRecording(SolrDocument doc) {
 
         Optional<String> id = getStrField(doc, IDF);

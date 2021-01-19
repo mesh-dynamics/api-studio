@@ -2085,10 +2085,8 @@ public class CubeStore {
     @Produces(MediaType.APPLICATION_JSON)
     public void getAppConfigurations(@Suspended AsyncResponse asyncResponse,
         @PathParam("customerId") String customerId, List<String> apps) {
-        //default app config without any tracer
-        CustomerAppConfig defaultAppCfgNoTracer= new CustomerAppConfig.Builder()/*.withTracer(Tracer.MeshD.toString())*/.build();
 
-        List<CompletableFuture<CustomerAppConfig>> futures =  apps.stream().map(app->CompletableFuture.supplyAsync(()->rrstore.getAppConfiguration(customerId, app).orElse(defaultAppCfgNoTracer))).collect(Collectors.toList());
+        List<CompletableFuture<CustomerAppConfig>> futures =  apps.stream().map(app->CompletableFuture.supplyAsync(()->rrstore.getAppConfiguration(customerId, app).orElse(new CustomerAppConfig.Builder(customerId, app).build()))).collect(Collectors.toList());
 
         Utils.sequence(futures).thenApply(appConfigs->{
             Map<String , CustomerAppConfig> appCfgs = new HashMap<>();
