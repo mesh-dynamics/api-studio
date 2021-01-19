@@ -489,7 +489,6 @@ class HttpClientTabs extends Component {
                         hdrs: {},
                         body: {},
                         status: "",
-                        statusCode: ""
                     }
                 ],
                 recordingType: "UserGolden",
@@ -603,7 +602,6 @@ class HttpClientTabs extends Component {
                     hdrs: {},
                     body: {},
                     status: "",
-                    statusCode: ""
                 }
             ],
             recordingType: "UserGolden",
@@ -1473,7 +1471,6 @@ class HttpClientTabs extends Component {
                         hdrs: httpResponseHeaders,
                         body: httpResponseBody,
                         status: httpResponseStatus,
-                        statusCode: String(httpResponseStatus),
                         path: apiPath,
                         payloadState : "WrappedDecoded",
                     }
