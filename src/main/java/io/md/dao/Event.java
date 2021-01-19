@@ -107,6 +107,7 @@ public class Event implements MDStorable {
 			Validate.notNull(timestamp);
 			Validate.notNull(reqId);
 			Validate.notNull(apiPath);
+			Validate.isTrue(apiPath.indexOf('?')==-1 && apiPath.indexOf('&')==-1 , "apiPath should not contain query params %s" , apiPath);
 			Validate.notNull(eventType);
 			if (eventType != EventType.ThriftResponse && eventType != EventType.ThriftRequest) {
 				Validate.notNull(traceId);
@@ -115,6 +116,7 @@ public class Event implements MDStorable {
 			Validate.isTrue(!payload.isRawPayloadEmpty());
 			Validate.notNull(payloadFields);
 			Validate.notNull(seqId);
+
 		} catch (Exception ex) {
 			throw new InvalidEventException("Invalid Event Object " + ex.getMessage(), ex);
 		}
@@ -276,7 +278,12 @@ public class Event implements MDStorable {
 
 	public final Instant timestamp;
 	public final String reqId; // for responses, this is the reqId of the corresponding request
-	public final String apiPath; // apiPath for HTTP req, function signature for Java functions, etc
+
+	public void setApiPath(String apiPath) {
+		this.apiPath = apiPath;
+	}
+
+	public String apiPath; // apiPath for HTTP req, function signature for Java functions, etc
 	public final EventType eventType;
 	public final Payload payload;
 	public RecordingType recordingType;

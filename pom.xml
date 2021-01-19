@@ -163,14 +163,6 @@
       <version>3.13.0</version>
     </dependency>
 
-    <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>30.0-jre</version>
-    </dependency>
-
-
     <dependency>
       <groupId>com.github.os72</groupId>
       <artifactId>protobuf-dynamic</artifactId>
