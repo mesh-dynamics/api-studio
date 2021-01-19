@@ -22,6 +22,7 @@ public class TestEventRecord {
 	public static void main(String[] args) {
 		try {
 			CommonConfig commonConfig =  CommonConfig.getInstance();
+			ConsoleRecorder.init();
 			ConsoleRecorder consoleRecorder = ConsoleRecorder.getInstance();
 
 			CubeMetaInfo cubeMetaInfo = new CubeMetaInfo("random-user"

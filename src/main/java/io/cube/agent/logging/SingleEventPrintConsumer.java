@@ -25,11 +25,11 @@ public class SingleEventPrintConsumer {
 
 
 	private ObjectWriter objectWriter;
+	private PrintWriter eventWriter;
 	private JsonGenerator generator;
 
 	public SingleEventPrintConsumer() {
 		System.out.println("SingleEventPrintConsumer Constructor Called");
-		PrintWriter eventWriter;
 		if (CommonConfig.getInstance().disruptorOutputLocation.equals("stdout")) {
 			eventWriter = new PrintWriter(System.out);
 		} else {
@@ -59,8 +59,9 @@ public class SingleEventPrintConsumer {
 		return (event, sequence, endOfBatch  )
 			-> {
 			objectWriter.writeValue(generator, event);
-			generator.writeRaw("\n");
 			generator.flush();
+			eventWriter.println();
+			//generator.writeRaw("\n");
 		};
 	}
 }
