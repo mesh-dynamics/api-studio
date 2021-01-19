@@ -280,7 +280,7 @@ public class CubeStoreController {
         @RequestParam(value="environmentName", required = false) String environmentName,
         Authentication authentication)
         throws InvalidEventException {
-        return  saveReqRespEvents(request, postBody, recordingId, authentication, "/cs/afterResponse/");;
+        return  saveReqRespEvents(request, postBody, recordingId, authentication, "/cs/afterResponse/");
     }
 
     @PostMapping("/storeUserReqResp/{recordingId}")
