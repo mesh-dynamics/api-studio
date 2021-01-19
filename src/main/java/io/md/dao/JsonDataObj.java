@@ -255,7 +255,21 @@ public class JsonDataObj implements DataObj {
 					, mediaType, unwrapContext);
 				objectNode.set(Constants.MULTIPART_VALUE
 					, unwrapped.orElse(binaryNode));
-				multipartParent.set(fileItem.getFieldName(), objectNode);
+				String key = fileItem.getFieldName();
+				if (multipartParent.has(key)) {
+					JsonNode existingNode = multipartParent.get(key);
+					if (existingNode instanceof ArrayNode) {
+						((ArrayNode) existingNode).add(objectNode);
+					} else {
+						ObjectNode existing = (ObjectNode) existingNode;
+						ArrayNode arrayNode = JsonNodeFactory.instance.arrayNode();
+						arrayNode.add(existing);
+						arrayNode.add(objectNode);
+						multipartParent.set(key, arrayNode);
+					}
+				} else {
+					multipartParent.set(key, objectNode);
+				}
 			}
 		}));
 		return multipartParent;
@@ -387,6 +401,35 @@ public class JsonDataObj implements DataObj {
 		return wrap(objRoot, path, mimetype, true, wrapContext);
 	}
 
+	private void addObjectNodeToMultipartRequest(MultipartBody.Builder builder, ObjectNode fieldObject ,
+		Optional<WrapUnwrapContext> wrapContext, String fieldName) {
+		if (fieldObject.get(Constants.MULTIPART_TYPE).textValue()
+			.equals(Constants.MULTIPART_FIELD_TYPE)) {
+			builder.addFormDataPart(fieldName,
+				fieldObject.get(Constants.MULTIPART_VALUE).textValue());
+		} else {
+			// file type
+			try {
+				String mimeTypePart = Optional
+					.ofNullable(fieldObject.get(Constants.MULTIPART_CONTENT_TYPE)
+					).map(JsonNode::textValue).orElse(MediaType.TEXT_PLAIN);
+				JsonNode valueNode = fieldObject.get(Constants.MULTIPART_VALUE);
+				JsonNode fileNameNode = fieldObject
+					.get(Constants.MULTIPART_FILENAME);
+				JsonNode wrapped = wrap(valueNode, mimeTypePart, false,
+					wrapContext, Optional.empty()).orElse(valueNode);
+				byte[] content = wrapped.isTextual() ?
+					wrapped.textValue().getBytes() : wrapped.binaryValue();
+				builder.addFormDataPart(fieldName,
+					fileNameNode != null ? fileNameNode.textValue() : null,
+					RequestBody.create(content,
+						okhttp3.MediaType.parse(mimeTypePart)));
+			} catch (Exception e) {
+				LOGGER.error("Error while adding file to multipart form", e);
+			}
+		}
+	}
+
 	private Optional<JsonNode> wrapMultipart(JsonNode original, boolean asEncoded
 			, Optional<WrapUnwrapContext> wrapContext, Optional<ObjectNode> parent) throws IOException {
 
@@ -396,26 +439,15 @@ public class JsonDataObj implements DataObj {
 				Iterator<String> fieldNames = bodyAsObject.fieldNames();
 				while (fieldNames.hasNext()) {
 					String fieldName = fieldNames.next();
-					ObjectNode fieldObject = (ObjectNode) bodyAsObject.get(fieldName);
-					if (fieldObject.get(Constants.MULTIPART_TYPE).textValue().equals(Constants.MULTIPART_FIELD_TYPE)) {
-						builder.addFormDataPart(fieldName,
-								fieldObject.get(Constants.MULTIPART_VALUE).textValue());
-					} else {
-						// file type
-						try {
-							String mimeTypePart = Optional.ofNullable(fieldObject.get(Constants.MULTIPART_CONTENT_TYPE)
-							).map(JsonNode::textValue).orElse(MediaType.TEXT_PLAIN);
-							JsonNode valueNode = fieldObject.get(Constants.MULTIPART_VALUE);
-							JsonNode fileNameNode = fieldObject.get(Constants.MULTIPART_FILENAME);
-							JsonNode wrapped = wrap(valueNode, mimeTypePart, false,
-									wrapContext, Optional.empty()).orElse(valueNode);
-							byte[] content = wrapped.isTextual() ?
-									wrapped.textValue().getBytes() : wrapped.binaryValue();
-							builder.addFormDataPart(fieldName,
-									fileNameNode != null? fileNameNode.textValue() : null, RequestBody.create(content,
-											okhttp3.MediaType.parse(mimeTypePart)));
-						} catch (Exception e) {
-							LOGGER.error("Error while adding file to multipart form", e);
+					JsonNode fieldObjects = bodyAsObject.get(fieldName);
+					if (fieldObjects instanceof ObjectNode)
+						addObjectNodeToMultipartRequest(builder, (ObjectNode) fieldObjects,
+							wrapContext, fieldName);
+					else {
+						ArrayNode fieldObjectsArray = (ArrayNode)  fieldObjects;
+						for (JsonNode object : fieldObjectsArray) {
+							addObjectNodeToMultipartRequest(builder, (ObjectNode) object,
+								wrapContext, fieldName);
 						}
 					}
 				}
