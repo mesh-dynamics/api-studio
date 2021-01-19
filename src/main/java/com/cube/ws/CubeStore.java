@@ -2040,7 +2040,7 @@ public class CubeStore {
             builder.command(commandList);
             Process process = builder.start();
             int exitCode = process.waitFor();
-            if(exitCode == 0) {
+            if(exitCode != 0) {
                 throw new Exception("Cannot initiate process to compile descriptor from protos");
             }
 
