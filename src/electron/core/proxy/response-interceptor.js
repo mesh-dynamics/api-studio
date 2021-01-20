@@ -7,7 +7,7 @@ const url = require("url");
 const proxyLiveResponseInterceptor = (proxyRes, req, res, options) => {
     let body = [];
 
-    const handleResponseOnEnd = async () => {
+    const handleResponseOnEnd = () => {
         body = Buffer.concat(body).toString();
 
         logger.info('Received body in response :', body);
@@ -17,55 +17,33 @@ const proxyLiveResponseInterceptor = (proxyRes, req, res, options) => {
         const domain = store.get('domain');
         const parsedUrl = url.parse(domain);
 
-        try {
-            // Transform the body of response to be stored in a collection
-            const transformedRequestResponseBody = transformForCollection(proxyRes, options, body);
+        // Transform the body of response to be stored in a collection
+        const transformedRequestResponseBody = transformForCollection(proxyRes, options, body);
 
-            logger.info('Transformed request and response', JSON.stringify(transformedRequestResponseBody));
+        logger.info('Transformed request and response', JSON.stringify(transformedRequestResponseBody));
 
-            // Add request options for storing request response
-            const requestOptions = {
-                headers: {
-                    'Authorization': `${user.tokenType} ${user.accessToken}`,
-                    'Host': `${parsedUrl.hostname}`,
-                    'Content-Type': 'application/json'
-                },
-                
-            };
-
-            logger.info('Request headers for storeEventBatch call', JSON.stringify(requestOptions));
-
-            const url = `${domain}/api/cs/storeEventBatch`;
-
-            logger.info('Posting request response details to :', url);
+        // Add request options for storing request response
+        const requestOptions = {
+            headers: {
+                'Authorization': `${user.tokenType} ${user.accessToken}`,
+                'Host': `${parsedUrl.hostname}`,
+                'Content-Type': 'application/json'
+            },
             
-            // POST Format => URL, Body, Headers
-            const response = await axios.post(url, transformedRequestResponseBody, requestOptions)
+        };
 
+        logger.info('Request headers for storeEventBatch call', JSON.stringify(requestOptions));
+
+        const storeEventUrl = `${domain}/api/cs/storeEventBatch`;
+
+        logger.info('Posting request response details to :', storeEventUrl);
+        
+        // POST Format => URL, Body, Headers
+        axios.post(storeEventUrl, transformedRequestResponseBody, requestOptions).then((response) => {
             logger.info(`storeEventBatch call completed returning status: ${response.status}, body: ${JSON.stringify(response.data)}`);
-
-            // Set proxyRes headers to propagate up
-            Object.keys(proxyRes.headers).forEach(headerKey => res.setHeader(headerKey, proxyRes.headers[headerKey]))
-
-            res.statusMessage = proxyRes.statusMessage;
-
-            res.statusCode = proxyRes.statusCode;
-
-            res.end(body);
-
-        } catch (error) {
+        }).catch((error) => {
             logger.info('Error in response interceptor', error);
-
-            logger.info('Response Body: ', body);
-
-            Object.keys(proxyRes.headers).forEach(headerKey => res.setHeader(headerKey, proxyRes.headers[headerKey]))
-
-            res.statusMessage = proxyRes.statusMessage;
-            
-            res.statusCode = proxyRes.statusCode;
-            
-            res.end(body);
-        }
+        })
     }
     
     proxyRes.on('data', (chunk) => { body.push(chunk) });
@@ -74,29 +52,14 @@ const proxyLiveResponseInterceptor = (proxyRes, req, res, options) => {
 };
 
 const proxyMockResponseInterceptor = (proxyRes, req, res, options) => {
-    logger.info("Response status: ", proxyRes.statusCode)
-    logger.info("Response headers: ", proxyRes.headers)
+    logger.info("Mock response status: ", proxyRes.statusCode)
+    logger.info("Mock response headers: ", proxyRes.headers)
     
     let body = [];
 
-    const handleResponseOnEnd = async () => {
+    const handleResponseOnEnd = () => {
         body = Buffer.concat(body).toString();
-
-        logger.info('Response body: ', body.length ? body : "(empty)");
-
-        try {
-            // Set proxyRes headers to propagate up
-            Object.keys(proxyRes.headers).forEach(headerKey => res.setHeader(headerKey, proxyRes.headers[headerKey]))
-
-            res.statusMessage = proxyRes.statusMessage;
-
-            res.statusCode = proxyRes.statusCode;
-
-            res.end(body);
-
-        } catch (error) {
-            logger.info('Error in response interceptor', error);
-        }
+        logger.info('Mock response body: ', body.length ? body : "(empty)");
     }
     
     proxyRes.on('data', (chunk) => { body.push(chunk) });
