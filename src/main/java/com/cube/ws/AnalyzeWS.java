@@ -1517,7 +1517,7 @@ public class AnalyzeWS {
 				new Exception("Unable to find recording object for the given id"));
 
 			ArrayList servicePathFacets = rrstore
-				.getServicePathHierarchicalFacets(recording.collection, RunType.Record);
+				.getServicePathHierarchicalFacets(recording.collection);
 
 			Map jsonMap = jsonMapper.convertValue(recording, Map.class);
 			jsonMap.put(Constants.SERVICE_FACET, servicePathFacets);

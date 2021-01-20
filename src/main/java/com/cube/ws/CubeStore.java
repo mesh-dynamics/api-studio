@@ -1982,7 +1982,8 @@ public class CubeStore {
         byte[] encodedFileBytes;
         try {
             encodedFileBytes = Base64.getEncoder().encode(uploadedInputStream.readAllBytes());
-            ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app, new String(encodedFileBytes, StandardCharsets.UTF_8));
+            ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app,
+                new String(encodedFileBytes, StandardCharsets.UTF_8), new HashMap<>());
             status = rrstore.storeProtoDescriptorFile(protoDescriptorDAO);
         } catch (IOException | DescriptorValidationException e) {
             LOGGER.error("Cannot encode uploaded proto descriptor file",e);
@@ -2015,7 +2016,11 @@ public class CubeStore {
                 // Note the state for stored event in solr will be UnwrappedDecoded if this is directly coming from devtool
                 // then the state has to be set as UnwrappedDecoded by devtool.
                 ((GRPCPayload) requestEvent.payload).wrapBodyAndEncode();
+            } else if (requestEvent.payload instanceof HTTPPayload) {
+                // dummy call to getBody to wrap body
+                ((HTTPPayload) requestEvent.payload).getBody();
             }
+
 
             Optional<Recording> optionalRecording = rrstore.getRecording(recordingOrReplayId);
             Optional<String> recordOrReplayRunId = optionalRecording.map(recording -> {
@@ -2059,7 +2064,7 @@ public class CubeStore {
         EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
             event.service, event.instanceId, collection,
             new MDTraceInfo(traceId, event.spanId, event.parentSpanId),
-            event.getRunType(), Optional.of(timeStamp), reqId, event.apiPath,
+            event.getRunType(), Optional.of(event.timestamp), reqId, event.apiPath,
             event.eventType, recordingType);
         eventBuilder.setPayload(event.payload);
         eventBuilder.withMetaData(event.metaData);
@@ -2087,10 +2092,8 @@ public class CubeStore {
     @Produces(MediaType.APPLICATION_JSON)
     public void getAppConfigurations(@Suspended AsyncResponse asyncResponse,
         @PathParam("customerId") String customerId, List<String> apps) {
-        //default app config without any tracer
-        CustomerAppConfig defaultAppCfgNoTracer= new CustomerAppConfig.Builder()/*.withTracer(Tracer.MeshD.toString())*/.build();
 
-        List<CompletableFuture<CustomerAppConfig>> futures =  apps.stream().map(app->CompletableFuture.supplyAsync(()->rrstore.getAppConfiguration(customerId, app).orElse(defaultAppCfgNoTracer))).collect(Collectors.toList());
+        List<CompletableFuture<CustomerAppConfig>> futures =  apps.stream().map(app->CompletableFuture.supplyAsync(()->rrstore.getAppConfiguration(customerId, app).orElse(new CustomerAppConfig.Builder(customerId, app).build()))).collect(Collectors.toList());
 
         Utils.sequence(futures).thenApply(appConfigs->{
             Map<String , CustomerAppConfig> appCfgs = new HashMap<>();

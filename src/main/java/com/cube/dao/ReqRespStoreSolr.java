@@ -2806,12 +2806,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public ArrayList getServicePathHierarchicalFacets(String collectionId, RunType runType) {
+    public ArrayList getServicePathHierarchicalFacets(String collectionId) {
         SolrQuery query = new SolrQuery("*:*");
         query.setFields("*");
         addFilter(query, TYPEF, Types.Event.toString());
         addFilter(query, COLLECTIONF, collectionId);
-        addFilter(query, RRTYPEF, runType.toString());
 
         FacetQ facetq = new FacetQ();
 
@@ -2915,7 +2914,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> encodedFile = getStrFieldMVFirst(doc,PROTO_DESCRIPTOR_FILE_F);
         try {
             ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId.orElse(null),
-                app.orElse(null), encodedFile.orElse(null));
+                app.orElse(null), encodedFile.orElse(null), new HashMap<>());
             protoDescriptorDAO.setVersion(version.orElse(0));
             ValidateProtoDescriptorDAO.validate(protoDescriptorDAO);
             return Optional.of(protoDescriptorDAO);
@@ -3215,13 +3214,20 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String GENERATED_CLASS_JAR_PATH = CPREFIX +  Constants.GENERATED_CLASS_JAR_PATH_FIELD + STRING_SUFFIX;
 
     private Optional<CustomerAppConfig> docToCustomerAppConfig(SolrDocument doc){
+        final Optional<String> customerId = getStrField(doc , CUSTOMERIDF);
+        final Optional<String> app = getStrField(doc , APPF);
+        if(customerId.isEmpty() || app.isEmpty()){
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Did not find customerId/app in the SolrDocument" , Constants.ERROR , doc.toString())));
+            return Optional.empty();
+        }
         final Optional<String> tracer = getStrField(doc, TRACERF);
 
-        CustomerAppConfig.Builder builder = new CustomerAppConfig.Builder();
+        CustomerAppConfig.Builder builder = new CustomerAppConfig.Builder(customerId.get() , app.get());
         tracer.ifPresent(builder::withTracer);
 
         return Optional.of(builder.build());
     }
+
     private Optional<Recording> docToRecording(SolrDocument doc) {
 
         Optional<String> id = getStrField(doc, IDF);
