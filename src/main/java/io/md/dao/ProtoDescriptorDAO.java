@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.md.dao.ApiTraceResponse.ServiceReqRes;
 import io.md.logger.LogMgr;
 import io.md.utils.CubeObjectMapperProvider;
 
@@ -18,8 +17,13 @@ import org.slf4j.Logger;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.github.os72.protobuf.dynamic.DynamicSchema;
 import com.google.protobuf.DescriptorProtos;
+import com.google.protobuf.DescriptorProtos.DescriptorProto;
+import com.google.protobuf.DescriptorProtos.FieldDescriptorProto;
 import com.google.protobuf.DescriptorProtos.FileDescriptorProto;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
@@ -104,6 +108,67 @@ public class ProtoDescriptorDAO {
 
 	public void initializeProtoDescriptor(String descriptorFile) throws IOException, Descriptors.DescriptorValidationException {
 		initialize();
+	}
+
+	public String convertToJsonDescriptor() {
+		ObjectNode rootNode = JsonNodeFactory.instance.objectNode();
+		schema.getFileDescriptorSet().getFileList().forEach(fileDescriptorProto -> {
+			ObjectNode fileNode = JsonNodeFactory.instance.objectNode();
+			rootNode.set(fileDescriptorProto.getName() , fileNode);
+			List<DescriptorProto> descriptorProtoList = fileDescriptorProto.getMessageTypeList();
+			Map<String, JsonNode> typeMap = new HashMap<>();
+
+			descriptorProtoList.forEach(descriptorProto -> {
+				ObjectNode typeNode = JsonNodeFactory.instance.objectNode();
+				typeMap.put(descriptorProto.getName(), typeNode);
+				for (int i = 0; i < descriptorProto.getFieldCount(); i++) {
+					FieldDescriptorProto fieldDescriptor = descriptorProto.getField(i);
+					String fieldName = fieldDescriptor.getName();
+					String type = fieldDescriptor.getType().name();
+					String typeName = fieldDescriptor.getTypeName();
+					if (type.equals("TYPE_INT32") || type.equals("TYPE_INT64") ||
+						type.equals("TYPE_UINT32") || type.equals("TYPE_UINT64") ||
+						type.equals("TYPE_SINT32") || type.equals("TYPE_FIXED32") ||
+						type.equals("TYPE_FIXED64")) {
+						typeNode.set(fieldName, JsonNodeFactory.instance.numberNode(10));
+					} else if (type.equals("TYPE_FLOAT") || type.equals("TYPE_DOUBLE")) {
+						typeNode.set(fieldName, JsonNodeFactory.instance.numberNode(1.1));
+					} else if (type.equals("TYPE_BOOL")) {
+						typeNode.set(fieldName, JsonNodeFactory.instance.booleanNode(true));
+					} else if (type.equals("TYPE_STRING")) {
+						typeNode.set(fieldName, JsonNodeFactory.instance.textNode("Hello"));
+					} else if (type.equals("TYPE_MESSAGE")) {
+						typeNode.set(fieldName, typeMap
+							.get(typeName.substring(typeName.lastIndexOf(".") + 1)));
+					}
+				}
+			});
+
+			for (int i = 0; i < fileDescriptorProto.getServiceCount(); i++) {
+				DescriptorProtos.ServiceDescriptorProto serviceDescriptorProto = fileDescriptorProto
+					.getService(i);
+				ObjectNode serviceNode = JsonNodeFactory.instance.objectNode();
+				fileNode.set(serviceDescriptorProto.getName(), serviceNode);
+				int methodCount = serviceDescriptorProto.getMethodCount();
+				for (int j = 0; j < methodCount; j++) {
+					DescriptorProtos.MethodDescriptorProto methodDescriptorProto = serviceDescriptorProto
+						.getMethod(j);
+					ObjectNode methodNode = JsonNodeFactory.instance.objectNode();
+					serviceNode.set(methodDescriptorProto.getName(), methodNode);
+					String inputTypeName = methodDescriptorProto.getInputType();
+					String outputTypeName = methodDescriptorProto.getOutputType();
+					methodNode.set("inputTypeName", new TextNode(inputTypeName));
+					methodNode.set("inputSchema",
+						typeMap.get(inputTypeName.substring(inputTypeName.lastIndexOf(".") + 1)));
+					methodNode.set("outputTypeName", new TextNode(outputTypeName));
+					methodNode.set("outputSchema",
+						typeMap.get(outputTypeName.substring(outputTypeName.lastIndexOf(".") + 1)));
+
+				}
+			}
+		});
+
+		return rootNode.toString();
 	}
 
 	private Optional<MethodDescriptor> findMethodDescriptor(String service, String method) {
