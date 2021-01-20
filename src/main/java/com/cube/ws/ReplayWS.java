@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.ProxyAnalyzer;
 import io.cube.agent.ProxyDataStore;
+import io.md.cache.ProtoDescriptorCache;
 import io.md.constants.ReplayStatus;
 import io.md.core.Utils;
 import io.md.dao.Recording;
@@ -43,7 +44,6 @@ import io.md.ws.ReplayBasicWS;
 public class ReplayWS extends ReplayBasicWS {
 
     private static final Logger LOGGER = LogManager.getLogger(ReplayWS.class);
-
 
     @Path("/health")
 	@GET
@@ -76,7 +76,7 @@ public class ReplayWS extends ReplayBasicWS {
      */
 	@Inject
 	public ReplayWS() {
-	    super(new ProxyDataStore(), new ProxyAnalyzer());
+	    super(new ProxyDataStore(), new ProxyAnalyzer(), Optional.of(new ProtoDescriptorCache(new ProxyDataStore())));
     }
 
 
