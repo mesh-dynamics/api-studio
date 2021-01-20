@@ -464,7 +464,7 @@ class HttpClientTabs extends Component {
                 runId = gatewayHttpRequestEvent.runId,
                 instanceId = gatewayHttpRequestEvent.instanceId,
                 collection = gatewayHttpRequestEvent.collectionId,
-                timestamp = Date.now();
+                timestamp = Date.now() / 1000;
 
             let outgoingRequests = [];
             
@@ -578,7 +578,7 @@ class HttpClientTabs extends Component {
     }
 
     generateEventdata(app, customerId, traceDetails, service, apiPath, method, requestHeaders, requestQueryParams, requestFormParams, rawData) {
-        const timestamp = Date.now();
+        const timestamp = Date.now() / 1000;
         let path = apiPath ? apiPath.replace(/^\/|\/$/g, '') : "";
         let {traceKeys, traceIdDetails: {traceId, traceIdForEvent}, spanId, parentSpanId} = traceDetails;
         let httpResponseEvent = {
@@ -1120,7 +1120,7 @@ class HttpClientTabs extends Component {
         currentEnvironment = getCurrentEnvironment();
         currentEnvironmentVars = getCurrentEnvVars();
 
-        const reqTimestamp = Date.now();
+        const reqTimestamp = Date.now() / 1000;
 
         try {
             
@@ -1200,7 +1200,7 @@ class HttpClientTabs extends Component {
         } else {
             fetchConfigRendered.signal = tabToProcess.abortRequest.signal;
             return fetch(fetchUrlRendered, fetchConfigRendered).then(async(response) => {
-                resTimestamp = Date.now();
+                resTimestamp = Date.now() / 1000;
                 responseStatus = response.status;
                 responseStatusText = response.statusText;
                 for (const header of response.headers) {
