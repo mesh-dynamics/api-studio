@@ -1471,7 +1471,6 @@ class HttpClientTabs extends Component {
                         hdrs: httpResponseHeaders,
                         body: httpResponseBody,
                         status: httpResponseStatus,
-                        path: apiPath,
                         payloadState : "WrappedDecoded",
                     }
                 ]
