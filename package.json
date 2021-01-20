@@ -9,6 +9,7 @@
     "dependencies": {
         "@emotion/styled": "^10.0.27",
         "@tippy.js/react": "^2.2.2",
+        "abort-controller": "^3.0.0",
         "ajv": "^6.12.3",
         "ajv-keywords": "^3.5.2",
         "array-to-tree": "^3.3.2",
@@ -31,6 +32,7 @@
         "detect-indent": "^6.0.0",
         "diff": "^4.0.2",
         "download-file": "^0.1.5",
+        "electron-fetch": "^1.7.2",
         "electron-is-dev": "^1.2.0",
         "electron-log": "^4.2.1",
         "electron-reload": "^1.5.0",
@@ -39,6 +41,7 @@
         "emotion": "^10.0.27",
         "extract-zip": "^2.0.1",
         "find-process": "^1.4.3",
+        "form-data": "^3.0.0",
         "formik": "^2.1.5",
         "http-proxy": "^1.18.1",
         "is-electron": "^2.2.0",

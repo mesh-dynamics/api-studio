@@ -301,6 +301,7 @@ class SaveToCollection extends React.Component<
 
         const collectionNameAddedFromClient = tabToProcess.collectionNameAddedFromClient;
         const message = collectionNameAddedFromClient ? `Saving to collection "${collectionNameAddedFromClient}"` : "Saving...";
+        const successMessage = collectionNameAddedFromClient ? `Saved Successfully to "${collectionNameAddedFromClient}"` : "Saved Successfully!";
 
         this.setState({
           modalErroSaveMessage: message,
@@ -312,7 +313,7 @@ class SaveToCollection extends React.Component<
             dispatch(httpClientActions.unsetHasChangedAll(tabId));
             this.updateTabWithNewData(tabId, serverRes, recordingId);
             this.setState({
-              modalErroSaveMessage: "Saved Successfully!",
+              modalErroSaveMessage: successMessage,
               modalErroSaveMessageIsError: false,
             });
             dispatch(httpClientActions.loadCollectionTrace(recordingId));

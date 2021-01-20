@@ -355,6 +355,7 @@ export interface IEventData {
   spanId?: string;
   timestamp: number;
   traceId: string;
+  payloadFields:[];
 }
 export interface IApiTrace {
   apiPath: string;
@@ -423,6 +424,7 @@ export interface IHttpClientTabDetails {
   collectionNameAddedFromClient: string;
   eventData: IEventData[];
   formData: IRequestParamData[];
+  multipartData: IRequestParamData[];
   headers: IRequestParamData[];
   httpMethod: string;
   httpURL: string;

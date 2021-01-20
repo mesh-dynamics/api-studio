@@ -96,7 +96,7 @@ const rewriteLivePath = (serviceConfigObject, receivedPathInProxy) => {
  */
 const proxyRequestInterceptorMockService = (proxyReq, mockContext, user, traceDetails, service, serviceConfigObject) => {
     const { accessToken, tokenType } = user;
-    const { selectedApp } = mockContext;
+    const { selectedApp, strictMock  } = mockContext;
     const {traceKeys, spanId, traceIdDetails, parentSpanId} = traceDetails
     const token = `${tokenType} ${accessToken}`;
     const {traceId} = traceIdDetails
@@ -124,8 +124,10 @@ const proxyRequestInterceptorMockService = (proxyReq, mockContext, user, traceDe
         proxyReq.setHeader(traceIdKey, traceId);
     }
 
-    logger.info('Setting dynamicInjectionConfigVersion', `Default${selectedApp}`);
-    proxyReq.setHeader('dynamicInjectionConfigVersion', `Default${selectedApp}`);
+    if (!strictMock) {
+        logger.info('Setting dynamicInjectionConfigVersion', `Default${selectedApp}`);
+        proxyReq.setHeader('dynamicInjectionConfigVersion', `Default${selectedApp}`);
+    }
 
     // rewrite request url
     logger.info('Rewriting url...');

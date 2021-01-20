@@ -45,6 +45,7 @@ export class HttpRequestFields extends React.Component<
           tabId={this.props.tabId}
           showBody={this.props.paramsType === "showBody"}
           formData={this.props.formData}
+          multipartData={this.props.multipartData}
           addOrRemoveParam={this.props.addOrRemoveParam}
           updateParam={this.props.updateParam}
           updateAllParams={this.props.updateAllParams}
