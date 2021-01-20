@@ -2164,7 +2164,7 @@ public class CubeStore {
     public void getAppConfigurations(@Suspended AsyncResponse asyncResponse,
         @PathParam("customerId") String customerId, List<String> apps) {
 
-        List<CompletableFuture<CustomerAppConfig>> futures =  apps.stream().map(app->CompletableFuture.supplyAsync(()->rrstore.getAppConfiguration(customerId, app).orElse(new CustomerAppConfig.Builder(customerId, app).build()))).collect(Collectors.toList());
+        List<CompletableFuture<CustomerAppConfig>> futures =  apps.stream().map(app->CompletableFuture.supplyAsync(()->custAppConfigCache.getCustomerAppConfig(customerId, app).orElse(new CustomerAppConfig.Builder(customerId,app).build()))).collect(Collectors.toList());
 
         Utils.sequence(futures).thenApply(appConfigs->{
 
