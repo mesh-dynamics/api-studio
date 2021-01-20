@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -679,6 +680,12 @@ public class JsonDataObj implements DataObj {
 
 	@Override
 	public boolean put(String path, DataObj value) throws PathNotFoundException {
+		return put(path, value, false);
+	}
+
+
+
+	public boolean put(String path, DataObj value, boolean createPath) throws PathNotFoundException {
 		JsonPointer pathPtr = JsonPointer.compile(path);
 		JsonNode valParent = getNode(pathPtr.head().toString());
 		if (valParent != null && valParent.isObject()) {
@@ -738,8 +745,27 @@ public class JsonDataObj implements DataObj {
 				}
 			}
 			return true;
+		} else if (createPath) {
+			List<String> toCreate = new ArrayList<>();
+			toCreate.add(pathPtr.last().getMatchingProperty());
+			createJsonNode(pathPtr.head(), toCreate);
+			return true;
 		} else {
 			throw new PathNotFoundException(path);
+		}
+	}
+
+	private void createJsonNode(JsonPointer toLookUp, List<String> toCreate) {
+		JsonNode valParent = getNode(toLookUp.head().toString());
+		if (valParent != null) {
+			Collections.reverse(toCreate);
+			toCreate.forEach(pathSegment -> {
+				//ObjectNode
+			});
+			// create and then insert
+		} else {
+			toCreate.add(toLookUp.tail().getMatchingProperty());
+
 		}
 	}
 
