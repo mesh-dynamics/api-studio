@@ -8,6 +8,7 @@ import {
     getLastApiTraceEndTimeFromApiTrace
 } from "../utils/api-catalog/api-catalog-utils";
 import _ from "lodash";
+import gcbrowseActions from "./gcbrowse.actions";
 
 export const apiCatalogActions = {
     getDiffData: (app, requestIdLeft, requestIdRight) => async (dispatch, getState) => {
@@ -92,17 +93,20 @@ export const apiCatalogActions = {
     handleFilterChange: (metadata, value) => (dispatch, getState) => {
         const state = getState();
         const { selectedApp } = state.cube;
-        let {selectedSource, selectedCollection, selectedGolden,
+        let {selectedSource,
             selectedService, selectedGoldenService, selectedCollectionService, 
             selectedCaptureService, selectedApiPath, selectedCaptureApi,
             selectedCollectionApi, selectedGoldenApi, selectedInstance, selectedCaptureInstance,
             startTime, endTime, apiPaths, instances, apiFacets, services} = state.apiCatalog;
-
+            //TODO: Refactor this based on individual values
+        let selectedCollection = state.gcbrowse.selectedCollectionItem.collec;
+        let selectedGolden = selectedCollection;
         switch (metadata) {
             case "selectedSource":
                 if(selectedSource != value){
                     apiPaths = [];
                     services = [];
+                    dispatch(gcbrowseActions.clearSelectedGoldenCollection());
                 }
                 selectedSource = value;
                 
@@ -241,6 +245,9 @@ export const apiCatalogActions = {
         })
 
         // fetch api trace only if all necessary filters are selected
+        if(metadata == "selectedSource"){
+            return; //TODO: Temporary fix.
+        }
         switch (selectedSource) {
             case "UserGolden":
                 if(!(selectedCollection )) {

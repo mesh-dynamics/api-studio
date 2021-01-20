@@ -20,26 +20,29 @@ import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { cubeActions } from "../../actions";
 import classNames from "classnames";
 
+//TOOD: Revert the commented changes, take the selected values from apiCatalog only.
+
 export interface IConvertCollectionState {
   isPopupVisible: boolean;
   isSelectorVisible: boolean;
   newCollection: string;
   prevDerivedCollection: string;
-  selectedCollection: string;
-  selectedGolden: string;
+  // selectedCollection: string;
+  // selectedGolden: string;
   message: string;
   isErrorMessage: boolean;
   isLoading: boolean;
 }
 export interface IConvertCollectionProps {
   selectedSource: string;
-  selectedCollection: string;
-  selectedGolden: string;
-  goldenList: ICollectionDetails[];
+  // selectedCollection: string;
+  // selectedGolden: string;
+  // goldenList: ICollectionDetails[];
   collectionList: ICollectionDetails[];
   username: string;
   app: string;
   dispatch: any;
+  selectedCollectionItem: ICollectionDetails;
 }
 
 class ConvertCollection extends Component<
@@ -54,8 +57,8 @@ class ConvertCollection extends Component<
       newCollection: derivedCollection,
       prevDerivedCollection: derivedCollection,
 
-      selectedCollection: this.props.selectedCollection,
-      selectedGolden: this.props.selectedGolden,
+      // selectedCollection: this.props.selectedCollection,
+      // selectedGolden: this.props.selectedGolden,
       isSelectorVisible: false,
       isErrorMessage: false,
       isLoading: false,
@@ -64,16 +67,20 @@ class ConvertCollection extends Component<
   }
 
   static getSelectedCollections(props: IConvertCollectionProps) {
-    const selectedGolden = _.find(props.goldenList, {
-      collec: props.selectedGolden,
-    });
-    const selectedCollection = _.find(props.collectionList, {
-      collec: props.selectedCollection,
-    });
-    return {
-      selectedCollectionName: selectedCollection ? selectedCollection.name : "",
-      selectedGoldenName: selectedGolden ? selectedGolden.name : "",
-    };
+    // const selectedGolden = _.find(props.goldenList, {
+    //   collec: props.selectedGolden,
+    // });
+    // const selectedCollection = _.find(props.collectionList, {
+    //   collec: props.selectedCollection,
+    // });
+    // return {
+    //   selectedCollectionName: selectedCollection ? selectedCollection.name : "",
+    //   selectedGoldenName: selectedGolden ? selectedGolden.name : "",
+    // };
+    return{
+      selectedCollectionName: props.selectedCollectionItem?.name,
+      selectedGoldenName: props.selectedCollectionItem?.name
+    }
   }
 
   static getDerivedCollection(props: IConvertCollectionProps) {
@@ -93,23 +100,23 @@ class ConvertCollection extends Component<
     return "";
   }
 
-  static getDerivedStateFromProps(
-    props: IConvertCollectionProps,
-    state: IConvertCollectionState
-  ) {
-    let newState: IConvertCollectionState = { ...state };
-    const collectionName = ConvertCollection.getDerivedCollection(props);
-    if (
-      (props.selectedCollection != state.selectedCollection ||
-        props.selectedGolden != state.selectedGolden) &&
-      collectionName !== state.prevDerivedCollection
-    ) {
-      newState.newCollection = collectionName;
-      newState.prevDerivedCollection = collectionName;
-      newState.message = "";
-    }
-    return newState;
-  }
+  // static getDerivedStateFromProps(
+  //   props: IConvertCollectionProps,
+  //   state: IConvertCollectionState
+  // ) {
+  //   let newState: IConvertCollectionState = { ...state };
+  //   const collectionName = ConvertCollection.getDerivedCollection(props);
+  //   if (
+  //     (props.selectedCollection != state.selectedCollection ||
+  //       props.selectedGolden != state.selectedGolden) &&
+  //     collectionName !== state.prevDerivedCollection
+  //   ) {
+  //     newState.newCollection = collectionName;
+  //     newState.prevDerivedCollection = collectionName;
+  //     newState.message = "";
+  //   }
+  //   return newState;
+  // }
 
   showPopup = () => {
     this.setState({
@@ -140,12 +147,14 @@ class ConvertCollection extends Component<
 
   convertToTestSuite = () => {
     const { username, app } = this.props;
-    const selectedGolden = _.find(this.props.goldenList, {
-      collec: this.props.selectedGolden,
-    });
-    const selectedCollection = _.find(this.props.collectionList, {
-      collec: this.props.selectedCollection,
-    });
+    // const selectedGolden = _.find(this.props.goldenList, {
+    //   collec: this.props.selectedGolden,
+    // });
+    // const selectedCollection = _.find(this.props.collectionList, {
+    //   collec: this.props.selectedCollection,
+    // });
+    const selectedGolden = this.props.selectedCollectionItem;
+    const selectedCollection = this.props.selectedCollectionItem;
     const isGolden = this.isGolden();
     const collectionId = isGolden ? selectedGolden!.id : selectedCollection!.id;
     const copyRecordingData: any = {
@@ -209,9 +218,9 @@ class ConvertCollection extends Component<
     const header = isGolden ? "Convert to collection" : "Save as test suite";
     const inputLabel = isGolden ? "Golden" : "Collection";
     const inputLabelSaveAs = !isGolden ? "Golden" : "Collection";
-    const disabled =
-      (isGolden && !this.props.selectedGolden) ||
-      (!isGolden && !this.props.selectedCollection);
+    const disabled = !this.props.selectedCollectionItem;
+      // (isGolden && !this.props.selectedGolden) ||
+      // (!isGolden && !this.props.selectedCollection);
 
     const {
       selectedCollectionName,
@@ -299,14 +308,21 @@ const mapStateToProps = (state: IStoreState) => {
     goldenList,
     collectionList,
   } = state.apiCatalog;
+
+  const {
+    gcbrowse: {
+      selectedCollectionItem
+  }} = state;
+
   const username = (state.authentication.user as IUserAuthDetails).username;
 
   return {
     selectedSource,
-    selectedCollection,
-    selectedGolden,
-    goldenList,
+    // selectedCollection,
+    // selectedGolden,
+    // goldenList,
     collectionList,
+    selectedCollectionItem,
     username,
     app: state.cube.selectedApp,
   };
