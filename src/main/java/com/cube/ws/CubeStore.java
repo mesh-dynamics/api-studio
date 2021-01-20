@@ -2051,13 +2051,12 @@ public class CubeStore {
         }
     }
 
-
     private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId, Optional<String> runId)
         throws InvalidEventException {
         EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
             event.service, event.instanceId, collection,
             new MDTraceInfo(traceId, event.spanId, event.parentSpanId),
-            event.getRunType(), Optional.of(Instant.now()), reqId, event.apiPath,
+            event.getRunType(), Optional.of(event.timestamp), reqId, event.apiPath,
             event.eventType, recordingType);
         eventBuilder.setPayload(event.payload);
         eventBuilder.withMetaData(event.metaData);
