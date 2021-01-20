@@ -9,6 +9,7 @@ import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
 import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
+import com.cube.queue.StoreUtils;
 import com.cube.sequence.SeqMgr;
 
 import io.md.core.CollectionKey;
@@ -17,9 +18,16 @@ import io.md.dao.Event.EventType;
 import io.md.injection.DynamicInjector;
 import io.md.injection.DynamicInjectorFactory;
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -31,11 +39,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
@@ -54,6 +64,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.solr.common.util.Pair;
+import org.glassfish.jersey.media.multipart.BodyPartEntity;
+import org.glassfish.jersey.media.multipart.FormDataBodyPart;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.json.JSONObject;
 import org.msgpack.core.MessagePack;
@@ -277,9 +290,22 @@ public class CubeStore {
     }
 
 
+    /**
+     *
+     * @param headers
+     * @param messageBytes
+     * @param direct
+     * @return
+     * This api is used mostly by agents to store events. It write events to a queue. The consumer dequeues and
+     * writes the events after setting some fields based on current running recording or replay
+     * When contentType is MediaType.APPLICATION_JSON, the behavior is different. This writes the events directly
+     * without putting into queue (sync mode). Further, When direct is true, store directly to rrstore without any
+     * change in event and when direct is false, set payloadKey and other fields (but not the collection)
+     */
     @POST
     @Path("/storeEventBatch")
-    public Response storeEventBatch(@Context HttpHeaders headers, byte[] messageBytes) {
+    public Response storeEventBatch(@Context HttpHeaders headers, byte[] messageBytes,
+                                    @DefaultValue("false") @QueryParam("direct") boolean direct) {
         Optional<String> contentType = Optional.ofNullable(headers.getRequestHeaders().getFirst(Constants.CONTENT_TYPE));
         LOGGER.info(new ObjectMessage(
             Map.of(
@@ -354,9 +380,24 @@ public class CubeStore {
                         return Response.ok(jsonResp).type(MediaType.APPLICATION_JSON_TYPE).build();
                     case MediaType.APPLICATION_JSON:
                         try{
+
                             Event[] events = jsonMapper.readValue(messageBytes , Event[].class);
-                            return rrstore.save(Arrays.stream(events)) && rrstore.commit() ?  Response.ok().build() : Response.serverError().entity("Bulk save error").build();
-                        }catch (Exception e){
+                            boolean success = true;
+                            if (direct) {
+                                success = rrstore.save(Arrays.stream(events));
+                            } else {
+                                if (events.length > 0) {
+                                    Event event = events[0];
+                                    Optional<RecordOrReplay> recordOrReplay =
+                                        rrstore.getRecordOrReplayFromCollection(event.customerId, event.app,
+                                            event.getCollection());
+                                    StoreUtils.processEvents(Arrays.stream(events), rrstore,
+                                        Optional.of(config.protoDescriptorCache), recordOrReplay);
+                                }
+                            }
+                            return success && rrstore.commit() ?  Response.ok().build()
+                                : Response.serverError().entity("Bulk save error").build();
+                        } catch (Exception e){
                             LOGGER.error(new ObjectMessage(
                                 Map.of(Constants.MESSAGE, "Error while parsing the events json")), e
                             );
@@ -373,7 +414,8 @@ public class CubeStore {
     @POST
     @Path("/storeEvent")
     @Consumes({MediaType.APPLICATION_JSON})
-    public Response storeEvent(Event event) {
+    public Response storeEvent(Event event,
+                               @DefaultValue("false") @QueryParam("direct") boolean direct) {
 	    try {
 	        event.validateEvent();
       } catch (InvalidEventException e) {
@@ -382,7 +424,11 @@ public class CubeStore {
           return Response.status(Status.BAD_REQUEST).entity(Utils.buildErrorResponse(
               Status.BAD_REQUEST.toString(),Constants.ERROR,  e.getMessage())).build();
       }
-	    eventQueue.enqueue(event);
+	    boolean success = true;
+	    if (direct) {
+	        success = rrstore.save(event) && rrstore.commit();
+        } else {
+            eventQueue.enqueue(event);
 	    /*
         try {
             StoreUtils.processEvent(event, config.rrstore);
@@ -391,34 +437,37 @@ public class CubeStore {
                 "Error while storing event/rr in solr")), e);
         }
 	    */
-        logStoreInfo("Enqueued Event", new CubeEventMetaInfo(event), true);
-            return Response.ok().build();
+            logStoreInfo("Enqueued Event", new CubeEventMetaInfo(event), true);
+        }
+        return success  ?  Response.ok().build()
+            : Response.serverError().entity("Event save error").build();
     }
 
     @POST
-    @Path("/deleteEventByReqId/{reqId}")
+    @Path("/deleteEventByReqId")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Response deleteEventByReqId(Event event , @PathParam("reqId") String reqId) throws ParameterException {
+    public Response deleteEventByReqId(Event event) throws ParameterException {
 
 	    if(event.customerId == null) throw new ParameterException("customerId is not present in the request");
+	    if(event.getReqId() == null) throw new ParameterException("ReqId is not present in the request");
 
-
-	    boolean deletionSuccess = rrstore.deleteReqResByReqId(reqId , event.customerId , Optional.ofNullable(event.eventType));
+	    boolean deletionSuccess = rrstore.deleteReqResByReqId(event.getReqId() , event.customerId , Optional.ofNullable(event.eventType));
 	    return Response.ok().type(MediaType.APPLICATION_JSON).
             entity(buildSuccessResponse(Constants.SUCCESS , new JSONObject(Map.of("deletion_success" , deletionSuccess)) )).build();
     }
 
     @POST
-    @Path("/deleteEventByTraceId/{traceId}")
+    @Path("/deleteEventByTraceId")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Response deleteEventByTraceId(Event event , @PathParam("traceId") String traceId) throws ParameterException {
+    public Response deleteEventByTraceId(Event event) throws ParameterException {
 
         if(event.customerId == null) throw new ParameterException("customerId is not present in the request");
         if(event.getCollection() == null) throw new ParameterException("collection is not present in the request");
+        if(event.getTraceId() == null) throw new ParameterException("TraceId is not present in the request");
 
-        boolean deletionSuccess = rrstore.deleteReqResByTraceId(traceId , event.customerId , event.getCollection(), Optional.ofNullable(event.eventType));
+        boolean deletionSuccess = rrstore.deleteReqResByTraceId(event.getTraceId() , event.customerId , event.getCollection(), Optional.ofNullable(event.eventType));
         return Response.ok().type(MediaType.APPLICATION_JSON).
             entity(buildSuccessResponse(Constants.SUCCESS , new JSONObject(Map.of("deletion_success" , deletionSuccess)) )).build();
     }
@@ -1321,7 +1370,8 @@ public class CubeStore {
                         event.service, event.getTraceId());
                     reqIdMap.put(oldReqId, reqId);
                 }
-                return buildEvent(event, toRecording.collection,  toRecording.recordingType, reqId, event.getTraceId(), Optional.of(timeStamp.toString()));
+                return buildEvent(event, toRecording.collection,  toRecording.recordingType, reqId, event.getTraceId(),
+                    Optional.of(timeStamp.toString()), event.timestamp);
             } catch (InvalidEventException e) {
                 eventCreationFailure[0] = true;
                 LOGGER.error(new ObjectMessage(
@@ -1928,29 +1978,93 @@ public class CubeStore {
     @Produces(MediaType.APPLICATION_JSON)
     public Response protoDescriptorFileUpload(@PathParam("customerId") String customerId,
         @PathParam("app") String app,
-        @FormDataParam("protoDescriptorFile") InputStream uploadedInputStream) {
+        @FormDataParam("protoDescriptorFile") List<FormDataBodyPart>  bodyParts,
+        @DefaultValue("false") @QueryParam("appendExisting") boolean appendExisting) {
+//        @FormDataParam("protoDescriptorFile") FormDataContentDisposition fileDetail) {
 
-        if(uploadedInputStream==null) {
+
+        if(bodyParts==null || bodyParts.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
                 Map.of("Message",
                     "Uploaded file stream null. Ensure the variable name is \"protoDescriptorFile\" for the file")
             )).toString()).build();
         }
 
-
+        Map<String, String> protoFileMap = new HashMap<>();
         boolean status = false;
         byte[] encodedFileBytes;
         try {
-            encodedFileBytes = Base64.getEncoder().encode(uploadedInputStream.readAllBytes());
-            ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app, new String(encodedFileBytes, StandardCharsets.UTF_8));
+            String tmpDir = io.md.constants.Constants.TEMP_DIR;
+            String descFileName = "tmp_" + UUID.randomUUID() +  ".desc";
+            List<String> commandList = new ArrayList<>();
+            commandList.add("protoc");
+            commandList.add("--descriptor_set_out=" + descFileName);
+
+            // If appending add existing protos for compiler
+            if(appendExisting) {
+                Optional<ProtoDescriptorDAO> existingProtoDescriptorDAOOptional = rrstore
+                    .getLatestProtoDescriptorDAO(customerId, app);
+                existingProtoDescriptorDAOOptional.ifPresent(UtilException.rethrowConsumer(existingProtoDescriptorDAO ->
+                {
+                    existingProtoDescriptorDAO.protoFileMap.forEach(UtilException.rethrowBiConsumer(
+                        (uniqueFileName,fileContent) -> {
+                            File targetFile = new File(tmpDir + "/" + uniqueFileName);
+                            OutputStream outStream = new FileOutputStream(targetFile);
+                            byte[] fileBytes = fileContent.getBytes(StandardCharsets.UTF_8);
+                            outStream.write(fileBytes);
+                            //Add to new fileMap and list of commands
+                            protoFileMap.put(uniqueFileName, fileContent);
+                            commandList.add(uniqueFileName);
+                        }));
+                }));
+            }
+
+            // Add newly uploaded protos
+            for (FormDataBodyPart bodyPart : bodyParts) {
+
+                BodyPartEntity bodyPartEntity = (BodyPartEntity) bodyPart.getEntity();
+                String fileName = bodyPart.getContentDisposition().getFileName();
+                String uniqueFileName = "TAG_" + UUID.randomUUID() + "_" + fileName;
+                byte[] fileBytes = bodyPartEntity.getInputStream().readAllBytes();
+                protoFileMap.put(uniqueFileName, new String(fileBytes, StandardCharsets.UTF_8));
+                commandList.add(uniqueFileName);
+                File targetFile = new File(tmpDir + "/" + uniqueFileName);
+                OutputStream outStream = new FileOutputStream(targetFile);
+                outStream.write(fileBytes);
+            }
+
+            Files.deleteIfExists(Paths.get(tmpDir + "/" + descFileName));
+            ProcessBuilder builder = new ProcessBuilder();
+            builder.directory(new File(tmpDir));
+            // Need to ensure protoc compiler is installed in the docker container env
+            builder.command(commandList);
+            Process process = builder.start();
+            int exitCode = process.waitFor();
+            if(exitCode != 0) {
+                throw new Exception("Cannot initiate process to compile descriptor from protos");
+            }
+
+            InputStream initialStream = new FileInputStream(
+                new File(tmpDir + "/" + descFileName));
+            byte[] buffer = new byte[initialStream.available()];
+            initialStream.read(buffer);
+
+            encodedFileBytes = Base64.getEncoder().encode(buffer);
+            ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app, new String(encodedFileBytes, StandardCharsets.UTF_8), protoFileMap);
             status = rrstore.storeProtoDescriptorFile(protoDescriptorDAO);
-        } catch (IOException | DescriptorValidationException e) {
+        } catch (Exception e) {
+            String message = "Cannot encode uploaded proto descriptor file";
+            if(e instanceof FileNotFoundException) {
+                message = "Cannot compile descriptor file from protos using protoc compiler."
+                    + " Make sure the files are not duplicated in case of appending to existing protos";
+            }
             LOGGER.error("Cannot encode uploaded proto descriptor file",e);
             return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
-                Map.of("Message", "Cannot encode uploaded proto descriptor file",
+                Map.of("Message", message,
                     "Error", e.getMessage())).toString())).build();
         }
-        return status ? Response.ok().build() : Response.serverError().entity(Map.of("Error", "Cannot store proto descriptor file")).build();
+        return status ? Response.ok().type(MediaType.APPLICATION_JSON)
+            .entity("The protofile is successfully saved in Solr").build() : Response.serverError().entity(Map.of("Error", "Cannot store proto descriptor file")).build();
     }
 
     @GET
@@ -2026,13 +2140,18 @@ public class CubeStore {
         }
     }
 
-
     private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId, Optional<String> runId)
+        throws InvalidEventException {
+        return buildEvent(event, collection, recordingType, reqId, traceId, runId, Instant.now());
+    }
+
+
+    private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId, Optional<String> runId, Instant timeStamp)
         throws InvalidEventException {
         EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
             event.service, event.instanceId, collection,
             new MDTraceInfo(traceId, event.spanId, event.parentSpanId),
-            event.getRunType(), Optional.of(Instant.now()), reqId, event.apiPath,
+            event.getRunType(), Optional.of(timeStamp), reqId, event.apiPath,
             event.eventType, recordingType);
         eventBuilder.setPayload(event.payload);
         eventBuilder.withMetaData(event.metaData);
@@ -2060,10 +2179,8 @@ public class CubeStore {
     @Produces(MediaType.APPLICATION_JSON)
     public void getAppConfigurations(@Suspended AsyncResponse asyncResponse,
         @PathParam("customerId") String customerId, List<String> apps) {
-        //default app config without any tracer
-        CustomerAppConfig defaultAppCfgNoTracer= new CustomerAppConfig.Builder()/*.withTracer(Tracer.MeshD.toString())*/.build();
 
-        List<CompletableFuture<CustomerAppConfig>> futures =  apps.stream().map(app->CompletableFuture.supplyAsync(()->rrstore.getAppConfiguration(customerId, app).orElse(defaultAppCfgNoTracer))).collect(Collectors.toList());
+        List<CompletableFuture<CustomerAppConfig>> futures =  apps.stream().map(app->CompletableFuture.supplyAsync(()->rrstore.getAppConfiguration(customerId, app).orElse(new CustomerAppConfig.Builder(customerId, app).build()))).collect(Collectors.toList());
 
         Utils.sequence(futures).thenApply(appConfigs->{
             Map<String , CustomerAppConfig> appCfgs = new HashMap<>();
@@ -2073,6 +2190,21 @@ public class CubeStore {
             return asyncResponse.resume(Response.ok(appCfgs , MediaType.APPLICATION_JSON).build());
         }).exceptionally(e-> asyncResponse.resume(Response.status(Status.INTERNAL_SERVER_ERROR)
             .entity(String.format("Server error: " + e.getMessage())).build()));
+    }
+
+    @POST
+    @Path("setAppConfiguration")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response setAppConfiguration(CustomerAppConfig custAppCfg ) {
+
+        if(rrstore.saveConfig(custAppCfg)){
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity(
+                buildSuccessResponse(Constants.SUCCESS, new JSONObject(Map.of(Constants.MESSAGE, "The customer app config tag has been changed",
+                            Constants.CUSTOMER_ID_FIELD, custAppCfg.customerId, Constants.APP_FIELD, custAppCfg.app)))).build();
+        }
+
+        return Response.serverError().type(MediaType.APPLICATION_JSON).entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE , "Error saving the customer app config")).build();
     }
 
     @POST
@@ -2185,7 +2317,7 @@ public class CubeStore {
         var newEventsStream =   pending.stream().map(event -> {
             String newReqId = "Update-" + finalPayloadHash;
             try {
-                Event newEvent = buildEvent(event, collection, recordingType, newReqId, newReqId, Optional.empty());
+                Event newEvent = buildEvent(event, collection, recordingType, newReqId, newReqId, Optional.empty(), event.timestamp);
                 return newEvent;
             } catch (InvalidEventException e) {
                 LOGGER.error(new ObjectMessage(Map.of(

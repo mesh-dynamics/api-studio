@@ -3,10 +3,7 @@ package com.cube.queue;
 import static io.md.utils.Utils.createHTTPRequestEvent;
 
 import io.md.cache.ProtoDescriptorCache;
-import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.dao.GRPCPayload;
-import io.md.dao.ProtoDescriptorDAO;
-import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingType;
 import io.md.dao.Replay;
 import java.net.URISyntaxException;
@@ -15,6 +12,7 @@ import java.net.URLDecoder;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -39,12 +37,10 @@ import io.md.services.DataStore.TemplateNotFoundException;
 import io.md.utils.Constants;
 import io.md.core.Utils;
 import io.md.utils.UtilException;
-import jdk.jshell.execution.Util;
 
 import com.cube.core.ServerUtils;
 import com.cube.dao.CubeEventMetaInfo;
 import com.cube.dao.ReqRespStore;
-import com.cube.ws.Config;
 import com.cube.ws.CubeStore.CubeStoreException;
 
 public class StoreUtils {
@@ -217,81 +213,107 @@ public class StoreUtils {
 	// process and store Event
 	// return error string (Optional<String>)
 	public static void processEvent(Event event, ReqRespStore rrstore, Optional<ProtoDescriptorCache> protoDescriptorCacheOptional) throws CubeStoreException {
-		if (event == null) {
-			throw new CubeStoreException(null, "Event is null", new CubeEventMetaInfo());
-		}
 
-		Optional<String> collection;
-
-		event.setCollection("NA"); // so that validate doesn't fail
-
-		if (!event.validate()) {
-			throw new CubeStoreException(null, "some required field missing,"
-				+ " or both binary and string payloads set", event);
-		}
-
-		Optional<RecordOrReplay> recordOrReplay =
-			rrstore.getCurrentRecordOrReplay(Optional.of(event.customerId),
-				Optional.of(event.app), Optional.of(event.instanceId), false);
-
-		if (recordOrReplay.isEmpty()) {
-			throw new CubeStoreException(null, "No current record/replay!", event);
-		}
-		event.setRecordingType(recordOrReplay.get().getRecordingType());
-		recordOrReplay.flatMap(RecordOrReplay::getRunId).ifPresent(runId -> {
-			event.setRunId(runId);
-		});
-
-		event.setRunType(recordOrReplay.get().getRunType());
-
-		collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
-
-		// check collection, validate, fetch template for request, set key and store. If error at any point stop
-		if (collection.isEmpty()) {
-			throw new CubeStoreException(null, "Collection is missing", event);
-		}
-		event.setCollection(collection.get());
-
-		if(event.payload instanceof GRPCPayload) {
-			protoDescriptorCacheOptional.map(
-				protoDescriptorCache -> {
-					io.md.utils.Utils.setProtoDescriptorGrpcEvent(event, protoDescriptorCache);
-					return protoDescriptorCache;
-				}
-			).orElseThrow(() -> new CubeStoreException(null, "protoDescriptorCache is missing for GRPCPAyload", event));
-		}
-
-		if (event.isRequestType()) {
-			// if request type, need to extract keys from request and index it, so that it can be
-			// used while mocking
-			Optional<String> method = Optional.empty();
-			if (event.payload instanceof HTTPRequestPayload)  {
-				HTTPRequestPayload payload = (HTTPRequestPayload) event.payload;
-				payload.transformSubTree("/queryParams" , URLDecoder::decode);
-				method = Optional.ofNullable(payload.getMethod());
-			}
-
-			try {
-				Optional<URLClassLoader> classLoader = Optional.empty();
-				if (event.eventType.equals(EventType.ThriftRequest)) {
-					classLoader = recordOrReplay.flatMap(RecordOrReplay::getClassLoader);
-				}
-
-				event.parseAndSetKey(rrstore.getTemplate(event.customerId, event.app, event.service, event.apiPath,
-					recordOrReplay.get().getTemplateVersion(), Type.RequestMatch, Optional.ofNullable(event.eventType),
-					method , collection.get()),
-                    classLoader);
-			} catch (TemplateNotFoundException e) {
-				throw new CubeStoreException(e, "Compare Template Not Found", event);
-			}
-		}
-
-		boolean saveResult = rrstore.save(event);
+		boolean saveResult = rrstore.save(checkAndTransformEvent(event, rrstore, protoDescriptorCacheOptional, Optional.empty()));
 		if (!saveResult) {
 			throw new CubeStoreException(null, "Unable to store event in solr", event);
 		}
 
 	}
+
+    // process and store Event - stream version
+    public static void processEvents(Stream<Event> events, ReqRespStore rrstore,
+                                     Optional<ProtoDescriptorCache> protoDescriptorCacheOptional,
+                                     Optional<RecordOrReplay> recordOrReplay) throws CubeStoreException {
+
+        boolean saveResult = rrstore.save(events.map(UtilException.rethrowFunction(event -> checkAndTransformEvent(event, rrstore,
+            protoDescriptorCacheOptional, recordOrReplay))));
+        if (!saveResult) {
+            throw new CubeStoreException(null, "Unable to store events in solr", new CubeEventMetaInfo());
+        }
+
+    }
+
+    /*
+     * If recordOrReplay is empty - fetch from current running recording or replay and update collection accordingly,
+     *  else use given recordOrReplay and don't update collection
+     * This will also set the payloadKey in either case
+     */
+    private static Event checkAndTransformEvent(Event event, ReqRespStore rrstore,
+                               Optional<ProtoDescriptorCache> protoDescriptorCacheOptional, Optional<RecordOrReplay> recordOrReplay) throws CubeStoreException {
+        if (event == null) {
+            throw new CubeStoreException(null, "Event is null", new CubeEventMetaInfo());
+        }
+
+        if (recordOrReplay.isEmpty()) {
+           event.setCollection("NA"); // so that validate doesn't fail
+        }
+        if (!event.validate()) {
+            throw new CubeStoreException(null, "some required field missing,"
+                + " or both binary and string payloads set", event);
+        }
+
+        Optional<String> collection = Optional.empty();
+        if (recordOrReplay.isEmpty()) {
+            recordOrReplay = rrstore.getCurrentRecordOrReplay(Optional.of(event.customerId), Optional.of(event.app),
+                Optional.of(event.instanceId), false);
+        }
+
+        if (recordOrReplay.isEmpty()) {
+            throw new CubeStoreException(null, "No current record/replay!", event);
+        }
+        event.setRecordingType(recordOrReplay.get().getRecordingType());
+        recordOrReplay.flatMap(RecordOrReplay::getRunId).ifPresent(runId -> {
+            event.setRunId(runId);
+        });
+
+        event.setRunType(recordOrReplay.get().getRunType());
+
+        collection = recordOrReplay.flatMap(RecordOrReplay::getCollection);
+
+        // check collection, validate, fetch template for request, set key and store. If error at any point stop
+        if (collection.isEmpty()) {
+            throw new CubeStoreException(null, "Collection is missing", event);
+        }
+        event.setCollection(collection.get());
+
+        if(event.payload instanceof GRPCPayload) {
+            protoDescriptorCacheOptional.map(
+                protoDescriptorCache -> {
+                    io.md.utils.Utils.setProtoDescriptorGrpcEvent(event, protoDescriptorCache);
+                    return protoDescriptorCache;
+                }
+            ).orElseThrow(() -> new CubeStoreException(null, "protoDescriptorCache is missing for GRPCPAyload", event));
+        }
+
+        if (event.isRequestType()) {
+            // if request type, need to extract keys from request and index it, so that it can be
+            // used while mocking
+            Optional<String> method = Optional.empty();
+            if (event.payload instanceof HTTPRequestPayload)  {
+                HTTPRequestPayload payload = (HTTPRequestPayload) event.payload;
+                payload.transformSubTree("/queryParams" , URLDecoder::decode);
+                method = Optional.ofNullable(payload.getMethod());
+            }
+
+            try {
+                Optional<URLClassLoader> classLoader = Optional.empty();
+                if (event.eventType.equals(EventType.ThriftRequest)) {
+                    classLoader = recordOrReplay.flatMap(RecordOrReplay::getClassLoader);
+                }
+
+                event.parseAndSetKey(rrstore.getTemplate(event.customerId, event.app, event.service, event.apiPath,
+                    recordOrReplay.get().getTemplateVersion(), Type.RequestMatch, Optional.ofNullable(event.eventType),
+                    method , collection.get()),
+                    classLoader);
+            } catch (TemplateNotFoundException e) {
+                throw new CubeStoreException(e, "Compare Template Not Found", event);
+            }
+        }
+
+        return event;
+    }
+
 
 
 }

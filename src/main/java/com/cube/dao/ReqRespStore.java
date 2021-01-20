@@ -152,6 +152,8 @@ public interface ReqRespStore extends DataStore {
 	Pair<Result<ConfigApplicationAcknowledge> , List>getLatestAgentConfigAcknowledge(
 		io.md.dao.CubeMetaInfo cubeMetaInfo, boolean facetOnNodeSelected, int forLastNsec);
 
+    Optional<RecordOrReplay> getRecordOrReplayFromCollection(String customerId, String app, String collection);
+
 	class ReqResp {
 
 
@@ -724,5 +726,5 @@ public interface ReqRespStore extends DataStore {
 	boolean deleteAllData(String customerId);
 	Comparator getDefaultComparator(EventType eventType, TemplateKey.Type templateKeyType) throws TemplateNotFoundException;
 
-
+	boolean saveConfig(CustomerAppConfig cfg);
 }
