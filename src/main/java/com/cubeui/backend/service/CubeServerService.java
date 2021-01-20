@@ -172,34 +172,7 @@ public class CubeServerService {
             return Optional.empty();
         }
     }
-
-    public Map<String, String> getExtractionMap(ResponseEntity response) {
-        Map<String, String> map = new HashMap<>();
-        try {
-            String body = response.getBody().toString();
-            JsonNode json = jsonMapper.readTree(body);
-            JsonNode data = json.get("data");
-            JsonNode responseBody = data.get(Constants.RESPONSE);
-            if(responseBody.isArray()) {
-                ArrayNode arrayNode = (ArrayNode) responseBody;
-                arrayNode.forEach(node -> {
-                    try {
-                        JsonNode extractionMapJson = jsonMapper.readTree(node.get("extractionMap").textValue());
-                        TypeReference<HashMap<String,String>> typeRef
-                            = new TypeReference<HashMap<String,String>>() {};
-                        ObjectReader reader = jsonMapper.readerFor(typeRef);
-                        Map<String, String> extractionMap = reader.readValue(extractionMapJson);
-                        map.putAll(extractionMap);
-                    } catch (IOException e) {
-                        log.info(String.format("Error in converting node to Map for  message= %s", e.getMessage()));
-                    }
-                });
-            }
-        } catch (Exception e) {
-            log.info(String.format("Error in converting Json to response Map for  message= %s", e.getMessage()));
-        }
-        return map;
-    }
+    
     public Optional<List<Event>> getEvents(EventQuery query, HttpServletRequest request) {
         ResponseEntity response = fetchPostResponse(request, Optional.of(query), "/cs/getEvents");
         return getListData(response,"/cs/getEvents", Optional.of("objects"), new TypeReference<List<Event>>(){});
