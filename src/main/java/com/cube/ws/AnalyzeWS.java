@@ -351,6 +351,62 @@ public class AnalyzeWS {
     }
 
     @GET
+    @Path("getTemplateSet/{customerId}/{appId}/{templateVersion}/")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response getTemplateSet(@Context UriInfo urlInfo, @PathParam("appId") String appId,
+        @PathParam("customerId") String customerId, @PathParam("templateVersion") String templateVersion) {
+
+        return rrstore.getTemplateSet(customerId, appId, templateVersion).map(templateSet -> {
+            try {
+
+                String data = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(templateSet);
+                final String fileName = "comparison_rules", ext = ".json";
+
+                File file = new File("/tmp/" + fileName + "-" +
+                    (customerId + appId + Instant.now()).hashCode() +
+                    ext);
+
+                FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
+
+                Response.ResponseBuilder response = Response.ok(file);
+                response.header("Content-Disposition",
+                    "attachment; filename=\"" + fileName + ext + "\"");
+                response.header("Access-Control-Expose-Headers",
+                    "Content-Disposition, X-Suggested-Filename");
+
+                return response.build();
+
+            } catch (JsonProcessingException e) {
+                LOGGER.error(
+                    String.format(
+                        "Error in converting comparison rules to JSON for customer=%s, app=%s, version=%s",
+                        customerId, appId, templateVersion), e);
+                return Response.serverError().entity(
+                    Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                        String.format(
+                            "Error in converting comparison rules to JSON for customer=%s, app=%s, version=%s",
+                            customerId, appId, templateVersion))).build();
+            } catch (IOException e) {
+                LOGGER.error(
+                    String.format(
+                        "Error in comparison rules file creation for customer=%s, app=%s, version=%s",
+                        customerId, appId, templateVersion), e);
+                return Response.serverError().entity(
+                    Utils.buildErrorResponse(Constants.ERROR, Constants.IO_EXCEPTION,
+                        String.format(
+                            "Error in comparison rules file creation for customer=%s, app=%s, version=%s",
+                            customerId, appId, templateVersion))).build();
+            }
+        })
+            .orElse(Response.serverError()
+                .entity(Utils.buildErrorResponse(Constants.ERROR, Constants.NOT_PRESENT,
+                    String
+                        .format("Unable to find templateSet for customer=%s, app=%s, version=%s",
+                            customerId, appId, templateVersion))).build());
+    }
+
+
+    @GET
     @Path("getPotentialCompareTemplates")
     @Produces(MediaType.TEXT_PLAIN)
     public Response getPotentialCompareTemplates(@Context UriInfo uriInfo) {
@@ -1602,8 +1658,10 @@ public class AnalyzeWS {
 	    traceCollectionMap.forEach((traceCollectionKey, events) -> {
 	      List<Event> parentRequestEvents = apiTraceFacetQuery.apiPath.map(path -> {
 	          // get parent events based on apiPath filter if it is non-empty
+					//TODO Use ApiPathRegex
+							String updatedPath = path.replace("*", ".*");
               return events.stream()
-                  .filter(e -> e.apiPath.equals(path) && apiTraceFacetQuery.service.map(e.service::equals).orElse(true))
+                  .filter(e -> e.apiPath.matches(updatedPath) && apiTraceFacetQuery.service.map(e.service::equals).orElse(true))
                   .limit(numResults)
                   .collect(Collectors.toList());
 	      }).or(() -> {
