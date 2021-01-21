@@ -9,8 +9,6 @@ import {getTransformHeaders} from "../utils/lib/url-utils";
 import api from "../api";
 import {GoldenMeta} from "./Golden-Visibility";
 import {GoldenCollectionBrowse} from "./GoldenCollectionBrowse";
-// import {GoldenCollectionBrowse} from "./APICatalog";
-// import {GoldenCollectionDropdown} from "./GoldenCollectionDropdown";
 import {goldenActions} from '../actions/golden.actions'
 import {validateGoldenName} from "../utils/lib/golden-utils";
 import classNames from "classnames";
@@ -19,7 +17,7 @@ import { apiCatalogActions } from '../actions/api-catalog.actions';
 import MDLoading from '../../../public/assets/images/md-loading.gif';
 import Tippy from '@tippy.js/react'
 import {isURL} from 'validator';
-import gcbrowseActions from '../actions/gcbrowse.actions';
+import gcbrowseActions from '../actions/gcBrowse.actions';
 import { defaultCollectionItem } from "../constants";
 import {setStrictMock} from "./../helpers/httpClientHelpers"
 import { fetchGoldenMeta } from "../services/golden.service";
@@ -79,10 +77,10 @@ class ViewSelectedTestConfig extends React.Component {
     }
 
     componentDidMount() {
-        const { dispatch, gcbrowse: { selectedCollectionItem } } = this.props;
+        const { dispatch, cube: { selectedGolden } } = this.props;
         dispatch(cubeActions.clearPreviousData());
-        if(!this.props.cube.testConfig && selectedCollectionItem){
-            this.fetchServicesForGoldenSelected(selectedCollectionItem.id);
+        if(!this.props.cube.testConfig && selectedGolden){
+            this.fetchServicesForGoldenSelected(selectedGolden);
         }
     }
 
@@ -102,13 +100,13 @@ class ViewSelectedTestConfig extends React.Component {
     }
 
     handleChangeForTestConfig = (e) => {
-        const { dispatch, cube: { testConfigList }, gcbrowse: { selectedCollectionItem }  } = this.props;
+        const { dispatch, cube: { testConfigList }, cube: { selectedGolden } } = this.props;
         if (e && e.target.value) {
             if(e.target.value == "other"){
                 dispatch(cubeActions.setTestConfig(null));
                 dispatch(cubeActions.setSelectedInstance("other"));
-                if(selectedCollectionItem){
-                    this.fetchServicesForGoldenSelected(selectedCollectionItem.id);
+                if(selectedGolden){
+                    this.fetchServicesForGoldenSelected(selectedGolden);
                 }
 
             }else{
@@ -219,14 +217,13 @@ class ViewSelectedTestConfig extends React.Component {
     showCT = () => this.setState({showCT: true});
     
     handleCloseOnReplayModal = () => {
-        const { gcbrowse: { selectedCollectionItem }, dispatch } = this.props;
-        
-        const {
-            name,
-            id: golden,
-            templateVer: version,
-            collec: collectionId 
-        } = selectedCollectionItem;
+        const { 
+            cube: { 
+                selectedTestId: collectionId,
+                selectedGolden: golden,
+                selectedGoldenName: name,
+                collectionTemplateVersion: version
+            }, dispatch } = this.props;
         
         dispatch(cubeActions.clearPreviousData());
         dispatch(cubeActions.setSelectedTestIdAndVersion(collectionId, version, golden, name));
@@ -859,24 +856,24 @@ class ViewSelectedTestConfig extends React.Component {
     }
 
     renderRecordingInfo = () => {
-        const { gcbrowse: { actualGoldens, selectedCollectionItem }} = this.props;
+        const { cube: { selectedTestId }, gcBrowse: { actualGoldens }} = this.props;
 
-        if (selectedCollectionItem.id && actualGoldens.recordings.length !== 0) {
-            const { id, label, name } = actualGoldens.recordings.find(test => test.id === selectedCollectionItem.id);
+        if (selectedTestId && actualGoldens.recordings.length !== 0) {
+            const selectedItem = actualGoldens.recordings.find(test => test.collec === selectedTestId) || defaultCollectionItem;
 
             return(
                 <div className="resume-modal-info-container">
                     <div className="resume-modal-info-line">
                         <div className="resume-modal-identifier"><b>Id:</b></div>
-                        <div className="resume-modal-content">{id || ''}</div>
+                        <div className="resume-modal-content">{selectedItem.id}</div>
                     </div>
                     <div className="resume-modal-info-line">
                         <div className="resume-modal-identifier"><b>Name:</b></div>
-                        <div className="resume-modal-content">{name || ''}</div>
+                        <div className="resume-modal-content">{selectedItem.name}</div>
                     </div>
                     <div className="resume-modal-info-line"s>
                         <div className="resume-modal-identifier"><b>Label:</b></div>
-                        <div className="resume-modal-content">{label || ''}</div>
+                        <div className="resume-modal-content">{selectedItem.label}</div>
                     </div>
                 </div>
             );
@@ -970,9 +967,18 @@ class ViewSelectedTestConfig extends React.Component {
 
 
     renderTestInfo = () => {
-        const { cube, authentication: { user: { username } } } = this.props;
+        const { cube, authentication: { user: { username } }, gcBrowse: { actualGoldens } } = this.props;
         const { recStatus } = this.state;
-        
+
+        const selectedGoldenItem = actualGoldens.recordings.length === 0 
+        ? defaultCollectionItem
+        : actualGoldens.recordings.find(eachGolden => eachGolden.collec === cube.selectedTestId);
+
+        // If the golden is not found in the recording object, return the default collection
+        // object which is an empty object. This will prevent from `undefined` being passed
+        // and prevent the blank screen
+        const selectedItem = selectedGoldenItem || defaultCollectionItem;
+
         return(
             <Fragment>
                 <div className="div-label">
@@ -1020,8 +1026,10 @@ class ViewSelectedTestConfig extends React.Component {
                 </div>
                 <GoldenCollectionBrowse 
                     showDeleteOption
+                    showGrouping
                     selectedSource="Golden" 
-                    dropdownLabel="SELECT GOLDEN"
+                    dropdownLabel="GOLDEN"
+                    selectedGoldenOrCollectionItem={selectedItem}
                     handleViewGoldenClick={this.handleViewGoldenClick}
                     handleChangeCallback={this.handleChangeInBrowseCollection}
                     showVisibilityOption={(!recStatus || recStatus.status !== "Running")}
@@ -1290,7 +1298,7 @@ class ViewSelectedTestConfig extends React.Component {
 
 const mapStateToProps = (state) => ({
     cube: state.cube,
-    gcbrowse: state.gcbrowse,
+    gcBrowse: state.gcBrowse,
     authentication: state.authentication
 });
 

@@ -28,7 +28,7 @@ import EditableLabel from "./EditableLabel";
 import { updateGoldenName } from '../../services/golden.service';
 import { IApiCatalogState, IApiTrace, ICollectionDetails, ICubeState, IHttpClientStoreState, IKeyValuePairs, IPayloadData, IStoreState, IUserAuthDetails } from "../../reducers/state.types";
 import { IGetEventsApiResponse } from "../../apiResponse.types";
-import gcbrowseActions from "../../actions/gcbrowse.actions";
+import gcbrowseActions from "../../actions/gcBrowse.actions";
 
 interface ITreeNodeHeader<T> {
   node: T,
@@ -98,7 +98,6 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
       if (itemToDelete.requestType == "collection") {
         await cubeService.deleteGolden(itemToDelete.id!);
         dispatch(httpClientActions.deleteUserCollection(itemToDelete.id));
-        dispatch(gcbrowseActions.clearSelectedGoldenCollection());
       } else if (itemToDelete.requestType == "request") {
         if (itemToDelete.isParent) {
           await cubeService.deleteEventByTraceId(customerId, itemToDelete.id!, itemToDelete.collectionId!);

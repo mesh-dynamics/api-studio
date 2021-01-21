@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ReactEventHandler, SyntheticEvent } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { connect } from 'react-redux';
 import { Modal } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
@@ -10,53 +10,52 @@ import {
     IGoldenCollectionBrowseState
 } from '../../reducers/state.types';
 import commonUtils from '../../utils/commonUtils';
-import gcbrowseActions from '../../actions/gcbrowse.actions';
+import gcbrowseActions from '../../actions/gcBrowse.actions';
 import './GoldenCollectionBrowse.css';
+import { defaultCollectionItem } from '../../constants';
 
 declare type SelectedSourceType = "UserGolden" | "Golden";
-
 export interface IGoldenCollectionBrowseProps {
     cube: ICubeState;
     dropdownLabel: string;
+    showGrouping?: boolean;
     ddlClassNames?: string;
     showDeleteOption?: boolean;
     showVisibilityOption?: boolean;
-    gcbrowse: IGoldenCollectionBrowseState;
+    gcBrowse: IGoldenCollectionBrowseState;
     selectedSource: SelectedSourceType;
+    selectedGoldenOrCollectionItem: ICollectionDetails;
     handleViewGoldenClick?: () => void;
-    clearSelectedGoldenCollection: () => void;
     deleteGolden: (selectedItemId: string, selectedSource: string) => void,
     fetchGoldensCollections: (selectedSource: SelectedSourceType) => void;
-    updateSelectedGoldenCollection: (selectedItem: ICollectionDetails) => void;
     handleChangeCallback: (selectedItem: ICollectionDetails) => void;
 }
 
 const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
     const {
         cube: { selectedApp },
-        gcbrowse: {
-            selectedCollectionItem,
+        gcBrowse: {
             actualGoldens,
             userGoldens,
             isCollectionLoading,
-            messages,
         },
-        ddlClassNames,
+        showGrouping,
         dropdownLabel,
         selectedSource,
         showDeleteOption,
         showVisibilityOption,
+        selectedGoldenOrCollectionItem,
         deleteGolden,
         handleChangeCallback,
         handleViewGoldenClick,
-        fetchGoldensCollections,
-        clearSelectedGoldenCollection,
-        updateSelectedGoldenCollection
+        fetchGoldensCollections
     } = props;
 
     const [showGoldenCollectionModal, setShowGoldenCollectionModal] = useState(false);
 
     const [showDeleteGoldenConfirm, setShowDeleteGoldenConfirm] = useState(false);
+
+    const [selectedFilterItem, setSelectedFilterItem] =  useState(defaultCollectionItem);
 
     const [nameFilter, setNameFilter] = useState('');
 
@@ -66,9 +65,9 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
 
     const [versionFilter, setVersionFilter] = useState('');
 
-    const ddlClass = classNames("r-att", ddlClassNames, {
-        "select-indicator": !selectedCollectionItem.id,
-    });
+    const goldenCollectionSelectorClass = classNames("gcBrowse-selected-item-wrapper", {
+        ["gcBrowse-selected-group"]: showGrouping
+    })
 
     const findSelectedObjectForCollectionId = (selectedCollectionId: string) => {
         if (selectedSource === 'UserGolden') {
@@ -83,7 +82,7 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
     }
 
     /**
-     * Handler are here
+     * Handlers are here
      */
 
     const handleShowGoldenFilter = () => {
@@ -93,32 +92,20 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
 
     const selectHighlighted = () => {
         setShowGoldenCollectionModal(false);
-        handleChangeCallback(selectedCollectionItem);
+        handleChangeCallback(selectedFilterItem);
     };
 
     const handleClickFromFilter = (selectedCollectionId: string) => {
-        const selectedObject = findSelectedObjectForCollectionId(selectedCollectionId);
+        const selectedObject: ICollectionDetails = findSelectedObjectForCollectionId(selectedCollectionId) || defaultCollectionItem;
 
         if (selectedObject) {
-            updateSelectedGoldenCollection(selectedObject);
+            setSelectedFilterItem(selectedObject);
         }
     };
 
-    const handleDropdownOptionChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        const selectedCollectionId = event.target.value;
-
-        const selectedObject = findSelectedObjectForCollectionId(selectedCollectionId);
-
-        if (selectedObject) {
-            updateSelectedGoldenCollection(selectedObject);
-            handleChangeCallback(selectedObject);
-        }
-    }
-
     const handleDeleteConfirm = () => {
-        deleteGolden(selectedCollectionItem.id, selectedSource);
+        deleteGolden(selectedFilterItem.id, selectedSource);
         setShowDeleteGoldenConfirm(false);
-        clearSelectedGoldenCollection();
     }
 
     // End of handlers
@@ -132,39 +119,6 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
     );
     // End of Effects
 
-
-    /**
-     * render jsx items are here
-     */
-    const renderDropdownOptions = () => {
-        let options: ICollectionDetails[] = (selectedSource === 'UserGolden' ? userGoldens.recordings : actualGoldens.recordings);
-
-        return (
-            <select
-                id="ddlTestId"
-                className={ddlClass}
-                onChange={handleDropdownOptionChange}
-                value={selectedCollectionItem.collec || "DEFAULT"}
-                placeholder={'Select...'}
-            >
-                <option value="DEFAULT" disabled>
-                    {`Select ${selectedSource === 'UserGolden' ? 'Collection' : 'Golden'}`}
-                </option>
-                {
-                    options.map(
-                        (item, index) => (
-                            <option
-                                key={item.collec + index}
-                                value={item.collec}
-                                hidden={index > 10 && selectedCollectionItem.collec != item.collec}
-                            >
-                                {`${item.name} ${item.label}`}
-                            </option>)
-                    )
-                }
-            </select>
-        );
-    };
 
     const renderCollectionTable = () => {
         // let collectionList = cube.testIds;
@@ -194,7 +148,7 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
         (
             <tr
                 key={item.collec}
-                className={selectedCollectionItem.collec === item.collec ? "selected-g-row" : ""}
+                className={selectedFilterItem.collec === item.collec ? "selected-g-row" : ""}
                 onClick={() => handleClickFromFilter(item.collec)}
             >
                 <td>{item.name}</td>
@@ -214,39 +168,64 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
     return (
         <div className="margin-top-10">
             <div className="label-n">
-                {dropdownLabel}&nbsp;
-                <i
-                    onClick={handleShowGoldenFilter}
-                    title={`Browse ${selectedSource === "UserGolden" ? "Collection" : "Golden"}`}
-                    className="link fas fa-folder-open pull-right font-15"
-                ></i>
+                SELECTED {dropdownLabel}&nbsp;
+            </div>
+            <div className={goldenCollectionSelectorClass}>
                 {
-                    selectedCollectionItem.collec
-                    && showVisibilityOption
-                    && (
+                    selectedGoldenOrCollectionItem.id 
+                    ? 
+                        (
+                            <Fragment>
+                                <div className="gcBrowse-selected-item-wrapper">
+                                    <span className="label-n">NAME :</span>
+                                    <span className="value-n gcBrowse-value-n">{`${selectedGoldenOrCollectionItem?.name || ''}`}</span>
+                                </div>
+                                <div className="gcBrowse-selected-item-wrapper">
+                                    <span className="label-n">LABEL :</span>
+                                    <span className="value-n gcBrowse-value-n">{`${selectedGoldenOrCollectionItem?.label || ''}`}</span>
+                                </div>
+                            </Fragment>
+                        )
+                    :   
+                        (
+                            <span className="value-n">NA</span>
+                        )
+                }
+
+                <div className="gcBrowse-button-container">
+                    {
+                        selectedGoldenOrCollectionItem?.collec
+                        && showVisibilityOption
+                        &&
                         <Link to={{
                             pathname: "/test_config_view/golden_visibility",
-                            search: `recordingId=${selectedCollectionItem.id}`
+                            search: `recordingId=${selectedGoldenOrCollectionItem?.id || ''}`
                         }}>
-                            <span className="pull-right gcd-view-golden-icon-container" onClick={handleViewGoldenClick}>
-                                <i className="fas fa-eye margin-right-10 gcd-view-golden-icon" aria-hidden="true"></i>
-                            </span>
+                            <span className="cube-btn gcBrowse-action-buttons" onClick={handleViewGoldenClick}>VIEW GOLDEN</span>
                         </Link>
-                    )
-                }
-            </div>
-            <div className="value-n">
-                {renderDropdownOptions()}
+                        
+                    }
+                    <span
+                            className={
+                                !showVisibilityOption 
+                                ? "cube-btn gcBrowse-action-buttons gcBrowse-button-full"
+                                : "cube-btn gcBrowse-action-buttons"
+                            } 
+                            onClick={handleShowGoldenFilter}
+                    >
+                        SELECT {dropdownLabel}
+                    </span>
+                </div>
             </div>
             <Modal show={showGoldenCollectionModal} bsSize="large" onHide={() => { }}>
                 <Modal.Header>
                     <Modal.Title>
                         {`Browse ${selectedSource === "UserGolden" ? "Collections" : "Goldens"}`}
-                        <small className="gcbrowse-modal-heading-color">({selectedApp})</small>
+                        <small className="gcBrowse-modal-heading-color">({selectedApp})</small>
                     </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <div className="margin-bottom-10 gcbrowse-modal-body-container">
+                    <div className="margin-bottom-10 gcBrowse-modal-body-container">
                         <div className="row margin-bottom-10">
                             <div className="col-md-5">
                                 <div className="label-n">NAME</div>
@@ -282,15 +261,15 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
                         isCollectionLoading
                             ?
                             (
-                                <div className="gcbrowse-spinner-root">
-                                    <div className="gcbrowse-spinner-inner">
+                                <div className="gcBrowse-spinner-root">
+                                    <div className="gcBrowse-spinner-inner">
                                         <i className="fa fa-spinner fa-spin"></i>
                                     </div>
                                 </div>
                             )
                             :
                             (
-                                <div className="gcbrowse-modal-body-table-container">
+                                <div className="gcBrowse-modal-body-table-container">
                                     <table className="table table-condensed table-hover table-striped">
                                         <thead>
                                             <tr>
@@ -312,16 +291,16 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
 
                 </Modal.Body>
                 <Modal.Footer>
-                    <span onClick={selectHighlighted} className={selectedCollectionItem ? "cube-btn" : "disabled cube-btn"}>Select</span>&nbsp;&nbsp;
-                        {showDeleteOption && <span onClick={() => setShowDeleteGoldenConfirm(true)} className={selectedCollectionItem ? "cube-btn" : "disabled cube-btn"}>Delete</span>}&nbsp;&nbsp;
+                    <span onClick={selectHighlighted} className={selectedFilterItem.collec ? "cube-btn" : "disabled cube-btn"}>Select</span>&nbsp;&nbsp;
+                        {showDeleteOption && <span onClick={() => setShowDeleteGoldenConfirm(true)} className={selectedFilterItem.collec ? "cube-btn" : "disabled cube-btn"}>Delete</span>}&nbsp;&nbsp;
                         <span onClick={() => setShowGoldenCollectionModal(false)} className="cube-btn">Cancel</span>
                 </Modal.Footer>
             </Modal>
             <Modal show={showDeleteGoldenConfirm} onHide={() => { }}>
                 <Modal.Body>
-                    <div className="gcbrowse-delete-body-container">
-                        <div className="margin-right-10 gcbrowse-delete-body-content">
-                            This will delete the {selectedCollectionItem.name}. Please confirm.
+                    <div className="gcBrowse-delete-body-container">
+                        <div className="margin-right-10 gcBrowse-delete-body-content">
+                            This will delete the {selectedFilterItem.name}. Please confirm.
                         </div>
                         <div style={{ display: "flex", alignItems: "flex-start" }}>
                             <span className="cube-btn margin-right-10" onClick={handleDeleteConfirm}>Confirm</span>
@@ -337,7 +316,7 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
 
 const mapStateToProps = (state: IStoreState) => ({
     cube: state.cube,
-    gcbrowse: state.gcbrowse
+    gcBrowse: state.gcBrowse
 })
 
 const mapDispatchToProps = (dispatch: any) => ({
@@ -345,16 +324,9 @@ const mapDispatchToProps = (dispatch: any) => ({
         (selectedSource: SelectedSourceType) =>
             dispatch(gcbrowseActions.fetchGoldensCollections(selectedSource)),
 
-    updateSelectedGoldenCollection:
-        (selectedItem: ICollectionDetails) =>
-            dispatch(gcbrowseActions.updateSelectedGoldenCollection(selectedItem)),
-
     deleteGolden:
         (selectedItemId: string, selectedSource: string) =>
             dispatch(gcbrowseActions.deleteGolden(selectedItemId, selectedSource)),
-
-    clearSelectedGoldenCollection:
-        () => dispatch(gcbrowseActions.clearSelectedGoldenCollection()),
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(GoldenCollectionBrowse);

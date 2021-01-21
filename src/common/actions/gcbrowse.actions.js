@@ -14,10 +14,6 @@ const gcbrowseActions = {
 
     loadUserGoldens: (payload) => ({ type: gcbrowseConstants.LOAD_USER_GOLDENS, payload }),
 
-    clearSelectedGoldenCollection: () => ({ type: gcbrowseConstants.CLEAR_SELECTED_ITEM }),
-
-    updateSelectedGoldenCollection: (payload) => ({ type: gcbrowseConstants.UPDATE_SELECTED_ITEM, payload }),
-
     fetchGoldensCollections: (selectedSource) => async (dispatch, getState) => {
         const { cube: { selectedApp }, authentication: { user }} = getState();
 

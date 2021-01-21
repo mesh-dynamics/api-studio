@@ -568,7 +568,6 @@ export interface IGoldenCollectionBrowseSearchResults {
 
 export interface IGoldenCollectionBrowseState {
   currentCollectionType: string,
-  selectedCollectionItem: ICollectionDetails,
   actualGoldens: IGoldenCollectionBrowseSearchResults,
   userGoldens: IGoldenCollectionBrowseSearchResults,
   isCollectionLoading: boolean,
@@ -581,7 +580,7 @@ export interface IStoreState {
   authentication: IAuthenticationState;
   navigation: INavigationState;
   golden: IGoldenState;
-  gcbrowse: IGoldenCollectionBrowseState;
+  gcBrowse: IGoldenCollectionBrowseState;
   apiCatalog: IApiCatalogState;
 }
 

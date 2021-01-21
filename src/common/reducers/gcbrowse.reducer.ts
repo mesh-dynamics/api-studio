@@ -8,7 +8,6 @@ interface IGCBrowseAction {
 
 const initialState: IGoldenCollectionBrowseState = {
     currentCollectionType: '',
-    selectedCollectionItem: defaultCollectionItem,
     actualGoldens: {
         numFound: 0,
         recordings: []
@@ -49,26 +48,12 @@ const gcbrowseReducer = (state = initialState, action: IGCBrowseAction) => {
             return {
                 ...state,
                 actualGoldens: action.payload,
-                selectedCollectionItem: {},
             }
         }
         case gcbrowseConstants.LOAD_USER_GOLDENS: {
             return {
                 ...state,
                 userGoldens: action.payload,
-                selectedCollectionItem: {},
-            }
-        }
-        case gcbrowseConstants.UPDATE_SELECTED_ITEM: {
-            return {
-                ...state,
-                selectedCollectionItem: action.payload
-            }
-        }
-        case gcbrowseConstants.CLEAR_SELECTED_ITEM: {
-            return {
-                ...state,
-                selectedCollectionItem: initialState.selectedCollectionItem
             }
         }
         default:
@@ -78,6 +63,6 @@ const gcbrowseReducer = (state = initialState, action: IGCBrowseAction) => {
 
 export {
     IGCBrowseAction,
-    gcbrowseReducer as gcbrowse,
+    gcbrowseReducer as gcBrowse,
     defaultCollectionItem
 }
