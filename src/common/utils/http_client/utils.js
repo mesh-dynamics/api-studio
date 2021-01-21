@@ -699,6 +699,63 @@ const extractURLQueryParams = (url) => {
     return {httpURL, queryParamsFromUrl}
 }
 
+const generateContentTypeHeaderValue = (type, value) => {
+    if(value === 'formData') {
+        return 'application/x-www-form-urlencoded';
+    }
+
+    if(value === 'multipartData') {
+        return 'multipart/form-data';
+    }
+
+    if(value === 'rawDataType') {
+        return 'application/json';
+    }
+
+    if(type === 'rawDataType') {
+        switch(value) {
+            case 'js':
+                return 'application/js';
+            case 'json':
+                return 'application/json';
+            case 'text':
+                return 'application/text';
+            case 'html':
+                return 'application/html';
+            case 'xml':
+                return 'application/xml';
+            default:
+                return 'application/text';
+        }
+    }
+}
+
+const updateHeaderBasedOnContentType = (existingHeaders, type, value) => {
+    const contentTypeHeaderObject = existingHeaders.find(headerObject => headerObject.name.toLowerCase() === 'content-type');
+
+    if(contentTypeHeaderObject) {
+        // if content type exists, then update this and return the object
+
+        // update the value
+        contentTypeHeaderObject['value'] = generateContentTypeHeaderValue(type, value);
+        
+        // filter out the old value
+        const filteredHeaders = existingHeaders.filter(headerObject => headerObject.name.toLowerCase() !== 'content-type');
+
+        return [...filteredHeaders, contentTypeHeaderObject];
+    } 
+    // add content type and return the object
+    const newContentTypeHeaderObject = {
+        description: "",
+        id: uuidv4(),
+        name: "content-type",
+        selected: true,
+        value: generateContentTypeHeaderValue(type, value)
+    };
+    
+    return [...existingHeaders, newContentTypeHeaderObject];
+}
+
 export { 
     generateRunId,
     getStatusColor,
@@ -728,4 +785,5 @@ export {
     multipartDataToCubeFormat,
     convertFileToString,
     tryJsonParse,
+    updateHeaderBasedOnContentType
 };
