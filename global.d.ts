@@ -69,3 +69,5 @@ declare module "react-treebeard" {
     export const animations: TreeAnimations
     export const theme: TreeTheme
 }
+
+declare module 'jsoneditor-react'

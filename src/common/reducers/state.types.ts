@@ -164,6 +164,7 @@ export interface ITestConfigDetails {
   updatedAt: number[]; // 3
   gatewayService: ITestConfigGatewayService;
   criteria: string;
+  gatewayServiceName: string;
 }
 
 export interface ITimelineDataResult {
