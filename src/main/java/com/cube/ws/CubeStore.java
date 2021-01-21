@@ -2065,6 +2065,24 @@ public class CubeStore {
             .entity("The protofile is successfully saved in Solr").build() : Response.serverError().entity(Map.of("Error", "Cannot store proto descriptor file")).build();
     }
 
+    @GET
+    @Path("/getProtoDescriptor/{customerId}/{app}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getProtoDescriptorFile(@PathParam("customerId") String customerId, @PathParam(
+        "app") String app) {
+        try {
+            Optional<ProtoDescriptorDAO> latestProtoDescDao =
+                rrstore.getLatestProtoDescriptorDAO(customerId, app);
+            return latestProtoDescDao.map(protoDescriptorDAO -> Response.ok()
+                .entity(protoDescriptorDAO.convertToJsonDescriptor()).build())
+                .orElse(Response.serverError().entity("Proto Descriptor not present for the "
+                    + "customer and app combo").build());
+        } catch (Exception e) {
+            return Response.serverError().entity("Exception occurred while retrieving proto "
+                + "descriptor " + e.getMessage()).build();
+        }
+    }
+
     @POST
     @Path("/preRequest/{recordingOrReplayId}/{runId}")
     public Response preRequest(@Context UriInfo uriInfo,@PathParam("recordingOrReplayId") String recordingOrReplayId,
