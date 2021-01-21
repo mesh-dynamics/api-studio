@@ -317,7 +317,10 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
                                 <b>Service</b>
                             </Col>
                             <Col xs={3}>
-                                <b>Prefix</b>
+                                <b>Prefix</b>{" "}
+                                <Tippy content={"The path prefix to use. If not specified, will default to the service name, which will also be stripped before lookup and saving the request."} placement="bottom"  arrow={true}>
+                                    <i className="fa fa-info-circle"></i>
+                                </Tippy>
                             </Col>
                             <Col xs={1}>
                                 <Checkbox inline disabled={_.isEmpty(selectedEditMockConfig.serviceConfigs)} checked={allMocked} onChange={() => this.handleMockAllCheckChange(allMocked)}>
@@ -336,9 +339,7 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
                                             <input value={service} onChange={(e) => this.handleServiceChange(e, index)} className="form-control"/>
                                         </Col>
                                         <Col xs={3}>
-                                        <Tippy content={"The path prefix to use. If not specified, will default to the service name, which will also be stripped before lookup and saving the request."} placement="bottom"  arrow={true}>
                                             <input value={servicePrefix} onChange={(e) => this.handleServicePrefixChange(e, index)} className="form-control"/>
-                                        </Tippy>
                                         </Col>
                                         <Col xs={1} style={{}}>
                                             <Checkbox inline checked={isMocked} onChange={() => this.handleIsMockedCheckChange(index)}/>
