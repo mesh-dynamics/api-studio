@@ -287,7 +287,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
               } else {
                 //Adding a initial state of response data, else we won't be able to run the request properly. 
                 const { customerId, app, service, instanceId, collection, traceId, parentSpanId, runType, timestamp, reqId, apiPath, recordingType, runId } = reqResPair[0];
-                const responsePayload: IPayloadData = { hdrs: {}, body: {}, method: "", path: "", pathSegments: [] };
+                const responsePayload: IPayloadData = { hdrs: {}, body: {}, method: "", pathSegments: [] };
                 reqResPair.push({
                   customerId, app, service, instanceId, collection, traceId, parentSpanId,
                   runType, timestamp, reqId, apiPath, recordingType, runId, eventType: "HTTPResponse", metaData: {},
