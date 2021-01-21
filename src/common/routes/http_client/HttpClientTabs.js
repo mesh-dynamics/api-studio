@@ -161,7 +161,7 @@ class HttpClientTabs extends Component {
 
             let tabData = {
                 id: uuidv4(),
-                requestId: toBeCopiedFromData.reqId,
+                requestId: toBeCopiedFromData.requestId,
                 httpMethod: toBeCopiedFromData.httpMethod,
                 httpURL: toBeCopiedFromData.httpURL,
                 httpURLShowOnly: toBeCopiedFromData.httpURLShowOnly,
@@ -467,7 +467,7 @@ class HttpClientTabs extends Component {
                 runId = gatewayHttpRequestEvent.runId,
                 instanceId = gatewayHttpRequestEvent.instanceId,
                 collection = gatewayHttpRequestEvent.collectionId,
-                timestamp = Date.now();
+                timestamp = Date.now() / 1000;
 
             let outgoingRequests = [];
             
@@ -492,7 +492,6 @@ class HttpClientTabs extends Component {
                         hdrs: {},
                         body: {},
                         status: "",
-                        statusCode: ""
                     }
                 ],
                 recordingType: "UserGolden",
@@ -583,7 +582,7 @@ class HttpClientTabs extends Component {
     }
 
     generateEventdata(app, customerId, traceDetails, service, apiPath, method, requestHeaders, requestQueryParams, requestFormParams, rawData) {
-        const timestamp = Date.now();
+        const timestamp = Date.now() / 1000;
         let path = apiPath ? apiPath.replace(/^\/|\/$/g, '') : "";
         let {traceKeys, traceIdDetails: {traceId, traceIdForEvent}, spanId, parentSpanId} = traceDetails;
         let httpResponseEvent = {
@@ -607,7 +606,6 @@ class HttpClientTabs extends Component {
                     hdrs: {},
                     body: {},
                     status: "",
-                    statusCode: ""
                 }
             ],
             recordingType: "UserGolden",
@@ -1158,7 +1156,7 @@ class HttpClientTabs extends Component {
         currentEnvironment = getCurrentEnvironment();
         currentEnvironmentVars = getCurrentEnvVars();
 
-        const reqTimestamp = Date.now();
+        const reqTimestamp = Date.now() / 1000;
 
         try {
             
@@ -1495,8 +1493,6 @@ class HttpClientTabs extends Component {
                         hdrs: httpResponseHeaders,
                         body: httpResponseBody,
                         status: httpResponseStatus,
-                        statusCode: String(httpResponseStatus),
-                        path: apiPath,
                         payloadState : "WrappedDecoded",
                     }
                 ]

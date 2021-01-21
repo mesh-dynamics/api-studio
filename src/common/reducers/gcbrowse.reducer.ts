@@ -49,12 +49,14 @@ const gcbrowseReducer = (state = initialState, action: IGCBrowseAction) => {
             return {
                 ...state,
                 actualGoldens: action.payload,
+                selectedCollectionItem: {},
             }
         }
         case gcbrowseConstants.LOAD_USER_GOLDENS: {
             return {
                 ...state,
-                userGoldens: action.payload
+                userGoldens: action.payload,
+                selectedCollectionItem: {},
             }
         }
         case gcbrowseConstants.UPDATE_SELECTED_ITEM: {

@@ -859,25 +859,24 @@ class ViewSelectedTestConfig extends React.Component {
     }
 
     renderRecordingInfo = () => {
-        const { cube: { selectedGolden, testIds }, gcbrowse: { actualGoldens }} = this.props;
+        const { gcbrowse: { actualGoldens, selectedCollectionItem }} = this.props;
 
-        if (selectedGolden && testIds.length !== 0) {
-            const { id, label, name } = testIds.find(test => test.id === selectedGolden) 
-                                        || actualGoldens.recordings.find(test => test.id === selectedGolden);
+        if (selectedCollectionItem.id && actualGoldens.recordings.length !== 0) {
+            const { id, label, name } = actualGoldens.recordings.find(test => test.id === selectedCollectionItem.id);
 
             return(
                 <div className="resume-modal-info-container">
                     <div className="resume-modal-info-line">
                         <div className="resume-modal-identifier"><b>Id:</b></div>
-                        <div className="resume-modal-content">{id}</div>
+                        <div className="resume-modal-content">{id || ''}</div>
                     </div>
                     <div className="resume-modal-info-line">
                         <div className="resume-modal-identifier"><b>Name:</b></div>
-                        <div className="resume-modal-content">{name}</div>
+                        <div className="resume-modal-content">{name || ''}</div>
                     </div>
                     <div className="resume-modal-info-line"s>
                         <div className="resume-modal-identifier"><b>Label:</b></div>
-                        <div className="resume-modal-content">{label}</div>
+                        <div className="resume-modal-content">{label || ''}</div>
                     </div>
                 </div>
             );
