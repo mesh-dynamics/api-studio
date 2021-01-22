@@ -8,7 +8,8 @@ import {
   Label,
   Modal,
   Dropdown,
-  MenuItem
+  MenuItem,
+  Button
 } from "react-bootstrap";
 import { v4 as uuidv4 } from "uuid";
 import _ from "lodash";
@@ -29,6 +30,7 @@ import { updateGoldenName } from '../../services/golden.service';
 import { IApiCatalogState, IApiTrace, ICollectionDetails, ICubeState, IHttpClientStoreState, IKeyValuePairs, IPayloadData, IStoreState, IUserAuthDetails } from "../../reducers/state.types";
 import { IGetEventsApiResponse } from "../../apiResponse.types";
 import gcbrowseActions from "../../actions/gcBrowse.actions";
+import HistoryTabFilter from "../../components/HttpClient/HistoryTabFilter";
 
 interface ITreeNodeHeader<T> {
   node: T,
@@ -290,7 +292,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                 reqResPair.push({
                   customerId, app, service, instanceId, collection, traceId, parentSpanId,
                   runType, timestamp, reqId, apiPath, recordingType, runId, eventType: "HTTPResponse", metaData: {},
-                  payload: ["HTTPResponsePayload", responsePayload]
+                  payload: ["HTTPResponsePayload", responsePayload], payloadFields:[]
                 });
               }
 
@@ -519,7 +521,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     });
     return (
       <div className={divClass} role="group" aria-label="Pagination control">
-        <div
+        <Button
           className="btn btn-sm cube-btn text-center"
           title={
             historyTabState.currentPage == 0 ? "Reload" : "Go to First Page"
@@ -532,16 +534,16 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
           ) : (
               <i className="fas fa-step-backward"></i>
             )}
-        </div>
-        <div
+        </Button>
+        <Button
           className="btn btn-sm cube-btn text-center"
           disabled={historyTabState.currentPage == 0 || isHistoryLoading}
           title="Previous Page"
           onClick={this.onPrevPageClickHistoryTab}
         >
           <i style={{ fontSize: "18px" }} className="fas fa-caret-left"></i>
-        </div>
-        <div
+        </Button>
+        <Button
           className="btn btn-sm cube-btn text-center"
           disabled={
             (historyTabState.currentPage + 1) * historyTabState.numResults >=
@@ -551,7 +553,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
           onClick={this.onNextPageClickHistoryTab}
         >
           <i style={{ fontSize: "18px" }} className="fas fa-caret-right"></i>
-        </div>
+        </Button>
       </div>
     );
   };
@@ -607,7 +609,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     });
     return (
       <div className={divClass} role="group" aria-label="Pagination control">
-        <div
+        <Button
           className="btn btn-sm cube-btn text-center"
           title={
             collectionTabState.currentPage == 0 ? "Reload" : "Go to First Page"
@@ -620,16 +622,16 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
           ) : (
               <i className="fas fa-step-backward"></i>
             )}
-        </div>
-        <div
+        </Button>
+        <Button
           className="btn btn-sm cube-btn text-center"
           disabled={collectionTabState.currentPage == 0 || isCollectionLoading}
           title="Previous Page"
           onClick={this.onPrevPageClickCollectionTab}
         >
           <i style={{ fontSize: "18px" }} className="fas fa-caret-left"></i>
-        </div>
-        <div
+        </Button>
+        <Button
           className="btn btn-sm cube-btn text-center"
           disabled={
             (collectionTabState.currentPage + 1) *
@@ -640,7 +642,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
           onClick={this.onNextPageClickCollectionTab}
         >
           <i style={{ fontSize: "18px" }} className="fas fa-caret-right"></i>
-        </div>
+        </Button>
       </div>
     );
   };
@@ -668,6 +670,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
               <div className="value-n"></div>
             </div>
             <div className="margin-top-10">
+            <HistoryTabFilter />
               {Object.keys(cubeRunHistory).map((k, i) => {
                 return (
                   <Panel

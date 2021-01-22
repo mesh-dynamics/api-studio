@@ -163,7 +163,8 @@ const initialState : IHttpClientStoreState = {
     isCollectionLoading: false,
     mockContextLookupCollection: "",
     mockContextSaveToCollection: {},
-    uiPref:{}
+    uiPref:{},
+    historyPathFilterText: ""
 }
 
 const getTabIndexGivenTabId = (tabId:string, tabs: IHttpClientTabDetails[]) => {
@@ -171,7 +172,7 @@ const getTabIndexGivenTabId = (tabId:string, tabs: IHttpClientTabDetails[]) => {
     return tabs.findIndex((e) => e.id === tabId);
 }
 
-export const httpClient = (state = initialState, { type, data }: IHttpClientAction) => {
+export const httpClient = (state = initialState, { type, data }: IHttpClientAction) : IHttpClientStoreState => {
     switch (type) {
 
         case httpClientConstants.DELETE_PARAM_IN_OUTGOING_TAB: {
@@ -588,6 +589,12 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             return {
                 ...state,
                 collectionTabState: data
+            }
+        }
+        case httpClientConstants.SET_HISTORY_PATH_FILTER: {
+            return {
+                ...state,
+                historyPathFilterText: data
             }
         }
 
