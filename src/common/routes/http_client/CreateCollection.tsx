@@ -169,6 +169,7 @@ class CreateCollection extends Component<
       <Modal
         show={showCreateCollectionModal}
         onHide={this.onCloseCreateCollectionModal}
+        backdrop="static"
       >
         <Modal.Header closeButton>
           <Modal.Title>Create a new collection</Modal.Title>

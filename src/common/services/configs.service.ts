@@ -22,6 +22,12 @@ export interface IUpoadRuleArgs {
   formData: FormData;
   apiConfig: AxiosRequestConfig;
 }
+export interface IProtoDescriptorFileUploadArgs{
+  customerId: string;
+  app: string;
+  formData: FormData;
+  appendExisting:string
+}
 
 //Start: Context Propagation Section
 
@@ -86,9 +92,23 @@ const getDynamicInjectionConfig = async (args: IDownloadRuleArgs) => {
 
 //End: Context Propagation Section
 
+//Start: Grpc Configuration Section
+const protoDescriptorFileUpload = async(args: IProtoDescriptorFileUploadArgs ) =>{
+  let apiURL = `${config.recordBaseUrl}/protoDescriptorFileUpload/${args.customerId}/${args.app}?appendExisting=${args.appendExisting}`;
+
+  try {
+    return api.post(apiURL, args.formData);
+  } catch (e) {
+    console.error("Error fetching API Event data");
+    throw e;
+  }
+}
+//End: Grpc Configuration Section
+
 export const configsService = {
   getPotentialDynamicInjectionConfigs,
   saveDynamicInjectionConfigFromCsv,
   getDynamicInjectionConfig,
   saveDynamicInjectionConfigFromJson,
+  protoDescriptorFileUpload
 };

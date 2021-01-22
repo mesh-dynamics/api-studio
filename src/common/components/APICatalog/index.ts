@@ -6,4 +6,3 @@ export {default as APICatalogServiceGraph} from "./APICatalogServiceGraph";
 export {default as APICatalogDiff} from "./APICatalogDiff";
 export {default as APICatalogTopFilters} from './APICatalogTopFilters';
 export {default as CollapsibleTabs} from './CollapsibleTabs';
-export {default as GoldenCollectionBrowse} from './GoldenCollectionBrowse';

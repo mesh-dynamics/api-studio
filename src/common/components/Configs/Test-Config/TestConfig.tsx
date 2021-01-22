@@ -4,12 +4,14 @@ import { history } from '../../../helpers';
 import "./TestConfig.css"
 import {cubeActions} from "../../../actions";
 import {Link} from "react-router-dom";
-import Breadcrumb from "../../../components/breadcrumb/Breadcrumb";
-import {cubeConstants} from "../../../constants";
+import { ICubeState, IStoreState, ITestConfigDetails } from 'src/src/common/reducers/state.types';
+export interface ITestConfigProps{
+    dispatch:any,
+    cube: ICubeState
+}
+class TestConfig extends Component<ITestConfigProps> {
 
-class TestConfig extends Component {
-
-    setTestConfig(config) {
+    setTestConfig(config: ITestConfigDetails) {
         const { dispatch} = this.props;
         dispatch(cubeActions.setTestConfig(config));
         setTimeout(() => {
@@ -31,11 +33,11 @@ class TestConfig extends Component {
         dispatch(cubeActions.hideHttpClient(false));
     }
 
-    createTestConfig(cube) {
+    createTestConfig(cube: ICubeState) {
         if (!cube.testConfigList || cube.testConfigList.length == 0) {
             return 'No Test Config Found'
         }
-        let jsxContent = cube.testConfigList.map((item, index) => {
+        let jsxContent = cube.testConfigList.map((item) => {
             return (
                 <div key={item.id} className="grid-content" onClick={() => this.setTestConfig(item)}>
                     <div className={cube.testConfig && cube.testConfig.testConfigName ==  item.testConfigName ? "g-head selected" : "g-head"}>
@@ -100,7 +102,7 @@ class TestConfig extends Component {
     }
 }
 
-function mapStateToProps(state) {
+function mapStateToProps(state: IStoreState) {
     const cube = state.cube;
     return {
         cube

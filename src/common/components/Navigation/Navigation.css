@@ -252,3 +252,9 @@ aside .nav-tabs>li>a {
     padding: 5px;
     border-radius: 7px;
 }
+.nav-cont{
+    overflow-y: auto;
+}
+.nav-cont > div{
+    min-height: 440px;
+}

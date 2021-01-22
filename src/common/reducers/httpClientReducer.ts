@@ -1,6 +1,7 @@
 import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
+import { updateHeaderBasedOnContentType } from '../utils/http_client/utils';
 import { ICollectionDetails, ICubeRunHistory, IHttpClientStoreState, IHttpClientTabDetails } from "./state.types";
 export interface IHttpClientAction{
     type: string,
@@ -162,7 +163,8 @@ const initialState : IHttpClientStoreState = {
     isCollectionLoading: false,
     mockContextLookupCollection: "",
     mockContextSaveToCollection: {},
-    uiPref:{}
+    uiPref:{},
+    historyPathFilterText: ""
 }
 
 const getTabIndexGivenTabId = (tabId:string, tabs: IHttpClientTabDetails[]) => {
@@ -170,7 +172,7 @@ const getTabIndexGivenTabId = (tabId:string, tabs: IHttpClientTabDetails[]) => {
     return tabs.findIndex((e) => e.id === tabId);
 }
 
-export const httpClient = (state = initialState, { type, data }: IHttpClientAction) => {
+export const httpClient = (state = initialState, { type, data }: IHttpClientAction) : IHttpClientStoreState => {
     switch (type) {
 
         case httpClientConstants.DELETE_PARAM_IN_OUTGOING_TAB: {
@@ -370,6 +372,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab.outgoingRequests.map((eachOutgoingTab) => {
                             if (eachOutgoingTab.id === data.tabId) {
                                 eachOutgoingTab[data.type] = data.value;
+                                eachOutgoingTab['headers'] = updateHeaderBasedOnContentType(eachOutgoingTab.headers, data.type, data.value);
                                 eachOutgoingTab.hasChanged = true;
                             }
                         })
@@ -387,6 +390,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab[data.type  as IHttpClientTabDetailsFieldNames] = data.value;
+                        eachTab['headers'] = updateHeaderBasedOnContentType(eachTab.headers, data.type, data.value);
                         eachTab.hasChanged = true;
                     }
                     return eachTab; 
@@ -585,6 +589,12 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             return {
                 ...state,
                 collectionTabState: data
+            }
+        }
+        case httpClientConstants.SET_HISTORY_PATH_FILTER: {
+            return {
+                ...state,
+                historyPathFilterText: data
             }
         }
 

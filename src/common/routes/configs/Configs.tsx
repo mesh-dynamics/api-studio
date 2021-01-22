@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
-import { Link } from "react-router-dom";
 import { Tabs, Tab } from 'react-bootstrap';
 import AgentConfig from "../../components/Configs/Agent-Config/AgentConfig";
 import TestConfig from "../../components/Configs/Test-Config/TestConfig";
 import ContextPropagationRules from '../../components/Configs/ContextPropagationRules/ContextPropagationRules';
+import GrpcConfiguration from '../../components/Configs/Grpc/GrpcConfiguration';
 
 class Config extends Component {
 
@@ -28,6 +28,11 @@ class Config extends Component {
                     <Tab eventKey={3} title="Context Propagation Rules">
                         <div className="margin-top-20">
                             <ContextPropagationRules />
+                        </div>
+                    </Tab>
+                    <Tab eventKey={4} title="gRPC">
+                        <div className="margin-top-20">
+                            <GrpcConfiguration />
                         </div>
                     </Tab>
                 </Tabs>

@@ -108,7 +108,7 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
                 host: parsedUrl.hostname,
                 port: parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80)
             },
-            selfHandleResponse : true,
+            //selfHandleResponse : true, // setting this flag will require the header/body of the final response to be set manually
             changeOrigin: true,
         };
     

@@ -158,6 +158,7 @@ class EnvironmentSection extends React.Component<
           show={this.state.showEnvVarModal}
           onHide={this.hideEnvModal}
           className="envModal"
+          backdrop="static"
         >
           <EnvVar hideModal={this.hideEnvModal} />
         </Modal>

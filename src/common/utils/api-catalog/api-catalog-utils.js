@@ -1,4 +1,5 @@
 import _ from "lodash";
+import { defaultCollectionItem } from '../../constants/gcBrowse.constants';
 
 const getServiceList = (apiFacets) => {
     return _.chain(apiFacets.serviceFacets)
@@ -69,10 +70,38 @@ const getLastApiTraceEndTimeFromApiTrace = (apiTraces)=>{
     return currentEndTime;
 }
 
+/**
+ * 
+ * @param {*} options 
+ * selectedSource | <'UserGolden', 'Golden', 'Capture'>
+ * selectedCollection | string
+ * selectedGolden | string
+ * userGoldens | object <recordings is the key to be used for source list>
+ * actualGoldens | object <recordings is the key to be used for source list>
+ */
+const findGoldenOrCollectionInSource = (options) => {
+
+    const {
+        selectedSource, selectedCollection, selectedGolden, 
+        userGoldens, actualGoldens 
+    } = options;
+    
+    if(selectedSource && selectedSource === 'UserGolden' && userGoldens.recordings.length !== 0) {
+        return userGoldens.recordings.find(item => item.collec === selectedCollection);
+    }
+
+    if(selectedSource && selectedSource === 'Golden' && actualGoldens.recordings.length !== 0) {
+        return actualGoldens.recordings.find(item => item.collec === selectedGolden);
+    }
+
+    return defaultCollectionItem;
+};
+
 export { 
     getServiceList, 
     getIncomingAPIList,
     getInstanceList,
     getDefaultTraceApiFilters,
+    findGoldenOrCollectionInSource,
     getLastApiTraceEndTimeFromApiTrace
 };

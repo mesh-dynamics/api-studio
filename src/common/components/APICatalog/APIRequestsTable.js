@@ -90,6 +90,7 @@ class APIRequestsTable extends Component {
               service: traceData.parentRequest.service,
               method: traceData.parentRequest.method,
               request: traceData.parentRequest.apiPath + (_.isEmpty(traceData.parentRequest.queryParams) ? "" : "?" + Object.entries(traceData.parentRequest.queryParams).map(([k, v]) => k + "=" + v).join("&")),
+              status: traceData.parentRequest.status,
             }));
   }
 
@@ -294,6 +295,11 @@ class APIRequestsTable extends Component {
             style: {
               cursor: 'pointer',
             }, 
+      },
+      {  
+        Header: <div style={{textAlign:"left",fontWeight:"bold"}}>HTTP STATUS</div>,
+            accessor: "status",
+            id: "status"
       },
       {  
         Header: <div style={{textAlign:"left",fontWeight:"bold"}}>OUTGOING REQUESTS</div>,

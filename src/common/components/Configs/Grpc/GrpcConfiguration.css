@@ -1,0 +1,26 @@
+.grpc-import-section{
+    padding-left: 20px;
+}
+.grpc-import-section .file{
+    padding: 3px;
+}
+.grpc-import-section .file span{
+    margin-right: 10px;
+}.grpc-import-section .file:hover{
+    margin-right: 10px;
+    background-color: #ddd;
+}
+.grpc-config-section{
+    max-width: 850px;
+}
+.collapsible-header{
+    font-size: 17px;;
+    font-weight: 700;
+}
+
+.cube-btn i.fas.pointer{
+    color: #fff;
+}
+.cube-btn[disabled]:hover{
+    color: #333;
+}
