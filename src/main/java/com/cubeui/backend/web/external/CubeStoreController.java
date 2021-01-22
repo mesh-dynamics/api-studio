@@ -9,6 +9,7 @@ import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.service.CubeServerService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.md.core.ConfigApplicationAcknowledge;
+import io.md.dao.CustomerAppConfig;
 import io.md.dao.DynamicInjectionEventDao;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.RecordOrReplay;
@@ -36,6 +37,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
@@ -280,33 +282,7 @@ public class CubeStoreController {
         @RequestParam(value="environmentName", required = false) String environmentName,
         Authentication authentication)
         throws InvalidEventException {
-        ResponseEntity responseEntity = saveReqRespEvents(request, postBody, recordingId, authentication, "/cs/afterResponse/");;
-        User user = (User) authentication.getPrincipal();
-        if(environmentName != null && responseEntity.getStatusCode() == HttpStatus.OK) {
-            Optional<DtEnvironment> dtEnvironmentOptional
-                = devtoolEnvironmentsRepository.findDtEnvironmentByUserIdAndName(user.getId(), environmentName);
-            dtEnvironmentOptional.ifPresent(dt -> {
-                Map<String, String> extractionMap = cubeServerService.getExtractionMap(responseEntity);
-                List<DtEnvVar> vars = dt.getVars();
-                Map<String, String> varsMap = new HashMap<>();
-                vars.forEach(dtEnvVar -> {
-                    varsMap.put(dtEnvVar.getKey(), dtEnvVar.getValue());
-                });
-                varsMap.putAll(extractionMap);
-                List<DtEnvVar> updatedVars = new ArrayList<>();
-                varsMap.forEach((key, value) -> {
-                    DtEnvVar dtEnvVar = new DtEnvVar();
-                    dtEnvVar.setKey(key);
-                    dtEnvVar.setValue(value);
-                    dtEnvVar.setEnvironment(dt);
-                    updatedVars.add(dtEnvVar);
-                });
-                dt.setVars(updatedVars);
-                devtoolEnvironmentsRepository.save(dt);
-            });
-
-        }
-        return responseEntity;
+        return  saveReqRespEvents(request, postBody, recordingId, authentication, "/cs/afterResponse/");
     }
 
     @PostMapping("/storeUserReqResp/{recordingId}")
@@ -434,6 +410,13 @@ public class CubeStoreController {
         validation.validateCustomerName(authentication,customerId);
         return cubeServerService.fetchGetResponse(request, getBody);
     }
+    
+    @PostMapping("/setAppConfiguration")
+    public ResponseEntity setAppConfiguration(HttpServletRequest request, @RequestBody CustomerAppConfig custAppCfg , Authentication authentication) {
+
+        validation.validateCustomerName(authentication, custAppCfg.customerId);
+        return cubeServerService.fetchPostResponse(request, Optional.of(custAppCfg));
+    }
 
     @PostMapping("/preRequest/{recordingOrReplayId}/{runId}")
     public ResponseEntity preRequest(HttpServletRequest request, @PathVariable String recordingOrReplayId,
@@ -527,3 +510,6 @@ public class CubeStoreController {
         return cubeServerService.fetchPostResponse(request, Optional.of(recordOrReplay));
     }
 }
+
+
+
