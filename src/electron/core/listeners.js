@@ -384,6 +384,21 @@ const setupListeners = (mockContext, user, replayContext) => {
         fetchCall(args.url, data.fetchConfigRendered).then(response=>{
 
             logger.info(`RESPONSE STATUS: ${response.statusCode}`);
+            const fetchedResponseHeaders = {};
+            if(Array.isArray(response.headers)){
+                response.headers.forEach((value, key) => {
+                    fetchedResponseHeaders[key] = value;
+                });
+            }else if(response.headers.forEach){
+                response.headers.forEach((header, key) => {
+                    fetchedResponseHeaders[key] = header;
+                });            
+            }else{
+                Object.entries(response.headers).forEach(([key, header]) => {
+                    fetchedResponseHeaders[key] = header;
+                }); 
+            }
+            response.headers = fetchedResponseHeaders;             
             
             global.requestResponse[args.tabId + args.runId] = response;
             delete global.fetchRequest[args.tabId + args.runId];
