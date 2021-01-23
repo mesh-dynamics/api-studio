@@ -289,10 +289,11 @@ public class RecordingUpdate {
             return false;
         }
 
-        Stream<Event> events = reqEvents.getObjects().flatMap(event -> {
-            if (respIdMap.containsKey(event.reqId)) {
-                return addToNewCollection(event, respIdMap.get(event.reqId), newCollectionName);
+        Stream<Event> events = reqIdMap.entrySet().stream().flatMap(entry -> {
+            if (respIdMap.containsKey(entry.getKey())) {
+                return addToNewCollection(entry.getValue(), respIdMap.get(entry.getKey()), newCollectionName);
             }
+
             return Stream.empty();
         });
 
