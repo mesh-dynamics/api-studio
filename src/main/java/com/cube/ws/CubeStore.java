@@ -25,7 +25,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -59,6 +58,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.solr.common.util.Pair;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
@@ -1387,6 +1387,15 @@ public class CubeStore {
         return batchSaveResult;
     }
 
+    /**
+     * Takes a Recording Id and a list of optional status codes. Creates a new
+     * Recording having only requests with responses, eliminating any responses
+     * with the said status codes.
+     *
+     * @param asyncResponse
+     * @param recordingId Recording Id to be sanitized
+     * @param status List of status codes to remove from the Recording
+     */
     @POST
     @Path("sanitizeGolden")
     @Produces(MediaType.APPLICATION_JSON)
@@ -1406,10 +1415,22 @@ public class CubeStore {
 
         Recording originalRec = recording.get();
 
+        Set<String> invalidReqIds = getInvalidReqIdsToFilter(originalRec, status);
+
+        Predicate<Event> isInvalidReqId = (event) -> !invalidReqIds.contains(event.reqId);
+
+        copyRecording(recordingId, Optional.empty(), Optional.empty(), Optional.empty(),
+            originalRec.userId, originalRec.recordingType, Optional.of(isInvalidReqId))
+            .thenApply(v -> asyncResponse.resume(v));
+
+    }
+
+    private Set<String> getInvalidReqIdsToFilter(
+        Recording originalRec, @QueryParam("ignoreStatus") List<String> status) {
         Set<String> reqIds = new HashSet<>();
         Set<String> respIds = new HashSet<>();
 
-        //Use fieldList to reduce the data fetched.
+        //TODO: Use fieldList to reduce the data fetched.
         EventQuery.Builder reqBuilder = new EventQuery.Builder(originalRec.customerId,
             originalRec.app, Event.REQUEST_EVENT_TYPES);
         reqBuilder.withCollection(originalRec.collection);
@@ -1437,13 +1458,7 @@ public class CubeStore {
             invalidRespEvents.getObjects()
                 .forEach(event -> invalidReqIds.add(event.reqId));
         }
-
-        Predicate<Event> isInvalidReqId = (event) -> !invalidReqIds.contains(event.reqId);
-
-        copyRecording(recordingId, Optional.empty(), Optional.empty(), Optional.empty(),
-            originalRec.userId, originalRec.recordingType, Optional.of(isInvalidReqId))
-            .thenApply(v -> asyncResponse.resume(v));
-
+        return invalidReqIds;
     }
 
     @POST

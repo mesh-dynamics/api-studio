@@ -5,7 +5,6 @@ import static io.md.core.TemplateKey.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -22,7 +21,6 @@ import io.md.core.Comparator;
 import io.md.core.TemplateKey;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
-import io.md.dao.EventQuery;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Recording;
 import io.md.dao.ReqRespMatchResult;
