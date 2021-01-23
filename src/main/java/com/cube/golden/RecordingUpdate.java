@@ -5,6 +5,7 @@ import static io.md.core.TemplateKey.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -21,6 +22,7 @@ import io.md.core.Comparator;
 import io.md.core.TemplateKey;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
+import io.md.dao.EventQuery;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Recording;
 import io.md.dao.ReqRespMatchResult;
@@ -261,6 +263,73 @@ public class RecordingUpdate {
         */
 
         return true; // todo: false?
+    }
+
+    public boolean createSanitizedRecording (String newCollectionName, Recording originalRec, List<Integer> status) {
+
+        EventQuery.Builder reqBuilder = new EventQuery.Builder(originalRec.customerId, originalRec.app, Event.REQUEST_EVENT_TYPES);
+        reqBuilder.withCollection(originalRec.collection);
+        reqBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
+        Result<Event> reqEvents = config.rrstore.getEvents(reqBuilder.build());
+        Map<String, Event> reqIdMap = new HashMap<>();
+
+        reqEvents.getObjects().forEach(event -> reqIdMap.put(event.reqId, event));
+
+        EventQuery.Builder respBuilder = new EventQuery.Builder(originalRec.customerId, originalRec.app, Event.RESPONSE_EVENT_TYPES);
+        respBuilder.withCollection(originalRec.collection);
+        respBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
+        Result<Event> respEvents = config.rrstore.getEvents(respBuilder.build());
+        Map<String, Event> respIdMap = new HashMap<>();
+
+        respEvents.getObjects().forEach(event -> respIdMap.put(event.reqId, event));
+
+        if ((status == null || status.isEmpty()) && reqIdMap.keySet().equals(respIdMap.keySet())) {
+            //No sanitization to be done. We have matching requests and responses
+            LOGGER.debug("No sanitization to be done. We have matching requests and responses!");
+            return false;
+        }
+
+        Stream<Event> events = reqEvents.getObjects().flatMap(event -> {
+            if (respIdMap.containsKey(event.reqId)) {
+                return addToNewCollection(event, respIdMap.get(event.reqId), newCollectionName);
+            }
+            return Stream.empty();
+        });
+
+        if (!config.rrstore.save(events)) {
+            LOGGER.error("request/response bulk saved failed");
+            return false;
+        }
+
+        config.rrstore.commit();
+
+        return true;
+    }
+
+    private Stream<Event> addToNewCollection(
+        Event recordRequest, Event recordResponse, String newCollectionName) {
+        try {
+            String newReqId = generateReqId(recordResponse.reqId, newCollectionName);
+
+            Event transformedResponse = null;
+
+            transformedResponse = copyEvent(newCollectionName, recordResponse, newReqId,
+                recordResponse.getTraceId());
+
+            LOGGER.debug("Changing the reqid and collection name in the response for "
+                + "the sanitized collection");
+
+            Event transformedRequest = copyEvent(newCollectionName, recordRequest, newReqId,
+                recordResponse.getTraceId());
+
+            LOGGER.debug("saving request/response with reqid: " + newReqId);
+
+            return Stream.of(transformedRequest, transformedResponse);
+        } catch (Exception e) {
+            LOGGER.error("Error occurred creating new collection while sanitizing :: "
+                + e.getMessage(), e);
+        }
+        return Stream.empty();
     }
 
     public boolean createSanitizedCollection(String replayId, String newCollectionName

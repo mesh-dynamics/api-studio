@@ -1310,6 +1310,55 @@ public class AnalyzeWS {
     }
 
 
+	@POST
+	@Path("sanitizeGolden")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response sanitizeGoldenRecording (@QueryParam("recordingId") String recordingId,
+		@QueryParam("ignoreStatus") List<Integer> status)   {
+
+		try {
+			Recording originalRec = rrstore.getRecording(recordingId).orElseThrow(() ->
+				new Exception("Unable to find recording object for the given id"));
+//			TemplateSet templateSet = rrstore.getTemplateSet(originalRec.customerId, originalRec.app, originalRec
+//				.templateVersion).orElseThrow(() ->
+//				new Exception("Unable to find template set mentioned in the specified golden set"));
+
+			String newCollectionName = originalRec.collection + "-" + UUID.randomUUID().toString();
+			boolean created = recordingUpdate.createSanitizedRecording(newCollectionName, originalRec, status);
+
+			if (!created) {
+				throw new Exception(
+					"Golden already sanitized or Unable to create an updated collection from existing golden! Check logs!");
+			}
+
+			RecordingBuilder recordingBuilder = new RecordingBuilder(
+				originalRec.customerId, originalRec.app, originalRec.instanceId, newCollectionName)
+				.withStatus(RecordingStatus.Completed).withTemplateSetVersion("DEFAULT")
+				.withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
+				.withName(originalRec.name).withLabel(originalRec.label).withTags(originalRec.tags).withArchived(originalRec.archived)
+				.withUserId(originalRec.userId).withRecordingType(originalRec.recordingType).withRunId(originalRec.runId);
+			originalRec.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
+			originalRec.branch.ifPresent(recordingBuilder::withBranch);
+			originalRec.gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
+			originalRec.comment.ifPresent(recordingBuilder::withComment);
+			originalRec.generatedClassJarPath.ifPresent(UtilException
+				.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
+			originalRec.dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
+
+			Recording updatedRecording = recordingBuilder.build();
+
+			rrstore.saveRecording(updatedRecording);
+			return Response.ok().entity((new JSONObject(Map.of(
+				"Message", "Successfully created new recording by sanitizing the specified original recording",
+				"ID", updatedRecording.getId()))).toString()).build();
+		}  catch (Exception e) {
+			LOGGER.error("Error while creating sanitized golden set :: "  + e.getMessage(), e);
+			return Response.serverError().entity(new JSONObject(Map.of(
+				"Message", "Error while creating sanitized golden set",
+				"Error", e.getMessage())).toString()).build();
+		}
+	}
+
     /**
     * API to create a new recording operation set for a customer and app. This creates a new RecordingOperationSetMeta
     * entry in Solr and returns the id. This Meta entry ties together the RecordingOperationSets of different
