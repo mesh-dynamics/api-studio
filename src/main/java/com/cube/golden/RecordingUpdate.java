@@ -265,7 +265,7 @@ public class RecordingUpdate {
         return true; // todo: false?
     }
 
-    public boolean createSanitizedRecording (String newCollectionName, Recording originalRec, List<Integer> status) {
+    public boolean createSanitizedRecording (String newCollectionName, Recording originalRec, List<String> status) {
 
         EventQuery.Builder reqBuilder = new EventQuery.Builder(originalRec.customerId, originalRec.app, Event.REQUEST_EVENT_TYPES);
         reqBuilder.withCollection(originalRec.collection);
@@ -283,7 +283,23 @@ public class RecordingUpdate {
 
         respEvents.getObjects().forEach(event -> respIdMap.put(event.reqId, event));
 
-        if ((status == null || status.isEmpty()) && reqIdMap.keySet().equals(respIdMap.keySet())) {
+        Map<String, Event> invalidRespIdMap = new HashMap<>();
+        if (status != null && !status.isEmpty()) {
+            EventQuery.Builder invalidRespBuilder = new EventQuery.Builder(originalRec.customerId,
+                originalRec.app, Event.RESPONSE_EVENT_TYPES);
+            invalidRespBuilder.withCollection(originalRec.collection);
+            invalidRespBuilder.withPayloadFields(status);
+            invalidRespBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
+            Result<Event> invalidRespEvents = config.rrstore.getEvents(invalidRespBuilder.build());
+
+            invalidRespEvents.getObjects()
+                .forEach(event -> invalidRespIdMap.put(event.reqId, event));
+
+            respIdMap.entrySet().removeIf(entry -> invalidRespIdMap.containsKey(entry.getKey()));
+        }
+
+        if ((status == null || status.isEmpty() || invalidRespIdMap.size() == 0) && (reqIdMap.size()
+            == respIdMap.size()) && reqIdMap.keySet().equals(respIdMap.keySet())) {
             //No sanitization to be done. We have matching requests and responses
             LOGGER.debug("No sanitization to be done. We have matching requests and responses!");
             return false;

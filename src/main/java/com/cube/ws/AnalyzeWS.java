@@ -1314,7 +1314,7 @@ public class AnalyzeWS {
 	@Path("sanitizeGolden")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response sanitizeGoldenRecording (@QueryParam("recordingId") String recordingId,
-		@QueryParam("ignoreStatus") List<Integer> status)   {
+		@QueryParam("ignoreStatus") List<String> status)   {
 
 		try {
 			Recording originalRec = rrstore.getRecording(recordingId).orElseThrow(() ->
