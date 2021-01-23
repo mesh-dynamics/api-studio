@@ -27,6 +27,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import java.util.stream.Stream;
@@ -65,6 +66,7 @@ import org.msgpack.value.ValueType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Sets;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 
 import io.cube.agent.FnReqResponse;
@@ -1305,11 +1307,13 @@ public class CubeStore {
                 .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"version needs to be given for a golden")).build());
             return;
         }
-        copyRecording(recordingId, name, label, templateVersion, userId, type).thenApply(v -> asyncResponse.resume(v));
+        copyRecording(recordingId, name, label, templateVersion, userId, type, Optional.empty()).thenApply(v -> asyncResponse.resume(v));
     }
 
-    private CompletableFuture<Response> copyRecording(String recordingId, Optional<String> name, Optional<String> label,
-        Optional<String> templateVersion, String userId, RecordingType type) {
+    private CompletableFuture<Response> copyRecording(String recordingId, Optional<String> name,
+        Optional<String> label,
+        Optional<String> templateVersion, String userId, RecordingType type,
+        Optional<Predicate<Event>> eventFilter) {
         Instant timeStamp = Instant.now();
         String labelValue = label.orElse(timeStamp.toString());
         Optional<Recording> recordingForId = rrstore.getRecording(recordingId);
@@ -1326,7 +1330,7 @@ public class CubeStore {
             Recording  updatedRecording = createRecordingObjectFrom(recording, templateVersion,
                 name, Optional.of(userId), timeStamp, labelValue, type);
             if(rrstore.saveRecording(updatedRecording)) {
-                return CompletableFuture.supplyAsync(() -> copyEvents(recording, updatedRecording, timeStamp)).thenApply(success ->
+                return CompletableFuture.supplyAsync(() -> copyEvents(recording, updatedRecording, timeStamp, eventFilter)).thenApply(success ->
                     success ? Response.ok().type(MediaType.APPLICATION_JSON).entity(updatedRecording).build() : Response.status(Status.INTERNAL_SERVER_ERROR)
                         .type(MediaType.APPLICATION_JSON)
                         .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"Error while copying events"))
@@ -1344,14 +1348,14 @@ public class CubeStore {
     }
 
 
-    public boolean copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp) {
+    public boolean copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp, Optional<Predicate<Event>> eventFilter) {
         EventQuery.Builder builder = new EventQuery.Builder(fromRecording.customerId, fromRecording.app, Collections.emptyList());
         builder.withCollection(fromRecording.collection);
         builder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
         Result<Event> result = rrstore.getEvents(builder.build());
         Map<String, String> reqIdMap = new HashMap<>();
         final boolean[] eventCreationFailure = new boolean[1];
-        Stream<Event> eventStream = result.getObjects().map(event -> {
+        Stream<Event> eventStream = result.getObjects().filter(eventFilter.orElse(event -> true)).map(event -> {
             try {
                 String reqId = reqIdMap.get(event.getReqId());
                 if(reqId == null) {
@@ -1381,6 +1385,65 @@ public class CubeStore {
         var eventsStream =  SeqMgr.createSeqId(eventStream , estimatedReqSize);
         boolean batchSaveResult = rrstore.save(eventsStream) && rrstore.commit();
         return batchSaveResult;
+    }
+
+    @POST
+    @Path("sanitizeGolden")
+    @Produces(MediaType.APPLICATION_JSON)
+    public void sanitizeGoldenRecording(@Suspended AsyncResponse asyncResponse,
+        @QueryParam("recordingId") String recordingId,
+        @QueryParam("ignoreStatus") List<String> status) {
+
+        Optional<Recording> recording = rrstore.getRecording(recordingId);
+
+        if (recording.isEmpty()) {
+            asyncResponse
+                .resume(Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).
+                    entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
+                        "No such Recording found")).build());
+            return;
+        }
+
+        Recording originalRec = recording.get();
+
+        Set<String> reqIds = new HashSet<>();
+        Set<String> respIds = new HashSet<>();
+
+        //Use fieldList to reduce the data fetched.
+        EventQuery.Builder reqBuilder = new EventQuery.Builder(originalRec.customerId,
+            originalRec.app, Event.REQUEST_EVENT_TYPES);
+        reqBuilder.withCollection(originalRec.collection);
+        reqBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
+        Result<Event> reqEvents = rrstore.getEvents(reqBuilder.build());
+        reqEvents.getObjects().forEach(event -> reqIds.add(event.reqId));
+
+        EventQuery.Builder respBuilder = new EventQuery.Builder(originalRec.customerId,
+            originalRec.app, Event.RESPONSE_EVENT_TYPES);
+        respBuilder.withCollection(originalRec.collection);
+        respBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
+        Result<Event> respEvents = rrstore.getEvents(respBuilder.build());
+        respEvents.getObjects().forEach(event -> respIds.add(event.reqId));
+
+        Set<String> invalidReqIds = new HashSet<>(Sets.difference(reqIds, respIds));
+
+        if (status != null && !status.isEmpty()) {
+            EventQuery.Builder invalidRespBuilder = new EventQuery.Builder(originalRec.customerId,
+                originalRec.app, Event.RESPONSE_EVENT_TYPES);
+            invalidRespBuilder.withCollection(originalRec.collection);
+            invalidRespBuilder.withPayloadFields(status);
+            invalidRespBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
+            Result<Event> invalidRespEvents = rrstore.getEvents(invalidRespBuilder.build());
+
+            invalidRespEvents.getObjects()
+                .forEach(event -> invalidReqIds.add(event.reqId));
+        }
+
+        Predicate<Event> isInvalidReqId = (event) -> !invalidReqIds.contains(event.reqId);
+
+        copyRecording(recordingId, Optional.empty(), Optional.empty(), Optional.empty(),
+            originalRec.userId, originalRec.recordingType, Optional.of(isInvalidReqId))
+            .thenApply(v -> asyncResponse.resume(v));
+
     }
 
     @POST
@@ -2129,7 +2192,7 @@ public class CubeStore {
         Instant timeStamp = Instant.now();
         if(firstRecording.recordingType == RecordingType.UserGolden && newType.isEmpty()) {
             thirdRecording = firstRecording;
-            CompletableFuture.runAsync(() -> copyEvents(secondRecording, thirdRecording, timeStamp))
+            CompletableFuture.runAsync(() -> copyEvents(secondRecording, thirdRecording, timeStamp, Optional.empty()))
                 .thenApply(v -> asyncResponse.resume(Response.ok().type(MediaType.APPLICATION_JSON).entity(thirdRecording).build()));
         } else {
             thirdRecording = createRecordingObjectFrom(firstRecording, Optional.empty(),
@@ -2137,8 +2200,8 @@ public class CubeStore {
                 timeStamp, timeStamp.toString(), newType.orElse(RecordingType.UserGolden));
             if(rrstore.saveRecording(thirdRecording)) {
                 CompletableFuture.runAsync(() -> {
-                    copyEvents(firstRecording, thirdRecording, timeStamp);
-                    copyEvents(secondRecording, thirdRecording, timeStamp);
+                    copyEvents(firstRecording, thirdRecording, timeStamp, Optional.empty());
+                    copyEvents(secondRecording, thirdRecording, timeStamp, Optional.empty());
                 }).thenApply(v -> asyncResponse.resume(Response.ok().type(MediaType.APPLICATION_JSON).entity(thirdRecording).build()));
             }
         }
