@@ -154,7 +154,7 @@ public interface ReqRespStore extends DataStore {
 
     Optional<RecordOrReplay> getRecordOrReplayFromCollection(String customerId, String app, String collection);
 
-    class ReqResp {
+	class ReqResp {
 
 
 		/**
@@ -596,7 +596,7 @@ public interface ReqRespStore extends DataStore {
 	 * @param runType
 	 * @return
 	 */
-    ArrayList getServicePathHierarchicalFacets(String collectionId, RunType runType);
+    ArrayList getServicePathHierarchicalFacets(String collectionId);
 
     /**
      * Deletes the Requests and Responses from the passed collection that has the given trace id
@@ -726,5 +726,5 @@ public interface ReqRespStore extends DataStore {
 	boolean deleteAllData(String customerId);
 	Comparator getDefaultComparator(EventType eventType, TemplateKey.Type templateKeyType) throws TemplateNotFoundException;
 
-
+	boolean saveConfig(CustomerAppConfig cfg);
 }
