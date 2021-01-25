@@ -378,9 +378,9 @@ public class AnalyzeWS {
 
 
     @GET
-    @Path("getPotentialCompareTemplates")
+    @Path("learnComparisonRules")
     @Produces(MediaType.TEXT_PLAIN)
-    public Response getPotentialCompareTemplates(@Context UriInfo uriInfo) {
+    public Response learnComparisonRules(@Context UriInfo uriInfo) {
 
         MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 
@@ -392,43 +392,72 @@ public class AnalyzeWS {
                     "Missing query parameter replayId")).build();
         }
 
-        AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(replayId,
-            new MultivaluedHashMap<>());
+        return rrstore.getReplay(replayId).map(replay -> {
+            AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(replayId,
+                new MultivaluedHashMap<>());
 
-        ReqRespResultsWithFacets resultWithFacets = rrstore
-            .getAnalysisMatchResults(analysisMatchResultQuery);
+            ReqRespResultsWithFacets resultWithFacets = rrstore
+                .getAnalysisMatchResults(analysisMatchResultQuery);
 
-        CompareTemplatesLearner ctLearner = new CompareTemplatesLearner();
+            // Create a reqId to method map to get the method of the orig event in the diff
 
-        List<TemplateEntryMeta> finalMetaList = ctLearner.learnCompareTemplates(
-            resultWithFacets.result.getObjects());
+            Map<String, String> reqIdToMethodMap = new HashMap();
 
-        try {
+            List<ReqRespMatchResult> reqRespMatchResultList = resultWithFacets.result
+                .getObjects().collect(Collectors.toList());
 
-            CsvSchema csvSchema = csvMapper.schemaFor(TemplateEntryMeta.class).withHeader();
-            String data = csvMapper.writer(csvSchema).writeValueAsString(finalMetaList);
+            List<String> reqIds = reqRespMatchResultList.stream().map(r -> r.recordReqId).flatMap(
+                Optional::stream)
+                .collect(Collectors.toList());
 
-            final String fileName = "learned_comparison_rules", ext = ".csv";
+            if (!reqIds.isEmpty()) {
+                // empty reqId list would lead to returning of all requests, so check for it
+                Result<Event> requestResult = rrstore
+                    .getRequests(replay.customerId, replay.app, replay.collection,
+                        reqIds, Collections.emptyList(), Collections.emptyList(), Optional.empty());
+                requestResult.getObjects().forEach(req -> reqIdToMethodMap.put(req.reqId, ((RequestPayload)req.payload).getMethod()));
+            }
 
-            File file = new File(
-                "/tmp/" + fileName + "-" + (replayId + Instant.now()).hashCode() + ext);
+            CompareTemplatesLearner ctLearner = new CompareTemplatesLearner(replay.customerId,
+                replay.app, replay.templateVersion, rrstore);
 
-            FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
-            Response.ResponseBuilder response = Response.ok((Object) file);
-            response
-                .header("Content-Disposition", "attachment; filename=\"" + fileName + ext + "\"");
-            response.header("Access-Control-Expose-Headers",
-                "Content-Disposition, X-Suggested-Filename");
+            List<TemplateEntryMeta> finalMetaList = ctLearner.learnCompareTemplates(reqIdToMethodMap,
+                reqRespMatchResultList,
+                rrstore.getTemplateSet(replay.customerId, replay.app, replay.templateVersion));
 
-            return response.build();
+            try {
 
-        } catch (IOException e) {
-            String errorString =  String.format("Error in file creation for replay=%s", replayId);
-            LOGGER.error(errorString, e);
+                CsvSchema csvSchema = csvMapper.schemaFor(TemplateEntryMeta.class).withHeader();
+                String data = csvMapper.writer(csvSchema).writeValueAsString(finalMetaList);
+
+                final String fileName = "learned_comparison_rules", ext = ".csv";
+
+                File file = new File(
+                    "/tmp/" + fileName + "-" + (replayId + Instant.now()).hashCode() + ext);
+
+                FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
+                Response.ResponseBuilder response = Response.ok((Object) file);
+                response
+                    .header("Content-Disposition", "attachment; filename=\"" + fileName + ext + "\"");
+                response.header("Access-Control-Expose-Headers",
+                    "Content-Disposition, X-Suggested-Filename");
+
+                return response.build();
+
+            } catch (IOException e) {
+                String errorString =  String.format("Error in file creation for replay=%s", replayId);
+                LOGGER.error(errorString, e);
+                return Response.serverError().entity(
+                    Utils.buildErrorResponse(Constants.ERROR, Constants.IO_EXCEPTION,
+                        errorString)).build();
+            }
+        }).orElseGet(() -> {
+            String errorString =  String.format("Replay not found: %s", replayId);
             return Response.serverError().entity(
                 Utils.buildErrorResponse(Constants.ERROR, Constants.IO_EXCEPTION,
                     errorString)).build();
-        }
+            }
+        );
     }
 
 
