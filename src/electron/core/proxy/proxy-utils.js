@@ -113,9 +113,12 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
         };
     
         logger.info(`Service : ${service} configured to be live`);
-        
+
+        const outgoingApiPath = getOutgoingApiPath(serviceConfigObject, inputUrl)
+        logger.info('Outgoing API path: ', outgoingApiPath)
+
         logger.info('Attaching REQUEST INTERCEPTOR for live service');
-        proxy.on('proxyReq', (proxyReq) => proxyRequestInterceptorLiveService(proxyReq, serviceConfigObject, mockContext, traceDetails));
+        proxy.on('proxyReq', (proxyReq) => proxyRequestInterceptorLiveService(proxyReq, serviceConfigObject, mockContext, traceDetails, outgoingApiPath));
     
         logger.info('Attaching RESPONSE INTERCEPTOR for live service');
         proxy.on(
@@ -131,7 +134,8 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
                             headers, 
                             mockContext, 
                             requestData,
-                            traceDetails
+                            traceDetails,
+                            outgoingApiPath,
                         })
             );
     
@@ -164,6 +168,30 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
     return defaultProxyOptions;  
 
 };
+
+const getOutgoingApiPath = (serviceConfigObject, receivedPathInProxy) => {
+    const { url: configUrl } = serviceConfigObject;
+
+    const parsedConfigUrl = url.parse(configUrl);
+
+    logger.info('Parsed Config Url ', parsedConfigUrl);
+
+    const outgoingProxyApiPath = stripServiceNameFromOutgoingProxyPath(receivedPathInProxy, serviceConfigObject);
+
+    return outgoingProxyApiPath
+}
+
+const stripServiceNameFromOutgoingProxyPath = (apiPath, {service, servicePrefix}) => {
+    if(apiPath) {
+        if (servicePrefix) {
+            return apiPath.slice(1) // remove starting slash
+        } else {
+            return apiPath.slice(service.length + 2) // accounting for slashes
+        }
+    }
+
+    return '';
+}
 
 module.exports = {
     getServiceNameFromUrl,

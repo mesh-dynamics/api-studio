@@ -4,22 +4,6 @@ const logger = require('electron-log');
 // Alt Mock With Collection API: /api/ms/mockWithCollection??
 const mockApiPrefix = '/api/msc/mockWithRunId';
 const strictMockApiPrefix = '/api/ms'
-/**
- * Exclude the service name from API path
- * @param {*} apiPath - api path that contains service name as first path variable
- * @param {*} serviceConfigObject
- */
-const stripServiceNameFromOutgoingProxyPath = (apiPath, {service, servicePrefix}) => {
-    if(apiPath) {
-        if (servicePrefix) {
-            return apiPath.slice(1) // remove starting slash
-        } else {
-            return apiPath.slice(service.length + 2) // accounting for slashes
-        }
-    }
-
-    return '';
-}
 
 /**
  * Rewrites outgoing proxy path with mock configuration
@@ -70,18 +54,16 @@ const rewriteMockPath = (resourcePath, mockContext, traceDetails, service, servi
  * @param {*} serviceConfigObject Object - Service Config 
  * @param {*} receivedPathInProxy String - API Path 
  */
-const rewriteLivePath = (serviceConfigObject, receivedPathInProxy) => {
+const rewriteLivePath = (serviceConfigObject, outgoingApiPath) => {
     const { url: configUrl } = serviceConfigObject;
 
     const parsedConfigUrl = url.parse(configUrl);
 
     logger.info('Parsed Config Url ', parsedConfigUrl);
 
-    const outgoingProxyApiPath = stripServiceNameFromOutgoingProxyPath(receivedPathInProxy, serviceConfigObject);
-
     const constructedApiPath = parsedConfigUrl.path === '/' 
-                                ? `/${outgoingProxyApiPath}` // If path is just '/' return the outgoing proxy path 
-                                : `${parsedConfigUrl.path}/${outgoingProxyApiPath}`; // else, merge both paths
+                                ? `/${outgoingApiPath}` // If path is just '/' return the outgoing proxy path 
+                                : `${parsedConfigUrl.path}/${outgoingApiPath}`; // else, merge both paths
 
     logger.info('Updated API Path for proxy : ', constructedApiPath);
 
@@ -140,7 +122,7 @@ const proxyRequestInterceptorMockService = (proxyReq, mockContext, user, traceDe
  * @param {*} proxyReq 
  * @param {*} serviceConfigObject 
  */
-const proxyRequestInterceptorLiveService = (proxyReq, serviceConfigObject, mockContext, traceDetails) => {
+const proxyRequestInterceptorLiveService = (proxyReq, serviceConfigObject, mockContext, traceDetails, outgoingApiPath) => {
     const {traceKeys, traceIdDetails, spanId, parentSpanId} = traceDetails
     const {traceId} = traceIdDetails
 
@@ -172,7 +154,7 @@ const proxyRequestInterceptorLiveService = (proxyReq, serviceConfigObject, mockC
     logger.info('Logging Request Headers for Live Service', proxyReq._headers);
 
     logger.info('Rewriting Live url path');
-    proxyReq.path = rewriteLivePath(serviceConfigObject, proxyReq.path);
+    proxyReq.path = rewriteLivePath(serviceConfigObject, outgoingApiPath);
 };
 
 module.exports = { 

@@ -36,9 +36,8 @@ const constructEventDetails = (mockContext, traceDetails, service, apiPath, even
 
 const transformForCollection = (proxyRes, options, responseBody) => {
 
-    const apiPath = proxyRes.req.path;
 
-    const { mockContext, service, traceDetails } = options;
+    const { mockContext, service, traceDetails, outgoingApiPath: apiPath } = options;
 
     const requestId = cryptoRandomString({length:32});
     const httpRequestEventDetails = constructEventDetails(mockContext, traceDetails, service, apiPath, 'HTTPRequest', requestId);

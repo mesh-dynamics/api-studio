@@ -50,9 +50,19 @@ const generateSpecialParentSpanId = (tracer) => {
   return "ffffffffffffffff"    
 }
 
+const extractTraceIdDetails = (traceId, tracer) => {
+  if (traceId && (tracer==="meshd" || tracer==="jaeger" || !tracer)) {
+    const [traceIdForEvent] = traceId.split(":")
+    return {traceId, traceIdForEvent}
+  } else {
+    return {traceId, traceIdForEvent: traceId}; // both same
+  }
+}
+
 module.exports = {
   generateTraceKeys,
   generateSpanId, 
   generateSpecialParentSpanId,
-  generateTraceIdDetails
+  generateTraceIdDetails,
+  extractTraceIdDetails,
 };
