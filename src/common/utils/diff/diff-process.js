@@ -25,7 +25,7 @@ const validateAndCleanHTTPMessageParts = (messagePart, headers) => {
     if(headers) {
         let contentType = getParameterCaseInsensitive(headers, "content-type");
         let contentTypeString = contentType ? (_.isArray(contentType) ? contentType[0] : contentType) : "",
-            isMultipart = contentTypeString.toLowerCase().indexOf("multipart") > -1;
+            isMultipart = contentTypeString?.toLowerCase().indexOf("multipart") > -1;
         if(isMultipart) {
             return messagePart;
         }
