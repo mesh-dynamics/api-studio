@@ -1207,6 +1207,7 @@ class HttpClientTabs extends Component {
             requestApi.push(tabId + runId, {fetchConfigRendered, filePaths});
             ipcRenderer.on('drive_request_error', (event, reqTabId, reqRunId, reqError) => {
                 if(reqTabId === tabId && reqRunId === runId) {
+                    const responseApi = window.require('electron').remote.getGlobal("responseApi");
                     this.driveRequestHandleError(reqError, tabId, runId);
                     responseApi.remove(tabId + runId);
                 }
@@ -1494,6 +1495,7 @@ class HttpClientTabs extends Component {
                         body: httpResponseBody,
                         status: httpResponseStatus,
                         payloadState : "WrappedDecoded",
+                        path: apiPath,
                     }
                 ]
             }

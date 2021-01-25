@@ -315,7 +315,7 @@ export const apiCatalogActions = {
 
     fetchApiTraceByPage : (nextPage) => async(dispatch, getState)=>{
         const {
-            apiCatalog:{ apiCatalogTableState },
+            apiCatalog:{ apiCatalogTableState, apiTrace: prevData },
             authentication: { user: { customer_name: customerId } }
         } = getState();
         let nextFilterData = {...apiCatalogTableState.filterData};
@@ -341,6 +341,10 @@ export const apiCatalogActions = {
         if(nextPage > apiCatalogTableState.currentPage || nextPage == 0){
             const endTime = getLastApiTraceEndTimeFromApiTrace(apiTraces);
             nextApiCatalogTableState.oldPagesData.push({endTime});
+        }
+
+        if(nextPage !== 0 && prevData && prevData.numFound){
+            apiTrace.numFound = prevData.numFound;
         }
 
         nextApiCatalogTableState.currentPage = nextPage;
