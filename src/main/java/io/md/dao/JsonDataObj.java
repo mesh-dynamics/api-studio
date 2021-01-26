@@ -468,7 +468,7 @@ public class JsonDataObj implements DataObj {
 			byte[] originalContent = buffer.readByteArray();
 
 			return asEncoded?  Optional.of(new TextNode(
-					new String(Base64.getEncoder().encode(buffer.readByteArray())))) :
+					new String(Base64.getEncoder().encode(originalContent)))) :
 					Optional.of(new BinaryNode(originalContent));
 
 
