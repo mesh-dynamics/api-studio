@@ -21,19 +21,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import javax.swing.text.html.Option;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CompareTemplatesLearner {
 
-    HashMap<TemplateEntryMeta, TemplateEntryMeta> learnedMetasMap = new HashMap<>();
+    private static final Logger LOGGER = LoggerFactory.getLogger(CompareTemplatesLearner.class);
+
+    HashMap<RulesKey, TemplateEntryMeta> learnedMetasMap = new HashMap<>();
     // Creating our own map to restrict search to user-defined rules. ComparatorCache returns
     // default rules as well when no user-defined rules are found for a particular service/api.
-    HashMap<CompareTemplateMapKey, CompareTemplate> existingCompareTemplatesMap = new HashMap<>();
+    HashMap<RulesKey, CompareTemplate> existingCompareTemplatesMap = new HashMap<>();
     // Used to get the default rule
     String customer;
     String app;
     String templateVersion;
     ReqRespStore rrstore;
+
+    RulesKey createRulesKey(String service, String apiPath,  Type reqOrResp, Optional<String> method, Optional<String> jsonPath){
+        return new RulesKey(templateVersion, customer, app, service, apiPath, reqOrResp, method, jsonPath);
+    }
 
     public CompareTemplatesLearner(String customer, String app, String templateVersion, ReqRespStore rrstore) {
         this.customer = customer;
@@ -42,101 +49,91 @@ public class CompareTemplatesLearner {
         this.rrstore = rrstore;
     }
 
-    Optional<TemplateEntry> getDecisiveExistingRule(String service, String apiPath, Type reqOrResp, Optional<String> method,
-        String jsonPath) {
+    Optional<TemplateEntry> getDecisiveExistingRule(RulesKey key) {
         return Optional
-            .ofNullable(existingCompareTemplatesMap.get(new CompareTemplateMapKey(service, apiPath,
-                reqOrResp, method)))
-            .map(template -> template.getRule(jsonPath));
+            .ofNullable(existingCompareTemplatesMap.get(
+                createRulesKey(key.getServiceId(), key.getPath(), key.getReqOrResp(),
+                    key.getMethod(), Optional.empty())))
+            .flatMap(template -> key.getJsonPath().map(path -> template.getRule(path)));
     }
 
-    Optional<TemplateEntryMeta> getExistingParentMeta(String service, String apiPath, Type reqOrResp, Optional<String> method,
-        String jsonPath) {
+    Optional<TemplateEntryMeta> getExistingParentMeta(RulesKey key) {
 
-        // The rule can come from a user-defined template or default template. Both in user-defined
-        // template and default template, if a jsonPath is not found, a default rule (DEFAULT_CT/DEFAULT_PT) would be
-        // used to resolve the diff.
 
-        // This is an existing compare template with a non-default rule,
-        // hence an existing parent meta must be existing (since a user exact meta
-        // wasn't found for it and we had indexed all the user-templates to metas)
-        return getDecisiveExistingRule(service, apiPath,
-            reqOrResp, method, jsonPath).flatMap(existingTemplate -> {
+        return getDecisiveExistingRule(key)
+            .flatMap(existingTemplate -> {
             if (!isDefaultRule(existingTemplate) && existingTemplate.getClass().equals(TemplateEntryAsRule.class)) {
+                // This is an existing compare template with a non-default rule,
+                // hence an existing parent meta must be existing (since a user exact meta
+                // wasn't found for it and we had indexed all the user-templates to metas)
+                // Not finding it indicates an error
                 Optional<String> parentPath = ((TemplateEntryAsRule) existingTemplate).parentPath;
-                return parentPath
-                    .flatMap(path -> getLearnedMeta(service, apiPath, reqOrResp, method,
-                        path));
+                return parentPath.flatMap(path -> getLearnedMeta(
+                    createRulesKey(key.getServiceId(), key.getPath(), key.getReqOrResp(),
+                        key.getMethod(), Optional.of(path))));
             }else
                 return Optional.empty();
         });
     }
 
-    Optional<TemplateEntry> getDefaultRule(String service, String apiPath, Type reqOrResp, Optional<String> method,
-        String jsonPath) {
+    Optional<TemplateEntry> getDefaultRule(RulesKey key) {
         // In case there is a compare template for the service, apiPath, method, it will return
         // an existing rule.
-        try {
-            return Optional.of(rrstore.getComparator(new TemplateKey(templateVersion, customer, app, service, apiPath,
-                    reqOrResp, method, TemplateKey.DEFAULT_RECORDING)).getCompareTemplate().getRule(jsonPath));
-        } catch (TemplateNotFoundException e) {
-            return Optional.empty();
-        }
+        return key.getJsonPath().flatMap(jsonPath -> {
+            try {
+                return Optional
+                    .of(rrstore.getComparator(
+                        new TemplateKey(templateVersion, customer, app, key.getServiceId(),
+                            key.getPath(), key.getReqOrResp(), key.getMethod(),
+                            TemplateKey.DEFAULT_RECORDING)).getCompareTemplate().getRule(jsonPath));
+            } catch (TemplateNotFoundException e) {
+                return Optional.empty();
+            }
+        });
     }
 
-    Optional<TemplateEntryMeta> getLearnedMeta(String service, String apiPath, Type reqOrResp, Optional<String> method,
-        String jsonPath) {
-
-        return Optional.ofNullable(learnedMetasMap
-            .get(new TemplateEntryMeta(service, apiPath, reqOrResp, method.orElse(TemplateEntryMeta.METHODS_ALL), jsonPath)));
-
+    Optional<TemplateEntryMeta> getLearnedMeta(RulesKey key) {
+        return Optional.ofNullable(learnedMetasMap.get(key));
     }
+
 
     boolean isDefaultRule(TemplateEntry templateEntry){
         return (templateEntry.ct == ComparisonType.Default || templateEntry.pt == PresenceType.Default);
     }
 
     YesOrNo getValueMatchRequired(TemplateEntry templateEntry){
-        return templateEntry.ct == ComparisonType.Equal ? YesOrNo.yes
-            : YesOrNo.no;
+        //TODO: Comparison type has a third level called equalOptional. Cater to that as well.
+        return templateEntry.ct == ComparisonType.Equal ? YesOrNo.yes : YesOrNo.no;
     }
 
     YesOrNo getPresenceRequired(TemplateEntry templateEntry){
-        //TODO: Comparison type has a third level called equalOptional. Cater to that as well.
-
-        // Handles default_pt and default_ct case as well
-        return templateEntry.pt == PresenceType.Required ? YesOrNo.yes
-            : YesOrNo.no;
+        return templateEntry.pt == PresenceType.Required ? YesOrNo.yes: YesOrNo.no;
     }
 
     void convertExistingTemplatesToMetas(TemplateSet existingTemplateSet, Map<String, String> reqIdToMethodMap){
 
             existingTemplateSet.templates.forEach(template -> {
                 // Put compare template in existing compare templates map
-                String apiPath = template.requestPath;
-                String service = template.service;
-                Type reqOrResp = template.type;
-                Optional<String> method = template.method;
 
-                CompareTemplateMapKey key = new CompareTemplateMapKey(
-                    service, apiPath, reqOrResp, method);
+                RulesKey key = createRulesKey(template.service, template.requestPath,
+                    template.type, template.method, Optional.empty());
                 existingCompareTemplatesMap.putIfAbsent(key, template);
 
-                if (reqOrResp == Type.RequestCompare || reqOrResp == Type.ResponseCompare) {
+                if (template.type == Type.RequestCompare || template.type == Type.ResponseCompare) {
                     // Convert existing template rules to learnt template metas
                     template.getRules().forEach(templateEntry ->
                         {
-                            TemplateEntryMeta templateEntryMeta = new TemplateEntryMeta(Optional.empty(),
-                                Optional.empty(),
-                                RuleStatus.UnusedExisting,
-                                reqOrResp, service, apiPath,
-                                method.orElse(TemplateEntryMeta.METHODS_ALL),
-                                templateEntry.path, 0, 0
-                                , getValueMatchRequired(templateEntry),
-                                getPresenceRequired(templateEntry),
-                                Optional.empty());
-                            learnedMetasMap
-                                .putIfAbsent(templateEntryMeta, templateEntryMeta);
+                           learnedMetasMap
+                                .putIfAbsent(createRulesKey(template.service, template.requestPath,
+                                    template.type, template.method,
+                                    Optional.of(templateEntry.path)), new TemplateEntryMeta(
+                                    RuleStatus.UnusedExisting,
+                                    template.type, template.service, template.requestPath,
+                                    template.method,
+                                    templateEntry.path,
+                                    getValueMatchRequired(templateEntry),
+                                    getPresenceRequired(templateEntry),
+                                    Optional.empty()));
                         }
                     );
                 }
@@ -165,20 +162,17 @@ public class CompareTemplatesLearner {
     }
 
 
-    void addLearnedTemplateMetas(Type reqOrResp, String service,
-        Resolution resolution, String apiPath, Optional<String> method, String jsonPath) {
+    void addLearnedTemplateMetas(Type reqOrResp, String service, Resolution resolution,
+        String apiPath,
+        Optional<String> method, String jsonPath) {
 
-        Optional<TemplateEntryMeta> existingLearnedMeta = getLearnedMeta(service, apiPath,
-            reqOrResp, method, jsonPath);
+        RulesKey key = createRulesKey(service, apiPath, reqOrResp, method, Optional.of(jsonPath));
+
+        Optional<TemplateEntryMeta> existingLearnedMeta = getLearnedMeta(key);
 
         Optional<TemplateEntryMeta> existingParentMeta =
             existingLearnedMeta.isPresent() ? Optional.empty()
-                : getExistingParentMeta(service, apiPath, reqOrResp, method, jsonPath);
-
-        Optional<TemplateEntry> defaultTemplateEntry =
-            existingParentMeta.isPresent() ? Optional.empty()
-                : getDefaultRule(service, apiPath, reqOrResp, method, jsonPath);
-
+                : getExistingParentMeta(key);
 
         YesOrNo valueMatchRequired;
         YesOrNo presenceRequired;
@@ -190,7 +184,9 @@ public class CompareTemplatesLearner {
             TemplateEntryMeta meta = existingLearnedMeta.get();
             valueMatchRequired = meta.valueMatchRequired;
             presenceRequired = meta.presenceRequired;
-            oldRuleStatus = meta.ruleStatus;
+            oldRuleStatus =
+                meta.ruleStatus == RuleStatus.UnusedExisting ? RuleStatus.ConformsToExistingExact
+                    : meta.ruleStatus;
             count = meta.count + 1;
             numViolations = meta.numViolations;
         } else {
@@ -215,8 +211,7 @@ public class CompareTemplatesLearner {
                 // defined template as the rules for the particular JSON path didn't exist.
                 // In both cases, the rule will be categorized as a default rule, the template
                 // taken to reach to it may be non-default.
-                Optional<TemplateEntry> defaultTemplateRule = getDefaultRule(service, apiPath,
-                    reqOrResp, method, jsonPath);
+                Optional<TemplateEntry> defaultTemplateRule = getDefaultRule(key);
                 valueMatchRequired = defaultTemplateRule.map(rule -> getValueMatchRequired(rule))
                     .orElse(YesOrNo.no);
                 presenceRequired = defaultTemplateRule.map(rule -> getPresenceRequired(rule))
@@ -235,11 +230,9 @@ public class CompareTemplatesLearner {
             case OK_Ignore:
             case OK_DefaultCT:
             case OK_DefaultPT:
-                break;
-
             case OK_Optional:
             case OK_OtherValInvalid:
-                presenceRequired = YesOrNo.no;
+                // Diff conforms to existing rules, so no action required
                 break;
 
             case ERR_ValMismatch:
@@ -277,11 +270,13 @@ public class CompareTemplatesLearner {
                 meta.valueMatchRequired = valueMatchRequired;
 
         } else {
-            TemplateEntryMeta meta = new TemplateEntryMeta(Optional.empty(), Optional.empty(), newRuleStatus,
-                reqOrResp, service, apiPath, method.orElse(TemplateEntryMeta.METHODS_ALL),
-                jsonPath, count, numViolations, valueMatchRequired,
+            TemplateEntryMeta meta = new TemplateEntryMeta(newRuleStatus,
+                reqOrResp, service, apiPath, method,
+                jsonPath, valueMatchRequired,
                 presenceRequired, existingParentMeta);
-            learnedMetasMap.put(meta, meta);
+            meta.count = count;
+            meta.numViolations = numViolations;
+            learnedMetasMap.put(key, meta);
 
         }
     }
@@ -297,15 +292,15 @@ public class CompareTemplatesLearner {
 
                 res.reqCompareRes.diffs.forEach(
                     diff -> {
-                        addLearnedTemplateMetas(Type.RequestCompare, res.service, diff.resolution,
-                            res.path, method, diff.path);
+                        addLearnedTemplateMetas(Type.RequestCompare, res.service, diff.resolution, res.path,
+                            method, diff.path);
                         ;
                     });
 
                 res.respCompareRes.diffs.forEach(
                     diff -> {
-                        addLearnedTemplateMetas(Type.ResponseCompare, res.service, diff.resolution,
-                            res.path, method, diff.path);
+                        addLearnedTemplateMetas(Type.ResponseCompare, res.service, diff.resolution, res.path,
+                            method, diff.path);
                     });
             }
         );
@@ -324,21 +319,27 @@ public class CompareTemplatesLearner {
         return templateEntryMetaList;
     }
 
-    private static class CompareTemplateMapKey {
+    private static class RulesKey extends TemplateKey{
 
-        String apiPath;
-        String service;
-        Type eventType;
-        String method;
+        private static final String EMPTY_RECORDING = "";
+        private final Optional<String> jsonPath;
 
-        private static final String METHODS_ALL = "ALL";
+        public Optional<String> getJsonPath() {
+            return jsonPath;
+        }
 
-        public CompareTemplateMapKey(String service, String apiPath, Type eventType,
-            Optional<String> method) {
-            this.apiPath = apiPath;
-            this.service = service;
-            this.eventType = eventType;
-            this.method = method.orElse(METHODS_ALL);
+        public RulesKey(String templateVersion, String customerId, String appId, String service, String apiPath, Type eventType, Optional<String> method, Optional<String> jsonPath) {
+            super(templateVersion, customerId, appId, service, apiPath, eventType, method, EMPTY_RECORDING);
+            this.jsonPath = jsonPath;
+        }
+
+        private boolean checkRegexEquals(Optional<String> string1, Optional<String> string2){
+            return string1.map(
+                str1 -> string2.map(str2 -> {
+                    if (str1.contains(*))
+                    str1.equals(str2);
+                })
+                    .orElse(true)).orElse(true);
         }
 
         @Override
@@ -349,16 +350,23 @@ public class CompareTemplatesLearner {
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            CompareTemplateMapKey that = (CompareTemplateMapKey) o;
-            return apiPath.equals(that.apiPath) &&
-                service.equals(that.service) &&
-                eventType == that.eventType &&
-                (method.equals(that.method) || method.equals(METHODS_ALL) || that.method.equals(METHODS_ALL));
+            RulesKey that = (RulesKey) o;
+            return getPath().equals(that.getPath()) &&
+                getServiceId().equals(that.getServiceId()) &&
+                getReqOrResp() == that.getReqOrResp() &&
+                getMethod().map(
+                    method -> that.getMethod().map(thatMethod -> method.equals(thatMethod))
+                        .orElse(true)).orElse(true) &&
+                getJsonPath().map(
+                    jsonPath -> that.getJsonPath().map(thatJsonPath -> jsonPath.equals(thatJsonPath))
+                        .orElse(true)).orElse(true);
         }
+
+
 
         @Override
         public int hashCode() {
-            return Objects.hash(apiPath, service, eventType);
+            return Objects.hash(getPath(), getServiceId(), getReqOrResp());
         }
     }
 }

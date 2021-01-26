@@ -11,10 +11,10 @@ import org.jetbrains.annotations.NotNull;
     "ValueMatchRequired", "PresenceRequired", "Count", "numViolations"})
 public class TemplateEntryMeta implements Comparable{
     @JsonProperty("Id")
-    String id;
+    String id = EMPTY_ID;
 
     @JsonProperty("InheritedRuleId")
-    String inheritedRuleId;
+    String inheritedRuleId = EMPTY_ID;
 
     @JsonProperty("RuleStatus")
     RuleStatus ruleStatus;
@@ -35,10 +35,10 @@ public class TemplateEntryMeta implements Comparable{
     String jsonPath;
 
     @JsonProperty("numViolations")
-    Integer numViolations;
+    Integer numViolations = 0;
 
     @JsonProperty("Count")
-    Integer count;
+    Integer count = 0;
 
     @JsonProperty("ValueMatchRequired")
     YesOrNo valueMatchRequired;
@@ -52,35 +52,27 @@ public class TemplateEntryMeta implements Comparable{
     public static final String EMPTY_ID = "";
 
 
-    public TemplateEntryMeta(Optional<String> id, Optional<String> inheritedRuleId, RuleStatus ruleStatus,
+    public TemplateEntryMeta(RuleStatus ruleStatus,
         Type reqOrResp,
         String service,
-        String apiPath, String method, String jsonPath, Integer count,
-        Integer numViolations, YesOrNo valueMatchRequired,
+        String apiPath, Optional<String> method, String jsonPath, YesOrNo valueMatchRequired,
         YesOrNo presenceRequired,
         Optional<TemplateEntryMeta> parentMeta) {
-        this.id = id.orElse(EMPTY_ID);
-        this.inheritedRuleId = inheritedRuleId.orElse(EMPTY_ID);
         this.ruleStatus = ruleStatus;
         this.reqOrResp = reqOrResp;
         this.service = service;
         this.apiPath = apiPath;
-        this.method = method;
+        this.method = method.orElse(METHODS_ALL);
         this.jsonPath = jsonPath;
-        this.count = count;
-        this.numViolations = numViolations;
         this.valueMatchRequired = valueMatchRequired;
         this.presenceRequired = presenceRequired;
         this.parentMeta = parentMeta;
     }
 
-    public TemplateEntryMeta(String service, String apiPath, Type reqOrResp, String method,
+    public TemplateEntryMeta(String service, String apiPath, Type reqOrResp, Optional<String> method,
         String jsonPath) {
-        this.service = service;
-        this.apiPath = apiPath;
-        this.reqOrResp = reqOrResp;
-        this.method = method;
-        this.jsonPath = jsonPath;
+        this(RuleStatus.Undefined, Type.DontCare, service, apiPath,
+            method, jsonPath, YesOrNo.undefined, YesOrNo.undefined, Optional.empty());
     }
 
     enum RuleStatus {
@@ -92,10 +84,13 @@ public class TemplateEntryMeta implements Comparable{
         ConformsToExistingInherited, // Instance complies with an inherited rule already configured to ignore mismatch
         ConformsToDefault,  // Mismatch when no rule configured, or exact/inherited rule from template with behaviour also to ignore it.
         UsedExistingAsInherited,  // Already configured rule that was exercised as inherited rule.
+        Undefined
     }
 
     enum YesOrNo{
-        yes, no
+        yes,
+        no,
+        undefined
     }
 
     @Override

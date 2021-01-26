@@ -352,27 +352,56 @@ public class AnalyzeWS {
 
     @GET
     @Path("getTemplateSet/{customerId}/{appId}/{templateVersion}/")
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.TEXT_PLAIN)
     public Response getTemplateSet(@Context UriInfo urlInfo, @PathParam("appId") String appId,
         @PathParam("customerId") String customerId, @PathParam("templateVersion") String templateVersion) {
 
         return rrstore.getTemplateSet(customerId, appId, templateVersion).map(templateSet -> {
-            String resp;
             try {
-                resp = jsonMapper.writeValueAsString(templateSet);
-                return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
-                    .entity(resp).build();
+
+                String data = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(templateSet);
+                final String fileName = "comparison_rules", ext = ".json";
+
+                File file = new File("/tmp/" + fileName + "-" +
+                    (customerId + appId + Instant.now()).hashCode() +
+                    ext);
+
+                FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
+
+                Response.ResponseBuilder response = Response.ok(file);
+                response.header("Content-Disposition",
+                    "attachment; filename=\"" + fileName + ext + "\"");
+                response.header("Access-Control-Expose-Headers",
+                    "Content-Disposition, X-Suggested-Filename");
+
+                return response.build();
+
             } catch (JsonProcessingException e) {
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .type(MediaType.APPLICATION_JSON)
-                    .entity(Map.of(Constants.ERROR
-                        , "Unable to convert template rules to json")).build();
+                LOGGER.error(
+                    String.format(
+                        "Error in converting comparison rules to JSON for customer=%s, app=%s, version=%s",
+                        customerId, appId, templateVersion), e);
+                return Response.serverError().entity(
+                    Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                        String.format(
+                            "Error in converting comparison rules to JSON for customer=%s, app=%s, version=%s",
+                            customerId, appId, templateVersion))).build();
+            } catch (IOException e) {
+                LOGGER.error(
+                    String.format(
+                        "Error in comparison rules file creation for customer=%s, app=%s, version=%s",
+                        customerId, appId, templateVersion), e);
+                return Response.serverError().entity(
+                    Utils.buildErrorResponse(Constants.ERROR, Constants.IO_EXCEPTION,
+                        String.format(
+                            "Error in comparison rules file creation for customer=%s, app=%s, version=%s",
+                            customerId, appId, templateVersion))).build();
             }
         })
             .orElse(Response.serverError()
                 .entity(Utils.buildErrorResponse(Constants.ERROR, Constants.NOT_PRESENT,
                     String
-                        .format("Unable to find templateSet for customer: %s, app: %s, version: %s",
+                        .format("Unable to find templateSet for customer=%s, app=%s, version=%s",
                             customerId, appId, templateVersion))).build());
     }
 
