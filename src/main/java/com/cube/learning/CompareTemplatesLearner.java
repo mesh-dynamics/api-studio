@@ -333,11 +333,10 @@ public class CompareTemplatesLearner {
             this.jsonPath = jsonPath;
         }
 
-        private boolean checkRegexEquals(Optional<String> string1, Optional<String> string2){
+        private boolean checkOptionalEquals(Optional<String> string1, Optional<String> string2){
             return string1.map(
                 str1 -> string2.map(str2 -> {
-                    if (str1.contains(*))
-                    str1.equals(str2);
+                    return str1.equals(str2);
                 })
                     .orElse(true)).orElse(true);
         }
@@ -354,12 +353,8 @@ public class CompareTemplatesLearner {
             return getPath().equals(that.getPath()) &&
                 getServiceId().equals(that.getServiceId()) &&
                 getReqOrResp() == that.getReqOrResp() &&
-                getMethod().map(
-                    method -> that.getMethod().map(thatMethod -> method.equals(thatMethod))
-                        .orElse(true)).orElse(true) &&
-                getJsonPath().map(
-                    jsonPath -> that.getJsonPath().map(thatJsonPath -> jsonPath.equals(thatJsonPath))
-                        .orElse(true)).orElse(true);
+                checkOptionalEquals(getMethod(), that.getMethod()) &&
+                checkOptionalEquals(getJsonPath(), that.getJsonPath());
         }
 
 
