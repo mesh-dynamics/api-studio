@@ -52,7 +52,8 @@ public abstract class GRPCPayload extends HTTPPayload {
 
     abstract boolean isRequest();
 
-    private Optional<WrapUnwrapContext> getWrapUnwrapContext() {
+    @Override
+    protected Optional<WrapUnwrapContext> getWrapUnwrapContext() {
         return protoDescriptor.map(descriptor ->
             new WrapUnwrapContext(descriptor, protoService, methodName, isRequest()));
     }
@@ -67,25 +68,6 @@ public abstract class GRPCPayload extends HTTPPayload {
                 Constants.APPLICATION_GRPC,getWrapUnwrapContext())) {
                 setPayloadState(HTTPPayloadState.UnwrappedDecoded);
             }
-        }
-    }
-
-    @Override
-    public void wrapBody() {
-
-        if (payloadState == HTTPPayloadState.UnwrappedDecoded) {
-            if (this.dataObj.wrapAsString("/".concat(HTTPRequestPayload.BODY),
-                Constants.APPLICATION_GRPC, getWrapUnwrapContext())) {
-                setPayloadState(HTTPPayloadState.WrappedDecoded);
-            }
-        }
-    }
-
-    public void wrapBodyAndEncode() {
-        if (payloadState == HTTPPayloadState.UnwrappedDecoded) {
-            if (this.dataObj.wrapAsEncoded("/".concat(HTTPRequestPayload.BODY),
-                    Constants.APPLICATION_GRPC, getWrapUnwrapContext()))
-                setPayloadState(HTTPPayloadState.WrappedEncoded);
         }
     }
 

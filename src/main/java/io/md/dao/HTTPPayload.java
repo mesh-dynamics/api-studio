@@ -6,7 +6,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 
-import io.md.logger.LogMgr;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 
@@ -17,6 +16,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
+import io.md.core.WrapUnwrapContext;
+import io.md.logger.LogMgr;
 import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.Utils;
 
@@ -154,12 +155,25 @@ public class HTTPPayload extends LazyParseAbstractPayload {
 		}
 	}
 
-	protected void wrapBody() {
+	public void wrapBody() {
 		if (payloadState == HTTPPayloadState.UnwrappedDecoded) {
 			this.dataObj.wrapAsString("/".concat(HTTPRequestPayload.BODY),
-				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN) , Optional.empty());
+				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN) , getWrapUnwrapContext());
 			setPayloadState(HTTPPayloadState.WrappedDecoded);
 		}
+	}
+
+	public void wrapBodyAndEncode() {
+		if (payloadState == HTTPPayloadState.UnwrappedDecoded) {
+			if (this.dataObj.wrapAsEncoded("/".concat(HTTPRequestPayload.BODY),
+				Utils.getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN), getWrapUnwrapContext()));
+			setPayloadState(HTTPPayloadState.WrappedEncoded);
+		}
+	}
+
+
+	protected Optional<WrapUnwrapContext> getWrapUnwrapContext() {
+		return Optional.empty();
 	}
 
 	public void unWrapBody() {
