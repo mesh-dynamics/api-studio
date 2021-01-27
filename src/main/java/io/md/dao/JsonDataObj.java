@@ -265,7 +265,7 @@ public class JsonDataObj implements DataObj {
 				} else {
 					ArrayNode arrayNode = JsonNodeFactory.instance.arrayNode();
 					arrayNode.add(objectNode);
-					multipartParent.set(key, objectNode);
+					multipartParent.set(key, arrayNode);
 				}
 			}
 		}));
