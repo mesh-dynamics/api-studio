@@ -131,6 +131,28 @@ const hasTabDataChanged = (tab) => {
     return false;
 }
 
+const getMultipartField = (key, field) => {
+    if(field.type == "file"){
+        return {
+            id: uuidv4(),
+            name: key,
+            value: field,
+            description: "",
+            selected: true,
+            isFile: true
+        }
+    }else{
+        return {
+            id: uuidv4(),
+            name: key,
+            value: field.value,
+            description: "",
+            selected: true,
+            isFile: false
+        }
+    }
+}
+
 const extractParamsFromRequestEvent = (httpRequestEvent) =>{
     let headers = [], queryParams = [], formData = [], multipartData = [], rawData = "", rawDataType = "", grpcData = "", grpcDataType = "";
     const isGrpc = httpRequestEvent.payload[0] =="GRPCRequestPayload";
@@ -190,37 +212,13 @@ const extractParamsFromRequestEvent = (httpRequestEvent) =>{
                     });
                 }else if(bodyType == "multipartData"){
                     Object.entries(body).forEach(([key, paramValues]) => {
-                        if(paramValues.type == "file"){
-                            multipartData.push({
-                                id: uuidv4(),
-                                name: key,
-                                value: paramValues,
-                                description: "",
-                                selected: true,
-                                isFile: true
-                            })
+                        if(_.isString(paramValues)){
+                            multipartData.push(getMultipartField(key, paramValues));
                         }else{
-                            if(_.isString(paramValues.value)){
-                                multipartData.push({
-                                    id: uuidv4(),
-                                    name: key,
-                                    value: paramValues.value,
-                                    description: "",
-                                    selected: true,
-                                    isFile: false
-                                })
-                            }else{                        
-                                paramValues.value.forEach((value) => {
-                                    multipartData.push({
-                                        id: uuidv4(),
-                                        name: key,
-                                        value: value,
-                                        description: "",
-                                        selected: true,
-                                        isFile: false
-                                    })                                
-                                });
-                            }
+                            paramValues.forEach((value) => {
+                                multipartData.push(getMultipartField(key, value));
+                                                            
+                            });
                         }
                         
                     });
@@ -434,7 +432,7 @@ const preRequestToFetchableConfig = (preRequestResult, httpURL) => {
                 rawData = byteArray.buffer;
 
             }else{
-                rawData = payload.body;
+                rawData = atob(payload.body);
             }
         }
     }
@@ -497,22 +495,26 @@ const multipartDataToCubeFormat = (multipartData, type) =>{
         if (each.name && each.value) {
             const nameRendered = getValueBySaveType(each.name, type)
             let valueRendered = getValueBySaveType(each.value, type);
-            if(formData[nameRendered]){
-                const existingValue = _.isString(formData[nameRendered].value) ? [formData[nameRendered].value]: formData[nameRendered].value;
-                formData[nameRendered].value = [...existingValue, valueRendered];
-            }else if(each.isFile){
+            let value = undefined;
+            
+            if(each.isFile){
                 const fileJSON = tryJsonParse(each.value); //this is type of IMultipartFileJSON
-                formData[nameRendered] ={ 
+                value = { 
                     "value": fileJSON.value,
                     "type":"file",
                     "content-type": fileJSON.type,
                     "filename": fileJSON.filename,
                 };
             }else{
-                formData[nameRendered] ={ 
+                value = { 
                     "value": valueRendered,
                     "type":"field"
                 };
+            }
+            if(formData[nameRendered]){
+                formData[nameRendered] = [...formData[nameRendered], value];
+            }else{
+                formData[nameRendered] = [value];
             }
             
         }

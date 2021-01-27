@@ -353,29 +353,6 @@ const setupListeners = (mockContext, user, replayContext) => {
         const data = global.fetchRequest[args.tabId + args.runId];
         logger.info(`Request received at ipc `,   data.fetchConfigRendered, bodyType);
         
-        if(bodyType == "formData" && data.fetchConfigRendered.body){
-           const bodyFormParams = new URLSearchParams();
-            Object.entries(JSON.parse(data.fetchConfigRendered.body)).forEach(([key, paramValues]) => { 
-                paramValues.forEach((value) => {
-                    bodyFormParams.append(key, value);
-                });
-            });
-            data.fetchConfigRendered.headers["Content-Type"] = "application/x-www-form-urlencoded";
-            data.fetchConfigRendered.body = bodyFormParams;
-        }else if(bodyType == "multipartData" && data.fetchConfigRendered.body){
-            const bodyFormParams = new FormData();
-            Object.entries(JSON.parse(data.fetchConfigRendered.body)).forEach(([key, paramValues]) => { 
-                if(Array.isArray(paramValues.value)){
-                    paramValues.value.forEach((value) => {
-                        formatMultipartData(key, value, bodyFormParams);
-                    });
-                }else{  
-                    formatMultipartData(key, paramValues, bodyFormParams);            
-                }
-            });
-            data.fetchConfigRendered.body = bodyFormParams;
-        }
-
         const fetchCall = bodyType == "grpcData" ? require("./http2fetch.js").fetch :  fetch.default;
         const abortController = new AbortController();
         reqMap[args.tabId + args.runId] = abortController;
