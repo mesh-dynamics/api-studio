@@ -1,8 +1,17 @@
 package com.cubeui.backend.service;
 
+import static com.cubeui.backend.security.Constants.CUBE_SERVER_HREF;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.ResponseEntity.noContent;
+import static org.springframework.http.ResponseEntity.ok;
+import static org.springframework.http.ResponseEntity.status;
+
 import com.cubeui.backend.domain.AppFile;
 import com.cubeui.backend.domain.DTO.Response.AppFileResponse;
+import com.cubeui.backend.web.ErrorResponse;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.md.dao.ApiTraceResponse;
@@ -10,27 +19,29 @@ import io.md.dao.Event;
 import io.md.dao.EventQuery;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
-import com.cubeui.backend.web.ErrorResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.md.utils.Constants;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,17 +49,6 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.UnknownHttpStatusCodeException;
-import com.fasterxml.jackson.core.type.TypeReference;
-
-import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletRequest;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Optional;
-
-import static com.cubeui.backend.security.Constants.CUBE_SERVER_HREF;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.ResponseEntity.*;
 
 @Service
 @Transactional
@@ -172,34 +172,7 @@ public class CubeServerService {
             return Optional.empty();
         }
     }
-
-    public Map<String, String> getExtractionMap(ResponseEntity response) {
-        Map<String, String> map = new HashMap<>();
-        try {
-            String body = response.getBody().toString();
-            JsonNode json = jsonMapper.readTree(body);
-            JsonNode data = json.get("data");
-            JsonNode responseBody = data.get(Constants.RESPONSE);
-            if(responseBody.isArray()) {
-                ArrayNode arrayNode = (ArrayNode) responseBody;
-                arrayNode.forEach(node -> {
-                    try {
-                        JsonNode extractionMapJson = jsonMapper.readTree(node.get("extractionMap").textValue());
-                        TypeReference<HashMap<String,String>> typeRef
-                            = new TypeReference<HashMap<String,String>>() {};
-                        ObjectReader reader = jsonMapper.readerFor(typeRef);
-                        Map<String, String> extractionMap = reader.readValue(extractionMapJson);
-                        map.putAll(extractionMap);
-                    } catch (IOException e) {
-                        log.info(String.format("Error in converting node to Map for  message= %s", e.getMessage()));
-                    }
-                });
-            }
-        } catch (Exception e) {
-            log.info(String.format("Error in converting Json to response Map for  message= %s", e.getMessage()));
-        }
-        return map;
-    }
+    
     public Optional<List<Event>> getEvents(EventQuery query, HttpServletRequest request) {
         ResponseEntity response = fetchPostResponse(request, Optional.of(query), "/cs/getEvents");
         return getListData(response,"/cs/getEvents", Optional.of("objects"), new TypeReference<List<Event>>(){});
@@ -233,8 +206,9 @@ public class CubeServerService {
     }
 
     public String getPathForHttpMethod(String uri , String method , String... lastParams){
-        String path = String.join("/" ,  lastParams);
-        return uri.replace(path , path + "/" + method).replaceFirst("^/api" , "");
+        String path = URLDecoder.decode(String.join("/" ,  lastParams), Charset.defaultCharset());
+        String decodedUri = URLDecoder.decode(uri, Charset.defaultCharset());
+        return decodedUri.replace(path , path + "/" + method).replaceFirst("^/api" , "");
     }
 
     public <T> ResponseEntity fetchGetResponse(HttpServletRequest request, Optional<T> requestBody, String... path) {
