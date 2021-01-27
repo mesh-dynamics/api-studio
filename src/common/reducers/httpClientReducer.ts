@@ -372,7 +372,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab.outgoingRequests.map((eachOutgoingTab) => {
                             if (eachOutgoingTab.id === data.tabId) {
                                 eachOutgoingTab[data.type] = data.value;
-                                eachOutgoingTab['headers'] = updateHeaderBasedOnContentType(eachOutgoingTab.headers, data.type, data.value);
+                                eachOutgoingTab['headers'] = updateHeaderBasedOnContentType(eachOutgoingTab.headers, data.type, data.value, eachOutgoingTab);
                                 eachOutgoingTab.hasChanged = true;
                             }
                         })
@@ -390,7 +390,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab[data.type  as IHttpClientTabDetailsFieldNames] = data.value;
-                        eachTab['headers'] = updateHeaderBasedOnContentType(eachTab.headers, data.type, data.value);
+                        eachTab['headers'] = updateHeaderBasedOnContentType(eachTab.headers, data.type, data.value, eachTab);
                         eachTab.hasChanged = true;
                     }
                     return eachTab; 
