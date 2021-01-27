@@ -13,14 +13,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Repository
 @Transactional
 public interface DevtoolEnvironmentsRepository extends JpaRepository<DtEnvironment, Long> {
-  Optional<List<DtEnvironment>> findDtEnvironmentsByUserId(Long userId);
   Optional<DtEnvironment> findDtEnvironmentById(Long id);
   Optional<DtEnvironment> findDtEnvironmentByUserIdAndName(Long userId, String name);
-  Optional<DtEnvironment> findDtEnvironmentByUserIdAndNameAndIdNot(Long userId, String name, Long id);
-  List<DtEnvironment> findDtEnvironmentByNameAndGlobalAndAppIdIn(String Name, boolean global, List<Long> appIds);
-  List<DtEnvironment> findDtEnvironmentByNameAndAppIdInAndGlobalAndIdNot(String Name, List<Long> appIds, boolean global, Long id);
+  Optional<DtEnvironment> findDtEnvironmentByUserIdAndNameAndAppId(Long userId, String name, Long appId);
+  Optional<DtEnvironment> findDtEnvironmentByUserIdAndNameAndAppIdAndIdNot(Long userId, String name,Long appId, Long id);
+  List<DtEnvironment> findDtEnvironmentByNameAndGlobalAndAppId(String Name, boolean global, Long appId);
+  List<DtEnvironment> findDtEnvironmentByNameAndAppIdAndGlobalAndIdNot(String Name, Long appId, boolean global, Long id);
   List<DtEnvironment> findDtEnvironmentByAppIdInOrUserId(List<Long> appIds, Long userId);
   @Query(nativeQuery = true , value="select * from devtool_environments where (user_id=:userId Or app_id In :appIds) and global=:global")
   List<DtEnvironment> findDtEnvironmentByUserIdOrAppIdInAndGlobal(@Param("userId") Long userId, @Param("appIds") List<Long> appIds,  @Param("global") boolean global);
-
 }

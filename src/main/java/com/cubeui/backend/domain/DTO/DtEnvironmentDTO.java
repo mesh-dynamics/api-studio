@@ -4,10 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.validation.constraints.NotEmpty;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 
 @Getter
-@ToString
+@Setter
 public class DtEnvironmentDTO {
   Long id;
 

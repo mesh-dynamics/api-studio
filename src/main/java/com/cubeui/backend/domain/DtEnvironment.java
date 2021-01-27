@@ -49,7 +49,7 @@ public class DtEnvironment {
   @JsonIgnore
   @ManyToOne
   @OnDelete(action = OnDeleteAction.CASCADE)
-  @JoinColumn(name = "app_id", nullable = false)
+  @JoinColumn(name = "app_id", nullable = true)
   App app;
 
   @Column

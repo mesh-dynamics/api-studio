@@ -4,7 +4,9 @@ import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.AppFile;
 import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.CustomerDTO;
+import com.cubeui.backend.domain.DTO.DtEnvVarDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
+import com.cubeui.backend.domain.DtEnvVar;
 import com.cubeui.backend.domain.DtEnvironment;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.AppRepository;
@@ -14,6 +16,7 @@ import com.cubeui.backend.repository.UserRepository;
 import com.cubeui.backend.service.AppFileStorageService;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.service.UserService;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -105,12 +108,22 @@ public class DataInitializer implements CommandLineRunner {
                     for(int i=0; i < apps.size(); i++) {
                         if(i == apps.size()-1) {
                             dtEnvironment.setApp(apps.get(i));
+                            dtEnvironment.setGlobal(false);
                             devtoolEnvironmentsRepository.save(dtEnvironment);
                         } else {
                             DtEnvironment dt = new DtEnvironment(dtEnvironment.getName());
                             dt.setApp(apps.get(i));
                             dt.setUser(dtEnvironment.getUser());
-                            dt.setVars(dtEnvironment.getVars());
+                            List<DtEnvVar> envVarsList = new ArrayList<>(dtEnvironment.getVars().size());
+                            for (DtEnvVar dtEnvVar : dtEnvironment.getVars()) {
+                                DtEnvVar newDtEnvVar = new DtEnvVar();
+                                newDtEnvVar.setKey(dtEnvVar.getKey());
+                                newDtEnvVar.setValue(dtEnvVar.getValue());
+                                newDtEnvVar.setEnvironment(dt);
+                                envVarsList.add(newDtEnvVar);
+                            }
+                            dt.setVars(envVarsList);
+                            dt.setGlobal(false);
                             devtoolEnvironmentsRepository.save(dt);
                         }
                     }
