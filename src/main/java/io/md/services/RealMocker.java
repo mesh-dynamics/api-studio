@@ -6,6 +6,7 @@
 
 package io.md.services;
 
+import io.md.core.CollectionKey;
 import io.md.dao.*;
 
 import java.time.Instant;
@@ -74,9 +75,11 @@ public class RealMocker implements Mocker {
 
             Optional<JoinQuery> joinQuery = mockWColl.isDevtool ? Optional.of(getSuccessResponseMatch()) : Optional.empty();
             Optional<ReplayContext> replayCtx = mockWColl.replay.flatMap(r->r.replayContext);
+
+            boolean tracePropagation = mockWColl.replay.map(r->r.tracePropagation).orElse(true);
             EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1),
                 !mockWColl.isDevtool, lowerBoundForMatching, mockWColl.recordCollection,
-                payloadFieldFilterList , joinQuery , mockWColl.isDevtool , replayCtx);
+                payloadFieldFilterList , joinQuery , mockWColl.isDevtool , replayCtx , tracePropagation);
             DSResult<Event> res = cube.getEvents(eventQuery);
 
             final Map<String , Event> reqIdReqMapping = new HashMap<>();
@@ -86,14 +89,22 @@ public class RealMocker implements Mocker {
                 return cube.getRespEventForReqEvent(req);
             };
 
-            Optional<Event> matchingResponse = res.getObjects().findFirst().flatMap(getRespEventForReqEvent);
-
+            Optional<Event> matchingRequest = res.getObjects().findFirst();
+            Optional<Event> matchingResponse = matchingRequest.flatMap(getRespEventForReqEvent);
+            if(!mockWColl.isDevtool && matchingRequest.isPresent() && res.getNumFound()>1){
+                ReplayContext replyCtx = replayCtx.orElse(new ReplayContext());
+                replyCtx.setMockResultToReplayContext(matchingRequest.get());
+                Replay replay = mockWColl.replay.get();
+                replay.replayContext = Optional.of(replyCtx);
+                cube.populateCache(new CollectionKey(replay.customerId, replay.app , replay.instanceId) , RecordOrReplay.createFromReplay(replay));
+            }
+            
             if(mockWColl.isDevtool && !matchingResponse.isPresent()){
                 LOGGER.info(createMockReqErrorLogMessage(reqEvent,
                         "Did not find any valid 200 response. Giving first match resp"));
                 eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1),
                     false , lowerBoundForMatching, mockWColl.recordCollection ,
-                    payloadFieldFilterList , Optional.empty() , mockWColl.isDevtool , Optional.empty());
+                    payloadFieldFilterList , Optional.empty() , mockWColl.isDevtool , Optional.empty() , true);
                 res = cube.getEvents(eventQuery);
                 matchingResponse = res.getObjects().findFirst().flatMap(getRespEventForReqEvent);
             }
@@ -161,14 +172,14 @@ public class RealMocker implements Mocker {
 
     private EventQuery buildRequestEventQuery(Event event, int offset, Optional<Integer> limit,
         boolean isTimestampSortOrderAsc, Optional<Instant> lowerBoundForMatching, String collection ,
-        List<String> payloadFields , Optional<JoinQuery> joinQuery , boolean isDevtoolRequest , Optional<ReplayContext> replayContext) {
+        List<String> payloadFields , Optional<JoinQuery> joinQuery , boolean isDevtoolRequest , Optional<ReplayContext> replayContext , boolean tracePropagation) {
         EventQuery.Builder builder =
             new EventQuery.Builder(event.customerId, event.app, event.eventType)
                 .withService(event.service)
                 .withCollection(collection , isDevtoolRequest ? EventQuery.COLLECTION_WEIGHT : null)
                 //.withInstanceId(event.instanceId)
                 .withPaths(Arrays.asList(event.apiPath))
-                .withTraceId(event.getTraceId() , (isDevtoolRequest || replayContext.isPresent()) ? EventQuery.TRACEID_WEIGHT : null)
+                .withTraceId(event.getTraceId() , (isDevtoolRequest || !tracePropagation) ? EventQuery.TRACEID_WEIGHT : null)
                 .withPayloadKey(event.payloadKey , isDevtoolRequest ? EventQuery.PAYLOAD_KEY_WEIGHT : null)
                 .withOffset(offset)
                 .withTimestampAsc(isTimestampSortOrderAsc)
@@ -176,7 +187,9 @@ public class RealMocker implements Mocker {
                 .withRunTypes(nonMockRunTypes);
         if(replayContext.isPresent()){
             ReplayContext rCtx = replayContext.get();
-            builder.withStartTimestamp(rCtx.reqStartTs).withEndTimestamp(rCtx.reqEndTs);
+            Optional<Instant> reqStartTs = Optional.ofNullable(rCtx.getLastMockEventTs(event).orElse(rCtx.reqStartTs.orElse(null)));
+            reqStartTs.ifPresent(builder::withStartTimestamp);
+            rCtx.reqEndTs.ifPresent(builder::withEndTimestamp);
         }else{
             lowerBoundForMatching.ifPresent(builder::withStartTimestamp);
         }
@@ -203,7 +216,7 @@ public class RealMocker implements Mocker {
             String runId = optionalRunId.orElse(event.getTraceId());
             mockWithCollection.runId = runId;
             event.setCollection(replayCollection.get());
-            replayCtx.ifPresent(ctx->event.setTraceId(ctx.reqTraceId));
+            replayCtx.flatMap(ctx->ctx.reqTraceId).ifPresent(event::setTraceId);
 
             try {
                 event.parseAndSetKey(cube.getTemplate(event.customerId, event.app, event.service,
