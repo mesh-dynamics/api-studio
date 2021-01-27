@@ -509,6 +509,13 @@ public class CubeStoreController {
         validation.validateCustomerName(authentication,recordOrReplay.getCustomerId().orElse(null));
         return cubeServerService.fetchPostResponse(request, Optional.of(recordOrReplay));
     }
+
+    @GetMapping("/getProtoDescriptor/{customerId}/{app}")
+    public ResponseEntity getProtoDescriptor(HttpServletRequest request, @RequestBody Optional<String> postBody , Authentication authentication,
+        @PathVariable String customerId, @PathVariable String app) {
+        validation.validateCustomerName(authentication,customerId);
+        return cubeServerService.fetchGetResponse(request, postBody);
+    }
 }
 
 
