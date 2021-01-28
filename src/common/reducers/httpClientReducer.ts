@@ -2,28 +2,29 @@ import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import { updateHeaderBasedOnContentType } from '../utils/http_client/utils';
+import { setGrpcDataFromDescriptor } from '../utils/http_client/grpc-utils';
 import { ICollectionDetails, ICubeRunHistory, IHttpClientStoreState, IHttpClientTabDetails } from "./state.types";
-export interface IHttpClientAction{
+export interface IHttpClientAction {
     type: string,
-    data:any;
-  }
+    data: any;
+}
 
-  /*
-    eachTab[data.type]: this is not proper as per typescript. data.type may be key which doesn't belong into eachTab
-    To remove compile errors, as of now adding a type. But slowly this pattern needs to be improved.
-    Adding below interface only to ask TS to consider data.type as one of these props, which belongs to IHttpClientTabDetails type
-  */
+/*
+  eachTab[data.type]: this is not proper as per typescript. data.type may be key which doesn't belong into eachTab
+  To remove compile errors, as of now adding a type. But slowly this pattern needs to be improved.
+  Adding below interface only to ask TS to consider data.type as one of these props, which belongs to IHttpClientTabDetails type
+*/
 
- export type IHttpClientTabDetailsFieldNames = 
- "eventData" | "formData" | "multipartData" | "headers" | "outgoingRequestIds"
- | "outgoingRequests" | "queryStringParams";
+export type IHttpClientTabDetailsFieldNames =
+    "eventData" | "formData" | "multipartData" | "headers" | "outgoingRequestIds"
+    | "outgoingRequests" | "queryStringParams";
 
 /* const tabId = uuidv4();
 const isoDate = new Date().toISOString();
 const timestamp = new Date(isoDate).getTime();
 const traceId = cryptoRandomString({length: 32});
 const spanId = cryptoRandomString({length: 16}); */
-const initialState : IHttpClientStoreState = { 
+const initialState: IHttpClientStoreState = {
     tabs: [/* { 
         id: tabId,
         requestId: "",
@@ -148,27 +149,28 @@ const initialState : IHttpClientStoreState = {
     mockConfigStatusIsError: false,
     showMockConfigList: true,
     selectedMockConfig: "",
-    historyTabState:{        
+    historyTabState: {
         currentPage: 0,
-        oldPagesData:[],
-        numResults:15,
-        count:0
+        oldPagesData: [],
+        numResults: 15,
+        count: 0
     },
     isHistoryLoading: false,
-    collectionTabState:{  
-        currentPage : 0,
-        numResults:10,
-        count:0
+    collectionTabState: {
+        currentPage: 0,
+        numResults: 10,
+        count: 0
     },
     isCollectionLoading: false,
     mockContextLookupCollection: "",
     mockContextSaveToCollection: {},
     uiPref:{},
-    historyPathFilterText: ""
+    historyPathFilterText: "",
+    appGrpcSchema: {},
 }
 
-const getTabIndexGivenTabId = (tabId:string, tabs: IHttpClientTabDetails[]) => {
-    if(!tabs) return -1;
+const getTabIndexGivenTabId = (tabId: string, tabs: IHttpClientTabDetails[]) => {
+    if (!tabs) return -1;
     return tabs.findIndex((e) => e.id === tabId);
 }
 
@@ -176,11 +178,11 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
     switch (type) {
 
         case httpClientConstants.DELETE_PARAM_IN_OUTGOING_TAB: {
-            let {tabs, selectedTabKey} = state;
+            let { tabs, selectedTabKey } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
-                    if(eachTab.id === selectedTabKey) {
+                    if (eachTab.id === selectedTabKey) {
                         eachTab.outgoingRequests.map((eachOutgoingTab) => {
                             if (eachOutgoingTab.id === data.tabId) {
                                 eachOutgoingTab[data.type] = eachOutgoingTab[data.type].filter((e: any) => e.id !== data.id);
@@ -188,17 +190,17 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                             }
                         })
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
 
         case httpClientConstants.ADD_PARAM_TO_OUTGOING_TAB: {
-            let {tabs, selectedTabKey} = state;
+            let { tabs, selectedTabKey } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
-                    if(eachTab.id === selectedTabKey) {
+                    if (eachTab.id === selectedTabKey) {
                         eachTab.outgoingRequests.map((eachOutgoingTab) => {
                             if (eachOutgoingTab.id === data.tabId) {
                                 const type =( data.type === "multipartDataFile" ? "multipartData": data.type);
@@ -214,13 +216,13 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                             }
                         })
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
 
         case httpClientConstants.DELETE_PARAM_IN_TAB: {
-            let {tabs} = state;
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
@@ -228,13 +230,13 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab[data.type as IHttpClientTabDetailsFieldNames] = eachTab[data.type as IHttpClientTabDetailsFieldNames].filter((e: any) => e.id !== data.id);
                         eachTab.hasChanged = true;
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
 
         case httpClientConstants.ADD_PARAM_TO_TAB: {
-            let {tabs} = state;
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
@@ -250,19 +252,19 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                             isFile
                         }];
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
 
         case httpClientConstants.UPDATE_PARAM_IN_OUTGOING_TAB: {
-            let {tabs, selectedTabKey} = state;
+            let { tabs, selectedTabKey } = state;
             const selectedTabIndex = tabs.findIndex(tab => tab.id === selectedTabKey);
             const selectedOutgoingTabIndex = tabs[selectedTabIndex]["outgoingRequests"].findIndex(tab => tab.id === data.tabId);
             let params = tabs[selectedTabIndex]["outgoingRequests"][selectedOutgoingTabIndex][data.type];
-            if(_.isArray(params)) {
+            if (_.isArray(params)) {
                 let specificParamArr = params.filter((e) => e.id === data.id);
-                if(specificParamArr.length > 0) {
+                if (specificParamArr.length > 0) {
                     specificParamArr[0][data.key] = data.value;
                 }
             } else {
@@ -275,24 +277,24 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab.outgoingRequests.map((eachOutgoingTab) => {
                             if (eachOutgoingTab.id === data.tabId) {
                                 eachOutgoingTab[data.type] = params;
-                                if(data.type === "httpURL") eachOutgoingTab.tabName = params;
+                                if (data.type === "httpURL") eachOutgoingTab.tabName = params;
                                 eachOutgoingTab.hasChanged = true;
                             }
                         })
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
 
         case httpClientConstants.UPDATE_PARAM_IN_TAB: {
-            let {tabs} = state;
+            let { tabs } = state;
             const tabIndex = tabs.findIndex(tab => tab.id === data.tabId);
-            if(tabIndex < 0) return state;
-            let params = tabs[tabIndex][data.type  as IHttpClientTabDetailsFieldNames];
-            if(_.isArray(params)) {
+            if (tabIndex < 0) return state;
+            let params = tabs[tabIndex][data.type as IHttpClientTabDetailsFieldNames];
+            if (_.isArray(params)) {
                 let specificParamArr = params.filter((e) => e.id === data.id);
-                if(specificParamArr.length > 0) {
+                if (specificParamArr.length > 0) {
                     specificParamArr[0][data.key] = data.value;
                 }
             } else {
@@ -304,21 +306,21 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab[data.type as IHttpClientTabDetailsFieldNames] = params as any[];
-                        if(data.type === "httpURL") eachTab.tabName = params as unknown as string;
+                        if (data.type === "httpURL") eachTab.tabName = params as unknown as string;
                         eachTab.hasChanged = true;
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
 
         case httpClientConstants.UPDATE_ALL_PARAMS_IN_OUTGOING_TAB: {
-            let {tabs, selectedTabKey} = state;
+            let { tabs, selectedTabKey } = state;
             const selectedTabIndex = tabs.findIndex(tab => tab.id === selectedTabKey);
             const selectedOutgoingTabIndex = tabs[selectedTabIndex]["outgoingRequests"].findIndex(tab => tab.id === data.tabId);
             let params = tabs[selectedTabIndex]["outgoingRequests"][selectedOutgoingTabIndex][data.type];
-            if(_.isArray(params)) {
-                params.forEach((param) => {param[data.key]=data.value})
+            if (_.isArray(params)) {
+                params.forEach((param) => { param[data.key] = data.value })
             } else {
                 params = data.value;
             }
@@ -329,23 +331,23 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab.outgoingRequests.map((eachOutgoingTab) => {
                             if (eachOutgoingTab.id === data.tabId) {
                                 eachOutgoingTab[data.type] = params;
-                                if(data.type === "httpURL") eachOutgoingTab.tabName = params;
+                                if (data.type === "httpURL") eachOutgoingTab.tabName = params;
                                 eachOutgoingTab.hasChanged = true;
                             }
                         })
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
 
         case httpClientConstants.UPDATE_ALL_PARAMS_IN_TAB: {
-            let {tabs} = state;
+            let { tabs } = state;
             const tabIndex = tabs.findIndex(tab => tab.id === data.tabId);
-            if(tabIndex < 0) return state;
-            let params = tabs[tabIndex][data.type  as IHttpClientTabDetailsFieldNames];
-            if(_.isArray(params)) {
-                params.forEach((param) => {param[data.key]=data.value})
+            if (tabIndex < 0) return state;
+            let params = tabs[tabIndex][data.type as IHttpClientTabDetailsFieldNames];
+            if (_.isArray(params)) {
+                params.forEach((param) => { param[data.key] = data.value })
             } else {
                 params = data.value;
             }
@@ -355,16 +357,16 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab[data.type as IHttpClientTabDetailsFieldNames] = params as any[];
-                        if(data.type === "httpURL") eachTab.tabName = params as unknown as string;
+                        if (data.type === "httpURL") eachTab.tabName = params as unknown as string;
                         eachTab.hasChanged = true;
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
 
         case httpClientConstants.UPDATE_BODY_OR_RAWA_DATA_TYPE_IN_OUTGOING_TAB: {
-            let {tabs, selectedTabKey} = state;
+            let { tabs, selectedTabKey } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
@@ -377,13 +379,13 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                             }
                         })
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
 
         case httpClientConstants.UPDATE_BODY_OR_RAWA_DATA_TYPE_IN_TAB: {
-            let {tabs} = state;
+            let { tabs } = state;
             // this.setState({[type]: value});
             return {
                 ...state,
@@ -393,15 +395,15 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab['headers'] = updateHeaderBasedOnContentType(eachTab.headers, data.type, data.value);
                         eachTab.hasChanged = true;
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
 
         case httpClientConstants.REPLACE_ALL_PARAMS_IN_TAB: {
-            let {tabs} = state;
+            let { tabs } = state;
             const tabIndex = tabs.findIndex(tab => tab.id === data.tabId);
-            if(tabIndex < 0) return state;
+            if (tabIndex < 0) return state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
@@ -409,20 +411,20 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab[data.type as IHttpClientTabDetailsFieldNames] = data.params;
                         eachTab.hasChanged = true;
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
 
         case httpClientConstants.REPLACE_ALL_PARAMS_IN_OUTGOING_TAB: {
-            let {tabs, selectedTabKey} = state;
+            let { tabs, selectedTabKey } = state;
             const selectedTabIndex = tabs.findIndex(tab => tab.id === selectedTabKey);
             const selectedOutgoingTabIndex = tabs[selectedTabIndex]["outgoingRequests"].findIndex(tab => tab.id === data.tabId);
-            if(selectedOutgoingTabIndex < 0) return state;
+            if (selectedOutgoingTabIndex < 0) return state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
-                    if(eachTab.id === selectedTabKey) {
+                    if (eachTab.id === selectedTabKey) {
                         eachTab.outgoingRequests.map((eachOutgoingTab) => {
                             if (eachOutgoingTab.id === data.tabId) {
                                 eachOutgoingTab[data.type] = data.params;
@@ -430,7 +432,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                             }
                         })
                     }
-                    return eachTab; 
+                    return eachTab;
                 }),
             }
         }
@@ -443,7 +445,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
         }
 
         case httpClientConstants.UNSET_HAS_CHANGED_ALL: {
-            let {tabs} = state;
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
@@ -453,13 +455,13 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                             eachOutgoingTab.hasChanged = false;
                         })
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
 
         }
         case httpClientConstants.PRE_DRIVE_REQUEST: {
-            let {tabs} = state;
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
@@ -469,13 +471,13 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab["currentRunId"] = data.runId;
                         eachTab["progressState"] = httpClientConstants.PRE_DRIVE_REQUEST;
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
 
         case httpClientConstants.POST_SUCCESS_DRIVE_REQUEST: {
-            let {tabs} = state;
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
@@ -486,12 +488,12 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab["responseStatusText"] = data.responseStatusText;
                         eachTab["progressState"] = httpClientConstants.POST_SUCCESS_DRIVE_REQUEST;
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
         case httpClientConstants.AFTER_RESPONSE_RECEIVED_DATA: {
-            let {tabs} = state;
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
@@ -499,13 +501,13 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab["responseBody"] = data.responseBody;
                         eachTab["progressState"] = httpClientConstants.AFTER_RESPONSE_RECEIVED_DATA;
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
 
         case httpClientConstants.UPDATE_EVENT_DATA_IN_TAB: {
-            let {tabs} = state;
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
@@ -513,7 +515,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab["eventData"] = data.value
                         // eachTab.hasChanged = true; //TODO:Check with Sid
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
@@ -526,20 +528,20 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
         }
 
         case httpClientConstants.POST_ERROR_DRIVE_REQUEST: {
-            let {tabs} = state;
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab["responseStatus"] = data.responseStatus;
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
 
         case httpClientConstants.ADD_TAB: {
-            let {tabs} = state;
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: [...tabs, {
@@ -555,14 +557,14 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
         }
 
         case httpClientConstants.ADD_OUTGOING_REQUESTS_TO_TAB: {
-            let {tabs} = state;
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab["outgoingRequests"] = data.outgoingRequests;
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
@@ -610,14 +612,14 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
         case httpClientConstants.DELETE_CUBE_RUN_HISTORY: {
             let cubeRunHistory: ICubeRunHistory = {};
             Object.keys(state.cubeRunHistory).forEach((historyDate) => {
-              cubeRunHistory[historyDate] = state.cubeRunHistory[historyDate].filter((traceList) => {
-                if (traceList.children) {
-                    traceList.children = traceList.children.filter(
-                    (traceItem) => (traceItem.requestEventId != data)
-                  );
-                }
-                return !(traceList.requestEventId == data  || traceList.traceIdAddedFromClient == data);
-              });
+                cubeRunHistory[historyDate] = state.cubeRunHistory[historyDate].filter((traceList) => {
+                    if (traceList.children) {
+                        traceList.children = traceList.children.filter(
+                            (traceItem) => (traceItem.requestEventId != data)
+                        );
+                    }
+                    return !(traceList.requestEventId == data || traceList.traceIdAddedFromClient == data);
+                });
             });
             return {
                 ...state,
@@ -634,17 +636,18 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
         }
         case httpClientConstants.DELETE_USER_COLLECTION: {
             let deletedCollection: ICollectionDetails;
-            const userCollections = state.userCollections.filter( collection => { 
-                if(collection.id === data){
+            const userCollections = state.userCollections.filter(collection => {
+                if (collection.id === data) {
                     deletedCollection = collection;
-                } 
+                }
                 return collection.id !== data;
             });
-            const tabs = state.tabs.map( tab => {
-                if(deletedCollection && tab.collectionIdAddedFromClient === deletedCollection.collec){
-                    return {...tab, 
-                    collectionIdAddedFromClient : "",
-                    recordingIdAddedFromClient : ""
+            const tabs = state.tabs.map(tab => {
+                if (deletedCollection && tab.collectionIdAddedFromClient === deletedCollection.collec) {
+                    return {
+                        ...tab,
+                        collectionIdAddedFromClient: "",
+                        recordingIdAddedFromClient: ""
                     }
                 }
                 return tab;
@@ -657,15 +660,15 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
         }
 
         case httpClientConstants.POST_SUCCESS_LOAD_RECORDED_HISTORY: {
-            let {tabs} = state;
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
-                    if (eachTab.id === data.tabId  && eachTab.currentRunId == data.runId) {
+                    if (eachTab.id === data.tabId && eachTab.currentRunId == data.runId) {
                         eachTab["recordedHistory"] = data.recordedHistory;
                         eachTab["selectedTraceTableTestReqTabId"] = data.recordedHistory.id;
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
@@ -673,7 +676,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
         case httpClientConstants.SET_INACTIVE_HISTORY_CURSOR: {
             return {
                 ...state,
-                historyCursor : data.historyCursor,
+                historyCursor: data.historyCursor,
                 active: data.active
             }
         }
@@ -681,14 +684,14 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
         case httpClientConstants.SET_ACTIVE_HISTORY_CURSOR: {
             return {
                 ...state,
-                historyCursor : data.historyCursor
+                historyCursor: data.historyCursor
             }
         }
 
         case httpClientConstants.SET_SELECTED_TAB_KEY: {
             return {
                 ...state,
-                selectedTabKey : data.selectedTabKey
+                selectedTabKey: data.selectedTabKey
             }
         }
 
@@ -696,7 +699,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             return {
                 ...state,
                 tabs: data.tabs,
-                selectedTabKey : data.selectedTabKey
+                selectedTabKey: data.selectedTabKey
             }
         }
 
@@ -722,7 +725,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 envStatusText: "",
             }
         }
-        
+
         case httpClientConstants.SHOW_ENV_LIST: {
             return {
                 ...state,
@@ -738,7 +741,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
         }
 
         case httpClientConstants.RESET_RUN_STATE: {
-            let {tabs} = state;
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
@@ -760,7 +763,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
         }
 
         case httpClientConstants.SET_AS_REFERENCE: {
-            let {tabs} = state;
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
@@ -769,7 +772,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                             ...data.tab
                         };
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
@@ -777,9 +780,9 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
         case httpClientConstants.CLOSE_ADD_MOCK_REQ_MODAL: {
             return {
                 ...state,
-                showAddMockReqModal: data.showAddMockReqModal, 
-                mockReqServiceName: data.mockReqServiceName, 
-                mockReqApiPath: data.mockReqApiPath, 
+                showAddMockReqModal: data.showAddMockReqModal,
+                mockReqServiceName: data.mockReqServiceName,
+                mockReqApiPath: data.mockReqApiPath,
                 selectedTabIdToAddMockReq: data.selectedTabIdToAddMockReq
             }
         }
@@ -794,41 +797,41 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
         case httpClientConstants.SHOW_ADD_MOCK_REQ_MODAL: {
             return {
                 ...state,
-                showAddMockReqModal: data.showAddMockReqModal, 
-                mockReqServiceName: data.mockReqServiceName, 
-                mockReqApiPath: data.mockReqApiPath, 
+                showAddMockReqModal: data.showAddMockReqModal,
+                mockReqServiceName: data.mockReqServiceName,
+                mockReqApiPath: data.mockReqApiPath,
                 selectedTabIdToAddMockReq: data.selectedTabIdToAddMockReq
             }
         }
 
         case httpClientConstants.SET_SELECTED_TRACE_TABLE_REQ_TAB: {
-            let {tabs} = state;
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab.selectedTraceTableReqTabId = data.selectedTraceTableReqTabId
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
 
         case httpClientConstants.SET_SELECTED_TRACE_TABLE_TEST_REQ_TAB: {
-            let {tabs} = state;
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab.selectedTraceTableTestReqTabId = data.selectedTraceTableTestReqTabId
                     }
-                    return eachTab; 
+                    return eachTab;
                 })
             }
         }
-        
-        case httpClientConstants.SET_REQUEST_RUNNING: {            
-            let {tabs} = state;
+
+        case httpClientConstants.SET_REQUEST_RUNNING: {
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
@@ -839,24 +842,24 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 })
             }
         }
-        
+
         case httpClientConstants.UNSET_REQUEST_RUNNING: {
-            let {tabs} = state;
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
-                        if (eachTab.id === data.tabId && eachTab.currentRunId === data.runId) {
-                            eachTab["requestRunning"] = false;
-                            eachTab["abortRequest"] = null;
-                        }
-                        return eachTab;
-                    })
+                    if (eachTab.id === data.tabId && eachTab.currentRunId === data.runId) {
+                        eachTab["requestRunning"] = false;
+                        eachTab["abortRequest"] = null;
+                    }
+                    return eachTab;
+                })
             }
         }
-        
+
         case httpClientConstants.CREATE_DUPLICATE_TAB: {
-            let {tabs} = state;
-            const tabToCloneIndex = _.findIndex(tabs, {id: data.tabId});
+            let { tabs } = state;
+            const tabToCloneIndex = _.findIndex(tabs, { id: data.tabId });
             const tabToClone = tabs[tabToCloneIndex];
             const newTab = _.cloneDeep(tabToClone)!;
             newTab.id = uuidv4();
@@ -866,7 +869,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             newTab.isHighlighted = true;
             newTab.recordingIdAddedFromClient = ""
             newTab.collectionIdAddedFromClient = ""
-            
+
             newTab.outgoingRequests.forEach((request) => {
                 request.recordingIdAddedFromClient = ""
                 request.collectionIdAddedFromClient = ""
@@ -877,8 +880,8 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             }
         }
 
-        case httpClientConstants.TOGGLE_SHOW_TRACE: {            
-            let {tabs} = state;
+        case httpClientConstants.TOGGLE_SHOW_TRACE: {
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
@@ -912,7 +915,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 mockConfigStatusText: "",
             }
         }
-        
+
         case httpClientConstants.SHOW_MOCK_CONFIG_LIST: {
             return {
                 ...state,
@@ -926,7 +929,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 selectedMockConfig: data,
             }
         }
-        
+
         case httpClientConstants.RESET_HTTP_CLIENT_TO_INITIAL_STATE: {
             return initialState;
         }
@@ -946,57 +949,146 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
         }
 
         case httpClientConstants.UPDATE_ABORT_REQUEST: {
-            let {tabs} = state;
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
-                        if (eachTab.id === data.tabId) {
-                            eachTab["abortRequest"] = data.abortRequest;
-                        }
-                        return eachTab;
-                    })
+                    if (eachTab.id === data.tabId) {
+                        eachTab["abortRequest"] = data.abortRequest;
+                    }
+                    return eachTab;
+                })
             }
         }
 
         case httpClientConstants.SET_TAB_IS_HIGHLIGHTED: {
-            let {tabs} = state;
-            const {tabId, isHighlighted} = data;
+            let { tabs } = state;
+            const { tabId, isHighlighted } = data;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
-                        if (eachTab.id === data.tabId) {
-                            eachTab["isHighlighted"] = isHighlighted;
-                        }
-                        return eachTab;
-                    })
+                    if (eachTab.id === data.tabId) {
+                        eachTab["isHighlighted"] = isHighlighted;
+                    }
+                    return eachTab;
+                })
             }
         }
 
         case httpClientConstants.UPDATE_UI_PREFERENCE: {
-            let {tabs} = state;
-            const {tabId, isHighlighted} = data;
+            let { tabs } = state;
+            const { tabId, isHighlighted } = data;
             return {
                 ...state,
-                uiPref: {...state.uiPref, [data.key]: data.value}
+                uiPref: { ...state.uiPref, [data.key]: data.value }
             } as IHttpClientStoreState
         }
         case httpClientConstants.DELETE_OUTGOING_REQ: {
-            let {tabs} = state;
+            let { tabs } = state;
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
                     let outgoingRequests = eachTab.outgoingRequests;
-                    if(eachTab.id === data.tabId) {
+                    if (eachTab.id === data.tabId) {
                         outgoingRequests = eachTab.outgoingRequests.filter((eachOutgoingTab) => {
                             return eachOutgoingTab.id !== data.outgoingReqTabId;
                         })
                         eachTab.hasChanged = true;
                     }
-                    return {...eachTab, outgoingRequests: [...outgoingRequests]}; 
+                    return { ...eachTab, outgoingRequests: [...outgoingRequests] };
                 })
             }
         }
+        case httpClientConstants.SET_PROTO_DESCRIPTOR_VALUES: {
+            let { tabs } = state;
+            return {
+                ...state,
+                appGrpcSchema: data,
+                tabs: tabs.map(eachTab => {
+                            eachTab.grpcData = setGrpcDataFromDescriptor(data, eachTab.grpcData);
+                            return eachTab;
+                        })
+            }
+        }
+        case httpClientConstants.UPDATE_GRPC_CONNECTION_DETAILS_IN_TAB: {
+            let { tabs } = state;
+            const tabIndex = tabs.findIndex(tab => tab.id === data.tabId);
+            if (tabIndex < 0) return state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab.grpcConnectionSchema = data.value;
+                        eachTab.hasChanged = true;
+                    }
+                    return eachTab;
+                })
+            }
+        }
+        case httpClientConstants.UPDATE_GRPC_CONNECTION_DETAILS_IN_OUTGOING_TAB: {
+            let { tabs } = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    let outgoingRequests = eachTab.outgoingRequests;
+                    if (eachTab.id === data.tabId) {
+                        outgoingRequests = eachTab.outgoingRequests
+                                                    .map(request => request.grpcConnectionSchema = data.value);
+                        eachTab.hasChanged = true;
+                    }
+                    return { ...eachTab, outgoingRequests: [...outgoingRequests] };
+                })
+            }
+        }
+        case httpClientConstants.UPDATE_REQUEST_TYPE_IN_SELECTED_OUTGOING_TAB: {
+            let { tabs } = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if(eachTab.id === data.tabId) {
+                        const outgoingRequests = eachTab.outgoingRequests.map(eachOutgoingRequestTab => {
+                            if(eachOutgoingRequestTab.id === data.outgoingRequestTabId) {
+                                eachOutgoingRequestTab.bodyType = data.value.bodyType;
+                                eachOutgoingRequestTab.paramsType = data.value.paramsType;
+                                eachOutgoingRequestTab.grpcData = setGrpcDataFromDescriptor(state.appGrpcSchema, eachTab.grpcData);
+                                eachOutgoingRequestTab.eventData[0].payload[0] = data.value.payloadRequestEventName
+                                if(eachOutgoingRequestTab.eventData.length > 1){
+                                    eachOutgoingRequestTab.eventData[1].payload[1] = data.value.payloadResponseEventName;
+                                }
+                            }
+                            return eachOutgoingRequestTab;
+                        })
 
+                        return { ...eachTab, outgoingRequests: [...outgoingRequests] };
+                    }
+
+                    return eachTab;
+                })
+            }
+        }
+        case httpClientConstants.UPDATE_REQUEST_TYPE_IN_SELECTED_TAB: {
+            let { tabs } = state;
+            const tabIndex = tabs.findIndex(tab => tab.id === data.tabId);
+            if (tabIndex < 0) return state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab.hasChanged = true;
+                        eachTab.bodyType = data.value.bodyType;
+                        eachTab.paramsType = data.value.paramsType;
+                        eachTab.grpcData = setGrpcDataFromDescriptor(state.appGrpcSchema, eachTab.grpcData);
+                        //Request Event
+                        eachTab.eventData[0].payload[0] = data.value.payloadRequestEventName;
+                        if(eachTab.eventData.length > 1){
+                            //Response Event
+                            eachTab.eventData[1].payload[1] = data.value.payloadResponseEventName;
+                        }
+                    }
+                    return eachTab;
+                })
+            }
+        }
         default:
             return state;
     }

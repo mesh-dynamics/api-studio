@@ -244,6 +244,7 @@ div.loading, div.loading button{
 }
 .params-input .cell-2{
   width: 35%;
+  padding-left: 5px;
 }
 .params-input .cell-3{
   width: 55%;

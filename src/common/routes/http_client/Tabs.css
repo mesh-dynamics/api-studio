@@ -106,4 +106,10 @@
     border-color: #ddd #ddd #fff;
     color: #7777ec;
 }
-  
+
+.md-request-type-dropdown {
+    width: 100px;
+    margin-left: 5px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}

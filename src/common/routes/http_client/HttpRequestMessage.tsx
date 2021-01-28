@@ -17,7 +17,7 @@ export interface IHttpRequestMessageProps {
     updateBodyOrRawDataType: UpdateBodyOrRawDataTypeHandler;
     id: string;
     rawData: string;
-    grpcData: string;
+    grpcData: any;
     readOnly: boolean;
     tabId: string, 
     isOutgoingRequest : boolean;
@@ -123,13 +123,12 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
             "filled": this.props.queryStringParams.findIndex( queryString => queryString.name !== '') > -1
         });
         const isRawDataHighlighted = this.props.rawData && this.props.rawData.trim();
-        const isGrpcDataHighlighted = this.props.grpcData && this.props.grpcData.trim();
         const isFormDataExists =this.props.formData.findIndex( header => header.name !== '') > -1;
         const isMultipartDataExists =this.props.multipartData?.findIndex( header => header.name !== '') > -1;
         
         const bodyLabelClass = classNames({
             "request-data-label": true,
-            "filled": isFormDataExists || isRawDataHighlighted || isGrpcDataHighlighted || isMultipartDataExists
+            "filled": isFormDataExists || isRawDataHighlighted || isMultipartDataExists
         }); 
         const isgRPCData = this.props.bodyType == "grpcData" && this.props.paramsType == "showBody";
         const httpMethod = isgRPCData ? "post" : this.props.httpMethod;

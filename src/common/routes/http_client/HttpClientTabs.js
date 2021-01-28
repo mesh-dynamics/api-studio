@@ -2,14 +2,10 @@ import React, { Component, Fragment, createContext } from "react";
 import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 import { FormControl, FormGroup, Tabs, Tab, Panel, Label, Modal, Button, ControlLabel, Glyphicon } from 'react-bootstrap';
-
-import { preRequestToFetchableConfig, getCurrentMockConfig,
-    extractQueryStringParamsToCubeFormat,
-    extractBodyToCubeFormat, extractHeadersToCubeFormat, multipartDataToCubeFormat } from "../../utils/http_client/utils";
 import { applyEnvVars, getCurrentEnvironment, getRenderEnvVars, getCurrentEnvVars } from "../../utils/http_client/envvar";
 import EnvironmentSection from './EnvironmentSection';
 import MockConfigSection from './MockConfigSection';
-import _, { head } from 'lodash';
+import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import { stringify, parse } from 'query-string';
 import cryptoRandomString from 'crypto-random-string';
@@ -34,7 +30,30 @@ import "./Tabs.css";
 
 import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
-import { generateRunId, generateApiPath, getApiPathFromRequestEvent, extractParamsFromRequestEvent, selectedRequestParamData, unSelectedRequestParamData, isValidJSON, generateTraceKeys, getTraceDetailsForCurrentApp, getTracerForCurrentApp, extractURLQueryParams, generateSpanId } from "../../utils/http_client/utils"; 
+import { 
+    generateRunId,
+    generateApiPath, 
+    extractParamsFromRequestEvent, 
+    selectedRequestParamData, 
+    unSelectedRequestParamData, 
+    generateTraceKeys, 
+    getTraceDetailsForCurrentApp, 
+    getTracerForCurrentApp, 
+    generateSpanId,
+    hasTabDataChanged, 
+    formatHttpEventToTabObject,    
+    preRequestToFetchableConfig, 
+    getCurrentMockConfig,
+    extractQueryStringParamsToCubeFormat,
+    extractBodyToCubeFormat, 
+    extractHeadersToCubeFormat, 
+    multipartDataToCubeFormat
+} from "../../utils/http_client/utils"; 
+import { 
+    extractGrpcBody, 
+    applyGrpcDataToRequestObject,
+    getRequestUrlFromSchema
+} from "../../utils/http_client/grpc-utils"; 
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
 import { getParameterCaseInsensitive, Base64Binary } from '../../../shared/utils';
 
@@ -44,7 +63,6 @@ import commonConstants from '../../utils/commonConstants';
 import MockConfigs from "./MockConfigs";
 import {setDefaultMockContext} from '../../helpers/httpClientHelpers'
 import SideBarTabs from "./SideBarTabs";
-import {hasTabDataChanged, formatHttpEventToTabObject} from "../../utils/http_client/utils"
 import {applyEnvVarsToUrl} from "../../utils/http_client/envvar";
 
 class HttpClientTabs extends Component {
@@ -68,7 +86,9 @@ class HttpClientTabs extends Component {
 
         this.addOrRemoveParam = this.addOrRemoveParam.bind(this);
         this.updateParam = this.updateParam.bind(this);
+        this.updateGrpcConnectData = this.updateGrpcConnectData.bind(this);
         this.updateBodyOrRawDataType = this.updateBodyOrRawDataType.bind(this);
+        this.updateRequestTypeOfTab = this.updateRequestTypeOfTab.bind(this);
 
         this.driveRequest = this.driveRequest.bind(this);
         this.showOutgoingRequests = this.showOutgoingRequests.bind(this);
@@ -192,6 +212,8 @@ class HttpClientTabs extends Component {
                 recordingIdAddedFromClient: toBeUpdatedData.recordingIdAddedFromClient,
                 collectionIdAddedFromClient: toBeUpdatedData.collectionIdAddedFromClient,
                 traceIdAddedFromClient: toBeUpdatedData.traceIdAddedFromClient,
+                grpcData: toBeUpdatedData.grpcData,
+                grpcConnectionSchema: toBeUpdatedData.grpcConnectionSchema,
                 recordedHistory: [],
                 hasChanged: true,
             }
@@ -255,6 +277,7 @@ class HttpClientTabs extends Component {
                 traceIdAddedFromClient: toBeUpdatedData.traceIdAddedFromClient,
                 recordedHistory: toBeUpdatedData.recordedHistory,
                 hasChanged: true,
+                grpcConnectionSchema: toBeCopiedFromData.grpcConnectionSchema,
             }
             return tabData;
         }
@@ -423,6 +446,7 @@ class HttpClientTabs extends Component {
                 selectedTraceTableReqTabId: "",
                 selectedTraceTableTestReqTabId: "",
                 requestRunning: false,
+                grpcData: {},
             }
             const savedTabId = this.addTab(null, reqObj, app);
             setTimeout(() => {
@@ -543,6 +567,7 @@ class HttpClientTabs extends Component {
                 queryStringParams: [],
                 bodyType: "formData",
                 formData: [],
+                grpcData: {},
                 multipartData: [],
                 rawData: "",
                 rawDataType: "json",
@@ -567,7 +592,13 @@ class HttpClientTabs extends Component {
                 recordingIdAddedFromClient: "",
                 collectionIdAddedFromClient: "",
                 traceIdAddedFromClient: "",
-                recordedHistory: null
+                recordedHistory: null,
+                grpcConnectionSchema: {
+                    app,
+                    service: "",
+                    endpoint: "",
+                    method: ""
+                }
             }
 
             if(tabToBeUpdated.outgoingRequests && _.isArray(tabToBeUpdated.outgoingRequests)) {
@@ -894,6 +925,18 @@ class HttpClientTabs extends Component {
         }
     }
 
+    updateGrpcConnectData(isOutgoingRequest, tabId, value) {
+        const { dispatch } = this.props;
+
+        if(isOutgoingRequest) {
+            dispatch(httpClientActions.updateGrpcConnectDetailsInSelectedOutgoingTab(tabId, value));
+        } else {
+            dispatch(httpClientActions.updateGrpcConnectDetailsInSelectedTab(tabId, value));
+        }
+    }
+    
+
+
     updateParam(isOutgoingRequest, tabId, type, key, value, id) {
         const {dispatch} = this.props;
         if(isOutgoingRequest) {
@@ -910,6 +953,15 @@ class HttpClientTabs extends Component {
             dispatch(httpClientActions.updateAllParamsInSelectedOutgoingTab(tabId, type, key, value));
         } else {
             dispatch(httpClientActions.updateAllParamsInSelectedTab(tabId, type, key, value));
+        }
+    }
+
+    updateRequestTypeOfTab(isOutgoingRequest, currentSelectedTabId, currentSelectedRequestTabId, value) {
+        const { dispatch } = this.props;
+        if(isOutgoingRequest) {
+            dispatch(httpClientActions.updateRequestTypeOfSelectedOutgoingTab(currentSelectedTabId, currentSelectedRequestTabId, value));
+        } else {
+            dispatch(httpClientActions.updateRequestTypeOfSelectedTab(currentSelectedRequestTabId, value));
         }
     }
 
@@ -988,6 +1040,12 @@ class HttpClientTabs extends Component {
                                 traceIdAddedFromClient: traceId,
                                 requestRunning: false,
                                 showTrace: null,
+                                grpcConnectionSchema: {
+                                    app,
+                                    service: '',
+                                    method: '',
+                                    endpoint: ''
+                                }
                             };
                             const tabId = uuidv4();
                             outgoingRequests.push({
@@ -1040,7 +1098,8 @@ class HttpClientTabs extends Component {
     }
 
     isgRPCRequest(tabToProcess){
-        return tabToProcess.bodyType === "grpcData" && tabToProcess.grpcData && tabToProcess.grpcData.trim()
+        return tabToProcess.bodyType === "grpcData" && tabToProcess.eventData[0].payload[0] === "GRPCRequestPayload"
+        // tabToProcess.grpcData && tabToProcess.grpcData.trim()
     }
  
     async driveRequestHandleResponse(response, tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, fetchedResponseHeaders){
@@ -1124,16 +1183,21 @@ class HttpClientTabs extends Component {
             httpRequestBody = this.extractBody(rawData);
         }
         if (isGrpc) {
-            const { grpcData } = tabToProcess;
-            if(!isValidJSON(grpcData)){
-                const errorMessage = "Grpc data should be valid JSON object";
-                alert(errorMessage);
-                throw new Error(errorMessage);
-            }
-            httpRequestBody = this.extractBody(grpcData);
+            const { grpcData, grpcConnectionSchema } = tabToProcess;
+            httpRequestBody = extractGrpcBody(grpcData, grpcConnectionSchema);
+            // NOTE: extracting body seems to be something intended for non-grpc request types
+            // with its extraction for formdata etc. Skipping this implementation but keeping the code
+            // if(!isValidJSON(grpcData)){
+            //     const errorMessage = "Grpc data should be valid JSON object";
+            //     alert(errorMessage);
+            //     throw new Error(errorMessage);
+            // }
+            // httpRequestBody = this.extractBody(grpcData, grpc);
         }
         const httpMethod = this.getHttpMethod(tabToProcess);
-        const httpRequestURL = tabToProcess.httpURL;
+        const httpRequestURL = bodyType === 'grpcData' 
+            ? getRequestUrlFromSchema(tabToProcess.grpcConnectionSchema) 
+            : tabToProcess.httpURL;
 
         let fetchConfig = {
             method: httpMethod,
@@ -1339,10 +1403,18 @@ class HttpClientTabs extends Component {
         const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
         let httpRequestEvent = eachPair[httpRequestEventTypeIndex];
         let httpResponseEvent = eachPair[httpResponseEventTypeIndex];
+        let httpURL = "";
+
+        // Set the URL
+        if(bodyType === "grpcData") {
+            httpURL = getRequestUrlFromSchema(tabToSave.grpcConnectionSchema);
+        } else {    
+            httpURL = tabToSave.httpURL;
+        }
         
         // let apiPath = getApiPathFromRequestEvent(httpRequestEvent); // httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : "";
         // let apiPath = this.getPathName(applyEnvVarsToUrl(tabToSave.httpURL));
-        const parsedUrl = urlParser(applyEnvVarsToUrl(tabToSave.httpURL), PLATFORM_ELECTRON ? {} : true);
+        const parsedUrl = urlParser(applyEnvVarsToUrl(httpURL), PLATFORM_ELECTRON ? {} : true);
 
         let apiPath = generateApiPath(parsedUrl);
 
@@ -1366,8 +1438,8 @@ class HttpClientTabs extends Component {
         if(!httpResponseEvent.metaData){
             httpResponseEvent.metaData = {};
         }
-        httpRequestEvent.metaData.httpURL = tabToSave.httpURL;
-        httpResponseEvent.metaData.httpURL = tabToSave.httpURL;
+        httpRequestEvent.metaData.httpURL = httpURL;
+        httpResponseEvent.metaData.httpURL = httpURL;
 
         if(httpRequestEvent.parentSpanId === null) {
             httpRequestEvent.parentSpanId = "NA"
@@ -1412,6 +1484,7 @@ class HttpClientTabs extends Component {
         httpRequestEvent.metaData.hdrs = JSON.stringify(unSelectedRequestParamData(headers));
         httpRequestEvent.metaData.queryParams = JSON.stringify(unSelectedRequestParamData(queryStringParams));
         httpRequestEvent.metaData.bodyType = bodyType;
+        httpRequestEvent.metaData.grpcConnectionSchema = JSON.stringify(tabToSave.grpcConnectionSchema);
         
         const httpReqestHeaders = extractHeadersToCubeFormat(selectedRequestParamData(headers), type);
         const httpRequestQueryStringParams = extractQueryStringParamsToCubeFormat(selectedRequestParamData(queryStringParams), type);
@@ -1431,8 +1504,8 @@ class HttpClientTabs extends Component {
             httpRequestBody = extractBodyToCubeFormat(rawData, type);
         }
         if (this.isgRPCRequest(tabToSave)) {
-            const { grpcData } = tabToSave;
-            httpRequestBody = this.tryJsonParse(grpcData);  
+            const { grpcData, grpcConnectionSchema } = tabToSave;
+            httpRequestBody = extractGrpcBody(grpcData, grpcConnectionSchema); // this.tryJsonParse(grpcData);
             httpReqestHeaders["content-type"] = ["application/grpc"];          
         }
 
@@ -1597,7 +1670,6 @@ class HttpClientTabs extends Component {
             multipartData,
             rawData: rawData,
             rawDataType: rawDataType,
-            grpcData: grpcData,
             grpcDataType: grpcDataType,
             paramsType: "showQueryParams",
             responseStatus: "NA",
@@ -1623,7 +1695,17 @@ class HttpClientTabs extends Component {
             apiPath: httpRequestEvent.apiPath,
             requestRunning: false,
             showTrace: null,
-            metaData: httpResponseEvent ? httpResponseEvent.metaData : {}
+            metaData: httpResponseEvent ? httpResponseEvent.metaData : {},
+            grpcData: applyGrpcDataToRequestObject(grpcData, httpRequestEvent.metaData.grpcConnectionSchema),
+            grpcConnectionSchema: httpRequestEvent.metaData.grpcConnectionSchema 
+                ? JSON.parse(httpRequestEvent.metaData.grpcConnectionSchema)
+                : 
+                    {
+                        app: "",
+                        service: "",
+                        endpoint: "", 
+                        method: ""
+                    }
         };
         return reqObject;
     }
@@ -1706,10 +1788,8 @@ class HttpClientTabs extends Component {
 
 
     addTab(evt, reqObject, givenApp, isSelected = true) {
-        const httpRequestEventIndex = 0;
         const { dispatch, user, httpClient: {selectedTabKey} } = this.props;
         const tabId = uuidv4();
-        const requestId = uuidv4();
         const { app } = this.state;
         const appAvailable = givenApp ? givenApp : app ? app : "";
         const traceDetails = getTraceDetailsForCurrentApp()
@@ -1781,7 +1861,14 @@ class HttpClientTabs extends Component {
                 recordingIdAddedFromClient: "",
                 collectionIdAddedFromClient: "",
                 traceIdAddedFromClient: traceIdForEvent,
-                recordedHistory: null
+                recordedHistory: null,
+                grpcData: {},
+                grpcConnectionSchema: {
+                    app,
+                    service: "",
+                    endpoint: "",
+                    method: ""
+                }
             };
         } else {
             // add trace headers if not present
@@ -1816,6 +1903,15 @@ class HttpClientTabs extends Component {
                     })
                 }
             })
+
+            if(!reqObject.grpcConnectionSchema) {
+                reqObject['grpcConnectionSchema'] = {
+                    app,
+                    service: "",
+                    endpoint: "",
+                    method: ""
+                };
+            }
 
         }
         
@@ -1867,6 +1963,7 @@ class HttpClientTabs extends Component {
         
         dispatch(httpClientActions.loadFromHistory());
         dispatch(httpClientActions.loadUserCollections());
+        dispatch(httpClientActions.loadProtoDescriptor());
         
         const requestIds = this.getRequestIds(), reqIdArray = Object.keys(requestIds);
         if (reqIdArray && reqIdArray.length > 0) {
@@ -1963,7 +2060,7 @@ class HttpClientTabs extends Component {
 
     getTabs(givenTabs) {
         let tabsToRender = givenTabs;
-        const {httpClient: {selectedTabKey, cubeRunHistory}} = this.props;
+        const {httpClient: {selectedTabKey, cubeRunHistory, appGrpcSchema}, cube: { selectedApp }} = this.props;
         return tabsToRender.map((eachTab, index) => ({
             title: (
                 <div className="tab-container">
@@ -1975,6 +2072,7 @@ class HttpClientTabs extends Component {
                     <div className="tab-container">
                         <HttpClient 
                             currentSelectedTab={eachTab}
+                            selectedApp={selectedApp}
                             /* tabId={eachTab.id}
                             requestId={eachTab.requestId}
                             httpMethod={eachTab.httpMethod}
@@ -1997,7 +2095,9 @@ class HttpClientTabs extends Component {
                             showCompleteDiff={eachTab.showCompleteDiff}
                             service={eachTab.service}
                             diffLayoutData={eachTab.diffLayoutData} */
-
+                            appGrpcSchema={appGrpcSchema}
+                            updateGrpcConnectData={this.updateGrpcConnectData}
+                            updateRequestTypeOfTab={this.updateRequestTypeOfTab}
                             addOrRemoveParam={this.addOrRemoveParam} 
                             updateParam={this.updateParam}
                             updateAllParams={this.updateAllParams}
@@ -2042,10 +2142,8 @@ class HttpClientTabs extends Component {
     };
 
     render() {
-        const { cube } = this.props;
         const { showErrorModal, errorMsg, importedToCollectionId, serializedCollection, modalErrorImportCollectionMessage, showImportModal, curlCommand, modalErrorImportFromCurlMessage } = this.state;
-        const { cube: {selectedApp} } = this.props;
-        const app = selectedApp;
+        const { cube: { selectedApp: app } } = this.props;
         const {httpClient: { userCollections, tabs, selectedTabKey, showAddMockReqModal, mockRequestServiceName, mockRequestApiPath, modalErrorAddMockReqMessage}} = this.props;
 
         return (

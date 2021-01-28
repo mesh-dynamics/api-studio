@@ -4,8 +4,26 @@ import AgentConfig from "../../components/Configs/Agent-Config/AgentConfig";
 import TestConfig from "../../components/Configs/Test-Config/TestConfig";
 import ContextPropagationRules from '../../components/Configs/ContextPropagationRules/ContextPropagationRules';
 import GrpcConfiguration from '../../components/Configs/Grpc/GrpcConfiguration';
+import * as URL from "url";
 
-class Config extends Component {
+export interface IConfigSettingsState{
+    selectedTabKey: number
+}
+class Config extends Component<any, IConfigSettingsState> {
+    constructor(props:any){
+        super(props);
+        this.state = {
+            selectedTabKey: 1
+        }
+    }
+    componentDidMount(){
+        const parsedUrlObj = URL.parse(window.location.href, true);
+        const tabId = parseInt(parsedUrlObj.query.tabId?.toString() || "1");
+        this.setState({selectedTabKey: tabId});
+    }
+    handleSelectedTabChange = (changedKey: any) => {
+        this.setState({selectedTabKey: changedKey});
+    }
 
     render() {
         return (
@@ -13,7 +31,7 @@ class Config extends Component {
                 <div>
                     <h4 className="inline-block margin-right-10">Configurations</h4>
                 </div>
-                <Tabs id="controlled-mode">
+                <Tabs id="controlled-mode" onSelect={this.handleSelectedTabChange} activeKey={this.state.selectedTabKey}>
                     <Tab eventKey={1} title="Test Configurations">
                         <div className="margin-top-20">
                             <TestConfig />

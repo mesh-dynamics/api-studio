@@ -109,16 +109,6 @@ const getApiPathFromRequestEvent = (requestEvent) => {
     return EMPTY_STRING;
 };
 
-//Following could be used globally, can be moved to a common utility file.
-const isValidJSON = (jsonString) =>{
-    try{
-         JSON.parse(jsonString);
-    }catch(e){
-        return false;
-    }
-    return true;
-}
-
 const hasTabDataChanged = (tab) => {
     if (tab.hasChanged) {
       return true;
@@ -339,6 +329,7 @@ const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) =
         traceIdAddedFromClient: httpRequestEvent.traceId,
         requestRunning: false,
         showTrace: null,
+        grpcConnectionSchema: httpRequestEvent.grpcConnectionSchema,
     };
     return reqObject;
 }
@@ -771,7 +762,6 @@ export {
     selectedRequestParamData,
     unSelectedRequestParamData,
     extractParamsFromRequestEvent,
-    isValidJSON,
     Base64Binary,
     generateTraceIdDetails,
     generateSpanId,
