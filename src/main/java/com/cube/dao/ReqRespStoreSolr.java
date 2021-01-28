@@ -46,7 +46,6 @@ import java.util.stream.Stream;
 
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -135,6 +134,10 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return saveDocs(eventToSolrDoc(event));
     }
 
+    @Override
+    public boolean saveConfig(CustomerAppConfig cfg) {
+        return saveDocs(customerAppConfigToDoc(cfg));
+    }
 
     @Override
     public boolean save(Event... events) {
@@ -574,15 +577,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> id = getStrField(solrDocument , IDF);
         Optional<String> operationsAsString = getStrField(solrDocument, OPERATION);
         Map<TemplateKey, SingleTemplateUpdateOperation> updateMap  = (Map<TemplateKey, SingleTemplateUpdateOperation>)
-            operationsAsString.flatMap(operations -> {
-            try {
-                return Optional.of(config.jsonMapper.readValue(operations , typeReference));
-                // note that id will always be present as the filter query is on the id field
-            } catch (Exception e) {
-                LOGGER.error("Unable to deserialize template set update operations :: " + e.getMessage());
-                return Optional.empty();
-            }
-        }).orElse(new HashMap<>());
+            operationsAsString.flatMap(operations -> deserialize(operations , typeReference , "operations"  )).orElse(new HashMap<>());
         return Optional.of(new TemplateUpdateOperationSet(id.get(), updateMap));
     }
 
@@ -1288,6 +1283,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String SEQIDEF = CPREFIX + SEQID_FIELD + STRING_SUFFIX;
 
     private static final String PROTO_DESCRIPTOR_FILE_F = CPREFIX + Constants.PROTO_DESCRIPTOR_FILE_FIELD + NOTINDEXED_SUFFIX;
+    private static final String PROTO_FILE_MAP_F = CPREFIX + PROTO_FILE_MAP_FIELD + NOTINDEXED_SUFFIX;
     private static final String PAYLOAD_FIELDS_F = CPREFIX + PAYLOAD_FIELDS_FIELD + MULT_TEXT_SUFFIX;
 
     private static final Map<String , String> fieldNameSolrMap = new HashMap<>();
@@ -1743,6 +1739,15 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return event;
     }
 
+    private<T> Optional<T> deserialize(String src , TypeReference reference , String fieldName) {
+        try{
+            return Optional.of(this.config.jsonMapper.readValue(src , reference));
+        }catch (Exception e){
+            LOGGER.error("Could not deserialize "+fieldName+" from value "+src + " error "+e.getMessage());
+            return Optional.empty();
+        }
+    }
+
     private static void checkAndAddValues(MultivaluedMap<String, String> cont, String key, Object val) {
         if (val instanceof List) {
             @SuppressWarnings("unchecked")
@@ -1774,6 +1779,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static List<String> getStrFieldMV(SolrDocument doc, String fname) {
         return getField(doc, fname, List.class).orElse(new ArrayList());
     }
+
 
     private static<T> Optional<T> getFirst(Collection<?> collection , Class<T> clazz){
         return (Optional<T>) collection.stream().findFirst();
@@ -1963,7 +1969,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String PARTIALMATCH = CPREFIX + "partialmatch" + STRING_SUFFIX;
 
 
-    private static final String TRACERF = CPREFIX + "tracer" + STRING_SUFFIX;
+    private static final String TRACERF = CPREFIX + TRACER_FIELD + STRING_SUFFIX;
+    private static final String API_GEN_PATHS_F = CPREFIX + API_GEN_PATHS_FIELD + NOTINDEXED_SUFFIX;
 
     static {
         fieldNameSolrMap.put(Constants.EVENT_TYPE_FIELD , EVENTTYPEF);
@@ -2899,11 +2906,20 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private SolrInputDocument protoDescriptorDAOToSolrDoc(ProtoDescriptorDAO protoDescriptorDAO) {
         final SolrInputDocument doc = new SolrInputDocument();
+        String protoFileMapString;
+        try {
+            protoFileMapString = this.config.jsonMapper.writeValueAsString(protoDescriptorDAO.protoFileMap);
+        } catch (Exception e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                "Unable to convert protoFileMap to string")), e);
+            return doc;
+        }
         doc.setField(TYPEF, Types.ProtoDescriptor.toString());
         doc.setField(INT_VERSION_F, protoDescriptorDAO.version);
         doc.setField(CUSTOMERIDF, protoDescriptorDAO.customerId);
         doc.setField(APPF, protoDescriptorDAO.app);
         doc.setField(PROTO_DESCRIPTOR_FILE_F, protoDescriptorDAO.encodedFile);
+        doc.setField(PROTO_FILE_MAP_F, protoFileMapString);
         return doc;
     }
 
@@ -2912,9 +2928,19 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> app = getStrField(doc, APPF);
         Optional<Integer> version = getIntField(doc, INT_VERSION_F);
         Optional<String> encodedFile = getStrFieldMVFirst(doc,PROTO_DESCRIPTOR_FILE_F);
+
+        Optional<Map<String,String>> protoFileMap = getStrFieldMVFirst(doc, PROTO_FILE_MAP_F)
+            .flatMap(pfm -> {
+                try {
+                    return Optional.of(config.jsonMapper.readValue(pfm, new TypeReference<Map<String, String>>(){}));
+                } catch (Exception e) {
+                    LOGGER.error("Error while reading protoFileMap object from json :: " + getIntField(doc , IDF).orElse(-1),e);
+                    return Optional.empty();
+                }
+            });
         try {
             ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId.orElse(null),
-                app.orElse(null), encodedFile.orElse(null), new HashMap<>());
+                app.orElse(null), encodedFile.orElse(null), protoFileMap.orElse(new HashMap<>()));
             protoDescriptorDAO.setVersion(version.orElse(0));
             ValidateProtoDescriptorDAO.validate(protoDescriptorDAO);
             return Optional.of(protoDescriptorDAO);
@@ -3221,11 +3247,31 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             return Optional.empty();
         }
         final Optional<String> tracer = getStrField(doc, TRACERF);
+        final Optional<Map<String , String[]>> apiGenericPaths = getStrFieldMVFirst(doc , API_GEN_PATHS_F).flatMap(src-> deserialize(src , new TypeReference<Map<String , String[]>>(){} , "apiGenericPaths" ));
 
         CustomerAppConfig.Builder builder = new CustomerAppConfig.Builder(customerId.get() , app.get());
         tracer.ifPresent(builder::withTracer);
+        apiGenericPaths.ifPresent(builder::withApiGenericPaths);
 
         return Optional.of(builder.build());
+    }
+
+    private SolrInputDocument customerAppConfigToDoc(CustomerAppConfig cfg) {
+        SolrInputDocument doc = new SolrInputDocument();
+        doc.setField(TYPEF, Types.CustomerAppConfig.toString());
+        doc.setField(CUSTOMERIDF, cfg.customerId);
+        doc.setField(APPF, cfg.app);
+        cfg.tracer.ifPresent(tracer->doc.setField(TRACERF , tracer));
+        cfg.apiGenericPaths.ifPresent(genPaths->{
+            String genPathStr = null;
+            try{
+                genPathStr = this.config.jsonMapper.writeValueAsString(genPaths);
+            }catch(Exception e){
+                LOGGER.error("genPath serialization error" , e);
+            }
+            doc.setField(API_GEN_PATHS_F , genPathStr);
+        });
+        return doc;
     }
 
     private Optional<Recording> docToRecording(SolrDocument doc) {
@@ -3600,23 +3646,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         // TODO: The original String Injection and Extraction meta fields are for backward compatibility
         // Eventually only the Text field should be retained in Solr.
         Optional<List<ExtractionMeta>> extractionMetas = getStrField(doc, EXTRACTION_METAS_TXT_JSON)
-            .or(() -> getStrField(doc, EXTRACTION_METAS_STR_JSON)).flatMap(em -> {
-            try {
-                return Optional.of(config.jsonMapper.readValue(em, new TypeReference<List<ExtractionMeta>>(){}));
-            } catch (Exception e) {
-                LOGGER.error("Error while reading ExtractionMeta object from json :: " + getIntField(doc , IDF).orElse(-1),e);
-                return Optional.empty();
-            }
-            });
+            .or(() -> getStrField(doc, EXTRACTION_METAS_STR_JSON)).flatMap(em -> deserialize(em , new TypeReference<List<ExtractionMeta>>(){} , "extractionMetas" ));
         Optional<List<InjectionMeta>> injectionMetas = getStrField(doc, INJECTION_METAS_TXT_JSON)
-            .or(() -> getStrField(doc, INJECTION_METAS_STR_JSON)).flatMap(im -> {
-            try {
-                return Optional.of(config.jsonMapper.readValue(im, new TypeReference<List<InjectionMeta>>(){}));
-            } catch (Exception e) {
-                LOGGER.error("Error while reading InjectionMeta object from json :: " + getIntField(doc , IDF).orElse(-1),e);
-                return Optional.empty();
-            }
-            });
+            .or(() -> getStrField(doc, INJECTION_METAS_STR_JSON)).flatMap(im -> deserialize(im , new TypeReference<List<InjectionMeta>>(){} , "injectionMetas" ));
 
         Optional<DynamicInjectionConfig> dynamicInjectionConfig = Optional.empty();
         Optional<String> app = getStrField(doc, APPF);

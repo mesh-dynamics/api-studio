@@ -12,21 +12,29 @@ import com.cube.core.TagConfig;
 import com.cube.queue.StoreUtils;
 import com.cube.sequence.SeqMgr;
 
+import io.md.core.ApiGenPathMgr;
 import io.md.core.CollectionKey;
 import io.md.dao.DataObj.DataObjProcessingException;
 import io.md.dao.Event.EventType;
 import io.md.injection.DynamicInjector;
 import io.md.injection.DynamicInjectorFactory;
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import java.util.stream.Stream;
@@ -57,7 +65,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.solr.common.util.Pair;
+import org.glassfish.jersey.media.multipart.BodyPartEntity;
+import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
@@ -65,7 +76,7 @@ import org.msgpack.value.ValueType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.protobuf.Descriptors.DescriptorValidationException;
+import com.google.common.collect.Sets;
 
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.UtilException;
@@ -92,6 +103,7 @@ import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
+import io.md.services.CustAppConfigCache;
 import io.md.services.DataStore.TemplateNotFoundException;
 import io.md.exception.ParameterException;
 import io.md.utils.Constants;
@@ -374,14 +386,14 @@ public class CubeStore {
                             Event[] events = jsonMapper.readValue(messageBytes , Event[].class);
                             boolean success = true;
                             if (direct) {
-                                success = rrstore.save(Arrays.stream(events));
+                                success = rrstore.save(Arrays.stream(events).map(this::mapApiGenPath));
                             } else {
                                 if (events.length > 0) {
                                     Event event = events[0];
                                     Optional<RecordOrReplay> recordOrReplay =
                                         rrstore.getRecordOrReplayFromCollection(event.customerId, event.app,
                                             event.getCollection());
-                                    StoreUtils.processEvents(Arrays.stream(events), rrstore,
+                                    StoreUtils.processEvents(Arrays.stream(events).map(this::mapApiGenPath), rrstore,
                                         Optional.of(config.protoDescriptorCache), recordOrReplay);
                                 }
                             }
@@ -405,58 +417,57 @@ public class CubeStore {
     @Path("/storeEvent")
     @Consumes({MediaType.APPLICATION_JSON})
     public Response storeEvent(Event event,
-                               @DefaultValue("false") @QueryParam("direct") boolean direct) {
-	    try {
-	        event.validateEvent();
-      } catch (InvalidEventException e) {
-          LOGGER.error(new ObjectMessage(
-              Map.of(Constants.MESSAGE, "Invalid Event")), e);
-          return Response.status(Status.BAD_REQUEST).entity(Utils.buildErrorResponse(
-              Status.BAD_REQUEST.toString(),Constants.ERROR,  e.getMessage())).build();
-      }
-	    boolean success = true;
-	    if (direct) {
-	        success = rrstore.save(event) && rrstore.commit();
+        @DefaultValue("false") @QueryParam("direct") boolean direct) {
+        try {
+            event.validateEvent();
+        } catch (InvalidEventException e) {
+            LOGGER.error(new ObjectMessage(
+                Map.of(Constants.MESSAGE, "Invalid Event")), e);
+            return Response.status(Status.BAD_REQUEST).entity(Utils.buildErrorResponse(
+                Status.BAD_REQUEST.toString(), Constants.ERROR, e.getMessage())).build();
+        }
+        mapApiGenPath(event);
+        boolean success = true;
+        if (direct) {
+            success = rrstore.save(event) && rrstore.commit();
         } else {
             eventQueue.enqueue(event);
-	    /*
-        try {
-            StoreUtils.processEvent(event, config.rrstore);
-        } catch (CubeStoreException e) {
-            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-                "Error while storing event/rr in solr")), e);
+	        logStoreInfo("Enqueued Event", new CubeEventMetaInfo(event), true);
         }
-	    */
-            logStoreInfo("Enqueued Event", new CubeEventMetaInfo(event), true);
-        }
-        return success  ?  Response.ok().build()
+        return success ? Response.ok().build()
             : Response.serverError().entity("Event save error").build();
     }
 
+    private Event mapApiGenPath(Event event){
+        apiGenPathMgr.getGenericPath(event).ifPresent(event::setApiPath);
+        return event;
+    }
+
     @POST
-    @Path("/deleteEventByReqId/{reqId}")
+    @Path("/deleteEventByReqId")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Response deleteEventByReqId(Event event , @PathParam("reqId") String reqId) throws ParameterException {
+    public Response deleteEventByReqId(Event event) throws ParameterException {
 
 	    if(event.customerId == null) throw new ParameterException("customerId is not present in the request");
+	    if(event.getReqId() == null) throw new ParameterException("ReqId is not present in the request");
 
-
-	    boolean deletionSuccess = rrstore.deleteReqResByReqId(reqId , event.customerId , Optional.ofNullable(event.eventType));
+	    boolean deletionSuccess = rrstore.deleteReqResByReqId(event.getReqId() , event.customerId , Optional.ofNullable(event.eventType));
 	    return Response.ok().type(MediaType.APPLICATION_JSON).
             entity(buildSuccessResponse(Constants.SUCCESS , new JSONObject(Map.of("deletion_success" , deletionSuccess)) )).build();
     }
 
     @POST
-    @Path("/deleteEventByTraceId/{traceId}")
+    @Path("/deleteEventByTraceId")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Response deleteEventByTraceId(Event event , @PathParam("traceId") String traceId) throws ParameterException {
+    public Response deleteEventByTraceId(Event event) throws ParameterException {
 
         if(event.customerId == null) throw new ParameterException("customerId is not present in the request");
         if(event.getCollection() == null) throw new ParameterException("collection is not present in the request");
+        if(event.getTraceId() == null) throw new ParameterException("TraceId is not present in the request");
 
-        boolean deletionSuccess = rrstore.deleteReqResByTraceId(traceId , event.customerId , event.getCollection(), Optional.ofNullable(event.eventType));
+        boolean deletionSuccess = rrstore.deleteReqResByTraceId(event.getTraceId() , event.customerId , event.getCollection(), Optional.ofNullable(event.eventType));
         return Response.ok().type(MediaType.APPLICATION_JSON).
             entity(buildSuccessResponse(Constants.SUCCESS , new JSONObject(Map.of("deletion_success" , deletionSuccess)) )).build();
     }
@@ -474,6 +485,7 @@ public class CubeStore {
             }
             event = wrapperEvent.cubeEvent;
             event.validateEvent();
+            mapApiGenPath(event);
         } catch (IOException e) {
             LOGGER.error(new ObjectMessage(
                 Map.of(Constants.MESSAGE, "Error parsing Event JSON")),e);
@@ -1304,11 +1316,13 @@ public class CubeStore {
                 .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"version needs to be given for a golden")).build());
             return;
         }
-        copyRecording(recordingId, name, label, templateVersion, userId, type).thenApply(v -> asyncResponse.resume(v));
+        copyRecording(recordingId, name, label, templateVersion, userId, type, Optional.empty()).thenApply(v -> asyncResponse.resume(v));
     }
 
-    private CompletableFuture<Response> copyRecording(String recordingId, Optional<String> name, Optional<String> label,
-        Optional<String> templateVersion, String userId, RecordingType type) {
+    private CompletableFuture<Response> copyRecording(String recordingId, Optional<String> name,
+        Optional<String> label,
+        Optional<String> templateVersion, String userId, RecordingType type,
+        Optional<Predicate<Event>> eventFilter) {
         Instant timeStamp = Instant.now();
         String labelValue = label.orElse(timeStamp.toString());
         Optional<Recording> recordingForId = rrstore.getRecording(recordingId);
@@ -1325,7 +1339,7 @@ public class CubeStore {
             Recording  updatedRecording = createRecordingObjectFrom(recording, templateVersion,
                 name, Optional.of(userId), timeStamp, labelValue, type);
             if(rrstore.saveRecording(updatedRecording)) {
-                return CompletableFuture.supplyAsync(() -> copyEvents(recording, updatedRecording, timeStamp)).thenApply(success ->
+                return CompletableFuture.supplyAsync(() -> copyEvents(recording, updatedRecording, timeStamp, eventFilter)).thenApply(success ->
                     success ? Response.ok().type(MediaType.APPLICATION_JSON).entity(updatedRecording).build() : Response.status(Status.INTERNAL_SERVER_ERROR)
                         .type(MediaType.APPLICATION_JSON)
                         .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"Error while copying events"))
@@ -1343,14 +1357,14 @@ public class CubeStore {
     }
 
 
-    public boolean copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp) {
+    public boolean copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp, Optional<Predicate<Event>> eventFilter) {
         EventQuery.Builder builder = new EventQuery.Builder(fromRecording.customerId, fromRecording.app, Collections.emptyList());
         builder.withCollection(fromRecording.collection);
         builder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
         Result<Event> result = rrstore.getEvents(builder.build());
         Map<String, String> reqIdMap = new HashMap<>();
         final boolean[] eventCreationFailure = new boolean[1];
-        Stream<Event> eventStream = result.getObjects().map(event -> {
+        Stream<Event> eventStream = result.getObjects().filter(eventFilter.orElse(event -> true)).map(event -> {
             try {
                 String reqId = reqIdMap.get(event.getReqId());
                 if(reqId == null) {
@@ -1359,7 +1373,8 @@ public class CubeStore {
                         event.service, event.getTraceId());
                     reqIdMap.put(oldReqId, reqId);
                 }
-                return buildEvent(event, toRecording.collection,  toRecording.recordingType, reqId, event.getTraceId(), Optional.of(timeStamp.toString()));
+                return buildEvent(event, toRecording.collection,  toRecording.recordingType, reqId, event.getTraceId(),
+                    Optional.of(timeStamp.toString()), event.timestamp);
             } catch (InvalidEventException e) {
                 eventCreationFailure[0] = true;
                 LOGGER.error(new ObjectMessage(
@@ -1379,6 +1394,76 @@ public class CubeStore {
         var eventsStream =  SeqMgr.createSeqId(eventStream , estimatedReqSize);
         boolean batchSaveResult = rrstore.save(eventsStream) && rrstore.commit();
         return batchSaveResult;
+    }
+
+    /**
+     * Takes a Recording Id and a list of optional status codes. Creates a new
+     * Recording having only requests with responses, eliminating any responses
+     * with the said status codes.
+     *
+     * @param asyncResponse
+     * @param recordingId Recording Id to be sanitized
+     * @param status List of status codes to remove from the Recording
+     */
+    @POST
+    @Path("sanitizeGolden")
+    @Produces(MediaType.APPLICATION_JSON)
+    public void sanitizeGoldenRecording(@Suspended AsyncResponse asyncResponse,
+        @QueryParam("recordingId") String recordingId,
+        @QueryParam("ignoreStatus") List<String> status) {
+
+        Optional<Recording> recording = rrstore.getRecording(recordingId);
+
+        if (recording.isEmpty()) {
+            asyncResponse
+                .resume(Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).
+                    entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
+                        "No such Recording found")).build());
+            return;
+        }
+
+        Recording originalRec = recording.get();
+
+        Set<String> invalidReqIds = getInvalidReqIdsToFilter(originalRec, status);
+
+        Predicate<Event> isInvalidReqId = (event) -> !invalidReqIds.contains(event.reqId);
+
+        copyRecording(recordingId, Optional.empty(), Optional.empty(), Optional.empty(),
+            originalRec.userId, originalRec.recordingType, Optional.of(isInvalidReqId))
+            .thenApply(v -> asyncResponse.resume(v));
+
+    }
+
+    private Set<String> getInvalidReqIdsToFilter(Recording originalRec, List<String> status) {
+        Set<String> reqIds = new HashSet<>();
+        Set<String> respIds = new HashSet<>();
+
+        //TODO: Use fieldList to reduce the data fetched.
+        EventQuery.Builder reqBuilder = new EventQuery.Builder(originalRec.customerId,
+            originalRec.app, Event.REQUEST_EVENT_TYPES);
+        reqBuilder.withCollection(originalRec.collection);
+        reqBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
+        Result<Event> reqEvents = rrstore.getEvents(reqBuilder.build());
+        reqEvents.getObjects().forEach(event -> reqIds.add(event.reqId));
+
+        Set<String> badStatusCodes = Optional.ofNullable(status).map(HashSet::new)
+            .orElseGet(() -> new HashSet());
+
+        EventQuery.Builder respBuilder = new EventQuery.Builder(originalRec.customerId,
+            originalRec.app, Event.RESPONSE_EVENT_TYPES);
+        respBuilder.withCollection(originalRec.collection);
+        respBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
+        Result<Event> respEvents = rrstore.getEvents(respBuilder.build());
+        respEvents.getObjects().forEach(event -> {
+            if (event.payload instanceof ResponsePayload) {
+                if (!badStatusCodes.contains(((ResponsePayload) event.payload).getStatusCode())) {
+                    respIds.add(event.reqId);
+                }
+            }
+        });
+
+        return new HashSet<>(Sets.difference(reqIds, respIds));
+
     }
 
     @POST
@@ -1966,30 +2051,111 @@ public class CubeStore {
     @Produces(MediaType.APPLICATION_JSON)
     public Response protoDescriptorFileUpload(@PathParam("customerId") String customerId,
         @PathParam("app") String app,
-        @FormDataParam("protoDescriptorFile") InputStream uploadedInputStream) {
+        @FormDataParam("protoDescriptorFile") List<FormDataBodyPart>  bodyParts,
+        @DefaultValue("false") @QueryParam("appendExisting") boolean appendExisting) {
+//        @FormDataParam("protoDescriptorFile") FormDataContentDisposition fileDetail) {
 
-        if(uploadedInputStream==null) {
+
+        if(bodyParts==null || bodyParts.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
                 Map.of("Message",
                     "Uploaded file stream null. Ensure the variable name is \"protoDescriptorFile\" for the file")
             )).toString()).build();
         }
 
-
+        Map<String, String> protoFileMap = new HashMap<>();
         boolean status = false;
         byte[] encodedFileBytes;
         try {
-            encodedFileBytes = Base64.getEncoder().encode(uploadedInputStream.readAllBytes());
-            ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app,
-                new String(encodedFileBytes, StandardCharsets.UTF_8), new HashMap<>());
+            String tmpDir = io.md.constants.Constants.TEMP_DIR;
+            String descFileName = "tmp_" + UUID.randomUUID() +  ".desc";
+            List<String> commandList = new ArrayList<>();
+            commandList.add("protoc");
+            commandList.add("--descriptor_set_out=" + descFileName);
+
+            // If appending add existing protos for compiler
+            if(appendExisting) {
+                Optional<ProtoDescriptorDAO> existingProtoDescriptorDAOOptional = rrstore
+                    .getLatestProtoDescriptorDAO(customerId, app);
+                existingProtoDescriptorDAOOptional.ifPresent(UtilException.rethrowConsumer(existingProtoDescriptorDAO ->
+                {
+                    existingProtoDescriptorDAO.protoFileMap.forEach(UtilException.rethrowBiConsumer(
+                        (uniqueFileName,fileContent) -> {
+                            File targetFile = new File(tmpDir + "/" + uniqueFileName);
+                            OutputStream outStream = new FileOutputStream(targetFile);
+                            byte[] fileBytes = fileContent.getBytes(StandardCharsets.UTF_8);
+                            outStream.write(fileBytes);
+                            //Add to new fileMap and list of commands
+                            protoFileMap.put(uniqueFileName, fileContent);
+                            commandList.add(uniqueFileName);
+                        }));
+                }));
+            }
+
+            // Add newly uploaded protos
+            for (FormDataBodyPart bodyPart : bodyParts) {
+
+                BodyPartEntity bodyPartEntity = (BodyPartEntity) bodyPart.getEntity();
+                String fileName = bodyPart.getContentDisposition().getFileName();
+                String uniqueFileName = "TAG_" + UUID.randomUUID() + "_" + fileName;
+                byte[] fileBytes = bodyPartEntity.getInputStream().readAllBytes();
+                protoFileMap.put(uniqueFileName, new String(fileBytes, StandardCharsets.UTF_8));
+                commandList.add(uniqueFileName);
+                File targetFile = new File(tmpDir + "/" + uniqueFileName);
+                OutputStream outStream = new FileOutputStream(targetFile);
+                outStream.write(fileBytes);
+            }
+
+            Files.deleteIfExists(Paths.get(tmpDir + "/" + descFileName));
+            ProcessBuilder builder = new ProcessBuilder();
+            builder.directory(new File(tmpDir));
+            // Need to ensure protoc compiler is installed in the docker container env
+            builder.command(commandList);
+            Process process = builder.start();
+            int exitCode = process.waitFor();
+            if(exitCode != 0) {
+                throw new Exception("Cannot initiate process to compile descriptor from protos");
+            }
+
+            InputStream initialStream = new FileInputStream(
+                new File(tmpDir + "/" + descFileName));
+            byte[] buffer = new byte[initialStream.available()];
+            initialStream.read(buffer);
+
+            encodedFileBytes = Base64.getEncoder().encode(buffer);
+            ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app, new String(encodedFileBytes, StandardCharsets.UTF_8), protoFileMap);
             status = rrstore.storeProtoDescriptorFile(protoDescriptorDAO);
-        } catch (IOException | DescriptorValidationException e) {
+        } catch (Exception e) {
+            String message = "Cannot encode uploaded proto descriptor file";
+            if(e instanceof FileNotFoundException) {
+                message = "Cannot compile descriptor file from protos using protoc compiler."
+                    + " Make sure the files are not duplicated in case of appending to existing protos";
+            }
             LOGGER.error("Cannot encode uploaded proto descriptor file",e);
             return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
-                Map.of("Message", "Cannot encode uploaded proto descriptor file",
+                Map.of("Message", message,
                     "Error", e.getMessage())).toString())).build();
         }
-        return status ? Response.ok().build() : Response.serverError().entity(Map.of("Error", "Cannot store proto descriptor file")).build();
+        return status ? Response.ok().type(MediaType.APPLICATION_JSON)
+            .entity("The protofile is successfully saved in Solr").build() : Response.serverError().entity(Map.of("Error", "Cannot store proto descriptor file")).build();
+    }
+
+    @GET
+    @Path("/getProtoDescriptor/{customerId}/{app}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getProtoDescriptorFile(@PathParam("customerId") String customerId, @PathParam(
+        "app") String app) {
+        try {
+            Optional<ProtoDescriptorDAO> latestProtoDescDao =
+                rrstore.getLatestProtoDescriptorDAO(customerId, app);
+            return latestProtoDescDao.map(protoDescriptorDAO -> Response.ok()
+                .entity(protoDescriptorDAO.convertToJsonDescriptor()).build())
+                .orElse(Response.serverError().entity("Proto Descriptor not present for the "
+                    + "customer and app combo").build());
+        } catch (Exception e) {
+            return Response.serverError().entity("Exception occurred while retrieving proto "
+                + "descriptor " + e.getMessage()).build();
+        }
     }
 
     @POST
@@ -2013,12 +2179,11 @@ public class CubeStore {
                 io.md.utils.Utils.setProtoDescriptorGrpcEvent(requestEvent, config.protoDescriptorCache);
                 // Note the state for stored event in solr will be UnwrappedDecoded if this is directly coming from devtool
                 // then the state has to be set as UnwrappedDecoded by devtool.
-                ((GRPCPayload) requestEvent.payload).wrapBodyAndEncode();
-            } else if (requestEvent.payload instanceof HTTPPayload) {
-                // dummy call to getBody to wrap body
-                ((HTTPPayload) requestEvent.payload).getBody();
             }
-
+            if (requestEvent.payload instanceof HTTPPayload) {
+                // wrap and encode the body to be used by UI
+                ((HTTPPayload) requestEvent.payload).wrapBodyAndEncode();
+            }
 
             Optional<Recording> optionalRecording = rrstore.getRecording(recordingOrReplayId);
             Optional<String> recordOrReplayRunId = optionalRecording.map(recording -> {
@@ -2053,6 +2218,12 @@ public class CubeStore {
 
     private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId, Optional<String> runId)
         throws InvalidEventException {
+        return buildEvent(event, collection, recordingType, reqId, traceId, runId, Instant.now());
+    }
+
+
+    private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId, Optional<String> runId, Instant timeStamp)
+        throws InvalidEventException {
         EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
             event.service, event.instanceId, collection,
             new MDTraceInfo(traceId, event.spanId, event.parentSpanId),
@@ -2085,16 +2256,30 @@ public class CubeStore {
     public void getAppConfigurations(@Suspended AsyncResponse asyncResponse,
         @PathParam("customerId") String customerId, List<String> apps) {
 
-        List<CompletableFuture<CustomerAppConfig>> futures =  apps.stream().map(app->CompletableFuture.supplyAsync(()->rrstore.getAppConfiguration(customerId, app).orElse(new CustomerAppConfig.Builder(customerId, app).build()))).collect(Collectors.toList());
+        List<CompletableFuture<CustomerAppConfig>> futures =  apps.stream().map(app->CompletableFuture.supplyAsync(()->custAppConfigCache.getCustomerAppConfig(customerId, app).orElse(new CustomerAppConfig.Builder(customerId,app).build()))).collect(Collectors.toList());
 
         Utils.sequence(futures).thenApply(appConfigs->{
-            Map<String , CustomerAppConfig> appCfgs = new HashMap<>();
-            for(int i=0 ; i<apps.size() ; i++){
-                appCfgs.put(apps.get(i) , appConfigs.get(i));
-            }
+
+            Map<String , CustomerAppConfig> appCfgs = appConfigs.stream().collect(Collectors.toMap(cfg->cfg.app , cfg->cfg));
+
             return asyncResponse.resume(Response.ok(appCfgs , MediaType.APPLICATION_JSON).build());
         }).exceptionally(e-> asyncResponse.resume(Response.status(Status.INTERNAL_SERVER_ERROR)
             .entity(String.format("Server error: " + e.getMessage())).build()));
+    }
+
+    @POST
+    @Path("setAppConfiguration")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response setAppConfiguration(CustomerAppConfig custAppCfg ) {
+
+        if(rrstore.saveConfig(custAppCfg)){
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity(
+                buildSuccessResponse(Constants.SUCCESS, new JSONObject(Map.of(Constants.MESSAGE, "The customer app config tag has been changed",
+                            Constants.CUSTOMER_ID_FIELD, custAppCfg.customerId, Constants.APP_FIELD, custAppCfg.app)))).build();
+        }
+
+        return Response.serverError().type(MediaType.APPLICATION_JSON).entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE , "Error saving the customer app config")).build();
     }
 
     @POST
@@ -2124,7 +2309,7 @@ public class CubeStore {
         Instant timeStamp = Instant.now();
         if(firstRecording.recordingType == RecordingType.UserGolden && newType.isEmpty()) {
             thirdRecording = firstRecording;
-            CompletableFuture.runAsync(() -> copyEvents(secondRecording, thirdRecording, timeStamp))
+            CompletableFuture.runAsync(() -> copyEvents(secondRecording, thirdRecording, timeStamp, Optional.empty()))
                 .thenApply(v -> asyncResponse.resume(Response.ok().type(MediaType.APPLICATION_JSON).entity(thirdRecording).build()));
         } else {
             thirdRecording = createRecordingObjectFrom(firstRecording, Optional.empty(),
@@ -2132,8 +2317,8 @@ public class CubeStore {
                 timeStamp, timeStamp.toString(), newType.orElse(RecordingType.UserGolden));
             if(rrstore.saveRecording(thirdRecording)) {
                 CompletableFuture.runAsync(() -> {
-                    copyEvents(firstRecording, thirdRecording, timeStamp);
-                    copyEvents(secondRecording, thirdRecording, timeStamp);
+                    copyEvents(firstRecording, thirdRecording, timeStamp, Optional.empty());
+                    copyEvents(secondRecording, thirdRecording, timeStamp, Optional.empty());
                 }).thenApply(v -> asyncResponse.resume(Response.ok().type(MediaType.APPLICATION_JSON).entity(thirdRecording).build()));
             }
         }
@@ -2207,7 +2392,7 @@ public class CubeStore {
         var newEventsStream =   pending.stream().map(event -> {
             String newReqId = "Update-" + finalPayloadHash;
             try {
-                Event newEvent = buildEvent(event, collection, recordingType, newReqId, newReqId, Optional.empty());
+                Event newEvent = buildEvent(event, collection, recordingType, newReqId, newReqId, Optional.empty(), event.timestamp);
                 return newEvent;
             } catch (InvalidEventException e) {
                 LOGGER.error(new ObjectMessage(Map.of(
@@ -2290,6 +2475,8 @@ public class CubeStore {
 		this.eventQueue = config.disruptorEventQueue;
 		this.tagConfig = new TagConfig(config.rrstore);
 		this.factory = new DynamicInjectorFactory(rrstore, jsonMapper);
+		this.apiGenPathMgr = ApiGenPathMgr.getInstance(rrstore);
+		this.custAppConfigCache = CustAppConfigCache.getInstance(rrstore);
 	}
 
 
@@ -2299,6 +2486,8 @@ public class CubeStore {
 	Config config;
 	TagConfig tagConfig;
     DisruptorEventQueue eventQueue;
+    ApiGenPathMgr apiGenPathMgr;
+    CustAppConfigCache custAppConfigCache;
 
 	private Optional<String> getCurrentCollectionIfEmpty(Optional<String> collection,
 			Optional<String> customerId, Optional<String> app, Optional<String> instanceId) {

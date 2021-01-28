@@ -252,6 +252,7 @@ public class RecordingUpdate {
             LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
                 , "Error in saving transformed request/response"
                 , Constants.RECORDING_UPDATE_OPERATION_SET_ID, recordingOperationSetId)));
+            return false;
         }
 
         /* This should no longer be needed. TODO: Remove once java function recording path is tested

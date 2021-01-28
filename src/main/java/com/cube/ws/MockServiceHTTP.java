@@ -2,6 +2,7 @@ package com.cube.ws;
 
 import static io.md.core.Utils.buildErrorResponse;
 
+import io.md.core.ApiGenPathMgr;
 import io.md.dao.GRPCResponsePayload;
 import io.md.dao.MockWithCollection;
 import io.md.dao.Recording;
@@ -280,6 +281,7 @@ public class MockServiceHTTP {
 
         Optional<Event> respEvent = Optional.empty();
         try {
+            path = apiGenPathMgr.getGenericPath(customerId , app , service , path).orElse(path);
             Event mockRequestEvent = io.md.utils.Utils
                 .createRequestMockNew(path, formParams, customerId, app, instanceId,
                     service, method, body, headers, ui.getQueryParameters(), traceId, tracerMgr);
@@ -362,6 +364,7 @@ public class MockServiceHTTP {
 
         mocker = new RealMocker(rrstore);
         tracerMgr = new TracerMgr(rrstore);
+        apiGenPathMgr = ApiGenPathMgr.getInstance(rrstore);
 	}
 
 
@@ -372,6 +375,7 @@ public class MockServiceHTTP {
 
 	private Mocker mocker;
 	private TracerMgr tracerMgr;
+    private ApiGenPathMgr apiGenPathMgr;
 
 
 }
