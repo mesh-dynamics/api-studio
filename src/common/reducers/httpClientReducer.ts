@@ -1030,13 +1030,19 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
-                    let outgoingRequests = eachTab.outgoingRequests;
-                    if (eachTab.id === data.tabId) {
-                        outgoingRequests = eachTab.outgoingRequests
-                                                    .map(request => request.grpcConnectionSchema = data.value);
-                        eachTab.hasChanged = true;
+                    if(eachTab.id === data.tabId) {
+                        const outgoingRequests = eachTab.outgoingRequests.map(eachOutgoingRequestTab => {
+                            if(eachOutgoingRequestTab.id === data.outgoingRequestTabId) {
+                                eachOutgoingRequestTab.grpcConnectionSchema = data.value;
+                            }
+
+                            return eachOutgoingRequestTab;
+                        })
+
+                        return { ...eachTab, outgoingRequests: [...outgoingRequests] };
                     }
-                    return { ...eachTab, outgoingRequests: [...outgoingRequests] };
+
+                    return eachTab;
                 })
             }
         }

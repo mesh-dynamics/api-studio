@@ -27,6 +27,7 @@ export declare type UpdateGrpcConnectData = (
     isOutgoingRequest: boolean,
     tabId: string,
     value: IGrpcConnect,
+    currentSelectedTabId: string
   ) => void;
 
 export interface IGRPCRequestMessage {
@@ -35,6 +36,7 @@ export interface IGRPCRequestMessage {
     paramsType: string;
     selectedApp: string;
     appGrpcSchema: IGrpcSchema;
+    currentSelectedTabId: string;
     grpcConnectionSchema: IGrpcConnect,
     updateGrpcConnectData: UpdateGrpcConnectData,
     addOrRemoveParam: AddOrRemoveHandler,
@@ -51,7 +53,7 @@ export interface IGRPCRequestMessage {
 const GRPCRequestMessage = (props: IGRPCRequestMessage) => {
     const { 
         appGrpcSchema, selectedApp, readOnly, disabled, tabId,
-        httpURL, isOutgoingRequest, updateParam,
+        httpURL, isOutgoingRequest, updateParam, currentSelectedTabId,
         addOrRemoveParam, updateAllParams, headers, updateGrpcConnectData,
         paramsType, 
     } = props;
@@ -75,29 +77,32 @@ const GRPCRequestMessage = (props: IGRPCRequestMessage) => {
 
         const resetSelectedMethod = methodsForSelectedService.length !== 0 ? methodsForSelectedService[0] : '';
 
-        const updatedUrl = `${endpoint}.${value}/${resetSelectedMethod}`;
+        const tabValue: IGrpcConnect = { app: selectedApp, service: value, method: resetSelectedMethod, endpoint };
 
-        updateGrpcConnectData(isOutgoingRequest, tabId, { app: selectedApp, service: value, method: resetSelectedMethod, endpoint });
+        updateGrpcConnectData(isOutgoingRequest, tabId, tabValue, currentSelectedTabId);
 
+        // const updatedUrl = `${endpoint}.${value}/${resetSelectedMethod}`;
         // updateParam(isOutgoingRequest, tabId, "httpURL", "httpURL", updatedUrl); TODO: keep this for now
 
     }
     
     const handleMethodChange = (value: string) => {
+        
+        const tabValue: IGrpcConnect = { app: selectedApp, service, method: value, endpoint };
+        
+        updateGrpcConnectData(isOutgoingRequest, tabId, tabValue, currentSelectedTabId);
 
-        const updatedUrl = `${endpoint}.${service}/${value}`;
-
-        updateGrpcConnectData(isOutgoingRequest, tabId, { app: selectedApp, service, method: value, endpoint })
-
+        // const updatedUrl = `${endpoint}.${service}/${value}`;
         // updateParam(isOutgoingRequest, tabId, "httpURL", "httpURL", updatedUrl); TODO: keep this for now
     }
 
     const handleEndpointChange = (value: string) => {
 
-        const updatedUrl = `${value}.${service}/${method}`;
+        const tabValue: IGrpcConnect = { app: selectedApp, service, method, endpoint: value };
 
-        updateGrpcConnectData(isOutgoingRequest, tabId, { app: selectedApp, service, method, endpoint: value });
+        updateGrpcConnectData(isOutgoingRequest, tabId, tabValue, currentSelectedTabId);
 
+        // const updatedUrl = `${value}.${service}/${method}`;
         // updateParam(isOutgoingRequest, tabId, "httpURL", "httpURL", updatedUrl); TODO: keep this for now
     };
 

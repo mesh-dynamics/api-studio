@@ -49,8 +49,8 @@ export const httpClientActions = {
         return {type: httpClientConstants.UPDATE_GRPC_CONNECTION_DETAILS_IN_TAB, data: { tabId, value }};
     },
 
-    updateGrpcConnectDetailsInSelectedOutgoingTab: (tabId, value) => {
-        return {type: httpClientConstants.UPDATE_GRPC_CONNECTION_DETAILS_IN_OUTGOING_TAB, data: { tabId, value }};
+    updateGrpcConnectDetailsInSelectedOutgoingTab: (tabId, outgoingRequestTabId, value) => {
+        return {type: httpClientConstants.UPDATE_GRPC_CONNECTION_DETAILS_IN_OUTGOING_TAB, data: { tabId, outgoingRequestTabId, value }};
     },
 
     updateAllParamsInSelectedTab: (tabId, type, key, value) => {

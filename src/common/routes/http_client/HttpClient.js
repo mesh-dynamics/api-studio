@@ -858,7 +858,6 @@ class HttpClient extends Component {
                                 <div style={{display: "flex"}}>
                                     <div style={{flex: "1", padding: "0.5rem", height:'100%'}}>
                                         <GRPCRequestMessage
-                                            id=""
                                             readOnly={false}
                                             disabled={false}
                                             selectedApp={selectedApp}
@@ -866,6 +865,7 @@ class HttpClient extends Component {
                                             tabId={selectedTraceTableReqTab.id}
                                             headers={selectedTraceTableReqTab.headers} 
                                             httpURL={selectedTraceTableReqTab.httpURL}
+                                            currentSelectedTabId={currentSelectedTab.id}
                                             grpcData={selectedTraceTableReqTab.grpcData}
                                             paramsType={selectedTraceTableReqTab.paramsType}
                                             grpcConnectionSchema={selectedTraceTableReqTab.grpcConnectionSchema}
@@ -879,12 +879,12 @@ class HttpClient extends Component {
                                     <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0", height:'100%'}}>
                                         {selectedTraceTableReqTab && selectedTraceTableTestReqTab && (
                                             <GRPCRequestMessage
-                                                id="test"
                                                 readOnly={true}
                                                 disabled={true}
                                                 selectedApp={selectedApp}
                                                 appGrpcSchema={appGrpcSchema}
                                                 tabId={selectedTraceTableTestReqTab.id}
+                                                currentSelectedTabId={currentSelectedTab.id}
                                                 httpURL={selectedTraceTableTestReqTab.httpURL}
                                                 headers={selectedTraceTableTestReqTab.headers} 
                                                 grpcData={selectedTraceTableTestReqTab.grpcData}

@@ -925,11 +925,11 @@ class HttpClientTabs extends Component {
         }
     }
 
-    updateGrpcConnectData(isOutgoingRequest, tabId, value) {
+    updateGrpcConnectData(isOutgoingRequest, tabId, value, currentSelectedTabId) {
         const { dispatch } = this.props;
 
         if(isOutgoingRequest) {
-            dispatch(httpClientActions.updateGrpcConnectDetailsInSelectedOutgoingTab(tabId, value));
+            dispatch(httpClientActions.updateGrpcConnectDetailsInSelectedOutgoingTab(currentSelectedTabId, tabId, value));
         } else {
             dispatch(httpClientActions.updateGrpcConnectDetailsInSelectedTab(tabId, value));
         }
