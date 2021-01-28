@@ -145,7 +145,7 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>agent</artifactId>
-			<version>1.0.62</version>
+			<version>1.0.67</version>
 
 			<exclusions>
 				<exclusion>
