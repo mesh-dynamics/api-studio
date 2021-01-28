@@ -144,6 +144,8 @@ public class ProtoDescriptorDAO {
 				}
 			});
 
+			fileNode.set("package" , JsonNodeFactory.instance.textNode(fileDescriptorProto.getPackage()));
+
 			for (int i = 0; i < fileDescriptorProto.getServiceCount(); i++) {
 				DescriptorProtos.ServiceDescriptorProto serviceDescriptorProto = fileDescriptorProto
 					.getService(i);
