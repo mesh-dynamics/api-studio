@@ -58,6 +58,7 @@ import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.Pair;
+import org.apache.zookeeper.Op;
 
 import com.cube.learning.DynamicInjectionGeneratedToActualConvertor;
 import com.cube.learning.InjectionExtractionMeta;
@@ -3242,8 +3243,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private Optional<CustomerAppConfig> docToCustomerAppConfig(SolrDocument doc){
         final Optional<String> customerId = getStrField(doc , CUSTOMERIDF);
         final Optional<String> app = getStrField(doc , APPF);
-        if(customerId.isEmpty() || app.isEmpty()){
-            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Did not find customerId/app in the SolrDocument" , Constants.ERROR , doc.toString())));
+        final Optional<String> id = getStrField(doc , IDF);
+        if(customerId.isEmpty() || app.isEmpty() || id.isEmpty()){
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE, "Did not find customerId/app/id in the SolrDocument" , Constants.ERROR , doc.toString())));
             return Optional.empty();
         }
         final Optional<String> tracer = getStrField(doc, TRACERF);
@@ -3252,6 +3254,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         CustomerAppConfig.Builder builder = new CustomerAppConfig.Builder(customerId.get() , app.get());
         tracer.ifPresent(builder::withTracer);
         apiGenericPaths.ifPresent(builder::withApiGenericPaths);
+        builder.withId(id.get());
 
         return Optional.of(builder.build());
     }
@@ -3261,6 +3264,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(TYPEF, Types.CustomerAppConfig.toString());
         doc.setField(CUSTOMERIDF, cfg.customerId);
         doc.setField(APPF, cfg.app);
+        doc.setField(IDF , cfg.id);
         cfg.tracer.ifPresent(tracer->doc.setField(TRACERF , tracer));
         cfg.apiGenericPaths.ifPresent(genPaths->{
             String genPathStr = null;
