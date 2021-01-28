@@ -20,7 +20,7 @@ export interface IHttpRequestBodyProps {
   showBody: boolean;
   tabId: string;
   rawData: string;
-  grpcData: string;
+  grpcData: any; // TODO: get from properly defined interface
   isOutgoingRequest: boolean;
   readOnly: boolean;
   bodyType: string;
@@ -91,12 +91,12 @@ class HttpRequestBody extends Component<
       "request-data-label": true,
       filled: isRawDataHighlighted,
     });
-    const isGrpcDataHighlighted =
-      this.props.grpcData && this.props.grpcData.trim();
-    const grpcDataLabelClass = classNames({
-      "request-data-label": true,
-      filled: isGrpcDataHighlighted,
-    });
+    // const isGrpcDataHighlighted =
+    //   this.props.grpcData && this.props.grpcData.trim();
+    // const grpcDataLabelClass = classNames({
+    //   "request-data-label": true,
+    //   filled: isGrpcDataHighlighted,
+    // });
     const isFormDataExists =
       this.props.formData.findIndex((header) => header.name !== "") > -1;
     const isMultipartDataExists =
@@ -168,16 +168,6 @@ class HttpRequestBody extends Component<
               onChange={this.handleBodyOrRawDataType}
             />
             Raw Data
-          </div>
-          <div className={grpcDataLabelClass}>
-            <input
-              type="radio"
-              value="grpcData"
-              name={"bodyType" + this.props.id.trim()}
-              checked={isGrpcData}
-              onChange={this.handleBodyOrRawDataType}
-            />
-            gRPC Data
           </div>
           <div
             className=""
@@ -262,7 +252,7 @@ class HttpRequestBody extends Component<
             }
             paramName="rawData"
           ></HttpRequestRawData>
-          <HttpRequestRawData
+          {/* <HttpRequestRawData
             tabId={this.props.tabId}
             showRawData={isGrpcData}
             rawData={this.props.grpcData}
@@ -273,7 +263,7 @@ class HttpRequestBody extends Component<
               !this.state.grpcDataRef && this.setState({ grpcDataRef: item })
             }
             paramName="grpcData"
-          ></HttpRequestRawData>
+          ></HttpRequestRawData> */}
         </div>
       </>
     );

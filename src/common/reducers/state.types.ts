@@ -328,7 +328,7 @@ export interface IPayloadData {
   payloadState?: string;
   queryParams?: any; //2
   body: any;
-  status?:number;
+  status?: number;
 }
 
 export interface IQueryParams {
@@ -357,6 +357,7 @@ export interface IEventData {
   timestamp: number;
   traceId: string;
   payloadFields:[];
+  grpcConnectionSchema: IGrpcConnect
 }
 export interface IApiTrace {
   apiPath: string;
@@ -464,6 +465,8 @@ export interface IHttpClientTabDetails {
   isHighlighted: boolean;
   progressState?: string;
   contextMap: IKeyValuePairs;
+  grpcData: any; // TODO: get this the right format
+  grpcConnectionSchema: IGrpcConnect;
 }
 
 export interface IUserApiTraceHistory {
@@ -514,6 +517,17 @@ export interface IMockConfig {
   value: string;
 }
 
+export interface IGrpcSchema {
+  [key: string]: any
+}
+
+export interface IGrpcConnect {
+  app: string;
+  service: string;
+  endpoint: string;
+  method: string;
+}
+
 export interface IHttpClientStoreState {
   active: boolean;
   app: string;
@@ -549,6 +563,7 @@ export interface IHttpClientStoreState {
   mockContextSaveToCollection: ICollectionDetails;
   uiPref: IKeyValuePairs<any>;
   historyPathFilterText: string;
+  appGrpcSchema: IGrpcSchema;
 }
 
 // Navigation State

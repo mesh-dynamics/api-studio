@@ -289,6 +289,7 @@ function setSelectedApp (app) {
             dispatch(httpClientActions.fetchMockConfigs())
             dispatch(httpClientActions.loadFromHistory());
             dispatch(httpClientActions.loadUserCollections());
+            dispatch(httpClientActions.loadProtoDescriptor());
         });
     }
 }

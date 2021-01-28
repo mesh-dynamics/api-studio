@@ -2,6 +2,7 @@ import { cubeService } from "../services";
 import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from "lodash";
 import { getDefaultTraceApiFilters } from "../utils/api-catalog/api-catalog-utils";
+import { mergeApplicationProtoFiles } from "../utils/http_client/grpc-utils";
 import arrayToTree from 'array-to-tree';
 import {setDefaultMockContext} from '../helpers/httpClientHelpers'
 
@@ -44,6 +45,14 @@ export const httpClientActions = {
         return {type: httpClientConstants.UPDATE_ALL_PARAMS_IN_OUTGOING_TAB, data: {tabId, type, key, value}};
     },
 
+    updateGrpcConnectDetailsInSelectedTab: (tabId, value) => {
+        return {type: httpClientConstants.UPDATE_GRPC_CONNECTION_DETAILS_IN_TAB, data: { tabId, value }};
+    },
+
+    updateGrpcConnectDetailsInSelectedOutgoingTab: (tabId, outgoingRequestTabId, value) => {
+        return {type: httpClientConstants.UPDATE_GRPC_CONNECTION_DETAILS_IN_OUTGOING_TAB, data: { tabId, outgoingRequestTabId, value }};
+    },
+
     updateAllParamsInSelectedTab: (tabId, type, key, value) => {
         return {type: httpClientConstants.UPDATE_ALL_PARAMS_IN_TAB, data: {tabId, type, key, value}};
     },
@@ -54,6 +63,14 @@ export const httpClientActions = {
 
     updateBodyOrRawDataTypeInTab: (tabId, type, value) => {
         return {type: httpClientConstants.UPDATE_BODY_OR_RAWA_DATA_TYPE_IN_TAB, data: {tabId, type, value}};
+    },
+
+    updateRequestTypeOfSelectedOutgoingTab: (tabId, outgoingRequestTabId, value) => {
+        return {type: httpClientConstants.UPDATE_REQUEST_TYPE_IN_SELECTED_OUTGOING_TAB, data: {tabId, outgoingRequestTabId, value}}
+    },
+
+    updateRequestTypeOfSelectedTab: (tabId, value) => {
+        return {type: httpClientConstants.UPDATE_REQUEST_TYPE_IN_SELECTED_TAB, data: {tabId, value}}
     },
 
     replaceAllParamsInSelectedTab: (tabId, type, params) => {
@@ -164,6 +181,24 @@ export const httpClientActions = {
     },
 
     setEnvironmentList: (environmentList) => ({type: httpClientConstants.SET_ENVIRONMENT_LIST, data: environmentList}),
+
+    setProtoDescriptorValues: (schema) => ({ type: httpClientConstants.SET_PROTO_DESCRIPTOR_VALUES, data: schema }),
+
+    loadProtoDescriptor: () => async (dispatch, getState) => {
+        const { 
+            cube: { selectedApp: app }, 
+            authentication: { user: { customer_name: customerId } } 
+        } = getState();
+        
+        
+        try {
+            const response = await cubeService.fetchGrpcProtoDescriptor(customerId, app);
+
+            dispatch(httpClientActions.setProtoDescriptorValues({ [app]: mergeApplicationProtoFiles(response) }));
+        } catch (e) {
+            console.log('An error occured trying to load schema', e);
+        }
+    },
 
     fetchEnvironments: () => async (dispatch) => {
         dispatch(httpClientActions.setEnvStatusText("Loading..."))

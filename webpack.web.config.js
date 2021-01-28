@@ -64,7 +64,7 @@ const config = {
         historyApiFallback: {
             index: '/index.html',
         },
-        clientLogLevel: 'none',
+        clientLogLevel: 'error',
         watchOptions: {
             poll: 5000,
             ignored: ["node_modules", "relase", "dist"]
@@ -75,7 +75,11 @@ const config = {
             version: false,
             timings: false,
             assets: false,
+            cached: false,
+            cachedAssets: false,
             chunks: false,
+            chunkModules: false,
+            chunkOrigins: false,
             modules: false,
             reasons: false,
             children: false,
