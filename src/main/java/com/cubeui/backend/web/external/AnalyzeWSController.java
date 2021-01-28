@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.md.dao.Recording;
 import io.md.dao.RecordingOperationSetSP;
+import javax.ws.rs.QueryParam;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -357,5 +358,23 @@ public class AnalyzeWSController {
     @GetMapping("/getReqRespMatchResult")
     public ResponseEntity getReqRespMatchResult(HttpServletRequest request, @RequestBody Optional<String> getBody) {
         return cubeServerService.fetchGetResponse(request, getBody);
+    }
+
+    @GetMapping("/learnCompareTemplates")
+    public ResponseEntity learnCompareTemplates(HttpServletRequest request, @RequestBody Optional<String> body,
+        Authentication authentication, @QueryParam("replayId") String replayId) {
+        final Optional<Replay> replay =cubeServerService.getReplay(replayId);
+        if(replay.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("No Replay found for replayId=" + replayId);
+        validation.validateCustomerName(authentication,replay.get().customerId);
+        return cubeServerService.fetchGetResponse(request, body, "/as/getPotentialCompareTemplates");
+    }
+
+    @GetMapping("/getTemplateSet/{customerId}/{appId}/{templateVersion}")
+    public ResponseEntity getTemplateSet(HttpServletRequest request, @RequestBody Optional<String> body,
+        Authentication authentication, @PathVariable String customerId, @PathVariable String appId, @PathVariable String templateVersion) {
+        validation.validateCustomerName(authentication,customerId);
+        return cubeServerService.fetchGetResponse(request, body);
     }
 }
