@@ -51,6 +51,10 @@ public class TemplateEntryMeta implements Comparable{
     public static final String METHODS_ALL = "ALL";
     public static final String EMPTY_ID = "";
 
+    public TemplateEntryMeta(){
+        // Default constructor for jsonMapper
+    }
+
 
     public TemplateEntryMeta(RuleStatus ruleStatus,
         Type reqOrResp,
@@ -76,6 +80,7 @@ public class TemplateEntryMeta implements Comparable{
     }
 
     enum RuleStatus {
+        // IMP: Order of fields is used for sorting.
         ViolatesExistingExact, // Instance violates an exact rule of expected match.
         ViolatesExistingInherited, // Instance violates an inherited rule of expected match.
         ViolatesDefault, // Violates a default rule

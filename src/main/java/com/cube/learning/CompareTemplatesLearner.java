@@ -1,7 +1,11 @@
 package com.cube.learning;
 
 import com.cube.dao.ReqRespStore;
+import com.cube.golden.SingleTemplateUpdateOperation;
+import com.cube.golden.TemplateEntryOperation;
+import com.cube.golden.TemplateEntryOperation.RuleType;
 import com.cube.golden.TemplateSet;
+import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.learning.TemplateEntryMeta.RuleStatus;
 import com.cube.learning.TemplateEntryMeta.YesOrNo;
 import io.md.core.Comparator.Resolution;
@@ -12,7 +16,9 @@ import io.md.core.TemplateEntry;
 import io.md.core.TemplateEntryAsRule;
 import io.md.core.TemplateKey;
 import io.md.core.TemplateKey.Type;
+import io.md.dao.Event.EventType;
 import io.md.dao.ReqRespMatchResult;
+import io.md.dao.ReqRespUpdateOperation.OperationType;
 import io.md.services.DataStore.TemplateNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -80,14 +86,28 @@ public class CompareTemplatesLearner {
         // In case there is a compare template for the service, apiPath, method, it will return
         // an existing rule.
         return key.getJsonPath().flatMap(jsonPath -> {
+            TemplateKey templateKey = new TemplateKey(templateVersion, customer, app, key.getServiceId(),
+                key.getPath(), key.getReqOrResp(), key.getMethod(),
+                TemplateKey.DEFAULT_RECORDING);
             try {
                 return Optional
-                    .of(rrstore.getComparator(
-                        new TemplateKey(templateVersion, customer, app, key.getServiceId(),
-                            key.getPath(), key.getReqOrResp(), key.getMethod(),
-                            TemplateKey.DEFAULT_RECORDING)).getCompareTemplate().getRule(jsonPath));
+                    .of(rrstore.getComparator(templateKey).getCompareTemplate().getRule(jsonPath));
             } catch (TemplateNotFoundException e) {
-                return Optional.empty();
+                LOGGER.info(String.format(
+                    "No sample api call found to determine eventType. Assuming HTTP type. "
+                        + "customer=%s app=%s templateVersion=%s service=%s apiPath=%s reqOrResp:%s jsonPath=%s",
+                    key.getCustomerId(), key.getAppId(), key.getVersion(), key.getServiceId(),
+                    key.getPath(), key.getReqOrResp().toString(), key.getJsonPath()));
+                try {
+                    return Optional
+                        .of(rrstore.getComparator(templateKey,
+                            templateKey.getReqOrResp() == Type.RequestCompare ? EventType.HTTPRequest
+                                : EventType.HTTPResponse).getCompareTemplate().getRule(jsonPath));
+                } catch (TemplateNotFoundException templateNotFoundException) {
+                    LOGGER.error("Default template not found");
+                    templateNotFoundException.printStackTrace();
+                    return Optional.empty();
+                }
             }
         });
     }
@@ -281,7 +301,7 @@ public class CompareTemplatesLearner {
         }
     }
 
-    public List<TemplateEntryMeta> learnCompareTemplates(Map<String, String> reqIdToMethodMap,
+    public List<TemplateEntryMeta> learnComparisonRules(Map<String, String> reqIdToMethodMap,
         List<ReqRespMatchResult> reqRespMatchResultList,
         Optional<TemplateSet> existingTemplateSet) {
 
@@ -305,10 +325,10 @@ public class CompareTemplatesLearner {
             }
         );
 
-       return generateCompareTemplates();
+       return generateComparisonRules();
     }
 
-    public List<TemplateEntryMeta> generateCompareTemplates() {
+    public List<TemplateEntryMeta> generateComparisonRules() {
         List<TemplateEntryMeta> templateEntryMetaList = new ArrayList<>(
             learnedMetasMap.values());
         Collections.sort(templateEntryMetaList);
@@ -317,6 +337,50 @@ public class CompareTemplatesLearner {
         templateEntryMetaList.forEach(
             meta -> meta.parentMeta.ifPresent(parentMeta -> meta.inheritedRuleId = parentMeta.id));
         return templateEntryMetaList;
+    }
+
+    public TemplateUpdateOperationSet updateComparisonRules(List<TemplateEntryMeta> templateEntryMetaList, String updateOperationSetId){
+
+        TemplateUpdateOperationSet updateOperationSet = new TemplateUpdateOperationSet();
+
+        templateEntryMetaList.forEach(tm -> {
+            Optional<TemplateEntry> existingEntry = getDefaultRule(
+                createRulesKey(tm.service, tm.apiPath, tm.reqOrResp,
+                    tm.method.equals(TemplateEntryMeta.METHODS_ALL) ? Optional.empty()
+                        : Optional.of(tm.method), Optional.of(tm.jsonPath)));
+
+            Optional<TemplateEntry> newEntry = existingEntry.flatMap(entry -> {
+                if (!getValueMatchRequired(entry).equals(tm.valueMatchRequired) ||
+                    !getPresenceRequired(entry).equals(tm.presenceRequired)){
+                    // Replace existing rule only if it has changed
+                    // Add happens automatically if no existing rule
+                    return Optional.of(new TemplateEntry(entry.path, entry.dt,
+                        tm.presenceRequired == YesOrNo.yes ? PresenceType.Required
+                            : PresenceType.Optional,
+                        tm.valueMatchRequired == YesOrNo.yes ? ComparisonType.Equal
+                            : ComparisonType.Ignore, entry.em, entry.customization, entry.arrayComparisionKeyPath));
+                }else
+                    return Optional.empty();
+            });
+
+            newEntry.ifPresent(entry -> {
+                SingleTemplateUpdateOperation singleUpdateOperation = updateOperationSet
+                    .getTemplateUpdates().computeIfAbsent(
+                        new TemplateKey(templateVersion, customer, app, tm.service, tm.apiPath,
+                            tm.reqOrResp,
+                            tm.method.equals(TemplateEntryMeta.METHODS_ALL) ? Optional.empty()
+                                : Optional.of(tm.method), TemplateKey.DEFAULT_RECORDING),
+                        k -> new SingleTemplateUpdateOperation(new ArrayList<>()));
+
+                singleUpdateOperation.getOperationList().add(
+                    new TemplateEntryOperation(OperationType.REPLACE, entry.path,
+                        Optional.of(entry),
+                        RuleType.TEMPLATERULE));
+
+            });
+
+        });
+        return updateOperationSet;
     }
 
     private static class RulesKey extends TemplateKey{

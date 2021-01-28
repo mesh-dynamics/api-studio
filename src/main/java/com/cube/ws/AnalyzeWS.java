@@ -17,6 +17,7 @@ import com.cube.dao.ApiTraceFacetQuery;
 import com.cube.learning.CompareTemplatesLearner;
 import com.cube.learning.TemplateEntryMeta;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import io.md.cache.ProtoDescriptorCache;
@@ -29,8 +30,6 @@ import io.md.core.Comparator.Match;
 import io.md.dao.ConvertEventPayloadResponse;
 import io.md.dao.Event.EventType;
 import io.md.dao.GRPCPayload;
-import io.md.dao.HTTPRequestPayload;
-import io.md.dao.HTTPResponsePayload;
 import io.md.dao.Payload;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.RequestPayload;
@@ -38,6 +37,7 @@ import io.md.dao.ResponsePayload;
 import io.md.dao.Analysis.ReqRespMatchWithEvent;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -78,6 +78,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -98,7 +99,6 @@ import io.md.core.TemplateEntry;
 import io.md.core.TemplateKey;
 import io.md.core.ValidateCompareTemplate;
 import io.md.dao.Event;
-import io.md.dao.Event.RunType;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
 import io.md.dao.Analysis;
@@ -120,9 +120,6 @@ import com.cube.golden.RecordingUpdate;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
-import com.cube.golden.transform.TemplateSetTransformer;
-import com.cube.golden.transform.TemplateUpdateOperationSetTransformer;
-import com.cube.queue.StoreUtils;
 import com.cube.utils.AnalysisUtils;
 
 /**
@@ -450,7 +447,7 @@ public class AnalyzeWS {
             CompareTemplatesLearner ctLearner = new CompareTemplatesLearner(replay.customerId,
                 replay.app, replay.templateVersion, rrstore);
 
-            List<TemplateEntryMeta> finalMetaList = ctLearner.learnCompareTemplates(reqIdToMethodMap,
+            List<TemplateEntryMeta> finalMetaList = ctLearner.learnComparisonRules(reqIdToMethodMap,
                 reqRespMatchResultList,
                 rrstore.getTemplateSet(replay.customerId, replay.app, replay.templateVersion));
 
@@ -489,6 +486,61 @@ public class AnalyzeWS {
         );
     }
 
+    @POST
+    @Path("learnComparisonRules/{customerId}/{app}/{version}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response saveComparisonRules(@PathParam("customerId") String customerId,
+        @PathParam("app") String app,
+        @PathParam("version") String version,
+        @FormDataParam("file") InputStream uploadedInputStream) {
+
+        CsvSchema csvSchema = csvMapper.schemaFor(TemplateEntryMeta.class)
+            .withSkipFirstDataRow(true);
+
+        String previousTemplateVersion = version;
+
+
+        try {
+            List<TemplateEntryMeta> templateEntryMetaList;
+            MappingIterator<TemplateEntryMeta> mi = csvMapper
+                .readerFor(TemplateEntryMeta.class).
+                    with(csvSchema).readValues(uploadedInputStream);
+            templateEntryMetaList = mi.readAll();
+
+            String operationSetID = rrstore.createTemplateUpdateOperationSet(customerId,
+                app, previousTemplateVersion);
+
+            CompareTemplatesLearner ctLearner = new CompareTemplatesLearner(customerId,
+                app, version, rrstore);
+
+            TemplateUpdateOperationSet updateOperationSet = ctLearner
+                .updateComparisonRules(templateEntryMetaList, operationSetID);
+
+            rrstore.saveTemplateUpdateOperationSet(updateOperationSet, customerId);
+
+            Optional<TemplateSet> originalTemplateSet = rrstore
+                .getTemplateSet(customerId, app, previousTemplateVersion);
+
+            String updatedTemplateSetVersion =
+                AnalysisUtils.updateTemplateSet(operationSetID, originalTemplateSet, rrstore);
+
+            return Response.ok().entity(new JSONObject(Map.of("Message"
+                , "Template Set successfully updated", "ID", updatedTemplateSetVersion))).build();
+        } catch (IOException e) {
+            LOGGER.error(
+                String.format("Error in reading CSV file for customer=%s, app=%s, version=%s",
+                    customerId, app, version), e);
+            return Response.serverError().entity(
+                Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                    String.format("Error in reading CSV file for customer=%s, app=%s, version=%s",
+                        customerId, app, version))).build();
+        }catch (Exception e) {
+            LOGGER.error("Error while updating template set: " + previousTemplateVersion);
+            return Response.serverError().entity(new JSONObject(Map.of("Message"
+                , "Unable to update template set", "Error", e.getMessage()))).build();
+        }
+    }
 
 
     public Response getCompareTemplate(UriInfo urlInfo, String appId,
