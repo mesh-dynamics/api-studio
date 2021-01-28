@@ -1434,8 +1434,7 @@ public class CubeStore {
 
     }
 
-    private Set<String> getInvalidReqIdsToFilter(
-        Recording originalRec, @QueryParam("ignoreStatus") List<String> status) {
+    private Set<String> getInvalidReqIdsToFilter(Recording originalRec, List<String> status) {
         Set<String> reqIds = new HashSet<>();
         Set<String> respIds = new HashSet<>();
 
@@ -1447,27 +1446,24 @@ public class CubeStore {
         Result<Event> reqEvents = rrstore.getEvents(reqBuilder.build());
         reqEvents.getObjects().forEach(event -> reqIds.add(event.reqId));
 
+        Set<String> badStatusCodes = Optional.ofNullable(status).map(HashSet::new)
+            .orElseGet(() -> new HashSet());
+
         EventQuery.Builder respBuilder = new EventQuery.Builder(originalRec.customerId,
             originalRec.app, Event.RESPONSE_EVENT_TYPES);
         respBuilder.withCollection(originalRec.collection);
         respBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
         Result<Event> respEvents = rrstore.getEvents(respBuilder.build());
-        respEvents.getObjects().forEach(event -> respIds.add(event.reqId));
+        respEvents.getObjects().forEach(event -> {
+            if (event.payload instanceof ResponsePayload) {
+                if (!badStatusCodes.contains(((ResponsePayload) event.payload).getStatusCode())) {
+                    respIds.add(event.reqId);
+                }
+            }
+        });
 
-        Set<String> invalidReqIds = new HashSet<>(Sets.difference(reqIds, respIds));
+        return new HashSet<>(Sets.difference(reqIds, respIds));
 
-        if (status != null && !status.isEmpty()) {
-            EventQuery.Builder invalidRespBuilder = new EventQuery.Builder(originalRec.customerId,
-                originalRec.app, Event.RESPONSE_EVENT_TYPES);
-            invalidRespBuilder.withCollection(originalRec.collection);
-            invalidRespBuilder.withPayloadFields(status);
-            invalidRespBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
-            Result<Event> invalidRespEvents = rrstore.getEvents(invalidRespBuilder.build());
-
-            invalidRespEvents.getObjects()
-                .forEach(event -> invalidReqIds.add(event.reqId));
-        }
-        return invalidReqIds;
     }
 
     @POST
