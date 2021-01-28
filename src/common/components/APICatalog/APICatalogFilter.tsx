@@ -7,34 +7,23 @@ import _ from "lodash";
 import { apiCatalogActions } from '../../actions/api-catalog.actions';
 import classNames from 'classnames';
 import { GoldenCollectionBrowse } from "../../components/GoldenCollectionBrowse";
-// import GoldenCollectionBrowse from './GoldenCollectionBrowse';
 import ConvertCollection from './ConvertCollection';
 import AppManager from '../Navigation/AppManager';
-import { IApiCatalogCompareRequest, IApiCatalogState, ICubeState, IStoreState, ICollectionDetails, IGoldenCollectionBrowseState } from '../../reducers/state.types';
+import { findGoldenOrCollectionInSource } from '../../utils/api-catalog/api-catalog-utils';
+import { 
+    IApiCatalogCompareRequest, IApiCatalogState, ICubeState, 
+    IStoreState, ICollectionDetails, IGoldenCollectionBrowseState 
+} from '../../reducers/state.types';
+import { defaultCollectionItem } from '../../constants';
 
 export interface IAPICatalogFilterProps {
     cube: ICubeState;
     apiCatalog: IApiCatalogState;
     dispatch: any;
     currentPage: string;
-    gcbrowse: IGoldenCollectionBrowseState
+    gcBrowse: IGoldenCollectionBrowseState
 }
 class APICatalogFilter extends Component<IAPICatalogFilterProps> {
-
-    private currentSelectedCollectionId: string = "";
-
-    componentDidMount(){
-        const {
-            gcbrowse: {
-            selectedCollectionItem} ,
-            apiCatalog: { selectedSource } 
-        } = this.props;
-        if(selectedCollectionItem.collec != this.currentSelectedCollectionId){
-            const metaData = selectedSource === "UserGolden" ? "selectedCollection" : "selectedGolden";
-            this.currentSelectedCollectionId = selectedCollectionItem.collec;
-            this.handleFilterChange(metaData, selectedCollectionItem.collec)
-        }
-    }
 
     handleFilterChange = (metadata: string, value: any) => {
         const { dispatch } = this.props;
@@ -149,13 +138,20 @@ class APICatalogFilter extends Component<IAPICatalogFilterProps> {
         const { apiCatalog: { selectedSource } } = this.props;
 
         const metaData = selectedSource === "UserGolden" ? "selectedCollection" : "selectedGolden";
-        this.currentSelectedCollectionId = selectedCollectionObject.collec;
+        // this.currentSelectedCollectionId = selectedCollectionObject.collec;
         this.handleFilterChange(metaData, selectedCollectionObject.collec)
     };
 
     render() {
-        const { currentPage, cube, apiCatalog } = this.props;
+        const { currentPage, cube, apiCatalog, gcBrowse: { userGoldens, actualGoldens } } = this.props;
         const { diffRequestLeft, diffRequestRight, compareRequests, selectedSource, selectedService, selectedApiPath, selectedCollection, selectedGolden } = apiCatalog;
+        const selectedItem: ICollectionDetails = findGoldenOrCollectionInSource({
+                                selectedSource, 
+                                selectedCollection, 
+                                selectedGolden, 
+                                userGoldens, 
+                                actualGoldens
+                            });
 
         return (
             <div>
@@ -176,6 +172,7 @@ class APICatalogFilter extends Component<IAPICatalogFilterProps> {
                                             <GoldenCollectionBrowse
                                                 ddlClassNames="form-control"
                                                 selectedSource={selectedSource}
+                                                selectedGoldenOrCollectionItem={selectedItem || defaultCollectionItem}
                                                 dropdownLabel={selectedSource === "UserGolden" ? "COLLECTION" : "GOLDEN"}
                                                 handleChangeCallback={this.handleChangeInBrowseCollection}
                                             />
@@ -252,7 +249,7 @@ class APICatalogFilter extends Component<IAPICatalogFilterProps> {
 const mapStateToProps = (state: IStoreState) => ({
     cube: state.cube,
     apiCatalog: state.apiCatalog,
-    gcbrowse: state.gcbrowse
+    gcBrowse: state.gcBrowse
 });
 
 const connectedAPICatalogFilter = connect(mapStateToProps)(APICatalogFilter);

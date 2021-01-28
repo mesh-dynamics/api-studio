@@ -1,25 +1,27 @@
 import  React , { Component, Fragment, createContext } from "react";
-import { Checkbox, FormGroup, FormControl, Glyphicon, DropdownButton, MenuItem, Label, Table, ButtonGroup, Button, Radio, Tabs, Tab} from 'react-bootstrap';
+import { 
+    Checkbox, FormGroup, FormControl, Glyphicon, 
+    DropdownButton, MenuItem, Label, Table, Button
+} from 'react-bootstrap';
 
 import HttpRequestMessage from "./HttpRequestMessage.tsx";
 import HttpResponseMessage from "./HttpResponseMessage.tsx";
 
+import GRPCRequestMessage from "./GRPCRequestMessage.tsx";
 
+import ErrorBoundary from '../../components/ErrorHandling/ErrorBoundary';
 import ReactDiffViewer from '../../utils/diff/diff-main';
 import config from "../../config";
 import statusCodeList from "../../status-code-list";
-import {resolutionsIconMap} from '../../components/Resolutions.js';
-import { cubeService } from "../../services";
+import { resolutionsIconMap } from '../../components/Resolutions.js';
 import api from '../../api';
-import { getTraceTableTestReqData } from '../../utils/http_client/utils';
-import {
-    validateAndCreateDiffLayoutData  
-} from "../../utils/diff/diff-process.js";
+import { validateAndCreateDiffLayoutData  } from "../../utils/diff/diff-process.js";
 import { AbortRequest } from "./abortRequest";
 import SaveToCollection from './SaveToCollection.tsx';
 import SplitSlider from "../../components/SplitSlider.tsx";
 import EditableLabel from "./EditableLabel";
-import {hasTabDataChanged} from "../../utils/http_client/utils"
+import { hasTabDataChanged } from "../../utils/http_client/utils";
+import { isRequestTypeGrpc, getRequestUrlFromSchema } from "../../utils/http_client/grpc-utils";
 import Tippy from "@tippy.js/react";
 import RequestMatchType from './RequestMatchType.tsx';
 import { HttpRequestFields } from "./HttpRequestFields";
@@ -140,6 +142,29 @@ class HttpClient extends Component {
                 }
             }
         });
+    }
+
+    handleRequestTypeChange = (event, selectedTraceTableReqTabId) => {
+        const { currentSelectedTab, updateRequestTypeOfTab } = this.props;
+        const value = {};
+        if(event.target.value === 'grpcData') {
+            value.bodyType = 'grpcData';
+            value.paramsType = 'showBody';
+            value.payloadRequestEventName = 'GRPCRequestPayload';
+            value.payloadResponseEventName = 'GRPCResponsePayload';
+        } else {
+            value.bodyType = 'rawData';
+            value.paramsType = 'showQueryParams';
+            value.payloadRequestEventName = 'HTTPRequestPayload';
+            value.payloadResponseEventName = 'HTTPResponsePayload';
+        }
+        
+
+        if(currentSelectedTab.id === selectedTraceTableReqTabId) {
+            updateRequestTypeOfTab(false, currentSelectedTab.id, selectedTraceTableReqTabId, value);
+        } else {
+            updateRequestTypeOfTab(true, currentSelectedTab.id, selectedTraceTableReqTabId, value);
+        }
     }
 
     handleEditServiceNameForEgress = (updatedServiceName, requestId) => {
@@ -408,7 +433,7 @@ class HttpClient extends Component {
     }
 
     render() {
-        const {  currentSelectedTab } = this.props;
+        const {  currentSelectedTab, appGrpcSchema, selectedApp } = this.props;
         let selectedTraceTableReqTabId = currentSelectedTab.selectedTraceTableReqTabId;
         let selectedTraceTableTestReqTabId = currentSelectedTab.selectedTraceTableTestReqTabId;
         let selectedTraceTableReqTab, selectedTraceTableTestReqTab;
@@ -524,7 +549,7 @@ class HttpClient extends Component {
             <div>
                 <div style={{display: "flex"}}>
                     <div style={{marginLeft: "auto", order: "2"}}>
-                        <Button className="cube-btn text-center"  onClick={this.handleClick}>
+                        <Button className="cube-btn text-center" onClick={this.handleClick}>
                             {currentSelectedTab.requestRunning ? <><i className="fa fa-spinner fa-spin"></i> STOP</>: <><Glyphicon glyph="play" /> RUN</>} 
                         </Button>
                         <SaveToCollection 
@@ -547,12 +572,12 @@ class HttpClient extends Component {
                     </div>
                 </div>
                     <div style={{display: showTraceV ? "flex" : "none", backgroundColor: "#ffffff", marginBottom: "9px"}}>
-                        <div style={{flex: "1", padding: "0.5rem", minWidth: "0px"}}>
+                        <div style={{flex: "1", padding: "0.5rem", minWidth: "0px", overflow: "hidden"}}>
                             <div>Reference</div>
                             <Table hover style={{backgroundColor: "#fff", border: "1px solid #ddd", borderSpacing: "0px", borderCollapse: "separate", marginBottom: "0px"}}>
                                 <thead>
                                     <tr>
-                                        <th>SERVICE BY TRACE ORDER</th>
+                                        <th style={{ minWidth: "180px" }}>SERVICE BY TRACE ORDER</th>
                                         <th>API PATH</th>
                                         <th></th>
                                         <th></th>
@@ -579,7 +604,13 @@ class HttpClient extends Component {
                                         return (
                                             <tr className="service-rows" key={eachReq.id} style={{cursor: "pointer", backgroundColor: selectedTraceTableReqTab.id === eachReq.id ? "#ccc" : "#fff"}} onClick={() => this.handleRowClick(true, eachReq.id)}>
                                                 <td style={{ display: "inline-flex", width: "100%" }}>
-                                                    <span style={{marginRight: "30px", width: "25px"}}></span>
+                                                    <span style={{marginRight: "30px", width: "25px"}}>
+                                                        {
+                                                            isRequestTypeGrpc(eachReq.id, currentSelectedTab, outgoingRequests) 
+                                                            ? <span style={{ fontWeight: "700",fontSize: "11px" }}>gRPC</span> 
+                                                            : <span style={{ fontWeight: "700",fontSize: "11px" }}>REST</span>
+                                                        }
+                                                    </span>
                                                     <span>
                                                         <i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i>
                                                     </span>
@@ -696,108 +727,181 @@ class HttpClient extends Component {
                         </div>
                     </div>
                 </div>
+                <div style={{ display: "flex", width: "10%" }}>
+                    <select 
+                        value={isRequestTypeGrpc(selectedTraceTableReqTabId, currentSelectedTab, outgoingRequests) ? "grpcData" : "rawData"}
+                        className="form-control md-request-type-dropdown" 
+                        onChange={(event) => this.handleRequestTypeChange(event, selectedTraceTableReqTabId)}
+                    >
+                        <option value="grpcData">gRPC</option>
+                        <option value="rawData">REST</option>
+                    </select>
+                </div>
                 {!showCompleteDiff && (
                     <div>
-                        <div style={{display: "flex"}}>
-                            <div style={{flex: "1", padding: "0.5rem", height:'100%'}}>
-                                <HttpRequestMessage 
-                                    tabId={selectedTraceTableReqTab.id}
-                                    httpMethod={selectedTraceTableReqTab.httpMethod}
-                                    httpURL={selectedTraceTableReqTab.httpURL}
-                                    headers={selectedTraceTableReqTab.headers} 
-                                    queryStringParams={selectedTraceTableReqTab.queryStringParams}
-                                    bodyType={selectedTraceTableReqTab.bodyType}
-                                    formData={selectedTraceTableReqTab.formData} 
-                                    rawData={selectedTraceTableReqTab.rawData}
-                                    grpcData={selectedTraceTableReqTab.grpcData}
-                                    rawDataType={selectedTraceTableReqTab.rawDataType}
-                                    paramsType={selectedTraceTableReqTab.paramsType}
-                                    updateParam={this.props.updateParam}
-                                    replaceAllParams={this.props.replaceAllParams}
-                                    updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
-                                    isOutgoingRequest={selectedTraceTableReqTab.isOutgoingRequest} 
-                                    id="" 
-                                    readOnly={false}>
-                                </HttpRequestMessage>
-                            </div>
-                            <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0", height:'100%'}}>
-                                {selectedTraceTableReqTab && selectedTraceTableTestReqTab && (
-                                    <HttpRequestMessage
-                                        tabId={selectedTraceTableTestReqTab.id}
-                                        httpMethod={selectedTraceTableTestReqTab.httpMethod}
-                                        httpURL={selectedTraceTableTestReqTab.httpURL}
-                                        headers={selectedTraceTableTestReqTab.headers} 
-                                        queryStringParams={selectedTraceTableTestReqTab.queryStringParams}
-                                        bodyType={selectedTraceTableTestReqTab.bodyType}
-                                        formData={selectedTraceTableTestReqTab.formData} 
-                                        rawData={selectedTraceTableTestReqTab.rawData}
-                                        grpcData={selectedTraceTableTestReqTab.grpcData}
-                                        rawDataType={selectedTraceTableTestReqTab.rawDataType}
-                                        paramsType={selectedTraceTableReqTab.paramsType}
-                                        updateParam={this.props.updateParam}
-                                        replaceAllParams={this.props.replaceAllParams}
-                                        updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
-                                        isOutgoingRequest={selectedTraceTableTestReqTab.isOutgoingRequest}
-                                        readOnly={true}
-                                        id="test"
-                                        disabled={true} >
-                                    </HttpRequestMessage>
-                                )}
-                            </div>
-                        </div>
-                        <div style={{display: "flex",  minHeight: (selectedTraceTableReqTab.paramsType == "body" ?'200px': '50px'), overflowY: "auto"}} 
-                            ref={e=> (!this.state.httpRequestRef && this.setState({httpRequestRef : e}))}
-                            >
-                            <div style={{flex: "1", padding: "0.5rem", height:'100%', minWidth: "0px"}}>
-                            <HttpRequestFields 
-                                // Remove not required props
-                                    tabId={selectedTraceTableReqTab.id}
-                                    requestId={selectedTraceTableReqTab.requestId}
-                                    
-                                    headers={selectedTraceTableReqTab.headers} 
-                                    queryStringParams={selectedTraceTableReqTab.queryStringParams}
-                                    bodyType={selectedTraceTableReqTab.bodyType}
-                                    formData={selectedTraceTableReqTab.formData} 
-                                    rawData={selectedTraceTableReqTab.rawData}
-                                    grpcData={selectedTraceTableReqTab.grpcData}
-                                    rawDataType={selectedTraceTableReqTab.rawDataType}
-                                    paramsType={selectedTraceTableReqTab.paramsType}
-                                    addOrRemoveParam={this.props.addOrRemoveParam} 
-                                    updateParam={this.props.updateParam}
-                                    updateAllParams={this.props.updateAllParams}
-                                    updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
-                                    isOutgoingRequest={selectedTraceTableReqTab.isOutgoingRequest} 
-                                    id="" 
-                                    readOnly={false}
-                                />
+                    {
+                        !isRequestTypeGrpc(selectedTraceTableReqTabId, currentSelectedTab, outgoingRequests)
+                        // selectedTraceTableReqTabId.bodyType !== "grpcData"  // this.state.requestType === "REST" 
+                        ? 
+                            (
+                                <Fragment>
+                                    <div style={{display: "flex"}}>
+                                        <div style={{flex: "1", padding: "0.5rem", height:'100%'}}>
+                                            <HttpRequestMessage 
+                                                tabId={selectedTraceTableReqTab.id}
+                                                httpMethod={selectedTraceTableReqTab.httpMethod}
+                                                httpURL={selectedTraceTableReqTab.httpURL}
+                                                headers={selectedTraceTableReqTab.headers} 
+                                                queryStringParams={selectedTraceTableReqTab.queryStringParams}
+                                                bodyType={selectedTraceTableReqTab.bodyType}
+                                                formData={selectedTraceTableReqTab.formData} 
+                                                multipartData={selectedTraceTableReqTab.multipartData} 
+                                                rawData={selectedTraceTableReqTab.rawData}
+                                                grpcData={selectedTraceTableReqTab.grpcData}
+                                                rawDataType={selectedTraceTableReqTab.rawDataType}
+                                                paramsType={selectedTraceTableReqTab.paramsType}
+                                                updateParam={this.props.updateParam}
+                                                replaceAllParams={this.props.replaceAllParams}
+                                                updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
+                                                isOutgoingRequest={selectedTraceTableReqTab.isOutgoingRequest} 
+                                                id="" 
+                                                readOnly={false}
+                                            />
+                                        </div>
+                                        <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0", height:'100%'}}>
+                                            {selectedTraceTableReqTab && selectedTraceTableTestReqTab && (
+                                                <HttpRequestMessage
+                                                    tabId={selectedTraceTableTestReqTab.id}
+                                                    httpMethod={selectedTraceTableTestReqTab.httpMethod}
+                                                    httpURL={selectedTraceTableTestReqTab.httpURL}
+                                                    headers={selectedTraceTableTestReqTab.headers} 
+                                                    queryStringParams={selectedTraceTableTestReqTab.queryStringParams}
+                                                    bodyType={selectedTraceTableTestReqTab.bodyType}
+                                                    formData={selectedTraceTableTestReqTab.formData} 
+                                                    multipartData={selectedTraceTableTestReqTab.multipartData} 
+                                                    rawData={selectedTraceTableTestReqTab.rawData}
+                                                    grpcData={selectedTraceTableTestReqTab.grpcData}
+                                                    rawDataType={selectedTraceTableTestReqTab.rawDataType}
+                                                    paramsType={selectedTraceTableReqTab.paramsType}
+                                                    updateParam={this.props.updateParam}
+                                                    replaceAllParams={this.props.replaceAllParams}
+                                                    updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
+                                                    isOutgoingRequest={selectedTraceTableTestReqTab.isOutgoingRequest}
+                                                    readOnly={true}
+                                                    id="test"
+                                                    disabled={true}
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div style={{display: "flex",  minHeight: (selectedTraceTableReqTab.paramsType == "body" ?'200px': '50px'), overflowY: "auto"}} 
+                                        ref={e=> (!this.state.httpRequestRef && this.setState({httpRequestRef : e}))}
+                                    >
+                                        <div style={{flex: "1", padding: "0.5rem", height:'100%', minWidth: "0px"}}>
+                                            <HttpRequestFields 
+                                                // Remove not required props
+                                                tabId={selectedTraceTableReqTab.id}
+                                                requestId={selectedTraceTableReqTab.requestId}
+                                                
+                                                headers={selectedTraceTableReqTab.headers} 
+                                                queryStringParams={selectedTraceTableReqTab.queryStringParams}
+                                                bodyType={selectedTraceTableReqTab.bodyType}
+                                                formData={selectedTraceTableReqTab.formData} 
+                                                multipartData={selectedTraceTableReqTab.multipartData || []}
+                                                rawData={selectedTraceTableReqTab.rawData}
+                                                grpcData={selectedTraceTableReqTab.grpcData}
+                                                rawDataType={selectedTraceTableReqTab.rawDataType}
+                                                paramsType={selectedTraceTableReqTab.paramsType}
+                                                addOrRemoveParam={this.props.addOrRemoveParam} 
+                                                updateParam={this.props.updateParam}
+                                                updateAllParams={this.props.updateAllParams}
+                                                updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
+                                                isOutgoingRequest={selectedTraceTableReqTab.isOutgoingRequest} 
+                                                id="" 
+                                                readOnly={false}
+                                            />
+                                        </div>
+                                        <div style={{flex: "1", padding: "0.5rem", height:'100%', minWidth: "0px"}}>
+                                            {selectedTraceTableReqTab && selectedTraceTableTestReqTab && (
+                                                <HttpRequestFields 
+                                                    // Remove not required props
+                                                        tabId={selectedTraceTableTestReqTab.id}
+                                                        requestId={selectedTraceTableTestReqTab.requestId}
+                                                        httpMethod={selectedTraceTableTestReqTab.httpMethod}
+                                                        httpURL={selectedTraceTableTestReqTab.httpURL}
+                                                        headers={selectedTraceTableTestReqTab.headers} 
+                                                        queryStringParams={selectedTraceTableTestReqTab.queryStringParams}
+                                                        bodyType={selectedTraceTableTestReqTab.bodyType}
+                                                        formData={selectedTraceTableTestReqTab.formData} 
+                                                        multipartData={selectedTraceTableTestReqTab.multipartData || []}
+                                                        rawData={selectedTraceTableTestReqTab.rawData}
+                                                        grpcData={selectedTraceTableTestReqTab.grpcData}
+                                                        rawDataType={selectedTraceTableTestReqTab.rawDataType}
+                                                        paramsType={selectedTraceTableReqTab.paramsType}
+                                                        addOrRemoveParam={this.props.addOrRemoveParam} 
+                                                        updateParam={this.props.updateParam}
+                                                        updateAllParams={this.props.updateAllParams}
+                                                        updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
+                                                        isOutgoingRequest={selectedTraceTableTestReqTab.isOutgoingRequest} 
+                                                        id="test" 
+                                                        setBodyRef={this.setRequestBodyRef}
+                                                        readOnly={true}
+                                                    />
+                                                )
+                                            }
+                                        </div>
+                                    </div>
+                                </Fragment>
+                            )
+                        :
+                            (
+                                <div style={{display: "flex"}}>
+                                    <div style={{flex: "1", padding: "0.5rem", height:'100%'}}>
+                                        <GRPCRequestMessage
+                                            readOnly={false}
+                                            disabled={false}
+                                            selectedApp={selectedApp}
+                                            appGrpcSchema={appGrpcSchema}
+                                            tabId={selectedTraceTableReqTab.id}
+                                            headers={selectedTraceTableReqTab.headers} 
+                                            httpURL={selectedTraceTableReqTab.httpURL}
+                                            currentSelectedTabId={currentSelectedTab.id}
+                                            grpcData={selectedTraceTableReqTab.grpcData}
+                                            paramsType={selectedTraceTableReqTab.paramsType}
+                                            grpcConnectionSchema={selectedTraceTableReqTab.grpcConnectionSchema}
+                                            updateParam={this.props.updateParam}
+                                            updateAllParams={this.props.updateAllParams}
+                                            addOrRemoveParam={this.props.addOrRemoveParam} 
+                                            updateGrpcConnectData={this.props.updateGrpcConnectData}
+                                            isOutgoingRequest={selectedTraceTableReqTab.isOutgoingRequest} 
+                                        />
+                                    </div>
+                                    <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0", height:'100%'}}>
+                                        {selectedTraceTableReqTab && selectedTraceTableTestReqTab && (
+                                            <GRPCRequestMessage
+                                                readOnly={true}
+                                                disabled={true}
+                                                selectedApp={selectedApp}
+                                                appGrpcSchema={appGrpcSchema}
+                                                tabId={selectedTraceTableTestReqTab.id}
+                                                currentSelectedTabId={currentSelectedTab.id}
+                                                httpURL={selectedTraceTableTestReqTab.httpURL}
+                                                headers={selectedTraceTableTestReqTab.headers} 
+                                                grpcData={selectedTraceTableTestReqTab.grpcData}
+                                                paramsType={selectedTraceTableReqTab.paramsType}
+                                                grpcConnectionSchema={selectedTraceTableTestReqTab.grpcConnectionSchema}
+                                                updateParam={this.props.updateParam}
+                                                updateAllParams={this.props.updateAllParams}
+                                                addOrRemoveParam={this.props.addOrRemoveParam} 
+                                                updateGrpcConnectData={this.props.updateGrpcConnectData}
+                                                isOutgoingRequest={selectedTraceTableTestReqTab.isOutgoingRequest}
+                                            />
+                                        )}
+                                    </div>
                                 </div>
-                            <div style={{flex: "1", padding: "0.5rem", height:'100%', minWidth: "0px"}}>
-                            {selectedTraceTableReqTab && selectedTraceTableTestReqTab && (
-                            <HttpRequestFields 
-                                // Remove not required props
-                                    tabId={selectedTraceTableTestReqTab.id}
-                                    requestId={selectedTraceTableTestReqTab.requestId}
-                                    httpMethod={selectedTraceTableTestReqTab.httpMethod}
-                                    httpURL={selectedTraceTableTestReqTab.httpURL}
-                                    headers={selectedTraceTableTestReqTab.headers} 
-                                    queryStringParams={selectedTraceTableTestReqTab.queryStringParams}
-                                    bodyType={selectedTraceTableTestReqTab.bodyType}
-                                    formData={selectedTraceTableTestReqTab.formData} 
-                                    rawData={selectedTraceTableTestReqTab.rawData}
-                                    grpcData={selectedTraceTableTestReqTab.grpcData}
-                                    rawDataType={selectedTraceTableTestReqTab.rawDataType}
-                                    paramsType={selectedTraceTableReqTab.paramsType}
-                                    addOrRemoveParam={this.props.addOrRemoveParam} 
-                                    updateParam={this.props.updateParam}
-                                    updateAllParams={this.props.updateAllParams}
-                                    updateBodyOrRawDataType={this.props.updateBodyOrRawDataType}
-                                    isOutgoingRequest={selectedTraceTableTestReqTab.isOutgoingRequest} 
-                                    id="test" 
-                                    setBodyRef={this.setRequestBodyRef}
-                                    readOnly={true}
-                                />)}
-                                </div>
-                        </div>
+                            )        
+                    }
+                        
                         <SplitSlider 
                             slidingElement={this.state.httpRequestRef} 
                             horizontal 
@@ -819,6 +923,7 @@ class HttpClient extends Component {
                             requestRunning={currentSelectedTab.requestRunning} >
                         </HttpResponseMessage>
                     </div>
+                
                 )}
                 
                 {showCompleteDiff && selectedDiffItem && (
@@ -1027,4 +1132,25 @@ class HttpClient extends Component {
     }
 }
 
-export default HttpClient;
+
+
+function errorBoundedHttpClient(props) {
+    const fallBackMessage = (
+      <div>
+        <h3>An error occurred</h3>
+        <p>
+          Please close this tab to resolve the issue. If the error
+          persists, please contact us.
+        </p>
+      </div>
+    );
+    return (
+      <ErrorBoundary fallbackUI={fallBackMessage}>
+        <HttpClient {...props} />
+      </ErrorBoundary>
+    );
+  }
+  
+
+
+export default errorBoundedHttpClient;

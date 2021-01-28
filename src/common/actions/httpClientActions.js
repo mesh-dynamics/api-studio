@@ -2,6 +2,7 @@ import { cubeService } from "../services";
 import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from "lodash";
 import { getDefaultTraceApiFilters } from "../utils/api-catalog/api-catalog-utils";
+import { mergeApplicationProtoFiles } from "../utils/http_client/grpc-utils";
 import arrayToTree from 'array-to-tree';
 import {setDefaultMockContext} from '../helpers/httpClientHelpers'
 
@@ -44,6 +45,14 @@ export const httpClientActions = {
         return {type: httpClientConstants.UPDATE_ALL_PARAMS_IN_OUTGOING_TAB, data: {tabId, type, key, value}};
     },
 
+    updateGrpcConnectDetailsInSelectedTab: (tabId, value) => {
+        return {type: httpClientConstants.UPDATE_GRPC_CONNECTION_DETAILS_IN_TAB, data: { tabId, value }};
+    },
+
+    updateGrpcConnectDetailsInSelectedOutgoingTab: (tabId, outgoingRequestTabId, value) => {
+        return {type: httpClientConstants.UPDATE_GRPC_CONNECTION_DETAILS_IN_OUTGOING_TAB, data: { tabId, outgoingRequestTabId, value }};
+    },
+
     updateAllParamsInSelectedTab: (tabId, type, key, value) => {
         return {type: httpClientConstants.UPDATE_ALL_PARAMS_IN_TAB, data: {tabId, type, key, value}};
     },
@@ -54,6 +63,14 @@ export const httpClientActions = {
 
     updateBodyOrRawDataTypeInTab: (tabId, type, value) => {
         return {type: httpClientConstants.UPDATE_BODY_OR_RAWA_DATA_TYPE_IN_TAB, data: {tabId, type, value}};
+    },
+
+    updateRequestTypeOfSelectedOutgoingTab: (tabId, outgoingRequestTabId, value) => {
+        return {type: httpClientConstants.UPDATE_REQUEST_TYPE_IN_SELECTED_OUTGOING_TAB, data: {tabId, outgoingRequestTabId, value}}
+    },
+
+    updateRequestTypeOfSelectedTab: (tabId, value) => {
+        return {type: httpClientConstants.UPDATE_REQUEST_TYPE_IN_SELECTED_TAB, data: {tabId, value}}
     },
 
     replaceAllParamsInSelectedTab: (tabId, type, params) => {
@@ -165,6 +182,24 @@ export const httpClientActions = {
 
     setEnvironmentList: (environmentList) => ({type: httpClientConstants.SET_ENVIRONMENT_LIST, data: environmentList}),
 
+    setProtoDescriptorValues: (schema) => ({ type: httpClientConstants.SET_PROTO_DESCRIPTOR_VALUES, data: schema }),
+
+    loadProtoDescriptor: () => async (dispatch, getState) => {
+        const { 
+            cube: { selectedApp: app }, 
+            authentication: { user: { customer_name: customerId } } 
+        } = getState();
+        
+        
+        try {
+            const response = await cubeService.fetchGrpcProtoDescriptor(customerId, app);
+
+            dispatch(httpClientActions.setProtoDescriptorValues({ [app]: mergeApplicationProtoFiles(response) }));
+        } catch (e) {
+            console.log('An error occured trying to load schema', e);
+        }
+    },
+
     fetchEnvironments: () => async (dispatch) => {
         dispatch(httpClientActions.setEnvStatusText("Loading..."))
         try {
@@ -235,6 +270,7 @@ export const httpClientActions = {
     createDuplicateTab: (tabId) => ({type: httpClientConstants.CREATE_DUPLICATE_TAB, data: {tabId}}),
 
     toggleShowTrace: (tabId) => ({type: httpClientConstants.TOGGLE_SHOW_TRACE, data: {tabId}}),
+    updateHistoryPathFilterText: (value) => ({type: httpClientConstants.SET_HISTORY_PATH_FILTER, data: value}),
 
 
     loadCollectionTrace: (selectedCollectionId) => async (dispatch, getState) => {
@@ -264,14 +300,15 @@ export const httpClientActions = {
         }
     },
 
-    loadHistoryApiCall : async(customerId, app, collection, endTime, numResults)=> {
-        
+    loadHistoryApiCall : async(customerId, app, collection, apiPath, endTime, numResults)=> {
+        const apiPathFilter = apiPath && apiPath.trim() ? `*${apiPath.trim()}*`: "";
         const filterData = {
             ...getDefaultTraceApiFilters(),
             app, endTime, 
             collectionName: collection.collec,
             depth: 100,
-            numResults
+            numResults,
+            apiPath : apiPathFilter
         };
         const res = await cubeService.fetchAPITraceData(customerId, filterData);
         const apiTraces = res.response;
@@ -325,7 +362,7 @@ export const httpClientActions = {
     loadFromHistory: () => async (dispatch, getState) => {
         const { 
             cube: { selectedApp: app }, 
-            httpClient: { historyTabState }, 
+            httpClient: { historyTabState, historyPathFilterText }, 
             authentication: { user } 
         } = getState();
 
@@ -343,7 +380,7 @@ export const httpClientActions = {
                 dispatch(httpClientActions.addUserHistoryCollection(fetchedUserHistoryCollection));
             
                 dispatch(httpClientActions.setHistoryLoading(true));
-                const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(customerId, app, fetchedUserHistoryCollection, null, historyTabState.numResults)
+                const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(customerId, app, fetchedUserHistoryCollection, historyPathFilterText, null, historyTabState.numResults)
                 
                 const initialHistoryTabState = {
                     ...historyTabState, 
@@ -376,14 +413,14 @@ export const httpClientActions = {
     historyTabNextPage: ()=> async(dispatch, getState)=>{
         const { 
             cube: { selectedApp: app }, 
-            httpClient:{ historyTabState, userHistoryCollection }, 
+            httpClient:{ historyTabState, userHistoryCollection, historyPathFilterText }, 
             authentication: { user: { customer_name: customerId } } 
         } = getState();
 
         try {    
             const currentPageEndTime = historyTabState.oldPagesData[historyTabState.currentPage];
             dispatch(httpClientActions.setHistoryLoading(true));
-            const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(customerId, app, userHistoryCollection, currentPageEndTime.endTime, historyTabState.numResults);
+            const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(customerId, app, userHistoryCollection, historyPathFilterText, currentPageEndTime.endTime, historyTabState.numResults);
             
             const initialHistoryTabState = {
                 ...historyTabState,
@@ -405,13 +442,13 @@ export const httpClientActions = {
 
         const { 
             cube: { selectedApp: app }, 
-            httpClient: { historyTabState, userHistoryCollection }, 
+            httpClient: { historyTabState, userHistoryCollection, historyPathFilterText }, 
             authentication: { user: { customer_name: customerId } } 
         } = getState();
 
         try {            
             dispatch(httpClientActions.setHistoryLoading(true));
-            const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(customerId, app, userHistoryCollection, null, historyTabState.numResults);
+            const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(customerId, app, userHistoryCollection, historyPathFilterText, null, historyTabState.numResults);
             
             const initialHistoryTabState = {
                 ...historyTabState,
@@ -431,7 +468,7 @@ export const httpClientActions = {
     historyTabPrevPage: ()=> async(dispatch, getState)=>{
         const { 
             cube: { selectedApp: app }, 
-            httpClient:{ historyTabState, userHistoryCollection }, 
+            httpClient:{ historyTabState, userHistoryCollection, historyPathFilterText }, 
             authentication: { user: { customer_name: customerId } }  
         } = getState();
 
@@ -441,7 +478,7 @@ export const httpClientActions = {
             }else{            
                 dispatch(httpClientActions.setHistoryLoading(true));
                 const currentPageEndTime = historyTabState.oldPagesData[historyTabState.currentPage-2];
-                const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(customerId, app, userHistoryCollection, currentPageEndTime.endTime);
+                const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(customerId, app, userHistoryCollection, historyPathFilterText, currentPageEndTime.endTime);
                 
                 const initialHistoryTabState = {
                     ...historyTabState,

@@ -101,9 +101,8 @@ const extractRequestPayloadDetailsFromProxy = (proxyRes, apiPath, options) => {
     
     const { headers, requestData, mockContext } = options;
 
-    const { query } = url.parse(apiPath);
-
-    const queryParams = extractQueryStringParamsToCubeFormat(query);
+    const parsedUrl = url.parse(apiPath);
+    const queryParams = extractQueryStringParamsToCubeFormat(parsedUrl.query);
 
     const { formParams, body, payloadState } = extractRequestBodyAndFormParams(headers, requestData);
 
@@ -112,9 +111,9 @@ const extractRequestPayloadDetailsFromProxy = (proxyRes, apiPath, options) => {
         body,
         formParams,
         queryParams,
-        path: apiPath,
+        path: parsedUrl.pathname,
         method: proxyRes.req.method.toUpperCase(),
-        pathSegments: apiPath.split("/").filter(Boolean),
+        pathSegments: parsedUrl.pathname.split("/").filter(Boolean),
         payloadState
     }
 }

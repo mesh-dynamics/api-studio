@@ -1,0 +1,61 @@
+
+.grpcrm-input-root {
+    display: flex;
+    flex-direction: column;
+}
+
+.grpcrm-input-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.grpcrm-dropdown-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    margin-right: 10px;
+}
+
+.grpcrm-endpoint-container {
+    display: flex;
+    flex-direction: column;
+    margin-right: 10px;
+    margin-top: 12px;
+}
+
+.grpcrm-request-body-container {
+    margin: 10px 0;
+}
+
+.grpcrm-request-body-radio-menu {
+    display: flex;
+    align-items: center;
+    padding: 10px 0px;
+}
+
+.grpcrm-request-view-label {
+    margin-right: 20px;
+}
+
+.grpcrm-request-view-input-container {
+    display: flex;
+    margin-right: 22px;
+}
+
+.grpcrm-request-view-input-label {
+    margin: 1px 0px 0px 5px;
+}
+
+.grpcrm-request-view-input-radio {
+    cursor: pointer;
+}
+
+.grpcrm-request-view-added-control {
+    min-width: 130px;
+}
+
+.grpcrm-request-view-proto-error {
+    margin-top: 20px;
+    font-size: 12px;
+    color: rgb(255 0 0);
+}

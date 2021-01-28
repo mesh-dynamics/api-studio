@@ -8,7 +8,8 @@ import {
   Label,
   Modal,
   Dropdown,
-  MenuItem
+  MenuItem,
+  Button
 } from "react-bootstrap";
 import { v4 as uuidv4 } from "uuid";
 import _ from "lodash";
@@ -24,11 +25,16 @@ import api from "../../api";
 import classNames from "classnames";
 import CreateCollection from "./CreateCollection";
 import { extractParamsFromRequestEvent } from '../../utils/http_client/utils';
+import { 
+  applyGrpcDataToRequestObject, 
+  setGrpcDataFromDescriptor 
+} from '../../utils/http_client/grpc-utils';
 import EditableLabel from "./EditableLabel";
 import { updateGoldenName } from '../../services/golden.service';
 import { IApiCatalogState, IApiTrace, ICollectionDetails, ICubeState, IHttpClientStoreState, IKeyValuePairs, IPayloadData, IStoreState, IUserAuthDetails } from "../../reducers/state.types";
 import { IGetEventsApiResponse } from "../../apiResponse.types";
-import gcbrowseActions from "../../actions/gcbrowse.actions";
+import gcbrowseActions from "../../actions/gcBrowse.actions";
+import HistoryTabFilter from "../../components/HttpClient/HistoryTabFilter";
 
 interface ITreeNodeHeader<T> {
   node: T,
@@ -98,7 +104,6 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
       if (itemToDelete.requestType == "collection") {
         await cubeService.deleteGolden(itemToDelete.id!);
         dispatch(httpClientActions.deleteUserCollection(itemToDelete.id));
-        dispatch(gcbrowseActions.clearSelectedGoldenCollection());
       } else if (itemToDelete.requestType == "request") {
         if (itemToDelete.isParent) {
           await cubeService.deleteEventByTraceId(customerId, itemToDelete.id!, itemToDelete.collectionId!);
@@ -256,6 +261,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
   openTab(node: IApiTrace) {
     const {
       cube: { selectedApp },
+      httpClient: { appGrpcSchema },
       user,
     } = this.props;
     const reqIdArray = [node.requestEventId];
@@ -291,7 +297,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                 reqResPair.push({
                   customerId, app, service, instanceId, collection, traceId, parentSpanId,
                   runType, timestamp, reqId, apiPath, recordingType, runId, eventType: "HTTPResponse", metaData: {},
-                  payload: ["HTTPResponsePayload", responsePayload]
+                  payload: ["HTTPResponsePayload", responsePayload], payloadFields:[]
                 });
               }
 
@@ -303,7 +309,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                 httpRequestEventTypeIndex === 0 ? 1 : 0;
               const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
               const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
-              const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType, httpURL } = extractParamsFromRequestEvent(httpRequestEvent);
+              const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType, multipartData, httpURL } = extractParamsFromRequestEvent(httpRequestEvent);
 
               const collectionDetails = _.find(this.props.httpClient.userCollections, { collec: node.collectionIdAddedFromClient });
               const collectionName = collectionDetails?.name || "";
@@ -315,15 +321,17 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                 headers: headers,
                 queryStringParams: queryParams,
                 bodyType:
-                  formData && formData.length > 0
-                    ? "formData"
-                    : rawData && rawData.length > 0
-                      ? "rawData"
-                      : grpcData && grpcData.length ? "grpcData" : "formData",
+                  multipartData && multipartData.length > 0
+                    ? "multipartData"
+                    : formData && formData.length > 0
+                      ? "formData"
+                      : rawData && rawData.length > 0
+                        ? "rawData"
+                        : grpcData && grpcData.length ? "grpcData" : "formData",
                 formData: formData,
+                multipartData,
                 rawData: rawData,
                 rawDataType: rawDataType,
-                grpcData,
                 grpcDataType,
                 paramsType: grpcData && grpcData.length ? "showBody" : "showQueryParams",
                 responseStatus: "NA",
@@ -368,6 +376,18 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                 service: httpRequestEvent.service,
                 requestRunning: false,
                 showTrace: null,
+                grpcData: setGrpcDataFromDescriptor(
+                            appGrpcSchema,
+                            applyGrpcDataToRequestObject(grpcData, httpRequestEvent.metaData.grpcConnectionSchema),
+                          ),
+                grpcConnectionSchema: httpRequestEvent.metaData.grpcConnectionSchema 
+                  ? JSON.parse(httpRequestEvent.metaData.grpcConnectionSchema)
+                  : ({
+                      app: selectedApp,
+                      service: "",
+                      endpoint: "", 
+                      method: ""
+                    })
               };
               //todo: Test below
               const savedTabId = this.props.onAddTab(
@@ -517,7 +537,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     });
     return (
       <div className={divClass} role="group" aria-label="Pagination control">
-        <div
+        <Button
           className="btn btn-sm cube-btn text-center"
           title={
             historyTabState.currentPage == 0 ? "Reload" : "Go to First Page"
@@ -530,16 +550,16 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
           ) : (
               <i className="fas fa-step-backward"></i>
             )}
-        </div>
-        <div
+        </Button>
+        <Button
           className="btn btn-sm cube-btn text-center"
           disabled={historyTabState.currentPage == 0 || isHistoryLoading}
           title="Previous Page"
           onClick={this.onPrevPageClickHistoryTab}
         >
           <i style={{ fontSize: "18px" }} className="fas fa-caret-left"></i>
-        </div>
-        <div
+        </Button>
+        <Button
           className="btn btn-sm cube-btn text-center"
           disabled={
             (historyTabState.currentPage + 1) * historyTabState.numResults >=
@@ -549,7 +569,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
           onClick={this.onNextPageClickHistoryTab}
         >
           <i style={{ fontSize: "18px" }} className="fas fa-caret-right"></i>
-        </div>
+        </Button>
       </div>
     );
   };
@@ -605,7 +625,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     });
     return (
       <div className={divClass} role="group" aria-label="Pagination control">
-        <div
+        <Button
           className="btn btn-sm cube-btn text-center"
           title={
             collectionTabState.currentPage == 0 ? "Reload" : "Go to First Page"
@@ -618,16 +638,16 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
           ) : (
               <i className="fas fa-step-backward"></i>
             )}
-        </div>
-        <div
+        </Button>
+        <Button
           className="btn btn-sm cube-btn text-center"
           disabled={collectionTabState.currentPage == 0 || isCollectionLoading}
           title="Previous Page"
           onClick={this.onPrevPageClickCollectionTab}
         >
           <i style={{ fontSize: "18px" }} className="fas fa-caret-left"></i>
-        </div>
-        <div
+        </Button>
+        <Button
           className="btn btn-sm cube-btn text-center"
           disabled={
             (collectionTabState.currentPage + 1) *
@@ -638,7 +658,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
           onClick={this.onNextPageClickCollectionTab}
         >
           <i style={{ fontSize: "18px" }} className="fas fa-caret-right"></i>
-        </div>
+        </Button>
       </div>
     );
   };
@@ -666,6 +686,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
               <div className="value-n"></div>
             </div>
             <div className="margin-top-10">
+            <HistoryTabFilter />
               {Object.keys(cubeRunHistory).map((k, i) => {
                 return (
                   <Panel

@@ -109,16 +109,6 @@ const getApiPathFromRequestEvent = (requestEvent) => {
     return EMPTY_STRING;
 };
 
-//Following could be used globally, can be moved to a common utility file.
-const isValidJSON = (jsonString) =>{
-    try{
-         JSON.parse(jsonString);
-    }catch(e){
-        return false;
-    }
-    return true;
-}
-
 const hasTabDataChanged = (tab) => {
     if (tab.hasChanged) {
       return true;
@@ -131,8 +121,30 @@ const hasTabDataChanged = (tab) => {
     return false;
 }
 
+const getMultipartField = (key, field) => {
+    if(field.type == "file"){
+        return {
+            id: uuidv4(),
+            name: key,
+            value: field,
+            description: "",
+            selected: true,
+            isFile: true
+        }
+    }else{
+        return {
+            id: uuidv4(),
+            name: key,
+            value: field.value,
+            description: "",
+            selected: true,
+            isFile: false
+        }
+    }
+}
+
 const extractParamsFromRequestEvent = (httpRequestEvent) =>{
-    let headers = [], queryParams = [], formData = [], rawData = "", rawDataType = "", grpcData = "", grpcDataType = "";
+    let headers = [], queryParams = [], formData = [], multipartData = [], rawData = "", rawDataType = "", grpcData = "", grpcDataType = "";
     const isGrpc = httpRequestEvent.payload[0] =="GRPCRequestPayload";
     for (let eachHeader in httpRequestEvent.payload[1].hdrs) {
         headers.push({
@@ -173,28 +185,54 @@ const extractParamsFromRequestEvent = (httpRequestEvent) =>{
         });
         rawDataType = "";
     }
-    if (httpRequestEvent.payload[1].body) {
-        if (!_.isString(httpRequestEvent.payload[1].body)) {
+    const body = httpRequestEvent.payload[1].body;
+    if (body) {
+        if (!_.isString(body)) {
             try {
-                const data = JSON.stringify(httpRequestEvent.payload[1].body, undefined, 4)
-                const dataType = "json";
-                if(isGrpc){
-                    grpcData = data;
-                    grpcDataType = dataType;
+                const bodyType = httpRequestEvent.metaData?.bodyType;
+                if(bodyType == "formData"){
+                    Object.entries(body).forEach(([key, paramValues]) => {
+                        formData.push({
+                            id: uuidv4(),
+                            name: key,
+                            value: paramValues.join(","),
+                            description: "",
+                            selected: true,
+                        });
+                    });
+                }else if(bodyType == "multipartData"){
+                    Object.entries(body).forEach(([key, paramValues]) => {
+                        if(_.isString(paramValues)){
+                            multipartData.push(getMultipartField(key, paramValues));
+                        }else{
+                            paramValues.forEach((value) => {
+                                multipartData.push(getMultipartField(key, value));
+                                                            
+                            });
+                        }
+                        
+                    });
                 }else{
-                    rawData = data;
-                    rawDataType = dataType;
+                    const data = JSON.stringify(body, undefined, 4)
+                    const dataType = "json";
+                    if(isGrpc){
+                        grpcData = data;
+                        grpcDataType = dataType;
+                    }else{
+                        rawData = data;
+                        rawDataType = dataType;
+                    }
                 }
             } catch (err) {
                 console.error(err);
             }
         } else {
             if(isGrpc){
-                grpcData = httpRequestEvent.payload[1].body;
+                grpcData = body;
                 grpcDataType = "json";
             }else{
 
-                rawData = httpRequestEvent.payload[1].body;
+                rawData = body;
                 rawDataType = "text";
             }
         }
@@ -240,7 +278,7 @@ const extractParamsFromRequestEvent = (httpRequestEvent) =>{
       }
 
     return{
-        headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType, httpURL
+        headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType, multipartData, httpURL
     }
 }
 
@@ -249,19 +287,22 @@ const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) =
     const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
     const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
     const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
-    const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
+    const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType, multipartData }  = extractParamsFromRequestEvent(httpRequestEvent);
     let reqObject = {
         httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
         httpURL: "{{{url}}}/" + httpRequestEvent.apiPath,
         httpURLShowOnly: httpRequestEvent.apiPath,
         headers: headers,
         queryStringParams: queryParams,
-        bodyType:   formData?.length > 0
-            ? "formData"
-            : rawData?.length > 0
+        bodyType:   multipartData.length > 0
+        ? "multipartData"
+        :  formData?.length > 0
+        ? "formData"
+        : rawData?.length > 0
             ? "rawData"
             : grpcData?.length ? "grpcData" : "formData",
         formData: formData,
+        multipartData: multipartData,
         rawData: rawData,
         grpcData: grpcData,
         rawDataType: rawDataType,
@@ -288,6 +329,7 @@ const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) =
         traceIdAddedFromClient: httpRequestEvent.traceId,
         requestRunning: false,
         showTrace: null,
+        grpcConnectionSchema: httpRequestEvent.grpcConnectionSchema,
     };
     return reqObject;
 }
@@ -328,9 +370,9 @@ const preRequestToFetchableConfig = (preRequestResult, httpURL) => {
       });
     });
   
-    //Form params
+    //Form params: Backward compatibility. Can be removed later.
     const formParams = payload.formParams;
-    const bodyFormParams = new URLSearchParams();
+    let bodyFormParams = new URLSearchParams();
     let containsFormParam = false;
     Object.entries(formParams).forEach(([key, paramValues]) => {
       containsFormParam = true;
@@ -340,15 +382,38 @@ const preRequestToFetchableConfig = (preRequestResult, httpURL) => {
     });
 
     let rawData = "";
-
+    const bodyType = preRequestResult.metaData?.bodyType;
     if (payload.body) {
         if (!_.isString(payload.body)) {
           try {
-            rawData = JSON.stringify(
-                payload.body,
-              undefined,
-              4
-            );
+              //In case of electron, Form data is created in listeners.js part
+            if(bodyType == "formData" && !PLATFORM_ELECTRON){
+                bodyFormParams = new URLSearchParams();
+                Object.entries(payload.body).forEach(([key, paramValues]) => {
+                    containsFormParam = true;
+                    paramValues.forEach((value) => {
+                        bodyFormParams.append(key, value);
+                    });
+                });
+            }else if(bodyType == "multipartData" && !PLATFORM_ELECTRON){
+                bodyFormParams = new FormData();
+                Object.entries(payload.body).forEach(([key, paramValues]) => {
+                    containsFormParam = true;
+                    if(_.isArray(paramValues.value)){
+                        paramValues.value.forEach((value) => {
+                            formatMultipartData(key, value, bodyFormParams);
+                        });
+                    }else{  
+                        formatMultipartData(key, paramValues, bodyFormParams);            
+                    }
+                });
+            }else{
+                rawData = JSON.stringify(
+                    payload.body,
+                    undefined,
+                    4
+                );
+            }
           } catch (err) {
             console.error(err);
           }
@@ -358,7 +423,7 @@ const preRequestToFetchableConfig = (preRequestResult, httpURL) => {
                 rawData = byteArray.buffer;
 
             }else{
-                rawData = payload.body;
+                rawData = atob(payload.body);
             }
         }
     }
@@ -375,6 +440,78 @@ const preRequestToFetchableConfig = (preRequestResult, httpURL) => {
       fetchConfigRendered,
     ];
 };
+
+const DataURIToBlob = (dataURI)=> {
+	const splitDataURI = dataURI.split(',')
+	const byteString = splitDataURI[0].indexOf('base64') >= 0 ? atob(splitDataURI[1]) : decodeURI(splitDataURI[1])
+	const mimeString = splitDataURI[0].split(':')[1].split(';')[0]
+
+	const ia = new Uint8Array(byteString.length)
+	for (let i = 0; i < byteString.length; i++)
+		ia[i] = byteString.charCodeAt(i)
+
+	return new Blob([ia], { type: mimeString })
+}
+
+const formatMultipartData = (key, param, bodyFormParams)=>{
+    switch(param.type){
+        case "file":
+            bodyFormParams.append(key, DataURIToBlob(param.value), param.filename);
+            break;
+        case "field":
+        default:
+            bodyFormParams.append(key, param.value);    
+    }
+}
+
+const convertFileToString = async (file)=>{
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.readAsDataURL(file)
+        reader.onload = () => resolve(reader.result)
+        reader.onerror = (e) => reject(e)
+      });
+};
+
+const tryJsonParse = (jsonString)=>{
+    try{
+        return JSON.parse(jsonString);
+    }catch(e){}
+    return jsonString;
+}
+
+const multipartDataToCubeFormat = (multipartData, type) =>{
+    let formData = {};
+    for(var each of multipartData) {
+        if (each.name && each.value) {
+            const nameRendered = getValueBySaveType(each.name, type)
+            let valueRendered = getValueBySaveType(each.value, type);
+            let value = undefined;
+            
+            if(each.isFile){
+                const fileJSON = tryJsonParse(each.value); //this is type of IMultipartFileJSON
+                value = { 
+                    "value": fileJSON.value,
+                    "type":"file",
+                    "content-type": fileJSON.type,
+                    "filename": fileJSON.filename,
+                };
+            }else{
+                value = { 
+                    "value": valueRendered,
+                    "type":"field"
+                };
+            }
+            if(formData[nameRendered]){
+                formData[nameRendered] = [...formData[nameRendered], value];
+            }else{
+                formData[nameRendered] = [value];
+            }
+            
+        }
+    }
+    return formData;
+} 
 
 const generateTraceKeys = (tracer) => {
     let traceIdKey, spanIdKey, parentSpanIdKeys = [];
@@ -555,6 +692,64 @@ const extractURLQueryParams = (url) => {
     return {httpURL, queryParamsFromUrl}
 }
 
+const generateContentTypeHeaderValue = (type, value, currentTab) => {
+    if(value === 'formData') {
+        return 'application/x-www-form-urlencoded';
+    }
+
+    if(value === 'multipartData') {
+        return 'multipart/form-data';
+    }
+
+    if(value === 'rawData') {
+        type = 'rawDataType';
+        value = currentTab.rawDataType;
+    }
+
+    if(type === 'rawDataType') {
+        switch(value) {
+            case 'js':
+                return 'application/js';
+            case 'json':
+                return 'application/json';
+            case 'text':
+                return 'application/text';
+            case 'html':
+                return 'application/html';
+            case 'xml':
+                return 'application/xml';
+            default:
+                return 'application/text';
+        }
+    }
+}
+
+const updateHeaderBasedOnContentType = (existingHeaders, type, value, currentTab) => {
+    const contentTypeHeaderObject = existingHeaders.find(headerObject => headerObject.name.toLowerCase() === 'content-type');
+
+    if(contentTypeHeaderObject) {
+        // if content type exists, then update this and return the object
+
+        // update the value
+        contentTypeHeaderObject['value'] = generateContentTypeHeaderValue(type, value, currentTab);
+        
+        // filter out the old value
+        const filteredHeaders = existingHeaders.filter(headerObject => headerObject.name.toLowerCase() !== 'content-type');
+
+        return [...filteredHeaders, contentTypeHeaderObject];
+    } 
+    // add content type and return the object
+    const newContentTypeHeaderObject = {
+        description: "",
+        id: uuidv4(),
+        name: "content-type",
+        selected: true,
+        value: generateContentTypeHeaderValue(type, value, currentTab)
+    };
+    
+    return [...existingHeaders, newContentTypeHeaderObject];
+}
+
 export { 
     generateRunId,
     getStatusColor,
@@ -568,7 +763,6 @@ export {
     selectedRequestParamData,
     unSelectedRequestParamData,
     extractParamsFromRequestEvent,
-    isValidJSON,
     Base64Binary,
     generateTraceIdDetails,
     generateSpanId,
@@ -581,4 +775,8 @@ export {
     getTraceDetailsForCurrentApp,
     generateUrlWithQueryParams,
     extractURLQueryParams,
+    multipartDataToCubeFormat,
+    convertFileToString,
+    tryJsonParse,
+    updateHeaderBasedOnContentType
 };

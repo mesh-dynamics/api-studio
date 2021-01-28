@@ -5,6 +5,11 @@ import storage from 'redux-persist/lib/storage';
 import { createLogger } from "redux-logger";
 import rootReducer from '../reducers';
 
+const tabDefaultState = {
+    //More default values for tab can be added here, if new are added
+    grpcConnectionSchema: { app: "", service: "", endpoint:"", method:"" },
+}
+
 const configureStore = () => {
 
     const persistConfig = {
@@ -13,7 +18,14 @@ const configureStore = () => {
             // Add the required fields default values for reset purpose.
             createTransform((inboundState, key) => {
                 if(key == "httpClient"){
-                    const tabs = (inboundState.tabs || []).map( tab =>  ({...tab, abortRequest: null, requestRunning: false }));
+                    const tabs = (inboundState.tabs || []).map( tab =>  { 
+                            const recordedHistory = tab.recordedHistory ? {...tabDefaultState, ...tab.recordedHistory }: tab.recordedHistory
+                            return {...tabDefaultState, 
+                            ...tab, 
+                            abortRequest: null, requestRunning: false, multipartData: tab.multipartData || [],
+                            recordedHistory : recordedHistory }
+                        }
+                        );
                     return {
                         ...inboundState,
                         tabs: tabs,

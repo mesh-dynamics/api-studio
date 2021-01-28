@@ -10,6 +10,7 @@ export interface IHttpRequestRawDataProps {
   readOnly: boolean;
   paramName: string;
 }
+
 export interface IHttpRequestRawDataState {
   showError: boolean;
 }

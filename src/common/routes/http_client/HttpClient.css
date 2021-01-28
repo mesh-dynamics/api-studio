@@ -244,6 +244,7 @@ div.loading, div.loading button{
 }
 .params-input .cell-2{
   width: 35%;
+  padding-left: 5px;
 }
 .params-input .cell-3{
   width: 55%;
@@ -285,4 +286,16 @@ div.loading, div.loading button{
 }
 .CodeMirror .cm-property {
   color: #a31515;
+}
+.fileListParam{
+  display:inline-block;
+  background-color: #d8d8d8;
+  padding:2px
+}
+
+.fileListParam:hover{ 
+  background-color: #afafaf;
+}
+.fileListParam span{
+  margin-right: 5px;
 }

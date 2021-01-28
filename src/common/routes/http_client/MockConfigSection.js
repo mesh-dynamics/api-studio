@@ -177,6 +177,7 @@ class MockConfigSection extends React.Component {
           show={this.state.showMockConfigModal}
           onHide={this.hideMockConfigModal}
           className="envModal"
+          backdrop="static"
         >
           <MockConfigs hideModal={this.hideMockConfigModal} />
         </Modal>

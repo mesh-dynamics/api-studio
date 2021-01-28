@@ -164,6 +164,7 @@ export interface ITestConfigDetails {
   updatedAt: number[]; // 3
   gatewayService: ITestConfigGatewayService;
   criteria: string;
+  gatewayServiceName: string;
 }
 
 export interface ITimelineDataResult {
@@ -327,7 +328,7 @@ export interface IPayloadData {
   payloadState?: string;
   queryParams?: any; //2
   body: any;
-  status?:number;
+  status?: number;
 }
 
 export interface IQueryParams {
@@ -355,6 +356,8 @@ export interface IEventData {
   spanId?: string;
   timestamp: number;
   traceId: string;
+  payloadFields:[];
+  grpcConnectionSchema: IGrpcConnect
 }
 export interface IApiTrace {
   apiPath: string;
@@ -423,6 +426,7 @@ export interface IHttpClientTabDetails {
   collectionNameAddedFromClient: string;
   eventData: IEventData[];
   formData: IRequestParamData[];
+  multipartData: IRequestParamData[];
   headers: IRequestParamData[];
   httpMethod: string;
   httpURL: string;
@@ -461,6 +465,8 @@ export interface IHttpClientTabDetails {
   isHighlighted: boolean;
   progressState?: string;
   contextMap: IKeyValuePairs;
+  grpcData: any; // TODO: get this the right format
+  grpcConnectionSchema: IGrpcConnect;
 }
 
 export interface IUserApiTraceHistory {
@@ -511,6 +517,17 @@ export interface IMockConfig {
   value: string;
 }
 
+export interface IGrpcSchema {
+  [key: string]: any
+}
+
+export interface IGrpcConnect {
+  app: string;
+  service: string;
+  endpoint: string;
+  method: string;
+}
+
 export interface IHttpClientStoreState {
   active: boolean;
   app: string;
@@ -545,6 +562,8 @@ export interface IHttpClientStoreState {
   mockContextLookupCollection: string;
   mockContextSaveToCollection: ICollectionDetails;
   uiPref: IKeyValuePairs<any>;
+  historyPathFilterText: string;
+  appGrpcSchema: IGrpcSchema;
 }
 
 // Navigation State
@@ -566,7 +585,6 @@ export interface IGoldenCollectionBrowseSearchResults {
 
 export interface IGoldenCollectionBrowseState {
   currentCollectionType: string,
-  selectedCollectionItem: ICollectionDetails,
   actualGoldens: IGoldenCollectionBrowseSearchResults,
   userGoldens: IGoldenCollectionBrowseSearchResults,
   isCollectionLoading: boolean,
@@ -579,7 +597,7 @@ export interface IStoreState {
   authentication: IAuthenticationState;
   navigation: INavigationState;
   golden: IGoldenState;
-  gcbrowse: IGoldenCollectionBrowseState;
+  gcBrowse: IGoldenCollectionBrowseState;
   apiCatalog: IApiCatalogState;
 }
 
