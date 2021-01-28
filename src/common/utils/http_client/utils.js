@@ -692,7 +692,7 @@ const extractURLQueryParams = (url) => {
     return {httpURL, queryParamsFromUrl}
 }
 
-const generateContentTypeHeaderValue = (type, value) => {
+const generateContentTypeHeaderValue = (type, value, currentTab) => {
     if(value === 'formData') {
         return 'application/x-www-form-urlencoded';
     }
@@ -701,8 +701,9 @@ const generateContentTypeHeaderValue = (type, value) => {
         return 'multipart/form-data';
     }
 
-    if(value === 'rawDataType') {
-        return 'application/json';
+    if(value === 'rawData') {
+        type = 'rawDataType';
+        value = currentTab.rawDataType;
     }
 
     if(type === 'rawDataType') {
@@ -723,14 +724,14 @@ const generateContentTypeHeaderValue = (type, value) => {
     }
 }
 
-const updateHeaderBasedOnContentType = (existingHeaders, type, value) => {
+const updateHeaderBasedOnContentType = (existingHeaders, type, value, currentTab) => {
     const contentTypeHeaderObject = existingHeaders.find(headerObject => headerObject.name.toLowerCase() === 'content-type');
 
     if(contentTypeHeaderObject) {
         // if content type exists, then update this and return the object
 
         // update the value
-        contentTypeHeaderObject['value'] = generateContentTypeHeaderValue(type, value);
+        contentTypeHeaderObject['value'] = generateContentTypeHeaderValue(type, value, currentTab);
         
         // filter out the old value
         const filteredHeaders = existingHeaders.filter(headerObject => headerObject.name.toLowerCase() !== 'content-type');
@@ -743,7 +744,7 @@ const updateHeaderBasedOnContentType = (existingHeaders, type, value) => {
         id: uuidv4(),
         name: "content-type",
         selected: true,
-        value: generateContentTypeHeaderValue(type, value)
+        value: generateContentTypeHeaderValue(type, value, currentTab)
     };
     
     return [...existingHeaders, newContentTypeHeaderObject];
