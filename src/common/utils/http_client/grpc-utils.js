@@ -133,6 +133,8 @@ const setGrpcDataFromDescriptor = (data, currentGrpcData) => {
 
     const serviceObject = dataEntries[1];
 
+    delete serviceObject['package']; // TODO: Update this later
+
     if (!appName || !serviceObject) {
         // if appName is undefined or service facets are undefined return currentGrpcData
         return currentGrpcData;
