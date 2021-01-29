@@ -196,7 +196,8 @@ export const httpClientActions = {
 
             dispatch(httpClientActions.setProtoDescriptorValues({ [app]: mergeApplicationProtoFiles(response) }));
         } catch (e) {
-            console.log('An error occured trying to load schema', e);
+            dispatch(httpClientActions.setProtoDescriptorValues({ [app]: {} }));
+            // console.log('An error occured trying to load schema', e);
         }
     },
 
