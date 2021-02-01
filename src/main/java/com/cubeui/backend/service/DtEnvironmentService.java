@@ -20,10 +20,8 @@ import com.cubeui.backend.web.exception.EnvironmentNotFoundException;
 import com.cubeui.backend.web.exception.InvalidDataException;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -170,13 +168,12 @@ public class DtEnvironmentService {
       appIds.add(app.getId());
     } else {
       Optional<List<App>> apps = appRepository.findByCustomerId(user.getCustomer().getId());
-      appIds.addAll(apps.map(aps -> aps.stream().map(app -> app.getId()).collect(
-          Collectors.toList())).orElse(Collections.emptyList()));
+      apps.ifPresent(aps -> aps.stream().map(app-> app.getId()).forEach(id-> appIds.add(id)));
     }
     if(environmentType.equalsIgnoreCase("ALL")) {
-      return  devtoolEnvironmentsRepository.findDtEnvironmentByAppIdInOrUserId(appIds, user.getId());
+      return  devtoolEnvironmentsRepository.findDtEnvironmentByAppIdInAndUserId(appIds, user.getId());
     }
-    return devtoolEnvironmentsRepository.findDtEnvironmentByUserIdOrAppIdInAndGlobal(user.getId(), appIds, environmentType.equalsIgnoreCase("GLOBAL"));
+    return devtoolEnvironmentsRepository.findDtEnvironmentByUserIdAndAppIdInAndGlobal(user.getId(), appIds, environmentType.equalsIgnoreCase("GLOBAL"));
   }
 
   public String deleteEnvironment(Long id, Authentication authentication) {

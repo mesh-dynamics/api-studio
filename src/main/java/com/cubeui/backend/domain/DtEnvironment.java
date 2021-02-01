@@ -46,6 +46,9 @@ public class DtEnvironment {
   @JoinColumn(name = "user_id", nullable = false)
   User user;
 
+  /**TODO
+   * change nullable to false once deployed in each cluster
+   */
   @JsonIgnore
   @ManyToOne
   @OnDelete(action = OnDeleteAction.CASCADE)
