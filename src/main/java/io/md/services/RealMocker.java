@@ -74,9 +74,9 @@ public class RealMocker implements Mocker {
 
 
             Optional<JoinQuery> joinQuery = mockWColl.isDevtool ? Optional.of(getSuccessResponseMatch()) : Optional.empty();
-            Optional<ReplayContext> replayCtx = mockWColl.replay.replayContext;
+            Optional<ReplayContext> replayCtx = mockWColl.replay.flatMap(r->r.replayContext);
 
-            boolean tracePropagation = mockWColl.replay.tracePropagation;
+            boolean tracePropagation = mockWColl.replay.map(r->r.tracePropagation).orElse(true);
             EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1),
                 !mockWColl.isDevtool, lowerBoundForMatching, mockWColl.recordCollection,
                 payloadFieldFilterList , joinQuery , mockWColl.isDevtool , replayCtx , tracePropagation);
@@ -94,9 +94,10 @@ public class RealMocker implements Mocker {
             if(!mockWColl.isDevtool && matchingRequest.isPresent() && res.getNumFound()>1){
                 ReplayContext replyCtx = replayCtx.orElse(new ReplayContext());
                 replyCtx.setMockResultToReplayContext(matchingRequest.get());
-                Replay replay = mockWColl.replay;
-                replay.replayContext = Optional.of(replyCtx);
-                cube.populateCache(new CollectionKey(replay.customerId, replay.app , replay.instanceId) , RecordOrReplay.createFromReplay(replay));
+                mockWColl.replay.ifPresent(replay->{
+                    replay.replayContext = Optional.of(replyCtx);
+                    cube.populateCache(new CollectionKey(replay.customerId, replay.app , replay.instanceId) , RecordOrReplay.createFromReplay(replay));
+                });
             }
             
             if(mockWColl.isDevtool && !matchingResponse.isPresent()){
@@ -219,7 +220,7 @@ public class RealMocker implements Mocker {
             String replayCollection = ctx.replayCollection;
             String templateVersion = ctx.templateVersion;
             String runId = ctx.runId;
-            Optional<ReplayContext> replayCtx = ctx.replay.replayContext;
+            Optional<ReplayContext> replayCtx = ctx.replay.flatMap(r->r.replayContext);
 
             event.setCollection(replayCollection);
             replayCtx.flatMap(rctx->rctx.reqTraceId).ifPresent(event::setTraceId);
