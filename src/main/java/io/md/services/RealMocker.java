@@ -74,9 +74,9 @@ public class RealMocker implements Mocker {
 
 
             Optional<JoinQuery> joinQuery = mockWColl.isDevtool ? Optional.of(getSuccessResponseMatch()) : Optional.empty();
-            Optional<ReplayContext> replayCtx = mockWColl.replay.replayContext;
+            Optional<ReplayContext> replayCtx = mockWColl.replay.flatMap(r->r.replayContext);
 
-            boolean tracePropagation = mockWColl.replay.tracePropagation;
+            boolean tracePropagation = mockWColl.replay.map(r->r.tracePropagation).orElse(true);
             EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1),
                 !mockWColl.isDevtool, lowerBoundForMatching, mockWColl.recordCollection,
                 payloadFieldFilterList , joinQuery , mockWColl.isDevtool , replayCtx , tracePropagation);

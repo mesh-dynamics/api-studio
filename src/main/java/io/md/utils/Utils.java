@@ -654,7 +654,7 @@ public class Utils {
 			String optionalRunId = runningReplay.get().runId;
 			Optional<String> dynamicInjectionCfgVersion = recordOrReplay.getDynamicInjectionConfigVersion();
 
-			return new MockWithCollection(replayCollection, collection, templateVersion, optionalRunId, dynamicInjectionCfgVersion, devtool , replay);
+			return new MockWithCollection(replayCollection, collection, templateVersion, optionalRunId, dynamicInjectionCfgVersion, devtool , Optional.of(replay));
 		});
 	}
 
