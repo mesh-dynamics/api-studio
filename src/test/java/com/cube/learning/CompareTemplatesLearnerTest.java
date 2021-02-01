@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.ws.rs.core.MultivaluedHashMap;
 import org.junit.jupiter.api.Test;
 
@@ -58,9 +57,10 @@ class CompareTemplatesLearnerTest {
                     .put(req.reqId, ((RequestPayload) req.payload).getMethod()));
             }
 
-            List<TemplateEntryMeta> finalMetaList = ctLearner.learnCompareTemplates(reqIdToMethodMap,
+            List<TemplateEntryMeta> finalMetaList = ctLearner.learnComparisonRules(reqIdToMethodMap,
                 reqRespMatchResultList,
-                config.rrstore.getTemplateSet(replay.customerId, replay.app, replay.templateVersion));
+                config.rrstore
+                    .getTemplateSet(replay.customerId, replay.app, replay.templateVersion), false);
 
             try {
                 System.out.print(config.jsonMapper

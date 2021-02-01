@@ -2,8 +2,8 @@ package com.cube.learning;
 
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
+import com.cube.learning.TemplateEntryMeta.Action;
 import com.cube.learning.TemplateEntryMeta.RuleStatus;
-import com.cube.learning.TemplateEntryMeta.YesOrNo;
 import io.md.core.Comparator.Resolution;
 import io.md.core.CompareTemplate;
 import io.md.core.CompareTemplate.ComparisonType;
@@ -101,15 +101,6 @@ public class CompareTemplatesLearner {
         return (templateEntry.ct == ComparisonType.Default || templateEntry.pt == PresenceType.Default);
     }
 
-    YesOrNo getValueMatchRequired(TemplateEntry templateEntry){
-        //TODO: Comparison type has a third level called equalOptional. Cater to that as well.
-        return templateEntry.ct == ComparisonType.Equal ? YesOrNo.yes : YesOrNo.no;
-    }
-
-    YesOrNo getPresenceRequired(TemplateEntry templateEntry){
-        return templateEntry.pt == PresenceType.Required ? YesOrNo.yes: YesOrNo.no;
-    }
-
     void convertExistingTemplatesToMetas(TemplateSet existingTemplateSet, Map<String, String> reqIdToMethodMap){
 
             existingTemplateSet.templates.forEach(template -> {
@@ -131,9 +122,11 @@ public class CompareTemplatesLearner {
                                     template.type, template.service, template.requestPath,
                                     template.method,
                                     templateEntry.path,
-                                    getValueMatchRequired(templateEntry),
-                                    getPresenceRequired(templateEntry),
-                                    Optional.empty()));
+                                    templateEntry.getCompareType(),
+                                    templateEntry.getPresenceType(),
+                                    Optional.empty(),
+                                    Optional.empty(),
+                                    Optional.empty(), Action.Remove));
                         }
                     );
                 }
@@ -174,27 +167,31 @@ public class CompareTemplatesLearner {
             existingLearnedMeta.isPresent() ? Optional.empty()
                 : getExistingParentMeta(key);
 
-        YesOrNo valueMatchRequired;
-        YesOrNo presenceRequired;
-        RuleStatus oldRuleStatus;
-        Integer count = 0, numViolations = 0;
-
+        ComparisonType currentCt;
+        PresenceType currentPt;
+        Optional<ComparisonType> newCt = Optional.empty();
+        Optional<PresenceType> newPt = Optional.empty();
+        RuleStatus ruleStatus;
+        Integer count = 0, numViolationsComparison = 0, numViolationsPresence = 0;
+        Action action = Action.None;
 
         if (existingLearnedMeta.isPresent()) {
             TemplateEntryMeta meta = existingLearnedMeta.get();
-            valueMatchRequired = meta.valueMatchRequired;
-            presenceRequired = meta.presenceRequired;
-            oldRuleStatus =
+            currentCt = meta.currentCt;
+            currentPt = meta.currentPt;
+            ruleStatus =
                 meta.ruleStatus == RuleStatus.UnusedExisting ? RuleStatus.ConformsToExistingExact
                     : meta.ruleStatus;
             count = meta.count + 1;
-            numViolations = meta.numViolations;
+            numViolationsComparison = meta.numViolationsComparison;
+            numViolationsPresence = meta.numViolationsPresence;
+            action = meta.action;
         } else {
             if (existingParentMeta.isPresent()){
-                TemplateEntryMeta meta = existingParentMeta.get();
-                valueMatchRequired = meta.valueMatchRequired;
-                presenceRequired = meta.presenceRequired;
-                oldRuleStatus = RuleStatus.ConformsToExistingInherited;
+                TemplateEntryMeta parentMeta = existingParentMeta.get();
+                currentCt = parentMeta.currentCt;
+                currentPt = parentMeta.currentPt;
+                ruleStatus = RuleStatus.ConformsToExistingInherited;
                 count = 1;
 
                 // Update parent's status.
@@ -202,8 +199,9 @@ public class CompareTemplatesLearner {
                 // as the moment it is inherited, that means there are sub-fields,
                 // so exact path match is not possible.
 
-                meta.ruleStatus = RuleStatus.UsedExistingAsInherited;
-                meta.count++;
+                parentMeta.ruleStatus = RuleStatus.UsedExistingAsInherited;
+                parentMeta.count++;
+                parentMeta.action = Action.None;
 
             } else {
                 // A Compare Template doesn't exist for provided service/apiPath combination,
@@ -212,18 +210,14 @@ public class CompareTemplatesLearner {
                 // In both cases, the rule will be categorized as a default rule, the template
                 // taken to reach to it may be non-default.
                 Optional<TemplateEntry> defaultTemplateRule = getDefaultRule(key);
-                valueMatchRequired = defaultTemplateRule.map(rule -> getValueMatchRequired(rule))
-                    .orElse(YesOrNo.no);
-                presenceRequired = defaultTemplateRule.map(rule -> getPresenceRequired(rule))
-                    .orElse(YesOrNo.no);
-                oldRuleStatus = RuleStatus.ConformsToDefault;
+                currentCt = defaultTemplateRule.map(rule -> rule.getCompareType())
+                    .orElse(ComparisonType.Ignore);
+                currentPt = defaultTemplateRule.map(rule -> rule.getPresenceType())
+                    .orElse(PresenceType.Optional);
+                ruleStatus = RuleStatus.ConformsToDefault;
                 count = 1;
-
             }
         }
-
-        RuleStatus newRuleStatus = oldRuleStatus;
-
 
         switch (resolution) {
 
@@ -236,17 +230,19 @@ public class CompareTemplatesLearner {
                 break;
 
             case ERR_ValMismatch:
-                valueMatchRequired = YesOrNo.no;
-                newRuleStatus = negateRule(oldRuleStatus);
-                numViolations++;
+                newCt = Optional.of(ComparisonType.Ignore);
+                ruleStatus = negateRule(ruleStatus);
+                numViolationsComparison++;
+                action = Action.Create;
                 break;
 
             case ERR_NewField:
             case ERR_Required:
             case ERR_RequiredGolden:
-                presenceRequired = YesOrNo.no;
-                newRuleStatus = negateRule(oldRuleStatus);
-                numViolations++;
+                newPt = Optional.of(PresenceType.Optional);
+                ruleStatus = negateRule(ruleStatus);
+                numViolationsPresence++;
+                action = Action.Create;
                 break;
 
             // Not handling below types as they are not related to either value or presence
@@ -265,25 +261,29 @@ public class CompareTemplatesLearner {
             // Not using Optional lambdas as they accept only final variables inside lambda.
             TemplateEntryMeta meta = existingLearnedMeta.get();
 
-                meta.ruleStatus = newRuleStatus;
-                meta.presenceRequired = presenceRequired;
-                meta.valueMatchRequired = valueMatchRequired;
+                meta.ruleStatus = ruleStatus;
+                meta.currentPt = currentPt;
+                meta.currentCt = currentCt;
+                meta.setNewCt(newCt);
+                meta.setNewPt(newPt);
+                meta.action = action;
 
         } else {
-            TemplateEntryMeta meta = new TemplateEntryMeta(newRuleStatus,
+            TemplateEntryMeta meta = new TemplateEntryMeta(ruleStatus,
                 reqOrResp, service, apiPath, method,
-                jsonPath, valueMatchRequired,
-                presenceRequired, existingParentMeta);
+                jsonPath, currentCt,
+                currentPt, newCt, newPt, existingParentMeta, action);
             meta.count = count;
-            meta.numViolations = numViolations;
+            meta.numViolationsComparison = numViolationsComparison;
+            meta.numViolationsPresence = numViolationsPresence;
             learnedMetasMap.put(key, meta);
-
         }
     }
 
-    public List<TemplateEntryMeta> learnCompareTemplates(Map<String, String> reqIdToMethodMap,
+    public List<TemplateEntryMeta> learnComparisonRules(Map<String, String> reqIdToMethodMap,
         List<ReqRespMatchResult> reqRespMatchResultList,
-        Optional<TemplateSet> existingTemplateSet) {
+        Optional<TemplateSet> existingTemplateSet,
+        Boolean includeConforming) {
 
         existingTemplateSet.ifPresent(templateSet -> convertExistingTemplatesToMetas(templateSet, reqIdToMethodMap));
 
@@ -305,17 +305,26 @@ public class CompareTemplatesLearner {
             }
         );
 
-       return generateCompareTemplates();
+       return generateComparisonRules(includeConforming);
     }
 
-    public List<TemplateEntryMeta> generateCompareTemplates() {
+    public List<TemplateEntryMeta> generateComparisonRules(Boolean includeConforming) {
         List<TemplateEntryMeta> templateEntryMetaList = new ArrayList<>(
             learnedMetasMap.values());
+        if (!includeConforming){
+            templateEntryMetaList.removeIf(templateEntryMeta -> templateEntryMeta.ruleStatus
+                == RuleStatus.ConformsToExistingInherited);
+        }
+
         Collections.sort(templateEntryMetaList);
+
         int[] id = {0};
         templateEntryMetaList.forEach(meta -> meta.id = String.valueOf(id[0]++));
         templateEntryMetaList.forEach(
-            meta -> meta.parentMeta.ifPresent(parentMeta -> meta.inheritedRuleId = parentMeta.id));
+            meta -> meta.parentMeta.ifPresent(parentMeta -> {
+                meta.inheritedRuleId = parentMeta.id;
+                meta.sourceRulePath = parentMeta.jsonPath;
+            }));
         return templateEntryMetaList;
     }
 
@@ -328,7 +337,9 @@ public class CompareTemplatesLearner {
             return jsonPath;
         }
 
-        public RulesKey(String templateVersion, String customerId, String appId, String service, String apiPath, Type eventType, Optional<String> method, Optional<String> jsonPath) {
+        public RulesKey(String templateVersion, String customerId, String appId, String service,
+            String apiPath, Type eventType, Optional<String> method, Optional<String> jsonPath) {
+
             super(templateVersion, customerId, appId, service, apiPath, eventType, method, EMPTY_RECORDING);
             this.jsonPath = jsonPath;
         }
@@ -356,8 +367,6 @@ public class CompareTemplatesLearner {
                 checkOptionalEquals(getMethod(), that.getMethod()) &&
                 checkOptionalEquals(getJsonPath(), that.getJsonPath());
         }
-
-
 
         @Override
         public int hashCode() {

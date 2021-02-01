@@ -1,23 +1,35 @@
 package com.cube.learning;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import io.md.core.CompareTemplate.ComparisonType;
+import io.md.core.CompareTemplate.PresenceType;
 import io.md.core.TemplateKey.Type;
 import java.util.Objects;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
-@JsonPropertyOrder({"Id", "RuleStatus", "InheritedRuleId", "Service", "ApiPath", "Method", "EventType", "JsonPath",
-    "ValueMatchRequired", "PresenceRequired", "Count", "numViolations"})
+@JsonPropertyOrder({"Id", "Action", "Service", "ApiPath", "Method", "EventType", "JsonPath",
+    "SourceRulePath", "CurrentComparisonType", "CurrentPresenceType",
+    "NewComparisonType", "NewPresenceType", "InheritedRuleId", "Count",
+    "NumViolationsComparison", "NumViolationsPresence"})
 public class TemplateEntryMeta implements Comparable{
     @JsonProperty("Id")
-    String id = EMPTY_ID;
+    String id = EMPTY;
 
     @JsonProperty("InheritedRuleId")
-    String inheritedRuleId = EMPTY_ID;
+    String inheritedRuleId = EMPTY;
 
-    @JsonProperty("RuleStatus")
+    @JsonProperty("SourceRulePath")
+    String sourceRulePath;
+
+    @JsonIgnore
     RuleStatus ruleStatus;
+
+    @JsonProperty("Action")
+    Action action;
 
     @JsonProperty("Service")
     public String service;
@@ -34,46 +46,89 @@ public class TemplateEntryMeta implements Comparable{
     @JsonProperty("JsonPath")
     String jsonPath;
 
-    @JsonProperty("numViolations")
-    Integer numViolations = 0;
+    @JsonProperty("NumViolationsComparison")
+    Integer numViolationsComparison = 0;
+
+    @JsonProperty("NumViolationsPresence")
+    Integer numViolationsPresence = 0;
 
     @JsonProperty("Count")
     Integer count = 0;
 
-    @JsonProperty("ValueMatchRequired")
-    YesOrNo valueMatchRequired;
+    @JsonProperty("NewComparisonType")
+    private String newCt = EMPTY;
 
-    @JsonProperty("PresenceRequired")
-    YesOrNo presenceRequired;
+    @JsonProperty("NewPresenceType")
+    private String newPt = EMPTY;
+
+    @JsonProperty("CurrentComparisonType")
+    ComparisonType currentCt;
+
+    @JsonProperty("CurrentPresenceType")
+    PresenceType currentPt;
 
     Optional<TemplateEntryMeta> parentMeta = Optional.empty();
 
     public static final String METHODS_ALL = "ALL";
-    public static final String EMPTY_ID = "";
+    public static final String EMPTY = "";
 
 
     public TemplateEntryMeta(RuleStatus ruleStatus,
         Type reqOrResp,
         String service,
-        String apiPath, Optional<String> method, String jsonPath, YesOrNo valueMatchRequired,
-        YesOrNo presenceRequired,
-        Optional<TemplateEntryMeta> parentMeta) {
+        String apiPath, Optional<String> method, String jsonPath, ComparisonType currentCt,
+        PresenceType currentPt, Optional<ComparisonType> newCt,
+        Optional<PresenceType> newPt,
+        Optional<TemplateEntryMeta> parentMeta,
+        Action action) {
         this.ruleStatus = ruleStatus;
         this.reqOrResp = reqOrResp;
         this.service = service;
         this.apiPath = apiPath;
         this.method = method.orElse(METHODS_ALL);
         this.jsonPath = jsonPath;
-        this.valueMatchRequired = valueMatchRequired;
-        this.presenceRequired = presenceRequired;
+        this.sourceRulePath = jsonPath;
+        this.currentCt = currentCt;
+        this.currentPt = currentPt;
+        setNewCt(newCt);
+        setNewPt(newPt);
         this.parentMeta = parentMeta;
+        this.action = action;
+    }
+    public String getNewCt() {
+        return newCt;
     }
 
-    public TemplateEntryMeta(String service, String apiPath, Type reqOrResp, Optional<String> method,
-        String jsonPath) {
-        this(RuleStatus.Undefined, Type.DontCare, service, apiPath,
-            method, jsonPath, YesOrNo.undefined, YesOrNo.undefined, Optional.empty());
+    public String getNewPt() {
+        return newPt;
     }
+
+    @JsonSetter("NewComparisonType")
+    public void setNewCt(Optional<ComparisonType> newCt) {
+        this.newCt = newCt.map(ct -> ct.toString()).orElse(EMPTY);
+    }
+
+    @JsonSetter("NewComparisonType")
+    public void setNewCt(String newCt) {
+        this.newCt = newCt;
+    }
+
+    @JsonSetter("NewPresenceType")
+    public void setNewPt(Optional<PresenceType> newPt) {
+        this.newPt = newPt.map(pt -> pt.toString()).orElse(EMPTY);
+    }
+
+    @JsonSetter("NewPresenceType")
+    public void setNewPt(String newPt) {
+        this.newPt = newPt;
+    }
+
+    //    public TemplateEntryMeta(String service, String apiPath, Type reqOrResp, Optional<String> method,
+//        String jsonPath) {
+//        this(RuleType.Undefined, Type.DontCare, service, apiPath,
+//            method, jsonPath, ComparisonType.Default, PresenceType.Default, Optional.empty(),
+//            Optional.empty(), Optional.empty(), Action.Remove);
+//    }
 
     enum RuleStatus {
         ViolatesExistingExact, // Instance violates an exact rule of expected match.
@@ -87,10 +142,10 @@ public class TemplateEntryMeta implements Comparable{
         Undefined
     }
 
-    enum YesOrNo{
-        yes,
-        no,
-        undefined
+    enum Action{
+        Create,
+        Remove,
+        None
     }
 
     @Override
