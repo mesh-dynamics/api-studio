@@ -258,7 +258,7 @@ public class Utils {
 		MultivaluedMap<String, String> hdrs,
 		MDTraceInfo mdTraceInfo, byte[] body,
 		String customerId, String app, String service, String instance,
-		RunType runType, String method, String reqId, RecordingType recordingType)
+		RunType runType, String method, String reqId, RecordingType recordingType, Optional<Instant> timestamp)
 		throws Event.EventBuilder.InvalidEventException {
 
 		Payload mockedRequestPayload = null;
@@ -289,7 +289,7 @@ public class Utils {
 
 		Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId, app,
 			service, instance, Constants.NOT_APPLICABLE,
-			mdTraceInfo, runType, Optional.empty(),
+			mdTraceInfo, runType, timestamp,
 			reqId, apiPath, Event.EventType.HTTPRequest, recordingType);
 		eventBuilder.setPayload(mockedRequestPayload);
 		Event event = eventBuilder.createEvent();
@@ -573,7 +573,7 @@ public class Utils {
 		String method, byte[] body,
 		MultivaluedMap<String, String> headers,
 		MultivaluedMap<String, String> queryParams,
-		Optional<String> traceIdValue , TracerMgr tracerMgr) throws EventBuilder.InvalidEventException, JsonProcessingException {
+		Optional<String> traceIdValue , TracerMgr tracerMgr, Optional<Instant> timestamp) throws EventBuilder.InvalidEventException, JsonProcessingException {
 		// At the time of mock, our lua filters don't get deployed, hence no request id is generated
 		// we can generate a new request id here in the mock service
 		String requestId = service.concat("-mock-").concat(String.valueOf(UUID.randomUUID()));
@@ -593,7 +593,7 @@ public class Utils {
 
 		return createMockedRequestEvent(path, queryParams, formParams, headers, mdTraceInfo,
 			body, customerId, app, service, instanceId, RunType.Mock , method, requestId,
-			recordingType);
+			recordingType, timestamp);
 	}
 
 	static public String convertTraceId(long traceIdHigh, long traceIdLow) {
