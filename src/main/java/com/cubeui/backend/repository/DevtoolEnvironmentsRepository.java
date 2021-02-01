@@ -20,6 +20,5 @@ public interface DevtoolEnvironmentsRepository extends JpaRepository<DtEnvironme
   List<DtEnvironment> findDtEnvironmentByNameAndGlobalAndAppId(String Name, boolean global, Long appId);
   List<DtEnvironment> findDtEnvironmentByNameAndAppIdAndGlobalAndIdNot(String Name, Long appId, boolean global, Long id);
   List<DtEnvironment> findDtEnvironmentByAppIdInAndUserId(List<Long> appIds, Long userId);
-//  @Query(nativeQuery = true , value="select * from devtool_environments where (user_id=:userId Or app_id In :appIds) and global=:global")
   List<DtEnvironment> findDtEnvironmentByUserIdAndAppIdInAndGlobal(@Param("userId") Long userId, @Param("appIds") List<Long> appIds,  @Param("global") boolean global);
 }
