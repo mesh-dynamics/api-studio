@@ -33,7 +33,7 @@ public class RecordOrReplay {
 	@JsonIgnore
 	public Optional<String> getRecordingCollection() {
 		// return collection of recording corresponding to replay if non empty, else return recording collection
-		Optional<String> ret = replay.map(replay -> replay.collection);
+		Optional<String> ret = replay.map(Replay::getCurrentRecording);
 		if (ret.isPresent()) {
 			return ret;
 		} else {

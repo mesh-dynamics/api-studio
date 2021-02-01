@@ -6,6 +6,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import io.md.constants.ReplayStatus;
 import io.md.core.ReplayTypeEnum;
 
@@ -15,7 +17,7 @@ public class Replay {
 	public String customerId;
 	public String app;
 	public String instanceId;
-	public String collection;
+	public List<String> collection;
 	public String userId;
 	public List<String> reqIds;
 	public String templateVersion;
@@ -49,7 +51,7 @@ public class Replay {
 	public Optional<ReplayContext> replayContext = Optional.empty();
 
 	public Replay(String endpoint, String customerId, String app, String instanceId,
-		String collection, String userId, List<String> reqIds,
+		List<String> collection, String userId, List<String> reqIds,
 		String replayId, boolean async, String templateVersion, ReplayStatus status,
 		List<String> paths, boolean excludePaths, int reqcnt, int reqsent, int reqfailed,
 		Instant creationTimestamp,
@@ -104,7 +106,7 @@ public class Replay {
 		customerId = "";
 		app = "";
 		instanceId = "";
-		collection = "";
+		collection = Collections.emptyList();
 		userId = "";
 		replayId = "";
 		async = false;
@@ -128,6 +130,11 @@ public class Replay {
 		analysisCompleteTimestamp = null;
 		staticInjectionMap = null;
 		runId = "";
+	}
+
+	@JsonIgnore
+	public String getCurrentRecording(){
+		return replayContext.flatMap(ctx->ctx.currentRecording).orElse(collection.get(0));
 	}
 
 }
