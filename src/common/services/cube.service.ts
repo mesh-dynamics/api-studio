@@ -678,7 +678,7 @@ const fetchGrpcProtoDescriptor = async (customerId: string, selectedApp: string)
 
         return await api.get(url);
     } catch (e) {
-        console.error("Error fetching schema for app");
+        // console.error("Error fetching schema for app");
         throw new Error("Couldn't fetch gRPC schema from server");
     }
 }
