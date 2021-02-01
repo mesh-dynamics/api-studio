@@ -219,7 +219,7 @@ public class RealMocker implements Mocker {
             String replayCollection = ctx.replayCollection;
             String templateVersion = ctx.templateVersion;
             String runId = ctx.runId;
-            Optional<ReplayContext> replayCtx = ctx.replay.replayContext;
+            Optional<ReplayContext> replayCtx = ctx.replay.flatMap(r->r.replayContext);
 
             event.setCollection(replayCollection);
             replayCtx.flatMap(rctx->rctx.reqTraceId).ifPresent(event::setTraceId);
