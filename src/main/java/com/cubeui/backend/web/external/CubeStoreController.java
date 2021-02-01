@@ -1,12 +1,15 @@
 package com.cubeui.backend.web.external;
 
+import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.DtEnvVar;
 import com.cubeui.backend.domain.DtEnvironment;
 import com.cubeui.backend.domain.MultipartInputStreamFileResource;
 import com.cubeui.backend.domain.User;
+import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.DevtoolEnvironmentsRepository;
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.service.CubeServerService;
+import com.cubeui.backend.web.exception.RecordNotFoundException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.dao.CustomerAppConfig;
@@ -50,6 +53,8 @@ public class CubeStoreController {
     private Validation validation;
     @Autowired
     private DevtoolEnvironmentsRepository devtoolEnvironmentsRepository;
+    @Autowired
+    private AppRepository appRepository;
 
     @GetMapping("/status/{customerId}/{app}/{name}/{label}")
     public ResponseEntity status(HttpServletRequest request, @RequestBody Optional<String> getBody, @PathVariable String customerId,
@@ -432,12 +437,16 @@ public class CubeStoreController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body("InjectionConfigVersion cannot be null or empty");
         }
-
-        Long userId = ((User) authentication.getPrincipal()).getId();
-
+        User user = ((User) authentication.getPrincipal());
+        Long userId = user.getId();
+        Optional<App> app = appRepository.findByNameAndCustomerId(dynamicInjectionEventDao.getRequestEvent().app, user.getCustomer().getId());
+        Long appId = app.map(ap -> ap.getId())
+            .orElseThrow(() ->
+                new RecordNotFoundException(String.format("No app found for name=%s",
+                    dynamicInjectionEventDao.getRequestEvent().app)));
         Map<String, String> contextMap = new HashMap<>();
         Optional<DtEnvironment> dtEnvironment = Optional.ofNullable(dynamicInjectionEventDao.getEnvironmentName())
-            .flatMap(env -> devtoolEnvironmentsRepository.findDtEnvironmentByUserIdAndName(userId,  env));
+            .flatMap(env -> devtoolEnvironmentsRepository.findDtEnvironmentByUserIdAndNameAndAppId(userId,  env, appId));
         dtEnvironment.ifPresent(dt -> {
             List<DtEnvVar> dtEnvVars = dt.getVars();
             dtEnvVars.forEach(dtEnvVar -> contextMap.put(dtEnvVar.getKey(), dtEnvVar.getValue()));
