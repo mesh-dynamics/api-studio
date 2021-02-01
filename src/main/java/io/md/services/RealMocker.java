@@ -330,7 +330,7 @@ public class RealMocker implements Mocker {
             mockRequest.service,
             instanceId, replayCollection,
             new MDTraceInfo(mockRequest.getTraceId() , null, null),
-            mockRequest.getRunType(), Optional.of(Instant.now()),
+            mockRequest.getRunType(), Optional.of(mockRequest.timestamp),
             mockReqId.orElse("NA"),
             mockRequest.apiPath, EventType.getResponseType(mockRequest.eventType), mockRequest.recordingType)
                 .withRunId(runId)
