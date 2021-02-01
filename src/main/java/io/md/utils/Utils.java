@@ -640,16 +640,22 @@ public class Utils {
 		return Optional.empty();
 	}
 
-	public static MockWithCollection getMockCollection(DataStore dataStore, String customerId , String app , String instanceId , boolean devtool){
-		RecordOrReplay recordOrReplay = dataStore.getCurrentRecordOrReplay(customerId, app, instanceId).get();
-		String replayCollection = recordOrReplay.getCollection().get();
-		String collection = recordOrReplay.getRecordingCollection().get();
-		String templateVersion = recordOrReplay.getTemplateVersion();
-		Optional<Replay> runningReplay = recordOrReplay.replay;
-		Optional<String> optionalRunId = runningReplay.map(r->r.runId);
-		Optional<String> dynamicInjectionCfgVersion = recordOrReplay.getDynamicInjectionConfigVersion();
+	public static Optional<MockWithCollection> getMockCollection(DataStore dataStore, String customerId , String app , String instanceId , boolean devtool){
+		return dataStore.getCurrentRecordOrReplay(customerId, app, instanceId).map(recordOrReplay->{
+			Optional<Replay> runningReplay = recordOrReplay.replay;
+			if(!runningReplay.isPresent()){
+				LOGGER.error("Could not get replayCollection / recording collection from MockWithCollection " +recordOrReplay);
+				return null;
+			}
+			Replay replay = runningReplay.get();
+			String replayCollection = replay.replayId;
+			String collection = replay.collection;
+			String templateVersion = recordOrReplay.getTemplateVersion();
+			String optionalRunId = runningReplay.get().runId;
+			Optional<String> dynamicInjectionCfgVersion = recordOrReplay.getDynamicInjectionConfigVersion();
 
-		return new MockWithCollection(replayCollection, collection, templateVersion, optionalRunId.orElse(null) , dynamicInjectionCfgVersion, devtool , runningReplay);
+			return new MockWithCollection(replayCollection, collection, templateVersion, optionalRunId, dynamicInjectionCfgVersion, devtool , replay);
+		});
 	}
 
 	public static void setProtoDescriptorGrpcEvent(Event e, ProtoDescriptorCache protoDescriptorCache) {

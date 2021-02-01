@@ -136,10 +136,13 @@ public class Constants {
 	public static final String SPAN_ID_FIELD = "spanId";
 	public static final String PARENT_SPAN_ID_FIELD = "parentSpanId";
 	public static final String EXCLUDE_PATH_FIELD = "excludePath";
-	public static final String PAYLOAD_FIELDS_FIELD = "payloadFields";
-	public static final String START_TIMESTAMP_FIELD = "startTimestamp";
-	public static final String END_TIMESTAMP_FIELD = "endTimestamp";
 
+	public static final String PAYLOAD_FIELDS_FIELD = "payloadFields";
+	public static final String PAYLOAD_FIELDS_FIELD_PATH = "/"+PAYLOAD_FIELDS_FIELD;
+	public static final String START_TIMESTAMP_FIELD = "startTimestamp";
+	public static final String START_TIMESTAMP_FIELD_PATH = "/"+START_TIMESTAMP_FIELD;
+	public static final String END_TIMESTAMP_FIELD = "endTimestamp";
+	public static final String END_TIMESTAMP_FIELD_PATH = "/"+END_TIMESTAMP_FIELD;
 
 	public static final String EVENT_TYPE_FIELD = "eventType";
 	public static final String JSON_PATH_FIELD = "jsonPath";

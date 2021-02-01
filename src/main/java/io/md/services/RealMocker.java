@@ -74,9 +74,9 @@ public class RealMocker implements Mocker {
 
 
             Optional<JoinQuery> joinQuery = mockWColl.isDevtool ? Optional.of(getSuccessResponseMatch()) : Optional.empty();
-            Optional<ReplayContext> replayCtx = mockWColl.replay.flatMap(r->r.replayContext);
+            Optional<ReplayContext> replayCtx = mockWColl.replay.replayContext;
 
-            boolean tracePropagation = mockWColl.replay.map(r->r.tracePropagation).orElse(true);
+            boolean tracePropagation = mockWColl.replay.tracePropagation;
             EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1),
                 !mockWColl.isDevtool, lowerBoundForMatching, mockWColl.recordCollection,
                 payloadFieldFilterList , joinQuery , mockWColl.isDevtool , replayCtx , tracePropagation);
@@ -94,7 +94,7 @@ public class RealMocker implements Mocker {
             if(!mockWColl.isDevtool && matchingRequest.isPresent() && res.getNumFound()>1){
                 ReplayContext replyCtx = replayCtx.orElse(new ReplayContext());
                 replyCtx.setMockResultToReplayContext(matchingRequest.get());
-                Replay replay = mockWColl.replay.get();
+                Replay replay = mockWColl.replay;
                 replay.replayContext = Optional.of(replyCtx);
                 cube.populateCache(new CollectionKey(replay.customerId, replay.app , replay.instanceId) , RecordOrReplay.createFromReplay(replay));
             }
@@ -200,28 +200,34 @@ public class RealMocker implements Mocker {
         return builder.build();
     }
 
-    private Optional<MockWithCollection> setPayloadKeyAndCollection(Event event, Optional<MockWithCollection> mockWithCollections) {
+    private Optional<MockWithCollection> setPayloadKeyAndCollection(Event event, Optional<MockWithCollection> mockCtx) {
 
-        MockWithCollection mockWithCollection = mockWithCollections.orElseGet(()->Utils.getMockCollection(cube , event.customerId, event.app, event.instanceId, false ));
+        if(!mockCtx.isPresent()){
+            mockCtx = Utils.getMockCollection(cube , event.customerId, event.app, event.instanceId, false );
+            if(!mockCtx.isPresent()){
+                LOGGER
+                    .error(Utils.createLogMessasge(
+                        Constants.REASON, "Collection not found",
+                        Constants.CUSTOMER_ID_FIELD, event.customerId,
+                        Constants.APP_FIELD, event.app,
+                        Constants.INSTANCE_ID_FIELD, event.instanceId,
+                        Constants.TRACE_ID_FIELD, event.getTraceId()));
+            }
+        }
 
-        Optional<String> replayCollection = Optional.of(mockWithCollection.replayCollection);
-        Optional<String> collection = Optional.of(mockWithCollection.recordCollection);
-        Optional<String> templateVersion = Optional.of(mockWithCollection.templateVersion);
-        Optional<String> optionalRunId = Optional.of(mockWithCollection.runId);
-        Optional<ReplayContext> replayCtx = mockWithCollection.replay.flatMap(r->r.replayContext);
+        mockCtx.ifPresent(ctx->{
+            String replayCollection = ctx.replayCollection;
+            String templateVersion = ctx.templateVersion;
+            String runId = ctx.runId;
+            Optional<ReplayContext> replayCtx = ctx.replay.replayContext;
 
-
-        // check collection, validate, fetch template for request, set key and store. If error at any point stop
-        if (collection.isPresent() && replayCollection.isPresent() && templateVersion.isPresent()) {
-            String runId = optionalRunId.orElse(event.getTraceId());
-            mockWithCollection.runId = runId;
-            event.setCollection(replayCollection.get());
-            replayCtx.flatMap(ctx->ctx.reqTraceId).ifPresent(event::setTraceId);
+            event.setCollection(replayCollection);
+            replayCtx.flatMap(rctx->rctx.reqTraceId).ifPresent(event::setTraceId);
 
             try {
                 event.parseAndSetKey(cube.getTemplate(event.customerId, event.app, event.service,
-                    event.apiPath, templateVersion.get(), Type.RequestMatch
-                    , Optional.ofNullable(event.eventType), Utils.extractMethod(event), replayCollection.get()));
+                    event.apiPath, templateVersion, Type.RequestMatch
+                    , Optional.ofNullable(event.eventType), Utils.extractMethod(event), replayCollection));
                 event.setRunId(runId);
             } catch (TemplateNotFoundException e) {
                 LOGGER.error(Utils.createLogMessasge(
@@ -230,19 +236,13 @@ public class RealMocker implements Mocker {
                     "reqId", event.reqId,
                     "path", event.apiPath), e);
             }
-        } else {
-            LOGGER
-                .error(Utils.createLogMessasge(
-                    Constants.REASON, "Collection not found",
-                    Constants.CUSTOMER_ID_FIELD, event.customerId,
-                    Constants.APP_FIELD, event.app,
-                    Constants.INSTANCE_ID_FIELD, event.instanceId,
-                    Constants.TRACE_ID_FIELD, event.getTraceId()));
-        }
+        });
+
         if (shouldStore(event.eventType)) {
             cube.save(event);
         }
-        return Optional.of(mockWithCollection);
+
+        return mockCtx;
     }
 
     private boolean shouldStore(EventType eventType) {
