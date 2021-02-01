@@ -94,7 +94,7 @@ public class RealMocker implements Mocker {
             if(!mockWColl.isDevtool && matchingRequest.isPresent() && res.getNumFound()>1){
                 ReplayContext replyCtx = replayCtx.orElse(new ReplayContext());
                 replyCtx.setMockResultToReplayContext(matchingRequest.get());
-                Replay replay = mockWColl.replay;
+                Replay replay = mockWColl.replay.get();
                 replay.replayContext = Optional.of(replyCtx);
                 cube.populateCache(new CollectionKey(replay.customerId, replay.app , replay.instanceId) , RecordOrReplay.createFromReplay(replay));
             }
