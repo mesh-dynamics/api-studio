@@ -14,6 +14,7 @@ import com.cube.sequence.SeqMgr;
 
 import io.md.core.ApiGenPathMgr;
 import io.md.core.CollectionKey;
+import io.md.dao.CustomerAppConfig.Builder;
 import io.md.dao.DataObj.DataObjProcessingException;
 import io.md.dao.Event.EventType;
 import io.md.injection.DynamicInjector;
@@ -2273,6 +2274,16 @@ public class CubeStore {
     @Produces(MediaType.APPLICATION_JSON)
     public Response setAppConfiguration(CustomerAppConfig custAppCfg ) {
 
+        //Get existing appCfg
+        Optional<CustomerAppConfig> existing = rrstore.getAppConfiguration(custAppCfg.customerId , custAppCfg.app);
+        //If the existing app cfg Id in solr is different then autoCalculated
+        if(existing.isPresent() && !existing.get().id.equals(custAppCfg.id)){
+            CustomerAppConfig.Builder builder = new Builder(custAppCfg.customerId , custAppCfg.app);
+            custAppCfg.tracer.ifPresent(builder::withTracer);
+            custAppCfg.apiGenericPaths.ifPresent(builder::withApiGenericPaths);
+            builder.withId(existing.get().id);
+            custAppCfg = builder.build();
+        }
         if(rrstore.saveConfig(custAppCfg)){
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(
                 buildSuccessResponse(Constants.SUCCESS, new JSONObject(Map.of(Constants.MESSAGE, "The customer app config tag has been changed",
