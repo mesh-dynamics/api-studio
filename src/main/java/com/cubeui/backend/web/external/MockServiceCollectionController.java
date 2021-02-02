@@ -50,10 +50,10 @@ public class MockServiceCollectionController {
   }
 
 
-  @RequestMapping(value = "/mockWithRunId/{replayCollection}/{recordCollection}/{customerId}/{app}/{traceId}/{runId}/{service}/**" , consumes = {MediaType.ALL_VALUE})
+  @RequestMapping(value = "/mockWithRunId/{replayCollection}/{recordCollection}/{customerId}/{app}/{timestamp}/{traceId}/{runId}/{service}/**" , consumes = {MediaType.ALL_VALUE})
   public ResponseEntity mockWithRunId(HttpServletRequest request, @RequestBody Optional<String> body,
       @PathVariable String replayCollection, @PathVariable String recordCollection,
-      @PathVariable String customerId, @PathVariable String app,
+      @PathVariable String customerId, @PathVariable String app, @PathVariable String timestamp,
       @PathVariable String traceId, @PathVariable String service, @PathVariable String runId, Authentication authentication) {
     validation.validateCustomerName(authentication,customerId);
     String query =  String.format("customerId=%s&app=%s&collection=%s", customerId, app, recordCollection);
@@ -66,7 +66,7 @@ public class MockServiceCollectionController {
     validation.validateCustomerName(authentication,recording.get().customerId);
 
     String path = getPathForMockWithRunId(request.getRequestURI(), replayCollection, recordCollection, customerId, app, recording.get().id);
-    path = cubeServerService.getPathForHttpMethod(path , request.getMethod() , traceId, runId, service );
+    path = cubeServerService.getPathForHttpMethod(path , request.getMethod() , traceId, runId, service, timestamp);
 
     return cubeServerService.fetchResponse(request, body, HttpMethod.POST , path);
   }
