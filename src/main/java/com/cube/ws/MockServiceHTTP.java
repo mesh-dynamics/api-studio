@@ -90,7 +90,7 @@ public class MockServiceHTTP {
                               byte[] body) {
         LOGGER.info(String.format("customerId: %s, app: %s, path: %s, uriinfo: %s, body: %s", customerId, app, path,
             ui.toString(), body));
-        MockWithCollection mockWithCollection = io.md.utils.Utils.getMockCollection(rrstore , customerId , app , instanceId, false);
+        Optional<MockWithCollection> mockWithCollection = io.md.utils.Utils.getMockCollection(rrstore , customerId , app , instanceId, false);
         return getResp(ui, path, new MultivaluedHashMap<>(), customerId, app, instanceId, service, httpMethod , body, headers.getRequestHeaders(), mockWithCollection
             , Optional.empty());
     }
@@ -226,7 +226,7 @@ public class MockServiceHTTP {
         MultivaluedMap<String, String> hdrs = headers.getRequestHeaders();
         Optional<String> dynamicInjCfgVersion = ServerUtils.getCustomHeaderValue(hdrs , Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD).or(()->recording.dynamicInjectionConfigVersion);
         Response response = getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            httpMethod , body, hdrs, new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId, dynamicInjCfgVersion, true , Optional.empty()), Optional.of(traceId));
+            httpMethod , body, hdrs, Optional.of(new MockWithCollection(replayCollection, recording.collection, recording.templateVersion, runId, dynamicInjCfgVersion, true , Optional.empty())) , Optional.of(traceId));
         rrstore.commit();
         return response;
     }
@@ -261,7 +261,7 @@ public class MockServiceHTTP {
         LOGGER.debug(String.format("MockWithRunId Passing collection %s for recordingType %s dynamicInjCfgVersion %s" , recCollection , recording.recordingType.toString(), dynamicInjCfgVersion.orElse(null)  ));
 
         Response response = getResp(ui, path, new MultivaluedHashMap<>(), recording.customerId, recording.app, recording.instanceId, service,
-            httpMethod , body, hdrs, new MockWithCollection(replayCollection, recCollection, recording.templateVersion, runId, dynamicInjCfgVersion, true , Optional.empty()), Optional.of(traceId));
+            httpMethod , body, hdrs, Optional.of(new MockWithCollection(replayCollection, recCollection, recording.templateVersion, runId, dynamicInjCfgVersion, true , Optional.empty())) , Optional.of(traceId));
         rrstore.commit();
         return response;
     }
@@ -271,7 +271,7 @@ public class MockServiceHTTP {
     private Response getResp(UriInfo ui, String path, MultivaluedMap<String, String> formParams,
         String customerId, String app, String instanceId,
         String service, String method, byte[] body, MultivaluedMap<String, String> headers,
-        MockWithCollection collection, Optional<String> traceId)
+        Optional<MockWithCollection> collection, Optional<String> traceId)
     {
 
         LOGGER.info(io.md.utils.Utils.createLogMessasge(io.md.constants.Constants.MESSAGE, "Attempting to mock request",
@@ -284,8 +284,8 @@ public class MockServiceHTTP {
             path = apiGenPathMgr.getGenericPath(customerId , app , service , path).orElse(path);
             Event mockRequestEvent = io.md.utils.Utils
                 .createRequestMockNew(path, formParams, customerId, app, instanceId,
-                    service, method, body, headers, ui.getQueryParameters(), traceId, tracerMgr);
-            MockResponse mockResponse = mocker.mock(mockRequestEvent, Optional.empty(),  Optional.of(collection));
+                    service, method, body, headers, ui.getQueryParameters(), traceId, tracerMgr , Optional.empty());
+            MockResponse mockResponse = mocker.mock(mockRequestEvent, Optional.empty(),  collection);
             respEvent = mockResponse.response;
 
         } catch (Exception e) {
