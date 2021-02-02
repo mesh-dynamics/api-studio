@@ -284,7 +284,7 @@ public class MockServiceHTTP {
             path = apiGenPathMgr.getGenericPath(customerId , app , service , path).orElse(path);
             Event mockRequestEvent = io.md.utils.Utils
                 .createRequestMockNew(path, formParams, customerId, app, instanceId,
-                    service, method, body, headers, ui.getQueryParameters(), traceId, tracerMgr , Optional.empty());
+                    service, method, body, headers, ui.getQueryParameters(), traceId, tracerMgr);
             MockResponse mockResponse = mocker.mock(mockRequestEvent, Optional.empty(),  collection);
             respEvent = mockResponse.response;
 
