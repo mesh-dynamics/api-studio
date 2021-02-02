@@ -1,5 +1,6 @@
 package com.cube.learning;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -7,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import io.md.core.CompareTemplate.ComparisonType;
 import io.md.core.CompareTemplate.PresenceType;
 import io.md.core.TemplateKey.Type;
+import io.md.core.Utils;
 import java.util.Objects;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
@@ -56,10 +58,10 @@ public class TemplateEntryMeta implements Comparable{
     Integer count = 0;
 
     @JsonProperty("NewComparisonType")
-    private String newCt = EMPTY;
+    private Optional<ComparisonType> newCt;
 
     @JsonProperty("NewPresenceType")
-    private String newPt = EMPTY;
+    private Optional<PresenceType> newPt;
 
     @JsonProperty("CurrentComparisonType")
     ComparisonType currentCt;
@@ -73,14 +75,10 @@ public class TemplateEntryMeta implements Comparable{
     public static final String EMPTY = "";
 
 
-    public TemplateEntryMeta(RuleStatus ruleStatus,
-        Type reqOrResp,
-        String service,
-        String apiPath, Optional<String> method, String jsonPath, ComparisonType currentCt,
-        PresenceType currentPt, Optional<ComparisonType> newCt,
-        Optional<PresenceType> newPt,
-        Optional<TemplateEntryMeta> parentMeta,
-        Action action) {
+    public TemplateEntryMeta(Action action, Type reqOrResp, String service, String apiPath,
+        Optional<String> method, String jsonPath, ComparisonType currentCt, PresenceType currentPt,
+        Optional<ComparisonType> newCt, Optional<PresenceType> newPt,
+        Optional<TemplateEntryMeta> parentMeta, RuleStatus ruleStatus) {
         this.ruleStatus = ruleStatus;
         this.reqOrResp = reqOrResp;
         this.service = service;
@@ -95,33 +93,27 @@ public class TemplateEntryMeta implements Comparable{
         this.parentMeta = parentMeta;
         this.action = action;
     }
-    public String getNewCt() {
-        return newCt;
-    }
 
-    public String getNewPt() {
-        return newPt;
-    }
 
-    @JsonSetter("NewComparisonType")
-    public void setNewCt(Optional<ComparisonType> newCt) {
-        this.newCt = newCt.map(ct -> ct.toString()).orElse(EMPTY);
-    }
+
+    @JsonGetter("NewComparisonType")
+    public String getNewCt() { return newCt.map(ct -> ct.toString()).orElse(EMPTY); }
+
+    @JsonGetter("NewPresenceType")
+    public String getNewPt() {return newPt.map(pt -> pt.toString()).orElse(EMPTY); }
 
     @JsonSetter("NewComparisonType")
     public void setNewCt(String newCt) {
-        this.newCt = newCt;
+        this.newCt = Utils.valueOf(ComparisonType.class, newCt);
     }
 
     @JsonSetter("NewPresenceType")
-    public void setNewPt(Optional<PresenceType> newPt) {
-        this.newPt = newPt.map(pt -> pt.toString()).orElse(EMPTY);
-    }
+    public void setNewPt(String newPt) {this.newPt = Utils.valueOf(PresenceType.class, newPt);}
 
-    @JsonSetter("NewPresenceType")
-    public void setNewPt(String newPt) {
-        this.newPt = newPt;
-    }
+    public void setNewCt(Optional<ComparisonType> newCt) { this.newCt = newCt; }
+
+    public void setNewPt(Optional<PresenceType> newPt) { this.newPt = newPt;}
+
 
     //    public TemplateEntryMeta(String service, String apiPath, Type reqOrResp, Optional<String> method,
 //        String jsonPath) {

@@ -118,15 +118,11 @@ public class CompareTemplatesLearner {
                                 .putIfAbsent(createRulesKey(template.service, template.requestPath,
                                     template.type, template.method,
                                     Optional.of(templateEntry.path)), new TemplateEntryMeta(
-                                    RuleStatus.UnusedExisting,
-                                    template.type, template.service, template.requestPath,
-                                    template.method,
-                                    templateEntry.path,
-                                    templateEntry.getCompareType(),
-                                    templateEntry.getPresenceType(),
-                                    Optional.empty(),
-                                    Optional.empty(),
-                                    Optional.empty(), Action.Remove));
+                                    Action.Remove, template.type, template.service,
+                                    template.requestPath, template.method, templateEntry.path,
+                                    templateEntry.getCompareType(), templateEntry.getPresenceType(),
+                                    Optional.empty(), Optional.empty(), Optional.empty(), RuleStatus.UnusedExisting
+                                ));
                         }
                     );
                 }
@@ -269,10 +265,9 @@ public class CompareTemplatesLearner {
                 meta.action = action;
 
         } else {
-            TemplateEntryMeta meta = new TemplateEntryMeta(ruleStatus,
-                reqOrResp, service, apiPath, method,
-                jsonPath, currentCt,
-                currentPt, newCt, newPt, existingParentMeta, action);
+            TemplateEntryMeta meta = new TemplateEntryMeta(action, reqOrResp, service, apiPath,
+                method, jsonPath, currentCt, currentPt, newCt, newPt, existingParentMeta, ruleStatus
+            );
             meta.count = count;
             meta.numViolationsComparison = numViolationsComparison;
             meta.numViolationsPresence = numViolationsPresence;
