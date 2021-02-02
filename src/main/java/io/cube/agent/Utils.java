@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
+import io.cube.agent.samplers.TimeSampler;
 import io.md.logger.LogMgr;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -164,6 +165,12 @@ public class Utils {
 			return false;
 		}
 
+		if ((type.equalsIgnoreCase(TimeSampler.TYPE))
+			&& (!rate.isPresent() || !accuracy.isPresent())) {
+			LOGGER.debug("Need sampling time/delay for Time Samplers!");
+			return false;
+		}
+
 		if (type.equalsIgnoreCase(BoundarySampler.TYPE)
 			&& (!rate.isPresent() || !accuracy.isPresent()
 			|| !fieldCategory.isPresent() || !attributes.isPresent())) {
@@ -197,6 +204,9 @@ public class Utils {
 			return CountingSampler.create(rate.get(), accuracy.get());
 		}
 
+		if (TimeSampler.TYPE.equalsIgnoreCase(type)) {
+			return TimeSampler.create(rate.get(), accuracy.get());
+		}
 		//This sampler takes only a list of fields on which the sampling is to be done.
 		//Specific values are not looked at.
 		if (BoundarySampler.TYPE.equalsIgnoreCase(type)) {

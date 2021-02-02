@@ -1,5 +1,6 @@
 package io.cube.agent;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -22,6 +23,7 @@ import io.cube.agent.samplers.BoundarySampler;
 import io.cube.agent.samplers.CountingSampler;
 import io.cube.agent.samplers.Sampler;
 import io.cube.agent.samplers.SimpleSampler;
+import io.cube.agent.samplers.TimeSampler;
 
 public class SamplerTest {
 
@@ -56,6 +58,30 @@ public class SamplerTest {
 
 		//System.out.println("Count Value : " + count.get());
 		Assertions.assertTrue(count == (int)(0.4 * 50000));
+	}
+
+	@Test
+	public void testTimeSampler() {
+		int count = 0;
+		//Init sampler with sampling for 5s every 10s
+		Sampler sampler = TimeSampler.create(5000f, 10000);
+		//Run 30 requests and check probability criteria
+		for (int i=0; i<30; i++) {
+			//send a request every 1000ms
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			boolean result = sampler.isSampled(new MultivaluedHashMap<>());
+			if (result) {
+				count++;
+			}
+		}
+
+		//System.out.println("Count Value : " + count);
+		float percent = count/30.0f;
+		Assertions.assertTrue(percent > 0.45 && percent < 0.55);
 	}
 
 	@Test
