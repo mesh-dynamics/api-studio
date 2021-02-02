@@ -1441,22 +1441,20 @@ public class CubeStore {
 
         //TODO: Use fieldList to reduce the data fetched.
         EventQuery.Builder reqBuilder = new EventQuery.Builder(originalRec.customerId,
-            originalRec.app, Event.REQUEST_EVENT_TYPES);
+            originalRec.app,
+            Stream.concat(Event.REQUEST_EVENT_TYPES.stream(), Event.RESPONSE_EVENT_TYPES.stream())
+                .collect(Collectors.toList()));
         reqBuilder.withCollection(originalRec.collection);
         reqBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
-        Result<Event> reqEvents = rrstore.getEvents(reqBuilder.build());
-        reqEvents.getObjects().forEach(event -> reqIds.add(event.reqId));
+        Result<Event> reqRespEvents = rrstore.getEvents(reqBuilder.build());
 
         Set<String> badStatusCodes = Optional.ofNullable(status).map(HashSet::new)
             .orElseGet(() -> new HashSet());
 
-        EventQuery.Builder respBuilder = new EventQuery.Builder(originalRec.customerId,
-            originalRec.app, Event.RESPONSE_EVENT_TYPES);
-        respBuilder.withCollection(originalRec.collection);
-        respBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
-        Result<Event> respEvents = rrstore.getEvents(respBuilder.build());
-        respEvents.getObjects().forEach(event -> {
-            if (event.payload instanceof ResponsePayload) {
+        reqRespEvents.getObjects().forEach(event -> {
+            if (event.payload instanceof RequestPayload) {
+                reqIds.add(event.reqId);
+            } else if (event.payload instanceof ResponsePayload) {
                 if (!badStatusCodes.contains(((ResponsePayload) event.payload).getStatusCode())) {
                     respIds.add(event.reqId);
                 }

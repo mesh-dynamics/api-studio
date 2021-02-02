@@ -297,8 +297,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     public Result<Event> getRequests(String customerId, String app, String collection,
                                        List<String> reqids, List<String> services, List<String> paths, Optional<Event.RunType> runType) {
 
-        // TODO: Event redesign - change this include all event types
-        EventQuery.Builder builder = new EventQuery.Builder(customerId, app, Event.EventType.HTTPRequest);
+        EventQuery.Builder builder = new EventQuery.Builder(customerId, app, Event.REQUEST_EVENT_TYPES);
         builder.withCollection(collection)
             .withReqIds(reqids)
             .withPaths(paths)
@@ -1216,7 +1215,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         return getSingleEvent(builder.build());
     }
-
 
     /**
      * @param solr
