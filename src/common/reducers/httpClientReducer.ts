@@ -2,7 +2,7 @@ import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import { updateHeaderBasedOnContentType } from '../utils/http_client/utils';
-import { setGrpcDataFromDescriptor } from '../utils/http_client/grpc-utils';
+import { setGrpcDataFromDescriptor, getGrpcTabName } from '../utils/http_client/grpc-utils';
 import { ICollectionDetails, ICubeRunHistory, IHttpClientStoreState, IHttpClientTabDetails } from "./state.types";
 export interface IHttpClientAction {
     type: string,
@@ -1019,6 +1019,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab.grpcConnectionSchema = data.value;
+                        eachTab.tabName = getGrpcTabName(data.value);
                         eachTab.hasChanged = true;
                     }
                     return eachTab;
@@ -1083,6 +1084,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab.hasChanged = true;
                         eachTab.bodyType = data.value.bodyType;
                         eachTab.paramsType = data.value.paramsType;
+                        eachTab.tabName = data.value.tabName;
                         eachTab.grpcData = setGrpcDataFromDescriptor(state.appGrpcSchema, eachTab.grpcData);
                         //Request Event
                         eachTab.eventData[0].payload[0] = data.value.payloadRequestEventName;

@@ -166,7 +166,7 @@ const GRPCRequestMessage = (props: IGRPCRequestMessage) => {
     );
 
     useEffect(() => {
-        if(appGrpcSchema[selectedApp] && appGrpcSchema[selectedApp].length !== 0) {
+        if(appGrpcSchema[selectedApp] && appGrpcSchema[selectedApp].length !== 0 && (!service && !method)) {
             handleServiceChange(Object.keys(appGrpcSchema[selectedApp])[0]);
         }
     }, [appGrpcSchema, selectedApp]);
@@ -182,7 +182,7 @@ const GRPCRequestMessage = (props: IGRPCRequestMessage) => {
                         disabled={disabled}
                         onChange={(event) => handleServiceChange(event.target.value)}
                     >
-                        {services.map(service => <option value={service}>{service}</option>)}
+                        {services.map(service => <option key={`${service}${Math.random()}`} value={service}>{service}</option>)}
                     </select>
                 </div>
                 <div className='grpcrm-dropdown-container'>
@@ -193,12 +193,13 @@ const GRPCRequestMessage = (props: IGRPCRequestMessage) => {
                         disabled={disabled}
                         onChange={(event) => handleMethodChange(event.target.value)}
                     >
-                        {methods.map(method => <option value={method}>{method}</option>)}
+                        {methods.map(method => <option key={`${method}${Math.random()}`} value={method}>{method}</option>)}
                     </select>
                 </div>
             </div>
             {
-                !appGrpcSchema[selectedApp] 
+                appGrpcSchema[selectedApp] 
+                && Object.keys(appGrpcSchema[selectedApp]).length === 0
                 && 
                 <div className="grpcrm-request-view-proto-error">
                     No proto files found selected app. Please <Link to={`/configs?tabId=4`}>add proto files from gRPC configuration</Link> section.

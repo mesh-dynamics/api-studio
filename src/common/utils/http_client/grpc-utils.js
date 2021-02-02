@@ -183,6 +183,16 @@ const getRequestUrlFromSchema = (grpcConnectionSchema) => {
     return `${endpoint}.${service}/${method}`;
 }; 
 
+const getGrpcTabName = (grpcConnectionSchema) => {
+    const { endpoint, service, method } = grpcConnectionSchema;
+
+    if(!service || !method) {
+        return 'New';
+    }
+
+    return `${endpoint}.${service}/${method}`;
+}
+
 export {
     isValidJSON,
     isRequestTypeGrpc,
@@ -192,5 +202,6 @@ export {
     mergeApplicationProtoFiles,
     setGrpcDataFromDescriptor,
     getGrpcDataForSelectedValues,
-    getRequestUrlFromSchema
+    getRequestUrlFromSchema,
+    getGrpcTabName
 };

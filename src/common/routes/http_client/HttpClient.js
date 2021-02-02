@@ -21,7 +21,7 @@ import SaveToCollection from './SaveToCollection.tsx';
 import SplitSlider from "../../components/SplitSlider.tsx";
 import EditableLabel from "./EditableLabel";
 import { hasTabDataChanged } from "../../utils/http_client/utils";
-import { isRequestTypeGrpc, getRequestUrlFromSchema } from "../../utils/http_client/grpc-utils";
+import { isRequestTypeGrpc, getGrpcTabName } from "../../utils/http_client/grpc-utils";
 import Tippy from "@tippy.js/react";
 import RequestMatchType from './RequestMatchType.tsx';
 import { HttpRequestFields } from "./HttpRequestFields";
@@ -152,9 +152,11 @@ class HttpClient extends Component {
             value.paramsType = 'showBody';
             value.payloadRequestEventName = 'GRPCRequestPayload';
             value.payloadResponseEventName = 'GRPCResponsePayload';
+            value.tabName = getGrpcTabName(currentSelectedTab.grpcConnectionSchema)
         } else {
             value.bodyType = 'rawData';
             value.paramsType = 'showQueryParams';
+            value.tabName = currentSelectedTab.httpURL;
             value.payloadRequestEventName = 'HTTPRequestPayload';
             value.payloadResponseEventName = 'HTTPResponsePayload';
         }
