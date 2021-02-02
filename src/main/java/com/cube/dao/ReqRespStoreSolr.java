@@ -58,7 +58,6 @@ import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.Pair;
-import org.apache.zookeeper.Op;
 
 import com.cube.learning.DynamicInjectionGeneratedToActualConvertor;
 import com.cube.learning.InjectionExtractionMeta;
