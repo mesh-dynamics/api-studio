@@ -55,7 +55,7 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
 
     const [showDeleteGoldenConfirm, setShowDeleteGoldenConfirm] = useState(false);
 
-    const [selectedFilterItem, setSelectedFilterItem] =  useState(defaultCollectionItem);
+    const [selectedFilterItem, setSelectedFilterItem] =  useState(defaultCollectionItem as ICollectionDetails);
 
     const [nameFilter, setNameFilter] = useState('');
 
@@ -103,6 +103,15 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
         }
     };
 
+    const handleDoubleClickFromFilter = (selectedCollectionId: string) => {
+        const selectedObject: ICollectionDetails = findSelectedObjectForCollectionId(selectedCollectionId) || defaultCollectionItem;
+
+        if (selectedObject) {
+            setShowGoldenCollectionModal(false);
+            handleChangeCallback(selectedFilterItem);
+        }
+    }
+
     const handleDeleteConfirm = () => {
         deleteGolden(selectedFilterItem.id, selectedSource);
         setShowDeleteGoldenConfirm(false);
@@ -149,7 +158,7 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
             <tr
                 key={item.collec}
                 className={selectedFilterItem.collec === item.collec ? "selected-g-row" : ""}
-                onClick={() => handleClickFromFilter(item.collec)}
+                onClick={() => handleClickFromFilter(item.collec)} onDoubleClick={()=> handleDoubleClickFromFilter(item.collec)}
             >
                 <td>{item.name}</td>
                 <td>{item.label}</td>
