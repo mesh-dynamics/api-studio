@@ -666,8 +666,16 @@ public class Utils {
 			return;
 		}
 		GRPCPayload ge = (GRPCPayload) e.payload;
-		ge.setProtoDescriptor(protoDescriptorCache.get(
-			new ProtoDescriptorKey(e.customerId, e.app, e.getCollection())));
+		// If run from devtool then set collection as runId to always miss cache and fetch from DB.
+		// This is done to ensure consistency in case a new proto has been uploaded
+		if(e.getRunType() == RunType.DevTool || e.getRunType() == RunType.DevToolProxy) {
+			ge.setProtoDescriptor(protoDescriptorCache.get(
+				new ProtoDescriptorKey(e.customerId, e.app, e.runId)));
+		}
+		else {
+			ge.setProtoDescriptor(protoDescriptorCache.get(
+				new ProtoDescriptorKey(e.customerId, e.app, e.getCollection())));
+		}
 	}
 
 	static public String getHttpMethod(Event event) {
