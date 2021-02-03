@@ -52,11 +52,15 @@ const getServiceConfig = (serviceConfigs, url) => {
     }
 
     if(serviceConfigs && url) {        
-        return serviceConfigs.find(item => {
+        const sortedItems = serviceConfigs.filter(item => {
             const servicePrefix = item.servicePrefix || item.service
             const servicePrefixNormalized = servicePrefix.startsWith('/') ? servicePrefix.substring(1) : servicePrefix
             return url.startsWith(servicePrefixNormalized)
-        });
+        }).sort((i1, i2) => i2.servicePrefix.length - i1.servicePrefix.length);
+        if(sortedItems && sortedItems.length > 0) {
+            return sortedItems[0];
+        }
+
     }
     
     return null;
