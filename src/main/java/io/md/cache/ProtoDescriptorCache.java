@@ -21,6 +21,14 @@ public class ProtoDescriptorCache {
 		this.dataStore = dataStore;
 	}
 
+	public void invalidate(ProtoDescriptorKey protoDescriptorKey) {
+		loadingCache.invalidate(protoDescriptorKey);
+	}
+
+	public void invalidateAll() {
+		loadingCache.invalidateAll();
+	}
+
 	public static class ProtoDescriptorKey {
 		public final String customer;
 		public final String app;
