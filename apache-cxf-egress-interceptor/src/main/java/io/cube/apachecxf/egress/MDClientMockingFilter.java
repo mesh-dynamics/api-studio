@@ -47,7 +47,7 @@ public class MDClientMockingFilter implements ClientRequestFilter, ClientRespons
 		Span[] clientSpan = {null};
 		Scope[] clientScope = {null};
 		try {
-			LOGGER.info("Inside Egress Mocking Request filter");
+			LOGGER.debug("Inside Egress Mocking Request filter");
 			URI originalUri = clientRequestContext.getUri();
 			CommonConfig commonConfig = CommonConfig.getInstance();
 			Message message = PhaseInterceptorChain.getCurrentMessage();
@@ -57,7 +57,7 @@ public class MDClientMockingFilter implements ClientRequestFilter, ClientRespons
 
 			//mockURI is already set through app. Not able to set the URI in interceptor
 			//for apache cxf 2.7.7
-			LOGGER.info("MOCK URI : " + originalUri);
+			LOGGER.debug("MOCK URI : " + originalUri);
 			if (originalUri != null && originalUri.toString()
 				.startsWith(new URI(commonConfig.CUBE_MOCK_SERVICE_URI).toString())) {
 				Optional<Span> ingressSpan = CommonUtils.getCurrentSpan();
@@ -104,7 +104,7 @@ public class MDClientMockingFilter implements ClientRequestFilter, ClientRespons
 	@Override
 	public void filter(ClientRequestContext clientRequestContext,
 		ClientResponseContext clientResponseContext) {
-		LOGGER.info("Inside Egress Mocking Response filter");
+		LOGGER.debug("Inside Egress Mocking Response filter");
 		Message message = PhaseInterceptorChain.getCurrentMessage();
 		if (message != null) {
 			Object span = message.getExchange().get(MOCK_SPAN);

@@ -1,8 +1,5 @@
 package io.cube.apachecxf.egress;
 
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +29,7 @@ public class MDClientTracingFilter implements ClientRequestFilter {
 	@Override
 	public void filter(ClientRequestContext clientRequestContext) {
 		try {
-			LOGGER.info("Inside Egress tracing filter : " + clientRequestContext.getUri());
+			LOGGER.debug("Inside Egress tracing filter : " + clientRequestContext.getUri());
 			MultivaluedMap<String, String> mdTraceHeaders = new MultivaluedHashMap<>();
 			CommonUtils.injectContext(mdTraceHeaders);
 			MultivaluedMap<String, Object> clientHeaders = clientRequestContext.getHeaders();

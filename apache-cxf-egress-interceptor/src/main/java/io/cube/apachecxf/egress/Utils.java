@@ -34,7 +34,13 @@ public class Utils {
 
 	public static final long PAYLOAD_MAX_LIMIT = 25000000; //25 MB
 
-	private static final Config config = new Config();
+	public static final Config config = new Config();
+
+	public static boolean isSampled(MultivaluedMap<String, String> requestHeaders) {
+		return ((config.intentResolver.isIntentToRecord()
+			&& CommonConfig.getInstance().sampler.isSampled(requestHeaders))
+			|| config.intentResolver.isIntentToMock());
+	}
 
 	public static MultivaluedMap<String, String> getRequestMeta(String method, String cRequestId,
 		Optional<String> serviceName) {

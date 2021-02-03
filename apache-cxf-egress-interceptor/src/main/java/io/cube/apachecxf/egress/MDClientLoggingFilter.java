@@ -63,7 +63,7 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 		MutableBoolean didContextProceed = new MutableBoolean(false);
 
 		try {
-			LOGGER.info("aroundWriteTo : Inside Egress Logging request filter");
+			LOGGER.debug("aroundWriteTo : Inside Egress Logging request filter");
 			ClientRequestContext reqContext = null;
 			Message message = null;
 			//get the request context
@@ -84,7 +84,7 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 					Constants.EXCEPTION_STACK, e);
 		} finally {
 			if (didContextProceed.isFalse()) {
-				LOGGER.info(
+				LOGGER.debug(
 					io.md.constants.Constants.MESSAGE
 						+ ":Proceeding context in aroundWriteTo finally"
 				);
@@ -161,7 +161,7 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 		Message message = null;
 
 		try {
-			LOGGER.info("Inside Egress Logging response filter");
+			LOGGER.debug("Inside Egress Logging response filter");
 			message = PhaseInterceptorChain.getCurrentMessage();
 			span = (Span) message.getExchange().get(Constants.MD_CHILD_SPAN);
 			scope = (Scope) message.getExchange().get(Constants.MD_SCOPE);
@@ -259,7 +259,7 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 	@Override
 	public void filter(ClientRequestContext clientRequestContext) throws IOException {
 		try {
-			LOGGER.info("Inside Egress Logging request filter : " + clientRequestContext.getUri());
+			LOGGER.debug("Inside Egress Logging request filter : " + clientRequestContext.getUri());
 			Message message = PhaseInterceptorChain.getCurrentMessage();
 			if (clientRequestContext.getEntity() == null) {
 				//aroundWriteTo will not be called, as there will be no body to write.
@@ -287,7 +287,7 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 
 			Optional<Span> ingressSpan = CommonUtils.getCurrentSpan();
 			if (!ingressSpan.isPresent()) {
-				LOGGER.info(
+				LOGGER.debug(
 					Constants.MESSAGE + ":Ingress span not set. Creating default Span context"
 				);
 			}
@@ -310,15 +310,16 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 
 			newClientScope = CommonUtils.activateSpan(newClientSpan);
 
+			//Ingress span not passed, hence have to run sampling separately for egress
+			getOrRunSampling(clientRequestContext, newClientSpan);
+
 			//Either baggage has sampling set to true or this service uses its veto power to sample.
 			boolean isSampled = BooleanUtils
 				.toBoolean(newClientSpan.getBaggageItem(Constants.MD_IS_SAMPLED));
 			boolean isVetoed = BooleanUtils
 				.toBoolean(newClientSpan.getBaggageItem(Constants.MD_IS_VETOED));
 
-			//Empty ingress span pertains to DB initialization scenarios.
-			//So need to record all calls as these will not be driven by replay driver.
-			if (isSampled || isVetoed || !ingressSpan.isPresent()) {
+			if (isSampled || isVetoed) {
 				gatherDataAndLogRequest(message, writerInterceptorContext, clientRequestContext,
 					didContextProceed, newClientSpan, newClientScope);
 			} else {
@@ -329,6 +330,45 @@ public class MDClientLoggingFilter implements WriterInterceptor, ClientRequestFi
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private void getOrRunSampling(ClientRequestContext reqContext, Span span) {
+		Optional<String> fieldCategory = CommonConfig.getInstance().sampler.getFieldCategory();
+		String sampleBaggageItem = span.getBaggageItem(Constants.MD_IS_SAMPLED);
+		if (sampleBaggageItem == null) {
+			//root span
+			boolean isSampled = runSampling(reqContext, fieldCategory);
+			span.setBaggageItem(Constants.MD_IS_SAMPLED, String.valueOf(isSampled));
+		} else if (!BooleanUtils.toBoolean(sampleBaggageItem) && CommonConfig.getInstance().samplerVeto) {
+			span.setBaggageItem(Constants.MD_IS_VETOED,
+				String.valueOf(runSampling(reqContext, fieldCategory)));
+		}
+	}
+
+	private boolean runSampling(ClientRequestContext reqContext, Optional<String> fieldCategory) {
+		boolean isSampled;
+		if (!fieldCategory.isPresent()) {
+			isSampled = Utils.isSampled(new MultivaluedHashMap<>());
+		} else {
+			switch (fieldCategory.get()) {
+				case Constants.HEADERS:
+					isSampled = Utils.isSampled(reqContext.getStringHeaders());
+					break;
+				case Constants.QUERY_PARAMS:
+					isSampled = Utils.isSampled(Utils.getQueryParams(reqContext.getUri()));
+					break;
+				case Constants.API_PATH_FIELD:
+					String apiPath = reqContext.getUri().getPath();
+					MultivaluedMap<String,String> apiPathMap = new MultivaluedHashMap<>();
+					apiPathMap.add(Constants.API_PATH_FIELD, apiPath);
+					isSampled = Utils.isSampled(apiPathMap);
+					break;
+				default:
+					isSampled = Utils.isSampled(new MultivaluedHashMap<>());
+			}
+		}
+
+		return isSampled;
 	}
 
 	private void gatherDataAndLogRequest(Message message,
