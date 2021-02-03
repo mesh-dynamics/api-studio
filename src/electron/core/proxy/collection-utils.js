@@ -47,12 +47,14 @@ const transformForCollection = (proxyRes, options, responseBody) => {
     const requestPayloadDetails = extractRequestPayloadDetailsFromProxy(proxyRes, apiPath, options);
     
     const responsePayloadDetails = extractResponsePayloadDetailsFromProxy(proxyRes, responseBody);
-
+    const metaData = requestPayloadDetails.metaData;
+    delete requestPayloadDetails.metaData;
     const requestResponseFormattedData = [   
         // request
         {
             ...httpRequestEventDetails,
-            payload: ["HTTPRequestPayload", requestPayloadDetails]
+            payload: ["HTTPRequestPayload", requestPayloadDetails],
+            metaData: {...metaData,...httpRequestEventDetails.metaData }
         },
 
         // response

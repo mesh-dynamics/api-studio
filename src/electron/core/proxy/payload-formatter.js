@@ -16,11 +16,92 @@ const convertFormParamsToCubeFormat = (requestDataString) => {
 
     fieldParts.map(part => {
         const [fieldName, fieldValue] = part.split('=');
-        formParams[fieldName] = [fieldValue];
+        if(formParams[fieldName]){
+            formParams[fieldName] = [...formParams[fieldName] , fieldValue];
+        }else{
+            formParams[fieldName] = [fieldValue];
+        }
     })
 
     return formParams;
 };
+
+function getMatching(string, regex) {
+    // Helper function when using non-matching groups
+    const matches = string.match(regex)
+    if (!matches || matches.length < 2) {
+      return null
+    }
+    return matches[1]
+}
+
+const formParamParser = (rawData, boundary) =>{
+    //Ref: https://medium.com/javascript-in-plain-english/parsing-post-data-3-different-ways-in-node-js-e39d9d11ba8
+    let result = { files: [], fields: {}}
+        const rawDataArray = rawData.split(boundary)
+        for (let item of rawDataArray) {
+          // Use non-matching groups to exclude part of the result
+          let name = getMatching(item, /(?:name=")(.+?)(?:")/)
+          if (!name || !(name = name.trim())) continue
+          let value = getMatching(item, /(?:\r\n\r\n)([\S\s]*)(?:\r\n--$)/)
+          if (!value) continue
+          let filename = getMatching(item, /(?:filename=")(.*?)(?:")/)
+          if (filename && (filename = filename.trim())) {
+            // Add the file information in a files array
+            let file = {}
+            file.name = name;
+            file.value = value
+            file['filename'] = filename
+            let contentType = getMatching(item, /(?:Content-Type:)(.*?)(?:\r\n)/)
+            if (contentType && (contentType = contentType.trim())) {
+              file['Content-Type'] = contentType
+            }
+            result.files.push(file)
+          } else {
+            // Key/Value pair
+            result.fields[name] = value
+          }
+        }
+        return result;
+}
+
+const convertMultipartParamsToCubeFormat = (requestDataString, contentType) => {
+    const formParams = {};
+    const contentParts = contentType.split(';').map(contentPart => contentPart.trim());
+    if(contentParts.length > 1){
+        const boundaryParts = contentParts[1].split("=");
+        if(boundaryParts.length > 1 && boundaryParts[0] == "boundary") {
+            const boundary = boundaryParts[1];
+            const parts = formParamParser(requestDataString, boundary);
+            Object.entries(parts.fields).forEach(([key, value]) => {
+                const fieldData = { 
+                        "value": value,
+                        "type":"field"
+                    }; 
+                    if(formParams[key]){
+                        formParams[key] = [...formParams[key], fieldData];
+                    }else{
+                        formParams[key] = [fieldData];
+                    }
+            });
+            parts.files.forEach(part => {
+                const fieldData = { 
+                    "value": part.value,
+                    "type":"file",
+                    "content-type": part['Content-Type'],
+                    "filename": part.filename,
+                };
+                if(formParams[part.name]){
+                    formParams[part.name] = [...formParams[part.name], fieldData];
+                }else{
+                    formParams[part.name] = [fieldData];
+                }
+            })
+        }
+    }
+
+    return formParams;
+}
 
 const extractHeadersToCubeFormat = (headersReceived, context) => {
     let headers = {};
@@ -48,6 +129,7 @@ const extractRequestBodyAndFormParams = (headers, requestData) => {
 
     if(contentType && contentType.includes('json')) {
         return {
+            bodyType: 'rawData',
             body: requestData,
             payloadState: PAYLOAD_STATE.WRAPPED_DECODED
         }
@@ -55,7 +137,8 @@ const extractRequestBodyAndFormParams = (headers, requestData) => {
 
     if(contentType && contentType.includes('application/x-www-form-urlencoded')) {
         return {
-            formParams: convertFormParamsToCubeFormat(requestData),
+            bodyType: 'formData',
+            body: convertFormParamsToCubeFormat(requestData),
             payloadState: PAYLOAD_STATE.UNWRAPPED_DECODED
         }
     }
@@ -63,7 +146,8 @@ const extractRequestBodyAndFormParams = (headers, requestData) => {
     if(contentType && contentType && contentType.includes('multipart/form-data')) {
 
         return {
-            body: requestData, // TODO: Handle this in future
+            bodyType: 'multipartData',
+            body: convertMultipartParamsToCubeFormat(requestData, contentType), // TODO: Handle this in future
             payloadState: PAYLOAD_STATE.WRAPPED_DECODED
         }
     }
@@ -74,6 +158,7 @@ const extractRequestBodyAndFormParams = (headers, requestData) => {
             contentType.includes('text/plain')
             )) {
         return {
+            bodyType: 'rawData',
             body: requestData,
             payloadState: PAYLOAD_STATE.WRAPPED_DECODED
         }
@@ -104,7 +189,7 @@ const extractRequestPayloadDetailsFromProxy = (proxyRes, apiPath, options) => {
     const parsedUrl = url.parse(apiPath);
     const queryParams = extractQueryStringParamsToCubeFormat(parsedUrl.query);
 
-    const { formParams, body, payloadState } = extractRequestBodyAndFormParams(headers, requestData);
+    const { formParams, body, payloadState, bodyType } = extractRequestBodyAndFormParams(headers, requestData);
 
     return  {
         hdrs: extractHeadersToCubeFormat(headers, mockContext),
@@ -114,6 +199,7 @@ const extractRequestPayloadDetailsFromProxy = (proxyRes, apiPath, options) => {
         path: parsedUrl.pathname,
         method: proxyRes.req.method.toUpperCase(),
         pathSegments: parsedUrl.pathname.split("/").filter(Boolean),
+        metaData: { bodyType },
         payloadState
     }
 }
