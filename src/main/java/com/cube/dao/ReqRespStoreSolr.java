@@ -5,6 +5,8 @@ package com.cube.dao;
 
 import static io.md.core.TemplateKey.*;
 
+import io.md.cache.ProtoDescriptorCache;
+import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.constants.ReplayStatus;
 import io.md.core.AttributeRuleMap;
 import io.md.core.BatchingIterator;
@@ -2960,6 +2962,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         int maxVersion = currentDoc.map(cd -> cd.version).orElse(0);
         protoDescriptorDAO.setVersion(maxVersion+1);
         SolrInputDocument doc = protoDescriptorDAOToSolrDoc(protoDescriptorDAO);
+        config.protoDescriptorCache.invalidateAll();
         return saveDocs(doc) && softcommit();
     }
 
