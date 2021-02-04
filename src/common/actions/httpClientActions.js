@@ -201,10 +201,13 @@ export const httpClientActions = {
         }
     },
 
-    fetchEnvironments: () => async (dispatch) => {
+    fetchEnvironments: () => async (dispatch, getState) => {
         dispatch(httpClientActions.setEnvStatusText("Loading..."))
+        const {
+            cube: { selectedAppObj },
+        } = getState();
         try {
-            const environmentList = await cubeService.getAllEnvironments();
+            const environmentList = await cubeService.getAllEnvironments(selectedAppObj.id);
             dispatch(httpClientActions.setEnvironmentList(environmentList))
             dispatch(httpClientActions.resetEnvStatusText())
         } catch (e) {

@@ -286,6 +286,7 @@ function setSelectedApp (app) {
         
         // now fetch things that depend upon the app
         setTimeout(() => {
+            dispatch(httpClientActions.fetchEnvironments());
             dispatch(httpClientActions.fetchMockConfigs())
             dispatch(httpClientActions.loadFromHistory());
             dispatch(httpClientActions.loadUserCollections());
