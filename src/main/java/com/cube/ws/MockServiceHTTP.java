@@ -333,7 +333,7 @@ public class MockServiceHTTP {
                 ProtoDescriptorCache protoDescriptorCache = ProtoDescriptorCacheProvider.getInstance()
                     .get();
                 Optional<ProtoDescriptorDAO> protoDescriptorDAO =
-                    protoDescriptorCache.get(new ProtoDescriptorKey(respEventVal.customerId, respEventVal.app, "NA"));
+                    protoDescriptorCache.get(new ProtoDescriptorKey(respEventVal.customerId, respEventVal.app, respEventVal.getCollection()));
                 responsePayload.setProtoDescriptor(protoDescriptorDAO);
                 return Optional.of(builder.entity(responsePayload.getBody()).build());
             }
