@@ -265,11 +265,6 @@ public class Utils {
 		if (getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN).toLowerCase()
 			.startsWith(Constants.APPLICATION_GRPC)) {
 			GRPCRequestPayload grpcRequestPayload = new GRPCRequestPayload(hdrs, body, apiPath);
-			ProtoDescriptorCache protoDescriptorCache = ProtoDescriptorCacheProvider.getInstance()
-				.get();
-			Optional<ProtoDescriptorDAO> protoDescriptorDAO =
-				protoDescriptorCache.get(new ProtoDescriptorKey(customerId, app, "NA"));
-			grpcRequestPayload.setProtoDescriptor(protoDescriptorDAO);
 			try {
 				grpcRequestPayload.dataObj.put(Constants.METHOD_PATH,
 					new JsonDataObj(new TextNode("POST"), CubeObjectMapperProvider.getInstance()));
