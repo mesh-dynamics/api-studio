@@ -1,6 +1,7 @@
 const logger = require('electron-log');
 const _ = require('lodash');
 const url = require("url");
+const queryString = require("querystring");
 const { getParameterCaseInsensitive } = require('../../../shared/utils');
 
 // Specification for request payload state
@@ -75,7 +76,7 @@ const convertMultipartParamsToCubeFormat = (requestDataString, contentType) => {
             const parts = formParamParser(requestDataString, boundary);
             Object.entries(parts.fields).forEach(([key, value]) => {
                 const fieldData = { 
-                        "value": value,
+                        "value": queryString.unescape(value),
                         "type":"field"
                     }; 
                     if(formParams[key]){
