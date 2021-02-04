@@ -102,7 +102,7 @@ spec:
                   buf[#buf+1] = ']'
                   delim = ', '
                 end
-				function logHdrBody(handle, meta)
+                function logHdrBody(handle, meta)
                   local starttime = getEpochTime()
                   handle:logErr('logHdrBody Start time ' .. starttime)
                   local r = {['"'] = '\\"', ['\\'] = '\\\\'}
@@ -138,37 +138,28 @@ spec:
                 end
                 function envoy_on_response(response_handle)
                   local starttime = getEpochTime()
-                  local meta = {}
+                  local cubeReq = response_handle:streamInfo():dynamicMetadata():get("cubeio-request-meta")
+                  local crequestid = cubeReq["reqId"]
+                  local meta = cubeReq
                   meta["type"] = "response"
                   meta["status"] = response_handle:headers():get(":status") or ""
                   meta["timestamp"] = getEpochTime()
                   -- meta["collection"] = "testc1"
-                  meta["runType"] = "Record"
-                  meta["customerId"] = "{{customer}}"
-                  meta["app"] = "{{cube_application}}"
-                  meta["instanceId"] = "{{cube_instanceid}}"
-                  meta["service"] = "{{service_name}}"
-                  if (crequestid) then meta["c-request-id"] = crequestid end
-                  if (xrequestid) then meta["x-request-id"] = xrequestid end
-                  if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
-                  if (xb3spanid) then meta["x-b3-spanid"] = xb3spanid end
-                  if (xb3parentspanid) then meta["x-b3-parentspanid"] = xb3parentspanid end
-                  if (apiPath) then meta["apiPath"] = apiPath end
                   logHdrBody(response_handle, meta)
                   local endtime = getEpochTime()
                   response_handle:logErr('End time ' .. endtime)
-                  response_handle:logErr('envoy_on_response time ' .. (endtime - starttime))
+                  response_handle:logErr('envoy_on_response time ' .. (endtime - starttime) .. " Req Id : " .. crequestid)
                 end
                 function envoy_on_request(request_handle)
                   local service = "{{service_name}}"
                   local meta = {}
                   meta["type"] = "request"
-                  xrequestid = request_handle:headers():get("x-request-id")
-                  xb3traceid = request_handle:headers():get("x-b3-traceid")
-                  xb3spanid = request_handle:headers():get("x-b3-spanid")
-                  xb3parentspanid = request_handle:headers():get("x-b3-parentspanid")
-                  apiPath = request_handle:headers():get(":path") or "/"
-                  crequestid = service .. "-" .. xb3traceid .. "-" .. uuid()
+                  local xrequestid = request_handle:headers():get("x-request-id")
+                  local xb3traceid = request_handle:headers():get("x-b3-traceid")
+                  local xb3spanid = request_handle:headers():get("x-b3-spanid")
+                  local xb3parentspanid = request_handle:headers():get("x-b3-parentspanid")
+                  local apiPath = request_handle:headers():get(":path") or "/"
+                  local crequestid = service .. "-" .. xb3traceid .. "-" .. uuid()
                   meta["c-request-id"] = crequestid
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
@@ -180,7 +171,7 @@ spec:
                   meta["instanceId"] = "{{cube_instanceid}}"
                   meta["service"] = "{{service_name}}"
                   request_handle:logErr("Span id : " .. xb3spanid)
-                  baggageParentId = request_handle:headers():get("baggage-parent-span-id")
+                  local baggageParentId = request_handle:headers():get("baggage-parent-span-id")
                   if (baggageParentId) then request_handle:logErr("Baggage Parent id : " .. baggageParentId) end
                   if (xb3spanid) then meta["x-b3-spanid"] = xb3spanid end
                   if (xb3traceid) then meta["x-b3-traceid"] = xb3traceid end
@@ -188,6 +179,11 @@ spec:
                     meta["x-b3-parentspanid"] = baggageParentId
                   end
                   logHdrBody(request_handle, meta)
+                  for k,v in pairs(meta) do
+                    if type(v)=="string" and k~="body" then
+                      request_handle:streamInfo():dynamicMetadata():set("cubeio-request-meta", k , v)
+                    end
+                  end
                   request_handle:headers():remove("baggage-parent-span-id")
                   request_handle:headers():add("baggage-parent-span-id", xb3spanid)
                 end

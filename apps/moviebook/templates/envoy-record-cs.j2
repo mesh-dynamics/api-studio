@@ -169,25 +169,11 @@ spec:
                 end
                 function envoy_on_response(response_handle)
                   local starttime = os.clock()
-                  local cubeResp = {}
-
-                  cubeResp["customerId"] = "{{customer}}"
-                  cubeResp["app"] = "{{cube_application}}"
-                  cubeResp["instanceId"] = "{{cube_instanceid}}"
-                  cubeResp["service"] = "{{service_name}}"
-                  cubeResp["run_type"] = "Record"
-                  -- "Record"
-                  cubeResp["recordingType"] = "Golden"
-                   -- "{{run_type}}"
+                  local cubeReq = response_handle:streamInfo():dynamicMetadata():get("cubeio-request-meta")
+                  local crequestid = cubeReq["reqId"]
+                  local cubeResp = cubeReq
                   cubeResp["eventType"] = "HTTPResponse"
                   cubeResp["timestamp"] = getEpochTime()
-
-                  if (crequestid) then cubeResp["reqId"] = crequestid end
-                  if (traceId) then cubeResp["traceId"] = traceId end
-                  if (spanId) then cubeResp["spanId"] = spanId end
-                  if (parentSpanId) then cubeResp["parentSpanId"] = parentSpanId end
-                  if (apiPath) then cubeResp["apiPath"] = apiPath end
-
                   logResponse(response_handle, cubeResp)
                   local endtime = os.clock()
                   response_handle:logErr('End time ' .. endtime)
@@ -196,23 +182,21 @@ spec:
                 function envoy_on_request(request_handle)
                   local service = "{{service_name}}"
                   local cubeReq = {}
-                  xrequestid = request_handle:headers():get("x-request-id")
-                  traceId = request_handle:headers():get("x-b3-traceid")
+                  local xrequestid = request_handle:headers():get("x-request-id")
+                  local traceId = request_handle:headers():get("x-b3-traceid")
                   if not (traceId) then
                     traceId = generateTrace()
                     request_handle:logErr("Generated TRACE : " .. traceId)
                     request_handle:headers():add("x-b3-traceid", traceId)
                   end
-                  spanId = request_handle:headers():get("x-b3-spanid")
-                  parentspanid = request_handle:headers():get("x-b3-parentspanid")
+                  local spanId = request_handle:headers():get("x-b3-spanid")
+                  local parentspanid = request_handle:headers():get("x-b3-parentspanid")
 
-                  apiPath = request_handle:headers():get(":path") or "/"
+                  local apiPath = request_handle:headers():get(":path") or "/"
                   if starts_with(apiPath, "/") and apiPath ~= "/" then
                       apiPath = apiPath:sub(2, #apiPath)
                   end
-                  crequestid = service .. "-" .. traceId .. "-" .. uuid()
-                  -- crequestid = service .. "-" .. uuid()
-
+                  local crequestid = service .. "-" .. traceId .. "-" .. uuid()
                   cubeReq["customerId"] = "{{customer}}"
                   cubeReq["app"] = "{{cube_application}}"
                   cubeReq["instanceId"] = "{{cube_instanceid}}"
@@ -229,6 +213,11 @@ spec:
                   request_handle:logErr("envoy_on_request Request id: " .. crequestid)
 
                   logRequest(request_handle, cubeReq)
+                  for k,v in pairs(cubeReq) do
+                    if type(v)=="string" and k~="payload" then
+                      request_handle:streamInfo():dynamicMetadata():set("cubeio-request-meta", k , v)
+                    end
+                  end
                   request_handle:headers():remove("ot-baggage-md-parent-id")
                   request_handle:headers():add("ot-baggage-md-parent-id", spanId)
                 end
