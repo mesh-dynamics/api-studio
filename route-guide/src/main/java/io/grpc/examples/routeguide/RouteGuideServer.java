@@ -58,7 +58,7 @@ public class RouteGuideServer {
 
 
 	static String BASE_URL = System.getenv("GUIDER_SERVICE_URL");
-	static String guiderServerTarget = BASE_URL != null ? BASE_URL : "localhost:9000/guider";
+	static String guiderServerTarget = BASE_URL != null ? BASE_URL : "localhost:8981/guider";
 	static ManagedChannel guiderServerChannel = ManagedChannelBuilder.forTarget(guiderServerTarget).usePlaintext().intercept().build();
 	static GuiderBlockingStub guiderServerBlockingStub = GuiderGrpc.newBlockingStub(guiderServerChannel);
 

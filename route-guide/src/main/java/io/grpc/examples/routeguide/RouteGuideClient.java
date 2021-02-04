@@ -277,10 +277,10 @@ public class RouteGuideClient {
 
   /** Issues several different requests and then exits. */
   public static void main(String[] args) throws InterruptedException {
-//    String target = "localhost:8980";
+    String target = "localhost:8980";
 //    String target = "ae8543962e0be11ea9a68022977d7f01-457121265.us-east-2.elb.amazonaws.com:8980";
 //    String target = "staging-pm.dev.cubecorp.io:8980";
-      String target ="grpc.prod.v2.cubecorp.io:8980";
+//      String target ="grpc.prod.v2.cubecorp.io:8980";
 //    String target = "staging-pm-replay.dev.cubecorp.io:8980";
 //    String target = "grpc.dev.cubecorp.io:8980";
 //    String target = "100.64.31.44/grpc:8980";
