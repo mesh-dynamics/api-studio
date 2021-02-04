@@ -107,6 +107,9 @@ spec:
                   local xb3parentspanid = request_handle:headers():get("x-b3-parentspanid")
                   local apiPath = request_handle:headers():get(":path") or "/"
                   local crequestid = service .. "-" .. xb3traceid .. "-" .. uuid()
+                  local meta2 = {["x-request-id"] = xrequestid,["x-b3-traceid"] = xb3traceid,["x-b3-spanid"] = xb3spanid,
+                  ["x-b3-parentspanid"] = xb3parentspanid,["apiPath"] = apiPath}
+
                   meta["c-request-id"] = crequestid
                   request_handle:logErr("Request id: " .. crequestid)
                   meta["method"] = request_handle:headers():get(":method") or ""
@@ -125,5 +128,8 @@ spec:
                     if type(v)=="string" and k~="body" then
                       request_handle:streamInfo():dynamicMetadata():set("cubeio-request-meta", k , v)
                     end
+                  end
+                  for k,v in pairs(meta2) do
+                      request_handle:streamInfo():dynamicMetadata():set("cubeio-request-meta", k , v)
                   end
                 end
