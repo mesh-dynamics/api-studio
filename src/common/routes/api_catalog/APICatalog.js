@@ -22,31 +22,8 @@ class APICatalog extends Component {
     super(props);
 
     this.state = {
-      app: "",
       currentPage: "api",
     }
-  }
-
-  componentDidMount() {
-    const { dispatch } = this.props;
-
-    let urlParameters = _.chain(window.location.search)
-      .replace('?', '')
-      .split('&')
-      .map(_.partial(_.split, _, '=', 2))
-      .fromPairs()
-      .value();
-
-    const app = urlParameters["app"];
-    dispatch(cubeActions.setSelectedApp(app));
-
-    setTimeout(() => {
-      const { cube } = this.props;
-
-      this.setState({
-        app: cube.selectedApp,
-      })
-    });
   }
 
   componentWillReceiveProps(nextProps) {

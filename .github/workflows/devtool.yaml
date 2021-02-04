@@ -145,7 +145,7 @@ jobs:
           WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
 
         run: |
-          choco install yq -y
+          choco install yq --version 3.4.1 -y
           echo 'Decoding certificate string'
           $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.WIN_CSC_LINK }}")
           [IO.File]::WriteAllBytes("md-cert.pfx", $pfx_cert_byte)
@@ -180,7 +180,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
         run: |
-          choco install yq -y
+          choco install yq --version 3.4.1 -y
           echo 'Decoding certificate string'
           $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.WIN_CSC_LINK }}")
           [IO.File]::WriteAllBytes("md-cert.pfx", $pfx_cert_byte)

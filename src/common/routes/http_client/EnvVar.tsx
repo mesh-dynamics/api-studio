@@ -17,7 +17,7 @@ class EnvVar extends Component <IEnvVarProps, IEnvVarState>{
     constructor(props) {
         super(props)
         this.state = {
-            selectedEnv: {name:"", vars: []},
+            selectedEnv: {name:"", appId: 0, vars: []},
             addNew: false,
         }
     }
@@ -51,8 +51,12 @@ class EnvVar extends Component <IEnvVarProps, IEnvVarState>{
     }
 
     handleAddNewEnv = () => {
+        const {
+            cube: { selectedAppObj },
+        } = this.props;
         let selectedEnv = {
             name: "",
+            appId: selectedAppObj.id,
             vars: [],
         }
         this.showEnvList(false)
@@ -98,8 +102,9 @@ class EnvVar extends Component <IEnvVarProps, IEnvVarState>{
     }
 
     handleUpdateEnvironment = () => {
-        const {dispatch} = this.props;
+        const {dispatch, cube: { selectedAppObj }} = this.props;
         const {selectedEnv} = this.state;
+        selectedEnv.appId = selectedAppObj.id;
         if (_.isEmpty(selectedEnv.name)) {
             this.setEnvStatusText("Environment name cannot be empty", true)
             return
@@ -220,7 +225,7 @@ class EnvVar extends Component <IEnvVarProps, IEnvVarState>{
     }
 }
 
-const mapStateToProps = (state: IStoreState) =>  ({httpClient: state.httpClient});
+const mapStateToProps = (state: IStoreState) =>  ({httpClient: state.httpClient, cube: state.cube});
 
 export default connect(mapStateToProps)(EnvVar);
 

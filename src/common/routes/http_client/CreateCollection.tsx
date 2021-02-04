@@ -131,6 +131,13 @@ class CreateCollection extends Component<
                   ? ""
                   : " Please select this newly created collection from below dropdown and click save."),
             });
+          }).catch(error=>{
+            const message = error.response?.data || error.message;
+            this.setState({
+              modalCreateCollectionMessage: "Error saving: " + message,
+            });
+            console.error("Error ", error);
+            throw new Error("Error");
           });
       } catch (error) {
         this.setState({

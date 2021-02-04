@@ -546,9 +546,9 @@ const updateAgentConfig = async (updatedConfig: string) => {
     }
 };
 
-const getAllEnvironments = async () => {
+const getAllEnvironments = async (appId: number) => {
     try {
-        return await api.get(`${config.apiBaseUrl}/dtEnvironment/getAll`);
+        return await api.get(`${config.apiBaseUrl}/dtEnvironment/getAll?appId=${appId}`);
     } catch (e) {
         console.error("Error fetching environments")
         throw e;
@@ -567,7 +567,7 @@ const insertNewEnvironment = async (environment: any) => {
 
 const updateEnvironment = async (environment: any) => {
     try {
-        const url = `${config.apiBaseUrl}/dtEnvironment/update/${environment.id}`
+        const url = `${config.apiBaseUrl}/dtEnvironment/update`
         return await api.post(url, environment);
     } catch (e) {
         console.error("Error updating environment")

@@ -31,7 +31,7 @@ import {
 } from '../../utils/http_client/grpc-utils';
 import EditableLabel from "./EditableLabel";
 import { updateGoldenName } from '../../services/golden.service';
-import { IApiCatalogState, IApiTrace, ICollectionDetails, ICubeState, IHttpClientStoreState, IKeyValuePairs, IPayloadData, IStoreState, IUserAuthDetails } from "../../reducers/state.types";
+import { IApiCatalogState, IApiTrace, ICollectionDetails, ICubeState, IHttpClientStoreState, IHttpClientTabDetails, IKeyValuePairs, IPayloadData, IStoreState, IUserAuthDetails } from "../../reducers/state.types";
 import { IGetEventsApiResponse } from "../../apiResponse.types";
 import gcbrowseActions from "../../actions/gcBrowse.actions";
 import HistoryTabFilter from "../../components/HttpClient/HistoryTabFilter";
@@ -314,7 +314,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
               const collectionDetails = _.find(this.props.httpClient.userCollections, { collec: node.collectionIdAddedFromClient });
               const collectionName = collectionDetails?.name || "";
               //TODO: Create a separate class to handle below object
-              let reqObject = {
+              let reqObject: IHttpClientTabDetails = {
                 httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
                 httpURL: httpURL,
                 httpURLShowOnly: httpURL,
@@ -387,7 +387,8 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                       service: "",
                       endpoint: "", 
                       method: ""
-                    })
+                    }),
+                  hideInternalHeaders: true
               };
               //todo: Test below
               const savedTabId = this.props.onAddTab(

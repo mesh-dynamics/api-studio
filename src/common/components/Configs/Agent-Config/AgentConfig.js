@@ -101,15 +101,8 @@ class AgentConfig extends Component {
     };
 
     componentDidMount() {
-        let urlParameters = _.chain(window.location.search)
-            .replace('?', '')
-            .split('&')
-            .map(_.partial(_.split, _, '=', 2))
-            .fromPairs()
-            .value();
-        const app = urlParameters["app"];
-        const { user: { customer_name: customerId } } = this.props;
-        cubeService.fetchAgentConfigs(customerId, app).then(res => {
+        const { user: { customer_name: customerId }, cube: {selectedApp} } = this.props;
+        cubeService.fetchAgentConfigs(customerId, selectedApp).then(res => {
             this.setState({ facets: res.facets.instance_facets });
             this.setState({ configs: res.configs });
         });

@@ -5,6 +5,8 @@
     border-radius: 8px 8px 0px 0px;
     padding-top: 8px;
     display: flex;
+    height: 44px;
+    overflow-y: hidden;
 }
 
 .md-hc-tab {

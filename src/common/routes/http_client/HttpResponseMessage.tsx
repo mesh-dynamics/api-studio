@@ -317,6 +317,7 @@ class HttpResponseMessage extends Component<
         <div className="diffEditors">
           <HttpResponseHeaders
             tabId={this.props.tabId}
+            clientTabId={this.props.clientTabId}
             showHeaders={this.state.showHeaders}
             responseHeaders={this.props.responseHeaders}
             recordedResponseHeaders={this.props.recordedResponseHeaders}

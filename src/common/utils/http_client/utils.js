@@ -330,6 +330,7 @@ const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) =
         requestRunning: false,
         showTrace: null,
         grpcConnectionSchema: httpRequestEvent.grpcConnectionSchema,
+        hideInternalHeaders: true
     };
     return reqObject;
 }
@@ -748,6 +749,20 @@ const updateHeaderBasedOnContentType = (existingHeaders, type, value, currentTab
     };
     
     return [...existingHeaders, newContentTypeHeaderObject];
+}
+
+export function getInternalHeaders(){
+    return ["x-datadog-trace-id", "x-datadog-parent-id", "ot-baggage-parent-span-id",
+    "x-b3-traceid", "x-b3-spanid", "baggage-parent-span-id", "x-b3-parentspanid",
+    "x-b3-sampled","x-istio-attributes", "x-request-id","x-forwarded-proto", ":method", ":path", ":authority", "user-agent",
+    "sec-ch-ua", "sec-ch-ua-mobile", "sec-fetch-site", "sec-fetch-dest", "sec-fetch-mode", "md-trace-id",
+    "uber-trace-id", "uberctx-parent-span-id", "mdctxmd-parent-span" ];
+}
+export function filterInternalHeaders(headers, isFilter){
+    if(isFilter){
+        return headers.filter( header => getInternalHeaders().indexOf(header.name.toLowerCase()) == -1 )
+    }
+    return headers;
 }
 
 export { 
