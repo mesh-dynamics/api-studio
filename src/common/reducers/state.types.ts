@@ -467,6 +467,7 @@ export interface IHttpClientTabDetails {
   contextMap: IKeyValuePairs;
   grpcData: any; // TODO: get this the right format
   grpcConnectionSchema: IGrpcConnect;
+  hideInternalHeaders: boolean;
 }
 
 export interface IUserApiTraceHistory {
@@ -505,6 +506,16 @@ export interface ICollectionDetails {
   apiTraces: IApiTrace[];
 }
 
+export interface IServiceConfigDetails{
+  service:string;
+  url:string,
+  isMocked:boolean
+  servicePrefix: string;
+}
+export interface IMockConfigValue{
+  name: string;
+  serviceConfigs: IServiceConfigDetails[]
+}
 export interface IMockConfig {
   app: string;
   authenticate: boolean;
@@ -514,7 +525,7 @@ export interface IMockConfig {
   key: string;
   service: null
   userId: string;
-  value: string;
+  value: string; //This is JSON.stringify(IMockConfigValue)
 }
 
 export interface IGrpcSchema {

@@ -30,6 +30,7 @@ export class HttpRequestFields extends React.Component<
           isOutgoingRequest={this.props.isOutgoingRequest}
           readOnly={this.props.readOnly}
           isResponse={false}
+          clientTabId={this.props.clientTabId}
         ></HttpRequestHeaders>
         <HttpRequestQueryString
           tabId={this.props.tabId}

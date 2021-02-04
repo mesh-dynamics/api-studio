@@ -47,6 +47,7 @@ export interface IGRPCRequestMessage {
     disabled: boolean;
     id: string;
     tabId: string;
+    clientTabId: string;
     headers: any[] // TODO: get proper interface
 }
 
@@ -251,6 +252,7 @@ const GRPCRequestMessage = (props: IGRPCRequestMessage) => {
                     <div className="grpcrm-request-view-input-container">
                         <HttpRequestHeaders
                             tabId={tabId}
+                            clientTabId={props.clientTabId}
                             isOutgoingRequest={isOutgoingRequest}
                             updateParam={updateParam}
                             readOnly={readOnly}

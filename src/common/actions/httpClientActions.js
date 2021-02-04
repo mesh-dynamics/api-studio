@@ -662,5 +662,8 @@ export const httpClientActions = {
     deleteOutgoingReq: (outgoingReqTabId, tabId) => {
         return {type: httpClientConstants.DELETE_OUTGOING_REQ, data: {outgoingReqTabId, tabId}};
 
+    },
+    toggleHideInternalHeaders : (tabId) => {
+        return { type: httpClientConstants.TOGGLE_HIDE_INTERNAL_HEADERS, data : {tabId} }
     }
 }

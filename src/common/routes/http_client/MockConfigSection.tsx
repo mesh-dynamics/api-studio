@@ -1,26 +1,33 @@
-import React, { Component, Fragment, createContext } from "react";
+import React, { Fragment } from "react";
 import { connect } from "react-redux";
 import { getCurrentMockConfig } from "../../utils/http_client/utils";
 import { httpClientActions } from "../../actions/httpClientActions";
-import _ from 'lodash';
+import _ from "lodash";
 
 import MockConfigs from "./MockConfigs";
 //Remove unused Components later
+import { FormControl, FormGroup, Modal } from "react-bootstrap";
 import {
-  FormControl,
-  FormGroup,
-  Tabs,
-  Tab,
-  Panel,
-  Label,
-  Modal,
-  Button,
-  ControlLabel,
-  Glyphicon,
-} from "react-bootstrap";
+  IMockConfig,
+  IMockConfigValue,
+  IStoreState,
+} from "../../reducers/state.types";
 
-class MockConfigSection extends React.Component {
-  constructor(props) {
+export interface IMockConfigSectionState {
+  showMockConfigModal: boolean;
+  showSelectedMockConfigModal: boolean;
+}
+export interface IMockConfigSectionProps {
+  mockConfigList: IMockConfig[];
+  selectedMockConfig: string;
+  dispatch: any;
+}
+
+class MockConfigSection extends React.Component<
+  IMockConfigSectionProps,
+  IMockConfigSectionState
+> {
+  constructor(props: IMockConfigSectionProps) {
     super(props);
     this.state = {
       showMockConfigModal: false,
@@ -31,9 +38,7 @@ class MockConfigSection extends React.Component {
   // mock config
 
   renderMockConfigListDD = () => {
-    const {
-      httpClient: { mockConfigList, selectedMockConfig },
-    } = this.props;
+    const { mockConfigList, selectedMockConfig } = this.props;
     return (
       <FormGroup bsSize="small" style={{ marginBottom: "0px" }}>
         <FormControl
@@ -44,7 +49,9 @@ class MockConfigSection extends React.Component {
           onChange={this.handleMockConfigChange}
           className="btn-sm"
         >
-          <option value="NONE" disabled>Select Mock Configuration</option>
+          <option value="NONE" disabled>
+            Select Mock Configuration
+          </option>
           <option value="">All services mocked</option>
           {mockConfigList.length &&
             mockConfigList.map((mockConfig) => (
@@ -57,16 +64,20 @@ class MockConfigSection extends React.Component {
     );
   };
 
-  handleMockConfigChange = (e) => {
+  handleMockConfigChange = (
+    e: React.FormEvent<FormControl & HTMLSelectElement>
+  ) => {
     const { dispatch } = this.props;
-    dispatch(httpClientActions.setSelectedMockConfig(e.target.value));
+    dispatch(
+      httpClientActions.setSelectedMockConfig(
+        (e.target as HTMLSelectElement).value
+      )
+    );
   };
 
   renderSelectedMockConfigModal = () => {
-    const {
-      httpClient: { mockConfigList, selectedMockConfig },
-    } = this.props;
-    const currentMockConfig = getCurrentMockConfig(
+    const { mockConfigList, selectedMockConfig } = this.props;
+    const currentMockConfig: IMockConfigValue = getCurrentMockConfig(
       mockConfigList,
       selectedMockConfig
     );
@@ -85,7 +96,8 @@ class MockConfigSection extends React.Component {
         >
           <Modal.Header closeButton>
             <Modal.Title>
-              {"Mock Configuration: " + (selectedMockConfig || "All services mocked")}
+              {"Mock Configuration: " +
+                (selectedMockConfig || "All services mocked")}
             </Modal.Title>
           </Modal.Header>
           <Modal.Body>
@@ -103,7 +115,7 @@ class MockConfigSection extends React.Component {
                       </thead>
                       <tbody>
                         {currentMockConfig.serviceConfigs.map(
-                          ({ service, servicePrefix, url, isMocked}) => (
+                          ({ service, servicePrefix, url, isMocked }) => (
                             <tr key={service}>
                               <td>{service}</td>
                               <td>{servicePrefix}</td>
@@ -148,8 +160,8 @@ class MockConfigSection extends React.Component {
   };
 
   hideMockConfigModal = () => {
-    const {dispatch} = this.props;
-    dispatch(httpClientActions.resetMockConfigStatusText())
+    const { dispatch } = this.props;
+    dispatch(httpClientActions.resetMockConfigStatusText());
     this.setState({ showMockConfigModal: false });
   };
 
@@ -186,12 +198,13 @@ class MockConfigSection extends React.Component {
   }
 }
 
-function mapStateToProps(state) {
-  const { cube, apiCatalog, httpClient } = state;
+function mapStateToProps(state: IStoreState) {
+  const {
+    httpClient: { mockConfigList, selectedMockConfig },
+  } = state;
   return {
-    cube,
-    apiCatalog,
-    httpClient,
+    mockConfigList,
+    selectedMockConfig,
   };
 }
 

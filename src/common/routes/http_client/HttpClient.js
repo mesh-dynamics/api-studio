@@ -768,6 +768,7 @@ class HttpClient extends Component {
                                                 isOutgoingRequest={selectedTraceTableReqTab.isOutgoingRequest} 
                                                 id="" 
                                                 readOnly={false}
+                                                clientTabId={currentSelectedTab.id}
                                             />
                                         </div>
                                         <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0", height:'100%'}}>
@@ -792,6 +793,7 @@ class HttpClient extends Component {
                                                     readOnly={true}
                                                     id="test"
                                                     disabled={true}
+                                                    clientTabId={currentSelectedTab.id}
                                                 />
                                             )}
                                         </div>
@@ -821,6 +823,7 @@ class HttpClient extends Component {
                                                 isOutgoingRequest={selectedTraceTableReqTab.isOutgoingRequest} 
                                                 id="" 
                                                 readOnly={false}
+                                                clientTabId={currentSelectedTab.id}
                                             />
                                         </div>
                                         <div style={{flex: "1", padding: "0.5rem", height:'100%', minWidth: "0px"}}>
@@ -848,6 +851,7 @@ class HttpClient extends Component {
                                                         id="test" 
                                                         setBodyRef={this.setRequestBodyRef}
                                                         readOnly={true}
+                                                        clientTabId={currentSelectedTab.id}
                                                     />
                                                 )
                                             }
@@ -876,6 +880,7 @@ class HttpClient extends Component {
                                             addOrRemoveParam={this.props.addOrRemoveParam} 
                                             updateGrpcConnectData={this.props.updateGrpcConnectData}
                                             isOutgoingRequest={selectedTraceTableReqTab.isOutgoingRequest} 
+                                            clientTabId={currentSelectedTab.id}
                                         />
                                     </div>
                                     <div style={{flex: "1", padding: "0.5rem", paddingLeft: "0", height:'100%'}}>
@@ -897,6 +902,7 @@ class HttpClient extends Component {
                                                 addOrRemoveParam={this.props.addOrRemoveParam} 
                                                 updateGrpcConnectData={this.props.updateGrpcConnectData}
                                                 isOutgoingRequest={selectedTraceTableTestReqTab.isOutgoingRequest}
+                                                clientTabId={currentSelectedTab.id}
                                             />
                                         )}
                                     </div>
@@ -911,6 +917,7 @@ class HttpClient extends Component {
                             minSpace={(selectedTraceTableReqTab.paramsType == "body" ? 200: 50)}/> 
                         <HttpResponseMessage 
                             tabId={selectedTraceTableReqTab.id}
+                            clientTabId = {currentSelectedTab.id}
                             /** Belongs to RHS */
                             responseStatus={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseStatus : selectedTraceTableReqTab.responseStatus}
                             responseStatusText={""}
