@@ -12,6 +12,7 @@ import com.cubeui.backend.web.exception.RecordNotFoundException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,14 +63,13 @@ public class ApiAccessTokenController {
         break;
       }
     }
-    return meshDUser.map(u -> {
-      Optional<ApiAccessToken> apiAccessToken = apiAccessTokenRepository.findByUserId(u.getId());
-      if(apiAccessToken.isEmpty() || updateToken) {
-        apiAccessTokenRepository.deleteByUserId(u.getId());
-        return ResponseEntity.ok(buildResponse(createApiAccessToken(u)));
-      }
-      return ResponseEntity.ok(buildResponse(apiAccessToken.get()));
-    }).orElseGet(() -> ResponseEntity.ok(buildResponse(createNewUserAndToken(customer))));
+    User meshUser = meshDUser.orElseGet(() -> createNewUser(customer));
+    if(updateToken) {
+      apiAccessTokenRepository.deleteByUserId(meshUser.getId());
+    }
+    ApiAccessToken apiAccessToken = apiAccessTokenRepository.findByUserId(meshUser.getId())
+        .orElseGet(() -> createApiAccessToken(meshUser));
+    return ResponseEntity.ok(buildResponse(apiAccessToken));
   }
 
   private Map buildResponse(ApiAccessToken apiAccessToken){
@@ -77,17 +77,15 @@ public class ApiAccessTokenController {
 
   }
 
-
-  private ApiAccessToken createNewUserAndToken(Customer customer) {
-    String encodedPassword = this.passwordEncoder.encode(MESHD_AGENT_USER);
-    User newUser = this.userRepository.save(User.builder()
+  private User createNewUser(Customer customer) {
+    String encodedPassword = this.passwordEncoder.encode(MESHD_AGENT_USER.concat(UUID.randomUUID().toString()));
+    return this.userRepository.save(User.builder()
         .name(MESHD_AGENT_USER)
         .username(MESHD_AGENT_USER.concat("@").concat(customer.getDomainUrls().iterator().next()))
         .customer(customer)
         .password(encodedPassword)
         .activated(false)
         .build());
-    return createApiAccessToken(newUser);
   }
 
   private ApiAccessToken createApiAccessToken(User user) {
