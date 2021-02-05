@@ -20,8 +20,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
-import io.md.cache.ProtoDescriptorCache;
-import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.core.Comparator.Diff;
 import io.md.dao.ApiTraceResponse;
 import io.md.dao.ApiTraceResponse.ServiceReqRes;
@@ -413,6 +411,10 @@ public class AnalyzeWS {
 
         String replayId = queryParams.getFirst("replayId");
 
+        Boolean includeConforming = Optional
+            .ofNullable(queryParams.getFirst("includeConforming")).flatMap(Utils::strToBool)
+            .orElse(false);
+
         if (replayId == null){
             return Response.serverError().entity(
                 Utils.buildErrorResponse(Constants.ERROR, Constants.NOT_PRESENT,
@@ -450,7 +452,8 @@ public class AnalyzeWS {
 
             List<TemplateEntryMeta> finalMetaList = ctLearner.learnComparisonRules(reqIdToMethodMap,
                 reqRespMatchResultList,
-                rrstore.getTemplateSet(replay.customerId, replay.app, replay.templateVersion));
+                rrstore.getTemplateSet(replay.customerId, replay.app, replay.templateVersion),
+                includeConforming);
 
             try {
 
