@@ -72,7 +72,7 @@ public class CompareTemplatesLearner {
         return context.getRule(key);
     }
 
-    void convertTemplateEntriesToRules(LearningContext context, String service, String requestPath,
+    void addAllTemplateEntriesAsRules(LearningContext context, String service, String requestPath,
         Type type, Optional<String> method, CompareTemplate template) {
 
         TemplateKey templateKey = new TemplateKey(templateVersion, customer, app,
@@ -131,7 +131,7 @@ public class CompareTemplatesLearner {
         if (!context.isKeyCovered(templateKey)) {
             context.addCoveredKey(templateKey);
             getTemplate(templateKey)
-                .ifPresent(template -> convertTemplateEntriesToRules(context, service,
+                .ifPresent(template -> addAllTemplateEntriesAsRules(context, service,
                     apiPath, reqOrResp, method, template));
         }
 
@@ -262,7 +262,7 @@ public class CompareTemplatesLearner {
         LearningContext context = new LearningContext();
 
         existingTemplateSet.ifPresent(templateSet -> templateSet.templates
-            .forEach(template -> convertTemplateEntriesToRules(context, template.service,
+            .forEach(template -> addAllTemplateEntriesAsRules(context, template.service,
                 template.requestPath, template.type, template.method, template)));
 
         reqRespMatchResultList.forEach(res -> {
