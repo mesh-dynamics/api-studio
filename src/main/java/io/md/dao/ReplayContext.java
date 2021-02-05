@@ -11,7 +11,7 @@ public class ReplayContext {
     public Optional<String> reqTraceId;
     public Optional<Instant> reqStartTs;
     public Optional<Instant> reqEndTs;
-    public Optional<String> currentRecording;
+    public Optional<String> currentCollection;
 
     public final Map<String , Instant> mockReqsMatchInfo = new HashMap<>();
 
@@ -19,19 +19,19 @@ public class ReplayContext {
         reqTraceId = Optional.empty();
         reqStartTs = Optional.empty();
         reqEndTs = Optional.empty();
-        currentRecording = Optional.empty();
+        currentCollection = Optional.empty();
     }
 
-    public ReplayContext(String reqTraceId , Instant reqStartTs , Instant reqEndTs){
+    public ReplayContext(String reqTraceId , Instant reqStartTs , Instant reqEndTs , String currentCollection){
         this.reqTraceId = Optional.ofNullable(reqTraceId);
         this.reqStartTs = Optional.ofNullable(reqStartTs);
         this.reqEndTs = Optional.ofNullable(reqEndTs);
-        this.currentRecording = Optional.empty();
+        this.currentCollection = Optional.ofNullable(currentCollection);
     }
 
     @JsonIgnore
-    public void setCurrentRecordingCollection(String currentRecording) {
-        this.currentRecording = Optional.of(currentRecording);
+    public void setCurrentCollection(String currentRecording) {
+        this.currentCollection = Optional.of(currentRecording);
     }
 
 

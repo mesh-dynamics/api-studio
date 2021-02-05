@@ -9,6 +9,7 @@ import java.util.Optional;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.md.constants.ReplayStatus;
+import io.md.core.CollectionKey;
 import io.md.core.ReplayTypeEnum;
 
 public class Replay {
@@ -49,6 +50,8 @@ public class Replay {
 	public boolean tracePropagation = true;
 	public boolean storeToDatastore = false;
 	public Optional<ReplayContext> replayContext = Optional.empty();
+	@JsonIgnore
+	public final CollectionKey collectionKey;
 
 	public Replay(String endpoint, String customerId, String app, String instanceId,
 		List<String> collection, String userId, List<String> reqIds,
@@ -98,6 +101,7 @@ public class Replay {
 		this.runId = runId != null ? runId : this.replayId;
 		this.tracePropagation = tracePropagation;
 		this.storeToDatastore = storeToDatastore;
+		this.collectionKey = new CollectionKey(customerId, app, instanceId);
 	}
 
 	//for deserialization
@@ -130,11 +134,12 @@ public class Replay {
 		analysisCompleteTimestamp = null;
 		staticInjectionMap = null;
 		runId = "";
+		this.collectionKey = new CollectionKey(customerId, app, instanceId);
 	}
 
 	@JsonIgnore
 	public String getCurrentRecording(){
-		return replayContext.flatMap(ctx->ctx.currentRecording).orElse(collection.get(0));
+		return replayContext.flatMap(ctx->ctx.currentCollection).orElse(collection.get(0));
 	}
 
 }
