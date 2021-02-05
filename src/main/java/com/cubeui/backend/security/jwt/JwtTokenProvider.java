@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
@@ -70,6 +72,19 @@ public class JwtTokenProvider {
         Claims claims = Jwts.claims().setSubject(username);
         claims.put("roles", roles);
 
+        return buildToken(claims, validityInSeconds);
+    }
+
+    public String createToken(User user, long validityInSeconds) {
+
+        Claims claims = Jwts.claims().setSubject(user.getUsername());
+        claims.put("roles", user.getRoles());
+        claims.put("type", "pat");
+        claims.put("customer_id", user.getCustomer().getId());
+        return buildToken(claims, validityInSeconds);
+    }
+
+    private String buildToken(Claims claims, long validityInSeconds) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityInSeconds * 1000);
 
@@ -146,10 +161,9 @@ public class JwtTokenProvider {
                     log.trace("Found that the token is of type API token");
                     long customerId = claims.getBody().get("customer_id", Long.class);
                     //The token is of type personal access token, so check the DB to confirm that it is not revoked
-                    Optional<List<ApiAccessToken>> accessToken = userRepository.findByUsernameIgnoreCaseAndCustomerId(getUsername(token, secretKey), customerId)
+                    Optional<ApiAccessToken> accessToken = userRepository.findByUsernameIgnoreCaseAndCustomerId(getUsername(token, secretKey), customerId)
                         .map(User::getId).flatMap(apiAccessTokenRepository::findByUserId);
-                    value =  accessToken.flatMap(list -> list.stream().findFirst())
-                        .map(ApiAccessToken::getToken)
+                    value =  accessToken.map(ApiAccessToken::getToken)
                         .filter(token::equals)
                         .isPresent();
                 } else {
