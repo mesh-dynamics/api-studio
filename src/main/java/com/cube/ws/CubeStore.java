@@ -14,6 +14,7 @@ import com.cube.sequence.SeqMgr;
 
 import io.md.core.ApiGenPathMgr;
 import io.md.core.CollectionKey;
+import io.md.dao.CustomerAppConfig.Builder;
 import io.md.dao.DataObj.DataObjProcessingException;
 import io.md.dao.Event.EventType;
 import io.md.injection.DynamicInjector;
@@ -34,6 +35,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import java.util.stream.Stream;
@@ -67,6 +69,7 @@ import org.apache.solr.common.util.Pair;
 import org.glassfish.jersey.media.multipart.BodyPartEntity;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
@@ -74,6 +77,7 @@ import org.msgpack.value.ValueType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Sets;
 
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.UtilException;
@@ -1313,11 +1317,13 @@ public class CubeStore {
                 .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"version needs to be given for a golden")).build());
             return;
         }
-        copyRecording(recordingId, name, label, templateVersion, userId, type).thenApply(v -> asyncResponse.resume(v));
+        copyRecording(recordingId, name, label, templateVersion, userId, type, Optional.empty()).thenApply(v -> asyncResponse.resume(v));
     }
 
-    private CompletableFuture<Response> copyRecording(String recordingId, Optional<String> name, Optional<String> label,
-        Optional<String> templateVersion, String userId, RecordingType type) {
+    private CompletableFuture<Response> copyRecording(String recordingId, Optional<String> name,
+        Optional<String> label,
+        Optional<String> templateVersion, String userId, RecordingType type,
+        Optional<Predicate<Event>> eventFilter) {
         Instant timeStamp = Instant.now();
         String labelValue = label.orElse(timeStamp.toString());
         Optional<Recording> recordingForId = rrstore.getRecording(recordingId);
@@ -1334,7 +1340,7 @@ public class CubeStore {
             Recording  updatedRecording = createRecordingObjectFrom(recording, templateVersion,
                 name, Optional.of(userId), timeStamp, labelValue, type);
             if(rrstore.saveRecording(updatedRecording)) {
-                return CompletableFuture.supplyAsync(() -> copyEvents(recording, updatedRecording, timeStamp)).thenApply(success ->
+                return CompletableFuture.supplyAsync(() -> copyEvents(recording, updatedRecording, timeStamp, eventFilter)).thenApply(success ->
                     success ? Response.ok().type(MediaType.APPLICATION_JSON).entity(updatedRecording).build() : Response.status(Status.INTERNAL_SERVER_ERROR)
                         .type(MediaType.APPLICATION_JSON)
                         .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"Error while copying events"))
@@ -1352,14 +1358,14 @@ public class CubeStore {
     }
 
 
-    public boolean copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp) {
+    public boolean copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp, Optional<Predicate<Event>> eventFilter) {
         EventQuery.Builder builder = new EventQuery.Builder(fromRecording.customerId, fromRecording.app, Collections.emptyList());
         builder.withCollection(fromRecording.collection);
         builder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
         Result<Event> result = rrstore.getEvents(builder.build());
         Map<String, String> reqIdMap = new HashMap<>();
         final boolean[] eventCreationFailure = new boolean[1];
-        Stream<Event> eventStream = result.getObjects().map(event -> {
+        Stream<Event> eventStream = result.getObjects().filter(eventFilter.orElse(event -> true)).map(event -> {
             try {
                 String reqId = reqIdMap.get(event.getReqId());
                 if(reqId == null) {
@@ -1389,6 +1395,74 @@ public class CubeStore {
         var eventsStream =  SeqMgr.createSeqId(eventStream , estimatedReqSize);
         boolean batchSaveResult = rrstore.save(eventsStream) && rrstore.commit();
         return batchSaveResult;
+    }
+
+    /**
+     * Takes a Recording Id and a list of optional status codes. Creates a new
+     * Recording having only requests with responses, eliminating any responses
+     * with the said status codes.
+     *
+     * @param asyncResponse
+     * @param recordingId Recording Id to be sanitized
+     * @param status List of status codes to remove from the Recording
+     */
+    @POST
+    @Path("sanitizeGolden")
+    @Produces(MediaType.APPLICATION_JSON)
+    public void sanitizeGoldenRecording(@Suspended AsyncResponse asyncResponse,
+        @QueryParam("recordingId") String recordingId,
+        @QueryParam("ignoreStatus") List<String> status) {
+
+        Optional<Recording> recording = rrstore.getRecording(recordingId);
+
+        if (recording.isEmpty()) {
+            asyncResponse
+                .resume(Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).
+                    entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,
+                        "No such Recording found")).build());
+            return;
+        }
+
+        Recording originalRec = recording.get();
+
+        Set<String> invalidReqIds = getInvalidReqIdsToFilter(originalRec, status);
+
+        Predicate<Event> isInvalidReqId = (event) -> !invalidReqIds.contains(event.reqId);
+
+        copyRecording(recordingId, Optional.empty(), Optional.empty(), Optional.empty(),
+            originalRec.userId, originalRec.recordingType, Optional.of(isInvalidReqId))
+            .thenApply(v -> asyncResponse.resume(v));
+
+    }
+
+    private Set<String> getInvalidReqIdsToFilter(Recording originalRec, List<String> status) {
+        Set<String> reqIds = new HashSet<>();
+        Set<String> respIds = new HashSet<>();
+
+        //TODO: Use fieldList to reduce the data fetched.
+        EventQuery.Builder reqBuilder = new EventQuery.Builder(originalRec.customerId,
+            originalRec.app,
+            Stream.concat(Event.REQUEST_EVENT_TYPES.stream(), Event.RESPONSE_EVENT_TYPES.stream())
+                .collect(Collectors.toList()));
+        reqBuilder.withCollection(originalRec.collection);
+        reqBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
+        Result<Event> reqRespEvents = rrstore.getEvents(reqBuilder.build());
+
+        Set<String> badStatusCodes = Optional.ofNullable(status).map(HashSet::new)
+            .orElseGet(() -> new HashSet());
+
+        reqRespEvents.getObjects().forEach(event -> {
+            if (event.payload instanceof RequestPayload) {
+                reqIds.add(event.reqId);
+            } else if (event.payload instanceof ResponsePayload) {
+                if (!badStatusCodes.contains(((ResponsePayload) event.payload).getStatusCode())) {
+                    respIds.add(event.reqId);
+                }
+            }
+        });
+
+        return new HashSet<>(Sets.difference(reqIds, respIds));
+
     }
 
     @POST
@@ -2104,12 +2178,11 @@ public class CubeStore {
                 io.md.utils.Utils.setProtoDescriptorGrpcEvent(requestEvent, config.protoDescriptorCache);
                 // Note the state for stored event in solr will be UnwrappedDecoded if this is directly coming from devtool
                 // then the state has to be set as UnwrappedDecoded by devtool.
-                ((GRPCPayload) requestEvent.payload).wrapBodyAndEncode();
-            } else if (requestEvent.payload instanceof HTTPPayload) {
-                // dummy call to getBody to wrap body
-                ((HTTPPayload) requestEvent.payload).getBody();
             }
-
+            if (requestEvent.payload instanceof HTTPPayload) {
+                // wrap and encode the body to be used by UI
+                ((HTTPPayload) requestEvent.payload).wrapBodyAndEncode();
+            }
 
             Optional<Recording> optionalRecording = rrstore.getRecording(recordingOrReplayId);
             Optional<String> recordOrReplayRunId = optionalRecording.map(recording -> {
@@ -2199,6 +2272,16 @@ public class CubeStore {
     @Produces(MediaType.APPLICATION_JSON)
     public Response setAppConfiguration(CustomerAppConfig custAppCfg ) {
 
+        //Get existing appCfg
+        Optional<CustomerAppConfig> existing = rrstore.getAppConfiguration(custAppCfg.customerId , custAppCfg.app);
+        //If the existing app cfg Id in solr is different then autoCalculated
+        if(existing.isPresent() && !existing.get().id.equals(custAppCfg.id)){
+            CustomerAppConfig.Builder builder = new Builder(custAppCfg.customerId , custAppCfg.app);
+            custAppCfg.tracer.ifPresent(builder::withTracer);
+            custAppCfg.apiGenericPaths.ifPresent(builder::withApiGenericPaths);
+            builder.withId(existing.get().id);
+            custAppCfg = builder.build();
+        }
         if(rrstore.saveConfig(custAppCfg)){
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(
                 buildSuccessResponse(Constants.SUCCESS, new JSONObject(Map.of(Constants.MESSAGE, "The customer app config tag has been changed",
@@ -2235,7 +2318,7 @@ public class CubeStore {
         Instant timeStamp = Instant.now();
         if(firstRecording.recordingType == RecordingType.UserGolden && newType.isEmpty()) {
             thirdRecording = firstRecording;
-            CompletableFuture.runAsync(() -> copyEvents(secondRecording, thirdRecording, timeStamp))
+            CompletableFuture.runAsync(() -> copyEvents(secondRecording, thirdRecording, timeStamp, Optional.empty()))
                 .thenApply(v -> asyncResponse.resume(Response.ok().type(MediaType.APPLICATION_JSON).entity(thirdRecording).build()));
         } else {
             thirdRecording = createRecordingObjectFrom(firstRecording, Optional.empty(),
@@ -2243,8 +2326,8 @@ public class CubeStore {
                 timeStamp, timeStamp.toString(), newType.orElse(RecordingType.UserGolden));
             if(rrstore.saveRecording(thirdRecording)) {
                 CompletableFuture.runAsync(() -> {
-                    copyEvents(firstRecording, thirdRecording, timeStamp);
-                    copyEvents(secondRecording, thirdRecording, timeStamp);
+                    copyEvents(firstRecording, thirdRecording, timeStamp, Optional.empty());
+                    copyEvents(secondRecording, thirdRecording, timeStamp, Optional.empty());
                 }).thenApply(v -> asyncResponse.resume(Response.ok().type(MediaType.APPLICATION_JSON).entity(thirdRecording).build()));
             }
         }

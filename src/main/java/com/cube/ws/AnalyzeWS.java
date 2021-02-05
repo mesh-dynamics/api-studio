@@ -29,6 +29,7 @@ import io.md.constants.ReplayStatus;
 import io.md.core.Comparator.Match;
 import io.md.dao.ConvertEventPayloadResponse;
 import io.md.dao.Event.EventType;
+import io.md.dao.EventQuery;
 import io.md.dao.GRPCPayload;
 import io.md.dao.Payload;
 import io.md.dao.RecordingOperationSetSP;
@@ -877,15 +878,49 @@ public class AnalyzeWS {
                 .collect(Collectors.toList());
             List<String> reqIds = res.stream().map(r -> r.recordReqId).flatMap(Optional::stream)
                 .collect(Collectors.toList());
+		    List<String> replayReqIds = res.stream().map(r -> r.replayReqId).flatMap(Optional::stream)
+			    .collect(Collectors.toList());
 
             Map<String, Event> requestMap = new HashMap<>();
+		    Map<String, Event> respMap = new HashMap<>();
             if (!reqIds.isEmpty()) {
                 // empty reqId list would lead to returning of all requests, so check for it
-                Result<Event> requestResult = rrstore
-                    .getRequests(replay.customerId, replay.app, replay.collection,
-                        reqIds, Collections.emptyList(), Collections.emptyList(), Optional.empty());
-                requestResult.getObjects().forEach(req -> requestMap.put(req.reqId, req));
+	            EventQuery.Builder reqBuilder = new EventQuery.Builder(replay.customerId,
+		            replay.app,
+		            includeDiff.orElse(false) ? Collections.emptyList()
+			            : Event.REQUEST_EVENT_TYPES);
+	            reqBuilder.withCollection(replay.collection);
+	            reqBuilder.withReqIds(reqIds);
+	            reqBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
+	            Result<Event> reqRespEvents = rrstore.getEvents(reqBuilder.build());
+
+	            reqRespEvents.getObjects().forEach(event -> {
+		            if (event.payload instanceof RequestPayload) {
+			            requestMap.put(event.reqId, event);
+		            } else if (event.payload instanceof ResponsePayload) {
+			            respMap.put(event.reqId, event);
+		            }
+	            });
             }
+
+		    if (includeDiff.orElse(false)) {
+			    EventQuery.Builder reqBuilder = new EventQuery.Builder(replay.customerId,
+				    replay.app,
+				    Stream.concat(Event.REQUEST_EVENT_TYPES.stream(), Event.RESPONSE_EVENT_TYPES.stream())
+					    .collect(Collectors.toList()));
+			    reqBuilder.withCollection(replay.replayId);
+			    reqBuilder.withReqIds(replayReqIds);
+			    reqBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
+			    Result<Event> reqRespEvents = rrstore.getEvents(reqBuilder.build());
+
+			    reqRespEvents.getObjects().forEach(event -> {
+				    if (event.payload instanceof RequestPayload) {
+					    requestMap.put(event.reqId, event);
+				    } else if (event.payload instanceof ResponsePayload) {
+					    respMap.put(event.reqId, event);
+				    }
+			    });
+		    }
 
 		    return res.stream().map(matchRes -> {
 			    Optional<Event> reqEvent = matchRes.recordReqId
@@ -914,7 +949,7 @@ public class AnalyzeWS {
 			    if (includeDiff.orElse(false)) {
 				    recordedRequest = request;
 				    Optional<Event> replayedRequestEvent = matchRes.replayReqId
-					    .flatMap(rrstore::getRequestEvent);
+					    .flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)));
 				    replayedRequest = replayedRequestEvent
 					    .map(e -> {
 						    if(e.payload instanceof GRPCPayload) {
@@ -941,7 +976,7 @@ public class AnalyzeWS {
 				    List<String> pathsToKeep = getPathsToKeep(responseCompDiffList);
 
 				    Optional<Event> recordResponseEvent = matchRes.recordReqId
-					    .flatMap(rrstore::getResponseEvent);
+					    .flatMap(reqId -> Optional.ofNullable(respMap.get(reqId)));
 
 				    Optional<ConvertEventPayloadResponse> convertRecordResponse =
 					    extractPayload(matchRes.respCompareRes.recordedResponse, recordResponseEvent)
@@ -952,7 +987,7 @@ public class AnalyzeWS {
 				    recordRespTime = recordResponseEvent.map(e -> e.timestamp.toEpochMilli());
 
 				    Optional<Event> replayResponseEvent = matchRes.replayReqId
-					    .flatMap(rrstore::getResponseEvent);
+					    .flatMap(reqId -> Optional.ofNullable(respMap.get(reqId)));
 
 				    Optional<ConvertEventPayloadResponse> convertReplayResponse =
 					    extractPayload(matchRes.respCompareRes.replayedResponse, replayResponseEvent)
