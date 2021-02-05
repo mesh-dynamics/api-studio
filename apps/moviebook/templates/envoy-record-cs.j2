@@ -219,6 +219,9 @@ spec:
                       request_handle:streamInfo():dynamicMetadata():set("cubeio-request-meta", k , v)
                     end
                   end
-                  request_handle:headers():remove("ot-baggage-md-parent-id")
-                  request_handle:headers():add("ot-baggage-md-parent-id", spanId)
+
+
+                  request_handle:headers():remove("baggage-parent-span-id")
+                  request_handle:headers():add("baggage-parent-span-id", spanId)
+                  
                 end
