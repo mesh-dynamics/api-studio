@@ -191,7 +191,7 @@ spec:
                     request_handle:headers():add("x-b3-traceid", traceId)
                   end
                   local spanId = request_handle:headers():get("x-b3-spanid")
-                  local parentspanid = request_handle:headers():get("x-b3-parentspanid")
+                  local parentSpanId = request_handle:headers():get("x-b3-parentspanid")
 
                   local apiPath = request_handle:headers():get(":path") or "/"
                   if starts_with(apiPath, "/") and apiPath ~= "/" then
