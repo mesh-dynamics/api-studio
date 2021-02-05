@@ -1,6 +1,5 @@
 package com.cube.learning;
 
-import com.cube.core.CompareTemplateVersioned;
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
 import com.cube.learning.TemplateEntryMeta.Action;
@@ -100,9 +99,9 @@ public class CompareTemplatesLearner {
         }
     }
 
-    RuleStatus violatesRule(RuleStatus status) {
+    RuleStatus violatesRule(RuleStatus currentStatus) {
         RuleStatus negatedStatus;
-        switch (status) {
+        switch (currentStatus) {
             case ConformsToDefault:
             case ViolatesDefault:
                 negatedStatus = RuleStatus.ViolatesDefault;
@@ -116,7 +115,7 @@ public class CompareTemplatesLearner {
                 negatedStatus = RuleStatus.ViolatesInherited;
                 break;
             default:
-                negatedStatus = status;
+                negatedStatus = currentStatus;
         }
         return negatedStatus;
     }
