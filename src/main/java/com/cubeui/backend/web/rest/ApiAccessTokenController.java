@@ -9,6 +9,7 @@ import com.cubeui.backend.repository.UserRepository;
 import com.cubeui.backend.security.jwt.JwtTokenProvider;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.web.exception.RecordNotFoundException;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
@@ -65,10 +66,15 @@ public class ApiAccessTokenController {
       Optional<ApiAccessToken> apiAccessToken = apiAccessTokenRepository.findByUserId(u.getId());
       if(apiAccessToken.isEmpty() || updateToken) {
         apiAccessTokenRepository.deleteByUserId(u.getId());
-        return ResponseEntity.ok(createApiAccessToken(u));
+        return ResponseEntity.ok(buildResponse(createApiAccessToken(u)));
       }
-      return ResponseEntity.ok(apiAccessToken);
-    }).orElseGet(() -> ResponseEntity.ok(createNewUserAndToken(customer)));
+      return ResponseEntity.ok(buildResponse(apiAccessToken.get()));
+    }).orElseGet(() -> ResponseEntity.ok(buildResponse(createNewUserAndToken(customer))));
+  }
+
+  private Map buildResponse(ApiAccessToken apiAccessToken){
+    return Map.of("token", apiAccessToken.getToken());
+
   }
 
 
