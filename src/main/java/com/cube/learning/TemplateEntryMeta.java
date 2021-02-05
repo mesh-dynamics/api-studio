@@ -34,19 +34,19 @@ public class TemplateEntryMeta implements Comparable{
     Action action;
 
     @JsonProperty("Service")
-    public String service;
+    final public String service;
 
     @JsonProperty("ApiPath")
-    String apiPath;
+    final String apiPath;
 
     @JsonProperty("EventType")
-    Type reqOrResp;
+    final Type reqOrResp;
 
     @JsonProperty("Method")
-    String method;
+    final String method;
 
     @JsonProperty("JsonPath")
-    String jsonPath;
+    final String jsonPath;
 
     @JsonProperty("NumViolationsComparison")
     Integer numViolationsComparison = 0;
@@ -64,10 +64,10 @@ public class TemplateEntryMeta implements Comparable{
     private Optional<PresenceType> newPt;
 
     @JsonProperty("CurrentComparisonType")
-    ComparisonType currentCt;
+    final ComparisonType currentCt;
 
     @JsonProperty("CurrentPresenceType")
-    PresenceType currentPt;
+    final PresenceType currentPt;
 
     Optional<TemplateEntryMeta> parentMeta = Optional.empty();
 
@@ -97,10 +97,10 @@ public class TemplateEntryMeta implements Comparable{
 
 
     @JsonGetter("NewComparisonType")
-    public String getNewCt() { return newCt.map(ct -> ct.toString()).orElse(EMPTY); }
+    public String getNewCt() { return newCt.map(Enum::toString).orElse(EMPTY); }
 
     @JsonGetter("NewPresenceType")
-    public String getNewPt() {return newPt.map(pt -> pt.toString()).orElse(EMPTY); }
+    public String getNewPt() {return newPt.map(Enum::toString).orElse(EMPTY); }
 
     @JsonSetter("NewComparisonType")
     public void setNewCt(String newCt) {
@@ -114,23 +114,15 @@ public class TemplateEntryMeta implements Comparable{
 
     public void setNewPt(Optional<PresenceType> newPt) { this.newPt = newPt;}
 
-
-    //    public TemplateEntryMeta(String service, String apiPath, Type reqOrResp, Optional<String> method,
-//        String jsonPath) {
-//        this(RuleType.Undefined, Type.DontCare, service, apiPath,
-//            method, jsonPath, ComparisonType.Default, PresenceType.Default, Optional.empty(),
-//            Optional.empty(), Optional.empty(), Action.Remove);
-//    }
-
     enum RuleStatus {
-        ViolatesExistingExact, // Instance violates an exact rule of expected match.
-        ViolatesExistingInherited, // Instance violates an inherited rule of expected match.
+        ViolatesExact, // Instance violates an exact rule of expected match.
+        ViolatesInherited, // Instance violates an inherited rule of expected match.
         ViolatesDefault, // Violates a default rule
         UnusedExisting,  // Already configured rule that wasn't exercised.
-        ConformsToExistingExact, // Instance complies with an exact rule already configured to ignore mismatch
-        ConformsToExistingInherited, // Instance complies with an inherited rule already configured to ignore mismatch
+        ConformsToExact, // Instance complies with an exact rule already configured to ignore mismatch
+        ConformsToInherited, // Instance complies with an inherited rule already configured to ignore mismatch
+        UsedAsInherited,  // Already configured rule that was exercised as inherited rule.
         ConformsToDefault,  // Mismatch when no rule configured, or exact/inherited rule from template with behaviour also to ignore it.
-        UsedExistingAsInherited,  // Already configured rule that was exercised as inherited rule.
         Undefined
     }
 
