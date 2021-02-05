@@ -1261,6 +1261,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String BODYF = CPREFIX + Constants.BODY + NOTINDEXED_SUFFIX;
     private static final String OLDBODYF = CPREFIX + Constants.BODY + TEXT_SUFFIX;
     private static final String COLLECTIONF = CPREFIX + Constants.COLLECTION_FIELD + STRING_SUFFIX;
+    private static final String COLLECTIONSF = CPREFIX + Constants.COLLECTION_FIELD + STRINGSET_SUFFIX;
     private static final String TIMESTAMPF = CPREFIX + TIMESTAMP_FIELD + DATE_SUFFIX;
     private static final String RRTYPEF = CPREFIX + Constants.RUN_TYPE_FIELD + STRING_SUFFIX;
     private static final String CUSTOMERIDF = CPREFIX + Constants.CUSTOMER_ID_FIELD + STRING_SUFFIX;
@@ -1999,7 +2000,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(IDF, id);
         doc.setField(APPF, replay.app);
         doc.setField(ASYNCF, replay.async);
-        doc.setField(COLLECTIONF, replay.collection);
+        //doc.setField(COLLECTIONF, replay.collection);
+        replay.collection.forEach(col->doc.addField(COLLECTIONSF , col));
         doc.setField(CUSTOMERIDF, replay.customerId);
         doc.setField(INSTANCEIDF, replay.instanceId);
         doc.setField(ENDPOINTF, replay.endpoint);
@@ -2074,7 +2076,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> app = getStrField(doc, APPF);
         Optional<String> instanceId = getStrField(doc, INSTANCEIDF);
         Optional<Boolean> async = getBoolField(doc, ASYNCF);
-        Optional<String> collection = getStrField(doc, COLLECTIONF);
+        List<String> collection = getStrField(doc, COLLECTIONF).map(col->List.of(col)).orElseGet(()->getStrFieldMV(doc , COLLECTIONSF));
         Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
         Optional<String> userId = getStrField(doc, USERIDF);
         Optional<String> endpoint = getStrField(doc, ENDPOINTF);
@@ -2115,12 +2117,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         Optional<Replay> replay = Optional.empty();
         if (endpoint.isPresent() && customerId.isPresent() && app.isPresent() &&
-            instanceId.isPresent() && collection.isPresent()
+            instanceId.isPresent() && !collection.isEmpty()
             && replayId.isPresent() && async.isPresent() && status.isPresent() && userId.isPresent()
             && templateVersion.isPresent()) {
             try {
                 ReplayBuilder builder = new ReplayBuilder(endpoint.get(),
-                    customerId.get(), app.get(), instanceId.get(), collection.get(), userId.get()).withReqIds(reqIds)
+                    customerId.get(), app.get(), instanceId.get(), collection, userId.get()).withReqIds(reqIds)
                     .withReplayId(replayId.get())
                     .withAsync(async.get()).withTemplateSetVersion(templateVersion.get())
                     .withReplayStatus(status.get()).withPaths(paths)

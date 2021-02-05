@@ -295,7 +295,7 @@ public class RealAnalyzer implements Analyzer {
      }
 
     Stream<Event> expandOnTraceId(Collection<Event> requestList, String customerId,
-                                  String app, String collectionId, ReqRespStore rrstore) {
+                                  String app, List<String> collectionIds, ReqRespStore rrstore) {
         List<String> traceIds =
             requestList.stream().map(Event::getTraceId).collect(Collectors.toList());
         if (traceIds.isEmpty()) {
@@ -303,7 +303,7 @@ public class RealAnalyzer implements Analyzer {
         }
         EventQuery.Builder builder = new EventQuery.Builder(customerId, app, Event.getRequestEventTypes());
         EventQuery eventQuery = builder
-            .withCollection(collectionId)
+            .withCollections(collectionIds)
             .withTraceIds(traceIds)
             .build();
 

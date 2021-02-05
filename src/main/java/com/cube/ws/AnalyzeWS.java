@@ -699,17 +699,18 @@ public class AnalyzeWS {
            */
             Instant timeStamp = replay.analysisCompleteTimestamp != Instant.EPOCH ? replay.analysisCompleteTimestamp : replay.creationTimeStamp;
             Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerId, replay.app,
-                replay.collection , Optional.of(replay.templateVersion));
+                replay.collection.get(0) , Optional.of(replay.templateVersion));
             String recordingInfo = "";
             if (recordingOpt.isEmpty()) {
                 LOGGER.error("Unable to find recording corresponding to given replay");
             } else {
+            	boolean multiRecordings = replay.collection.size() > 1 ;
                 Recording recording = recordingOpt.get();
-                recordingInfo = "\" , \"recordingid\" : \"" + recording.getId()
-                    + "\" , \"collection\" : \"" + recording.collection
+                recordingInfo = "\" , \"recordingid\" : \"" + (multiRecordings ? "NA" : recording.getId())
+                    + "\" , \"collection\" : \"" + (multiRecordings ? replay.collection.stream().collect(Collectors.joining(",")) :recording.collection)
                     + "\" , \"templateVer\" : \"" + recording.templateVersion
-                    + "\", \"goldenName\" : \"" + recording.name
-                    + "\", \"goldenLabel\" : \"" + recording.label;
+                    + "\", \"goldenName\" : \"" + (multiRecordings ? "NA" : recording.name)
+                    + "\", \"goldenLabel\" : \"" + (multiRecordings ? "NA" :recording.label);
             }
 
             Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayId, service, byPath);
@@ -808,7 +809,7 @@ public class AnalyzeWS {
 		            replay.app,
 		            includeDiff.orElse(false) ? Collections.emptyList()
 			            : Event.REQUEST_EVENT_TYPES);
-	            reqBuilder.withCollection(replay.collection);
+	            reqBuilder.withCollections(replay.collection);
 	            reqBuilder.withReqIds(reqIds);
 	            reqBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
 	            Result<Event> reqRespEvents = rrstore.getEvents(reqBuilder.build());

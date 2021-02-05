@@ -192,7 +192,7 @@ public class ReplayWS extends ReplayBasicWS {
                 .entity(String.format("cannot find recording for golden  name %s", goldenName)).build();
         }
 
-        return startReplay(headers, formParams, recordingOpt.get());
+        return startReplay(headers, formParams, List.of(recordingOpt.get()));
     }
 
     @POST
@@ -488,7 +488,7 @@ public class ReplayWS extends ReplayBasicWS {
 
         MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
         String instanceId = queryParams.getFirst(Constants.INSTANCE_ID_FIELD);
-        String recordingCollection = queryParams.getFirst(Constants.COLLECTION_FIELD);
+        List<String> recordingCollections = queryParams.get(Constants.COLLECTION_FIELD);
         String userId = queryParams.getFirst(Constants.USER_ID_FIELD);
         String endPoint = queryParams.getFirst(Constants.END_POINT_FIELD);
         if (instanceId == null) {
@@ -496,9 +496,9 @@ public class ReplayWS extends ReplayBasicWS {
                 .entity("InstaceId needs to be given for a replay")
                 .build();
         }
-        if (recordingCollection == null) {
+        if (recordingCollections == null || recordingCollections.isEmpty()) {
             return Response.status(Status.BAD_REQUEST)
-                .entity("RecordingCollection needs to be given for a replay")
+                .entity("RecordingCollections needs to be given for a replay")
                 .build();
         }
         if (userId == null) {
@@ -515,7 +515,7 @@ public class ReplayWS extends ReplayBasicWS {
         Replay replay = null;
         if(optionalReplay.isPresent()) {
             replay = optionalReplay.get();
-            replay.collection = recordingCollection;
+            replay.collection = recordingCollections;
             if(!replay.customerId.equals(customerId)) {
                 LOGGER.error(String.format("customerId is not matching the replay customerId for replayId %s", replayId));
                 return Response.status(Status.BAD_REQUEST)
@@ -530,7 +530,7 @@ public class ReplayWS extends ReplayBasicWS {
             }
         } else {
             ReplayBuilder replayBuilder = new ReplayBuilder(endPoint, customerId, app, instanceId,
-                recordingCollection, userId)
+                recordingCollections, userId)
                 .withReplayId(replayId);
             replay = replayBuilder.build();
         }
@@ -577,25 +577,25 @@ public class ReplayWS extends ReplayBasicWS {
 
     @Override
     protected CompletableFuture<Void> beforeReplay(@Context HttpHeaders headers,
-                                                   MultivaluedMap<String, String> formParams, Recording recording,
+                                                   MultivaluedMap<String, String> formParams, List<Recording> recordings,
                                                    Replay replay) {
         Optional<String> tagOpt = formParams == null ? Optional.empty()
             : Optional.ofNullable(formParams.getFirst(Constants.TAG_FIELD));
 
-        return tagOpt.map(tag -> this.tagConfig.setTag(recording, replay.instanceId, tag))
+        return tagOpt.map(tag -> this.tagConfig.setTag(recordings.get(0), replay.instanceId, tag))
             .orElse(CompletableFuture.completedFuture(null));
     }
 
     @Override
     protected CompletableFuture<Void> afterReplay(@Context HttpHeaders headers,
-                                                  MultivaluedMap<String, String> formParams, Recording recording,
+                                                  MultivaluedMap<String, String> formParams, List<Recording> recordings,
         Replay replay, Optional<Analyzer> analyzerOpt) {
         Optional<String> resetTagOpt = formParams == null ? Optional.empty()
             : Optional.ofNullable(formParams.getFirst(Constants.RESET_TAG_FIELD));
 
          return CompletableFuture.runAsync(() -> analyze(replay, analyzerOpt))
             .thenCompose(v ->
-                 resetTagOpt.map(tag -> this.tagConfig.setTag(recording, replay.instanceId, tag))
+                 resetTagOpt.map(tag -> this.tagConfig.setTag(recordings.get(0), replay.instanceId, tag))
                     .orElse(CompletableFuture.completedFuture(null)));
     }
 
