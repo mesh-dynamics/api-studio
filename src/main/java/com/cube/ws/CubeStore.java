@@ -14,6 +14,7 @@ import com.cube.sequence.SeqMgr;
 
 import io.md.core.ApiGenPathMgr;
 import io.md.core.CollectionKey;
+import io.md.dao.CustomerAppConfig.Builder;
 import io.md.dao.DataObj.DataObjProcessingException;
 import io.md.dao.Event.EventType;
 import io.md.injection.DynamicInjector;
@@ -1440,22 +1441,20 @@ public class CubeStore {
 
         //TODO: Use fieldList to reduce the data fetched.
         EventQuery.Builder reqBuilder = new EventQuery.Builder(originalRec.customerId,
-            originalRec.app, Event.REQUEST_EVENT_TYPES);
+            originalRec.app,
+            Stream.concat(Event.REQUEST_EVENT_TYPES.stream(), Event.RESPONSE_EVENT_TYPES.stream())
+                .collect(Collectors.toList()));
         reqBuilder.withCollection(originalRec.collection);
         reqBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
-        Result<Event> reqEvents = rrstore.getEvents(reqBuilder.build());
-        reqEvents.getObjects().forEach(event -> reqIds.add(event.reqId));
+        Result<Event> reqRespEvents = rrstore.getEvents(reqBuilder.build());
 
         Set<String> badStatusCodes = Optional.ofNullable(status).map(HashSet::new)
             .orElseGet(() -> new HashSet());
 
-        EventQuery.Builder respBuilder = new EventQuery.Builder(originalRec.customerId,
-            originalRec.app, Event.RESPONSE_EVENT_TYPES);
-        respBuilder.withCollection(originalRec.collection);
-        respBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
-        Result<Event> respEvents = rrstore.getEvents(respBuilder.build());
-        respEvents.getObjects().forEach(event -> {
-            if (event.payload instanceof ResponsePayload) {
+        reqRespEvents.getObjects().forEach(event -> {
+            if (event.payload instanceof RequestPayload) {
+                reqIds.add(event.reqId);
+            } else if (event.payload instanceof ResponsePayload) {
                 if (!badStatusCodes.contains(((ResponsePayload) event.payload).getStatusCode())) {
                     respIds.add(event.reqId);
                 }
@@ -2273,6 +2272,16 @@ public class CubeStore {
     @Produces(MediaType.APPLICATION_JSON)
     public Response setAppConfiguration(CustomerAppConfig custAppCfg ) {
 
+        //Get existing appCfg
+        Optional<CustomerAppConfig> existing = rrstore.getAppConfiguration(custAppCfg.customerId , custAppCfg.app);
+        //If the existing app cfg Id in solr is different then autoCalculated
+        if(existing.isPresent() && !existing.get().id.equals(custAppCfg.id)){
+            CustomerAppConfig.Builder builder = new Builder(custAppCfg.customerId , custAppCfg.app);
+            custAppCfg.tracer.ifPresent(builder::withTracer);
+            custAppCfg.apiGenericPaths.ifPresent(builder::withApiGenericPaths);
+            builder.withId(existing.get().id);
+            custAppCfg = builder.build();
+        }
         if(rrstore.saveConfig(custAppCfg)){
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(
                 buildSuccessResponse(Constants.SUCCESS, new JSONObject(Map.of(Constants.MESSAGE, "The customer app config tag has been changed",
