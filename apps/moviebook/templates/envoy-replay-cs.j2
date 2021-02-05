@@ -207,7 +207,8 @@ spec:
                   cubeReq["apiPath"] = apiPath
                   cubeReq["traceId"] = traceId
                   if spanId then cubeReq["spanId"] = spanId end
-                  if parentSpanId then cubeReq["parentSpanId"] = parentSpanId end
+                  baggageParentId = request_handle:headers():get("baggage-parent-span-id")
+                  if baggageParentId then cubeReq["parentSpanId"] = baggageParentId end
                   cubeReq["reqId"] = crequestid
                   cubeReq["eventType"] = "HTTPRequest"
                   cubeReq["timestamp"] = getEpochTime()
