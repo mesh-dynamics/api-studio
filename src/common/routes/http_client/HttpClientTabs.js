@@ -1568,7 +1568,7 @@ class HttpClientTabs extends Component {
                         body: httpResponseBody,
                         status: httpResponseStatus,
                         payloadState : "WrappedDecoded",
-                        path: apiPath,
+                        ...(this.isgRPCRequest(tabToSave) && {path: apiPath}), // path not needed in non-grpc case
                     }
                 ]
             }

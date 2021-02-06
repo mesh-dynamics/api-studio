@@ -50,7 +50,6 @@ class APICatalogDiff extends Component {
     }
 
     componentDidMount() {
-        const {dispatch} = this.props
         this.props.setCurrentPage("diff");
 
         let urlParameters = _.chain(window.location.search)
@@ -60,8 +59,6 @@ class APICatalogDiff extends Component {
         .fromPairs()
         .value();
 
-        const app = urlParameters["app"]; // todo: app
-        //dispatch(cubeActions.setSelectedApp(app));
         
         const requestIdLeft = urlParameters["requestId1"] || "";
         const requestIdRight = urlParameters["requestId2"] || "";
@@ -257,7 +254,7 @@ class APICatalogDiff extends Component {
                    <p style={{ fontWeight: 300 }}>COMPARE REQUESTS</p>
                 </div>
                 <div style={{ display: "inline-block" }} className="pull-right">
-                    <Link to={`/api_catalog/api?app=${cube.selectedApp}`}>
+                    <Link to={`/api_catalog/api`}>
                         <Button bsSize="small" className="cube-btn text-center">
                             <Glyphicon style={{ visibility: "visible" }} glyph="menu-left" />
                             <span>BACK TO API CATALOG</span>

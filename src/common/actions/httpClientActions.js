@@ -201,10 +201,13 @@ export const httpClientActions = {
         }
     },
 
-    fetchEnvironments: () => async (dispatch) => {
+    fetchEnvironments: () => async (dispatch, getState) => {
         dispatch(httpClientActions.setEnvStatusText("Loading..."))
+        const {
+            cube: { selectedAppObj },
+        } = getState();
         try {
-            const environmentList = await cubeService.getAllEnvironments();
+            const environmentList = await cubeService.getAllEnvironments(selectedAppObj.id);
             dispatch(httpClientActions.setEnvironmentList(environmentList))
             dispatch(httpClientActions.resetEnvStatusText())
         } catch (e) {
@@ -659,5 +662,8 @@ export const httpClientActions = {
     deleteOutgoingReq: (outgoingReqTabId, tabId) => {
         return {type: httpClientConstants.DELETE_OUTGOING_REQ, data: {outgoingReqTabId, tabId}};
 
+    },
+    toggleHideInternalHeaders : (tabId) => {
+        return { type: httpClientConstants.TOGGLE_HIDE_INTERNAL_HEADERS, data : {tabId} }
     }
 }

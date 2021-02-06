@@ -60,6 +60,7 @@ export interface IHttpResponseHeadersProps {
   updateParam: UpdateParamHandler;
   recordedResponseHeaders: string;
   responseHeaders: string;
+  clientTabId: string;
 }
 
 class HttpResponseHeaders extends Component<
@@ -234,6 +235,7 @@ class HttpResponseHeaders extends Component<
             isOutgoingRequest={this.props.isOutgoingRequest}
             readOnly={false}
             isResponse={true}
+            clientTabId={this.props.clientTabId}
           ></HttpRequestHeaders>
         </div>
         <div style={{ width: "50%" }}>
@@ -247,6 +249,7 @@ class HttpResponseHeaders extends Component<
             isOutgoingRequest={this.props.isOutgoingRequest}
             readOnly={true}
             isResponse={true}
+            clientTabId={this.props.clientTabId}
           ></HttpRequestHeaders>
         </div>
       </div>

@@ -8,6 +8,7 @@ import { applyEnvVarsToUrl } from "../../utils/http_client/envvar";
 import { UpdateBodyOrRawDataTypeHandler, UpdateParamHandler, ReplaceAllParamsHandler } from './HttpResponseHeaders';
 import {generateUrlWithQueryParams, extractURLQueryParams} from "./../../utils/http_client/utils"
 import { IRequestParamData } from '../../reducers/state.types';
+import HideInternalHeadersButton from './HideInternalHeadersButton';
 export interface IHttpRequestMessageProps {
     bodyType: string;
     httpMethod: string;
@@ -27,6 +28,7 @@ export interface IHttpRequestMessageProps {
     updateParam: UpdateParamHandler;
     replaceAllParams: ReplaceAllParamsHandler;
     disabled: boolean;
+    clientTabId: string;
 }
 
 
@@ -186,6 +188,9 @@ class HttpRequestMessage extends Component<IHttpRequestMessageProps, IHttpReques
                             value="showBody" name={"paramsType"+this.props.id.trim()}  checked={this.props.paramsType === "showBody"} onChange={this.onChangeValue}/>
                             Body
                     </div>
+                    { this.props.paramsType === "showHeaders" && this.props.tabId && !this.props.disabled && 
+                        <HideInternalHeadersButton clientTabId={this.props.clientTabId} headers={this.props.headers}/>
+                    }
                 </div>
             </>
         );

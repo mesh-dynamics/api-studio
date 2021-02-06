@@ -50,6 +50,7 @@ export interface ISaveToCollectionState {
   showModal: boolean;
   showSaveStatusModal: boolean;
   userCollectionId: string;
+  selectedCollectionName: string;
   modalErroSaveMessage: string;
   modalErroSaveMessageIsError: boolean;
 }
@@ -65,6 +66,7 @@ class SaveToCollection extends React.Component<
       showModal: false,
       showSaveStatusModal: false,
       userCollectionId: "",
+      selectedCollectionName: "",
       modalErroSaveMessage: "",
       modalErroSaveMessageIsError: false,
     };
@@ -87,10 +89,12 @@ class SaveToCollection extends React.Component<
   }
 
   handleUserCollection = (
-    evt: React.FormEvent<FormControl & HTMLInputElement>
+    evt: React.FormEvent<FormControl & HTMLSelectElement>
   ) => {
+    const selectedOptions =(evt.target as HTMLSelectElement).selectedOptions[0];
     this.setState({
-      userCollectionId: (evt.target as HTMLInputElement).value,
+      userCollectionId: selectedOptions.value,
+      selectedCollectionName: selectedOptions.text,
       modalErroSaveMessage: "",
     });
 
@@ -138,6 +142,7 @@ class SaveToCollection extends React.Component<
     this.setState({
       showModal: true,
       userCollectionId: "",
+      selectedCollectionName: "",
       modalErroSaveMessage: "",
       modalErroSaveMessageIsError: false,
     });
@@ -210,6 +215,7 @@ class SaveToCollection extends React.Component<
 
   saveTabToCollection(generateSpanTraceId=false) {
     const recordingId = this.state.userCollectionId;
+    const selectedCollectionName = this.state.selectedCollectionName;
     const {
       httpClient: { tabs: tabsToProcess },
       dispatch,
@@ -299,7 +305,7 @@ class SaveToCollection extends React.Component<
           }
         });
 
-        const collectionNameAddedFromClient = tabToProcess.collectionNameAddedFromClient;
+        const collectionNameAddedFromClient = selectedCollectionName || tabToProcess.collectionNameAddedFromClient;
         const message = collectionNameAddedFromClient ? `Saving to collection "${collectionNameAddedFromClient}"` : "Saving...";
         const successMessage = collectionNameAddedFromClient ? `Saved Successfully to "${collectionNameAddedFromClient}"` : "Saved Successfully!";
 

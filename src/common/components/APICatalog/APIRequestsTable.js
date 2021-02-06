@@ -128,8 +128,7 @@ class APIRequestsTable extends Component {
     dispatch(apiCatalogActions.setHttpClientRequestIds(requestIdMap))
 
     history.push({
-      pathname: "/http_client",
-      search: `?app=${app}`
+      pathname: "/http_client"
     })
   }
 

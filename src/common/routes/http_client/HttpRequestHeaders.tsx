@@ -2,6 +2,9 @@ import React, { Component } from 'react';
 import { Glyphicon, FormGroup, Button, FormControl, Radio, ControlLabel, Checkbox } from 'react-bootstrap';
 // import "./styles_here.css";
 import { AddOrRemoveHandler, UpdateParamHandler } from './HttpResponseHeaders';
+import {filterInternalHeaders} from '../../utils/http_client/utils'
+import { connect } from "react-redux";
+import { IRequestParamData, IStoreState } from '../../reducers/state.types';
 
 export interface IHttpRequestHeadersProps{
     tabId: string;
@@ -12,11 +15,14 @@ export interface IHttpRequestHeadersProps{
     updateAllParams: UpdateParamHandler;
     readOnly: boolean;
     isResponse: boolean;
-    headers: any[]; //TODO: Get proper interface from HttpClientTabs
+    headers: IRequestParamData[];
+    hideInternalHeaders: boolean;
+    clientTabId: string;
 }
 
 class HttpRequestHeaders extends Component<IHttpRequestHeadersProps> {
-    constructor(props) {
+    
+    constructor(props: IHttpRequestHeadersProps) {
         super(props);
         this.handleAdd = this.handleAdd.bind(this);
     }
@@ -51,6 +57,7 @@ class HttpRequestHeaders extends Component<IHttpRequestHeadersProps> {
     }
 
     render() {
+        const displayHeaders: IRequestParamData[] = filterInternalHeaders(this.props.headers, this.props.hideInternalHeaders);
         return (
             <div style={{display: this.props.showHeaders === true ? "" : "none"}} className="params-input">
                 {this.props.headers.length > 0 && (
@@ -77,7 +84,7 @@ class HttpRequestHeaders extends Component<IHttpRequestHeadersProps> {
                         </div>
                     </div>
                 )}
-                {this.props.headers.map(eachHeader => {return (
+                {displayHeaders.map(eachHeader => {return (
                     <div  className="row" key={eachHeader.id}>
                         <div className="cell cell-1"> 
                           {!this.props.isResponse && <FormGroup>
@@ -120,4 +127,12 @@ class HttpRequestHeaders extends Component<IHttpRequestHeadersProps> {
     }
 }
 
-export default HttpRequestHeaders;
+
+const mapStateToProps = (state: IStoreState, props: IHttpRequestHeadersProps) =>  {
+    const hideInternalHeaders = !!(state.httpClient.tabs.find((tab => tab.id == props.clientTabId))?.hideInternalHeaders);
+    return{
+        hideInternalHeaders
+    }
+}
+
+export default connect(mapStateToProps)(HttpRequestHeaders);

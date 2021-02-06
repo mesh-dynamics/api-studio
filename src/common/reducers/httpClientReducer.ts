@@ -2,7 +2,7 @@ import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import { updateHeaderBasedOnContentType } from '../utils/http_client/utils';
-import { setGrpcDataFromDescriptor } from '../utils/http_client/grpc-utils';
+import { setGrpcDataFromDescriptor, getGrpcTabName } from '../utils/http_client/grpc-utils';
 import { ICollectionDetails, ICubeRunHistory, IHttpClientStoreState, IHttpClientTabDetails } from "./state.types";
 export interface IHttpClientAction {
     type: string,
@@ -291,16 +291,19 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             let { tabs } = state;
             const tabIndex = tabs.findIndex(tab => tab.id === data.tabId);
             if (tabIndex < 0) return state;
+            tabs[tabIndex] = {...tabs[tabIndex]};
             let params = tabs[tabIndex][data.type as IHttpClientTabDetailsFieldNames];
             if (_.isArray(params)) {
-                let specificParamArr = params.filter((e) => e.id === data.id);
-                if (specificParamArr.length > 0) {
-                    specificParamArr[0][data.key] = data.value;
-                }
+                params = (params as Array<any>).map( param => {
+                    if(param.id === data.id){
+                        return {...param, [data.key] : data.value}
+                    }else{
+                        return param;
+                    }
+                })
             } else {
                 params = data.value;
             }
-            //this.setState({[type]: params})
             return {
                 ...state,
                 tabs: tabs.map(eachTab => {
@@ -308,6 +311,9 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab[data.type as IHttpClientTabDetailsFieldNames] = params as any[];
                         if (data.type === "httpURL") eachTab.tabName = params as unknown as string;
                         eachTab.hasChanged = true;
+                        return {
+                            ...eachTab
+                        }
                     }
                     return eachTab;
                 })
@@ -893,6 +899,19 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             }
         }
 
+        case httpClientConstants.TOGGLE_HIDE_INTERNAL_HEADERS: {
+            let { tabs } = state;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        return { ...eachTab, hideInternalHeaders : !eachTab.hideInternalHeaders }
+                    }
+                    return eachTab;
+                })
+            }
+        }
+
         // mock configs
         case httpClientConstants.SET_MOCK_CONFIG_LIST: {
             return {
@@ -1019,6 +1038,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab.grpcConnectionSchema = data.value;
+                        eachTab.tabName = getGrpcTabName(data.value);
                         eachTab.hasChanged = true;
                     }
                     return eachTab;
@@ -1083,6 +1103,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab.hasChanged = true;
                         eachTab.bodyType = data.value.bodyType;
                         eachTab.paramsType = data.value.paramsType;
+                        eachTab.tabName = data.value.tabName;
                         eachTab.grpcData = setGrpcDataFromDescriptor(state.appGrpcSchema, eachTab.grpcData);
                         //Request Event
                         eachTab.eventData[0].payload[0] = data.value.payloadRequestEventName;
