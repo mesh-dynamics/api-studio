@@ -4,18 +4,25 @@ import com.cubeui.backend.domain.App;
 import com.cubeui.backend.domain.AppFile;
 import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.CustomerDTO;
+import com.cubeui.backend.domain.DTO.DtEnvVarDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
+import com.cubeui.backend.domain.DtEnvVar;
+import com.cubeui.backend.domain.DtEnvironment;
 import com.cubeui.backend.domain.User;
 import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.CustomerRepository;
+import com.cubeui.backend.repository.DevtoolEnvironmentsRepository;
 import com.cubeui.backend.repository.UserRepository;
 import com.cubeui.backend.service.AppFileStorageService;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.service.UserService;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import lombok.Data;
 import lombok.Getter;
@@ -45,10 +52,12 @@ public class DataInitializer implements CommandLineRunner {
 
     private AppFileStorageService appFileStorageService;
 
+    private DevtoolEnvironmentsRepository devtoolEnvironmentsRepository;
+
     public DataInitializer(UserService userService, CustomerService customerService,
         CustomerRepository customerRepository, UserRepository userRepository,
         HttpServletRequest httpServletRequest, AppRepository appRepository,
-        AppFileStorageService appFileStorageService) {
+        AppFileStorageService appFileStorageService, DevtoolEnvironmentsRepository devtoolEnvironmentsRepository) {
 
         this.userService = userService;
         this.customerService = customerService;
@@ -57,6 +66,7 @@ public class DataInitializer implements CommandLineRunner {
         this.appRepository = appRepository;
         this.httpServletRequest = httpServletRequest;
         this.appFileStorageService = appFileStorageService;
+        this.devtoolEnvironmentsRepository = devtoolEnvironmentsRepository;
     }
 
     @Override
@@ -85,26 +95,39 @@ public class DataInitializer implements CommandLineRunner {
             this.userService.save(userDTOAdmin, true, false);
             log.info("User with username '{}' created", userDTOAdmin.getEmail());
         }
+
         /**TODO
-         * Remove in next Release
+         * Remove in next release
          */
-        List<App> apps = appRepository.findAll();
-        apps.forEach(app -> {
-            boolean update = false;
-            if (app.getDisplayName() == null) {
-                app.setDisplayName(app.getName());
-                update = true;
-            }
-            if(app.getUserId() == null) {
-                app.setUserId(app.getCustomer().getEmail());
-                update = true;
-            }
-            if(update) {
-                this.appRepository.save(app);
-            }
-            Optional<AppFile> appFile = this.appFileStorageService.getFileByAppId(app.getId());
-            if(appFile.isEmpty()) {
-                this.appFileStorageService.storeFile(null, app);
+        List<DtEnvironment> dtEnvironments = devtoolEnvironmentsRepository.findAll();
+        dtEnvironments.forEach(dtEnvironment -> {
+            if(dtEnvironment.getApp() == null ) {
+                Optional<List<App>> optionalApps = appRepository.findByCustomerId(dtEnvironment.getUser().getCustomer().getId());
+                if(optionalApps.isPresent()) {
+                    List<App> apps = optionalApps.get();
+                    for(int i=0; i < apps.size(); i++) {
+                        if(i == apps.size()-1) {
+                            dtEnvironment.setApp(apps.get(i));
+                            dtEnvironment.setGlobal(false);
+                            devtoolEnvironmentsRepository.save(dtEnvironment);
+                        } else {
+                            DtEnvironment dt = new DtEnvironment(dtEnvironment.getName());
+                            dt.setApp(apps.get(i));
+                            dt.setUser(dtEnvironment.getUser());
+                            List<DtEnvVar> envVarsList = new ArrayList<>(dtEnvironment.getVars().size());
+                            for (DtEnvVar dtEnvVar : dtEnvironment.getVars()) {
+                                DtEnvVar newDtEnvVar = new DtEnvVar();
+                                newDtEnvVar.setKey(dtEnvVar.getKey());
+                                newDtEnvVar.setValue(dtEnvVar.getValue());
+                                newDtEnvVar.setEnvironment(dt);
+                                envVarsList.add(newDtEnvVar);
+                            }
+                            dt.setVars(envVarsList);
+                            dt.setGlobal(false);
+                            devtoolEnvironmentsRepository.save(dt);
+                        }
+                    }
+                }
             }
         });
 

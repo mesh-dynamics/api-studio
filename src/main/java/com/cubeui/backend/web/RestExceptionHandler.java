@@ -3,10 +3,11 @@ package com.cubeui.backend.web;
 import com.cubeui.backend.security.jwt.InvalidJwtAuthenticationException;
 import com.cubeui.backend.service.exception.FileRetrievalException;
 import com.cubeui.backend.service.exception.FileStorageException;
+import com.cubeui.backend.web.exception.AppServiceMappingException;
 import com.cubeui.backend.web.exception.ConfigExistsException;
 import com.cubeui.backend.web.exception.CustomerIdException;
 import com.cubeui.backend.web.exception.DuplicateRecordException;
-import com.cubeui.backend.web.exception.EnvironmentNameExitsException;
+import com.cubeui.backend.web.exception.EnvironmentNameExistsException;
 import com.cubeui.backend.web.exception.EnvironmentNotFoundException;
 import com.cubeui.backend.web.exception.InvalidDataException;
 import com.cubeui.backend.web.exception.OldPasswordException;
@@ -58,8 +59,8 @@ public class RestExceptionHandler {
         return status(UNAUTHORIZED).body(errorResponse);
     }
 
-    @ExceptionHandler(value = {EnvironmentNameExitsException.class})
-    public ResponseEntity invalidData(EnvironmentNameExitsException ex, WebRequest request) {
+    @ExceptionHandler(value = {EnvironmentNameExistsException.class})
+    public ResponseEntity invalidData(EnvironmentNameExistsException ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse<String>("Environment already exists", ex.getMessage(), CONFLICT.value());
         return status(CONFLICT).body(errorResponse);
     }
@@ -110,5 +111,11 @@ public class RestExceptionHandler {
     public ResponseEntity invalidData(FileRetrievalException ex, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse<String>("Error while retrieving the file", ex.getMessage(), INTERNAL_SERVER_ERROR.value());
         return status(INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    @ExceptionHandler(value = {AppServiceMappingException.class})
+    public ResponseEntity appServiceMappingException(AppServiceMappingException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse<String>("Service app mapping error", ex.getMessage(), BAD_REQUEST.value());
+        return status(BAD_REQUEST).body(errorResponse);
     }
 }
