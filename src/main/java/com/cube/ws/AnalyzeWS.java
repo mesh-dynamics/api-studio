@@ -118,7 +118,6 @@ import com.cube.drivers.RealAnalyzer;
 import com.cube.golden.RecordingUpdate;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateSet;
-import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.utils.AnalysisUtils;
 
 /**
@@ -502,9 +501,6 @@ public class AnalyzeWS {
         CsvSchema csvSchema = csvMapper.schemaFor(TemplateEntryMeta.class)
             .withSkipFirstDataRow(true);
 
-        String previousTemplateVersion = version;
-
-
         try {
             List<TemplateEntryMeta> templateEntryMetaList;
             MappingIterator<TemplateEntryMeta> mi = csvMapper
@@ -515,19 +511,22 @@ public class AnalyzeWS {
             CompareTemplatesLearner ctLearner = new CompareTemplatesLearner(customerId,
                 app, version, rrstore);
 
-            TemplateUpdateOperationSet updateOperationSet = ctLearner
+            TemplateSet templateSet = ctLearner
                 .createTemplateSetFromTemplateEntryMetas(templateEntryMetaList);
 
-//            rrstore.saveTemplateUpdateOperationSet(updateOperationSet, customerId);
+            ValidateCompareTemplate validTemplate = ServerUtils.validateTemplateSet(templateSet);
+            if (!validTemplate.isValid()) {
+                return Response.status(Response.Status.BAD_REQUEST).entity(
+                    (new JSONObject(Map.of("Message", validTemplate.getMessage()))).toString())
+                    .build();
+            }
 
-//            Optional<TemplateSet> originalTemplateSet = rrstore
-//                .getTemplateSet(customerId, app, previousTemplateVersion);
+            String templateSetId = rrstore.saveTemplateSet(templateSet);
+            return Response.ok().entity((new JSONObject(Map.of(
+                "Message", "Successfully saved template set",
+                "ID", templateSetId,
+                "templateSetVersion", templateSet.version))).toString()).build();
 
-//            String updatedTemplateSetVersion =
-//                AnalysisUtils.updateTemplateSet(operationSetID, originalTemplateSet, rrstore);
-
-            return Response.ok().entity(new JSONObject(Map.of("Message"
-                , "Template Set successfully updated", "ID", updatedTemplateSetVersion))).build();
         } catch (IOException e) {
             LOGGER.error(
                 String.format("Error in reading CSV file for customer=%s, app=%s, version=%s",
@@ -536,10 +535,20 @@ public class AnalyzeWS {
                 Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
                     String.format("Error in reading CSV file for customer=%s, app=%s, version=%s",
                         customerId, app, version))).build();
-        }catch (Exception e) {
-            LOGGER.error("Error while updating template set: " + previousTemplateVersion);
-            return Response.serverError().entity(new JSONObject(Map.of("Message"
-                , "Unable to update template set", "Error", e.getMessage()))).build();
+        } catch (CompareTemplate.CompareTemplateStoreException e) {
+            return Response.serverError().entity((
+                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED,
+                    "Unable to save template set: " +
+                        e.getMessage()))).build();
+        } catch (TemplateSet.TemplateSetMetaStoreException e) {
+            return Response.serverError().entity((
+                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_META_STORE_FAILED,
+                    "Unable to save template meta: " +
+                        e.getMessage()))).build();
+        } catch (Exception e) {
+            return Response.serverError().entity((new JSONObject(Map.of(
+                "Message", "Unable to save template set",
+                "Error", e.getMessage()))).toString()).build();
         }
     }
 

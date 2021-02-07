@@ -6,8 +6,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import io.md.core.CompareTemplate.ComparisonType;
-import io.md.core.CompareTemplate.DataType;
-import io.md.core.CompareTemplate.ExtractionMethod;
 import io.md.core.CompareTemplate.PresenceType;
 import io.md.core.TemplateKey.Type;
 import io.md.core.Utils;
@@ -71,21 +69,6 @@ public class TemplateEntryMeta implements Comparable{
     @JsonProperty("CurrentPresenceType")
     PresenceType currentPt;
 
-    @JsonProperty("CurrentDataType")
-    DataType currentDt;
-
-    @JsonProperty("CurrentExtractionMethod")
-    ExtractionMethod currentEm;
-
-    @JsonProperty("customization")
-    private Optional<String> customization;
-
-    @JsonProperty("arrayCompKeyPath")
-    private Optional<String> arrayComparisonKeyPath;
-
-
-    String
-
     Optional<TemplateEntryMeta> parentMeta = Optional.empty();
 
     public static final String METHODS_ALL = "ALL";
@@ -99,9 +82,6 @@ public class TemplateEntryMeta implements Comparable{
     public TemplateEntryMeta(Action action, Type reqOrResp, String service, String apiPath,
         Optional<String> method, String jsonPath, ComparisonType currentCt, PresenceType currentPt,
         Optional<ComparisonType> newCt, Optional<PresenceType> newPt,
-        DataType dt, ExtractionMethod em,
-        Optional<String> customization,
-        Optional<String> arrayComparisonKeyPath,
         Optional<TemplateEntryMeta> parentMeta, RuleStatus ruleStatus) {
         this.ruleStatus = ruleStatus;
         this.reqOrResp = reqOrResp;
@@ -114,10 +94,6 @@ public class TemplateEntryMeta implements Comparable{
         this.currentPt = currentPt;
         setNewCt(newCt);
         setNewPt(newPt);
-        this.currentDt = dt;
-        this.currentEm = em;
-        setCustomization(customization);
-        setArrayComparisonKeyPath(arrayComparisonKeyPath);
         this.parentMeta = parentMeta;
         this.action = action;
     }
@@ -155,15 +131,17 @@ public class TemplateEntryMeta implements Comparable{
     }
 
     @JsonGetter("NewComparisonType")
-    public String getNewCt() { return newCt.map(Enum::toString).orElse(EMPTY); }
+    public String getNewCtAsString() { return newCt.map(Enum::toString).orElse(EMPTY); }
+
+    public Optional<ComparisonType> getNewCt() { return newCt; }
 
     @JsonGetter("NewPresenceType")
     public String getNewPtAsString() {return newPt.map(Enum::toString).orElse(EMPTY); }
 
+    public Optional<PresenceType> getNewPt() { return newPt; }
+
     @JsonSetter("NewComparisonType")
-    public void setNewCt(String newCt) {
-        this.newCt = Utils.valueOf(ComparisonType.class, newCt);
-    }
+    public void setNewCt(String newCt) { this.newCt = Utils.valueOf(ComparisonType.class, newCt); }
 
     @JsonSetter("NewPresenceType")
     public void setNewPt(String newPt) {this.newPt = Utils.valueOf(PresenceType.class, newPt);}
@@ -171,31 +149,6 @@ public class TemplateEntryMeta implements Comparable{
     public void setNewCt(Optional<ComparisonType> newCt) { this.newCt = newCt; }
 
     public void setNewPt(Optional<PresenceType> newPt) { this.newPt = newPt;}
-
-    public String getCustomizationAsString() {
-        return customization.orElse(EMPTY);
-    }
-
-    public String getArrayComparisonKeyPathAsString() {
-        return arrayComparisonKeyPath.orElse(EMPTY);
-    }
-
-    public void setCustomization(String customization) {
-        this.customization = customization.equals(EMPTY)? Optional.empty(): Optional.of(customization);
-    }
-
-    public void setCustomization(Optional<String> customization) {
-        this.customization = customization;
-    }
-
-    public void setArrayComparisonKeyPath(String arrayComparisonKeyPath) {
-        this.arrayComparisonKeyPath = arrayComparisonKeyPath.equals(EMPTY) ? Optional.empty()
-            : Optional.of(arrayComparisonKeyPath);
-    }
-
-    public void setArrayComparisonKeyPath(Optional<String> arrayComparisonKeyPath) {
-        this.arrayComparisonKeyPath = arrayComparisonKeyPath;
-    }
 
     enum RuleStatus {
         // IMP: Order of fields is used for sorting.

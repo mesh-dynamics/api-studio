@@ -2,9 +2,6 @@ package com.cube.learning;
 
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.dao.ReqRespStore;
-import com.cube.golden.SingleTemplateUpdateOperation;
-import com.cube.golden.TemplateEntryOperation;
-import com.cube.golden.TemplateEntryOperation.RuleType;
 import com.cube.golden.TemplateSet;
 import com.cube.learning.TemplateEntryMeta.Action;
 import com.cube.learning.TemplateEntryMeta.RuleStatus;
@@ -20,8 +17,8 @@ import io.md.core.TemplateEntryAsRule;
 import io.md.core.TemplateKey;
 import io.md.core.TemplateKey.Type;
 import io.md.dao.ReqRespMatchResult;
-import io.md.dao.ReqRespUpdateOperation.OperationType;
 import io.md.services.DataStore.TemplateNotFoundException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -98,12 +95,7 @@ public class CompareTemplatesLearner {
                             requestPath, method, templateEntry.path,
                             templateEntry.getCompareType(),
                             templateEntry.getPresenceType(),
-                            Optional.empty(), Optional.empty(),
-                            templateEntry.dt,
-                            templateEntry.em,
-                            templateEntry.customization,
-                            templateEntry.arrayComparisionKeyPath,
-                            Optional.empty(),
+                            Optional.empty(), Optional.empty(), Optional.empty(),
                             RuleStatus.UnusedExisting
                         ));
                 }
@@ -158,10 +150,6 @@ public class CompareTemplatesLearner {
         Optional<ComparisonType> newCt = Optional.empty();
         Optional<PresenceType> newPt = Optional.empty();
         RuleStatus ruleStatus;
-        DataType currentDt = DataType.Default;
-        ExtractionMethod currentEm = ExtractionMethod.Default;
-        Optional<String> arrayComparisonPath = Optional.empty();
-        Optional<String> customization = Optional.empty();
         Integer count = 0, numViolationsComparison = 0, numViolationsPresence = 0;
         Action action = Action.None;
 
@@ -214,7 +202,6 @@ public class CompareTemplatesLearner {
                 currentPt = PresenceType.Optional;
                 ruleStatus = RuleStatus.ConformsToDefault;
                 count = 1;
-
             }
         }
 
@@ -322,46 +309,25 @@ public class CompareTemplatesLearner {
 
         templateEntryMetaList.forEach(tm -> {
             TemplateKey templateKey = new TemplateKey(templateVersion, customer, app, tm.service,
-                tm.apiPath, tm.reqOrResp, tm.getMethod(), TemplateKey.DEFAULT_RECORDING);
+                CompareTemplate.normaliseAPIPath(tm.apiPath), tm.reqOrResp, tm.getMethod(), TemplateKey.DEFAULT_RECORDING);
 
-            CompareTemplate compareTemplate = templatesMap.computeIfAbsent(templateKey,
-                k -> new CompareTemplateVersioned(Optional.of(tm.service), Optional.of(tm.apiPath),
-                    tm.getMethod(), tm.reqOrResp, new CompareTemplate()));
-            compareTemplate.addRule(new TemplateEntry(tm.jsonPath, DataType.Default, tm.getNewPtAsString()));
+            if (tm.currentCt != ComparisonType.Default && tm.currentPt != PresenceType.Default){
+                // TODO: Handle the case when only one of them gets updated in the learned rules.
+                // Currently, we don't support creating a TemplateEntry with either Comparison
+                // or Presence types as Default.
+                CompareTemplate compareTemplate = templatesMap.computeIfAbsent(templateKey,
+                    k -> new CompareTemplateVersioned(Optional.of(tm.service), Optional.of(tm.apiPath),
+                        tm.getMethod(), tm.reqOrResp, new CompareTemplate()));
 
-
-            Optional<TemplateEntry> newEntry = existingEntry.flatMap(entry -> {
-                if (!getValueMatchRequired(entry).equals(tm.valueMatchRequired) ||
-                    !getPresenceRequired(entry).equals(tm.presenceRequired)){
-                    // Replace existing rule only if it has changed
-                    // Add happens automatically if no existing rule
-                    return Optional.of(new TemplateEntry(entry.path, entry.dt,
-                        tm.presenceRequired == YesOrNo.yes ? PresenceType.Required
-                            : PresenceType.Optional,
-                        tm.valueMatchRequired == YesOrNo.yes ? ComparisonType.Equal
-                            : ComparisonType.Ignore, entry.em, entry.customization, entry.arrayComparisionKeyPath));
-                }else
-                    return Optional.empty();
-            });
-
-            newEntry.ifPresent(entry -> {
-                SingleTemplateUpdateOperation singleUpdateOperation = updateOperationSet
-                    .getTemplateUpdates().computeIfAbsent(
-                        new TemplateKey(templateVersion, customer, app, tm.service, tm.apiPath,
-                            tm.reqOrResp,
-                            tm.method.equals(TemplateEntryMeta.METHODS_ALL) ? Optional.empty()
-                                : Optional.of(tm.method), TemplateKey.DEFAULT_RECORDING),
-                        k -> new SingleTemplateUpdateOperation(new ArrayList<>()));
-
-                singleUpdateOperation.getOperationList().add(
-                    new TemplateEntryOperation(OperationType.REPLACE, entry.path,
-                        Optional.of(entry),
-                        RuleType.TEMPLATERULE));
-
-            });
-
+                compareTemplate.addRule(
+                    new TemplateEntry(tm.jsonPath, DataType.Default, tm.getNewPt().orElse(tm.currentPt),
+                        tm.getNewCt().orElse(tm.currentCt), ExtractionMethod.Default, Optional.empty(),
+                        Optional.empty()));
+            }
         });
-        return updateOperationSet;
+
+        return new TemplateSet(templateVersion, customer, app, Instant.now(),
+            new ArrayList<>(templatesMap.values()), Optional.empty());
     }
 
 
