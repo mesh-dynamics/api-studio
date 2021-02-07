@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import io.md.core.CompareTemplate.ComparisonType;
+import io.md.core.CompareTemplate.DataType;
+import io.md.core.CompareTemplate.ExtractionMethod;
 import io.md.core.CompareTemplate.PresenceType;
 import io.md.core.TemplateKey.Type;
 import io.md.core.Utils;
@@ -19,10 +21,10 @@ import org.jetbrains.annotations.NotNull;
     "NumViolationsComparison", "NumViolationsPresence"})
 public class TemplateEntryMeta implements Comparable{
     @JsonProperty("Id")
-    String id = EMPTY;
+    String id;
 
     @JsonProperty("InheritedRuleId")
-    String inheritedRuleId = EMPTY;
+    private Optional<String> inheritedRuleId = Optional.empty();
 
     @JsonProperty("SourceRulePath")
     String sourceRulePath;
@@ -34,19 +36,19 @@ public class TemplateEntryMeta implements Comparable{
     Action action;
 
     @JsonProperty("Service")
-    final public String service;
+    public String service;
 
     @JsonProperty("ApiPath")
-    final String apiPath;
+    String apiPath;
 
     @JsonProperty("EventType")
-    final Type reqOrResp;
+    Type reqOrResp;
 
     @JsonProperty("Method")
-    final String method;
+    private Optional<String> method;
 
     @JsonProperty("JsonPath")
-    final String jsonPath;
+    String jsonPath;
 
     @JsonProperty("NumViolationsComparison")
     Integer numViolationsComparison = 0;
@@ -64,10 +66,25 @@ public class TemplateEntryMeta implements Comparable{
     private Optional<PresenceType> newPt;
 
     @JsonProperty("CurrentComparisonType")
-    final ComparisonType currentCt;
+    ComparisonType currentCt;
 
     @JsonProperty("CurrentPresenceType")
-    final PresenceType currentPt;
+    PresenceType currentPt;
+
+    @JsonProperty("CurrentDataType")
+    DataType currentDt;
+
+    @JsonProperty("CurrentExtractionMethod")
+    ExtractionMethod currentEm;
+
+    @JsonProperty("customization")
+    private Optional<String> customization;
+
+    @JsonProperty("arrayCompKeyPath")
+    private Optional<String> arrayComparisonKeyPath;
+
+
+    String
 
     Optional<TemplateEntryMeta> parentMeta = Optional.empty();
 
@@ -82,29 +99,66 @@ public class TemplateEntryMeta implements Comparable{
     public TemplateEntryMeta(Action action, Type reqOrResp, String service, String apiPath,
         Optional<String> method, String jsonPath, ComparisonType currentCt, PresenceType currentPt,
         Optional<ComparisonType> newCt, Optional<PresenceType> newPt,
+        DataType dt, ExtractionMethod em,
+        Optional<String> customization,
+        Optional<String> arrayComparisonKeyPath,
         Optional<TemplateEntryMeta> parentMeta, RuleStatus ruleStatus) {
         this.ruleStatus = ruleStatus;
         this.reqOrResp = reqOrResp;
         this.service = service;
         this.apiPath = apiPath;
-        this.method = method.orElse(METHODS_ALL);
+        setMethod(method);
         this.jsonPath = jsonPath;
         this.sourceRulePath = jsonPath;
         this.currentCt = currentCt;
         this.currentPt = currentPt;
         setNewCt(newCt);
         setNewPt(newPt);
+        this.currentDt = dt;
+        this.currentEm = em;
+        setCustomization(customization);
+        setArrayComparisonKeyPath(arrayComparisonKeyPath);
         this.parentMeta = parentMeta;
         this.action = action;
     }
 
+    @JsonSetter("InheritedRuleId")
+    public void setInheritedRuleId(String inheritedRuleId) {
+        this.inheritedRuleId =
+            inheritedRuleId.equals(EMPTY) ? Optional.empty() : Optional.of(inheritedRuleId);
+    }
 
+    public void setInheritedRuleId(Optional<String> inheritedRuleId) {
+        this.inheritedRuleId = inheritedRuleId;
+    }
+
+    @JsonGetter("InheritedRuleId")
+    public String getInheritedRuleIdAsString() {
+        return inheritedRuleId.orElse(EMPTY);
+    }
+
+    public void setMethod(Optional<String> method) {
+        this.method = method;
+    }
+
+    @JsonSetter("Method")
+    public void setMethod(String method) {
+        this.method = method.equals(METHODS_ALL)?Optional.empty():Optional.of(method);
+    }
+    @JsonGetter("Method")
+    public String getMethodAsString() {
+        return method.orElse(METHODS_ALL);
+    }
+
+    public Optional<String> getMethod() {
+        return method;
+    }
 
     @JsonGetter("NewComparisonType")
     public String getNewCt() { return newCt.map(Enum::toString).orElse(EMPTY); }
 
     @JsonGetter("NewPresenceType")
-    public String getNewPt() {return newPt.map(Enum::toString).orElse(EMPTY); }
+    public String getNewPtAsString() {return newPt.map(Enum::toString).orElse(EMPTY); }
 
     @JsonSetter("NewComparisonType")
     public void setNewCt(String newCt) {
@@ -117,6 +171,31 @@ public class TemplateEntryMeta implements Comparable{
     public void setNewCt(Optional<ComparisonType> newCt) { this.newCt = newCt; }
 
     public void setNewPt(Optional<PresenceType> newPt) { this.newPt = newPt;}
+
+    public String getCustomizationAsString() {
+        return customization.orElse(EMPTY);
+    }
+
+    public String getArrayComparisonKeyPathAsString() {
+        return arrayComparisonKeyPath.orElse(EMPTY);
+    }
+
+    public void setCustomization(String customization) {
+        this.customization = customization.equals(EMPTY)? Optional.empty(): Optional.of(customization);
+    }
+
+    public void setCustomization(Optional<String> customization) {
+        this.customization = customization;
+    }
+
+    public void setArrayComparisonKeyPath(String arrayComparisonKeyPath) {
+        this.arrayComparisonKeyPath = arrayComparisonKeyPath.equals(EMPTY) ? Optional.empty()
+            : Optional.of(arrayComparisonKeyPath);
+    }
+
+    public void setArrayComparisonKeyPath(Optional<String> arrayComparisonKeyPath) {
+        this.arrayComparisonKeyPath = arrayComparisonKeyPath;
+    }
 
     enum RuleStatus {
         // IMP: Order of fields is used for sorting.

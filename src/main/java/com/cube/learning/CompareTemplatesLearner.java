@@ -1,23 +1,24 @@
 package com.cube.learning;
 
+import com.cube.core.CompareTemplateVersioned;
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateEntryOperation;
 import com.cube.golden.TemplateEntryOperation.RuleType;
 import com.cube.golden.TemplateSet;
 import com.cube.learning.TemplateEntryMeta.Action;
-import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.learning.TemplateEntryMeta.RuleStatus;
 import io.md.core.Comparator.Diff;
 import io.md.core.Comparator.Resolution;
 import io.md.core.CompareTemplate;
 import io.md.core.CompareTemplate.ComparisonType;
+import io.md.core.CompareTemplate.DataType;
+import io.md.core.CompareTemplate.ExtractionMethod;
 import io.md.core.CompareTemplate.PresenceType;
 import io.md.core.TemplateEntry;
 import io.md.core.TemplateEntryAsRule;
 import io.md.core.TemplateKey;
 import io.md.core.TemplateKey.Type;
-import io.md.dao.Event.EventType;
 import io.md.dao.ReqRespMatchResult;
 import io.md.dao.ReqRespUpdateOperation.OperationType;
 import io.md.services.DataStore.TemplateNotFoundException;
@@ -97,7 +98,12 @@ public class CompareTemplatesLearner {
                             requestPath, method, templateEntry.path,
                             templateEntry.getCompareType(),
                             templateEntry.getPresenceType(),
-                            Optional.empty(), Optional.empty(), Optional.empty(),
+                            Optional.empty(), Optional.empty(),
+                            templateEntry.dt,
+                            templateEntry.em,
+                            templateEntry.customization,
+                            templateEntry.arrayComparisionKeyPath,
+                            Optional.empty(),
                             RuleStatus.UnusedExisting
                         ));
                 }
@@ -152,6 +158,10 @@ public class CompareTemplatesLearner {
         Optional<ComparisonType> newCt = Optional.empty();
         Optional<PresenceType> newPt = Optional.empty();
         RuleStatus ruleStatus;
+        DataType currentDt = DataType.Default;
+        ExtractionMethod currentEm = ExtractionMethod.Default;
+        Optional<String> arrayComparisonPath = Optional.empty();
+        Optional<String> customization = Optional.empty();
         Integer count = 0, numViolationsComparison = 0, numViolationsPresence = 0;
         Action action = Action.None;
 
@@ -300,21 +310,25 @@ public class CompareTemplatesLearner {
         templateEntryMetaList.forEach(meta -> meta.id = String.valueOf(id[0]++));
         templateEntryMetaList.forEach(
             meta -> meta.parentMeta.ifPresent(parentMeta -> {
-                meta.inheritedRuleId = parentMeta.id;
+                meta.setInheritedRuleId(parentMeta.id);
                 meta.sourceRulePath = parentMeta.jsonPath;
             }));
         return templateEntryMetaList;
     }
 
-    public TemplateUpdateOperationSet updateComparisonRules(List<TemplateEntryMeta> templateEntryMetaList, String updateOperationSetId){
+    public TemplateSet createTemplateSetFromTemplateEntryMetas(List<TemplateEntryMeta> templateEntryMetaList){
 
-        TemplateUpdateOperationSet updateOperationSet = new TemplateUpdateOperationSet();
+        HashMap<TemplateKey, CompareTemplateVersioned> templatesMap = new HashMap<>();
 
         templateEntryMetaList.forEach(tm -> {
-            Optional<TemplateEntry> existingEntry = getDefaultRule(
-                createRulesKey(tm.service, tm.apiPath, tm.reqOrResp,
-                    tm.method.equals(TemplateEntryMeta.METHODS_ALL) ? Optional.empty()
-                        : Optional.of(tm.method), Optional.of(tm.jsonPath)));
+            TemplateKey templateKey = new TemplateKey(templateVersion, customer, app, tm.service,
+                tm.apiPath, tm.reqOrResp, tm.getMethod(), TemplateKey.DEFAULT_RECORDING);
+
+            CompareTemplate compareTemplate = templatesMap.computeIfAbsent(templateKey,
+                k -> new CompareTemplateVersioned(Optional.of(tm.service), Optional.of(tm.apiPath),
+                    tm.getMethod(), tm.reqOrResp, new CompareTemplate()));
+            compareTemplate.addRule(new TemplateEntry(tm.jsonPath, DataType.Default, tm.getNewPtAsString()));
+
 
             Optional<TemplateEntry> newEntry = existingEntry.flatMap(entry -> {
                 if (!getValueMatchRequired(entry).equals(tm.valueMatchRequired) ||

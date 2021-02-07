@@ -512,22 +512,19 @@ public class AnalyzeWS {
                     with(csvSchema).readValues(uploadedInputStream);
             templateEntryMetaList = mi.readAll();
 
-            String operationSetID = rrstore.createTemplateUpdateOperationSet(customerId,
-                app, previousTemplateVersion);
-
             CompareTemplatesLearner ctLearner = new CompareTemplatesLearner(customerId,
                 app, version, rrstore);
 
             TemplateUpdateOperationSet updateOperationSet = ctLearner
-                .updateComparisonRules(templateEntryMetaList, operationSetID);
+                .createTemplateSetFromTemplateEntryMetas(templateEntryMetaList);
 
-            rrstore.saveTemplateUpdateOperationSet(updateOperationSet, customerId);
+//            rrstore.saveTemplateUpdateOperationSet(updateOperationSet, customerId);
 
-            Optional<TemplateSet> originalTemplateSet = rrstore
-                .getTemplateSet(customerId, app, previousTemplateVersion);
+//            Optional<TemplateSet> originalTemplateSet = rrstore
+//                .getTemplateSet(customerId, app, previousTemplateVersion);
 
-            String updatedTemplateSetVersion =
-                AnalysisUtils.updateTemplateSet(operationSetID, originalTemplateSet, rrstore);
+//            String updatedTemplateSetVersion =
+//                AnalysisUtils.updateTemplateSet(operationSetID, originalTemplateSet, rrstore);
 
             return Response.ok().entity(new JSONObject(Map.of("Message"
                 , "Template Set successfully updated", "ID", updatedTemplateSetVersion))).build();
