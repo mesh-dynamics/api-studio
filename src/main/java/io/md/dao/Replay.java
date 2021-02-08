@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.md.constants.ReplayStatus;
 import io.md.core.CollectionKey;
 import io.md.core.ReplayTypeEnum;
+import io.md.core.Validate;
 
 public class Replay {
 
@@ -70,6 +71,7 @@ public class Replay {
 		this.customerId = customerId;
 		this.app = app;
 		this.instanceId = instanceId;
+		if(collection==null || collection.isEmpty()) throw new IllegalArgumentException("colllection can not be null or empty "+collection==null ? null : "empty");
 		this.collection = collection;
 		this.userId = userId;
 		this.reqIds = reqIds;
