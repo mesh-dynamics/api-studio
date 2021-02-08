@@ -124,7 +124,7 @@ spec:
                 {
                   [":method"] = "POST",
                   [":path"] = "/api/cs/storeEvent",
-                  [":authority"] = "cube",
+                  [":authority"] = "{{cube_host}}",
                   ["Content-Type"] = "application/json",
                   ["Authorization"] = "Bearer {{auth_token}}"
                 },
@@ -249,7 +249,7 @@ spec:
           name: envoy.transport_sockets.tls
           typed_config:
             "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
-            sni: demo.dev.cubecorp.io
+            sni: {{cube_host}}
             common_tls_context:
               validation_context:
                 match_subject_alt_names:
