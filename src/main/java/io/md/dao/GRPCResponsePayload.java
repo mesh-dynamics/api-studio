@@ -1,7 +1,5 @@
 package io.md.dao;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -33,11 +31,11 @@ public class GRPCResponsePayload extends GRPCPayload implements ResponsePayload 
 
 	@JsonDeserialize(as= MultivaluedHashMap.class)
 	@JsonProperty("trls")
-	protected Map<String, String> trls;
+	protected MultivaluedMap<String, String> trls;
 
 
 	protected GRPCResponsePayload(MultivaluedMap<String, String> hdrs, byte[] body,
-		 String path, Integer status, Map<String, String> trls) {
+		 String path, Integer status, MultivaluedMap<String, String> trls) {
 		super(hdrs, body, path);
 		this.status = status;
 		if (hdrs != null) this.trls = trls;
@@ -46,7 +44,7 @@ public class GRPCResponsePayload extends GRPCPayload implements ResponsePayload 
 	public GRPCResponsePayload(JsonNode deserializedJsonTree) {
 		super(deserializedJsonTree);
 		this.trls =  this.dataObj.getValAsObject("/".concat("trls"),
-			HashMap.class).orElse(new HashMap());
+			MultivaluedHashMap.class).orElse(new MultivaluedHashMap());
 		try {
 			Optional<Integer> optionalStatus = this.dataObj
 				.getValAsObject(Constants.GRPC_STATUS_PATH,
@@ -79,10 +77,10 @@ public class GRPCResponsePayload extends GRPCPayload implements ResponsePayload 
 	}
 
 	@JsonIgnore
-	public Map<String, String> getTrls() {
+	public MultivaluedMap<String, String> getTrls() {
 		if (this.dataObj != null && !this.dataObj.isDataObjEmpty()) {
 			return this.dataObj.getValAsObject("/".concat("trls"),
-				HashMap.class).orElse(new HashMap<>());
+				MultivaluedHashMap.class).orElse(new MultivaluedHashMap<>());
 		}
 		return trls;
 	}
