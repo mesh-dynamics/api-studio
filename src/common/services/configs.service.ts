@@ -105,10 +105,25 @@ const protoDescriptorFileUpload = async(args: IProtoDescriptorFileUploadArgs ) =
 }
 //End: Grpc Configuration Section
 
+
+//Start: API Token Section
+const getApiToken = async() =>{
+  let apiURL = `${config.apiBaseUrl}/access_token`;
+
+  try {
+    return api.post(apiURL);
+  } catch (e) {
+    console.error("Error fetching API Token");
+    throw e;
+  }
+}
+//End: API Token Section
+
 export const configsService = {
   getPotentialDynamicInjectionConfigs,
   saveDynamicInjectionConfigFromCsv,
   getDynamicInjectionConfig,
   saveDynamicInjectionConfigFromJson,
-  protoDescriptorFileUpload
+  protoDescriptorFileUpload,
+  getApiToken
 };
