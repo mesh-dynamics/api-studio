@@ -336,13 +336,27 @@ public class MockServiceHTTP {
                         builder.header(fieldName, val);
                     }
                 }));
+                if(httpServletResponse !=null) {
+                    // It's necessary to set "Trailer" header when setting trailers
+                    // https://javaee.github.io/tutorial/servlets014b.html
+                    responsePayload.getTrls().forEach((k,v) -> {
+                        builder.header(io.md.constants.Constants.TRAILER_HEADER, k);
+                    });
 
-                // It's necessary to set "Trailer" header when setting trailers
-                // https://javaee.github.io/tutorial/servlets014b.html
-                responsePayload.getTrls().forEach((k,v) -> {
-                    builder.header(io.md.constants.Constants.TRAILER_HEADER, k);
-                });
-                httpServletResponse.setTrailerFields(responsePayload::getTrls);
+                    httpServletResponse.setTrailerFields(() -> {
+                        MultivaluedMap<String, String> trailersMultiValuedMap = responsePayload
+                            .getTrls();
+                        Map<String,String> trailersMap = new HashMap<String,String>();
+
+                        for(String key : trailersMultiValuedMap.keySet()){
+                            trailersMap.put(key, trailersMultiValuedMap.getFirst(key));
+                        }
+                        return trailersMap;
+                    });
+                }
+                else {
+                    LOGGER.error("httpServletResponse is not injected using context annotation. grpc trailers not set/");
+                }
                 ProtoDescriptorCache protoDescriptorCache = ProtoDescriptorCacheProvider.getInstance()
                     .get();
                 Optional<ProtoDescriptorDAO> protoDescriptorDAO =
