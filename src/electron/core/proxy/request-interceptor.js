@@ -2,7 +2,7 @@ const url = require('url');
 const logger = require('electron-log');
 
 // Alt Mock With Collection API: /api/ms/mockWithCollection??
-const mockApiPrefix = '/api/msc/mockWithRunId';
+const mockApiPrefix = '/api/msc/mockWithRunIdTS';
 const strictMockApiPrefix = '/api/ms'
 
 /**
@@ -21,6 +21,7 @@ const rewriteMockPath = (resourcePath, mockContext, traceDetails, service, servi
         strictMock,
         replayInstance,
     } = mockContext;
+    const timestamp = new Date(Date.now()).toISOString();
     const {traceIdDetails: {traceIdForEvent}} = traceDetails;
 
     logger.info('Intercepted Resource URI :', resourcePath);
@@ -40,7 +41,7 @@ const rewriteMockPath = (resourcePath, mockContext, traceDetails, service, servi
     if(strictMock) {
         path = `${strictMockApiPrefix}/${customerName}/${selectedApp}/${replayInstance}/${service}/${strippedResourcePath}`
     } else {
-        path = `${mockApiPrefix}/${collectionId}/${recordingCollectionId}/${customerName}/${selectedApp}/${traceIdForEvent}/${runId}/${service}/${strippedResourcePath}`;
+        path = `${mockApiPrefix}/${collectionId}/${recordingCollectionId}/${customerName}/${selectedApp}/${timestamp}/${traceIdForEvent}/${runId}/${service}/${strippedResourcePath}`;
     }
 
     logger.info('Updated Resource URI : ', path);
