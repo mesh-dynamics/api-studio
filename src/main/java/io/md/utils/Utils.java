@@ -266,6 +266,7 @@ public class Utils {
 			.startsWith(Constants.APPLICATION_GRPC)) {
 			GRPCRequestPayload grpcRequestPayload = new GRPCRequestPayload(hdrs, body, apiPath);
 			try {
+				grpcRequestPayload.parseIfRequired();
 				grpcRequestPayload.dataObj.put(Constants.METHOD_PATH,
 					new JsonDataObj(new TextNode("POST"), CubeObjectMapperProvider.getInstance()));
 				// Need to add path field in dataObj otherwise will error out while deserialisng
