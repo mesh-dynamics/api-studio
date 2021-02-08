@@ -11,8 +11,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -60,6 +62,10 @@ import com.cube.dao.ReqRespStore;
  */
 @Path("/ms")
 public class MockServiceHTTP {
+
+
+    @Context
+    private HttpServletResponse httpServletResponse; // Used for grpc mock response to add trailers.
 
     private static final Logger LOGGER = LogManager.getLogger(MockServiceHTTP.class);
 
@@ -330,6 +336,27 @@ public class MockServiceHTTP {
                         builder.header(fieldName, val);
                     }
                 }));
+                if(httpServletResponse !=null) {
+                    // It's necessary to set "Trailer" header when setting trailers
+                    // https://javaee.github.io/tutorial/servlets014b.html
+                    responsePayload.getTrls().forEach((k,v) -> {
+                        builder.header(io.md.constants.Constants.TRAILER_HEADER, k);
+                    });
+
+                    httpServletResponse.setTrailerFields(() -> {
+                        MultivaluedMap<String, String> trailersMultiValuedMap = responsePayload
+                            .getTrls();
+                        Map<String,String> trailersMap = new HashMap<String,String>();
+
+                        for(String key : trailersMultiValuedMap.keySet()){
+                            trailersMap.put(key, trailersMultiValuedMap.getFirst(key));
+                        }
+                        return trailersMap;
+                    });
+                }
+                else {
+                    LOGGER.error("httpServletResponse is not injected using context annotation. grpc trailers not set/");
+                }
                 ProtoDescriptorCache protoDescriptorCache = ProtoDescriptorCacheProvider.getInstance()
                     .get();
                 Optional<ProtoDescriptorDAO> protoDescriptorDAO =
