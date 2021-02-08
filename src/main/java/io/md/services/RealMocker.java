@@ -6,6 +6,8 @@
 
 package io.md.services;
 
+import io.md.cache.ProtoDescriptorCache;
+import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.core.CollectionKey;
 import io.md.dao.*;
 
@@ -32,6 +34,7 @@ import io.md.core.TemplateKey.Type;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Event.EventType;
 import io.md.services.DataStore.TemplateNotFoundException;
+import io.md.utils.ProtoDescriptorCacheProvider;
 import io.md.utils.UtilException;
 import io.md.utils.Utils;
 
@@ -226,6 +229,14 @@ public class RealMocker implements Mocker {
             replayCtx.flatMap(rctx->rctx.reqTraceId).ifPresent(event::setTraceId);
 
             try {
+                if(event.payload instanceof GRPCPayload) {
+                    ProtoDescriptorCache protoDescriptorCache = ProtoDescriptorCacheProvider
+                        .getInstance()
+                        .get();
+                    Optional<ProtoDescriptorDAO> protoDescriptorDAO =
+                        protoDescriptorCache.get(new ProtoDescriptorKey(event.customerId, event.app, event.getCollection()));
+                    ((GRPCPayload) event.payload).setProtoDescriptor(protoDescriptorDAO);
+                }
                 event.parseAndSetKey(cube.getTemplate(event.customerId, event.app, event.service,
                     event.apiPath, templateVersion, Type.RequestMatch
                     , Optional.ofNullable(event.eventType), Utils.extractMethod(event), replayCollection));
