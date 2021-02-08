@@ -14,6 +14,7 @@ public class Constants {
 	public static final String DEFAULT_PARENT_SPAN_FIELD = "x-b3-parentspanid";
 	public static final String X_REQUEST_ID = "x-request-id";
 	public static final String PARENT_SPAN_ID_PROP_FIELD = "parent-span-id";
+	public static final String TRAILER_HEADER = "Trailer";
 
 
 	//public static final String DEFAULT_BAGGAGE_PARENT_SPAN = "baggage-parent-span-id";
@@ -110,6 +111,7 @@ public class Constants {
 	public static final String PATH_PATH = "/path";
 	public static final String METHOD_PATH = "/method";
 	public static final String STATUS_PATH = "/status";
+	public static final String GRPC_STATUS_PATH = "/trls/grpc-status";
 
 	public static final String ARGS_PATH = "/args";
 	public static final String FN_RESPONSE_PATH = "/retOrExceptionVal";
