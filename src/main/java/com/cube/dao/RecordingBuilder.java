@@ -87,7 +87,7 @@ public class RecordingBuilder {
 		return new Recording(idv, customerId, app, instanceId, collection, status, timestamp
 			, templateVersion, parentRecordingId, rootRecordingId, name, codeVersion, branch
 		, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment
-			, userId, generatedClassJarPath, generatedClassLoader, label, recordingType , dynamicInjectionConfigVersion, runId);
+			, userId, generatedClassJarPath, generatedClassLoader, label, recordingType , dynamicInjectionConfigVersion, runId , false);
 	}
 
 	private String recalculateId() {
