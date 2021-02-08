@@ -265,16 +265,6 @@ public class Utils {
 		if (getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN).toLowerCase()
 			.startsWith(Constants.APPLICATION_GRPC)) {
 			GRPCRequestPayload grpcRequestPayload = new GRPCRequestPayload(hdrs, body, apiPath);
-			try {
-				grpcRequestPayload.parseIfRequired();
-				grpcRequestPayload.dataObj.put(Constants.METHOD_PATH,
-					new JsonDataObj(new TextNode("POST"), CubeObjectMapperProvider.getInstance()));
-				// Need to add path field in dataObj otherwise will error out while deserialisng
-				grpcRequestPayload.dataObj.put(Constants.PATH_PATH,
-					new JsonDataObj(new TextNode(apiPath), CubeObjectMapperProvider.getInstance()));
-			} catch (Exception e) {
-				LOGGER.error("Unable to set method as post in GRPCRequestPayload dataobj", e);
-			}
 			mockedRequestPayload = grpcRequestPayload;
 
 		} else {

@@ -40,6 +40,8 @@ import io.md.utils.Utils;
 
 import static io.md.dao.Event.RunType.*;
 
+import com.fasterxml.jackson.databind.node.TextNode;
+
 
 /*
  * Created by IntelliJ IDEA.
@@ -233,9 +235,19 @@ public class RealMocker implements Mocker {
                     ProtoDescriptorCache protoDescriptorCache = ProtoDescriptorCacheProvider
                         .getInstance()
                         .get();
+                    GRPCPayload grpcPayload = ((GRPCPayload) event.payload);
                     Optional<ProtoDescriptorDAO> protoDescriptorDAO =
                         protoDescriptorCache.get(new ProtoDescriptorKey(event.customerId, event.app, event.getCollection()));
-                    ((GRPCPayload) event.payload).setProtoDescriptor(protoDescriptorDAO);
+                    grpcPayload.setProtoDescriptor(protoDescriptorDAO);
+                    try {
+                        grpcPayload.dataObj.put(Constants.METHOD_PATH,
+                            new JsonDataObj(new TextNode("POST"), CubeObjectMapperProvider.getInstance()));
+                        // Need to add path field in dataObj otherwise will error out while deserialisng
+                        grpcPayload.dataObj.put(Constants.PATH_PATH,
+                            new JsonDataObj(new TextNode(event.apiPath), CubeObjectMapperProvider.getInstance()));
+                    } catch (Exception e) {
+                        LOGGER.error("Unable to set method as post in GRPCRequestPayload dataobj", e);
+                    }
                 }
                 event.parseAndSetKey(cube.getTemplate(event.customerId, event.app, event.service,
                     event.apiPath, templateVersion, Type.RequestMatch
