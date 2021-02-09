@@ -1442,8 +1442,7 @@ public class CubeStore {
         //TODO: Use fieldList to reduce the data fetched.
         EventQuery.Builder reqBuilder = new EventQuery.Builder(originalRec.customerId,
             originalRec.app,
-            Stream.concat(Event.REQUEST_EVENT_TYPES.stream(), Event.RESPONSE_EVENT_TYPES.stream())
-                .collect(Collectors.toList()));
+            Collections.emptyList());
         reqBuilder.withCollection(originalRec.collection);
         reqBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
         Result<Event> reqRespEvents = rrstore.getEvents(reqBuilder.build());

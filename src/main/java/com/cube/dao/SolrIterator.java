@@ -19,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrRequest.METHOD;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
@@ -199,7 +200,7 @@ public class SolrIterator implements Iterator<SolrDocument> {
         QueryResponse response = null;
         Optional<QueryResponse> toReturn = Optional.empty();
         try {
-            response = solr.query(query);
+            response = solr.query(query, METHOD.POST);
             toReturn = Optional.of(response);
         } catch (SolrServerException | IOException e) {
 	        LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,

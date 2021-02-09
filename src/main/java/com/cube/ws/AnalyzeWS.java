@@ -20,6 +20,10 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import io.md.cache.ProtoDescriptorCache;
+import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
+import io.md.core.BatchingIterator;
+
 import io.md.core.Comparator.Diff;
 import io.md.dao.ApiTraceResponse;
 import io.md.dao.ApiTraceResponse.ServiceReqRes;
@@ -885,139 +889,158 @@ public class AnalyzeWS {
             app[1] = analysisOpt.map(analysis -> analysis.templateVersion).orElse(replay.templateVersion);
             List<ReqRespMatchResult> res = result.getObjects()
                 .collect(Collectors.toList());
-            List<String> reqIds = res.stream().map(r -> r.recordReqId).flatMap(Optional::stream)
-                .collect(Collectors.toList());
-		    List<String> replayReqIds = res.stream().map(r -> r.replayReqId).flatMap(Optional::stream)
-			    .collect(Collectors.toList());
-
-            Map<String, Event> requestMap = new HashMap<>();
+		    Map<String, Event> reqMap = new HashMap<>();
 		    Map<String, Event> respMap = new HashMap<>();
-            if (!reqIds.isEmpty()) {
-                // empty reqId list would lead to returning of all requests, so check for it
-	            EventQuery.Builder reqBuilder = new EventQuery.Builder(replay.customerId,
-		            replay.app,
-		            includeDiff.orElse(false) ? Collections.emptyList()
-			            : Event.REQUEST_EVENT_TYPES);
-	            reqBuilder.withCollection(replay.collection);
-	            reqBuilder.withReqIds(reqIds);
-	            reqBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
-	            Result<Event> reqRespEvents = rrstore.getEvents(reqBuilder.build());
 
-	            reqRespEvents.getObjects().forEach(event -> {
-		            if (event.payload instanceof RequestPayload) {
-			            requestMap.put(event.reqId, event);
-		            } else if (event.payload instanceof ResponsePayload) {
-			            respMap.put(event.reqId, event);
-		            }
-	            });
-            }
+		    List<MatchRes> list = new ArrayList<>();
+		    BatchingIterator.batchedStreamOf(res.stream(), 100).forEach(resBatch -> {
+			    List<String> reqIds = resBatch.stream().map(r -> r.recordReqId)
+				    .flatMap(Optional::stream)
+				    .collect(Collectors.toList());
+			    List<String> replayReqIds = resBatch.stream().map(r -> r.replayReqId)
+				    .flatMap(Optional::stream)
+				    .collect(Collectors.toList());
 
-		    if (includeDiff.orElse(false)) {
-			    EventQuery.Builder reqBuilder = new EventQuery.Builder(replay.customerId,
-				    replay.app,
-				    Stream.concat(Event.REQUEST_EVENT_TYPES.stream(), Event.RESPONSE_EVENT_TYPES.stream())
-					    .collect(Collectors.toList()));
-			    reqBuilder.withCollection(replay.replayId);
-			    reqBuilder.withReqIds(replayReqIds);
-			    reqBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
-			    Result<Event> reqRespEvents = rrstore.getEvents(reqBuilder.build());
-
-			    reqRespEvents.getObjects().forEach(event -> {
-				    if (event.payload instanceof RequestPayload) {
-					    requestMap.put(event.reqId, event);
-				    } else if (event.payload instanceof ResponsePayload) {
-					    respMap.put(event.reqId, event);
-				    }
-			    });
-		    }
-
-		    return res.stream().map(matchRes -> {
-			    Optional<Event> reqEvent = matchRes.recordReqId
-				    .flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)));
-			    Optional<String> request = reqEvent
-				    .map(e -> {
-				    	if(e.payload instanceof GRPCPayload) {
-						    io.md.utils.Utils.setProtoDescriptorGrpcEvent(e, config.protoDescriptorCache);
+			    if (!reqIds.isEmpty()) {
+				    // empty reqId list would lead to returning of all requests, so check for it
+				    EventQuery.Builder reqBuilder = new EventQuery.Builder(replay.customerId,
+					    replay.app,
+					    includeDiff.orElse(false) ? Collections.emptyList()
+						    : Event.REQUEST_EVENT_TYPES);
+				    reqBuilder.withReqIds(reqIds);
+				    reqBuilder.withCollection(replay.collection);
+				    reqBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
+				    Result<Event> reqRespEvents = rrstore.getEvents(reqBuilder.build());
+				    reqRespEvents.getObjects().forEach(event -> {
+					    if (event.payload instanceof RequestPayload) {
+						    reqMap.put(event.reqId, event);
+					    } else if (event.payload instanceof ResponsePayload) {
+						    respMap.put(event.reqId, event);
 					    }
-				    	return e.payload.getPayloadAsJsonString(true);
 				    });
-			    Optional<Long> recordReqTime = reqEvent.map(e -> e.timestamp.toEpochMilli());
+			    }
 
-			    Optional<String> recordedRequest = Optional.empty();
-			    Optional<String> replayedRequest = Optional.empty();
-			    Optional<String> respCompDiff = Optional.empty();
-			    Optional<String> recordResponse = Optional.empty();
-			    Optional<Boolean> recordResponseTruncated = Optional.of(false);
-			    Optional<String> replayResponse = Optional.empty();
-			    Optional<Boolean> replayResponseTruncated = Optional.of(false);
-			    Optional<String> reqCompDiff = Optional.empty();
-			    Optional<Long> replayReqTime = Optional.empty();
-			    Optional<Long> recordRespTime = Optional.empty();
-			    Optional<Long> replayRespTime = Optional.empty();
-			    MatchType reqCompResType = matchRes.reqCompareRes.mt;
 			    if (includeDiff.orElse(false)) {
-				    recordedRequest = request;
-				    Optional<Event> replayedRequestEvent = matchRes.replayReqId
-					    .flatMap(reqId -> Optional.ofNullable(requestMap.get(reqId)));
-				    replayedRequest = replayedRequestEvent
+				    EventQuery.Builder reqBuilder = new EventQuery.Builder(replay.customerId,
+					    replay.app,
+					    Collections.emptyList());
+				    reqBuilder.withReqIds(replayReqIds);
+				    reqBuilder.withCollection(replay.replayId);
+				    reqBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
+				    Result<Event> reqRespEvents = rrstore.getEvents(reqBuilder.build());
+				    reqRespEvents.getObjects().forEach(event -> {
+					    if (event.payload instanceof RequestPayload) {
+						    reqMap.put(event.reqId, event);
+					    } else if (event.payload instanceof ResponsePayload) {
+						    respMap.put(event.reqId, event);
+					    }
+				    });
+			    }
+
+			    List<MatchRes> temp = resBatch.stream().map(matchRes -> {
+				    Optional<Event> reqEvent = matchRes.recordReqId
+					    .flatMap(reqId -> Optional.ofNullable(reqMap.get(reqId)));
+				    Optional<String> request = reqEvent
 					    .map(e -> {
-						    if(e.payload instanceof GRPCPayload) {
-							    io.md.utils.Utils.setProtoDescriptorGrpcEvent(e, config.protoDescriptorCache);
+						    if (e.payload instanceof GRPCPayload) {
+							    io.md.utils.Utils
+								    .setProtoDescriptorGrpcEvent(e, config.protoDescriptorCache);
 						    }
 						    return e.payload.getPayloadAsJsonString(true);
 					    });
-				    replayReqTime = replayedRequestEvent.map(e -> e.timestamp.toEpochMilli());
-				    List<Diff> responseCompDiffList =
-					    matchRes.respCompareRes.diffs.size() > config.getPathsToKeepLimit()
-						    ? matchRes.respCompareRes.diffs
-						    .subList(0, (int) config.getPathsToKeepLimit())
-						    : matchRes.respCompareRes.diffs;
+				    Optional<Long> recordReqTime = reqEvent.map(e -> e.timestamp.toEpochMilli());
 
-				    try {
-					    respCompDiff = Optional
-						    .of(jsonMapper.writeValueAsString(responseCompDiffList));
-					    reqCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes
-						    .reqCompareRes.diffs));
-				    } catch (JsonProcessingException e) {
-					    LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-						    "Unable to convert diff to json string")), e);
+				    Optional<String> recordedRequest = Optional.empty();
+				    Optional<String> replayedRequest = Optional.empty();
+				    Optional<String> respCompDiff = Optional.empty();
+				    Optional<String> recordResponse = Optional.empty();
+				    Optional<Boolean> recordResponseTruncated = Optional.of(false);
+				    Optional<String> replayResponse = Optional.empty();
+				    Optional<Boolean> replayResponseTruncated = Optional.of(false);
+				    Optional<String> reqCompDiff = Optional.empty();
+				    Optional<Long> replayReqTime = Optional.empty();
+				    Optional<Long> recordRespTime = Optional.empty();
+				    Optional<Long> replayRespTime = Optional.empty();
+				    MatchType reqCompResType = matchRes.reqCompareRes.mt;
+				    if (includeDiff.orElse(false)) {
+					    recordedRequest = request;
+					    Optional<Event> replayedRequestEvent = matchRes.replayReqId
+						    .flatMap(reqId -> Optional.ofNullable(reqMap.get(reqId)));
+					    replayedRequest = replayedRequestEvent
+						    .map(e -> {
+							    if (e.payload instanceof GRPCPayload) {
+								    io.md.utils.Utils.setProtoDescriptorGrpcEvent(e,
+									    config.protoDescriptorCache);
+							    }
+							    return e.payload.getPayloadAsJsonString(true);
+						    });
+					    replayReqTime = replayedRequestEvent.map(e -> e.timestamp.toEpochMilli());
+					    List<Diff> responseCompDiffList =
+						    matchRes.respCompareRes.diffs.size() > config.getPathsToKeepLimit()
+							    ? matchRes.respCompareRes.diffs
+							    .subList(0, (int) config.getPathsToKeepLimit())
+							    : matchRes.respCompareRes.diffs;
+
+					    try {
+						    respCompDiff = Optional
+							    .of(jsonMapper.writeValueAsString(responseCompDiffList));
+						    reqCompDiff = Optional.of(jsonMapper.writeValueAsString(matchRes
+							    .reqCompareRes.diffs));
+					    } catch (JsonProcessingException e) {
+						    LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+							    "Unable to convert diff to json string")), e);
+					    }
+					    List<String> pathsToKeep = getPathsToKeep(responseCompDiffList);
+
+					    Optional<Event> recordResponseEvent = matchRes.recordReqId
+						    .flatMap(reqId -> Optional.ofNullable(respMap.get(reqId)));
+
+					    Optional<ConvertEventPayloadResponse> convertRecordResponse =
+						    extractPayload(matchRes.respCompareRes.recordedResponse,
+							    recordResponseEvent)
+							    .map(payload -> payload
+								    .checkAndConvertResponseToString(true, pathsToKeep,
+									    size, "/body"));
+					    recordResponse = convertRecordResponse.map(
+						    ConvertEventPayloadResponse::getResponse);
+					    recordResponseTruncated = convertRecordResponse
+						    .map(ConvertEventPayloadResponse::isTruncated);
+					    recordRespTime = recordResponseEvent.map(e -> e.timestamp.toEpochMilli());
+
+					    Optional<Event> replayResponseEvent = matchRes.replayReqId
+						    .flatMap(reqId -> Optional.ofNullable(respMap.get(reqId)));
+
+					    Optional<ConvertEventPayloadResponse> convertReplayResponse =
+						    extractPayload(matchRes.respCompareRes.replayedResponse,
+							    replayResponseEvent)
+							    .map(payload -> payload
+								    .checkAndConvertResponseToString(true, pathsToKeep,
+									    size, "/body"));
+					    replayResponse = convertReplayResponse.map(
+						    ConvertEventPayloadResponse::getResponse);
+					    replayResponseTruncated = convertReplayResponse
+						    .map(ConvertEventPayloadResponse::isTruncated);
+					    replayRespTime = replayResponseEvent.map(e -> e.timestamp.toEpochMilli());
 				    }
-				    List<String> pathsToKeep = getPathsToKeep(responseCompDiffList);
 
-				    Optional<Event> recordResponseEvent = matchRes.recordReqId
-					    .flatMap(reqId -> Optional.ofNullable(respMap.get(reqId)));
+				    return new MatchRes(matchRes.recordReqId, matchRes.replayReqId,
+					    matchRes.reqMatchRes, matchRes.numMatch,
+					    matchRes.respCompareRes.mt, matchRes.service, matchRes.path, reqCompResType
+					    , respCompDiff, reqCompDiff, recordedRequest, replayedRequest,
+					    recordResponse
+					    , replayResponse, matchRes.recordTraceId, matchRes.replayTraceId,
+					    matchRes.recordedSpanId, matchRes.recordedParentSpanId,
+					    matchRes.replayedSpanId, matchRes.replayedParentSpanId,
+					    recordReqTime, recordRespTime,
+					    replayReqTime, replayRespTime, Optional.of(replay.instanceId)
+					    , recordResponseTruncated, replayResponseTruncated);
+			    }).collect(Collectors.toList());
+			    list.addAll(temp);
+			    reqMap.clear();
+			    respMap.clear();
+		    });
 
-				    Optional<ConvertEventPayloadResponse> convertRecordResponse =
-					    extractPayload(matchRes.respCompareRes.recordedResponse, recordResponseEvent)
-						    .map(payload -> payload.checkAndConvertResponseToString(true, pathsToKeep,
-						    size, "/body"));
-				    recordResponse = convertRecordResponse.map(resp -> resp.getResponse());
-				    recordResponseTruncated = convertRecordResponse.map(resp -> resp.isTruncated());
-				    recordRespTime = recordResponseEvent.map(e -> e.timestamp.toEpochMilli());
-
-				    Optional<Event> replayResponseEvent = matchRes.replayReqId
-					    .flatMap(reqId -> Optional.ofNullable(respMap.get(reqId)));
-
-				    Optional<ConvertEventPayloadResponse> convertReplayResponse =
-					    extractPayload(matchRes.respCompareRes.replayedResponse, replayResponseEvent)
-						    .map(payload -> payload.checkAndConvertResponseToString(true, pathsToKeep,
-							    size, "/body"));
-				    replayResponse = convertReplayResponse.map(resp -> resp.getResponse());
-				    replayResponseTruncated = convertReplayResponse.map(resp -> resp.isTruncated());
-				    replayRespTime = replayResponseEvent.map(e -> e.timestamp.toEpochMilli());
-			    }
-
-                return new MatchRes(matchRes.recordReqId, matchRes.replayReqId,
-                    matchRes.reqMatchRes, matchRes.numMatch,
-                    matchRes.respCompareRes.mt, matchRes.service, matchRes.path, reqCompResType
-	                , respCompDiff, reqCompDiff, recordedRequest, replayedRequest, recordResponse
-	                , replayResponse, matchRes.recordTraceId, matchRes.replayTraceId,
-                    matchRes.recordedSpanId, matchRes.recordedParentSpanId,
-                    matchRes.replayedSpanId, matchRes.replayedParentSpanId,
-	                recordReqTime, recordRespTime,
-	                replayReqTime, replayRespTime, Optional.of(replay.instanceId)
-                    ,recordResponseTruncated, replayResponseTruncated);
-            }).collect(Collectors.toList());
+		    return list;
         }).orElse(Collections.emptyList());
 
         String json;
