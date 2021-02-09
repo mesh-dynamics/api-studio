@@ -360,15 +360,23 @@ public class AnalyzeWSController {
         return cubeServerService.fetchGetResponse(request, getBody);
     }
 
-    @GetMapping("/learnCompareTemplates")
-    public ResponseEntity learnCompareTemplates(HttpServletRequest request, @RequestBody Optional<String> body,
+    @GetMapping("/learnComparisonRules")
+    public ResponseEntity learnComparisonRules(HttpServletRequest request, @RequestBody Optional<String> body,
         Authentication authentication, @QueryParam("replayId") String replayId) {
         final Optional<Replay> replay =cubeServerService.getReplay(replayId);
         if(replay.isEmpty())
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("No Replay found for replayId=" + replayId);
         validation.validateCustomerName(authentication,replay.get().customerId);
-        return cubeServerService.fetchGetResponse(request, body, "/as/getPotentialCompareTemplates");
+        return cubeServerService.fetchGetResponse(request, body);
+    }
+
+    @PostMapping("/learnComparisonRules/{customerId}/{app}/{version}")
+    public ResponseEntity learnComparisonRules(HttpServletRequest request, @RequestBody Optional<String> body,
+        Authentication authentication, @QueryParam("replayId") String replayId,
+        @PathVariable String customerId, @PathVariable String app, @PathVariable String version) {
+        validation.validateCustomerName(authentication, customerId);
+        return cubeServerService.fetchPostResponse(request, body);
     }
 
     @GetMapping("/getTemplateSet/{customerId}/{appId}/{templateVersion}")
