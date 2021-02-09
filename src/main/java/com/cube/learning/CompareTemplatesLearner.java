@@ -1,5 +1,6 @@
 package com.cube.learning;
 
+import com.cube.core.CompareTemplateVersioned;
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
 import com.cube.learning.TemplateEntryMeta.Action;
@@ -8,6 +9,8 @@ import io.md.core.Comparator.Diff;
 import io.md.core.Comparator.Resolution;
 import io.md.core.CompareTemplate;
 import io.md.core.CompareTemplate.ComparisonType;
+import io.md.core.CompareTemplate.DataType;
+import io.md.core.CompareTemplate.ExtractionMethod;
 import io.md.core.CompareTemplate.PresenceType;
 import io.md.core.TemplateEntry;
 import io.md.core.TemplateEntryAsRule;
@@ -15,6 +18,7 @@ import io.md.core.TemplateKey;
 import io.md.core.TemplateKey.Type;
 import io.md.dao.ReqRespMatchResult;
 import io.md.services.DataStore.TemplateNotFoundException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -293,11 +297,44 @@ public class CompareTemplatesLearner {
         templateEntryMetaList.forEach(meta -> meta.id = String.valueOf(id[0]++));
         templateEntryMetaList.forEach(
             meta -> meta.parentMeta.ifPresent(parentMeta -> {
-                meta.inheritedRuleId = parentMeta.id;
+                meta.setInheritedRuleId(parentMeta.id);
                 meta.sourceRulePath = parentMeta.jsonPath;
             }));
         return templateEntryMetaList;
     }
+
+    public TemplateSet createTemplateSetFromTemplateEntryMetas(List<TemplateEntryMeta> templateEntryMetaList){
+
+        HashMap<TemplateKey, CompareTemplateVersioned> templatesMap = new HashMap<>();
+
+        templateEntryMetaList.forEach(tm -> {
+            TemplateKey templateKey = new TemplateKey(templateVersion, customer, app, tm.service,
+                CompareTemplate.normaliseAPIPath(tm.apiPath), tm.reqOrResp, tm.getMethod(), TemplateKey.DEFAULT_RECORDING);
+
+            PresenceType effectivePt = tm.getNewPt().orElse(tm.currentPt);
+            ComparisonType effectiveCt = tm.getNewCt().orElse(tm.currentCt);
+
+            if (effectiveCt != ComparisonType.Default && effectivePt != PresenceType.Default){
+                // TODO: Handle the case when only one of them gets updated in the learned rules.
+                // Currently, we don't support creating a TemplateEntry with either Comparison
+                // or Presence types as Default.
+                CompareTemplate compareTemplate = templatesMap.computeIfAbsent(templateKey,
+                    k -> new CompareTemplateVersioned(Optional.of(tm.service), Optional.of(tm.apiPath),
+                        tm.getMethod(), tm.reqOrResp, new CompareTemplate()));
+
+                compareTemplate.addRule(
+                    new TemplateEntry(tm.jsonPath, DataType.Default, effectivePt,
+                        effectiveCt, ExtractionMethod.Default, Optional.empty(),
+                        Optional.empty()));
+            }else{
+                LOGGER.error("Found default presence or comparison type for template " + tm.toString());
+            }
+        });
+
+        return new TemplateSet(templateVersion, customer, app, Instant.now(),
+            new ArrayList<>(templatesMap.values()), Optional.empty());
+    }
+
 
     private static class RulesKey {
 

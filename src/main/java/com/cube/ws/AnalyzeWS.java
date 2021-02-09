@@ -17,6 +17,7 @@ import com.cube.dao.ApiTraceFacetQuery;
 import com.cube.learning.CompareTemplatesLearner;
 import com.cube.learning.TemplateEntryMeta;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import io.md.core.Comparator.Diff;
@@ -35,6 +36,7 @@ import io.md.dao.ResponsePayload;
 import io.md.dao.Analysis.ReqRespMatchWithEvent;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -75,6 +77,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -486,6 +489,68 @@ public class AnalyzeWS {
         );
     }
 
+    @POST
+    @Path("learnComparisonRules/{customerId}/{app}/{version}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response saveComparisonRules(@PathParam("customerId") String customerId,
+        @PathParam("app") String app,
+        @PathParam("version") String version,
+        @FormDataParam("file") InputStream uploadedInputStream) {
+
+        CsvSchema csvSchema = csvMapper.schemaFor(TemplateEntryMeta.class)
+            .withSkipFirstDataRow(true);
+
+        try {
+            List<TemplateEntryMeta> templateEntryMetaList;
+            MappingIterator<TemplateEntryMeta> mi = csvMapper
+                .readerFor(TemplateEntryMeta.class).
+                    with(csvSchema).readValues(uploadedInputStream);
+            templateEntryMetaList = mi.readAll();
+
+            CompareTemplatesLearner ctLearner = new CompareTemplatesLearner(customerId,
+                app, version, rrstore);
+
+            TemplateSet templateSet = ctLearner
+                .createTemplateSetFromTemplateEntryMetas(templateEntryMetaList);
+
+            ValidateCompareTemplate validTemplate = ServerUtils.validateTemplateSet(templateSet);
+            if (!validTemplate.isValid()) {
+                return Response.status(Response.Status.BAD_REQUEST).entity(
+                    (new JSONObject(Map.of("Message", validTemplate.getMessage()))).toString())
+                    .build();
+            }
+
+            String templateSetId = rrstore.saveTemplateSet(templateSet);
+            return Response.ok().entity((new JSONObject(Map.of(
+                "Message", "Successfully saved template set",
+                "ID", templateSetId,
+                "templateSetVersion", templateSet.version))).toString()).build();
+
+        } catch (IOException e) {
+            LOGGER.error(
+                String.format("Error in reading CSV file for customer=%s, app=%s, version=%s",
+                    customerId, app, version), e);
+            return Response.serverError().entity(
+                Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                    String.format("Error in reading CSV file for customer=%s, app=%s, version=%s",
+                        customerId, app, version))).build();
+        } catch (CompareTemplate.CompareTemplateStoreException e) {
+            return Response.serverError().entity((
+                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED,
+                    "Unable to save template set: " +
+                        e.getMessage()))).build();
+        } catch (TemplateSet.TemplateSetMetaStoreException e) {
+            return Response.serverError().entity((
+                Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_META_STORE_FAILED,
+                    "Unable to save template meta: " +
+                        e.getMessage()))).build();
+        } catch (Exception e) {
+            return Response.serverError().entity((new JSONObject(Map.of(
+                "Message", "Unable to save template set",
+                "Error", e.getMessage()))).toString()).build();
+        }
+    }
 
 
     public Response getCompareTemplate(UriInfo urlInfo, String appId,
