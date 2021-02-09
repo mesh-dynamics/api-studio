@@ -258,6 +258,7 @@ class HttpClientTabs extends Component {
                 paramsType: toBeUpdatedData.paramsType,
                 responseStatus: toBeCopiedFromData.responseStatus,
                 responseStatusText: toBeCopiedFromData.responseStatusText,
+                recordedResponseStatus: toBeCopiedFromData.recordedResponseStatus,
                 responseHeaders: toBeCopiedFromData.responseHeaders,
                 responseBody: toBeCopiedFromData.responseBody,
                 recordedResponseHeaders: toBeCopiedFromData.recordedResponseHeaders,
@@ -1397,7 +1398,7 @@ class HttpClientTabs extends Component {
 
 
     getReqResFromTabData(eachPair, tabToSave, runId, type, reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment, tracer, traceDetails, parentSpanId, spanId) {
-        const { headers, queryStringParams, bodyType, rawDataType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus } = tabToSave;
+        const { headers, queryStringParams, bodyType, rawDataType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus, recordedResponseStatus } = tabToSave;
 
         const httpRequestEventTypeIndex = eachPair[0].eventType === "HTTPRequest" ? 0 : 1;
         const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
@@ -1530,7 +1531,7 @@ class HttpClientTabs extends Component {
         if (type !== "History") {
             httpResponseHeaders = recordedResponseHeaders ? extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : responseHeaders ? extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : null;
             httpResponseBody = this.tryJsonParse(recordedResponseBody);
-            httpResponseStatus = httpResponseEvent.payload[1].status
+            httpResponseStatus = recordedResponseStatus;
         } else {
             httpResponseHeaders = responseHeaders ? extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : recordedResponseHeaders ? extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : null;
             httpResponseBody = this.tryJsonParse(responseBody);

@@ -140,6 +140,10 @@ export const httpClientActions = {
         return {type: httpClientConstants.POST_SUCCESS_LOAD_RECORDED_HISTORY, data: {tabId, recordedHistory, runId}};
     },
 
+    updateHttpStatusInTab: (tabId, clientTabId, status, statusText) => {
+        return {type: httpClientConstants.UPDATE_HTTP_STATUS_IN_TAB, data: {tabId, clientTabId, status, statusText}};
+    },
+
     setInactiveHistoryCursor: (historyCursor, active) => {
         return {type: httpClientConstants.SET_INACTIVE_HISTORY_CURSOR, data: {historyCursor, active}};
     },

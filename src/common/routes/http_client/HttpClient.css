@@ -299,3 +299,24 @@ div.loading, div.loading button{
 .fileListParam span{
   margin-right: 5px;
 }
+
+.editable-options{
+  display: inline-block;
+  max-width: 150px;
+  max-height: 20px;
+}
+.editable-options select{
+  padding: 0px;
+  max-height: 20px
+}
+.isEditableLabel{
+  padding: 2px;
+}
+.isEditableLabel:hover{
+  background-color: white;
+  cursor: pointer; 
+}
+.isEditableLabel::after {
+  content: '\25be';
+  padding-left: 5px;
+}

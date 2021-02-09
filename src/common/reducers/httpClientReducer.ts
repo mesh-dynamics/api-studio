@@ -443,6 +443,44 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             }
         }
 
+
+        case httpClientConstants.UPDATE_HTTP_STATUS_IN_TAB: {
+            let { tabs } = state;
+            const { clientTabId, tabId, status, statusText} = data;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === clientTabId) {
+                        if(clientTabId == tabId){
+                            //Status of main tab has changed
+                            return {
+                                ...eachTab, 
+                                recordedResponseStatus: status,
+                                // responseStatusText: statusText,
+                                hasChanged: true
+                            }
+                        }else{
+                            //status in outgoing request has changed
+                            eachTab.outgoingRequests = eachTab.outgoingRequests.map((eachOutgoingTab) => {
+                                if (eachOutgoingTab.id === tabId) {
+                                    return {
+                                        ...eachOutgoingTab,
+                                        recordedResponseStatus : status,
+                                        // responseStatusText: statusText,
+                                        hasChanged : true
+                                    }
+                                }
+                                return eachOutgoingTab;
+                            });
+                            return {...eachTab}
+                        }
+                       
+                    }
+                    return eachTab;
+                })
+            }
+        }
+
         case httpClientConstants.MERGE_STATE: {
             return {
                 ...state,
