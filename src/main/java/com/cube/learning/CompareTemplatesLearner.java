@@ -311,7 +311,10 @@ public class CompareTemplatesLearner {
             TemplateKey templateKey = new TemplateKey(templateVersion, customer, app, tm.service,
                 CompareTemplate.normaliseAPIPath(tm.apiPath), tm.reqOrResp, tm.getMethod(), TemplateKey.DEFAULT_RECORDING);
 
-            if (tm.currentCt != ComparisonType.Default && tm.currentPt != PresenceType.Default){
+            PresenceType effectivePt = tm.getNewPt().orElse(tm.currentPt);
+            ComparisonType effectiveCt = tm.getNewCt().orElse(tm.currentCt);
+
+            if (effectiveCt != ComparisonType.Default && effectivePt != PresenceType.Default){
                 // TODO: Handle the case when only one of them gets updated in the learned rules.
                 // Currently, we don't support creating a TemplateEntry with either Comparison
                 // or Presence types as Default.
@@ -320,9 +323,11 @@ public class CompareTemplatesLearner {
                         tm.getMethod(), tm.reqOrResp, new CompareTemplate()));
 
                 compareTemplate.addRule(
-                    new TemplateEntry(tm.jsonPath, DataType.Default, tm.getNewPt().orElse(tm.currentPt),
-                        tm.getNewCt().orElse(tm.currentCt), ExtractionMethod.Default, Optional.empty(),
+                    new TemplateEntry(tm.jsonPath, DataType.Default, effectivePt,
+                        effectiveCt, ExtractionMethod.Default, Optional.empty(),
                         Optional.empty()));
+            }else{
+                LOGGER.error("Found default presence or comparison type for template " + tm.toString());
             }
         });
 

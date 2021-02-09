@@ -206,4 +206,11 @@ public class TemplateEntryMeta implements Comparable{
             return Integer.compare(this.count, that.count);
         return this.jsonPath.compareTo(that.jsonPath);
     }
+
+    @Override
+    public String toString(){
+        return String
+            .format("service=%s api=%s method=%s reqOrResp=%s jsonPath=%s", service, apiPath,
+                getMethodAsString(), reqOrResp, jsonPath);
+    }
 }
