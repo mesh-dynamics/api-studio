@@ -17,10 +17,11 @@ const convertFormParamsToCubeFormat = (requestDataString) => {
 
     fieldParts.map(part => {
         const [fieldName, fieldValue] = part.split('=');
+        const value = queryString.unescape(fieldValue);
         if(formParams[fieldName]){
-            formParams[fieldName] = [...formParams[fieldName] , fieldValue];
+            formParams[fieldName] = [...formParams[fieldName] , value];
         }else{
-            formParams[fieldName] = [fieldValue];
+            formParams[fieldName] = [value];
         }
     })
 
