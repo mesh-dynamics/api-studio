@@ -1385,7 +1385,7 @@ public class AnalyzeWS {
 			    .withName(name).withLabel(label).withTags(tags)
 			    .withCollectionUpdateOpSetId(collectionUpdateOpSetId)
 			    .withTemplateUpdateOpSetId(templateUpdOpSetId).withUserId(userId)
-			    .withRecordingType(originalRec.recordingType).withRunId(originalRec.runId);
+			    .withRecordingType(originalRec.recordingType).withRunId(originalRec.runId).withIgnoreStatic(originalRec.ignoreStatic);
 		    codeVersion.ifPresent(recordingBuilder::withCodeVersion);
 		    branch.ifPresent(recordingBuilder::withBranch);
 		    gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
@@ -1442,6 +1442,7 @@ public class AnalyzeWS {
 	        originalRec.generatedClassJarPath.ifPresent(UtilException
 		        .rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
 	        originalRec.dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
+	        recordingBuilder.withIgnoreStatic(originalRec.ignoreStatic);
 
             Recording updatedRecording = recordingBuilder.build();
 

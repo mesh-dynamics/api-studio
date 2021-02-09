@@ -46,6 +46,7 @@ public class RecordingBuilder {
 	private RecordingType recordingType;
 	private Optional<String> dynamicInjectionConfigVersion = Optional.empty();
 	private String runId;
+	private boolean ignoreStatic = false;
 
 	public RecordingBuilder(String customerId, String app, String instanceId, String collection) {
 		this.customerId = customerId;
@@ -87,7 +88,7 @@ public class RecordingBuilder {
 		return new Recording(idv, customerId, app, instanceId, collection, status, timestamp
 			, templateVersion, parentRecordingId, rootRecordingId, name, codeVersion, branch
 		, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment
-			, userId, generatedClassJarPath, generatedClassLoader, label, recordingType , dynamicInjectionConfigVersion, runId , false);
+			, userId, generatedClassJarPath, generatedClassLoader, label, recordingType , dynamicInjectionConfigVersion, runId , ignoreStatic);
 	}
 
 	private String recalculateId() {
@@ -203,12 +204,18 @@ public class RecordingBuilder {
 		return this;
 	}
 
-	public RecordingBuilder withDynamicInjectionConfigVersion(String dInjCfgVersion){
-	    this.dynamicInjectionConfigVersion = Optional.ofNullable(dInjCfgVersion);
-	    return this;
-    }
-  public RecordingBuilder withRunId(String runId) {
+	public RecordingBuilder withDynamicInjectionConfigVersion(String dInjCfgVersion) {
+		this.dynamicInjectionConfigVersion = Optional.ofNullable(dInjCfgVersion);
+		return this;
+	}
+
+	public RecordingBuilder withRunId(String runId) {
 		this.runId = runId;
+		return this;
+	}
+
+	public  RecordingBuilder withIgnoreStatic(boolean ignore){
+		this.ignoreStatic = ignore;
 		return this;
 	}
 
