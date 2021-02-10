@@ -340,8 +340,16 @@ public class MockServiceHTTP {
                     // It's necessary to set "Trailer" header when setting trailers
                     // https://javaee.github.io/tutorial/servlets014b.html
                     responsePayload.getTrls().forEach((k,v) -> {
-                        builder.header(io.md.constants.Constants.TRAILER_HEADER, k);
+                        httpServletResponse.addHeader(io.md.constants.Constants.TRAILER_HEADER, k);
+//                        builder.header(io.md.constants.Constants.TRAILER_HEADER, k);
                     });
+
+                    // Setting trailers in headers also because it seems to be dropped in ui-backend
+                    responsePayload.getTrls()
+                        .forEach((fieldName, fieldValList) -> fieldValList.forEach((val) -> {
+                            String headerName = io.md.constants.Constants.MD_TRAILER_HEADER_PREFIX+fieldName;
+                            builder.header(headerName, val);
+                        }));
 
                     httpServletResponse.setTrailerFields(() -> {
                         MultivaluedMap<String, String> trailersMultiValuedMap = responsePayload
