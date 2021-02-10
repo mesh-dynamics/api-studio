@@ -6,8 +6,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import io.md.constants.ReplayStatus;
+import io.md.core.CollectionKey;
 import io.md.core.ReplayTypeEnum;
+import io.md.core.Validate;
 
 public class Replay {
 
@@ -15,7 +19,7 @@ public class Replay {
 	public String customerId;
 	public String app;
 	public String instanceId;
-	public String collection;
+	public List<String> collection;
 	public String userId;
 	public List<String> reqIds;
 	public String templateVersion;
@@ -47,9 +51,11 @@ public class Replay {
 	public boolean tracePropagation = true;
 	public boolean storeToDatastore = false;
 	public Optional<ReplayContext> replayContext = Optional.empty();
+	@JsonIgnore
+	public final CollectionKey collectionKey;
 
 	public Replay(String endpoint, String customerId, String app, String instanceId,
-		String collection, String userId, List<String> reqIds,
+		List<String> collection, String userId, List<String> reqIds,
 		String replayId, boolean async, String templateVersion, ReplayStatus status,
 		List<String> paths, boolean excludePaths, int reqcnt, int reqsent, int reqfailed,
 		Instant creationTimestamp,
@@ -65,6 +71,7 @@ public class Replay {
 		this.customerId = customerId;
 		this.app = app;
 		this.instanceId = instanceId;
+		if(collection==null || collection.isEmpty()) throw new IllegalArgumentException("colllection can not be null or empty "+collection==null ? null : "empty");
 		this.collection = collection;
 		this.userId = userId;
 		this.reqIds = reqIds;
@@ -96,6 +103,7 @@ public class Replay {
 		this.runId = runId != null ? runId : this.replayId;
 		this.tracePropagation = tracePropagation;
 		this.storeToDatastore = storeToDatastore;
+		this.collectionKey = new CollectionKey(customerId, app, instanceId);
 	}
 
 	//for deserialization
@@ -104,7 +112,7 @@ public class Replay {
 		customerId = "";
 		app = "";
 		instanceId = "";
-		collection = "";
+		collection = Collections.emptyList();
 		userId = "";
 		replayId = "";
 		async = false;
@@ -128,6 +136,12 @@ public class Replay {
 		analysisCompleteTimestamp = null;
 		staticInjectionMap = null;
 		runId = "";
+		this.collectionKey = new CollectionKey(customerId, app, instanceId);
+	}
+
+	@JsonIgnore
+	public String getCurrentRecording(){
+		return replayContext.flatMap(ctx->ctx.currentCollection).orElse(collection.get(0));
 	}
 
 }

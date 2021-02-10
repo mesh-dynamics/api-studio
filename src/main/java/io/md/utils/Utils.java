@@ -635,7 +635,7 @@ public class Utils {
 			}
 			Replay replay = runningReplay.get();
 			String replayCollection = replay.replayId;
-			String collection = replay.collection;
+			String collection = replay.getCurrentRecording();
 			String templateVersion = recordOrReplay.getTemplateVersion();
 			String optionalRunId = runningReplay.get().runId;
 			Optional<String> dynamicInjectionCfgVersion = recordOrReplay.getDynamicInjectionConfigVersion();
