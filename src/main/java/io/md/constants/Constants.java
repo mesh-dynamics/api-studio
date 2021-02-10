@@ -15,6 +15,7 @@ public class Constants {
 	public static final String X_REQUEST_ID = "x-request-id";
 	public static final String PARENT_SPAN_ID_PROP_FIELD = "parent-span-id";
 	public static final String TRAILER_HEADER = "Trailer";
+	public static final String MD_TRAILER_HEADER_PREFIX = "md_trailer_header_";
 
 
 	//public static final String DEFAULT_BAGGAGE_PARENT_SPAN = "baggage-parent-span-id";
@@ -34,6 +35,7 @@ public class Constants {
 	public static final String DATADOG_SPAN_FIELD = "x-datadog-parent-id";
 	public static final String DATADOG_BAGGAGE_KEY_PREFIX = "ot-baggage-";
 	public static final String DATADOG_BAGGAGE_PARENT_SPAN = DATADOG_BAGGAGE_KEY_PREFIX + PARENT_SPAN_ID_PROP_FIELD;
+
 
 
 	public static final String DEFAULT_TEMPLATE_VER = "DEFAULT";
