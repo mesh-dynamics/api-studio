@@ -237,7 +237,9 @@ public class CubeServerService {
             HttpEntity<T> entity;
             entity = requestBody.map(body -> new HttpEntity<>(body, headers)).orElseGet(() -> new HttpEntity<>(headers));
 //            return restTemplate.postForEntity(uri, entity, String.class);
-            return restTemplate.exchange(uri, method, entity, String.class);
+            ResponseEntity<byte[]> response = restTemplate
+                .exchange(uri, method, entity, byte[].class);
+            return response;
         } catch (URISyntaxException e){
             return noContent().build();
         } catch (HttpClientErrorException e){
