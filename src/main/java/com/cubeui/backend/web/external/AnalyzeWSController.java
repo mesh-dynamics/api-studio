@@ -1,5 +1,6 @@
 package com.cubeui.backend.web.external;
 
+import com.cubeui.backend.domain.MultipartInputStreamFileResource;
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.service.CubeServerService;
 import com.cubeui.backend.web.ErrorResponse;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import io.md.dao.Replay;
 
@@ -26,6 +28,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/as")
@@ -163,9 +166,16 @@ public class AnalyzeWSController {
 
     @PostMapping("/saveTemplateSet/{customer}/{app}")
     public ResponseEntity saveTemplateSet(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String customer,
-                                           @PathVariable String app, Authentication authentication) {
+                                           @PathVariable String app, Authentication authentication, @RequestParam("file") MultipartFile[] files)
+        throws IOException {
         validation.validateCustomerName(authentication,customer);
-        return cubeServerService.fetchPostResponse(request, postBody);
+        LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
+        for (MultipartFile file : files) {
+            if (!file.isEmpty()) {
+                map.add("file", new MultipartInputStreamFileResource(file.getInputStream(), file.getOriginalFilename()));
+            }
+        }
+        return cubeServerService.fetchPostResponse(request, Optional.of(map));
     }
 
     @PostMapping("/cache/flushall")
@@ -374,9 +384,16 @@ public class AnalyzeWSController {
     @PostMapping("/learnComparisonRules/{customerId}/{app}/{version}")
     public ResponseEntity learnComparisonRules(HttpServletRequest request, @RequestBody Optional<String> body,
         Authentication authentication, @QueryParam("replayId") String replayId,
-        @PathVariable String customerId, @PathVariable String app, @PathVariable String version) {
+        @PathVariable String customerId, @PathVariable String app, @PathVariable String version, @RequestParam("file") MultipartFile[] files)
+        throws IOException {
         validation.validateCustomerName(authentication, customerId);
-        return cubeServerService.fetchPostResponse(request, body);
+        LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
+        for (MultipartFile file : files) {
+            if (!file.isEmpty()) {
+                map.add("file", new MultipartInputStreamFileResource(file.getInputStream(), file.getOriginalFilename()));
+            }
+        }
+        return cubeServerService.fetchPostResponse(request, Optional.of(map));
     }
 
     @GetMapping("/getTemplateSet/{customerId}/{appId}/{templateVersion}")
