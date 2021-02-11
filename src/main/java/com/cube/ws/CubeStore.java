@@ -1134,9 +1134,12 @@ public class CubeStore {
     protected CompletableFuture<Void> afterRecording(MultivaluedMap<String, String> params, Recording recording) {
         Optional<String> tagOpt = params == null ? Optional.empty()
                                     :Optional.ofNullable(params.getFirst(Constants.RESET_TAG_FIELD));
-
-        return tagOpt.map(tag -> this.tagConfig.setTag(recording, recording.instanceId, tag))
+        CompletableFuture<?> tagCfgTask = tagOpt.map(tag -> this.tagConfig.setTag(recording, recording.instanceId, tag))
             .orElse(CompletableFuture.completedFuture(null));
+        CompletableFuture<?> sanitizeTask = recording.ignoreStatic ? copyRecording(recording.id, Optional.empty(), Optional.empty(), Optional.empty(),
+            recording.userId, recording.recordingType, Optional.of(SanitizationFilters.filter(getValidEvents(recording) , List.of(new IgnoreStaticContent())))) : CompletableFuture.completedFuture(null);
+
+        return  CompletableFuture.allOf(tagCfgTask , sanitizeTask);
     }
 
     @POST
