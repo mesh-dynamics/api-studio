@@ -1,7 +1,5 @@
 import React, { Component } from "react";
 import { FormGroup, FormControl, Grid, Row, Col } from "react-bootstrap";
-import { getStatusColor } from "../../utils/http_client/utils";
-import { getHttpStatus } from "../../status-code-list";
 import _ from "lodash";
 // import "./styles_here.css";
 
@@ -9,6 +7,7 @@ import HttpResponseHeaders, {
   IHttpResponseHeadersProps,
 } from "./HttpResponseHeaders";
 import HttpResponseBody, { IHttpResponseBodyProps } from "./HttpResponseBody";
+import ResponseStatusEditable from "./ResponseStatusEditable";
 
 export interface IHttpResponseMessageProps
   extends IHttpResponseHeadersProps,
@@ -58,7 +57,7 @@ class HttpResponseMessage extends Component<
       this.childRefHttpResponseBody.current &&
         this.childRefHttpResponseBody.current.formatHandler();
     }
-  }
+  };
   //Move this to utilities
 
   getContentTypeToLanguage(headers: string) {
@@ -68,14 +67,17 @@ class HttpResponseMessage extends Component<
         return contentType.find((header) => header.indexOf("text/html") !== -1)
           ? "html"
           : contentType.find(
-              (header) => header.indexOf("application/json") !== -1 ||  header.indexOf("application/grpc") !== -1
+              (header) =>
+                header.indexOf("application/json") !== -1 ||
+                header.indexOf("application/grpc") !== -1
             )
           ? "json"
           : "text";
       } else if (_.isString(contentType)) {
         return contentType.indexOf("text/html") !== -1
           ? "html"
-          : contentType.indexOf("application/json") !== -1 ||  contentType.indexOf("application/grpc") !== -1
+          : contentType.indexOf("application/json") !== -1 ||
+            contentType.indexOf("application/grpc") !== -1
           ? "json"
           : "text";
       }
@@ -119,7 +121,7 @@ class HttpResponseMessage extends Component<
       this.setState({ responseBodyType: responseLanguageNext });
     } else if (recordedResponseLanguage !== recordedResponseLanguageNext) {
       this.setState({ responseBodyType: recordedResponseLanguageNext });
-    } else if(!this.isResponseBodyTypeManuallySet){
+    } else if (!this.isResponseBodyTypeManuallySet) {
       if (responseLanguageNext !== "json" || nextProps.responseBody) {
         responseLanguageNext !== this.state.responseBodyType &&
           this.setState({ responseBodyType: responseLanguageNext });
@@ -138,14 +140,13 @@ class HttpResponseMessage extends Component<
       () => {
         if (this.state.maximizeEditorHeight) {
           const contentWrapper = document.querySelector(".content-wrapper");
-          const editorDiv = document.querySelector(".diffEditors") as HTMLDivElement;
+          const editorDiv = document.querySelector(
+            ".diffEditors"
+          ) as HTMLDivElement;
           if (contentWrapper && editorDiv) {
             contentWrapper.scroll({
               behavior: "smooth",
-              top:
-                contentWrapper.scrollHeight -
-                editorDiv.offsetHeight -
-                85,
+              top: contentWrapper.scrollHeight - editorDiv.offsetHeight - 85,
             });
           }
         }
@@ -250,36 +251,25 @@ class HttpResponseMessage extends Component<
             <Col xs={6}>
               <span style={{ opacity: "0.7" }}>
                 HTTP RESPONSE STATUS:
-                <b
-                  style={{
-                    color:
-                      recordedResponseStatus &&
-                      getStatusColor(recordedResponseStatus),
-                  }}
-                >
-                  {" "}
-                  {recordedResponseStatus
-                    ? getHttpStatus(recordedResponseStatus)
-                    : "NA"}
-                </b>
+                <ResponseStatusEditable
+                  tabId={this.props.tabId}
+                  clientTabId={this.props.clientTabId}
+                  status={recordedResponseStatus}
+                  isRecordingStatus={true}
+                  requestRunning={false}
+                />
               </span>
-              
             </Col>
             <Col xs={6}>
               <span style={{ opacity: "0.7" }}>
                 HTTP RESPONSE STATUS:
-                <b
-                  style={{
-                    color: responseStatus && getStatusColor(responseStatus),
-                  }}
-                >
-                  {" "}
-                  {requestRunning
-                    ? "WAITING..."
-                    : responseStatus
-                    ? getHttpStatus(responseStatus)
-                    : "NA"}
-                </b>
+                <ResponseStatusEditable
+                  tabId={this.props.tabId}
+                  clientTabId={this.props.clientTabId}
+                  status={responseStatus}
+                  isRecordingStatus={false}
+                  requestRunning={requestRunning}
+                />
               </span>
 
               <div style={{ float: "right" }}>
@@ -300,17 +290,19 @@ class HttpResponseMessage extends Component<
                   )}
                 </span>
               </div>
-              {this.state.showBody && <div style={{ float: "right" }}>
-                <span
-                  className="btn btn-sm cube-btn text-center"
-                  style={{ padding: "2px 10px", display: "inline-block" }}
-                  title="Format document"
-                  onClick={this.onFormatIconClick}
-                >
-                  <i className="fa fa-align-center" aria-hidden="true"></i>{" "}
-                  Format
-                </span>
-              </div>}
+              {this.state.showBody && (
+                <div style={{ float: "right" }}>
+                  <span
+                    className="btn btn-sm cube-btn text-center"
+                    style={{ padding: "2px 10px", display: "inline-block" }}
+                    title="Format document"
+                    onClick={this.onFormatIconClick}
+                  >
+                    <i className="fa fa-align-center" aria-hidden="true"></i>{" "}
+                    Format
+                  </span>
+                </div>
+              )}
             </Col>
           </Row>
         </Grid>

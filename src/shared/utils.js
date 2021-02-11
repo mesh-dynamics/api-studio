@@ -112,4 +112,24 @@ const isJsonOrGrpcMime = (contentType) => {
     return contentType && (contentType.toLowerCase().indexOf("json") || contentType.toLowerCase().indexOf("grpc"));
 }
 
-module.exports = { getParameterCaseInsensitive, isJsonOrGrpcMime, Base64Binary };
+// deferred promise
+class Deferred {
+	_promise = new Promise((resolve, reject) => {
+			this._reject = reject;
+			this._resolve = resolve;
+	})
+
+	get promise() {
+			return this._promise;
+	}
+
+	resolve(value) {
+			this._resolve(value);
+	}
+
+	reject(value) {
+			this._reject(value);
+	}
+}
+
+module.exports = { getParameterCaseInsensitive, isJsonOrGrpcMime, Base64Binary, Deferred };

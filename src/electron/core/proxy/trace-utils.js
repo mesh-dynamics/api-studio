@@ -59,10 +59,45 @@ const extractTraceIdDetails = (traceId, tracer) => {
   }
 }
 
+
+const getTraceDetails = (mockContext, headers) => {
+  const tracer = mockContext.tracer
+  const traceKeys = generateTraceKeys(tracer)
+  const {traceIdKey, spanIdKey, parentSpanIdKeys} = traceKeys;
+  
+  let parentSpanId = mockContext.parentSpanId
+  if(!parentSpanId) {
+      for(const key of parentSpanIdKeys) {
+          parentSpanId = headers[key]
+          if (parentSpanId)
+              break;
+      }
+  }
+
+  if (!parentSpanId) {
+      parentSpanId = generateSpecialParentSpanId(tracer)
+  }
+
+  const spanId = headers[spanIdKey] || generateSpanId(tracer);
+  
+  let traceIdDetails = {} 
+  if(mockContext.traceId) {
+      traceIdDetails = extractTraceIdDetails(mockContext.traceId);
+  } else if(headers[traceIdKey]) {
+      traceIdDetails = extractTraceIdDetails(headers[traceIdKey]);
+  } else {
+      traceIdDetails = generateTraceIdDetails(tracer, spanId)
+  }
+
+  const traceDetails = {tracer, traceKeys, traceIdDetails, spanId, parentSpanId};
+  return traceDetails;
+}
+
 module.exports = {
   generateTraceKeys,
   generateSpanId, 
   generateSpecialParentSpanId,
   generateTraceIdDetails,
   extractTraceIdDetails,
+  getTraceDetails
 };
