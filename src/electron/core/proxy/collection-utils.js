@@ -48,19 +48,20 @@ const transformForCollection = (proxyRes, options, responseBody) => {
     
     const responsePayloadDetails = extractResponsePayloadDetailsFromProxy(proxyRes, responseBody);
     const metaData = requestPayloadDetails.metaData;
+    const isgRPC = metaData.bodyType == "grpcData";
     delete requestPayloadDetails.metaData;
     const requestResponseFormattedData = [   
         // request
         {
             ...httpRequestEventDetails,
-            payload: ["HTTPRequestPayload", requestPayloadDetails],
+            payload: [isgRPC ? "GRPCRequestPayload" : "HTTPRequestPayload", requestPayloadDetails],
             metaData: {...metaData,...httpRequestEventDetails.metaData }
         },
 
         // response
         {
             ...httpResponseEventDetails,
-            payload: ["HTTPResponsePayload", responsePayloadDetails]
+            payload: [isgRPC ? "GRPCResponsePayload": "HTTPResponsePayload", responsePayloadDetails]
         }
     ]
 

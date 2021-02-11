@@ -200,5 +200,6 @@ const stripServiceNameFromOutgoingProxyPath = (apiPath, {service, servicePrefix}
 module.exports = {
     getServiceNameFromUrl,
     // readRequestBodyFromBuffer,
-    selectProxyTargetForService
+    selectProxyTargetForService,
+    getServiceConfig
 };
