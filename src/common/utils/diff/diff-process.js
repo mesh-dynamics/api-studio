@@ -82,7 +82,7 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
             let recordedResponseMime = recordedResponseContentType ? (_.isArray(recordedResponseContentType) ? recordedResponseContentType[0] : recordedResponseContentType) : "";
             isJsonOrGrpc = isJsonOrGrpcMime(recordedResponseMime);
 
-            if (_.isString(item.recordResponse.body) && item.recordResponse.body && isJsonOrGrpc) {
+            if (_.isString(item.recordResponse.body) && item.recordResponse.body && isJsonOrGrpc > -1) {
                 try {
                     recordedData = JSON.parse(item.recordResponse.body);
                 } catch (e) {
@@ -105,7 +105,7 @@ const validateAndCreateDiffLayoutData = (replayList, app, replayId, recordingId,
             let replayedResponseContentType = getParameterCaseInsensitive(replayedResponseHeaders, "content-type");
             let replayedResponseMime = replayedResponseContentType ? (_.isArray(replayedResponseContentType) ? replayedResponseContentType[0] : replayedResponseContentType) : "";
             isJsonOrGrpc = isJsonOrGrpcMime(replayedResponseMime);
-            if (_.isString(item.replayResponse.body) && item.replayResponse.body && isJsonOrGrpc) {
+            if (_.isString(item.replayResponse.body) && item.replayResponse.body && isJsonOrGrpc > -1) {
                 try {
                     replayedData = JSON.parse(item.replayResponse.body);
                 } catch (e) {
