@@ -307,6 +307,8 @@ public class Constants {
 	public static final String TESTSET_REQUEST = "TestSet.Request";
 	public static final String TESTSET_RESPONSE = "TestSet.Response";
 	public static final String TEMP_DIR = "/tmp";
+	public static final Integer GRPC_SUCCESS_STATUS_CODE = 0;
+
 
 
 }

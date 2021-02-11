@@ -78,7 +78,7 @@ public class RealMocker implements Mocker {
                 }).collect(Collectors.toList()):Collections.EMPTY_LIST;
 
 
-            Optional<JoinQuery> joinQuery = mockWColl.isDevtool ? Optional.of(getSuccessResponseMatch()) : Optional.empty();
+            Optional<JoinQuery> joinQuery = mockWColl.isDevtool ? Optional.of(getSuccessResponseMatch(reqEvent)) : Optional.empty();
             Optional<ReplayContext> replayCtx = mockWColl.replay.flatMap(r->r.replayContext);
 
             boolean tracePropagation = mockWColl.replay.map(r->r.tracePropagation).orElse(true);
@@ -107,7 +107,7 @@ public class RealMocker implements Mocker {
             
             if(mockWColl.isDevtool && !matchingResponse.isPresent()){
                 LOGGER.info(createMockReqErrorLogMessage(reqEvent,
-                        "Did not find any valid 200 response. Giving first match resp"));
+                        "Did not find any valid success response. Giving first match resp"));
                 eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1),
                     false , lowerBoundForMatching, mockWColl.recordCollection ,
                     payloadFieldFilterList , Optional.empty() , mockWColl.isDevtool , Optional.empty() , true);
@@ -139,12 +139,12 @@ public class RealMocker implements Mocker {
         }
     }
 
-    private JoinQuery getSuccessResponseMatch(){
+    private JoinQuery getSuccessResponseMatch(Event reqEvent){
 
         JoinQuery.Builder builder = new JoinQuery.Builder();
         Map<String,String> successfulRespCond = new HashMap<>();
-        successfulRespCond.put(Constants.EVENT_TYPE_FIELD , EventType.HTTPResponse.toString());
-        successfulRespCond.put(Constants.PAYLOAD_FIELDS_FIELD , String.format("%s:%s", Constants.STATUS_PATH, String.valueOf(HttpStatus.SC_OK)));
+        successfulRespCond.put(Constants.EVENT_TYPE_FIELD , EventType.getResponseType(reqEvent.eventType).toString());
+        successfulRespCond.put(Constants.PAYLOAD_FIELDS_FIELD , String.format("%s:%s", Constants.STATUS_PATH, String.valueOf(reqEvent.payload instanceof GRPCPayload ? Constants.GRPC_SUCCESS_STATUS_CODE : HttpStatus.SC_OK)));
 
         builder.withAndConds(successfulRespCond);
 
