@@ -47,7 +47,8 @@ import {
     extractQueryStringParamsToCubeFormat,
     extractBodyToCubeFormat, 
     extractHeadersToCubeFormat, 
-    multipartDataToCubeFormat
+    multipartDataToCubeFormat,
+    isLocalhostUrl
 } from "../../utils/http_client/utils"; 
 import { 
     extractGrpcBody, 
@@ -984,12 +985,11 @@ class HttpClientTabs extends Component {
         }
     }
 
-    showOutgoingRequests(tabId, traceId, collectionId, recordingId) {    
+    showOutgoingRequests(tabId, traceId, collectionId, recordingId, outgoingEvents ) {    
         const { 
             dispatch,
             httpClient: { tabs },
             cube: { selectedApp: app },
-            user: { customer_name: customerId },
         } = this.props; 
         const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
 
@@ -998,69 +998,71 @@ class HttpClientTabs extends Component {
             return;
         };
         if (reqIdArray && reqIdArray.length > 0) {
-            const eventTypes = [];
-            cubeService.fetchAPIEventData(customerId, app, reqIdArray, eventTypes).then((result) => {
-                if (result && result.numResults > 0) {
-                    let outgoingRequests = [];
-                    for (let eachReqId of reqIdArray) {
-                        const reqResPair = result.objects.filter(eachReq => eachReq.reqId === eachReqId);                    
-                        if (reqResPair.length > 0) {
-                            const httpRequestEventTypeIndex = reqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
-                            const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
-                            const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
-                            const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
-                            
-                            const { headers, queryParams, formData, rawData, rawDataType, multipartData, httpURL }  = extractParamsFromRequestEvent(httpRequestEvent);
-                            let reqObject = {
-                                httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-                                httpURL: httpURL,
-                                httpURLShowOnly: httpURL,
-                                headers: headers,
-                                queryStringParams: queryParams,
-                                bodyType: multipartData && multipartData.length > 0 ? "multipartData" :formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData", //multipart
-                                formData: formData,
-                                multipartData,
-                                rawData: rawData,
-                                rawDataType: rawDataType,
-                                paramsType: "showQueryParams",
-                                responseStatus: "NA",
-                                responseStatusText: "",
-                                responseHeaders: "",
-                                responseBody: "",
-                                recordedResponseHeaders: (httpResponseEvent && httpResponseEvent.payload[1].hdrs) ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
-                                recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
-                                recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
-                                responseBodyType: "json",
-                                showOutgoingRequestsBtn: false,
-                                isOutgoingRequest: true,
-                                showSaveBtn: true,
-                                outgoingRequests: [],
-                                service: httpRequestEvent.service,
-                                recordingIdAddedFromClient: recordingId,
-                                collectionIdAddedFromClient: collectionId,
-                                traceIdAddedFromClient: traceId,
-                                requestRunning: false,
-                                showTrace: null,
-                                grpcConnectionSchema: {
-                                    app,
-                                    service: '',
-                                    method: '',
-                                    endpoint: ''
-                                }
-                            };
-                            const tabId = uuidv4();
-                            outgoingRequests.push({
-                                id: tabId,
-                                requestId: eachReqId,
-                                eventData: reqResPair,
-                                tabName: reqObject.httpURLShowOnly ? reqObject.httpURLShowOnly : "New",
-                                ...reqObject
-                            })
+            let outgoingRequests = [];
+
+            //Sort reqIdArray based on reqTimeStamp of HTTPRequest events
+            const sortedReqIds = outgoingEvents.filter( outgoingEvent => outgoingEvent.eventType == "HTTPRequest")
+                .sort((u,v)=> u.timestamp - v.timestamp)
+                .map(outgoingEvent => outgoingEvent.reqId);
+            reqIdArray.sort((reqId1, reqId2) => sortedReqIds.indexOf(reqId1) - sortedReqIds.indexOf(reqId2));
+
+            for (let eachReqId of reqIdArray) {
+                const reqResPair = outgoingEvents.filter(eachReq => eachReq.reqId === eachReqId);                    
+                if (reqResPair.length > 0) {
+                    const httpRequestEventTypeIndex = reqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
+                    const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
+                    const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
+                    const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
+                    
+                    const { headers, queryParams, formData, rawData, rawDataType, multipartData, httpURL }  = extractParamsFromRequestEvent(httpRequestEvent);
+                    let reqObject = {
+                        httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
+                        httpURL: httpURL,
+                        httpURLShowOnly: httpURL,
+                        headers: headers,
+                        queryStringParams: queryParams,
+                        bodyType: multipartData && multipartData.length > 0 ? "multipartData" :formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData", //multipart
+                        formData: formData,
+                        multipartData,
+                        rawData: rawData,
+                        rawDataType: rawDataType,
+                        paramsType: "showQueryParams",
+                        responseStatus: "NA",
+                        responseStatusText: "",
+                        responseHeaders: "",
+                        responseBody: "",
+                        recordedResponseHeaders: (httpResponseEvent && httpResponseEvent.payload[1].hdrs) ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
+                        recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
+                        recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
+                        responseBodyType: "json",
+                        showOutgoingRequestsBtn: false,
+                        isOutgoingRequest: true,
+                        showSaveBtn: true,
+                        outgoingRequests: [],
+                        service: httpRequestEvent.service,
+                        recordingIdAddedFromClient: recordingId,
+                        collectionIdAddedFromClient: collectionId,
+                        traceIdAddedFromClient: traceId,
+                        requestRunning: false,
+                        showTrace: null,
+                        grpcConnectionSchema: {
+                            app,
+                            service: '',
+                            method: '',
+                            endpoint: ''
                         }
-                    }
-                    dispatch(httpClientActions.addOutgoingRequestsToTab(tabId, outgoingRequests));
+                    };
+                    const tabId = uuidv4();
+                    outgoingRequests.push({
+                        id: tabId,
+                        requestId: eachReqId,
+                        eventData: reqResPair,
+                        tabName: reqObject.httpURLShowOnly ? reqObject.httpURLShowOnly : "New",
+                        ...reqObject
+                    })
                 }
-            });
+            }
+            dispatch(httpClientActions.addOutgoingRequestsToTab(tabId, outgoingRequests));
         }
     }
 
@@ -1617,10 +1619,13 @@ class HttpClientTabs extends Component {
                                 dispatch(httpClientActions.afterResponseReceivedData(tabId, JSON.stringify(responseEvent.payload[1].body, undefined, 4)));
                             }
                             const apiPath = _.trimStart(data[0].request.apiPath, '/');
+                            const isLocalhost = isLocalhostUrl(tabToProcess.httpURL);
                             this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig);
-                            setTimeout(() => {
-                                this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig, true);
-                            }, 5000);
+                            if(!isLocalhost){
+                                setTimeout(() => {
+                                    this.loadSavedTrace(tabId, parsedTraceReqData.newTraceId, parsedTraceReqData.newReqId, runId, apiPath, apiConfig, true);
+                                }, 5000);
+                            }
 
                             dispatch(httpClientActions.updateContextMap(JSON.parse(parsedTraceReqData.extractionMap)));
                         } catch (error) {
@@ -1733,8 +1738,8 @@ class HttpClientTabs extends Component {
                 const apiTrace = res.response[0];
                 const reqIdArray = [];
                 if(apiTrace && apiTrace.res.length > 0){
-                    reqIdArray.push(apiTrace.res[0].requestEventId);
-                    apiTrace.res.reverse().pop();
+                    // reqIdArray.push(apiTrace.res[0].requestEventId);
+                    apiTrace.res.reverse();//.pop();
                     apiTrace.res.forEach((eachApiTraceEvent) => {
                         reqIdArray.push(eachApiTraceEvent.requestEventId);
                     });
@@ -1966,7 +1971,7 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.loadUserCollections());
         dispatch(httpClientActions.loadProtoDescriptor());
         
-        const requestIds = this.getRequestIds(), reqIdArray = Object.keys(requestIds);
+        const requestIds = this.getRequestIds(), reqIdArray = Object.keys(requestIds); //Remove reqIdArray
         if (reqIdArray && reqIdArray.length > 0) {
             /*
                 reqIdArray: string array of request IDs, which needs to be displayed at HttpClient
@@ -1980,6 +1985,7 @@ class HttpClientTabs extends Component {
             tabs.forEach(eachTab => {
                 const indx = reqIdArray.findIndex((eachReq) => eachReq === eachTab.requestId);
                 if(indx > -1) {
+                    delete requestIds[reqIdArray[indx]];
                     reqIdArray.splice(indx, 1);
                     tabsToHighlight.push(eachTab.id);
                 }
@@ -1990,20 +1996,33 @@ class HttpClientTabs extends Component {
                     dispatch(httpClientActions.setTabIsHighlighted(tabId, true));
                 }
             });
-
-            const eventTypes = [];
-            cubeService.fetchAPIEventData(customerId, selectedApp, reqIdArray, eventTypes).then((result) => {
-                if (result && result.numResults > 0) {
-                    for (let eachReqId of reqIdArray) {
-                        const reqResPair = result.objects.filter(eachReq => eachReq.reqId === eachReqId);
-                        if (reqResPair.length > 0) {
-                            let reqObject = formatHttpEventToTabObject(eachReqId, requestIds, reqResPair);
-                            const savedTabId = this.addTab(null, reqObject, selectedApp, eachReqId == reqIdArray[reqIdArray.length - 1]);
-                            this.showOutgoingRequests(savedTabId, reqObject.traceIdAddedFromClient, reqObject.collectionIdAddedFromClient, reqObject.recordingIdAddedFromClient);
+            if(reqIdArray.length > 0){
+                const allReqIds = [];
+                reqIdArray.forEach((reqId) => {
+                    allReqIds.push(reqId);
+                    const outgoingIds = requestIds[reqId] || [];
+                    allReqIds.push(...outgoingIds);
+                })
+                const eventTypes = [];
+                cubeService.fetchAPIEventData(customerId, selectedApp, allReqIds, eventTypes).then((result) => {
+                    if (result && result.numResults > 0) {
+                        for (let eachReqId of reqIdArray) {
+                            const reqResPair = result.objects.filter(eachReq => eachReq.reqId === eachReqId);
+                            if (reqResPair.length > 0) {
+                                let reqObject = formatHttpEventToTabObject(eachReqId, requestIds, reqResPair);
+                                const savedTabId = this.addTab(null, reqObject, selectedApp, eachReqId == reqIdArray[reqIdArray.length - 1]);
+                                const outgoingIds = requestIds[eachReqId] || [];
+                                const outgoingEvents = [];
+                                outgoingIds.map(childReqId => {
+                                    const outgoingReqResPair = result.objects.filter(eachReq => eachReq.reqId === childReqId);
+                                    outgoingEvents.push(...outgoingReqResPair);
+                                })
+                                this.showOutgoingRequests(savedTabId, reqObject.traceIdAddedFromClient, reqObject.collectionIdAddedFromClient, reqObject.recordingIdAddedFromClient, outgoingEvents);
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
             dispatch(apiCatalogActions.setHttpClientRequestIds([]));
         } else {
             let app = selectedApp;

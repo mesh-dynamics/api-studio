@@ -308,6 +308,9 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 ...state,
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
+                        if(eachTab[data.type] != params && params == "showBody"){
+                            eachTab['headers'] = updateHeaderBasedOnContentType(eachTab.headers, "bodyType", eachTab.bodyType, eachTab);
+                        }
                         eachTab[data.type as IHttpClientTabDetailsFieldNames] = params as any[];
                         if (data.type === "httpURL") eachTab.tabName = params as unknown as string;
                         eachTab.hasChanged = true;

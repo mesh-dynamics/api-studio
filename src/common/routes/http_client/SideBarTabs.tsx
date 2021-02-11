@@ -31,10 +31,11 @@ import {
 } from '../../utils/http_client/grpc-utils';
 import EditableLabel from "./EditableLabel";
 import { updateGoldenName } from '../../services/golden.service';
-import { IApiCatalogState, IApiTrace, ICollectionDetails, ICubeState, IHttpClientStoreState, IHttpClientTabDetails, IKeyValuePairs, IPayloadData, IStoreState, IUserAuthDetails } from "../../reducers/state.types";
+import { IApiCatalogState, IApiTrace, ICollectionDetails, ICubeState, IEventData, IHttpClientStoreState, IHttpClientTabDetails, IKeyValuePairs, IPayloadData, IStoreState, IUserAuthDetails } from "../../reducers/state.types";
 import { IGetEventsApiResponse } from "../../apiResponse.types";
 import gcbrowseActions from "../../actions/gcBrowse.actions";
 import HistoryTabFilter from "../../components/HttpClient/HistoryTabFilter";
+import { sortApiTraceChildren } from "../../utils/http_client/httpClientUtils";
 
 interface ITreeNodeHeader<T> {
   node: T,
@@ -46,7 +47,7 @@ export interface ISideBarTabsProps {
   apiCatalog: IApiCatalogState,
   httpClient: IHttpClientStoreState,
   user: IUserAuthDetails;
-  showOutgoingRequests: (tabId: string, traceId: string, collectionId: string, recordingId: string) => void;
+  showOutgoingRequests: (tabId: string, traceId: string, collectionId: string, recordingId: string, outgoingEvents: IEventData[]) => void;
   onAddTab: (evt: any, reqObject: any, givenApp: string, isSelected?: boolean) => string; //reqObject can be properly defined
 }
 export interface ISideBarTabsState {
@@ -141,7 +142,8 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
       if (!apiTracesForACollection || forceLoad) {
         this.setState({ loadingCollections: { ...this.state.loadingCollections, [selectedCollection!.id]: true } });
         cubeService.loadCollectionTraces(customerId, selectedCollectionId, app!, selectedCollection!.id).then(
-          (apiTraces) => {
+          (apiTraces: IApiTrace[]) => {
+            sortApiTraceChildren(apiTraces);
             selectedCollection!.apiTraces = apiTraces;
             this.setState({ loadingCollections: { ...this.state.loadingCollections, [selectedCollection!.id]: false } });
             dispatch(httpClientActions.addUserCollections(userCollections));
@@ -264,17 +266,15 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
       httpClient: { appGrpcSchema },
       user,
     } = this.props;
-    const reqIdArray = [node.requestEventId];
+    const childReqIds = (node.children || []).map(req => req.requestEventId);
+    const reqIdArray = [node.requestEventId], allReqIds = [node.requestEventId, ...childReqIds];
     if (reqIdArray && reqIdArray.length > 0) {
       const apiEventURL = `${config.recordBaseUrl}/getEvents`;
       let body = {
         customerId: user.customer_name,
         app: selectedApp,
         eventTypes: [],
-        services: [node.service],
-        traceIds: [node.traceIdAddedFromClient],
-        reqIds: reqIdArray,
-        paths: [node.apiPath],
+        reqIds: allReqIds,
         collection: node.collectionIdAddedFromClient,
       };
       api.post(apiEventURL, body).then((response: unknown) => {
@@ -396,11 +396,20 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                 reqObject,
                 selectedApp!
               );
+
+              
+              const outgoingEvents: IEventData[] = [];
+              childReqIds.map(childReqId => {
+                  const outgoingReqResPair = result.objects.filter(eachReq => eachReq.reqId === childReqId);
+                  outgoingEvents.push(...outgoingReqResPair);
+              })
+              
               this.props.showOutgoingRequests(
                 savedTabId,
                 node.traceIdAddedFromClient,
                 node.collectionIdAddedFromClient,
-                node.recordingIdAddedFromClient
+                node.recordingIdAddedFromClient,
+                outgoingEvents
               );
             }
           }
