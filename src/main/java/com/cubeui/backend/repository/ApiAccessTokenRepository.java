@@ -10,5 +10,7 @@ import com.cubeui.backend.domain.ApiAccessToken;
 
 @RepositoryRestResource(path = "api-access-tokens", collectionResourceRel = "api-access-tokens", itemResourceRel = "api-access-token")
 public interface ApiAccessTokenRepository extends JpaRepository<ApiAccessToken, Long> {
-    Optional<List<ApiAccessToken>> findByUserId(Long userId);
+    Optional<ApiAccessToken> findByUserId(Long userId);
+    void deleteByUserId(Long userId);
+
 }

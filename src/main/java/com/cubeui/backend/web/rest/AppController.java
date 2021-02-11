@@ -123,7 +123,7 @@ public class AppController {
         List<App> apps = appUsers.get().stream().map(AppUser::getApp).collect(Collectors.toList());
         List<Long> appIds = apps.stream().map(App::getId).collect(Collectors.toList());
         List<String> appNames = apps.stream().map(App::getName).collect(Collectors.toList());
-        ResponseEntity responseEntity = cubeServerService.fetchPostResponse(request, Optional.of(appNames),  "/cs/getAppConfigurations/" + user.getCustomer().getName(),
+        ResponseEntity<byte[]> responseEntity = cubeServerService.fetchPostResponse(request, Optional.of(appNames),  "/cs/getAppConfigurations/" + user.getCustomer().getName(),
             MediaType.APPLICATION_JSON);
         List<AppFile> files = this.appFileStorageService.getFilesFoAppIds(appIds);
         if(responseEntity.getStatusCode() == HttpStatus.OK) {

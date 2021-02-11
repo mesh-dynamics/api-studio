@@ -12,23 +12,17 @@ import com.cubeui.backend.web.ErrorResponse;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.md.dao.ApiTraceResponse;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
-import io.md.utils.Constants;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
@@ -86,7 +80,7 @@ public class CubeServerService {
     public ResponseEntity fetchGetResponse(String path, String query){
         try {
             URI uri = new URI(null, null, null, 0, path, query, null);
-            String result = restTemplate.getForObject(uri, String.class);
+            byte[] result = restTemplate.getForObject(uri, byte[].class);
             return ok().body(result);
         } catch (URISyntaxException e){
             log.error("Error while retrieving the data from "+ path + " with message="+ e.getMessage());
@@ -106,10 +100,10 @@ public class CubeServerService {
         return getData(response, path, Replay.class);
     }
 
-    public <T> Optional<T> getData(ResponseEntity response, String path, Class<T> valueType) {
+    public <T> Optional<T> getData(ResponseEntity<byte[]> response, String path, Class<T> valueType) {
         if (response.getStatusCode() == HttpStatus.OK) {
             try {
-                final String body = response.getBody().toString();
+                final String body = new String(response.getBody());
                 final T data = jsonMapper.readValue(body, valueType);
                 return Optional.of(data);
             } catch (Exception e) {
@@ -130,10 +124,10 @@ public class CubeServerService {
         return getData(response, path, Recording.class);
     }
 
-    public List<AppFileResponse> getAppFileResponse(ResponseEntity responseEntity, List<AppFile> files) {
+    public List<AppFileResponse> getAppFileResponse(ResponseEntity<byte[]> responseEntity, List<AppFile> files) {
         List<AppFileResponse> response = new ArrayList<>();
         try {
-            String body = responseEntity.getBody().toString();
+            String body = new String(responseEntity.getBody());
             JsonNode json = jsonMapper.readTree(body);
             for (AppFile appFile: files) {
                 AppFileResponse appFileResponse = new AppFileResponse();
@@ -151,10 +145,10 @@ public class CubeServerService {
         return response;
     }
 
-    public <T> Optional<List<T>> getListData(ResponseEntity response, String request, Optional<String> getField, TypeReference typeReference) {
+    public <T> Optional<List<T>> getListData(ResponseEntity<byte[]> response, String request, Optional<String> getField, TypeReference typeReference) {
         if (response.getStatusCode() == HttpStatus.OK) {
             try {
-                String body = response.getBody().toString();
+                String body = new String(response.getBody());
                 if(getField.isPresent()) {
                     JsonNode json = jsonMapper.readTree(body);
                     JsonNode responseBody = json.get(getField.get());
@@ -237,7 +231,9 @@ public class CubeServerService {
             HttpEntity<T> entity;
             entity = requestBody.map(body -> new HttpEntity<>(body, headers)).orElseGet(() -> new HttpEntity<>(headers));
 //            return restTemplate.postForEntity(uri, entity, String.class);
-            return restTemplate.exchange(uri, method, entity, String.class);
+            ResponseEntity<byte[]> response = restTemplate
+                .exchange(uri, method, entity, byte[].class);
+            return response;
         } catch (URISyntaxException e){
             return noContent().build();
         } catch (HttpClientErrorException e){
