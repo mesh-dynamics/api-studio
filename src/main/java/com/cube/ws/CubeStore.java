@@ -69,7 +69,6 @@ import org.apache.solr.common.util.Pair;
 import org.glassfish.jersey.media.multipart.BodyPartEntity;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataParam;
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
@@ -77,7 +76,6 @@ import org.msgpack.value.ValueType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Sets;
 
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.UtilException;
@@ -118,6 +116,9 @@ import com.cube.dao.Result;
 import com.cube.dao.WrapperEvent;
 import com.cube.queue.DisruptorEventQueue;
 import com.cube.queue.RREvent;
+import com.cube.ws.SanitizationFilters.BadStatuses;
+import com.cube.ws.SanitizationFilters.IgnoreStaticContent;
+import com.cube.ws.SanitizationFilters.ReqRespMissing;
 
 /**
  * @author prasad
@@ -1062,6 +1063,7 @@ public class CubeStore {
         Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
         Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst(Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD)) ;
         Optional<String> runId = Optional.ofNullable(formParams.getFirst(Constants.RUN_ID_FIELD));
+        Optional<Boolean> ignoreStaticContent = io.md.utils.Utils.strToBool(formParams.getFirst(Constants.IGNORE_STATIC_CONTENT));
 
 
         RecordingBuilder recordingBuilder = new RecordingBuilder(customerId, app,
@@ -1074,6 +1076,7 @@ public class CubeStore {
         recordingType.ifPresent(recordingBuilder::withRecordingType);
         dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
         runId.ifPresentOrElse(recordingBuilder::withRunId, () -> recordingBuilder.withRunId(Instant.now().toString()));
+        ignoreStaticContent.ifPresent(recordingBuilder::withIgnoreStatic);
 
         try {
             jarPath.ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
@@ -1131,9 +1134,12 @@ public class CubeStore {
     protected CompletableFuture<Void> afterRecording(MultivaluedMap<String, String> params, Recording recording) {
         Optional<String> tagOpt = params == null ? Optional.empty()
                                     :Optional.ofNullable(params.getFirst(Constants.RESET_TAG_FIELD));
-
-        return tagOpt.map(tag -> this.tagConfig.setTag(recording, recording.instanceId, tag))
+        CompletableFuture<?> tagCfgTask = tagOpt.map(tag -> this.tagConfig.setTag(recording, recording.instanceId, tag))
             .orElse(CompletableFuture.completedFuture(null));
+        CompletableFuture<?> sanitizeTask = recording.ignoreStatic ? copyRecording(recording.id, Optional.empty(), Optional.empty(), Optional.empty(),
+            recording.userId, recording.recordingType, Optional.of(SanitizationFilters.filter(getValidEvents(recording) , List.of(new IgnoreStaticContent())))) : CompletableFuture.completedFuture(null);
+
+        return  CompletableFuture.allOf(tagCfgTask , sanitizeTask);
     }
 
     @POST
@@ -1424,45 +1430,31 @@ public class CubeStore {
         }
 
         Recording originalRec = recording.get();
+        List<SanitizationFilter> list = new ArrayList<>();
+        if(status!=null && !status.isEmpty()){
+            list.add(new ReqRespMissing());
+            list.add(new BadStatuses(new HashSet<>(status)));
+        }
+        if(originalRec.ignoreStatic){
+            list.add(new IgnoreStaticContent());
+        }
 
-        Set<String> invalidReqIds = getInvalidReqIdsToFilter(originalRec, status);
-
-        Predicate<Event> isInvalidReqId = (event) -> !invalidReqIds.contains(event.reqId);
+        var filter = SanitizationFilters.filter(getValidEvents(originalRec) , list);
 
         copyRecording(recordingId, Optional.empty(), Optional.empty(), Optional.empty(),
-            originalRec.userId, originalRec.recordingType, Optional.of(isInvalidReqId))
+            originalRec.userId, originalRec.recordingType, Optional.of(filter))
             .thenApply(v -> asyncResponse.resume(v));
 
     }
 
-    private Set<String> getInvalidReqIdsToFilter(Recording originalRec, List<String> status) {
-        Set<String> reqIds = new HashSet<>();
-        Set<String> respIds = new HashSet<>();
-
-        //TODO: Use fieldList to reduce the data fetched.
+    private Stream<Event> getValidEvents(Recording originalRec){
         EventQuery.Builder reqBuilder = new EventQuery.Builder(originalRec.customerId,
             originalRec.app,
-            Stream.concat(Event.REQUEST_EVENT_TYPES.stream(), Event.RESPONSE_EVENT_TYPES.stream())
-                .collect(Collectors.toList()));
+            Collections.emptyList());
         reqBuilder.withCollection(originalRec.collection);
         reqBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
         Result<Event> reqRespEvents = rrstore.getEvents(reqBuilder.build());
-
-        Set<String> badStatusCodes = Optional.ofNullable(status).map(HashSet::new)
-            .orElseGet(() -> new HashSet());
-
-        reqRespEvents.getObjects().forEach(event -> {
-            if (event.payload instanceof RequestPayload) {
-                reqIds.add(event.reqId);
-            } else if (event.payload instanceof ResponsePayload) {
-                if (!badStatusCodes.contains(((ResponsePayload) event.payload).getStatusCode())) {
-                    respIds.add(event.reqId);
-                }
-            }
-        });
-
-        return new HashSet<>(Sets.difference(reqIds, respIds));
-
+        return reqRespEvents.getObjects();
     }
 
     @POST
@@ -1721,7 +1713,7 @@ public class CubeStore {
                     .withRootRecordingId(rec.rootRecordingId)
                     .withArchived(rec.archived)
                     .withId(rec.id) // same recording is updated, so carry over id
-                    .withRecordingType(rec.recordingType).withRunId(rec.runId);
+                    .withRecordingType(rec.recordingType).withRunId(rec.runId).withIgnoreStatic(rec.ignoreStatic);
                 rec.parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
                 recordingBuilder.withName(name.orElse(rec.name));
                 recordingBuilder.withLabel(label.orElse(rec.label));
@@ -2435,7 +2427,7 @@ public class CubeStore {
             .withName(name.orElse(recording.name))
             .withUserId(userId.orElse(recording.userId)).withTags(recording.tags).withUpdateTimestamp(timeStamp)
             .withRootRecordingId(recording.rootRecordingId).withLabel(labelValue)
-            .withRecordingType(type).withRunId(timeStamp.toString());
+            .withRecordingType(type).withRunId(timeStamp.toString()).withIgnoreStatic(recording.ignoreStatic);
         recording.parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
         recording.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
         recording.branch.ifPresent(recordingBuilder::withBranch);
