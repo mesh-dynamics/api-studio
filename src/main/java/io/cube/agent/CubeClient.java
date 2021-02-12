@@ -1,6 +1,8 @@
 package io.cube.agent;
 
-import static io.cube.agent.Constants.*;
+import static io.cube.agent.Constants.APPLICATION_FORM_URL_ENCODED;
+import static io.cube.agent.Constants.APPLICATION_JSON;
+import static io.cube.agent.Constants.TEXT_PLAIN;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -8,18 +10,13 @@ import java.net.URI;
 import java.nio.charset.UnsupportedCharsetException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
-import io.md.core.CollectionKey;
-import io.md.dao.*;
-import io.md.logger.LogMgr;
 import org.apache.http.Consts;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -36,7 +33,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.md.constants.Constants;
+import io.md.core.CollectionKey;
 import io.md.core.TemplateKey;
+import io.md.dao.Event;
+import io.md.dao.EventQuery;
+import io.md.dao.RecordOrReplay;
+import io.md.dao.Replay;
+import io.md.dao.ReqRespMatchResult;
+import io.md.logger.LogMgr;
 import io.md.services.MockResponse;
 import io.md.utils.CommonUtils;
 
@@ -61,10 +65,7 @@ public class CubeClient {
 	}
 
 	public Optional<String> getResponse(HttpRequestBase request) {
-		Optional<String> token = authToken.isPresent() ? authToken : CommonConfig.getInstance().authToken;
-		token.ifPresent(val -> request.setHeader(io.cube.agent.Constants.AUTHORIZATION_HEADER, val));
-
-		Optional<CloseableHttpResponse> response = HttpUtils.getResponse(request, Optional.empty());
+		Optional<CloseableHttpResponse> response = getCloseableResponse(request);
 		try {
 			return response.flatMap(UtilException.rethrowFunction(resp -> {
 				// response can be NOTFOUND so check for it
@@ -86,6 +87,15 @@ public class CubeClient {
 		}
 		LOGGER.error("Error while sending request to cube service");
 		return Optional.empty();
+	}
+
+	public Optional<CloseableHttpResponse> getCloseableResponse(HttpRequestBase request) {
+		Optional<String> token =
+			authToken.isPresent() ? authToken : CommonConfig.getInstance().authToken;
+		token
+			.ifPresent(val -> request.setHeader(io.cube.agent.Constants.AUTHORIZATION_HEADER, val));
+
+		return HttpUtils.getResponse(request, Optional.empty());
 	}
 
 	private Optional<String> getResponse(URI uri, Object reqBody,
