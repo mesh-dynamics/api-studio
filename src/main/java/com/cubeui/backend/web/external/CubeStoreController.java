@@ -163,7 +163,7 @@ public class CubeStoreController {
         validation.validateCustomerName(authentication,customerId);
         String app = queryMap.getFirst(Constants.APP_FIELD);
         User user = (User)authentication.getPrincipal();
-        ResponseEntity responseEntity = cubeServerService.fetchGetResponse(request, getBody);
+        ResponseEntity<byte[]> responseEntity = cubeServerService.fetchGetResponse(request, getBody);
         String recordingType = queryMap.getFirst(Constants.RECORDING_TYPE_FIELD);
         if(recordingType != null && app != null && recordingType.equals(RecordingType.History.toString())) {
             List<Object> recordings = cubeServerService.getListData(responseEntity, request.getRequestURI(),

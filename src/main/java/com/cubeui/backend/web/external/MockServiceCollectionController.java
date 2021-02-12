@@ -73,14 +73,14 @@ public class MockServiceCollectionController {
   }
 
   @RequestMapping(value = "/mockWithRunId/{replayCollection}/{recordCollection}/{customerId}/{app}/{traceId}/{runId}/{service}/**" , consumes = {MediaType.ALL_VALUE})
-  public ResponseEntity mockWithRunId(HttpServletRequest request, @RequestBody Optional<String> body,
+  public ResponseEntity mockWithRunId(HttpServletRequest request, @RequestBody Optional<byte[]> body,
       @PathVariable String replayCollection, @PathVariable String recordCollection,
       @PathVariable String customerId, @PathVariable String app,
       @PathVariable String traceId, @PathVariable String service, @PathVariable String runId, Authentication authentication) {
     validation.validateCustomerName(authentication,customerId);
     String query =  String.format("customerId=%s&app=%s&collection=%s", customerId, app, recordCollection);
     Optional<Recording> recording = cubeServerService.searchRecording(query);
-    body.ifPresent(b -> log.info("Encoded Body", Base64.getEncoder().encode(b.getBytes())));
+    body.ifPresent(b -> log.info("Encoded Body", new String(Base64.getEncoder().encode(b))));
     if(recording.isEmpty())
       return ResponseEntity.status(HttpStatus.NOT_FOUND)
           .body(String.format("There is no Recording Object for customerId=%s, app=%s, collection=%s",
@@ -103,7 +103,7 @@ public class MockServiceCollectionController {
 
   private String getPathForMockWithRunId(String uri, String replayCollection, String recordCollection,
       String customerId, String app,String recordingId) {
-    return uri.replace(String.format("/api/msc/mockWithRunId/%s/%s/%s/%s",
+    return uri.replace(String.format("/api/msc/mockWithRunIdTS/%s/%s/%s/%s",
         replayCollection, recordCollection, customerId, app),
         String.format("/ms/mockWithRunId/%s/%s", replayCollection, recordingId));
   }
