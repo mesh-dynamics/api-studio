@@ -414,10 +414,6 @@ public class AnalyzeWS {
 
         String replayId = queryParams.getFirst("replayId");
 
-        Boolean includeConforming = Optional
-            .ofNullable(queryParams.getFirst("includeConforming")).flatMap(Utils::strToBool)
-            .orElse(false);
-
         if (replayId == null){
             return Response.serverError().entity(
                 Utils.buildErrorResponse(Constants.ERROR, Constants.NOT_PRESENT,
@@ -455,8 +451,7 @@ public class AnalyzeWS {
 
             List<TemplateEntryMeta> finalMetaList = ctLearner.learnComparisonRules(reqIdToMethodMap,
                 reqRespMatchResultList,
-                rrstore.getTemplateSet(replay.customerId, replay.app, replay.templateVersion),
-                includeConforming);
+                rrstore.getTemplateSet(replay.customerId, replay.app, replay.templateVersion));
 
             try {
 
@@ -1125,11 +1120,21 @@ public class AnalyzeWS {
 
     @POST
     @Path("saveTemplateSet/{customer}/{app}")
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public Response saveTemplateSet(@Context UriInfo uriInfo, @PathParam("customer") String customer,
-                                    @PathParam("app") String app, TemplateSet templateSet) {
+        @PathParam("app") String app, @FormDataParam("file") InputStream uploadedInputStream) {
+
+        TemplateSet templateSet;
         try {
+            templateSet = this.jsonMapper.readValue(uploadedInputStream, TemplateSet.class);
+            if (!templateSet.customer.equals(customer) || !templateSet.app.equals(app)){
+                Response.status(Status.UNAUTHORIZED).entity(Utils
+                    .buildErrorResponse(Constants.ERROR, "UNAUTHORIZED", String.format(
+                        "customer/app name mismatch in path and json file. "
+                            + "path customer=%s app=%s json customer=%s app=%s",
+                        customer, app, templateSet.customer, templateSet.app)));
+            }
 	        templateSet.templates.forEach(compareTemplateVersioned -> {
 		        String normalisedAPIPath= CompareTemplate.normaliseAPIPath(compareTemplateVersioned.requestPath);
 		        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Normalizing APIPath before storing template ",
@@ -1150,6 +1155,14 @@ public class AnalyzeWS {
             return Response.serverError().entity((
                 Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED, "Unable to save template set: " +
                     e.getMessage()))).build();
+        }
+        catch (IOException e) {
+            LOGGER.error(
+                "Error in parsing JSON file for template set", e);
+            return Response.serverError().entity(
+                Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                    "Error in parsing JSON file for template set"))
+                .build();
         }
 
         catch (TemplateSet.TemplateSetMetaStoreException e) {
