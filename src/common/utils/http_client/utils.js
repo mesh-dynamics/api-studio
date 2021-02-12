@@ -4,6 +4,7 @@ import {Base64Binary} from '../../../shared/utils'
 import {applyEnvVarsToUrl, getRenderEnvVars } from './envvar';
 import cryptoRandomString from 'crypto-random-string';
 import { store } from '../../helpers';
+import URLParse from "url-parse";
 
 const generateRunId = () => {
     return new Date(Date.now()).toISOString()
@@ -763,6 +764,15 @@ export function filterInternalHeaders(headers, isFilter){
         return headers.filter( header => getInternalHeaders().indexOf(header.name.toLowerCase()) == -1 )
     }
     return headers;
+}
+
+
+export function isLocalhostUrl(url){
+    const urlFetched = applyEnvVarsToUrl(url);
+    if(urlFetched){
+        return URLParse(urlFetched).hostname == "localhost";
+    }
+    return false;
 }
 
 export { 

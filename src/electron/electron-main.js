@@ -1,7 +1,7 @@
 const setupProxy = require('./core/proxy/server');
 const { setupListeners } = require('./core/listeners');
 const { setupApplicationConfig } = require('./core/fs-utils');
-
+const setupGrpcH2Server = require('./core/proxy/grpc-h2-server');
 /**
  * This will setup the application config into fs for persistence.
  */
@@ -40,6 +40,9 @@ setupListeners(mockContext, user);
  * Setup server proxy
  */
 setupProxy(mockContext, user);
+
+// setup gRPC http2 server proxy
+setupGrpcH2Server(mockContext, user);
 
 // DO NOT DELETE
 // const replayContext = {

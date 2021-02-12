@@ -3,7 +3,12 @@ import {Link, withRouter} from "react-router-dom";
 import {connect} from "react-redux";
 import {cubeActions} from "../actions";
 import {cubeConstants} from "../constants";
-import Modal from "react-bootstrap/es/Modal";
+import {
+    Grid,
+    Row,
+    Col,
+    Modal
+  } from "react-bootstrap";
 import config from "../config";
 import {getTransformHeaders} from "../utils/lib/url-utils";
 import api from "../api";
@@ -71,7 +76,8 @@ class ViewSelectedTestConfig extends React.Component {
             otherInstanceEndPoint: "",
             storeToDatastore: true,
             servicesForSelectedGolden : [],
-            selectedService : ""
+            selectedService : "",
+            ignoreStaticContent: true
         };
         //this.statusInterval;
     }
@@ -523,15 +529,21 @@ class ViewSelectedTestConfig extends React.Component {
                     customer_name,
                     access_token
                 } 
-            }, 
+            },
+            gcBrowse: {
+                actualGoldens
+            },
             dispatch 
         } = this.props;
 
-        const { name: recName, label: recLabel } = testIds.find(recording => recording.id === selectedGolden);
+        const recordings = actualGoldens?.recordings || [];
+
+        const { name: recName, label: recLabel } = recordings.find(recording => recording.id === selectedGolden);
         
         const searchParams = new URLSearchParams();
         searchParams.set('tag', `default${selectedApp}Record`);
         searchParams.set('resettag', `default${selectedApp}Noop`);
+        searchParams.set('ignoreStaticContent', this.state.ignoreStaticContent.toString());
 
         const resumeUrl = `${config.recordBaseUrl}/resumeRecording/${selectedGolden}`;
         const statusUrl = `${config.recordBaseUrl}/status/${customer_name}/${selectedApp}/${recName}/${recLabel}`;
@@ -598,6 +610,7 @@ class ViewSelectedTestConfig extends React.Component {
         searchParams.set('label', recLabel);
         searchParams.set('tag', `default${selectedApp}Record` );
         searchParams.set('resettag', `default${selectedApp}Noop`);
+        searchParams.set('ignoreStaticContent', this.state.ignoreStaticContent.toString());
 
         // axios.post(recordUrl, searchParams, configForHTTP
         api.post(recordUrl, searchParams, configForHTTP)
@@ -843,6 +856,10 @@ class ViewSelectedTestConfig extends React.Component {
         this.setState({storeToDatastore: event.target.checked});
     }
 
+    onIgnoreStaticContentChange = (event) =>{
+        this.setState({ignoreStaticContent: event.target.checked});
+    }
+
     renderStoreToDatastore(cube){
         if(cube.selectedInstance == "other"){
             return <div className="margin-top-10">
@@ -862,20 +879,40 @@ class ViewSelectedTestConfig extends React.Component {
             const selectedItem = actualGoldens.recordings.find(test => test.collec === selectedTestId) || defaultCollectionItem;
 
             return(
-                <div className="resume-modal-info-container">
-                    <div className="resume-modal-info-line">
-                        <div className="resume-modal-identifier"><b>Id:</b></div>
-                        <div className="resume-modal-content">{selectedItem.id}</div>
-                    </div>
-                    <div className="resume-modal-info-line">
-                        <div className="resume-modal-identifier"><b>Name:</b></div>
-                        <div className="resume-modal-content">{selectedItem.name}</div>
-                    </div>
-                    <div className="resume-modal-info-line"s>
-                        <div className="resume-modal-identifier"><b>Label:</b></div>
-                        <div className="resume-modal-content">{selectedItem.label}</div>
-                    </div>
-                </div>
+                <Grid>
+                <Row>
+                    <Col xs={12} sm={4}>
+                        <label>Id:</label>
+                    </Col>
+                    <Col xs={12} sm={8}>
+                    {selectedItem.id}
+                    </Col>
+                </Row>
+                    <Row>
+                        <Col xs={12} sm={4}>
+                        <label>Name:</label>
+                        </Col>
+                        <Col xs={12} sm={8}>
+                        {selectedItem.name}
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col xs={12} sm={4}>
+                        <label>Label:</label>
+                        </Col>
+                        <Col xs={12} sm={8}>
+                        {selectedItem.label}
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col xs={12} sm={4}>
+                        <label>Ignore static content:</label>
+                        </Col>
+                        <Col xs={12} sm={8}>
+                        <input type="checkbox" name="ignoreStaticContentCb" onChange={this.onIgnoreStaticContentChange} checked={this.state.ignoreStaticContent}/> (Ex: js, css, img, html etc.)
+                        </Col>
+                    </Row>
+                </Grid>
             );
 
         }
@@ -1122,14 +1159,30 @@ class ViewSelectedTestConfig extends React.Component {
 
                     <Modal.Body className={"text-center padding-15"}>
                         <div style={{ display: "flex", flex: 1, justifyContent: "center"}}>
-                            <div className="margin-right-10" style={{ display: "flex", flexDirection: "column" }}>
-                                <input placeholder={"Enter Name"} onChange={this.changeRecName} type="text" value={recName}/>
-                            </div>
-                            <div style={{ display: "flex", alignItems: "flex-start" }}>
-                                <span onClick={this.showDBWarningModal} className={stopDisabled ? "cube-btn margin-right-10" : "cube-btn disabled margin-right-10"}>START</span>
-                                <span onClick={this.stopRecord} className={stopDisabled || stoppingStatus ? "cube-btn disabled" : "cube-btn"}>STOP</span>
-                            </div>
-                            
+                            <Grid style={{maxWidth:'420px'}}>
+                                <Row className="text-left">
+                                    <Col xs={12} md={4}>
+                                        Recording Name:
+                                    </Col>
+                                    <Col xs={12} md={8}>
+                                        <input placeholder={"Enter Name"} onChange={this.changeRecName} type="text" value={recName}/>
+                                    </Col>
+                                </Row>
+                                <Row className="text-left">
+                                    <Col xs={12} md={4}>
+                                        Ignore static content:
+                                    </Col>
+                                    <Col xs={12} md={8}>
+                                        <input type="checkbox" name="ignoreStaticContentCb" onChange={this.onIgnoreStaticContentChange} checked={this.state.ignoreStaticContent}/> (Ex: js, css, img, html etc.)
+                                    </Col>
+                                </Row>
+                                <Row>
+                                    <Col xs={12} md={12}>
+                                        <span onClick={this.showDBWarningModal} className={stopDisabled ? "cube-btn margin-right-10" : "cube-btn disabled margin-right-10"}>START</span>
+                                        <span onClick={this.stopRecord} className={stopDisabled || stoppingStatus ? "cube-btn disabled" : "cube-btn"}>STOP</span>
+                                    </Col>
+                                </Row>
+                            </Grid>
                         </div>
                         <div style={{ display: "flex", justifyContent: "center", marginTop: "10px" }}>
                             <span style={{ color: "#c24b4b"}}>{goldenNameErrorMessage}</span>
@@ -1164,7 +1217,7 @@ class ViewSelectedTestConfig extends React.Component {
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                             <div 
                                 className="margin-right-10" 
-                                style={{ display: "flex", flexDirection: "column", justifyContent: "center", fontWeight: "500", width: "50%" }}
+                                style={{ display: "flex", flexDirection: "column", justifyContent: "center", fontWeight: "500", width: "420px", textAlign: "left" }}
                             >
                                 {this.renderRecordingInfo()}
                             </div>

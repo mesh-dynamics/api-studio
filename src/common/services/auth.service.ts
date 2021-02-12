@@ -2,7 +2,7 @@ import config from '../config';
 import { getAccesToken, getRefreshToken } from "../utils/lib/common-utils";
 import { store } from "../helpers";
 import authActions from '../actions/auth.actions'
-import Deferred from './deferred';
+import {Deferred} from './../../shared/utils';
 import {getApi} from '../api';
 import { ipcRenderer } from '../helpers/ipc-renderer';
 import { AxiosAdapter } from 'axios';

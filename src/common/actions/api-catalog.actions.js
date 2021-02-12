@@ -8,6 +8,7 @@ import {
     getLastApiTraceEndTimeFromApiTrace
 } from "../utils/api-catalog/api-catalog-utils";
 import _ from "lodash";
+import { sortCatalogTraceChildren } from "../utils/http_client/httpClientUtils";
 
 export const apiCatalogActions = {
     getDiffData: (app, requestIdLeft, requestIdRight) => async (dispatch, getState) => {
@@ -300,6 +301,7 @@ export const apiCatalogActions = {
         };
         const apiTrace = await cubeService.fetchAPITraceData(customerId, filterData);
         const apiTraces = apiTrace.response;
+        sortCatalogTraceChildren(apiTraces);
         const currentEndTime = getLastApiTraceEndTimeFromApiTrace(apiTraces);
 
         const changedApiCatalogTableState = {

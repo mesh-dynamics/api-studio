@@ -11,16 +11,19 @@ const PAYLOAD_STATE = {
     UNWRAPPED_DECODED: 'UnwrappedDecoded' // To be used if payload is sent in cube format
 };
 
+const isgRPC = (responseProps) => responseProps.headers["content-type"] == 'application/grpc';
+
 const convertFormParamsToCubeFormat = (requestDataString) => {
     const formParams = {};
     const fieldParts = requestDataString.split('&');
 
     fieldParts.map(part => {
         const [fieldName, fieldValue] = part.split('=');
+        const value = queryString.unescape(fieldValue);
         if(formParams[fieldName]){
-            formParams[fieldName] = [...formParams[fieldName] , fieldValue];
+            formParams[fieldName] = [...formParams[fieldName] , value];
         }else{
-            formParams[fieldName] = [fieldValue];
+            formParams[fieldName] = [value];
         }
     })
 
@@ -144,12 +147,21 @@ const extractRequestBodyAndFormParams = (headers, requestData) => {
         }
     }
 
-    if(contentType && contentType && contentType.includes('multipart/form-data')) {
+    if(contentType && contentType.includes('multipart/form-data')) {
 
         return {
             bodyType: 'multipartData',
-            body: convertMultipartParamsToCubeFormat(requestData, contentType), // TODO: Handle this in future
+            body: convertMultipartParamsToCubeFormat(requestData, contentType),
             payloadState: PAYLOAD_STATE.WRAPPED_DECODED
+        }
+    }
+
+    if(contentType && contentType.includes('application/grpc')) {
+
+        return {
+            bodyType: 'grpcData',
+            body: requestData, 
+            payloadState: PAYLOAD_STATE.WRAPPED_ENCODED
         }
     }
 
@@ -183,7 +195,22 @@ const extractQueryStringParamsToCubeFormat = (queryString) => {
     return queryParams;
 };
 
-const extractRequestPayloadDetailsFromProxy = (proxyRes, apiPath, options) => {
+const extractGrpcMetaData = (options) => {
+    let metaData = {}
+    if(isgRPC(options)){
+        metaData = {
+            grpcConnectionSchema: JSON.stringify({
+                "app":options.mockContext.selectedApp,
+                "service":options.grpcService,
+                "method": options.grpcMethod,
+                "endpoint":options.grpcEndpoint
+            })
+        }
+    }
+    return metaData;
+}
+
+const extractRequestPayloadDetailsFromProxy = (responseProps, apiPath, options) => {
     
     const { headers, requestData, mockContext } = options;
 
@@ -191,33 +218,40 @@ const extractRequestPayloadDetailsFromProxy = (proxyRes, apiPath, options) => {
     const queryParams = extractQueryStringParamsToCubeFormat(parsedUrl.query);
 
     const { formParams, body, payloadState, bodyType } = extractRequestBodyAndFormParams(headers, requestData);
-
+    const grpcMetadata = extractGrpcMetaData(options);
     return  {
         hdrs: extractHeadersToCubeFormat(headers, mockContext),
         body,
         formParams,
         queryParams,
         path: parsedUrl.pathname,
-        method: proxyRes.req.method.toUpperCase(),
+        method: responseProps.method,
         pathSegments: parsedUrl.pathname.split("/").filter(Boolean),
-        metaData: { bodyType },
+        metaData: { bodyType,
+            ...grpcMetadata },
         payloadState
     }
 }
 
 
 
-const extractResponsePayloadDetailsFromProxy = (proxyRes, responseBody) => {
+const extractResponsePayloadDetailsFromProxy = (responseProps, responseBody) => {
+    
+    const additionalProps = isgRPC(responseProps) ? { path: responseProps.outgoingApiPath, trls: extractHeadersToCubeFormat(responseProps.trailers) } : {};
     return {
-        hdrs: extractHeadersToCubeFormat(proxyRes.headers),
+        hdrs: extractHeadersToCubeFormat(responseProps.headers),
         body: responseBody,
-        status: proxyRes.statusCode,
+        status: responseProps.statusCode,
+        method: responseProps.method,
+        payloadState: PAYLOAD_STATE.WRAPPED_ENCODED,
+        ...additionalProps
     }
 }
 
 module.exports = {
     extractRequestPayloadDetailsFromProxy,
-    extractResponsePayloadDetailsFromProxy
+    extractResponsePayloadDetailsFromProxy,
+    PAYLOAD_STATE
 };
 
 

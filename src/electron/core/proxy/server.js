@@ -12,12 +12,9 @@ const {
     selectProxyTargetForService,
 } = require('./proxy-utils');
 const {
-    generateSpanId, 
-    generateSpecialParentSpanId,
-    generateTraceKeys,
-    generateTraceIdDetails,
-    extractTraceIdDetails,
+    getTraceDetails
 } = require("./trace-utils")
+
 
 /**
  * This function will setup the proxy server
@@ -98,35 +95,7 @@ const setupProxy = (mockContext, user) => {
             // if traceId & spanId isn't present in the mock context, 
             // check in the incoming request headers
             // if not present in the headers, generate new values
-            const tracer = mockContext.tracer
-            const traceKeys = generateTraceKeys(tracer)
-            const {traceIdKey, spanIdKey, parentSpanIdKeys} = traceKeys;
-            
-            let parentSpanId = mockContext.parentSpanId
-            if(!parentSpanId) {
-                for(const key of parentSpanIdKeys) {
-                    parentSpanId = headers[key]
-                    if (parentSpanId)
-                        break;
-                }
-            }
-
-            if (!parentSpanId) {
-                parentSpanId = generateSpecialParentSpanId(tracer)
-            }
-
-            const spanId = headers[spanIdKey] || generateSpanId(tracer);
-            
-            let traceIdDetails = {} 
-            if(mockContext.traceId) {
-                traceIdDetails = extractTraceIdDetails(mockContext.traceId);
-            } else if(headers[traceIdKey]) {
-                traceIdDetails = extractTraceIdDetails(headers[traceIdKey]);
-            } else {
-                traceIdDetails = generateTraceIdDetails(tracer, spanId)
-            }
-
-            const traceDetails = {tracer, traceKeys, traceIdDetails, spanId, parentSpanId}
+           const traceDetails = getTraceDetails(mockContext, headers);
             const proxyOptionParameters = {
                 user,
                 proxy,

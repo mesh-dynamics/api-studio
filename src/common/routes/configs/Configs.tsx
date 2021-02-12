@@ -4,6 +4,7 @@ import AgentConfig from "../../components/Configs/Agent-Config/AgentConfig";
 import TestConfig from "../../components/Configs/Test-Config/TestConfig";
 import ContextPropagationRules from '../../components/Configs/ContextPropagationRules/ContextPropagationRules';
 import GrpcConfiguration from '../../components/Configs/Grpc/GrpcConfiguration';
+import ApiToken from '../../components/Configs/ApiToken/ApiToken';
 import * as URL from "url";
 
 export interface IConfigSettingsState{
@@ -51,6 +52,11 @@ class Config extends Component<any, IConfigSettingsState> {
                     <Tab eventKey={4} title="gRPC">
                         <div className="margin-top-20">
                             <GrpcConfiguration />
+                        </div>
+                    </Tab>
+                    <Tab eventKey={5} title="API Token">
+                        <div className="margin-top-20">
+                            <ApiToken />
                         </div>
                     </Tab>
                 </Tabs>
