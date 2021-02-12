@@ -194,7 +194,7 @@ public class RecordingUpdate {
                             originalRec.app,
                             Collections.emptyList());
                         reqBuilder.withReqIds(reqIds);
-                        reqBuilder.withCollection(originalRec.collection);
+                        reqBuilder.withCollections(List.of(originalRec.collection , replayId));
                         reqBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
 
                         Result<Event> reqRespEvents = config.rrstore.getEvents(reqBuilder.build());
