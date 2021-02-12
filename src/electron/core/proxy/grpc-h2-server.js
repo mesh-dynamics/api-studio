@@ -103,27 +103,28 @@ const setupGrpcH2Server = (mockContext, user) => {
           allowForbiddenHeaders: true,
         };
 
+    
+      if (spanIdKey && !(spanIdKey in targetReqHeaders)) {
+        logger.info(`Setting spanId header (${spanIdKey}): `, spanId);
+        targetReqHeaders[spanIdKey] = spanId;
+      }
+
+      parentSpanIdKeys.forEach((key) => {
+        if (!(key in targetReqHeaders)) {
+          logger.info(`Setting parentSpanId header (${key}): `, parentSpanId);
+          targetReqHeaders[key] = parentSpanId;
+        }
+      });
+
+      if (traceIdKey && !(traceIdKey in targetReqHeaders)) {
+        logger.info(`Setting traceId header (${traceIdKey}): `, traceId);
+        targetReqHeaders[traceIdKey] = traceId;
+      }
+      
       if (isLive) {
         // live
         logger.info("Live service");
-
-        if (spanIdKey && !(spanIdKey in targetReqHeaders)) {
-          logger.info(`Setting spanId header (${spanIdKey}): `, spanId);
-          targetReqHeaders[spanIdKey] = spanId;
-        }
-
-        parentSpanIdKeys.forEach((key) => {
-          if (!(key in targetReqHeaders)) {
-            logger.info(`Setting parentSpanId header (${key}): `, parentSpanId);
-            targetReqHeaders[key] = parentSpanId;
-          }
-        });
-
-        if (traceIdKey && !(traceIdKey in targetReqHeaders)) {
-          logger.info(`Setting traceId header (${traceIdKey}): `, traceId);
-          targetReqHeaders[traceIdKey] = traceId;
-        }
-
+  
         fetchUrl = serviceConfigObject.url + "/" + resourcePath;
       } else {
         // mocked
