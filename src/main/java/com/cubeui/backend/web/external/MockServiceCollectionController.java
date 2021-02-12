@@ -103,7 +103,7 @@ public class MockServiceCollectionController {
 
   private String getPathForMockWithRunId(String uri, String replayCollection, String recordCollection,
       String customerId, String app,String recordingId) {
-    return uri.replace(String.format("/api/msc/mockWithRunId/%s/%s/%s/%s",
+    return uri.replace(String.format("/api/msc/mockWithRunIdTS/%s/%s/%s/%s",
         replayCollection, recordCollection, customerId, app),
         String.format("/ms/mockWithRunId/%s/%s", replayCollection, recordingId));
   }
