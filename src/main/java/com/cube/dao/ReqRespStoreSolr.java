@@ -1281,6 +1281,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String CONFIG_JSON_F = CPREFIX + Constants.CONFIG_JSON + STRING_SUFFIX;
     private static final String SCOREF = CPREFIX + SCORE_FIELD + CSUFFIX;
     private static final String SEQIDEF = CPREFIX + SEQID_FIELD + STRING_SUFFIX;
+    private static final String IGNORESTATICCONTENTF = CPREFIX + Constants.IGNORE_STATIC_CONTENT + BOOLEAN_SUFFIX;
 
     private static final String PROTO_DESCRIPTOR_FILE_F = CPREFIX + Constants.PROTO_DESCRIPTOR_FILE_FIELD + NOTINDEXED_SUFFIX;
     private static final String PROTO_FILE_MAP_F = CPREFIX + PROTO_FILE_MAP_FIELD + NOTINDEXED_SUFFIX;
@@ -3307,6 +3308,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             .flatMap(r -> Utils.valueOf(RecordingType.class, r));
         Optional<String> dynamicInjectionConfigVersion = getStrField(doc , DYNAMIC_INJECTION_CONFIG_VERSIONF);
         Optional<String> runId = getStrField(doc , RUNIDF);
+        Optional<Boolean> ignoreStatic = getBoolField(doc , IGNORESTATICCONTENTF );
 
         if (id.isPresent() && customerId.isPresent() && app.isPresent() && instanceId.isPresent() && collection
             .isPresent() &&
@@ -3331,6 +3333,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             recordingType.ifPresent(recordingBuilder::withRecordingType);
             dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
             runId.ifPresent(recordingBuilder::withRunId);
+            ignoreStatic.ifPresent(recordingBuilder::withIgnoreStatic);
 
             try {
                 generatedClassJarPath.ifPresent(
@@ -3378,6 +3381,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(USERIDF, recording.userId);
         doc.setField(RECORDING_TYPE_F, recording.recordingType.toString());
         doc.setField(RUNIDF, recording.runId);
+        doc.setField(IGNORESTATICCONTENTF , recording.ignoreStatic);
+
         recording.parentRecordingId.ifPresent(parentRecId -> doc.setField(PARENT_RECORDING_IDF, parentRecId));
         recording.generatedClassJarPath.ifPresent(jarPath -> doc.setField(GENERATED_CLASS_JAR_PATH, jarPath));
         recording.updateTimestamp.ifPresent(timestamp -> doc.setField(TIMESTAMPF , timestamp.toString()));

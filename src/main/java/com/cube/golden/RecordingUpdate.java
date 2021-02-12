@@ -4,7 +4,9 @@ package com.cube.golden;
 import static io.md.core.TemplateKey.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -17,15 +19,19 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
+import io.md.core.BatchingIterator;
 import io.md.core.Comparator;
 import io.md.core.TemplateKey;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
+import io.md.dao.EventQuery;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Recording;
 import io.md.dao.ReqRespMatchResult;
 import io.md.dao.ReqRespUpdateOperation;
 import io.md.dao.RecordingOperationSetSP;
+import io.md.dao.RequestPayload;
+import io.md.dao.ResponsePayload;
 import io.md.utils.Constants;
 import io.md.utils.UtilException;
 
@@ -170,89 +176,146 @@ public class RecordingUpdate {
                 .collect(Collectors.toMap(set -> set.path
                     , Function.identity()));
         Stream<ReqRespMatchResult> results = getReqRespMatchResultStream(replayId);
-        Stream<Event> events =  results.flatMap(res -> {
-            try {
-                LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE
-                    , "Applying Recording Update", Constants.RECORD_REQ_ID_FIELD
-                    , res.recordReqId.orElse(Constants.NOT_PRESENT)
-                    , Constants.REPLAY_REQ_ID_FIELD, res.replayReqId.orElse(Constants.NOT_PRESENT),
-                    Constants.REPLAY_ID_FIELD, res.replayId, Constants
-                        .RECORDING_UPDATE_OPERATION_SET_ID, recordingOperationSetId)));
-                Event recordRequest = res.recordReqId.flatMap(config.rrstore::getRequestEvent)
-                    .orElseThrow(() -> new Exception("Unable to fetch recorded request :: "
-                        + res.recordReqId.orElse(Constants.NOT_PRESENT)));
-                Optional<Event> recordResponseOpt = res.recordReqId.flatMap(config.rrstore::getResponseEvent);
-                    /*.orElseThrow(() -> new Exception("Unable to fetch recorded response :: "
-                        + res.recordReqId.orElse(Constants.NOT_PRESENT)));*/
+        List<ReqRespMatchResult> resList = results.collect(Collectors.toList());
+        Map<String, Event> reqMap = new HashMap<>();
+        Map<String, Event> respMap = new HashMap<>();
+        try {
+            BatchingIterator.batchedStreamOf(resList.stream(), 100)
+                .forEach(UtilException.rethrowConsumer(res -> {
 
-                Optional<Event> replayRequest = res.replayReqId.flatMap(config.rrstore
-                    ::getRequestEvent);
-                Optional<Event> replayResponse = res.replayReqId.flatMap(config.rrstore
-                    ::getResponseEvent);
+                    List<String> reqIds = res.stream()
+                        .flatMap(r -> Stream.of(r.recordReqId, r.replayReqId))
+                        .flatMap(Optional::stream)
+                        .collect(Collectors.toList());
 
-                Optional<RecordingOperationSetSP> updateOperationSet = Optional.ofNullable(
-                    apiPathVsUpdateOperationSet.get(recordRequest.apiPath));
-                List<ReqRespUpdateOperation> operationsList = updateOperationSet
-                    .map(updateOpSet -> updateOpSet.operationsList)
-                    .orElse(Collections.emptyList());
+                    if (!reqIds.isEmpty()) {
+                        EventQuery.Builder reqBuilder = new EventQuery.Builder(
+                            originalRec.customerId,
+                            originalRec.app,
+                            Collections.emptyList());
+                        reqBuilder.withReqIds(reqIds);
+                        reqBuilder.withCollections(List.of(originalRec.collection , replayId));
+                        reqBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
 
-                Map<Boolean, List<ReqRespUpdateOperation>> operationTypeVsList
-                    = operationsList.stream().collect(Collectors.partitioningBy(
-                        op -> op.eventType == ReqRespUpdateOperation.Type.Request));
+                        Result<Event> reqRespEvents = config.rrstore.getEvents(reqBuilder.build());
+                        reqRespEvents.getObjects().forEach(event -> {
+                            if (event.payload instanceof RequestPayload) {
+                                reqMap.put(event.reqId, event);
+                            } else if (event.payload instanceof ResponsePayload) {
+                                respMap.put(event.reqId, event);
+                            }
+                        });
+                    }
 
-                List<ReqRespUpdateOperation> reqOperationList = operationTypeVsList.get(true);
-                List<ReqRespUpdateOperation> responseOperationList = operationTypeVsList.get(false);
+                    Stream<Event> events = res.stream().flatMap(reqRespMatchResult -> {
+                        try {
+                            LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE
+                                , "Applying Recording Update", Constants.RECORD_REQ_ID_FIELD
+                                , reqRespMatchResult.recordReqId.orElse(Constants.NOT_PRESENT)
+                                , Constants.REPLAY_REQ_ID_FIELD,
+                                reqRespMatchResult.replayReqId.orElse(Constants.NOT_PRESENT),
+                                Constants.REPLAY_ID_FIELD, reqRespMatchResult.replayId, Constants
+                                    .RECORDING_UPDATE_OPERATION_SET_ID, recordingOperationSetId)));
 
-                String newReqId = generateReqId(recordRequest.reqId, newCollectionName);
-                Optional<Event> transformedResponseOpt = recordResponseOpt.map(UtilException
-                    .rethrowFunction(recordResponse -> recordResponse.applyTransform(replayResponse
-                    , responseOperationList,  newCollectionName, newReqId, Optional.empty())));
+                            Event recordRequest = reqRespMatchResult.recordReqId.map(reqMap::get)
+                                .orElseThrow(
+                                    () -> new Exception("Unable to fetch recorded request :: "
+                                        + reqRespMatchResult.recordReqId
+                                        .orElse(Constants.NOT_PRESENT)));
+                            Optional<Event> recordResponseOpt = reqRespMatchResult.recordReqId
+                                .map(respMap::get);
+                            Optional<Event> replayRequest = reqRespMatchResult.replayReqId
+                                .map(reqMap::get);
+                            Optional<Event> replayResponse = reqRespMatchResult.replayReqId
+                                .map(respMap::get);
 
-                TemplateKey key = new TemplateKey(newTemplateSetVersion, originalRec.customerId,
-                    originalRec.app, recordRequest.service, recordRequest.apiPath,
-                    Type.RequestMatch, io.md.utils.Utils.extractMethod(recordRequest),
-                    originalRec.collection);
-                Comparator comparator = config.rrstore.getComparator(key
-                    , Event.EventType.HTTPRequest);
+                            Optional<RecordingOperationSetSP> updateOperationSet = Optional
+                                .ofNullable(
+                                    apiPathVsUpdateOperationSet.get(recordRequest.apiPath));
+                            List<ReqRespUpdateOperation> operationsList = updateOperationSet
+                                .map(updateOpSet -> updateOpSet.operationsList)
+                                .orElse(Collections.emptyList());
 
-                // Transform request
-                Event transformedRequest = recordRequest.applyTransform(replayRequest
-                    , reqOperationList , newCollectionName, newReqId
-                    , Optional.of(comparator));
+                            Map<Boolean, List<ReqRespUpdateOperation>> operationTypeVsList
+                                = operationsList.stream().collect(Collectors.partitioningBy(
+                                op -> op.eventType == ReqRespUpdateOperation.Type.Request));
 
-                LOGGER.debug(new ObjectMessage(Map.of(
-                    Constants.MESSAGE, "Saving transformed request/response",
-                    Constants.REQ_ID_FIELD, Optional.ofNullable(newReqId)
-                        .orElse(Constants.NOT_PRESENT))));
-                LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE
-                    , "Saving transformed request/response",
-                    Constants.RECORD_REQ_ID_FIELD, res.recordReqId.orElse(Constants.NOT_PRESENT)
-                    , Constants.REPLAY_REQ_ID_FIELD, res.replayReqId.orElse(Constants.NOT_PRESENT),
-                    Constants.REPLAY_ID_FIELD, res.replayId, Constants.REQ_ID_FIELD, Optional
-                        .ofNullable(newReqId).orElse(Constants.NOT_PRESENT),
-                    Constants.RECORDING_UPDATE_OPERATION_SET_ID, recordingOperationSetId
-                    /*, Constants.PAYLOAD, Optional.ofNullable(transformedResponse.rawPayloadString)
-                        .orElse(Constants.NOT_PRESENT)*/)));
+                            List<ReqRespUpdateOperation> reqOperationList = operationTypeVsList
+                                .get(true);
+                            List<ReqRespUpdateOperation> responseOperationList = operationTypeVsList
+                                .get(false);
 
+                            String newReqId = generateReqId(recordRequest.reqId, newCollectionName);
+                            Optional<Event> transformedResponseOpt = recordResponseOpt
+                                .map(UtilException
+                                    .rethrowFunction(
+                                        recordResponse -> recordResponse
+                                            .applyTransform(replayResponse
+                                                , responseOperationList, newCollectionName,
+                                                newReqId,
+                                                Optional.empty())));
 
-                return transformedResponseOpt.map(resp->Stream.of(transformedRequest , resp)).orElseGet(()->Stream.of(transformedRequest));
+                            TemplateKey key = new TemplateKey(newTemplateSetVersion,
+                                originalRec.customerId,
+                                originalRec.app, recordRequest.service, recordRequest.apiPath,
+                                Type.RequestMatch, io.md.utils.Utils.extractMethod(recordRequest),
+                                originalRec.collection);
+                            Comparator comparator = config.rrstore.getComparator(key
+                                , Event.EventType.HTTPRequest);
 
-            } catch (Exception e) {
-                LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
-                    , "Exception Occurred while transforming request/response",
-                    Constants.RECORD_REQ_ID_FIELD, res.recordReqId.orElse(Constants.NOT_PRESENT)
-                    , Constants.REPLAY_REQ_ID_FIELD, res.replayReqId.orElse(Constants.NOT_PRESENT),
-                    Constants.REPLAY_ID_FIELD, res.replayId,
-                    Constants.RECORDING_UPDATE_OPERATION_SET_ID, recordingOperationSetId)), e);
-            }
-            return Stream.empty();
-        });
+                            // Transform request
+                            Event transformedRequest = recordRequest.applyTransform(replayRequest
+                                , reqOperationList, newCollectionName, newReqId
+                                , Optional.of(comparator));
 
-        if (!config.rrstore.save(events)) {
-            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
-                , "Error in saving transformed request/response"
-                , Constants.RECORDING_UPDATE_OPERATION_SET_ID, recordingOperationSetId)));
+                            LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE
+                                , "Saving transformed request/response",
+                                Constants.RECORD_REQ_ID_FIELD,
+                                reqRespMatchResult.recordReqId.orElse(Constants.NOT_PRESENT)
+                                , Constants.REPLAY_REQ_ID_FIELD,
+                                reqRespMatchResult.replayReqId.orElse(Constants.NOT_PRESENT),
+                                Constants.REPLAY_ID_FIELD, reqRespMatchResult.replayId,
+                                Constants.REQ_ID_FIELD, Optional
+                                    .ofNullable(newReqId).orElse(Constants.NOT_PRESENT),
+                                Constants.RECORDING_UPDATE_OPERATION_SET_ID, recordingOperationSetId
+                        /*, Constants.PAYLOAD, Optional.ofNullable(transformedResponse.rawPayloadString)
+                            .orElse(Constants.NOT_PRESENT)*/)));
+
+                            return transformedResponseOpt
+                                .map(resp -> Stream.of(transformedRequest, resp))
+                                .orElseGet(() -> Stream.of(transformedRequest));
+
+                        } catch (Exception e) {
+                            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
+                                , "Exception Occurred while transforming request/response",
+                                Constants.RECORD_REQ_ID_FIELD,
+                                reqRespMatchResult.recordReqId.orElse(Constants.NOT_PRESENT)
+                                , Constants.REPLAY_REQ_ID_FIELD,
+                                reqRespMatchResult.replayReqId.orElse(Constants.NOT_PRESENT),
+                                Constants.REPLAY_ID_FIELD, reqRespMatchResult.replayId,
+                                Constants.RECORDING_UPDATE_OPERATION_SET_ID,
+                                recordingOperationSetId)), e);
+                        }
+                        return Stream.empty();
+                    });
+
+                    if (!config.rrstore.save(events)) {
+                        LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
+                            , "Error in saving transformed request/response"
+                            , Constants.RECORDING_UPDATE_OPERATION_SET_ID,
+                            recordingOperationSetId)));
+                        throw new Exception("Error in saving transformed request/response");
+                    }
+                    reqMap.clear();
+                    respMap.clear();
+                }));
+        } catch (Exception e) {
+            LOGGER.error(new ObjectMessage(
+                Map.of(Constants.MESSAGE, "Exception occured : " + e.getMessage())));
             return false;
+        } finally {
+            reqMap.clear();
+            respMap.clear();
         }
 
         /* This should no longer be needed. TODO: Remove once java function recording path is tested
