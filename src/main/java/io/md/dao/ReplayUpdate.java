@@ -84,7 +84,7 @@ public class ReplayUpdate {
 		EventQuery eventQuery = new EventQuery.Builder(replay.customerId, replay.app, eventType)
 			/*.withRunType(Event.RunType.Record)*/.withReqIds(reqIds).withPaths(replay.paths)
             .withExcludePaths(replay.excludePaths)
-			.withCollection(replay.collection)
+			.withCollection(replay.getCurrentRecording())
 			.withServices(replay.service)
 			.withoutScoreOrder()
 			.withTimestampAsc(true)

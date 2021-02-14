@@ -150,70 +150,85 @@ public abstract class AbstractReplayDriver {
 		// TODO: add support for matrix params
 
 		try {
+			for (String currentCollection : replay.collection) {
 
-			Pair<Stream<List<Event>>, Long> batchedResult = ReplayUpdate
-				.getRequestBatchesUsingEvents(BATCHSIZE, dataStore, replay);
-			replay.reqcnt = batchedResult.getRight().intValue();
-			// NOTE: converting long to int, should be ok, since we
-			// never replay so many requests
+				if (replay.collection.size() > 1) {
+					ReplayContext replayContext = replay.replayContext.orElse(new ReplayContext());
+					replayContext.setCurrentCollection(currentCollection);
+					replay.replayContext = Optional.of(replayContext);
+					dataStore.populateCache(replay.collectionKey, RecordOrReplay.createFromReplay(replay));
+				}
+				Pair<Stream<List<Event>>, Long> batchedResult = ReplayUpdate
+					.getRequestBatchesUsingEvents(BATCHSIZE, dataStore, replay);
+				replay.reqcnt += batchedResult.getRight().intValue();
+				// NOTE: converting long to int, should be ok, since we
+				// never replay so many requests
 
-			batchedResult.getLeft().forEach(requests -> {
+				batchedResult.getLeft().forEach(requests -> {
 
-				// replay.reqcnt += requests.size();
+					// replay.reqcnt += requests.size();
 
-				List<Event> reqs = new ArrayList<>();
-				requests.forEach(eventReq -> {
+					List<Event> reqs = new ArrayList<>();
+					requests.forEach(eventReq -> {
 
-					try {
+						try {
 					/*
                      TODO: currently sampling samples across all paths with same rate.
                       If we want to ensure that we have some minimum requests from each path
                       (particularly the rare ones), we need to add more logic
                     */
-						if (replay.sampleRate.map(sr -> random.nextDouble() > sr).orElse(false)) {
-							return; // drop this request
+							if (replay.sampleRate.map(sr -> random.nextDouble() > sr)
+								.orElse(false)) {
+								return; // drop this request
+							}
+							LOGGER.debug(
+								new ObjectMessage(Map.of(Constants.MESSAGE, "Enqueuing request"
+										+ "for reply", Constants.REPLAY_ID_FIELD, replay.replayId
+									, Constants.REQ_ID_FIELD, Optional.ofNullable(eventReq.reqId)
+										.orElse(Constants.NOT_PRESENT), Constants.TRACE_ID_FIELD,
+									eventReq.getTraceId())));
+							reqs.add(eventReq);
+
+						} catch (Exception e) {
+							LOGGER.error(new ObjectMessage(Map.of(
+								Constants.MESSAGE,
+								"Skipping request. Exception in Creating Replay Request"
+								, Constants.REQ_ID_FIELD,
+								Optional.ofNullable(eventReq.reqId).orElse(Constants.NOT_PRESENT)
+								, Constants.REPLAY_ID_FIELD, replay.replayId
+							)), e);
 						}
-						LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE, "Enqueuing request"
-								+ "for reply", Constants.REPLAY_ID_FIELD, replay.replayId
-							, Constants.REQ_ID_FIELD, Optional.ofNullable(eventReq.reqId)
-								.orElse(Constants.NOT_PRESENT), Constants.TRACE_ID_FIELD,
-							eventReq.getTraceId())));
-						reqs.add(eventReq);
+					});
 
-					} catch (Exception e) {
-						LOGGER.error(new ObjectMessage(Map.of(
-							Constants.MESSAGE,
-							"Skipping request. Exception in Creating Replay Request"
-							, Constants.REQ_ID_FIELD,
-							Optional.ofNullable(eventReq.reqId).orElse(Constants.NOT_PRESENT)
-							, Constants.REPLAY_ID_FIELD, replay.replayId
-						)), e);
+					Map<String, Instant> reqIdRespTsMap = Map.of();
+					if (!replay.tracePropagation) {
+						Stream<Event> respEventStream = ReplayUpdate
+							.getResponseEvents(dataStore, replay,
+								reqs.stream().map(Event::getReqId).collect(Collectors.toList()));
+						reqIdRespTsMap = respEventStream.collect(Collectors.toMap(e -> e.reqId,
+							e -> Instant.ofEpochSecond(e.timestamp.getEpochSecond(),
+								e.timestamp.getNano())));
 					}
+					Map<String, Instant> finalReqIdRespTsMap = reqIdRespTsMap;
+					List<Event> storeEvents = new ArrayList<>();
+					List<String> respcodes =
+						replay.async ? sendReqAsync(reqs.stream(), storeEvents) :
+							sendReqSync(reqs.stream(), finalReqIdRespTsMap, replay.collectionKey,
+								storeEvents);
+
+					if (replay.storeToDatastore) {
+						boolean success = dataStore.save(storeEvents.stream());
+						if (!success) {
+							LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+								"Error during saving storeToDatastore", Constants.REPLAY_ID_FIELD,
+								replay.replayId)));
+						}
+					}
+					// count number of errors
+					replay.reqfailed += respcodes.stream()
+						.filter(s -> (!client.isSuccessStatusCode(s))).count();
 				});
-
-				Map<String , Instant> reqIdRespTsMap = Map.of();
-				if(!replay.tracePropagation){
-					Stream<Event> respEventStream = ReplayUpdate.getResponseEvents(dataStore, replay,
-							reqs.stream().map(Event::getReqId).collect(Collectors.toList()));
-					reqIdRespTsMap = respEventStream.collect(Collectors.toMap(e->e.reqId , e->Instant.ofEpochSecond(e.timestamp.getEpochSecond() , e.timestamp.getNano()) ));
-				}
-				Map<String, Instant> finalReqIdRespTsMap = reqIdRespTsMap;
-				CollectionKey replayCollKey = new CollectionKey(replay.customerId, replay.app , replay.instanceId);
-				List<Event> storeEvents = new ArrayList<>();
-				List<String> respcodes = replay.async ? sendReqAsync(reqs.stream() , storeEvents) :
-					sendReqSync(reqs.stream(), finalReqIdRespTsMap, replayCollKey , storeEvents);
-
-				if(replay.storeToDatastore){
-					boolean success= dataStore.save(storeEvents.stream());
-					if(!success){
-						LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
-							"Error during saving storeToDatastore", Constants.REPLAY_ID_FIELD, replay.replayId)));
-					}
-				}
-				// count number of errors
-				replay.reqfailed += respcodes.stream()
-					.filter(s -> (!client.isSuccessStatusCode(s))).count();
-			});
+			}
 
 			LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Replay Completed"
 				, Constants.REPLAY_ID_FIELD, replay.replayId,
@@ -325,7 +340,7 @@ public abstract class AbstractReplayDriver {
 				diMgr.inject(request);
 				if(!replay.tracePropagation){
 					Optional<Instant> respTs = Optional.ofNullable(reqIdRespTsMap.get(request.getReqId()));
-					Optional<ReplayContext> replayCtx = respTs.map(ts->new ReplayContext(request.getTraceId() ,request.timestamp , ts ));
+					Optional<ReplayContext> replayCtx = respTs.map(ts->new ReplayContext(request.getTraceId() ,request.timestamp , ts , replay.replayContext.flatMap(x->x.currentCollection).orElse(null)));
 					replay.replayContext = replayCtx;
 					dataStore.populateCache(replayCollKey, RecordOrReplay.createFromReplay(replay));
 				}

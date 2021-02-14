@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -102,16 +103,73 @@ public class ReplayBasicWS {
                     .entity(String.format("cannot find recording for id %s", recordingId)).build();
         }
 
-        return startReplay(headers, formParams, recordingOpt.get());
+        return startReplay(headers, formParams, List.of(recordingOpt.get()));
     }
 
-    protected Response startReplay(HttpHeaders headers, MultivaluedMap<String, String> formParams, Recording recording) {
+    @POST
+    @Path("start")
+    @Consumes("application/x-www-form-urlencoded")
+    public Response startMultiple(@Context HttpHeaders headers, @Context UriInfo ui,
+        MultivaluedMap<String, String> formParams) {
+        List<String> recordingIds =  Optional.ofNullable(formParams.get(Constants.RECORDING_ID)).orElse(new ArrayList<>());
+        if(recordingIds.isEmpty()){
+            LOGGER.error("Did not get recording ids to start replay");
+            return Response.status(Status.BAD_REQUEST)
+                .entity("Did not get recording ids to start replay").build();
+        }
+
+        beforeApi(headers);
+        List<Recording> recordings;
+        try{
+            recordings = validateRecordings(recordingIds);
+        }catch (Exception e){
+            LOGGER.error("Recording validation failed "+e.getMessage());
+            return Response.status(Status.BAD_REQUEST)
+                .entity("Recording validation failed "+e.getMessage()).build();
+
+        }
+
+        return startReplay(headers, formParams, recordings);
+    }
+
+    private List<Recording> validateRecordings(List<String> recordingIds) throws Exception {
+        List<Recording> recordings = new ArrayList<>();
+        for(String recordingId : recordingIds){
+            Optional<Recording> recordingOpt = dataStore.getRecording(recordingId);
+            if (recordingOpt.isEmpty()) {
+                LOGGER.error(String
+                    .format("Cannot init Replay since cannot find recording for id %s", recordingId));
+                throw new Exception(String.format("cannot find recording for id %s", recordingId));
+            }
+            recordings.add(recordingOpt.get());
+        }
+	    Recording sample = recordings.get(0);
+	    for(Recording r : recordings){
+	        if(!sample.app.equals(r.app)){
+	            throw new Exception("app name different for recordings "+String.format("%s %s", sample.app , r.app));
+            }
+            if(!sample.customerId.equals(r.customerId)){
+                throw new Exception("customerId name different for recordings "+String.format("%s %s", sample.customerId , r.customerId));
+            }
+            if(!sample.templateVersion.equals(r.templateVersion)){
+                throw new Exception("templateVersion name different for recordings "+String.format("%s %s", sample.templateVersion , r.templateVersion));
+            }
+            if(!sample.dynamicInjectionConfigVersion.equals(r.dynamicInjectionConfigVersion)){
+                throw new Exception("dynamicInjectionConfigVersion name different for recordings "+String.format("%s %s", sample.dynamicInjectionConfigVersion , r.dynamicInjectionConfigVersion));
+            }
+        }
+	    return recordings;
+
+    }
+
+    protected Response startReplay(HttpHeaders headers, MultivaluedMap<String, String> formParams, List<Recording> recordings) {
         String replayId = "NotInited";
+        Recording recording = recordings.get(0);
         try {
             // boolean startReplay = Utils.strToBool(formParams.getFirst("startReplay")).orElse(true);
             boolean analyze = Utils.strToBool(formParams.getFirst(Constants.ANALYZE_FIELD)).orElse(true);
 
-            Replay replay = createReplayObject(formParams, recording);
+            Replay replay = createReplayObject(formParams , recordings);
             replayId = replay.replayId;
             // check if recording or replay is ongoing for (customer, app, instanceid)
             Optional<Response> errResp = Utils
@@ -121,9 +179,9 @@ public class ReplayBasicWS {
             if (errResp.isPresent()) {
                 return errResp.get();
             }
-            beforeReplay(headers, formParams, recording, replay)
+            beforeReplay(headers, formParams, recordings, replay)
                     .thenApply(v -> doStartReplay(replay))
-                    .thenCompose(v -> afterReplay(headers, formParams, recording, replay,
+                    .thenCompose(v -> afterReplay(headers, formParams, recordings, replay,
                             analyze ? Optional.ofNullable(analyzer) : Optional.empty()));
             String json = jsonMapper.writeValueAsString(replay);
             return Response.ok(json, MediaType.APPLICATION_JSON).build();
@@ -139,15 +197,16 @@ public class ReplayBasicWS {
         }
     }
 
-    private Replay createReplayObject(MultivaluedMap<String, String> formParams, Recording recording) throws ParameterException {
+    private Replay createReplayObject(MultivaluedMap<String, String> formParams, List<Recording> recordings) throws ParameterException {
         // TODO: move all these constant strings to a file so we can easily change them.
+        Recording recording = recordings.get(0);
         boolean async = Utils.strToBool(formParams.getFirst(Constants.ASYNC_FIELD)).orElse(false);
         boolean excludePaths = Utils.strToBool(formParams.getFirst(Constants.EXCLUDE_PATH_FIELD)).orElse(false);
         List<String> reqIds = Optional.ofNullable(formParams.get(Constants.REQ_IDS_FIELD))
-            .orElse(new ArrayList<String>());
+            .orElse(new ArrayList<>());
         String endpoint = formParams.getFirst(Constants.END_POINT_FIELD);
         List<String> paths = Optional.ofNullable(formParams.get(Constants.PATHS_FIELD))
-            .orElse(new ArrayList<String>());
+            .orElse(new ArrayList<>());
         Optional<Double> sampleRate = Optional.ofNullable(formParams.getFirst(Constants.SAMPLE_RATE_FIELD))
             .flatMap(v -> Utils.strToDouble(v));
         List<String> intermediateServices = Optional.ofNullable(formParams.get(Constants.INTERM_SERVICE_FIELD))
@@ -158,7 +217,7 @@ public class ReplayBasicWS {
         String instanceId = formParams.getFirst(Constants.INSTANCE_ID_FIELD);
         String replayType = formParams.getFirst(Constants.REPLAY_TYPE_FIELD);
         List<String> mockServices = Optional.ofNullable(formParams.get(Constants.MOCK_SERVICES_FIELD))
-            .orElse(new ArrayList<String>());
+            .orElse(new ArrayList<>());
         Optional<String> testConfigName = Optional.ofNullable(formParams.getFirst(Constants.TEST_CONFIG_NAME_FIELD));
 
         Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst(Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD)).or(()->recording.dynamicInjectionConfigVersion);
@@ -183,16 +242,24 @@ public class ReplayBasicWS {
 
         ReplayBuilder replayBuilder = new ReplayBuilder(endpoint,
             recording.customerId,
-                recording.app, instanceId, recording.collection, userId)
+            recording.app, instanceId, recordings.stream().map(r->r.collection).collect(Collectors.toList()), userId)
             .withTemplateSetVersion(recording.templateVersion)
             .withReqIds(reqIds).withAsync(async).withPaths(paths)
             .withExcludePaths(excludePaths)
             .withIntermediateServices(intermediateServices)
             .withReplayType((replayType != null) ? Utils.valueOf(ReplayTypeEnum.class, replayType)
                 .orElse(ReplayTypeEnum.HTTP) : ReplayTypeEnum.HTTP)
-            .withMockServices(mockServices)
-            .withRecordingId(recording.id)
-            .withGoldenName(recording.name);
+            .withMockServices(mockServices);
+        if(recordings.size()==1){
+            replayBuilder.withRecordingId(recording.id);
+            replayBuilder.withGoldenName(recording.name);
+        }else{
+            //Name of replay golden is concatenated goldenName of all recordings.
+            // For getReplay query purpose
+            String goldenNameMulti = recordings.stream().map(r->r.name).collect(Collectors.joining("-"));
+            replayBuilder.withGoldenName(goldenNameMulti);
+        }
+
         sampleRate.ifPresent(replayBuilder::withSampleRate);
         replayBuilder.withServiceToReplay(service);
         testConfigName.ifPresent(replayBuilder::withTestConfigName);
@@ -204,8 +271,10 @@ public class ReplayBasicWS {
         replayBuilder.withStoreToDatastore(storeToDatastore);
 
         try {
-            recording.generatedClassJarPath
-                .ifPresent(UtilException.rethrowConsumer(replayBuilder::withGeneratedClassJar));
+            if (recordings.size() == 1) {
+                recording.generatedClassJarPath
+                    .ifPresent(UtilException.rethrowConsumer(replayBuilder::withGeneratedClassJar));
+            }
         } catch (Exception ex) {
             LOGGER.error(new ObjectMessage(Map.of(
                 Constants.MESSAGE, "Error while constructing class loader from the specified jar path",
@@ -236,13 +305,13 @@ public class ReplayBasicWS {
                 });
     }
 
-    protected CompletableFuture<Void> beforeReplay(HttpHeaders headers, MultivaluedMap<String, String> formParams, Recording recording,
+    protected CompletableFuture<Void> beforeReplay(HttpHeaders headers, MultivaluedMap<String, String> formParams, List<Recording> recordings,
                                                    Replay replay) {
         // nothing to do
 	    return CompletableFuture.completedFuture(null);
     }
 
-    protected CompletableFuture<Void> afterReplay(HttpHeaders headers, MultivaluedMap<String, String> formParams, Recording recording,
+    protected CompletableFuture<Void> afterReplay(HttpHeaders headers, MultivaluedMap<String, String> formParams, List<Recording> recordings,
                                                   Replay replay, Optional<Analyzer> analyzer) {
         // nothing to do
         return CompletableFuture.completedFuture(null);

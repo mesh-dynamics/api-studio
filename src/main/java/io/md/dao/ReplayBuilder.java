@@ -27,7 +27,7 @@ public class ReplayBuilder {
 	private String customerId;
 	private String app;
 	private String instanceId;
-	private String collection;
+	private List<String> collection;
 	private String userId;
 	private String templateSetVersion;
 	//very specific to HTTP requests (the entire filtering can
@@ -67,17 +67,22 @@ public class ReplayBuilder {
 
 	public ReplayBuilder(String endpoint, String customerId, String app, String instanceId,
                          String collection, String userId) {
+		this(endpoint , customerId , app , instanceId , List.of(collection) , userId);
+	}
+	public ReplayBuilder(String endpoint, String customerId, String app, String instanceId,
+		List<String> collection, String userId) {
 		this.replayEndpoint = endpoint;
 		this.customerId = customerId;
 		this.app = app;
 		this.instanceId = instanceId;
-		this.collection = collection;
+		if(collection.isEmpty()) throw new IllegalArgumentException("Collection is Empty");
+		this.collection = collection ;
 		this.userId = userId;
 		this.templateSetVersion = DEFAULT_TEMPLATE_VER;
 		this.pathsToReplay = Collections.EMPTY_LIST;
 		this.excludePaths = false;
 		this.reqIdsToReplay = Collections.EMPTY_LIST;
-		this.replayId = ReplayUpdate.getReplayIdFromCollection(collection);
+		this.replayId = ReplayUpdate.getReplayIdFromCollection(collection.get(0));
 		this.replayStatus = ReplayStatus.Init;
 		async = false;
 		sampleRate = Optional.empty();
@@ -105,6 +110,7 @@ public class ReplayBuilder {
 		this.analysisCompleteTimestamp = Instant.EPOCH;
 		this.runId = null;
 	}
+
 
 	private void populateClassLoader() throws Exception {
 		generatedClassJarPath.ifPresent(UtilException.rethrowConsumer(jarPath -> {
