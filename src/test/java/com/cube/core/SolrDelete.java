@@ -26,6 +26,8 @@ public class SolrDelete {
             //Preparing the Solr document
             /*SolrInputDocument doc = new SolrInputDocument();
             doc.setField("test_s", createDataSize(50000));
+
+
             //Deleting the documents from Solr
            //
             //
@@ -39,6 +41,7 @@ public class SolrDelete {
             Solr.deleteByQuery("id:" +
                     "\"-484826313\"");*//*
             //Saving the document
+
                 Solr.add(doc);
             Solr.add(doc);*/
             //Solr.deleteByQuery("collection_s:order-processor-jan-18 AND eventType_s:HTTPRequest");
