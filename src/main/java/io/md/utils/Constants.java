@@ -223,4 +223,7 @@ public class Constants {
     public static final String CONFIG_ACK_DATA_KEY_FIELD = "configAckDataKey";
     public static final int AGENT_ACK_DEFAULT_DELAY_SEC = 30;
 
+    public static final String TEMPLATE_SET_NAME = "templateSetName";
+    public static final String TEMPLATE_SET_LABEL = "templateSetLabel";
+
 }

@@ -3,7 +3,9 @@
  */
 package io.md.ws;
 
+
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -228,6 +230,32 @@ public class ReplayBasicWS {
         boolean tracePropagation = Utils.strToBool(formParams.getFirst(Constants.TRACE_PROPAGATION)).orElseGet(()-> dataStore.getAppConfiguration(recording.customerId, recording.app).map(cfg->cfg.tracer).isPresent());
         boolean storeToDatastore = Utils.strToBool(formParams.getFirst(Constants.STORE_TO_DATASTORE)).orElse(false);
 
+        String templateSetName = Optional.ofNullable(formParams.getFirst(Constants.TEMPLATE_SET_NAME)).orElseThrow(() ->
+            new ParameterException("Template Set Name not specified"));
+        String templateSetLabel = Optional.ofNullable(formParams.getFirst(Constants.TEMPLATE_SET_LABEL))
+            .or(() -> dataStore.getLatestTemplateSet(recording.customerId, recording.app, templateSetName).flatMap(templateSet ->
+            templateSet.label)).orElseThrow(() -> new ParameterException("Unable to assign template set label for replay"));
+
+        String templateSetVersion = io.md.utils.Utils.constructTemplateSetVersion(templateSetName, Optional.of(templateSetLabel));
+
+        Recording updatedRecording;
+        if (! recording.templateVersion.equals(templateSetVersion)) {
+            // create a new recording indexed with the new template set version
+            updatedRecording = io.md.utils.Utils.createRecordingObjectFrom(recording, Optional.of(templateSetVersion),
+                Optional.of(recording.name), Optional.of(userId), Instant.now() , LocalDateTime.now().format(
+                    io.md.utils.Utils.templateLabelFormatter) ,  recording.recordingType);
+            if(dataStore.saveRecording(updatedRecording)) {
+                // can't be done async as replay can't proceed before the copying
+                io.md.utils.Utils.copyEvents(recording,
+                    updatedRecording, Instant.now(), Optional.empty(), dataStore);
+                // the updated recording will be used as recording
+        }} else {
+            updatedRecording = recording;
+        }
+
+
+        recordings.set(0, updatedRecording);
+
         if (userId == null) {
             throw new ParameterException("userId Not Specified");
         }
@@ -249,7 +277,9 @@ public class ReplayBasicWS {
             .withIntermediateServices(intermediateServices)
             .withReplayType((replayType != null) ? Utils.valueOf(ReplayTypeEnum.class, replayType)
                 .orElse(ReplayTypeEnum.HTTP) : ReplayTypeEnum.HTTP)
-            .withMockServices(mockServices);
+            .withMockServices(mockServices)
+            .withTemplateSetName(templateSetName)
+            .withTemplateSetLabel(templateSetLabel);;
         if(recordings.size()==1){
             replayBuilder.withRecordingId(recording.id);
             replayBuilder.withGoldenName(recording.name);

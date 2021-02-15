@@ -63,6 +63,8 @@ public class ReplayBuilder {
 	public boolean tracePropagation = true;
 	public Optional<ReplayContext> replayContext = Optional.empty();
 	public boolean storeToDatastore = false;
+	public String templateSetName;
+	public String templateSetLabel;
 
 
 	public ReplayBuilder(String endpoint, String customerId, String app, String instanceId,
@@ -128,7 +130,8 @@ public class ReplayBuilder {
 				excludePaths, reqCnt , reqSent , reqFailed, creationTimestamp, sampleRate, intermediateServices,
 				generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, mockServices
 				, testConfigName, goldenName, recordingId, archived,dynamicInjectionConfigVersion,
-				analysisCompleteTimestamp, staticInjectionMap, runId, tracePropagation , storeToDatastore);
+				analysisCompleteTimestamp, staticInjectionMap, runId, tracePropagation , storeToDatastore,
+			templateSetName, templateSetLabel);
 		return replay;
 	}
 
@@ -272,6 +275,15 @@ public class ReplayBuilder {
 	}
 	//storeToDatastore
 
+	public ReplayBuilder withTemplateSetName(String name) {
+		this.templateSetName = name;
+		return this;
+	}
+
+	public ReplayBuilder withTemplateSetLabel(String label) {
+		this.templateSetLabel  = label;
+		return this;
+	}
 
 	public String getReplayId() {
 		return this.replayId;
