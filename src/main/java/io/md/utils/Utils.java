@@ -571,8 +571,9 @@ public class Utils {
 
 		RecordingType recordingType = RecordingType.Replay;
 		String traceIdData = traceId.orElse(generateTraceId());
+		// Special character to be set for parentSpanId
 		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceIdData ,
-			spanId.orElse("NA") , parentSpanId.orElse("NA"));
+			spanId.orElse("NA") , parentSpanId.orElse(Constants.PARENTSPANID_SPECIAL_CHARACTERS));
 
 		/*byte[] bodyBytes = (body != null && (!body.isEmpty())) ?
 			body.getBytes(StandardCharsets.UTF_8) : null;*/

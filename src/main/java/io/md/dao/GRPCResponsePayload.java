@@ -52,7 +52,7 @@ public class GRPCResponsePayload extends GRPCPayload implements ResponsePayload 
 			if(optionalStatus.isPresent()) {
 				this.status = optionalStatus.get();
 			} else {
-				this.status = 0;
+				this.status = Constants.GRPC_SUCCESS_STATUS_CODE;
 				LOGGER.debug("grpc-status trailer not present in response dataobj. Setting status as 0");
 			}
 
