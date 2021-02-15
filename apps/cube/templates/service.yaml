@@ -17,12 +17,15 @@ spec:
   selector:
     component: cubews-record
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cubews-record-v1
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: cubews-record
   replicas: 1
   strategy:
     rollingUpdate:
@@ -37,6 +40,10 @@ spec:
         version: v1
         namespace: {{namespace}}
     spec:
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
       containers:
       - name: cubews
         image: cubeiocorp/cubews:{{cubeio_tag}}
@@ -140,12 +147,15 @@ spec:
   selector:
     component: cubews-mock
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cubews-mock-v1
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: cubews-mock
   replicas: 1
   strategy:
     rollingUpdate:
@@ -160,6 +170,10 @@ spec:
         version: v1
         namespace: {{namespace}}
     spec:
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
       containers:
       - name: cubews
         image: cubeiocorp/cubews:{{cubeio_tag}}
@@ -263,12 +277,15 @@ spec:
   selector:
     component: cubews-replay
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cubews-replay-v1
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: cubews-replay
   replicas: 1
   strategy:
     rollingUpdate:
@@ -283,6 +300,10 @@ spec:
         version: v1
         namespace: {{namespace}}
     spec:
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
       containers:
       - name: cubews
         image: cubeiocorp/cubews:{{cubeio_tag}}
@@ -385,12 +406,15 @@ spec:
   selector:
     component: cubeui
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cubeui-v1
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: cubeui
   replicas: 1
   strategy:
     rollingUpdate:
@@ -411,11 +435,11 @@ spec:
         imagePullPolicy: Always
         resources:
           requests:
-            memory: "128Mi"
-            cpu: "200m"
-          limits:
             memory: "256Mi"
             cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
         ports:
         - containerPort: 80
       imagePullSecrets:
@@ -439,12 +463,15 @@ spec:
   selector:
     component: cubeui-backend
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cubeui-backend-v1
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: cubeui-backend
   replicas: 1
   strategy:
     rollingUpdate:
@@ -459,6 +486,10 @@ spec:
         version: v1
         namespace: {{namespace}}
     spec:
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "1"
       containers:
       - name: cubeui-backend
         image: cubeiocorp/cubeuibackend:{{cubeui_backend_tag}}
@@ -469,9 +500,16 @@ spec:
         - name: SPRING_PROFILES_ACTIVE
           value: "{{springboot_profile}}"
         - name: spring.datasource.url
-          value: "jdbc:postgresql://postgresql.postgres-dev.svc.cluster.local:5432/cubedevdb?schema=qui"
+          value: "jdbc:postgresql://postgresql.postgres.svc.cluster.local:5432/cubedevdb?schema=qui"
         - name: allowed.origins.path
           value: "/usr/local/tomcat/webCorsAllowedOrigins.txt"
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - '/bin/sh'
+              - '-c'
+              - 'curl -X POST http://localhost:15000/runtime_modify?envoy.reloadable_features.reject_unsupported_transfer_encodings=false'
         resources:
           requests:
             memory: "640Mi"
@@ -531,12 +569,15 @@ spec:
   selector:
     component: cubelogcollector
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cubelogcollector
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: cubelogcollector
   replicas: 1
   strategy:
     rollingUpdate:
@@ -622,7 +663,7 @@ spec:
 #   selector:
 #     app: mysql-sakila
 # ---
-# apiVersion: extensions/v1beta1
+# apiVersion: apps/v1
 # kind: Deployment
 # metadata:
 #   name: mysql-sakila-v1
