@@ -180,11 +180,11 @@ main() {
 	# DRONE_COMMIT="411e4ee4dfeb290932122f3ad56141c5b8ec6b15"
 	# DRONE_COMMIT_AUTHOR="ethicalaakash"
 	# DRONE_BUILD_NUMBER="test108"
-  CUBE_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.cubecorp.io
+  CUBE_ENDPOINT=https://$DRONE_COMMIT_AUTHOR.dev.meshdynamics.io
 	CONFIG_FILE="temp"
   TEMPLATE=DEFAULT
   USER_ID=CubeCorp
-  SPRINGBOOT_HOST=http://$DRONE_COMMIT_AUTHOR-springboot.dev.cubecorp.io
+  SPRINGBOOT_HOST=http://$DRONE_COMMIT_AUTHOR-springboot.dev.meshdynamics.io
   INSTANCE_ID=$DRONE_COMMIT
   AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s"
 	register_config
