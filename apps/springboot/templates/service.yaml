@@ -16,12 +16,15 @@ spec:
   selector:
     component: receiver-replay
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: receiver-replay
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: receiver-replay
   replicas: 1
   strategy:
     rollingUpdate:
@@ -88,12 +91,15 @@ spec:
   selector:
     component: receiver-record
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: receiver-record
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: receiver-record
   replicas: 1
   strategy:
     rollingUpdate:
@@ -161,12 +167,15 @@ spec:
   selector:
     component: transformer
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: transformer
   namespace: {{namespace}}
 spec:
+  selector:
+    matchLabels:
+      component: transformer
   replicas: 1
   strategy:
     rollingUpdate:
