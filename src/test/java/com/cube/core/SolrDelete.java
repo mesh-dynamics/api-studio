@@ -1,12 +1,9 @@
 package com.cube.core;
 
 import java.io.IOException;
-import java.util.UUID;
 
 import org.apache.solr.client.solrj.SolrClient;
-import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.common.SolrInputDocument;
 
 import com.cube.ws.Config;
 
@@ -26,58 +23,32 @@ public class SolrDelete {
             Config config = new Config();
             SolrClient Solr = config.solr;
 
-            SolrQuery solrQuery = new SolrQuery("*:*");
-            solrQuery.addFilterQuery("id:TemplateSet-1463391485");
-            Solr.query(solrQuery).getResults().forEach(solrDoc -> {
-                SolrInputDocument inputDocument = new SolrInputDocument();
-                solrDoc.entrySet().stream().forEach(v -> {
-                    inputDocument.addField(v.getKey(), v.getValue());
-                });
-
-                //System.out.println(inputDocument.getFieldValue("id"));
-                inputDocument.addField("template_id_ss" , "RequestMatch-1703379751");
-                //inputDocument.setField("customerId_s", "CubeCorp");
-                //inputDocument.setField("app_s", "MovieInfo");
-                //inputDocument.setField("version_s", "6879ea75-2d74-4d77-a607-daab439cf7f8");
-                //inputDocument.setField("id", "AttributeTemplate-" + UUID.randomUUID().toString());
-                inputDocument.removeField("_version_");
-
-                try {
-                    Solr.add(inputDocument);
-                    System.out.println("document Added");
-                } catch (SolrServerException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-               /* {
-                    "id":"AttributeTemplate-111396919",
-                    "attribute_rule_template_s":
-                    "{\"attributeRuleMap\":{\"/timestamp\":{\"path\":\"/timestamp\",\"dt\":\"Default\",\"pt\":\"Default\",\"ct\":\"Ignore\",\"em\":\"Default\",\"customization\":null,\"arrayCompKeyPath\":null}}}",
-                        "app_s":"random",
-                    "customerId_s":"ravivj",
-                    "type_s":"AttributeTemplate",
-                    "version_s":"e58f3865-bc01-40cb-8b13-1ad4795c15ac",
-                    "_version_":1678415374979170304
-                },*/
-            });
-
             //Preparing the Solr document
             /*SolrInputDocument doc = new SolrInputDocument();
             doc.setField("test_s", createDataSize(50000));
-
-
             //Deleting the documents from Solr
+           //
+            //
+            // Solr.deleteByQuery("*");
+            //Solr.deleteByQuery("id:ResponseCompareTemplate--484826313");
+            //Solr.deleteByQuery("id:\"ResponseCompareTemplate-1412732366\"");
+            //Solr.deleteByQuery("id:\"ResponseCompareTemplate--491986321" +"\"");
+            //Solr.deleteByQuery("id:ResponseCompareTemplate-1069006985");
+    *//*        Solr.deleteByQuery("id:" +
+                    "\"-1763741525\"");
+            Solr.deleteByQuery("id:" +
+                    "\"-484826313\"");*//*
             //Saving the document
+                Solr.add(doc);
             Solr.add(doc);*/
-            //Solr.deleteByQuery("id:\"HTTPRequest-restsql/update-req-2019-11-20T14:40:36Z\"");
+            //Solr.deleteByQuery("collection_s:order-processor-jan-18 AND eventType_s:HTTPRequest");
+            Solr.deleteByQuery("id:\"HTTPRequest-restsql/update-req-2019-11-20T14:40:36Z\"");
             Solr.commit();
         } catch (Exception e) {
             System.out.println("Error in saving document to solr " + e.getMessage());
         }
 
-        System.out.println("Task done");
+        System.out.println("Documents deleted");
     }
 
 
