@@ -165,10 +165,10 @@ clean() {
 
 main() {
 	set -x
-	DRONE_BRANCH="staging"
-	DRONE_COMMIT="8e8830b19ab4bf65d74ca9796dec709e6eba8730"
-	DRONE_COMMIT_AUTHOR="ethicalaakash"
-	DRONE_BUILD_NUMBER="test2dec"
+	#DRONE_BRANCH="staging"
+	#DRONE_COMMIT="8e8830b19ab4bf65d74ca9796dec709e6eba8730"
+	#DRONE_COMMIT_AUTHOR="ethicalaakash"
+	#DRONE_BUILD_NUMBER="test2dec"
 	AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJNZXNoREFnZW50VXNlckBjdWJlY29ycC5pbyIsInJvbGVzIjpbIlJPTEVfVVNFUiJdLCJ0eXBlIjoicGF0IiwiY3VzdG9tZXJfaWQiOjMsImlhdCI6MTU4OTgyODI4NiwiZXhwIjoxOTA1MTg4Mjg2fQ.Xn6JTEIAi58it6iOSZ0G7u2waK6a_c-Elpk_cpWsK9s"
 	check_test_status
 	generate_config_file
