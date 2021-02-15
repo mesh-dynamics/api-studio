@@ -308,7 +308,7 @@ class ViewSelectedTestConfig extends React.Component {
         goldenSelectWarningModalVisible: true,
         userAlertMessage: {
             header: "Alert",
-            message: "Select a Golden to Run Test."
+            message: "Select a Test suite to Run Test."
         }
     });
 
@@ -332,7 +332,7 @@ class ViewSelectedTestConfig extends React.Component {
         goldenSelectWarningModalVisible: true,
         userAlertMessage: {
             header: "Alert",
-            message: "Select a Golden to resume recording."
+            message: "Select a Test suite to resume recording."
         }
     });
 
@@ -1065,7 +1065,8 @@ class ViewSelectedTestConfig extends React.Component {
                     showDeleteOption
                     showGrouping
                     selectedSource="Golden" 
-                    dropdownLabel="GOLDEN"
+                    selectBtnLabel="SELECT"
+                    selectedLabel="TEST SUITE"
                     selectedGoldenOrCollectionItem={selectedItem}
                     handleViewGoldenClick={this.handleViewGoldenClick}
                     handleChangeCallback={this.handleChangeInBrowseCollection}

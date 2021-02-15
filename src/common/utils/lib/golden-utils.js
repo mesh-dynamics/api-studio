@@ -35,7 +35,7 @@ const validateGoldenName = (inputText) => {
     if(inputText.trim().match(regex)) {
         return {
             goldenNameIsValid: false,
-            goldenNameErrorMessage: "Special characters not allowed in golden name"
+            goldenNameErrorMessage: "Special characters not allowed in test suite name"
         }
     }
 

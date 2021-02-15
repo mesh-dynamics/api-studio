@@ -909,15 +909,7 @@ class HttpClientTabs extends Component {
         
         if(PLATFORM_ELECTRON) {
             const requestApi = window.require('electron').remote.getGlobal("requestApi");
-            const filePaths = {}; //this can be removed
-            if(bodyType == "multipartData"){
-                tabToProcess.formData.forEach((param)=>{
-                    if(param.isFile && param.selected){
-                        filePaths[param.name] = param.value;
-                    }                   
-                });
-            }
-            requestApi.push(tabId + runId, {fetchConfigRendered, filePaths});
+            requestApi.push(tabId + runId, {fetchConfigRendered});
             ipcRenderer.on('drive_request_error', (event, reqTabId, reqRunId, reqError) => {
                 if(reqTabId === tabId && reqRunId === runId) {
                     const responseApi = window.require('electron').remote.getGlobal("responseApi");
@@ -1361,7 +1353,7 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.loadUserCollections());
         dispatch(httpClientActions.loadProtoDescriptor());
         
-        const requestIds = this.getRequestIds(), reqIdArray = Object.keys(requestIds); //Remove reqIdArray
+        const requestIds = this.getRequestIds(), reqIdArray = Object.keys(requestIds);
         if (reqIdArray && reqIdArray.length > 0) {
             /*
                 reqIdArray: string array of request IDs, which needs to be displayed at HttpClient

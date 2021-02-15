@@ -373,7 +373,7 @@ const unifiedGoldenUpdate = async (data: any) => {
     try {
         return await api.post(`${config.analyzeBaseUrl}/goldenUpdateUnified`, data, requestOptions);
     } catch (error) {
-        console.log("Failed to update golden \n");
+        console.log("Failed to update test suite \n");
         throw error;
     }
 };
@@ -382,7 +382,7 @@ const deleteGolden = async (recordingId: string) => {
     try {
         return await api.post(`${config.recordBaseUrl}/delete/${recordingId}`);
     } catch (error) {
-        console.log("Error deleting Golden \n", error);
+        console.log("Error deleting test suite \n", error);
         throw error;
     }
 };
