@@ -1136,8 +1136,9 @@ public class CubeStore {
                                     :Optional.ofNullable(params.getFirst(Constants.RESET_TAG_FIELD));
         CompletableFuture<?> tagCfgTask = tagOpt.map(tag -> this.tagConfig.setTag(recording, recording.instanceId, tag))
             .orElse(CompletableFuture.completedFuture(null));
-        CompletableFuture<?> sanitizeTask = recording.ignoreStatic ? copyRecording(recording.id, Optional.empty(), Optional.empty(), Optional.empty(),
-            recording.userId, recording.recordingType, Optional.of(SanitizationFilters.filter(getValidEvents(recording) , List.of(new IgnoreStaticContent())))) : CompletableFuture.completedFuture(null);
+        Set<String> badReqIds = recording.ignoreStatic ? SanitizationFilters.getBadRequests(getValidEvents(recording) , List.of(new IgnoreStaticContent())) : Collections.EMPTY_SET;
+        CompletableFuture<?> sanitizeTask = !badReqIds.isEmpty()  ? copyRecording(recording.id, Optional.empty(), Optional.empty(), Optional.empty(),
+            recording.userId, recording.recordingType, Optional.of(e->!badReqIds.contains(e.reqId))) : CompletableFuture.completedFuture(null);
 
         return  CompletableFuture.allOf(tagCfgTask , sanitizeTask);
     }
@@ -1439,11 +1440,14 @@ public class CubeStore {
             list.add(new IgnoreStaticContent());
         }
 
-        var filter = SanitizationFilters.filter(getValidEvents(originalRec) , list);
-
-        copyRecording(recordingId, Optional.empty(), Optional.empty(), Optional.empty(),
-            originalRec.userId, originalRec.recordingType, Optional.of(filter))
-            .thenApply(v -> asyncResponse.resume(v));
+        Set<String> badReqIds = SanitizationFilters.getBadRequests(getValidEvents(originalRec) , list);
+        if(badReqIds.isEmpty()){
+            asyncResponse.resume(Response.ok().entity("No Bad requests found for sanitization").build());
+        }else{
+            copyRecording(recordingId, Optional.empty(), Optional.empty(), Optional.empty(),
+                originalRec.userId, originalRec.recordingType, Optional.of((e)->!badReqIds.contains(e.reqId)))
+                .thenApply(v -> asyncResponse.resume(v));
+        }
 
     }
 

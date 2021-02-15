@@ -9,6 +9,8 @@ import java.util.stream.Stream;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.apache.solr.common.util.Pair;
+
 import com.google.common.collect.Sets;
 
 import io.md.dao.Event;
@@ -104,7 +106,10 @@ public class SanitizationFilters {
 	}
 
 
-	public static Predicate<Event> filter(Stream<Event> input , List<SanitizationFilter> filters ){
+	/*
+	  Returns Set of Bad Request Ids (to be filtered)
+	 */
+	public static Set<String> getBadRequests(Stream<Event> input , List<SanitizationFilter> filters ){
 
 		for(var f : filters){
 			input = input.filter(f::consume);
@@ -116,7 +121,7 @@ public class SanitizationFilters {
 		Set<String> badReqIds = new HashSet<>();
 		filters.stream().forEach(f->badReqIds.addAll(f.getBadReqIds()));
 
-		return e->!badReqIds.contains(e.reqId);
+		return badReqIds;
 	}
 
 }
