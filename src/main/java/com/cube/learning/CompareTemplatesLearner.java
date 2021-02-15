@@ -1,8 +1,7 @@
 package com.cube.learning;
 
-import com.cube.core.CompareTemplateVersioned;
 import com.cube.dao.ReqRespStore;
-import com.cube.golden.TemplateSet;
+
 import com.cube.learning.TemplateEntryMeta.Action;
 import com.cube.learning.TemplateEntryMeta.RuleStatus;
 import io.md.core.Comparator.Diff;
@@ -12,10 +11,12 @@ import io.md.core.CompareTemplate.ComparisonType;
 import io.md.core.CompareTemplate.DataType;
 import io.md.core.CompareTemplate.ExtractionMethod;
 import io.md.core.CompareTemplate.PresenceType;
+import io.md.core.CompareTemplateVersioned;
 import io.md.core.TemplateEntry;
 import io.md.core.TemplateEntryAsRule;
 import io.md.core.TemplateKey;
 import io.md.core.TemplateKey.Type;
+import io.md.core.TemplateSet;
 import io.md.dao.ReqRespMatchResult;
 import io.md.services.DataStore.TemplateNotFoundException;
 import java.time.Instant;
@@ -336,8 +337,8 @@ public class CompareTemplatesLearner {
             }
         });
 
-        return new TemplateSet(templateVersion, customer, app, Instant.now(),
-            new ArrayList<>(templatesMap.values()), Optional.empty());
+        return new TemplateSet(customer, app, Instant.now(),
+            new ArrayList<>(templatesMap.values()), Optional.empty(), templateVersion, Optional.empty());
     }
 
 
