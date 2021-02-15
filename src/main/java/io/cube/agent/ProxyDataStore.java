@@ -1,6 +1,7 @@
 package io.cube.agent;
 
 import io.md.core.CollectionKey;
+import io.md.core.TemplateSet;
 import io.md.dao.*;
 import java.io.IOException;
 import java.util.Arrays;
@@ -177,5 +178,41 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
     public Optional<ProtoDescriptorDAO> getLatestProtoDescriptorDAO(String s, String s1) {
 
         throw new UnsupportedOperationException("ProxyData Store getLatestProtoDescriptorDAO call is not supported");
+    }
+
+    @Override
+    public Optional<TemplateSet> getLatestTemplateSet(String customerId, String app,
+        String templateSetName) {
+        try {
+            return cubeClient.getLatestTemplateSet(customerId, app, templateSetName)
+                .map(UtilException.rethrowFunction(templateSetString -> jsonMapper
+                    .readValue(templateSetString, TemplateSet.class)));
+        } catch (IOException e) {
+            LOGGER.error("Error while converting template set string to object" , e);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<TemplateSet> getTemplateSet(String customerId, String app,
+        String templateSetVersion) {
+        try {
+            return cubeClient.getTemplateSet(customerId, app, templateSetVersion)
+                .map(UtilException.rethrowFunction(templateSetString -> jsonMapper
+                    .readValue(templateSetString, TemplateSet.class)));
+        } catch (IOException e) {
+            LOGGER.error("Error while converting template set string to object" , e);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public boolean commit() {
+        return cubeClient.commitDataStore();
+    }
+
+    @Override
+    public boolean saveRecording(Recording recording) {
+        return cubeClient.saveRecording(recording);
     }
 }

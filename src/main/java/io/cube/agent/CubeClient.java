@@ -370,4 +370,31 @@ public class CubeClient {
 		return getResponse(uri, recordOrReplay, MediaType.APPLICATION_JSON);
 	}
 
+	public Optional<String> getLatestTemplateSet(String customerId, String app, String templateSetName) {
+		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.segment("cs", "getLatestTemplateSet" , customerId , app , templateSetName).build();
+		return getGetResponse(uri);
+	}
+
+	public Optional<String> getTemplateSet(String customerId, String app, String templateSetVersion) {
+		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.segment("cs", "getTemplateSet" , customerId , app , templateSetVersion).build();
+		return getGetResponse(uri);
+	}
+
+	public boolean commitDataStore() {
+		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.segment("cs", "commitDataStore").build();
+		HttpPost reqBuilder = new HttpPost(uri);
+		return getResponse(reqBuilder).isPresent();
+	}
+
+	public boolean saveRecording(Recording recording) {
+		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.segment("cs", "saveRecording").build();
+		return getResponse(uri, recording, MediaType.APPLICATION_JSON).isPresent();
+
+	}
+
+
 }
