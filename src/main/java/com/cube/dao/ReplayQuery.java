@@ -14,7 +14,7 @@ public class ReplayQuery {
   public final Optional<String> app;
   public final List<String> instanceId;
   public final List<ReplayStatus> status;
-  public final Optional<String> collection;
+  public final List<String> collection;
   public final Optional<String> userId;
   public final Optional<String> testConfigName;
   public final Optional<String> goldenName;
@@ -28,7 +28,7 @@ public class ReplayQuery {
     this.app = Optional.ofNullable(queryParams.getFirst(Constants.APP_FIELD));
     this.instanceId = Optional.ofNullable(queryParams.get(Constants.INSTANCE_ID_FIELD))
           .orElse(Collections.emptyList());
-    this.collection = Optional.ofNullable(queryParams.getFirst(Constants.COLLECTION_FIELD));
+    this.collection = Optional.ofNullable(queryParams.get(Constants.COLLECTION_FIELD)).orElse(Collections.emptyList());
     this.userId = Optional.ofNullable(queryParams.getFirst(Constants.USER_ID_FIELD));
     this.testConfigName = Optional.ofNullable(queryParams.getFirst(Constants.TEST_CONFIG_NAME_FIELD));
     this.goldenName = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_NAME_FIELD));

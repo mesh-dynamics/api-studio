@@ -296,11 +296,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @see com.cube.dao.ReqRespStore#getRequests(java.lang.String, java.lang.String, java.lang.String, java.lang.Iterable, com.cube.dao.ReqRespStore.RR, com.cube.dao.ReqRespStore.Types)
      */
     @Override
-    public Result<Event> getRequests(String customerId, String app, String collection,
+    public Result<Event> getRequests(String customerId, String app, List<String> collections,
                                        List<String> reqids, List<String> services, List<String> paths, Optional<Event.RunType> runType) {
 
         EventQuery.Builder builder = new EventQuery.Builder(customerId, app, Event.REQUEST_EVENT_TYPES);
-        builder.withCollection(collection)
+        builder.withCollections(collections)
             .withReqIds(reqids)
             .withPaths(paths)
             .withServices(services);
@@ -1282,6 +1282,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String CONFIG_JSON_F = CPREFIX + Constants.CONFIG_JSON + STRING_SUFFIX;
     private static final String SCOREF = CPREFIX + SCORE_FIELD + CSUFFIX;
     private static final String SEQIDEF = CPREFIX + SEQID_FIELD + STRING_SUFFIX;
+    private static final String IGNORESTATICCONTENTF = CPREFIX + Constants.IGNORE_STATIC_CONTENT + BOOLEAN_SUFFIX;
 
     private static final String PROTO_DESCRIPTOR_FILE_F = CPREFIX + Constants.PROTO_DESCRIPTOR_FILE_FIELD + NOTINDEXED_SUFFIX;
     private static final String PROTO_FILE_MAP_F = CPREFIX + PROTO_FILE_MAP_FIELD + NOTINDEXED_SUFFIX;
@@ -2352,12 +2353,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     @Override
     public Stream<Replay> getReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceId,
                                     ReplayStatus status) {
-        return getReplay(customerId,app,instanceId,List.of(status),Optional.of(1),Optional.empty());
+        return getReplay(customerId,app,instanceId,List.of(status),Optional.of(1), Collections.EMPTY_LIST);
     }
 
     @Override
     public Result<Replay> getReplay(Optional<String> customerId, Optional<String> app, List<String> instanceId,
-            List<ReplayStatus> status, Optional<String> collection,  Optional<Integer> numOfResults,  Optional<Integer> start,
+            List<ReplayStatus> status, List<String> collections,  Optional<Integer> numOfResults,  Optional<Integer> start,
             Optional<String> userId, Optional<Instant> endDate, Optional<Instant> startDate, Optional<String> testConfigName,
             Optional<String> goldenName, boolean archived) {
         final SolrQuery query = new SolrQuery("*:*");
@@ -2368,7 +2369,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, APPF, app);
         addFilter(query, INSTANCEIDF, instanceId);
         addFilter(query, REPLAYSTATUSF, status.stream().map(ReplayStatus::toString).collect(Collectors.toList()));
-        addFilter(query, COLLECTIONF , collection);
+        if(collections.size()>1){
+            // replay with multiple recordings/collection
+            // new replay structure
+            addFilter(query, COLLECTIONSF , collections);
+        }else if(collections.size()==1){
+            String singleCollection = collections.get(0);
+            // collection can be present in old key COLLECTIONF or the new string set key COLLECTIONSF
+            query.addFilterQuery(String.format("(%s:%s) OR (%s:%s)", COLLECTIONF, singleCollection , COLLECTIONSF , singleCollection ));
+        }
+
         addFilter(query, USERIDF, userId);
         addFilter(query, TESTCONFIGNAMEF, testConfigName);
         addFilter(query, GOLDEN_NAMEF, goldenName);
@@ -2390,7 +2400,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public Stream<Replay> getReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceId,
-            List<ReplayStatus> status, Optional<Integer> numofResults, Optional<String> collection) {
+            List<ReplayStatus> status, Optional<Integer> numofResults, List<String> collection) {
         //Reference - https://stackoverflow.com/a/31688505/3918349
         List<String> instanceidList = instanceId.stream().collect(Collectors.toList());
         return getReplay(customerId, app, instanceidList, status, collection, numofResults, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
@@ -3309,6 +3319,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             .flatMap(r -> Utils.valueOf(RecordingType.class, r));
         Optional<String> dynamicInjectionConfigVersion = getStrField(doc , DYNAMIC_INJECTION_CONFIG_VERSIONF);
         Optional<String> runId = getStrField(doc , RUNIDF);
+        Optional<Boolean> ignoreStatic = getBoolField(doc , IGNORESTATICCONTENTF );
 
         if (id.isPresent() && customerId.isPresent() && app.isPresent() && instanceId.isPresent() && collection
             .isPresent() &&
@@ -3333,6 +3344,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             recordingType.ifPresent(recordingBuilder::withRecordingType);
             dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
             runId.ifPresent(recordingBuilder::withRunId);
+            ignoreStatic.ifPresent(recordingBuilder::withIgnoreStatic);
 
             try {
                 generatedClassJarPath.ifPresent(
@@ -3380,6 +3392,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(USERIDF, recording.userId);
         doc.setField(RECORDING_TYPE_F, recording.recordingType.toString());
         doc.setField(RUNIDF, recording.runId);
+        doc.setField(IGNORESTATICCONTENTF , recording.ignoreStatic);
+
         recording.parentRecordingId.ifPresent(parentRecId -> doc.setField(PARENT_RECORDING_IDF, parentRecId));
         recording.generatedClassJarPath.ifPresent(jarPath -> doc.setField(GENERATED_CLASS_JAR_PATH, jarPath));
         recording.updateTimestamp.ifPresent(timestamp -> doc.setField(TIMESTAMPF , timestamp.toString()));
