@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import subprocess
 import sys
-subprocess.call([sys.executable, '-m', 'pip3', 'install','--quiet' , 'pyaml'])
-subprocess.call([sys.executable, '-m', 'pip3', 'install','--quiet' , 'jinja2'])
+# subprocess.call([sys.executable, '-m', 'pip', 'install','--quiet' , 'pyaml'])
+# subprocess.call([sys.executable, '-m', 'pip', 'install','--quiet' , 'jinja2'])
 
 import yaml
 import os
