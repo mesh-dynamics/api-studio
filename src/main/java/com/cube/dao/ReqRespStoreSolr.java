@@ -309,11 +309,11 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
      * @see com.cube.dao.ReqRespStore#getRequests(java.lang.String, java.lang.String, java.lang.String, java.lang.Iterable, com.cube.dao.ReqRespStore.RR, com.cube.dao.ReqRespStore.Types)
      */
     @Override
-    public Result<Event> getRequests(String customerId, String app, String collection,
+    public Result<Event> getRequests(String customerId, String app, List<String> collections,
                                        List<String> reqids, List<String> services, List<String> paths, Optional<Event.RunType> runType) {
 
         EventQuery.Builder builder = new EventQuery.Builder(customerId, app, Event.REQUEST_EVENT_TYPES);
-        builder.withCollection(collection)
+        builder.withCollections(collections)
             .withReqIds(reqids)
             .withPaths(paths)
             .withServices(services);
@@ -1291,6 +1291,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String BODYF = CPREFIX + Constants.BODY + NOTINDEXED_SUFFIX;
     private static final String OLDBODYF = CPREFIX + Constants.BODY + TEXT_SUFFIX;
     private static final String COLLECTIONF = CPREFIX + Constants.COLLECTION_FIELD + STRING_SUFFIX;
+    private static final String COLLECTIONSF = CPREFIX + Constants.COLLECTION_FIELD + STRINGSET_SUFFIX;
     private static final String TIMESTAMPF = CPREFIX + TIMESTAMP_FIELD + DATE_SUFFIX;
     private static final String RRTYPEF = CPREFIX + Constants.RUN_TYPE_FIELD + STRING_SUFFIX;
     private static final String CUSTOMERIDF = CPREFIX + Constants.CUSTOMER_ID_FIELD + STRING_SUFFIX;
@@ -2030,7 +2031,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(IDF, id);
         doc.setField(APPF, replay.app);
         doc.setField(ASYNCF, replay.async);
-        doc.setField(COLLECTIONF, replay.collection);
+        //doc.setField(COLLECTIONF, replay.collection);
+        replay.collection.forEach(col->doc.addField(COLLECTIONSF , col));
         doc.setField(CUSTOMERIDF, replay.customerId);
         doc.setField(INSTANCEIDF, replay.instanceId);
         doc.setField(ENDPOINTF, replay.endpoint);
@@ -2107,7 +2109,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> app = getStrField(doc, APPF);
         Optional<String> instanceId = getStrField(doc, INSTANCEIDF);
         Optional<Boolean> async = getBoolField(doc, ASYNCF);
-        Optional<String> collection = getStrField(doc, COLLECTIONF);
+        List<String> collection = getStrField(doc, COLLECTIONF).map(col->List.of(col)).orElseGet(()->getStrFieldMV(doc , COLLECTIONSF));
         Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
         Optional<String> userId = getStrField(doc, USERIDF);
         Optional<String> endpoint = getStrField(doc, ENDPOINTF);
@@ -2148,12 +2150,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         Optional<Replay> replay = Optional.empty();
         if (endpoint.isPresent() && customerId.isPresent() && app.isPresent() &&
-            instanceId.isPresent() && collection.isPresent()
+            instanceId.isPresent() && !collection.isEmpty()
             && replayId.isPresent() && async.isPresent() && status.isPresent() && userId.isPresent()
             && templateVersion.isPresent()) {
             try {
                 ReplayBuilder builder = new ReplayBuilder(endpoint.get(),
-                    customerId.get(), app.get(), instanceId.get(), collection.get(), userId.get()).withReqIds(reqIds)
+                    customerId.get(), app.get(), instanceId.get(), collection, userId.get()).withReqIds(reqIds)
                     .withReplayId(replayId.get())
                     .withAsync(async.get()).withTemplateSetVersion(templateVersion.get())
                     .withReplayStatus(status.get()).withPaths(paths)
@@ -2383,12 +2385,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     @Override
     public Stream<Replay> getReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceId,
                                     ReplayStatus status) {
-        return getReplay(customerId,app,instanceId,List.of(status),Optional.of(1),Optional.empty());
+        return getReplay(customerId,app,instanceId,List.of(status),Optional.of(1), Collections.EMPTY_LIST);
     }
 
     @Override
     public Result<Replay> getReplay(Optional<String> customerId, Optional<String> app, List<String> instanceId,
-            List<ReplayStatus> status, Optional<String> collection,  Optional<Integer> numOfResults,  Optional<Integer> start,
+            List<ReplayStatus> status, List<String> collections,  Optional<Integer> numOfResults,  Optional<Integer> start,
             Optional<String> userId, Optional<Instant> endDate, Optional<Instant> startDate, Optional<String> testConfigName,
             Optional<String> goldenName, boolean archived) {
         final SolrQuery query = new SolrQuery("*:*");
@@ -2399,7 +2401,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, APPF, app);
         addFilter(query, INSTANCEIDF, instanceId);
         addFilter(query, REPLAYSTATUSF, status.stream().map(ReplayStatus::toString).collect(Collectors.toList()));
-        addFilter(query, COLLECTIONF , collection);
+        if(collections.size()>1){
+            // replay with multiple recordings/collection
+            // new replay structure
+            addFilter(query, COLLECTIONSF , collections);
+        }else if(collections.size()==1){
+            String singleCollection = collections.get(0);
+            // collection can be present in old key COLLECTIONF or the new string set key COLLECTIONSF
+            query.addFilterQuery(String.format("(%s:%s) OR (%s:%s)", COLLECTIONF, singleCollection , COLLECTIONSF , singleCollection ));
+        }
+
         addFilter(query, USERIDF, userId);
         addFilter(query, TESTCONFIGNAMEF, testConfigName);
         addFilter(query, GOLDEN_NAMEF, goldenName);
@@ -2421,7 +2432,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public Stream<Replay> getReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceId,
-            List<ReplayStatus> status, Optional<Integer> numofResults, Optional<String> collection) {
+            List<ReplayStatus> status, Optional<Integer> numofResults, List<String> collection) {
         //Reference - https://stackoverflow.com/a/31688505/3918349
         List<String> instanceidList = instanceId.stream().collect(Collectors.toList());
         return getReplay(customerId, app, instanceidList, status, collection, numofResults, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),

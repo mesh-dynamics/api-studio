@@ -202,14 +202,14 @@ public interface ReqRespStore extends DataStore {
 	 *
 	 * @param customerId
 	 * @param app
-	 * @param collection
+	 * @param collections
 	 * @param reqids
 	 * @param services
 	 * @param paths
 	 * @param runType
 	 * @return
 	 */
-	public Result<Event> getRequests(String customerId, String app, String collection,
+	public Result<Event> getRequests(String customerId, String app, List<String> collections,
 		List<String> reqids, List<String> services, List<String> paths, Optional<Event.RunType> runType);
 
 	@Override
@@ -285,7 +285,7 @@ public interface ReqRespStore extends DataStore {
      * @return
      */
     Result<Replay> getReplay(Optional<String> customerId, Optional<String> app, List<String> instanceId,
-                             List<ReplayStatus> status, Optional<String> collection, Optional<Integer> numOfResults, Optional<Integer> start,
+                             List<ReplayStatus> status, List<String> collection, Optional<Integer> numOfResults, Optional<Integer> start,
                              Optional<String> userId, Optional<Instant> endDate, Optional<Instant> startDate, Optional<String> testConfigName, Optional<String> goldenName, boolean archived);
 
     /**
@@ -299,7 +299,7 @@ public interface ReqRespStore extends DataStore {
      * @return
      */
 	Stream<Replay> getReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceId,
-                             List<ReplayStatus> status, Optional<Integer> numOfResults, Optional<String> collection);
+                             List<ReplayStatus> status, Optional<Integer> numOfResults, List<String> collection);
 
 	/**
      * @param customerId
