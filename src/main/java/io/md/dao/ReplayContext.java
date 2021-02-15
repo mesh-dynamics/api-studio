@@ -24,12 +24,12 @@ public class ReplayContext {
         reqSpanId = Optional.empty();
     }
 
-    public ReplayContext(String reqTraceId , Instant reqStartTs , Instant reqEndTs , String currentCollection , String reqSpanId){
-        this.reqTraceId = Optional.ofNullable(reqTraceId);
+    public ReplayContext(Event request , Instant reqStartTs , Instant reqEndTs , Optional<ReplayContext> currentCtx){
+        this.reqTraceId = Optional.of(request.getTraceId());
         this.reqStartTs = Optional.ofNullable(reqStartTs);
         this.reqEndTs = Optional.ofNullable(reqEndTs);
-        this.currentCollection = Optional.ofNullable(currentCollection);
-        this.reqSpanId = Optional.ofNullable(reqSpanId);
+        this.currentCollection = currentCtx.flatMap(ctx->ctx.currentCollection);
+        this.reqSpanId = Optional.of(request.getSpanId());
     }
 
     @JsonIgnore
