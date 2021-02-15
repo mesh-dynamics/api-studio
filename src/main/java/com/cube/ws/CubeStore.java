@@ -1638,7 +1638,7 @@ public class CubeStore {
                     if(deleteRecordingMeta) {
                        Stream<Replay> replays = rrstore.getReplay(Optional.of(rec.customerId), Optional.of(rec.app),
                             Optional.empty(), Collections.EMPTY_LIST, Optional.empty(),
-                            Optional.of(rec.collection));
+                            List.of(rec.collection));
                        rrstore.deleteAllReplayData(replays.collect(Collectors.toList()));
                     } else {
                         LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR, "Recording Data is not deleted", "RecordingId", recordingId)));
