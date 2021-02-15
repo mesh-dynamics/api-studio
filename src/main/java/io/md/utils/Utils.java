@@ -8,10 +8,12 @@ import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -36,7 +39,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.md.cache.ProtoDescriptorCache;
 import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.dao.*;
+import io.md.dao.Event.EventBuilder.InvalidEventException;
+import io.md.dao.Recording.RecordingStatus;
 import io.md.logger.LogMgr;
+import io.md.services.DSResult;
 import io.md.services.DataStore;
 import io.md.tracer.TracerMgr;
 import org.apache.commons.lang3.BooleanUtils;
@@ -60,6 +66,7 @@ import io.md.services.FnResponse;
 import io.md.services.MockResponse;
 import io.md.services.Mocker.MockerException;
 import io.opentracing.Span;
+import kotlin.Result;
 
 public class Utils {
 
@@ -692,4 +699,96 @@ public class Utils {
 			emptyAction.run();
 		}
 	}
+
+	public static String constructTemplateSetVersion(String templateSetName, Optional<String> templateSetLabel) {
+		return templateSetName + templateSetLabel.map(l -> "::" + l).orElse("");
+	}
+
+	public static Recording createRecordingObjectFrom(Recording recording,
+		Optional<String> templateVersion,
+		Optional<String> name, Optional<String> userId, Instant timeStamp, String labelValue,
+		RecordingType type) {
+		String collection = UUID.randomUUID().toString();
+		RecordingBuilder recordingBuilder = new RecordingBuilder(
+			recording.customerId, recording.app, recording.instanceId, collection)
+			.withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateVersion.orElse(recording.templateVersion))
+			.withName(name.orElse(recording.name))
+			.withUserId(userId.orElse(recording.userId)).withTags(recording.tags).withUpdateTimestamp(timeStamp)
+			.withRootRecordingId(recording.rootRecordingId).withLabel(labelValue)
+			.withRecordingType(type).withRunId(timeStamp.toString());
+		recording.parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
+		recording.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
+		recording.branch.ifPresent(recordingBuilder::withBranch);
+		recording.gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
+		recording.collectionUpdOpSetId.ifPresent(recordingBuilder::withCollectionUpdateOpSetId);
+		recording.templateUpdOpSetId.ifPresent(recordingBuilder::withTemplateUpdateOpSetId);
+		recording.comment.ifPresent(recordingBuilder::withComment);
+		recording.dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
+		try {
+			recording.generatedClassJarPath
+				.ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
+		} catch (Exception e) {
+			LOGGER.error("Error while generatedClassJarPath , customerId :: " + recording.customerId
+				+ " , app :: " + recording.app + " , instance :: "  + recording.instanceId);
+		}
+		return recordingBuilder.build();
+	}
+
+
+	public static boolean copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp
+		, Optional<Predicate<Event>> eventFilter, DataStore dataStore) {
+		EventQuery.Builder builder = new EventQuery.Builder(fromRecording.customerId, fromRecording.app, Collections.emptyList());
+		builder.withCollection(fromRecording.collection);
+		builder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
+		DSResult<Event> result = dataStore.getEvents(builder.build());
+		Map<String, String> reqIdMap = new HashMap<>();
+		final boolean[] eventCreationFailure = new boolean[1];
+		Stream<Event> eventStream = result.getObjects().filter(eventFilter.orElse(event -> true)).map(event -> {
+			try {
+				String reqId = reqIdMap.get(event.getReqId());
+				if(reqId == null) {
+					String oldReqId = event.getReqId();
+					reqId = io.md.utils.Utils.generateRequestId(
+						event.service, event.getTraceId());
+					reqIdMap.put(oldReqId, reqId);
+				}
+				return buildEvent(event, toRecording.collection,  toRecording.recordingType, reqId, event.getTraceId(),
+					Optional.of(timeStamp.toString()), event.timestamp);
+			} catch (InvalidEventException e) {
+				eventCreationFailure[0] = true;
+				LOGGER.error("Error while creating event, recording Id :: " + toRecording.id , e);
+			}
+			return null;
+		});/*.filter(Objects::nonNull)*/;
+		if(eventCreationFailure[0]){
+			LOGGER.error("Event Creation Failure ");
+			return false;
+		}
+
+		// unique requests will be almost half. 0.6 to be on safe side
+		long estimatedReqSize = (long)(result.getNumResults()*0.6) +1;
+		//check whether num of results and numFound are same
+		Stream<Event> eventsStream =  SeqMgr.createSeqId(eventStream , estimatedReqSize);
+		// TODO check if we need to commit after saving events
+		boolean batchSaveResult = dataStore.save(eventsStream) && dataStore.commit();
+		return batchSaveResult;
+	}
+
+	public static Event buildEvent(Event event, String collection, RecordingType recordingType,
+		String reqId, String traceId, Optional<String> runId, Instant timeStamp)
+		throws InvalidEventException {
+		EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
+			event.service, event.instanceId, collection,
+			new MDTraceInfo(traceId, event.spanId, event.parentSpanId),
+			event.getRunType(), Optional.of(event.timestamp), reqId, event.apiPath,
+			event.eventType, recordingType);
+		eventBuilder.setPayload(event.payload);
+		eventBuilder.withMetaData(event.metaData);
+		eventBuilder.withRunId(runId.orElse(event.runId));
+		eventBuilder.setPayloadKey(event.payloadKey);
+		return eventBuilder.createEvent();
+	}
+
+	public static final DateTimeFormatter templateLabelFormatter =  DateTimeFormatter.ofPattern("dd-MM-yyyy_HH:mm:ss_SSS");
+
 }

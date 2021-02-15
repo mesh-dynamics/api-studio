@@ -53,6 +53,8 @@ public class Replay {
 	public Optional<ReplayContext> replayContext = Optional.empty();
 	@JsonIgnore
 	public final CollectionKey collectionKey;
+	public String templateSetName;
+	public String templateSetLabel;
 
 	public Replay(String endpoint, String customerId, String app, String instanceId,
 		List<String> collection, String userId, List<String> reqIds,
@@ -66,7 +68,8 @@ public class Replay {
 		Optional<String> testConfigName, Optional<String> goldenName, Optional<String> recordingId,
 		boolean archived, Optional<String> dynamicInjectionConfigVersion,
 		Instant analysisCompleteTimestamp, Optional<String> staticInjectionMap, String runId,
-		boolean tracePropagation , boolean storeToDatastore ) {
+		boolean tracePropagation , boolean storeToDatastore, String templateSetName,
+		String templateSetLabel) {
 		this.endpoint = endpoint;
 		this.customerId = customerId;
 		this.app = app;
@@ -104,6 +107,8 @@ public class Replay {
 		this.tracePropagation = tracePropagation;
 		this.storeToDatastore = storeToDatastore;
 		this.collectionKey = new CollectionKey(customerId, app, instanceId);
+		this.templateSetName = templateSetName;
+		this.templateSetLabel = templateSetLabel;
 	}
 
 	//for deserialization
@@ -137,6 +142,8 @@ public class Replay {
 		staticInjectionMap = null;
 		runId = "";
 		this.collectionKey = new CollectionKey(customerId, app, instanceId);
+		templateSetName = "";
+		templateSetLabel = "";
 	}
 
 	@JsonIgnore

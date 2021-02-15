@@ -7,6 +7,7 @@ import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.core.CollectionKey;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateKey.Type;
+import io.md.core.TemplateSet;
 import io.md.dao.*;
 
 import java.io.File;
@@ -191,6 +192,28 @@ public class EventPayloadTests {
 						}
 					}
 					return Optional.empty();
+				}
+
+				@Override
+				public Optional<TemplateSet> getLatestTemplateSet(String customerId, String app,
+					String templateSetName) {
+					return Optional.empty();
+				}
+
+				@Override
+				public Optional<TemplateSet> getTemplateSet(String customerId, String app,
+					String templateSetVersion) {
+					return Optional.empty();
+				}
+
+				@Override
+				public boolean commit() {
+					return false;
+				}
+
+				@Override
+				public boolean saveRecording(Recording recording) {
+					return false;
 				}
 			};
 

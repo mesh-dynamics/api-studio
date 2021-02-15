@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import io.md.core.CollectionKey;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateKey.Type;
+import io.md.core.TemplateSet;
 import io.md.dao.*;
 import io.md.injection.DynamicInjectionConfig;
 
@@ -88,5 +89,44 @@ public interface DataStore {
 
 //    Optional<ProtoDescriptor> getProtoDescriptor(String customer, String app);
     Optional<ProtoDescriptorDAO> getLatestProtoDescriptorDAO(String customerId, String app);
+
+    Optional<TemplateSet> getLatestTemplateSet(String customerId, String app, String templateSetName);
+
+    Optional<TemplateSet> getTemplateSet(String customerId, String app, String templateSetVersion);
+
+
+    enum Types {
+        Event,
+        Request,
+        Response,
+        ReplayMeta, // replay metadata
+        Analysis,
+        ReqRespMatchResult,
+        Recording,
+        RequestMatchTemplate,
+        RequestCompareTemplate,
+        ResponseCompareTemplate,
+        ReplayStats,
+        FuncReqResp,
+        TemplateSet,
+        TemplateUpdateOperationSet,
+        GoldenSet,
+        RecordingOperationSetMeta,
+        RecordingOperationSet,
+        MatchResultAggregate,
+        Diff,
+        AttributeTemplate,
+        DynamicInjectionConfig,
+        AgentConfigTagInfo,
+        AgentConfig,
+        AgentConfigAcknowledge,
+        ProtoDescriptor,
+        CustomerAppConfig;
+    }
+
+
+    public boolean commit();
+
+    boolean saveRecording(Recording recording);
 
 }
