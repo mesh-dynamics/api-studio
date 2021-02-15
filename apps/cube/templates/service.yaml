@@ -604,7 +604,7 @@ spec:
         - name: SPRING_PROFILES_ACTIVE
           value: "dev"
         - name: spring.datasource.url
-          value: "jdbc:postgresql://postgresql.postgres-dev.svc.cluster.local:5432/cubedevdb?schema=qui"
+          value: "jdbc:postgresql://postgresql.postgres.svc.cluster.local:5432/cubedevdb?schema=qui"
         resources:
           requests:
             memory: "640Mi"
