@@ -48,8 +48,11 @@ generate_manifest() {
 		if [ -z "$SOLR_URL" ]; then
 			SOLR_URL=null
 		fi
-		./generate_yamls.py $OPERATION $COMMON_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE $CUBEIO_TAG $CUBEUI_TAG $CUBEUI_BACKEND_TAG $MOVIEINFO_TAG $AUTH_TOKEN $SOLR_URL
-		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE $CUBEIO_TAG $CUBEUI_TAG $CUBEUI_BACKEND_TAG $MOVIEINFO_TAG $AUTH_TOKEN $SOLR_URL
+		if [ -z "$logcollector_url" ]; then
+			logcollector_url=null
+		fi
+		./generate_yamls.py $OPERATION $COMMON_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE $CUBEIO_TAG $CUBEUI_TAG $CUBEUI_BACKEND_TAG $MOVIEINFO_TAG $AUTH_TOKEN $SOLR_URL $logcollector_url
+		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $CUBE_SERVICE_ENDPOINT $NAMESPACE_HOST $CUBE_HOST $STAGING_HOST $INSTANCEID $SPRINGBOOT_PROFILE $SOLR_CORE $CUBEIO_TAG $CUBEUI_TAG $CUBEUI_BACKEND_TAG $MOVIEINFO_TAG $AUTH_TOKEN $SOLR_URL $logcollector_url
 	elif [ "$OPERATION" = "record" ] || [ "$OPERATION" = "replay" ]; then
 		./generate_yamls.py $OPERATION $APP_DIR $NAMESPACE $CUBE_APP $CUBE_CUSTOMER $INSTANCEID $CUBE_HOST $AUTH_TOKEN
 	fi
@@ -64,9 +67,9 @@ init() {
 	if ls $APP_DIR/kubernetes/route* 1> /dev/null 2>&1; then
 		kubectl apply -f $APP_DIR/kubernetes/route-v1.yaml
 	fi
-	kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.json)" -n logging --record || :
+	# kubectl patch ds fluentd --type=json --patch "$(cat $APP_DIR/kubernetes/fluentd_patch.json)" -n logging --record || :
 	#Check fluentd rollout status, exit once rollout is complete
-	kubectl rollout status ds/fluentd -n logging
+	# kubectl rollout status ds/fluentd -n logging
 }
 
 register_matcher() {
@@ -110,6 +113,9 @@ echo $RESPONSE
 
 }
 
+setup_record() {
+	kubectl apply -f $APP_DIR/kubernetes/envoy-record-cs.yaml
+}
 start_record() {
 	#start_record function can have 3 arguments, if these arguments are passed then
 	#script will run in non-interactive fashion:
@@ -360,6 +366,7 @@ main () {
 	get_environment #check kubernetes context
 	case "$1" in
 		init) OPERATION="init"; shift; generate_manifest $1; shift; init "$@";;
+		setup_record) OPERATION="record"; shift; generate_manifest $1; shift; setup_record "$@";;
 		record) OPERATION="record"; shift; generate_manifest $1; shift; start_record "$@";;
 		stop_record) OPERATION="record"; shift; generate_manifest $1; shift; stop_record "$@";;
 		setup_replay) OPERATION="replay"; shift; generate_manifest $1; shift; replay_setup "$@";;
