@@ -20,11 +20,11 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
-import io.md.cache.ProtoDescriptorCache;
-import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.core.BatchingIterator;
 
+
 import io.md.core.Comparator.Diff;
+import io.md.core.TemplateSet;
 import io.md.dao.ApiTraceResponse;
 import io.md.dao.ApiTraceResponse.ServiceReqRes;
 import io.md.constants.ReplayStatus;
@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -110,18 +111,18 @@ import io.md.dao.ReqRespUpdateOperation;
 import io.md.services.Analyzer;
 import io.md.utils.Constants;
 import io.md.core.Utils;
+import io.md.utils.RecordingBuilder;
 
 import com.cube.core.TemplateRegistries;
 import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.MatchResultAggregate;
-import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.Result;
 import com.cube.drivers.RealAnalyzer;
 import com.cube.golden.RecordingUpdate;
 import com.cube.golden.SingleTemplateUpdateOperation;
-import com.cube.golden.TemplateSet;
+
 import com.cube.utils.AnalysisUtils;
 
 /**
@@ -214,18 +215,38 @@ public class AnalyzeWS {
     }
 
 
+    @GET
+    @Path("getTemplateSetLabels/{customerId}/{appId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getTemplateSetLabels(@Context UriInfo uriInfo,
+	    @PathParam("customerId") String customerId,
+	    @PathParam("appId") String appId) {
+    	List<TemplateSet> templateSetList = rrstore.getTemplateSetList(customerId, appId);
+    	JSONObject root = new JSONObject();
+    	templateSetList.forEach(templateSet -> {
+    		JSONObject setDetails = new JSONObject();
+    		setDetails.put("name" , templateSet.name);
+	        setDetails.put("label" , templateSet.label.orElse(""));
+		    root.put(templateSet.version , setDetails);
+	    });
+		return Response.ok().entity(root.toString()).build();
+    }
+
+
 	@POST
-    @Path("registerTemplateApp/{customerId}/{appId}/{version}")
+    @Path("registerTemplateApp/{customerId}/{appId}/{name}")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
     public Response registerTemplateApp(@Context UriInfo uriInfo,
                                         @PathParam("customerId") String customerId,
                                         @PathParam("appId") String appId,
-                                        @PathParam("version") String version,
+                                        @PathParam("name") String name,
                                         String templateRegistryArray) {
         try {
+
             //TODO study the impact of enabling this flag in other deserialization methods
             //jsonMapper.enable(ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
+
             TemplateRegistries registries = jsonMapper.readValue(templateRegistryArray, TemplateRegistries.class);
             /*
             List<TemplateRegistry> templateRegistries = registries.getTemplateRegistryList();
@@ -249,9 +270,13 @@ public class AnalyzeWS {
 
             }));
             */
-            Optional<String> templateVersion = version.equals("AUTO") ? Optional.empty() : Optional.of(version);
+	        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+	        String templateLabel = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_LABEL_FIELD))
+		        .orElse(LocalDateTime.now().format(AnalysisUtils.templateLabelFormatter));
+
+            /*Optional<String> templateVersion = version.equals("AUTO") ? Optional.empty() : Optional.of(version);*/
             TemplateSet templateSet = ServerUtils.templateRegistriesToTemplateSet(registries, customerId, appId,
-                templateVersion);
+                name, templateLabel);
             //String templateSetJSON = jsonmapper.writeValueAsString(templateSet);
 
             ValidateCompareTemplate validTemplate = ServerUtils.validateTemplateSet(templateSet);
@@ -1119,22 +1144,28 @@ public class AnalyzeWS {
     }
 
     @POST
-    @Path("saveTemplateSet/{customer}/{app}")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Path("saveTemplateSet/{customer}/{app}/{name}")
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response saveTemplateSet(@Context UriInfo uriInfo, @PathParam("customer") String customer,
-        @PathParam("app") String app, @FormDataParam("file") InputStream uploadedInputStream) {
-
-        TemplateSet templateSet;
+	    @PathParam("app") String app, @PathParam("name") String templateSetName,
+	    @FormDataParam("file") InputStream uploadedInputStream) {
+		        TemplateSet templateSet;
         try {
-            templateSet = this.jsonMapper.readValue(uploadedInputStream, TemplateSet.class);
-            if (!templateSet.customer.equals(customer) || !templateSet.app.equals(app)){
-                Response.status(Status.UNAUTHORIZED).entity(Utils
-                    .buildErrorResponse(Constants.ERROR, "UNAUTHORIZED", String.format(
-                        "customer/app name mismatch in path and json file. "
-                            + "path customer=%s app=%s json customer=%s app=%s",
-                        customer, app, templateSet.customer, templateSet.app)));
-            }
+	        templateSet = this.jsonMapper.readValue(uploadedInputStream, TemplateSet.class);
+	        if (!templateSet.customer.equals(customer) || !templateSet.app.equals(app)){
+		        Response.status(Status.UNAUTHORIZED).entity(Utils
+			        .buildErrorResponse(Constants.ERROR, "UNAUTHORIZED", String.format(
+				        "customer/app name mismatch in path and json file. "
+					        + "path customer=%s app=%s json customer=%s app=%s",
+				        customer, app, templateSet.customer, templateSet.app)));
+	        }
+	        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+	        String templateLabel = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_LABEL_FIELD))
+		        .orElse(LocalDateTime.now().format(AnalysisUtils.templateLabelFormatter));
+	        //forcefully correcting the label and version
+	        templateSet.label = Optional.of(templateLabel);
+	        templateSet.version = templateSetName + "::" + templateLabel;
 	        templateSet.templates.forEach(compareTemplateVersioned -> {
 		        String normalisedAPIPath= CompareTemplate.normaliseAPIPath(compareTemplateVersioned.requestPath);
 		        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Normalizing APIPath before storing template ",
@@ -1365,11 +1396,16 @@ public class AnalyzeWS {
 		    Optional<Analysis> analysis = rrstore.getAnalysis(replayId);
 		    // creating a new temporary empty template set against the old version
 		    // (if one doesn't exist already)
+		    String[] templateVersionSplits = originalRec.templateVersion.split("::");
+			String originalRecTemplateSetName = templateVersionSplits[0];
+			Optional<String> originalRecTemplateSetLabel = templateVersionSplits.length > 1 ?
+					Optional.of(templateVersionSplits[1]) : Optional.empty();
 		    TemplateSet templateSet = rrstore
 			    .getTemplateSet(originalRec.customerId, originalRec.app, analysis.map(a ->
 				    a.templateVersion).orElse(originalRec.templateVersion))
-			    .orElse(new TemplateSet(originalRec.templateVersion, originalRec.customerId,
-				    originalRec.app, Instant.now(), Collections.emptyList(), Optional.empty()));
+			    .orElse(new TemplateSet(originalRec.customerId,
+				    originalRec.app, Instant.now(), Collections.emptyList(), Optional.empty()
+				    , originalRecTemplateSetName, originalRecTemplateSetLabel));
 
 		    String updatedTemplateSetVersion = AnalysisUtils.updateTemplateSet(templateUpdOpSetId,
 			    Optional.of(templateSet), rrstore);

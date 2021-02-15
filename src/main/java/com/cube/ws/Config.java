@@ -3,6 +3,7 @@
  */
 package com.cube.ws;
 
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.regex.Pattern;
@@ -85,6 +86,8 @@ public class Config {
     public final DisruptorEventQueue disruptorEventQueue;
 
     public final ProtoDescriptorCache protoDescriptorCache;
+
+    public final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy_HH:mm:ss_SSS");
 
 	public Config() throws Exception {
 		LOGGER.info("Creating config");

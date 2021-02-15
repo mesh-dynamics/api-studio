@@ -6,7 +6,8 @@ package com.cube.core;
 
 import io.md.core.Comparator.Diff;
 import io.md.core.CompareTemplate.DataType;
-import io.md.dao.HTTPRequestPayload;
+import io.md.core.CompareTemplateVersioned;
+import io.md.core.TemplateSet;
 import io.md.dao.Recording.RecordingType;
 
 import java.io.IOException;
@@ -44,7 +45,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -64,7 +64,6 @@ import io.md.utils.Constants;
 import io.md.utils.Utils;
 
 import com.cube.dao.ReqRespStore;
-import com.cube.golden.TemplateSet;
 import com.cube.ws.Config;
 import redis.clients.jedis.Jedis;
 
@@ -311,7 +310,7 @@ public class ServerUtils {
 
     static public TemplateSet templateRegistriesToTemplateSet(TemplateRegistries registries,
                                                               String customerId, String appId,
-                                                              Optional<String> templateVersion) {
+                                                              String templateSetName, String templateSetLabel) {
         List<TemplateRegistry> templateRegistries = registries.getTemplateRegistryList();
 
         List<CompareTemplateVersioned> compareTemplateVersionedList =
@@ -322,8 +321,8 @@ public class ServerUtils {
                 .collect(Collectors.toList());
 
         // pass null for version if version is empty and timestamp so that new version number is created automatically
-        TemplateSet templateSet = new TemplateSet(templateVersion.orElse(null), customerId, appId, null,
-            compareTemplateVersionedList , Optional.empty());
+        TemplateSet templateSet = new TemplateSet(customerId, appId, null,
+            compareTemplateVersionedList , Optional.empty(), templateSetName, Optional.of(templateSetLabel));
 
         return templateSet;
 

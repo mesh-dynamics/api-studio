@@ -4,13 +4,13 @@ import static io.md.core.TemplateKey.*;
 import static io.md.services.DataStore.*;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -20,17 +20,18 @@ import org.apache.logging.log4j.message.ObjectMessage;
 
 import io.md.core.AttributeRuleMap;
 import io.md.core.CompareTemplate;
+import io.md.core.CompareTemplateVersioned;
 import io.md.core.TemplateEntry;
 import io.md.core.TemplateKey;
+import io.md.core.TemplateSet;
 import io.md.dao.ReqRespUpdateOperation.OperationType;
 import io.md.utils.Constants;
 
-import com.cube.core.CompareTemplateVersioned;
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateEntryOperation;
-import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
+import com.cube.utils.AnalysisUtils;
 
 public class TemplateSetTransformer {
 
@@ -48,7 +49,7 @@ public class TemplateSetTransformer {
         throws Exception {
         List<CompareTemplateVersioned> sourceTemplates = sourceTemplateSet.templates;
         Map<TemplateKey, SingleTemplateUpdateOperation> updates =   templateSetUpdateSpec.getTemplateUpdates();
-        String newVersion = UUID.randomUUID().toString();
+        String newLabel = LocalDateTime.now().format(AnalysisUtils.templateLabelFormatter);
 
         Map<TemplateKey, CompareTemplateVersioned> sourceTemplateMap = sourceTemplates.stream()
             .collect(Collectors.toMap(template -> new TemplateKey(sourceTemplateSet.version,
@@ -111,8 +112,11 @@ public class TemplateSetTransformer {
         });
 
         List<CompareTemplateVersioned> updatedCompareTemplates = new ArrayList<>(sourceTemplateMap.values());
-        return new TemplateSet(newVersion, sourceTemplateSet.customer
-            , sourceTemplateSet.app, Instant.now(), updatedCompareTemplates, pathVsEntryAttributes.isEmpty() ? Optional.empty() : Optional.of(new AttributeRuleMap(pathVsEntryAttributes)));
+        return new TemplateSet(sourceTemplateSet.customer,
+            sourceTemplateSet.app, Instant.now(), updatedCompareTemplates,
+            pathVsEntryAttributes.isEmpty() ? Optional.empty() :
+                Optional.of(new AttributeRuleMap(pathVsEntryAttributes)),
+            sourceTemplateSet.name, Optional.of(newLabel));
     }
 
     /**

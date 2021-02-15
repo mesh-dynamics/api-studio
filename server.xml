@@ -65,10 +65,16 @@ Java AJP  Connector: /docs/config/ajp.html
 APR (HTTP/AJP) Connector: /docs/apr.html
 Define a non-SSL/TLS HTTP/1.1 Connector on port 8080
 -->
+    <Connector port="8080" protocol="HTTP/1.1" connectionTimeout="20000" redirectPort="8443"
+               SSLEnabled="true" scheme="https" keystoreFile="ssl/localhost.jks"
+               keystorePass="cubeio" clientAuth="false" sslProtocol="TLS" relaxedQueryChars="[,]">
+        <UpgradeProtocol className="org.apache.coyote.http2.Http2Protocol" />
+    </Connector>
+<!--
 <Connector port="8080" protocol="HTTP/1.1"
 connectionTimeout="20000"
 redirectPort="8443"
-relaxedQueryChars="[,]" />
+relaxedQueryChars="[,]" />-->
 <!-- A "Connector" using the shared thread pool-->
 <!--
 <Connector executor="tomcatThreadPool"

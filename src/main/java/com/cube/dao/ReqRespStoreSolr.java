@@ -13,9 +13,11 @@ import io.md.core.BatchingIterator;
 import io.md.core.CollectionKey;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
+import io.md.core.CompareTemplateVersioned;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.ReplayTypeEnum;
 import io.md.core.TemplateKey;
+import io.md.core.TemplateSet;
 import io.md.core.ValidateAgentStore;
 import io.md.core.ValidateProtoDescriptorDAO;
 import io.md.dao.ProtoDescriptorDAO;
@@ -79,7 +81,6 @@ import io.md.core.Comparator.Resolution;
 import io.md.core.CompareTemplate.ComparisonType;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventType;
-import io.md.dao.Event.RunType;
 import io.md.dao.FnReqRespPayload.RetStatus;
 import io.md.services.FnResponse;
 import io.md.utils.FnKey;
@@ -88,6 +89,7 @@ import io.md.injection.DynamicInjectionConfig.ExtractionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta;
 import io.md.utils.Constants;
 
+import io.md.utils.RecordingBuilder;
 import io.md.utils.Utils;
 import redis.clients.jedis.Jedis;
 
@@ -95,9 +97,7 @@ import com.cube.cache.ComparatorCache;
 import com.cube.cache.TemplateCache;
 import com.cube.cache.TemplateCacheRedis;
 import com.cube.cache.TemplateCacheWithoutCaching;
-import com.cube.core.CompareTemplateVersioned;
 import com.cube.golden.SingleTemplateUpdateOperation;
-import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 
 import static io.md.constants.Constants.*;
@@ -141,7 +141,20 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return saveDocs(customerAppConfigToDoc(cfg));
     }
 
-    @Override
+	@Override
+	public List<TemplateSet> getTemplateSetList(String customerId, String appId) {
+        SolrQuery templateSetQuery = new SolrQuery("*:*");
+        addFilter(templateSetQuery, TYPEF, Types.TemplateSet.toString());
+        addFilter(templateSetQuery, CUSTOMERIDF , customerId);
+        addFilter(templateSetQuery, APPF, appId);
+
+        return SolrIterator.getStream(solr, templateSetQuery, Optional.empty()).map(solrDoc ->
+            solrDocToTemplateSet(solrDoc, false)).filter(Optional::isPresent).map(Optional::get)
+            .collect(Collectors.toList());
+
+	}
+
+	@Override
     public boolean save(Event... events) {
         if(events.length==0) return true;
         if(events.length==1) return save(events[0]);
@@ -713,6 +726,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     @Override
     public String saveTemplateSet(TemplateSet templateSet) throws Exception {
         List<String> templateIds = new ArrayList<>();
+        // check if a template set already exists with the given name and label
+        SolrQuery checkExistingTemplateSet = new SolrQuery("*:*");
+        addFilter(checkExistingTemplateSet, TEMPLATE_SET_NAME_F, templateSet.name);
+        addFilter(checkExistingTemplateSet, TEMPLATE_SET_LABEL_F, templateSet.label);
+        if (SolrIterator
+            .getSingleResult(solr, checkExistingTemplateSet).isPresent()) {
+            throw  new Exception("Template set with name and label combination already exists");
+        }
+
+
         templateSet.templates.forEach(UtilException.rethrowConsumer(template -> {
             TemplateKey templateKey = new TemplateKey(templateSet.version, templateSet.customer,
                 templateSet.app, template.service, template.requestPath, template.type, template.method, DEFAULT_RECORDING);
@@ -1048,6 +1071,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String VERSIONF = Constants.VERSION_FIELD + STRING_SUFFIX;
     private static final String INT_VERSION_F = Constants.VERSION_FIELD + INT_SUFFIX;
     private static final String ATTRIBUTE_RULE_MAP_ID = "attribute_rule_map_id" + STRING_SUFFIX;
+    private static final String TEMPLATE_SET_NAME_F = "name" + STRING_SUFFIX;
+    private static final String TEMPLATE_SET_LABEL_F = "label" + STRING_SUFFIX;
     private static final String DYNAMIC_INJECTION_CONFIG_VERSIONF =
         Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD + STRING_SUFFIX;
     private static final String STATIC_INJECTION_MAPF =
@@ -1069,6 +1094,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         solrDoc.setField(CUSTOMERIDF , templateSet.customer);
         solrDoc.setField(APPF, templateSet.app);
         solrDoc.setField(TIMESTAMPF , templateSet.timestamp.toString());
+        solrDoc.setField(TEMPLATE_SET_NAME_F, templateSet.name);
+        templateSet.label.ifPresent(label -> solrDoc.setField(TEMPLATE_SET_LABEL_F, label));
         templateIds.forEach(templateId -> solrDoc.addField(TEMPLATE_ID, templateId));
         appAttributeRuleMapId.ifPresent(ruleMapId -> solrDoc.setField(ATTRIBUTE_RULE_MAP_ID, ruleMapId));
         boolean success = saveDocs(solrDoc) && softcommit();
@@ -1087,8 +1114,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             addFilter(query, IDF, templateSetId);
             addFilter(query, TYPEF, Types.TemplateSet.toString());
             Optional<Integer> maxResults = Optional.of(1);
-
-            return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(this::solrDocToTemplateSet);
+            return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(solrDoc ->
+                solrDocToTemplateSet(solrDoc, true));
         } catch (Exception e) {
             LOGGER.error("Error occured while fetching template set for version :: " + templateSetId + " :: " + e.getMessage());
         }
@@ -1104,8 +1131,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             addFilter(query, APPF, app);
             addFilter(query, VERSIONF, version);
             Optional<Integer> maxResults = Optional.of(1);
-
-            return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(this::solrDocToTemplateSet);
+            return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(solrDoc -> solrDocToTemplateSet(solrDoc, true));
         } catch (Exception e) {
             LOGGER.error("Error occured while fetching template set for customer/app/verion :: " + customerId + "::"
                 + app + "::" +  version + "::"  + e.getMessage());
@@ -1123,7 +1149,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             addSort(query, IDF, true);
             Optional<Integer> maxResults = Optional.of(1);
 
-            return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(this::solrDocToTemplateSet);
+            return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(solrDoc -> solrDocToTemplateSet(solrDoc, true));
         } catch (Exception e) {
             LOGGER.error("Error occured while fetching template set for customer :: " + customer + " :: app :: " + app + " :: " + e.getMessage());
         }
@@ -1145,7 +1171,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             -> (String)doc.getFieldValue(EVENTTYPEF));
     }
 
-    private Optional<TemplateSet> solrDocToTemplateSet(SolrDocument doc) {
+    private Optional<TemplateSet> solrDocToTemplateSet(SolrDocument doc, boolean fetchTemplates) {
         Optional<String> version = getStrField(doc, VERSIONF);
         Optional<String> customerId = getStrField(doc, CUSTOMERIDF);
         Optional<String> app = getStrField(doc, APPF);
@@ -1156,9 +1182,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             return Optional.empty();
         }
         Optional<String> appAttributeRuleMapId = getStrField(doc, ATTRIBUTE_RULE_MAP_ID);
-        TemplateSet templateSet = new TemplateSet(version.get(), customerId.get(), app.get(),
-            creationTimestamp.get(), getVersionedTemplatesFromSolr(templateIds) ,
-            getVersionedAttributeRuleMapFromSolr(appAttributeRuleMapId));
+        String templateSetName = getStrField(doc, TEMPLATE_SET_NAME_F).orElse(version.get());
+        Optional<String> templateSetLabel = getStrField(doc, TEMPLATE_SET_LABEL_F);
+
+        TemplateSet templateSet = new TemplateSet(customerId.get(), app.get(),
+            creationTimestamp.get(), fetchTemplates? getVersionedTemplatesFromSolr(templateIds) : null ,
+            fetchTemplates ? getVersionedAttributeRuleMapFromSolr(appAttributeRuleMapId) : null, templateSetName,
+            templateSetLabel);
         return Optional.of(templateSet);
     }
 
@@ -2033,6 +2063,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         replay.staticInjectionMap.ifPresent(sim -> doc.setField(
             STATIC_INJECTION_MAPF, sim));
         doc.setField(RUNIDF, replay.runId);
+        doc.setField(TEMPLATE_SET_NAME_F, replay.templateSetName);
+        doc.setField(TEMPLATE_SET_LABEL_F, replay.templateSetLabel);
 
         return doc;
     }
@@ -2978,6 +3010,26 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
         return SolrIterator.getSingleResult(solr, maxVersionQuery).flatMap(this::docToProtoDescriptorDAO);
 
+    }
+
+    @Override
+    public Optional<TemplateSet> getLatestTemplateSet(String customerId, String app,
+        String templateSetName) {
+        try {
+            SolrQuery query = new SolrQuery("*:*");
+            addFilter(query, TYPEF, Types.TemplateSet.toString());
+            addFilter(query, APPF, app);
+            addFilter(query, CUSTOMERIDF, customerId);
+            addFilter(query, TEMPLATE_SET_NAME_F, templateSetName);
+            addSort(query, TIMESTAMPF, false); // descending
+            addSort(query, IDF, true);
+            Optional<Integer> maxResults = Optional.of(1);
+
+            return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(solrDoc -> solrDocToTemplateSet(solrDoc, true));
+        } catch (Exception e) {
+            LOGGER.error("Error occured while fetching template set for customer :: " + customerId + " :: app :: " + app + " :: " + e.getMessage());
+        }
+        return Optional.empty();
     }
 
     @Override
