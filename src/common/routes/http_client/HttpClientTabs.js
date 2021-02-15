@@ -32,27 +32,18 @@ import { apiCatalogActions } from "../../actions/api-catalog.actions";
 import { httpClientActions } from "../../actions/httpClientActions";
 import { 
     generateRunId,
-    generateApiPath, 
-    extractParamsFromRequestEvent, 
-    selectedRequestParamData, 
-    unSelectedRequestParamData, 
-    generateTraceKeys, 
+    extractParamsFromRequestEvent,
     getTraceDetailsForCurrentApp, 
     getTracerForCurrentApp, 
-    generateSpanId,
     hasTabDataChanged, 
     formatHttpEventToTabObject,    
     preRequestToFetchableConfig, 
     getCurrentMockConfig,
-    extractQueryStringParamsToCubeFormat,
-    extractBodyToCubeFormat, 
-    extractHeadersToCubeFormat, 
-    multipartDataToCubeFormat,
-    isLocalhostUrl
-} from "../../utils/http_client/utils"; 
+    isLocalhostUrl,
+} from "../../utils/http_client/utils.js";
+import * as httpClientTabUtils from "../../utils/http_client/httpClientTabs.utils.js";
 import { 
     extractGrpcBody, 
-    applyGrpcDataToRequestObject,
     getRequestUrlFromSchema
 } from "../../utils/http_client/grpc-utils"; 
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
@@ -61,10 +52,8 @@ import { getParameterCaseInsensitive, Base64Binary } from '../../../shared/utils
 import SplitSlider  from '../../components/SplitSlider.tsx';
 
 import commonConstants from '../../utils/commonConstants';
-import MockConfigs from "./MockConfigs";
 import {setDefaultMockContext} from '../../helpers/httpClientHelpers'
 import SideBarTabs from "./SideBarTabs";
-import {applyEnvVarsToUrl} from "../../utils/http_client/envvar";
 
 class HttpClientTabs extends Component {
 
@@ -120,201 +109,6 @@ class HttpClientTabs extends Component {
         
     }
 
-    createRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFromData) {
-        let referenceEventData = toBeCopiedFromData ? toBeCopiedFromData.eventData : null;
-        let eventData = toBeUpdatedData.eventData;
-        const tracer = getTracerForCurrentApp()
-        const spanId = generateSpanId(tracer)
-        if(referenceEventData && referenceEventData.length > 0) {
-            let refHttpRequestEventTypeIndex = referenceEventData[0].eventType === "HTTPRequest" ? 0 : 1;
-            let refHttpResponseEventTypeIndex = refHttpRequestEventTypeIndex === 0 ? 1 : 0;
-            let refHttpResponseEvent = referenceEventData[refHttpResponseEventTypeIndex];
-            let refHttpRequestEvent = referenceEventData[refHttpRequestEventTypeIndex];
-            let refRequestEventData = eventData[refHttpRequestEventTypeIndex];
-            let refResponseEventData = eventData[refHttpResponseEventTypeIndex];
-
-            let httpRequestEventTypeIndex = eventData[0].eventType === "HTTPRequest" ? 0 : 1;
-            let httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
-            let gatewayHttpResponseEvent = eventData[httpResponseEventTypeIndex];
-            let gatewayHttpRequestEvent = eventData[httpRequestEventTypeIndex];
-
-            // TODO: should have been more careful while copying event data.
-            // This has to be simpler.
-            let httpResponseEvent = {
-                customerId: refResponseEventData.customerId,
-                app: refResponseEventData.app,
-                service: refHttpRequestEvent.service,
-                instanceId: refResponseEventData.instanceId,
-                collection: toBeUpdatedData.collectionIdAddedFromClient,
-                traceId: toBeUpdatedData.traceIdAddedFromClient,
-                spanId: null,
-                parentSpanId: null,
-                runType: refHttpRequestEvent.runType,
-                runId: null,
-                timestamp: refHttpRequestEvent.timestamp,
-                reqId: "NA",
-                apiPath: refHttpRequestEvent.apiPath,
-                eventType: "HTTPResponse",
-                payload: refHttpResponseEvent.payload,
-                recordingType: refResponseEventData.recordingType,
-                metaData: {}
-            };
-            
-            let httpRequestEvent = {
-                customerId: refRequestEventData.customerId,
-                app: refRequestEventData.app,
-                service: refHttpRequestEvent.service,
-                instanceId: refRequestEventData.instanceId,
-                collection: toBeUpdatedData.collectionIdAddedFromClient,
-                traceId: toBeUpdatedData.traceIdAddedFromClient,
-                spanId: spanId,
-                parentSpanId: eventData[httpRequestEventTypeIndex].spanId,
-                runType: refHttpRequestEvent.runType,
-                runId: null,
-                timestamp: refHttpRequestEvent.timestamp,
-                reqId: refHttpRequestEvent.reqId || "NA", // TODO: Revisit this for new request
-                apiPath: refHttpRequestEvent.apiPath,
-                eventType: "HTTPRequest",
-                payload: refHttpRequestEvent.payload,
-                recordingType: refRequestEventData.recordingType,
-                metaData: {}
-            };
-
-            let tabData = {
-                id: uuidv4(),
-                requestId: toBeCopiedFromData.requestId,
-                httpMethod: toBeCopiedFromData.httpMethod,
-                httpURL: toBeCopiedFromData.httpURL,
-                httpURLShowOnly: toBeCopiedFromData.httpURLShowOnly,
-                headers: toBeCopiedFromData.headers,
-                queryStringParams: toBeCopiedFromData.queryStringParams,
-                bodyType: toBeCopiedFromData.bodyType,
-                formData: toBeCopiedFromData.formData,
-                multipartData: toBeCopiedFromData.multipartData,
-                rawData: toBeCopiedFromData.rawData,
-                rawDataType: toBeCopiedFromData.rawDataType,
-                paramsType: "showQueryParams",
-                responseStatus: toBeCopiedFromData.responseStatus,
-                responseStatusText: toBeCopiedFromData.responseStatusText,
-                responseHeaders: toBeCopiedFromData.responseHeaders,
-                responseBody: toBeCopiedFromData.responseBody,
-                recordedResponseHeaders: toBeCopiedFromData.recordedResponseHeaders,
-                recordedResponseBody: toBeCopiedFromData.recordedResponseBody,
-                responseBodyType: toBeCopiedFromData.responseBodyType,
-                outgoingRequestIds: toBeCopiedFromData.outgoingRequestIds,
-                eventData: [httpRequestEvent, httpResponseEvent],
-                showOutgoingRequestsBtn: toBeCopiedFromData.showOutgoingRequestsBtn,
-                showSaveBtn: toBeCopiedFromData.showSaveBtn,
-                outgoingRequests: toBeCopiedFromData.outgoingRequests,
-                diffLayoutData: toBeCopiedFromData.diffLayoutData,
-                showCompleteDiff: toBeCopiedFromData.showCompleteDiff,
-                isOutgoingRequest: toBeCopiedFromData.isOutgoingRequest,
-                service: toBeCopiedFromData.service,
-                recordingIdAddedFromClient: toBeUpdatedData.recordingIdAddedFromClient,
-                collectionIdAddedFromClient: toBeUpdatedData.collectionIdAddedFromClient,
-                traceIdAddedFromClient: toBeUpdatedData.traceIdAddedFromClient,
-                grpcData: toBeUpdatedData.grpcData,
-                grpcConnectionSchema: toBeUpdatedData.grpcConnectionSchema,
-                recordedHistory: [],
-                hasChanged: true,
-            }
-            return tabData;
-        }
-    }
-
-    copyRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFromData) {
-        let referenceEventData = toBeCopiedFromData ? toBeCopiedFromData.eventData : null,
-            eventData = toBeUpdatedData.eventData; 
-        if(referenceEventData && eventData && referenceEventData.length > 0 && eventData.length > 0 ) {
-            let refHttpRequestEventTypeIndex = referenceEventData[0].eventType === "HTTPRequest" ? 0 : 1;
-            let refHttpResponseEventTypeIndex = refHttpRequestEventTypeIndex === 0 ? 1 : 0;
-            let refHttpResponseEvent = referenceEventData[refHttpResponseEventTypeIndex];
-            let refHttpRequestEvent = referenceEventData[refHttpRequestEventTypeIndex];
-
-            let httpRequestEventTypeIndex = eventData[0].eventType === "HTTPRequest" ? 0 : 1;
-            let httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
-            let httpResponseEvent = eventData[httpResponseEventTypeIndex];
-            let httpRequestEvent = eventData[httpRequestEventTypeIndex];
-            if(httpResponseEvent && refHttpResponseEvent)
-            {
-                httpResponseEvent.payload = refHttpResponseEvent.payload;
-            }
-            httpRequestEvent.payload = refHttpRequestEvent.payload;
-
-            let tabData = {
-                id: toBeUpdatedData.id,
-                tabName: toBeUpdatedData.tabName,
-                requestId: toBeCopiedFromData.requestId,
-                httpMethod: toBeCopiedFromData.httpMethod,
-                httpURL: toBeCopiedFromData.httpURL,
-                httpURLShowOnly: toBeCopiedFromData.httpURLShowOnly,
-                headers: toBeCopiedFromData.headers,
-                queryStringParams: toBeCopiedFromData.queryStringParams,
-                bodyType: toBeCopiedFromData.bodyType,
-                formData: toBeCopiedFromData.formData,
-                multipartData: toBeCopiedFromData.multipartData,
-                rawDataType: toBeCopiedFromData.rawDataType,
-                rawData: toBeCopiedFromData.rawData,
-                grpcData: toBeCopiedFromData.grpcData,
-                paramsType: toBeUpdatedData.paramsType,
-                responseStatus: toBeCopiedFromData.responseStatus,
-                responseStatusText: toBeCopiedFromData.responseStatusText,
-                recordedResponseStatus: toBeCopiedFromData.recordedResponseStatus,
-                responseHeaders: toBeCopiedFromData.responseHeaders,
-                responseBody: toBeCopiedFromData.responseBody,
-                recordedResponseHeaders: toBeCopiedFromData.recordedResponseHeaders,
-                recordedResponseBody: toBeCopiedFromData.recordedResponseBody,
-                responseBodyType: toBeCopiedFromData.responseBodyType,
-                outgoingRequestIds: toBeCopiedFromData.outgoingRequestIds,
-                eventData: toBeCopiedFromData.eventData,
-                showOutgoingRequestsBtn: toBeCopiedFromData.showOutgoingRequestsBtn,
-                showSaveBtn: toBeCopiedFromData.showSaveBtn,
-                outgoingRequests: toBeCopiedFromData.outgoingRequests,
-                diffLayoutData: toBeCopiedFromData.diffLayoutData,
-                showCompleteDiff: toBeCopiedFromData.showCompleteDiff,
-                isOutgoingRequest: toBeCopiedFromData.isOutgoingRequest,
-                service: toBeCopiedFromData.service,
-                recordingIdAddedFromClient: toBeUpdatedData.recordingIdAddedFromClient,
-                collectionIdAddedFromClient: toBeUpdatedData.collectionIdAddedFromClient,
-                traceIdAddedFromClient: toBeUpdatedData.traceIdAddedFromClient,
-                recordedHistory: toBeUpdatedData.recordedHistory,
-                hasChanged: true,
-                grpcConnectionSchema: toBeCopiedFromData.grpcConnectionSchema,
-            }
-            return tabData;
-        }
-    }
-
-    findOutgoingRequestIndexGivenApiPath(refReq, tab) {
-        let outgoingRequests = tab.outgoingRequests;
-        const indexToFind = outgoingRequests.findIndex(eachReq => eachReq.eventData[0].apiPath === refReq.eventData[0].apiPath);
-        return indexToFind;
-    }
-
-    setAsReferenceForEachRequest(tabToBeProcessed) {
-        const recordedHistory = tabToBeProcessed.recordedHistory;
-        const copiedTabData = this.copyRecordedDataForEachRequest(tabToBeProcessed, recordedHistory);
-        const copiedTab = {
-            ...copiedTabData
-        };
-        const outgoingRequests = [];
-        recordedHistory.outgoingRequests.forEach((eachReq) => {
-            const matchedReqIndex = this.findOutgoingRequestIndexGivenApiPath(eachReq, tabToBeProcessed);
-            if(matchedReqIndex > -1) {
-                const copiedOutgoingData = this.copyRecordedDataForEachRequest(tabToBeProcessed.outgoingRequests[matchedReqIndex], eachReq);
-                outgoingRequests.push(copiedOutgoingData);
-                tabToBeProcessed.outgoingRequests.splice(matchedReqIndex, 1); // Please please please no. Mutation of passed parameters leads to untraceable and confusing bugs
-            } else {
-                const copiedOutgoingData = this.createRecordedDataForEachRequest(tabToBeProcessed, eachReq);
-                outgoingRequests.push(copiedOutgoingData);
-            }
-        })
-        copiedTab.outgoingRequests = [...tabToBeProcessed.outgoingRequests, ...outgoingRequests];
-        copiedTab.selectedTraceTableReqTabId = copiedTab.id;
-        copiedTab.selectedTraceTableTestReqTabId = recordedHistory.id;
-        copiedTab.requestId = recordedHistory.requestId;
-        return copiedTab;
-    }
 
     setAsReference(tabId) {
         const {httpClient: {tabs}} = this.props;
@@ -322,7 +116,7 @@ class HttpClientTabs extends Component {
         const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
         const tabToBeUpdated = tabs[tabIndex];
 
-        let updatedTab = this.setAsReferenceForEachRequest(tabToBeUpdated);
+        let updatedTab = httpClientTabUtils.setAsReferenceForEachRequest(tabToBeUpdated);
         updatedTab = _.cloneDeep(updatedTab);
         dispatch(httpClientActions.setAsReference(tabId, updatedTab));
         setTimeout(() => {
@@ -358,7 +152,7 @@ class HttpClientTabs extends Component {
             const traceDetails = getTraceDetailsForCurrentApp()
             let {traceKeys, traceIdDetails: {traceId, traceIdForEvent}, spanId, parentSpanId} = traceDetails;
             const customerId = user.customer_name;
-            const eventData = this.generateEventdata(app, customerId, traceDetails, service, apiPath);
+            const eventData = httpClientTabUtils.generateEventdata(app, customerId, traceDetails, service, apiPath);
             let headers = [], queryParams = [], formData = [], multipartData=[], rawData = "", rawDataType = "", bodyType = "";
             for (let eachHeader in parsedCurl.headers) {
                 headers.push({
@@ -614,86 +408,6 @@ class HttpClientTabs extends Component {
         this.handleAddMockReqModalClose();
     }
 
-    generateEventdata(app, customerId, traceDetails, service, apiPath, method, requestHeaders, requestQueryParams, requestFormParams, rawData) {
-        const timestamp = Date.now() / 1000;
-        let path = apiPath ? apiPath.replace(/^\/|\/$/g, '') : "";
-        let {traceKeys, traceIdDetails: {traceId, traceIdForEvent}, spanId, parentSpanId} = traceDetails;
-        let httpResponseEvent = {
-            customerId: customerId,
-            app: app,
-            service: service ? service : "NA",
-            instanceId: "devtool",
-            collection: "NA",
-            traceId: traceIdForEvent,
-            spanId: spanId,
-            parentSpanId: parentSpanId,
-            runType: "DevTool",
-            runId: generateRunId(),
-            timestamp: timestamp,
-            reqId: "NA",
-            apiPath: path ? path : "NA",
-            eventType: "HTTPResponse",
-            payload: [
-                "HTTPResponsePayload",
-                {
-                    hdrs: {},
-                    body: {},
-                    status: "",
-                }
-            ],
-            recordingType: "UserGolden",
-            metaData: {
-
-            }
-        };
-        
-        let httpRequestEvent = {
-            customerId: customerId,
-            app: app,
-            service: service ? service : "NA",
-            instanceId: "devtool",
-            collection: "NA",
-            traceId: traceIdForEvent,
-            spanId: spanId,
-            parentSpanId: parentSpanId,
-            runType: "DevTool",
-            runId: generateRunId(),
-            timestamp: timestamp,
-            reqId: "NA",
-            apiPath: path ? path : "NA",
-            eventType: "HTTPRequest",
-            payload: [
-                "HTTPRequestPayload",
-                {
-                    hdrs: requestHeaders ? requestHeaders : {},
-                    queryParams: requestQueryParams ? requestQueryParams : {},
-                    formParams: requestFormParams ? requestFormParams : {},
-                    method: method ? method : "",
-                    path: path ? path : "",
-                    pathSegments: path ? path.split(/\//) : [],
-                    ...(rawData && {body: rawData})
-                }
-            ],
-            recordingType: "UserGolden",
-            metaData: {
-
-            }
-        };
-
-        return [...httpRequestEvent, ...httpResponseEvent];
-    }
-
-    updateHttpEvent(apiPath, service, httpEvent) {
-        const { cube: {selectedApp} } = this.props;
-
-        return {
-            ...httpEvent,
-            app: selectedApp,
-            ...(apiPath && {apiPath: apiPath}),
-            ...(service && {service: service})
-        };
-    }
-
     handleRowClick(isOutgoingRequest, selectedTraceTableReqTabId, tabId) {
         const { dispatch, httpClient: { tabs } } = this.props;
         
@@ -780,35 +494,6 @@ class HttpClientTabs extends Component {
         });
     }
 
-    flattenCollection(collectionToImport) {
-        let result = [], queue = [];
-        if(!collectionToImport || !collectionToImport.items || !collectionToImport.items.count() || !collectionToImport.items.members || !collectionToImport.items.members.length) {
-            return result;
-        }
-        for(let eachItem of collectionToImport.items.members) {
-            queue.push({
-                ...eachItem
-            });
-        }
-        while (queue.length > 0) {
-            let current = queue.shift();
-            if(current.items && current.items.members && current.items.members.length) {
-                for(let eachItemNode of current.items.members) {
-                    queue.unshift({
-                        ...eachItemNode
-                    });
-                }
-            } else if(current.items && current.items.count() === 0) {
-                
-            } else {
-                result.push({
-                    ...current
-                });
-            }
-        }
-        return result;
-    }
-
     handleImportCollection() {
         const {importedToCollectionId, serializedCollection } = this.state;
         const { user, dispatch } = this.props;
@@ -820,7 +505,7 @@ class HttpClientTabs extends Component {
         const httpEventPairs = [];
         try {
             const collectionToImport = new Collection(JSON.parse(serializedCollection));
-            const flattenedCollection = this.flattenCollection(collectionToImport);
+            const flattenedCollection = httpClientTabUtils.flattenCollection(collectionToImport);
             flattenedCollection.map((eachMember) => {
                 const { cube: {selectedApp} } = this.props;
                 const url = eachMember.request.url.getRaw(),
@@ -875,7 +560,7 @@ class HttpClientTabs extends Component {
                         rawData = requestBody.raw;
                     }
                 }
-                const eventData = this.generateEventdata(app, customerId, traceDetails, service, unescape(apiPath), method, headers, queryParams, formData, rawData);
+                const eventData = httpClientTabUtils.generateEventdata(app, customerId, traceDetails, service, unescape(apiPath), method, headers, queryParams, formData, rawData);
                 httpEventPairs.push({
                     request: eventData[0],
                     response: eventData[1]
@@ -1066,45 +751,6 @@ class HttpClientTabs extends Component {
         }
     }
 
-    extractHeaders(httpReqestHeaders) {
-        let headers = {};
-        httpReqestHeaders
-            .filter((header) => header.selected)
-            .forEach(each => {
-                if(each.name && each.value && each.name.indexOf(":") < 0) headers[each.name] = each.value;
-            })
-        return headers;
-    }
-
-    extractBody(httpRequestBody) {
-        let formData = new URLSearchParams();
-        if(_.isArray(httpRequestBody)) {
-            httpRequestBody
-                .filter((fparam) => fparam.selected)
-                .forEach(each => {
-                    if(each.name && each.value) formData.append(each.name, each.value);
-                })
-            return formData;
-        } else {
-            return httpRequestBody;
-        }
-    }
-
-    extractQueryStringParams(httpRequestQueryStringParams) {
-        let qsParams = {};
-        httpRequestQueryStringParams
-            .filter((param) => param.selected)
-            .forEach(each => {
-                if(each.name && each.value) qsParams[each.name] = each.value;
-            })
-        return qsParams;
-    }
-
-    isgRPCRequest(tabToProcess){
-        return tabToProcess.bodyType === "grpcData" && tabToProcess.eventData[0].payload[0] === "GRPCRequestPayload"
-        // tabToProcess.grpcData && tabToProcess.grpcData.trim()
-    }
- 
     async driveRequestHandleResponse(response, tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, fetchedResponseHeaders){
         const {httpClient: { userHistoryCollection}, dispatch} = this.props;
         const resISODate = new Date().toISOString();
@@ -1172,18 +818,18 @@ class HttpClientTabs extends Component {
             ipcRenderer.send('mock_context_change', mockContext);
         }
         const { headers, queryStringParams, bodyType, rawDataType } = tabToProcess;
-        const httpReqestHeaders = this.extractHeaders(headers);
+        const httpReqestHeaders = httpClientTabUtils.extractHeaders(headers);
 
-        const httpRequestQueryStringParams = this.extractQueryStringParams(queryStringParams);
+        const httpRequestQueryStringParams = httpClientTabUtils.extractQueryStringParams(queryStringParams);
         let httpRequestBody;
-        const isGrpc = this.isgRPCRequest(tabToProcess);
+        const isGrpc = httpClientTabUtils.isgRPCRequest(tabToProcess);
         if (bodyType === "formData") {
             const { formData } = tabToProcess;
-            httpRequestBody = this.extractBody(formData);
+            httpRequestBody = httpClientTabUtils.extractBody(formData);
         }
         if (bodyType === "rawData") {
             const { rawData } = tabToProcess;
-            httpRequestBody = this.extractBody(rawData);
+            httpRequestBody = httpClientTabUtils.extractBody(rawData);
         }
         if (isGrpc) {
             const { grpcData, grpcConnectionSchema } = tabToProcess;
@@ -1195,9 +841,9 @@ class HttpClientTabs extends Component {
             //     alert(errorMessage);
             //     throw new Error(errorMessage);
             // }
-            // httpRequestBody = this.extractBody(grpcData, grpc);
+            // httpRequestBody = httpClientTabUtils.extractBody(grpcData, grpc);
         }
-        const httpMethod = this.getHttpMethod(tabToProcess);
+        const httpMethod = httpClientTabUtils.getHttpMethod(tabToProcess);
         const httpRequestURL = bodyType === 'grpcData' 
             ? getRequestUrlFromSchema(tabToProcess.grpcConnectionSchema) 
             : tabToProcess.httpURL;
@@ -1228,7 +874,7 @@ class HttpClientTabs extends Component {
         try {
             
             const reqResPair = tabToProcess.eventData;
-            const formattedData = this.getReqResFromTabData(reqResPair, tabToProcess, runId, "History", reqTimestamp, null, httpRequestURLRendered, currentEnvironment, currentEnvironmentVars);
+            const formattedData = httpClientTabUtils.getReqResFromTabData(selectedApp, reqResPair, tabToProcess, runId, "History", reqTimestamp, null, httpRequestURLRendered, currentEnvironment, currentEnvironmentVars);
             const preRequestData = {
                 requestEvent : formattedData.request,
                 environmentName: selectedEnvironment,
@@ -1382,203 +1028,6 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.deleteOutgoingReq(outgoingReqTabId, tabId));
     }
 
-    tryJsonParse(jsonString){
-        try{
-            return JSON.parse(jsonString);
-        }catch(e){}
-        return jsonString;
-    }
-
-    getHttpMethod(tabToSave){
-        return this.isgRPCRequest(tabToSave) ? "POST" : tabToSave.httpMethod;
-    }
-
-    getPathName(url){
-        const urlData = urlParser(url);
-        return _.trim(urlData.pathname, '/');
-    }
-
-
-    getReqResFromTabData(eachPair, tabToSave, runId, type, reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment, tracer, traceDetails, parentSpanId, spanId) {
-        const { headers, queryStringParams, bodyType, rawDataType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus, recordedResponseStatus } = tabToSave;
-
-        const httpRequestEventTypeIndex = eachPair[0].eventType === "HTTPRequest" ? 0 : 1;
-        const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
-        let httpRequestEvent = eachPair[httpRequestEventTypeIndex];
-        let httpResponseEvent = eachPair[httpResponseEventTypeIndex];
-        let httpURL = "";
-
-        // Set the URL
-        if(bodyType === "grpcData") {
-            httpURL = getRequestUrlFromSchema(tabToSave.grpcConnectionSchema);
-        } else {    
-            httpURL = tabToSave.httpURL;
-        }
-        
-        // let apiPath = getApiPathFromRequestEvent(httpRequestEvent); // httpRequestEvent.apiPath ? httpRequestEvent.apiPath : httpRequestEvent.payload[1].path ? httpRequestEvent.payload[1].path : "";
-        // let apiPath = this.getPathName(applyEnvVarsToUrl(tabToSave.httpURL));
-        const parsedUrl = urlParser(applyEnvVarsToUrl(httpURL), PLATFORM_ELECTRON ? {} : true);
-
-        let apiPath = generateApiPath(parsedUrl);
-
-        if(bodyType === "grpcData") {
-            // Trim the all slashes in case of gRPC
-            apiPath = _.trim(apiPath, '/');
-        }
-        
-
-        if(httpRequestEvent.reqId === "NA") {
-            let service = httpRequestEvent.service != "NA" ? httpRequestEvent.service : (parsedUrl.host || "NA");
-            httpRequestEvent = this.updateHttpEvent(apiPath, service, httpRequestEvent);
-            httpResponseEvent = this.updateHttpEvent(apiPath, service, httpResponseEvent);
-            httpRequestEvent.metaData.typeOfRequest = "devtool";
-        } else {
-            if(!httpRequestEvent.metaData.typeOfRequest) httpRequestEvent.metaData.typeOfRequest = "apiCatalog";
-            httpRequestEvent = this.updateHttpEvent(apiPath, "", httpRequestEvent);
-            httpResponseEvent = this.updateHttpEvent(apiPath, "", httpResponseEvent);
-        }
-
-        if(!httpResponseEvent.metaData){
-            httpResponseEvent.metaData = {};
-        }
-        httpRequestEvent.metaData.httpURL = httpURL;
-        httpResponseEvent.metaData.httpURL = httpURL;
-
-        if(httpRequestEvent.parentSpanId === null) {
-            httpRequestEvent.parentSpanId = "NA"
-        }
-
-        if(httpRequestEvent.spanId === null) {
-            httpRequestEvent.spanId = "NA"
-        }
-
-        if(traceDetails?.traceIdForEvent) {
-            httpRequestEvent.traceId = traceDetails.traceIdForEvent
-            httpResponseEvent.traceId = traceDetails.traceIdForEvent
-        }
-
-        if (parentSpanId) {
-            httpRequestEvent.parentSpanId = parentSpanId
-            httpResponseEvent.parentSpanId = parentSpanId
-        }
-
-        if(spanId) {
-            httpRequestEvent.spanId = spanId
-            httpResponseEvent.spanId = spanId
-        }
-
-        if(type === "History") {
-            httpRequestEvent.metaData.collectionId = tabToSave.collectionIdAddedFromClient;
-            httpRequestEvent.metaData.requestId = tabToSave.requestId;
-            if(urlEnvVal) {
-                const path = this.getPathName(urlEnvVal);
-                httpRequestEvent.apiPath = path;
-                httpResponseEvent.apiPath = path;                
-            }else{
-                httpRequestEvent.metaData.href = "";
-            }
-            if(currentEnvironment) {
-                httpRequestEvent.metaData.currentEnvironment = currentEnvironment;
-            }
-            const renderEnvVars = getRenderEnvVars();
-            apiPath = renderEnvVars(apiPath);
-        }
-
-        httpRequestEvent.metaData.hdrs = JSON.stringify(unSelectedRequestParamData(headers));
-        httpRequestEvent.metaData.queryParams = JSON.stringify(unSelectedRequestParamData(queryStringParams));
-        httpRequestEvent.metaData.bodyType = bodyType;
-        httpRequestEvent.metaData.grpcConnectionSchema = JSON.stringify(tabToSave.grpcConnectionSchema);
-        
-        const httpReqestHeaders = extractHeadersToCubeFormat(selectedRequestParamData(headers), type);
-        const httpRequestQueryStringParams = extractQueryStringParamsToCubeFormat(selectedRequestParamData(queryStringParams), type);
-        let httpRequestFormParams = {}, httpRequestBody = "";
-        if (bodyType === "formData") {
-            const { formData } = tabToSave;
-            httpRequestEvent.metaData.formParams = JSON.stringify(unSelectedRequestParamData(formData));
-            httpRequestBody = extractBodyToCubeFormat(selectedRequestParamData(formData), type);
-        }
-        if (bodyType === "multipartData") {
-            const { multipartData } = tabToSave;
-            httpRequestEvent.metaData.multipartData = JSON.stringify(unSelectedRequestParamData(multipartData));
-            httpRequestBody = multipartDataToCubeFormat(selectedRequestParamData(multipartData), type);
-        }
-        if (bodyType === "rawData") {
-            const { rawData } = tabToSave;
-            httpRequestBody = extractBodyToCubeFormat(rawData, type);
-        }
-        if (this.isgRPCRequest(tabToSave)) {
-            const { grpcData, grpcConnectionSchema } = tabToSave;
-            httpRequestBody = extractGrpcBody(grpcData, grpcConnectionSchema); // this.tryJsonParse(grpcData);
-            httpReqestHeaders["content-type"] = ["application/grpc"];          
-        }
-
-        const {traceIdKey, spanIdKey, parentSpanIdKeys} = generateTraceKeys(tracer)
-
-        if(traceDetails?.traceId) {
-            httpReqestHeaders[traceIdKey] = [traceDetails.traceId]
-        }
-
-        if (parentSpanId) {
-            parentSpanIdKeys.forEach((key) => {
-                httpReqestHeaders[key] = [parentSpanId]
-            })
-        }
-        
-        if (spanId && spanIdKey) {
-            httpReqestHeaders[spanIdKey] = [spanId]
-        }
-
-        const httpMethod = this.getHttpMethod(tabToSave);
-        let httpResponseHeaders, httpResponseBody, httpResponseStatus;
-        if (type !== "History") {
-            httpResponseHeaders = recordedResponseHeaders ? extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : responseHeaders ? extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : null;
-            httpResponseBody = this.tryJsonParse(recordedResponseBody);
-            httpResponseStatus = recordedResponseStatus;
-        } else {
-            httpResponseHeaders = responseHeaders ? extractHeadersToCubeFormat(JSON.parse(responseHeaders)) : recordedResponseHeaders ? extractHeadersToCubeFormat(JSON.parse(recordedResponseHeaders)) : null;
-            httpResponseBody = this.tryJsonParse(responseBody);
-            httpResponseStatus = responseStatus;
-        }
-        const reqResCubeFormattedData = {   
-            request: {
-                ...httpRequestEvent,
-                ...(reqTimestamp && { timestamp: reqTimestamp }),
-                runId: runId,
-                runType: "DevTool",
-                payload: [
-                    this.isgRPCRequest(tabToSave) ? "GRPCRequestPayload": "HTTPRequestPayload",
-                    {
-                        hdrs: httpReqestHeaders,
-                        queryParams: httpRequestQueryStringParams,
-                         formParams: [], //This can be removed after few releases. Backward compatibility.
-                        ...(httpRequestBody && { body: httpRequestBody }),
-                        method: httpMethod.toUpperCase(),
-                        path: apiPath,
-                        pathSegments: apiPath.split("/"),
-                        payloadState :  this.isgRPCRequest(tabToSave) ? "UnwrappedDecoded": "WrappedDecoded",
-                    }
-                ]
-            },
-            response: {
-                ...httpResponseEvent,
-                ...(resTimestamp && { timestamp: resTimestamp }),
-                runId: runId,
-                runType: "DevTool",
-                payload: [
-                    this.isgRPCRequest(tabToSave) ? "GRPCResponsePayload": "HTTPResponsePayload",
-                    {
-                        hdrs: httpResponseHeaders,
-                        body: httpResponseBody,
-                        status: httpResponseStatus,
-                        payloadState : "WrappedDecoded",
-                        ...(this.isgRPCRequest(tabToSave) && {path: apiPath}), // path not needed in non-grpc case
-                    }
-                ]
-            }
-        }
-        return reqResCubeFormattedData;
-    }
-
     saveToHistoryAndLoadTrace = (tabId, recordingId, runId="", reqTimestamp="", resTimestamp="", urlEnvVal="", currentEnvironment="") => {
         const { 
             httpClient: { 
@@ -1603,7 +1052,7 @@ class HttpClientTabs extends Component {
         try {
             if (reqResPair.length > 0) {
                 const data = [];
-                data.push(this.getReqResFromTabData(reqResPair, tabToProcess, runId, "History", reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment));
+                data.push(httpClientTabUtils.getReqResFromTabData(selectedApp, reqResPair, tabToProcess, runId, "History", reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment));
                 const apiConfig = {
                     cancelToken: tabToProcess.abortRequest.cancelToken
                 }
@@ -1656,65 +1105,6 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.setUpdatedModalUserCollectionDetails(evt.target.name, evt.target.value));
     }
 
-    formatHttpEventToReqResObject(reqId, httpEventReqResPair, isOutgoingRequest, existingId) {
-        const httpRequestEventTypeIndex = httpEventReqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
-        const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
-        const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
-        const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
-
-        const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType, multipartData, httpURL }  = extractParamsFromRequestEvent(httpRequestEvent);
-        
-        let reqObject = {
-            id: existingId || uuidv4(),
-            httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-            httpURL: httpURL,
-            httpURLShowOnly: httpURL,
-            headers: headers,
-            queryStringParams: queryParams,
-            bodyType: multipartData && multipartData.length > 0 ? "multipartData" : formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : grpcData && grpcData.length > 0 ? "grpcData" : "formData",
-            formData: formData,
-            multipartData,
-            rawData: rawData,
-            rawDataType: rawDataType,
-            grpcDataType: grpcDataType,
-            paramsType: "showQueryParams",
-            responseStatus: "NA",
-            responseStatusText: "",
-            responseHeaders: "",
-            responseBody: "",
-            recordedResponseHeaders: (httpResponseEvent && httpResponseEvent.payload[1].hdrs) ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
-            recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
-            recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
-            responseBodyType: "json",
-            requestId: reqId,
-            outgoingRequestIds: [],
-            eventData: httpEventReqResPair,
-            showOutgoingRequestsBtn: false,
-            showSaveBtn: true,
-            outgoingRequests: [],
-            showCompleteDiff: false,
-            isOutgoingRequest: isOutgoingRequest,
-            service: httpRequestEvent.service,
-            recordingIdAddedFromClient: "",
-            collectionIdAddedFromClient: httpRequestEvent.collection,
-            traceIdAddedFromClient: httpRequestEvent.traceId,
-            apiPath: httpRequestEvent.apiPath,
-            requestRunning: false,
-            showTrace: null,
-            metaData: httpResponseEvent ? httpResponseEvent.metaData : {},
-            grpcData: applyGrpcDataToRequestObject(grpcData, httpRequestEvent.metaData.grpcConnectionSchema),
-            grpcConnectionSchema: httpRequestEvent.metaData.grpcConnectionSchema 
-                ? JSON.parse(httpRequestEvent.metaData.grpcConnectionSchema)
-                : 
-                    {
-                        app: "",
-                        service: "",
-                        endpoint: "", 
-                        method: ""
-                    }
-        };
-        return reqObject;
-    }
 
     loadSavedTrace(tabId, traceId, reqId, runId, apiPath, apiConfig, isRefetchTrace) {
         const { 
@@ -1759,7 +1149,7 @@ class HttpClientTabs extends Component {
                                 if(isRefetchTrace && currentTabRecordedHistory && currentTabRecordedHistory.requestId == reqId){
                                     existingId = currentTabRecordedHistory.id;
                                 }
-                                ingressReqObj = this.formatHttpEventToReqResObject(reqId, ingressReqResPair, false, existingId);
+                                ingressReqObj = httpClientTabUtils.formatHttpEventToReqResObject(reqId, ingressReqResPair, false, existingId);
                             }
                             for (let eachReqId of reqIdArray) {
                                 const reqResPair = result.objects.filter(eachReq => {
@@ -1773,7 +1163,7 @@ class HttpClientTabs extends Component {
                                             existingId = matchigRequest.id;
                                         }
                                     }
-                                    let reqObject = this.formatHttpEventToReqResObject(eachReqId, reqResPair, true, existingId);
+                                    let reqObject = httpClientTabUtils.formatHttpEventToReqResObject(eachReqId, reqResPair, true, existingId);
                                     ingressReqObj.outgoingRequests.push(reqObject);
                                 }
                             }
@@ -1803,7 +1193,7 @@ class HttpClientTabs extends Component {
         if (!reqObject) {
             const { cube: { selectedApp } } = this.props;
             const customerId = user.customer_name;
-            const eventData = this.generateEventdata(selectedApp, customerId, traceDetails);
+            const eventData = httpClientTabUtils.generateEventdata(selectedApp, customerId, traceDetails);
             const traceHeaders = []
             traceHeaders.push({
                 description: "",
@@ -2124,7 +1514,6 @@ class HttpClientTabs extends Component {
                             updateBodyOrRawDataType={this.updateBodyOrRawDataType}
                             replaceAllParams={this.replaceAllParams}
                             driveRequest={this.driveRequest}
-                            getReqResFromTabData={this.getReqResFromTabData.bind(this)}
                             handleRowClick={this.handleRowClick}
                             handleTestRowClick={this.handleTestRowClick}
                             setAsReference={this.setAsReference}
