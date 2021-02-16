@@ -6,6 +6,7 @@ package com.cube.ws;
 import static io.cube.agent.Constants.AUTHORIZATION_HEADER;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -57,7 +58,7 @@ public class ReplayWS extends ReplayBasicWS {
 
     @Override
     protected CompletableFuture<Void> afterReplay(HttpHeaders headers, MultivaluedMap<String, String> formParams,
-                                                  Recording recording, Replay replay, Optional<Analyzer> analyzerOpt) {
+                                                  List<Recording> recording, Replay replay, Optional<Analyzer> analyzerOpt) {
 
         return CompletableFuture.runAsync(() -> analyze(replay, analyzerOpt));
     }
