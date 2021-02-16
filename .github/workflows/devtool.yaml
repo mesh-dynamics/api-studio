@@ -30,6 +30,8 @@ jobs:
         with:
           p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE }}
           p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
+      - name: yq - portable yaml processor
+        uses: mikefarah/yq@v3.4.1
       - name: Build for macOS
         if: ${{ github.event_name == 'push'}}
         env:
@@ -91,6 +93,8 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - run: git fetch --prune --unshallow --tags
+      - name: yq - portable yaml processor
+        uses: mikefarah/yq@v3.4.1
       - name: Build for linux
         if: ${{ github.event_name == 'push'}}
         env:
@@ -133,7 +137,8 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - run: git fetch --prune --unshallow --tags
-
+      - name: yq - portable yaml processor
+        uses: mikefarah/yq@v3.4.1
       - name: Build for windows
         shell: pwsh
         if: ${{ github.event_name == 'push'}}
