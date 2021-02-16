@@ -26,7 +26,7 @@ public class ReplayContext {
 
     public ReplayContext(Event request , Instant reqEndTs , Optional<ReplayContext> currentCtx){
         this.reqTraceId = Optional.of(request.getTraceId());
-        this.reqStartTs = Optional.ofNullable(request.timestamp);
+        this.reqStartTs = Optional.of(request.timestamp);
         this.reqEndTs = Optional.ofNullable(reqEndTs);
         this.currentCollection = currentCtx.flatMap(ctx->ctx.currentCollection);
         this.reqSpanId = Optional.of(request.getSpanId());
