@@ -2149,6 +2149,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> runId = getStrField(doc, RUNIDF);
 
         Optional<Replay> replay = Optional.empty();
+        Optional<String> templateSetName = getStrField(doc, TEMPLATE_SET_NAME_F);
+        Optional<String> templateSetLabel = getStrField(doc, TEMPLATE_SET_LABEL_F);
         if (endpoint.isPresent() && customerId.isPresent() && app.isPresent() &&
             instanceId.isPresent() && !collection.isEmpty()
             && replayId.isPresent() && async.isPresent() && status.isPresent() && userId.isPresent()
@@ -2178,7 +2180,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 analysisCompleteTimestamp.ifPresent(builder::withAnalysisCompleteTimestamp);
                 dynamicInjectionConfigVersion.ifPresent(builder::withDynamicInjectionConfigVersion);
                 staticInjectionMap.ifPresent(builder::withStaticInjectionMap);
-
+                templateSetName.ifPresent(builder::withTemplateSetName);
+                templateSetLabel.ifPresent(builder::withTemplateSetLabel);
                 replay = Optional.of(builder.build());
             } catch (Exception e) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
