@@ -327,32 +327,39 @@ export const httpClientActions = {
             return b.res[0].reqTimestamp - a.res[0].reqTimestamp;
         });
         apiTraces.forEach((eachApiTrace) => {
-            const timeStamp = eachApiTrace.res[0].reqTimestamp,
-                objectKey = new Date(timeStamp * 1000).toDateString();
-            eachApiTrace.res.map((eachApiTraceEvent) => {
-                eachApiTraceEvent["name"] = eachApiTraceEvent["apiPath"];
-                eachApiTraceEvent["id"] = eachApiTraceEvent["requestEventId"];
-                eachApiTraceEvent["toggled"] = false;
-                eachApiTraceEvent["recordingIdAddedFromClient"] = collection.id;
-                eachApiTraceEvent["traceIdAddedFromClient"] = eachApiTrace.traceId;
-                eachApiTraceEvent["collectionIdAddedFromClient"] = eachApiTrace.collection;
-            });
+            try{
+                const timeStamp = eachApiTrace.res[0].reqTimestamp,
+                    objectKey = new Date(timeStamp * 1000).toDateString();
+                eachApiTrace.res.map((eachApiTraceEvent) => {
+                    eachApiTraceEvent["name"] = eachApiTraceEvent["apiPath"];
+                    eachApiTraceEvent["id"] = eachApiTraceEvent["requestEventId"];
+                    eachApiTraceEvent["toggled"] = false;
+                    eachApiTraceEvent["recordingIdAddedFromClient"] = collection.id;
+                    eachApiTraceEvent["traceIdAddedFromClient"] = eachApiTrace.traceId;
+                    eachApiTraceEvent["collectionIdAddedFromClient"] = eachApiTrace.collection;
+                });
 
-            if (objectKey in cubeRunHistory) {
-                const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
-                    customID: "spanId", parentProperty: "parentSpanId"
-                });
-                cubeRunHistory[objectKey].push({
-                    ...apiFlatArrayToTree[0]
-                });
-            } else {
-                cubeRunHistory[objectKey] = [];
-                const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
-                    customID: "spanId", parentProperty: "parentSpanId"
-                });
-                cubeRunHistory[objectKey].push({
-                    ...apiFlatArrayToTree[0]
-                });
+                if (objectKey in cubeRunHistory) {
+                    const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
+                        customID: "spanId", parentProperty: "parentSpanId"
+                    });
+                    cubeRunHistory[objectKey].push({
+                        ...apiFlatArrayToTree[0]
+                    });
+                } else {
+                    cubeRunHistory[objectKey] = [];
+                    const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
+                        customID: "spanId", parentProperty: "parentSpanId"
+                    });
+                    cubeRunHistory[objectKey].push({
+                        ...apiFlatArrayToTree[0]
+                    });
+                }
+            }
+            catch(error){
+                //This can occur due to some apitrace is not properly formatted in rare scenarios. 
+                //If not cached at individual trace lavel, complete History would not be visible to user.
+                console.error("Error in parsing apiTrace to tree ", error);
             }
         });
         let currentEndTime = null;
