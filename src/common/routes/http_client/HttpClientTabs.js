@@ -43,8 +43,10 @@ import {
 } from "../../utils/http_client/utils.js";
 import * as httpClientTabUtils from "../../utils/http_client/httpClientTabs.utils.js";
 import { 
-    extractGrpcBody, 
-    getRequestUrlFromSchema
+    extractGrpcBody,
+    applyGrpcDataToRequestObject,
+    getRequestUrlFromSchema,
+    setGrpcDataFromDescriptor
 } from "../../utils/http_client/grpc-utils"; 
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
 import { getParameterCaseInsensitive, Base64Binary } from '../../../shared/utils';
@@ -673,7 +675,7 @@ class HttpClientTabs extends Component {
     showOutgoingRequests(tabId, traceId, collectionId, recordingId, outgoingEvents ) {    
         const { 
             dispatch,
-            httpClient: { tabs },
+            httpClient: { tabs, appGrpcSchema },
             cube: { selectedApp: app },
         } = this.props; 
         const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
@@ -699,19 +701,20 @@ class HttpClientTabs extends Component {
                     const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
                     const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
                     
-                    const { headers, queryParams, formData, rawData, rawDataType, multipartData, httpURL }  = extractParamsFromRequestEvent(httpRequestEvent);
+                    const { headers, queryParams, formData, rawData, rawDataType, multipartData, httpURL, grpcData, grpcDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
                     let reqObject = {
                         httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
                         httpURL: httpURL,
                         httpURLShowOnly: httpURL,
                         headers: headers,
                         queryStringParams: queryParams,
-                        bodyType: multipartData && multipartData.length > 0 ? "multipartData" :formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : "formData", //multipart
+                        bodyType: multipartData && multipartData.length > 0 ? "multipartData" : formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : grpcData ? "grpcData" : "formData",
                         formData: formData,
                         multipartData,
                         rawData: rawData,
                         rawDataType: rawDataType,
-                        paramsType: "showQueryParams",
+                        grpcDataType,
+                        paramsType: grpcData ? "showBody" : "showQueryParams",
                         responseStatus: "NA",
                         responseStatusText: "",
                         responseHeaders: "",
@@ -730,12 +733,20 @@ class HttpClientTabs extends Component {
                         traceIdAddedFromClient: traceId,
                         requestRunning: false,
                         showTrace: null,
-                        grpcConnectionSchema: {
-                            app,
-                            service: '',
-                            method: '',
-                            endpoint: ''
-                        }
+                        grpcData: setGrpcDataFromDescriptor(
+                            appGrpcSchema,
+                            applyGrpcDataToRequestObject(grpcData, httpRequestEvent.metaData.grpcConnectionSchema),
+                          ),
+                        grpcConnectionSchema: httpRequestEvent.metaData.grpcConnectionSchema 
+                            ? JSON.parse(httpRequestEvent.metaData.grpcConnectionSchema)
+                            : ({
+                                app: app,
+                                service: "",
+                                endpoint: "", 
+                                method: ""
+                            }),
+                        hideInternalHeaders: true
+                
                     };
                     const tabId = uuidv4();
                     outgoingRequests.push({

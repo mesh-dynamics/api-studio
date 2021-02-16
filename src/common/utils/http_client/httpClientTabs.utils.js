@@ -85,7 +85,7 @@ export function createRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFrom
             recordingType: refRequestEventData.recordingType,
             metaData: {}
         };
-
+        
         let tabData = {
             id: uuidv4(),
             requestId: toBeCopiedFromData.requestId,
@@ -99,7 +99,7 @@ export function createRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFrom
             multipartData: toBeCopiedFromData.multipartData,
             rawData: toBeCopiedFromData.rawData,
             rawDataType: toBeCopiedFromData.rawDataType,
-            paramsType: "showQueryParams",
+            paramsType: toBeCopiedFromData.grpcData ? "showBody" : "showQueryParams",
             responseStatus: toBeCopiedFromData.responseStatus,
             responseStatusText: toBeCopiedFromData.responseStatusText,
             responseHeaders: toBeCopiedFromData.responseHeaders,
@@ -119,8 +119,8 @@ export function createRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFrom
             recordingIdAddedFromClient: toBeUpdatedData.recordingIdAddedFromClient,
             collectionIdAddedFromClient: toBeUpdatedData.collectionIdAddedFromClient,
             traceIdAddedFromClient: toBeUpdatedData.traceIdAddedFromClient,
-            grpcData: toBeUpdatedData.grpcData,
-            grpcConnectionSchema: toBeUpdatedData.grpcConnectionSchema,
+            grpcData: toBeCopiedFromData.grpcData,
+            grpcConnectionSchema: toBeCopiedFromData.grpcConnectionSchema,
             recordedHistory: [],
             hasChanged: true,
         }
@@ -162,7 +162,7 @@ export function copyRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFromDa
             rawDataType: toBeCopiedFromData.rawDataType,
             rawData: toBeCopiedFromData.rawData,
             grpcData: toBeCopiedFromData.grpcData,
-            paramsType: toBeUpdatedData.paramsType,
+            paramsType: toBeCopiedFromData.paramsType,
             responseStatus: toBeCopiedFromData.responseStatus,
             responseStatusText: toBeCopiedFromData.responseStatusText,
             recordedResponseStatus: toBeCopiedFromData.recordedResponseStatus,
@@ -385,7 +385,7 @@ export function formatHttpEventToReqResObject(reqId, httpEventReqResPair, isOutg
         rawData: rawData,
         rawDataType: rawDataType,
         grpcDataType: grpcDataType,
-        paramsType: "showQueryParams",
+        paramsType: grpcData ? "showBody" : "showQueryParams",
         responseStatus: "NA",
         responseStatusText: "",
         responseHeaders: "",
