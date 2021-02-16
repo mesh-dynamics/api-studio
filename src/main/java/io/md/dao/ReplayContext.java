@@ -12,6 +12,7 @@ public class ReplayContext {
     public Optional<Instant> reqStartTs;
     public Optional<Instant> reqEndTs;
     public Optional<String> currentCollection;
+    public Optional<String> reqSpanId;
 
     public final Map<String , Instant> mockReqsMatchInfo = new HashMap<>();
 
@@ -20,13 +21,15 @@ public class ReplayContext {
         reqStartTs = Optional.empty();
         reqEndTs = Optional.empty();
         currentCollection = Optional.empty();
+        reqSpanId = Optional.empty();
     }
 
-    public ReplayContext(String reqTraceId , Instant reqStartTs , Instant reqEndTs , String currentCollection){
-        this.reqTraceId = Optional.ofNullable(reqTraceId);
-        this.reqStartTs = Optional.ofNullable(reqStartTs);
+    public ReplayContext(Event request , Instant reqEndTs , Optional<ReplayContext> currentCtx){
+        this.reqTraceId = Optional.of(request.getTraceId());
+        this.reqStartTs = Optional.of(request.timestamp);
         this.reqEndTs = Optional.ofNullable(reqEndTs);
-        this.currentCollection = Optional.ofNullable(currentCollection);
+        this.currentCollection = currentCtx.flatMap(ctx->ctx.currentCollection);
+        this.reqSpanId = Optional.of(request.getSpanId());
     }
 
     @JsonIgnore
