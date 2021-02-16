@@ -200,6 +200,11 @@
 		</dependency>
 		<!-- these are needed for jersey injection to work -->
 		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<version>4.0.1</version>
+		</dependency>
+		<dependency>
 			<groupId>org.glassfish.jersey.core</groupId>
 			<artifactId>jersey-server</artifactId>
 			<version>${version.jersey}</version>
@@ -275,7 +280,7 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>agent</artifactId>
-			<version>1.2.0.0</version>
+			<version>1.2.2.0</version>
 
 			<exclusions>
 				<exclusion>
@@ -292,7 +297,7 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>commons</artifactId>
-			<version>1.2.5.0</version>
+			<version>1.2.20.0</version>
 
 			<exclusions>
 				<exclusion>
