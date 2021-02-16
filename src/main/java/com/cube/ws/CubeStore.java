@@ -2414,13 +2414,21 @@ public class CubeStore {
 
     @GET
     @Path("/getLatestTemplateSet/{customerId}/{app}/{templateSetName}")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response getLatestTemplateSet(@Context UriInfo uriInfo, @PathParam("customerId")
         String customerId, @PathParam("app") String app, @PathParam("templateSetName")
         String templateSetName) {
 
-       return rrstore.getLatestTemplateSet(customerId, app, templateSetName)
-           .map(templateSet -> Response.ok().entity(templateSet).build())
-            .orElse(Response.serverError().entity("Unable to find the latest template set").build());
+       try {
+           return rrstore.getLatestTemplateSet(customerId, app, templateSetName)
+               .map(UtilException.rethrowFunction(
+                   templateSet -> Response.ok().entity(jsonMapper.writeValueAsString(templateSet)).build()))
+               .orElse(
+                   Response.serverError().entity("Unable to find the latest template set").build());
+       } catch (Exception e) {
+            return Response.serverError().entity("Error while converting template set to json string "
+                + e.getMessage()).build();
+       }
     }
 
 
@@ -2430,9 +2438,16 @@ public class CubeStore {
         String customerId, @PathParam("app") String app, @PathParam("templateSetVersion")
         String templateSetVersion) {
 
-        return rrstore.getTemplateSet(customerId, app, templateSetVersion)
-            .map(templateSet -> Response.ok().entity(templateSet).build())
-            .orElse(Response.serverError().entity("Unable to find template set").build());
+        try {
+            return rrstore.getTemplateSet(customerId, app, templateSetVersion)
+                .map(UtilException.rethrowFunction(
+                    templateSet -> Response.ok().entity(jsonMapper.writeValueAsString(templateSet)).build()))
+                .orElse(
+                    Response.serverError().entity("Unable to find the latest template set").build());
+        } catch (Exception e) {
+            return Response.serverError().entity("Error while converting template set to json string "
+                + e.getMessage()).build();
+        }
     }
 
     @POST
