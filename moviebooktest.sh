@@ -70,7 +70,7 @@ call_replay() {
 	done
 
 	REPLAY_PATHS=${TEMP_PATH::${#TEMP_PATH}-1}
-	BODY="$REPLAY_PATHS&endPoint=$REPLAY_ENDPOINT&instanceId=$INSTANCE_ID&templateSetVer=DEFAULT&userId=$USER_ID&transforms=$TRANSFORMS"
+	BODY="$REPLAY_PATHS&endPoint=$REPLAY_ENDPOINT&instanceId=$INSTANCE_ID&analyze=true&templateSetVer=DEFAULT&userId=$USER_ID&transforms=$TRANSFORMS"
 
 	COUNT=0
 	while [ "$http_code" != "200" ] || [ "$REPLAY_ID" = "none" ] && [ "$COUNT" != "5" ]; do
