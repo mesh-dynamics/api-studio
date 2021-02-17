@@ -194,9 +194,9 @@ main() {
   generate_traffic 5
   sleep 20
   stop_recording
-  sleep 20
 	kubectl get deploy -o name -l app=springboot -n $DRONE_COMMIT_AUTHOR-springboot | xargs -n1 -t kubectl rollout restart -n $DRONE_COMMIT_AUTHOR-springboot
 	kubectl get deploy -o name -l app=springboot -n $DRONE_COMMIT_AUTHOR-springboot | xargs -n1 -t kubectl rollout status -n $DRONE_COMMIT_AUTHOR-springboot
+  sleep 30
   replay
   analyze
 	clean $DRONE_COMMIT_AUTHOR-springboot springboot
