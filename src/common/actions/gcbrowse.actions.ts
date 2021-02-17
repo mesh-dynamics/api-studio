@@ -1,9 +1,10 @@
 import { gcbrowseConstants } from '../constants';
 import { cubeService } from '../services';
+import { IActionsType } from './actions.types';
 import { cubeActions } from './cube.actions';
 
 
-const gcbrowseActions = {
+const gcbrowseActions : IActionsType= {
     beginFetch: () => ({ type: gcbrowseConstants.REQUEST_BEGIN }),
 
     fetchSuccess: () => ({ type: gcbrowseConstants.REQUEST_SUCCESS }),
@@ -14,13 +15,13 @@ const gcbrowseActions = {
 
     loadUserGoldens: (payload) => ({ type: gcbrowseConstants.LOAD_USER_GOLDENS, payload }),
 
-    fetchGoldensCollections: (selectedSource) => async (dispatch, getState) => {
+    fetchGoldensCollections: (selectedSource: string) => async (dispatch, getState) => {
         const { cube: { selectedApp }, authentication: { user }} = getState();
 
         dispatch(gcbrowseActions.beginFetch());
 
         try {
-            const results = await cubeService.fetchCollectionList(user, selectedApp, selectedSource);
+            const results = await cubeService.fetchCollectionList(user, selectedApp!, selectedSource);
 
             dispatch(gcbrowseActions.fetchSuccess());
 
