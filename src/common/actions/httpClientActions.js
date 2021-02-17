@@ -199,9 +199,9 @@ export const httpClientActions = {
         try {
             const response = await cubeService.fetchGrpcProtoDescriptor(customerId, app);
 
-            dispatch(httpClientActions.setProtoDescriptorValues({ [app]: mergeApplicationProtoFiles(response) }));
+            dispatch(httpClientActions.setProtoDescriptorValues(mergeApplicationProtoFiles(response)));
         } catch (e) {
-            dispatch(httpClientActions.setProtoDescriptorValues({ [app]: {} }));
+            dispatch(httpClientActions.setProtoDescriptorValues({}));
             // console.log('An error occured trying to load schema', e);
         }
     },

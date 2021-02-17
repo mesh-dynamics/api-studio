@@ -46,7 +46,8 @@ import {
     extractGrpcBody,
     applyGrpcDataToRequestObject,
     getRequestUrlFromSchema,
-    setGrpcDataFromDescriptor
+    setGrpcDataFromDescriptor,
+    getConnectionSchemaFromMetadataOrApiPath
 } from "../../utils/http_client/grpc-utils"; 
 import { parseCurlCommand } from '../../utils/http_client/curlparser';
 import { getParameterCaseInsensitive, Base64Binary } from '../../../shared/utils';
@@ -701,20 +702,19 @@ class HttpClientTabs extends Component {
                     const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
                     const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
                     
-                    const { headers, queryParams, formData, rawData, rawDataType, multipartData, httpURL, grpcData, grpcDataType }  = extractParamsFromRequestEvent(httpRequestEvent);
+                    const { headers, queryParams, formData, rawData, rawDataType, multipartData, httpURL, grpcRawData }  = extractParamsFromRequestEvent(httpRequestEvent);
                     let reqObject = {
                         httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
                         httpURL: httpURL,
                         httpURLShowOnly: httpURL,
                         headers: headers,
                         queryStringParams: queryParams,
-                        bodyType: multipartData && multipartData.length > 0 ? "multipartData" : formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : grpcData ? "grpcData" : "formData",
+                        bodyType: multipartData && multipartData.length > 0 ? "multipartData" : formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : grpcRawData ? "grpcData" : "formData",
                         formData: formData,
                         multipartData,
                         rawData: rawData,
                         rawDataType: rawDataType,
-                        grpcDataType,
-                        paramsType: grpcData ? "showBody" : "showQueryParams",
+                        paramsType: grpcRawData ? "showBody" : "showQueryParams",
                         responseStatus: "NA",
                         responseStatusText: "",
                         responseHeaders: "",
@@ -735,16 +735,9 @@ class HttpClientTabs extends Component {
                         showTrace: null,
                         grpcData: setGrpcDataFromDescriptor(
                             appGrpcSchema,
-                            applyGrpcDataToRequestObject(grpcData, httpRequestEvent.metaData.grpcConnectionSchema),
+                            applyGrpcDataToRequestObject(grpcRawData, httpRequestEvent.metaData.grpcConnectionSchema, httpRequestEvent.apiPath),
                           ),
-                        grpcConnectionSchema: httpRequestEvent.metaData.grpcConnectionSchema 
-                            ? JSON.parse(httpRequestEvent.metaData.grpcConnectionSchema)
-                            : ({
-                                app: app,
-                                service: "",
-                                endpoint: "", 
-                                method: ""
-                            }),
+                        grpcConnectionSchema: getConnectionSchemaFromMetadataOrApiPath(httpRequestEvent.metaData.grpcConnectionSchema, httpRequestEvent.apiPath),
                         hideInternalHeaders: true
                 
                     };

@@ -27,6 +27,7 @@ import CreateCollection from "./CreateCollection";
 import { extractParamsFromRequestEvent } from '../../utils/http_client/utils';
 import { 
   applyGrpcDataToRequestObject, 
+  getConnectionSchemaFromMetadataOrApiPath, 
   setGrpcDataFromDescriptor 
 } from '../../utils/http_client/grpc-utils';
 import EditableLabel from "./EditableLabel";
@@ -309,8 +310,13 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                 httpRequestEventTypeIndex === 0 ? 1 : 0;
               const httpRequestEvent = reqResPair[httpRequestEventTypeIndex];
               const httpResponseEvent = reqResPair[httpResponseEventTypeIndex];
-              const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType, multipartData, httpURL } = extractParamsFromRequestEvent(httpRequestEvent);
+              const { headers, queryParams, formData, rawData, rawDataType, grpcRawData, multipartData, httpURL } = extractParamsFromRequestEvent(httpRequestEvent);
 
+              /* Notes for understanding: 
+                  grpcRawData from extracted params is actual raw Data for gRPC Requests
+                  grpcData in reqObject event[Tab data] is the IGrpcData type object with package.service.method.data form, 
+                    where valueof(package.service.method.data) = grpcRawData (actual rawData)
+              */
               const collectionDetails = _.find(this.props.httpClient.userCollections, { collec: node.collectionIdAddedFromClient });
               const collectionName = collectionDetails?.name || "";
               //TODO: Create a separate class to handle below object
@@ -327,13 +333,12 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                       ? "formData"
                       : rawData && rawData.length > 0
                         ? "rawData"
-                        : grpcData && grpcData.length ? "grpcData" : "formData",
+                        : grpcRawData && grpcRawData.length ? "grpcData" : "formData",
                 formData: formData,
                 multipartData,
                 rawData: rawData,
                 rawDataType: rawDataType,
-                grpcDataType,
-                paramsType: grpcData && grpcData.length ? "showBody" : "showQueryParams",
+                paramsType: grpcRawData && grpcRawData.length ? "showBody" : "showQueryParams",
                 responseStatus: "NA",
                 responseStatusText: "",
                 responseHeaders: "",
@@ -378,16 +383,9 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                 showTrace: null,
                 grpcData: setGrpcDataFromDescriptor(
                             appGrpcSchema,
-                            applyGrpcDataToRequestObject(grpcData, httpRequestEvent.metaData.grpcConnectionSchema),
+                            applyGrpcDataToRequestObject(grpcRawData, httpRequestEvent.metaData.grpcConnectionSchema),
                           ),
-                grpcConnectionSchema: httpRequestEvent.metaData.grpcConnectionSchema 
-                  ? JSON.parse(httpRequestEvent.metaData.grpcConnectionSchema)
-                  : ({
-                      app: selectedApp,
-                      service: "",
-                      endpoint: "", 
-                      method: ""
-                    }),
+                grpcConnectionSchema: getConnectionSchemaFromMetadataOrApiPath(httpRequestEvent.metaData.grpcConnectionSchema, httpRequestEvent.apiPath),
                   hideInternalHeaders: true
               };
               //todo: Test below

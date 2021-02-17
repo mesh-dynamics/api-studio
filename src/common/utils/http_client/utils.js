@@ -5,6 +5,10 @@ import {applyEnvVarsToUrl, getRenderEnvVars } from './envvar';
 import cryptoRandomString from 'crypto-random-string';
 import { store } from '../../helpers';
 import URLParse from "url-parse";
+import { 
+    applyGrpcDataToRequestObject, 
+    getGrpcSchemaFromMetaData,
+  } from '../../utils/http_client/grpc-utils';
 
 const generateRunId = () => {
     return new Date(Date.now()).toISOString()
@@ -145,7 +149,7 @@ const getMultipartField = (key, field) => {
 }
 
 const extractParamsFromRequestEvent = (httpRequestEvent) =>{
-    let headers = [], queryParams = [], formData = [], multipartData = [], rawData = "", rawDataType = "", grpcData = "", grpcDataType = "";
+    let headers = [], queryParams = [], formData = [], multipartData = [], rawData = "", rawDataType = "", grpcRawData = "";
     const isGrpc = httpRequestEvent.payload[0] =="GRPCRequestPayload";
     for (let eachHeader in httpRequestEvent.payload[1].hdrs) {
         headers.push({
@@ -217,8 +221,7 @@ const extractParamsFromRequestEvent = (httpRequestEvent) =>{
                     const data = JSON.stringify(body, undefined, 4)
                     const dataType = "json";
                     if(isGrpc){
-                        grpcData = data;
-                        grpcDataType = dataType;
+                        grpcRawData = data;
                     }else{
                         rawData = data;
                         rawDataType = dataType;
@@ -229,8 +232,7 @@ const extractParamsFromRequestEvent = (httpRequestEvent) =>{
             }
         } else {
             if(isGrpc){
-                grpcData = body;
-                grpcDataType = "json";
+                grpcRawData = body;
             }else{
 
                 rawData = body;
@@ -279,16 +281,17 @@ const extractParamsFromRequestEvent = (httpRequestEvent) =>{
       }
 
     return{
-        headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType, multipartData, httpURL
+        headers, queryParams, formData, rawData, rawDataType, grpcRawData, multipartData, httpURL
     }
 }
 
 const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) => {
+    debugger; //remove
     const httpRequestEventTypeIndex = httpEventReqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
     const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
     const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
     const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
-    const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType, multipartData }  = extractParamsFromRequestEvent(httpRequestEvent);
+    const { headers, queryParams, formData, rawData, rawDataType, grpcRawData, multipartData }  = extractParamsFromRequestEvent(httpRequestEvent);
     let reqObject = {
         httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
         httpURL: "{{{url}}}/" + httpRequestEvent.apiPath,
@@ -301,13 +304,12 @@ const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) =
         ? "formData"
         : rawData?.length > 0
             ? "rawData"
-            : grpcData?.length ? "grpcData" : "formData",
+            : grpcRawData?.length ? "grpcData" : "formData",
         formData: formData,
         multipartData: multipartData,
         rawData: rawData,
-        grpcData: grpcData,
         rawDataType: rawDataType,
-        paramsType: grpcData && grpcData.length ? "showBody": "showQueryParams",
+        paramsType: grpcRawData && grpcRawData.length ? "showBody": "showQueryParams",
         responseStatus: "NA",
         responseStatusText: "",
         responseHeaders: "",
@@ -331,6 +333,9 @@ const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) =
         requestRunning: false,
         showTrace: null,
         grpcConnectionSchema: httpRequestEvent.grpcConnectionSchema,
+        grpcData: 
+            applyGrpcDataToRequestObject(grpcRawData, httpRequestEvent.metaData.grpcConnectionSchema),
+        grpcConnectionSchema: getConnectionSchemaFromMetadataOrApiPath(httpRequestEvent.metaData.grpcConnectionSchema, httpRequestEvent.apiPath),
         hideInternalHeaders: true
     };
     return reqObject;

@@ -27,7 +27,7 @@ import _ from 'lodash';
 import { getRenderEnvVars,applyEnvVarsToUrl } from "../../utils/http_client/envvar";
 
 import { applyGrpcDataToRequestObject, extractGrpcBody,
-    getRequestUrlFromSchema } from "../../utils/http_client/grpc-utils"; 
+    getRequestUrlFromSchema, getConnectionSchemaFromMetadataOrApiPath } from "../../utils/http_client/grpc-utils"; 
 
 export function createRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFromData) {
     let referenceEventData = toBeCopiedFromData ? toBeCopiedFromData.eventData : null;
@@ -370,7 +370,7 @@ export function formatHttpEventToReqResObject(reqId, httpEventReqResPair, isOutg
     const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
     const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
 
-    const { headers, queryParams, formData, rawData, rawDataType, grpcData, grpcDataType, multipartData, httpURL }  = extractParamsFromRequestEvent(httpRequestEvent);
+    const { headers, queryParams, formData, rawData, rawDataType, grpcRawData, multipartData, httpURL }  = extractParamsFromRequestEvent(httpRequestEvent);
     
     let reqObject = {
         id: existingId || uuidv4(),
@@ -379,13 +379,12 @@ export function formatHttpEventToReqResObject(reqId, httpEventReqResPair, isOutg
         httpURLShowOnly: httpURL,
         headers: headers,
         queryStringParams: queryParams,
-        bodyType: multipartData && multipartData.length > 0 ? "multipartData" : formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : grpcData && grpcData.length > 0 ? "grpcData" : "formData",
+        bodyType: multipartData && multipartData.length > 0 ? "multipartData" : formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : grpcRawData && grpcRawData.length > 0 ? "grpcData" : "formData",
         formData: formData,
         multipartData,
         rawData: rawData,
         rawDataType: rawDataType,
-        grpcDataType: grpcDataType,
-        paramsType: grpcData ? "showBody" : "showQueryParams",
+        paramsType: grpcRawData ? "showBody" : "showQueryParams",
         responseStatus: "NA",
         responseStatusText: "",
         responseHeaders: "",
@@ -410,16 +409,8 @@ export function formatHttpEventToReqResObject(reqId, httpEventReqResPair, isOutg
         requestRunning: false,
         showTrace: null,
         metaData: httpResponseEvent ? httpResponseEvent.metaData : {},
-        grpcData: applyGrpcDataToRequestObject(grpcData, httpRequestEvent.metaData.grpcConnectionSchema),
-        grpcConnectionSchema: httpRequestEvent.metaData.grpcConnectionSchema 
-            ? JSON.parse(httpRequestEvent.metaData.grpcConnectionSchema)
-            : 
-                {
-                    app: "",
-                    service: "",
-                    endpoint: "", 
-                    method: ""
-                }
+        grpcData: applyGrpcDataToRequestObject(grpcRawData, httpRequestEvent.metaData.grpcConnectionSchema, httpRequestEvent.apiPath),
+        grpcConnectionSchema: getConnectionSchemaFromMetadataOrApiPath(httpRequestEvent.metaData.grpcConnectionSchema, httpRequestEvent.apiPath)
     };
     return reqObject;
 }
