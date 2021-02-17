@@ -85,18 +85,41 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     this.persistPanelState = {};
   }
 
+  componentDidUpdate(prevProps: ISideBarTabsProps){
+    if(prevProps.httpClient.collectionTabState.timeStamp != this.props.httpClient.collectionTabState.timeStamp){
+      Object.entries(this.persistPanelState).forEach(([key, value])=> {
+        if(value){
+          const collection = this.props.httpClient.userCollections.find( collection => collection.collec == key);
+          if(collection && !collection.apiTraces)
+          {
+            //This can be further improved to load data for multiple collections in single API call, depends on backend capability. 
+            this.handlePanelClick(key, true);
+          }
+        }
+      })
+    }
+  }
+
   getExpendedState = (uniqueid: string) => {
     const isExpanded = this.persistPanelState[uniqueid];
-    if (isExpanded) {
+    const isLoading = this.state.loadingCollections[uniqueid];
+    if (isExpanded && !isLoading) {
       this.handlePanelClick(uniqueid);
     }
     return isExpanded;
   };
 
   onPanelToggle = (isToggled: boolean, event: any) => {
-    this.persistPanelState[
-      event.target.parentElement.getAttribute("data-unique-id")
-    ] = isToggled;
+    let parentElement: HTMLElement | null = event.target;
+    while(parentElement && !parentElement.classList.contains("panel-heading")){
+      parentElement = parentElement.parentElement;
+    }
+    if(parentElement){
+      const uniqueId = parentElement.getAttribute("data-unique-id");
+      if(uniqueId){
+          this.persistPanelState[uniqueId] = isToggled;
+      }
+    }    
   };
 
   deleteItem = async () => {
@@ -141,7 +164,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
     const apiTracesForACollection = selectedCollection!.apiTraces;
     try {
       if (!apiTracesForACollection || forceLoad) {
-        this.setState({ loadingCollections: { ...this.state.loadingCollections, [selectedCollection!.id]: true } });
+        this.setState({ loadingCollections: { ...this.state.loadingCollections, [selectedCollection!.collec]: true } });
         cubeService.loadCollectionTraces(customerId, selectedCollectionId, app!, selectedCollection!.id).then(
           (apiTraces: IApiTrace[]) => {
             sortApiTraceChildren(apiTraces);
@@ -769,11 +792,11 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                     >
                       <Panel.Heading
                         style={{ paddingLeft: "9px", position: "relative" }}
+                        data-unique-id={eachCollec.collec}
                       >
                         <Panel.Title
                           toggle
                           style={{ fontSize: "13px" }}
-                          data-unique-id={eachCollec.collec}
                         >
                           <EditableLabel
                             label={eachCollec.name}

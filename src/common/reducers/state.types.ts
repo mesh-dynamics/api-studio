@@ -317,6 +317,7 @@ export interface ICollectionTabState {
   currentPage: number;
   numResults: number;
   count: number;
+  timeStamp: number;
 }
 
 export interface IPayloadData {

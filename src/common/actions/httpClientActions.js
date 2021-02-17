@@ -565,11 +565,11 @@ export const httpClientActions = {
             const response = await cubeService.fetchCollectionList(user, app, "UserGolden", true, collectionTabState.numResults, currentPage * collectionTabState.numResults);
             const serverRes = response.recordings;
             const userCollections = serverRes.filter((eachCollection) => (eachCollection.recordingType !== "History"))
+            dispatch(httpClientActions.addUserCollections(userCollections));
             if(resetToFirstPage){
-                dispatch(httpClientActions.setCollectionTabState({...collectionTabState, currentPage: 0, count: response.numFound }));
+                dispatch(httpClientActions.setCollectionTabState({...collectionTabState, currentPage: 0, count: response.numFound, timeStamp: Date.now() }));
             }
 
-            dispatch(httpClientActions.addUserCollections(userCollections));
         } catch (error) {
             console.error("Error ", error);
             throw new Error("Error");
