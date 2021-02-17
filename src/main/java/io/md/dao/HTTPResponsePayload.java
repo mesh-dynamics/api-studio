@@ -79,9 +79,4 @@ public class HTTPResponsePayload extends HTTPPayload implements ResponsePayload 
 		return status;
 	}
 
-	@Override
-	public List<String> getPayloadFields() {
-		return Arrays.asList(String.format("%s:%s", Constants.STATUS_PATH, getStatusCode()));
-	}
-
 }

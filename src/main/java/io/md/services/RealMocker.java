@@ -68,20 +68,14 @@ public class RealMocker implements Mocker {
             DynamicInjector di = diFactory.getMgr(reqEvent.customerId , reqEvent.app , mockWColl.dynamicInjectionConfigVersion);
             di.extract(reqEvent , null);
 
-            List<String> payloadFieldFilterList = mockWColl.isDevtool ? reqEvent.payloadFields.stream().map(payloadField -> {
-                    try {
-                        return String.format("%s:%s", "/".concat(payloadField),
-                         reqEvent.payload.getValAsString("/".concat(payloadField)));
-                    } catch (Exception e) {
-                        return payloadField;
-                    }
-                }).collect(Collectors.toList()):Collections.EMPTY_LIST;
-
+            List<String> payloadFieldFilterList = mockWColl.isDevtool ? reqEvent.payloadFields: Collections.EMPTY_LIST;
 
             Optional<JoinQuery> joinQuery = mockWColl.isDevtool ? Optional.of(getSuccessResponseMatch(reqEvent)) : Optional.empty();
             Optional<ReplayContext> replayCtx = mockWColl.replay.flatMap(r->r.replayContext);
 
             boolean tracePropagation = mockWColl.replay.map(r->r.tracePropagation).orElse(true);
+            //For devtool get the latest success match - isTimestampSortOrderAsc = false
+            //For regression -> get the first match - isTimestampSortOrderAsc = true
             EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1),
                 !mockWColl.isDevtool, lowerBoundForMatching, mockWColl.recordCollection,
                 payloadFieldFilterList , joinQuery , mockWColl.isDevtool , replayCtx , tracePropagation);
@@ -108,6 +102,8 @@ public class RealMocker implements Mocker {
             if(mockWColl.isDevtool && !matchingResponse.isPresent()){
                 LOGGER.info(createMockReqErrorLogMessage(reqEvent,
                         "Did not find any valid success response. Giving first match resp"));
+                //If there is no success match then get the first latest match.
+                //JoinQuery - Empty
                 eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1),
                     false , lowerBoundForMatching, mockWColl.recordCollection ,
                     payloadFieldFilterList , Optional.empty() , mockWColl.isDevtool , Optional.empty() , true);

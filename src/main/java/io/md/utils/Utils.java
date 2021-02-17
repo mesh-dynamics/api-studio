@@ -262,7 +262,10 @@ public class Utils {
 		throws Event.EventBuilder.InvalidEventException {
 
 		Payload mockedRequestPayload = null;
-		if (getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN).toLowerCase()
+		if (getMimeType(hdrs).orElseGet(()->{
+			LOGGER.info("Did not find the Mime-type header in request. Giving default "+MediaType.TEXT_PLAIN);
+			return MediaType.TEXT_PLAIN;
+		}).toLowerCase()
 			.startsWith(Constants.APPLICATION_GRPC)) {
 			GRPCRequestPayload grpcRequestPayload = new GRPCRequestPayload(hdrs, body, apiPath);
 			mockedRequestPayload = grpcRequestPayload;
