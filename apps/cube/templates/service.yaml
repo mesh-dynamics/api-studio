@@ -22,6 +22,9 @@ kind: Deployment
 metadata:
   name: cubews-record-v1
   namespace: {{namespace}}
+  labels:
+    component: cubews-record
+    app: cube
 spec:
   selector:
     matchLabels:
@@ -152,6 +155,9 @@ kind: Deployment
 metadata:
   name: cubews-mock-v1
   namespace: {{namespace}}
+  labels:
+    component: cubews-mock
+    app: cube
 spec:
   selector:
     matchLabels:
@@ -282,6 +288,9 @@ kind: Deployment
 metadata:
   name: cubews-replay-v1
   namespace: {{namespace}}
+  labels:
+    component: cubews-replay
+    app: cube
 spec:
   selector:
     matchLabels:
@@ -411,6 +420,9 @@ kind: Deployment
 metadata:
   name: cubeui-v1
   namespace: {{namespace}}
+  labels:
+    component: cubeui
+    app: cube
 spec:
   selector:
     matchLabels:
@@ -468,6 +480,9 @@ kind: Deployment
 metadata:
   name: cubeui-backend-v1
   namespace: {{namespace}}
+  labels:
+    component: cubeui-backend
+    app: cube
 spec:
   selector:
     matchLabels:
@@ -574,6 +589,9 @@ kind: Deployment
 metadata:
   name: cubelogcollector
   namespace: {{namespace}}
+  labels:
+    component: cubelogcollector
+    app: cube
 spec:
   selector:
     matchLabels:
