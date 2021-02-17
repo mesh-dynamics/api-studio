@@ -29,9 +29,11 @@ kubectl rollout restart deployment <DEPLOYMENT_NAME>
 pip3 install -r requirements.txt
 ```
 
-2. (Optional) Edit `templates/services` file and add the name of deployments for which you want to generate envoy filters and change value of `service_file_provided` in config.py to `yes`.
+2. Edit `config.py` and update the namespace for which you want to generate envoy filters.
 
-3. Run script to fetch deployments, lables and generate Meshdynamics record filters.  
+3. (Optional) Edit `templates/services` file and add the name of deployments for which you want to generate envoy filters and change value of `service_file_provided` in config.py to `yes`.
+
+4. Run script to fetch deployments, lables and generate Meshdynamics record filters.  
 ```
 ./prepare_and_deploy_mesh_filters.py
 ```  
@@ -40,8 +42,7 @@ NOTE: If your kubernetes configuration is not at the default location, export `K
 KUBECONFIG=/Users/aakashsinghal/workspace/config ./prepare_and_deploy_mesh_filters.py
 ```
 
-4. Deploy Envoy filters  
+5. Deploy Envoy filters  
 ```
 cd output && kubectl apply -f .
 ```
-
