@@ -21,6 +21,9 @@ kind: Deployment
 metadata:
   name: receiver-replay
   namespace: {{namespace}}
+  labels:
+    app: springboot
+    component: receiver-replay
 spec:
   selector:
     matchLabels:
@@ -96,6 +99,9 @@ kind: Deployment
 metadata:
   name: receiver-record
   namespace: {{namespace}}
+  labels:
+    app: springboot
+    component: receiver-record
 spec:
   selector:
     matchLabels:
@@ -172,6 +178,9 @@ kind: Deployment
 metadata:
   name: transformer
   namespace: {{namespace}}
+  labels:
+    app: springboot
+    component: transformer
 spec:
   selector:
     matchLabels:
