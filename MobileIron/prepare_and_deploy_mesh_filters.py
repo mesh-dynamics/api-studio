@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import errno
 import yaml
 import os
 from config import *
@@ -48,6 +49,11 @@ def generate_filters(deployment_info, template_dir):
         env = Environment(loader=FileSystemLoader(template_dir))
         template = env.get_template("envoyfilter.j2")
         env = Environment(loader=FileSystemLoader(template_dir))
+        try:
+            os.makedirs('output')
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
         if service_file_provided == "yes":
             service_file = "templates/services"
             data_stream = open(service_file, 'r')
