@@ -167,7 +167,7 @@ const checkStatusForReplay = async (replayId: string) => {
     }
 };
 
-const fetchTimelineData = (user: IUserAuthDetails, app: string, userId: string, endDate: Date, startDate: Date, numResults: number, testConfigName: string, goldenName: string) => {
+const fetchTimelineData = (user: IUserAuthDetails, app: string, userId: string, endDate: Date, startDate: Date | null, numResults: number, testConfigName: string, goldenName: string, collectionId: string) => {
     const { username, customer_name } = user;
     const endDateString = endDate.toISOString();
     const params = new URLSearchParams();
@@ -199,6 +199,10 @@ const fetchTimelineData = (user: IUserAuthDetails, app: string, userId: string, 
 
     if (goldenName) {
         params.set("golden_name", goldenName);
+    }
+
+    if(collectionId) {
+        params.set("collection", collectionId);
     }
 
     try {
