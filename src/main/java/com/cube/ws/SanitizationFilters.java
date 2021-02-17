@@ -4,12 +4,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import javax.ws.rs.core.MultivaluedMap;
 
-import org.apache.solr.common.util.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
@@ -20,6 +20,8 @@ import io.md.dao.ResponsePayload;
 import io.md.utils.Utils;
 
 public class SanitizationFilters {
+
+	private static final Logger LOGGER = LogManager.getLogger(SanitizationFilters.class);
 
 	public static class BadStatuses implements SanitizationFilter{
 
@@ -117,6 +119,7 @@ public class SanitizationFilters {
 		Set<String> badReqIds = new HashSet<>();
 		filters.stream().forEach(f->badReqIds.addAll(f.getBadReqIds()));
 
+		LOGGER.debug("Total Bad Requests for sanitization "+badReqIds.size());
 		return badReqIds;
 	}
 
