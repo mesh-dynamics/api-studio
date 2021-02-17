@@ -67,7 +67,7 @@ public class SanitizationFilters {
 
 	public static class IgnoreStaticContent implements SanitizationFilter {
 
-		public static final HashSet<String> staticContentMimes = new HashSet<>(List.of("gif" , "html" , "css" , "js" , "ttf" , "svg" , "png"));
+		public static final HashSet<String> staticContentMimes = new HashSet<>(List.of("gif" , "html" , "css" , "javascript" , "ttf" , "svg" , "png" , "text"));
 		private final Set<String> badReqResp = new HashSet<>();
 
 		private static boolean isStaticContentPath(String path){
@@ -75,23 +75,19 @@ public class SanitizationFilters {
 		}
 
 		private static boolean staticHeader(MultivaluedMap<String, String> headers , String key){
-			return Optional.ofNullable(headers.get(key)).map(contentTypes-> contentTypes.stream().anyMatch(type->staticContentMimes.stream().anyMatch(mime->type.toLowerCase().indexOf(type)!=-1))).orElse(false);
-		}
-
-		private static boolean isStaticContentPath(MultivaluedMap<String, String> headers){
-			return staticHeader(headers , "content-type") || staticHeader(headers , "accept") ;
+			return Optional.ofNullable(headers.get(key)).map(contentTypes-> contentTypes.stream().anyMatch(type->staticContentMimes.stream().anyMatch(mime->type.toLowerCase().indexOf(mime)!=-1))).orElse(false);
 		}
 
 		@Override
 		public boolean consume(Event e) {
 			if (e.payload instanceof HTTPRequestPayload) {
-				if(isStaticContentPath(e.apiPath)){
+				if(isStaticContentPath(e.apiPath) || staticHeader(((HTTPRequestPayload) e.payload).getHdrs() , "accept")){
 					badReqResp.add(e.reqId);
 					return false;
 				}
 			}else if (e.payload instanceof HTTPResponsePayload) {
 				HTTPResponsePayload payload = (HTTPResponsePayload) e.payload;
-				if(isStaticContentPath(payload.getHdrs())){
+				if(staticHeader(payload.getHdrs() , "content-type")){
 					badReqResp.add(e.reqId);
 					return false;
 				}
