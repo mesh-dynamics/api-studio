@@ -1347,11 +1347,14 @@ public class CubeStore {
             Recording  updatedRecording = createRecordingObjectFrom(recording, templateVersion,
                 name, Optional.of(userId), timeStamp, labelValue, type);
             if(rrstore.saveRecording(updatedRecording)) {
-                return CompletableFuture.supplyAsync(() -> copyEvents(recording, updatedRecording, timeStamp, eventFilter)).thenApply(success ->
-                    success ? Response.ok().type(MediaType.APPLICATION_JSON).entity(updatedRecording).build() : Response.status(Status.INTERNAL_SERVER_ERROR)
+                return CompletableFuture.supplyAsync(() -> copyEvents(recording, updatedRecording, timeStamp, eventFilter)).thenApply(success ->{
+                    if(success) return Response.ok().type(MediaType.APPLICATION_JSON).entity(updatedRecording).build();
+                    rrstore.deleteAllRecordingData(updatedRecording);
+                    return Response.status(Status.INTERNAL_SERVER_ERROR)
                         .type(MediaType.APPLICATION_JSON)
                         .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"Error while copying events"))
-                        .build());
+                        .build();
+                });
             }
             return CompletableFuture.completedFuture(Response.status(Status.INTERNAL_SERVER_ERROR)
                 .type(MediaType.APPLICATION_JSON)
