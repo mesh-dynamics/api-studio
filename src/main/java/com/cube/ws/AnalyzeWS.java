@@ -414,10 +414,6 @@ public class AnalyzeWS {
 
         String replayId = queryParams.getFirst("replayId");
 
-        Boolean includeConforming = Optional
-            .ofNullable(queryParams.getFirst("includeConforming")).flatMap(Utils::strToBool)
-            .orElse(false);
-
         if (replayId == null){
             return Response.serverError().entity(
                 Utils.buildErrorResponse(Constants.ERROR, Constants.NOT_PRESENT,
@@ -455,8 +451,7 @@ public class AnalyzeWS {
 
             List<TemplateEntryMeta> finalMetaList = ctLearner.learnComparisonRules(reqIdToMethodMap,
                 reqRespMatchResultList,
-                rrstore.getTemplateSet(replay.customerId, replay.app, replay.templateVersion),
-                includeConforming);
+                rrstore.getTemplateSet(replay.customerId, replay.app, replay.templateVersion));
 
             try {
 
@@ -744,7 +739,7 @@ public class AnalyzeWS {
         MultivaluedMap<String, String> queryParams = urlInfo.getQueryParameters();
         List<String> instanceId = Optional.ofNullable(queryParams.get(Constants.INSTANCE_ID_FIELD)).orElse(Collections.EMPTY_LIST);
         Optional<String> service = Optional.ofNullable(queryParams.getFirst(Constants.SERVICE_FIELD));
-        Optional<String> collection = Optional.ofNullable(queryParams.getFirst(Constants.COLLECTION_FIELD));
+        List<String> collection = Optional.ofNullable(queryParams.get(Constants.COLLECTION_FIELD)).orElse(Collections.EMPTY_LIST);;
         Optional<String> userId = Optional.ofNullable(queryParams.getFirst(Constants.USER_ID_FIELD));
         Optional<String> endDate = Optional.ofNullable(queryParams.getFirst(Constants.END_DATE_FIELD));
         Optional<String> startDate = Optional.ofNullable(queryParams.getFirst(Constants.START_DATE_FIELD));
@@ -793,17 +788,18 @@ public class AnalyzeWS {
            */
             Instant timeStamp = replay.analysisCompleteTimestamp != Instant.EPOCH ? replay.analysisCompleteTimestamp : replay.creationTimeStamp;
             Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerId, replay.app,
-                replay.collection , Optional.of(replay.templateVersion));
+                replay.collection.get(0) , Optional.of(replay.templateVersion));
             String recordingInfo = "";
             if (recordingOpt.isEmpty()) {
                 LOGGER.error("Unable to find recording corresponding to given replay");
             } else {
+            	boolean multiRecordings = replay.collection.size() > 1 ;
                 Recording recording = recordingOpt.get();
-                recordingInfo = "\" , \"recordingid\" : \"" + recording.getId()
-                    + "\" , \"collection\" : \"" + recording.collection
+                recordingInfo = "\" , \"recordingid\" : \"" + (multiRecordings ? "NA" : recording.getId())
+                    + "\" , \"collection\" : \"" + (multiRecordings ? replay.collection.stream().collect(Collectors.joining(",")) :recording.collection)
                     + "\" , \"templateVer\" : \"" + recording.templateVersion
-                    + "\", \"goldenName\" : \"" + recording.name
-                    + "\", \"goldenLabel\" : \"" + recording.label;
+                    + "\", \"goldenName\" : \"" + (multiRecordings ? "NA" : recording.name)
+                    + "\", \"goldenLabel\" : \"" + (multiRecordings ? "NA" :recording.label);
             }
 
             Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayId, service, byPath);
@@ -908,7 +904,7 @@ public class AnalyzeWS {
 					    includeDiff.orElse(false) ? Collections.emptyList()
 						    : Event.REQUEST_EVENT_TYPES);
 				    reqBuilder.withReqIds(reqIds);
-				    reqBuilder.withCollection(replay.collection);
+				    reqBuilder.withCollections(replay.collection);
 				    reqBuilder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
 				    Result<Event> reqRespEvents = rrstore.getEvents(reqBuilder.build());
 				    reqRespEvents.getObjects().forEach(event -> {
@@ -1125,11 +1121,21 @@ public class AnalyzeWS {
 
     @POST
     @Path("saveTemplateSet/{customer}/{app}")
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public Response saveTemplateSet(@Context UriInfo uriInfo, @PathParam("customer") String customer,
-                                    @PathParam("app") String app, TemplateSet templateSet) {
+        @PathParam("app") String app, @FormDataParam("file") InputStream uploadedInputStream) {
+
+        TemplateSet templateSet;
         try {
+            templateSet = this.jsonMapper.readValue(uploadedInputStream, TemplateSet.class);
+            if (!templateSet.customer.equals(customer) || !templateSet.app.equals(app)){
+                Response.status(Status.UNAUTHORIZED).entity(Utils
+                    .buildErrorResponse(Constants.ERROR, "UNAUTHORIZED", String.format(
+                        "customer/app name mismatch in path and json file. "
+                            + "path customer=%s app=%s json customer=%s app=%s",
+                        customer, app, templateSet.customer, templateSet.app)));
+            }
 	        templateSet.templates.forEach(compareTemplateVersioned -> {
 		        String normalisedAPIPath= CompareTemplate.normaliseAPIPath(compareTemplateVersioned.requestPath);
 		        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Normalizing APIPath before storing template ",
@@ -1150,6 +1156,14 @@ public class AnalyzeWS {
             return Response.serverError().entity((
                 Utils.buildErrorResponse(Constants.ERROR, Constants.TEMPLATE_STORE_FAILED, "Unable to save template set: " +
                     e.getMessage()))).build();
+        }
+        catch (IOException e) {
+            LOGGER.error(
+                "Error in parsing JSON file for template set", e);
+            return Response.serverError().entity(
+                Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                    "Error in parsing JSON file for template set"))
+                .build();
         }
 
         catch (TemplateSet.TemplateSetMetaStoreException e) {

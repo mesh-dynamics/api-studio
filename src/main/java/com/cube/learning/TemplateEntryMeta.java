@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import io.md.core.CompareTemplate.ComparisonType;
+import io.md.core.CompareTemplate.DataType;
+import io.md.core.CompareTemplate.ExtractionMethod;
 import io.md.core.CompareTemplate.PresenceType;
 import io.md.core.TemplateKey.Type;
 import io.md.core.Utils;
@@ -16,7 +18,9 @@ import org.jetbrains.annotations.NotNull;
 @JsonPropertyOrder({"Id", "Action", "Service", "ApiPath", "Method", "EventType", "JsonPath",
     "SourceRulePath", "CurrentComparisonType", "CurrentPresenceType",
     "NewComparisonType", "NewPresenceType", "InheritedRuleId", "Count",
-    "NumViolationsComparison", "NumViolationsPresence"})
+    "NumViolationsComparison", "NumViolationsPresence", "DataType", "ExtractionMethod",
+    "Customization", "ArrayComparisonKeyPath"})
+
 public class TemplateEntryMeta implements Comparable{
     @JsonProperty("Id")
     String id;
@@ -69,6 +73,16 @@ public class TemplateEntryMeta implements Comparable{
     @JsonProperty("CurrentPresenceType")
     PresenceType currentPt;
 
+    @JsonIgnore
+    DataType dt;
+
+    @JsonIgnore
+    ExtractionMethod em;
+
+    Optional<String> arrayComparisionKeyPath;
+
+    Optional<String> customization;
+
     Optional<TemplateEntryMeta> parentMeta = Optional.empty();
 
     public static final String METHODS_ALL = "ALL";
@@ -82,7 +96,10 @@ public class TemplateEntryMeta implements Comparable{
     public TemplateEntryMeta(Action action, Type reqOrResp, String service, String apiPath,
         Optional<String> method, String jsonPath, ComparisonType currentCt, PresenceType currentPt,
         Optional<ComparisonType> newCt, Optional<PresenceType> newPt,
-        Optional<TemplateEntryMeta> parentMeta, RuleStatus ruleStatus) {
+        DataType dt, ExtractionMethod em,
+        Optional<String> customization, Optional<String> arrayCompKeyPath,
+        Optional<TemplateEntryMeta> parentMeta,
+        RuleStatus ruleStatus) {
         this.ruleStatus = ruleStatus;
         this.reqOrResp = reqOrResp;
         this.service = service;
@@ -92,10 +109,19 @@ public class TemplateEntryMeta implements Comparable{
         this.sourceRulePath = jsonPath;
         this.currentCt = currentCt;
         this.currentPt = currentPt;
+        this.dt = dt;
+        this.em = em;
+        this.customization = customization;
+        this.arrayComparisionKeyPath = arrayCompKeyPath;
         setNewCt(newCt);
         setNewPt(newPt);
         this.parentMeta = parentMeta;
         this.action = action;
+    }
+
+    @JsonGetter("InheritedRuleId")
+    public String getInheritedRuleIdAsString() {
+        return inheritedRuleId.orElse(EMPTY);
     }
 
     @JsonSetter("InheritedRuleId")
@@ -108,19 +134,15 @@ public class TemplateEntryMeta implements Comparable{
         this.inheritedRuleId = inheritedRuleId;
     }
 
-    @JsonGetter("InheritedRuleId")
-    public String getInheritedRuleIdAsString() {
-        return inheritedRuleId.orElse(EMPTY);
-    }
-
     public void setMethod(Optional<String> method) {
         this.method = method;
     }
 
     @JsonSetter("Method")
     public void setMethod(String method) {
-        this.method = method.equals(METHODS_ALL)?Optional.empty():Optional.of(method);
+        this.method = method.equals(METHODS_ALL) ? Optional.empty() : Optional.of(method);
     }
+
     @JsonGetter("Method")
     public String getMethodAsString() {
         return method.orElse(METHODS_ALL);
@@ -130,25 +152,137 @@ public class TemplateEntryMeta implements Comparable{
         return method;
     }
 
+
     @JsonGetter("NewComparisonType")
-    public String getNewCtAsString() { return newCt.map(Enum::toString).orElse(EMPTY); }
+    public String getNewCtAsString() {
+        return newCt.map(Enum::toString).orElse(EMPTY);
+    }
 
-    public Optional<ComparisonType> getNewCt() { return newCt; }
-
-    @JsonGetter("NewPresenceType")
-    public String getNewPtAsString() {return newPt.map(Enum::toString).orElse(EMPTY); }
-
-    public Optional<PresenceType> getNewPt() { return newPt; }
+    public Optional<ComparisonType> getNewCt() {
+        return newCt;
+    }
 
     @JsonSetter("NewComparisonType")
-    public void setNewCt(String newCt) { this.newCt = Utils.valueOf(ComparisonType.class, newCt); }
+    public void setNewCt(String newCt) {
+        this.newCt = Utils.valueOf(ComparisonType.class, newCt);
+    }
+
+    public void setNewCt(Optional<ComparisonType> newCt) {
+        this.newCt = newCt;
+    }
+
+
+    @JsonGetter("NewPresenceType")
+    public String getNewPtAsString() {
+        return newPt.map(Enum::toString).orElse(EMPTY);
+    }
+
+    public Optional<PresenceType> getNewPt() {
+        return newPt;
+    }
 
     @JsonSetter("NewPresenceType")
-    public void setNewPt(String newPt) {this.newPt = Utils.valueOf(PresenceType.class, newPt);}
+    public void setNewPt(String newPt) {
+        this.newPt = Utils.valueOf(PresenceType.class, newPt);
+    }
 
-    public void setNewCt(Optional<ComparisonType> newCt) { this.newCt = newCt; }
+    public void setNewPt(Optional<PresenceType> newPt) {
+        this.newPt = newPt;
+    }
 
-    public void setNewPt(Optional<PresenceType> newPt) { this.newPt = newPt;}
+    @JsonGetter("JsonPath")
+    public String getJsonPath() {
+        return jsonPath;
+    }
+
+    @JsonSetter("JsonPath")
+    public void setJsonPath(String jsonPath) {
+        this.jsonPath = jsonPath;
+    }
+
+    public ComparisonType getCurrentCt() {
+        return currentCt;
+    }
+
+    @JsonGetter("CurrentComparisonType")
+    public String getCurrentCtAsString() {
+        return currentCt.toString();
+    }
+
+    @JsonSetter("CurrentComparisonType")
+    public void setCurrentCt(String currentCt) {
+        this.currentCt = Utils.valueOf(ComparisonType.class, currentCt)
+            .orElse(ComparisonType.Ignore);
+    }
+
+    public PresenceType getCurrentPt() {
+        return currentPt;
+    }
+
+    @JsonGetter("CurrentPresenceType")
+    public String getCurrentPtAsString() {
+        return currentPt.toString();
+    }
+
+    @JsonSetter("CurrentPresenceType")
+    public void setCurrentPt(String currentPt) {
+        this.currentPt = Utils.valueOf(PresenceType.class, currentPt)
+            .orElse(PresenceType.Optional);
+    }
+
+    public DataType getDt() {
+        return dt;
+    }
+
+    @JsonGetter("DataType")
+    public String getDtAsString() {
+        return dt.toString();
+    }
+
+    @JsonSetter("DataType")
+    public void setDt(String dt) {
+        this.dt = Utils.valueOf(DataType.class, dt)
+            .orElse(DataType.Default);
+    }
+
+    public ExtractionMethod getEm() {
+        return em;
+    }
+
+    @JsonGetter("ExtractionMethod")
+    public String getEmAsString() {
+        return em.toString();
+    }
+
+    @JsonSetter("ExtractionMethod")
+    public void setEm(String em) {
+        this.em = Utils.valueOf(ExtractionMethod.class, em)
+            .orElse(ExtractionMethod.Default);
+    }
+
+    @JsonGetter("Customization")
+    public String getCustomization() {
+        return customization.orElse(EMPTY);
+    }
+
+    @JsonSetter("Customization")
+    public void setCustomization(String customization) {
+        this.customization =
+            customization.equals(EMPTY) ? Optional.empty() : Optional.of(customization);
+    }
+
+    @JsonGetter("ArrayComparisonKeyPath")
+    public String getArrayCompPath() {
+        return arrayComparisionKeyPath.orElse(EMPTY);
+    }
+
+    @JsonSetter("ArrayComparisonKeyPath")
+    public void setArrayCompPath(String arrayCompKeyPath) {
+        arrayComparisionKeyPath =
+            arrayCompKeyPath.equals(EMPTY) ? Optional.empty() : Optional.of(arrayCompKeyPath);
+    }
+
+
 
     enum RuleStatus {
         // IMP: Order of fields is used for sorting.
