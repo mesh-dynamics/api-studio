@@ -33,6 +33,7 @@ import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Event.EventType;
 import io.md.dao.HTTPRequestPayload;
 import io.md.dao.RecordOrReplay;
+import io.md.dao.ReplayContext;
 import io.md.services.DataStore.TemplateNotFoundException;
 import io.md.utils.Constants;
 import io.md.core.Utils;
@@ -247,6 +248,18 @@ public class StoreUtils {
 
         if (recordOrReplay.isEmpty()) {
            event.setCollection("NA"); // so that validate doesn't fail
+        }else{
+        	Optional<ReplayContext>  replayContext = recordOrReplay.get().replay.flatMap(r->r.replayContext);
+	        replayContext.ifPresent(ctx->{
+	        	ctx.reqTraceId.ifPresent(traceId->{
+	        		event.setTraceId(traceId);
+	        		LOGGER.debug("setting traceId from replay context : "+traceId);
+	        	});
+	        	ctx.reqSpanId.ifPresent(spanId->{
+	        		event.setParentSpanId(spanId);
+			        LOGGER.debug("setting parentSpanId from replay context : "+spanId);
+		        });
+	        });
         }
         if (!event.validate()) {
             throw new CubeStoreException(null, "some required field missing,"
