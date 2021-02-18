@@ -286,7 +286,6 @@ const extractParamsFromRequestEvent = (httpRequestEvent) =>{
 }
 
 const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) => {
-    debugger; //remove
     const httpRequestEventTypeIndex = httpEventReqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
     const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
     const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];

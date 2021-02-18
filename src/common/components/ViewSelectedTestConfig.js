@@ -77,7 +77,7 @@ class ViewSelectedTestConfig extends React.Component {
             storeToDatastore: true,
             servicesForSelectedGolden : [],
             selectedService : "",
-            ignoreStaticContent: true
+            ignoreStaticContent: false
         };
         //this.statusInterval;
     }
@@ -343,7 +343,7 @@ class ViewSelectedTestConfig extends React.Component {
             return;
         } 
 
-        this.setState({ recordModalVisible: true });
+        this.setState({ recordModalVisible: true, ignoreStaticContent: false });
 
     };
 
@@ -360,7 +360,7 @@ class ViewSelectedTestConfig extends React.Component {
             return;
         } 
         
-        this.setState({ resumeModalVisible: true});
+        this.setState({ resumeModalVisible: true, ignoreStaticContent: false});
 
     }
 
@@ -1169,7 +1169,7 @@ class ViewSelectedTestConfig extends React.Component {
                                         <input placeholder={"Enter Name"} onChange={this.changeRecName} type="text" value={recName}/>
                                     </Col>
                                 </Row>
-                                <Row className="text-left">
+                                <Row className="text-left margin-top-5">
                                     <Col xs={12} md={4}>
                                         Ignore static content:
                                     </Col>
@@ -1177,7 +1177,7 @@ class ViewSelectedTestConfig extends React.Component {
                                         <input type="checkbox" name="ignoreStaticContentCb" onChange={this.onIgnoreStaticContentChange} checked={this.state.ignoreStaticContent}/> (Ex: js, css, img, html etc.)
                                     </Col>
                                 </Row>
-                                <Row>
+                                <Row className="margin-top-15">
                                     <Col xs={12} md={12}>
                                         <span onClick={this.showDBWarningModal} className={stopDisabled ? "cube-btn margin-right-10" : "cube-btn disabled margin-right-10"}>START</span>
                                         <span onClick={this.stopRecord} className={stopDisabled || stoppingStatus ? "cube-btn disabled" : "cube-btn"}>STOP</span>
