@@ -119,11 +119,68 @@ const getApiToken = async() =>{
 }
 //End: API Token Section
 
+//Start: Comparison Rules
+
+const getComparisonRulesConfig = async (replayId: string) => { 
+  let apiEventURL = `${config.analyzeBaseUrl}/learnComparisonRules/?replayId=${replayId}`;
+
+  try {
+    return api.get(apiEventURL);
+  } catch (e) {
+    console.error("Error fetching API Event data");
+    throw e;
+  }
+};
+
+const getTemplateSet = async(customerId: string, app: string, version: string) =>{
+  let apiEventURL = `${config.analyzeBaseUrl}/getTemplateSet/${customerId}/${app}/${version}`;
+
+  try {
+    return api.get(apiEventURL);
+  } catch (e) {
+    console.error("Error fetching API Event data");
+    throw e;
+  }
+}
+
+
+const saveComparisonRulesConfigFromJson = async (
+  uploadArgs: IUpoadRuleArgs
+) => {
+  let apiEventURL = `${config.analyzeBaseUrl}/saveTemplateSet/${uploadArgs.customerId}/${uploadArgs.app}`;
+
+  try {
+    return api.post(apiEventURL, uploadArgs.formData, uploadArgs.apiConfig);
+  } catch (e) {
+    console.error("Error fetching API Event data");
+    throw e;
+  }
+};
+const saveComparisonRulesConfigFromCsv = async (
+  uploadArgs: IUpoadRuleArgs
+) => {
+  let apiEventURL = `${config.analyzeBaseUrl}/learnComparisonRules/${uploadArgs.customerId}/${uploadArgs.app}/${uploadArgs.version}`;
+
+  try {
+    return api.post(apiEventURL, uploadArgs.formData, uploadArgs.apiConfig);
+  } catch (e) {
+    console.error("Error fetching API Event data");
+    throw e;
+  }
+};
+
+//End: Comparison Rules
+
+
 export const configsService = {
   getPotentialDynamicInjectionConfigs,
   saveDynamicInjectionConfigFromCsv,
   getDynamicInjectionConfig,
   saveDynamicInjectionConfigFromJson,
   protoDescriptorFileUpload,
-  getApiToken
+  getApiToken,
+  getComparisonRulesConfig,
+  getTemplateSet,
+  saveComparisonRulesConfigFromJson,
+  saveComparisonRulesConfigFromCsv
 };

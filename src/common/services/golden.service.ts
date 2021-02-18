@@ -52,8 +52,8 @@ const postGoldenMeta = async (goldenDetails: any) => {
     try {
         return await api.post(`${config.recordBaseUrl}/updateGoldenFields/${id}`, urlencoded, requestOptions);
     } catch (error) {
-        console.log("Error updating golden", error);
-        throw new Error("Error Updating Golden Details");
+        console.log("Error updating test suite", error);
+        throw new Error("Error Updating test suite Details");
     }
 };
 
@@ -70,8 +70,8 @@ const updateGoldenName = async (id: string, goldenName: string ) => {
     try {
         return await api.post(`${config.recordBaseUrl}/updateGoldenFields/${id}`, urlencoded, requestOptions);
     } catch (error) {
-        console.log("Error updating golden", error);
-        throw new Error("Error Updating Golden Details");
+        console.log("Error updating test suite", error);
+        throw new Error("Error updating test suite details");
     }
 };
 

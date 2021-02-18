@@ -2,7 +2,7 @@ import { httpClientConstants } from "../constants/httpClientConstants";
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import { updateHeaderBasedOnContentType } from '../utils/http_client/utils';
-import { setGrpcDataFromDescriptor, getGrpcTabName } from '../utils/http_client/grpc-utils';
+import { setGrpcDataFromDescriptor, getGrpcTabName, getGrpcSchema } from '../utils/http_client/grpc-utils';
 import { ICollectionDetails, ICubeRunHistory, IHttpClientStoreState, IHttpClientTabDetails } from "./state.types";
 export interface IHttpClientAction {
     type: string,
@@ -1066,6 +1066,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 appGrpcSchema: data,
                 tabs: tabs.map(eachTab => {
                             eachTab.grpcData = setGrpcDataFromDescriptor(data, eachTab.grpcData);
+                            eachTab.grpcConnectionSchema = getGrpcSchema(data, eachTab.grpcConnectionSchema);
                             return eachTab;
                         })
             }
@@ -1118,6 +1119,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                                 eachOutgoingRequestTab.bodyType = data.value.bodyType;
                                 eachOutgoingRequestTab.paramsType = data.value.paramsType;
                                 eachOutgoingRequestTab.grpcData = setGrpcDataFromDescriptor(state.appGrpcSchema, eachTab.grpcData);
+                                eachOutgoingRequestTab.grpcConnectionSchema = getGrpcSchema(state.appGrpcSchema, eachOutgoingRequestTab.grpcConnectionSchema);
                                 eachOutgoingRequestTab.eventData[0].payload[0] = data.value.payloadRequestEventName
                                 if(eachOutgoingRequestTab.eventData.length > 1){
                                     eachOutgoingRequestTab.eventData[1].payload[1] = data.value.payloadResponseEventName;
@@ -1146,6 +1148,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab.paramsType = data.value.paramsType;
                         eachTab.tabName = data.value.tabName;
                         eachTab.grpcData = setGrpcDataFromDescriptor(state.appGrpcSchema, eachTab.grpcData);
+                        eachTab.grpcConnectionSchema = getGrpcSchema(state.appGrpcSchema, eachTab.grpcConnectionSchema);
                         //Request Event
                         eachTab.eventData[0].payload[0] = data.value.payloadRequestEventName;
                         if(eachTab.eventData.length > 1){

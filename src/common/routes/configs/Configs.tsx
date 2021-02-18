@@ -6,7 +6,7 @@ import ContextPropagationRules from '../../components/Configs/ContextPropagation
 import GrpcConfiguration from '../../components/Configs/Grpc/GrpcConfiguration';
 import ApiToken from '../../components/Configs/ApiToken/ApiToken';
 import * as URL from "url";
-
+import ComparisonRules from '../../components/Configs/ComparisonRules/ComparisonRules';
 export interface IConfigSettingsState{
     selectedTabKey: number
 }
@@ -58,6 +58,13 @@ class Config extends Component<any, IConfigSettingsState> {
                         <div className="margin-top-20">
                             <ApiToken />
                         </div>
+                    </Tab>
+                    <Tab eventKey={6} title="Comparison Rules">
+                        {this.state.selectedTabKey == 6 && 
+                        <div className="margin-top-20">
+                            <ComparisonRules />
+                        </div>
+                        }
                     </Tab>
                 </Tabs>
             </div>

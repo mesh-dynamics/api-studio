@@ -48,9 +48,9 @@ class Actions extends React.Component {
                         Actions
                     </Dropdown.Toggle>
                     <Dropdown.Menu className="pull-right">
-                        <MenuItem eventKey="1" onClick={() => this.handleShow("editTemplate", "Update Golden")}>
+                        <MenuItem eventKey="1" onClick={() => this.handleShow("editTemplate", "Update test suite")}>
                             <Glyphicon glyph="edit" /> 
-                            <span style={{position: "relative", bottom: "1px", paddingLeft: "7px"}}>Update Golden</span>
+                            <span style={{position: "relative", bottom: "1px", paddingLeft: "7px"}}>Update test suite</span>
                         </MenuItem>
                         <MenuItem eventKey="2" onClick={() => this.handleShow("fileReport", "File Report")}>
                             <Glyphicon glyph="tag" /> 

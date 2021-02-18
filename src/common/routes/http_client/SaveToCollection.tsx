@@ -10,6 +10,7 @@ import {
   Dropdown,
 } from "react-bootstrap";
 
+import * as httpClientTabUtils from "../../utils/http_client/httpClientTabs.utils.js";
 import { httpClientActions } from "../../actions/httpClientActions";
 import CreateCollection from "./CreateCollection";
 import { cubeService } from "../../services";
@@ -41,7 +42,6 @@ export interface ISaveToCollectionProps {
   tabId: string;
   visible: boolean;
   disabled: boolean;
-  getReqResFromTabData: GetReqResFromTabDataHandler;
   dispatch: any; //Need to check proper type for dispatch
   selectedApp: string;
   appsList: IAppDetails[];
@@ -248,14 +248,14 @@ class SaveToCollection extends React.Component<
         /** Fix Start */
         let reqResData;
         if (generateSpanTraceId) 
-        reqResData = this.props.getReqResFromTabData(reqResPair, tabToProcess, runId, type, 
+        reqResData = httpClientTabUtils.getReqResFromTabData(selectedApp, reqResPair, tabToProcess, runId, type, 
           null, null, null, null,
           tracer,
           traceIdDetails,
           rootParentSpanId,
           rootSpanId)
           else {
-            reqResData = this.props.getReqResFromTabData(reqResPair, tabToProcess, runId, type)
+            reqResData = httpClientTabUtils.getReqResFromTabData(selectedApp, reqResPair, tabToProcess, runId, type)
           }
 
         const { response: { payload: httpResponsePayload } } = reqResData;
@@ -282,7 +282,8 @@ class SaveToCollection extends React.Component<
             const spanId = generateSpanId(tracer);
             let reqResData;
             if(generateSpanTraceId) {
-                reqResData = this.props.getReqResFromTabData(
+                reqResData = httpClientTabUtils.getReqResFromTabData(
+                  selectedApp,
                   eachOutgoingTab.eventData,
                   eachOutgoingTab,
                   runId,
@@ -294,7 +295,8 @@ class SaveToCollection extends React.Component<
                   spanId,
                 )
               } else {
-                reqResData = this.props.getReqResFromTabData(
+                reqResData = httpClientTabUtils.getReqResFromTabData(
+                  selectedApp,
                   eachOutgoingTab.eventData,
                   eachOutgoingTab,
                   runId,

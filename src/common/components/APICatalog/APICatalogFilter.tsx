@@ -36,7 +36,7 @@ class APICatalogFilter extends Component<IAPICatalogFilterProps> {
         const sources = [
             { value: "Capture", text: "Capture" },
             { value: "UserGolden", text: "Collection" },
-            { value: "Golden", text: "Golden" },
+            { value: "Golden", text: "Test suite" },
         ]
         const ddlClass = classNames({
             "r-att form-control": true,
@@ -170,10 +170,13 @@ class APICatalogFilter extends Component<IAPICatalogFilterProps> {
                                     <>
                                         <div>
                                             <GoldenCollectionBrowse
+                                                showDeleteOption
+                                                showGrouping
                                                 ddlClassNames="form-control"
                                                 selectedSource={selectedSource}
                                                 selectedGoldenOrCollectionItem={selectedItem || defaultCollectionItem}
-                                                dropdownLabel={selectedSource === "UserGolden" ? "COLLECTION" : "GOLDEN"}
+                                                selectBtnLabel={"SELECT " + (selectedSource === "UserGolden" ? "COLLECTION" : "TEST SUITE")}
+                                                selectedLabel={"SELECTED " + (selectedSource === "UserGolden" ? "COLLECTION" : "TEST SUITE")}
                                                 handleChangeCallback={this.handleChangeInBrowseCollection}
                                             />
                                         </div>
