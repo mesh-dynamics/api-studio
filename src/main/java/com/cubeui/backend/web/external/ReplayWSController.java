@@ -56,6 +56,19 @@ public class ReplayWSController {
         return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
     }
 
+    @PostMapping("/start")
+    public ResponseEntity startMultiple(HttpServletRequest request, @RequestBody MultiValueMap<String, String> postBody, Authentication authentication) {
+        String recordingId = postBody.getFirst(Constants.RECORDING_ID);
+        Optional<Recording> recording = cubeServerService.getRecording(recordingId);
+        if(recording.isEmpty())
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error while retrieving Recording Object for recordingId=" + recordingId);
+        validation.validateCustomerName(authentication,recording.get().customerId);
+        User user = (User) authentication.getPrincipal();
+        postBody.put(Constants.USER_ID_FIELD, List.of(user.getUsername()));
+        return cubeServerService.fetchPostResponse(request, Optional.of(postBody));
+    }
+
     @PostMapping("/transforms/{customerId}/{app}/{collection}/{replayId}")
     public ResponseEntity transforms(HttpServletRequest request, @RequestBody Optional<String> postBody, @PathVariable String customerId,
                                      @PathVariable String app, @PathVariable String collection, @PathVariable String replayId, Authentication authentication) {
