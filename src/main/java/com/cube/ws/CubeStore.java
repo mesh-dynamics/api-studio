@@ -1185,9 +1185,9 @@ public class CubeStore {
     @POST
     @Path("resumeRecording/{recordingId}")
     public void resumeRecording(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui,
-        @PathParam("recordingId") String recordingId) {
+        @PathParam("recordingId") String recordingId, MultivaluedMap<String, String> formParams) {
         Optional<Recording> recording = rrstore.getRecording(recordingId);
-        CompletableFuture<Response> resp = resumeRecording(recording, ui.getQueryParameters());
+        CompletableFuture<Response> resp = resumeRecording(recording, formParams);
         resp.thenApply(response -> asyncResponse.resume(response));
     }
 
