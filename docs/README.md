@@ -20,25 +20,28 @@ Operation could be one of the following:
 a) `init`  
 Generate yamls and deploy app.  
 
-b) `record`  
-Generate envoy filters for record and make API calls to start recording.
+b) `setup_record`  
+Generate and deploy envoy filters for record.
 
-c) `stop_record`  
+c) `record`  
+Make API calls to start recording.
+
+d) `stop_record`  
 Delete envoy filters and make API call to stop recording.
 
-d) `setup_replay`  
+e) `setup_replay`  
 Generate and deploy replay files.
 
-e) `replay`  
+f) `replay`  
 Make API calls to init and start replay.
 
-f) `stop_replay`  
+g) `stop_replay`  
 Delete replay envoy filters.
 
-g) `analyze`  
+h) `analyze`  
 Make API call to start analyze
 
-h) `clean`  
+i) `clean`  
 This will delete the namespace and all the resources in that namespace.
 
 ### 3) Configuration
