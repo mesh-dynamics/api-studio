@@ -1331,7 +1331,7 @@ public class CubeStore {
         Optional<String> templateVersion, String userId, RecordingType type,
         Optional<Predicate<Event>> eventFilter) {
         Instant timeStamp = Instant.now();
-        String labelValue = label.orElse(timeStamp.toString());
+        String labelValue = label.orElse(""+timeStamp.getEpochSecond());
         Optional<Recording> recordingForId = rrstore.getRecording(recordingId);
         return recordingForId.map(recording -> {
             Optional<Recording> recordingWithSameName = name.flatMap(nameValue -> rrstore
