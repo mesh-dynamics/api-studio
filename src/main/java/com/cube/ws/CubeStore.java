@@ -34,6 +34,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -116,6 +118,7 @@ import com.cube.dao.Result;
 import com.cube.dao.WrapperEvent;
 import com.cube.queue.DisruptorEventQueue;
 import com.cube.queue.RREvent;
+import com.cube.utils.ScheduledCompletable;
 import com.cube.ws.SanitizationFilters.BadStatuses;
 import com.cube.ws.SanitizationFilters.IgnoreStaticContent;
 import com.cube.ws.SanitizationFilters.ReqRespMissing;
@@ -1131,15 +1134,52 @@ public class CubeStore {
             .orElse(CompletableFuture.completedFuture(null));
     }
 
-    protected CompletableFuture<Void> afterRecording(MultivaluedMap<String, String> params, Recording recording) {
+    protected CompletableFuture<Void> afterRecording(MultivaluedMap<String, String> params,
+        Recording recording) {
         Optional<String> tagOpt = params == null ? Optional.empty()
-                                    :Optional.ofNullable(params.getFirst(Constants.RESET_TAG_FIELD));
-        CompletableFuture<?> tagCfgTask = tagOpt.map(tag -> this.tagConfig.setTag(recording, recording.instanceId, tag))
+            : Optional.ofNullable(params.getFirst(Constants.RESET_TAG_FIELD));
+        CompletableFuture<Void> tagCfgTask = tagOpt
+            .map(tag -> this.tagConfig.setTag(recording, recording.instanceId, tag))
             .orElse(CompletableFuture.completedFuture(null));
-        CompletableFuture<?> sanitizeTask = recording.ignoreStatic ? copyRecording(recording.id, Optional.empty(), Optional.empty(), Optional.empty(),
-            recording.userId, recording.recordingType, Optional.of(SanitizationFilters.filter(getValidEvents(recording) , List.of(new IgnoreStaticContent())))) : CompletableFuture.completedFuture(null);
 
-        return  CompletableFuture.allOf(tagCfgTask , sanitizeTask);
+        return CompletableFuture.allOf(tagCfgTask, Sanitize(recording));
+    }
+
+    private CompletableFuture<?>  Sanitize(Recording recording){
+        if (!recording.ignoreStatic) {
+            LOGGER.debug("Not sanitizing as ignoreStatic flag is false");
+            return CompletableFuture.completedFuture(null);
+        }
+
+        LOGGER.info("Waiting for 15s to commit before Sanitize. current time" + Instant.now());
+        CompletableFuture<Set<String>> sanitizeFilterTask = ScheduledCompletable
+            .schedule(Config.scheduler, () -> {
+                LOGGER.info("Finished waiting for 15 sec to commit the recording for Sanitize");
+                rrstore.commit();
+                return SanitizationFilters
+                    .getBadRequests(getValidEvents(recording), List.of(new IgnoreStaticContent()));
+            }, 16, TimeUnit.SECONDS);
+
+        CompletableFuture<Response> copyTask = sanitizeFilterTask.thenApply(badReq -> {
+            if(badReq.isEmpty()) {
+                LOGGER.info("Not doing sanitize copy recording as there are no bad requests to be filtered");
+                return null;
+            }
+            LOGGER.info("Starting sanitize copy recording. Total bad reqIds "+badReq.size());
+            CompletableFuture<Response> rs = copyRecording(recording.id, Optional.empty(), Optional.empty(),
+                Optional.empty(),
+                recording.userId, recording.recordingType,
+                Optional.of(e -> !badReq.contains(e.reqId)));
+            try {
+                var resp = rs.get();
+                LOGGER.info("Finished Copy recording for sanitization");
+                return resp;
+            } catch (Exception e) {
+                LOGGER.error("copyRecording failure ", e);
+            }
+            return null;
+        });
+        return copyTask;
     }
 
     @POST
@@ -1346,11 +1386,14 @@ public class CubeStore {
             Recording  updatedRecording = createRecordingObjectFrom(recording, templateVersion,
                 name, Optional.of(userId), timeStamp, labelValue, type);
             if(rrstore.saveRecording(updatedRecording)) {
-                return CompletableFuture.supplyAsync(() -> copyEvents(recording, updatedRecording, timeStamp, eventFilter)).thenApply(success ->
-                    success ? Response.ok().type(MediaType.APPLICATION_JSON).entity(updatedRecording).build() : Response.status(Status.INTERNAL_SERVER_ERROR)
+                return CompletableFuture.supplyAsync(() -> copyEvents(recording, updatedRecording, timeStamp, eventFilter)).thenApply(success ->{
+                    if(success) return Response.ok().type(MediaType.APPLICATION_JSON).entity(updatedRecording).build();
+                    rrstore.deleteAllRecordingData(updatedRecording);
+                    return Response.status(Status.INTERNAL_SERVER_ERROR)
                         .type(MediaType.APPLICATION_JSON)
                         .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"Error while copying events"))
-                        .build());
+                        .build();
+                });
             }
             return CompletableFuture.completedFuture(Response.status(Status.INTERNAL_SERVER_ERROR)
                 .type(MediaType.APPLICATION_JSON)
@@ -1439,11 +1482,14 @@ public class CubeStore {
             list.add(new IgnoreStaticContent());
         }
 
-        var filter = SanitizationFilters.filter(getValidEvents(originalRec) , list);
-
-        copyRecording(recordingId, Optional.empty(), Optional.empty(), Optional.empty(),
-            originalRec.userId, originalRec.recordingType, Optional.of(filter))
-            .thenApply(v -> asyncResponse.resume(v));
+        Set<String> badReqIds = SanitizationFilters.getBadRequests(getValidEvents(originalRec) , list);
+        if(badReqIds.isEmpty()){
+            asyncResponse.resume(Response.ok().entity("No Bad requests found for sanitization").build());
+        }else{
+            copyRecording(recordingId, Optional.empty(), Optional.empty(), Optional.empty(),
+                originalRec.userId, originalRec.recordingType, Optional.of((e)->!badReqIds.contains(e.reqId)))
+                .thenApply(v -> asyncResponse.resume(v));
+        }
 
     }
 
@@ -1558,6 +1604,7 @@ public class CubeStore {
         } else {
             asyncResponse.resume(resp);
         }
+
     }
 
     @POST

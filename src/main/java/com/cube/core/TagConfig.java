@@ -3,6 +3,8 @@ package com.cube.core;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Result;
 import com.cube.utils.ScheduledCompletable;
+import com.cube.ws.Config;
+
 import io.md.dao.Recording;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import java.time.Instant;
@@ -26,7 +28,7 @@ public class TagConfig {
   public TagConfig(ReqRespStore rrstore) {
     this.rrstore = rrstore;
     // use single thread for all waiting requirements so as to not block the main threads
-    scheduler = Executors.newSingleThreadScheduledExecutor();;
+    this.scheduler = Config.scheduler;
   }
 
   public CompletableFuture<Void> setTag(Recording recording, String instanceId, String tag) {
