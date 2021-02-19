@@ -190,7 +190,7 @@ stop_record() {
 	-H "Host:$CUBE_HOST" \
   -H 'cache-control: no-cache'
 
-  sleep 20
+  sleep 5
 
   curl -X POST https://$CUBE_HOST/api/cs/forcestop/$RECORDING_ID \
   -H 'Content-Type: application/x-www-form-urlencoded' \
