@@ -317,6 +317,7 @@ export interface ICollectionTabState {
   currentPage: number;
   numResults: number;
   count: number;
+  timeStamp: number;
 }
 
 export interface IPayloadData {
@@ -412,6 +413,16 @@ export interface IRequestParamData {
   value: string;
 }
 
+export interface IGrpcData {
+  [packageName: string] : {
+    [serviceName: string] : {
+      [method: string] : {
+        data: string
+      }
+    }
+  }
+}
+
 export interface IRecordedHistory {
   id: string;
   httpMethod: string; //enum
@@ -465,7 +476,7 @@ export interface IHttpClientTabDetails {
   isHighlighted: boolean;
   progressState?: string;
   contextMap: IKeyValuePairs;
-  grpcData: any; // TODO: get this the right format
+  grpcData: IGrpcData;
   grpcConnectionSchema: IGrpcConnect;
   hideInternalHeaders: boolean;
 }
@@ -533,7 +544,6 @@ export interface IGrpcSchema {
 }
 
 export interface IGrpcConnect {
-  app: string;
   service: string;
   endpoint: string;
   method: string;

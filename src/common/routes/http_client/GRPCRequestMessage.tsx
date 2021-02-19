@@ -4,15 +4,15 @@ import HttpRequestRawData from './HttpRequestRawData';
 import Tippy from '@tippy.js/react';
 import { FormGroup, FormControl, InputGroup } from 'react-bootstrap';
 import { applyEnvVarsToUrl } from "../../utils/http_client/envvar";
-import { IRequestParamData, IGrpcSchema, IGrpcConnect } from '../../reducers/state.types';
+import { IRequestParamData, IGrpcSchema, IGrpcConnect, IGrpcData } from '../../reducers/state.types';
 import { UpdateParamHandler, AddOrRemoveHandler } from './HttpResponseHeaders';
 import { 
     getGrpcMethodsFromService,
     getGrpcDataForSelectedValues,
+    parsePackageAndServiceName,
 } from '../../utils/http_client/grpc-utils';
 import './GRPCRequestMessage.css';
 import { Link } from 'react-router-dom';
-import { string } from 'prop-types';
 
 export declare type UpdateGRPCDataHandler = (
     isOutgoingRequest: boolean,
@@ -32,9 +32,8 @@ export declare type UpdateGrpcConnectData = (
 
 export interface IGRPCRequestMessage {
     httpURL: string;
-    grpcData: any; //string; // TODO: add proper definition
+    grpcData: IGrpcData;
     paramsType: string;
-    selectedApp: string;
     appGrpcSchema: IGrpcSchema;
     currentSelectedTabId: string;
     grpcConnectionSchema: IGrpcConnect,
@@ -48,37 +47,36 @@ export interface IGRPCRequestMessage {
     id: string;
     tabId: string;
     clientTabId: string;
-    headers: any[] // TODO: get proper interface
+    headers: IRequestParamData[];
 }
 
 const GRPCRequestMessage = (props: IGRPCRequestMessage) => {
     const { 
-        appGrpcSchema, selectedApp, readOnly, disabled, tabId,
+        appGrpcSchema, readOnly, disabled, tabId,
         httpURL, isOutgoingRequest, updateParam, currentSelectedTabId,
         addOrRemoveParam, updateAllParams, headers, updateGrpcConnectData,
         paramsType, 
     } = props;
 
     //Below are for backward compatibility and can be merged with above props after few releases.
-    const { service, endpoint, method } = props.grpcConnectionSchema || {};
-    const grpcData = props.grpcData || "";
-
-    const services: string[] = appGrpcSchema[selectedApp] ? Object.keys(appGrpcSchema[selectedApp]) : [];
-
-    const methods: string[] = getGrpcMethodsFromService(appGrpcSchema, selectedApp, service);
-
-    const grpcDataForSelectedOptions = getGrpcDataForSelectedValues(grpcData, selectedApp, service, method);
+    const { service: sericeAndPackageName, endpoint, method: methodName } = props.grpcConnectionSchema || {};
+    const grpcData = props.grpcData || {};
+    const { packageName, serviceName, servicePackageName} = parsePackageAndServiceName(sericeAndPackageName, appGrpcSchema);
+    const methods: string[] = getGrpcMethodsFromService(appGrpcSchema, packageName, serviceName);
+    const method = methodName || (methods.length > 0 ? methods[0] : "");
+    const grpcDataForSelectedOptions = getGrpcDataForSelectedValues(grpcData, packageName, serviceName, method);
 
     const handleGRPCRadioClick = (radioValue: string) => {
         updateParam(isOutgoingRequest, tabId, 'paramsType', 'paramsType', radioValue);
     };
     
     const handleServiceChange = (value: string) => {
-        const methodsForSelectedService: string[] = getGrpcMethodsFromService(appGrpcSchema, selectedApp, value);
+        const { packageName: selectedPackage, serviceName: selectedService } = parsePackageAndServiceName(value);
+        const methodsForSelectedService: string[] = getGrpcMethodsFromService(appGrpcSchema, selectedPackage, selectedService);
 
         const resetSelectedMethod = methodsForSelectedService.length !== 0 ? methodsForSelectedService[0] : '';
 
-        const tabValue: IGrpcConnect = { app: selectedApp, service: value, method: resetSelectedMethod, endpoint };
+        const tabValue: IGrpcConnect = { service: value, method: resetSelectedMethod, endpoint };
 
         updateGrpcConnectData(isOutgoingRequest, tabId, tabValue, currentSelectedTabId);
 
@@ -89,7 +87,7 @@ const GRPCRequestMessage = (props: IGRPCRequestMessage) => {
     
     const handleMethodChange = (value: string) => {
         
-        const tabValue: IGrpcConnect = { app: selectedApp, service, method: value, endpoint };
+        const tabValue: IGrpcConnect = { service: servicePackageName, method: value, endpoint };
         
         updateGrpcConnectData(isOutgoingRequest, tabId, tabValue, currentSelectedTabId);
 
@@ -99,7 +97,7 @@ const GRPCRequestMessage = (props: IGRPCRequestMessage) => {
 
     const handleEndpointChange = (value: string) => {
 
-        const tabValue: IGrpcConnect = { app: selectedApp, service, method, endpoint: value };
+        const tabValue: IGrpcConnect = { service: servicePackageName, method, endpoint: value };
 
         updateGrpcConnectData(isOutgoingRequest, tabId, tabValue, currentSelectedTabId);
 
@@ -134,7 +132,7 @@ const GRPCRequestMessage = (props: IGRPCRequestMessage) => {
 
         const updatedGrpcData = { ...grpcData };
 
-        updatedGrpcData[selectedApp][service][method]['data'] = value.trim();
+        updatedGrpcData[packageName][serviceName][method]['data'] = value.trim();
 
         updateParam(isOutgoingRequest, tabId, type, key, updatedGrpcData);
     };
@@ -153,37 +151,44 @@ const GRPCRequestMessage = (props: IGRPCRequestMessage) => {
             <InputGroup>
                 <FormControl 
                     type="text" 
-                    placeholder="https://0.0.0.0:8080/package"
+                    placeholder="https://0.0.0.0:8080"
                     style={{fontSize: "12px"}} 
                     readOnly={readOnly} 
                     disabled={disabled}
                     name="httpURL" 
                     value={endpoint} 
-                    onChange={(event) => handleEndpointChange(event.target.value)}
+                    onChange={(event) => handleEndpointChange((event.target as HTMLInputElement).value)}
                 />
-                <InputGroup.Addon className="grpcrm-request-view-added-control">.{service}/{method}</InputGroup.Addon>
+                <InputGroup.Addon className="grpcrm-request-view-added-control">/{servicePackageName}/{method}</InputGroup.Addon>
             </InputGroup>
         </FormGroup>
     );
 
     useEffect(() => {
-        if(appGrpcSchema[selectedApp] && appGrpcSchema[selectedApp].length !== 0 && (!service && !method)) {
-            handleServiceChange(Object.keys(appGrpcSchema[selectedApp])[0]);
+        if(appGrpcSchema[packageName] && appGrpcSchema[packageName].length !== 0 && (!serviceName && !method)) {
+            handleServiceChange(Object.keys(appGrpcSchema[packageName])[0]);
         }
-    }, [appGrpcSchema, selectedApp]);
+    }, [appGrpcSchema, packageName, serviceName]);
 
+    const serviceOptions = [];
+    for(var packageVal in appGrpcSchema){
+         for(const serviceName in appGrpcSchema[packageVal]){
+             const displayName = `${packageVal}.${serviceName}`;
+            serviceOptions.push(<option key={displayName} value={displayName}>{displayName}</option>)
+         }
+    }
     return (
         <div className='grpcrm-input-root'>
             <div className='grpcrm-input-container'>
                 <div className='grpcrm-dropdown-container'>
                     <span>SERVICE</span>
                     <select
-                        value={service}
+                        value={servicePackageName}
                         className='form-control'
                         disabled={disabled}
                         onChange={(event) => handleServiceChange(event.target.value)}
                     >
-                        {services.map(service => <option key={`${service}${Math.random()}`} value={service}>{service}</option>)}
+                        {serviceOptions}
                     </select>
                 </div>
                 <div className='grpcrm-dropdown-container'>
@@ -194,13 +199,13 @@ const GRPCRequestMessage = (props: IGRPCRequestMessage) => {
                         disabled={disabled}
                         onChange={(event) => handleMethodChange(event.target.value)}
                     >
-                        {methods.map(method => <option key={`${method}${Math.random()}`} value={method}>{method}</option>)}
+                        {methods.map((method, index) => <option key={`${method}${index}`} value={method}>{method}</option>)}
                     </select>
                 </div>
             </div>
             {
-                appGrpcSchema[selectedApp] 
-                && Object.keys(appGrpcSchema[selectedApp]).length === 0
+                appGrpcSchema[packageName] 
+                && Object.keys(appGrpcSchema[packageName]).length === 0
                 && 
                 <div className="grpcrm-request-view-proto-error">
                     No proto files found selected app. Please <Link to={`/configs?tabId=4`}>add proto files from gRPC configuration</Link> section.
@@ -261,6 +266,7 @@ const GRPCRequestMessage = (props: IGRPCRequestMessage) => {
                             isResponse={false}
                             showHeaders={true}
                             headers={headers}
+                            hideInternalHeaders={props.disabled}
                         />
                     </div>
 

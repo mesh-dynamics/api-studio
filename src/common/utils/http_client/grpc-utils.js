@@ -17,12 +17,50 @@ const isRequestTypeGrpc = (selectedTraceTableReqTabId, currentSelectedTab, outgo
     }
 };
 
-const getGrpcMethodsFromService = (appGrpcSchema, selectedApp, selectedService) => {
-    if(appGrpcSchema[selectedApp]) {
-        const services = Object.keys(appGrpcSchema[selectedApp]);
+const getDefaultGrpcData = (getDefaultFromGrpcSchema)=>{
+    let packageName = "", serviceName = "", method = "";
+    const packageList =  Object.keys(getDefaultFromGrpcSchema);
+    if(packageList && packageList.length > 0){
+        packageName = packageList[0];
+        const serviceObj = getDefaultFromGrpcSchema[packageName];
+        const serviceList =  Object.keys(serviceObj);
+        if(serviceList && serviceList.length > 0){
+            serviceName = serviceList[0];
+            const service = serviceObj[serviceName];
+            const methodList =  Object.keys(service);
+            if(methodList && methodList.length > 0){
+                method = methodList[0];
+            }
+        }
+    }
+    return{
+        packageName,
+        serviceName,
+        method,
+        servicePackageName: `${packageName}.${serviceName}`
+    }
+}
+
+//Send getDefaultFromGrpcSchema param only if default value needed from packageServiceName
+const parsePackageAndServiceName = (packageServiceName, getDefaultFromGrpcSchema = null) => {
+    
+    let serviceName = packageServiceName.substr(packageServiceName.lastIndexOf(".") + 1);
+    let packageName = packageServiceName.substr(0, packageServiceName.lastIndexOf("."));
+    if(getDefaultFromGrpcSchema && !packageName){
+        const defaultValues =  getDefaultGrpcData(getDefaultFromGrpcSchema);
+        serviceName = defaultValues.serviceName;
+        packageName = defaultValues.packageName;
+    }
+    return {serviceName, packageName, servicePackageName: `${packageName}.${serviceName}`};
+}
+
+
+const getGrpcMethodsFromService = (appGrpcSchema, packageName, selectedService) => {
+    if(appGrpcSchema[packageName]) {
+        const services = Object.keys(appGrpcSchema[packageName]);
 
         if(services.length !== 0 && services.includes(selectedService)) {
-            return Object.keys(appGrpcSchema[selectedApp][selectedService]);
+            return Object.keys(appGrpcSchema[packageName][selectedService]);
         }
 
         
@@ -32,16 +70,17 @@ const getGrpcMethodsFromService = (appGrpcSchema, selectedApp, selectedService) 
         
         // Basically if selectedService is empty then return the methods
         // based on the first item in service
-        return Object.keys(appGrpcSchema[selectedApp][services[0]]);
+        return Object.keys(appGrpcSchema[packageName][services[0]]);
     }
 
     return [];
 };
 
 const extractGrpcBody = (grpcData, grpcConnectionSchema) => {
-    const { app, service, method } = grpcConnectionSchema;
+    const { service, method } = grpcConnectionSchema;
+    const {serviceName, packageName}  = parsePackageAndServiceName(service);
 
-    const data = grpcData[app][service][method]['data'];
+    const data = grpcData[packageName][serviceName][method]['data'];
 
     if(!isValidJSON(data)) {
         const errorMessage = "Grpc data should be valid JSON object";
@@ -52,22 +91,17 @@ const extractGrpcBody = (grpcData, grpcConnectionSchema) => {
     return JSON.parse(data);
 };
 
-const getGrpcDataForSelectedValues = (grpcData, selectedApp, selectedService, selectedMethod) => {
-    if(grpcData[selectedApp]) {
-        const services = Object.keys(grpcData[selectedApp]);
+const getGrpcDataForSelectedValues = (grpcData, packageName, selectedService, selectedMethod) => {
+    if(grpcData[packageName]) {
+        const services = Object.keys(grpcData[packageName]);
 
         if(services.length !== 0 && services.includes(selectedService)) {
-            const methods = Object.keys(grpcData[selectedApp][selectedService]);
+            const methods = Object.keys(grpcData[packageName][selectedService]);
 
             if(methods.length !== 0 && methods.includes(selectedMethod)) {
-                const { data }  = grpcData[selectedApp][selectedService][selectedMethod];
+                const { data }  = grpcData[packageName][selectedService][selectedMethod];
                 // data is already string
-                if(data) {
-                    return data; //JSON.stringify(data, undefined, 4);
-                }
-
-                return JSON.stringify({});
-                
+                return data || JSON.stringify({});
             }
 
         }
@@ -81,12 +115,12 @@ const mergeApplicationProtoFiles = (protoData) => {
     let mergedProtoData = {};
 
     if(files && files.length !== 0) {
-        files.forEach(key => (mergedProtoData = { ...mergedProtoData, ...protoData[key]}));
-
-        return mergedProtoData;
+        files.forEach(key => { 
+            const packageName = protoData[key].package || "_"; //Some key value will be required in package name.
+            mergedProtoData[packageName] = { ...mergedProtoData[packageName], ...protoData[key] };
+        });
     }
-
-    return {};
+    return mergedProtoData;
 }
 
 const getMethodsAndDataFromService = (service, serviceObject, currentGrpcServices) => {
@@ -125,18 +159,19 @@ const getMethodsAndDataFromService = (service, serviceObject, currentGrpcService
 };
 
 const setGrpcDataFromDescriptor = (data, currentGrpcData) => {
+    
     const dataEntries = Object.entries(data)[0];
 
     const constructedServiceObject = {};
 
-    const appName = dataEntries[0];
+    const packageName = dataEntries[0];
 
     const serviceObject = dataEntries[1];
 
     delete serviceObject['package']; // TODO: Update this later
 
-    if (!appName || !serviceObject) {
-        // if appName is undefined or service facets are undefined return currentGrpcData
+    if (!packageName || !serviceObject) {
+        // if packageName is undefined or service facets are undefined return currentGrpcData
         return currentGrpcData;
     }
 
@@ -147,40 +182,108 @@ const setGrpcDataFromDescriptor = (data, currentGrpcData) => {
             constructedServiceObject[service] = getMethodsAndDataFromService(
                                                         service, 
                                                         serviceObject, 
-                                                        currentGrpcData[appName]
+                                                        currentGrpcData[packageName]
                                                         )
         );
 
     const grpcDataObject = {
-        [appName]: constructedServiceObject
+        [packageName]: constructedServiceObject
     };
 
     return grpcDataObject;
 };
 
-const applyGrpcDataToRequestObject = (grpcDataFromRequest, savedConnectionSchema) => {
-    if(!savedConnectionSchema) {
-        return {};
+
+const getGrpcSchema = (data, currentGrpcSchema) => {
+    const defaultValues =  getDefaultGrpcData(data);
+    const endpoint = currentGrpcSchema?.endpoint || "";
+    return{
+        endpoint,
+        service: currentGrpcSchema?.service || defaultValues.servicePackageName,
+        method : currentGrpcSchema?.method || defaultValues.method
     }
+}
 
-    const { app, service, method } = JSON.parse(savedConnectionSchema);
+const getGrpcSchemaFromApiPath = (apiPath) => {
+    const lastSlash = apiPath.lastIndexOf("/");
+    const servicePackageName = apiPath.substr(0, lastSlash);
+    const method = apiPath.substr(lastSlash + 1);
 
-    const grpcData = {
-        [app]: {
-            [service]: {
-                [method]: {
-                    data: grpcDataFromRequest
+    const lastDotIndex = servicePackageName.lastIndexOf(".");
+    const serviceName = servicePackageName.substr(lastDotIndex + 1);
+    const packageName = servicePackageName.substr(0, lastDotIndex);
+    return {
+        service: servicePackageName,
+        method,
+        endpoint: "",
+        packageName,
+        serviceName
+    }
+}
+const getGrpcSchemaFromMetaData = (savedConnectionSchema) => {
+    let {app, service, method, endpoint } = JSON.parse(savedConnectionSchema);
+    let { packageName, serviceName } = parsePackageAndServiceName(service);
+    if(packageName){
+        return {
+            service,
+            method,
+            endpoint,
+            packageName,
+            serviceName
+        }
+    }else{
+        //For backward compatibility
+        packageName = endpoint.substr(endpoint.lastIndexOf("/") + 1);
+        endpoint = endpoint.substr(0, endpoint.lastIndexOf("/"));
+        serviceName = service;
+        service = `${packageName}.${service}`;
+        return {
+            service,
+            method,
+            endpoint,
+            packageName,
+            serviceName
+        }
+    }
+}
+
+const getConnectionSchemaFromMetadataOrApiPath = (metaData, apiPath) => {
+    if(metaData) {
+        return getGrpcSchemaFromMetaData(metaData);
+    }
+    else if(apiPath){
+        return getGrpcSchemaFromApiPath(apiPath);
+    }else{
+        return {
+            service: "",
+            endpoint:"",
+            method: ""
+        };
+    }
+}
+
+const applyGrpcDataToRequestObject = (grpcDataFromRequest, metaData, apiPath = "") => {
+    const schemaValues = getConnectionSchemaFromMetadataOrApiPath(metaData, apiPath);
+    if(schemaValues.packageName){
+        const grpcData = {
+            [schemaValues.packageName]: {
+                [schemaValues.serviceName]: {
+                    [schemaValues.method]: {
+                        data: grpcDataFromRequest
+                    }
                 }
             }
-        }
-    };
+        };
+        return grpcData;
+    }
     
-    return grpcData;
+    return {};
+    
 };
 
 const getRequestUrlFromSchema = (grpcConnectionSchema) => {
     const { endpoint, service, method } = grpcConnectionSchema;
-    return `${endpoint}.${service}/${method}`;
+    return `${endpoint}/${service}/${method}`;
 }; 
 
 const getGrpcTabName = (grpcConnectionSchema) => {
@@ -190,7 +293,7 @@ const getGrpcTabName = (grpcConnectionSchema) => {
         return 'New';
     }
 
-    return `${endpoint}.${service}/${method}`;
+    return `${endpoint}/${service}/${method}`;
 }
 
 export {
@@ -203,5 +306,9 @@ export {
     setGrpcDataFromDescriptor,
     getGrpcDataForSelectedValues,
     getRequestUrlFromSchema,
-    getGrpcTabName
+    getGrpcTabName,
+    parsePackageAndServiceName,
+    getGrpcSchema,
+    getGrpcSchemaFromMetaData,
+    getConnectionSchemaFromMetadataOrApiPath
 };

@@ -199,9 +199,9 @@ export const httpClientActions = {
         try {
             const response = await cubeService.fetchGrpcProtoDescriptor(customerId, app);
 
-            dispatch(httpClientActions.setProtoDescriptorValues({ [app]: mergeApplicationProtoFiles(response) }));
+            dispatch(httpClientActions.setProtoDescriptorValues(mergeApplicationProtoFiles(response)));
         } catch (e) {
-            dispatch(httpClientActions.setProtoDescriptorValues({ [app]: {} }));
+            dispatch(httpClientActions.setProtoDescriptorValues({}));
             // console.log('An error occured trying to load schema', e);
         }
     },
@@ -327,32 +327,39 @@ export const httpClientActions = {
             return b.res[0].reqTimestamp - a.res[0].reqTimestamp;
         });
         apiTraces.forEach((eachApiTrace) => {
-            const timeStamp = eachApiTrace.res[0].reqTimestamp,
-                objectKey = new Date(timeStamp * 1000).toDateString();
-            eachApiTrace.res.map((eachApiTraceEvent) => {
-                eachApiTraceEvent["name"] = eachApiTraceEvent["apiPath"];
-                eachApiTraceEvent["id"] = eachApiTraceEvent["requestEventId"];
-                eachApiTraceEvent["toggled"] = false;
-                eachApiTraceEvent["recordingIdAddedFromClient"] = collection.id;
-                eachApiTraceEvent["traceIdAddedFromClient"] = eachApiTrace.traceId;
-                eachApiTraceEvent["collectionIdAddedFromClient"] = eachApiTrace.collection;
-            });
+            try{
+                const timeStamp = eachApiTrace.res[0].reqTimestamp,
+                    objectKey = new Date(timeStamp * 1000).toDateString();
+                eachApiTrace.res.map((eachApiTraceEvent) => {
+                    eachApiTraceEvent["name"] = eachApiTraceEvent["apiPath"];
+                    eachApiTraceEvent["id"] = eachApiTraceEvent["requestEventId"];
+                    eachApiTraceEvent["toggled"] = false;
+                    eachApiTraceEvent["recordingIdAddedFromClient"] = collection.id;
+                    eachApiTraceEvent["traceIdAddedFromClient"] = eachApiTrace.traceId;
+                    eachApiTraceEvent["collectionIdAddedFromClient"] = eachApiTrace.collection;
+                });
 
-            if (objectKey in cubeRunHistory) {
-                const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
-                    customID: "spanId", parentProperty: "parentSpanId"
-                });
-                cubeRunHistory[objectKey].push({
-                    ...apiFlatArrayToTree[0]
-                });
-            } else {
-                cubeRunHistory[objectKey] = [];
-                const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
-                    customID: "spanId", parentProperty: "parentSpanId"
-                });
-                cubeRunHistory[objectKey].push({
-                    ...apiFlatArrayToTree[0]
-                });
+                if (objectKey in cubeRunHistory) {
+                    const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
+                        customID: "spanId", parentProperty: "parentSpanId"
+                    });
+                    cubeRunHistory[objectKey].push({
+                        ...apiFlatArrayToTree[0]
+                    });
+                } else {
+                    cubeRunHistory[objectKey] = [];
+                    const apiFlatArrayToTree = arrayToTree(eachApiTrace.res, {
+                        customID: "spanId", parentProperty: "parentSpanId"
+                    });
+                    cubeRunHistory[objectKey].push({
+                        ...apiFlatArrayToTree[0]
+                    });
+                }
+            }
+            catch(error){
+                //This can occur due to some apitrace is not properly formatted in rare scenarios. 
+                //If not cached at individual trace lavel, complete History would not be visible to user.
+                console.error("Error in parsing apiTrace to tree ", error);
             }
         });
         let currentEndTime = null;
@@ -558,11 +565,11 @@ export const httpClientActions = {
             const response = await cubeService.fetchCollectionList(user, app, "UserGolden", true, collectionTabState.numResults, currentPage * collectionTabState.numResults);
             const serverRes = response.recordings;
             const userCollections = serverRes.filter((eachCollection) => (eachCollection.recordingType !== "History"))
+            dispatch(httpClientActions.addUserCollections(userCollections));
             if(resetToFirstPage){
-                dispatch(httpClientActions.setCollectionTabState({...collectionTabState, currentPage: 0, count: response.numFound }));
+                dispatch(httpClientActions.setCollectionTabState({...collectionTabState, currentPage: 0, count: response.numFound, timeStamp: Date.now() }));
             }
 
-            dispatch(httpClientActions.addUserCollections(userCollections));
         } catch (error) {
             console.error("Error ", error);
             throw new Error("Error");

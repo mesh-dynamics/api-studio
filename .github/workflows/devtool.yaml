@@ -48,6 +48,7 @@ jobs:
           NEXTVERSION="${version}-${BRANCH}.${TIMESTAMP}.${COMMIT}"
           echo $NEXTVERSION
           npm install
+          brew install yq@3
           jq --arg version "${NEXTVERSION}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.$BRANCH.yml --publish always
@@ -64,6 +65,7 @@ jobs:
           echo $version
           npm install
           export RELEASE_TYPE=customer
+          brew install yq@3
           jq --arg version "${version}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.yml --publish always
@@ -80,6 +82,7 @@ jobs:
           echo $version
           npm install
           export RELEASE_TYPE=customer
+          brew install yq@3
           jq --arg version "${version}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.customer-fitch.yml --publish always
@@ -91,6 +94,8 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - run: git fetch --prune --unshallow --tags
+      - name: yq - portable yaml processor
+        uses: mikefarah/yq@3.4.1
       - name: Build for linux
         if: ${{ github.event_name == 'push'}}
         env:
@@ -133,7 +138,6 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - run: git fetch --prune --unshallow --tags
-
       - name: Build for windows
         shell: pwsh
         if: ${{ github.event_name == 'push'}}

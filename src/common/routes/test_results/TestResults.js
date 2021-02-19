@@ -228,7 +228,7 @@ class TestResults extends Component {
                                     {`Run By : ${userName}`}
                             </span>
                             <span className="timeline-replay-id">
-                                    {`Golden : ${goldenName}`}
+                                    {`Test suite : ${goldenName}`}
                             </span>
                             <span className="timeline-replay-id">
                                     {`Label : ${goldenLabel}`}
@@ -258,7 +258,7 @@ class TestResults extends Component {
                                     {`Run By : ${userName}`}
                             </div>
                             <div className="timeline-replay-id">
-                                    {`Golden : ${goldenName}`}
+                                    {`Test suite : ${goldenName}`}
                             </div>
                             <span className="timeline-replay-id">
                                     {`Label : ${goldenLabel}`}

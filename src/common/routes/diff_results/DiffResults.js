@@ -582,9 +582,9 @@ class DiffResults extends Component {
                     
                     <div className="back" style={{ marginBottom: "10px", padding: "5px", background: "#454545" }}>
                         <Link to={"/test_results"} onClick={this.handleBackToDashboardClick}><span className="link-alt"><Glyphicon className="font-15" glyph="chevron-left" /> BACK TO DASHBOARD</span></Link>
-                        <span className="link-alt pull-right" onClick={this.showSaveGoldenModal}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-save font-15"></i>&nbsp;Save Golden</span>
+                        <span className="link-alt pull-right" onClick={this.showSaveGoldenModal}>&nbsp;&nbsp;&nbsp;&nbsp;<i className="fas fa-save font-15"></i>&nbsp;Save test suite</span>
                         <Link to="/review_golden_updates" className="hidden">
-                            <span className="link pull-right"><i className="fas fa-pen-square font-15"></i>&nbsp;REVIEW GOLDEN UPDATES</span>
+                            <span className="link pull-right"><i className="fas fa-pen-square font-15"></i>&nbsp;REVIEW TEST SUITE UPDATES</span>
                         </Link>
                     </div>
                     

@@ -187,7 +187,7 @@ class Navigation extends Component<INavigationProps,INavigationState> {
                                 <div className="value-n">{cube.testConfig ? cube.testConfig.testConfigName : ''}</div>
                             </div>
                             <div className={cube.golden ? "margin-top-10" : "hidden"}>
-                                <div className="label-n">GOLDEN</div>
+                                <div className="label-n">TEST SUITE</div>
                                 <div className="value-n">{cube.golden ? cube.golden : ''}</div>
                             </div>
                             <div className={cube.goldenTimeStamp ? "margin-top-10" : "hidden"}>

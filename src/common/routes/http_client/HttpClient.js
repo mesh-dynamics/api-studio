@@ -557,8 +557,7 @@ class HttpClient extends Component {
                         <SaveToCollection 
                         disabled={currentSelectedTab.httpURL.length === 0} 
                         visible={currentSelectedTab.showSaveBtn} 
-                        tabId={currentSelectedTab.id} 
-                        getReqResFromTabData={this.props.getReqResFromTabData}
+                        tabId={currentSelectedTab.id}
                         />
                         <Button className="cube-btn text-center"  onClick={this.handleDuplicateTabClick} title="Duplicate Tab">
                             <i className="fa fa-clone"></i>

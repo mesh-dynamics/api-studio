@@ -17,7 +17,8 @@ import { defaultCollectionItem } from '../../constants';
 declare type SelectedSourceType = "UserGolden" | "Golden";
 export interface IGoldenCollectionBrowseProps {
     cube: ICubeState;
-    dropdownLabel: string;
+    selectedLabel: string;
+    selectBtnLabel: string;
     showGrouping?: boolean;
     ddlClassNames?: string;
     showDeleteOption?: boolean;
@@ -40,7 +41,8 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
             isCollectionLoading,
         },
         showGrouping,
-        dropdownLabel,
+        selectedLabel,
+        selectBtnLabel,
         selectedSource,
         showDeleteOption,
         showVisibilityOption,
@@ -177,7 +179,7 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
     return (
         <div className="margin-top-10">
             <div className="label-n">
-                SELECTED {dropdownLabel}&nbsp;
+                {selectedLabel}&nbsp;
             </div>
             <div className={goldenCollectionSelectorClass}>
                 {
@@ -210,7 +212,7 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
                             pathname: "/test_config_view/golden_visibility",
                             search: `recordingId=${selectedGoldenOrCollectionItem?.id || ''}`
                         }}>
-                            <span className="cube-btn gcBrowse-action-buttons" onClick={handleViewGoldenClick}>VIEW GOLDEN</span>
+                            <span className="cube-btn gcBrowse-action-buttons" onClick={handleViewGoldenClick}>View</span>
                         </Link>
                         
                     }
@@ -222,14 +224,14 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
                             } 
                             onClick={handleShowGoldenFilter}
                     >
-                        SELECT {dropdownLabel}
+                        {selectBtnLabel}
                     </span>
                 </div>
             </div>
             <Modal show={showGoldenCollectionModal} bsSize="large" onHide={() => { }}>
                 <Modal.Header>
                     <Modal.Title>
-                        {`Browse ${selectedSource === "UserGolden" ? "Collections" : "Goldens"}`}
+                        {`${selectedSource === "UserGolden" ? "Collections" : "Test suites"}`}
                         <small className="gcBrowse-modal-heading-color">({selectedApp})</small>
                     </Modal.Title>
                 </Modal.Header>

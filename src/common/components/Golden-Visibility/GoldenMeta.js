@@ -115,7 +115,7 @@ const GoldenMeta = (props) => {
                         <i className="fa fa-pencil-square-o pointer" aria-hidden="true" onClick={() => setEditable(true)}></i>
                     </div>
                 }
-                <span className="margin-right-10"><strong>Golden:</strong></span>
+                <span className="margin-right-10"><strong>Test suite:</strong></span>
                 {!editable && <span>{goldenName}</span>}
                 {editable && 
                     <input 

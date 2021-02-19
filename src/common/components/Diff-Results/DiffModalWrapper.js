@@ -30,21 +30,21 @@ const DiffModalWrapper = (props) => {
                     <Modal.Title>
                         {
                             !cube.newGoldenId 
-                            ? "Saving Golden" 
-                            : "Golden Saved"
+                            ? "Saving test suite" 
+                            : "Test suite Saved"
                         }
                     </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <p className={cube.newGoldenId ? "" : "hidden"}>Name: {nameG}</p>
-                    <p className={cube.newGoldenId ? "hidden" : ""}>Saving Golden Operations</p>
+                    <p className={cube.newGoldenId ? "hidden" : ""}>Saving test suite Operations</p>
                 </Modal.Body>
                 <Modal.Footer>
                     <div>
                         {cube.newGoldenId ?
                             <span onClick={handleNewGoldenModalClose} className="cube-btn">Go To Test Config</span>
                         :
-                            <span className="modal-footer-text">The golden is being saved in the background and will be available later. </span>
+                            <span className="modal-footer-text">The test suite is being saved in the background and will be available later. </span>
                         }
                             &nbsp;&nbsp;
                             <span onClick={handleCloseDone} className={cube.goldenInProg ? "cube-btn disabled" : "cube-btn"}>
@@ -79,7 +79,7 @@ const DiffModalWrapper = (props) => {
                                     type="text" 
                                     value={nameG} 
                                     className="width-100"
-                                    placeholder="Enter Golden Name" 
+                                    placeholder="Enter test suite Name" 
                                     onChange={(event) => changeGoldenMetaData('nameG', event.target.value.replace(/  /g, " "))} 
                                 />
                             </div>
