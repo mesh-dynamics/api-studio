@@ -77,7 +77,8 @@ class ViewSelectedTestConfig extends React.Component {
             storeToDatastore: true,
             servicesForSelectedGolden : [],
             selectedService : "",
-            ignoreStaticContent: false
+            ignoreStaticContent: false,
+            stopInProgress: false
         };
         //this.statusInterval;
     }
@@ -668,9 +669,10 @@ class ViewSelectedTestConfig extends React.Component {
         const searchParams = new URLSearchParams();
         searchParams.set('resettag', `default${selectedApp}Noop`);
 
+        this.setState({ stopInProgress: true, stoppingStatus: true});
         // axios.post(stopUrl, {}, configForHTTP)
         api.post(stopUrl, searchParams, configForHTTP).then(() => {
-            this.setState({ recId: null, stoppingStatus: true});
+            this.setState({ recId: null, stoppingStatus: true, stopInProgress: false});
             this.stopStatusInterval = setInterval(
                 () => { 
                     if(this.state.recStatus.status === "Completed") {
@@ -1204,7 +1206,7 @@ class ViewSelectedTestConfig extends React.Component {
                     </Modal.Body>
 
                     <Modal.Footer>
-                        <span onClick={() => this.handleForceStopRecording(recStatus.id)} className={classNames("cube-btn","pull-left", {"hidden" : !stoppingStatus, "disabled" : forceStopping})}>FORCE STOP</span>&nbsp;&nbsp;
+                        <span onClick={() => this.handleForceStopRecording(recStatus.id)} className={classNames("cube-btn","pull-left", {"hidden" : !stoppingStatus || this.state.stopInProgress, "disabled" : forceStopping})}>FORCE STOP</span>&nbsp;&nbsp;
 
                         <span onClick={this.handleCloseRecModal} className={stopDisabled ? "cube-btn" : "cube-btn disabled"}>CLOSE</span>
                     </Modal.Footer>
