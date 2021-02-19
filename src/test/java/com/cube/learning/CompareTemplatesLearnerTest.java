@@ -60,7 +60,7 @@ class CompareTemplatesLearnerTest {
             List<TemplateEntryMeta> finalMetaList = ctLearner.learnComparisonRules(reqIdToMethodMap,
                 reqRespMatchResultList,
                 config.rrstore
-                    .getTemplateSet(replay.customerId, replay.app, replay.templateVersion), false);
+                    .getTemplateSet(replay.customerId, replay.app, replay.templateVersion));
 
             try {
                 System.out.print(config.jsonMapper

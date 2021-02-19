@@ -84,23 +84,32 @@ public class CompareTemplatesLearner {
 //                existingCompareTemplatesMap.putIfAbsent(templateKey, template);
         context.addCoveredKey(templateKey);
 
+        Action action;
+        RuleStatus status;
+
         if (type == Type.RequestCompare || type == Type.ResponseCompare) {
             // Convert existing template rules to learnt template metas
-            template.getRules().forEach(templateEntry ->
-                {
-                    context.addRule(
-                        new RulesKey(templateKey, templateEntry.path),
-                        new TemplateEntryMeta(Action.Remove, type,
-                            service,
-                            requestPath, method, templateEntry.path,
-                            templateEntry.getCompareType(),
-                            templateEntry.getPresenceType(),
-                            Optional.empty(), Optional.empty(), Optional.empty(),
-                            RuleStatus.UnusedExisting
-                        ));
-                }
-            );
+            action = Action.Remove;
+            status = RuleStatus.UnusedExisting;
+        }else {
+            action = Action.None;
+            status = RuleStatus.Undefined;
         }
+        template.getRules().forEach(entry ->
+
+            context.addRule(
+                new RulesKey(templateKey, entry.path),
+                new TemplateEntryMeta(action, type,
+                    service,
+                    requestPath, method, entry.path,
+                    entry.getCompareType(),
+                    entry.getPresenceType(),
+                    Optional.empty(), Optional.empty(), entry.getDataType(),
+                    entry.getExtractionMethod(), entry.getCustomization(),
+                    entry.arrayComparisionKeyPath
+                    , Optional.empty(), status)
+
+        ));
     }
 
     RuleStatus violatesRule(RuleStatus currentStatus) {
@@ -162,9 +171,10 @@ public class CompareTemplatesLearner {
             count = meta.count + 1;
             numViolationsComparison = meta.numViolationsComparison;
             numViolationsPresence = meta.numViolationsPresence;
-            action = meta.action;
+            action = meta.action == Action.Remove? Action.None : meta.action;
         } else {
             Optional<TemplateEntry> effectiveTemplateEntry = getEffectiveTemplateEntry(rulesKey);
+
             if (effectiveTemplateEntry.isPresent()) {
                 existingParentMeta = getParentMeta(context, rulesKey, effectiveTemplateEntry.get());
                 if (existingParentMeta.isPresent()) {
@@ -244,7 +254,9 @@ public class CompareTemplatesLearner {
         }
 
         TemplateEntryMeta meta = new TemplateEntryMeta(action, reqOrResp, service, apiPath,
-            method, jsonPath, currentCt, currentPt, newCt, newPt, existingParentMeta, ruleStatus);
+            method, jsonPath, currentCt, currentPt, newCt, newPt, DataType.Default,
+            ExtractionMethod.Default, Optional.empty(), Optional.empty(), existingParentMeta,
+            ruleStatus);
 
         meta.count = count;
         meta.numViolationsComparison = numViolationsComparison;
@@ -260,8 +272,7 @@ public class CompareTemplatesLearner {
 
     public List<TemplateEntryMeta> learnComparisonRules(Map<String, String> reqIdToMethodMap,
         List<ReqRespMatchResult> reqRespMatchResultList,
-        Optional<TemplateSet> existingTemplateSet,
-        Boolean includeConforming) {
+        Optional<TemplateSet> existingTemplateSet) {
 
         LearningContext context = new LearningContext();
 
@@ -279,17 +290,11 @@ public class CompareTemplatesLearner {
             }
         );
 
-        return generateComparisonRules(context, includeConforming);
+        return generateComparisonRules(context);
     }
 
-    public List<TemplateEntryMeta> generateComparisonRules(LearningContext context,
-        Boolean includeConforming) {
+    public List<TemplateEntryMeta> generateComparisonRules(LearningContext context) {
         List<TemplateEntryMeta> templateEntryMetaList = context.getAllRules();
-
-        if (!includeConforming) {
-            templateEntryMetaList.removeIf(templateEntryMeta -> templateEntryMeta.ruleStatus
-                == RuleStatus.ConformsToInherited);
-        }
 
         Collections.sort(templateEntryMetaList);
 
@@ -298,7 +303,7 @@ public class CompareTemplatesLearner {
         templateEntryMetaList.forEach(
             meta -> meta.parentMeta.ifPresent(parentMeta -> {
                 meta.setInheritedRuleId(parentMeta.id);
-                meta.sourceRulePath = parentMeta.jsonPath;
+                meta.sourceRulePath = parentMeta.getJsonPath();
             }));
         return templateEntryMetaList;
     }
@@ -311,8 +316,8 @@ public class CompareTemplatesLearner {
             TemplateKey templateKey = new TemplateKey(templateVersion, customer, app, tm.service,
                 CompareTemplate.normaliseAPIPath(tm.apiPath), tm.reqOrResp, tm.getMethod(), TemplateKey.DEFAULT_RECORDING);
 
-            PresenceType effectivePt = tm.getNewPt().orElse(tm.currentPt);
-            ComparisonType effectiveCt = tm.getNewCt().orElse(tm.currentCt);
+            PresenceType effectivePt = tm.getNewPt().orElse(tm.getCurrentPt());
+            ComparisonType effectiveCt = tm.getNewCt().orElse(tm.getCurrentCt());
 
             if (effectiveCt != ComparisonType.Default && effectivePt != PresenceType.Default){
                 // TODO: Handle the case when only one of them gets updated in the learned rules.
@@ -323,8 +328,8 @@ public class CompareTemplatesLearner {
                         tm.getMethod(), tm.reqOrResp, new CompareTemplate()));
 
                 compareTemplate.addRule(
-                    new TemplateEntry(tm.jsonPath, DataType.Default, effectivePt,
-                        effectiveCt, ExtractionMethod.Default, Optional.empty(),
+                    new TemplateEntry(tm.getJsonPath(), tm.getDt(), effectivePt,
+                        effectiveCt, tm.getEm(), Optional.empty(),
                         Optional.empty()));
             }else{
                 LOGGER.error("Found default presence or comparison type for template " + tm.toString());
@@ -338,7 +343,6 @@ public class CompareTemplatesLearner {
 
     private static class RulesKey {
 
-        private static final String EMPTY_RECORDING = "";
         private final String jsonPath;
         private final TemplateKey templateKey;
 

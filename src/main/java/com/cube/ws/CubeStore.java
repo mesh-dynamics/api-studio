@@ -1185,9 +1185,9 @@ public class CubeStore {
     @POST
     @Path("resumeRecording/{recordingId}")
     public void resumeRecording(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui,
-        @PathParam("recordingId") String recordingId) {
+        @PathParam("recordingId") String recordingId, MultivaluedMap<String, String> formParams) {
         Optional<Recording> recording = rrstore.getRecording(recordingId);
-        CompletableFuture<Response> resp = resumeRecording(recording, ui.getQueryParameters());
+        CompletableFuture<Response> resp = resumeRecording(recording, formParams);
         resp.thenApply(response -> asyncResponse.resume(response));
     }
 
@@ -1371,7 +1371,7 @@ public class CubeStore {
         Optional<String> templateVersion, String userId, RecordingType type,
         Optional<Predicate<Event>> eventFilter) {
         Instant timeStamp = Instant.now();
-        String labelValue = label.orElse(timeStamp.toString());
+        String labelValue = label.orElse(""+timeStamp.getEpochSecond());
         Optional<Recording> recordingForId = rrstore.getRecording(recordingId);
         return recordingForId.map(recording -> {
             Optional<Recording> recordingWithSameName = name.flatMap(nameValue -> rrstore
@@ -1685,7 +1685,7 @@ public class CubeStore {
                     if(deleteRecordingMeta) {
                        Stream<Replay> replays = rrstore.getReplay(Optional.of(rec.customerId), Optional.of(rec.app),
                             Optional.empty(), Collections.EMPTY_LIST, Optional.empty(),
-                            Optional.of(rec.collection));
+                            List.of(rec.collection));
                        rrstore.deleteAllReplayData(replays.collect(Collectors.toList()));
                     } else {
                         LOGGER.error(new ObjectMessage(Map.of(Constants.ERROR, "Recording Data is not deleted", "RecordingId", recordingId)));
