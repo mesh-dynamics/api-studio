@@ -21,7 +21,7 @@ public abstract class GRPCPayload extends HTTPPayload {
 
     protected String path;
     protected String protoService;
-    protected String methodName;
+    protected String methodName; // This is not HTTP method but proto rpc methodName
     @JsonIgnore
     private Optional<ProtoDescriptorDAO> protoDescriptor;
 

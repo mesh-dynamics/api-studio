@@ -267,7 +267,7 @@ public class Utils {
 			return MediaType.TEXT_PLAIN;
 		}).toLowerCase()
 			.startsWith(Constants.APPLICATION_GRPC)) {
-			GRPCRequestPayload grpcRequestPayload = new GRPCRequestPayload(hdrs, body, apiPath);
+			GRPCRequestPayload grpcRequestPayload = new GRPCRequestPayload(hdrs, body, apiPath, method);
 			mockedRequestPayload = grpcRequestPayload;
 
 		} else {

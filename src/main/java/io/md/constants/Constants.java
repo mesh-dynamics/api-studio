@@ -309,6 +309,9 @@ public class Constants {
 	public static final String TEMP_DIR = "/tmp";
 	public static final Integer GRPC_SUCCESS_STATUS_CODE = 0;
 	public static final String PARENTSPANID_SPECIAL_CHARACTERS = "ffffffffffffffff";
+	public static final String HTTP_POST = "POST";
+	public static final String GRPC_DEFAULT_HTTP_MEHTOD = HTTP_POST;
+
 
 
 
