@@ -204,11 +204,13 @@ const GRPCRequestMessage = (props: IGRPCRequestMessage) => {
                 </div>
             </div>
             {
-                appGrpcSchema[packageName] 
-                && Object.keys(appGrpcSchema[packageName]).length === 0
+                (!appGrpcSchema
+                || Object.keys(appGrpcSchema).length === 0)
                 && 
                 <div className="grpcrm-request-view-proto-error">
-                    No proto files found selected app. Please <Link to={`/configs?tabId=4`}>add proto files from gRPC configuration</Link> section.
+                    { props.disabled ? <>&nbsp;</> 
+                    : <>No proto files found selected app. Please <Link to={`/configs?tabId=4`}>add proto files from gRPC configuration</Link> section.</>
+                    }
                 </div>
             }
             <div className='grpcrm-endpoint-container'>
