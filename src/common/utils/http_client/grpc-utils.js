@@ -159,8 +159,11 @@ const getMethodsAndDataFromService = (service, serviceObject, currentGrpcService
 };
 
 const setGrpcDataFromDescriptor = (data, currentGrpcData) => {
-    
-    const dataEntries = Object.entries(data)[0];
+    const entries = Object.entries(data);
+    if(entries.length  == 0){
+        return currentGrpcData;
+    }
+    const dataEntries = entries[0];
 
     const constructedServiceObject = {};
 
