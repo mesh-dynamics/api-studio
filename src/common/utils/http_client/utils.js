@@ -7,7 +7,7 @@ import { store } from '../../helpers';
 import URLParse from "url-parse";
 import { 
     applyGrpcDataToRequestObject, 
-    getGrpcSchemaFromMetaData,
+    getConnectionSchemaFromMetadataOrApiPath,
   } from '../../utils/http_client/grpc-utils';
 
 const generateRunId = () => {
