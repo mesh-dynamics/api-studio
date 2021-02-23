@@ -132,4 +132,17 @@ class Deferred {
 	}
 }
 
-module.exports = { getParameterCaseInsensitive, isJsonOrGrpcMime, Base64Binary, Deferred };
+const clearRestrictedHeaders = function(headers){
+	//Chromium doesn't allow below headers, if any of headers are found the electron-fetch library throws an error.
+	// Ref: https://www.electronjs.org/docs/api/client-request#instance-methods
+	delete headers['te'];
+	delete headers['trailer'];
+	delete headers['upgrade'];
+	delete headers['keep-alive'];
+	delete headers['content-length'];
+	delete headers['transfer-encoding'];
+	delete headers['cookie2'];
+	delete headers['host'];
+}
+
+module.exports = { getParameterCaseInsensitive, isJsonOrGrpcMime, Base64Binary, Deferred, clearRestrictedHeaders };
