@@ -444,7 +444,7 @@ export const httpClientActions = {
             const currentPageEndTime = historyTabState.oldPagesData[historyTabState.currentPage];
             dispatch(httpClientActions.setHistoryLoading(true));
             const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(customerId, app, userHistoryCollection, historyPathFilterText, currentPageEndTime.endTime, historyTabState.numResults);
-            sortApiTraceChildren(apiTrace);
+            sortApiTraceChildren(apiTraces);
             const initialHistoryTabState = {
                 ...historyTabState,
                 currentPage: historyTabState.currentPage + 1,
@@ -472,7 +472,7 @@ export const httpClientActions = {
         try {            
             dispatch(httpClientActions.setHistoryLoading(true));
             const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(customerId, app, userHistoryCollection, historyPathFilterText, null, historyTabState.numResults);
-            sortApiTraceChildren(apiTrace);
+            sortApiTraceChildren(apiTraces);
             const initialHistoryTabState = {
                 ...historyTabState,
                 currentPage: 0,
@@ -502,7 +502,7 @@ export const httpClientActions = {
                 dispatch(httpClientActions.setHistoryLoading(true));
                 const currentPageEndTime = historyTabState.oldPagesData[historyTabState.currentPage-2];
                 const {apiTraces, cubeRunHistory, count, endTime}  = await httpClientActions.loadHistoryApiCall(customerId, app, userHistoryCollection, historyPathFilterText, currentPageEndTime.endTime);
-                sortApiTraceChildren(apiTrace);
+                sortApiTraceChildren(apiTraces);
                 const initialHistoryTabState = {
                     ...historyTabState,
                     currentPage: historyTabState.currentPage - 1,
