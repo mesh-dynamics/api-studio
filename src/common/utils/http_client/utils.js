@@ -7,7 +7,7 @@ import { store } from '../../helpers';
 import URLParse from "url-parse";
 import { 
     applyGrpcDataToRequestObject, 
-    getGrpcSchemaFromMetaData,
+    getConnectionSchemaFromMetadataOrApiPath,
   } from '../../utils/http_client/grpc-utils';
 
 const generateRunId = () => {
@@ -161,13 +161,15 @@ const extractParamsFromRequestEvent = (httpRequestEvent) =>{
         });
     }
     for (let eachQueryParam in httpRequestEvent.payload[1].queryParams) {
-        queryParams.push({
-            id: uuidv4(),
-            name: eachQueryParam,
-            value: httpRequestEvent.payload[1].queryParams[eachQueryParam][0],
-            description: "",
-            selected: true,
-        });
+        httpRequestEvent.payload[1].queryParams[eachQueryParam].forEach(value => {
+            queryParams.push({
+                id: uuidv4(),
+                name: eachQueryParam,
+                value: value,
+                description: "",
+                selected: true,
+            });
+        })
     }
 
     let {httpURL, queryParamsFromUrl} = extractURLQueryParams(httpRequestEvent.apiPath)
@@ -286,7 +288,6 @@ const extractParamsFromRequestEvent = (httpRequestEvent) =>{
 }
 
 const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) => {
-    debugger; //remove
     const httpRequestEventTypeIndex = httpEventReqResPair[0].eventType === "HTTPRequest" ? 0 : 1;
     const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
     const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
@@ -369,11 +370,11 @@ const preRequestToFetchableConfig = (preRequestResult, httpURL) => {
     });
   
     //Query String
-    const httpRequestQueryStringParamsRendered = {};
+    const httpRequestQueryStringParamsRendered = new URLSearchParams();
     const preRequestqueryString = payload.queryParams;
     Object.entries(preRequestqueryString).forEach(([key, queryStringValueArray]) => {
         queryStringValueArray.forEach((value) => {
-        httpRequestQueryStringParamsRendered[key] = value;
+        httpRequestQueryStringParamsRendered.append(key, value);
       });
     });
   

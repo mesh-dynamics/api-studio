@@ -77,7 +77,8 @@ class ViewSelectedTestConfig extends React.Component {
             storeToDatastore: true,
             servicesForSelectedGolden : [],
             selectedService : "",
-            ignoreStaticContent: true
+            ignoreStaticContent: false,
+            stopInProgress: false
         };
         //this.statusInterval;
     }
@@ -343,7 +344,7 @@ class ViewSelectedTestConfig extends React.Component {
             return;
         } 
 
-        this.setState({ recordModalVisible: true });
+        this.setState({ recordModalVisible: true, ignoreStaticContent: false });
 
     };
 
@@ -360,7 +361,7 @@ class ViewSelectedTestConfig extends React.Component {
             return;
         } 
         
-        this.setState({ resumeModalVisible: true});
+        this.setState({ resumeModalVisible: true, ignoreStaticContent: false});
 
     }
 
@@ -668,9 +669,10 @@ class ViewSelectedTestConfig extends React.Component {
         const searchParams = new URLSearchParams();
         searchParams.set('resettag', `default${selectedApp}Noop`);
 
+        this.setState({ stopInProgress: true, stoppingStatus: true});
         // axios.post(stopUrl, {}, configForHTTP)
         api.post(stopUrl, searchParams, configForHTTP).then(() => {
-            this.setState({ recId: null, stoppingStatus: true});
+            this.setState({ recId: null, stoppingStatus: true, stopInProgress: false});
             this.stopStatusInterval = setInterval(
                 () => { 
                     if(this.state.recStatus.status === "Completed") {
@@ -1169,7 +1171,7 @@ class ViewSelectedTestConfig extends React.Component {
                                         <input placeholder={"Enter Name"} onChange={this.changeRecName} type="text" value={recName}/>
                                     </Col>
                                 </Row>
-                                <Row className="text-left">
+                                <Row className="text-left margin-top-5">
                                     <Col xs={12} md={4}>
                                         Ignore static content:
                                     </Col>
@@ -1177,7 +1179,7 @@ class ViewSelectedTestConfig extends React.Component {
                                         <input type="checkbox" name="ignoreStaticContentCb" onChange={this.onIgnoreStaticContentChange} checked={this.state.ignoreStaticContent}/> (Ex: js, css, img, html etc.)
                                     </Col>
                                 </Row>
-                                <Row>
+                                <Row className="margin-top-15">
                                     <Col xs={12} md={12}>
                                         <span onClick={this.showDBWarningModal} className={stopDisabled ? "cube-btn margin-right-10" : "cube-btn disabled margin-right-10"}>START</span>
                                         <span onClick={this.stopRecord} className={stopDisabled || stoppingStatus ? "cube-btn disabled" : "cube-btn"}>STOP</span>
@@ -1204,7 +1206,7 @@ class ViewSelectedTestConfig extends React.Component {
                     </Modal.Body>
 
                     <Modal.Footer>
-                        <span onClick={() => this.handleForceStopRecording(recStatus.id)} className={classNames("cube-btn","pull-left", {"hidden" : !stoppingStatus, "disabled" : forceStopping})}>FORCE STOP</span>&nbsp;&nbsp;
+                        <span onClick={() => this.handleForceStopRecording(recStatus.id)} className={classNames("cube-btn","pull-left", {"hidden" : !stoppingStatus || this.state.stopInProgress, "disabled" : forceStopping})}>FORCE STOP</span>&nbsp;&nbsp;
 
                         <span onClick={this.handleCloseRecModal} className={stopDisabled ? "cube-btn" : "cube-btn disabled"}>CLOSE</span>
                     </Modal.Footer>

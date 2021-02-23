@@ -7,8 +7,8 @@ const { getParameterCaseInsensitive } = require('../../../shared/utils');
 // Specification for request payload state
 const PAYLOAD_STATE = {
     WRAPPED_ENCODED: 'WrappedEncoded', // To be used if payload is sent with base64 encoding
-    WRAPPED_DECODED: 'WrappedDecoded', // To be used if payload is string. This is the default for live proxy
-    UNWRAPPED_DECODED: 'UnwrappedDecoded' // To be used if payload is sent in cube format
+    WRAPPED_DECODED: 'WrappedDecoded', // To be used if payload is string.
+    UNWRAPPED_DECODED: 'UnwrappedDecoded' // To be used if payload is sent in cube format (body as json)
 };
 
 const isgRPC = (responseProps) => responseProps.headers["content-type"] == 'application/grpc';

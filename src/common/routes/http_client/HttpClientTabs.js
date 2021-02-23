@@ -719,6 +719,7 @@ class HttpClientTabs extends Component {
                         responseStatusText: "",
                         responseHeaders: "",
                         responseBody: "",
+                        responsePayloadState: httpResponseEvent?.payload[1].payloadState,
                         recordedResponseHeaders: (httpResponseEvent && httpResponseEvent.payload[1].hdrs) ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
                         recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
                         recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
@@ -757,8 +758,7 @@ class HttpClientTabs extends Component {
 
     async driveRequestHandleResponse(response, tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, fetchedResponseHeaders){
         const {httpClient: { userHistoryCollection}, dispatch} = this.props;
-        const resISODate = new Date().toISOString();
-        const resTimestamp = new Date(resISODate).getTime();
+        const resTimestamp = Date.now() / 1000;
         const responseStatus = response.status;
         const responseStatusText = response.statusText;
         let data = "";
@@ -874,9 +874,9 @@ class HttpClientTabs extends Component {
         currentEnvironmentVars = getCurrentEnvVars();
 
         const reqTimestamp = Date.now() / 1000;
-
+        let queryStringValue = "";
         try {
-            
+
             const reqResPair = tabToProcess.eventData;
             const formattedData = httpClientTabUtils.getReqResFromTabData(selectedApp, reqResPair, tabToProcess, runId, "History", reqTimestamp, null, httpRequestURLRendered, currentEnvironment, currentEnvironmentVars);
             const preRequestData = {
@@ -888,13 +888,14 @@ class HttpClientTabs extends Component {
             const preRequestResult = await cubeService.fetchPreRequest(userHistoryCollection.id, runId, preRequestData, selectedApp, tabToProcess.abortRequest.cancelToken);
         
             [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] = preRequestToFetchableConfig(preRequestResult, httpRequestURL);
-
+            queryStringValue = httpRequestQueryStringParamsRendered.toString();
         } catch (e) {
             console.error(e);
             //Fallback to old way of generating request
             try{
                 [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] 
                 = applyEnvVars(httpRequestURL, httpRequestQueryStringParams, fetchConfig);
+                queryStringValue = stringify(httpRequestQueryStringParamsRendered);
             }
             catch(error){
                 this.showErrorAlert(`${e}`); // prompt user for error in env vars
@@ -903,13 +904,9 @@ class HttpClientTabs extends Component {
                 return
             }
         }
-        let fetchUrlRendered = httpRequestURLRendered + (Object.keys(httpRequestQueryStringParamsRendered).length ? "?" + stringify(httpRequestQueryStringParamsRendered) : "");
-        let fetchedResponseHeaders = {}, responseStatus = "", responseStatusText = "";
-        const startDate = new Date(Date.now() - 2 * 1000).toISOString();
+        let fetchUrlRendered = httpRequestURLRendered + (queryStringValue.length ? "?" + queryStringValue : "");
+        let fetchedResponseHeaders = {};
         fetchConfigRendered.signal = tabToProcess.abortRequest.signal;
-        // TODO: Update this to be visible from UI
-        // fetchConfigRendered.headers.append('md-trace-id', encodeURIComponent(`${traceId}:${spanId}:0:1`) );
-        let resTimestamp;
         
         if(PLATFORM_ELECTRON) {
             const requestApi = window.require('electron').remote.getGlobal("requestApi");
@@ -1237,6 +1234,7 @@ class HttpClientTabs extends Component {
                 responseStatusText: "",
                 responseHeaders: "",
                 responseBody: "",
+                responsePayloadState: "WrappedEncoded",
                 recordedResponseHeaders: "",
                 recordedResponseBody: "",
                 recordedResponseStatus: "",

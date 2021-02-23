@@ -16,6 +16,7 @@ const { URLSearchParams } = require('url');
 const os = require('os');
 const menu = require('./menu');
 const { updateApplicationConfig, getApplicationConfig } = require('./fs-utils');
+const { clearRestrictedHeaders } = require('../../shared/utils');
 
 autoUpdater.autoInstallOnAppQuit = true;
 autoUpdater.autoDownload = false; 
@@ -357,6 +358,7 @@ const setupListeners = (mockContext, user, replayContext) => {
         const abortController = new AbortController();
         reqMap[args.tabId + args.runId] = abortController;
         data.fetchConfigRendered.signal = abortController.signal;
+        clearRestrictedHeaders(data.fetchConfigRendered.headers);
 
         fetchCall(args.url, data.fetchConfigRendered).then(response=>{
 

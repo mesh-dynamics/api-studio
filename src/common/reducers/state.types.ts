@@ -428,6 +428,7 @@ export interface IHttpClientTabDetails {
   recordingIdAddedFromClient: string;
   requestId: string;
   responseBody: string;
+  responsePayloadState: string;
   responseBodyType: string; //could be enum: json/HTML/text
   responseHeaders: string;
   responseStatus: string; //Could be Enum
