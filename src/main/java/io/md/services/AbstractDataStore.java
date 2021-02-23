@@ -58,7 +58,7 @@ public abstract class AbstractDataStore implements DataStore {
 
     @Override
     public boolean save(Stream<Event> eventStream){
-        return BatchingIterator.batchedStreamOf(eventStream , EVENT_BATCH_SIZE).map(listofEvents-> save(listofEvents.stream().toArray(Event[]::new))).reduce(Boolean::logicalAnd).orElse(false);
+        return BatchingIterator.batchedStreamOf(eventStream , EVENT_BATCH_SIZE).map(listofEvents-> save(listofEvents.stream().toArray(Event[]::new))).reduce(Boolean::logicalAnd).orElse(true);
     }
 
 
