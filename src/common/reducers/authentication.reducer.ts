@@ -8,7 +8,16 @@ export interface IAuthenticationAction{
 }
 
 const initialState: IAuthenticationState = {
-  user: {}, 
+  user: {
+    access_token: "",
+    customer_name: "",
+    expires_in: 0,
+    refresh_token: "",
+    roles: [],
+    timestamp: "",
+    token_type: "",
+    username: ""
+  }, 
   role: "",
   loggedIn: false,
   isFetching: false,
