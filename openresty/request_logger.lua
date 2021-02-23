@@ -178,7 +178,7 @@ cube_request["payload"] = req_payload_wrapper
  
 cube_request["apiPath"] = apiPathToSet
 cube_request["traceId"] = traceId_univ
-cube_request["spanId"] = req_headers_multimap["x-b3-spanid"]
+cube_request["spanId"] = traceId_univ
 cube_request["parentSpanId"] = ""
 cube_request["reqId"] = ngx.var.request_id
 cube_request["eventType"] = "HTTPRequest"
@@ -270,11 +270,11 @@ cube_response["payload"] = resp_payload_wrapper
 
 cube_response["apiPath"] = apiPathToSet
 cube_response["traceId"] = cube_request["traceId"]
-cube_response["spanId"] = req_headers_multimap["x-b3-spanid"]
+cube_response["spanId"] = traceId_univ
 cube_response["parentSpanId"] = ""
 cube_response["reqId"] = cube_request["reqId"]
 cube_response["eventType"] = "HTTPResponse"
-cube_response["timestamp"] = ngx.req.start_time()
+cube_response["timestamp"] = ngx.now()
 
 
 data["response"] = cube_response
@@ -323,7 +323,8 @@ local forbiddenHeaders = {
 "trailer",
 "transfer-encoding",
 "upgrade",
-"via"
+"via",
+"referrer"
 }
 
 local function has_value (tab, val)
