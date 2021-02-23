@@ -66,14 +66,21 @@ cube_request["runType"] = runType
 cube_request["recordingType"] = recordingType
 
  
+local req_headers, err = ngx.req.get_headers()
 
-req_headers = ngx.req.get_headers()
-req_headers_multimap = {}
-for k, v in pairs(req_headers) do
-    req_headers_multimap[k] = {v}
+if err == "truncated" then
+   -- one can choose to ignore or reject the current request here
 end
 
- 
+local req_headers_multimap = {}
+
+for k, v in pairs(req_headers) do
+    if type(v) == "table" then
+	req_headers_multimap[k] = v
+    else
+       req_headers_multimap[k] = {v}
+    end
+end
 
 local traceId_univ = ""
 
@@ -127,10 +134,10 @@ if err == "truncated" then
    -- one can choose to ignore or reject the current request here
 end
 
-req_query_params_multimap = {}
+local req_query_params_multimap = {}
 
 for k, v in pairs(req_query_params) do
-    if type(val) == "table" then
+    if type(v) == "table" then
        req_query_params_multimap[k] = v
     else
        req_query_params_multimap[k] = {v}
@@ -245,13 +252,21 @@ cube_response["recordingType"] = recordingType
 
  
 
-resp_headers = upstream_response.header
-resp_headers_multimap = {}
-for k, v in pairs(resp_headers) do
-    resp_headers_multimap[string.lower(k)] = {v}
+local resp_headers, err = upstream_response.header
+
+if err == "truncated" then
+   -- one can choose to ignore or reject the current request here
 end
 
- 
+local resp_headers_multimap = {}
+
+for k, v in pairs(resp_headers) do
+    if type(v) == "table" then
+       resp_headers_multimap[string.lower(k)] = v
+    else
+       resp_headers_multimap[string.lower(k)] = {v}
+    end
+end
 
 local resp_payload = {}
 
