@@ -1382,7 +1382,20 @@ public class CubeStore {
                         recordingWithSameName.get().collection, recording.customerId, recording.app, recordingWithSameName.get().instanceId)))
                     .build());
             }
+            /**
+             * Check the collection is not empty
 
+            EventQuery.Builder builder = new EventQuery.Builder(recording.customerId, recording.app, Collections.emptyList());
+            builder.withCollection(recording.collection);
+            builder.withLimit(1);
+            builder.withOffset(1);
+            Result<Event> result = rrstore.getEvents(builder.build());
+            if(result.numFound < 1) {
+                return CompletableFuture.completedFuture(Response.status(Status.BAD_REQUEST)
+                    .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"Collection is empty"))
+                    .build());
+            }
+            */
             Recording  updatedRecording = createRecordingObjectFrom(recording, templateVersion,
                 name, Optional.of(userId), timeStamp, labelValue, type);
             if(rrstore.saveRecording(updatedRecording)) {
