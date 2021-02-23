@@ -1,13 +1,3 @@
---- CUBE PROPERTIES ---
--- local customerId = 'Pronto'
--- local app = 'ProntoApp'
--- local instanceId = 'test-md'
--- local service = ngx.var.host
--- local runType = 'Record'
--- local recordingType = "Golden"
-
- 
-
 local customerId = ngx.var.customerId
 local app = ngx.var.app
 local instanceId = ngx.var.instanceId
@@ -131,15 +121,21 @@ end
     -- apiPathToSet = apiPathToSet:sub(1,#apiPathToSet-1)
 -- end
 
- 
+local req_query_params, err = ngx.req.get_uri_args()
 
- 
-
-req_query_params = ngx.req.get_uri_args()
-req_query_params_multimap = {}
-for k, v in pairs(req_query_params) do
-    req_query_params_multimap[k] = {v}
+if err == "truncated" then
+   -- one can choose to ignore or reject the current request here
 end
+
+req_query_params_multimap = {}
+
+for k, v in pairs(req_query_params) do
+    if type(val) == "table" then
+       req_query_params_multimap[k] = v
+    else
+       req_query_params_multimap[k] = {v}
+    end
+end 
 
 local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/' -- You will need this for encoding/decoding
 function enc(data)
@@ -227,7 +223,7 @@ else
 	uri = ngx.var.uri .. "?" .. ngx.var.QUERY_STRING
 end
 
-upstream_response = ngx.location.capture("/custom_cube" .. uri, {
+local upstream_response = ngx.location.capture("/custom_cube" .. uri, {
     method = subReqMethod,
     always_forward_body = true
 })
