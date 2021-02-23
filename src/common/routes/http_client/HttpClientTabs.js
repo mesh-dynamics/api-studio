@@ -758,8 +758,7 @@ class HttpClientTabs extends Component {
 
     async driveRequestHandleResponse(response, tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, fetchedResponseHeaders){
         const {httpClient: { userHistoryCollection}, dispatch} = this.props;
-        const resISODate = new Date().toISOString();
-        const resTimestamp = new Date(resISODate).getTime();
+        const resTimestamp = Date.now() / 1000;
         const responseStatus = response.status;
         const responseStatusText = response.statusText;
         let data = "";
