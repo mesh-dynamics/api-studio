@@ -464,8 +464,6 @@ class GoldenPopover extends React.Component {
                             <div>
                                 <div>Path:&nbsp;<b>{this.props.jsonPath}</b></div>
                                 <div>Data Type:&nbsp;<b>{this.state.newRule.dt}</b></div>
-                                <div>Count of similar items:&nbsp;<b>105</b></div>
-                                {/* TODO: Above value is hardcoded. Find out more */}
                             </div>
                             { 
                                 this.props.eventType === 'Request'
@@ -547,7 +545,17 @@ class GoldenPopover extends React.Component {
                                             </select>
                                         </td>
                                     </tr>
+                                    {
+                                        this.state.newRule.em == "Regex" &&
+                                        <tr>
+                                            <td>Regex</td>
+                                            <td>{this.state.defaultRule.customization}</td>
+                                            <td>
+                                                <input type="text" value={this.state.newRule.customization} className="width-100" onChange={(e) => this.setRule("customization", e)} />
+                                            </td>
+                                        </tr>
 
+                                    }
                                     <tr>
                                         <td>Comparison Type</td>
                                         <td>{this.state.defaultRule.ct}</td>
