@@ -6,7 +6,7 @@ import static org.springframework.http.ResponseEntity.noContent;
 import static org.springframework.http.ResponseEntity.ok;
 import static org.springframework.http.ResponseEntity.status;
 
-import com.cubeui.backend.domain.AppFile;
+import com.cubeui.backend.domain.AppFilePath;
 import com.cubeui.backend.domain.DTO.Response.AppFileResponse;
 import com.cubeui.backend.web.ErrorResponse;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -124,18 +124,19 @@ public class CubeServerService {
         return getData(response, path, Recording.class);
     }
 
-    public List<AppFileResponse> getAppFileResponse(ResponseEntity<byte[]> responseEntity, List<AppFile> files) {
+    public List<AppFileResponse> getAppFileResponse(ResponseEntity<byte[]> responseEntity, List<AppFilePath> files) {
         List<AppFileResponse> response = new ArrayList<>();
         try {
             String body = new String(responseEntity.getBody());
             JsonNode json = jsonMapper.readTree(body);
-            for (AppFile appFile: files) {
+            for (AppFilePath appFilePath : files) {
+                ResponseEntity<byte[]> img = fetchGetResponse(appFilePath.getFilePath(), null);
                 AppFileResponse appFileResponse = new AppFileResponse();
-                appFileResponse.setFileName(appFile.getFileName());
-                appFileResponse.setFileType(appFile.getFileType());
-                appFileResponse.setData(appFile.getData());
-                appFileResponse.setApp(appFile.getApp());
-                JsonNode responseBody = json.get(appFile.getApp().getName());
+                appFileResponse.setFileName(appFilePath.getFileName());
+                appFileResponse.setFilePath(appFilePath.getFilePath());
+                appFileResponse.setApp(appFilePath.getApp());
+                appFileResponse.setData(img.getBody());
+                JsonNode responseBody = json.get(appFilePath.getApp().getName());
                 appFileResponse.setConfiguration(responseBody);
                 response.add(appFileResponse);
             }

@@ -9,6 +9,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,16 +17,13 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-/**TODO
- * Delete in next Release
- */
 @Entity
-@Table(name="app_files")
+@Table(name="app_file_paths")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AppFile {
+public class AppFilePath {
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   Long id;
@@ -34,11 +32,7 @@ public class AppFile {
   String fileName;
 
   @Column(nullable = false)
-  String fileType;
-
-  @Lob
-  @Column(name="image")
-  private byte[] data;
+  String filePath;
 
   @OneToOne
   @JoinColumn(name = "app_id")
