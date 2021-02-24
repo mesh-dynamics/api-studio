@@ -371,7 +371,7 @@ export function formatHttpEventToReqResObject(reqId, httpEventReqResPair, isOutg
     const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
     const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
     const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
-    const httpResponseEventPayload  = httpResponseEvent.payload[1];
+    const httpResponseEventPayload  = httpResponseEvent && httpResponseEvent.payload ?  httpResponseEvent.payload[1] : {};
     
     const { headers, queryParams, formData, rawData, rawDataType, grpcRawData, multipartData, httpURL }  = extractParamsFromRequestEvent(httpRequestEvent);
     
@@ -581,8 +581,8 @@ export function getReqResFromTabData(selectedApp, eachPair, tabToSave, runId, ty
         httpResponseStatus = responseStatus;
     }
 
-    const httpResponseEventPayload = httpResponseEvent.payload[1]
-    const httpResponseTrailers = httpResponseEventPayload.trls
+    const httpResponseEventPayload = httpResponseEvent && httpResponseEvent.payload ?  httpResponseEvent.payload[1] : {};
+    const httpResponseTrailers = httpResponseEventPayload.trls;
     const reqResCubeFormattedData = {   
         request: {
             ...httpRequestEvent,
