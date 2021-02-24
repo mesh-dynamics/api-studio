@@ -42,7 +42,7 @@ export default class AppDetailBox extends React.PureComponent<
             id="base64image"
             title={this.props.app.fileName}
             alt={this.props.app.fileName}
-            src={`data:image/jpeg;base64, ${this.props.app.data}`}
+            src={`${this.props.app.filePath}`}
           />
         </div>
         <div style={{ width: "100%", position: "relative" }}>
