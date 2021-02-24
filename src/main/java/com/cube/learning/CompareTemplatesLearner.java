@@ -139,7 +139,7 @@ public class CompareTemplatesLearner {
         Optional<String> method, String jsonPath) {
 
         TemplateKey templateKey = new TemplateKey(templateVersion, customer, app, service, apiPath,
-            reqOrResp);
+            reqOrResp, method, TemplateKey.DEFAULT_RECORDING);
 
         if (!context.isKeyCovered(templateKey)) {
             context.addCoveredKey(templateKey);
