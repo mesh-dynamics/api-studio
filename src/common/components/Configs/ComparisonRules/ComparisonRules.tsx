@@ -255,7 +255,7 @@ function ComparisonRules(props: IComparisonRulesProps) {
                     key={index}
                     value={collection.collec}
                   >
-                    {collection.name}
+                    {collection.name} ({collection.label})
                   </option>
                 ))}
               </FormControl>
