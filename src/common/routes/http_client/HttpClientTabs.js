@@ -1419,6 +1419,7 @@ class HttpClientTabs extends Component {
 
         if(PLATFORM_ELECTRON) {
             ipcRenderer.send('get_config');
+            setDefaultMockContext()
         } else {
             dispatch(httpClientActions.fetchEnvironments());
         }
