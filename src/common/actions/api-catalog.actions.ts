@@ -9,13 +9,14 @@ import {
 } from "../utils/api-catalog/api-catalog-utils";
 import _ from "lodash";
 import { sortCatalogTraceChildren } from "../utils/http_client/httpClientUtils";
+import { GetStateAction, IActionsType, IDispatch } from "./actions.types";
+import {ICollectionListApiResponse, IGetApiTraceResponse, IGetEventsApiResponse } from '../../common/apiResponse.types'
 
-export const apiCatalogActions = {
-    getDiffData: (app, requestIdLeft, requestIdRight) => async (dispatch, getState) => {
+export const apiCatalogActions: IActionsType = {
+    getDiffData: (app: string, requestIdLeft: string, requestIdRight: string) => async (dispatch:IDispatch, getState: GetStateAction) => {
         const { user: { customer_name: customerId } } = getState().authentication;
         try {
-            const data = await cubeService.fetchAPIEventData(customerId, app, [requestIdLeft, requestIdRight], [])
-
+            const data = await cubeService.fetchAPIEventData(customerId, app, [requestIdLeft, requestIdRight], [])  as any as IGetEventsApiResponse;
             if (data.numFound) {
                 const [requestLeft, requestRight] = data.objects.filter(obj => obj.eventType === "HTTPRequest");
                 const [responseLeft, responseRight] = data.objects.filter(obj => obj.eventType === "HTTPResponse");
@@ -49,7 +50,7 @@ export const apiCatalogActions = {
     resetCompareRequest: () => ({ type: apiCatalogConstants.RESET_COMPARE_REQUEST }),
     setResizedColumns: (data) => ({ type: apiCatalogConstants.SET_RESIZED_COLUMNS, data: data }),
 
-    fetchAPIFacets: (app, selectedSource, selectedGoldenCollection, startTime, endTime, selectedService, selectedApiPath,) => async (dispatch, getState) => {
+    fetchAPIFacets: (app: string, selectedSource: string, selectedGoldenCollection: string, startTime: string, endTime: string, selectedService: string, selectedApiPath: string) => async (dispatch: IDispatch, getState: GetStateAction) => {
         const { authentication: { user: { customer_name: customerId } }} = getState();
         const apiFacets = await cubeService.fetchAPIFacetData(customerId, app, selectedSource, selectedGoldenCollection, startTime, endTime);
         const services = getServiceList(apiFacets);
@@ -65,7 +66,7 @@ export const apiCatalogActions = {
 
         cubeService.fetchCollectionList(user, app, recordingType)
             .then((data) => {
-                const result = data.recordings;
+                const result = (data as any as ICollectionListApiResponse).recordings;
                 if (recordingType === "UserGolden") {
                     dispatch({
                         type: apiCatalogConstants.UPDATE_COLLECTION_LIST,
@@ -299,7 +300,7 @@ export const apiCatalogActions = {
             collectionName: goldenCollection,
             numResults: apiCatalogTableState.pageSize
         };
-        const apiTrace = await cubeService.fetchAPITraceData(customerId, filterData);
+        const apiTrace = await cubeService.fetchAPITraceData(customerId, filterData) as any as IGetApiTraceResponse;
         const apiTraces = apiTrace.response;
         sortCatalogTraceChildren(apiTraces);
         const currentEndTime = getLastApiTraceEndTimeFromApiTrace(apiTraces);
@@ -337,7 +338,7 @@ export const apiCatalogActions = {
 
 
         dispatch({type: apiCatalogConstants.SET_API_TRACE_LOADING});
-        const apiTrace = await cubeService.fetchAPITraceData(customerId, nextFilterData);
+        const apiTrace = await cubeService.fetchAPITraceData(customerId, nextFilterData) as any as IGetApiTraceResponse;
 
         const apiTraces = apiTrace.response;
         if(nextPage > apiCatalogTableState.currentPage || nextPage == 0){
@@ -364,7 +365,7 @@ export const apiCatalogActions = {
 
         dispatch({type: apiCatalogConstants.SET_API_TRACE_LOADING});
 
-        const apiTrace = await cubeService.fetchAPITraceData(customerId, filterData);
+        const apiTrace = await cubeService.fetchAPITraceData(customerId, filterData) as any as IGetApiTraceResponse;
         const apiTraces = apiTrace.response;
         const currentEndTime = getLastApiTraceEndTimeFromApiTrace(apiTraces);
         

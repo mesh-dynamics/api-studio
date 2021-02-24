@@ -267,7 +267,7 @@ function ContextPropagationRules(props: IContextPropagationRulesProps) {
                     value={`${collection.collec};${collection.id}`}
                     selected={collection.collec == collectionId}
                   >
-                    {collection.name}
+                    {collection.name} ({collection.label})
                   </option>
                 ))}
               </FormControl>

@@ -22,7 +22,7 @@ import { apiCatalogActions } from '../actions/api-catalog.actions';
 import MDLoading from '../../../public/assets/images/md-loading.gif';
 import Tippy from '@tippy.js/react'
 import {isURL} from 'validator';
-import gcbrowseActions from '../actions/gcBrowse.actions';
+import gcbrowseActions from '../actions/gcBrowse.actions.ts';
 import { defaultCollectionItem } from "../constants";
 import {setStrictMock} from "./../helpers/httpClientHelpers"
 import { fetchGoldenMeta } from "../services/golden.service";
@@ -485,21 +485,27 @@ class ViewSelectedTestConfig extends React.Component {
 
     handleReplayErrorCatchAll = (message, statusText) => {
         this.setState({ showReplayModal: false });
-        alert(message || statusText);
+        console.error("Error in replay/recording", message || statusText);
     }
 
     handleReplayError = (data, status, statusText, username) => 
-        (
-            status && status === 409 && data.recordOrReplay?.replay
-            ?
-                this.setState({ 
-                    fcId: data.recordOrReplay.replay.replayId, 
-                    fcEnabled: (data.recordOrReplay.replay.userId === username), 
-                    showReplayModal: false
-                })
-                
-            : this.handleReplayErrorCatchAll(data["message"], statusText)
-        );
+        {
+            if(status && status === 409){
+                if(data.recordOrReplay?.replay){
+                    this.setState({ 
+                        fcId: data.recordOrReplay.replay.replayId, 
+                        fcEnabled: (data.recordOrReplay.replay.userId === username), 
+                        showReplayModal: false
+                    });
+                    return;
+                }else if(data.recordOrReplay?.recording){
+                    const ongoingRecStatus = data;
+                    this.setState({ongoingRecStatus, showOngoingRecModal: true,  showReplayModal: false});
+                    return;
+                }
+            } 
+            this.handleReplayErrorCatchAll(data["message"], statusText)
+        };
 
     checkStatus = (statusUrl, configForHTTP) => {
         this.setState(
@@ -632,12 +638,8 @@ class ViewSelectedTestConfig extends React.Component {
                 }, 
                 1000);
             }, (error) => {
-                if(error.response.status==409) {
-                    const ongoingRecStatus = error.response.data
-                    this.setState({ongoingRecStatus, showOngoingRecModal: true})
-                } else {
-                    console.error("Errror starting recording" ,error);
-                }
+                const { data, status, statusText } = error.response;
+                this.handleReplayError(data, status, statusText, username);
             });
     };
 

@@ -588,8 +588,12 @@ class HttpClient extends Component {
                                     <tr style={{cursor: "pointer", backgroundColor: selectedTraceTableReqTab.id === currentSelectedTab.id ? "#ccc" : "#fff"}} onClick={() => this.handleRowClick(false, currentSelectedTab.id)}>
                                         <td style={{ display: "inline-flex", width: "100%" }}>
                                             <span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>
-                                            <span>
-                                                <i className="far fa-minus-square" style={{fontSize: "12px", marginRight: "12px", cursor: "pointer"}}></i>
+                                            <span style={{marginRight: "30px", width: "25px"}}>
+                                                {
+                                                    isRequestTypeGrpc(selectedTraceTableReqTab.id, currentSelectedTab, outgoingRequests) 
+                                                    ? <span style={{ fontWeight: "700",fontSize: "11px" }}>gRPC</span> 
+                                                    : <span style={{ fontWeight: "700",fontSize: "11px" }}>REST</span>
+                                                }
                                             </span>
                                             <EditableLabel label={service} handleEditComplete={this.handleEditServiceNameForGateway} />
                                         </td>
@@ -605,15 +609,15 @@ class HttpClient extends Component {
                                         return (
                                             <tr className="service-rows" key={eachReq.id} style={{cursor: "pointer", backgroundColor: selectedTraceTableReqTab.id === eachReq.id ? "#ccc" : "#fff"}} onClick={() => this.handleRowClick(true, eachReq.id)}>
                                                 <td style={{ display: "inline-flex", width: "100%" }}>
-                                                    <span style={{marginRight: "30px", width: "25px"}}>
+                                                    <span>
+                                                        <i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i>
+                                                    </span>
+                                                    <span style={{marginRight: "30px", width: "25px", marginLeft: "3.5px"}}>
                                                         {
                                                             isRequestTypeGrpc(eachReq.id, currentSelectedTab, outgoingRequests) 
                                                             ? <span style={{ fontWeight: "700",fontSize: "11px" }}>gRPC</span> 
                                                             : <span style={{ fontWeight: "700",fontSize: "11px" }}>REST</span>
                                                         }
-                                                    </span>
-                                                    <span>
-                                                        <i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i>
                                                     </span>
                                                     <EditableLabel 
                                                         label={eachReq.service} 
@@ -670,9 +674,13 @@ class HttpClient extends Component {
                                                 
                                                     <td>
                                                         <span><i className="fas fa-arrow-right" style={{fontSize: "14px", marginRight: "12px"}}></i></span>
-                                                        <span>
-                                                            <i className="far fa-minus-square" style={{fontSize: "12px", marginRight: "12px", cursor: "pointer"}}></i>
-                                                        </span>
+                                                        <span style={{marginRight: "30px", width: "25px"}}>
+                                                        {
+                                                            isRequestTypeGrpc(selectedTraceTableTestReqTab.id, currentSelectedTab.recordedHistory, currentSelectedTab.recordedHistory.outgoingRequests) 
+                                                            ? <span style={{ fontWeight: "700",fontSize: "11px" }}>gRPC</span> 
+                                                            : <span style={{ fontWeight: "700",fontSize: "11px" }}>REST</span>
+                                                        }
+                                                    </span>
                                                         {currentSelectedTab.recordedHistory.service}
                                                     </td>
                                                     <td>{currentSelectedTab.recordedHistory.apiPath}</td>
@@ -690,9 +698,15 @@ class HttpClient extends Component {
                                                         onClick={() => this.handleTestRowClick(eachReq.id)} 
                                                     >
                                                         <td>
-                                                            <span style={{marginRight: "30px", width: "25px"}}></span>
                                                             <span>
                                                                 <i className="fas fa-level-up-alt fa-rotate-90" style={{fontSize: "14px", marginRight: "12px"}}></i>
+                                                            </span>
+                                                            <span style={{marginRight: "30px", width: "25px", marginLeft: "3.5px"}}>
+                                                                {
+                                                                    isRequestTypeGrpc(eachReq.id, currentSelectedTab.recordedHistory, currentSelectedTab.recordedHistory.outgoingRequests) 
+                                                                    ? <span style={{ fontWeight: "700",fontSize: "11px" }}>gRPC</span> 
+                                                                    : <span style={{ fontWeight: "700",fontSize: "11px" }}>REST</span>
+                                                                }
                                                             </span>
                                                             {eachReq.service}
                                                         </td>
