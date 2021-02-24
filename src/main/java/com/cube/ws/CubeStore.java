@@ -1146,15 +1146,16 @@ public class CubeStore {
     }
 
     private CompletableFuture<?>  Sanitize(Recording recording){
+        String recordingId = recording.id;
         if (!recording.ignoreStatic) {
-            LOGGER.debug("Not sanitizing as ignoreStatic flag is false");
+            LOGGER.debug("Not sanitizing as ignoreStatic flag is false "+recordingId);
             return CompletableFuture.completedFuture(null);
         }
 
-        LOGGER.info("Waiting for 15s to commit before Sanitize. current time" + Instant.now());
+        LOGGER.info("Waiting for 15s to commit before Sanitize. current time" + Instant.now() + " "+recordingId);
         CompletableFuture<Set<String>> sanitizeFilterTask = ScheduledCompletable
             .schedule(Config.scheduler, () -> {
-                LOGGER.info("Finished waiting for 15 sec to commit the recording for Sanitize");
+                LOGGER.info("Finished waiting for 15 sec to commit the recording for Sanitize "+recordingId);
                 rrstore.commit();
                 return SanitizationFilters
                     .getBadRequests(getValidEvents(recording), List.of(new IgnoreStaticContent()));
@@ -1162,20 +1163,20 @@ public class CubeStore {
 
         CompletableFuture<Response> copyTask = sanitizeFilterTask.thenApply(badReq -> {
             if(badReq.isEmpty()) {
-                LOGGER.info("Not doing sanitize copy recording as there are no bad requests to be filtered");
+                LOGGER.info("Not doing sanitize copy recording as there are no bad requests to be filtered "+recordingId);
                 return null;
             }
-            LOGGER.info("Starting sanitize copy recording. Total bad reqIds "+badReq.size());
+            LOGGER.info("Starting sanitize copy recording. Total bad reqIds "+badReq.size() +" "+recordingId);
             CompletableFuture<Response> rs = copyRecording(recording.id, Optional.empty(), Optional.empty(),
                 Optional.empty(),
                 recording.userId, recording.recordingType,
                 Optional.of(e -> !badReq.contains(e.reqId)));
             try {
                 var resp = rs.get();
-                LOGGER.info("Finished Copy recording for sanitization");
+                LOGGER.info("Finished Copy recording for sanitization "+recordingId);
                 return resp;
             } catch (Exception e) {
-                LOGGER.error("copyRecording failure ", e);
+                LOGGER.error("copyRecording failure "+recordingId, e);
             }
             return null;
         });
