@@ -366,6 +366,7 @@ class SideBarTabs extends Component<ISideBarTabsProps, ISideBarTabsState> {
                 responseStatusText: "",
                 responseHeaders: "",
                 responseBody: "",
+                responsePayloadState: httpResponseEvent?.payload[1].payloadState!,
                 recordedResponseHeaders: (httpResponseEvent && httpResponseEvent.payload[1].hdrs)
                   ? JSON.stringify(
                     httpResponseEvent.payload[1].hdrs,

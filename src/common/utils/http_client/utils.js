@@ -161,13 +161,15 @@ const extractParamsFromRequestEvent = (httpRequestEvent) =>{
         });
     }
     for (let eachQueryParam in httpRequestEvent.payload[1].queryParams) {
-        queryParams.push({
-            id: uuidv4(),
-            name: eachQueryParam,
-            value: httpRequestEvent.payload[1].queryParams[eachQueryParam][0],
-            description: "",
-            selected: true,
-        });
+        httpRequestEvent.payload[1].queryParams[eachQueryParam].forEach(value => {
+            queryParams.push({
+                id: uuidv4(),
+                name: eachQueryParam,
+                value: value,
+                description: "",
+                selected: true,
+            });
+        })
     }
 
     let {httpURL, queryParamsFromUrl} = extractURLQueryParams(httpRequestEvent.apiPath)
@@ -368,11 +370,11 @@ const preRequestToFetchableConfig = (preRequestResult, httpURL) => {
     });
   
     //Query String
-    const httpRequestQueryStringParamsRendered = {};
+    const httpRequestQueryStringParamsRendered = new URLSearchParams();
     const preRequestqueryString = payload.queryParams;
     Object.entries(preRequestqueryString).forEach(([key, queryStringValueArray]) => {
         queryStringValueArray.forEach((value) => {
-        httpRequestQueryStringParamsRendered[key] = value;
+        httpRequestQueryStringParamsRendered.append(key, value);
       });
     });
   

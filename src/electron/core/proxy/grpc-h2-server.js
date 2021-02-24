@@ -68,6 +68,7 @@ const setupGrpcH2Server = (mockContext, user) => {
       logger.info({ reqBodyBufferStr: reqBodyBuffer.toString("base64") });     
       const service = matchedService;
 
+      // set trace and other headers
       let targetReqHeaders = {
         "content-type": "application/grpc",
         ...req.headers,
@@ -95,15 +96,6 @@ const setupGrpcH2Server = (mockContext, user) => {
         targetReqHeaders.authorization = token;
       }
 
-      let fetchUrl,
-        fetchConfig = {
-          method: req.method,
-          body: reqBodyBuffer,
-          headers: targetReqHeaders,
-          allowForbiddenHeaders: true,
-        };
-
-    
       if (spanIdKey && !(spanIdKey in targetReqHeaders)) {
         logger.info(`Setting spanId header (${spanIdKey}): `, spanId);
         targetReqHeaders[spanIdKey] = spanId;
@@ -121,6 +113,14 @@ const setupGrpcH2Server = (mockContext, user) => {
         targetReqHeaders[traceIdKey] = traceId;
       }
       
+      const {strictMock, selectedApp} = mockContext;
+      if (!strictMock) {
+        logger.info('Setting dynamicInjectionConfigVersion', `Default${selectedApp}`);
+        targetReqHeaders['dynamicInjectionConfigVersion'] = `Default${selectedApp}`;
+      }
+      
+      // construct outgoing url
+      let fetchUrl = "";
       if (isLive) {
         // live
         logger.info("Live service");
@@ -139,12 +139,23 @@ const setupGrpcH2Server = (mockContext, user) => {
           replayInstance,
         } = mockContext;
 
-        const mockApiPrefix = "api/msc/mockWithRunId";
-
-        fetchUrl = `${mockTarget.protocol}//${mockTarget.host}:${mockTarget.port}/${mockApiPrefix}/${collectionId}/${recordingCollectionId}/${customerName}/${selectedApp}/${traceIdForEvent}/${runId}/${service}/${resourcePath}`;
+        if (strictMock) {
+          const strictMockApiPrefix = 'api/ms'
+          fetchUrl = `${mockTarget.protocol}//${mockTarget.host}:${mockTarget.port}/${strictMockApiPrefix}/${customerName}/${selectedApp}/${replayInstance}/${service}/${resourcePath}`
+        } else {
+          const mockApiPrefix = "api/msc/mockWithRunId";
+          fetchUrl = `${mockTarget.protocol}//${mockTarget.host}:${mockTarget.port}/${mockApiPrefix}/${collectionId}/${recordingCollectionId}/${customerName}/${selectedApp}/${traceIdForEvent}/${runId}/${service}/${resourcePath}`;
+        }
       }
 
       logger.info("fetch URL: ", fetchUrl);
+      
+      let fetchConfig = {
+        method: req.method,
+        body: reqBodyBuffer,
+        headers: targetReqHeaders,
+        allowForbiddenHeaders: true,
+      };
 
       const targetRespTrailersPromise = new Deferred();
 

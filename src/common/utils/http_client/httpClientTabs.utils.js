@@ -104,6 +104,7 @@ export function createRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFrom
             responseStatusText: toBeCopiedFromData.responseStatusText,
             responseHeaders: toBeCopiedFromData.responseHeaders,
             responseBody: toBeCopiedFromData.responseBody,
+            responsePayloadState: toBeCopiedFromData.responsePayloadState,
             recordedResponseHeaders: toBeCopiedFromData.recordedResponseHeaders,
             recordedResponseBody: toBeCopiedFromData.recordedResponseBody,
             responseBodyType: toBeCopiedFromData.responseBodyType,
@@ -168,6 +169,7 @@ export function copyRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFromDa
             recordedResponseStatus: toBeCopiedFromData.recordedResponseStatus,
             responseHeaders: toBeCopiedFromData.responseHeaders,
             responseBody: toBeCopiedFromData.responseBody,
+            responsePayloadState: toBeCopiedFromData.responsePayloadState,
             recordedResponseHeaders: toBeCopiedFromData.recordedResponseHeaders,
             recordedResponseBody: toBeCopiedFromData.recordedResponseBody,
             responseBodyType: toBeCopiedFromData.responseBodyType,
@@ -369,7 +371,8 @@ export function formatHttpEventToReqResObject(reqId, httpEventReqResPair, isOutg
     const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
     const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
     const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
-
+    const httpResponseEventPayload  = httpResponseEvent && httpResponseEvent.payload ?  httpResponseEvent.payload[1] : {};
+    
     const { headers, queryParams, formData, rawData, rawDataType, grpcRawData, multipartData, httpURL }  = extractParamsFromRequestEvent(httpRequestEvent);
     
     let reqObject = {
@@ -389,9 +392,10 @@ export function formatHttpEventToReqResObject(reqId, httpEventReqResPair, isOutg
         responseStatusText: "",
         responseHeaders: "",
         responseBody: "",
-        recordedResponseHeaders: (httpResponseEvent && httpResponseEvent.payload[1].hdrs) ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
-        recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
-        recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
+        responsePayloadState: httpResponseEventPayload?.payloadState,
+        recordedResponseHeaders: httpResponseEventPayload.hdrs ? JSON.stringify(httpResponseEventPayload.hdrs, undefined, 4) : "",
+        recordedResponseBody: httpResponseEvent ? httpResponseEventPayload.body ? JSON.stringify(httpResponseEventPayload.body, undefined, 4) : "" : "",
+        recordedResponseStatus: httpResponseEvent ? httpResponseEventPayload.status : "",
         responseBodyType: "json",
         requestId: reqId,
         outgoingRequestIds: [],
@@ -437,7 +441,7 @@ function getPathName(url){
 
 
 export function getReqResFromTabData(selectedApp, eachPair, tabToSave, runId, type, reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment, tracer, traceDetails, parentSpanId, spanId) {
-    const { headers, queryStringParams, bodyType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus, recordedResponseStatus } = tabToSave;
+    const { headers, queryStringParams, bodyType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus, recordedResponseStatus, responsePayloadState } = tabToSave;
 
     const httpRequestEventTypeIndex = eachPair[0].eventType === "HTTPRequest" ? 0 : 1;
     const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
@@ -576,6 +580,9 @@ export function getReqResFromTabData(selectedApp, eachPair, tabToSave, runId, ty
         httpResponseBody = tryJsonParse(responseBody);
         httpResponseStatus = responseStatus;
     }
+
+    const httpResponseEventPayload = httpResponseEvent && httpResponseEvent.payload ?  httpResponseEvent.payload[1] : {};
+    const httpResponseTrailers = httpResponseEventPayload.trls;
     const reqResCubeFormattedData = {   
         request: {
             ...httpRequestEvent,
@@ -592,7 +599,7 @@ export function getReqResFromTabData(selectedApp, eachPair, tabToSave, runId, ty
                     method: httpMethod.toUpperCase(),
                     path: apiPath,
                     pathSegments: apiPath.split("/"),
-                    payloadState :  isgRPCRequest(tabToSave) ? "UnwrappedDecoded": "WrappedDecoded",
+                    payloadState :  isgRPCRequest(tabToSave) ? "UnwrappedDecoded": "WrappedEncoded",
                 }
             ]
         },
@@ -607,8 +614,9 @@ export function getReqResFromTabData(selectedApp, eachPair, tabToSave, runId, ty
                     hdrs: httpResponseHeaders,
                     body: httpResponseBody,
                     status: httpResponseStatus,
-                    payloadState : "WrappedDecoded",
+                    payloadState: responsePayloadState || "WrappedEncoded", // pick from event if already present, or use WrappedEncoded
                     ...(isgRPCRequest(tabToSave) && {path: apiPath}), // path not needed in non-grpc case
+                    trls: httpResponseTrailers,
                 }
             ]
         }

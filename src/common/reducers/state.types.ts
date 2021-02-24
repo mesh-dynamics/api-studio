@@ -31,7 +31,7 @@ export interface IAuthenticationState {
   loggedIn: boolean;
   messages: string[]; //2
   role: string;
-  user: IUserAuthDetails | {};
+  user: IUserAuthDetails;
   rememberMe: boolean;
 }
 
@@ -63,7 +63,7 @@ export interface IApiCatalogState {
   diffRequestRight: any; //2
   diffResponseLeft: any; //2
   diffResponseRight: any; //2
-  endTime: string; //1
+  endTime: string | null; //1
   goldenList: ICollectionDetails[];
   lastGoldenListLoaded: string;
   httpClientRequestIds: any; //2
@@ -83,7 +83,7 @@ export interface IApiCatalogState {
   selectedService: string;
   selectedSource: string;
   services: any[]; //2
-  startTime: string; //1
+  startTime: string| null; //1
   goldenCollectionLoading: boolean;
 }
 
@@ -270,34 +270,6 @@ export interface IServiceFacets {
   val: string;
   path_facets: IPathFacets[];
 }
-export interface IGoldenState_SelectedGolden {
-  app: string;
-  archived: boolean;
-  branch: null;
-  codeVersion: null;
-  collec: string;
-  collectionUpdOpSetId: null;
-  comment: null;
-  cust: string;
-  dynamicInjectionConfigVersion: null;
-  gitCommitId: null;
-  id: string;
-  instance: string;
-  jarPath: null;
-  label: string;
-  name: string;
-  prntRcrdngId: null;
-  recordingType: string;
-  rootRcrdngId: string;
-  runId: string;
-  serviceFacets: IServiceFacets[];
-  status: string;
-  tags: string[];
-  templateUpdOpSetId: string | null;
-  templateVer: string;
-  timestmp: number;
-  userId: string;
-}
 export interface IGoldenState {
   fetchComplete: boolean;
   isFetching: boolean;
@@ -307,7 +279,7 @@ export interface IGoldenState {
   responseContract: IResponseContract;
   responseExamples: IResponseContract;
   selectedApi: string;
-  selectedGolden: IGoldenState_SelectedGolden;
+  selectedGolden: ICollectionDetails;
   selectedService: string;
 }
 
@@ -456,6 +428,7 @@ export interface IHttpClientTabDetails {
   recordingIdAddedFromClient: string;
   requestId: string;
   responseBody: string;
+  responsePayloadState: string;
   responseBodyType: string; //could be enum: json/HTML/text
   responseHeaders: string;
   responseStatus: string; //Could be Enum

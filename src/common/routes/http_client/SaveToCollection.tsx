@@ -53,6 +53,7 @@ export interface ISaveToCollectionState {
   selectedCollectionName: string;
   modalErroSaveMessage: string;
   modalErroSaveMessageIsError: boolean;
+  saveInProgress: boolean;
 }
 
 class SaveToCollection extends React.Component<
@@ -69,6 +70,7 @@ class SaveToCollection extends React.Component<
       selectedCollectionName: "",
       modalErroSaveMessage: "",
       modalErroSaveMessageIsError: false,
+      saveInProgress: true,
     };
     this.handleCloseModal = this.handleCloseModal.bind(this);
     this.showSaveModal = this.showSaveModal.bind(this);
@@ -96,6 +98,7 @@ class SaveToCollection extends React.Component<
       userCollectionId: selectedOptions.value,
       selectedCollectionName: selectedOptions.text,
       modalErroSaveMessage: "",
+      saveInProgress: selectedOptions.value === "" ? true : false,
     });
 
     this.createCollectionRef &&
@@ -214,6 +217,9 @@ class SaveToCollection extends React.Component<
   }
 
   saveTabToCollection(generateSpanTraceId=false) {
+    this.setState({
+      saveInProgress : true,
+    });
     const recordingId = this.state.userCollectionId;
     const selectedCollectionName = this.state.selectedCollectionName;
     const {
@@ -323,6 +329,7 @@ class SaveToCollection extends React.Component<
             this.setState({
               modalErroSaveMessage: successMessage,
               modalErroSaveMessageIsError: false,
+              saveInProgress: false,
             });
             dispatch(httpClientActions.loadCollectionTrace(recordingId));
           },
@@ -330,6 +337,7 @@ class SaveToCollection extends React.Component<
             this.setState({
               modalErroSaveMessage: "Error saving: " + error,
               modalErroSaveMessageIsError: true,
+              saveInProgress : false,
             });
             console.error("error: ", error);
           }
@@ -340,6 +348,7 @@ class SaveToCollection extends React.Component<
       this.setState({
         modalErroSaveMessage: "Error saving: " + error,
         modalErroSaveMessageIsError: true,
+        saveInProgress: false,
       });
     }
   }
@@ -464,12 +473,13 @@ class SaveToCollection extends React.Component<
             </p>
           </Modal.Body>
           <Modal.Footer>
-            <div
+            <Button
+              disabled = {this.state.saveInProgress}
               onClick={() => this.saveTabToCollection(true)}
               className="btn btn-sm cube-btn text-center"
             >
               Save
-            </div>
+            </Button>
             <div
               onClick={this.handleCloseModal}
               className="btn btn-sm cube-btn text-center"

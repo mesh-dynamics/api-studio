@@ -510,7 +510,7 @@ const loadCollectionTraces = async (customerId: string, selectedCollectionId: st
     return apiTraces;
 }
 
-const fetchAPIEventData = async (customerId: string, app: string, reqIds: string, eventTypes = [], apiConfig = {}) => {
+const fetchAPIEventData = async (customerId: string, app: string, reqIds: string[], eventTypes = [], apiConfig = {}) => {
     let apiEventURL = `${config.recordBaseUrl}/getEvents`;
 
     let body = {
