@@ -8,8 +8,11 @@ import lombok.Setter;
 @Setter
 public class AppFileResponse {
   String fileName;
-  String fileType;
-  byte[] data;
+  String filePath;
   App app;
   Object configuration;
+  /**TODO
+   *Remove in next release, once UI is updated for all customers
+   */
+  byte[] data;
 }

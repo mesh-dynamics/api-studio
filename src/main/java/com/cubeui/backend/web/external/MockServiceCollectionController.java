@@ -1,5 +1,7 @@
 package com.cubeui.backend.web.external;
 
+import static com.cubeui.backend.Utils.addTrailers;
+
 import com.cubeui.backend.security.Validation;
 import com.cubeui.backend.service.CubeServerService;
 import io.md.dao.Recording;
@@ -7,6 +9,8 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
@@ -33,7 +37,7 @@ public class MockServiceCollectionController {
   public ResponseEntity mockWithCollection(HttpServletRequest request, @RequestBody Optional<String> body,
       @PathVariable String replayCollection, @PathVariable String recordCollection,
       @PathVariable String customerId, @PathVariable String app,
-      @PathVariable String traceId, @PathVariable String service, Authentication authentication) {
+      @PathVariable String traceId, @PathVariable String service, Authentication authentication, HttpServletResponse response) {
     validation.validateCustomerName(authentication,customerId);
     String query =  String.format("customerId=%s&app=%s&collection=%s", customerId, app, recordCollection);
     Optional<Recording> recording = cubeServerService.searchRecording(query);
@@ -47,7 +51,15 @@ public class MockServiceCollectionController {
     body.ifPresent(b -> log.info("Encoded Body", Base64.getEncoder().encode(b.getBytes())));
     path = cubeServerService.getPathForHttpMethod(path , request.getMethod()  , traceId, service);
 
-    return cubeServerService.fetchResponse(request, body, HttpMethod.POST , path);
+    ResponseEntity responseEntity = cubeServerService.fetchResponse(request, body, HttpMethod.POST , path);
+
+    /**
+     * Extracting trailer data from headers and adding it to httpServletResponse.
+     * Workaround as Spring drops trailer information.
+     */
+    addTrailers(responseEntity, response);
+
+    return responseEntity;
   }
 
 
@@ -55,7 +67,7 @@ public class MockServiceCollectionController {
   public ResponseEntity mockWithRunIdTS(HttpServletRequest request, @RequestBody Optional<String> body,
       @PathVariable String replayCollection, @PathVariable String recordCollection,
       @PathVariable String customerId, @PathVariable String app, @PathVariable String timestamp,
-      @PathVariable String traceId, @PathVariable String service, @PathVariable String runId, Authentication authentication) {
+      @PathVariable String traceId, @PathVariable String service, @PathVariable String runId, Authentication authentication, HttpServletResponse response) {
     validation.validateCustomerName(authentication,customerId);
     String query =  String.format("customerId=%s&app=%s&collection=%s", customerId, app, recordCollection);
     Optional<Recording> recording = cubeServerService.searchRecording(query);
@@ -69,14 +81,22 @@ public class MockServiceCollectionController {
     String path = getPathForMockWithRunId(request.getRequestURI(), replayCollection, recordCollection, customerId, app, recording.get().id);
     path = cubeServerService.getPathForHttpMethod(path , request.getMethod() , timestamp, traceId, runId, service);
 
-    return cubeServerService.fetchResponse(request, body, HttpMethod.POST , path);
+    ResponseEntity responseEntity = cubeServerService.fetchResponse(request, body, HttpMethod.POST , path);
+
+    /**
+     * Extracting trailer data from headers and adding it to httpServletResponse.
+     * Workaround as Spring drops trailer information.
+     */
+    addTrailers(responseEntity, response);
+
+    return responseEntity;
   }
 
   @RequestMapping(value = "/mockWithRunId/{replayCollection}/{recordCollection}/{customerId}/{app}/{traceId}/{runId}/{service}/**" , consumes = {MediaType.ALL_VALUE})
   public ResponseEntity mockWithRunId(HttpServletRequest request, @RequestBody Optional<byte[]> body,
       @PathVariable String replayCollection, @PathVariable String recordCollection,
       @PathVariable String customerId, @PathVariable String app,
-      @PathVariable String traceId, @PathVariable String service, @PathVariable String runId, Authentication authentication) {
+      @PathVariable String traceId, @PathVariable String service, @PathVariable String runId, Authentication authentication, HttpServletResponse response) {
     validation.validateCustomerName(authentication,customerId);
     String query =  String.format("customerId=%s&app=%s&collection=%s", customerId, app, recordCollection);
     Optional<Recording> recording = cubeServerService.searchRecording(query);
@@ -91,7 +111,15 @@ public class MockServiceCollectionController {
     String path = getPathForMockWithRunIdWithTs(request.getRequestURI(), replayCollection, recordCollection, customerId, app, recording.get().id, timestamp);
     path = cubeServerService.getPathForHttpMethod(path , request.getMethod() , timestamp, traceId, runId, service);
 
-    return cubeServerService.fetchResponse(request, body, HttpMethod.POST , path);
+    ResponseEntity responseEntity = cubeServerService.fetchResponse(request, body, HttpMethod.POST , path);
+
+    /**
+     * Extracting trailer data from headers and adding it to httpServletResponse.
+     * Workaround as Spring drops trailer information.
+     */
+    addTrailers(responseEntity, response);
+
+    return responseEntity;
   }
 
   private String getPath(String uri, String replayCollection, String recordCollection,
