@@ -22,7 +22,7 @@ import { apiCatalogActions } from '../actions/api-catalog.actions';
 import MDLoading from '../../../public/assets/images/md-loading.gif';
 import Tippy from '@tippy.js/react'
 import {isURL} from 'validator';
-import gcbrowseActions from '../actions/gcBrowse.actions';
+import gcbrowseActions from '../actions/gcBrowse.actions.ts';
 import { defaultCollectionItem } from "../constants";
 import {setStrictMock} from "./../helpers/httpClientHelpers"
 import { fetchGoldenMeta } from "../services/golden.service";
