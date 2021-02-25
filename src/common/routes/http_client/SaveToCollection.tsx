@@ -356,10 +356,9 @@ class SaveToCollection extends React.Component<
   render() {
     const {
       httpClient: { userCollections, tabs, userHistoryCollection },
-      goldenList,
       tabId,
     } = this.props;
-    const collections = [...userCollections, ...goldenList];
+    const collections = userCollections;
 
     const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
     const recordingId = tabs[tabIndex].recordingIdAddedFromClient;
