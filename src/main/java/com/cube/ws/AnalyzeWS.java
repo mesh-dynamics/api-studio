@@ -20,8 +20,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
-import io.md.cache.ProtoDescriptorCache;
-import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.core.BatchingIterator;
 
 import io.md.core.Comparator.Diff;
@@ -52,10 +50,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -787,19 +787,27 @@ public class AnalyzeWS {
            * once all replays will be having the updateTimestamp, we can directy set updationTimestamp
            */
             Instant timeStamp = replay.analysisCompleteTimestamp != Instant.EPOCH ? replay.analysisCompleteTimestamp : replay.creationTimeStamp;
-            Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerId, replay.app,
-                replay.collection.get(0) , Optional.of(replay.templateVersion));
+            List<Recording> recordings = new ArrayList<>();
+            boolean recordingNotFound = false;
+            for(String replayCollection : replay.collection){
+	            Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerId, replay.app,
+		            replayCollection , Optional.of(replay.templateVersion));
+	            if (recordingOpt.isEmpty()){
+		            recordingNotFound = true;
+		            break;
+	            }
+	            recordings.add(recordingOpt.get());
+            }
             String recordingInfo = "";
-            if (recordingOpt.isEmpty()) {
+            if (recordingNotFound) {
                 LOGGER.error("Unable to find recording corresponding to given replay");
             } else {
-            	boolean multiRecordings = replay.collection.size() > 1 ;
-                Recording recording = recordingOpt.get();
-                recordingInfo = "\" , \"recordingid\" : \"" + (multiRecordings ? "NA" : recording.getId())
-                    + "\" , \"collection\" : \"" + (multiRecordings ? replay.collection.stream().collect(Collectors.joining(",")) :recording.collection)
-                    + "\" , \"templateVer\" : \"" + recording.templateVersion
-                    + "\", \"goldenName\" : \"" + (multiRecordings ? "NA" : recording.name)
-                    + "\", \"goldenLabel\" : \"" + (multiRecordings ? "NA" :recording.label);
+            	Recording firstRecording = recordings.get(0);
+            	recordingInfo = "\" , \"recordingid\" : " + ServerUtils.serializeList(recordings.stream().map(r->r.getId()).collect(Collectors.toList()))
+                    + " , \"collection\" : " + ServerUtils.serializeList(replay.collection.stream().collect(Collectors.toList()))
+                    + " , \"templateVer\" : \"" + firstRecording.templateVersion
+                    + "\", \"goldenName\" : " + ServerUtils.serializeList(recordings.stream().map(r->r.name).collect(Collectors.toList()))
+                    + ", \"goldenLabel\" : " + ServerUtils.serializeList(recordings.stream().map(r->r.label).collect(Collectors.toList()));
             }
 
             Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayId, service, byPath);
@@ -809,7 +817,7 @@ public class AnalyzeWS {
             StringBuilder jsonBuilder = new StringBuilder();
             String json;
             jsonBuilder.append("{ \"replayId\" : \"" + replayId + "\" , \"timestamp\" : \"" + timeStamp.toString()
-								+ "\", \"userName\" : \"" + replay.userId + "\" , \"testConfigName\" : \"" +  testConfigNameValue + recordingInfo +  "\" , \"results\" : ");
+								+ "\", \"userName\" : \"" + replay.userId + "\" , \"testConfigName\" : \"" +  testConfigNameValue + recordingInfo +  " , \"results\" : ");
             try {
                 json = jsonMapper.writeValueAsString(res);
                 jsonBuilder.append(json);

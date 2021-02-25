@@ -6,7 +6,6 @@ package com.cube.core;
 
 import io.md.core.Comparator.Diff;
 import io.md.core.CompareTemplate.DataType;
-import io.md.dao.HTTPRequestPayload;
 import io.md.dao.Recording.RecordingType;
 
 import java.io.IOException;
@@ -44,7 +43,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -61,11 +59,13 @@ import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Recording;
 import io.md.utils.Constants;
+import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.Utils;
 
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
 import com.cube.ws.Config;
+
 import redis.clients.jedis.Jedis;
 
 
@@ -418,6 +418,19 @@ public class ServerUtils {
 	        headers.remove(field);
         }
         return Optional.ofNullable(value);
+    }
+
+    public static Optional<String> serialize(Object obj){
+	    try{
+            return Optional.of(CubeObjectMapperProvider.getInstance().writeValueAsString(obj));
+        }catch (Exception e){
+	        LOGGER.error("Error serializing obj "+obj + " "+e.getMessage() , e);
+	        return Optional.empty();
+        }
+    }
+
+    public static String serializeList(List list){
+	    return serialize(list).orElse("[]");
     }
 
 }
