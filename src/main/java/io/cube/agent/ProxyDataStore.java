@@ -1,15 +1,14 @@
 package io.cube.agent;
 
 import io.md.core.CollectionKey;
-import io.md.core.TemplateSet;
 import io.md.dao.*;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Optional;
+import java.util.function.Predicate;
 
+import io.md.dao.Recording.RecordingType;
 import io.md.logger.LogMgr;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -181,38 +180,19 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
     }
 
     @Override
-    public Optional<TemplateSet> getLatestTemplateSet(String customerId, String app,
+    public Optional<String> getLatestTemplateSetLabel(String customerId, String app,
         String templateSetName) {
-        try {
-            return cubeClient.getLatestTemplateSet(customerId, app, templateSetName)
-                .map(UtilException.rethrowFunction(templateSetString -> jsonMapper
-                    .readValue(templateSetString, TemplateSet.class)));
-        } catch (IOException e) {
-            LOGGER.error("Error while converting template set string to object" , e);
-        }
-        return Optional.empty();
+        return cubeClient.getLatestTemplateSetLabel(customerId, app, templateSetName);
     }
 
     @Override
-    public Optional<TemplateSet> getTemplateSet(String customerId, String app,
-        String templateSetVersion) {
-        try {
-            return cubeClient.getTemplateSet(customerId, app, templateSetVersion)
-                .map(UtilException.rethrowFunction(templateSetString -> jsonMapper
-                    .readValue(templateSetString, TemplateSet.class)));
-        } catch (IOException e) {
-            LOGGER.error("Error while converting template set string to object" , e);
-        }
-        return Optional.empty();
+    public Recording copyRecording(String recordingId, Optional<String> name,
+        Optional<String> label, Optional<String> templateVersion, String userId, RecordingType type,
+        Optional<Predicate<Event>> eventFilter) throws Exception {
+        return cubeClient.copyRecording(recordingId, name, label, templateVersion, userId , type,
+            eventFilter).map(UtilException.rethrowFunction(recordingStr -> jsonMapper
+            .readValue(recordingStr, Recording.class))).orElseThrow(() -> new
+            Exception("Unable to copy recording"));
     }
 
-    @Override
-    public boolean commit() {
-        return cubeClient.commitDataStore();
-    }
-
-    @Override
-    public boolean saveRecording(Recording recording) {
-        return cubeClient.saveRecording(recording);
-    }
 }

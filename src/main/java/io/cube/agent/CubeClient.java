@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -39,6 +40,7 @@ import io.md.dao.Event;
 import io.md.dao.EventQuery;
 import io.md.dao.RecordOrReplay;
 import io.md.dao.Recording;
+import io.md.dao.Recording.RecordingType;
 import io.md.dao.Replay;
 import io.md.dao.ReqRespMatchResult;
 import io.md.logger.LogMgr;
@@ -371,30 +373,24 @@ public class CubeClient {
 		return getResponse(uri, recordOrReplay, MediaType.APPLICATION_JSON);
 	}
 
-	public Optional<String> getLatestTemplateSet(String customerId, String app, String templateSetName) {
+	public Optional<String> getLatestTemplateSetLabel(String customerId, String app, String templateSetName) {
 		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
-			.segment("cs", "getLatestTemplateSet" , customerId , app , templateSetName).build();
+			.segment("cs", "getLatestTemplateSetLabel" , customerId , app , templateSetName).build();
 		return getGetResponse(uri);
 	}
 
-	public Optional<String> getTemplateSet(String customerId, String app, String templateSetVersion) {
-		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
-			.segment("cs", "getTemplateSet" , customerId , app , templateSetVersion).build();
-		return getGetResponse(uri);
-	}
-
-	public boolean commitDataStore() {
-		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
-			.segment("cs", "commitDataStore").build();
-		HttpPost reqBuilder = new HttpPost(uri);
-		return getResponse(reqBuilder).isPresent();
-	}
-
-	public boolean saveRecording(Recording recording) {
-		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
-			.segment("cs", "saveRecording").build();
-		return getResponse(uri, recording, MediaType.APPLICATION_JSON).isPresent();
-
+	public Optional<String> copyRecording(String recordingId, Optional<String> name,
+		Optional<String> label, Optional<String> templateVersion, String userId, RecordingType type,
+		Optional<Predicate<Event>> eventFilter) {
+		UriBuilder uriBuilder = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.segment("cs" , "copyRecording" , recordingId , userId);
+		name.ifPresent(nameStr -> uriBuilder.queryParam(Constants.GOLDEN_NAME_FIELD , nameStr));
+		label.ifPresent(labelStr ->  uriBuilder.queryParam(Constants.GOLDEN_LABEL_FIELD , labelStr));
+		templateVersion.ifPresent(templateVersionStr -> uriBuilder.queryParam(Constants
+			.TEMPLATE_VERSION_FIELD, templateVersionStr));
+		uriBuilder.queryParam(Constants.RECORDING_TYPE_FIELD, type.name());
+		// TODO leaving eventFilter out of API Request right now
+		return getPostResponse(uriBuilder.build());
 	}
 
 
