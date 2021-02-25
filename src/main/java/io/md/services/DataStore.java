@@ -6,15 +6,15 @@
 
 package io.md.services;
 
-import java.util.Collection;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import io.md.core.CollectionKey;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateKey.Type;
-import io.md.core.TemplateSet;
 import io.md.dao.*;
+import io.md.dao.Recording.RecordingType;
 import io.md.injection.DynamicInjectionConfig;
 
 
@@ -90,43 +90,10 @@ public interface DataStore {
 //    Optional<ProtoDescriptor> getProtoDescriptor(String customer, String app);
     Optional<ProtoDescriptorDAO> getLatestProtoDescriptorDAO(String customerId, String app);
 
-    Optional<TemplateSet> getLatestTemplateSet(String customerId, String app, String templateSetName);
+    Optional<String> getLatestTemplateSetLabel(String customerId, String app, String templateSetName);
 
-    Optional<TemplateSet> getTemplateSet(String customerId, String app, String templateSetVersion);
-
-
-    enum Types {
-        Event,
-        Request,
-        Response,
-        ReplayMeta, // replay metadata
-        Analysis,
-        ReqRespMatchResult,
-        Recording,
-        RequestMatchTemplate,
-        RequestCompareTemplate,
-        ResponseCompareTemplate,
-        ReplayStats,
-        FuncReqResp,
-        TemplateSet,
-        TemplateUpdateOperationSet,
-        GoldenSet,
-        RecordingOperationSetMeta,
-        RecordingOperationSet,
-        MatchResultAggregate,
-        Diff,
-        AttributeTemplate,
-        DynamicInjectionConfig,
-        AgentConfigTagInfo,
-        AgentConfig,
-        AgentConfigAcknowledge,
-        ProtoDescriptor,
-        CustomerAppConfig;
-    }
-
-
-    public boolean commit();
-
-    boolean saveRecording(Recording recording);
+    Recording copyRecording(String recordingId, Optional<String> name,
+        Optional<String> label, Optional<String> templateVersion, String userId, RecordingType type,
+        Optional<Predicate<Event>> eventFilter) throws Exception;
 
 }

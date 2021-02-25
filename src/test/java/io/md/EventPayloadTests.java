@@ -7,7 +7,6 @@ import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.core.CollectionKey;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateKey.Type;
-import io.md.core.TemplateSet;
 import io.md.dao.*;
 
 import java.io.File;
@@ -21,6 +20,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import javax.ws.rs.core.MediaType;
@@ -195,25 +195,18 @@ public class EventPayloadTests {
 				}
 
 				@Override
-				public Optional<TemplateSet> getLatestTemplateSet(String customerId, String app,
+				public Optional<String> getLatestTemplateSetLabel(String customerId, String app,
 					String templateSetName) {
 					return Optional.empty();
 				}
 
-				@Override
-				public Optional<TemplateSet> getTemplateSet(String customerId, String app,
-					String templateSetVersion) {
-					return Optional.empty();
-				}
+
 
 				@Override
-				public boolean commit() {
-					return false;
-				}
-
-				@Override
-				public boolean saveRecording(Recording recording) {
-					return false;
+				public Recording copyRecording(String recordingId, Optional<String> name,
+					Optional<String> label, Optional<String> templateVersion, String userId,
+					RecordingType type, Optional<Predicate<Event>> eventFilter) throws Exception {
+					return null;
 				}
 			};
 

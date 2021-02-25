@@ -311,5 +311,5 @@ public class Constants {
 	public static final String PARENTSPANID_SPECIAL_CHARACTERS = "ffffffffffffffff";
 
 
-
+	public static final String GOLDEN_LABEL_FIELD = "label";
 }
