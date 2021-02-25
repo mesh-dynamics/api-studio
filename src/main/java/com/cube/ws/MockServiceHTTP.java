@@ -324,6 +324,9 @@ public class MockServiceHTTP {
                         builder.header(fieldName, val);
                     }
                 }));
+                respEventVal.metaData.forEach((key , val)->{
+                    builder.header(io.md.constants.Constants.META_FIELDS_PREFIX + key , val);
+                });
                 return Optional.of(builder.entity(responsePayload.getBody()).build());
             } else if (respEventVal.payload instanceof GRPCResponsePayload) {
                 GRPCResponsePayload responsePayload =  (GRPCResponsePayload) respEventVal.payload;
@@ -336,6 +339,9 @@ public class MockServiceHTTP {
                         builder.header(fieldName, val);
                     }
                 }));
+                respEventVal.metaData.forEach((key , val)->{
+                    builder.header(io.md.constants.Constants.META_FIELDS_PREFIX + key , val);
+                });
                 if(httpServletResponse !=null) {
                     // It's necessary to set "Trailer" header when setting trailers
                     // https://javaee.github.io/tutorial/servlets014b.html
