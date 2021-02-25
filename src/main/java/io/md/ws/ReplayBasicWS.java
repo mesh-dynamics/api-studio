@@ -238,31 +238,31 @@ public class ReplayBasicWS {
         String templateSetName = Optional.ofNullable(formParams.getFirst(Constants.TEMPLATE_SET_NAME)).orElseThrow(() ->
             new ParameterException("Template Set Name not specified"));
         String templateSetLabel = Optional.ofNullable(formParams.getFirst(Constants.TEMPLATE_SET_LABEL))
-            .or(() -> dataStore.getLatestTemplateSet(recordings.get(0).customerId,
-                recordings.get(0).app, templateSetName).flatMap(templateSet ->
-            templateSet.label)).orElseThrow(() -> new ParameterException("Unable to assign template set label for replay"));
+            .or(() -> dataStore.getLatestTemplateSetLabel(recordings.get(0).customerId,
+                recordings.get(0).app, templateSetName)).orElseThrow(() -> new ParameterException("Unable to assign template set label for replay"));
 
         String templateSetVersion = io.md.utils.Utils.constructTemplateSetVersion(templateSetName, Optional.of(templateSetLabel));
 
         List<Recording> updatedRecordings = new ArrayList<>();
 
-        recordings.forEach(recordingPrior -> {
-            Recording updatedRecording;
-            if (! recordingPrior.templateVersion.equals(templateSetVersion)) {
-                // create a new recording indexed with the new template set version
-                updatedRecording = io.md.utils.Utils.createRecordingObjectFrom(recordingPrior, Optional.of(templateSetVersion),
-                    Optional.of(recordingPrior.name), Optional.of(userId), Instant.now() , LocalDateTime.now().format(
-                        io.md.utils.Utils.templateLabelFormatter) ,  recordingPrior.recordingType);
-                if(dataStore.saveRecording(updatedRecording)) {
-                    // can't be done async as replay can't proceed before the copying
-                    io.md.utils.Utils.copyEvents(recordingPrior,
-                        updatedRecording, Instant.now(), Optional.empty(), dataStore);
-                    // the updated recording will be used as recording
-                }} else {
-                updatedRecording = recordingPrior;
-            }
-            updatedRecordings.add(updatedRecording);
-        });
+        try {
+            recordings.forEach(UtilException.rethrowConsumer(recordingPrior -> {
+                Recording updatedRecording;
+                if (!recordingPrior.templateVersion.equals(templateSetVersion)) {
+                    updatedRecording = dataStore
+                        .copyRecording(recordingPrior.id, Optional.of(recordingPrior.name)
+                            , Optional.of(LocalDateTime.now()
+                                .format(io.md.utils.Utils.templateLabelFormatter))
+                            , Optional.of(templateSetVersion), userId, recordingPrior.recordingType,
+                            Optional.empty());
+                } else {
+                    updatedRecording = recordingPrior;
+                }
+                updatedRecordings.add(updatedRecording);
+            }));
+        } catch (Exception e) {
+            throw new ParameterException("Unable to update recording , " + e.getMessage());
+        }
 
         Recording updatedRecordingFirst = updatedRecordings.get(0);
 
