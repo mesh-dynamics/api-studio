@@ -48,6 +48,7 @@ class Navigation extends Component<INavigationProps,INavigationState> {
             ipcRenderer.on('get_config', (event, appConfig) => {
                 ipcRenderer.removeAllListeners('get_config');
                 
+                config.localReplayBaseUrl = `http://localhost:${appConfig.replayDriverPort}/rs`;
                 config.apiBaseUrl= `${appConfig.domain}/api`;
                 config.recordBaseUrl= `${appConfig.domain}/api/cs`;
                 config.replayBaseUrl= `${appConfig.domain}/api/rs`;
@@ -79,7 +80,7 @@ class Navigation extends Component<INavigationProps,INavigationState> {
     }
     
 
-    checkReplayStatus = (replayId: string, otherInstanceSelected: boolean) => {
+    checkReplayStatus = (replayId: string, otherInstanceSelected: boolean, isLocalReplay: boolean) => {
         const { dispatch, cube } = this.props;
         this.replayStatusInterval = window.setInterval(() => {
             const {cube} = this.props;
@@ -96,7 +97,7 @@ class Navigation extends Component<INavigationProps,INavigationState> {
         }, 1000);
         
         let checkStatus = () => {
-            dispatch(cubeActions.getReplayStatus(cube.selectedTestId, replayId, cube.selectedApp));
+            dispatch(cubeActions.getReplayStatus(replayId, isLocalReplay));
         };
     }
 

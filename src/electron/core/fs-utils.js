@@ -46,10 +46,11 @@ const readConfig = () => {
 };
 
 const setupApplicationConfig = () => {
-    const { domain, proxyPort } = readConfig();
+    const { domain, proxyPort, replayDriverPort } = readConfig();
 
     const appDomain = store.get("domain");
-    const appProxyPort = store.get("proxyPort")
+    const appProxyPort = store.get("proxyPort");
+    const appReplayDriverPort = store.get("replayDriverPort");
 
     // If domain is not set
     if (!appDomain) {
@@ -61,6 +62,11 @@ const setupApplicationConfig = () => {
     if (!proxyPort) {
       logger.info("Setting port for proxy server to listen at:", appProxyPort);
       store.set("proxyPort", appProxyPort);
+    }
+
+    if(!appReplayDriverPort) {
+      logger.info("Setting port for local replay driver at:", replayDriverPort);
+      store.set("replayDriverPort", replayDriverPort);
     }
 
     // To remove any previous traces of old configuration
@@ -86,6 +92,7 @@ const getApplicationConfig = () => {
 
     const appDomain = store.get("domain");
     const proxyPort = store.get("proxyPort");
+    const replayDriverPort =  store.get("replayDriverPort");
     const parsedUrl = url.parse(appDomain);
 
     const proxyDestinationServerProtocol = parsedUrl.protocol;
@@ -95,6 +102,7 @@ const getApplicationConfig = () => {
     const config = {
       domain: appDomain,
       proxyPort,
+      replayDriverPort,
       proxyDestination: {
         protocol: proxyDestinationServerProtocol,
         host: proxyDestinationServerHost,

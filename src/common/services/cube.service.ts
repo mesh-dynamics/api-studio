@@ -152,15 +152,17 @@ const forceCompleteReplay = async (fcId: string) => {
     }
 };
 
-const checkStatusForReplay = async (replayId: string) => {
+const checkStatusForReplay = async (replayId: string, isLocalReplay: boolean) => {
     const requestOptions = {
         headers: {
             "cache-control": "no-cache",
         }
     };
 
+    const replayBaseUrl = isLocalReplay ? config.localReplayBaseUrl : config.replayBaseUrl;
+
     try {
-        return await api.get(`${config.replayBaseUrl}/status/${replayId}`, requestOptions);
+        return await api.get(`${replayBaseUrl}/status/${replayId}`, requestOptions);
     } catch (error) {
         console.log("Errors in replay status \n", error);
         throw error;

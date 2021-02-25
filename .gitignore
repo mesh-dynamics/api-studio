@@ -8,3 +8,4 @@ package-lock.json
 /dist
 /build
 /release
+/bin/java

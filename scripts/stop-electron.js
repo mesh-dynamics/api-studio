@@ -5,6 +5,7 @@ const logger = require('electron-log');
     async () => {
         try {
             const pList = await find('name', 'electron', true);
+
             logger.info('Processes running on electron', pList);
     
             pList.map((item) => {
