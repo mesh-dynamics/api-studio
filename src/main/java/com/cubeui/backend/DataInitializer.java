@@ -145,39 +145,5 @@ public class DataInitializer implements CommandLineRunner {
             }
         });
 
-        /** TODO
-         *  delete in next release
-         */
-        List<AppFile> appFiles = this.appFileRepository.findAll();
-        appFiles.forEach(appFile -> {
-            Optional<AppFilePath> appFilePath = this.appFileStorageService.getFilePathByAppId(appFile.getApp().getId());
-            if(appFilePath.isEmpty()) {
-                MultipartFile multipartFile = convertToMultiPartFile(appFile);
-                this.awss3AppFileStorageService.storeFile(multipartFile, appFile.getApp(), false);
-            }
-        });
-    }
-
-    public static MultipartFile convertToMultiPartFile(AppFile appFile) {
-        byte[] bytes = decompressBytes(appFile.getData());
-        return new CustomMultipartFile(bytes, appFile.getFileName(), appFile.getFileType());
-    }
-
-    public static byte[] decompressBytes(byte[] data) {
-        Inflater inflater = new Inflater();
-        inflater.setInput(data);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(data.length);
-        byte[] buffer = new byte[1024];
-        try {
-            while (!inflater.finished()) {
-                int count = inflater.inflate(buffer);
-                outputStream.write(buffer, 0, count);
-            }
-            outputStream.close();
-        } catch (IOException | DataFormatException ex) {
-            log.error("Error while decompressing the file ", ex.getMessage());
-            throw new FileRetrievalException("Error while decompressing the file " + ex.getMessage());
-        }
-        return outputStream.toByteArray();
     }
 }
