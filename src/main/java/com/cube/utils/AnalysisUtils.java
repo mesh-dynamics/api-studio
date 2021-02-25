@@ -18,7 +18,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.cube.agent.UtilException;
 import io.md.core.TemplateKey;
-import io.md.core.TemplateSet;
 import io.md.core.ValidateCompareTemplate;
 import io.md.services.Analyzer;
 import io.md.utils.Constants;
@@ -26,6 +25,7 @@ import io.md.utils.Constants;
 import com.cube.core.ServerUtils;
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.SingleTemplateUpdateOperation;
+import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.golden.transform.TemplateSetTransformer;
 import com.cube.golden.transform.TemplateUpdateOperationSetTransformer;

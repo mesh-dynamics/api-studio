@@ -10,10 +10,11 @@ import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.TemplateKey;
-import io.md.core.TemplateSet;
 import io.md.dao.*;
+import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Event.EventType;
 import io.md.dao.ProtoDescriptorDAO;
+import io.md.dao.Recording.RecordingType;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
 import java.io.IOException;
@@ -25,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
@@ -43,9 +45,10 @@ import io.md.dao.Recording.RecordingStatus;
 import io.md.services.DataStore;
 import io.md.services.FnResponse;
 import io.md.injection.DynamicInjectionConfig;
+
+import com.cube.golden.TemplateSet;
 import com.cube.learning.InjectionExtractionMeta;
 import io.md.utils.Constants;
-import io.md.utils.RecordingBuilder;
 
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
@@ -684,4 +687,48 @@ public interface ReqRespStore extends DataStore {
 	boolean saveConfig(CustomerAppConfig cfg);
 
 	List<TemplateSet> getTemplateSetList (String customerId, String appId);
+
+	Optional<TemplateSet> getTemplateSet(String customerId, String app, String templateSetVersion);
+
+
+	enum Types {
+		Event,
+		Request,
+		Response,
+		ReplayMeta, // replay metadata
+		Analysis,
+		ReqRespMatchResult,
+		Recording,
+		RequestMatchTemplate,
+		RequestCompareTemplate,
+		ResponseCompareTemplate,
+		ReplayStats,
+		FuncReqResp,
+		TemplateSet,
+		TemplateUpdateOperationSet,
+		GoldenSet,
+		RecordingOperationSetMeta,
+		RecordingOperationSet,
+		MatchResultAggregate,
+		Diff,
+		AttributeTemplate,
+		DynamicInjectionConfig,
+		AgentConfigTagInfo,
+		AgentConfig,
+		AgentConfigAcknowledge,
+		ProtoDescriptor,
+		CustomerAppConfig;
+	}
+
+
+	public boolean commit();
+
+	boolean saveRecording(Recording recording);
+
+	public boolean copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp
+		, Optional<Predicate<Event>> eventFilter);
+
+	public  Event buildEvent(Event event, String collection, RecordingType recordingType,
+		String reqId, String traceId, Optional<String> runId, Instant timeStamp,
+		Optional<String> targetTemplateSetVersion) throws InvalidEventException, TemplateNotFoundException;
 }

@@ -2,6 +2,8 @@ package com.cube.learning;
 
 import com.cube.dao.ReqRespStore;
 
+import com.cube.golden.CompareTemplateVersioned;
+import com.cube.golden.TemplateSet;
 import com.cube.learning.TemplateEntryMeta.Action;
 import com.cube.learning.TemplateEntryMeta.RuleStatus;
 import io.md.core.Comparator.Diff;
@@ -11,12 +13,10 @@ import io.md.core.CompareTemplate.ComparisonType;
 import io.md.core.CompareTemplate.DataType;
 import io.md.core.CompareTemplate.ExtractionMethod;
 import io.md.core.CompareTemplate.PresenceType;
-import io.md.core.CompareTemplateVersioned;
 import io.md.core.TemplateEntry;
 import io.md.core.TemplateEntryAsRule;
 import io.md.core.TemplateKey;
 import io.md.core.TemplateKey.Type;
-import io.md.core.TemplateSet;
 import io.md.dao.ReqRespMatchResult;
 import io.md.services.DataStore.TemplateNotFoundException;
 import java.time.Instant;
@@ -322,7 +322,7 @@ public class CompareTemplatesLearner {
 
             if (effectiveCt != ComparisonType.Default && effectivePt != PresenceType.Default){
                 // TODO: Handle the case when only one of them gets updated in the learned rules.
-                // Currently, we don't support creating a TemplateEntry with either Comparison
+                // Curerntly, we don't support creating a TemplateEntry with either Comparison
                 // or Presence types as Default.
                 CompareTemplate compareTemplate = templatesMap.computeIfAbsent(templateKey,
                     k -> new CompareTemplateVersioned(Optional.of(tm.service), Optional.of(tm.apiPath),

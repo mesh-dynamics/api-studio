@@ -6,8 +6,7 @@ package com.cube.core;
 
 import io.md.core.Comparator.Diff;
 import io.md.core.CompareTemplate.DataType;
-import io.md.core.CompareTemplateVersioned;
-import io.md.core.TemplateSet;
+import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
 
 import java.io.IOException;
@@ -25,6 +24,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -63,7 +63,10 @@ import io.md.dao.Recording;
 import io.md.utils.Constants;
 import io.md.utils.Utils;
 
+import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
+import com.cube.golden.CompareTemplateVersioned;
+import com.cube.golden.TemplateSet;
 import com.cube.ws.Config;
 import redis.clients.jedis.Jedis;
 
@@ -418,5 +421,36 @@ public class ServerUtils {
         }
         return Optional.ofNullable(value);
     }
+
+
+    public static Recording createRecordingObjectFrom(Recording recording, Optional<String> templateVersion,
+        Optional<String> name, Optional<String> userId, Instant timeStamp, String labelValue, RecordingType type) {
+        String collection = UUID.randomUUID().toString();
+        RecordingBuilder recordingBuilder = new RecordingBuilder(
+            recording.customerId, recording.app, recording.instanceId, collection)
+            .withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateVersion.orElse(recording.templateVersion))
+            .withName(name.orElse(recording.name))
+            .withUserId(userId.orElse(recording.userId)).withTags(recording.tags).withUpdateTimestamp(timeStamp)
+            .withRootRecordingId(recording.rootRecordingId).withLabel(labelValue)
+            .withRecordingType(type).withRunId(timeStamp.toString()).withIgnoreStatic(recording.ignoreStatic);
+        recording.parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
+        recording.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
+        recording.branch.ifPresent(recordingBuilder::withBranch);
+        recording.gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
+        recording.collectionUpdOpSetId.ifPresent(recordingBuilder::withCollectionUpdateOpSetId);
+        recording.templateUpdOpSetId.ifPresent(recordingBuilder::withTemplateUpdateOpSetId);
+        recording.comment.ifPresent(recordingBuilder::withComment);
+        recording.dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
+        try {
+            recording.generatedClassJarPath
+                .ifPresent(io.md.utils.UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
+        } catch (Exception e) {
+
+        }
+        return recordingBuilder.build();
+    }
+
+
+
 
 }

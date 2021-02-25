@@ -20,16 +20,16 @@ import org.apache.logging.log4j.message.ObjectMessage;
 
 import io.md.core.AttributeRuleMap;
 import io.md.core.CompareTemplate;
-import io.md.core.CompareTemplateVersioned;
 import io.md.core.TemplateEntry;
 import io.md.core.TemplateKey;
-import io.md.core.TemplateSet;
 import io.md.dao.ReqRespUpdateOperation.OperationType;
 import io.md.utils.Constants;
 
 import com.cube.dao.ReqRespStore;
+import com.cube.golden.CompareTemplateVersioned;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateEntryOperation;
+import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.utils.AnalysisUtils;
 

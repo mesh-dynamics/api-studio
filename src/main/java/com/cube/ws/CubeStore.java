@@ -9,11 +9,11 @@ import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
 import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
+import com.cube.dao.RecordingBuilder;
 import com.cube.queue.StoreUtils;
 
 import io.md.core.ApiGenPathMgr;
 import io.md.core.CollectionKey;
-import io.md.core.TemplateSet;
 import io.md.dao.CustomerAppConfig.Builder;
 import io.md.dao.DataObj.DataObjProcessingException;
 import io.md.dao.Event.EventType;
@@ -107,8 +107,6 @@ import io.md.services.DataStore.TemplateNotFoundException;
 import io.md.exception.ParameterException;
 import io.md.utils.Constants;
 import io.md.core.Utils;
-import io.md.utils.RecordingBuilder;
-import io.md.utils.SeqMgr;
 
 import com.cube.dao.CubeEventMetaInfo;
 import com.cube.dao.ReqRespStore;
@@ -117,6 +115,7 @@ import com.cube.dao.Result;
 import com.cube.dao.WrapperEvent;
 import com.cube.queue.DisruptorEventQueue;
 import com.cube.queue.RREvent;
+import com.cube.sequence.SeqMgr;
 import com.cube.ws.SanitizationFilters.BadStatuses;
 import com.cube.ws.SanitizationFilters.IgnoreStaticContent;
 import com.cube.ws.SanitizationFilters.ReqRespMissing;
@@ -1347,8 +1346,8 @@ public class CubeStore {
             Recording  updatedRecording = createRecordingObjectFrom(recording, templateVersion,
                 name, Optional.of(userId), timeStamp, labelValue, type);
             if(rrstore.saveRecording(updatedRecording)) {
-                return CompletableFuture.supplyAsync(() -> io.md.utils.Utils
-                    .copyEvents(recording, updatedRecording, timeStamp, eventFilter,rrstore)).thenApply(success ->
+                return CompletableFuture.supplyAsync(() ->
+                    rrstore.copyEvents(recording, updatedRecording, timeStamp, eventFilter)).thenApply(success ->
                     success ? Response.ok().type(MediaType.APPLICATION_JSON).entity(updatedRecording).build() : Response.status(Status.INTERNAL_SERVER_ERROR)
                         .type(MediaType.APPLICATION_JSON)
                         .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"Error while copying events"))
@@ -2172,8 +2171,8 @@ public class CubeStore {
     }
 
     private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId, Optional<String> runId)
-        throws InvalidEventException {
-        return io.md.utils.Utils.buildEvent(event, collection, recordingType, reqId, traceId, runId, Instant.now());
+        throws InvalidEventException, TemplateNotFoundException {
+        return rrstore.buildEvent(event, collection, recordingType, reqId, traceId, runId, Instant.now(), Optional.empty());
     }
 
     @GET
@@ -2259,7 +2258,7 @@ public class CubeStore {
         Instant timeStamp = Instant.now();
         if(firstRecording.recordingType == RecordingType.UserGolden && newType.isEmpty()) {
             thirdRecording = firstRecording;
-            CompletableFuture.runAsync(() -> io.md.utils.Utils.copyEvents(secondRecording, thirdRecording, timeStamp, Optional.empty(), rrstore))
+            CompletableFuture.runAsync(() -> rrstore.copyEvents(secondRecording, thirdRecording, timeStamp, Optional.empty()))
                 .thenApply(v -> asyncResponse.resume(Response.ok().type(MediaType.APPLICATION_JSON).entity(thirdRecording).build()));
         } else {
             thirdRecording = createRecordingObjectFrom(firstRecording, Optional.empty(),
@@ -2267,8 +2266,8 @@ public class CubeStore {
                 timeStamp, timeStamp.toString(), newType.orElse(RecordingType.UserGolden));
             if(rrstore.saveRecording(thirdRecording)) {
                 CompletableFuture.runAsync(() -> {
-                    io.md.utils.Utils.copyEvents(firstRecording, thirdRecording, timeStamp, Optional.empty(), rrstore);
-                    io.md.utils.Utils.copyEvents(secondRecording, thirdRecording, timeStamp, Optional.empty(), rrstore);
+                    rrstore.copyEvents(firstRecording, thirdRecording, timeStamp, Optional.empty());
+                    rrstore.copyEvents(secondRecording, thirdRecording, timeStamp, Optional.empty());
                 }).thenApply(v -> asyncResponse.resume(Response.ok().type(MediaType.APPLICATION_JSON).entity(thirdRecording).build()));
             }
         }
@@ -2342,9 +2341,9 @@ public class CubeStore {
         var newEventsStream =   pending.stream().map(event -> {
             String newReqId = "Update-" + finalPayloadHash;
             try {
-                Event newEvent =  io.md.utils.Utils.buildEvent(event, collection, recordingType, newReqId, newReqId, Optional.empty(), event.timestamp);
+                Event newEvent =  rrstore.buildEvent(event, collection, recordingType, newReqId, newReqId, Optional.empty(), event.timestamp, Optional.empty());
                 return newEvent;
-            } catch (InvalidEventException e) {
+            } catch (InvalidEventException | TemplateNotFoundException e) {
                 LOGGER.error(new ObjectMessage(Map.of(
                     Constants.MESSAGE, "Invalid Event",
                     Constants.REQ_ID_FIELD, reqId
@@ -2413,16 +2412,16 @@ public class CubeStore {
     }
 
     @GET
-    @Path("/getLatestTemplateSet/{customerId}/{app}/{templateSetName}")
+    @Path("/getLatestTemplateSetLabel/{customerId}/{app}/{templateSetName}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getLatestTemplateSet(@Context UriInfo uriInfo, @PathParam("customerId")
+    public Response getLatestTemplateSetLabel(@Context UriInfo uriInfo, @PathParam("customerId")
         String customerId, @PathParam("app") String app, @PathParam("templateSetName")
         String templateSetName) {
 
        try {
-           return rrstore.getLatestTemplateSet(customerId, app, templateSetName)
+           return rrstore.getLatestTemplateSetLabel(customerId, app, templateSetName)
                .map(UtilException.rethrowFunction(
-                   templateSet -> Response.ok().entity(jsonMapper.writeValueAsString(templateSet)).build()))
+                   templateSetLabel -> Response.ok().entity(templateSetLabel).build()))
                .orElse(
                    Response.serverError().entity("Unable to find the latest template set").build());
        } catch (Exception e) {
@@ -2448,22 +2447,6 @@ public class CubeStore {
             return Response.serverError().entity("Error while converting template set to json string "
                 + e.getMessage()).build();
         }
-    }
-
-    @POST
-    @Path("/saveRecording")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response saveRecording(@Context UriInfo uriInfo, Recording recordingToSave) {
-
-        return rrstore.saveRecording(recordingToSave) ? Response.ok().build()
-            : Response.serverError().build();
-    }
-
-    @POST
-    @Path("/commitDataStore")
-    public Response commitDataStore() {
-        return rrstore.commit() ? Response.ok().build()
-            : Response.serverError().build();
     }
 
 

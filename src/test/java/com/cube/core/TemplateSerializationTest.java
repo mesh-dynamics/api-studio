@@ -23,11 +23,11 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
-import io.md.core.TemplateSet;
 import io.md.utils.CubeObjectMapperProvider;
 
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr;
+import com.cube.golden.TemplateSet;
 import com.cube.utils.AnalysisUtils;
 import com.cube.ws.Config;
 

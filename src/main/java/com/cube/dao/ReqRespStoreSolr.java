@@ -5,21 +5,18 @@ package com.cube.dao;
 
 import static io.md.core.TemplateKey.*;
 
-import io.md.cache.ProtoDescriptorCache;
-import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.constants.ReplayStatus;
 import io.md.core.AttributeRuleMap;
 import io.md.core.BatchingIterator;
 import io.md.core.CollectionKey;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
-import io.md.core.CompareTemplateVersioned;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.ReplayTypeEnum;
 import io.md.core.TemplateKey;
-import io.md.core.TemplateSet;
 import io.md.core.ValidateAgentStore;
 import io.md.core.ValidateProtoDescriptorDAO;
+import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.ProtoDescriptorDAO;
 import io.md.dao.*;
 import io.md.dao.agent.config.AgentConfigTagInfo;
@@ -44,6 +41,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -63,6 +61,9 @@ import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.Pair;
 
+import com.cube.core.ServerUtils;
+import com.cube.golden.CompareTemplateVersioned;
+import com.cube.golden.TemplateSet;
 import com.cube.learning.DynamicInjectionGeneratedToActualConvertor;
 import com.cube.learning.InjectionExtractionMeta;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
@@ -82,6 +83,7 @@ import io.md.core.CompareTemplate.ComparisonType;
 import io.md.dao.Event.EventBuilder;
 import io.md.dao.Event.EventType;
 import io.md.dao.FnReqRespPayload.RetStatus;
+import io.md.services.DSResult;
 import io.md.services.FnResponse;
 import io.md.utils.FnKey;
 import io.md.injection.DynamicInjectionConfig;
@@ -89,7 +91,6 @@ import io.md.injection.DynamicInjectionConfig.ExtractionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta;
 import io.md.utils.Constants;
 
-import io.md.utils.RecordingBuilder;
 import io.md.utils.Utils;
 import redis.clients.jedis.Jedis;
 
@@ -99,6 +100,7 @@ import com.cube.cache.TemplateCacheRedis;
 import com.cube.cache.TemplateCacheWithoutCaching;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateUpdateOperationSet;
+import com.cube.sequence.SeqMgr;
 
 import static io.md.constants.Constants.*;
 
@@ -1237,6 +1239,110 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return SolrIterator.getStream(solr, query, maxResults).
             findFirst().flatMap(this::docToAttributeRuleMap);
     }
+
+    @Override
+    public Recording copyRecording(String recordingId, Optional<String> name,
+        Optional<String> label, Optional<String> templateVersion, String userId, RecordingType type,
+        Optional<Predicate<Event>> eventFilter) throws Exception {
+        Instant timeStamp = Instant.now();
+        String labelValue = label.orElse(timeStamp.toString());
+        Optional<Recording> recordingForId = getRecording(recordingId);
+        return recordingForId.map(UtilException.rethrowFunction(recording -> {
+            Optional<Recording> recordingWithSameName = name.flatMap(nameValue ->
+                getRecordingByName(recording.customerId, recording.app, nameValue, Optional.of(labelValue)));
+            if(recordingWithSameName.isPresent()) {
+                throw new Exception(String.format("Collection %s already active for customer %s,"
+                        + " app %s, for instance %s. Use different name or label",
+                    recordingWithSameName.get().collection, recording.customerId, recording.app,
+                    recordingWithSameName.get().instanceId));
+            }
+
+            Recording  updatedRecording = ServerUtils.createRecordingObjectFrom(recording,
+                templateVersion, name, Optional.of(userId), timeStamp, labelValue, type);
+            if(!saveRecording(updatedRecording)) throw new Exception("Error while saving new recording");
+            if (!copyEvents(recording, updatedRecording, timeStamp, eventFilter)) throw new Exception("Error while copying events");
+
+            return updatedRecording;
+
+        })).orElseThrow(() ->new Exception(String.format("No Recording found for recordingId=%s", recordingId)));
+    }
+
+
+    public  boolean copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp
+        , Optional<Predicate<Event>> eventFilter) {
+        EventQuery.Builder builder = new EventQuery.Builder(fromRecording.customerId,
+            fromRecording.app, Collections.emptyList());
+        builder.withCollection(fromRecording.collection);
+        builder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
+        DSResult<Event> result = getEvents(builder.build());
+        Map<String, String> reqIdMap = new HashMap<>();
+        final boolean[] eventCreationFailure = new boolean[1];
+        Stream<Event> eventStream = result.getObjects().filter(eventFilter.orElse(event -> true))
+            .map(event -> {
+                try {
+                    String reqId = reqIdMap.get(event.getReqId());
+                    if (reqId == null) {
+                        String oldReqId = event.getReqId();
+                        reqId = io.md.utils.Utils.generateRequestId(
+                            event.service, event.getTraceId());
+                        reqIdMap.put(oldReqId, reqId);
+                    }
+                    return buildEvent(event, toRecording.collection, toRecording.recordingType,
+                        reqId, event.getTraceId(), Optional.of(timeStamp.toString()),
+                        event.timestamp,
+                        fromRecording.templateVersion.equals(toRecording.templateVersion) ?
+                            Optional.empty() : Optional.of(toRecording.templateVersion));
+                } catch (InvalidEventException | TemplateNotFoundException e) {
+                    eventCreationFailure[0] = true;
+                    LOGGER
+                        .error("Error while creating event, recording Id :: " + toRecording.id, e);
+                }
+                return null;
+            });/*.filter(Objects::nonNull)*/;
+        if(eventCreationFailure[0]){
+            LOGGER.error("Event Creation Failure ");
+            return false;
+        }
+
+        // unique requests will be almost half. 0.6 to be on safe side
+        long estimatedReqSize = (long)(result.getNumResults()*0.6) +1;
+        //check whether num of results and numFound are same
+        Stream<Event> eventsStream =  SeqMgr.createSeqId(eventStream , estimatedReqSize);
+        // TODO check if we need to commit after saving events
+        boolean batchSaveResult = save(eventsStream) && commit();
+        return batchSaveResult;
+    }
+
+    public  Event buildEvent(Event event, String collection, RecordingType recordingType,
+        String reqId, String traceId, Optional<String> runId, Instant timeStamp,
+        Optional<String> targetTemplateSetVersion)
+        throws InvalidEventException, TemplateNotFoundException {
+        EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
+            event.service, event.instanceId, collection,
+            new MDTraceInfo(traceId, event.spanId, event.parentSpanId),
+            event.getRunType(), Optional.of(event.timestamp), reqId, event.apiPath,
+            event.eventType, recordingType);
+        eventBuilder.setPayload(event.payload);
+        eventBuilder.withMetaData(event.metaData);
+        eventBuilder.withRunId(runId.orElse(event.runId));
+        eventBuilder.setPayloadKey(event.payloadKey);
+        Event newEvent = eventBuilder.createEvent();
+
+        if (newEvent.payload instanceof RequestPayload) {
+            if (newEvent.payload instanceof HTTPRequestPayload && targetTemplateSetVersion.isPresent()) {
+                newEvent.parseAndSetKey(
+                    getTemplate(newEvent.customerId, newEvent.app, newEvent.service, newEvent.apiPath,
+                        targetTemplateSetVersion.get(), Type.RequestMatch,
+                        Optional.ofNullable(newEvent.eventType),
+                        Optional.of(((HTTPRequestPayload) newEvent.payload).getMethod()), collection)
+                );
+            }
+            // TODO how do we handle GRPCRequestPayload
+        }
+
+        return newEvent;
+    }
+
 
 
     @Override
@@ -3027,7 +3133,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
     @Override
-    public Optional<TemplateSet> getLatestTemplateSet(String customerId, String app,
+    public Optional<String> getLatestTemplateSetLabel(String customerId, String app,
         String templateSetName) {
         try {
             SolrQuery query = new SolrQuery("*:*");
@@ -3039,9 +3145,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             addSort(query, IDF, true);
             Optional<Integer> maxResults = Optional.of(1);
 
-            return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(solrDoc -> solrDocToTemplateSet(solrDoc, true));
+            return SolrIterator.getStream(solr, query, maxResults).findFirst()
+                .flatMap(solrDoc -> solrDocToTemplateSet(solrDoc, false))
+                .flatMap(templateSet -> templateSet.label);
         } catch (Exception e) {
-            LOGGER.error("Error occured while fetching template set for customer :: " + customerId + " :: app :: " + app + " :: " + e.getMessage());
+            LOGGER.error("Error occured while fetching template set for customer :: "
+                + customerId + " :: app :: " + app + " :: " + e.getMessage());
         }
         return Optional.empty();
     }

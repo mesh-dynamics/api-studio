@@ -18,12 +18,12 @@ import io.md.core.CompareTemplate.ComparisonType;
 import io.md.core.TemplateEntry;
 import io.md.core.TemplateKey;
 import io.md.core.TemplateKey.Type;
-import io.md.core.TemplateSet;
 import io.md.dao.ReqRespUpdateOperation.OperationType;
 
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateEntryOperation;
 import com.cube.golden.TemplateEntryOperation.RuleType;
+import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.golden.transform.TemplateSetTransformer;
 import com.cube.ws.Config;
