@@ -1,4 +1,6 @@
-package com.cube.golden;
+package com.cube.core;
+
+import static io.md.core.TemplateKey.*;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -7,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
-import io.md.core.TemplateKey.Type;
 import io.md.core.ValidateCompareTemplate;
 
 public class CompareTemplateVersioned extends CompareTemplate {

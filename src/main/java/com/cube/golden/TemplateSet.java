@@ -10,6 +10,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.md.core.AttributeRuleMap;
 import io.md.utils.Utils;
 
+import com.cube.core.CompareTemplateVersioned;
+
 public class TemplateSet {
 
 	// Tagging the template set

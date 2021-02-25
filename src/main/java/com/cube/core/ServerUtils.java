@@ -65,7 +65,6 @@ import io.md.utils.Utils;
 
 import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
-import com.cube.golden.CompareTemplateVersioned;
 import com.cube.golden.TemplateSet;
 import com.cube.ws.Config;
 import redis.clients.jedis.Jedis;

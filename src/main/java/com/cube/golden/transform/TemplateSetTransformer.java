@@ -25,8 +25,8 @@ import io.md.core.TemplateKey;
 import io.md.dao.ReqRespUpdateOperation.OperationType;
 import io.md.utils.Constants;
 
+import com.cube.core.CompareTemplateVersioned;
 import com.cube.dao.ReqRespStore;
-import com.cube.golden.CompareTemplateVersioned;
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateEntryOperation;
 import com.cube.golden.TemplateSet;
