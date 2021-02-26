@@ -40,6 +40,7 @@ import {
     preRequestToFetchableConfig, 
     getCurrentMockConfig,
     isLocalhostUrl,
+    getHostName,
 } from "../../utils/http_client/utils.js";
 import * as httpClientTabUtils from "../../utils/http_client/httpClientTabs.utils.js";
 import { 
@@ -208,7 +209,7 @@ class HttpClientTabs extends Component {
                 bodyType = "rawData";
             }
             let reqObj = {
-                requestId: "",
+                requestId: "NA",
                 tabName: urlWithoutQuery,
                 httpMethod: parsedCurl.method,
                 httpURL: urlWithoutQuery,
@@ -229,7 +230,6 @@ class HttpClientTabs extends Component {
                 recordedResponseBody: "",
                 recordedResponseStatus: "",
                 responseBodyType: "",
-                requestId: "",
                 outgoingRequestIds: [],
                 eventData: eventData,
                 showOutgoingRequestsBtn: false,
@@ -379,7 +379,6 @@ class HttpClientTabs extends Component {
                 recordedResponseBody: "",
                 recordedResponseStatus: "",
                 responseBodyType: "",
-                requestId: "",
                 outgoingRequestIds: [],
                 eventData: [...httpRequestEvent, ...httpResponseEvent],
                 showOutgoingRequestsBtn: false,
@@ -616,11 +615,20 @@ class HttpClientTabs extends Component {
     }
 
     updateGrpcConnectData(isOutgoingRequest, tabId, value, currentSelectedTabId) {
-        const { dispatch } = this.props;
+        const { dispatch, httpClient: {tabs}} = this.props;
 
         if(isOutgoingRequest) {
             dispatch(httpClientActions.updateGrpcConnectDetailsInSelectedOutgoingTab(currentSelectedTabId, tabId, value));
         } else {
+
+            let tabsToProcess = tabs;
+            const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
+            const tabToProcess = tabsToProcess[tabIndex];
+            if(tabToProcess.requestId == "NA" ||tabToProcess.requestId == ""){
+                const url = getRequestUrlFromSchema(value);
+                dispatch(httpClientActions.updateAllParamsInSelectedTab(tabId, "httpURLShowOnly", "httpURLShowOnly", url));
+                dispatch(httpClientActions.updateAllParamsInSelectedTab(tabId, "service", "service", getHostName(url) ));
+            }
             dispatch(httpClientActions.updateGrpcConnectDetailsInSelectedTab(tabId, value));
         }
     }
@@ -628,12 +636,23 @@ class HttpClientTabs extends Component {
 
 
     updateParam(isOutgoingRequest, tabId, type, key, value, id) {
-        const {dispatch} = this.props;
+        const {dispatch, httpClient: {tabs}} = this.props;
+        
         if(isOutgoingRequest) {
             dispatch(httpClientActions.updateParamInSelectedOutgoingTab(tabId, type, key, value, id));
         } else {
             dispatch(httpClientActions.updateParamInSelectedTab(tabId, type, key, value, id));
 
+            if (type === "httpURL"){
+    
+                let tabsToProcess = tabs;
+                const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
+                const tabToProcess = tabsToProcess[tabIndex];
+                if(tabToProcess.requestId == "NA" ||tabToProcess.requestId == ""){
+                    dispatch(httpClientActions.updateAllParamsInSelectedTab(tabId, "httpURLShowOnly", "httpURLShowOnly", value));
+                    dispatch(httpClientActions.updateAllParamsInSelectedTab(tabId, "service", "service", getHostName(value) ));
+                }
+            }
         }
     }
 
@@ -1239,7 +1258,7 @@ class HttpClientTabs extends Component {
                 recordedResponseBody: "",
                 recordedResponseStatus: "",
                 responseBodyType: "",
-                requestId: "",
+                requestId: "NA",
                 outgoingRequestIds: [],
                 eventData: eventData,
                 showOutgoingRequestsBtn: false,

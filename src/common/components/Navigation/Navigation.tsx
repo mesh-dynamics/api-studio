@@ -18,6 +18,7 @@ export interface INavigationProps{
     dispatch: any;
     user: IUserAuthDetails;
     cube: ICubeState;
+    pathname: string;
     lo: ()=> void;
 }
 export interface INavigationState{
@@ -175,8 +176,8 @@ class Navigation extends Component<INavigationProps,INavigationState> {
                         </div>
                     </div>
                     
-                    {!window.location.pathname.includes("http_client") && !window.location.pathname.includes("api_catalog")
-                     && !window.location.pathname.includes("/account") && 
+                    {!this.props.pathname.includes("http_client") && !this.props.pathname.includes("api_catalog")
+                     && !this.props.pathname.includes("/account") && 
                     <div className="info-wrapper">
                         <AppManager />
                         <div className={!cube.hideTestConfig && cube.testConfig ? "info-div" : "hidden"}>
@@ -243,8 +244,9 @@ class Navigation extends Component<INavigationProps,INavigationState> {
 function mapStateToProps(state: IStoreState) {
     const { user } = state.authentication;
     const cube = state.cube;
+    const pathname = window.location.pathname;
     return {
-        user, cube
+        user, cube, pathname
     }
 }
 
