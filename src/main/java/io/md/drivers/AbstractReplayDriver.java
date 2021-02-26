@@ -338,9 +338,13 @@ public abstract class AbstractReplayDriver {
 				replay.reqsent++;
 				logUpdate();
 				diMgr.inject(request);
-				if(!replay.tracePropagation){
+				/* when
+				1. trace propagation is not possible through service , replay ctx (of current request) is propagated through replayCtx (redis)
+				2. store to datastore is true which means replay is happening through our replay driver and devtool proxy. need to propagate request traceId and spanId
+				*/
+				if(!replay.tracePropagation || replay.storeToDatastore){
 					Optional<Instant> respTs = Optional.ofNullable(reqIdRespTsMap.get(request.getReqId()));
-					Optional<ReplayContext> replayCtx = respTs.map(ts->new ReplayContext(request.getTraceId() ,request.timestamp , ts , replay.replayContext.flatMap(x->x.currentCollection).orElse(null)));
+					Optional<ReplayContext> replayCtx = respTs.map(ts->new ReplayContext(request , ts , replay.replayContext));
 					replay.replayContext = replayCtx;
 					dataStore.populateCache(replayCollKey, RecordOrReplay.createFromReplay(replay));
 				}
