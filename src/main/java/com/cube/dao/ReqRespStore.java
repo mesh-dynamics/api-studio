@@ -45,13 +45,12 @@ import io.md.dao.Recording.RecordingStatus;
 import io.md.services.DataStore;
 import io.md.services.FnResponse;
 import io.md.injection.DynamicInjectionConfig;
-
-import com.cube.golden.TemplateSet;
 import com.cube.learning.InjectionExtractionMeta;
 import io.md.utils.Constants;
 
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
+import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 
 /**
@@ -145,6 +144,8 @@ public interface ReqRespStore extends DataStore {
 			return recording;
 	}
 
+    Optional<TemplateSet> getTemplateSet(String customerId, String app, String version);
+
     // void invalidateCacheFromTemplateSet(TemplateSet templateSet);
 
     void invalidateCache();
@@ -197,6 +198,36 @@ public interface ReqRespStore extends DataStore {
 		public final String body;
 
 	}
+
+	enum Types {
+        Event,
+		Request,
+		Response,
+		ReplayMeta, // replay metadata
+		Analysis,
+		ReqRespMatchResult,
+		Recording,
+		RequestMatchTemplate,
+		RequestCompareTemplate,
+		ResponseCompareTemplate,
+		ReplayStats,
+        FuncReqResp,
+        TemplateSet,
+        TemplateUpdateOperationSet,
+        GoldenSet,
+        RecordingOperationSetMeta,
+        RecordingOperationSet,
+        MatchResultAggregate,
+		Diff,
+		AttributeTemplate,
+		DynamicInjectionConfig,
+		AgentConfigTagInfo,
+		AgentConfig,
+		AgentConfigAcknowledge,
+        ProtoDescriptor,
+        CustomerAppConfig;
+	}
+
     /**
      * @param reqId
      * @return the matching request on the reqId
@@ -480,6 +511,12 @@ public interface ReqRespStore extends DataStore {
 	boolean forceDeleteInCache(Replay replay);
 
 	/**
+	 * @param recording
+	 * @return
+	 */
+	boolean saveRecording(Recording recording);
+
+	/**
 	 * @param customerId
 	 * @param app
 	 * @param collection
@@ -517,6 +554,11 @@ public interface ReqRespStore extends DataStore {
                                                       Optional<String> instanceId);
 
 	Optional<RecordOrReplay> getCurrentRecordOrReplay(Optional<String> customerId, Optional<String> app, Optional<String> instanceId, boolean extendTTL);
+	/**
+	 *
+	 */
+	boolean commit();
+
 
     /**
 	 * Get ReqResponseMatchResult for the given request and replay Id
@@ -690,43 +732,6 @@ public interface ReqRespStore extends DataStore {
 	boolean saveConfig(CustomerAppConfig cfg);
 
 	List<TemplateSet> getTemplateSetList (String customerId, String appId);
-
-	Optional<TemplateSet> getTemplateSet(String customerId, String app, String templateSetVersion);
-
-
-	enum Types {
-		Event,
-		Request,
-		Response,
-		ReplayMeta, // replay metadata
-		Analysis,
-		ReqRespMatchResult,
-		Recording,
-		RequestMatchTemplate,
-		RequestCompareTemplate,
-		ResponseCompareTemplate,
-		ReplayStats,
-		FuncReqResp,
-		TemplateSet,
-		TemplateUpdateOperationSet,
-		GoldenSet,
-		RecordingOperationSetMeta,
-		RecordingOperationSet,
-		MatchResultAggregate,
-		Diff,
-		AttributeTemplate,
-		DynamicInjectionConfig,
-		AgentConfigTagInfo,
-		AgentConfig,
-		AgentConfigAcknowledge,
-		ProtoDescriptor,
-		CustomerAppConfig;
-	}
-
-
-	public boolean commit();
-
-	boolean saveRecording(Recording recording);
 
 	public boolean copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp
 		, Optional<Predicate<Event>> eventFilter);

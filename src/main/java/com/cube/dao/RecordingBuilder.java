@@ -2,6 +2,7 @@ package com.cube.dao;
 
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
+
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
@@ -12,10 +13,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.cube.agent.UtilException;
 import io.md.dao.Recording;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
-import io.md.utils.UtilException;
 
 public class RecordingBuilder {
 
@@ -80,7 +81,7 @@ public class RecordingBuilder {
 	 * @return
 	 */
 	public Recording build() {
-		String idv = id.orElse(this.recalculateId());
+	    String idv = id.orElse(this.recalculateId());
 		if (this.rootRecordingId.isEmpty()) {
 			rootRecordingId = idv;
 		}
@@ -92,7 +93,7 @@ public class RecordingBuilder {
 	}
 
 	private String recalculateId() {
-		return ReqRespStore.Types.Recording.toString().concat("-")
+		return ReqRespStoreSolr.Types.Recording.toString().concat("-")
 			.concat(String.valueOf(Math.abs(Objects.hash(customerId, app,
 				collection, templateVersion))));
 	}
@@ -108,9 +109,9 @@ public class RecordingBuilder {
 	}
 
 	public RecordingBuilder withId(String id) {
-		this.id = Optional.of(id);
-		return this;
-	}
+	    this.id = Optional.of(id);
+	    return this;
+    }
 
 	public RecordingBuilder withStatus(RecordingStatus status) {
 		this.status = status;
@@ -143,10 +144,10 @@ public class RecordingBuilder {
 		return this;
 	}
 
-	public RecordingBuilder withLabel(String label) {
-		this.label = label;
-		return this;
-	}
+    public RecordingBuilder withLabel(String label) {
+        this.label = label;
+        return this;
+    }
 
 	public RecordingBuilder withCodeVersion(String codeVersion) {
 		this.codeVersion = Optional.ofNullable(codeVersion);
@@ -205,10 +206,10 @@ public class RecordingBuilder {
 	}
 
 	public RecordingBuilder withDynamicInjectionConfigVersion(String dInjCfgVersion){
-		this.dynamicInjectionConfigVersion = Optional.ofNullable(dInjCfgVersion);
-		return this;
-	}
-	public RecordingBuilder withRunId(String runId) {
+	    this.dynamicInjectionConfigVersion = Optional.ofNullable(dInjCfgVersion);
+	    return this;
+    }
+  public RecordingBuilder withRunId(String runId) {
 		this.runId = runId;
 		return this;
 	}
