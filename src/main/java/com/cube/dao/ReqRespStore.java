@@ -100,6 +100,9 @@ public interface ReqRespStore extends DataStore {
             recording.status = RecordingStatus.Running;
             recording.updateTimestamp = Optional.of(Instant.now());
             rrstore.saveRecording(recording);
+					rrstore.populateCache(
+							new CollectionKey(recording.customerId, recording.app, recording.instanceId),
+							RecordOrReplay.createFromRecording(recording));
         }
         return recording;
     }

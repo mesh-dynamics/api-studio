@@ -61,12 +61,14 @@ import io.md.dao.HTTPResponsePayload;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Recording;
 import io.md.utils.Constants;
+import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.Utils;
 
 import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
 import com.cube.ws.Config;
+
 import redis.clients.jedis.Jedis;
 
 
@@ -450,6 +452,17 @@ public class ServerUtils {
     }
 
 
+    public static Optional<String> serialize(Object obj){
+	    try{
+            return Optional.of(CubeObjectMapperProvider.getInstance().writeValueAsString(obj));
+        }catch (Exception e){
+	        LOGGER.error("Error serializing obj "+obj + " "+e.getMessage() , e);
+	        return Optional.empty();
+        }
+    }
 
+    public static String serializeList(List list){
+	    return serialize(list).orElse("[]");
+    }
 
 }

@@ -4,10 +4,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import javax.ws.rs.core.MultivaluedMap;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
@@ -18,6 +20,8 @@ import io.md.dao.ResponsePayload;
 import io.md.utils.Utils;
 
 public class SanitizationFilters {
+
+	private static final Logger LOGGER = LogManager.getLogger(SanitizationFilters.class);
 
 	public static class BadStatuses implements SanitizationFilter{
 
@@ -65,7 +69,7 @@ public class SanitizationFilters {
 
 	public static class IgnoreStaticContent implements SanitizationFilter {
 
-		public static final HashSet<String> staticContentMimes = new HashSet<>(List.of("gif" , "html" , "css" , "js" , "ttf" , "svg" , "png"));
+		public static final HashSet<String> staticContentMimes = new HashSet<>(List.of("gif" , "html" , "css" , "javascript" , "ttf" , "svg" , "png" , "text"));
 		private final Set<String> badReqResp = new HashSet<>();
 
 		private static boolean isStaticContentPath(String path){
@@ -73,23 +77,19 @@ public class SanitizationFilters {
 		}
 
 		private static boolean staticHeader(MultivaluedMap<String, String> headers , String key){
-			return Optional.ofNullable(headers.get(key)).map(contentTypes-> contentTypes.stream().anyMatch(type->staticContentMimes.stream().anyMatch(mime->type.toLowerCase().indexOf(type)!=-1))).orElse(false);
-		}
-
-		private static boolean isStaticContentPath(MultivaluedMap<String, String> headers){
-			return staticHeader(headers , "content-type") || staticHeader(headers , "accept") ;
+			return Optional.ofNullable(headers.get(key)).map(contentTypes-> contentTypes.stream().anyMatch(type->staticContentMimes.stream().anyMatch(mime->type.toLowerCase().indexOf(mime)!=-1))).orElse(false);
 		}
 
 		@Override
 		public boolean consume(Event e) {
 			if (e.payload instanceof HTTPRequestPayload) {
-				if(isStaticContentPath(e.apiPath)){
+				if(isStaticContentPath(e.apiPath) || staticHeader(((HTTPRequestPayload) e.payload).getHdrs() , "accept")){
 					badReqResp.add(e.reqId);
 					return false;
 				}
 			}else if (e.payload instanceof HTTPResponsePayload) {
 				HTTPResponsePayload payload = (HTTPResponsePayload) e.payload;
-				if(isStaticContentPath(payload.getHdrs())){
+				if(staticHeader(payload.getHdrs() , "content-type")){
 					badReqResp.add(e.reqId);
 					return false;
 				}
@@ -104,7 +104,10 @@ public class SanitizationFilters {
 	}
 
 
-	public static Predicate<Event> filter(Stream<Event> input , List<SanitizationFilter> filters ){
+	/*
+	  Returns Set of Bad Request Ids (to be filtered)
+	 */
+	public static Set<String> getBadRequests(Stream<Event> input , List<SanitizationFilter> filters ){
 
 		for(var f : filters){
 			input = input.filter(f::consume);
@@ -116,7 +119,8 @@ public class SanitizationFilters {
 		Set<String> badReqIds = new HashSet<>();
 		filters.stream().forEach(f->badReqIds.addAll(f.getBadReqIds()));
 
-		return e->!badReqIds.contains(e.reqId);
+		LOGGER.debug("Total Bad Requests for sanitization "+badReqIds.size());
+		return badReqIds;
 	}
 
 }

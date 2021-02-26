@@ -21,6 +21,7 @@ import io.md.dao.ReqRespMatchResult;
 import io.md.services.DataStore.TemplateNotFoundException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,6 +36,7 @@ import org.slf4j.LoggerFactory;
 public class CompareTemplatesLearner {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompareTemplatesLearner.class);
+    private static final List<String> jsonPathsToIgnoreForRemoval = Arrays.asList("", "/payloadFields");
 
     String customer;
     String app;
@@ -96,11 +98,12 @@ public class CompareTemplatesLearner {
             action = Action.None;
             status = RuleStatus.Undefined;
         }
-        template.getRules().forEach(entry ->
+        template.getRules().forEach(entry -> {
 
             context.addRule(
                 new RulesKey(templateKey, entry.path),
-                new TemplateEntryMeta(action, type,
+                new TemplateEntryMeta(
+                    jsonPathsToIgnoreForRemoval.contains(entry.path) ? Action.None : action, type,
                     service,
                     requestPath, method, entry.path,
                     entry.getCompareType(),
@@ -110,7 +113,9 @@ public class CompareTemplatesLearner {
                     entry.arrayComparisionKeyPath
                     , Optional.empty(), status)
 
-        ));
+
+
+        );});
     }
 
     RuleStatus violatesRule(RuleStatus currentStatus) {
@@ -140,7 +145,7 @@ public class CompareTemplatesLearner {
         Optional<String> method, String jsonPath) {
 
         TemplateKey templateKey = new TemplateKey(templateVersion, customer, app, service, apiPath,
-            reqOrResp);
+            reqOrResp, method, TemplateKey.DEFAULT_RECORDING);
 
         if (!context.isKeyCovered(templateKey)) {
             context.addCoveredKey(templateKey);

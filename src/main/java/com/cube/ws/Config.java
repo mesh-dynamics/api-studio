@@ -6,6 +6,8 @@ package com.cube.ws;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Pattern;
 
 import javax.inject.Singleton;
@@ -88,6 +90,7 @@ public class Config {
     public final ProtoDescriptorCache protoDescriptorCache;
 
     public final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy_HH:mm:ss_SSS");
+    public final static ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
 	public Config() throws Exception {
 		LOGGER.info("Creating config");

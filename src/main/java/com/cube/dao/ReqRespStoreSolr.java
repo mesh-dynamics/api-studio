@@ -1575,6 +1575,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         else addToQryStr(queryBuff , fieldname , orValues , isOr , weight );
     }
 
+    private static void addFilter(SolrQuery query , Collection<String> fieldNames , String value , boolean negate){
+        if(fieldNames.isEmpty()) return;
+        String prefix = negate ? "NOT " : "";
+        String filter = fieldNames.stream().map(fieldName -> String.format("(%s:%s)", fieldName, SolrIterator.escapeQueryChars(value))).collect(Collectors.joining(" OR "));
+        query.addFilterQuery(prefix + " ( " + filter + " ) ");
+    }
+
     private static void addFilter(SolrQuery query, String fieldname, Collection<String> orValues, boolean negate) {
         if(orValues.isEmpty()) return; // No values specified, so no filters
         String prefix = negate ? "NOT " : "";
@@ -2517,7 +2524,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }else if(collections.size()==1){
             String singleCollection = collections.get(0);
             // collection can be present in old key COLLECTIONF or the new string set key COLLECTIONSF
-            query.addFilterQuery(String.format("(%s:%s) OR (%s:%s)", COLLECTIONF, singleCollection , COLLECTIONSF , singleCollection ));
+            addFilter(query , List.of(COLLECTIONF , COLLECTIONSF) , singleCollection , false);
         }
 
         addFilter(query, USERIDF, userId);
