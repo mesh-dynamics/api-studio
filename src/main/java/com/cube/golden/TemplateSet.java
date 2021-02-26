@@ -11,6 +11,7 @@ import io.md.core.AttributeRuleMap;
 import io.md.utils.Utils;
 
 import com.cube.core.CompareTemplateVersioned;
+import com.cube.core.ServerUtils;
 
 public class TemplateSet {
 
@@ -30,7 +31,7 @@ public class TemplateSet {
 	@JsonProperty("name")
 	public final String name;
 	@JsonProperty("label")
-	public Optional<String> label;
+	public final String label;
 
 
 	@JsonCreator
@@ -38,10 +39,10 @@ public class TemplateSet {
 		@JsonProperty("app") String app, @JsonProperty("timestamp") Instant timestamp,
 		@JsonProperty("templates") List<CompareTemplateVersioned> compareTemplateVersionedList,
 		@JsonProperty("attributeRuleMap") Optional<AttributeRuleMap> appAttributeRuleMap,
-		@JsonProperty("name") String name, @JsonProperty("label") Optional<String> label) {
+		@JsonProperty("name") String name, @JsonProperty("label") String  label) {
 		this.name = name;
 		this.label = label;
-		this.version = Utils.constructTemplateSetVersion(name, label);
+		this.version = ServerUtils.createTemplateSetVersion(name, label);
 		this.customer = customer;
 		this.app = app;
 		this.timestamp = timestamp != null ? timestamp : Instant.now();

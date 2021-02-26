@@ -116,7 +116,7 @@ public class TemplateSetTransformer {
             sourceTemplateSet.app, Instant.now(), updatedCompareTemplates,
             pathVsEntryAttributes.isEmpty() ? Optional.empty() :
                 Optional.of(new AttributeRuleMap(pathVsEntryAttributes)),
-            sourceTemplateSet.name, Optional.of(newLabel));
+            sourceTemplateSet.name, newLabel);
     }
 
     /**

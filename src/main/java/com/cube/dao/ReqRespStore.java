@@ -598,7 +598,6 @@ public interface ReqRespStore extends DataStore {
 	/**
 	 * Returns service facets with path sub-facets for each service
 	 * @param collectionId
-	 * @param runType
 	 * @return
 	 */
     ArrayList getServicePathHierarchicalFacets(String collectionId);

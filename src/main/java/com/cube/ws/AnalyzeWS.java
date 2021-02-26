@@ -230,7 +230,7 @@ public class AnalyzeWS {
     	templateSetList.getObjects().forEach(templateSet -> {
     		JSONObject setDetails = new JSONObject();
     		setDetails.put("name" , templateSet.name);
-	        setDetails.put("label" , templateSet.label.orElse(""));
+	        setDetails.put("label" , templateSet.label);
 		    root.put(templateSet.version , setDetails);
 	    });
 		return Response.ok().entity(root.toString()).build();
@@ -1173,12 +1173,7 @@ public class AnalyzeWS {
 				        customer, app, templateSet.customer, templateSet.app)));
 	        }
 	        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-	        String templateSetName = templateSet.name;
-	        String templateLabel = templateSet.label
-		        .orElse(LocalDateTime.now().format(AnalysisUtils.templateLabelFormatter));
-	        //forcefully correcting the label and version
-	        templateSet.label = Optional.of(templateLabel);
-	        templateSet.version = ServerUtils.createTemplateSetVersion(templateSetName, templateLabel);
+	        templateSet.version = ServerUtils.createTemplateSetVersion(templateSet.name, templateSet.label);
 	        templateSet.templates.forEach(compareTemplateVersioned -> {
 		        String normalisedAPIPath= CompareTemplate.normaliseAPIPath(compareTemplateVersioned.requestPath);
 		        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Normalizing APIPath before storing template ",
@@ -1419,13 +1414,12 @@ public class AnalyzeWS {
 		    // (if one doesn't exist already)
 		    Pair<String, String> nameLabelPair = ServerUtils.extractTemplateSetNameAndLabel(originalRec.templateVersion);
 			String originalRecTemplateSetName = nameLabelPair.getLeft();
-			Optional<String> originalRecTemplateSetLabel = Optional.of(nameLabelPair.getRight());
 		    TemplateSet templateSet = rrstore
 			    .getTemplateSet(originalRec.customerId, originalRec.app, analysis.map(a ->
 				    a.templateVersion).orElse(originalRec.templateVersion))
 			    .orElse(new TemplateSet(originalRec.customerId,
 				    originalRec.app, Instant.now(), Collections.emptyList(), Optional.empty()
-				    , originalRecTemplateSetName, originalRecTemplateSetLabel));
+				    , originalRecTemplateSetName, nameLabelPair.getRight()));
 
 		    String updatedTemplateSetVersion = AnalysisUtils.updateTemplateSet(templateUpdOpSetId,
 			    Optional.of(templateSet), rrstore);

@@ -327,7 +327,7 @@ public class ServerUtils {
 
         // pass null for version if version is empty and timestamp so that new version number is created automatically
         TemplateSet templateSet = new TemplateSet(customerId, appId, null,
-            compareTemplateVersionedList , Optional.empty(), templateSetName, Optional.of(templateSetLabel));
+            compareTemplateVersionedList , Optional.empty(), templateSetName, templateSetLabel);
 
         return templateSet;
 
@@ -467,7 +467,7 @@ public class ServerUtils {
     }
 
     public static String createTemplateSetVersion(String templateSetName, String templateSetLabel) {
-	    return templateSetName + "::" + templateSetLabel;
+	    return templateSetName + (!templateSetLabel.isEmpty() ? "::" + templateSetLabel : "");
     }
 
     public static Pair<String, String> extractTemplateSetNameAndLabel(String templateSetVersion) {

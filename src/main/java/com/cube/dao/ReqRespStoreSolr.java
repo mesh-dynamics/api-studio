@@ -1095,7 +1095,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         solrDoc.setField(APPF, templateSet.app);
         solrDoc.setField(TIMESTAMPF , templateSet.timestamp.toString());
         solrDoc.setField(TEMPLATE_SET_NAME_F, templateSet.name);
-        templateSet.label.ifPresent(label -> solrDoc.setField(TEMPLATE_SET_LABEL_F, label));
+        solrDoc.setField(TEMPLATE_SET_LABEL_F, templateSet.label);
         templateIds.forEach(templateId -> solrDoc.addField(TEMPLATE_ID, templateId));
         appAttributeRuleMapId.ifPresent(ruleMapId -> solrDoc.setField(ATTRIBUTE_RULE_MAP_ID, ruleMapId));
         boolean success = saveDocs(solrDoc) && softcommit();
@@ -1188,7 +1188,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         TemplateSet templateSet = new TemplateSet(customerId.get(), app.get(),
             creationTimestamp.get(), fetchTemplates? getVersionedTemplatesFromSolr(templateIds) : null ,
             fetchTemplates ? getVersionedAttributeRuleMapFromSolr(appAttributeRuleMapId) : null, templateSetName,
-            templateSetLabel);
+            templateSetLabel.orElse(""));
         return Optional.of(templateSet);
     }
 
@@ -3152,7 +3152,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
             return SolrIterator.getStream(solr, query, maxResults).findFirst()
                 .flatMap(solrDoc -> solrDocToTemplateSet(solrDoc, false))
-                .flatMap(templateSet -> templateSet.label);
+                .map(templateSet -> templateSet.label);
         } catch (Exception e) {
             LOGGER.error("Error occured while fetching template set for customer :: "
                 + customerId + " :: app :: " + app + " :: " + e.getMessage());
