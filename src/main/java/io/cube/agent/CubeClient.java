@@ -46,6 +46,7 @@ import io.md.dao.ReqRespMatchResult;
 import io.md.logger.LogMgr;
 import io.md.services.MockResponse;
 import io.md.utils.CommonUtils;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Client to connect to cube service
@@ -389,6 +390,7 @@ public class CubeClient {
 		templateVersion.ifPresent(templateVersionStr -> uriBuilder.queryParam(Constants
 			.TEMPLATE_VERSION_FIELD, templateVersionStr));
 		uriBuilder.queryParam(Constants.RECORDING_TYPE_FIELD, type.name());
+		if (eventFilter.isPresent()) throw new NotImplementedException();
 		// TODO leaving eventFilter out of API Request right now
 		return getPostResponse(uriBuilder.build());
 	}
