@@ -6,8 +6,8 @@ import static org.springframework.http.ResponseEntity.noContent;
 import static org.springframework.http.ResponseEntity.ok;
 import static org.springframework.http.ResponseEntity.status;
 
-import com.cubeui.backend.domain.AppFilePath;
-import com.cubeui.backend.domain.DTO.Response.AppFileResponse;
+import com.cubeui.backend.domain.App;
+import com.cubeui.backend.domain.DTO.Response.AppResponse;
 import com.cubeui.backend.web.ErrorResponse;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -124,21 +124,17 @@ public class CubeServerService {
         return getData(response, path, Recording.class);
     }
 
-    public List<AppFileResponse> getAppFileResponse(ResponseEntity<byte[]> responseEntity, List<AppFilePath> files) {
-        List<AppFileResponse> response = new ArrayList<>();
+    public List<AppResponse> getAppFileResponse(ResponseEntity<byte[]> responseEntity, List<App> apps) {
+        List<AppResponse> response = new ArrayList<>();
         try {
             String body = new String(responseEntity.getBody());
             JsonNode json = jsonMapper.readTree(body);
-            for (AppFilePath appFilePath : files) {
-                ResponseEntity<byte[]> img = fetchGetResponse(appFilePath.getFilePath(), null);
-                AppFileResponse appFileResponse = new AppFileResponse();
-                appFileResponse.setFileName(appFilePath.getFileName());
-                appFileResponse.setFilePath(appFilePath.getFilePath());
-                appFileResponse.setApp(appFilePath.getApp());
-                appFileResponse.setData(img.getBody());
-                JsonNode responseBody = json.get(appFilePath.getApp().getName());
-                appFileResponse.setConfiguration(responseBody);
-                response.add(appFileResponse);
+            for (App app : apps) {
+                AppResponse appResponse = new AppResponse();
+                appResponse.setApp(app);
+                JsonNode responseBody = json.get(app.getName());
+                appResponse.setConfiguration(responseBody);
+                response.add(appResponse);
             }
         }catch (Exception e) {
             log.info(String.format("Error in converting Json to Map for message= %s", e.getMessage()));

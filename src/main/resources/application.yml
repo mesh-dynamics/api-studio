@@ -101,14 +101,3 @@ password:
             days: 1
     length: 20
 md_cloud: false
-aws:
-  url: "https://mdappimages.s3.us-east-2.amazonaws.com/"
-  access:
-    key:
-     id: "AKIA27QL2B3CZAXR26GD"
-  secret:
-    access:
-        key: "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"
-  region: "us-east-2"
-  bucket:
-    name: "mdappimages"
