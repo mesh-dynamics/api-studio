@@ -1158,7 +1158,7 @@ public class AnalyzeWS {
 
     @POST
     @Path("saveTemplateSet/{customer}/{app}")
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public Response saveTemplateSet(@Context UriInfo uriInfo, @PathParam("customer") String customer,
 	    @PathParam("app") String app, @FormDataParam("file") InputStream uploadedInputStream) {
@@ -1166,11 +1166,11 @@ public class AnalyzeWS {
         try {
 	        templateSet = this.jsonMapper.readValue(uploadedInputStream, TemplateSet.class);
 	        if (!templateSet.customer.equals(customer) || !templateSet.app.equals(app)){
-		        Response.status(Status.UNAUTHORIZED).entity(Utils
+		        return Response.status(Status.UNAUTHORIZED).entity(Utils
 			        .buildErrorResponse(Constants.ERROR, "UNAUTHORIZED", String.format(
 				        "customer/app name mismatch in path and json file. "
 					        + "path customer=%s app=%s json customer=%s app=%s",
-				        customer, app, templateSet.customer, templateSet.app)));
+				        customer, app, templateSet.customer, templateSet.app))).build();
 	        }
 	        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 	        templateSet.version = ServerUtils.createTemplateSetVersion(templateSet.name, templateSet.label);
