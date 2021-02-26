@@ -144,15 +144,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 	@Override
-	public List<TemplateSet> getTemplateSetList(String customerId, String appId) {
+	public Result<TemplateSet> getTemplateSetList(String customerId, String appId) {
         SolrQuery templateSetQuery = new SolrQuery("*:*");
         addFilter(templateSetQuery, TYPEF, Types.TemplateSet.toString());
         addFilter(templateSetQuery, CUSTOMERIDF , customerId);
         addFilter(templateSetQuery, APPF, appId);
-
-        return SolrIterator.getStream(solr, templateSetQuery, Optional.empty()).map(solrDoc ->
-            solrDocToTemplateSet(solrDoc, false)).filter(Optional::isPresent).map(Optional::get)
-            .collect(Collectors.toList());
+        return SolrIterator.getResults(solr, templateSetQuery, Optional.empty(), solrDoc ->
+            solrDocToTemplateSet(solrDoc, false));
 
 	}
 

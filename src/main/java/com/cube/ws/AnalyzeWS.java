@@ -8,6 +8,7 @@ import static io.md.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 import static io.md.core.Comparator.MatchType.DontCare;
 import static io.md.core.TemplateKey.Type;
+import static io.md.core.Utils.versionPattern;
 import static io.md.dao.Recording.RecordingStatus;
 import static io.md.services.DataStore.TemplateNotFoundException;
 
@@ -82,6 +83,7 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -223,9 +225,9 @@ public class AnalyzeWS {
     public Response getTemplateSetLabels(@Context UriInfo uriInfo,
 	    @PathParam("customerId") String customerId,
 	    @PathParam("appId") String appId) {
-    	List<TemplateSet> templateSetList = rrstore.getTemplateSetList(customerId, appId);
+    	Result<TemplateSet> templateSetList = rrstore.getTemplateSetList(customerId, appId);
     	JSONObject root = new JSONObject();
-    	templateSetList.forEach(templateSet -> {
+    	templateSetList.getObjects().forEach(templateSet -> {
     		JSONObject setDetails = new JSONObject();
     		setDetails.put("name" , templateSet.name);
 	        setDetails.put("label" , templateSet.label.orElse(""));
@@ -1155,12 +1157,11 @@ public class AnalyzeWS {
     }
 
     @POST
-    @Path("saveTemplateSet/{customer}/{app}/{name}")
+    @Path("saveTemplateSet/{customer}/{app}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response saveTemplateSet(@Context UriInfo uriInfo, @PathParam("customer") String customer,
-	    @PathParam("app") String app, @PathParam("name") String templateSetName,
-	    @FormDataParam("file") InputStream uploadedInputStream) {
+	    @PathParam("app") String app, @FormDataParam("file") InputStream uploadedInputStream) {
 		        TemplateSet templateSet;
         try {
 	        templateSet = this.jsonMapper.readValue(uploadedInputStream, TemplateSet.class);
@@ -1172,11 +1173,12 @@ public class AnalyzeWS {
 				        customer, app, templateSet.customer, templateSet.app)));
 	        }
 	        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-	        String templateLabel = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_LABEL_FIELD))
+	        String templateSetName = templateSet.name;
+	        String templateLabel = templateSet.label
 		        .orElse(LocalDateTime.now().format(AnalysisUtils.templateLabelFormatter));
 	        //forcefully correcting the label and version
 	        templateSet.label = Optional.of(templateLabel);
-	        templateSet.version = templateSetName + "::" + templateLabel;
+	        templateSet.version = ServerUtils.createTemplateSetVersion(templateSetName, templateLabel);
 	        templateSet.templates.forEach(compareTemplateVersioned -> {
 		        String normalisedAPIPath= CompareTemplate.normaliseAPIPath(compareTemplateVersioned.requestPath);
 		        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Normalizing APIPath before storing template ",
@@ -1188,6 +1190,14 @@ public class AnalyzeWS {
             if(!validTemplate.isValid()) {
                 return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
             }
+
+	        rrstore.getTemplateSet(customer, app, templateSet.version).ifPresent(
+		        io.md.utils.UtilException.rethrowConsumer(set ->
+		        {
+			        throw new Exception(
+				        "Template Set with given version (name + label) already exists");
+		        }));
+
             String templateSetId = rrstore.saveTemplateSet(templateSet);
             return Response.ok().entity((new JSONObject(Map.of(
                 "Message", "Successfully saved template set",
@@ -1407,10 +1417,9 @@ public class AnalyzeWS {
 		    Optional<Analysis> analysis = rrstore.getAnalysis(replayId);
 		    // creating a new temporary empty template set against the old version
 		    // (if one doesn't exist already)
-		    String[] templateVersionSplits = originalRec.templateVersion.split("::");
-			String originalRecTemplateSetName = templateVersionSplits[0];
-			Optional<String> originalRecTemplateSetLabel = templateVersionSplits.length > 1 ?
-					Optional.of(templateVersionSplits[1]) : Optional.empty();
+		    Pair<String, String> nameLabelPair = ServerUtils.extractTemplateSetNameAndLabel(originalRec.templateVersion);
+			String originalRecTemplateSetName = nameLabelPair.getLeft();
+			Optional<String> originalRecTemplateSetLabel = Optional.of(nameLabelPair.getRight());
 		    TemplateSet templateSet = rrstore
 			    .getTemplateSet(originalRec.customerId, originalRec.app, analysis.map(a ->
 				    a.templateVersion).orElse(originalRec.templateVersion))

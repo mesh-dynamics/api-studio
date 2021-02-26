@@ -89,7 +89,6 @@ public class Config {
 
     public final ProtoDescriptorCache protoDescriptorCache;
 
-    public final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy_HH:mm:ss_SSS");
     public final static ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
 	public Config() throws Exception {

@@ -33,6 +33,7 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
@@ -463,6 +464,16 @@ public class ServerUtils {
 
     public static String serializeList(List list){
 	    return serialize(list).orElse("[]");
+    }
+
+    public static String createTemplateSetVersion(String templateSetName, String templateSetLabel) {
+	    return templateSetName + "::" + templateSetLabel;
+    }
+
+    public static Pair<String, String> extractTemplateSetNameAndLabel(String templateSetVersion) {
+	    String[] splits = templateSetVersion.split("::");
+	    if (splits.length == 1 ) return Pair.of(templateSetVersion, "");
+	    return Pair.of(splits[0] , splits[1]);
     }
 
 }
