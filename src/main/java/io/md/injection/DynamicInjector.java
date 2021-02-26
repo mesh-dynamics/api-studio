@@ -49,12 +49,20 @@ public class DynamicInjector {
 		return strMap;
 	}
 
+	private void populateStaticValues(){
+		this.dynamicInjectionConfig.ifPresent(config -> {
+			config.staticValues.forEach(pair -> extractionMap
+				.put(pair.name, new JsonDataObj(new TextNode(pair.value), jsonMapper)));
+		});
+	}
+
 	public DynamicInjector(Optional<DynamicInjectionConfig> diCfg, DataStore dataStore,
 		ObjectMapper jsonMapper, Map<String, DataObj> extractionMap) {
 		this.dynamicInjectionConfig = diCfg;
 		this.dataStore = dataStore;
 		this.jsonMapper = jsonMapper;
 		this.extractionMap = extractionMap;
+		populateStaticValues();
 	}
 
 	public DynamicInjector(Optional<DynamicInjectionConfig> diCfg, DataStore dataStore,
@@ -63,6 +71,7 @@ public class DynamicInjector {
 		this.dataStore = dataStore;
 		this.jsonMapper = jsonMapper;
 		this.extractionMap = new HashMap<>();
+		populateStaticValues();
 	}
 
 	public void extract(Event goldenRequestEvent, Payload testResponsePayload) {
