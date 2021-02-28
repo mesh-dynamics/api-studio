@@ -11,6 +11,7 @@ import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.core.CollectionKey;
 import io.md.dao.*;
 
+import io.md.injection.DynamicInjectionConfig;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
@@ -66,6 +67,9 @@ public class RealMocker implements Mocker {
         if (mockWithCollection.isPresent()) {
             MockWithCollection mockWColl = mockWithCollection.get();
             DynamicInjector di = diFactory.getMgr(reqEvent.customerId , reqEvent.app , mockWColl.dynamicInjectionConfigVersion);
+            DynamicInjector si = diFactory.getMgr(reqEvent.customerId, reqEvent.app,
+                mockWColl.dynamicInjectionConfigVersion
+                    .map(config -> config + DynamicInjectionConfig.staticVersionSuffix));
             di.extract(reqEvent , null);
 
             List<String> payloadFieldFilterList = mockWColl.isDevtool ? reqEvent.payloadFields: Collections.EMPTY_LIST;
@@ -123,7 +127,8 @@ public class RealMocker implements Mocker {
                 }
             }
             matchingResponse.ifPresent(di::inject);
-            
+            matchingResponse.ifPresent(si::inject);
+
             Optional<Event> matchedReq = matchingResponse.map(resp->reqIdReqMapping.get(resp.reqId));
             Optional<Event> mockResponse = createResponseFromEvent(reqEvent, matchedReq , matchingResponse, mockWithCollection.get().runId, mockWColl.isDevtool);
             return new MockResponse(mockResponse, res.getNumFound());

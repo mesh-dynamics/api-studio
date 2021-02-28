@@ -1,5 +1,6 @@
 package io.md.injection;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,6 +42,11 @@ public class DynamicInjectionConfig {
 	@JsonProperty("injection")
 	public final List<InjectionMeta> injectionMetas;
 
+	@JsonProperty("static")
+	public List<StaticValue> staticValues;
+
+	public static final String staticVersionSuffix = "_Static";
+
 	// Default constructor for Jackson
 	private DynamicInjectionConfig() {
 		version = "";
@@ -49,17 +55,20 @@ public class DynamicInjectionConfig {
 		timestamp = Instant.now();
 		extractionMetas = new ArrayList<>();
 		injectionMetas = new ArrayList<>();
+		staticValues = new ArrayList<>();
 	}
 
 	public DynamicInjectionConfig(String version, String customerId, String app,
 		Optional<Instant> timestamp,
-		List<ExtractionMeta> extractionMetas, List<InjectionMeta> injectionMetas) {
+		List<ExtractionMeta> extractionMetas, List<InjectionMeta> injectionMetas,
+		List<StaticValue> staticValues) {
 		this.version = version;
 		this.customerId = customerId;
 		this.app = app;
 		this.timestamp = timestamp.orElse(Instant.now());
 		this.extractionMetas = extractionMetas;
 		this.injectionMetas = injectionMetas;
+		this.staticValues = staticValues;
 	}
 
 	static public class ExtractionMeta {
@@ -239,6 +248,18 @@ public class DynamicInjectionConfig {
 			this.sourceForValue = sourceForValue;
 			this.path = path;
 			this.keys = keys;
+		}
+	}
+
+	static public class StaticValue {
+		public final String name;
+
+		public final String value;
+
+		@JsonCreator
+		public StaticValue(@JsonProperty("name") String name, @JsonProperty("value") String value) {
+			this.name = name;
+			this.value = value;
 		}
 	}
 }
