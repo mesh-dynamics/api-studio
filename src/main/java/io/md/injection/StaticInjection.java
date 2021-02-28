@@ -34,7 +34,7 @@ public class StaticInjection{
             final String varName = staticValPrefix + config.value;
             staticValueList.add(new StaticValue(varName, config.value));
             injectionMetaList.add(
-                new InjectionMeta(Collections.singletonList(config.apiPath), config.jsonPath, false,
+                new InjectionMeta(config.apiPaths, config.jsonPath, false,
                     varName, Optional.empty(), config.method, Optional.empty()));
         });
         return new DynamicInjectionConfig(version, customerId, app, Optional.empty(),
@@ -52,19 +52,18 @@ public class StaticInjection{
             Optional<String> value = Optional.ofNullable(varNameToValueMap.get(injectionMeta.name));
             value.ifPresent(val -> {
                 staticInjectionMetas.add(new StaticInjectionMeta(val,
-                    injectionMeta.apiPaths.size() > 0 ? injectionMeta.apiPaths.get(0) : "",
-                    injectionMeta.jsonPath, injectionMeta.method));
+                    injectionMeta.apiPaths, injectionMeta.jsonPath, injectionMeta.method));
             });
 
         });
         return staticInjectionMetas;
     }
-    @JsonPropertyOrder({"Value", "APIPath", "JSONPath", "Method"})
+    @JsonPropertyOrder({"Value", "APIPaths", "JSONPath", "Method"})
     public static class StaticInjectionMeta {
         @JsonProperty("Value")
         final String value;
-        @JsonProperty("APIPath")
-        final String apiPath;
+        @JsonProperty("APIPaths")
+        final List<String> apiPaths;
         @JsonProperty("JSONPath")
         final String jsonPath;
         @JsonProperty("Method")
@@ -72,10 +71,10 @@ public class StaticInjection{
 
         @JsonCreator
         public StaticInjectionMeta(@JsonProperty("Value") String value,
-            @JsonProperty("APIPath") String apiPath, @JsonProperty("JSONPath") String jsonPath,
+            @JsonProperty("APIPaths") List<String> apiPaths, @JsonProperty("JSONPath") String jsonPath,
             @JsonProperty("Method") HTTPMethodType method) {
             this.value = value;
-            this.apiPath = apiPath;
+            this.apiPaths = apiPaths;
             this.jsonPath = jsonPath;
             this.method = method;
         }
