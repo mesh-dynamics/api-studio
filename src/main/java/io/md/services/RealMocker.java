@@ -295,15 +295,26 @@ public class RealMocker implements Mocker {
 
         if (shouldStore(mockRequestEvent.eventType)) {
 
-            Optional<String> score  = matchedReq.flatMap(e->e.getMetaFieldValue(Constants.SCORE_FIELD));
-            MatchType reqMatch = score.flatMap(Utils::strToFloat).map(val->{
-                return isDevtoolRequest ? (EventQuery.getEventMaxWeight() == val ? MatchType.ExactMatch : MatchType.FuzzyMatch) : MatchType.ExactMatch ;
+            boolean collectionMatched = matchedReq.map(mr->mr.getCollection().equals(mockRequestEvent.getCollection())).orElse(false);
+            boolean traceIdMatched    = matchedReq.map(mr->mr.getTraceId().equals(mockRequestEvent.getTraceId())).orElse(false);
+            boolean payloadKeyMatched    = matchedReq.map(mr->mr.payloadKey == mockRequestEvent.payloadKey).orElse(false);
+
+            //Optional<String> score  = matchedReq.flatMap(e->e.getMetaFieldValue(Constants.SCORE_FIELD));
+            MatchType reqMatch = matchedReq.map(val->{
+                return isDevtoolRequest ? (collectionMatched && traceIdMatched && payloadKeyMatched ? MatchType.ExactMatch : MatchType.FuzzyMatch) : MatchType.ExactMatch ;
             }).orElse(MatchType.NoMatch);
 
             Map<String,String> meta = new HashMap<>();
             meta.put(Constants.MATCH_TYPE , reqMatch.toString());
-            score.ifPresent(scr->meta.put(Constants.SCORE_FIELD , scr));
-            matchedReq.ifPresent(req->meta.put(Constants.MATCHED_REQUEST_ID , req.reqId));
+            matchedReq.ifPresent(req->{
+                meta.put(Constants.MATCHED_REQUEST_ID , req.reqId);
+                meta.put(Constants.MATCHED_COLLECTION_NAME , req.getCollection());
+                meta.put(Constants.COLLECTION_MATCHED , Boolean.toString(collectionMatched));
+                meta.put(Constants.TRACEID_MATCHED , Boolean.toString(traceIdMatched));
+                meta.put(Constants.PAYLOAD_KEY_MATCHED , Boolean.toString(payloadKeyMatched));
+            });
+
+            respEvent.ifPresent(e->meta.put(Constants.MATCHED_RESPONSE_ID , e.reqId));
 
             // store a req-resp analysis match result for the mock request (during replay)
             // and the matched recording request

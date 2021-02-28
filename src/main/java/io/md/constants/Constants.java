@@ -62,6 +62,18 @@ public class Constants {
 	public static final String INCLUDE_DIFF = "includeDiff";
 	public static final String LOWER_BOUND = "lowerBound";
 	public static final String MATCHED_REQUEST_ID = "matchedRequestId";
+	public static final String MATCHED_RESPONSE_ID = "matchedResponseId";
+	public static final String MATCHED_COLLECTION_NAME = "matchedCollectionName";
+
+	public static final String COLLECTION_MATCHED = "collectionMatched";
+	public static final String TRACEID_MATCHED = "traceIdMatched";
+	public static final String PAYLOAD_KEY_MATCHED = "payloadKeyMatched";
+
+	public static final String META_FIELDS_PREFIX = "MD_META_";
+
+
+
+
 
 
 	//MESSAGE KEYS
