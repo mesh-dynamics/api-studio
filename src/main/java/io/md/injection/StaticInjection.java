@@ -51,7 +51,8 @@ public class StaticInjection{
         diConfig.injectionMetas.forEach(injectionMeta -> {
             Optional<String> value = Optional.ofNullable(varNameToValueMap.get(injectionMeta.name));
             value.ifPresent(val -> {
-                staticInjectionMetas.add(new StaticInjectionMeta(val, injectionMeta.apiPaths.get(0),
+                staticInjectionMetas.add(new StaticInjectionMeta(val,
+                    injectionMeta.apiPaths.size() > 0 ? injectionMeta.apiPaths.get(0) : "",
                     injectionMeta.jsonPath, injectionMeta.method));
             });
 
