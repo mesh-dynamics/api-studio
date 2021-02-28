@@ -1,5 +1,6 @@
 package io.md.drivers;
 
+import io.md.injection.DynamicInjectionConfig;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ public abstract class AbstractReplayDriver {
 	protected ObjectMapper jsonMapper;
 	Map<String, DataObj> extractionMap;
 	protected DynamicInjector diMgr;
+	protected DynamicInjector siMgr;
 	//Todo : this needs to be passed or present as singleton somewhere
 	DynamicInjectorFactory factory;
 
@@ -90,6 +92,10 @@ public abstract class AbstractReplayDriver {
 		populateStaticExtactionMap();
 
 		this.diMgr = factory.getMgr(replay.customerId, replay.app, replay.dynamicInjectionConfigVersion , extractionMap);
+		this.siMgr = factory.getMgr(replay.customerId, replay.app,
+			replay.dynamicInjectionConfigVersion
+				.map(version -> version + DynamicInjectionConfig.staticVersionSuffix),
+			extractionMap);
 
 		CompletableFuture.runAsync(() -> replay()).handle((ret, e) -> {
 			if (e != null) {
@@ -263,6 +269,7 @@ public abstract class AbstractReplayDriver {
 			replay.reqsent++;
 			logUpdate();
 			diMgr.inject(request);
+			siMgr.inject(request);
 			Instant requestTime = Instant.now();
 			CompletableFuture<ResponsePayload> responsePayloadCompletableFuture = client
 				.sendAsync(request, replay);
@@ -338,6 +345,7 @@ public abstract class AbstractReplayDriver {
 				replay.reqsent++;
 				logUpdate();
 				diMgr.inject(request);
+				siMgr.inject(request);
 				/* when
 				1. trace propagation is not possible through service , replay ctx (of current request) is propagated through replayCtx (redis)
 				2. store to datastore is true which means replay is happening through our replay driver and devtool proxy. need to propagate request traceId and spanId
