@@ -4,6 +4,7 @@
 package com.cube.dao;
 
 import io.cube.agent.UtilException;
+import io.md.cache.ProtoDescriptorCache;
 import io.md.core.AttributeRuleMap;
 import io.md.core.CollectionKey;
 import io.md.core.Comparator;
@@ -737,5 +738,5 @@ public interface ReqRespStore extends DataStore {
 
 	public  Event buildEvent(Event event, String collection, RecordingType recordingType,
 		String reqId, String traceId, Optional<String> runId, Instant timeStamp,
-		Optional<String> targetTemplateSetVersion) throws InvalidEventException, TemplateNotFoundException;
+		Optional<String> targetTemplateSetVersion, ProtoDescriptorCache protoDescriptorCache) throws InvalidEventException, TemplateNotFoundException;
 }

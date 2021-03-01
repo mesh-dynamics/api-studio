@@ -2232,7 +2232,7 @@ public class CubeStore {
 
     private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId, Optional<String> runId)
         throws InvalidEventException, TemplateNotFoundException {
-        return rrstore.buildEvent(event, collection, recordingType, reqId, traceId, runId, Instant.now(), Optional.empty());
+        return rrstore.buildEvent(event, collection, recordingType, reqId, traceId, runId, Instant.now(), Optional.empty(), config.protoDescriptorCache);
     }
 
     @GET
@@ -2401,7 +2401,8 @@ public class CubeStore {
         var newEventsStream =   pending.stream().map(event -> {
             String newReqId = "Update-" + finalPayloadHash;
             try {
-                Event newEvent =  rrstore.buildEvent(event, collection, recordingType, newReqId, newReqId, Optional.empty(), event.timestamp, Optional.empty());
+                Event newEvent =  rrstore.buildEvent(event, collection, recordingType, newReqId,
+                    newReqId, Optional.empty(), event.timestamp, Optional.empty(), config.protoDescriptorCache);
                 return newEvent;
             } catch (InvalidEventException | TemplateNotFoundException e) {
                 LOGGER.error(new ObjectMessage(Map.of(

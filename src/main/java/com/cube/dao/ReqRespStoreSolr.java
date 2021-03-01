@@ -728,13 +728,20 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         List<String> templateIds = new ArrayList<>();
         // check if a template set already exists with the given name and label
         SolrQuery checkExistingTemplateSet = new SolrQuery("*:*");
-        addFilter(checkExistingTemplateSet, TEMPLATE_SET_NAME_F, templateSet.name);
-        addFilter(checkExistingTemplateSet, TEMPLATE_SET_LABEL_F, templateSet.label);
+        addFilter(checkExistingTemplateSet, TEMPLATE_VERSION_FIELD, templateSet.version);
         if (SolrIterator
             .getSingleResult(solr, checkExistingTemplateSet).isPresent()) {
-            throw  new Exception("Template set with name and label combination already exists");
+            // remove templates templates with the given version
+            String deleteQueryBuffer = VERSIONF + ":" + templateSet.version + " AND "
+                + TYPEF + ":(" + String
+                .join(" OR ", List.of(Type.RequestCompare.toString()
+                    , Type.RequestMatch.toString(), Type.ResponseCompare.toString()))
+                + ")";
+            solr.deleteByQuery(deleteQueryBuffer);
+            solr.commit();
+            LOGGER.debug(new ObjectMessage(Map.of(VERSIONF, templateSet.version,
+                MESSAGE, "Deleted compare templates for the given version")));
         }
-
 
         templateSet.templates.forEach(UtilException.rethrowConsumer(template -> {
             TemplateKey templateKey = new TemplateKey(templateSet.version, templateSet.customer,
@@ -1289,7 +1296,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                         reqId, event.getTraceId(), Optional.of(timeStamp.toString()),
                         event.timestamp,
                         fromRecording.templateVersion.equals(toRecording.templateVersion) ?
-                            Optional.empty() : Optional.of(toRecording.templateVersion));
+                            Optional.empty() : Optional.of(toRecording.templateVersion), config.protoDescriptorCache);
                 } catch (InvalidEventException | TemplateNotFoundException e) {
                     eventCreationFailure[0] = true;
                     LOGGER
@@ -1311,35 +1318,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         return batchSaveResult;
     }
 
-    public  Event buildEvent(Event event, String collection, RecordingType recordingType,
-        String reqId, String traceId, Optional<String> runId, Instant timeStamp,
-        Optional<String> targetTemplateSetVersion)
-        throws InvalidEventException, TemplateNotFoundException {
-        EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
-            event.service, event.instanceId, collection,
-            new MDTraceInfo(traceId, event.spanId, event.parentSpanId),
-            event.getRunType(), Optional.of(event.timestamp), reqId, event.apiPath,
-            event.eventType, recordingType);
-        eventBuilder.setPayload(event.payload);
-        eventBuilder.withMetaData(event.metaData);
-        eventBuilder.withRunId(runId.orElse(event.runId));
-        eventBuilder.setPayloadKey(event.payloadKey);
-        Event newEvent = eventBuilder.createEvent();
 
-        if (newEvent.payload instanceof RequestPayload) {
-            if (newEvent.payload instanceof HTTPRequestPayload && targetTemplateSetVersion.isPresent()) {
-                newEvent.parseAndSetKey(
-                    getTemplate(newEvent.customerId, newEvent.app, newEvent.service, newEvent.apiPath,
-                        targetTemplateSetVersion.get(), Type.RequestMatch,
-                        Optional.ofNullable(newEvent.eventType),
-                        Optional.of(((HTTPRequestPayload) newEvent.payload).getMethod()), collection)
-                );
-            }
-            // TODO how do we handle GRPCRequestPayload
-        }
-
-        return newEvent;
-    }
 
 
 
