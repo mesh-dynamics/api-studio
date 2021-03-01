@@ -41,7 +41,7 @@ public class StaticInjection{
             Collections.emptyList(), injectionMetaList, staticValueList);
     }
 
-    public List<StaticInjectionMeta> getStaticMetasFromDynamicConfig(
+    public static List<StaticInjectionMeta> getStaticMetasFromDynamicConfig(
         DynamicInjectionConfig diConfig) {
         HashMap<String, String> varNameToValueMap = new HashMap<>();
         List<StaticInjectionMeta> staticInjectionMetas = new ArrayList<>();
