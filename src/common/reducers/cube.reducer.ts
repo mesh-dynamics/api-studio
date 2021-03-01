@@ -74,7 +74,7 @@ const initialState : ICubeState = {
     hideHttpClient: false
 };
 
-export function cube (state = initialState, action: ICubeAction) {
+export function cube (state = initialState, action: ICubeAction) : ICubeState {
     switch (action.type) {
         case cubeConstants.APPS_REQUEST: 
             return {
@@ -127,6 +127,11 @@ export function cube (state = initialState, action: ICubeAction) {
                 selectedGoldenName: "",
                 collectionTemplateVersion: null,
                 fcId: null
+            };
+        case cubeConstants.SET_GETTING_STARTED_SCREEN:
+            return {
+                ...state,
+                isGettingStartedHidden: action.data
             };
         case cubeConstants.SET_TEST_CONFIG:
             return {
