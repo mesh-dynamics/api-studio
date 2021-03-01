@@ -3,6 +3,7 @@ import React from 'react';
 const MockSettings = (props) => {
     const {
         proxyPort,
+        gRPCProxyPort,
         handleMockSettingsChange,
         handleSaveMockSettingsClick
     } = props;
@@ -26,9 +27,24 @@ const MockSettings = (props) => {
                             id="dev-tool-proxy" 
                             type="text" 
                             className="form-control settings-no-border" 
-                            placeholder="9000"
+                            placeholder="Default Port: 9000"
                             value={proxyPort}
                             onChange={(event) => handleMockSettingsChange('proxyPort', event.target.value)}
+                        />
+                    </div>
+                    <br />
+                    <span>gRPC Proxy Port</span>
+                    <div className="input-group input-group-sm">
+                        <span className="input-group-addon settings-no-border">
+                            <i className="fa fa-server" aria-hidden="true"></i>
+                        </span>
+                        <input 
+                            id="dev-tool-grpc-proxy" 
+                            type="text" 
+                            className="form-control settings-no-border" 
+                            placeholder="Default Port: 9001"
+                            value={gRPCProxyPort}
+                            onChange={(event) => handleMockSettingsChange('gRPCProxyPort', event.target.value)}
                         />
                     </div>
                     <br />

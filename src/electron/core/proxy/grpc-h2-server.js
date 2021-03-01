@@ -2,7 +2,7 @@ const http2 = require("http2");
 const logger = require("electron-log");
 
 const { fetch } = require("fetch-h2");
-const { getApplicationConfig } = require("../fs-utils");
+const { getApplicationConfig, store } = require("../fs-utils");
 const { getServiceNameFromUrl, getServiceConfig } = require("./proxy-utils");
 const { Deferred } = require("../../../shared/utils");
 
@@ -11,6 +11,7 @@ const { getTraceDetails } = require("./trace-utils");
 
 const setupGrpcH2Server = (mockContext, user) => {
   const { proxyDestination } = getApplicationConfig();
+  const gRPCProxyPort =  store.get("gRPCProxyPort");
   const mockTarget = {
     protocol: proxyDestination.protocol, //`${mock.protocol}:`, // Do not forget the darn colon
     host: proxyDestination.host,
@@ -241,8 +242,9 @@ const setupGrpcH2Server = (mockContext, user) => {
     });
   });
 
-  logger.info("gRPC HTTP2 server listening on 9001");
-  server.listen(9001);
+  // TODO: We should add the below logger in listen callback.
+  logger.info(`gRPC HTTP2 server listening on ${gRPCProxyPort}`);
+  server.listen(gRPCProxyPort);
 };
 
 module.exports = setupGrpcH2Server;

@@ -12,6 +12,7 @@ class Settings extends Component {
         config: {
             domain: '',
             proxyPort: '',
+            gRPCProxyPort: ''
         }
     };
 
@@ -58,7 +59,8 @@ class Settings extends Component {
         this.setState({
             config: { 
                 ...this.state.config,
-                proxyPort: value
+                [name]: value
+                // proxyPort: value
             } 
         });
     }
@@ -77,7 +79,8 @@ class Settings extends Component {
         const { 
             config: {
                 domain,
-                proxyPort
+                proxyPort,
+                gRPCProxyPort,
             }, 
             domainSettingsModalVisible, 
             mockSettingsModalVisible,
@@ -103,6 +106,7 @@ class Settings extends Component {
                     />
                     <MockSettings
                         proxyPort={proxyPort}
+                        gRPCProxyPort={gRPCProxyPort}
                         handleMockSettingsChange={this.handleMockSettingsChange}
                         handleSaveMockSettingsClick={this.handleSaveMockSettingsClick}
                     />

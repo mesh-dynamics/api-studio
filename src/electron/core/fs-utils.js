@@ -46,11 +46,12 @@ const readConfig = () => {
 };
 
 const setupApplicationConfig = () => {
-    const { domain, proxyPort, replayDriverPort } = readConfig();
+    const { domain, proxyPort, replayDriverPort, gRPCProxyPort } = readConfig();
 
     const appDomain = store.get("domain");
     const appProxyPort = store.get("proxyPort");
     const appReplayDriverPort = store.get("replayDriverPort");
+    const appGRPCProxyPort = store.get("gRPCProxyPort");
 
     // If domain is not set
     if (!appDomain) {
@@ -60,13 +61,19 @@ const setupApplicationConfig = () => {
 
     // If proxy port is not already set
     if (!proxyPort) {
-      logger.info("Setting port for proxy server to listen at:", appProxyPort);
+      logger.info("Setting default port for proxy server to listen at:", appProxyPort);
       store.set("proxyPort", appProxyPort);
     }
 
+    // If replay driver port is not already set
     if(!appReplayDriverPort) {
-      logger.info("Setting port for local replay driver at:", replayDriverPort);
+      logger.info("Setting default port for local replay driver at:", replayDriverPort);
       store.set("replayDriverPort", replayDriverPort);
+    }
+
+    if(!appGRPCProxyPort) {
+      logger.info("Setting default port for gRPC Proxy Port at:", gRPCProxyPort);
+      store.set("gRPCProxyPort", gRPCProxyPort);
     }
 
     // To remove any previous traces of old configuration
@@ -93,6 +100,7 @@ const getApplicationConfig = () => {
     const appDomain = store.get("domain");
     const proxyPort = store.get("proxyPort");
     const replayDriverPort =  store.get("replayDriverPort");
+    const gRPCProxyPort = store.get("gRPCProxyPort");
     const parsedUrl = url.parse(appDomain);
 
     const proxyDestinationServerProtocol = parsedUrl.protocol;
@@ -103,6 +111,7 @@ const getApplicationConfig = () => {
       domain: appDomain,
       proxyPort,
       replayDriverPort,
+      gRPCProxyPort,
       proxyDestination: {
         protocol: proxyDestinationServerProtocol,
         host: proxyDestinationServerHost,
@@ -116,12 +125,14 @@ const getApplicationConfig = () => {
 };
 
 const updateApplicationConfig = (config) => {
-    const { domain, proxyPort } = config;
+    const { domain, proxyPort, gRPCProxyPort } = config;
     
     logger.info("Updating application config to store", domain);
 
+    // TODO: add try catch for default values during save
     store.set("domain", domain);
     store.set("proxyPort", proxyPort);
+    store.set("gRPCProxyPort", gRPCProxyPort);
 
     logger.info("Updated store with latest config");
 };
