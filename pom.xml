@@ -34,7 +34,9 @@
     </repository>
   </distributionManagement>
   <build>
+
     <plugins>
+
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.0</version>
@@ -49,6 +51,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.22.0</version>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
@@ -56,7 +59,9 @@
       </plugin>
 
     </plugins>
+
   </build>
+
   <dependencies>
 
     <dependency>
@@ -85,6 +90,7 @@
         </exclusion>
       </exclusions>
     </dependency>
+
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jsr310</artifactId>
@@ -100,6 +106,7 @@
         </exclusion>
       </exclusions>
     </dependency>
+
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-smile</artifactId>
@@ -111,7 +118,6 @@
       </exclusion>
       </exclusions>
     </dependency>
-
 
     <dependency>
       <groupId>javax.ws.rs</groupId>
@@ -130,27 +136,32 @@
         </exclusion>
       </exclusions>
     </dependency>
+
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-text</artifactId>
       <version>${version.commonstext}</version>
     </dependency>
+
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
       <version>${version.httpcomponents}</version>
     </dependency>
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.12</version>
       <scope>test</scope>
     </dependency>
+
     <dependency>
       <groupId>com.flipkart.zjsonpatch</groupId>
       <artifactId>zjsonpatch</artifactId>
       <version>${version.flipkart-jsonpath}</version>
     </dependency>
+
     <dependency>
       <groupId>com.github.javadev</groupId>
       <artifactId>underscore</artifactId>
