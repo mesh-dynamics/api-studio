@@ -8,10 +8,12 @@ import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -36,7 +39,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.md.cache.ProtoDescriptorCache;
 import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.dao.*;
+import io.md.dao.Event.EventBuilder.InvalidEventException;
+import io.md.dao.Recording.RecordingStatus;
 import io.md.logger.LogMgr;
+import io.md.services.DSResult;
 import io.md.services.DataStore;
 import io.md.tracer.TracerMgr;
 import org.apache.commons.lang3.BooleanUtils;
@@ -60,6 +66,7 @@ import io.md.services.FnResponse;
 import io.md.services.MockResponse;
 import io.md.services.Mocker.MockerException;
 import io.opentracing.Span;
+import kotlin.Result;
 
 public class Utils {
 
@@ -695,4 +702,12 @@ public class Utils {
 			emptyAction.run();
 		}
 	}
+
+	public static String constructTemplateSetVersion(String templateSetName, Optional<String> templateSetLabel) {
+		return templateSetName + templateSetLabel.map(l -> "::" + l).orElse("");
+	}
+
+
+	public static final DateTimeFormatter templateLabelFormatter =  DateTimeFormatter.ofPattern("dd-MM-yyyy_HH:mm:ss_SSS");
+
 }

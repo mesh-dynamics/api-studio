@@ -326,5 +326,5 @@ public class Constants {
 
 
 
-
+	public static final String GOLDEN_LABEL_FIELD = "label";
 }

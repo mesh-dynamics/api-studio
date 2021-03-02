@@ -14,6 +14,7 @@
     <version.httpcomponents>4.5.11</version.httpcomponents>
     <version.flipkart-jsonpath>0.4.7</version.flipkart-jsonpath>
     <version.slf4j>1.7.30</version.slf4j>
+    <version.commons-math>3.6.1</version.commons-math>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -143,6 +144,11 @@
       <version>${version.commonstext}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-math3</artifactId>
+      <version>${version.commons-math}</version>
+    </dependency>
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
