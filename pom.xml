@@ -9,7 +9,7 @@
     <properties>
         <version.java>8</version.java>
         <version.gson>2.8.5</version.gson>
-        <version.mdcommons>1.2.21.0</version.mdcommons>
+        <version.mdcommons>1.2.29.0</version.mdcommons>
         <version.jersey>2.27</version.jersey>
     </properties>
     <distributionManagement>
