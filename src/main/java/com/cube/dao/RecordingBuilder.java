@@ -87,8 +87,9 @@ public class RecordingBuilder {
 		}
 		return new Recording(idv, customerId, app, instanceId, collection, status, timestamp
 			, templateVersion, parentRecordingId, rootRecordingId, name, codeVersion, branch
-		, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment
-			, userId, generatedClassJarPath, generatedClassLoader, label, recordingType , dynamicInjectionConfigVersion, runId , ignoreStatic);
+			, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment
+			, userId, generatedClassJarPath, generatedClassLoader, label, recordingType ,
+			dynamicInjectionConfigVersion, runId, ignoreStatic);
 	}
 
 	private String recalculateId() {
@@ -204,12 +205,11 @@ public class RecordingBuilder {
 		return this;
 	}
 
-	public RecordingBuilder withDynamicInjectionConfigVersion(String dInjCfgVersion) {
-		this.dynamicInjectionConfigVersion = Optional.ofNullable(dInjCfgVersion);
-		return this;
-	}
-
-	public RecordingBuilder withRunId(String runId) {
+	public RecordingBuilder withDynamicInjectionConfigVersion(String dInjCfgVersion){
+	    this.dynamicInjectionConfigVersion = Optional.ofNullable(dInjCfgVersion);
+	    return this;
+    }
+  public RecordingBuilder withRunId(String runId) {
 		this.runId = runId;
 		return this;
 	}

@@ -1,6 +1,7 @@
 package com.cube.core.attribute.rule;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +27,7 @@ import com.cube.golden.TemplateEntryOperation.RuleType;
 import com.cube.golden.TemplateSet;
 import com.cube.golden.TemplateUpdateOperationSet;
 import com.cube.golden.transform.TemplateSetTransformer;
+import com.cube.utils.AnalysisUtils;
 import com.cube.ws.Config;
 
 public class AttributeMapTest {
@@ -89,17 +91,20 @@ public class AttributeMapTest {
 
 	@Test public void testUpdate() throws Exception {
 
-		TemplateKey key = new TemplateKey(
-			baseTemplateVersion, customer
-			, app , "NA", "NA"
-			, Type.DontCare);
 
 		TemplateSetTransformer templateSetTransformer = new TemplateSetTransformer();
 //		CompareTemplate compareTemplate = config.comparatorCache.getDefaultComparator(EventType.HTTPResponse, key).getCompareTemplate();
 
 
-		TemplateSet templateSet = new TemplateSet(baseTemplateVersion, customer, app, Instant.now(),
-			Collections.EMPTY_LIST, Optional.empty());
+		TemplateSet templateSet = new TemplateSet(customer, app, Instant.now(),
+			Collections.EMPTY_LIST, Optional.empty(), baseTemplateVersion, LocalDateTime
+			.now().format(AnalysisUtils.templateLabelFormatter));
+
+		TemplateKey key = new TemplateKey(
+			templateSet.version, customer
+			, app , "NA", "NA"
+			, Type.DontCare);
+
 
 		String templateUpdateOperationSetId = UUID.randomUUID().toString();
 		TemplateEntryOperation templateEntryOperation = new TemplateEntryOperation(

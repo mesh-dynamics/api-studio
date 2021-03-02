@@ -3,14 +3,24 @@
  */
 package com.cube.dao;
 
+import io.md.cache.ProtoDescriptorCache;
 import io.md.constants.ReplayStatus;
 import io.md.core.CollectionKey;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateKey;
+import io.md.core.TemplateKey.Type;
 import io.md.dao.Event;
+import io.md.dao.Event.EventBuilder;
+import io.md.dao.Event.EventBuilder.InvalidEventException;
+import io.md.dao.GRPCPayload;
+import io.md.dao.HTTPRequestPayload;
+import io.md.dao.MDTraceInfo;
 import io.md.dao.Recording;
+import io.md.dao.Recording.RecordingType;
 import io.md.dao.Replay;
+
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -21,9 +31,12 @@ import org.apache.logging.log4j.message.ObjectMessage;
 
 import com.google.common.base.MoreObjects;
 
+import io.md.dao.RequestPayload;
 import io.md.services.AbstractDataStore;
 import io.md.dao.RecordOrReplay;
 import io.md.utils.Constants;
+
+import com.cube.ws.Config;
 
 /**
  * @author prasad
@@ -198,6 +211,41 @@ public abstract class ReqRespStoreImplBase extends AbstractDataStore implements 
 				app, service, apiPath, templateType, method, recordingId);
 
 		return getComparator(tkey, eventType).getCompareTemplate();
+	}
+
+
+	public  Event buildEvent(Event event, String collection, RecordingType recordingType,
+		String reqId, String traceId, Optional<String> runId, Instant timeStamp,
+		Optional<String> targetTemplateSetVersion, ProtoDescriptorCache protoDescriptorCache)
+		throws InvalidEventException, TemplateNotFoundException {
+		EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
+			event.service, event.instanceId, collection,
+			new MDTraceInfo(traceId, event.spanId, event.parentSpanId),
+			event.getRunType(), Optional.of(event.timestamp), reqId, event.apiPath,
+			event.eventType, recordingType);
+		eventBuilder.setPayload(event.payload);
+		eventBuilder.withMetaData(event.metaData);
+		eventBuilder.withRunId(runId.orElse(event.runId));
+		eventBuilder.setPayloadKey(event.payloadKey);
+		Event newEvent = eventBuilder.createEvent();
+
+		if (newEvent.payload instanceof RequestPayload) {
+			if (targetTemplateSetVersion.isPresent()) {
+				if(newEvent.payload instanceof GRPCPayload) {
+					// Unwrap on body will be called internally after setting protoDescriptor
+					io.md.utils.Utils.setProtoDescriptorGrpcEvent(newEvent, protoDescriptorCache);
+				}
+
+				newEvent.parseAndSetKey(
+					getTemplate(newEvent.customerId, newEvent.app, newEvent.service, newEvent.apiPath,
+						targetTemplateSetVersion.get(), Type.RequestMatch,
+						Optional.ofNullable(newEvent.eventType),
+						Optional.of(((HTTPRequestPayload) newEvent.payload).getMethod()), collection)
+				);
+			}
+		}
+
+		return newEvent;
 	}
 
 

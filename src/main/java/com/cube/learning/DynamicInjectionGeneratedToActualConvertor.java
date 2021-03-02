@@ -74,7 +74,7 @@ public class DynamicInjectionGeneratedToActualConvertor {
         }
 
         return new DynamicInjectionConfig(version, customerId, app, Optional.empty(),
-            actualExtractionConfigList, actualInjectionConfigList);
+            actualExtractionConfigList, actualInjectionConfigList, Collections.emptyList());
 
     }
 
