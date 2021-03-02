@@ -235,8 +235,8 @@ public class ReplayBasicWS {
         boolean storeToDatastore = Utils.strToBool(formParams.getFirst(Constants.STORE_TO_DATASTORE))
             .orElse(false);
 
-        String templateSetName = Optional.ofNullable(formParams.getFirst(Constants.TEMPLATE_SET_NAME)).orElseThrow(() ->
-            new ParameterException("Template Set Name not specified"));
+        String templateSetName = Optional.ofNullable(formParams.getFirst(Constants.TEMPLATE_SET_NAME))
+            .orElse(recordings.get(0).templateVersion); // for backward compatibility
         String templateSetLabel = Optional.ofNullable(formParams.getFirst(Constants.TEMPLATE_SET_LABEL))
             .or(() -> dataStore.getLatestTemplateSetLabel(recordings.get(0).customerId,
                 recordings.get(0).app, templateSetName)).orElseThrow(() -> new ParameterException("Unable to assign template set label for replay"));
