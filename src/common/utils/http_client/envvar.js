@@ -7,6 +7,7 @@ const getCurrentEnvironment = (environmentList, selectedEnvironment) => {
 };
 
 // returns current EnvVArs
+//There is an issue if store is fetched in this way. You can use this function (or any caller of this function) in reducer.
 const getCurrentEnvVars = () => {
   const { httpClient: { environmentList, selectedEnvironment } } = store.getState();
   const currentEnvironment = getCurrentEnvironment(environmentList, selectedEnvironment);

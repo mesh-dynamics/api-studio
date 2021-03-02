@@ -40,6 +40,7 @@ import {
     preRequestToFetchableConfig, 
     getCurrentMockConfig,
     isLocalhostUrl,
+    getHostName,
 } from "../../utils/http_client/utils.js";
 import * as httpClientTabUtils from "../../utils/http_client/httpClientTabs.utils.js";
 import { 
@@ -152,8 +153,8 @@ class HttpClientTabs extends Component {
             const parsedUrl = URL.parse(url);
             let apiPath = parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
             let service = parsedUrl.host ? parsedUrl.host : "NA";
+            let defaultParamsType = "showQueryParams";
             const traceDetails = getTraceDetailsForCurrentApp()
-            let {traceKeys, traceIdDetails: {traceId, traceIdForEvent}, spanId, parentSpanId} = traceDetails;
             const customerId = user.customer_name;
             const eventData = httpClientTabUtils.generateEventdata(app, customerId, traceDetails, service, apiPath);
             let headers = [], queryParams = [], formData = [], multipartData=[], rawData = "", rawDataType = "", bodyType = "";
@@ -165,6 +166,7 @@ class HttpClientTabs extends Component {
                     description: "",
                     selected: true,
                 });
+                defaultParamsType = "showHeaders";
             }
             if(parsedCurl.cookieString) {
                 headers.push({
@@ -183,12 +185,16 @@ class HttpClientTabs extends Component {
                     description: "",
                     selected: true,
                 });
+                defaultParamsType = "showQueryParams";
             }
             let contentTypeHeader = _.isObject(parsedCurl.headers) ? getParameterCaseInsensitive(parsedCurl.headers, "content-type") : "";
             if(contentTypeHeader && contentTypeHeader.indexOf("json") > -1) {
                 rawData = parsedCurl.data;
                 rawDataType = "json";
                 bodyType = "rawData";
+                if(rawData){
+                    defaultParamsType = "showBody";
+                }
             } else if(contentTypeHeader && contentTypeHeader.indexOf("application/x-www-form-urlencoded") > -1) {
                 const formParams = parse(parsedCurl.data);
                 for (let eachFormParam in formParams) {
@@ -201,14 +207,31 @@ class HttpClientTabs extends Component {
                     });
                     rawDataType = "";
                 }
+                defaultParamsType = "showBody";
                 bodyType = "formData";
+            } else if(parsedCurl.multipartUploads){
+                for (let eachFormParam in parsedCurl.multipartUploads) {
+                    multipartData.push({
+                        id: uuidv4(),
+                        name: eachFormParam,
+                        value: parsedCurl.multipartUploads[eachFormParam],
+                        description: "",
+                        selected: true,
+                    });
+                    rawDataType = "";
+                }
+                bodyType = "multipartData";
+                defaultParamsType = "showBody";
             } else {
                 rawData = parsedCurl.data;
                 rawDataType = "text";
                 bodyType = "rawData";
+                if(rawData){
+                    defaultParamsType = "showBody";
+                }
             }
             let reqObj = {
-                requestId: "",
+                requestId: "NA",
                 tabName: urlWithoutQuery,
                 httpMethod: parsedCurl.method,
                 httpURL: urlWithoutQuery,
@@ -220,7 +243,7 @@ class HttpClientTabs extends Component {
                 multipartData: multipartData,
                 rawData: rawData,
                 rawDataType: rawDataType,
-                paramsType: "showQueryParams",
+                paramsType: defaultParamsType,
                 responseStatus: "NA",
                 responseStatusText: "",
                 responseHeaders: "",
@@ -229,7 +252,6 @@ class HttpClientTabs extends Component {
                 recordedResponseBody: "",
                 recordedResponseStatus: "",
                 responseBodyType: "",
-                requestId: "",
                 outgoingRequestIds: [],
                 eventData: eventData,
                 showOutgoingRequestsBtn: false,
@@ -379,7 +401,6 @@ class HttpClientTabs extends Component {
                 recordedResponseBody: "",
                 recordedResponseStatus: "",
                 responseBodyType: "",
-                requestId: "",
                 outgoingRequestIds: [],
                 eventData: [...httpRequestEvent, ...httpResponseEvent],
                 showOutgoingRequestsBtn: false,
@@ -616,11 +637,20 @@ class HttpClientTabs extends Component {
     }
 
     updateGrpcConnectData(isOutgoingRequest, tabId, value, currentSelectedTabId) {
-        const { dispatch } = this.props;
+        const { dispatch, httpClient: {tabs}} = this.props;
 
         if(isOutgoingRequest) {
             dispatch(httpClientActions.updateGrpcConnectDetailsInSelectedOutgoingTab(currentSelectedTabId, tabId, value));
         } else {
+
+            let tabsToProcess = tabs;
+            const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
+            const tabToProcess = tabsToProcess[tabIndex];
+            if(tabToProcess.requestId == "NA" ||tabToProcess.requestId == ""){
+                const url = getRequestUrlFromSchema(value);
+                dispatch(httpClientActions.updateAllParamsInSelectedTab(tabId, "httpURLShowOnly", "httpURLShowOnly", url));
+                dispatch(httpClientActions.updateAllParamsInSelectedTab(tabId, "service", "service", getHostName(url) ));
+            }
             dispatch(httpClientActions.updateGrpcConnectDetailsInSelectedTab(tabId, value));
         }
     }
@@ -628,12 +658,23 @@ class HttpClientTabs extends Component {
 
 
     updateParam(isOutgoingRequest, tabId, type, key, value, id) {
-        const {dispatch} = this.props;
+        const {dispatch, httpClient: {tabs}} = this.props;
+        
         if(isOutgoingRequest) {
             dispatch(httpClientActions.updateParamInSelectedOutgoingTab(tabId, type, key, value, id));
         } else {
             dispatch(httpClientActions.updateParamInSelectedTab(tabId, type, key, value, id));
 
+            if (type === "httpURL"){
+    
+                let tabsToProcess = tabs;
+                const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
+                const tabToProcess = tabsToProcess[tabIndex];
+                if(tabToProcess.requestId == "NA" ||tabToProcess.requestId == ""){
+                    dispatch(httpClientActions.updateAllParamsInSelectedTab(tabId, "httpURLShowOnly", "httpURLShowOnly", value));
+                    dispatch(httpClientActions.updateAllParamsInSelectedTab(tabId, "service", "service", getHostName(value) ));
+                }
+            }
         }
     }
 
@@ -1239,7 +1280,7 @@ class HttpClientTabs extends Component {
                 recordedResponseBody: "",
                 recordedResponseStatus: "",
                 responseBodyType: "",
-                requestId: "",
+                requestId: "NA",
                 outgoingRequestIds: [],
                 eventData: eventData,
                 showOutgoingRequestsBtn: false,
@@ -1328,6 +1369,7 @@ class HttpClientTabs extends Component {
             ipcRenderer.on('get_config', (event, appConfig) => {
                 ipcRenderer.removeAllListeners('get_config');
                 
+                config.localReplayBaseUrl = `http://localhost:${appConfig.replayDriverPort}/rs`;
                 config.apiBaseUrl= `${appConfig.domain}/api`;
                 config.recordBaseUrl= `${appConfig.domain}/api/cs`;
                 config.replayBaseUrl= `${appConfig.domain}/api/rs`;

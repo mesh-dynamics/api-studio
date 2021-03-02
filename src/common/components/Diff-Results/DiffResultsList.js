@@ -266,6 +266,14 @@ export default class DiffResultsList extends Component {
         </>
     }
 
+    getCheckBoxProps(isDiffError){
+        if(isDiffError){
+            return {className : "isDiffError"};
+        }else{
+            return {}
+        }
+    }
+
     renderToggleRibbon = () => {
         const { 
             diffToggleRibbon: {
@@ -275,21 +283,28 @@ export default class DiffResultsList extends Component {
                 showRequestMessageQParams, // Request Message Q Params
                 showRequestMessageFParams, // Request Message F Params
                 showRequestMessageBody,// Request Message Body
+
+                isRequestHdrsError,
+                isRequestBodyError,
+                isRequestQueryError,
+                isRequestFormError,
+                isResponseBodyError,
+                isResponseHdrsError
             }
         } = this.props;
 
         return (
             <Fragment>
                 <FormGroup>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="requestHeaders" checked={showRequestMessageHeaders}>Request Headers</Checkbox>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="requestQParams" checked={showRequestMessageQParams}>Request Query Params</Checkbox>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="requestFParams" checked={showRequestMessageFParams}>Request Form Params</Checkbox>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="requestBody" checked={showRequestMessageBody}>Request Body</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} {...this.getCheckBoxProps(isRequestHdrsError)} value="requestHeaders" checked={showRequestMessageHeaders}>Request Headers</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} {...this.getCheckBoxProps(isRequestQueryError)} value="requestQParams" checked={showRequestMessageQParams}>Request Query Params</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} {...this.getCheckBoxProps(isRequestFormError)} value="requestFParams" checked={showRequestMessageFParams}>Request Form Params</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} {...this.getCheckBoxProps(isRequestBodyError)} value="requestBody" checked={showRequestMessageBody}>Request Body</Checkbox>
                         
                         <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
                         
-                        <Checkbox inline onChange={this.toggleMessageContents} value="responseHeaders" checked={showResponseMessageHeaders}>Response Headers</Checkbox>
-                        <Checkbox inline onChange={this.toggleMessageContents} value="responseBody" checked={showResponseMessageBody} >Response Body</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} {...this.getCheckBoxProps(isResponseHdrsError)} value="responseHeaders" checked={showResponseMessageHeaders}>Response Headers</Checkbox>
+                        <Checkbox inline onChange={this.toggleMessageContents} {...this.getCheckBoxProps(isResponseBodyError)} value="responseBody" checked={showResponseMessageBody} >Response Body</Checkbox>
                         
                         <span style={{height: "18px", borderRight: "2px solid #333", paddingLeft: "18px", marginRight: "18px"}}></span>
                         

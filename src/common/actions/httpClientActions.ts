@@ -686,5 +686,13 @@ export const httpClientActions: IActionsType = {
     },
     toggleHideInternalHeaders : (tabId) => {
         return { type: httpClientConstants.TOGGLE_HIDE_INTERNAL_HEADERS, data : {tabId} }
-    }
+    },
+
+    updateTabWithNewData: (tabId, reqData, collectionId, recordingId) => {
+        return {type: httpClientConstants.UPDATE_TAB_WITH_NEW_DATA, data: {tabId, reqData, collectionId, recordingId}}   
+    },
+
+    updateOutgoingTabWithNewData: (tabId, reqData, collectionId, recordingId) => {
+        return {type: httpClientConstants.UPDATE_OUTGOING_TAB_WITH_NEW_DATA, data: {tabId, reqData, collectionId, recordingId}}   
+    },
 }

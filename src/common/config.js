@@ -9,6 +9,7 @@ const config = {
     diffMaxLinesLength: process.env.REACT_APP_DIFF_MAX_LENGTH || 1000,
     diffMaxLinesLengthIncrement: process.env.REACT_APP_DIFF_MAX_LENGTH_INCREMENT || 100,
     enableClientSideDiff: process.env.REACT_APP_ENABLE_CLIENT_SIDE_DIFF || "false",
+    localReplayBaseUrl: 'http://localhost:9992/rs', // TODO: pick port from config
     apiBaseUrl: '/api',
     recordBaseUrl: '/api/cs',
     replayBaseUrl: '/api/rs',

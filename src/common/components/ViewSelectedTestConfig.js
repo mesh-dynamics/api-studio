@@ -136,11 +136,6 @@ class ViewSelectedTestConfig extends React.Component {
         this.setState({fcId: null});
     };
 
-    getReplayStatus = () => {
-        const {cube, dispatch} = this.props;
-        dispatch(cubeActions.getReplayStatus(cube.selectedTestId, cube.replayId.replayId, cube.selectedApp));
-    };
-
     changeRecName = (e) => this.setState({recName: e.target.value.replace(/  /g, " ")});
 
     showAddCustomHeaderModal = () => this.setState({ showAddCustomHeader: true });
@@ -466,7 +461,12 @@ class ViewSelectedTestConfig extends React.Component {
         if(instancesForSelectedApp.length !== 0) {
             gatewayEndpoint = instancesForSelectedApp[0].gatewayEndpoint;            
         }else if(cube.selectedInstance == "other" && this.state.otherInstanceEndPoint){
-            if(isURL(this.state.otherInstanceEndPoint)){
+            if(
+                this.state.otherInstanceEndPoint.includes("localhost") 
+                || this.state.otherInstanceEndPoint.includes("127.0.0.1")
+            ){
+                gatewayEndpoint = this.state.otherInstanceEndPoint;
+            } else if(isURL(this.state.otherInstanceEndPoint)){
                 gatewayEndpoint = this.state.otherInstanceEndPoint;
             }else{
                 this.showGatewayEndPointInvalid();
@@ -708,7 +708,10 @@ class ViewSelectedTestConfig extends React.Component {
             }, 
             checkReplayStatus 
         } = this.props;
-        const replayStartUrl = `${config.replayBaseUrl}/start/${selectedGolden}`;
+        const isLocalReplay = gatewayEndpoint.includes("localhost") || gatewayEndpoint.includes("127.0.0.1");
+        const replayStartUrl = isLocalReplay 
+                                ? `${config.localReplayBaseUrl}/start/${selectedGolden}`
+                                : `${config.replayBaseUrl}/start/${selectedGolden}`;
         const { 
             testPaths, 
             testMockServices, 
@@ -727,7 +730,11 @@ class ViewSelectedTestConfig extends React.Component {
 
         const transforms = JSON.stringify(getTransformHeaders(this.state.customHeaders));
         const otherInstanceSelected = (selectedInstance == "other")
-        const gatewayEndpointNoProtocol = encodeURIComponent(gatewayEndpoint.replace(/^\/\/|^.*?:(\/\/)?/, '')); // drop the protocol
+        // Keep this line around. Unclear why this was added. Since local replay (mocked) is causing the replay to fail
+        // commenting out the part where the gateway endpoint is forcefully encoded
+        // const gatewayEndpointNoProtocol = encodeURIComponent(gatewayEndpoint.replace(/^\/\/|^.*?:(\/\/)?/, '')); // drop the protocol
+        const gatewayEndpointNoProtocol = gatewayEndpoint.replace(/^\/\/|^.*?:(\/\/)?/, ''); // drop the protocol
+
         
         const searchParams = new URLSearchParams();
         searchParams.set('endPoint', gatewayEndpoint);
@@ -736,6 +743,8 @@ class ViewSelectedTestConfig extends React.Component {
         searchParams.set('userId', username);
         searchParams.set('transforms', transforms);
         searchParams.set('testConfigName', testConfigName);
+        searchParams.set('templateSetName', collectionTemplateVersion);
+        searchParams.set('templateSetLabel', '');
         searchParams.set('analyze', true);
         if(otherInstanceSelected){
             searchParams.set('storeToDatastore', this.state.storeToDatastore.toString());
@@ -778,7 +787,7 @@ class ViewSelectedTestConfig extends React.Component {
             this.setState({ replay });
             // check replay status periodically and call analyze at the end; and update timeline
             // this method is run in the parent component (Navigation)
-            checkReplayStatus(replayId, otherInstanceSelected);
+            checkReplayStatus(replayId, otherInstanceSelected, isLocalReplay);
         } catch(error) {
             const { data, status, statusText } = error.response;
             this.handleReplayError(data, status, statusText, username);

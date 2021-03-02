@@ -42,18 +42,18 @@ const setupProxy = (mockContext, user) => {
         res.setHeader("Access-Control-Allow-Methods", "GET, PUT, PATCH, POST, DELETE");
         res.setHeader("Access-Control-Allow-Headers", "*");
 
-        let buffer = '';
+        let buffer = [];
         // Event handlers for reading request body
         
         // 'data' event on request
-        req.on('data', (data) => buffer+=data);
+        req.on('data', (chunk) => buffer.push(chunk));
 
         // 'end' event on request
         req.on('end', () => {
 
             const { url, method, headers } = req;
-
-            req.body = buffer;
+            const bufferData = Buffer.concat(buffer);
+            req.body = bufferData;
 
             // readRequestBodyFromBuffer,
 
@@ -64,7 +64,7 @@ const setupProxy = (mockContext, user) => {
             //Here we create a new stream with the buffered body on it
             const bufferStream = new stream.PassThrough();
             
-            bufferStream.end(new Buffer.from(buffer));
+            bufferStream.end(bufferData);
             
             req.bodyStream = bufferStream;
             
@@ -101,7 +101,7 @@ const setupProxy = (mockContext, user) => {
                 proxy,
                 headers,
                 mockContext,
-                requestData: buffer,
+                requestData: bufferData.toString(),
                 defaultProxyOptions,
                 traceDetails,
                 url,

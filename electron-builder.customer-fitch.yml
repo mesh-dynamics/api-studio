@@ -27,7 +27,7 @@ publish:
 #   - "!node_modules/jschardet/"
 
 extraResources:
-  - "./bin/demo-0.0.1-SNAPSHOT.war"
+  - "./bin/cubews-replay-V1-SNAPSHOT-jar-with-dependencies.jar"
   - "./config/mesh-dynamics.yml"
   - "./public/assets/**"
 

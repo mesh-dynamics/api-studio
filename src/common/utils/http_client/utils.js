@@ -781,6 +781,18 @@ export function isLocalhostUrl(url){
     return false;
 }
 
+
+export function getHostName(url) {
+    try{
+        const parsedUrl = URLParse(applyEnvVarsToUrl(url));
+        return parsedUrl.hostname;
+    }
+    catch{
+        //Silent error: this could be due to parsing while user is still is typing in URL entry
+        return "";
+    }
+}
+
 export { 
     generateRunId,
     getStatusColor,

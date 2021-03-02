@@ -43,9 +43,10 @@ const onBeforeLift = () => {
   if (PLATFORM_ELECTRON) {
     return new Promise((resolve) => {
       ipcRenderer.send("get_config");
-      ipcRenderer.on("get_config", (event, appConfig) => {
+      ipcRenderer.on('get_config', (event, appConfig) => {
         ipcRenderer.removeAllListeners("get_config");
 
+        config.localReplayBaseUrl = `http://localhost:${appConfig.replayDriverPort}/rs`;
         config.apiBaseUrl = `${appConfig.domain}/api`;
         config.recordBaseUrl = `${appConfig.domain}/api/cs`;
         config.replayBaseUrl = `${appConfig.domain}/api/rs`;

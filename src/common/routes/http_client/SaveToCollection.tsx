@@ -177,7 +177,7 @@ class SaveToCollection extends React.Component<
   updateTabWithNewData(tabId: string, response: any, recordingId: string) {
     const {
       httpClient: { tabs, userCollections },
-      goldenList,
+      goldenList, dispatch
     } = this.props;
     const collections = [...userCollections, ...goldenList];
     const tabIndex = this.getTabIndexGivenTabId(tabId, tabs);
@@ -188,27 +188,25 @@ class SaveToCollection extends React.Component<
         const collection = collections.find(
           (eachCollection) => eachCollection.id === recordingId
         );
-        for (let eachReq of parsedData) {
-          if (eachReq.oldReqId === tabToProcess.requestId) {
-            this.updateEachRequest(
-              tabToProcess,
-              eachReq,
-              collection!.collec,
-              collection!.id
-            );
-          } else {
-            tabToProcess.outgoingRequests.map((eachOutgoingReq) => {
-              if (eachReq.oldReqId === eachOutgoingReq.requestId) {
-                this.updateEachRequest(
-                  eachOutgoingReq,
-                  eachReq,
-                  collection!.collec,
-                  collection!.id
-                );
-              }
-              return eachOutgoingReq;
-            });
-          }
+
+        // update ingress request
+        const savedIngressRequestData = parsedData[0] // first item is ingress request data
+        dispatch(httpClientActions.updateTabWithNewData(
+          tabToProcess.id,
+          savedIngressRequestData,
+          collection!.collec,
+          collection!.id))
+
+        // update outgoing requests
+        for(let i = 0; i < tabToProcess.outgoingRequests.length; i++) {
+          const tabOutgoingReqIndex = i
+          const parsedDataIndex = tabOutgoingReqIndex + 1 // since 0 is ingress data
+          dispatch(httpClientActions.updateOutgoingTabWithNewData(
+            tabToProcess.outgoingRequests[tabOutgoingReqIndex].id,
+            parsedData[parsedDataIndex],
+            collection!.collec,
+            collection!.id
+          ))
         }
       } catch (err) {
         console.error("Error ", err);

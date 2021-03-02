@@ -47,6 +47,12 @@ class DiffResults extends Component {
                 showRequestMessageQParams: false,
                 showRequestMessageFParams: false,
                 showRequestMessageBody: false,
+                isRequestHdrsError: false,
+                isRequestBodyError: false,
+                isRequestQueryError: false,
+                isRequestFormError: false,
+                isResponseBodyError: false,
+                isResponseHdrsError: false
             },
 
             diffLayoutData : [],
@@ -352,6 +358,46 @@ class DiffResults extends Component {
     handlePageNav = (isNextPage, index) => {
         this.updateResults(isNextPage, index);
     }
+
+    highlightFilters = (diffLayoutDataPruned) => {
+        let isRequestHdrsError  = false;
+        let isRequestBodyError  = false;
+        let isRequestQueryError = false;
+        let isRequestFormError  = false;
+        let isResponseHdrsError = false;
+        let isResponseBodyError = false;
+        diffLayoutDataPruned.forEach(diffServiceData => {
+            const allResponsePathsWithError = diffServiceData.respCompDiff
+            .filter( compDiff => compDiff.resolution.startsWith("ERR"))
+            .map(compDiff => compDiff.path.split("/")
+            .find( path => !!path));
+            const uniquePathsResponse = _.uniq(allResponsePathsWithError);
+
+            const allRequestPathsWithError = diffServiceData.reqCompDiff
+            .filter( compDiff => compDiff.resolution.startsWith("ERR"))
+            .map(compDiff => compDiff.path.split("/")
+            .find( path => !!path));
+            const uniquePathsRequest = _.uniq(allRequestPathsWithError);
+
+            isRequestHdrsError  = isRequestHdrsError  || _.includes(uniquePathsRequest, "hdrs"); //Need a test case to test
+            isRequestBodyError  = isRequestBodyError  || _.includes(uniquePathsRequest, "body"); //Need a test case to test
+            isRequestQueryError = isRequestQueryError || _.includes(uniquePathsRequest, "queryParams"); //Need a test case to test
+            isRequestFormError  = isRequestFormError  || _.includes(uniquePathsRequest, "formParams"); //Need a test case to test
+            isResponseHdrsError = isResponseHdrsError || _.includes(uniquePathsResponse, "hdrs"); //Need a test case to test
+            isResponseBodyError = isResponseBodyError || _.includes(uniquePathsResponse, "body") || _.includes(uniquePathsResponse, "status") || _.includes(uniquePathsResponse, "method");
+
+        });
+
+        this.setState({diffToggleRibbon: {
+            ...this.state.diffToggleRibbon,
+            isRequestHdrsError,
+            isRequestBodyError,
+            isRequestQueryError,
+            isRequestFormError,
+            isResponseBodyError,
+            isResponseHdrsError
+        }});
+    }
     
     updatePageResults = async (isNextPage, index) => {
         let {filter, replayId} = this.state;
@@ -388,6 +434,8 @@ class DiffResults extends Component {
             
             startIndex = Math.max(endIndex - diffLayoutDataPruned.length, 0);
         }
+
+        this.highlightFilters(diffLayoutDataPruned);
 
         const facets = resultsData.data && resultsData.data.facets || {};
         const numFound = resultsData.data && resultsData.data.numFound || 0;

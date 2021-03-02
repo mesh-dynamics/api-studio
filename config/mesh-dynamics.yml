@@ -1,2 +1,4 @@
 domain: "https://app.meshdynamics.io"
 proxyPort: 9000
+gRPCProxyPort: 9001
+replayDriverPort: 9992
