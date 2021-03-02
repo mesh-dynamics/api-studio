@@ -341,19 +341,19 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>agent</artifactId>
-			<version>1.2.0.3</version>
+			<version>1.2.3.0</version>
 		</dependency>
 
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>commons</artifactId>
-			<version>1.2.26.0</version>
+			<version>1.2.29.0</version>
 		</dependency>
 
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>commons-server</artifactId>
-			<version>1.0.51.0</version>
+			<version>1.0.53.0</version>
 		</dependency>
 		<dependency>
 			<groupId>io.cube</groupId>
