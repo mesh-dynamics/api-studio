@@ -743,6 +743,8 @@ class ViewSelectedTestConfig extends React.Component {
         searchParams.set('userId', username);
         searchParams.set('transforms', transforms);
         searchParams.set('testConfigName', testConfigName);
+        searchParams.set('templateSetName', collectionTemplateVersion);
+        searchParams.set('templateSetLabel', '');
         searchParams.set('analyze', true);
         if(otherInstanceSelected){
             searchParams.set('storeToDatastore', this.state.storeToDatastore.toString());
