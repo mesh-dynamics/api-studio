@@ -25,6 +25,7 @@ import io.md.dao.agent.config.ConfigType;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
 
+import io.md.injection.DynamicInjectionConfig.StaticValue;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.time.Instant;
@@ -2089,6 +2090,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String EXTRACTION_METAS_TXT_JSON = CPREFIX + Constants.EXTRACTION_METAS_JSON_FIELD + TEXT_SUFFIX;
     private static final String INJECTION_METAS_STR_JSON = CPREFIX + Constants.INJECTION_METAS_JSON_FIELD + STRING_SUFFIX;
     private static final String INJECTION_METAS_TXT_JSON = CPREFIX + Constants.INJECTION_METAS_JSON_FIELD + TEXT_SUFFIX;
+    private static final String STATIC_VALUES_TXT_JSON = CPREFIX + Constants.STATIC_INJECTION_MAP_FIELD + TEXT_SUFFIX;
     private static final String PARTIALMATCH = CPREFIX + "partialmatch" + STRING_SUFFIX;
 
 
@@ -3761,11 +3763,13 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         DynamicInjectionConfig dynamicInjectionConfig) {
         String extractionMetas;
         String injectionMetas;
+        String staticValues;
 
         final SolrInputDocument doc = new SolrInputDocument();
         try {
             extractionMetas = this.config.jsonMapper.writeValueAsString(dynamicInjectionConfig.extractionMetas);
             injectionMetas = this.config.jsonMapper.writeValueAsString(dynamicInjectionConfig.injectionMetas);
+            staticValues = this.config.jsonMapper.writeValueAsString(dynamicInjectionConfig.staticValues);
         } catch (Exception e) {
             LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
                 "Unable to convert extraction/injection metas to string")), e);
@@ -3778,6 +3782,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(IDF , id);
         doc.setField(EXTRACTION_METAS_TXT_JSON, extractionMetas);
         doc.setField(INJECTION_METAS_TXT_JSON, injectionMetas);
+        doc.setField(STATIC_VALUES_TXT_JSON, staticValues);
         doc.setField(APPF , dynamicInjectionConfig.app);
         doc.setField(CUSTOMERIDF , dynamicInjectionConfig.customerId);
         doc.setField(DYNAMIC_INJECTION_CONFIG_VERSIONF, dynamicInjectionConfig.version);
@@ -3818,6 +3823,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             .or(() -> getStrField(doc, EXTRACTION_METAS_STR_JSON)).flatMap(em -> deserialize(em , new TypeReference<List<ExtractionMeta>>(){} , "extractionMetas" ));
         Optional<List<InjectionMeta>> injectionMetas = getStrField(doc, INJECTION_METAS_TXT_JSON)
             .or(() -> getStrField(doc, INJECTION_METAS_STR_JSON)).flatMap(im -> deserialize(im , new TypeReference<List<InjectionMeta>>(){} , "injectionMetas" ));
+        List<StaticValue> staticValues = (List<StaticValue>) getStrField(doc, STATIC_VALUES_TXT_JSON)
+            .flatMap(im -> deserialize(im, new TypeReference<List<StaticValue>>() {},
+                "staticValues")).orElse(Collections.emptyList());
 
         Optional<DynamicInjectionConfig> dynamicInjectionConfig = Optional.empty();
         Optional<String> app = getStrField(doc, APPF);
@@ -3828,7 +3836,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if(app.isPresent() && customerId.isPresent() && version.isPresent() && extractionMetas.isPresent() && injectionMetas.isPresent()) {
             dynamicInjectionConfig = Optional
                 .of(new DynamicInjectionConfig(version.get(), customerId.get(), app.get(), timestamp, extractionMetas.get(),
-                    injectionMetas.get()));
+                    injectionMetas.get(), staticValues));
         }
         else {
             LOGGER.error(new ObjectMessage(Map.of(
