@@ -9,10 +9,15 @@ import { ViewTrace } from "./view_trace";
 import { APICatalog } from "./api_catalog";
 import { HttpClientTabs } from "./http_client";
 import { Account } from './account';
+import GettingStarted from './GettingStarted';
 
 class PageContent extends Component {
   constructor(props) {
     super(props)
+  }
+
+  getGettingStartedScreen(){
+    return <GettingStarted />
   }
 
   getPlatformSpecificRoutes() {
@@ -39,6 +44,7 @@ class PageContent extends Component {
           {/* This has to be at the bottom since it has default routing handler */}
           {this.getPlatformSpecificRoutes()}
         </Switch>
+        {this.getGettingStartedScreen()}
       </div>
     )
   }

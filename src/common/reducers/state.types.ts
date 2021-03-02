@@ -250,6 +250,7 @@ export interface ICubeState {
   testIdsReqErr: string;
   testIdsReqStatus: string;
   timelineData: ITimelineData[];
+  isGettingStartedHidden?: boolean;
 }
 
 //Golden State
