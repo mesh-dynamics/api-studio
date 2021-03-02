@@ -43,8 +43,8 @@ class Settings extends Component {
                 || !proxyPort
                 || !gRPCProxyPort
                 || !isUrl(domain) 
-                || !isPort(proxyPort) 
-                || !isPort(gRPCProxyPort) 
+                || !isPort(String(proxyPort)) 
+                || !isPort(String(gRPCProxyPort)) 
                 || proxyPort === gRPCProxyPort;
     }
 
