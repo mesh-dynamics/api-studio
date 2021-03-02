@@ -13,6 +13,8 @@ import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
+import io.md.injection.StaticInjection;
+import io.md.injection.StaticInjection.StaticInjectionMeta;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -354,31 +357,18 @@ public class ReplayWS extends ReplayBasicWS {
             List<InjectionExtractionMeta> finalMetaList = diLearner
                 .generateRules(discardSingleValues);
 
-            CsvSchema csvSchema = csvMapper.schemaFor(InjectionExtractionMeta.class).withHeader();
-            String data = csvMapper.writer(csvSchema).writeValueAsString(finalMetaList);
-
-            final String fileName = "learned_context_propagation_rules", ext = ".csv";
-
-            File file = new File("/tmp/" + fileName + "-" +
-                (customerId +  app +  Instant.now()).hashCode() +
-                ext);
-            FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
-            Response.ResponseBuilder response = Response.ok((Object) file);
-            response.header("Content-Disposition", "attachment; filename=\"" + fileName + "\"" + ext);
-            response.header("Access-Control-Expose-Headers", "Content-Disposition, X-Suggested-Filename");
-
-            return response.build();
+            return writeResponseToFile("learned_context_propagation_rules", finalMetaList, InjectionExtractionMeta.class, true);
 
         } catch (JsonProcessingException e) {
             LOGGER.error(
                 String.format(
-                    "Error in converting Event list to Json for customer=%s, app=%s, collections=%s",
+                    "Error in converting Event list to csv for customer=%s, app=%s, collections=%s",
                     customerId, app, collection),
                 e);
             return Response.serverError().entity(
                 Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
                     String.format(
-                        "Error in converting Event list to Json for customer=%s, app=%s, collections=%s",
+                        "Error in converting Event list to csv for customer=%s, app=%s, collections=%s",
                         customerId, app, collection))).build();
         } catch (IOException e) {
             LOGGER.error(
@@ -447,20 +437,43 @@ public class ReplayWS extends ReplayBasicWS {
             customerId, app, version);
         Response resp = dynamicInjectionConfig.map(d -> {
             try{
-                String data = jsonMapper.writeValueAsString(d);
+              return writeResponseToFile("context_propagation_rules", d, DynamicInjectionConfig.class , false);
+            } catch (JsonProcessingException e) {
+                LOGGER.error(String.format("Error in converting DynamicInjectionConfig object to Json for customerId=%s, app=%s, version=%s",
+                    customerId, app, version), e);
+                return Response.serverError().entity(
+                    Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                        "Error in converting DynamicInjectionConfig object to Json")).build();
+            } catch (IOException e) {
+                LOGGER.error(
+                    String.format("Error in file creation for customer=%s, app=%s, version=%s",
+                        customerId, app, version),e);
+                return Response.serverError().entity(
+                    Utils.buildErrorResponse(Constants.ERROR, Constants.IO_EXCEPTION,
+                        String.format("Error in file creation for customer=%s, app=%s, version=%s",
+                            customerId, app, version))).build();            }
+        }).orElse(Response.status(Response.Status.NOT_FOUND)
+            .entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
+                "DynamicInjectionConfig object not found")).build());
+        return resp;
+    }
 
-                final String fileName = "context_propagation_rules", ext = ".json";
+    @GET
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("staticInjectionConfig/{customerId}/{app}/{version}")
+    public Response getStaticInjectionConfig(@Context UriInfo uriInfo,
+        @PathParam("customerId") String customerId, @PathParam("app") String app,
+        @PathParam("version") String version) {
+        Optional<DynamicInjectionConfig> dynamicInjectionConfig = rrstore.getDynamicInjectionConfig(
+            customerId, app, version + DynamicInjectionConfig.staticVersionSuffix);
+        Response resp = dynamicInjectionConfig.map(d -> {
+            try{
+                List<StaticInjectionMeta> staticValues = StaticInjection.getStaticMetasFromDynamicConfig(d);
 
-                File file = new File("/tmp/" + fileName + "-" +
-                    (customerId +  app +  Instant.now()).hashCode() +
-                    ext);
+                final String fileName = "static_injection_rules";
+                return writeResponseToFile(fileName, staticValues, StaticInjectionMeta.class, true);
 
-                FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
-                Response.ResponseBuilder response = Response.ok((Object) file);
-                response.header("Content-Disposition", "attachment; filename=\"" + fileName + "\"" + ext);
-                response.header("Access-Control-Expose-Headers", "Content-Disposition, X-Suggested-Filename");
-
-                return response.build();
             } catch (JsonProcessingException e) {
                 LOGGER.error(String.format("Error in converting DynamicInjectionConfig object to Json for customerId=%s, app=%s, version=%s",
                     customerId, app, version), e);
@@ -479,6 +492,53 @@ public class ReplayWS extends ReplayBasicWS {
             .entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
                 "DynamicInjectionConfig object not found")).build());
         return resp;
+    }
+
+    @POST
+    @Path("staticInjectionConfig/{customerId}/{app}/{version}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response saveStaticInjectionConfig(@PathParam("customerId") String customerId,
+        @PathParam("app") String app,
+        @PathParam("version") String version,
+        @FormDataParam("file") InputStream uploadedInputStream) {
+
+        CsvSchema csvSchema = csvMapper.schemaFor(StaticInjectionMeta.class).withSkipFirstDataRow(true);
+
+        try {
+            List<StaticInjectionMeta> staticInjectionMetas;
+            MappingIterator<StaticInjectionMeta> mi = csvMapper.readerFor(StaticInjectionMeta.class).
+                    with(csvSchema).readValues(uploadedInputStream);
+            staticInjectionMetas = mi.readAll();
+
+            // Static config is maintained in a separate version having an additional staticVersionSuffix
+            // For the user, both static and dynamic configs are associated with the same version.
+            StaticInjection staticInjection = new StaticInjection(customerId, app,
+                version + DynamicInjectionConfig.staticVersionSuffix);
+            DynamicInjectionConfig diConfig = staticInjection.convertStaticMetasToDynamicConfig(staticInjectionMetas);
+            String staticInjectionConfigId = rrstore.saveDynamicInjectionConfig(diConfig);
+
+            return Response.ok().entity((new JSONObject(Map.of(
+                "Message", "Successfully saved Static Injection Config",
+                "ID", staticInjectionConfigId,
+                "staticInjectionConfigVersion", version))).toString()).build();
+        } catch (SolrStoreException e) {
+            LOGGER.error(new ObjectMessage(
+                Map.of(Constants.MESSAGE, "Unable to save Static Injection Config",
+                    "staticInjectionConfig.version", version)), e);
+            return Response.serverError().entity((
+                Utils.buildErrorResponse(Constants.ERROR, Constants.SOLR_STORE_FAILED,
+                    "Unable to save Static Injection Config: " +
+                        e.getStackTrace()))).build();
+        } catch (IOException e) {
+            LOGGER.error(
+                String.format("Error in reading CSV file for customer:%s, app:%s, version:%s",
+                    customerId, app, version), e);
+            return Response.serverError().entity(
+                Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                    String.format("Error in reading CSV file for customer:%s, app:%s, version:%s",
+                        customerId, app, version))).build();
+        }
     }
 
     @POST
@@ -597,6 +657,30 @@ public class ReplayWS extends ReplayBasicWS {
             .thenCompose(v ->
                  resetTagOpt.map(tag -> this.tagConfig.setTag(recordings.get(0), replay.instanceId, tag))
                     .orElse(CompletableFuture.completedFuture(null)));
+    }
+
+    private Response writeResponseToFile(String fileName, Object object, Class clazz,
+        Boolean isCsv)
+        throws IOException {
+        String data, ext;
+        if (isCsv) {
+            CsvSchema csvSchema = csvMapper.schemaFor(clazz).withHeader();
+            data = csvMapper.writer(csvSchema).writeValueAsString(object);
+            ext = ".csv";
+        } else {
+            data = jsonMapper.writeValueAsString(object);
+            ext = ".json";
+        }
+
+        File file = new File("/tmp/" + fileName + "-" + UUID.randomUUID());
+        FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
+        Response.ResponseBuilder response = Response.ok((Object) file);
+        response.header("Content-Disposition", "attachment; filename=\"" + fileName + ext + "\"" );
+        response
+            .header("Access-Control-Expose-Headers", "Content-Disposition, X-Suggested-Filename");
+
+        return response.build();
+
     }
 
     /**

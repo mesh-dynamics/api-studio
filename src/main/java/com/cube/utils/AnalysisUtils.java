@@ -1,5 +1,6 @@
 package com.cube.utils;
 
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -32,6 +33,8 @@ import com.cube.golden.transform.TemplateUpdateOperationSetTransformer;
 public class AnalysisUtils {
 
 	private static final Logger LOGGER = LogManager.getLogger(AnalysisUtils.class);
+
+	public static final DateTimeFormatter templateLabelFormatter =  DateTimeFormatter.ofPattern("dd-MM-yyyy_HH:mm:ss_SSS");
 
 	public static void updateTemplateUpdateOperationSet(String customerId, String operationSetId,
 		String updateOperations, ObjectMapper jsonMapper, ReqRespStore rrStore) throws Exception {

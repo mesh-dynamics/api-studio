@@ -9,8 +9,8 @@ import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 
 import com.cube.core.ServerUtils;
 import com.cube.core.TagConfig;
+import com.cube.dao.RecordingBuilder;
 import com.cube.queue.StoreUtils;
-import com.cube.sequence.SeqMgr;
 
 import io.md.core.ApiGenPathMgr;
 import io.md.core.CollectionKey;
@@ -111,13 +111,13 @@ import io.md.utils.Constants;
 import io.md.core.Utils;
 
 import com.cube.dao.CubeEventMetaInfo;
-import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr.SolrStoreException;
 import com.cube.dao.Result;
 import com.cube.dao.WrapperEvent;
 import com.cube.queue.DisruptorEventQueue;
 import com.cube.queue.RREvent;
+import com.cube.sequence.SeqMgr;
 import com.cube.utils.ScheduledCompletable;
 import com.cube.ws.SanitizationFilters.BadStatuses;
 import com.cube.ws.SanitizationFilters.IgnoreStaticContent;
@@ -1400,7 +1400,7 @@ public class CubeStore {
             Recording  updatedRecording = createRecordingObjectFrom(recording, templateVersion,
                 name, Optional.of(userId), timeStamp, labelValue, type);
             if(rrstore.saveRecording(updatedRecording)) {
-                return CompletableFuture.supplyAsync(() -> copyEvents(recording, updatedRecording, timeStamp, eventFilter)).thenApply(success ->{
+                return CompletableFuture.supplyAsync(() -> rrstore.copyEvents(recording, updatedRecording, timeStamp, eventFilter)).thenApply(success ->{
                     if(success) return Response.ok().type(MediaType.APPLICATION_JSON).entity(updatedRecording).build();
                     rrstore.deleteAllRecordingData(updatedRecording);
                     return Response.status(Status.INTERNAL_SERVER_ERROR)
@@ -1420,45 +1420,6 @@ public class CubeStore {
             .build()));
     }
 
-
-    public boolean copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp, Optional<Predicate<Event>> eventFilter) {
-        EventQuery.Builder builder = new EventQuery.Builder(fromRecording.customerId, fromRecording.app, Collections.emptyList());
-        builder.withCollection(fromRecording.collection);
-        builder.withoutScoreOrder().withSeqIdAsc(true).withTimestampAsc(true);
-        Result<Event> result = rrstore.getEvents(builder.build());
-        Map<String, String> reqIdMap = new HashMap<>();
-        final boolean[] eventCreationFailure = new boolean[1];
-        Stream<Event> eventStream = result.getObjects().filter(eventFilter.orElse(event -> true)).map(event -> {
-            try {
-                String reqId = reqIdMap.get(event.getReqId());
-                if(reqId == null) {
-                    String oldReqId = event.getReqId();
-                    reqId = io.md.utils.Utils.generateRequestId(
-                        event.service, event.getTraceId());
-                    reqIdMap.put(oldReqId, reqId);
-                }
-                return buildEvent(event, toRecording.collection,  toRecording.recordingType, reqId, event.getTraceId(),
-                    Optional.of(timeStamp.toString()), event.timestamp);
-            } catch (InvalidEventException e) {
-                eventCreationFailure[0] = true;
-                LOGGER.error(new ObjectMessage(
-                    Map.of(Constants.MESSAGE, "Error while creating Event",
-                        Constants.RECORDING_ID, toRecording.id)), e);
-            }
-            return null;
-        });/*.filter(Objects::nonNull)*/;
-        if(eventCreationFailure[0]){
-            LOGGER.error("Event Creation Failure ");
-            return false;
-        }
-
-        // unique requests will be almost half. 0.6 to be on safe side
-        long estimatedReqSize = (long)(result.numResults*0.6) +1;
-        //check whether num of results and numFound are same
-        var eventsStream =  SeqMgr.createSeqId(eventStream , estimatedReqSize);
-        boolean batchSaveResult = rrstore.save(eventsStream) && rrstore.commit();
-        return batchSaveResult;
-    }
 
     /**
      * Takes a Recording Id and a list of optional status codes. Creates a new
@@ -1579,7 +1540,8 @@ public class CubeStore {
             throw new Exception("Invalid Range for MoveEvents");
         }
 
-        var eventsStream =  SeqMgr.insertBetween(insertAfterEventSeqId , insertBeforeEventSeqId , moveEvents.stream() , moveEventIds.size());
+        var eventsStream =  SeqMgr
+            .insertBetween(insertAfterEventSeqId , insertBeforeEventSeqId , moveEvents.stream() , moveEventIds.size());
         final Map<String , String> response = new HashMap<>();
         eventsStream = eventsStream.map(e->{
 
@@ -2269,23 +2231,8 @@ public class CubeStore {
     }
 
     private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId, Optional<String> runId)
-        throws InvalidEventException {
-        return buildEvent(event, collection, recordingType, reqId, traceId, runId, Instant.now());
-    }
-
-
-    private Event buildEvent(Event event, String collection, RecordingType recordingType, String reqId, String traceId, Optional<String> runId, Instant timeStamp)
-        throws InvalidEventException {
-        EventBuilder eventBuilder = new EventBuilder(event.customerId, event.app,
-            event.service, event.instanceId, collection,
-            new MDTraceInfo(traceId, event.spanId, event.parentSpanId),
-            event.getRunType(), Optional.of(event.timestamp), reqId, event.apiPath,
-            event.eventType, recordingType);
-        eventBuilder.setPayload(event.payload);
-        eventBuilder.withMetaData(event.metaData);
-        eventBuilder.withRunId(runId.orElse(event.runId));
-        eventBuilder.setPayloadKey(event.payloadKey);
-        return eventBuilder.createEvent();
+        throws InvalidEventException, TemplateNotFoundException {
+        return rrstore.buildEvent(event, collection, recordingType, reqId, traceId, runId, Instant.now(), Optional.empty(), config.protoDescriptorCache);
     }
 
     @GET
@@ -2371,7 +2318,7 @@ public class CubeStore {
         Instant timeStamp = Instant.now();
         if(firstRecording.recordingType == RecordingType.UserGolden && newType.isEmpty()) {
             thirdRecording = firstRecording;
-            CompletableFuture.runAsync(() -> copyEvents(secondRecording, thirdRecording, timeStamp, Optional.empty()))
+            CompletableFuture.runAsync(() -> rrstore.copyEvents(secondRecording, thirdRecording, timeStamp, Optional.empty()))
                 .thenApply(v -> asyncResponse.resume(Response.ok().type(MediaType.APPLICATION_JSON).entity(thirdRecording).build()));
         } else {
             thirdRecording = createRecordingObjectFrom(firstRecording, Optional.empty(),
@@ -2379,8 +2326,8 @@ public class CubeStore {
                 timeStamp, timeStamp.toString(), newType.orElse(RecordingType.UserGolden));
             if(rrstore.saveRecording(thirdRecording)) {
                 CompletableFuture.runAsync(() -> {
-                    copyEvents(firstRecording, thirdRecording, timeStamp, Optional.empty());
-                    copyEvents(secondRecording, thirdRecording, timeStamp, Optional.empty());
+                    rrstore.copyEvents(firstRecording, thirdRecording, timeStamp, Optional.empty());
+                    rrstore.copyEvents(secondRecording, thirdRecording, timeStamp, Optional.empty());
                 }).thenApply(v -> asyncResponse.resume(Response.ok().type(MediaType.APPLICATION_JSON).entity(thirdRecording).build()));
             }
         }
@@ -2454,9 +2401,10 @@ public class CubeStore {
         var newEventsStream =   pending.stream().map(event -> {
             String newReqId = "Update-" + finalPayloadHash;
             try {
-                Event newEvent = buildEvent(event, collection, recordingType, newReqId, newReqId, Optional.empty(), event.timestamp);
+                Event newEvent =  rrstore.buildEvent(event, collection, recordingType, newReqId,
+                    newReqId, Optional.empty(), event.timestamp, Optional.empty(), config.protoDescriptorCache);
                 return newEvent;
-            } catch (InvalidEventException e) {
+            } catch (InvalidEventException | TemplateNotFoundException e) {
                 LOGGER.error(new ObjectMessage(Map.of(
                     Constants.MESSAGE, "Invalid Event",
                     Constants.REQ_ID_FIELD, reqId
@@ -2523,6 +2471,45 @@ public class CubeStore {
 
         return Response.ok().build();
     }
+
+    @GET
+    @Path("/getLatestTemplateSetLabel/{customerId}/{app}/{templateSetName}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getLatestTemplateSetLabel(@Context UriInfo uriInfo, @PathParam("customerId")
+        String customerId, @PathParam("app") String app, @PathParam("templateSetName")
+        String templateSetName) {
+
+       try {
+           return rrstore.getLatestTemplateSetLabel(customerId, app, templateSetName)
+               .map(UtilException.rethrowFunction(
+                   templateSetLabel -> Response.ok().entity(templateSetLabel).build()))
+               .orElse(
+                   Response.serverError().entity("Unable to find the latest template set").build());
+       } catch (Exception e) {
+            return Response.serverError().entity("Error while converting template set to json string "
+                + e.getMessage()).build();
+       }
+    }
+
+
+    @GET
+    @Path("/getTemplateSet/{customerId}/{app}/{templateSetVersion}")
+    public Response getTemplateSet(@Context UriInfo uriInfo, @PathParam("customerId")
+        String customerId, @PathParam("app") String app, @PathParam("templateSetVersion")
+        String templateSetVersion) {
+
+        try {
+            return rrstore.getTemplateSet(customerId, app, templateSetVersion)
+                .map(UtilException.rethrowFunction(
+                    templateSet -> Response.ok().entity(jsonMapper.writeValueAsString(templateSet)).build()))
+                .orElse(
+                    Response.serverError().entity("Unable to find the latest template set").build());
+        } catch (Exception e) {
+            return Response.serverError().entity("Error while converting template set to json string "
+                + e.getMessage()).build();
+        }
+    }
+
 
 
     /**

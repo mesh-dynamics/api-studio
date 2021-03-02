@@ -8,21 +8,23 @@ import static io.md.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 import static io.md.core.Comparator.MatchType.DontCare;
 import static io.md.core.TemplateKey.Type;
+import static io.md.core.Utils.versionPattern;
 import static io.md.dao.Recording.RecordingStatus;
 import static io.md.services.DataStore.TemplateNotFoundException;
 
 import com.cube.core.ServerUtils;
 import com.cube.dao.ApiTraceFacetQuery;
 
+import com.cube.dao.RecordingBuilder;
+import com.cube.golden.TemplateSet;
 import com.cube.learning.CompareTemplatesLearner;
 import com.cube.learning.TemplateEntryMeta;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
-import io.md.cache.ProtoDescriptorCache;
-import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.core.BatchingIterator;
+
 
 import io.md.core.Comparator.Diff;
 import io.md.dao.ApiTraceResponse;
@@ -43,6 +45,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,10 +55,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -78,6 +83,7 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
@@ -114,14 +120,13 @@ import io.md.core.Utils;
 import com.cube.core.TemplateRegistries;
 import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.MatchResultAggregate;
-import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.Result;
 import com.cube.drivers.RealAnalyzer;
 import com.cube.golden.RecordingUpdate;
 import com.cube.golden.SingleTemplateUpdateOperation;
-import com.cube.golden.TemplateSet;
+
 import com.cube.utils.AnalysisUtils;
 
 /**
@@ -214,18 +219,38 @@ public class AnalyzeWS {
     }
 
 
+    @GET
+    @Path("getTemplateSetLabels/{customerId}/{appId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getTemplateSetLabels(@Context UriInfo uriInfo,
+	    @PathParam("customerId") String customerId,
+	    @PathParam("appId") String appId) {
+    	Result<TemplateSet> templateSetList = rrstore.getTemplateSetList(customerId, appId);
+    	JSONObject root = new JSONObject();
+    	templateSetList.getObjects().forEach(templateSet -> {
+    		JSONObject setDetails = new JSONObject();
+    		setDetails.put("name" , templateSet.name);
+	        setDetails.put("label" , templateSet.label);
+		    root.put(templateSet.version , setDetails);
+	    });
+		return Response.ok().entity(root.toString()).build();
+    }
+
+
 	@POST
-    @Path("registerTemplateApp/{customerId}/{appId}/{version}")
+    @Path("registerTemplateApp/{customerId}/{appId}/{name}")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces(MediaType.APPLICATION_JSON)
     public Response registerTemplateApp(@Context UriInfo uriInfo,
                                         @PathParam("customerId") String customerId,
                                         @PathParam("appId") String appId,
-                                        @PathParam("version") String version,
+                                        @PathParam("name") String name,
                                         String templateRegistryArray) {
         try {
+
             //TODO study the impact of enabling this flag in other deserialization methods
             //jsonMapper.enable(ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
+
             TemplateRegistries registries = jsonMapper.readValue(templateRegistryArray, TemplateRegistries.class);
             /*
             List<TemplateRegistry> templateRegistries = registries.getTemplateRegistryList();
@@ -249,9 +274,13 @@ public class AnalyzeWS {
 
             }));
             */
-            Optional<String> templateVersion = version.equals("AUTO") ? Optional.empty() : Optional.of(version);
+	        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+	        String templateLabel = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_LABEL_FIELD))
+		        .orElse(LocalDateTime.now().format(AnalysisUtils.templateLabelFormatter));
+
+            /*Optional<String> templateVersion = version.equals("AUTO") ? Optional.empty() : Optional.of(version);*/
             TemplateSet templateSet = ServerUtils.templateRegistriesToTemplateSet(registries, customerId, appId,
-                templateVersion);
+                name, templateLabel);
             //String templateSetJSON = jsonmapper.writeValueAsString(templateSet);
 
             ValidateCompareTemplate validTemplate = ServerUtils.validateTemplateSet(templateSet);
@@ -787,19 +816,27 @@ public class AnalyzeWS {
            * once all replays will be having the updateTimestamp, we can directy set updationTimestamp
            */
             Instant timeStamp = replay.analysisCompleteTimestamp != Instant.EPOCH ? replay.analysisCompleteTimestamp : replay.creationTimeStamp;
-            Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerId, replay.app,
-                replay.collection.get(0) , Optional.of(replay.templateVersion));
+            List<Recording> recordings = new ArrayList<>();
+            boolean recordingNotFound = false;
+            for(String replayCollection : replay.collection){
+	            Optional<Recording> recordingOpt = rrstore.getRecordingByCollectionAndTemplateVer(replay.customerId, replay.app,
+		            replayCollection , Optional.of(replay.templateVersion));
+	            if (recordingOpt.isEmpty()){
+		            recordingNotFound = true;
+		            break;
+	            }
+	            recordings.add(recordingOpt.get());
+            }
             String recordingInfo = "";
-            if (recordingOpt.isEmpty()) {
+            if (recordingNotFound) {
                 LOGGER.error("Unable to find recording corresponding to given replay");
             } else {
-            	boolean multiRecordings = replay.collection.size() > 1 ;
-                Recording recording = recordingOpt.get();
-                recordingInfo = "\" , \"recordingid\" : \"" + (multiRecordings ? "NA" : recording.getId())
-                    + "\" , \"collection\" : \"" + (multiRecordings ? replay.collection.stream().collect(Collectors.joining(",")) :recording.collection)
-                    + "\" , \"templateVer\" : \"" + recording.templateVersion
-                    + "\", \"goldenName\" : \"" + (multiRecordings ? "NA" : recording.name)
-                    + "\", \"goldenLabel\" : \"" + (multiRecordings ? "NA" :recording.label);
+            	Recording firstRecording = recordings.get(0);
+            	recordingInfo = "\" , \"recordingid\" : " + ServerUtils.serializeList(recordings.stream().map(r->r.getId()).collect(Collectors.toList()))
+                    + " , \"collection\" : " + ServerUtils.serializeList(replay.collection.stream().collect(Collectors.toList()))
+                    + " , \"templateVer\" : \"" + firstRecording.templateVersion
+                    + "\", \"goldenName\" : " + ServerUtils.serializeList(recordings.stream().map(r->r.name).collect(Collectors.toList()))
+                    + ", \"goldenLabel\" : " + ServerUtils.serializeList(recordings.stream().map(r->r.label).collect(Collectors.toList()));
             }
 
             Stream<MatchResultAggregate> resStream = rrstore.getResultAggregate(replayId, service, byPath);
@@ -809,7 +846,7 @@ public class AnalyzeWS {
             StringBuilder jsonBuilder = new StringBuilder();
             String json;
             jsonBuilder.append("{ \"replayId\" : \"" + replayId + "\" , \"timestamp\" : \"" + timeStamp.toString()
-								+ "\", \"userName\" : \"" + replay.userId + "\" , \"testConfigName\" : \"" +  testConfigNameValue + recordingInfo +  "\" , \"results\" : ");
+								+ "\", \"userName\" : \"" + replay.userId + "\" , \"testConfigName\" : \"" +  testConfigNameValue + recordingInfo +  " , \"results\" : ");
             try {
                 json = jsonMapper.writeValueAsString(res);
                 jsonBuilder.append(json);
@@ -1124,18 +1161,19 @@ public class AnalyzeWS {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public Response saveTemplateSet(@Context UriInfo uriInfo, @PathParam("customer") String customer,
-        @PathParam("app") String app, @FormDataParam("file") InputStream uploadedInputStream) {
-
-        TemplateSet templateSet;
+	    @PathParam("app") String app, @FormDataParam("file") InputStream uploadedInputStream) {
+		        TemplateSet templateSet;
         try {
-            templateSet = this.jsonMapper.readValue(uploadedInputStream, TemplateSet.class);
-            if (!templateSet.customer.equals(customer) || !templateSet.app.equals(app)){
-                Response.status(Status.UNAUTHORIZED).entity(Utils
-                    .buildErrorResponse(Constants.ERROR, "UNAUTHORIZED", String.format(
-                        "customer/app name mismatch in path and json file. "
-                            + "path customer=%s app=%s json customer=%s app=%s",
-                        customer, app, templateSet.customer, templateSet.app)));
-            }
+	        templateSet = this.jsonMapper.readValue(uploadedInputStream, TemplateSet.class);
+	        if (!templateSet.customer.equals(customer) || !templateSet.app.equals(app)){
+		        return Response.status(Status.UNAUTHORIZED).entity(Utils
+			        .buildErrorResponse(Constants.ERROR, "UNAUTHORIZED", String.format(
+				        "customer/app name mismatch in path and json file. "
+					        + "path customer=%s app=%s json customer=%s app=%s",
+				        customer, app, templateSet.customer, templateSet.app))).build();
+	        }
+	        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+	        templateSet.version = ServerUtils.createTemplateSetVersion(templateSet.name, templateSet.label);
 	        templateSet.templates.forEach(compareTemplateVersioned -> {
 		        String normalisedAPIPath= CompareTemplate.normaliseAPIPath(compareTemplateVersioned.requestPath);
 		        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Normalizing APIPath before storing template ",
@@ -1147,6 +1185,14 @@ public class AnalyzeWS {
             if(!validTemplate.isValid()) {
                 return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(Map.of("Message", validTemplate.getMessage() ))).toString()).build();
             }
+
+	        rrstore.getTemplateSet(customer, app, templateSet.version).ifPresent(
+		        io.md.utils.UtilException.rethrowConsumer(set ->
+		        {
+			        throw new Exception(
+				        "Template Set with given version (name + label) already exists");
+		        }));
+
             String templateSetId = rrstore.saveTemplateSet(templateSet);
             return Response.ok().entity((new JSONObject(Map.of(
                 "Message", "Successfully saved template set",
@@ -1366,11 +1412,14 @@ public class AnalyzeWS {
 		    Optional<Analysis> analysis = rrstore.getAnalysis(replayId);
 		    // creating a new temporary empty template set against the old version
 		    // (if one doesn't exist already)
+		    Pair<String, String> nameLabelPair = ServerUtils.extractTemplateSetNameAndLabel(originalRec.templateVersion);
+			String originalRecTemplateSetName = nameLabelPair.getLeft();
 		    TemplateSet templateSet = rrstore
 			    .getTemplateSet(originalRec.customerId, originalRec.app, analysis.map(a ->
 				    a.templateVersion).orElse(originalRec.templateVersion))
-			    .orElse(new TemplateSet(originalRec.templateVersion, originalRec.customerId,
-				    originalRec.app, Instant.now(), Collections.emptyList(), Optional.empty()));
+			    .orElse(new TemplateSet(originalRec.customerId,
+				    originalRec.app, Instant.now(), Collections.emptyList(), Optional.empty()
+				    , originalRecTemplateSetName, nameLabelPair.getRight()));
 
 		    String updatedTemplateSetVersion = AnalysisUtils.updateTemplateSet(templateUpdOpSetId,
 			    Optional.of(templateSet), rrstore);

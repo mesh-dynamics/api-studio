@@ -4,6 +4,7 @@
 package com.cube.dao;
 
 import io.cube.agent.UtilException;
+import io.md.cache.ProtoDescriptorCache;
 import io.md.core.AttributeRuleMap;
 import io.md.core.CollectionKey;
 import io.md.core.Comparator;
@@ -11,8 +12,10 @@ import io.md.core.CompareTemplate;
 import io.md.core.ConfigApplicationAcknowledge;
 import io.md.core.TemplateKey;
 import io.md.dao.*;
+import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Event.EventType;
 import io.md.dao.ProtoDescriptorDAO;
+import io.md.dao.Recording.RecordingType;
 import io.md.dao.agent.config.AgentConfigTagInfo;
 import io.md.dao.agent.config.ConfigDAO;
 import java.io.IOException;
@@ -24,6 +27,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
@@ -38,7 +42,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import io.cube.agent.FnReqResponse;
 import io.md.constants.ReplayStatus;
-import io.md.dao.Event.RunType;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.services.DataStore;
 import io.md.services.FnResponse;
@@ -596,7 +599,6 @@ public interface ReqRespStore extends DataStore {
 	/**
 	 * Returns service facets with path sub-facets for each service
 	 * @param collectionId
-	 * @param runType
 	 * @return
 	 */
     ArrayList getServicePathHierarchicalFacets(String collectionId);
@@ -700,8 +702,6 @@ public interface ReqRespStore extends DataStore {
 
     Optional<TemplateSet> getTemplateSet(String templateSetId);
 
-    Optional<TemplateSet> getLatestTemplateSet(String customer, String app);
-
     public void invalidateCurrentCollectionCache(String customerId, String app,
                                                  String instanceId);
 
@@ -730,4 +730,13 @@ public interface ReqRespStore extends DataStore {
 	Comparator getDefaultComparator(EventType eventType, TemplateKey.Type templateKeyType) throws TemplateNotFoundException;
 
 	boolean saveConfig(CustomerAppConfig cfg);
+
+	Result<TemplateSet> getTemplateSetList (String customerId, String appId);
+
+	public boolean copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp
+		, Optional<Predicate<Event>> eventFilter);
+
+	public  Event buildEvent(Event event, String collection, RecordingType recordingType,
+		String reqId, String traceId, Optional<String> runId, Instant timeStamp,
+		Optional<String> targetTemplateSetVersion, ProtoDescriptorCache protoDescriptorCache) throws InvalidEventException, TemplateNotFoundException;
 }

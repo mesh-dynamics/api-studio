@@ -4,6 +4,7 @@ import io.md.injection.DynamicInjector;
 import io.md.injection.InjectionVarResolver;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,8 +64,9 @@ public class DynamicInjectionTest {
 			extractionMetaList.add(extractionMeta2);
 			extractionMetaList.add(extractionMeta3);
 
-			DynamicInjectionConfig dynamicInjectionConfig = new DynamicInjectionConfig("ver1",
-				"ravivj", "RandomApp", Optional.empty(), extractionMetaList, injectionMetaList);
+            DynamicInjectionConfig dynamicInjectionConfig = new DynamicInjectionConfig("ver1",
+                "ravivj", "RandomApp", Optional.empty(), extractionMetaList, injectionMetaList,
+                Collections.emptyList());
 
 			CubeMetaInfo cubeMetaInfo = new CubeMetaInfo("random-user"
 				, "test", "movie-info", "mi-rest");

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -27,6 +28,7 @@ import io.md.utils.CubeObjectMapperProvider;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr;
 import com.cube.golden.TemplateSet;
+import com.cube.utils.AnalysisUtils;
 import com.cube.ws.Config;
 
 public class TemplateSerializationTest {
@@ -119,8 +121,10 @@ public class TemplateSerializationTest {
         TemplateRegistries templateRegistries1 = mapper.readValue(data1, TemplateRegistries.class);
         TemplateRegistries templateRegistries2 = mapper.readValue(data2, TemplateRegistries.class);
 
-        TemplateSet tset1 = ServerUtils.templateRegistriesToTemplateSet(templateRegistries1, CUSTID, app, Optional.empty());
-        TemplateSet tset2 = ServerUtils.templateRegistriesToTemplateSet(templateRegistries2, CUSTID, app, Optional.empty());
+        TemplateSet tset1 = ServerUtils.templateRegistriesToTemplateSet(templateRegistries1, CUSTID, app, "randomTest" , LocalDateTime
+            .now().format(AnalysisUtils.templateLabelFormatter));
+        TemplateSet tset2 = ServerUtils.templateRegistriesToTemplateSet(templateRegistries2, CUSTID, app, "randomTest" , LocalDateTime
+            .now().format(AnalysisUtils.templateLabelFormatter));
 
         reqRespStore.saveTemplateSet(tset1);
 
