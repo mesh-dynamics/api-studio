@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -38,11 +39,14 @@ import io.md.core.TemplateKey;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
 import io.md.dao.RecordOrReplay;
+import io.md.dao.Recording;
+import io.md.dao.Recording.RecordingType;
 import io.md.dao.Replay;
 import io.md.dao.ReqRespMatchResult;
 import io.md.logger.LogMgr;
 import io.md.services.MockResponse;
 import io.md.utils.CommonUtils;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Client to connect to cube service
@@ -369,5 +373,27 @@ public class CubeClient {
 		//Collection key can be reconstructed from recordOrReplay
 		return getResponse(uri, recordOrReplay, MediaType.APPLICATION_JSON);
 	}
+
+	public Optional<String> getLatestTemplateSetLabel(String customerId, String app, String templateSetName) {
+		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.segment("cs", "getLatestTemplateSetLabel" , customerId , app , templateSetName).build();
+		return getGetResponse(uri);
+	}
+
+	public Optional<String> copyRecording(String recordingId, Optional<String> name,
+		Optional<String> label, Optional<String> templateVersion, String userId, RecordingType type,
+		Optional<Predicate<Event>> eventFilter) {
+		UriBuilder uriBuilder = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.segment("cs" , "copyRecording" , recordingId , userId);
+		name.ifPresent(nameStr -> uriBuilder.queryParam(Constants.GOLDEN_NAME_FIELD , nameStr));
+		label.ifPresent(labelStr ->  uriBuilder.queryParam(Constants.GOLDEN_LABEL_FIELD , labelStr));
+		templateVersion.ifPresent(templateVersionStr -> uriBuilder.queryParam(Constants
+			.TEMPLATE_VERSION_FIELD, templateVersionStr));
+		uriBuilder.queryParam(Constants.RECORDING_TYPE_FIELD, type.name());
+		if (eventFilter.isPresent()) throw new NotImplementedException();
+		// TODO leaving eventFilter out of API Request right now
+		return getPostResponse(uriBuilder.build());
+	}
+
 
 }
