@@ -736,7 +736,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 + TYPEF + ":(" + String
                 .join(" OR ", List.of(Type.RequestCompare.toString()
                     , Type.RequestMatch.toString(), Type.ResponseCompare.toString()))
-                + ")";
+                + ") AND " + CUSTOMERIDF + ":" + templateSet.customer + " AND "
+                + APPF + ":" + templateSet.app;
             solr.deleteByQuery(deleteQueryBuffer);
             solr.commit();
             LOGGER.debug(new ObjectMessage(Map.of(VERSIONF, templateSet.version,
