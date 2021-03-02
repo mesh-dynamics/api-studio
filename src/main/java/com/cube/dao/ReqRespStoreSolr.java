@@ -728,7 +728,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         List<String> templateIds = new ArrayList<>();
         // check if a template set already exists with the given name and label
         SolrQuery checkExistingTemplateSet = new SolrQuery("*:*");
-        addFilter(checkExistingTemplateSet, TEMPLATE_VERSION_FIELD, templateSet.version);
+        addFilter(checkExistingTemplateSet, VERSIONF, templateSet.version);
         if (SolrIterator
             .getSingleResult(solr, checkExistingTemplateSet).isPresent()) {
             // remove templates templates with the given version
