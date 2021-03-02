@@ -16,7 +16,7 @@ public class DynamicInjectorFactory {
     public DynamicInjectorFactory(DataStore datastore , ObjectMapper mapper){
         this.dataStore = datastore;
         this.jsonMapper = mapper;
-        this.diCfgMgr = new DynamicInjectionConfigMgr(datastore);
+        this.diCfgMgr = DynamicInjectionConfigMgr.getInstance(dataStore);
     }
 
     public DynamicInjector getMgr(String customerId , String app , Optional<String> dynamicCfgVersion){
