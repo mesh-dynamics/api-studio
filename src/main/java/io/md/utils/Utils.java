@@ -704,7 +704,7 @@ public class Utils {
 	}
 
 	public static String constructTemplateSetVersion(String templateSetName, Optional<String> templateSetLabel) {
-		return templateSetName + templateSetLabel.map(l -> "::" + l).orElse("");
+		return templateSetName + templateSetLabel.map(l -> l.isEmpty() ? "" : "::" + l).orElse("");
 	}
 
 
