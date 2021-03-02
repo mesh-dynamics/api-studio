@@ -12,6 +12,7 @@ import com.cube.core.TagConfig;
 import com.cube.dao.RecordingBuilder;
 import com.cube.queue.StoreUtils;
 
+import io.md.cache.Constants.PubSubContext;
 import io.md.core.ApiGenPathMgr;
 import io.md.core.CollectionKey;
 import io.md.dao.CustomerAppConfig.Builder;
@@ -34,7 +35,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -78,6 +78,7 @@ import org.msgpack.value.ValueType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
 
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.UtilException;
@@ -2057,6 +2058,16 @@ public class CubeStore {
     public Response cacheFlushAll() {
         return ServerUtils.flushAll(config);
     }
+
+    @POST
+    @Path("cache/inMem")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response cacheClean(Map metadata) {
+        long receivedInstances =  config.pubSubMgr.publish(PubSubContext.IN_MEM_CACHE , metadata);
+        return Response.ok(Map.of("receivedInstances" , receivedInstances) , MediaType.APPLICATION_JSON).build();
+    }
+
+
 
 
     @POST

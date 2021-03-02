@@ -19,6 +19,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
+import io.md.cache.Constants.PubSubContext;
+import io.md.cache.MDCache;
+import io.md.cache.MDCacheMgr;
 import io.md.core.Comparator;
 import io.md.core.CompareTemplate;
 import io.md.core.CompareTemplate.ComparisonType;
@@ -36,25 +39,36 @@ import io.md.utils.Constants;
 import com.cube.core.JsonComparator;
 import com.cube.dao.ReqRespStore;
 import com.cube.exception.CacheException;
+import com.cube.ws.Config;
 
 /*
  * Created by IntelliJ IDEA.
  * Date: 2019-11-14
  */
-public class ComparatorCache {
+public class ComparatorCache implements MDCache {
 
     private static final Logger LOGGER = LogManager.getLogger(ComparatorCache.class);
 
     private final TemplateCache templateCache;
     private final ObjectMapper jsonMapper;
     private final ReqRespStore rrStore;
+    private final Config config;
     private final Cache<TemplateKey, Comparator> comparatorCache;
-
-
-    public ComparatorCache(TemplateCache cache, ObjectMapper jsonMapper, ReqRespStore rrStore) {
+    private static ComparatorCache singleton;
+    public static ComparatorCache getInstance(TemplateCache cache, ObjectMapper jsonMapper, ReqRespStore rrStore , Config config){
+        if(singleton!=null) return singleton;
+        synchronized (ComparatorCache.class){
+            if(singleton==null){
+                singleton = new ComparatorCache(cache , jsonMapper , rrStore , config);
+            }
+        }
+        return singleton;
+    }
+    private ComparatorCache(TemplateCache cache, ObjectMapper jsonMapper, ReqRespStore rrStore , Config config) {
         this.templateCache = cache;
         this.jsonMapper = jsonMapper;
         this.rrStore = rrStore;
+        this.config = config;
 
         // we cache the comparators to avoid parsing the template json every time
         this.comparatorCache = CacheBuilder.newBuilder().maximumSize(100).build();
@@ -109,6 +123,7 @@ public class ComparatorCache {
         defaultThriftResponseComparator = new JsonComparator(defaultThriftResponseTemplate,
             jsonMapper);
 
+        MDCacheMgr.register(this);
     }
 
     /**
@@ -219,12 +234,20 @@ public class ComparatorCache {
         }
     }
 
-    public void invalidateKey(TemplateKey key) {
+    public void publishInvalidateKey(TemplateKey key){
+        config.pubSubMgr.publish(PubSubContext.IN_MEM_CACHE , Map.of(io.md.cache.Constants.CACHE_NAME , CACHE_NAME ,  Constants.TEMPLATE_KEY_FIELD , key));
+    }
+
+    public void publishInvalidateAll(){
+        config.pubSubMgr.publish(PubSubContext.IN_MEM_CACHE , Map.of(io.md.cache.Constants.CACHE_NAME , CACHE_NAME));
+    }
+
+    private void invalidateKey(TemplateKey key) {
         comparatorCache.invalidate(key);
         templateCache.invalidateKey(key);
     }
 
-    public void invalidateAll() {
+    private void invalidateAll() {
         comparatorCache.invalidateAll();
         templateCache.invalidateAll();
     }
@@ -238,6 +261,39 @@ public class ComparatorCache {
                 TemplateNotFoundException::new)).orElseThrow(TemplateNotFoundException::new);
         return EventType.mapType(defaultEventType
             , key.isResponseTemplate());
+    }
+
+    @Override
+    public String getName() {
+        return CACHE_NAME;
+    }
+
+    @Override
+    public long clean(Map<String, ?> meta) {
+        LOGGER.debug(meta);
+        if(meta == null || meta.isEmpty() || !meta.containsKey(Constants.TEMPLATE_KEY_FIELD)){
+            LOGGER.info("invalidating all keys");
+            this.invalidateAll();
+            return 0 ;
+        }
+        getTemplateKey(meta).ifPresent(this::invalidateKey);
+        return 0;
+    }
+
+    private Optional<TemplateKey> getTemplateKey(Map meta){
+
+        try{
+            Object keyObj = meta.get(Constants.TEMPLATE_KEY_FIELD);
+            String jsonkeyStr = keyObj instanceof String ? keyObj.toString() :  jsonMapper.writeValueAsString(keyObj);
+            TemplateKey key = jsonMapper.readValue(jsonkeyStr , TemplateKey.class);
+            LOGGER.info("template key "+key);
+            return Optional.of(key);
+
+        }catch (Exception e){
+
+            LOGGER.error("Template key parsing error "+e.getMessage() , e);
+            return Optional.empty();
+        }
     }
 
     private class ComparatorNotImplementedException extends Exception {
@@ -254,4 +310,6 @@ public class ComparatorCache {
     private final Comparator defaultJavaResponseComparator;
     private final Comparator defaultThriftRequestComparator;
     private final Comparator defaultThriftResponseComparator;
+
+    private static final String CACHE_NAME = "ComparatorCache";
 }

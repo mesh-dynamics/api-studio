@@ -131,7 +131,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public void invalidateCache() {
-        comparatorCache.invalidateAll();
+        comparatorCache.publishInvalidateAll();
     }
 
     @Override
@@ -1111,7 +1111,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if(!success) {
             throw new TemplateSet.TemplateSetMetaStoreException("Error saving Template Set Meta Data in Solr");
         }
-        comparatorCache.invalidateAll();
+        comparatorCache.publishInvalidateAll();
         return id;
     }
 
@@ -1356,14 +1356,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         } else {
             this.templateCache = new TemplateCacheWithoutCaching(this);
         }
-        this.comparatorCache = new ComparatorCache(templateCache, config.jsonMapper, this);
+        this.comparatorCache = ComparatorCache.getInstance(templateCache, config.jsonMapper, this , config);
 
     }
 
     private final SolrClient solr;
     private final com.cube.ws.Config config;
-    private final TemplateCache templateCache;
-    private final ComparatorCache comparatorCache;
+    public final TemplateCache templateCache;
+    public final ComparatorCache comparatorCache;
 
     private static final String TYPEF = CPREFIX + "type" + STRING_SUFFIX;
 
@@ -2375,7 +2375,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if(!success) {
             throw new CompareTemplate.CompareTemplateStoreException("Error saving Compare Template in Solr");
         }
-        comparatorCache.invalidateKey(key);
+        comparatorCache.publishInvalidateKey(key);
         return solrDoc.getFieldValue(IDF).toString();
     }
 
@@ -2387,7 +2387,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if(!success) {
             throw new CompareTemplate.CompareTemplateStoreException("Error saving Compare Template in Solr");
         }
-        comparatorCache.invalidateKey(key);
+        comparatorCache.publishInvalidateKey(key);
         return solrDoc.getFieldValue(IDF).toString();
     }
 
