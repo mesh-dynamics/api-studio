@@ -9,3 +9,4 @@ package-lock.json
 /build
 /release
 /bin/java
+cubeio_replay_driver.log

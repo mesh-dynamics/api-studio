@@ -1,8 +1,11 @@
 import React, { Component } from 'react';
-import { Modal, Button } from 'react-bootstrap';
+import { Modal } from 'react-bootstrap';
+import isUrl from 'validator/lib/isURL';
+import isPort from 'validator/lib/isPort';
 import DomainSettings from './DomainSettings';
 import MockSettings from './MockSettings';
 import { ipcRenderer } from '../../../common/helpers/ipc-renderer';
+import { domain } from 'process';
 
 class Settings extends Component {
     state = {
@@ -35,9 +38,18 @@ class Settings extends Component {
         ipcRenderer.send('get_config');
     }
 
+    hasInvalidInputFields = (domain, proxyPort, gRPCProxyPort) => {
+        return !domain 
+                || !proxyPort
+                || !gRPCProxyPort
+                || !isUrl(domain) 
+                || !isPort(proxyPort) 
+                || !isPort(gRPCProxyPort) 
+                || proxyPort === gRPCProxyPort;
+    }
+
     handleDomainInputChange = (event) => {
         const domain = event.target.value;
-
         this.setState({ config: { ...this.state.config, domain } })
     }
 
@@ -55,13 +67,11 @@ class Settings extends Component {
     }
 
     handleMockSettingsChange = (name, value) => {
-
         this.setState({
             config: { 
                 ...this.state.config,
                 [name]: value
-                // proxyPort: value
-            } 
+            }
         });
     }
 
@@ -87,6 +97,8 @@ class Settings extends Component {
             successAlertModalVisible,
         } = this.state;
 
+        const isSaveButtonDisabled = this.hasInvalidInputFields(domain, proxyPort, gRPCProxyPort);
+
         return(
             <div className="settings-parent-container">
                 <div className="row settings-width-100">
@@ -99,14 +111,16 @@ class Settings extends Component {
                     </div>
                 </div>
                 <div className="row settings-width-100">
-                    <DomainSettings 
+                    <DomainSettings
                         domain={domain} 
+                        isSaveButtonDisabled={isSaveButtonDisabled}
                         handleDomainInputChange={this.handleDomainInputChange}
                         handleSaveDomainClick={this.handleSaveDomainClick}
                     />
                     <MockSettings
                         proxyPort={proxyPort}
                         gRPCProxyPort={gRPCProxyPort}
+                        isSaveButtonDisabled={isSaveButtonDisabled}
                         handleMockSettingsChange={this.handleMockSettingsChange}
                         handleSaveMockSettingsClick={this.handleSaveMockSettingsClick}
                     />

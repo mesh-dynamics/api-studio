@@ -2,7 +2,7 @@ import React from 'react';
 import isUrl from 'validator/lib/isURL';
 
 const  DomainSettings = (props) => {
-    const { domain, handleDomainInputChange, handleSaveDomainClick } = props;
+    const { domain, isSaveButtonDisabled, handleDomainInputChange, handleSaveDomainClick } = props;
 
     return (
         <div className="col-md-12 col-sm-12 col-xs-12">
@@ -31,11 +31,11 @@ const  DomainSettings = (props) => {
                     <div className="settings-action-buttons">
                         <span className="settings-margin-left-10">
                             <button 
-                                disabled={!isUrl(domain)}
                                 id="save-button" 
                                 type="button" 
-                                className="btn btn-sm cube-btn text-center"
                                 onClick={handleSaveDomainClick}
+                                disabled={isSaveButtonDisabled}
+                                className="btn btn-sm cube-btn text-center"
                             >
                                 Save
                             </button>

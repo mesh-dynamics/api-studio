@@ -1,9 +1,11 @@
 import React from 'react';
+import isPort from 'validator/lib/isPort';
 
 const MockSettings = (props) => {
     const {
         proxyPort,
         gRPCProxyPort,
+        isSaveButtonDisabled,
         handleMockSettingsChange,
         handleSaveMockSettingsClick
     } = props;
@@ -32,6 +34,7 @@ const MockSettings = (props) => {
                             onChange={(event) => handleMockSettingsChange('proxyPort', event.target.value)}
                         />
                     </div>
+                    {(!proxyPort || !isPort(proxyPort)) && <span className="settings-error-text">Port provided is not valid</span>}
                     <br />
                     <span>gRPC Proxy Port</span>
                     <div className="input-group input-group-sm">
@@ -47,6 +50,8 @@ const MockSettings = (props) => {
                             onChange={(event) => handleMockSettingsChange('gRPCProxyPort', event.target.value)}
                         />
                     </div>
+                    {(!gRPCProxyPort || !isPort(gRPCProxyPort)) && <span className="settings-error-text">Port provided is not valid</span>}
+                    {proxyPort === gRPCProxyPort && <span className="settings-error-text">Invalid configuration. Port conflict detected.</span>}
                     <br />
                     <div className="settings-action-buttons">
                         <span className="settings-margin-left-10">
@@ -54,6 +59,7 @@ const MockSettings = (props) => {
                                 id="save-button" 
                                 type="button" 
                                 className="btn btn-sm cube-btn text-center"
+                                disabled={isSaveButtonDisabled}
                                 onClick={handleSaveMockSettingsClick}
                             >Save</button>
                         </span>
