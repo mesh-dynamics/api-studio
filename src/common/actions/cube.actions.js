@@ -50,7 +50,8 @@ export const cubeActions = {
     removeReplayFromTimeline,
     removeSelectedGoldenFromTestIds,
     hideHttpClient,
-    resetCubeToInitialState
+    resetCubeToInitialState,
+    setDoNotShowGettingStartedAgain
 };
 
 function clearPreviousData() {
@@ -278,6 +279,10 @@ function getTestConfigByAppId(appId) {
 
 function setTestConfig(tc) {
     return {type: cubeConstants.SET_TEST_CONFIG, data: tc};
+}
+
+function setDoNotShowGettingStartedAgain(value) {
+    return {type: cubeConstants.SET_GETTING_STARTED_SCREEN, data: value};
 }
 
 function setSelectedApp (app) {
