@@ -239,7 +239,7 @@ public class ReplayBasicWS {
             .orElse(recordings.get(0).templateVersion); // for backward compatibility
         String templateSetLabel = Optional.ofNullable(formParams.getFirst(Constants.TEMPLATE_SET_LABEL))
             .or(() -> dataStore.getLatestTemplateSetLabel(recordings.get(0).customerId,
-                recordings.get(0).app, templateSetName)).orElseThrow(() -> new ParameterException("Unable to assign template set label for replay"));
+                recordings.get(0).app, templateSetName)).orElse(""); // for backward compatibility
 
         String templateSetVersion = io.md.utils.Utils.constructTemplateSetVersion(templateSetName, Optional.of(templateSetLabel));
 
