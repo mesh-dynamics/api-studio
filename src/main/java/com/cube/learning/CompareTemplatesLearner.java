@@ -2,9 +2,12 @@ package com.cube.learning;
 
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.dao.ReqRespStore;
+
 import com.cube.golden.TemplateSet;
 import com.cube.learning.TemplateEntryMeta.Action;
 import com.cube.learning.TemplateEntryMeta.RuleStatus;
+import com.cube.utils.AnalysisUtils;
+
 import io.md.core.Comparator.Diff;
 import io.md.core.Comparator.Resolution;
 import io.md.core.CompareTemplate;
@@ -19,6 +22,7 @@ import io.md.core.TemplateKey.Type;
 import io.md.dao.ReqRespMatchResult;
 import io.md.services.DataStore.TemplateNotFoundException;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -326,7 +330,7 @@ public class CompareTemplatesLearner {
 
             if (effectiveCt != ComparisonType.Default && effectivePt != PresenceType.Default){
                 // TODO: Handle the case when only one of them gets updated in the learned rules.
-                // Currently, we don't support creating a TemplateEntry with either Comparison
+                // Curerntly, we don't support creating a TemplateEntry with either Comparison
                 // or Presence types as Default.
                 CompareTemplate compareTemplate = templatesMap.computeIfAbsent(templateKey,
                     k -> new CompareTemplateVersioned(Optional.of(tm.service), Optional.of(tm.apiPath),
@@ -341,8 +345,9 @@ public class CompareTemplatesLearner {
             }
         });
 
-        return new TemplateSet(templateVersion, customer, app, Instant.now(),
-            new ArrayList<>(templatesMap.values()), Optional.empty());
+        return new TemplateSet(customer, app, Instant.now(),
+            new ArrayList<>(templatesMap.values()), Optional.empty(), templateVersion, LocalDateTime
+            .now().format(AnalysisUtils.templateLabelFormatter));
     }
 
 

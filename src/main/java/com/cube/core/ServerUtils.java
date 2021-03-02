@@ -6,6 +6,7 @@ package com.cube.core;
 
 import io.md.core.Comparator.Diff;
 import io.md.core.CompareTemplate.DataType;
+import io.md.dao.Recording.RecordingStatus;
 import io.md.dao.Recording.RecordingType;
 
 import java.io.IOException;
@@ -23,6 +24,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -31,6 +33,7 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.client.solrj.SolrClient;
@@ -62,6 +65,7 @@ import io.md.utils.Constants;
 import io.md.utils.CubeObjectMapperProvider;
 import io.md.utils.Utils;
 
+import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
 import com.cube.ws.Config;
@@ -311,7 +315,7 @@ public class ServerUtils {
 
     static public TemplateSet templateRegistriesToTemplateSet(TemplateRegistries registries,
                                                               String customerId, String appId,
-                                                              Optional<String> templateVersion) {
+                                                              String templateSetName, String templateSetLabel) {
         List<TemplateRegistry> templateRegistries = registries.getTemplateRegistryList();
 
         List<CompareTemplateVersioned> compareTemplateVersionedList =
@@ -322,8 +326,8 @@ public class ServerUtils {
                 .collect(Collectors.toList());
 
         // pass null for version if version is empty and timestamp so that new version number is created automatically
-        TemplateSet templateSet = new TemplateSet(templateVersion.orElse(null), customerId, appId, null,
-            compareTemplateVersionedList , Optional.empty());
+        TemplateSet templateSet = new TemplateSet(customerId, appId, null,
+            compareTemplateVersionedList , Optional.empty(), templateSetName, templateSetLabel);
 
         return templateSet;
 
@@ -420,6 +424,35 @@ public class ServerUtils {
         return Optional.ofNullable(value);
     }
 
+
+    public static Recording createRecordingObjectFrom(Recording recording, Optional<String> templateVersion,
+        Optional<String> name, Optional<String> userId, Instant timeStamp, String labelValue, RecordingType type) {
+        String collection = UUID.randomUUID().toString();
+        RecordingBuilder recordingBuilder = new RecordingBuilder(
+            recording.customerId, recording.app, recording.instanceId, collection)
+            .withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateVersion.orElse(recording.templateVersion))
+            .withName(name.orElse(recording.name))
+            .withUserId(userId.orElse(recording.userId)).withTags(recording.tags).withUpdateTimestamp(timeStamp)
+            .withRootRecordingId(recording.rootRecordingId).withLabel(labelValue)
+            .withRecordingType(type).withRunId(timeStamp.toString()).withIgnoreStatic(recording.ignoreStatic);
+        recording.parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
+        recording.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
+        recording.branch.ifPresent(recordingBuilder::withBranch);
+        recording.gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
+        recording.collectionUpdOpSetId.ifPresent(recordingBuilder::withCollectionUpdateOpSetId);
+        recording.templateUpdOpSetId.ifPresent(recordingBuilder::withTemplateUpdateOpSetId);
+        recording.comment.ifPresent(recordingBuilder::withComment);
+        recording.dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
+        try {
+            recording.generatedClassJarPath
+                .ifPresent(io.md.utils.UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
+        } catch (Exception e) {
+
+        }
+        return recordingBuilder.build();
+    }
+
+
     public static Optional<String> serialize(Object obj){
 	    try{
             return Optional.of(CubeObjectMapperProvider.getInstance().writeValueAsString(obj));
@@ -431,6 +464,16 @@ public class ServerUtils {
 
     public static String serializeList(List list){
 	    return serialize(list).orElse("[]");
+    }
+
+    public static String createTemplateSetVersion(String templateSetName, String templateSetLabel) {
+	    return templateSetName + (!templateSetLabel.isEmpty() ? "::" + templateSetLabel : "");
+    }
+
+    public static Pair<String, String> extractTemplateSetNameAndLabel(String templateSetVersion) {
+	    String[] splits = templateSetVersion.split("::");
+	    if (splits.length == 1 ) return Pair.of(templateSetVersion, "");
+	    return Pair.of(splits[0] , splits[1]);
     }
 
 }
