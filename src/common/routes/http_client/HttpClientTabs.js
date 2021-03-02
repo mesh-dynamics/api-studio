@@ -153,8 +153,8 @@ class HttpClientTabs extends Component {
             const parsedUrl = URL.parse(url);
             let apiPath = parsedUrl.pathname ? parsedUrl.pathname : parsedUrl.host;
             let service = parsedUrl.host ? parsedUrl.host : "NA";
+            let defaultParamsType = "showQueryParams";
             const traceDetails = getTraceDetailsForCurrentApp()
-            let {traceKeys, traceIdDetails: {traceId, traceIdForEvent}, spanId, parentSpanId} = traceDetails;
             const customerId = user.customer_name;
             const eventData = httpClientTabUtils.generateEventdata(app, customerId, traceDetails, service, apiPath);
             let headers = [], queryParams = [], formData = [], multipartData=[], rawData = "", rawDataType = "", bodyType = "";
@@ -166,6 +166,7 @@ class HttpClientTabs extends Component {
                     description: "",
                     selected: true,
                 });
+                defaultParamsType = "showHeaders";
             }
             if(parsedCurl.cookieString) {
                 headers.push({
@@ -184,12 +185,16 @@ class HttpClientTabs extends Component {
                     description: "",
                     selected: true,
                 });
+                defaultParamsType = "showQueryParams";
             }
             let contentTypeHeader = _.isObject(parsedCurl.headers) ? getParameterCaseInsensitive(parsedCurl.headers, "content-type") : "";
             if(contentTypeHeader && contentTypeHeader.indexOf("json") > -1) {
                 rawData = parsedCurl.data;
                 rawDataType = "json";
                 bodyType = "rawData";
+                if(rawData){
+                    defaultParamsType = "showBody";
+                }
             } else if(contentTypeHeader && contentTypeHeader.indexOf("application/x-www-form-urlencoded") > -1) {
                 const formParams = parse(parsedCurl.data);
                 for (let eachFormParam in formParams) {
@@ -202,11 +207,28 @@ class HttpClientTabs extends Component {
                     });
                     rawDataType = "";
                 }
+                defaultParamsType = "showBody";
                 bodyType = "formData";
+            } else if(parsedCurl.multipartUploads){
+                for (let eachFormParam in parsedCurl.multipartUploads) {
+                    multipartData.push({
+                        id: uuidv4(),
+                        name: eachFormParam,
+                        value: parsedCurl.multipartUploads[eachFormParam],
+                        description: "",
+                        selected: true,
+                    });
+                    rawDataType = "";
+                }
+                bodyType = "multipartData";
+                defaultParamsType = "showBody";
             } else {
                 rawData = parsedCurl.data;
                 rawDataType = "text";
                 bodyType = "rawData";
+                if(rawData){
+                    defaultParamsType = "showBody";
+                }
             }
             let reqObj = {
                 requestId: "NA",
@@ -221,7 +243,7 @@ class HttpClientTabs extends Component {
                 multipartData: multipartData,
                 rawData: rawData,
                 rawDataType: rawDataType,
-                paramsType: "showQueryParams",
+                paramsType: defaultParamsType,
                 responseStatus: "NA",
                 responseStatusText: "",
                 responseHeaders: "",
