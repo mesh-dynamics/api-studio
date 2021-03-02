@@ -3,7 +3,9 @@
  */
 package io.md.ws;
 
+
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -199,7 +201,8 @@ public class ReplayBasicWS {
 
     private Replay createReplayObject(MultivaluedMap<String, String> formParams, List<Recording> recordings) throws ParameterException {
         // TODO: move all these constant strings to a file so we can easily change them.
-        Recording recording = recordings.get(0);
+        //Recording recording = recordings.get(0);
+        Recording firstRecording = recordings.get(0);
         boolean async = Utils.strToBool(formParams.getFirst(Constants.ASYNC_FIELD)).orElse(false);
         boolean excludePaths = Utils.strToBool(formParams.getFirst(Constants.EXCLUDE_PATH_FIELD)).orElse(false);
         List<String> reqIds = Optional.ofNullable(formParams.get(Constants.REQ_IDS_FIELD))
@@ -220,13 +223,48 @@ public class ReplayBasicWS {
             .orElse(new ArrayList<>());
         Optional<String> testConfigName = Optional.ofNullable(formParams.getFirst(Constants.TEST_CONFIG_NAME_FIELD));
 
-        Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst(Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD)).or(()->recording.dynamicInjectionConfigVersion);
+        Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams
+            .getFirst(Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD)).or(()->firstRecording.dynamicInjectionConfigVersion);
         Optional<String> staticInjectionMap = Optional.ofNullable(formParams.getFirst(Constants.STATIC_INJECTION_MAP_FIELD));
 
         // Request transformations - for injecting tokens and such
         Optional<String> xfms = Optional.ofNullable(formParams.getFirst(Constants.TRANSFORMS_FIELD));
-        boolean tracePropagation = Utils.strToBool(formParams.getFirst(Constants.TRACE_PROPAGATION)).orElseGet(()-> dataStore.getAppConfiguration(recording.customerId, recording.app).map(cfg->cfg.tracer).isPresent());
-        boolean storeToDatastore = Utils.strToBool(formParams.getFirst(Constants.STORE_TO_DATASTORE)).orElse(false);
+        boolean tracePropagation = Utils.strToBool(formParams.getFirst(Constants.TRACE_PROPAGATION))
+            .orElseGet(()-> dataStore.getAppConfiguration(firstRecording.customerId,
+                firstRecording.app).map(cfg->cfg.tracer).isPresent());
+        boolean storeToDatastore = Utils.strToBool(formParams.getFirst(Constants.STORE_TO_DATASTORE))
+            .orElse(false);
+
+        String templateSetName = Optional.ofNullable(formParams.getFirst(Constants.TEMPLATE_SET_NAME)).orElseThrow(() ->
+            new ParameterException("Template Set Name not specified"));
+        String templateSetLabel = Optional.ofNullable(formParams.getFirst(Constants.TEMPLATE_SET_LABEL))
+            .or(() -> dataStore.getLatestTemplateSetLabel(recordings.get(0).customerId,
+                recordings.get(0).app, templateSetName)).orElseThrow(() -> new ParameterException("Unable to assign template set label for replay"));
+
+        String templateSetVersion = io.md.utils.Utils.constructTemplateSetVersion(templateSetName, Optional.of(templateSetLabel));
+
+        List<Recording> updatedRecordings = new ArrayList<>();
+
+        try {
+            recordings.forEach(UtilException.rethrowConsumer(recordingPrior -> {
+                Recording updatedRecording;
+                if (!recordingPrior.templateVersion.equals(templateSetVersion)) {
+                    updatedRecording = dataStore
+                        .copyRecording(recordingPrior.id, Optional.of(recordingPrior.name)
+                            , Optional.of(LocalDateTime.now()
+                                .format(io.md.utils.Utils.templateLabelFormatter))
+                            , Optional.of(templateSetVersion), userId, recordingPrior.recordingType,
+                            Optional.empty());
+                } else {
+                    updatedRecording = recordingPrior;
+                }
+                updatedRecordings.add(updatedRecording);
+            }));
+        } catch (Exception e) {
+            throw new ParameterException("Unable to update recording , " + e.getMessage());
+        }
+
+        Recording updatedRecordingFirst = updatedRecordings.get(0);
 
         if (userId == null) {
             throw new ParameterException("userId Not Specified");
@@ -241,22 +279,24 @@ public class ReplayBasicWS {
         }
 
         ReplayBuilder replayBuilder = new ReplayBuilder(endpoint,
-            recording.customerId,
-            recording.app, instanceId, recordings.stream().map(r->r.collection).collect(Collectors.toList()), userId)
-            .withTemplateSetVersion(recording.templateVersion)
+            updatedRecordingFirst.customerId,
+            updatedRecordingFirst.app, instanceId, updatedRecordings.stream().map(r->r.collection).collect(Collectors.toList()), userId)
+            .withTemplateSetVersion(templateSetVersion)
             .withReqIds(reqIds).withAsync(async).withPaths(paths)
             .withExcludePaths(excludePaths)
             .withIntermediateServices(intermediateServices)
             .withReplayType((replayType != null) ? Utils.valueOf(ReplayTypeEnum.class, replayType)
                 .orElse(ReplayTypeEnum.HTTP) : ReplayTypeEnum.HTTP)
-            .withMockServices(mockServices);
-        if(recordings.size()==1){
-            replayBuilder.withRecordingId(recording.id);
-            replayBuilder.withGoldenName(recording.name);
+            .withMockServices(mockServices)
+            .withTemplateSetName(templateSetName)
+            .withTemplateSetLabel(templateSetLabel);;
+        if(updatedRecordings.size()==1){
+            replayBuilder.withRecordingId(updatedRecordingFirst.id);
+            replayBuilder.withGoldenName(updatedRecordingFirst.name);
         }else{
             //Name of replay golden is concatenated goldenName of all recordings.
             // For getReplay query purpose
-            String goldenNameMulti = recordings.stream().map(r->r.name).collect(Collectors.joining("-"));
+            String goldenNameMulti = updatedRecordings.stream().map(r->r.name).collect(Collectors.joining("-"));
             replayBuilder.withGoldenName(goldenNameMulti);
         }
 
@@ -271,8 +311,8 @@ public class ReplayBasicWS {
         replayBuilder.withStoreToDatastore(storeToDatastore);
 
         try {
-            if (recordings.size() == 1) {
-                recording.generatedClassJarPath
+            if (updatedRecordings.size() == 1) {
+                updatedRecordingFirst.generatedClassJarPath
                     .ifPresent(UtilException.rethrowConsumer(replayBuilder::withGeneratedClassJar));
             }
         } catch (Exception ex) {
