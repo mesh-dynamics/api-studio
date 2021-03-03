@@ -46,15 +46,15 @@ public class DynamicInjectionConfigGenerator {
     private final HashMap<String, HTTPMethodType> requestMatchMap = new HashMap<>();
 
     // Strings not considered for config generation
-    private static final HashSet<String> excludedStrings = new HashSet<>();
-    private static final HashSet<String> restrictedHeadersAdditional = new HashSet<>();
-    private static final HashSet<String> restrictedBodyFields = new HashSet<>();
+    private static final Set<String> excludedStrings = new HashSet<>();
+    private static final Set<String> restrictedHeadersAdditional = new HashSet<>();
+    private static final Set<String> restictedFields = new HashSet<>();
 
     static{
         excludedStrings.addAll((Arrays
             .asList("true", "false", "0", "1", "", "\"\"", "null", "none", "en_us", "application/json")));
         restrictedHeadersAdditional.addAll(Arrays.asList("content-type"));
-        restrictedBodyFields.addAll(Arrays.asList("status"));
+        restictedFields.addAll(Arrays.asList("status"));
     }
 
 
@@ -128,7 +128,7 @@ public class DynamicInjectionConfigGenerator {
 
     }
 
-    private ExtractionConfig getFirstPostOrElseFirstGetExtConfig(LinkedHashSet<ExtractionConfig> extractionConfigs){
+    private ExtractionConfig getFirstPostOrElseFirstGetExtConfig(Set<ExtractionConfig> extractionConfigs){
         for (ExtractionConfig extractionConfig : extractionConfigs) {
             if (extractionConfig.method == HTTPMethodType.POST){
                 return extractionConfig;
@@ -141,29 +141,19 @@ public class DynamicInjectionConfigGenerator {
     private Boolean isRestrictedJsonPath(String jsonPath) {
         String[] subPaths = jsonPath.split("/");
         int len = subPaths.length;
-        if (len > 1) {
-            if (subPaths[len - 2].equals("hdrs")) {
-                String headerField = subPaths[len - 1];
-                if (!Utils.ALLOWED_HEADERS.test(headerField) || restrictedHeadersAdditional
-                    .contains(headerField) || headerField.startsWith(":")) {
-                    return true;
-                }
+        if (len > 1 && subPaths[len - 2].equals("hdrs")) {
+            String headerField = subPaths[len - 1];
+            if (!Utils.ALLOWED_HEADERS.test(headerField) || restrictedHeadersAdditional
+                .contains(headerField) || headerField.startsWith(":")) {
+                return true;
             }
-            else if(subPaths[len - 2].equals("body")){
-                String bodyField = subPaths[len - 1];
-
-                if (restrictedBodyFields.contains(bodyField) || bodyField.startsWith(":")){
-                    return true;
-                }
-            }
-
         }
         return false;
     }
 
     private void handleJsonNode(String apiPath, JsonNode jsonNode, String jsonPath,
         HTTPMethodType method, EventType eventType) {
-        if (isRestrictedJsonPath(jsonPath)){
+        if (restictedFields.contains(jsonPath) || isRestrictedJsonPath(jsonPath)){
             return;
         }
         if (jsonNode.isObject()) {
