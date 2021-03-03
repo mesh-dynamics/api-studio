@@ -60,9 +60,9 @@ const setupApplicationConfig = () => {
     }
 
     // If proxy port is not already set
-    if (!proxyPort) {
-      logger.info("Setting default port for proxy server to listen at:", appProxyPort);
-      store.set("proxyPort", appProxyPort);
+    if (!appProxyPort) {
+      logger.info("Setting default port for proxy server to listen at:", proxyPort);
+      store.set("proxyPort", proxyPort);
     }
 
     // If replay driver port is not already set
