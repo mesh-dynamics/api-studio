@@ -134,7 +134,7 @@ const updateApplicationConfig = (config) => {
 
     store.set("proxyPort", Number(proxyPort));
 
-    logger.info("Updating application config proxyPort to :", gRPCProxyPort);
+    logger.info("Updating application config gRPCProxyPort to :", gRPCProxyPort);
 
     store.set("gRPCProxyPort", Number(gRPCProxyPort));
     
