@@ -1161,6 +1161,69 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 })
             }
         }
+    
+        case httpClientConstants.UPDATE_TAB_WITH_NEW_DATA: {
+            let { tabs } = state;
+            const tabIndex = tabs.findIndex(tab => tab.id === data.tabId);
+            if (tabIndex < 0) return state;
+            tabs[tabIndex] = {...tabs[tabIndex]};
+            const {reqData, collectionId, recordingId} = data;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab.requestId = reqData.newReqId;
+                        eachTab.collectionIdAddedFromClient = collectionId;
+                        eachTab.traceIdAddedFromClient = reqData.newTraceId;
+                        eachTab.recordingIdAddedFromClient = recordingId;
+                        eachTab.eventData[0].reqId = reqData.newReqId;
+                        eachTab.eventData[0].traceId = reqData.newTraceId;
+                        eachTab.eventData[0].collection = collectionId;
+                        eachTab.eventData[1].reqId = reqData.newReqId;
+                        eachTab.eventData[1].traceId = reqData.newTraceId;
+                        eachTab.eventData[1].collection = reqData.collec;
+                    
+                        return {
+                            ...eachTab
+                        }
+                    }
+                    return eachTab;
+                })
+            }
+        }
+
+        case httpClientConstants.UPDATE_OUTGOING_TAB_WITH_NEW_DATA: {
+            let { tabs } = state;
+            const tabIndex = tabs.findIndex(tab => tab.id === data.tabId);
+            if (tabIndex < 0) return state;
+            tabs[tabIndex] = {...tabs[tabIndex]};
+            const {reqData, collectionId, recordingId} = data;
+            return {
+                ...state,
+                tabs: tabs.map(eachTab => {
+                    if (eachTab.id === data.tabId) {
+                        eachTab.outgoingRequests.map((eachOutgoingTab) => {
+                            eachOutgoingTab.requestId = reqData.newReqId;
+                            eachOutgoingTab.collectionIdAddedFromClient = collectionId;
+                            eachOutgoingTab.traceIdAddedFromClient = reqData.newTraceId;
+                            eachOutgoingTab.recordingIdAddedFromClient = recordingId;
+                            eachOutgoingTab.eventData[0].reqId = reqData.newReqId;
+                            eachOutgoingTab.eventData[0].traceId = reqData.newTraceId;
+                            eachOutgoingTab.eventData[0].collection = collectionId;
+                            eachOutgoingTab.eventData[1].reqId = reqData.newReqId;
+                            eachOutgoingTab.eventData[1].traceId = reqData.newTraceId;
+                            eachOutgoingTab.eventData[1].collection = reqData.collec;
+                        
+                            return {
+                                ...eachOutgoingTab
+                            }
+                        })
+                    }
+                    return {...eachTab};
+                })
+            }
+        }
+
         default:
             return state;
     }

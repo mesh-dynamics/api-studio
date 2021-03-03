@@ -1,6 +1,7 @@
 const setupProxy = require('./core/proxy/server');
 const { setupListeners } = require('./core/listeners');
 const { setupApplicationConfig } = require('./core/fs-utils');
+const setupReplayDriver = require('./core/replay-driver');
 const setupGrpcH2Server = require('./core/proxy/grpc-h2-server');
 /**
  * This will setup the application config into fs for persistence.
@@ -31,6 +32,10 @@ const mockContext = {
     replayCollection: 'sample-replay-collection'
 };
 
+const replayContext = {
+    // TODO: This will most likely be required 
+};
+
 /**
  * Set up auto update, ipc and main window listeners
  */
@@ -41,6 +46,11 @@ setupListeners(mockContext, user);
  */
 setupProxy(mockContext, user);
 
+/**
+ * Setup replay driver
+ */
+setupReplayDriver(replayContext);
+
 // setup gRPC http2 server proxy
 setupGrpcH2Server(mockContext, user);
 
@@ -48,8 +58,7 @@ setupGrpcH2Server(mockContext, user);
 // const replayContext = {
 //     port: 8090,
 // };
-// const replayDriver = require('./electron/replay-driver');
-// replayDriver.setupReplayDriver(replayContext); Recording-118804835
+//  Recording-118804835
 // name: "sample-config", 
 //         serviceConfigs: [
 //             { service: "sampleService1", url: "http://localhost:8091", isMocked: false },

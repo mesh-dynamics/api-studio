@@ -6,6 +6,7 @@ on:
       - develop
       - master
       - staging
+      - test
 
   release:
     types: [published]
@@ -48,8 +49,10 @@ jobs:
           NEXTVERSION="${version}-${BRANCH}.${TIMESTAMP}.${COMMIT}"
           echo $NEXTVERSION
           npm install
-          brew install yq@3
+          brew install yq
           jq --arg version "${NEXTVERSION}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
+          yq eval '.extraResources += ["./bin/OpenJDK14U-jre_x64_mac_openj9_14.0.2_12_openj9-0.21.0.tar.gz"]' -i electron-builder.$BRANCH.yml
+          cat electron-builder.$BRANCH.yml
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.$BRANCH.yml --publish always
       - name: Build for macOS(release)
@@ -65,8 +68,9 @@ jobs:
           echo $version
           npm install
           export RELEASE_TYPE=customer
-          brew install yq@3
+          brew install yq
           jq --arg version "${version}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
+          yq eval '.extraResources += ["./bin/OpenJDK14U-jre_x64_mac_openj9_14.0.2_12_openj9-0.21.0.tar.gz"]' -i electron-builder.yml
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.yml --publish always
       - name: Build for macOS(manual)
@@ -82,8 +86,9 @@ jobs:
           echo $version
           npm install
           export RELEASE_TYPE=customer
-          brew install yq@3
+          brew install yq
           jq --arg version "${version}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
+          yq eval '.extraResources += ["./bin/OpenJDK14U-jre_x64_mac_openj9_14.0.2_12_openj9-0.21.0.tar.gz"]' -i electron-builder.yml
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -m --config electron-builder.customer-fitch.yml --publish always
 
@@ -94,8 +99,6 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - run: git fetch --prune --unshallow --tags
-      - name: yq - portable yaml processor
-        uses: mikefarah/yq@3.4.1
       - name: Build for linux
         if: ${{ github.event_name == 'push'}}
         env:
@@ -103,6 +106,8 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
         run: |
+          sudo wget https://github.com/mikefarah/yq/releases/download/v4.6.0/yq_linux_386 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
           version=$(git describe --tags `git rev-list --tags --max-count=1`)
           version=$(echo ${version} | awk -F. -v OFS=. '{$NF++;print}')
           TIMESTAMP=$(date "+%Y%m%d%H%M%S")
@@ -114,6 +119,7 @@ jobs:
           sudo apt-get install wine64 -y
           npm install
           jq --arg version "${NEXTVERSION}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
+          /usr/bin/yq eval '.extraResources += ["./bin/OpenJDK14U-jre_x64_linux_openj9_14.0.2_12_openj9-0.21.0.tar.gz"]' -i electron-builder.$BRANCH.yml
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -l --config electron-builder.$BRANCH.yml --publish always
 
@@ -124,10 +130,13 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION}}
         run: |
+          sudo wget https://github.com/mikefarah/yq/releases/download/v4.6.0/yq_linux_386 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
           version=$(git describe --tags `git rev-list --tags --max-count=1`)
           npm install
           export RELEASE_TYPE=customer
           jq --arg version "${version}" '.version = $version' package.json > "tmp" && mv "tmp" package.json
+          /usr/bin/yq eval '.extraResources += ["./bin/OpenJDK14U-jre_x64_linux_openj9_14.0.2_12_openj9-0.21.0.tar.gz"]' -i electron-builder.yml
           npx webpack --mode production --display minimal --config webpack.electron.config.js
           npx electron-builder build -l --config electron-builder.yml --publish always
 
@@ -169,7 +178,7 @@ jobs:
           $CONTENT = Get-Content -Path .\tmp.txt
           Remove-Item -path .\package.json
           Add-Content -Path .\package.json -Value $CONTENT
-          yq w .\electron-builder.$BRANCH.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" > ebtmp.txt
+          yq w .\electron-builder.$BRANCH.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" | yq w - extraResources[3] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip" > ebtmp.txt
           $BUILDER_CONTENT = Get-Content -Path .\ebtmp.txt
           echo $BUILDER_CONTENT
           Remove-Item -path .\electron-builder.$BRANCH.yml
@@ -196,7 +205,7 @@ jobs:
           Remove-Item -path .\package.json
           Add-Content -Path .\package.json -Value $CONTENT
           $Env:RELEASE_TYPE = "customer"
-          yq w .\electron-builder.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" > ebtmp.txt
+          yq w .\electron-builder.yml win.certificateFile md-cert.pfx |  yq w - win.certificatePassword "${{ secrets.WIN_CSC_KEY_PASSWORD }}" | yq w - extraResources[3] "./bin/OpenJDK14U-jre_x64_windows_openj9_14.0.2_12_openj9-0.21.0.zip"> ebtmp.txt
           $BUILDER_CONTENT = Get-Content -Path .\ebtmp.txt
           echo $BUILDER_CONTENT
           Remove-Item -path .\electron-builder.yml

@@ -156,8 +156,19 @@ const setupListeners = (mockContext, user, replayContext) => {
     });
 
     app.on('window-all-closed', async function () {
+        const REPLAY_DRIVER_PORT = 9992; // TODO: Get from config
+
         try {
             const { proxyPort } = config;
+            
+            const replayDriverPList = await find('port', REPLAY_DRIVER_PORT);
+
+            logger.info(`Processes running on port ${REPLAY_DRIVER_PORT} :`, replayDriverPList);
+
+            replayDriverPList.map((item) => {
+                logger.info('Killing Process...', item.pid);
+                process.kill(item.pid);
+            });
 
             const proxyPortList = await find('port', proxyPort);
             
