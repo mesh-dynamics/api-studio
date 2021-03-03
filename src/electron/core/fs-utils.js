@@ -127,14 +127,18 @@ const getApplicationConfig = () => {
 const updateApplicationConfig = (config) => {
     const { domain, proxyPort, gRPCProxyPort } = config;
     
-    logger.info("Updating application config to store", domain);
-
-    // TODO: add try catch for default values during save
+    logger.info("Updating application config domain to :", domain);
     store.set("domain", domain);
-    store.set("proxyPort", proxyPort);
-    store.set("gRPCProxyPort", gRPCProxyPort);
 
-    logger.info("Updated store with latest config");
+    logger.info("Updating application config proxyPort to :", proxyPort);
+
+    store.set("proxyPort", Number(proxyPort));
+
+    logger.info("Updating application config proxyPort to :", gRPCProxyPort);
+
+    store.set("gRPCProxyPort", Number(gRPCProxyPort));
+    
+    logger.info("Config updated with latest input values");
 };
 
 module.exports = {
