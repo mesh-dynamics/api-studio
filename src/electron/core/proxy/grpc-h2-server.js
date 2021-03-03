@@ -33,8 +33,16 @@ const setupGrpcH2Server = (mockContext, user) => {
 
     // 'end' event on request
     req.on("end", () => {
+      const reqBodyBuffer = Buffer.concat(body);
+      
       const path = req.url;
-      logger.info("HTTP2 request path: ", path);
+      logger.info("Received HTTP2 request at proxy: ", 
+      { 
+        "method": req.method, 
+        "path": path, 
+        "headers": req.headers,
+        "body (base64 encoded)": reqBodyBuffer.toString("base64"),
+      })
 
       const pathParts = path.split("/");
       const grpcMethod = pathParts.pop();
@@ -63,9 +71,7 @@ const setupGrpcH2Server = (mockContext, user) => {
       logger.info("Selected service config object :", serviceConfigObject);
 
       const isLive = serviceConfigObject && !serviceConfigObject.isMocked;
-
-      const reqBodyBuffer = Buffer.concat(body);
-      logger.info({ reqBodyBufferStr: reqBodyBuffer.toString("base64") });     
+     
       const service = matchedService;
 
       // set trace and other headers
