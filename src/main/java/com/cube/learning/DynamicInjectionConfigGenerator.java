@@ -9,6 +9,7 @@ import io.md.injection.DynamicInjectionConfig.InjectionMeta.HTTPMethodType;
 import io.md.injection.DynamicInjector;
 import com.cube.learning.InjectionExtractionMeta.ExtractionConfig;
 import com.cube.learning.InjectionExtractionMeta.InjectionConfig;
+import io.md.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,8 +46,17 @@ public class DynamicInjectionConfigGenerator {
     private final HashMap<String, HTTPMethodType> requestMatchMap = new HashMap<>();
 
     // Strings not considered for config generation
-    List<String> excludedStrings = Arrays
-        .asList("true", "false", "0", "1", "", "\"\"", "null", "none", "en_us");
+    private static final HashSet<String> excludedStrings = new HashSet<>();
+    private static final HashSet<String> restrictedHeadersAdditional = new HashSet<>();
+    private static final HashSet<String> restrictedBodyFields = new HashSet<>();
+
+    static{
+        excludedStrings.addAll((Arrays
+            .asList("true", "false", "0", "1", "", "\"\"", "null", "none", "en_us", "application/json")));
+        restrictedHeadersAdditional.addAll(Arrays.asList("content-type"));
+        restrictedBodyFields.addAll(Arrays.asList("status"));
+    }
+
 
     private ExtractionConfig getExtractionConfigInstance(String apiPath, String jsonPath,
         HTTPMethodType method) {
@@ -71,6 +81,13 @@ public class DynamicInjectionConfigGenerator {
             injectionConfig);
         return metaToObjectMap.computeIfAbsent(newMeta, k -> newMeta);
 
+    }
+
+    private void deleteMetaInstance(ExtractionConfig extractionConfig,
+        InjectionConfig injectionConfig){
+        InjectionExtractionMeta toDeleteMeta = new InjectionExtractionMeta(extractionConfig,
+            injectionConfig);
+        metaToObjectMap.remove(toDeleteMeta);
     }
 
     private Optional<LinkedHashSet<ExtractionConfig>> getExtractionSetForValue(String value) {
@@ -111,12 +128,48 @@ public class DynamicInjectionConfigGenerator {
 
     }
 
-    private void handleJsonNode(String apiPath, JsonNode jsonNode, String keyPath,
+    private ExtractionConfig getFirstPostOrElseFirstGetExtConfig(LinkedHashSet<ExtractionConfig> extractionConfigs){
+        for (ExtractionConfig extractionConfig : extractionConfigs) {
+            if (extractionConfig.method == HTTPMethodType.POST){
+                return extractionConfig;
+            }
+        }
+        // Assumes the list is non-empty
+        return extractionConfigs.iterator().next();
+    }
+
+    private Boolean isRestrictedJsonPath(String jsonPath) {
+        String[] subPaths = jsonPath.split("/");
+        int len = subPaths.length;
+        if (len > 1) {
+            if (subPaths[len - 2].equals("hdrs")) {
+                String headerField = subPaths[len - 1];
+                if (!Utils.ALLOWED_HEADERS.test(headerField) || restrictedHeadersAdditional
+                    .contains(headerField) || headerField.startsWith(":")) {
+                    return true;
+                }
+            }
+            else if(subPaths[len - 2].equals("body")){
+                String bodyField = subPaths[len - 1];
+
+                if (restrictedBodyFields.contains(bodyField) || bodyField.startsWith(":")){
+                    return true;
+                }
+            }
+
+        }
+        return false;
+    }
+
+    private void handleJsonNode(String apiPath, JsonNode jsonNode, String jsonPath,
         HTTPMethodType method, EventType eventType) {
+        if (isRestrictedJsonPath(jsonPath)){
+            return;
+        }
         if (jsonNode.isObject()) {
-            handleJSONObject(apiPath, jsonNode, keyPath, method, eventType);
+            handleJSONObject(apiPath, jsonNode, jsonPath, method, eventType);
         } else if (jsonNode.isArray()) {
-            handleJSONArray(apiPath, jsonNode, keyPath, method, eventType);
+            handleJSONArray(apiPath, jsonNode, jsonPath, method, eventType);
         } else if (jsonNode.isValueNode()) {
             String stringValue = jsonNode.asText();
             if (excludedStrings.contains(stringValue.toLowerCase())) {
@@ -138,7 +191,7 @@ public class DynamicInjectionConfigGenerator {
                 }).ifPresent(extConfigList -> {
                     ExtractionConfig extConfig = getExtractionConfigInstance(
                         apiPath,
-                        keyPath,
+                        jsonPath,
                         method);
                     extConfig.instanceCount++;
                     extConfig.values.add(stringValue);  // Set, so duplication is taken care of
@@ -149,7 +202,7 @@ public class DynamicInjectionConfigGenerator {
                 // already spotted in requests
                 String modifiedApiPath = apiPath;
                 valuesAlreadySeenInRequestSet.add(stringValue);
-                if (keyPath.contains("pathSegments")) {
+                if (jsonPath.contains("pathSegments")) {
                     modifiedApiPath = apiPath.replace(stringValue, ".+");
                 }
 
@@ -159,10 +212,10 @@ public class DynamicInjectionConfigGenerator {
                     stringValue);
 
                 // If no extraction set exists for the present injection, create a new set with
-                // the first extraction in the set for the present value (which is also the place of value's first appearance).
-                // Else, check if the first extraction config already present in the existing set.
-                // If this config already exists, then just add this new value in the values list of inj-ext meta.
-                // Else, create a new inj-ext meta instance and initialize the equivalence set size based on
+                // the all extractions for the present value. Else take overlap of existing and new set.
+                // If overlap is non-empty, check if previous best ext candidate and new candidates are
+                // different. If they are different, remove injExt meta of prev ext. candidate.
+                // Finally, create a new inj-ext meta instance and initialize the equivalence set size based on
                 // the present situation. *** This is the only time a new meta instance will get created ***
                 // Post this filtering, we do eventually retain multiple extractions for an injection
                 // because it is possible that 2 different instances for the same injection are fed from 2 different extractions.
@@ -173,7 +226,7 @@ public class DynamicInjectionConfigGenerator {
                 extractionConfigsForPresentValue.ifPresent(esForValue -> {
 
                     InjectionConfig injectionConfig = getInjectionConfigInstance(
-                        finalApiPath, keyPath,
+                        finalApiPath, jsonPath,
                         method);
 
                     if (injectionConfig.values.contains(stringValue)) {
@@ -187,28 +240,51 @@ public class DynamicInjectionConfigGenerator {
                     Optional<LinkedHashSet<ExtractionConfig>> existingSet = getExtractionSetForInjection(
                         injectionConfig);
 
-                    // Use only the first extraction, keeping others as its equivalence set candidates
-                    // and record their count
-                    ExtractionConfig firstExtractionConfig = esForValue.iterator().next();
-
                     existingSet
                         .or(() -> Optional.of(createExtractionSetForInjection(injectionConfig)))
                         .ifPresent(existingSetForInj -> {
 
+                            ExtractionConfig bestExtractionConfigForValue = getFirstPostOrElseFirstGetExtConfig(
+                                esForValue);
+                            Integer equivalenceSetSize = esForValue.size();
+
+                            // Look for overlap between existing configs and configs for value;
+                            LinkedHashSet<ExtractionConfig> overlappingExtractionConfigsForInj = new LinkedHashSet<>();
+                            overlappingExtractionConfigsForInj.addAll(existingSetForInj);
+                            overlappingExtractionConfigsForInj.retainAll(esForValue);
+
+
+                            if (overlappingExtractionConfigsForInj.size() != 0) {
+                                // Possible that the some of the earlier chosen extractions were a fluke match
+                                // Check if the previous and new candidates from filtered list are same. If different
+                                // remove the injectionExtractionMeta belonging to previous candidate.
+                                // Addition for the new one will anyway happen in subsequent steps
+                                ExtractionConfig previousBestExtraction = getFirstPostOrElseFirstGetExtConfig(
+                                    existingSetForInj);
+                                bestExtractionConfigForValue = getFirstPostOrElseFirstGetExtConfig(
+                                    overlappingExtractionConfigsForInj);
+                                if (previousBestExtraction != bestExtractionConfigForValue) {
+                                    deleteMetaInstance(previousBestExtraction, injectionConfig);
+                                }
+                                existingSetForInj = overlappingExtractionConfigsForInj;
+                                equivalenceSetSize = existingSetForInj.size();
+
+                            } else {
+                                // This case may be hit in 2 cases:
+                                // a. This inj path is seen for first time
+                                // b. The value being injected in this path comes from a different
+                                //    source altogether in this instance. In this case, just add
+                                //    new ones to the existing set so that we don't lose out on
+                                //    the info in future of which ext config is more likely when another
+                                //    new value is found in the injection path.
+                                existingSetForInj.addAll(esForValue);
+                            }
+
                             InjectionExtractionMeta injectionExtractionMeta = getMetaInstance(
-                                firstExtractionConfig,
+                                bestExtractionConfigForValue,
                                 injectionConfig);
 
-                            if (!existingSetForInj.contains(firstExtractionConfig)) {
-                                existingSetForInj.add(firstExtractionConfig);
-
-                                // Only if this extraction config is seen for the first time for this
-                                // injection, update the equivalence set size.
-
-                                // All other extractions for the same value contribute to the equivalence set
-                                injectionExtractionMeta.extractionEquivalenceSetSize = esForValue
-                                    .size();
-                            }
+                            injectionExtractionMeta.extractionEquivalenceSetSize = equivalenceSetSize;
 
                             // Count for this pair
                             injectionExtractionMeta.instanceCount++;
