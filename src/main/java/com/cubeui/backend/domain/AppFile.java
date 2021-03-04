@@ -16,9 +16,6 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
-/**TODO
- * Delete in next Release
- */
 @Entity
 @Table(name="app_files")
 @Data

@@ -1,18 +1,18 @@
 package com.cubeui.backend.domain.DTO.Response;
 
-import com.cubeui.backend.domain.App;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class AppFileResponse {
   String fileName;
-  String filePath;
-  App app;
-  Object configuration;
-  /**TODO
-   *Remove in next release, once UI is updated for all customers
-   */
+  String fileType;
   byte[] data;
+  String appName;
+
 }
