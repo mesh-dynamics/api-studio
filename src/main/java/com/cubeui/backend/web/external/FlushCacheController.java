@@ -19,8 +19,11 @@ public class FlushCacheController {
 
   @PostMapping("/flushall")
   public ResponseEntity cacheFlushAll(HttpServletRequest request, @RequestBody Optional<String> postBody) {
-    cubeServerService.fetchPostResponse(request, postBody, "/cs/cache/flushall");
-    cubeServerService.fetchPostResponse(request,postBody, "/rs/cache/flushall");
-    return cubeServerService.fetchPostResponse(request,postBody,"/as/cache/flushall");
+    return cubeServerService.fetchPostResponse(request,postBody,"/cs/cache/flushall");
+  }
+
+  @PostMapping("/flushInMem")
+  public ResponseEntity flushInMemoryCache(HttpServletRequest request, @RequestBody Optional<String> postBody) {
+    return cubeServerService.fetchPostResponse(request, postBody, "/cs/cache/flushInMem");
   }
 }
