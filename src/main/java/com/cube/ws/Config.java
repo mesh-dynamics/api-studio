@@ -147,7 +147,7 @@ public class Config {
             //poolConfig.setTestOnReturn(true);
             jedisPool = new JedisPool(poolConfig , redisHost, redisPort , 2000,  redisPassword);
             REDIS_DELETE_TTL = Integer.parseInt(fromEnvOrProperties("redis_delete_ttl"
-                , "20"));
+                , "5"));
 	        Runnable subscribeThread = () -> {
 		        while(true){
 			        try{
