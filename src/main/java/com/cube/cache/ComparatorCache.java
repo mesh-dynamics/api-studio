@@ -235,21 +235,26 @@ public class ComparatorCache implements MDCache {
     }
 
     public void publishInvalidateKey(TemplateKey key){
+        //Template Cache is redis based cache. should be done only at 1 instance.
+        templateCache.invalidateKey(key);
+        //comparatorCache is inMemory Cache and all the cubeio instances needs to cleanup
         config.pubSubMgr.publish(PubSubContext.IN_MEM_CACHE , Map.of(io.md.cache.Constants.CACHE_NAME , CACHE_NAME ,  Constants.TEMPLATE_KEY_FIELD , key));
     }
 
     public void publishInvalidateAll(){
+        //Template Cache is redis based cache. should be done only at 1 instance.
+        templateCache.invalidateAll();
+        //comparatorCache is inMemory Cache and all the cubeio instances needs to cleanup
         config.pubSubMgr.publish(PubSubContext.IN_MEM_CACHE , Map.of(io.md.cache.Constants.CACHE_NAME , CACHE_NAME));
     }
 
     private void invalidateKey(TemplateKey key) {
         comparatorCache.invalidate(key);
-        templateCache.invalidateKey(key);
+
     }
 
     private void invalidateAll() {
         comparatorCache.invalidateAll();
-        templateCache.invalidateAll();
     }
 
     private EventType getDefaultEventType(TemplateKey key) throws TemplateNotFoundException {
