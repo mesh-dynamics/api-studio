@@ -386,15 +386,10 @@ public class ServerUtils {
 		return pathRules;
     }
 
-  public static Response flushAll(Config config) {
-    config.rrstore.invalidateCache();
-    try (Jedis jedis = config.jedisPool.getResource()) {
-      jedis.flushAll();
-      return Response.ok().build();
-    } catch (Exception e) {
-      return Response.serverError().entity("Exception occured while flushing :: " + e.getMessage()).build();
+    public static Response flushAll(Config config) {
+        config.rrstore.invalidateCache();
+        return Response.ok().build();
     }
-  }
 
     public static Map solrHealthCheck (SolrClient solr) {
 	    try {

@@ -629,12 +629,6 @@ public class ReplayWS extends ReplayBasicWS {
         return resp;
     }
 
-    @POST
-    @Path("cache/flushall")
-    public Response cacheFlushAll() {
-        return ServerUtils.flushAll(config);
-    }
-
     @Override
     protected CompletableFuture<Void> beforeReplay(@Context HttpHeaders headers,
                                                    MultivaluedMap<String, String> formParams, List<Recording> recordings,
