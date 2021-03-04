@@ -2060,9 +2060,9 @@ public class CubeStore {
     }
 
     @POST
-    @Path("cache/inMem")
+    @Path("cache/flushInMem")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response cacheClean(Map metadata) {
+    public Response cacheFlushInMemory(Map metadata) {
         long receivedInstances =  config.pubSubMgr.publish(PubSubContext.IN_MEM_CACHE , metadata);
         return Response.ok(Map.of("receivedInstances" , receivedInstances) , MediaType.APPLICATION_JSON).build();
     }
