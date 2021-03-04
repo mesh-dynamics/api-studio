@@ -73,30 +73,6 @@ const getCurrentMockConfig = (mockConfigList, selectedMockConfig) => {
     return foundMockConfig ? JSON.parse(foundMockConfig.value) : {};
 };
 
-const generateApiPath = (parsedUrl) => {
-    let generatedApiPath = parsedUrl.pathname;
-    let isModified = false;
-    // Handle if 'file' protocol is detected
-    if(parsedUrl.protocol.includes('file')) {
-        // clean up the double slashes in between and starting slash
-        generatedApiPath = parsedUrl.pathname.split('/').filter(Boolean).slice(2).join('/'); 
-        isModified = true;
-    }
-
-    // Handle if no protocol is detected // todo
-    if(!parsedUrl.protocol) {
-        // clean up the double slashes in between and starting slash
-        generatedApiPath = parsedUrl.pathname.split('/').filter(Boolean).join('/');
-        isModified = true;
-    }
-
-    if(parsedUrl.pathname.endsWith("/") && isModified) {
-        // Append trailing slash
-        generatedApiPath = `${generatedApiPath}/`;
-    }
-
-    return parsedUrl.pathname ? generatedApiPath : parsedUrl.host;
-};
 
 const getApiPathFromRequestEvent = (requestEvent) => {
 
@@ -796,7 +772,6 @@ export function getHostName(url) {
 export { 
     generateRunId,
     getStatusColor,
-    generateApiPath,
     getCurrentMockConfig,
     getTraceTableTestReqData,
     getApiPathFromRequestEvent,

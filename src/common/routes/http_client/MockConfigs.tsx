@@ -333,7 +333,7 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
                             <Col xs={1}></Col>
                         </Row>
                         {(selectedEditMockConfig.serviceConfigs || [])
-                            .map(({service, url, isMocked, servicePrefix}, index) => (
+                        .map(({service, url, isMocked, servicePrefix}, index) => (
                                     <Row className="show-grid margin-top-10" key={index}>
                                         <Col xs={3}>
                                             <input value={service} onChange={(e) => this.handleServiceChange(e, index)} className="form-control"/>
