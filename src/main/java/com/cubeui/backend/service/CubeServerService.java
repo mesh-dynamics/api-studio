@@ -124,7 +124,7 @@ public class CubeServerService {
         return getData(response, path, Recording.class);
     }
 
-    public List<AppResponse> getAppFileResponse(ResponseEntity<byte[]> responseEntity, List<App> apps) {
+    public List<AppResponse> getAppResponse(ResponseEntity<byte[]> responseEntity, List<App> apps) {
         List<AppResponse> response = new ArrayList<>();
         try {
             String body = new String(responseEntity.getBody());

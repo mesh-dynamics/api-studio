@@ -126,7 +126,7 @@ public class AppController {
         ResponseEntity<byte[]> responseEntity = cubeServerService.fetchPostResponse(request, Optional.of(appNames),  "/cs/getAppConfigurations/" + user.getCustomer().getName(),
             MediaType.APPLICATION_JSON);
         if(responseEntity.getStatusCode() == HttpStatus.OK) {
-           return  ResponseEntity.ok(cubeServerService.getAppFileResponse(responseEntity, apps));
+           return  ResponseEntity.ok(cubeServerService.getAppResponse(responseEntity, apps));
         }
         return responseEntity;
     }
