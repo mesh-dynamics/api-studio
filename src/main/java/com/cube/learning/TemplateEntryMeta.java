@@ -328,8 +328,8 @@ public class TemplateEntryMeta implements Comparable{
     @Override
     public int compareTo(@NotNull Object o) {
         TemplateEntryMeta that = (TemplateEntryMeta) o;
-        if (this.ruleStatus != that.ruleStatus)
-            return this.ruleStatus.compareTo(that.ruleStatus); // This sorts in declaration order in enum.
+        if (this.action != that.action)
+            return this.action.compareTo(that.action); // This sorts in declaration order in enum.
         if (!this.service.equals(that.service))
             return this.service.compareTo(that.service);
         if (!this.apiPath.equals(that.apiPath))

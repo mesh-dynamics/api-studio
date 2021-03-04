@@ -175,14 +175,14 @@ public class InjectionExtractionMeta implements Comparable{
     }
 
     private static Float getStringScore(String str){
-        if (str.matches("[-xX0-9a-fA-F]+")){
-            // Hex and <hyphen> are the highest score
-            return 1f;
-        }else if (str.matches("[a-z A-Z,_]+") || str.contains(":")){
+        if (str.matches("[-xX0-9a-fA-F]+")) {
+            // Hex and <hyphen> can return scores higher than 0.5, but only if len > 5.
+            return (float) str.length() / 10f;
+        } else if (str.matches("[a-z A-Z,_]+") || str.contains(":")) {
             // Only <alphabets>, <space>, <comma> and <underscore> are least score
             // ':' caters to timestamps
             return 0f;
-        }else {
+        } else {
             // Others are middle score
             return 0.5f;
         }
