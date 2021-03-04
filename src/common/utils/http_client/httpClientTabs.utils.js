@@ -106,6 +106,7 @@ export function createRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFrom
             responseBody: toBeCopiedFromData.responseBody,
             responsePayloadState: toBeCopiedFromData.responsePayloadState,
             recordedResponseHeaders: toBeCopiedFromData.recordedResponseHeaders,
+            recordedResponseStatus: toBeCopiedFromData.recordedResponseStatus,
             recordedResponseBody: toBeCopiedFromData.recordedResponseBody,
             responseBodyType: toBeCopiedFromData.responseBodyType,
             outgoingRequestIds: toBeCopiedFromData.outgoingRequestIds,
