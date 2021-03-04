@@ -311,6 +311,12 @@ export interface IQueryParams {
 export interface IKeyValuePairs<T = string> {
   [key: string]: T;
 }
+export interface IContextMap {
+  [key: string]: {
+    value: any,
+    createdOn: number; //timestamp when context map entry is added
+  };
+}
 export interface IEventData {
   apiPath: string;
   app: string;
@@ -449,7 +455,6 @@ export interface IHttpClientTabDetails {
   hasChanged: boolean;
   isHighlighted: boolean;
   progressState?: string;
-  contextMap: IKeyValuePairs;
   grpcData: IGrpcData;
   grpcConnectionSchema: IGrpcConnect;
   hideInternalHeaders: boolean;
@@ -559,6 +564,7 @@ export interface IHttpClientStoreState {
   uiPref: IKeyValuePairs<any>;
   historyPathFilterText: string;
   appGrpcSchema: IGrpcSchema;
+  contextMap: IContextMap;
 }
 
 // Navigation State

@@ -43,6 +43,7 @@ import {
     getHostName,
 } from "../../utils/http_client/utils.js";
 import * as httpClientTabUtils from "../../utils/http_client/httpClientTabs.utils.js";
+import { getContextMapKeyValues } from "../../utils/http_client/httpClientUtils";
 import { 
     extractGrpcBody,
     applyGrpcDataToRequestObject,
@@ -924,7 +925,7 @@ class HttpClientTabs extends Component {
                 requestEvent : formattedData.request,
                 environmentName: selectedEnvironment,
                 injectionConfigVersion: `Default${selectedApp}`,
-                contextMap:  contextMap || {},
+                contextMap:  getContextMapKeyValues(contextMap),
             }
             const preRequestResult = await cubeService.fetchPreRequest(userHistoryCollection.id, runId, preRequestData, selectedApp, tabToProcess.abortRequest.cancelToken);
         
