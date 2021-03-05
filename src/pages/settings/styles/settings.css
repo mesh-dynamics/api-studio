@@ -73,3 +73,7 @@
     border: none;
     margin: 0;
 }
+
+.settings-left-padding {
+    padding-left: 5px;
+}

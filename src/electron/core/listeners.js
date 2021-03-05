@@ -12,6 +12,8 @@ const path = require('path');
 const aws4 = require('aws4');
 const { URLSearchParams } = require('url');
 const os = require('os');
+const AnyProxy = require('anyproxy');
+const exec = require('child_process').exec;
 const menu = require('./menu');
 const { updateApplicationConfig, getApplicationConfig } = require('./fs-utils');
 const { clearRestrictedHeaders, Deferred } = require('../../shared/utils');
@@ -322,7 +324,20 @@ const setupListeners = (mockContext, user, replayContext) => {
         updateApplicationConfig(config);
 
         event.sender.send('config_update_success');
-        
+
+        const ifExist = AnyProxy.utils.certMgr.isRootCAFileExists();
+
+        if(!ifExist && config.generateCertificate) {
+            AnyProxy.utils.certMgr.generateRootCA((error, keyPath) => {
+                // let users to trust this CA before using proxy
+                if (!error) {
+                    const certDir = require('path').dirname(keyPath);
+                    logger.info('The cert is generated at', certDir);
+                } else {
+                    logger.info('error when generating rootCA', error);
+                }
+            });
+        }
         app.relaunch();
         app.exit();
     });

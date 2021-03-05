@@ -3,6 +3,7 @@ const { setupListeners } = require('./core/listeners');
 const { setupApplicationConfig } = require('./core/fs-utils');
 const setupReplayDriver = require('./core/replay-driver');
 const setupGrpcH2Server = require('./core/proxy/grpc-h2-server');
+const setupMeshProxy = require('./core/proxy/mesh-proxy-server');
 /**
  * This will setup the application config into fs for persistence.
  */
@@ -53,6 +54,9 @@ setupReplayDriver(replayContext);
 
 // setup gRPC http2 server proxy
 setupGrpcH2Server(mockContext, user);
+
+//setup MITM proxy
+setupMeshProxy(mockContext, user);
 
 // DO NOT DELETE
 // const replayContext = {

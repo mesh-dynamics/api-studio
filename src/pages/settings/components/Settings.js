@@ -15,13 +15,16 @@ class Settings extends Component {
         config: {
             domain: '',
             proxyPort: '',
-            gRPCProxyPort: ''
+            gRPCProxyPort: '',
+            httpsProxyPort: '',
+            generateCertificate: false
         }
     };
 
     componentWillMount() {
         ipcRenderer.on('get_config', (event, config) => {
             ipcRenderer.removeAllListeners('get_config');
+            console.log("config: ", config);
             this.setState({ config });
         });
 
@@ -38,14 +41,18 @@ class Settings extends Component {
         ipcRenderer.send('get_config');
     }
 
-    hasInvalidInputFields = (domain, proxyPort, gRPCProxyPort) => {
+    hasInvalidInputFields = (domain, proxyPort, gRPCProxyPort, httpsProxyPort) => {
         return !domain 
                 || !proxyPort
                 || !gRPCProxyPort
+                || !httpsProxyPort
                 || !isUrl(domain) 
                 || !isPort(String(proxyPort)) 
                 || !isPort(String(gRPCProxyPort)) 
-                || proxyPort === gRPCProxyPort;
+                || !isPort(String(httpsProxyPort))
+                || proxyPort === gRPCProxyPort
+                || proxyPort === httpsProxyPort
+                || gRPCProxyPort === httpsProxyPort;
     }
 
     handleDomainInputChange = (event) => {
@@ -67,6 +74,8 @@ class Settings extends Component {
     }
 
     handleMockSettingsChange = (name, value) => {
+        console.log("name: ", name);
+        console.log("value: ", value);
         this.setState({
             config: { 
                 ...this.state.config,
@@ -91,13 +100,15 @@ class Settings extends Component {
                 domain,
                 proxyPort,
                 gRPCProxyPort,
+                httpsProxyPort,
+                generateCertificate
             }, 
             domainSettingsModalVisible, 
             mockSettingsModalVisible,
             successAlertModalVisible,
         } = this.state;
 
-        const isSaveButtonDisabled = this.hasInvalidInputFields(domain, proxyPort, gRPCProxyPort);
+        const isSaveButtonDisabled = this.hasInvalidInputFields(domain, proxyPort, gRPCProxyPort, httpsProxyPort);
 
         return(
             <div className="settings-parent-container">
@@ -120,6 +131,8 @@ class Settings extends Component {
                     <MockSettings
                         proxyPort={proxyPort}
                         gRPCProxyPort={gRPCProxyPort}
+                        httpsProxyPort={httpsProxyPort}
+                        generateCertificate={generateCertificate}
                         isSaveButtonDisabled={isSaveButtonDisabled}
                         handleMockSettingsChange={this.handleMockSettingsChange}
                         handleSaveMockSettingsClick={this.handleSaveMockSettingsClick}

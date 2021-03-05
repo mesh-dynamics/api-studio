@@ -46,12 +46,14 @@ const readConfig = () => {
 };
 
 const setupApplicationConfig = () => {
-    const { domain, proxyPort, replayDriverPort, gRPCProxyPort } = readConfig();
+    const { domain, proxyPort, replayDriverPort, gRPCProxyPort, httpsProxyPort, generateCertificate } = readConfig();
 
     const appDomain = store.get("domain");
     const appProxyPort = store.get("proxyPort");
     const appReplayDriverPort = store.get("replayDriverPort");
     const appGRPCProxyPort = store.get("gRPCProxyPort");
+    const appHttpsProxyPort = store.get("httpsProxyPort");
+    const appGenerateCertificate = store.get("generateCertificate");
 
     // If domain is not set
     if (!appDomain) {
@@ -74,6 +76,11 @@ const setupApplicationConfig = () => {
     if(!appGRPCProxyPort) {
       logger.info("Setting default port for gRPC Proxy Port at:", gRPCProxyPort);
       store.set("gRPCProxyPort", gRPCProxyPort);
+    }
+
+    if(!appHttpsProxyPort) {
+      logger.info("Setting default port for https Proxy Port at:", httpsProxyPort);
+      store.set("httpsProxyPort", httpsProxyPort);
     }
 
     // To remove any previous traces of old configuration
@@ -101,6 +108,8 @@ const getApplicationConfig = () => {
     const proxyPort = store.get("proxyPort");
     const replayDriverPort =  store.get("replayDriverPort");
     const gRPCProxyPort = store.get("gRPCProxyPort");
+    const httpsProxyPort = store.get("httpsProxyPort");
+    const generateCertificate = store.get("generateCertificate");
     const parsedUrl = url.parse(appDomain);
 
     const proxyDestinationServerProtocol = parsedUrl.protocol;
@@ -112,6 +121,8 @@ const getApplicationConfig = () => {
       proxyPort,
       replayDriverPort,
       gRPCProxyPort,
+      httpsProxyPort,
+      generateCertificate,
       proxyDestination: {
         protocol: proxyDestinationServerProtocol,
         host: proxyDestinationServerHost,
@@ -125,7 +136,7 @@ const getApplicationConfig = () => {
 };
 
 const updateApplicationConfig = (config) => {
-    const { domain, proxyPort, gRPCProxyPort } = config;
+    const { domain, proxyPort, gRPCProxyPort, httpsProxyPort, generateCertificate } = config;
     
     logger.info("Updating application config domain to :", domain);
     store.set("domain", domain);
@@ -137,6 +148,14 @@ const updateApplicationConfig = (config) => {
     logger.info("Updating application config gRPCProxyPort to :", gRPCProxyPort);
 
     store.set("gRPCProxyPort", Number(gRPCProxyPort));
+
+    logger.info("Updating application config httpsProxyPort to :", httpsProxyPort);
+
+    store.set("httpsProxyPort", Number(httpsProxyPort));
+
+    logger.info("Updating application config generateCertificate to :", generateCertificate);
+
+    store.set("generateCertificate", Boolean(generateCertificate));
     
     logger.info("Config updated with latest input values");
 };
