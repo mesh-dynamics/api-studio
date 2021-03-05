@@ -5,14 +5,19 @@ package com.cube.ws;
 
 import static io.md.core.Utils.buildErrorResponse;
 
+import com.cube.dao.AnalysisMatchResultQuery;
+import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
+import com.cube.learning.CompareTemplatesLearner;
 import com.cube.learning.DynamicInjectionRulesLearner;
 import com.cube.learning.InjectionExtractionMeta;
+import com.cube.learning.TemplateEntryMeta;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
+import io.md.dao.ReqRespMatchResult;
 import io.md.injection.StaticInjection;
 import io.md.injection.StaticInjection.StaticInjectionMeta;
 import java.io.File;
@@ -28,6 +33,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -38,6 +44,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -541,6 +548,68 @@ public class ReplayWS extends ReplayBasicWS {
         }
     }
 
+    @GET
+    @Path("getFilteredDynamicInjectionConfigs/{customerId}/{app}/{version}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response getFilteredDynamicInjectionConfigs(@Context UriInfo uriInfo,
+        @PathParam("customerId") String customerId,
+        @PathParam("app") String app,
+        @PathParam("version") String version) {
+
+        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+
+        String replayId = queryParams.getFirst("replayId");
+        Optional<List<String>> paths = Optional.ofNullable(queryParams.get("path"));
+
+
+        if (replayId == null){
+            return Response.serverError().entity(
+                Utils.buildErrorResponse(Constants.ERROR, Constants.NOT_PRESENT,
+                    "Missing query parameter replayId")).build();
+        }
+
+        AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(replayId,
+            new MultivaluedHashMap<>());
+
+        ReqRespResultsWithFacets resultWithFacets = rrstore
+            .getAnalysisMatchResults(analysisMatchResultQuery);
+
+        Stream<ReqRespMatchResult> reqRespMatchResultList = resultWithFacets.result
+            .getObjects();
+
+        Optional<DynamicInjectionConfig> dynamicInjectionConfig = rrstore.getDynamicInjectionConfig(
+            customerId, app, version);
+
+        Response resp = dynamicInjectionConfig.map(diConfig -> {
+            List<InjectionExtractionMeta> injectionExtractionMetas = DynamicInjectionRulesLearner
+                .filterRulesByReplayMatchResults(diConfig, reqRespMatchResultList);
+
+            try {
+                return writeResponseToFile("context_propagation_rules", injectionExtractionMetas,
+                    InjectionExtractionMeta.class, true);
+            } catch (JsonProcessingException e) {
+                LOGGER.error(String.format(
+                    "Error in converting DynamicInjectionConfig object to Json for customerId=%s, app=%s, version=%s",
+                    customerId, app, version), e);
+                return Response.serverError().entity(
+                    Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                        "Error in converting DynamicInjectionConfig object to Json")).build();
+            } catch (IOException e) {
+                LOGGER.error(
+                    String.format("Error in file creation for customer=%s, app=%s, version=%s",
+                        customerId, app, version), e);
+                return Response.serverError().entity(
+                    Utils.buildErrorResponse(Constants.ERROR, Constants.IO_EXCEPTION,
+                        String.format("Error in file creation for customer=%s, app=%s, version=%s",
+                            customerId, app, version))).build();
+            }
+        }).orElse(Response.status(Response.Status.NOT_FOUND)
+            .entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
+                "DynamicInjectionConfig object not found")).build());
+        return resp;
+
+    }
+
     @POST
     @Path("replay/restart/{customerId}/{app}/{replayId}")
     public Response restartReplay(@Context UriInfo uriInfo, @PathParam("customerId") String customerId,
@@ -662,7 +731,7 @@ public class ReplayWS extends ReplayBasicWS {
             data = csvMapper.writer(csvSchema).writeValueAsString(object);
             ext = ".csv";
         } else {
-            data = jsonMapper.writeValueAsString(object);
+            data = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
             ext = ".json";
         }
 
