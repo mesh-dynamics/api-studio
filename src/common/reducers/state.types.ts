@@ -434,6 +434,7 @@ export interface IHttpClientTabDetails {
   responseHeaders: string;
   responseStatus: string; //Could be Enum
   responseStatusText: string;
+  responseTrailers: IHttpTrailers;
   service: string;
   showCompleteDiff: boolean;
   showOutgoingRequestsBtn: boolean;
@@ -453,6 +454,10 @@ export interface IHttpClientTabDetails {
   grpcData: IGrpcData;
   grpcConnectionSchema: IGrpcConnect;
   hideInternalHeaders: boolean;
+}
+
+export interface IHttpTrailers {
+  [key: string]: string
 }
 
 export interface IUserApiTraceHistory {

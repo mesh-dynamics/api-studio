@@ -43,4 +43,12 @@ const url = require("url");
         })
     }
 
-    module.exports = {storeReqResEvent};
+    // for non-https, the fetch-h2 library defaults to http1.1, so changing it to http2 for non-https calls to force http2
+    const getHttp2FetchUrl = (fetchUrl) => {
+        if (fetchUrl.startsWith("http://")) {
+            fetchUrl = fetchUrl.replace("http://", "http2://");
+        }
+        return fetchUrl;
+    }
+
+    module.exports = {storeReqResEvent, getHttp2FetchUrl};

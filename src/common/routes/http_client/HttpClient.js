@@ -936,13 +936,16 @@ class HttpClient extends Component {
                             responseStatusText={""}
                             responseHeaders={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseHeaders : selectedTraceTableReqTab.responseHeaders}
                             responseBody={selectedTraceTableTestReqTab ? selectedTraceTableTestReqTab.recordedResponseBody : responseBody}
+                            isGrpcRHS={selectedTraceTableTestReqTab?.bodyType==="grpcData"}
                             /** Belongs to LHS */
                             recordedResponseHeaders={selectedTraceTableReqTab.recordedResponseHeaders}
                             recordedResponseBody={ selectedTraceTableReqTab.recordedResponseBody}
                             recordedResponseStatus={selectedTraceTableReqTab.recordedResponseStatus}
                             updateParam={this.props.updateParam}
                             isOutgoingRequest={ selectedTraceTableReqTab.isOutgoingRequest}
-                            requestRunning={currentSelectedTab.requestRunning} >
+                            requestRunning={currentSelectedTab.requestRunning}
+                            isGrpcLHS={selectedTraceTableReqTab?.bodyType==="grpcData"}
+                            >
                         </HttpResponseMessage>
                     </div>
                 

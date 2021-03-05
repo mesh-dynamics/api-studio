@@ -441,7 +441,7 @@ function getPathName(url){
 
 
 export function getReqResFromTabData(selectedApp, eachPair, tabToSave, runId, type, reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment, tracer, traceDetails, parentSpanId, spanId) {
-    const { headers, queryStringParams, bodyType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus, recordedResponseStatus, responsePayloadState } = tabToSave;
+    const { headers, queryStringParams, bodyType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus, recordedResponseStatus, responsePayloadState, responseTrailers } = tabToSave;
 
     const httpRequestEventTypeIndex = eachPair[0].eventType === "HTTPRequest" ? 0 : 1;
     const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
@@ -582,7 +582,7 @@ export function getReqResFromTabData(selectedApp, eachPair, tabToSave, runId, ty
     }
 
     const httpResponseEventPayload = httpResponseEvent && httpResponseEvent.payload ?  httpResponseEvent.payload[1] : {};
-    const httpResponseTrailers = httpResponseEventPayload.trls;
+    const httpResponseTrailers = responseTrailers || httpResponseEventPayload.trls;
     const reqResCubeFormattedData = {   
         request: {
             ...httpRequestEvent,

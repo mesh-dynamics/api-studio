@@ -14,7 +14,7 @@ const generateRunId = () => {
     return new Date(Date.now()).toISOString()
 }
 
-const getStatusColor = (status) => {
+const getHttpStatusColor = (status) => {
     if(status >=100 && status <= 399) {
         if(status >=200 && status <= 299) {
             return '#008000';
@@ -22,6 +22,14 @@ const getStatusColor = (status) => {
         return '#FFFF00';
     } else if ( status == 'NA' || status == '' || status == undefined) {
         return 'none';
+    } else {
+        return '#FF0000';
+    }
+}
+
+const getGrpcStatusColor = (status) => {
+    if(status == 0) {
+        return '#008000'
     } else {
         return '#FF0000';
     }
@@ -795,7 +803,8 @@ export function getHostName(url) {
 
 export { 
     generateRunId,
-    getStatusColor,
+    getHttpStatusColor,
+    getGrpcStatusColor,
     generateApiPath,
     getCurrentMockConfig,
     getTraceTableTestReqData,
