@@ -552,19 +552,26 @@ const generateTraceKeys = (tracer) => {
 }
 
 const generateTraceIdDetails = (tracer, spanId) => {
-    const traceId = cryptoRandomString({length:16})
+    let traceId = cryptoRandomString({length:16})
     if (tracer==="meshd" || tracer==="jaeger" || !tracer) {
         if (!spanId)
             throw new Error("Error generating traceId: spanId not present")
         
         return {traceId:`${traceId}:${spanId}:0:1`, traceIdForEvent: traceId}; // full and only traceId part for event
+    } else if (tracer==="datadog") {
+        traceId = cryptoRandomString({length:19, type: "numeric"})
+        return {traceId, traceIdForEvent: traceId}
     } else {
         return {traceId, traceIdForEvent: traceId}; // both same
     }
 }
 
 const generateSpanId = (tracer) => {
-    return cryptoRandomString({length:16})
+    if(tracer==="datadog") {
+        return cryptoRandomString({length:19, type: "numeric"})
+    } else {
+        return cryptoRandomString({length:16})
+    }
 }
 
 const generateSpecialParentSpanId = (tracer) => {
