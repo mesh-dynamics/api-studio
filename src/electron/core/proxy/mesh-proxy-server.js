@@ -30,10 +30,6 @@ const setupMeshProxy = (mockContext, user) => {
 
     const { proxyDestination, proxyPort, httpsProxyPort } = getApplicationConfig();
 
-    const {
-        config: { serviceConfigs },
-    } = mockContext;
-
     const mockTarget = {
         protocol: proxyDestination.protocol, //`${mock.protocol}:`, // Do not forget the darn colon
         host: proxyDestination.host,
@@ -46,19 +42,16 @@ const setupMeshProxy = (mockContext, user) => {
     const getExtension  = (headers, httpMessageType) => {
         if (httpMessageType === "Request") {
             const acceptHeader = headers["Accept"] ? headers["Accept"] : headers["accept"];
-            logger.info("Accept Header : ", acceptHeader);
             if(acceptHeader) return mime.getExtension(acceptHeader);
             else return null;
         } else {
             const contentTypeHeader = headers["Content-Type"] ? headers["Content-Type"] : headers["content-type"];
-            logger.info("Content-Type Header : ", contentTypeHeader);
             if(contentTypeHeader) return mime.getExtension(contentTypeHeader);
             else return null;
         }
     };
 
     const getFileExtension = (path) => {
-        logger.info("url path : ", path);
         return path.split(".").pop();
     };
 
@@ -73,10 +66,11 @@ const setupMeshProxy = (mockContext, user) => {
                 const parsedUrl = URL.parse(requestDetail.url);
                 const mimeType = getExtension(newRequestOptions.headers, "Request"),
                     fileExtension = getFileExtension(parsedUrl.pathname);
-                logger.info("Request url : ", requestDetail.url);
-                logger.info("Response mimeType : ", mimeType);
-                logger.info("Response fileExtension : ", fileExtension);
                 if(staticMimeTypes.indexOf(mimeType) === -1 && staticMimeTypes.indexOf(fileExtension) === -1) {
+                    logger.info("Request url : ", requestDetail.url);
+                    logger.info("Request mimeType : ", mimeType);
+                    logger.info("Request fileExtension : ", fileExtension);
+                    
                     logger.info("Received HTTP request at proxy: ", 
                     { 
                         "method": newRequestOptions.method, 
@@ -84,6 +78,9 @@ const setupMeshProxy = (mockContext, user) => {
                         "headers": newRequestOptions.headers,
                         "body": requestDetail.requestData.toString()
                     });
+                    const {
+                        config: { serviceConfigs },
+                    } = mockContext;
                     const serviceConfigObject = getServiceConfig(serviceConfigs, parsedUrl.path);
                     logger.info(
                         "Matched service prefix: ",
@@ -157,7 +154,7 @@ const setupMeshProxy = (mockContext, user) => {
                                 ...(["GET", "HEAD"].indexOf(newRequestOptions.method.toUpperCase()) < 0 && {data: requestDetail.requestData}),
                             })
                             .then(function (response) {
-                                logger.info("Response from target : ", JSON.stringify(response.data));
+                                logger.info("Response from mock : ", JSON.stringify(response.data));
                                 logger.info("Target response HTTP status: ", response.status);
                                 logger.info("Target response HTTP headers: ", response.headers);
                                 const localResponse = {
@@ -184,14 +181,17 @@ const setupMeshProxy = (mockContext, user) => {
                 const parsedUrl = URL.parse(requestDetail.url);
                 const mimeType = getExtension(newResponse.header, "Response"),
                     fileExtension = getFileExtension(parsedUrl.pathname);
-                logger.info("Request url : ", requestDetail.url);
-                logger.info("Response mimeType : ", mimeType);
-                logger.info("Response fileExtension : ", fileExtension);
                 if(staticMimeTypes.indexOf(mimeType) === -1 && staticMimeTypes.indexOf(fileExtension) === -1) {
+                    logger.info("Request url : ", requestDetail.url);
+                    logger.info("Response mimeType : ", mimeType);
+                    logger.info("Response fileExtension : ", fileExtension);
+                    const {
+                        config: { serviceConfigs },
+                    } = mockContext;
                     const serviceConfigObject = getServiceConfig(serviceConfigs, parsedUrl.path);
                     const matchedService = serviceConfigObject?.service || "NA";
                     const isLive = serviceConfigObject && !serviceConfigObject.isMocked;
-                    logger.info("isLive: ", isLive);
+                    logger.info("Response isLive: ", isLive);
                     if(isLive !== true) return null;
                     // Only to get trace keys
                     const traceKeys = generateTraceKeys(mockContext.tracer);
