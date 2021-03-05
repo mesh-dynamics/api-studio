@@ -41,7 +41,7 @@ const setupMeshProxy = (mockContext, user) => {
     };
 
     const traceIdDetailsMap = {};
-    const staticMimeTypes = ["gif" , "html" , "css" , "javascript" , "ttf" , "svg" , "png" , "text", "img", "js", "txt", "woff", "woff2", "js.map", "ico"];
+    const staticMimeTypes = ["gif" , "html" , "css" , "javascript" , "ttf" , "svg" , "png" , "text", "img", "js", "txt", "woff", "woff2", "map", "ico"];
 
     const getExtension  = (headers, httpMessageType) => {
         if (httpMessageType === "Request") {
