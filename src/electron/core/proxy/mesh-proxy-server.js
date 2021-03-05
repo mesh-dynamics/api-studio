@@ -192,7 +192,7 @@ const setupMeshProxy = (mockContext, user) => {
                     const matchedService = serviceConfigObject?.service || "NA";
                     const isLive = serviceConfigObject && !serviceConfigObject.isMocked;
                     logger.info("isLive: ", isLive);
-                    if(isLive !== false) return null;
+                    if(isLive !== true) return null;
                     // Only to get trace keys
                     const traceKeys = generateTraceKeys(mockContext.tracer);
                     const service = matchedService;
