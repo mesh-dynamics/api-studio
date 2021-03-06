@@ -40,9 +40,9 @@ const rewriteMockPath = (resourcePath, mockContext, traceDetails, service, servi
     //We are encoding service here, as from path or serviceConfig it may contain special characters
     // In case of mock api being called from code (not devtool) also this comes as non-encoded form
     if(strictMock) {
-        path = `${strictMockApiPrefix}/${customerName}/${selectedApp}/${replayInstance}/${encodeURIComponent(service)}/${strippedResourcePath}`
+        path = `${strictMockApiPrefix}/${customerName}/${selectedApp}/${replayInstance}/${service}/${strippedResourcePath}`
     } else {
-        path = `${mockApiPrefix}/${collectionId}/${recordingCollectionId}/${customerName}/${selectedApp}/${timestamp}/${traceIdForEvent}/${runId}/${encodeURIComponent(service)}/${strippedResourcePath}`;
+        path = `${mockApiPrefix}/${collectionId}/${recordingCollectionId}/${customerName}/${selectedApp}/${timestamp}/${traceIdForEvent}/${runId}/${service}/${strippedResourcePath}`;
     }
 
     logger.info('Updated Resource URI : ', path);
