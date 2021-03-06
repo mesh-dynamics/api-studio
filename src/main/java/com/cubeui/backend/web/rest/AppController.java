@@ -7,10 +7,11 @@ import static org.springframework.http.ResponseEntity.ok;
 import static org.springframework.http.ResponseEntity.status;
 
 import com.cubeui.backend.domain.App;
-import com.cubeui.backend.domain.AppFilePath;
+import com.cubeui.backend.domain.AppFile;
 import com.cubeui.backend.domain.AppUser;
 import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.AppDTO;
+import com.cubeui.backend.domain.DTO.Response.AppFileResponse;
 import com.cubeui.backend.domain.DTO.Response.AppServiceResponse;
 import com.cubeui.backend.domain.DTO.Response.DTO.TestConfigDTO;
 import com.cubeui.backend.domain.DTO.Response.Mapper.TestConfigMapper;
@@ -36,7 +37,6 @@ import com.cubeui.backend.repository.TestPathRepository;
 import com.cubeui.backend.repository.TestVirtualizedServiceRepository;
 import com.cubeui.backend.repository.UserRepository;
 import com.cubeui.backend.security.Validation;
-import com.cubeui.backend.service.AWSS3AppFileStorageServiceImpl;
 import com.cubeui.backend.service.AppFileStorageService;
 import com.cubeui.backend.service.CubeServerService;
 import com.cubeui.backend.service.CustomerService;
@@ -89,7 +89,6 @@ public class AppController {
     private final UserRepository userRepository;
     private final CubeServerService cubeServerService;
     private final PathPrefixRepository pathPrefixRepository;
-    private final AWSS3AppFileStorageServiceImpl awss3AppFileStorageService;
     public AppController(AppRepository appRepository, ServiceRepository serviceRepository,
         ServiceGraphRepository serviceGraphRepository, TestConfigRepository testConfigRepository,
         TestIntermediateServiceRepository testIntermediateServiceRepository,
@@ -98,7 +97,7 @@ public class AppController {
         InstanceRepository instanceRepository, InstanceUserRepository instanceUserRepository,
         UserService userService, AppUserRepository appUserRepository, Validation validation,
         AppFileStorageService appFileStorageService, UserRepository userRepository, CubeServerService cubeServerService,
-        PathPrefixRepository pathPrefixRepository, AWSS3AppFileStorageServiceImpl awss3AppFileStorageService) {
+        PathPrefixRepository pathPrefixRepository) {
         this.appRepository = appRepository;
         this.serviceRepository = serviceRepository;
         this.serviceGraphRepository = serviceGraphRepository;
@@ -116,7 +115,6 @@ public class AppController {
         this.userRepository = userRepository;
         this.cubeServerService = cubeServerService;
         this.pathPrefixRepository = pathPrefixRepository;
-        this.awss3AppFileStorageService = awss3AppFileStorageService;
     }
 
     @GetMapping("")
@@ -124,15 +122,30 @@ public class AppController {
         User user = (User) authentication.getPrincipal();
         Optional<List<AppUser>> appUsers = this.appUserRepository.findByUserId(user.getId());
         List<App> apps = appUsers.get().stream().map(AppUser::getApp).collect(Collectors.toList());
-        List<Long> appIds = apps.stream().map(App::getId).collect(Collectors.toList());
         List<String> appNames = apps.stream().map(App::getName).collect(Collectors.toList());
         ResponseEntity<byte[]> responseEntity = cubeServerService.fetchPostResponse(request, Optional.of(appNames),  "/cs/getAppConfigurations/" + user.getCustomer().getName(),
             MediaType.APPLICATION_JSON);
-        List<AppFilePath> files = this.appFileStorageService.getFilePathsForAppIds(appIds);
         if(responseEntity.getStatusCode() == HttpStatus.OK) {
-           return  ResponseEntity.ok(cubeServerService.getAppFileResponse(responseEntity, files));
+           return  ResponseEntity.ok(cubeServerService.getAppResponse(responseEntity, apps));
         }
         return responseEntity;
+    }
+
+    @GetMapping("/images")
+    public ResponseEntity getImages(HttpServletRequest request, Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        Optional<List<AppUser>> appUsers = this.appUserRepository.findByUserId(user.getId());
+        List<Long> appIds = appUsers.map(aus ->
+            aus.stream().map(au -> au.getApp().getId()).collect(Collectors.toList()))
+            .orElse(Collections.emptyList());
+        List<AppFile> files = this.appFileStorageService.getFilesFoAppIds(appIds);
+        List<AppFileResponse> appFileResponses = new ArrayList<>(files.size());
+        for(AppFile file: files) {
+            AppFileResponse appFileResponse = new AppFileResponse(file.getFileName(),
+                file.getFileType(), file.getData(), file.getApp().getName());
+            appFileResponses.add(appFileResponse);
+        }
+        return ResponseEntity.ok(appFileResponses);
     }
 
     @PostMapping("")
@@ -172,7 +185,7 @@ public class AppController {
                         .userId(user.getUsername())
                         .build());
 
-        this.awss3AppFileStorageService.storeFile(file, saved, false);
+        this.appFileStorageService.storeFile(file, saved);
         Optional<List<User>> optionalUsers = this.userRepository.findByCustomerId(customer.get().getId());
         optionalUsers.ifPresent(users -> {
             users.forEach(u -> {
@@ -222,7 +235,8 @@ public class AppController {
         existingApp.setUserId(user.getUsername());
         this.appRepository.save(existingApp);
         if(file != null) {
-            this.awss3AppFileStorageService.storeFile(file, existingApp, true);
+            this.appFileStorageService.deleteFileByAppId(appDTO.getId());
+            this.appFileStorageService.storeFile(file, existingApp);
         }
         return created(
                 ServletUriComponentsBuilder
@@ -322,7 +336,7 @@ public class AppController {
     public ResponseEntity get(@PathVariable("id") Long id) {
         Optional<App> existing = this.appRepository.findById(id);
         return existing.map(app -> {
-            Optional<AppFilePath> appFile = this.appFileStorageService.getFilePathByAppId(app.getId());
+            Optional<AppFile> appFile = this.appFileStorageService.getFileByAppId(app.getId());
             return appFile.map(af -> ResponseEntity.ok(af)).orElseThrow(() -> new RecordNotFoundException("There is no app image found for given id"));
         }).orElseThrow(() -> new RecordNotFoundException("There is no app found for given id"));
     }
@@ -337,10 +351,6 @@ public class AppController {
         return customer.map(givenCustomer -> {
             Optional<App> existed = this.appRepository.findByDisplayNameAndCustomerId(displayName, givenCustomer.getId());
             return existed.map((app) -> {
-                Optional<AppFilePath> appFilePath = this.appFileStorageService.getFilePathByAppId(app.getId());
-                appFilePath.ifPresent(af -> {
-                    this.awss3AppFileStorageService.deleteFileFromS3Bucket(af.getFileName());
-                });
                 this.appRepository.delete(app);
                 return ResponseEntity.ok(app);
             }).orElseThrow(() -> new RecordNotFoundException("There is no app found for given name"));
