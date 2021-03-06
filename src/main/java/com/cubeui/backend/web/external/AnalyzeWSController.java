@@ -402,4 +402,11 @@ public class AnalyzeWSController {
         validation.validateCustomerName(authentication,customerId);
         return cubeServerService.fetchGetResponse(request, body);
     }
+
+    @GetMapping("/getTemplateSetLabels/{customerId}/{appId}")
+    public ResponseEntity getTemplateSetLabels(HttpServletRequest request, @RequestBody Optional<String> body,
+        Authentication authentication, @PathVariable String customerId, @PathVariable String appId) {
+        validation.validateCustomerName(authentication,customerId);
+        return cubeServerService.fetchGetResponse(request, body);
+    }
 }

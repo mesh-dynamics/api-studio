@@ -1,9 +1,6 @@
 package com.cubeui.backend;
 
 import com.cubeui.backend.domain.App;
-import com.cubeui.backend.domain.AppFile;
-import com.cubeui.backend.domain.AppFilePath;
-import com.cubeui.backend.domain.CustomMultipartFile;
 import com.cubeui.backend.domain.Customer;
 import com.cubeui.backend.domain.DTO.CustomerDTO;
 import com.cubeui.backend.domain.DTO.UserDTO;
@@ -15,16 +12,10 @@ import com.cubeui.backend.repository.AppRepository;
 import com.cubeui.backend.repository.CustomerRepository;
 import com.cubeui.backend.repository.DevtoolEnvironmentsRepository;
 import com.cubeui.backend.repository.UserRepository;
-import com.cubeui.backend.service.AWSS3AppFileStorageServiceImpl;
 import com.cubeui.backend.service.AppFileStorageService;
 import com.cubeui.backend.service.CustomerService;
 import com.cubeui.backend.service.UserService;
-import com.cubeui.backend.service.exception.FileRetrievalException;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.zip.DataFormatException;
-import java.util.zip.Inflater;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +27,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
 
 @Setter
 @Getter
@@ -63,13 +53,12 @@ public class DataInitializer implements CommandLineRunner {
 
     private AppFileRepository appFileRepository;
 
-    private AWSS3AppFileStorageServiceImpl awss3AppFileStorageService;
 
     public DataInitializer(UserService userService, CustomerService customerService,
         CustomerRepository customerRepository, UserRepository userRepository,
         HttpServletRequest httpServletRequest, AppRepository appRepository,
         AppFileStorageService appFileStorageService, DevtoolEnvironmentsRepository devtoolEnvironmentsRepository,
-        AppFileRepository appFileRepository, AWSS3AppFileStorageServiceImpl awss3AppFileStorageService) {
+        AppFileRepository appFileRepository) {
 
         this.userService = userService;
         this.customerService = customerService;
@@ -80,7 +69,6 @@ public class DataInitializer implements CommandLineRunner {
         this.appFileStorageService = appFileStorageService;
         this.devtoolEnvironmentsRepository = devtoolEnvironmentsRepository;
         this.appFileRepository = appFileRepository;
-        this.awss3AppFileStorageService = awss3AppFileStorageService;
     }
 
     @Override
@@ -144,6 +132,5 @@ public class DataInitializer implements CommandLineRunner {
                 }
             }
         });
-
     }
 }
