@@ -159,41 +159,34 @@ const getMethodsAndDataFromService = (service, serviceObject, currentGrpcService
 };
 
 const setGrpcDataFromDescriptor = (data, currentGrpcData) => {
-    const entries = Object.entries(data);
-    if(entries.length  == 0){
-        return currentGrpcData;
-    }
-    const dataEntries = entries[0];
-
-    const constructedServiceObject = {};
-
-    const packageName = dataEntries[0];
-
-    const serviceObject = dataEntries[1];
-
-    delete serviceObject['package']; // TODO: Update this later
-
-    if (!packageName || !serviceObject) {
-        // if packageName is undefined or service facets are undefined return currentGrpcData
+    const dataEntries = Object.entries(data);
+    if(dataEntries.length == 0){
         return currentGrpcData;
     }
 
-    const services = Object.keys(serviceObject);
+    const grpcDataObject = {}
+    dataEntries.forEach(([packageName, serviceObject]) => {
+        const constructedServiceObject = {};
+        delete serviceObject['package']; // TODO: Update this later
 
-    services.forEach(
-        (service) => 
-            constructedServiceObject[service] = getMethodsAndDataFromService(
-                                                        service, 
-                                                        serviceObject, 
-                                                        currentGrpcData[packageName]
-                                                        )
-        );
+        if (!packageName || !serviceObject) {
+            // if packageName is undefined or service facets are undefined, skip
+            return;
+        }
 
-    const grpcDataObject = {
-        [packageName]: constructedServiceObject
-    };
+        const services = Object.keys(serviceObject);
+        services.forEach((service) => 
+                constructedServiceObject[service] = getMethodsAndDataFromService(
+                                                            service, 
+                                                            serviceObject, 
+                                                            currentGrpcData[packageName]
+                                                            )
+            );
 
-    return grpcDataObject;
+        grpcDataObject[packageName] = constructedServiceObject
+    });
+
+    return _.isEmpty(grpcDataObject) ? currentGrpcData : grpcDataObject;
 };
 
 
