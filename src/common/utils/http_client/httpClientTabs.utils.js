@@ -7,7 +7,6 @@
 
 import { 
     generateRunId,
-    generateApiPath, 
     extractParamsFromRequestEvent, 
     selectedRequestParamData, 
     unSelectedRequestParamData, 
@@ -25,7 +24,7 @@ import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
 
 import { getRenderEnvVars,applyEnvVarsToUrl } from "../../utils/http_client/envvar";
-
+import MockConfigUtils from './mockConfigs.utils';
 import { applyGrpcDataToRequestObject, extractGrpcBody,
     getRequestUrlFromSchema, getConnectionSchemaFromMetadataOrApiPath } from "../../utils/http_client/grpc-utils"; 
 
@@ -106,6 +105,7 @@ export function createRecordedDataForEachRequest(toBeUpdatedData, toBeCopiedFrom
             responseBody: toBeCopiedFromData.responseBody,
             responsePayloadState: toBeCopiedFromData.responsePayloadState,
             recordedResponseHeaders: toBeCopiedFromData.recordedResponseHeaders,
+            recordedResponseStatus: toBeCopiedFromData.recordedResponseStatus,
             recordedResponseBody: toBeCopiedFromData.recordedResponseBody,
             responseBodyType: toBeCopiedFromData.responseBodyType,
             outgoingRequestIds: toBeCopiedFromData.outgoingRequestIds,
@@ -440,6 +440,56 @@ function getPathName(url){
 }
 
 
+const generateApiPathAndService = (parsedUrl) => {
+    let generatedApiPath = parsedUrl.host;
+    let service = parsedUrl.host;
+    let isModified = false;
+    let foundMatchingPathFromConfig = false;
+    
+    const mockConfigUtils = new MockConfigUtils();
+    const serviceConfigs = mockConfigUtils.getCurrentServiceConfigs();
+    const pathToFetch = parsedUrl.href;
+    const pathContaining = serviceConfigs
+        .filter(config =>  pathToFetch.indexOf(config.url) > -1)
+        .sort((config1, config2) => config2.url.length - config1.url.length);
+
+    if(pathContaining.length > 0){
+        for(const serviceConfig of pathContaining){
+            const path = pathToFetch.replace(serviceConfig.url, "");
+            if(path.indexOf(serviceConfig.servicePrefix) > -1){
+                generatedApiPath = path;
+                service = serviceConfig.service;
+                foundMatchingPathFromConfig = true;
+                break;
+            }
+        }
+    }
+    if(!foundMatchingPathFromConfig){
+        // Handle if 'file' protocol is detected
+        if(parsedUrl.protocol.includes('file')) {
+            // clean up the double slashes in between and starting slash
+            generatedApiPath = parsedUrl.pathname.split('/').filter(Boolean).slice(2).join('/'); 
+            isModified = true;
+        }
+
+        // Handle if no protocol is detected // todo
+        if(!parsedUrl.protocol) {
+            // clean up the double slashes in between and starting slash
+            generatedApiPath = parsedUrl.pathname.split('/').filter(Boolean).join('/');
+            isModified = true;
+        }
+
+        if(parsedUrl.pathname.endsWith("/") && isModified) {
+            // Append trailing slash
+            generatedApiPath = `${generatedApiPath}/`;
+        }
+    }
+    return {
+        apiPath : _.trim(generatedApiPath, "/"),
+        service : service
+    };
+};
+
 export function getReqResFromTabData(selectedApp, eachPair, tabToSave, runId, type, reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment, tracer, traceDetails, parentSpanId, spanId) {
     const { headers, queryStringParams, bodyType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus, recordedResponseStatus, responsePayloadState, responseTrailers } = tabToSave;
 
@@ -460,7 +510,7 @@ export function getReqResFromTabData(selectedApp, eachPair, tabToSave, runId, ty
     // let apiPath = this.getPathName(applyEnvVarsToUrl(tabToSave.httpURL));
     const parsedUrl = urlParser(applyEnvVarsToUrl(httpURL), PLATFORM_ELECTRON ? {} : true);
 
-    let apiPath = generateApiPath(parsedUrl);
+    let {apiPath, service : generatedService} = generateApiPathAndService(parsedUrl);
 
     if(bodyType === "grpcData") {
         // Trim the all slashes in case of gRPC
@@ -469,7 +519,7 @@ export function getReqResFromTabData(selectedApp, eachPair, tabToSave, runId, ty
     
 
     if(httpRequestEvent.reqId === "NA") {
-        let service = httpRequestEvent.service != "NA" ? httpRequestEvent.service : (parsedUrl.host || "NA");
+        let service = httpRequestEvent.service != "NA" ? httpRequestEvent.service : (generatedService || "NA");
         httpRequestEvent = updateHttpEvent(selectedApp, apiPath, service, httpRequestEvent);
         httpResponseEvent = updateHttpEvent(selectedApp, apiPath, service, httpResponseEvent);
         httpRequestEvent.metaData.typeOfRequest = "devtool";
@@ -513,8 +563,8 @@ export function getReqResFromTabData(selectedApp, eachPair, tabToSave, runId, ty
         httpRequestEvent.metaData.requestId = tabToSave.requestId;
         if(urlEnvVal) {
             const path = getPathName(urlEnvVal);
-            httpRequestEvent.apiPath = path;
-            httpResponseEvent.apiPath = path;                
+            httpRequestEvent.apiPath = httpRequestEvent.apiPath || path;
+            httpResponseEvent.apiPath = httpResponseEvent.apiPath || path;                
         }else{
             httpRequestEvent.metaData.href = "";
         }
