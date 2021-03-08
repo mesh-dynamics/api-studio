@@ -450,8 +450,8 @@ const generateApiPathAndService = (parsedUrl) => {
     const serviceConfigs = mockConfigUtils.getCurrentServiceConfigs();
     const pathToFetch = parsedUrl.href;
     const pathContaining = serviceConfigs
-        .filter( config =>  pathToFetch.indexOf(config.url) > -1)
-        .sort((config1, config2) => config2.serviceConfig.length - config1.serviceConfig.length);
+        .filter(config =>  pathToFetch.indexOf(config.url) > -1)
+        .sort((config1, config2) => config2.url.length - config1.url.length);
 
     if(pathContaining.length > 0){
         for(const serviceConfig of pathContaining){

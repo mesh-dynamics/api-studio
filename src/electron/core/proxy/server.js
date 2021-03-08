@@ -104,7 +104,7 @@ const setupProxy = (mockContext, user) => {
                 requestData: bufferData.toString(),
                 defaultProxyOptions,
                 traceDetails,
-                url: decodeURIComponent(url), //From devtool or direct call to proxy, url will appear as encoded and service/prefix will not match encoded one [ex: test%20space/path1 will not match 'test space' service name]
+                url,
             };
 
             logger.info('Configuring Target...');
