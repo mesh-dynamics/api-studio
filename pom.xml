@@ -243,7 +243,7 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>agent</artifactId>
-			<version>1.2.2.0</version>
+			<version>1.2.5.0</version>
 
 			<exclusions>
 				<exclusion>
@@ -260,7 +260,7 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>commons</artifactId>
-			<version>1.2.20.0</version>
+			<version>1.2.32.0</version>
 
 			<exclusions>
 				<exclusion>
@@ -277,7 +277,7 @@
 		<dependency>
 			<groupId>io.cube</groupId>
 			<artifactId>commons-server</artifactId>
-			<version>1.0.50.0</version>
+			<version>1.0.56.0</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.slf4j</groupId>
