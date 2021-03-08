@@ -388,7 +388,8 @@ const setupListeners = (mockContext, user, replayContext) => {
         reqMap[args.tabId + args.runId] = abortController;
         data.fetchConfigRendered.signal = abortController.signal;
         clearRestrictedHeaders(data.fetchConfigRendered.headers);
-
+        data.fetchConfigRendered.allowForbiddenHeaders = true;
+        
         const body = data.fetchConfigRendered.body
         if(body && !(typeof body === 'string' || body instanceof String)) {
             // convert body from js Buffer to nodejs Buffer
