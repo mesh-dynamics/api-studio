@@ -2169,14 +2169,24 @@ public class CubeStore {
     @Path("/getProtoDescriptor/{customerId}/{app}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getProtoDescriptorFile(@PathParam("customerId") String customerId, @PathParam(
-        "app") String app) {
+        "app") String app,
+        @DefaultValue("false") @QueryParam("asDAO") boolean asDAO) {
         try {
             Optional<ProtoDescriptorDAO> latestProtoDescDao =
                 rrstore.getLatestProtoDescriptorDAO(customerId, app);
-            return latestProtoDescDao.map(protoDescriptorDAO -> Response.ok()
-                .entity(protoDescriptorDAO.convertToJsonDescriptor()).build())
-                .orElse(Response.serverError().entity("Proto Descriptor not present for the "
-                    + "customer and app combo").build());
+
+            Response resp = latestProtoDescDao.map(UtilException.rethrowFunction(p -> {
+                String json;
+                if (asDAO) {
+                    json = jsonMapper.writeValueAsString(p);
+                } else {
+                    json = p.convertToJsonDescriptor();
+                }
+                return Response.ok(json, MediaType.APPLICATION_JSON).build();
+            })).orElseGet(() -> Response.status(Response.Status.NOT_FOUND).entity(String
+                .format("ProtoDescriptorDAO not found for customer %s and app %s", customerId, app))
+                .build());
+            return resp;
         } catch (Exception e) {
             return Response.serverError().entity("Exception occurred while retrieving proto "
                 + "descriptor " + e.getMessage()).build();
