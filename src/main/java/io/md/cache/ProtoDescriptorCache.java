@@ -3,14 +3,19 @@ package io.md.cache;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
 import io.md.dao.ProtoDescriptorDAO;
+import io.md.logger.LogMgr;
 import io.md.services.DataStore;
 import io.md.utils.UtilException;
+import io.md.utils.Utils;
 
 public class ProtoDescriptorCache {
+	private static final Logger LOGGER = LogMgr.getLogger(ProtoDescriptorCache.class);
 
 	private final DataStore dataStore;
 
@@ -61,11 +66,18 @@ public class ProtoDescriptorCache {
 		try {
 			return Optional.of(loadingCache.get(key , () ->
 				dataStore.getLatestProtoDescriptorDAO(key.customer, key.app)
+					.map(UtilException.rethrowFunction(protoDescriptorDAO -> {
+						protoDescriptorDAO.initializeProtoDescriptor();
+							return protoDescriptorDAO;
+						}
+					))
 					.orElseThrow(() ->
-					new Exception("Unable to find proto descritor in data store for "
+					new Exception("Unable to find proto descriptor in data store for "
 						+ key.customer + " : " + key.app))));
 		} catch (Exception e) {
+			LOGGER.error("Cannot fetch protoDescriptorDAO",e);
 			return Optional.empty();
+
 		}
 	}
 
