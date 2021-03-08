@@ -106,7 +106,7 @@ public class ProtoDescriptorDAO {
 		}
 	}
 
-	public void initializeProtoDescriptor(String descriptorFile) throws IOException, Descriptors.DescriptorValidationException {
+	public void initializeProtoDescriptor() throws IOException, Descriptors.DescriptorValidationException {
 		initialize();
 	}
 
