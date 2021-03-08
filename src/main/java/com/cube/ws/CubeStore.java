@@ -2174,26 +2174,19 @@ public class CubeStore {
         try {
             Optional<ProtoDescriptorDAO> latestProtoDescDao =
                 rrstore.getLatestProtoDescriptorDAO(customerId, app);
-            if(asDAO) {
-                Response resp = latestProtoDescDao.map(p -> {
-                    String json;
-                    try {
-                        json = jsonMapper.writeValueAsString(p);
-                        return Response.ok(json, MediaType.APPLICATION_JSON).build();
-                    } catch (JsonProcessingException e) {
-                        String jsonProcessingErrorMessage = String.format("Error in converting ProtoDescriptorDAO object to Json for customer %s and app %s", customerId, app);
-                        LOGGER.error(jsonProcessingErrorMessage, e);
-                        return Response.serverError().entity(jsonProcessingErrorMessage).build();
-                    }
-                }).orElse(Response.status(Response.Status.NOT_FOUND).entity(String.format("ProtoDescriptorDAO not found for customer %s and app %s", customerId, app)).build());
-                return resp;
-            }
-            else {
-                return latestProtoDescDao.map(protoDescriptorDAO -> Response.ok()
-                    .entity(protoDescriptorDAO.convertToJsonDescriptor()).build())
-                    .orElse(Response.serverError().entity("Proto Descriptor not present for the "
-                        + "customer and app combo").build());
-            }
+
+            Response resp = latestProtoDescDao.map(UtilException.rethrowFunction(p -> {
+                String json;
+                if (asDAO) {
+                    json = jsonMapper.writeValueAsString(p);
+                } else {
+                    json = p.convertToJsonDescriptor();
+                }
+                return Response.ok(json, MediaType.APPLICATION_JSON).build();
+            })).orElseGet(() -> Response.status(Response.Status.NOT_FOUND).entity(String
+                .format("ProtoDescriptorDAO not found for customer %s and app %s", customerId, app))
+                .build());
+            return resp;
         } catch (Exception e) {
             return Response.serverError().entity("Exception occurred while retrieving proto "
                 + "descriptor " + e.getMessage()).build();
