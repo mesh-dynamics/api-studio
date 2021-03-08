@@ -40,6 +40,7 @@ import org.json.JSONObject;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.md.dao.GRPCPayload;
 import io.md.dao.RequestPayload;
 import io.md.utils.UtilException;
 import io.md.core.RRTransformerOperations;
@@ -242,6 +243,8 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 				.uri(uri)
 				.method(httpRequest.getMethod(),
 					HttpRequest.BodyPublishers.ofByteArray(requestBody));
+
+			if(reqEvent.payload instanceof GRPCPayload) reqbuilder.version(Version.HTTP_2);
 
 			LOGGER.debug("PATH :: " + uri.toString() + " OUTGOING REQUEST BODY :: " + new String(requestBody,
 				StandardCharsets.UTF_8));
