@@ -379,7 +379,7 @@ export function formatHttpEventToReqResObject(reqId, httpEventReqResPair, isOutg
         id: existingId || uuidv4(),
         httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
         httpURL: httpURL,
-        httpURLShowOnly: httpURL,
+        httpURLShowOnly: httpRequestEvent.apiPath,
         headers: headers,
         queryStringParams: queryParams,
         bodyType: multipartData && multipartData.length > 0 ? "multipartData" : formData && formData.length > 0 ? "formData" : rawData && rawData.length > 0 ? "rawData" : grpcRawData && grpcRawData.length > 0 ? "grpcData" : "formData",
@@ -441,7 +441,7 @@ function getPathName(url){
 
 
 const generateApiPathAndService = (parsedUrl) => {
-    let generatedApiPath = parsedUrl.host;
+    let generatedApiPath = parsedUrl.pathname;
     let service = parsedUrl.host;
     let isModified = false;
     let foundMatchingPathFromConfig = false;
