@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { updateHeaderBasedOnContentType } from '../utils/http_client/utils';
 import { setGrpcDataFromDescriptor, getGrpcTabName, getGrpcSchema } from '../utils/http_client/grpc-utils';
 import { ICollectionDetails, ICubeRunHistory, IHttpClientStoreState, IHttpClientTabDetails } from "./state.types";
+import { getMergedContextMap } from "../utils/http_client/httpClientUtils";
 export interface IHttpClientAction {
     type: string,
     data: any;
@@ -159,7 +160,8 @@ const initialState: IHttpClientStoreState = {
     collectionTabState: {
         currentPage: 0,
         numResults: 10,
-        count: 0
+        count: 0,
+        timeStamp: 0
     },
     isCollectionLoading: false,
     mockContextLookupCollection: "",
@@ -167,6 +169,7 @@ const initialState: IHttpClientStoreState = {
     uiPref:{},
     historyPathFilterText: "",
     appGrpcSchema: {},
+    contextMap: {}
 }
 
 const getTabIndexGivenTabId = (tabId: string, tabs: IHttpClientTabDetails[]) => {
@@ -570,9 +573,10 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
         }
 
         case httpClientConstants.UPDATE_CONTEXT_MAP: {
+
             return {
                 ...state,
-                contextMap: data.value
+                contextMap: getMergedContextMap( state.contextMap, data.value)
             }
         }
 

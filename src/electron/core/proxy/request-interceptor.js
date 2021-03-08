@@ -37,7 +37,8 @@ const rewriteMockPath = (resourcePath, mockContext, traceDetails, service, servi
         strippedResourcePath = strippedResourcePath.substring(`${service}/`.length)
     }
     logger.info("Stripped resource path: ", strippedResourcePath)
-
+    //We are encoding service here, as from path or serviceConfig it may contain special characters
+    // In case of mock api being called from code (not devtool) also this comes as non-encoded form
     if(strictMock) {
         path = `${strictMockApiPrefix}/${customerName}/${selectedApp}/${replayInstance}/${service}/${strippedResourcePath}`
     } else {
