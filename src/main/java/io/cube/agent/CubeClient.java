@@ -396,4 +396,14 @@ public class CubeClient {
 	}
 
 
+
+	public Optional<String> getLatestProtoDescriptorDAO(String customerId, String app) {
+
+		URI uri = UriBuilder.fromPath(CommonConfig.getInstance().CUBE_RECORD_SERVICE_URI)
+			.segment("cs", "getProtoDescriptor", customerId, app)
+			.queryParam("asDAO", true)
+			.build();
+
+		return getGetResponse(uri);
+	}
 }

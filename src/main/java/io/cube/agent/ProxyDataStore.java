@@ -174,9 +174,18 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
       Todo: This method needs to be removed from Datastore interface. After that it can be removed from here.
      */
     @Override
-    public Optional<ProtoDescriptorDAO> getLatestProtoDescriptorDAO(String s, String s1) {
+    public Optional<ProtoDescriptorDAO> getLatestProtoDescriptorDAO(String customerId, String app) {
 
-        throw new UnsupportedOperationException("ProxyData Store getLatestProtoDescriptorDAO call is not supported");
+        try {
+            return cubeClient.getLatestProtoDescriptorDAO(customerId, app)
+                .map(UtilException.rethrowFunction(proto -> jsonMapper.readValue(proto,
+                    ProtoDescriptorDAO.class)));
+        } catch (IOException e) {
+            LOGGER.error(
+                "Exception occurred while getting protoDescriptor for customer : " + customerId
+                    + " and app : " + app, e);
+        }
+        return Optional.empty();
     }
 
     @Override
