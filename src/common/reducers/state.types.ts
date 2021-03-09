@@ -109,10 +109,14 @@ export interface IAppInfo {
 
 export interface IAppDetails {
   //From actual API call some data has been moved to 'app'.
-  data: string;
+  app: IAppInfo;
+}
+
+export interface IAppImages {
   fileName: string;
   fileType: string;
-  app: IAppInfo;
+  data: string;
+  appName: string;
 }
 
 export interface IServiceDetails {
@@ -202,6 +206,9 @@ export interface ICubeState {
   analysisStatus: string;
   analysisStatusObj: any; //2
   appsList: IAppDetails[];
+  appImages: IAppImages[];
+  appImagesReqStatus: string,
+  appImagesReqErr: string;
   appsListReqErr: string;
   appsListReqStatus: string;
   collectionTemplateVersion: string | null;

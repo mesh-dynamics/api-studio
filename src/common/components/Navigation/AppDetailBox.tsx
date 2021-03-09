@@ -1,5 +1,5 @@
 import React, { MouseEvent } from "react";
-import { IAppDetails } from "../../reducers/state.types";
+import { IAppDetails, IAppImages } from "../../reducers/state.types";
 import classNames from "classnames";
 
 export interface IAppDetailBoxState {}
@@ -8,6 +8,7 @@ export interface IAppDetailBoxProps {
   onAppSelect: (app: IAppDetails) => void;
   onAppEdit: (app: IAppDetails) => void;
   app: IAppDetails;
+  image: IAppImages;
   isSelected: boolean;
 }
 
@@ -45,9 +46,9 @@ export default class AppDetailBox extends React.PureComponent<
           <img
             style={{ width: "100%", height: "100%" }}
             id="base64image"
-            title={this.props.app.fileName}
-            alt={this.props.app.fileName}
-            src={`${this.props.app.filePath}`}
+            title={this.props.image && this.props.image.fileName}
+            alt={this.props.image && this.props.image.fileName}
+            src={this.props.image && `data:image/jpeg;base64, ${this.props.image.data}`}
           />
         </div>
         <div style={{ width: "100%", position: "relative" }}>

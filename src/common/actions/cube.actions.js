@@ -6,6 +6,7 @@ import { httpClientActions } from "./httpClientActions";
 export const cubeActions = {
     getApps,
     refreshAppList,
+    getAppImages,
     setSelectedApp,
     getInstances,
     getTestIds,
@@ -75,10 +76,24 @@ async function getAppList(){
     });
     return appsList;
 }
+
+function getAppImages() {
+    return async (dispatch, getState) => {
+        try {
+            let appImages = await cubeService.fetchAppsImages();
+            dispatch(success(appImages, Date.now()));
+        } catch (error) {
+            dispatch(failure("Failed to get Images", Date.now()));
+        }
+    };
+    function success(appImages, date) { return { type: cubeConstants.APP_IMAGES_SUCCESS, data: appImages, date: date } }
+    function failure(message, date) { return { type: cubeConstants.APP_IMAGES_FAILURE, err: message, date: date } }
+}
 function refreshAppList(){
     return async (dispatch, getState) => {
         const appsList = await getAppList();
         dispatch({ type: cubeConstants.APPS_SUCCESS, data: appsList, date: Date.now() }); 
+        dispatch(cubeActions.getAppImages());
     }
 }
 
@@ -95,6 +110,7 @@ function getApps () {
                 dispatch(cubeActions.getTimelineData(appsList[0].name));
                 dispatch(cubeActions.getTestConfigByAppId(appsList[0].id));
                 dispatch(cubeActions.getTestIds(appsList[0].name));
+                dispatch(cubeActions.getAppImages());
             }
         } catch (error) {
             dispatch(failure("Failed to getApps", Date.now()));

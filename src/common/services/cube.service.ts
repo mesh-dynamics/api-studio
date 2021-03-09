@@ -18,6 +18,15 @@ const fetchAppsList = async () => {
     }
 }
 
+const fetchAppsImages = async () => {
+    try {
+        return await api.get(`${config.apiBaseUrl}/app/images`);
+    } catch (error) {
+        console.log("Error Fetching AppImages \n", error);
+        throw new Error("Error Fetching AppImages");
+    }
+}
+
 const addNewApp = async (formData: any) => {
     try {
         return await api.post(`${config.apiBaseUrl}/app`, formData, {
@@ -691,6 +700,7 @@ const fetchGrpcProtoDescriptor = async (customerId: string, selectedApp: string)
 
 export const cubeService = {
     fetchAppsList,
+    fetchAppsImages,
     addNewApp,
     updateApp,
     removeAnApp,

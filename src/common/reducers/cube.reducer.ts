@@ -11,6 +11,9 @@ const initialState : ICubeState = {
     appsListReqStatus: cubeConstants.REQ_NOT_DONE,
     appsListReqErr: '',
     appsList: [],
+    appImagesReqStatus: cubeConstants.REQ_NOT_DONE,
+    appImagesReqErr: '',
+    appImages: [],
     selectedApp: null,
     selectedAppObj: null,
     gateway: null,
@@ -89,6 +92,20 @@ export function cube (state = initialState, action: ICubeAction) : ICubeState {
                 appsListReqErr: '',
                 appsList: action.data
             };
+        case cubeConstants.APP_IMAGES_SUCCESS:
+            return {
+                ...state,
+                appImagesReqStatus: cubeConstants.REQ_SUCCESS,
+                appImagesReqErr: '',
+                appImages: action.data
+            }; 
+        case cubeConstants.APP_IMAGES_FAILURE:
+            return {
+                ...state,
+                appImagesReqStatus: cubeConstants.REQ_FAILURE,
+                appImagesReqErr: action.err,
+                appImages: []
+            };       
         case cubeConstants.TEST_CONFIG_SUCCESS:
             return {
                 ...state,

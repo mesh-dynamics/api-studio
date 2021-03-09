@@ -396,7 +396,7 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
 
   createAppList = () => {
     const {
-      cube: { appsList, selectedApp },
+      cube: { appsList, selectedApp, appImages },
     } = this.props;
 
     return (
@@ -411,6 +411,7 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
         {appsList.map((item) => (
           <AppDetailBox
             app={item}
+            image= {appImages.find(im => im.appName === item.app.name)}
             key={item.app.name}
             isSelected={selectedApp == item.app.name}
             onDeleteApp={this.handleRemoveApp}
