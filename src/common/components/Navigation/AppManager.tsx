@@ -75,14 +75,13 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
   };
 
   handleRemoveApp = (app: IAppDetails) => {
-    this.setState({
-      isDeleteConfirmModalVisible: true,
-      actionedApp: app,
-    });
+    this.setState({ isDeleteConfirmModalVisible: true, actionedApp: app });
   };
+
   cancelDeletion = () => {
     this.setState({ isDeleteConfirmModalVisible: false });
   };
+
   proceedToDelete = () => {
     this.setState({
       isDeleteConfirmModalVisible: false,
@@ -90,6 +89,7 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
       message: "Deleting...",
       messageHeading: "Delete status",
     });
+    
     cubeService
       .removeAnApp(
         this.state.actionedApp?.app.displayName,

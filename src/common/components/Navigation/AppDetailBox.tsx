@@ -1,4 +1,4 @@
-import React from "react";
+import React, { MouseEvent } from "react";
 import { IAppDetails } from "../../reducers/state.types";
 import classNames from "classnames";
 
@@ -23,6 +23,11 @@ export default class AppDetailBox extends React.PureComponent<
     event.stopPropagation();
     this.props.onAppEdit(this.props.app);
   };
+
+  handleDelete = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    event.stopPropagation();
+    this.props.onDeleteApp(this.props.app);
+  }
 
   render() {
     const appBoxClass = classNames({
@@ -49,10 +54,13 @@ export default class AppDetailBox extends React.PureComponent<
           <div className="app-name">{this.props.app.app.displayName}</div>
           <span className="app-actions">
             <i className="fas pointer fa-edit" onClick={this.toggleEdit} />
-            {!this.props.isSelected && <i
-              className="fas fa-trash pointer"
-              onClick={() => this.props.onDeleteApp(this.props.app)}
-            />}
+            {
+            !this.props.isSelected && 
+              <i
+                className="fas fa-trash pointer"
+                onClick={this.handleDelete}
+              />
+            }
           </span>
         </div>
       </div>
