@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -100,8 +101,12 @@ public class DynamicInjectionConfig {
 		@JsonProperty("forEach")
 		public final Optional<ForEachStruct> forEach;
 
+		@JsonProperty("metadata")
+		public final Optional<Metadata> metadata;
+
 
 		public ExtractionMeta() {
+			metadata = Optional.empty();
 			apiPath = "";
 			method = HTTPMethodType.POST;
 			name = "";
@@ -111,9 +116,10 @@ public class DynamicInjectionConfig {
 			forEach = Optional.empty();
 		}
 
-		public ExtractionMeta(String apiPath, HTTPMethodType method,
+		public ExtractionMeta(String apiPath, String jsonPath, HTTPMethodType method,
 			String name, String value, boolean reset, boolean valueObject,
 			Optional<ForEachStruct> forEach) {
+			this.metadata = Optional.of(new Metadata(getExtractionId(apiPath, jsonPath, method), jsonPath));
 			this.apiPath = apiPath;
 			this.method = method;
 			this.name = name;
@@ -121,6 +127,10 @@ public class DynamicInjectionConfig {
 			this.reset = reset;
 			this.valueObject = valueObject;
 			this.forEach = forEach;
+		}
+
+		public static String getExtractionId(String apiPath, String jsonPath, HTTPMethodType method){
+			return String.valueOf(Objects.hash(apiPath, jsonPath, method));
 		}
 
 	}
@@ -151,20 +161,17 @@ public class DynamicInjectionConfig {
 		@JsonProperty("forEach")
 		public final Optional<ForEachStruct> forEach;
 
+		@JsonProperty("metadata")
+		public final Optional<Metadata> metadata;
+
+
 		public InjectionMeta() {
-			this.apiPaths = Collections.EMPTY_LIST;
-			this.jsonPath = "";
-			this.injectAllPaths = false;
-			this.name = "";
-			this.regex = Optional.empty();
-			this.method = HTTPMethodType.POST;
-			this.forEach = Optional.empty();
+			this(Collections.EMPTY_LIST, "", false, "", Optional.empty(),
+				HTTPMethodType.POST, Optional.empty(), Optional.empty());
 		}
-
-
 		public InjectionMeta(List<String> apiPaths, String jsonPath, boolean injectAllPaths
 			, String name, Optional<String> regex, HTTPMethodType method,
-			Optional<ForEachStruct> forEach) {
+			Optional<ForEachStruct> forEach, Optional<Metadata> metadata) {
 			this.apiPaths = apiPaths;
 			this.jsonPath = jsonPath;
 			this.injectAllPaths = injectAllPaths;
@@ -172,6 +179,17 @@ public class DynamicInjectionConfig {
 			this.regex = regex;
 			this.method = method;
 			this.forEach = forEach;
+			this.metadata = metadata;
+		}
+
+		public InjectionMeta(List<String> apiPaths, String jsonPath, boolean injectAllPaths
+			, String name, Optional<String> regex, HTTPMethodType method,
+			Optional<ForEachStruct> forEach, String extractionApiPath, String extractionJsonPath,
+			HTTPMethodType extractionMethod) {
+			this(apiPaths, jsonPath, injectAllPaths, name, regex, method, forEach,
+				Optional.of(new Metadata(ExtractionMeta
+					.getExtractionId(extractionApiPath, extractionJsonPath, extractionMethod),
+				extractionJsonPath)));
 		}
 
 		public String map(String original, String replacement) {
@@ -260,6 +278,26 @@ public class DynamicInjectionConfig {
 		public StaticValue(@JsonProperty("name") String name, @JsonProperty("value") String value) {
 			this.name = name;
 			this.value = value;
+		}
+	}
+
+	static public class Metadata{
+		@JsonProperty("extractionId")
+		public String extractionId;
+
+		@JsonProperty("extractionJsonPath")
+		public String extractionJsonPath;
+
+		public Metadata() {
+			// Empty constructor for JSON deserialization
+			this.extractionId = "";
+			this.extractionJsonPath = "";
+		}
+
+		public Metadata(String extractionId,
+			String extractionJsonPath) {
+			this.extractionId = extractionId;
+			this.extractionJsonPath = extractionJsonPath;
 		}
 	}
 }
