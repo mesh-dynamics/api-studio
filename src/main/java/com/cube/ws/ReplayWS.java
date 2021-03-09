@@ -573,11 +573,13 @@ public class ReplayWS extends ReplayBasicWS {
         List<InjectionExtractionMeta> injectionExtractionMetas;
 
         if (dynamicInjectionConfig.isPresent()) {
+            DynamicInjectionConfig diConfig = dynamicInjectionConfig.get();
+
             do {
-                DynamicInjectionConfig diConfig = dynamicInjectionConfig.get();
                 AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(
                     replayId,
-                    new MultivaluedHashMap());
+                    new MultivaluedHashMap<String, String>(
+                        Map.of(Constants.START_FIELD, String.valueOf(processedCount))));
 
                 ReqRespResultsWithFacets resultWithFacets = rrstore
                     .getAnalysisMatchResults(analysisMatchResultQuery);
@@ -590,10 +592,10 @@ public class ReplayWS extends ReplayBasicWS {
 
                 diLearner.processReplayMatchResults(reqRespMatchResultStream);
 
-                injectionExtractionMetas = diLearner.generateFilteredRules(diConfig);
-
-
             } while (processedCount < totalCount);
+
+            injectionExtractionMetas = diLearner.generateFilteredRules(diConfig);
+
 
             try {
                 return writeResponseToFile("context_propagation_rules", injectionExtractionMetas,
