@@ -12,6 +12,7 @@ import io.md.injection.DynamicInjectionConfig;
 import io.md.injection.DynamicInjectionConfig.ExtractionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta;
 import io.md.injection.DynamicInjectionConfig.InjectionMeta.HTTPMethodType;
+import io.md.injection.DynamicInjector;
 import io.md.utils.Utils;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,15 +28,20 @@ import org.apache.solr.common.util.Hash;
 
 public class DynamicInjectionRulesLearner {
 
-    List<String> paths;
+    private final List<String> paths;
 
     DynamicInjectionConfigGenerator diGen = new DynamicInjectionConfigGenerator();
     static final String methodPath = "/method";
+
+    private final HashSet<diffPaths> diffPathsHashSet = new HashSet<>();
+
 
     public DynamicInjectionRulesLearner(Optional<List<String>> paths) {
         this.paths = paths.orElse(
             Arrays.asList("/pathSegments", "/queryParams", "/body", "/hdrs"));
     }
+
+
 
     public void processEvents(Result<Event> events) {
         events.getObjects().forEach(this::processEvent);
@@ -67,43 +73,52 @@ public class DynamicInjectionRulesLearner {
         }
     }
 
-    public static List<InjectionExtractionMeta> filterRulesByReplayMatchResults(
-        DynamicInjectionConfig dynamicInjectionConfig,
-        Stream<ReqRespMatchResult> reqRespMatchResultStream) {
-
-        HashSet<diffPaths> diffPathsHashSet = new HashSet<>();
-        ArrayList<ExtractionMeta> unmatchedExtractionList = new ArrayList<>();
-//        HashSet<String> finalExtractionIdList = new HashSet<>();
-        List<InjectionMeta> unmatchedInjectionList = new ArrayList<>();
-        HashMap<String, ExtractionMeta> extractionMetaHashMap = new HashMap();
-        List<InjectionExtractionMeta> injectionExtractionMetas = new ArrayList<>();
+    public void processReplayMatchResults(Stream<ReqRespMatchResult> reqRespMatchResultStream) {
+        // NOTE: We are being sloppy here by not considering the req/resp method. But since it is
+        // just filtering rules based on diffs, an occasional false-positive is admissible.
+        // Retrieving method from orig events is too much of data processing overhead for marginal ben.
         reqRespMatchResultStream.forEach(res ->
                 res.respCompareRes.diffs.forEach(
-                    diff    -> diffPathsHashSet.add(new diffPaths(res.path, diff.path))
+                    // Use set to de-dup recurring api,json path combinations.
+                    diff -> diffPathsHashSet.add(new diffPaths(res.path, diff.path))
                 )
         );
 
+    }
+
+    public List<InjectionExtractionMeta> generateFilteredRules(DynamicInjectionConfig dynamicInjectionConfig){
+        final HashMap<String, ExtractionMeta> extractionMetaHashMap = new HashMap();
+
         dynamicInjectionConfig.extractionMetas.forEach(extractionMeta -> {
-            extractionMeta.metadata.extractionJsonPath.ifPresent(jsonPath -> {
-                diffPaths extractionPath = new diffPaths(extractionMeta.apiPath, jsonPath);
-                if (diffPathsHashSet.contains(extractionPath)) {
-                    extractionMeta.metadata.extractionId
-                        .ifPresent(id -> extractionMetaHashMap.put(id, extractionMeta));
-                }
+
+            extractionMeta.metadata.ifPresent(metadata -> {
+                diffPathsHashSet.forEach(diffPath -> {
+                    // Cannot use a hash-table as a) extConfig api path may be regex; and
+                    // b) the diff jsonPath may be at a parent path of the ext config json path, e.g.
+                    // extJsonPath at /body/id but diff is at /body as body itself is missing.
+                    if (DynamicInjector
+                        .apiPathMatch(Arrays.asList(extractionMeta.apiPath), diffPath.apiPath)
+                        && metadata.extractionJsonPath.contains(diffPath.jsonPath)) {
+                        extractionMetaHashMap.put(metadata.extractionId, extractionMeta);
+                    }
+                });
+
             });
         });
 
+        final List<InjectionExtractionMeta> injectionExtractionMetas = new ArrayList<>();
+
         dynamicInjectionConfig.injectionMetas.forEach(injectionMeta ->
-            injectionMeta.metadata.extractionId.ifPresent(id ->
-                Optional.ofNullable(extractionMetaHashMap.get(id)).ifPresent(
+            injectionMeta.metadata.ifPresent(metadata ->
+                Optional.ofNullable(extractionMetaHashMap.get(metadata.extractionId)).ifPresent(
                     extConfig -> injectionMeta.apiPaths
-                        // Separate out each inj api path into a separate line
+                        // Separate out each inj api path into a separate line in csv file
                         .forEach(path -> injectionExtractionMetas.add(new InjectionExtractionMeta(
                             new InjectionExtractionMeta.ExtractionConfig(extConfig.apiPath,
-                                extConfig.metadata.extractionJsonPath.get(), extConfig.method),
+                                metadata.extractionJsonPath, extConfig.method),
                             new InjectionConfig(path, injectionMeta.jsonPath,
                                 injectionMeta.method)))))));
-
+        Collections.sort(injectionExtractionMetas);
         return injectionExtractionMetas;
     }
 

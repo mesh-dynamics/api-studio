@@ -7,10 +7,8 @@ import static io.md.core.Utils.buildErrorResponse;
 
 import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
-import com.cube.learning.CompareTemplatesLearner;
 import com.cube.learning.DynamicInjectionRulesLearner;
 import com.cube.learning.InjectionExtractionMeta;
-import com.cube.learning.TemplateEntryMeta;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
@@ -549,9 +547,9 @@ public class ReplayWS extends ReplayBasicWS {
     }
 
     @GET
-    @Path("getFilteredDynamicInjectionConfigs/{customerId}/{app}/{version}")
+    @Path("filterDynamicInjectionConfigsByReplay/{customerId}/{app}/{version}")
     @Produces(MediaType.TEXT_PLAIN)
-    public Response getFilteredDynamicInjectionConfigs(@Context UriInfo uriInfo,
+    public Response filterDynamicInjectionConfigsByReplay(@Context UriInfo uriInfo,
         @PathParam("customerId") String customerId,
         @PathParam("app") String app,
         @PathParam("version") String version) {
@@ -567,46 +565,60 @@ public class ReplayWS extends ReplayBasicWS {
                 Utils.buildErrorResponse(Constants.ERROR, Constants.NOT_PRESENT,
                     "Missing query parameter replayId")).build();
         }
-
-        AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(replayId,
-            new MultivaluedHashMap<>());
-
-        ReqRespResultsWithFacets resultWithFacets = rrstore
-            .getAnalysisMatchResults(analysisMatchResultQuery);
-
-        Stream<ReqRespMatchResult> reqRespMatchResultList = resultWithFacets.result
-            .getObjects();
-
         Optional<DynamicInjectionConfig> dynamicInjectionConfig = rrstore.getDynamicInjectionConfig(
             customerId, app, version);
 
-        Response resp = dynamicInjectionConfig.map(diConfig -> {
-            List<InjectionExtractionMeta> injectionExtractionMetas = DynamicInjectionRulesLearner
-                .filterRulesByReplayMatchResults(diConfig, reqRespMatchResultList);
+        DynamicInjectionRulesLearner diLearner = new DynamicInjectionRulesLearner(Optional.empty());
+        long processedCount = 0, totalCount;
+        List<InjectionExtractionMeta> injectionExtractionMetas;
+
+        if (dynamicInjectionConfig.isPresent()) {
+            do {
+                DynamicInjectionConfig diConfig = dynamicInjectionConfig.get();
+                AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(
+                    replayId,
+                    new MultivaluedHashMap());
+
+                ReqRespResultsWithFacets resultWithFacets = rrstore
+                    .getAnalysisMatchResults(analysisMatchResultQuery);
+
+                processedCount += resultWithFacets.result.getNumResults();
+                totalCount = resultWithFacets.result.getNumFound();
+
+                Stream<ReqRespMatchResult> reqRespMatchResultStream = resultWithFacets.result
+                    .getObjects();
+
+                diLearner.processReplayMatchResults(reqRespMatchResultStream);
+
+                injectionExtractionMetas = diLearner.generateFilteredRules(diConfig);
+
+
+            } while (processedCount < totalCount);
 
             try {
                 return writeResponseToFile("context_propagation_rules", injectionExtractionMetas,
                     InjectionExtractionMeta.class, true);
             } catch (JsonProcessingException e) {
                 LOGGER.error(String.format(
-                    "Error in converting DynamicInjectionConfig object to Json for customerId=%s, app=%s, version=%s",
+                    "Error in converting DynamicInjectionConfig object to Json for customerId:%s, app:%s, version:%s",
                     customerId, app, version), e);
                 return Response.serverError().entity(
                     Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
                         "Error in converting DynamicInjectionConfig object to Json")).build();
             } catch (IOException e) {
                 LOGGER.error(
-                    String.format("Error in file creation for customer=%s, app=%s, version=%s",
+                    String.format("Error in file creation for customer:%s, app:%s, version:%s",
                         customerId, app, version), e);
                 return Response.serverError().entity(
                     Utils.buildErrorResponse(Constants.ERROR, Constants.IO_EXCEPTION,
-                        String.format("Error in file creation for customer=%s, app=%s, version=%s",
+                        String.format("Error in file creation for customer:%s, app:%s, version:%s",
                             customerId, app, version))).build();
             }
-        }).orElse(Response.status(Response.Status.NOT_FOUND)
-            .entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
-                "DynamicInjectionConfig object not found")).build());
-        return resp;
+        } else {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
+                    "DynamicInjectionConfig object not found")).build();
+        }
 
     }
 
