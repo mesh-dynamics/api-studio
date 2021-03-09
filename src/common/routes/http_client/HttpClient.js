@@ -550,7 +550,7 @@ class HttpClient extends Component {
         return (
             <div>
                 <div style={{display: "flex"}}>
-                    <div style={{marginLeft: "auto", order: "2"}}>
+                    <div style={{ display: "flex", justifyContent: "flex-start", flex: 1}}>
                         <Button className="cube-btn text-center" onClick={this.handleClick}>
                             {currentSelectedTab.requestRunning ? <><i className="fa fa-spinner fa-spin"></i> STOP</>: <><Glyphicon glyph="play" /> RUN</>} 
                         </Button>
@@ -559,11 +559,23 @@ class HttpClient extends Component {
                         visible={currentSelectedTab.showSaveBtn} 
                         tabId={currentSelectedTab.id}
                         />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "flex-end", flex: 1}}>
+                        <div>
+                            <div className="btn btn-sm cube-btn text-center" style={{ display: showCompleteDiff ? "none" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleShowDiff}>
+                                <Glyphicon glyph="random" /> DIFF
+                            </div>
+                            <div className="btn btn-sm cube-btn text-center" style={{ display: showCompleteDiff ? "inline-block" : "none"}} onClick={this.handleShowCompleteDiffClick}>
+                                <Glyphicon glyph="sort-by-attributes" /> FULL VIEW
+                            </div>
+                            <div className="btn btn-sm cube-btn text-center" style={{ display: showCompleteDiff ? "inline-block" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleSetAsReference}>
+                                <Glyphicon glyph="export" /> SET AS REFERENCE
+                            </div>
+                        </div>
                         <Button className="cube-btn text-center"  onClick={this.handleDuplicateTabClick} title="Duplicate Tab">
                             <i className="fa fa-clone"></i>
                         </Button>
                     </div>
-
                 </div>
                 <div>
                 <div style={{marginRight: "7px"}}>
@@ -726,19 +738,6 @@ class HttpClient extends Component {
                                     </Table>
                                 </div>
                             )}
-                        </div>
-                    </div>
-                    <div style={{display: "flex"}}>
-                        <div style={{marginLeft: "auto", order: "2"}}>
-                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "none" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleShowDiff}>
-                                <Glyphicon glyph="random" /> DIFF
-                            </div>
-                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "inline-block" : "none"}} onClick={this.handleShowCompleteDiffClick}>
-                                <Glyphicon glyph="sort-by-attributes" /> FULL VIEW
-                            </div>
-                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: showCompleteDiff ? "inline-block" : currentSelectedTab.recordedHistory ? "inline-block" : "none"}} onClick={this.handleSetAsReference}>
-                                <Glyphicon glyph="export" /> SET AS REFERENCE
-                            </div>
                         </div>
                     </div>
                 </div>
