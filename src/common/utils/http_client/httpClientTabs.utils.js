@@ -673,3 +673,50 @@ export function getReqResFromTabData(selectedApp, eachPair, tabToSave, runId, ty
     }
     return reqResCubeFormattedData;
 }
+
+export function updateRequestDataPerPreRequest(preRequestResult, reqResponseData){
+    try {
+        //Update the current tab, for any changes made by backend in request Data after preRequest call. So the same reflects in RHS.
+        const payload = preRequestResult.payload[1];
+        const requestPayload = reqResponseData.request.payload[1];
+
+        //Add or update Headers
+        const preRequestheaders = payload.hdrs;
+        Object.entries(preRequestheaders).forEach(([headerName, headerValues]) => {
+            headerValues.forEach((headerValue) => {
+                const existingValue = requestPayload.hdrs[headerName];
+                if(existingValue){
+                    if(existingValue.indexOf(headerValue) == -1){
+                        requestPayload.hdrs[headerName][0] = headerValue;
+                    }
+                }else{
+                    requestPayload.hdrs[headerName] = [headerValue];
+                }            
+            });
+        });
+
+        //Add or update Query String
+        const preRequestqueryString = payload.queryParams;
+        Object.entries(preRequestqueryString).forEach(([queryKey, queryStringValueArray]) => {
+            queryStringValueArray.forEach((queryValue) => {
+                const existingValue = requestPayload.queryParams[queryKey];
+                if(existingValue){
+                    if(existingValue.indexOf(queryValue) == -1){
+                        requestPayload.queryParams[queryKey][0] = queryValue;
+                    }
+                }else{
+                    requestPayload.queryParams[queryKey] = [queryValue];
+                }   
+            });
+        });
+
+        /*
+        For future change: To reflect UI change due to injection in formParams, multipartData and rawData
+            Backend need to send unwrapped data for these params and same can be displayed
+            At present, backend sends WrappedEncoded data (base64) containing above values and can not be parsed at UI
+        */
+    }
+    catch(error){
+        console.error(error);
+    }
+};

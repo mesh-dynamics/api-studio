@@ -798,12 +798,12 @@ class HttpClientTabs extends Component {
         }
     }
 
-    async driveRequestHandleResponse(tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, responseStatus, responseStatusText, fetchedResponseHeaders, bodyData, responseTrailers={}){
+    async driveRequestHandleResponse(tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, responseStatus, responseStatusText, fetchedResponseHeaders, bodyData, responseTrailers={}, preRequestResult){
         const {httpClient: { userHistoryCollection}, dispatch} = this.props;
         const resTimestamp = Date.now() / 1000;
     
         dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders), bodyData, responseTrailers));
-        this.saveToHistoryAndLoadTrace(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp, httpRequestURLRendered, currentEnvironment);
+        this.saveToHistoryAndLoadTrace(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp, httpRequestURLRendered, currentEnvironment, preRequestResult);
     }
      async driveRequestHandleError(error, tabId, runId){
          const {dispatch} = this.props;
@@ -901,6 +901,7 @@ class HttpClientTabs extends Component {
         let currentEnvironment, currentEnvironmentVars;
         currentEnvironment = getCurrentEnvironment();
         currentEnvironmentVars = getCurrentEnvVars();
+        let preRequestResult = {};
 
         const reqTimestamp = Date.now() / 1000;
         let queryStringValue = "";
@@ -914,7 +915,7 @@ class HttpClientTabs extends Component {
                 injectionConfigVersion: `Default${selectedApp}`,
                 contextMap:  getContextMapKeyValues(contextMap),
             }
-            const preRequestResult = await cubeService.fetchPreRequest(userHistoryCollection.id, runId, preRequestData, selectedApp, tabToProcess.abortRequest.cancelToken);
+            preRequestResult = await cubeService.fetchPreRequest(userHistoryCollection.id, runId, preRequestData, selectedApp, tabToProcess.abortRequest.cancelToken);
         
             [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] = preRequestToFetchableConfig(preRequestResult, httpRequestURL);
             queryStringValue = httpRequestQueryStringParamsRendered.toString();
@@ -976,7 +977,7 @@ class HttpClientTabs extends Component {
                             bodyData = await response.text();
                         }
 
-                        this.driveRequestHandleResponse(tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, responseStatus, responseStatusText, fetchedResponseHeaders, bodyData, responseTrailers);
+                        this.driveRequestHandleResponse(tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, responseStatus, responseStatusText, fetchedResponseHeaders, bodyData, responseTrailers, preRequestResult);
                     } catch (error) {
                         this.driveRequestHandleError(error, tabId, runId);
                     }
@@ -1000,7 +1001,7 @@ class HttpClientTabs extends Component {
 
                 const bodyData = response.text();
 
-                this.driveRequestHandleResponse(tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, responseStatus, responseStatusText, fetchedResponseHeaders, bodyData);
+                this.driveRequestHandleResponse(tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, responseStatus, responseStatusText, fetchedResponseHeaders, bodyData, {}, preRequestResult);
             
             })
             .catch((error) => {
@@ -1072,7 +1073,7 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.deleteOutgoingReq(outgoingReqTabId, tabId));
     }
 
-    saveToHistoryAndLoadTrace = (tabId, recordingId, runId="", reqTimestamp="", resTimestamp="", urlEnvVal="", currentEnvironment="") => {
+    saveToHistoryAndLoadTrace = (tabId, recordingId, runId="", reqTimestamp="", resTimestamp="", urlEnvVal="", currentEnvironment="", preRequestResult) => {
         const { 
             httpClient: { 
                 historyTabState, 
@@ -1096,7 +1097,9 @@ class HttpClientTabs extends Component {
         try {
             if (reqResPair.length > 0) {
                 const data = [];
-                data.push(httpClientTabUtils.getReqResFromTabData(selectedApp, reqResPair, tabToProcess, runId, "History", reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment));
+                const reqRespData = httpClientTabUtils.getReqResFromTabData(selectedApp, reqResPair, tabToProcess, runId, "History", reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment);
+                httpClientTabUtils.updateRequestDataPerPreRequest(preRequestResult, reqRespData);
+                data.push(reqRespData);
                 const apiConfig = {
                     cancelToken: tabToProcess.abortRequest.cancelToken
                 }

@@ -301,18 +301,18 @@ export interface ICollectionTabState {
 }
 
 export interface IPayloadData {
-  formParams?: any; //2
-  hdrs?: any; //2
+  formParams?: any; //2 //Obsolete
+  hdrs: IParamsMap;
   method: string; //enum
   path?: string;
   pathSegments?: string[];
   payloadState?: string;
-  queryParams?: any; //2
+  queryParams: IParamsMap;
   body: any;
   status?: number;
 }
 
-export interface IQueryParams {
+export interface IParamsMap {
   [key: string]: string[];
 }
 export interface IKeyValuePairs<T = string> {
@@ -343,7 +343,7 @@ export interface IEventData {
   spanId?: string;
   timestamp: number;
   traceId: string;
-  payloadFields:[];
+  payloadFields:string[];
   grpcConnectionSchema: IGrpcConnect
 }
 export interface IApiTrace {
@@ -355,7 +355,7 @@ export interface IApiTrace {
   method: string; //Should be Enum
   name: string;
   parentSpanId: string;
-  queryParams: IQueryParams;
+  queryParams: IParamsMap;
   recordingIdAddedFromClient: string;
   reqTimestamp: number;
   requestEventId: string;
