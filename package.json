@@ -9,6 +9,7 @@
     "dependencies": {
         "@emotion/styled": "^10.0.27",
         "@tippy.js/react": "^2.2.2",
+        "@types/mousetrap": "^1.6.5",
         "abort-controller": "^3.0.0",
         "ajv": "^6.12.3",
         "ajv-keywords": "^3.5.2",
@@ -56,6 +57,7 @@
         "lodash.throttle": "^4.1.1",
         "mime": "^2.5.2",
         "moment": "^2.24.0",
+        "mousetrap": "^1.6.5",
         "mustache": "^4.0.1",
         "postman-collection": "^3.6.5",
         "prop-types": "^15.6.2",

@@ -26,6 +26,7 @@ import Tippy from "@tippy.js/react";
 import RequestMatchType from './RequestMatchType.tsx';
 import { HttpRequestFields } from "./HttpRequestFields";
 import { httpClientConstants } from "../../constants/httpClientConstants";
+import RunButton from "./components/RunButton";
 
 const newStyles = {
     variables: {
@@ -551,9 +552,7 @@ class HttpClient extends Component {
             <div>
                 <div style={{display: "flex"}}>
                     <div style={{ display: "flex", justifyContent: "flex-start", flex: 1}}>
-                        <Button className="cube-btn text-center" onClick={this.handleClick}>
-                            {currentSelectedTab.requestRunning ? <><i className="fa fa-spinner fa-spin"></i> STOP</>: <><Glyphicon glyph="play" /> RUN</>} 
-                        </Button>
+                        <RunButton handleClick={this.handleClick} requestRunning={currentSelectedTab.requestRunning}/>
                         <SaveToCollection 
                         disabled={currentSelectedTab.httpURL.length === 0} 
                         visible={currentSelectedTab.showSaveBtn} 
