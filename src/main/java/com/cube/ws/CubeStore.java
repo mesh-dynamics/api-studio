@@ -978,14 +978,15 @@ public class CubeStore {
     }
 
 	@POST
-	@Path("start/{customerId}/{app}/{instanceId}/{templateSetVersion}")
+	@Path("start/{customerId}/{app}/{instanceId}/{templateSetName}/{templateSetLabel}")
 	@Consumes("application/x-www-form-urlencoded")
     public void start(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui,
                           MultivaluedMap<String, String> formParams,
                           @PathParam("app") String app,
                           @PathParam("customerId") String customerId,
                           @PathParam("instanceId") String instanceId,
-                          @PathParam("templateSetVersion") String templateSetVersion) {
+                          @PathParam("templateSetName") String templateSetName,
+                          @PathParam("templateSetLabel") String templateSetLabel) {
 	    // check if recording or replay is ongoing for (customer, app, instanceId)
 
       Optional<RecordingType> recordingType =
@@ -1070,8 +1071,12 @@ public class CubeStore {
         Optional<Boolean> ignoreStaticContent = io.md.utils.Utils.strToBool(formParams.getFirst(Constants.IGNORE_STATIC_CONTENT));
 
 
+        String templateSetVersion =ServerUtils.createTemplateSetVersion(templateSetName,
+            templateSetLabel);
+
         RecordingBuilder recordingBuilder = new RecordingBuilder(customerId, app,
-            instanceId, collection).withTemplateSetVersion(templateSetVersion).withName(name)
+            instanceId, collection).withTemplateSetName(templateSetName)
+            .withTemplateSetLabel(templateSetLabel).withTemplateSetVersion(templateSetVersion).withName(name)
             .withLabel(label).withUserId(userId).withTags(tags);
         codeVersion.ifPresent(recordingBuilder::withCodeVersion);
         branch.ifPresent(recordingBuilder::withBranch);

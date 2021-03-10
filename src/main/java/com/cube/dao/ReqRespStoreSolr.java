@@ -1080,8 +1080,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String VERSIONF = Constants.VERSION_FIELD + STRING_SUFFIX;
     private static final String INT_VERSION_F = Constants.VERSION_FIELD + INT_SUFFIX;
     private static final String ATTRIBUTE_RULE_MAP_ID = "attribute_rule_map_id" + STRING_SUFFIX;
-    private static final String TEMPLATE_SET_NAME_F = "name" + STRING_SUFFIX;
-    private static final String TEMPLATE_SET_LABEL_F = "label" + STRING_SUFFIX;
+    private static final String TEMPLATE_SET_NAME_F = "templateName" + STRING_SUFFIX;
+    private static final String TEMPLATE_SET_LABEL_F = "templateLabel" + STRING_SUFFIX;
     private static final String DYNAMIC_INJECTION_CONFIG_VERSIONF =
         Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD + STRING_SUFFIX;
     private static final String STATIC_INJECTION_MAPF =
@@ -3473,7 +3473,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> dynamicInjectionConfigVersion = getStrField(doc , DYNAMIC_INJECTION_CONFIG_VERSIONF);
         Optional<String> runId = getStrField(doc , RUNIDF);
         Optional<Boolean> ignoreStatic = getBoolField(doc , IGNORESTATICCONTENTF );
-
+        Optional<String> templateSetName = getStrField(doc, TEMPLATE_SET_NAME_F);
+        Optional<String> templateSetLabel = getStrField(doc, TEMPLATE_SET_LABEL_F);
         if (id.isPresent() && customerId.isPresent() && app.isPresent() && instanceId.isPresent() && collection
             .isPresent() &&
             status.isPresent() && templateVersion.isPresent() && archived.isPresent() && name
@@ -3498,7 +3499,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
             runId.ifPresent(recordingBuilder::withRunId);
             ignoreStatic.ifPresent(recordingBuilder::withIgnoreStatic);
-
+            templateSetName.ifPresent(recordingBuilder::withTemplateSetName);
+            templateSetLabel.ifPresent(recordingBuilder::withTemplateSetLabel);
             try {
                 generatedClassJarPath.ifPresent(
                     UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
@@ -3546,6 +3548,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(RECORDING_TYPE_F, recording.recordingType.toString());
         doc.setField(RUNIDF, recording.runId);
         doc.setField(IGNORESTATICCONTENTF , recording.ignoreStatic);
+        doc.setField(TEMPLATE_SET_NAME_F, recording.templateSetName);
+        doc.setField(TEMPLATE_SET_LABEL_F, recording.templateSetLabel);
 
         recording.parentRecordingId.ifPresent(parentRecId -> doc.setField(PARENT_RECORDING_IDF, parentRecId));
         recording.generatedClassJarPath.ifPresent(jarPath -> doc.setField(GENERATED_CLASS_JAR_PATH, jarPath));

@@ -47,6 +47,8 @@ public class RecordingBuilder {
 	private Optional<String> dynamicInjectionConfigVersion = Optional.empty();
 	private String runId;
 	private boolean ignoreStatic = false;
+	private String templateSetName;
+	private String templateSetLabel;
 
 	public RecordingBuilder(String customerId, String app, String instanceId, String collection) {
 		this.customerId = customerId;
@@ -75,6 +77,8 @@ public class RecordingBuilder {
 		this.label = "";
 		this.recordingType = RecordingType.Golden;
 		this.runId = "";
+		this.templateSetName= "";
+		this.templateSetLabel = "";
 	}
 
 	/**
@@ -89,7 +93,7 @@ public class RecordingBuilder {
 			, templateVersion, parentRecordingId, rootRecordingId, name, codeVersion, branch
 			, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment
 			, userId, generatedClassJarPath, generatedClassLoader, label, recordingType ,
-			dynamicInjectionConfigVersion, runId, ignoreStatic);
+			dynamicInjectionConfigVersion, runId, ignoreStatic, templateSetName, templateSetLabel);
 	}
 
 	private String recalculateId() {
@@ -216,6 +220,16 @@ public class RecordingBuilder {
 
 	public  RecordingBuilder withIgnoreStatic(boolean ignore){
 		this.ignoreStatic = ignore;
+		return this;
+	}
+
+	public RecordingBuilder withTemplateSetName(String templateSetName) {
+		this.templateSetName = templateSetName;
+		return this;
+	}
+
+	public RecordingBuilder withTemplateSetLabel(String templateSetLabel) {
+		this.templateSetLabel = templateSetLabel;
 		return this;
 	}
 
