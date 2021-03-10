@@ -1418,6 +1418,8 @@ public class AnalyzeWS {
 
 		    String updatedTemplateSetVersion = AnalysisUtils.updateTemplateSet(templateUpdOpSetId,
 			    Optional.of(templateSet), rrstore);
+		    Pair<String, String> updateTemplateSetNameAndLabel = ServerUtils.
+			    extractTemplateSetNameAndLabel(updatedTemplateSetVersion);
 
 		    // TODO With similar update logic find the updated collection id
 		    String newCollectionName = UUID.randomUUID().toString();
@@ -1443,7 +1445,10 @@ public class AnalyzeWS {
 			    .withName(name).withLabel(label).withTags(tags)
 			    .withCollectionUpdateOpSetId(collectionUpdateOpSetId)
 			    .withTemplateUpdateOpSetId(templateUpdOpSetId).withUserId(userId)
-			    .withRecordingType(originalRec.recordingType).withRunId(originalRec.runId).withIgnoreStatic(originalRec.ignoreStatic);
+			    .withRecordingType(originalRec.recordingType).withRunId(originalRec.runId)
+			    .withIgnoreStatic(originalRec.ignoreStatic)
+			    .withTemplateSetName(updateTemplateSetNameAndLabel.getLeft())
+			    .withTemplateSetLabel(updateTemplateSetNameAndLabel.getRight());
 		    codeVersion.ifPresent(recordingBuilder::withCodeVersion);
 		    branch.ifPresent(recordingBuilder::withBranch);
 		    gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
