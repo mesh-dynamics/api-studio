@@ -5,7 +5,7 @@ import { getDefaultTraceApiFilters } from "../utils/api-catalog/api-catalog-util
 import arrayToTree from "array-to-tree";
 
 import { stringify } from 'query-string'
-import { IUserAuthDetails } from '../reducers/state.types';
+import { ITemplateSetNameLabel, IUserAuthDetails } from '../reducers/state.types';
 import { CancelToken } from 'axios';
 
 // TODO: replace console log statements with logging
@@ -315,6 +315,20 @@ const getNewTemplateVerInfo = async (customerId: string, app: string, currentTem
         throw error;
     }
 };
+
+const getTemplateSetNameLabels = async (customerId: string, app: string) => {
+    try {
+        const response = await api.get(`${config.analyzeBaseUrl}/getTemplateSetLabels/${customerId}/${app}`)
+        let templateSetList: ITemplateSetNameLabel[] = []
+        if (response) {
+            templateSetList = Object.values(response)
+        }
+        return templateSetList;
+    } catch (error) {
+        console.log("Error getting template set labels", error);
+        return [];
+    }
+}
 
 const getProjectList = async () => {
     try {
@@ -749,4 +763,5 @@ export const cubeService = {
     afterResponse,
     copyRecording,
     fetchGrpcProtoDescriptor,
+    getTemplateSetNameLabels,
 };

@@ -258,6 +258,8 @@ export interface ICubeState {
   testIdsReqStatus: string;
   timelineData: ITimelineData[];
   isGettingStartedHidden?: boolean;
+  templateSetNameLabelsList: ITemplateSetNameLabel[],
+  selectedTemplateSetNameLabel: ITemplateSetNameLabel | null,
 }
 
 //Golden State
@@ -318,7 +320,12 @@ export interface IParamsMap {
 export interface IKeyValuePairs<T = string> {
   [key: string]: T;
 }
-export interface IContextMap {
+
+export interface ITemplateSetNameLabel {
+  name: string;
+  label: string;
+}
+  export interface IContextMap {
   [key: string]: {
     value: any,
     createdOn: number; //timestamp when context map entry is added

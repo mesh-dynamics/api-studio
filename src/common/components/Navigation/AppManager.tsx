@@ -182,6 +182,7 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
         dispatch(cubeActions.getTestIds(selectedApp.app.name));
         dispatch(cubeActions.setSelectedTestIdAndVersion("", ""));
         dispatch(apiCatalogActions.refreshApiCatalogCollections());
+        dispatch(cubeActions.getTemplateSetNameLabels(selectedApp.app.name));
       });
     }
   };

@@ -78,7 +78,7 @@ class ViewSelectedTestConfig extends React.Component {
             servicesForSelectedGolden : [],
             selectedService : "",
             ignoreStaticContent: false,
-            stopInProgress: false
+            stopInProgress: false,
         };
         //this.statusInterval;
     }
@@ -267,7 +267,15 @@ class ViewSelectedTestConfig extends React.Component {
 
         mode[recordingMode]();
     };
-
+    
+    showTemplateSetWarningModal = () => this.setState({ 
+        templateSetWarningModalVisible: true,
+        userAlertMessage: {
+            header: "Alert",
+            message: "Select a Template Set to proceed."
+        }
+    });
+    
     showDBWarningModal = () => this.setState({
         dbWarningModalVisible: true,
         userAlertMessage: {
@@ -339,8 +347,11 @@ class ViewSelectedTestConfig extends React.Component {
             return;
         } 
 
+        if(!cube.selectedTemplateSetNameLabel) {
+            this.showTemplateSetWarningModal()
+            return 
+        }
         this.setState({ recordModalVisible: true, ignoreStaticContent: false });
-
     };
 
     showResumeModal = () => {
@@ -410,6 +421,16 @@ class ViewSelectedTestConfig extends React.Component {
     }
         
 
+    handleTemplateSetSelectDismissClick = () => 
+    this.setState({ 
+        templateSetWarningModalVisible: false,
+        userAlertMessage: {
+            header: "",
+            message: ""
+        }
+    });
+
+    
     handleInstanceSelectDismissClick = () => 
         this.setState({ 
             instanceWarningModalVisible: false,
@@ -475,6 +496,11 @@ class ViewSelectedTestConfig extends React.Component {
         }else{
             this.showGatewayEndPointUnavailable();
             return;
+        }
+
+        if(!cube.selectedTemplateSetNameLabel) {
+            this.showTemplateSetWarningModal()
+            return   
         }
 
         // When the conditions above are met
@@ -586,7 +612,8 @@ class ViewSelectedTestConfig extends React.Component {
         const { 
             cube: { 
                 selectedApp, 
-                selectedInstance 
+                selectedInstance,
+                selectedTemplateSetNameLabel,
             }, 
             authentication: { 
                 user: {
@@ -699,7 +726,8 @@ class ViewSelectedTestConfig extends React.Component {
                 collectionTemplateVersion,
                 selectedGolden,
                 selectedApp, 
-                testConfig
+                testConfig,
+                selectedTemplateSetNameLabel,
             }, 
             authentication: { 
                 user: { 
@@ -735,6 +763,7 @@ class ViewSelectedTestConfig extends React.Component {
         // const gatewayEndpointNoProtocol = encodeURIComponent(gatewayEndpoint.replace(/^\/\/|^.*?:(\/\/)?/, '')); // drop the protocol
         const gatewayEndpointNoProtocol = gatewayEndpoint.replace(/^\/\/|^.*?:(\/\/)?/, ''); // drop the protocol
 
+        const {name: selectedTemplateSetName, label: selectedTemplateSetLabel} = selectedTemplateSetNameLabel
         
         const searchParams = new URLSearchParams();
         searchParams.set('endPoint', gatewayEndpoint);
@@ -743,8 +772,8 @@ class ViewSelectedTestConfig extends React.Component {
         searchParams.set('userId', username);
         searchParams.set('transforms', transforms);
         searchParams.set('testConfigName', testConfigName);
-        searchParams.set('templateSetName', collectionTemplateVersion);
-        searchParams.set('templateSetLabel', '');
+        searchParams.set('templateSetName', selectedTemplateSetName);
+        searchParams.set('templateSetLabel', selectedTemplateSetLabel);
         searchParams.set('analyze', true);
         if(otherInstanceSelected){
             searchParams.set('storeToDatastore', this.state.storeToDatastore.toString());
@@ -1088,6 +1117,8 @@ class ViewSelectedTestConfig extends React.Component {
 
                 {this.renderSelectedGoldenServices()}
 
+                {this.renderTemplateSetNameLabelSelection()}
+
                 <div style={{ fontSize: "12px" }} className="margin-top-10 row">
                     <span  className="label-link col-sm-12 pointer" onClick={this.showAddCustomHeaderModal}>
                         <i className="fas fa-plus" style={{ color: "#333333", marginRight: "5px" }} aria-hidden="true"></i>
@@ -1142,6 +1173,31 @@ class ViewSelectedTestConfig extends React.Component {
         return panel[pathname] ? panel[pathname]() : (<div />);
     };
 
+    handleTemplateSetNameLabelChange = (e) => {
+        const templateSetName = e.target.value;
+        const { cube: {templateSetNameLabelsList}, dispatch} = this.props;
+        const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name}) => (name===templateSetName))
+        dispatch(cubeActions.setSelectedTemplateSetNameLabel(selectedTemplateSetNameLabel))
+    }
+
+    renderTemplateSetNameLabelSelection = () => {
+        const { cube: {templateSetNameLabelsList, selectedTemplateSetNameLabel} } = this.props;
+        const options = (templateSetNameLabelsList || []).map(({name, label}) => {
+            return <option key={`${name}-${label}`} value={name}>{name} {label && label}</option>
+        })
+
+        const {name, label} = selectedTemplateSetNameLabel || {name: "", label: ""}
+        return (
+            <div className="margin-top-10">
+                <div className="label-n">SELECT TEMPLATE SET</div>
+                <select className="r-att" onChange={this.handleTemplateSetNameLabelChange} value={name}>
+                    <option disabled value="">Select Template Set</option>
+                    {options}
+                </select>
+            </div>
+        )
+    }
+
     render() {
         const { cube } = this.props;
         const { 
@@ -1149,7 +1205,7 @@ class ViewSelectedTestConfig extends React.Component {
             fcId, showGoldenFilter, selectedGoldenFromFilter,
             recName, stopDisabled, stoppingStatus, recStatus, showAddCustomHeader,
             goldenNameErrorMessage, fcEnabled, resumeModalVisible,
-            dbWarningModalVisible, instanceWarningModalVisible, 
+            dbWarningModalVisible, instanceWarningModalVisible, templateSetWarningModalVisible,
             goldenSelectWarningModalVisible, forceStopping, forceStopped, ongoingRecStatus
         } = this.state;
 
@@ -1161,7 +1217,9 @@ class ViewSelectedTestConfig extends React.Component {
                 {this.renderLeftPanelInfo()}
                 
                 {dbWarningModalVisible && this.renderAlertModals(dbWarningModalVisible, this.handleDBWarningModalDismissClick)}
-                
+
+                {templateSetWarningModalVisible && this.renderAlertModals(templateSetWarningModalVisible, this.handleTemplateSetSelectDismissClick)}
+
                 {instanceWarningModalVisible && this.renderAlertModals(instanceWarningModalVisible, this.handleInstanceSelectDismissClick)}
 
                 {goldenSelectWarningModalVisible && this.renderAlertModals(goldenSelectWarningModalVisible, this.handleGoldenSelectDismissClick)}
