@@ -1,5 +1,7 @@
 package io.md.utils;
 
+import java.text.NumberFormat;
+
 public class Constants {
     public static final String APPLICATION_X_NDJSON = "application/x-ndjson";
     public static final String APPLICATION_X_MSGPACK = "application/x-msgpack";
@@ -223,7 +225,46 @@ public class Constants {
     public static final String CONFIG_ACK_DATA_KEY_FIELD = "configAckDataKey";
     public static final int AGENT_ACK_DEFAULT_DELAY_SEC = 30;
 
+    // for using template set name and labels
     public static final String TEMPLATE_SET_NAME = "templateSetName";
     public static final String TEMPLATE_SET_LABEL = "templateSetLabel";
+
+    // for async polling
+    public static final String IS_POLL_REQUEST_METADATA = "isPollRequest";
+    public static final String POLL_REQUEST_MAX_RETRIES_METADATA = "pollMaxRetries";
+    public static final String POLL_REQUEST_RETRY_INTERVAL_METADATA = "pollRetryIntervalSec";
+    public static final String POLL_REQUEST_RESP_JSON_PATH_METADATA = "pollRespJsonPath";
+    public static final String POLL_REQUEST_RESP_COMPARATOR_METADATA = "pollRespComparator";
+    public static final String POLL_REQUEST_RESP_COMPARISON_VALUE_METADATA = "pollRespCompValue";
+    public static final String POLL_REQUEST_TRUE = "true";
+
+    public enum POLL_REQUEST_COMPARISON_OPERATOR {
+
+        equals {
+            @Override
+            public boolean compare(String s1, String s2) throws Exception {
+                return s1.equals(s2);
+            }
+        }, //equals
+        gt {
+            @Override
+            public boolean compare(String s1, String s2) throws Exception {
+                return numberFormat.parse(s1).doubleValue() >
+                    numberFormat.parse(s2).doubleValue() ;
+            }
+        }, // greater than
+        lt {
+            @Override
+            public boolean compare(String s1, String s2) throws Exception {
+                return numberFormat.parse(s1).doubleValue() <
+                    numberFormat.parse(s2).doubleValue();
+            }
+        }; // less than
+
+
+        NumberFormat numberFormat = NumberFormat.getInstance();
+        abstract public boolean compare(String s1, String s2) throws Exception;
+    };
+
 
 }
