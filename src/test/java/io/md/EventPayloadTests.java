@@ -20,6 +20,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import javax.ws.rs.core.MediaType;
@@ -191,6 +192,21 @@ public class EventPayloadTests {
 						}
 					}
 					return Optional.empty();
+				}
+
+				@Override
+				public Optional<String> getLatestTemplateSetLabel(String customerId, String app,
+					String templateSetName) {
+					return Optional.empty();
+				}
+
+
+
+				@Override
+				public Recording copyRecording(String recordingId, Optional<String> name,
+					Optional<String> label, Optional<String> templateVersion, String userId,
+					RecordingType type, Optional<Predicate<Event>> eventFilter) throws Exception {
+					return null;
 				}
 			};
 

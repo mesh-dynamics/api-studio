@@ -6,8 +6,12 @@
 
 package io.md.services;
 
+import io.md.cache.ProtoDescriptorCache;
+import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
+import io.md.core.CollectionKey;
 import io.md.dao.*;
 
+import io.md.injection.DynamicInjectionConfig;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
@@ -31,10 +35,13 @@ import io.md.core.TemplateKey.Type;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Event.EventType;
 import io.md.services.DataStore.TemplateNotFoundException;
+import io.md.utils.ProtoDescriptorCacheProvider;
 import io.md.utils.UtilException;
 import io.md.utils.Utils;
 
 import static io.md.dao.Event.RunType.*;
+
+import com.fasterxml.jackson.databind.node.TextNode;
 
 
 /*
@@ -60,27 +67,22 @@ public class RealMocker implements Mocker {
         if (mockWithCollection.isPresent()) {
             MockWithCollection mockWColl = mockWithCollection.get();
             DynamicInjector di = diFactory.getMgr(reqEvent.customerId , reqEvent.app , mockWColl.dynamicInjectionConfigVersion);
+            DynamicInjector si = diFactory.getMgr(reqEvent.customerId, reqEvent.app,
+                mockWColl.dynamicInjectionConfigVersion
+                    .map(config -> config + DynamicInjectionConfig.staticVersionSuffix));
             di.extract(reqEvent , null);
 
-            List<String> payloadFieldFilterList = mockWColl.isDevtool ? reqEvent.payloadFields.stream().map(payloadField -> {
-                    try {
-                        return String.format("%s:%s", "/".concat(payloadField),
-                         reqEvent.payload.getValAsString("/".concat(payloadField)));
-                    } catch (Exception e) {
-                        return payloadField;
-                    }
-                }).collect(Collectors.toList()):Collections.EMPTY_LIST;
+            List<String> payloadFieldFilterList = mockWColl.isDevtool ? reqEvent.payloadFields: Collections.EMPTY_LIST;
 
-
-            Optional<JoinQuery> joinQuery = mockWColl.isDevtool ? Optional.of(getSuccessResponseMatch()) : Optional.empty();
+            Optional<JoinQuery> joinQuery = mockWColl.isDevtool ? Optional.of(getSuccessResponseMatch(reqEvent)) : Optional.empty();
             Optional<ReplayContext> replayCtx = mockWColl.replay.flatMap(r->r.replayContext);
-            if(replayCtx.isPresent()){
-                reqEvent.setTraceId(replayCtx.get().reqTraceId);
-            }
 
+            boolean tracePropagation = mockWColl.replay.map(r->r.tracePropagation).orElse(true);
+            //For devtool get the latest success match - isTimestampSortOrderAsc = false
+            //For regression -> get the first match - isTimestampSortOrderAsc = true
             EventQuery eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1),
                 !mockWColl.isDevtool, lowerBoundForMatching, mockWColl.recordCollection,
-                payloadFieldFilterList , joinQuery , mockWColl.isDevtool , replayCtx);
+                payloadFieldFilterList , joinQuery , mockWColl.isDevtool , replayCtx , tracePropagation);
             DSResult<Event> res = cube.getEvents(eventQuery);
 
             final Map<String , Event> reqIdReqMapping = new HashMap<>();
@@ -90,14 +92,25 @@ public class RealMocker implements Mocker {
                 return cube.getRespEventForReqEvent(req);
             };
 
-            Optional<Event> matchingResponse = res.getObjects().findFirst().flatMap(getRespEventForReqEvent);
-
+            Optional<Event> matchingRequest = res.getObjects().findFirst();
+            Optional<Event> matchingResponse = matchingRequest.flatMap(getRespEventForReqEvent);
+            if(!mockWColl.isDevtool && matchingRequest.isPresent() && res.getNumFound()>1){
+                ReplayContext replyCtx = replayCtx.orElse(new ReplayContext());
+                replyCtx.setMockResultToReplayContext(matchingRequest.get());
+                mockWColl.replay.ifPresent(replay->{
+                    replay.replayContext = Optional.of(replyCtx);
+                    cube.populateCache(new CollectionKey(replay.customerId, replay.app , replay.instanceId) , RecordOrReplay.createFromReplay(replay));
+                });
+            }
+            
             if(mockWColl.isDevtool && !matchingResponse.isPresent()){
                 LOGGER.info(createMockReqErrorLogMessage(reqEvent,
-                        "Did not find any valid 200 response. Giving first match resp"));
+                        "Did not find any valid success response. Giving first match resp"));
+                //If there is no success match then get the first latest match.
+                //JoinQuery - Empty
                 eventQuery = buildRequestEventQuery(reqEvent, 0, Optional.of(1),
                     false , lowerBoundForMatching, mockWColl.recordCollection ,
-                    payloadFieldFilterList , Optional.empty() , mockWColl.isDevtool , Optional.empty());
+                    payloadFieldFilterList , Optional.empty() , mockWColl.isDevtool , Optional.empty() , true);
                 res = cube.getEvents(eventQuery);
                 matchingResponse = res.getObjects().findFirst().flatMap(getRespEventForReqEvent);
             }
@@ -114,7 +127,8 @@ public class RealMocker implements Mocker {
                 }
             }
             matchingResponse.ifPresent(di::inject);
-            
+            matchingResponse.ifPresent(si::inject);
+
             Optional<Event> matchedReq = matchingResponse.map(resp->reqIdReqMapping.get(resp.reqId));
             Optional<Event> mockResponse = createResponseFromEvent(reqEvent, matchedReq , matchingResponse, mockWithCollection.get().runId, mockWColl.isDevtool);
             return new MockResponse(mockResponse, res.getNumFound());
@@ -126,12 +140,12 @@ public class RealMocker implements Mocker {
         }
     }
 
-    private JoinQuery getSuccessResponseMatch(){
+    private JoinQuery getSuccessResponseMatch(Event reqEvent){
 
         JoinQuery.Builder builder = new JoinQuery.Builder();
         Map<String,String> successfulRespCond = new HashMap<>();
-        successfulRespCond.put(Constants.EVENT_TYPE_FIELD , EventType.HTTPResponse.toString());
-        successfulRespCond.put(Constants.PAYLOAD_FIELDS_FIELD , String.format("%s:%s", Constants.STATUS_PATH, String.valueOf(HttpStatus.SC_OK)));
+        successfulRespCond.put(Constants.EVENT_TYPE_FIELD , EventType.getResponseType(reqEvent.eventType).toString());
+        successfulRespCond.put(Constants.PAYLOAD_FIELDS_FIELD , String.format("%s:%s", Constants.STATUS_PATH, String.valueOf(reqEvent.payload instanceof GRPCPayload ? Constants.GRPC_SUCCESS_STATUS_CODE : HttpStatus.SC_OK)));
 
         builder.withAndConds(successfulRespCond);
 
@@ -165,14 +179,14 @@ public class RealMocker implements Mocker {
 
     private EventQuery buildRequestEventQuery(Event event, int offset, Optional<Integer> limit,
         boolean isTimestampSortOrderAsc, Optional<Instant> lowerBoundForMatching, String collection ,
-        List<String> payloadFields , Optional<JoinQuery> joinQuery , boolean isDevtoolRequest , Optional<ReplayContext> replayContext) {
+        List<String> payloadFields , Optional<JoinQuery> joinQuery , boolean isDevtoolRequest , Optional<ReplayContext> replayContext , boolean tracePropagation) {
         EventQuery.Builder builder =
             new EventQuery.Builder(event.customerId, event.app, event.eventType)
                 .withService(event.service)
                 .withCollection(collection , isDevtoolRequest ? EventQuery.COLLECTION_WEIGHT : null)
                 //.withInstanceId(event.instanceId)
                 .withPaths(Arrays.asList(event.apiPath))
-                .withTraceId(event.getTraceId() , (isDevtoolRequest || replayContext.isPresent()) ? EventQuery.TRACEID_WEIGHT : null)
+                .withTraceId(event.getTraceId() , (isDevtoolRequest || !tracePropagation) ? EventQuery.TRACEID_WEIGHT : null)
                 .withPayloadKey(event.payloadKey , isDevtoolRequest ? EventQuery.PAYLOAD_KEY_WEIGHT : null)
                 .withOffset(offset)
                 .withTimestampAsc(isTimestampSortOrderAsc)
@@ -180,7 +194,9 @@ public class RealMocker implements Mocker {
                 .withRunTypes(nonMockRunTypes);
         if(replayContext.isPresent()){
             ReplayContext rCtx = replayContext.get();
-            builder.withStartTimestamp(rCtx.reqStartTs).withEndTimestamp(rCtx.reqEndTs);
+            Optional<Instant> reqStartTs = Optional.ofNullable(rCtx.getLastMockEventTs(event).orElse(rCtx.reqStartTs.orElse(null)));
+            reqStartTs.ifPresent(builder::withStartTimestamp);
+            rCtx.reqEndTs.ifPresent(builder::withEndTimestamp);
         }else{
             lowerBoundForMatching.ifPresent(builder::withStartTimestamp);
         }
@@ -191,24 +207,52 @@ public class RealMocker implements Mocker {
         return builder.build();
     }
 
-    private Optional<MockWithCollection> setPayloadKeyAndCollection(Event event, Optional<MockWithCollection> mockWithCollections) {
+    private Optional<MockWithCollection> setPayloadKeyAndCollection(Event event, Optional<MockWithCollection> mockCtx) {
 
-        MockWithCollection mockWithCollection = mockWithCollections.orElseGet(()->Utils.getMockCollection(cube , event.customerId, event.app, event.instanceId, false ));
+        if(!mockCtx.isPresent()){
+            mockCtx = Utils.getMockCollection(cube , event.customerId, event.app, event.instanceId, false );
+            if(!mockCtx.isPresent()){
+                LOGGER
+                    .error(Utils.createLogMessasge(
+                        Constants.REASON, "Collection not found",
+                        Constants.CUSTOMER_ID_FIELD, event.customerId,
+                        Constants.APP_FIELD, event.app,
+                        Constants.INSTANCE_ID_FIELD, event.instanceId,
+                        Constants.TRACE_ID_FIELD, event.getTraceId()));
+            }
+        }
 
-        Optional<String> replayCollection = Optional.of(mockWithCollection.replayCollection);
-        Optional<String> collection = Optional.of(mockWithCollection.recordCollection);
-        Optional<String> templateVersion = Optional.of(mockWithCollection.templateVersion);
-        Optional<String> optionalRunId = Optional.of(mockWithCollection.runId);
+        mockCtx.ifPresent(ctx->{
+            String replayCollection = ctx.replayCollection;
+            String templateVersion = ctx.templateVersion;
+            String runId = ctx.runId;
+            Optional<ReplayContext> replayCtx = ctx.replay.flatMap(r->r.replayContext);
 
-        // check collection, validate, fetch template for request, set key and store. If error at any point stop
-        if (collection.isPresent() && replayCollection.isPresent() && templateVersion.isPresent()) {
-            String runId = optionalRunId.orElse(event.getTraceId());
-            mockWithCollection.runId = runId;
-            event.setCollection(replayCollection.get());
+            event.setCollection(replayCollection);
+            replayCtx.flatMap(rctx->rctx.reqTraceId).ifPresent(event::setTraceId);
+
             try {
+                if(event.payload instanceof GRPCPayload) {
+                    ProtoDescriptorCache protoDescriptorCache = ProtoDescriptorCacheProvider
+                        .getInstance()
+                        .get();
+                    GRPCPayload grpcPayload = ((GRPCPayload) event.payload);
+                    Optional<ProtoDescriptorDAO> protoDescriptorDAO =
+                        protoDescriptorCache.get(new ProtoDescriptorKey(event.customerId, event.app, event.getCollection()));
+                    grpcPayload.setProtoDescriptor(protoDescriptorDAO);
+                    try {
+                        grpcPayload.dataObj.put(Constants.METHOD_PATH,
+                            new JsonDataObj(new TextNode("POST"), CubeObjectMapperProvider.getInstance()));
+                        // Need to add path field in dataObj otherwise will error out while deserialisng
+                        grpcPayload.dataObj.put(Constants.PATH_PATH,
+                            new JsonDataObj(new TextNode(event.apiPath), CubeObjectMapperProvider.getInstance()));
+                    } catch (Exception e) {
+                        LOGGER.error("Unable to set method as post in GRPCRequestPayload dataobj", e);
+                    }
+                }
                 event.parseAndSetKey(cube.getTemplate(event.customerId, event.app, event.service,
-                    event.apiPath, templateVersion.get(), Type.RequestMatch
-                    , Optional.ofNullable(event.eventType), Utils.extractMethod(event), replayCollection.get()));
+                    event.apiPath, templateVersion, Type.RequestMatch
+                    , Optional.ofNullable(event.eventType), Utils.extractMethod(event), replayCollection));
                 event.setRunId(runId);
             } catch (TemplateNotFoundException e) {
                 LOGGER.error(Utils.createLogMessasge(
@@ -217,19 +261,13 @@ public class RealMocker implements Mocker {
                     "reqId", event.reqId,
                     "path", event.apiPath), e);
             }
-        } else {
-            LOGGER
-                .error(Utils.createLogMessasge(
-                    Constants.REASON, "Collection not found",
-                    Constants.CUSTOMER_ID_FIELD, event.customerId,
-                    Constants.APP_FIELD, event.app,
-                    Constants.INSTANCE_ID_FIELD, event.instanceId,
-                    Constants.TRACE_ID_FIELD, event.getTraceId()));
-        }
+        });
+
         if (shouldStore(event.eventType)) {
             cube.save(event);
         }
-        return Optional.of(mockWithCollection);
+
+        return mockCtx;
     }
 
     private boolean shouldStore(EventType eventType) {
@@ -257,15 +295,26 @@ public class RealMocker implements Mocker {
 
         if (shouldStore(mockRequestEvent.eventType)) {
 
-            Optional<String> score  = matchedReq.flatMap(e->e.getMetaFieldValue(Constants.SCORE_FIELD));
-            MatchType reqMatch = score.flatMap(Utils::strToFloat).map(val->{
-                return isDevtoolRequest ? (EventQuery.getEventMaxWeight() == val ? MatchType.ExactMatch : MatchType.FuzzyMatch) : MatchType.ExactMatch ;
+            boolean collectionMatched = matchedReq.map(mr->mr.getCollection().equals(mockRequestEvent.getCollection())).orElse(false);
+            boolean traceIdMatched    = matchedReq.map(mr->mr.getTraceId().equals(mockRequestEvent.getTraceId())).orElse(false);
+            boolean payloadKeyMatched    = matchedReq.map(mr->mr.payloadKey == mockRequestEvent.payloadKey).orElse(false);
+
+            //Optional<String> score  = matchedReq.flatMap(e->e.getMetaFieldValue(Constants.SCORE_FIELD));
+            MatchType reqMatch = matchedReq.map(val->{
+                return isDevtoolRequest ? (collectionMatched && traceIdMatched && payloadKeyMatched ? MatchType.ExactMatch : MatchType.FuzzyMatch) : MatchType.ExactMatch ;
             }).orElse(MatchType.NoMatch);
 
             Map<String,String> meta = new HashMap<>();
             meta.put(Constants.MATCH_TYPE , reqMatch.toString());
-            score.ifPresent(scr->meta.put(Constants.SCORE_FIELD , scr));
-            matchedReq.ifPresent(req->meta.put(Constants.MATCHED_REQUEST_ID , req.reqId));
+            matchedReq.ifPresent(req->{
+                meta.put(Constants.MATCHED_REQUEST_ID , req.reqId);
+                meta.put(Constants.MATCHED_COLLECTION_NAME , req.getCollection());
+                meta.put(Constants.COLLECTION_MATCHED , Boolean.toString(collectionMatched));
+                meta.put(Constants.TRACEID_MATCHED , Boolean.toString(traceIdMatched));
+                meta.put(Constants.PAYLOAD_KEY_MATCHED , Boolean.toString(payloadKeyMatched));
+            });
+
+            respEvent.ifPresent(e->meta.put(Constants.MATCHED_RESPONSE_ID , e.reqId));
 
             // store a req-resp analysis match result for the mock request (during replay)
             // and the matched recording request
@@ -317,7 +366,7 @@ public class RealMocker implements Mocker {
             mockRequest.service,
             instanceId, replayCollection,
             new MDTraceInfo(mockRequest.getTraceId() , null, null),
-            mockRequest.getRunType(), Optional.of(Instant.now()),
+            mockRequest.getRunType(), Optional.of(mockRequest.timestamp),
             mockReqId.orElse("NA"),
             mockRequest.apiPath, EventType.getResponseType(mockRequest.eventType), mockRequest.recordingType)
                 .withRunId(runId)

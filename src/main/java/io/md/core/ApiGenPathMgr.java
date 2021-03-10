@@ -1,20 +1,27 @@
 package io.md.core;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.collections4.map.PassiveExpiringMap;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 
+import io.md.cache.AbstractMDCache;
+import io.md.cache.Constants;
 import io.md.dao.Event;
 import io.md.logger.LogMgr;
 import io.md.services.CustAppConfigCache;
 import io.md.services.DataStore;
 import io.md.utils.ApiPathRegex;
 
-public class ApiGenPathMgr {
+import static io.md.cache.Constants.*;
+
+public class ApiGenPathMgr extends AbstractMDCache {
 
 	private static final Logger LOGGER = LogMgr.getLogger(ApiGenPathMgr.class);
 	private final DataStore dStore;
@@ -23,6 +30,11 @@ public class ApiGenPathMgr {
 
 	private static PassiveExpiringMap<String , Optional<ApiPathRegex[]> > serviceApiPathPatterns = new PassiveExpiringMap<>(30 , TimeUnit.MINUTES);
 	private static PassiveExpiringMap<String , Optional<String>> serviceApiGenPaths = new PassiveExpiringMap<>(30 , TimeUnit.MINUTES);
+	private List<Pair<PassiveExpiringMap<String , ?> , String[]>> cacheAndKeys = new ArrayList<>(2);
+	{
+		cacheAndKeys.add(Pair.of(serviceApiPathPatterns , new String[]{CUSTOMER_ID , APP , SERVICE}));
+		cacheAndKeys.add(Pair.of(serviceApiGenPaths , new String[]{CUSTOMER_ID , APP , SERVICE , API_PATH}));
+	}
 
 	private ApiGenPathMgr(DataStore dataStore){
 		this.dStore = dataStore;
@@ -32,7 +44,7 @@ public class ApiGenPathMgr {
 	public static ApiGenPathMgr getInstance(DataStore dataStore){
 
 		if(singleton!=null) return singleton;
-		synchronized (CustAppConfigCache.class){
+		synchronized (ApiGenPathMgr.class){
 			if(singleton==null){
 				singleton = new ApiGenPathMgr(dataStore);
 			}
@@ -85,6 +97,23 @@ public class ApiGenPathMgr {
 		}
 		return Optional.empty();
 	}
+
+	@Override
+	public String getName() {
+		return Constants.API_GEN_PATH;
+	}
+
+	@Override
+	public List<Pair<PassiveExpiringMap<String , ?> , String[]>> getCacheAndKeys() {
+		return cacheAndKeys;
+	}
+
+	@Override
+	public long clean(Map<String,?> keyMeta) {
+		// It gets the values from appConfigCache so necessary to clean that cache as well.
+		return super.clean(keyMeta) + this.appConfigCache.clean(keyMeta);
+	}
+
 
 	//
 	//public static void main(String[] args){

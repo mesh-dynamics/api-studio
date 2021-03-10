@@ -1,6 +1,7 @@
 package io.md.dao;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -9,6 +10,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 @JsonDeserialize(builder = CustomerAppConfig.Builder.class)
 public class CustomerAppConfig {
+
+    @JsonProperty("id")
+    public final String id;
 
     @JsonProperty("customerId")
     public final String customerId;
@@ -25,6 +29,7 @@ public class CustomerAppConfig {
     private CustomerAppConfig(Builder builder){
         this.customerId = builder.customerId;
         this.app = builder.app;
+        this.id = Objects.requireNonNull(builder.id) ;
         this.tracer = Optional.ofNullable(builder.tracer);
         this.apiGenericPaths = Optional.ofNullable(builder.apiGenericPaths);
     }
@@ -34,22 +39,13 @@ public class CustomerAppConfig {
         public  String app;
         private String tracer;
         private Map<String , String[]> apiGenericPaths;
+        private String id;
 
         @JsonCreator
         public Builder(@JsonProperty("customerId") String customerId , @JsonProperty("app") String app){
             this.customerId = customerId;
             this.app = app;
         }
-
-        /*
-        public Builder withCustomerId(String customerId){
-            this.customerId = customerId;
-            return this;
-        }
-        public Builder withApp(String app){
-            this.app = app;
-            return this;
-        }*/
 
         public Builder withTracer(String tracer){
             this.tracer = tracer;
@@ -61,8 +57,21 @@ public class CustomerAppConfig {
             return this;
         }
 
+        public Builder withId(String id){
+            this.id = id;
+            return this;
+        }
+
+
         public CustomerAppConfig build(){
+            if(id==null){
+                id = recalculateId();
+            }
             return new CustomerAppConfig(this);
+        }
+
+        private String recalculateId() {
+            return "CustomerAppConfig-".concat(String.valueOf(Math.abs(Objects.hash(customerId, app))));
         }
     }
 }

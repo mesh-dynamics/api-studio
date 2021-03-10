@@ -135,9 +135,15 @@ public class Event implements MDStorable {
 	public String getSpanId() {
 		return spanId;
 	}
+	public void setSpanId(String spanId) {
+		this.spanId = spanId;
+	}
 
 	public String getParentSpanId() {
 		return parentSpanId;
+	}
+	public void setParentSpanId(String parentSpanId) {
+		this.parentSpanId = parentSpanId;
 	}
 
 	public enum EventType {
@@ -266,8 +272,8 @@ public class Event implements MDStorable {
 	public final String instanceId;
 	private String collection;
 	private String traceId;
-	public final String spanId;
-	public final String parentSpanId;
+	public  String spanId;
+	public  String parentSpanId;
 	private RunType runType;
 	public String runId;
 

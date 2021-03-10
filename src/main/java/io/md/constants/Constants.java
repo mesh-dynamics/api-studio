@@ -14,6 +14,8 @@ public class Constants {
 	public static final String DEFAULT_PARENT_SPAN_FIELD = "x-b3-parentspanid";
 	public static final String X_REQUEST_ID = "x-request-id";
 	public static final String PARENT_SPAN_ID_PROP_FIELD = "parent-span-id";
+	public static final String TRAILER_HEADER = "Trailer";
+	public static final String MD_TRAILER_HEADER_PREFIX = "md_trailer_header_";
 
 
 	//public static final String DEFAULT_BAGGAGE_PARENT_SPAN = "baggage-parent-span-id";
@@ -33,6 +35,7 @@ public class Constants {
 	public static final String DATADOG_SPAN_FIELD = "x-datadog-parent-id";
 	public static final String DATADOG_BAGGAGE_KEY_PREFIX = "ot-baggage-";
 	public static final String DATADOG_BAGGAGE_PARENT_SPAN = DATADOG_BAGGAGE_KEY_PREFIX + PARENT_SPAN_ID_PROP_FIELD;
+
 
 
 	public static final String DEFAULT_TEMPLATE_VER = "DEFAULT";
@@ -59,6 +62,18 @@ public class Constants {
 	public static final String INCLUDE_DIFF = "includeDiff";
 	public static final String LOWER_BOUND = "lowerBound";
 	public static final String MATCHED_REQUEST_ID = "matchedRequestId";
+	public static final String MATCHED_RESPONSE_ID = "matchedResponseId";
+	public static final String MATCHED_COLLECTION_NAME = "matchedCollectionName";
+
+	public static final String COLLECTION_MATCHED = "collectionMatched";
+	public static final String TRACEID_MATCHED = "traceIdMatched";
+	public static final String PAYLOAD_KEY_MATCHED = "payloadKeyMatched";
+
+	public static final String META_FIELDS_PREFIX = "MD_META_";
+
+
+
+
 
 
 	//MESSAGE KEYS
@@ -110,6 +125,7 @@ public class Constants {
 	public static final String PATH_PATH = "/path";
 	public static final String METHOD_PATH = "/method";
 	public static final String STATUS_PATH = "/status";
+	public static final String GRPC_STATUS_PATH = "/trls/grpc-status";
 
 	public static final String ARGS_PATH = "/args";
 	public static final String FN_RESPONSE_PATH = "/retOrExceptionVal";
@@ -136,10 +152,13 @@ public class Constants {
 	public static final String SPAN_ID_FIELD = "spanId";
 	public static final String PARENT_SPAN_ID_FIELD = "parentSpanId";
 	public static final String EXCLUDE_PATH_FIELD = "excludePath";
-	public static final String PAYLOAD_FIELDS_FIELD = "payloadFields";
-	public static final String START_TIMESTAMP_FIELD = "startTimestamp";
-	public static final String END_TIMESTAMP_FIELD = "endTimestamp";
 
+	public static final String PAYLOAD_FIELDS_FIELD = "payloadFields";
+	public static final String PAYLOAD_FIELDS_FIELD_PATH = "/"+PAYLOAD_FIELDS_FIELD;
+	public static final String START_TIMESTAMP_FIELD = "startTimestamp";
+	public static final String START_TIMESTAMP_FIELD_PATH = "/"+START_TIMESTAMP_FIELD;
+	public static final String END_TIMESTAMP_FIELD = "endTimestamp";
+	public static final String END_TIMESTAMP_FIELD_PATH = "/"+END_TIMESTAMP_FIELD;
 
 	public static final String EVENT_TYPE_FIELD = "eventType";
 	public static final String JSON_PATH_FIELD = "jsonPath";
@@ -300,6 +319,12 @@ public class Constants {
 	public static final String TESTSET_REQUEST = "TestSet.Request";
 	public static final String TESTSET_RESPONSE = "TestSet.Response";
 	public static final String TEMP_DIR = "/tmp";
+	public static final Integer GRPC_SUCCESS_STATUS_CODE = 0;
+	public static final String PARENTSPANID_SPECIAL_CHARACTERS = "ffffffffffffffff";
+	public static final String HTTP_POST = "POST";
+	public static final String GRPC_DEFAULT_HTTP_MEHTOD = HTTP_POST;
 
 
+
+	public static final String GOLDEN_LABEL_FIELD = "label";
 }

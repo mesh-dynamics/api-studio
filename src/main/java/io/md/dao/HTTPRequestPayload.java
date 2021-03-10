@@ -156,9 +156,4 @@ public class HTTPRequestPayload extends HTTPPayload implements RequestPayload {
 			}
 		}
 	}
-
-	@Override
-	public List<String> getPayloadFields() {
-		return Arrays.asList(String.format("%s:%s", Constants.METHOD_PATH, method));
-	}
 }

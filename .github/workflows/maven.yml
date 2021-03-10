@@ -45,7 +45,7 @@ jobs:
         run: |
           version=$(git tag --list)
           IFS=$'\n'
-          NEXTVERSION=$(echo "${version[*]}" | sort -nr | head -n1 | awk -F. -v OFS=. '{$(NF-1)++;$(NF)=0;print}')
+          NEXTVERSION=$(echo "${version[*]}" | sort -Vr | head -n1 | awk -F. -v OFS=. '{$(NF-1)++;$(NF)=0;print}')
           python helper.py $NEXTVERSION
           mvn -B package --file pom.xml
           git tag $NEXTVERSION

@@ -141,6 +141,9 @@ public class JsonDataObj implements DataObj {
 
 	@Override
 	public String serializeDataObj() throws DataObjProcessingException {
+		if(objRoot.isTextual()) {
+			return objRoot.asText();
+		}
 		try {
 			return jsonMapper.writeValueAsString(objRoot);
 		} catch (JsonProcessingException e) {
@@ -263,7 +266,7 @@ public class JsonDataObj implements DataObj {
 				} else {
 					ArrayNode arrayNode = JsonNodeFactory.instance.arrayNode();
 					arrayNode.add(objectNode);
-					multipartParent.set(key, objectNode);
+					multipartParent.set(key, arrayNode);
 				}
 			}
 		}));
@@ -317,8 +320,25 @@ public class JsonDataObj implements DataObj {
 						"trying to deserialize grpc byte array string");
 				}
 				return unwrapContext.flatMap(UtilException.rethrowFunction(context ->
-					context.protoDescriptor.convertByteStringToJson(context.service,
-						context.method, original.asText(), context.isRequest)
+					{
+						Optional<String> unwrappedJson = context.protoDescriptor
+							.convertByteStringToJson(context.service,
+								context.method, original.asText(), context.isRequest);
+						if(unwrappedJson.isPresent()) {
+							return unwrappedJson;
+						}
+						// In case the response was a plain text rather than grpc proto objects for
+						// failure cases of request not succeeding
+						try {
+							return Optional.of(new String(Base64.getDecoder().decode(original.binaryValue())));
+						} catch (Exception e) {
+							LOGGER.error("Exception in decoding content for grpc "
+								.concat(" , value : ").concat(original.toString())
+								.concat(" for mime type : ").concat(mimeType), e);
+							return Optional.empty();
+						}
+					}
+
 				)).map(UtilException.rethrowFunction(jsonMapper::readTree));
 			} else if (Utils.startsWithIgnoreCase(mimeType, MediaType.MULTIPART_FORM_DATA)) {
 				return Optional.of(unwrapMultipartContent(original, mimeType, unwrapContext));
@@ -466,7 +486,7 @@ public class JsonDataObj implements DataObj {
 			byte[] originalContent = buffer.readByteArray();
 
 			return asEncoded?  Optional.of(new TextNode(
-					new String(Base64.getEncoder().encode(buffer.readByteArray())))) :
+					new String(Base64.getEncoder().encode(originalContent)))) :
 					Optional.of(new BinaryNode(originalContent));
 
 

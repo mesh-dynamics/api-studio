@@ -8,10 +8,12 @@ import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -36,7 +39,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.md.cache.ProtoDescriptorCache;
 import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.dao.*;
+import io.md.dao.Event.EventBuilder.InvalidEventException;
+import io.md.dao.Recording.RecordingStatus;
 import io.md.logger.LogMgr;
+import io.md.services.DSResult;
 import io.md.services.DataStore;
 import io.md.tracer.TracerMgr;
 import org.apache.commons.lang3.BooleanUtils;
@@ -60,6 +66,7 @@ import io.md.services.FnResponse;
 import io.md.services.MockResponse;
 import io.md.services.Mocker.MockerException;
 import io.opentracing.Span;
+import kotlin.Result;
 
 public class Utils {
 
@@ -258,27 +265,16 @@ public class Utils {
 		MultivaluedMap<String, String> hdrs,
 		MDTraceInfo mdTraceInfo, byte[] body,
 		String customerId, String app, String service, String instance,
-		RunType runType, String method, String reqId, RecordingType recordingType)
+		RunType runType, String method, String reqId, RecordingType recordingType, Optional<Instant> timestamp)
 		throws Event.EventBuilder.InvalidEventException {
 
 		Payload mockedRequestPayload = null;
-		if (getMimeType(hdrs).orElse(MediaType.TEXT_PLAIN).toLowerCase()
+		if (getMimeType(hdrs).orElseGet(()->{
+			LOGGER.info("Did not find the Mime-type header in request. Giving default "+MediaType.TEXT_PLAIN);
+			return MediaType.TEXT_PLAIN;
+		}).toLowerCase()
 			.startsWith(Constants.APPLICATION_GRPC)) {
-			GRPCRequestPayload grpcRequestPayload = new GRPCRequestPayload(hdrs, body, apiPath);
-			ProtoDescriptorCache protoDescriptorCache = ProtoDescriptorCacheProvider.getInstance()
-				.get();
-			Optional<ProtoDescriptorDAO> protoDescriptorDAO =
-				protoDescriptorCache.get(new ProtoDescriptorKey(customerId, app, "NA"));
-			grpcRequestPayload.setProtoDescriptor(protoDescriptorDAO);
-			try {
-				grpcRequestPayload.dataObj.put(Constants.METHOD_PATH,
-					new JsonDataObj(new TextNode("POST"), CubeObjectMapperProvider.getInstance()));
-				// Need to add path field in dataObj otherwise will error out while deserialisng
-				grpcRequestPayload.dataObj.put(Constants.PATH_PATH,
-					new JsonDataObj(new TextNode(apiPath), CubeObjectMapperProvider.getInstance()));
-			} catch (Exception e) {
-				LOGGER.error("Unable to set method as post in GRPCRequestPayload dataobj", e);
-			}
+			GRPCRequestPayload grpcRequestPayload = new GRPCRequestPayload(hdrs, body, apiPath, method);
 			mockedRequestPayload = grpcRequestPayload;
 
 		} else {
@@ -289,7 +285,7 @@ public class Utils {
 
 		Event.EventBuilder eventBuilder = new Event.EventBuilder(customerId, app,
 			service, instance, Constants.NOT_APPLICABLE,
-			mdTraceInfo, runType, Optional.empty(),
+			mdTraceInfo, runType, timestamp,
 			reqId, apiPath, Event.EventType.HTTPRequest, recordingType);
 		eventBuilder.setPayload(mockedRequestPayload);
 		Event event = eventBuilder.createEvent();
@@ -573,7 +569,7 @@ public class Utils {
 		String method, byte[] body,
 		MultivaluedMap<String, String> headers,
 		MultivaluedMap<String, String> queryParams,
-		Optional<String> traceIdValue , TracerMgr tracerMgr) throws EventBuilder.InvalidEventException, JsonProcessingException {
+		Optional<String> traceIdValue , TracerMgr tracerMgr, Optional<Instant> timestamp) throws EventBuilder.InvalidEventException, JsonProcessingException {
 		// At the time of mock, our lua filters don't get deployed, hence no request id is generated
 		// we can generate a new request id here in the mock service
 		String requestId = service.concat("-mock-").concat(String.valueOf(UUID.randomUUID()));
@@ -585,15 +581,16 @@ public class Utils {
 
 		RecordingType recordingType = RecordingType.Replay;
 		String traceIdData = traceId.orElse(generateTraceId());
+		// Special character to be set for parentSpanId
 		MDTraceInfo mdTraceInfo = new MDTraceInfo(traceIdData ,
-			spanId.orElse("NA") , parentSpanId.orElse("NA"));
+			spanId.orElse("NA") , parentSpanId.orElse(Constants.PARENTSPANID_SPECIAL_CHARACTERS));
 
 		/*byte[] bodyBytes = (body != null && (!body.isEmpty())) ?
 			body.getBytes(StandardCharsets.UTF_8) : null;*/
 
 		return createMockedRequestEvent(path, queryParams, formParams, headers, mdTraceInfo,
 			body, customerId, app, service, instanceId, RunType.Mock , method, requestId,
-			recordingType);
+			recordingType, timestamp);
 	}
 
 	static public String convertTraceId(long traceIdHigh, long traceIdLow) {
@@ -640,16 +637,22 @@ public class Utils {
 		return Optional.empty();
 	}
 
-	public static MockWithCollection getMockCollection(DataStore dataStore, String customerId , String app , String instanceId , boolean devtool){
-		RecordOrReplay recordOrReplay = dataStore.getCurrentRecordOrReplay(customerId, app, instanceId).get();
-		String replayCollection = recordOrReplay.getCollection().get();
-		String collection = recordOrReplay.getRecordingCollection().get();
-		String templateVersion = recordOrReplay.getTemplateVersion();
-		Optional<Replay> runningReplay = recordOrReplay.replay;
-		Optional<String> optionalRunId = runningReplay.map(r->r.runId);
-		Optional<String> dynamicInjectionCfgVersion = recordOrReplay.getDynamicInjectionConfigVersion();
+	public static Optional<MockWithCollection> getMockCollection(DataStore dataStore, String customerId , String app , String instanceId , boolean devtool){
+		return dataStore.getCurrentRecordOrReplay(customerId, app, instanceId).map(recordOrReplay->{
+			Optional<Replay> runningReplay = recordOrReplay.replay;
+			if(!runningReplay.isPresent()){
+				LOGGER.error("Could not get replayCollection / recording collection from MockWithCollection " +recordOrReplay);
+				return null;
+			}
+			Replay replay = runningReplay.get();
+			String replayCollection = replay.replayId;
+			String collection = replay.getCurrentRecording();
+			String templateVersion = recordOrReplay.getTemplateVersion();
+			String optionalRunId = runningReplay.get().runId;
+			Optional<String> dynamicInjectionCfgVersion = recordOrReplay.getDynamicInjectionConfigVersion();
 
-		return new MockWithCollection(replayCollection, collection, templateVersion, optionalRunId.orElse(null) , dynamicInjectionCfgVersion, devtool , runningReplay);
+			return new MockWithCollection(replayCollection, collection, templateVersion, optionalRunId, dynamicInjectionCfgVersion, devtool , Optional.of(replay));
+		});
 	}
 
 	public static void setProtoDescriptorGrpcEvent(Event e, ProtoDescriptorCache protoDescriptorCache) {
@@ -660,8 +663,16 @@ public class Utils {
 			return;
 		}
 		GRPCPayload ge = (GRPCPayload) e.payload;
-		ge.setProtoDescriptor(protoDescriptorCache.get(
-			new ProtoDescriptorKey(e.customerId, e.app, e.getCollection())));
+		// If run from devtool then set collection as runId to always miss cache and fetch from DB.
+		// This is done to ensure consistency in case a new proto has been uploaded
+		if(e.getRunType() == RunType.DevTool || e.getRunType() == RunType.DevToolProxy) {
+			ge.setProtoDescriptor(protoDescriptorCache.get(
+				new ProtoDescriptorKey(e.customerId, e.app, e.runId)));
+		}
+		else {
+			ge.setProtoDescriptor(protoDescriptorCache.get(
+				new ProtoDescriptorKey(e.customerId, e.app, e.getCollection())));
+		}
 	}
 
 	static public String getHttpMethod(Event event) {
@@ -691,4 +702,12 @@ public class Utils {
 			emptyAction.run();
 		}
 	}
+
+	public static String constructTemplateSetVersion(String templateSetName, Optional<String> templateSetLabel) {
+		return templateSetName + templateSetLabel.map(l -> l.isEmpty() ? "" : "::" + l).orElse("");
+	}
+
+
+	public static final DateTimeFormatter templateLabelFormatter =  DateTimeFormatter.ofPattern("dd-MM-yyyy_HH:mm:ss_SSS");
+
 }
