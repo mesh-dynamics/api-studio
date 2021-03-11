@@ -196,10 +196,10 @@ public class ProxyDataStore extends AbstractDataStore implements DataStore {
 
     @Override
     public Recording copyRecording(String recordingId, Optional<String> name,
-        Optional<String> label, Optional<String> templateVersion, String userId, RecordingType type,
-        Optional<Predicate<Event>> eventFilter) throws Exception {
-        return cubeClient.copyRecording(recordingId, name, label, templateVersion, userId , type,
-            eventFilter).map(UtilException.rethrowFunction(recordingStr -> jsonMapper
+        Optional<String> label, Optional<String> templateSetName, Optional<String> templateSetLabel,
+        String userId, RecordingType type, Optional<Predicate<Event>> eventFilter) throws Exception {
+        return cubeClient.copyRecording(recordingId, name, label, templateSetName, templateSetLabel,
+            userId , type, eventFilter).map(UtilException.rethrowFunction(recordingStr -> jsonMapper
             .readValue(recordingStr, Recording.class))).orElseThrow(() -> new
             Exception("Unable to copy recording"));
     }
