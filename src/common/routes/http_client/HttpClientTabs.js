@@ -672,8 +672,9 @@ class HttpClientTabs extends Component {
                 const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
                 const tabToProcess = tabsToProcess[tabIndex];
                 if(tabToProcess.requestId == "NA" ||tabToProcess.requestId == ""){
-                    dispatch(httpClientActions.updateAllParamsInSelectedTab(tabId, "httpURLShowOnly", "httpURLShowOnly", value));
-                    dispatch(httpClientActions.updateAllParamsInSelectedTab(tabId, "service", "service", getHostName(value) ));
+                    const {apiPath, service : generatedService} = httpClientTabUtils.getApiPathAndServiceFromUrl(value);
+                    dispatch(httpClientActions.updateAllParamsInSelectedTab(tabId, "httpURLShowOnly", "httpURLShowOnly", apiPath));
+                    dispatch(httpClientActions.updateAllParamsInSelectedTab(tabId, "service", "service", generatedService ));
                 }
             }
         }

@@ -490,6 +490,12 @@ const generateApiPathAndService = (parsedUrl) => {
     };
 };
 
+export const getApiPathAndServiceFromUrl = (url) => {
+    const parsedUrl = urlParser(applyEnvVarsToUrl(url), PLATFORM_ELECTRON ? {} : true);
+
+    return generateApiPathAndService(parsedUrl);
+}
+
 export function getReqResFromTabData(selectedApp, eachPair, tabToSave, runId, type, reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment, tracer, traceDetails, parentSpanId, spanId) {
     const { headers, queryStringParams, bodyType, responseHeaders, responseBody, recordedResponseHeaders, recordedResponseBody, responseStatus, recordedResponseStatus, responsePayloadState, responseTrailers } = tabToSave;
 
