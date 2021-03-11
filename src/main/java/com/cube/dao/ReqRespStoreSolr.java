@@ -1249,8 +1249,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     @Override
     public Recording copyRecording(String recordingId, Optional<String> name,
-        Optional<String> label, Optional<String> templateVersion, String userId, RecordingType type,
-        Optional<Predicate<Event>> eventFilter) throws Exception {
+        Optional<String> label, Optional<String> templateSetName, Optional<String> templateSetLabel,
+        String userId, RecordingType type, Optional<Predicate<Event>> eventFilter) throws Exception {
         Instant timeStamp = Instant.now();
         String labelValue = label.orElse(timeStamp.toString());
         Optional<Recording> recordingForId = getRecording(recordingId);
@@ -1265,7 +1265,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             }
 
             Recording  updatedRecording = ServerUtils.createRecordingObjectFrom(recording,
-                templateVersion, name, Optional.of(userId), timeStamp, labelValue, type);
+                templateSetName, templateSetLabel, name, Optional.of(userId), timeStamp, labelValue, type);
             if(!saveRecording(updatedRecording)) throw new Exception("Error while saving new recording");
             if (!copyEvents(recording, updatedRecording, timeStamp, eventFilter)) throw new Exception("Error while copying events");
 

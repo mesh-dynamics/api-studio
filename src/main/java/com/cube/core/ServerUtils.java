@@ -12,6 +12,7 @@ import io.md.dao.Recording.RecordingType;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -68,6 +69,7 @@ import io.md.utils.Utils;
 import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
+import com.cube.utils.AnalysisUtils;
 import com.cube.ws.Config;
 
 import redis.clients.jedis.Jedis;
@@ -420,12 +422,18 @@ public class ServerUtils {
     }
 
 
-    public static Recording createRecordingObjectFrom(Recording recording, Optional<String> templateVersion,
-        Optional<String> name, Optional<String> userId, Instant timeStamp, String labelValue, RecordingType type) {
+    public static Recording createRecordingObjectFrom(Recording recording, Optional<String> templateSetName,
+        Optional<String> templateSetLabel, Optional<String> name, Optional<String> userId, Instant timeStamp, String labelValue, RecordingType type) {
         String collection = UUID.randomUUID().toString();
+        String templateSetNameFinal = templateSetName.orElse(recording.templateSetName);
+        String templateSetLabelFinal = templateSetLabel.orElse(
+            LocalDateTime.now().format(AnalysisUtils.templateLabelFormatter));
+        String templateSetVersion = ServerUtils.createTemplateSetVersion(templateSetNameFinal,
+            templateSetLabelFinal);
         RecordingBuilder recordingBuilder = new RecordingBuilder(
             recording.customerId, recording.app, recording.instanceId, collection)
-            .withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateVersion.orElse(recording.templateVersion))
+            .withStatus(RecordingStatus.Completed).withTemplateSetName(templateSetNameFinal)
+            .withTemplateSetLabel(templateSetLabelFinal).withTemplateSetVersion(templateSetVersion)
             .withName(name.orElse(recording.name))
             .withUserId(userId.orElse(recording.userId)).withTags(recording.tags).withUpdateTimestamp(timeStamp)
             .withRootRecordingId(recording.rootRecordingId).withLabel(labelValue)
