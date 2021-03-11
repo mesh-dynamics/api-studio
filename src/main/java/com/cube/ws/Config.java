@@ -147,18 +147,18 @@ public class Config {
             //poolConfig.setTestOnReturn(true);
             jedisPool = new JedisPool(poolConfig , redisHost, redisPort , 2000,  redisPassword);
             REDIS_DELETE_TTL = Integer.parseInt(fromEnvOrProperties("redis_delete_ttl"
-                , "5"));
+                , "20"));
 	        Runnable subscribeThread = () -> {
-		        while(true){
-			        try{
+		        while (true) {
+			        try {
 				        Jedis jedis = jedisPool.getResource();
-				        jedis.configSet("notify-keyspace-events" , "Ex");
-				        jedis.psubscribe(new RedisPubSub(rrstore, jsonMapper, jedisPool), "__key*__:*");
-			        }catch (Throwable th){
-				        LOGGER.error("Redis Key Events PubSub Worker error "+th.getMessage() , th);
+				        jedis.configSet("notify-keyspace-events", "Ex");
+				        jedis.psubscribe(new RedisPubSub(rrstore, jsonMapper, jedisPool),
+					        "__key*__:*");
+			        } catch (Throwable th) {
+				        LOGGER.error("Redis Key Events PubSub Worker error " + th.getMessage(), th);
 			        }
 		        }
-
 	        };
 
 	        Runnable channelPubSubThread = () -> {
