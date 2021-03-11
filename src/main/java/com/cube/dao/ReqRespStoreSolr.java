@@ -3742,6 +3742,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         addFilter(query, CUSTOMERIDF, customerId);
         addFilter(query, APPF, app);
         addFilter(query, GOLDEN_NAMEF, name);
+        addFilter(query, ARCHIVEDF, false);
         label.ifPresentOrElse( l -> addFilter(query, GOLDEN_LABELF, l), () -> {addSort(query, TIMESTAMPF, false); addSort(query, IDF, true);});
         return SolrIterator.getSingleResult(solr, query).flatMap(doc -> docToRecording(doc));
     }
