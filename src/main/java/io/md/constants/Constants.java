@@ -327,4 +327,8 @@ public class Constants {
 
 
 	public static final String GOLDEN_LABEL_FIELD = "label";
+
+	// for using template set name and labels
+	public static final String TEMPLATE_SET_NAME = "templateSetName";
+	public static final String TEMPLATE_SET_LABEL = "templateSetLabel";
 }

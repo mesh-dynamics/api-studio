@@ -93,7 +93,7 @@ public interface DataStore {
     Optional<String> getLatestTemplateSetLabel(String customerId, String app, String templateSetName);
 
     Recording copyRecording(String recordingId, Optional<String> name,
-        Optional<String> label, Optional<String> templateVersion, String userId, RecordingType type,
-        Optional<Predicate<Event>> eventFilter) throws Exception;
+        Optional<String> label, Optional<String> templateSetName, Optional<String> templateSetLabel,
+        String userId, RecordingType type, Optional<Predicate<Event>> eventFilter) throws Exception;
 
 }
