@@ -385,7 +385,7 @@ export interface IEnvironmentConfigVars {
 export interface IEnvironmentConfig {
   id?: number;
   name: string;
-  vars: IEnvironmentConfigVars;
+  vars: IEnvironmentConfigVars[];
 }
 
 export interface IHistoryTabPagingData {

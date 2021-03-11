@@ -1,35 +1,91 @@
 import React, { Component, Fragment } from 'react'
 import { connect } from "react-redux";
-import { Modal, Grid, Row, Col, Checkbox, Tabs, Tab, FormGroup, FormControl, ControlLabel, Form} from 'react-bootstrap';
-import { httpClientActions } from '../../actions/httpClientActions';
 import _ from "lodash";
-import { IHttpClientStoreState, IStoreState, IUserAuthDetails, IMockConfig } from '../../reducers/state.types';
 import Tippy from '@tippy.js/react';
+import { Modal, Grid, Row, Col, Checkbox, Tabs, Tab, FormControl, Glyphicon } from 'react-bootstrap';
+import EnvVar from "./EnvVar";
+import { getCurrentEnvironment } from "../../utils/http_client/envvar";
+import { getCurrentMockConfig } from "../../utils/http_client/utils";
+import { httpClientActions } from '../../actions/httpClientActions';
+import { IHttpClientStoreState, IStoreState, IEnvironmentConfig, IUserAuthDetails, IMockConfig, ICubeState, IMockConfigValue } from '../../reducers/state.types';
+
 export interface IMockConfigsState{
     selectedEditMockConfig: any, //Need to verify type: {name: string; serviceConfigs: []}
     selectedEditMockConfigId: number | null,
-    addNew: boolean,
-    selectedTabKey : number;
+    addNewMockConfig: boolean,
+    addNewEnv: boolean,
+    selectedTabKey: number;
+    selectedEnv: IEnvironmentConfig,
 }
 export interface IMockConfigsProps{
     httpClient: IHttpClientStoreState;
+    tabIndexForEdit: number;
     user: IUserAuthDetails;
-    dispatch:any;
-    hideModal: ()=>void;
+    cube: ICubeState;
+    dispatch: any;
+    hideModal: () => void;
 }
-class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
+class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
     constructor(props) {
         super(props)
         this.state = {
             selectedEditMockConfig: {},
             selectedEditMockConfigId: null,
-            addNew: false,
-            selectedTabKey : 0
+            addNewMockConfig: false,
+            selectedTabKey : 0,
+            selectedEnv: { name:"", appId: 0, vars: [] },
         }
     }
 
+    componentDidMount() {
+        const {
+            httpClient: {
+                showEnvList,
+                environmentList,
+                selectedEnvironment,
+                showMockConfigList,
+                mockConfigList,
+                selectedMockConfig
+            },
+            tabIndexForEdit,
+        } = this.props;
+
+        const { selectedEnv, selectedEditMockConfig  } = this.state;
+
+        
+
+        if(!showEnvList && selectedEnv?.appId === 0 && tabIndexForEdit === 0) {
+            
+            const currentEnvironment: IEnvironmentConfig = getCurrentEnvironment(
+                environmentList,
+                selectedEnvironment
+            );
+            
+            // this.updateEnvState(currentEnvironment, false)
+            this.setState({ selectedEnv: currentEnvironment, addNewEnv: false });
+        }
+
+        if(!showMockConfigList && _.isEmpty(selectedEditMockConfig) && tabIndexForEdit === 1) {
+            const currentMockConfig: IMockConfigValue = getCurrentMockConfig(
+                mockConfigList,
+                selectedMockConfig
+            );
+
+
+            const currentMockConfigObject: any = mockConfigList.find(eachMockConfig => eachMockConfig.key === selectedMockConfig);
+
+            this.setState({ 
+                addNewMockConfig: false, 
+                selectedEditMockConfig: currentMockConfig, 
+                selectedEditMockConfigId: currentMockConfigObject.id 
+            });
+        }
+
+        this.handleSelectedTabChange(tabIndexForEdit);
+    }
+
     handleSelectedTabChange = (changedKey) => {
-        this.setState({selectedTabKey: changedKey});
+        this.setState({ selectedTabKey: changedKey });
     }
     
     handleMockConfigRowClick = (index) => {
@@ -39,7 +95,7 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
         this.showMockConfigList(false)
         // parse the value json string, attach id from the parent object
         const selectedEditMockConfig = {...JSON.parse(mockConfigList[index].value)}
-        this.setState({selectedEditMockConfig: selectedEditMockConfig, addNew: false, selectedEditMockConfigId: mockConfigList[index].id})
+        this.setState({selectedEditMockConfig: selectedEditMockConfig, addNewMockConfig: false, selectedEditMockConfigId: mockConfigList[index].id})
     }
 
     handleServiceChange = (e, index) => {
@@ -83,7 +139,7 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
             serviceConfigs: [],
         }
         this.showMockConfigList(false)
-        this.setState({selectedEditMockConfig, addNew: true})
+        this.setState({selectedEditMockConfig, addNewMockConfig: true})
     }
 
     showMockConfigList = (show) => {
@@ -104,9 +160,12 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
     }
 
     handleRemoveMockConfig = (index) => {
-        const {httpClient: {
-            mockConfigList
-        }, dispatch} = this.props;
+        const {
+            dispatch,
+            httpClient: {
+                mockConfigList
+            }
+        } = this.props;
         const {id, key} = mockConfigList[index];
         dispatch(httpClientActions.removeMockConfig(id, key))
     }
@@ -188,13 +247,14 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
     }
 
     componentWillUnmount() {
-        this.showMockConfigList(true)
+        this.showMockConfigList(true);
     }
 
     handleMockContextLookupCollectionChange = (e) => {
         const {dispatch} = this.props;
         dispatch(httpClientActions.setMockContextLookupCollection(e.target.value))
     }
+    
     handleMockContextSaveToCollectionChange = (e) => {
         const {dispatch} = this.props;
         const {httpClient: {userCollections}} = this.props;
@@ -214,6 +274,68 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
         })
         this.setState({selectedEditMockConfig})
         this.setMockConfigStatusText("", false)
+    }
+
+    updateSelectedEnv = (selectedEnv: IEnvironmentConfig) => {
+        this.setState({  selectedEnv });
+    }
+
+    updateEnvState = (selectedEnv: IEnvironmentConfig, addNewEnv: boolean) => {
+        this.setState({ selectedEnv, addNewEnv });
+    }
+
+    resetEnvStatusText = () => {
+        const { dispatch } = this.props;
+        dispatch(httpClientActions.resetEnvStatusText())
+    }
+
+    showEnvList = (show) => {
+        const {dispatch} = this.props;
+        dispatch(httpClientActions.showEnvList(show));
+    }
+
+    handleBackEnv = () => {
+        this.resetEnvStatusText()
+        this.showEnvList(true)
+    }
+
+    handleSaveEnvironment = () => {
+        const {dispatch} = this.props;
+        const {selectedEnv} = this.state;
+        if (_.isEmpty(selectedEnv.name)) {
+            this.setEnvStatusText("Environment name cannot be empty", true)
+            return
+        }
+        dispatch(httpClientActions.saveEnvironment(selectedEnv));
+    }
+
+    handleUpdateEnvironment = () => {
+        const {dispatch, cube: { selectedAppObj }} = this.props;
+        const {selectedEnv} = this.state;
+        selectedEnv.appId = selectedAppObj.id;
+        if (_.isEmpty(selectedEnv.name)) {
+            this.setEnvStatusText("Environment name cannot be empty", true)
+            return
+        }
+        dispatch(httpClientActions.updateEnvironment(selectedEnv));
+    }
+
+    setEnvStatusText = (text, isError) => {
+        const {dispatch} = this.props;
+        dispatch(httpClientActions.setEnvStatusText(text, isError))
+    }
+
+    renderEnvironmentVariableConfig = () => {
+        return (
+                <div className="margin-top-10">
+                    <EnvVar
+                        selectedEnv={this.state.selectedEnv}
+                        updateSelectedEnv={this.updateSelectedEnv}
+                        updateEnvState={this.updateEnvState}
+                        hideModal={() => {}} 
+                    />
+                </div>
+            );
     }
 
     renderMockContextConfig = () => {
@@ -269,16 +391,19 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
     }
 
     renderMockConfig = () => {
-        const {selectedEditMockConfig, addNew} = this.state;
-        const {httpClient: {
-            mockConfigList, showMockConfigList
-        }} = this.props;
+        const { selectedEditMockConfig } = this.state;
+        const {
+            httpClient: {
+                mockConfigList, 
+                showMockConfigList
+            }
+        } = this.props;
 
-        const allMocked = this.areAllMocked(selectedEditMockConfig.serviceConfigs)
+        const allMocked = this.areAllMocked(selectedEditMockConfig.serviceConfigs);
+
         return (<>
             <div className="margin-top-10">
                 {showMockConfigList && <div>
-                    <label>Configurations</label>
                     <table className="table table-hover">
                         <tbody>
                             {mockConfigList.map((mockConfig, index) => (
@@ -367,46 +492,110 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
             </div>
         </>)
     }
+
+    renderEnvironmentVariableConfigFooter = () => {
+        const { addNewEnv } = this.state;
+        const {
+            httpClient: {
+                envStatusText, 
+                envStatusIsError, 
+                showEnvList
+            }
+        } = this.props;
+        
+        return (
+            <>
+                <span className="pull-left" style={{color: envStatusIsError ? "red" : ""}}>{envStatusText}</span>
+                <span className="cube-btn" onClick={this.props.hideModal}>CLOSE</span>
+                {/* {showEnvList && <span className="cube-btn margin-left-15" onClick={this.props.hideModal}>DONE</span>} */}
+                {!showEnvList && <span className="cube-btn margin-left-15" onClick={this.handleBackEnv}>BACK</span>}
+                {!showEnvList && addNewEnv && <span className="cube-btn margin-left-15" onClick={this.handleSaveEnvironment}>SAVE</span>}
+                {!showEnvList && !addNewEnv && <span className="cube-btn margin-left-15" onClick={this.handleUpdateEnvironment}>UPDATE</span>}
+            </>
+        );
+    }
+
+    renderMockConfigFooter = () => {
+        const { addNewMockConfig, selectedTabKey} = this.state;
+        const {
+            httpClient: {
+                mockConfigStatusText, 
+                mockConfigStatusIsError, 
+                showMockConfigList
+            }
+        } = this.props;
+
+        return (
+            <>
+                <span className="pull-left" style={{color: mockConfigStatusIsError ? "red" : ""}}>{mockConfigStatusText}</span>
+                    {selectedTabKey == 0 && !showMockConfigList &&                         
+                        <>
+                            <span 
+                                className="cube-btn margin-right-10 margin-left-15" 
+                                onClick={this.handleBackMockConfig}
+                            >
+                                <i className="fa fa-arrow-circle-left"></i>
+                                &nbsp;BACK
+                            </span>
+                        
+                            { 
+                                addNewMockConfig 
+                                ? 
+                                    <span 
+                                        className="cube-btn margin-right-10" 
+                                        onClick={this.handleSaveMockConfig}
+                                    >
+                                        <i className="fa fa-save"></i>&nbsp;SAVE
+                                    </span>
+                                :   <span 
+                                        className="cube-btn margin-right-10" 
+                                        onClick={this.handleUpdateMockConfig}
+                                    >
+                                        <i className="fa fa-save"></i>&nbsp;UPDATE A
+                                    </span>
+                            }
+                        </>
+                    }
+                    <span className="cube-btn" onClick={this.props.hideModal}>CLOSE</span>
+                    {!showMockConfigList && <span className="cube-btn margin-left-15" onClick={this.handleBackMockConfig}>BACK</span>}
+                    {!showMockConfigList && addNewMockConfig && <span className="cube-btn margin-left-15" onClick={this.handleSaveMockConfig}>SAVE</span>}
+                    {!showMockConfigList && !addNewMockConfig && <span className="cube-btn margin-left-15" onClick={this.handleUpdateMockConfig}>UPDATE</span>}
+            </>
+        );
+    }
   
     render() {
-        const {selectedEditMockConfig, addNew} = this.state;
-        const {httpClient: {
-            mockConfigList, mockConfigStatusText, mockConfigStatusIsError, showMockConfigList
-        }} = this.props;
+        const { selectedTabKey } = this.state;
+
         return (
             <Fragment>
-                <Modal.Header closeButton>
-                    Proxy Settings
+                <Modal.Header>
+                    <div className="md-env-config-header-container">
+                        <span className="md-env-config-header-label">Configuration</span>
+                        <Glyphicon onClick={this.props.hideModal} glyph="remove" className="md-env-config-close" />
+                    </div>
                 </Modal.Header>
                 <Modal.Body>
-                    <div style={{height: "400px", overflowY: "auto"}}>
-                        <Tabs defaultActiveKey={this.state.selectedTabKey} id="proxyDialogBoxTabs" onSelect={this.handleSelectedTabChange}>
-                            <Tab eventKey={0} title="Service Configurations">
+                    <div className="md-env-config-modal-body">
+                        <Tabs 
+                            id="proxyDialogBoxTabs" 
+                            activeKey={selectedTabKey}
+                            onSelect={this.handleSelectedTabChange}>
+                            <Tab eventKey={0} title="Environment" style={{ paddingTop: "15px", height: "400px", overflowY: "auto" }}>
+                                {this.renderEnvironmentVariableConfig()}
+                            </Tab>
+                            <Tab eventKey={1} title="Service" style={{ paddingTop: "15px", height: "400px", overflowY: "auto" }}>
                                 {this.renderMockConfig()}
                             </Tab>
-                            <Tab eventKey={1} title="Mock Settings">
+                            <Tab eventKey={2} title="Mock Settings">
                                 {this.renderMockContextConfig()}
                             </Tab>
                         </Tabs>
                     </div>
                 </Modal.Body>
-                <Modal.Footer>
-                    <span className="pull-left" style={{color: mockConfigStatusIsError ? "red" : ""}}>{mockConfigStatusText}</span>
-                    {this.state.selectedTabKey == 0 && !showMockConfigList &&                         
-                        <>
-                        <span className="cube-btn margin-right-10 margin-left-15" onClick={this.handleBackMockConfig}>
-                            <i className="fa fa-arrow-circle-left"></i>
-                            &nbsp;BACK
-                        </span>
-                    
-                        { addNew ? <span className="cube-btn margin-right-10 " onClick={this.handleSaveMockConfig}><i className="fa fa-save"></i>&nbsp;SAVE</span>
-                                : <span className="cube-btn margin-right-10" onClick={this.handleUpdateMockConfig}><i className="fa fa-save"></i>&nbsp;UPDATE</span>
-                        }</>
-                    }
-                    <span className="cube-btn" onClick={this.props.hideModal}>CLOSE</span>
-                    {/* {!showMockConfigList && <span className="cube-btn margin-left-15" onClick={this.handleBackMockConfig}>BACK</span>} */}
-                    {/* {!showMockConfigList && addNew && <span className="cube-btn margin-left-15" onClick={this.handleSaveMockConfig}>SAVE</span>}
-                    {!showMockConfigList && !addNew && <span className="cube-btn margin-left-15" onClick={this.handleUpdateMockConfig}>UPDATE</span>} */}
+                <Modal.Footer style={{ height: "50px" }}>
+                    {selectedTabKey === 0 && this.renderEnvironmentVariableConfigFooter()}
+                    {selectedTabKey === 1 && this.renderMockConfigFooter()}
                 </Modal.Footer>
             </Fragment>
         )
@@ -414,9 +603,10 @@ class MockConfigs extends Component<IMockConfigsProps, IMockConfigsState> {
 }
 
 const mapStateToProps = (state: IStoreState) => ({
+    cube: state.cube,
     httpClient: state.httpClient,
     user: state.authentication.user
 });
 
-export default connect(mapStateToProps)(MockConfigs);
+export default connect(mapStateToProps)(EnvironmentConfigs);
 

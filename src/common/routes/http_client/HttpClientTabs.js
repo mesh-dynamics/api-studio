@@ -3,8 +3,7 @@ import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 import { FormControl, FormGroup, Tabs, Tab, Panel, Label, Modal, Button, ControlLabel, Glyphicon } from 'react-bootstrap';
 import { applyEnvVars, getCurrentEnvironment, getRenderEnvVars, getCurrentEnvVars } from "../../utils/http_client/envvar";
-import EnvironmentSection from './EnvironmentSection';
-import MockConfigSection from './MockConfigSection';
+import EnvironmentConfig from './EnvironmentSection';
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import { stringify, parse } from 'query-string';
@@ -1638,14 +1637,13 @@ class HttpClientTabs extends Component {
                             />
                         </FormGroup>
                     </div> */}
-                    <div style={{marginRight: "7px"}}>
+                    <div style={{marginRight: "7px", marginTop: "-30px"}}>
                         <div style={{marginBottom: "9px", display: "inline-block", width: "20%", fontSize: "11px"}}></div>
-                        <div style={{display: "inline-block", width: "80%", textAlign: "right"}}>
-                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleImportModalShow}>
+                        <div style={{display: "flex", justifyContent: "flex-end", alignItems: "flex-end" }}>
+                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block", height: "25px", width: "85px" }} onClick={this.handleImportModalShow}>
                                 <Glyphicon glyph="import" /> Import
                             </div>
-                            <MockConfigSection />
-                            <EnvironmentSection />
+                            <EnvironmentConfig />
                         </div>
                     </div>
                     <div style={{marginTop: "10px", display: ""}}>
