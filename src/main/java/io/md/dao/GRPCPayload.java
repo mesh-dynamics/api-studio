@@ -1,9 +1,11 @@
 package io.md.dao;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import io.md.constants.Constants;
+import io.md.core.CompareTemplate;
 import io.md.core.WrapUnwrapContext;
 import io.md.logger.LogMgr;
 import io.md.utils.Utils;
@@ -13,13 +15,16 @@ import javax.ws.rs.core.MultivaluedMap;
 import java.util.Optional;
 
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 public abstract class GRPCPayload extends HTTPPayload {
 
     private static final Logger LOGGER = LogMgr.getLogger(GRPCPayload.class);
 
+    @JsonProperty("path")
     protected String path;
+
     protected String protoService;
     protected String methodName; // This is not HTTP method but proto rpc methodName
     @JsonIgnore
@@ -27,14 +32,14 @@ public abstract class GRPCPayload extends HTTPPayload {
 
     protected GRPCPayload(MultivaluedMap<String, String> hdrs, byte[] body, String path) {
         super(hdrs, body);
-        this.path = path;
+        this.path = CompareTemplate.normaliseAPIPath(path);
         parsePath();
     }
 
     protected GRPCPayload(JsonNode deserializedJsonTree) {
         super(deserializedJsonTree);
         try {
-            this.path = this.dataObj.getValAsString("/".concat("path"));
+            this.path = CompareTemplate.normaliseAPIPath(this.dataObj.getValAsString("/".concat("path")));
             this.payloadState = Utils.valueOf(HTTPPayload.HTTPPayloadState.class, this.dataObj.getValAsString(HTTPPayload.PAYLOADSTATEPATH)).orElse(HTTPPayloadState.UnwrappedDecoded);
         } catch (Exception e) {
             LOGGER.error("Error while initializing GRPC Payload" , e);

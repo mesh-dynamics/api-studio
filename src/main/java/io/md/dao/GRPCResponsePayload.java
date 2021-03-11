@@ -36,11 +36,11 @@ public class GRPCResponsePayload extends GRPCPayload implements ResponsePayload 
 	protected MultivaluedMap<String, String> trls;
 
 
-	protected GRPCResponsePayload(MultivaluedMap<String, String> hdrs, byte[] body,
+	public GRPCResponsePayload(MultivaluedMap<String, String> hdrs, byte[] body,
 		 String path, Integer status, MultivaluedMap<String, String> trls) {
 		super(hdrs, body, path);
 		this.status = status;
-		if (hdrs != null) this.trls = trls;
+		if (trls != null) this.trls = trls;
 	}
 
 	public GRPCResponsePayload(JsonNode deserializedJsonTree) {
