@@ -143,7 +143,7 @@ public class Config {
             //poolConfig.setTestOnReturn(true);
             jedisPool = new JedisPool(poolConfig , redisHost, redisPort , 2000,  redisPassword);
             REDIS_DELETE_TTL = Integer.parseInt(fromEnvOrProperties("redis_delete_ttl"
-                , "5"));
+                , "20"));
 	        Runnable subscribeThread = new Runnable() {
 		        /**
 		         * When an object implementing interface <code>Runnable</code> is
