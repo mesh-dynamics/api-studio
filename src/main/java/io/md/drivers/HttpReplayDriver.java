@@ -36,6 +36,7 @@ import javax.ws.rs.core.UriBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.jersey.uri.UriComponent;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -75,6 +76,11 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 	@Override
 	public IReplayClient initClient(Replay replay) throws Exception {
 		return new HttpReplayClient(replay, jsonMapper);
+	}
+
+	@Override
+	protected void modifyResponse(Event respEvent) {
+		return;
 	}
 
 
@@ -139,11 +145,33 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 			return headers.firstValue("Content-Encoding").orElse("");
 		}
 
-		private ResponsePayload formResponsePayload(HttpResponse<byte[]> response)
+		protected ResponsePayload formResponsePayload(HttpResponse<byte[]> response)
 		{
 
+			byte[] responseBody = getResponseBody(response);
+
+			MultivaluedMap<String, String> responseHeaders = getResponseHeaders(
+				response);
+
+			HTTPResponsePayload responsePayload = new HTTPResponsePayload(responseHeaders,
+					response.statusCode(), responseBody);
+			return responsePayload;
+		}
+
+		@NotNull
+		public static MultivaluedMap<String, String> getResponseHeaders(
+			HttpResponse<byte[]> response) {
+			MultivaluedMap<String, String> responseHeaders = new MultivaluedHashMap<>();
+			response.headers().map().forEach((k, v) -> {
+				responseHeaders.addAll(k, v);
+			});
+			return responseHeaders;
+		}
+
+		public static byte[] getResponseBody(HttpResponse<byte[]> response) {
 			byte[] originalBody = response.body();
-			InputStream stream = getDecodedInputStream(new ByteArrayInputStream(originalBody), response.headers());
+			InputStream stream = getDecodedInputStream(new ByteArrayInputStream(originalBody), response
+				.headers());
 			byte[] responseBody = originalBody;
 			try {
 				responseBody = stream.readAllBytes();
@@ -151,14 +179,7 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 				responseBody = response.body();
 				e.printStackTrace();
 			}
-
-			MultivaluedMap<String, String> responseHeaders = new MultivaluedHashMap<>();
-			response.headers().map().forEach((k, v) -> {
-				responseHeaders.addAll(k, v);
-			});
-			HTTPResponsePayload responsePayload = new HTTPResponsePayload(responseHeaders,
-					response.statusCode(), responseBody);
-			return responsePayload;
+			return responseBody;
 		}
 
 		@Override

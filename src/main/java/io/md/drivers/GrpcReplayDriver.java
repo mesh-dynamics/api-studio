@@ -1,8 +1,14 @@
 package io.md.drivers;
 
+import static io.md.drivers.HttpReplayDriver.HttpReplayClient.getResponseBody;
+import static io.md.drivers.HttpReplayDriver.HttpReplayClient.getResponseHeaders;
+
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
@@ -11,6 +17,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriBuilder;
 
 import org.apache.logging.log4j.LogManager;
@@ -23,16 +30,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.md.cache.ProtoDescriptorCache;
 import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
 import io.md.core.RRTransformerOperations;
-import io.md.core.Utils;
 import io.md.dao.Event;
 import io.md.dao.GRPCPayload;
 import io.md.dao.GRPCRequestPayload;
+import io.md.dao.GRPCResponsePayload;
+import io.md.dao.HTTPResponsePayload;
 import io.md.dao.ProtoDescriptorDAO;
 import io.md.dao.Replay;
 import io.md.dao.RequestPayload;
+import io.md.dao.ResponsePayload;
 import io.md.services.DataStore;
 import io.md.utils.Constants;
 import io.md.utils.UtilException;
+import io.md.utils.Utils;
 
 public class GrpcReplayDriver extends HttpReplayDriver {
 
@@ -84,5 +94,30 @@ public class GrpcReplayDriver extends HttpReplayDriver {
 			return (RequestPayload) reqEvent.payload;
 		}
 
+		@Override
+		protected ResponsePayload formResponsePayload(HttpResponse<byte[]> response)
+		{
+
+			byte[] responseBody = getResponseBody(response);
+
+			MultivaluedMap<String, String> responseHeaders = getResponseHeaders(
+				response);
+
+
+			// TODO: Currently trailers aren't supported by java HttpResponse so using
+			//  http status code as response.statusCode and also cannot capture trailers
+			//  so setting empty trailers
+			GRPCResponsePayload responsePayload = new GRPCResponsePayload(responseHeaders,
+				responseBody, response.uri().getPath(), response.statusCode(), new MultivaluedHashMap() );
+			return responsePayload;
+		}
+
+	}
+
+	@Override
+	protected void modifyResponse(Event respEvent) {
+		if (respEvent.payload instanceof GRPCResponsePayload) {
+			Utils.setProtoDescriptorGrpcEvent(respEvent, protoDescriptorCacheOptional.orElseThrow());
+		}
 	}
 }
