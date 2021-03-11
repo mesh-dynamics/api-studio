@@ -12,6 +12,7 @@ import com.cube.core.TagConfig;
 import com.cube.dao.RecordingBuilder;
 import com.cube.queue.StoreUtils;
 
+import io.md.cache.Constants.PubSubContext;
 import io.md.core.ApiGenPathMgr;
 import io.md.core.CollectionKey;
 import io.md.dao.CustomerAppConfig.Builder;
@@ -34,7 +35,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -78,6 +78,7 @@ import org.msgpack.value.ValueType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
 
 import io.cube.agent.FnReqResponse;
 import io.cube.agent.UtilException;
@@ -1037,7 +1038,7 @@ public class CubeStore {
         errResp = recording.filter(r -> r.status == RecordingStatus.Running)
             .map(recordingv -> Response.status(Response.Status.CONFLICT)
                 .entity(String.format("Collection %s already active for customer %s, app %s, for instance %s. Use different name",
-                    collection, customerId, app, recordingv.instanceId))
+                    recordingv.collection, customerId, app, recordingv.instanceId))
                 .build());
         if (errResp.isPresent()) {
             asyncResponse.resume(errResp.get());
@@ -2058,6 +2059,16 @@ public class CubeStore {
         return ServerUtils.flushAll(config);
     }
 
+    @POST
+    @Path("cache/flushInMem")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response cacheFlushInMemory(Map metadata) {
+        long receivedInstances =  config.pubSubMgr.publish(PubSubContext.IN_MEM_CACHE , metadata);
+        return Response.ok(Map.of("receivedInstances" , receivedInstances) , MediaType.APPLICATION_JSON).build();
+    }
+
+
+
 
     @POST
     @Path("/protoDescriptorFileUpload/{customerId}/{app}/")
@@ -2158,14 +2169,24 @@ public class CubeStore {
     @Path("/getProtoDescriptor/{customerId}/{app}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getProtoDescriptorFile(@PathParam("customerId") String customerId, @PathParam(
-        "app") String app) {
+        "app") String app,
+        @DefaultValue("false") @QueryParam("asDAO") boolean asDAO) {
         try {
             Optional<ProtoDescriptorDAO> latestProtoDescDao =
                 rrstore.getLatestProtoDescriptorDAO(customerId, app);
-            return latestProtoDescDao.map(protoDescriptorDAO -> Response.ok()
-                .entity(protoDescriptorDAO.convertToJsonDescriptor()).build())
-                .orElse(Response.serverError().entity("Proto Descriptor not present for the "
-                    + "customer and app combo").build());
+
+            Response resp = latestProtoDescDao.map(UtilException.rethrowFunction(p -> {
+                String json;
+                if (asDAO) {
+                    json = jsonMapper.writeValueAsString(p);
+                } else {
+                    json = p.convertToJsonDescriptor();
+                }
+                return Response.ok(json, MediaType.APPLICATION_JSON).build();
+            })).orElseGet(() -> Response.status(Response.Status.NOT_FOUND).entity(String
+                .format("ProtoDescriptorDAO not found for customer %s and app %s", customerId, app))
+                .build());
+            return resp;
         } catch (Exception e) {
             return Response.serverError().entity("Exception occurred while retrieving proto "
                 + "descriptor " + e.getMessage()).build();
