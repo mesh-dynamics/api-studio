@@ -8,7 +8,6 @@ import static io.md.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 import static io.md.core.Comparator.MatchType.DontCare;
 import static io.md.core.TemplateKey.Type;
-import static io.md.core.Utils.versionPattern;
 import static io.md.dao.Recording.RecordingStatus;
 import static io.md.services.DataStore.TemplateNotFoundException;
 
@@ -35,6 +34,7 @@ import io.md.dao.ConvertEventPayloadResponse;
 import io.md.dao.Event.EventType;
 import io.md.dao.EventQuery;
 import io.md.dao.GRPCPayload;
+import io.md.dao.MatchResultAggregate;
 import io.md.dao.Payload;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.RequestPayload;
@@ -55,12 +55,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -119,7 +117,6 @@ import io.md.core.Utils;
 
 import com.cube.core.TemplateRegistries;
 import com.cube.dao.AnalysisMatchResultQuery;
-import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.Result;
