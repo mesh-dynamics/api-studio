@@ -182,7 +182,7 @@ public class ConnectionPool {
           JSONObject obj = new JSONObject();
           // resultset index starts from 1
           for (int i = 1; i <= numColumns; i++) {
-            String column_name = rsmd.getColumnName(i);
+            String column_name = rsmd.getColumnLabel(i);
             obj.put(column_name, rs.getObject(i));
           }
           rows.put(obj);

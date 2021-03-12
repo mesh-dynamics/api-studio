@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -416,20 +417,6 @@ public class MovieRentals {
 		return ros.executeQuery(query, params);
 	}
 
-	public JSONArray getCategoriesByIds(List<Integer> categories) {
-		String query = "Select category_id, name from category where category_id In (";
-		JSONArray params = new JSONArray();
-		for(int i=0; i< categories.size() && i < 60; i++) {
-			query = query + "?";
-			if (i < categories.size()-1)
-				query = query + ",";
-			if(i == categories.size()-1)
-				query = query + ")";
-			RestOverSql.addIntegerParam(params, categories.get(i));
-		}
-		return ros.executeQuery(query, params);
-	}
-
 	private Map<String, Integer> categoryNameIdMap(List<String> categories) {
 		Map<String, Integer>  nameIdMap = new HashMap<>();
 		JSONArray rs = getCategoriesByNames(categories);
@@ -480,36 +467,46 @@ public class MovieRentals {
 		}
 	}
 
-	public List<Integer> getCategoryIdsForGenreGroup(int genreGroupId) {
-		String query = "Select category_id from genre_group_category where genre_group_id = ?";
+	public Collection<JSONObject> getALlGenreGroupsForCustomer(String email) {
+    	String query = "select D3.name as categoryName, D2.category_id, D1.name, D1.genre_group_id from category D3 "
+					+ "left join (genre_group_category D2 join "
+					+ "(genre_group D1 join customer D0 "
+					+ "on D1.customer_id=D0.customer_id) "
+					+ "on D2.genre_group_id=D1.genre_group_id) "
+					+ "on D3.category_id=D2.category_id where D0.email=?";
 		JSONArray params = new JSONArray();
-		RestOverSql.addIntegerParam(params, genreGroupId);
-		JSONArray rs = ros.executeQuery(query, params);
-		List<Integer> ids = new ArrayList<>();
-		for(Object obj:rs) {
-			JSONObject json = (JSONObject)obj;
-			ids.add(json.getInt("category_id"));
-		}
-		return ids;
-	}
-
-	public JSONArray getAllCategoriesForGroup(int genreGroupId) {
-    	return getCategoriesByIds(getCategoryIdsForGenreGroup(genreGroupId));
-	}
-
-	public JSONArray getAllGenreGroupsForCustomer(int customerId) {
-		String query = "select name, genre_group_id  from genre_group "
-				+ " where customer_id = ?";
-		JSONArray params = new JSONArray();
-		RestOverSql.addIntegerParam(params, customerId);
+		RestOverSql.addStringParam(params, email);
 		JSONArray rs =  ros.executeQuery(query, params);
 		JSONArray response = new JSONArray();
+		Map<Integer, JSONObject> jsonMap = new HashMap<>();
 		for(Object obj:rs) {
 			JSONObject json = (JSONObject)obj;
-			json.put("categories", getAllCategoriesForGroup(json.getInt("genre_group_id")));
-			response.put(json);
+
+			int genre_group_id = json.getInt("genre_group_id");
+			String name = json.getString("name");
+			String categoryName = json.getString("categoryName");
+			int category_id = json.getInt("category_id");
+
+			JSONObject categoryObj = new JSONObject();
+			categoryObj.put("category_id", category_id);
+			categoryObj.put("name", categoryName);
+
+			JSONArray catel;
+			JSONObject value;
+			if(jsonMap.containsKey(genre_group_id)) {
+				value = jsonMap.get(genre_group_id);
+				catel = (JSONArray)value.get("categories");
+			} else {
+				value = new JSONObject();
+				value.put("genre_group_id", genre_group_id);
+				value.put("name", name);
+				catel = new JSONArray();
+			}
+			catel.put(categoryObj);
+			value.put("categories", catel);
+			jsonMap.put(genre_group_id, value);
 		}
-		return response;
+		return jsonMap.values();
 	}
 
 	public JSONArray getAllMovies() {
