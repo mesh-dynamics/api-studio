@@ -5,7 +5,7 @@ import { getDefaultTraceApiFilters } from "../utils/api-catalog/api-catalog-util
 import arrayToTree from "array-to-tree";
 
 import { stringify } from 'query-string'
-import { IUserAuthDetails } from '../reducers/state.types';
+import { ITemplateSetNameLabel, IUserAuthDetails } from '../reducers/state.types';
 import { CancelToken } from 'axios';
 
 // TODO: replace console log statements with logging
@@ -15,6 +15,15 @@ const fetchAppsList = async () => {
     } catch (error) {
         console.log("Error Fetching Applist \n", error);
         throw new Error("Error Fetching Applist");
+    }
+}
+
+const fetchAppsImages = async () => {
+    try {
+        return await api.get(`${config.apiBaseUrl}/app/images`);
+    } catch (error) {
+        console.log("Error Fetching AppImages \n", error);
+        throw new Error("Error Fetching AppImages");
     }
 }
 
@@ -306,6 +315,20 @@ const getNewTemplateVerInfo = async (customerId: string, app: string, currentTem
         throw error;
     }
 };
+
+const getTemplateSetNameLabels = async (customerId: string, app: string) => {
+    try {
+        const response = await api.get(`${config.analyzeBaseUrl}/getTemplateSetLabels/${customerId}/${app}`)
+        let templateSetList: ITemplateSetNameLabel[] = []
+        if (response) {
+            templateSetList = Object.values(response)
+        }
+        return templateSetList;
+    } catch (error) {
+        console.log("Error getting template set labels", error);
+        return [];
+    }
+}
 
 const getProjectList = async () => {
     try {
@@ -691,6 +714,7 @@ const fetchGrpcProtoDescriptor = async (customerId: string, selectedApp: string)
 
 export const cubeService = {
     fetchAppsList,
+    fetchAppsImages,
     addNewApp,
     updateApp,
     removeAnApp,
@@ -739,4 +763,5 @@ export const cubeService = {
     afterResponse,
     copyRecording,
     fetchGrpcProtoDescriptor,
+    getTemplateSetNameLabels,
 };

@@ -10,6 +10,7 @@ import {
   Dropdown,
 } from "react-bootstrap";
 
+import Shortcuts from '../../utils/Shortcuts';
 import * as httpClientTabUtils from "../../utils/http_client/httpClientTabs.utils.js";
 import { httpClientActions } from "../../actions/httpClientActions";
 import CreateCollection from "./CreateCollection";
@@ -80,6 +81,14 @@ class SaveToCollection extends React.Component<
 
     this.saveTabToCollection = this.saveTabToCollection.bind(this);
     this.createCollectionRef = React.createRef();
+  }
+
+  componentDidMount(){
+    Shortcuts.register("ctrl+s", this.showSaveModal)
+  }
+
+  componentWillUnmount(){
+    Shortcuts.unregister("ctrl+s");
   }
 
   handleCloseModal() {

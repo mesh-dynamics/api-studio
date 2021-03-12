@@ -109,10 +109,14 @@ export interface IAppInfo {
 
 export interface IAppDetails {
   //From actual API call some data has been moved to 'app'.
-  data: string;
+  app: IAppInfo;
+}
+
+export interface IAppImages {
   fileName: string;
   fileType: string;
-  app: IAppInfo;
+  data: string;
+  appName: string;
 }
 
 export interface IServiceDetails {
@@ -202,6 +206,9 @@ export interface ICubeState {
   analysisStatus: string;
   analysisStatusObj: any; //2
   appsList: IAppDetails[];
+  appImages: IAppImages[];
+  appImagesReqStatus: string,
+  appImagesReqErr: string;
   appsListReqErr: string;
   appsListReqStatus: string;
   collectionTemplateVersion: string | null;
@@ -251,6 +258,8 @@ export interface ICubeState {
   testIdsReqStatus: string;
   timelineData: ITimelineData[];
   isGettingStartedHidden?: boolean;
+  templateSetNameLabelsList: ITemplateSetNameLabel[],
+  selectedTemplateSetNameLabel: ITemplateSetNameLabel | null,
 }
 
 //Golden State
@@ -294,24 +303,29 @@ export interface ICollectionTabState {
 }
 
 export interface IPayloadData {
-  formParams?: any; //2
-  hdrs?: any; //2
+  formParams?: any; //2 //Obsolete
+  hdrs: IParamsMap;
   method: string; //enum
   path?: string;
   pathSegments?: string[];
   payloadState?: string;
-  queryParams?: any; //2
+  queryParams: IParamsMap;
   body: any;
   status?: number;
 }
 
-export interface IQueryParams {
+export interface IParamsMap {
   [key: string]: string[];
 }
 export interface IKeyValuePairs<T = string> {
   [key: string]: T;
 }
-export interface IContextMap {
+
+export interface ITemplateSetNameLabel {
+  name: string;
+  label: string;
+}
+  export interface IContextMap {
   [key: string]: {
     value: any,
     createdOn: number; //timestamp when context map entry is added
@@ -336,7 +350,7 @@ export interface IEventData {
   spanId?: string;
   timestamp: number;
   traceId: string;
-  payloadFields:[];
+  payloadFields:string[];
   grpcConnectionSchema: IGrpcConnect
 }
 export interface IApiTrace {
@@ -348,7 +362,7 @@ export interface IApiTrace {
   method: string; //Should be Enum
   name: string;
   parentSpanId: string;
-  queryParams: IQueryParams;
+  queryParams: IParamsMap;
   recordingIdAddedFromClient: string;
   reqTimestamp: number;
   requestEventId: string;
@@ -371,7 +385,7 @@ export interface IEnvironmentConfigVars {
 export interface IEnvironmentConfig {
   id?: number;
   name: string;
-  vars: IEnvironmentConfigVars;
+  vars: IEnvironmentConfigVars[];
 }
 
 export interface IHistoryTabPagingData {
@@ -440,6 +454,7 @@ export interface IHttpClientTabDetails {
   responseHeaders: string;
   responseStatus: string; //Could be Enum
   responseStatusText: string;
+  responseTrailers: IHttpTrailers;
   service: string;
   showCompleteDiff: boolean;
   showOutgoingRequestsBtn: boolean;
@@ -458,6 +473,10 @@ export interface IHttpClientTabDetails {
   grpcData: IGrpcData;
   grpcConnectionSchema: IGrpcConnect;
   hideInternalHeaders: boolean;
+}
+
+export interface IHttpTrailers {
+  [key: string]: string
 }
 
 export interface IUserApiTraceHistory {

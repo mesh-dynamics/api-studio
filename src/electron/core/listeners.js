@@ -2,9 +2,7 @@
  * This file is set up proxy and listeners
  */
 const { app, BrowserWindow, ipcMain, Menu, dialog } = require('electron');
-const fetch = require('electron-fetch');
-var FormData = require('form-data');
-const AbortController = require("abort-controller");
+const { fetch, AbortController } = require("fetch-h2");
 const { autoUpdater } = require('electron-updater');
 autoUpdater.logger = require('electron-log')
 const isDev = require('electron-is-dev');
@@ -14,9 +12,12 @@ const path = require('path');
 const aws4 = require('aws4');
 const { URLSearchParams } = require('url');
 const os = require('os');
+const AnyProxy = require('anyproxy');
+const exec = require('child_process').exec;
 const menu = require('./menu');
 const { updateApplicationConfig, getApplicationConfig } = require('./fs-utils');
-const { clearRestrictedHeaders } = require('../../shared/utils');
+const { clearRestrictedHeaders, Deferred } = require('../../shared/utils');
+const {getHttp2FetchUrl} = require('./proxy/h2server.utility')
 
 autoUpdater.autoInstallOnAppQuit = true;
 autoUpdater.autoDownload = false; 
@@ -323,7 +324,20 @@ const setupListeners = (mockContext, user, replayContext) => {
         updateApplicationConfig(config);
 
         event.sender.send('config_update_success');
-        
+
+        const ifExist = AnyProxy.utils.certMgr.isRootCAFileExists();
+
+        if(!ifExist && config.generateCertificate) {
+            AnyProxy.utils.certMgr.generateRootCA((error, keyPath) => {
+                // let users to trust this CA before using proxy
+                if (!error) {
+                    const certDir = require('path').dirname(keyPath);
+                    logger.info('The cert is generated at', certDir);
+                } else {
+                    logger.info('error when generating rootCA', error);
+                }
+            });
+        }
         app.relaunch();
         app.exit();
     });
@@ -364,37 +378,45 @@ const setupListeners = (mockContext, user, replayContext) => {
         const bodyType = args.bodyType;
         const data = global.fetchRequest[args.tabId + args.runId];
         logger.info(`Request received at ipc `,   data.fetchConfigRendered, bodyType);
-        
-        const fetchCall = bodyType == "grpcData" ? require("./http2fetch.js").fetch :  fetch.default;
+        const isGrpc = (bodyType == "grpcData")
+        let url = args.url;
+        if (isGrpc) {
+            url = getHttp2FetchUrl(url)
+        }
+
         const abortController = new AbortController();
         reqMap[args.tabId + args.runId] = abortController;
         data.fetchConfigRendered.signal = abortController.signal;
         clearRestrictedHeaders(data.fetchConfigRendered.headers);
+        data.fetchConfigRendered.allowForbiddenHeaders = true;
+        
+        const body = data.fetchConfigRendered.body
+        if(body && !(typeof body === 'string' || body instanceof String)) {
+            // convert body from js Buffer to nodejs Buffer
+            data.fetchConfigRendered.body = Buffer.from(body)
+        }
 
-        fetchCall(args.url, data.fetchConfigRendered).then(response=>{
+        let responseTrailersPromise;
+        if(isGrpc) {
+            responseTrailersPromise = new Deferred();
+            data.fetchConfigRendered.onTrailers = (trailers) => {
+                const trailersObject = trailers.toJSON();
+                logger.info("Received response trailers: ", trailersObject);
+                responseTrailersPromise.resolve(trailersObject);
+            };
+        }
 
+        fetch(url, data.fetchConfigRendered).then(async response => {
             logger.info(`RESPONSE STATUS: ${response.statusCode}`);
-            const fetchedResponseHeaders = {};
-            if(Array.isArray(response.headers)){
-                response.headers.forEach((value, key) => {
-                    fetchedResponseHeaders[key] = value;
-                });
-            }else if(response.headers.forEach){
-                response.headers.forEach((header, key) => {
-                    fetchedResponseHeaders[key] = header;
-                });            
-            }else{
-                Object.entries(response.headers).forEach(([key, header]) => {
-                    fetchedResponseHeaders[key] = header;
-                }); 
-            }
-            response.headers = fetchedResponseHeaders;             
             
+            let responseTrailers = {};
+            if(isGrpc) {
+                responseTrailers = await responseTrailersPromise.promise; // wait for trailers to be received
+            }
+
             global.requestResponse[args.tabId + args.runId] = response;
             delete global.fetchRequest[args.tabId + args.runId];
-            event.sender.send('drive_request_completed', args.tabId, args.runId);
-
-
+            event.sender.send('drive_request_completed', args.tabId, args.runId, JSON.stringify(responseTrailers));
         }).catch(error=>{
             logger.info('Request ERROR: ', error);
             event.sender.send('drive_request_error', args.tabId, args.runId, error);

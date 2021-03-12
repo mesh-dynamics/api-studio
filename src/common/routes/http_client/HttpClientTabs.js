@@ -3,8 +3,7 @@ import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 import { FormControl, FormGroup, Tabs, Tab, Panel, Label, Modal, Button, ControlLabel, Glyphicon } from 'react-bootstrap';
 import { applyEnvVars, getCurrentEnvironment, getRenderEnvVars, getCurrentEnvVars } from "../../utils/http_client/envvar";
-import EnvironmentSection from './EnvironmentSection';
-import MockConfigSection from './MockConfigSection';
+import EnvironmentConfig from './EnvironmentSection';
 import _ from 'lodash';
 import { v4 as uuidv4 } from 'uuid';
 import { stringify, parse } from 'query-string';
@@ -672,8 +671,9 @@ class HttpClientTabs extends Component {
                 const tabIndex = this.getTabIndexGivenTabId(tabId, tabsToProcess);
                 const tabToProcess = tabsToProcess[tabIndex];
                 if(tabToProcess.requestId == "NA" ||tabToProcess.requestId == ""){
-                    dispatch(httpClientActions.updateAllParamsInSelectedTab(tabId, "httpURLShowOnly", "httpURLShowOnly", value));
-                    dispatch(httpClientActions.updateAllParamsInSelectedTab(tabId, "service", "service", getHostName(value) ));
+                    const {apiPath, service : generatedService} = httpClientTabUtils.getApiPathAndServiceFromUrl(value);
+                    dispatch(httpClientActions.updateAllParamsInSelectedTab(tabId, "httpURLShowOnly", "httpURLShowOnly", apiPath));
+                    dispatch(httpClientActions.updateAllParamsInSelectedTab(tabId, "service", "service", generatedService ));
                 }
             }
         }
@@ -798,25 +798,12 @@ class HttpClientTabs extends Component {
         }
     }
 
-    async driveRequestHandleResponse(response, tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, fetchedResponseHeaders){
+    async driveRequestHandleResponse(tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, responseStatus, responseStatusText, fetchedResponseHeaders, bodyData, responseTrailers={}, preRequestResult){
         const {httpClient: { userHistoryCollection}, dispatch} = this.props;
         const resTimestamp = Date.now() / 1000;
-        const responseStatus = response.status;
-        const responseStatusText = response.statusText;
-        let data = "";
-        
-        if(fetchedResponseHeaders["content-type"] == "application/grpc"){
-           //  var reader = response.body.getReader();
-           //  var result = await reader.read();
-            const base64Data = Base64Binary.encode(response.body || new Uint8Array());
-            data =  base64Data;
-        }
-        else{
-            data= await response.text();
-        }
     
-        dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders, undefined, 4), data));
-        this.saveToHistoryAndLoadTrace(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp, httpRequestURLRendered, currentEnvironment);
+        dispatch(httpClientActions.postSuccessDriveRequest(tabId, responseStatus, responseStatusText, JSON.stringify(fetchedResponseHeaders), bodyData, responseTrailers));
+        this.saveToHistoryAndLoadTrace(tabId, userHistoryCollection.id, runId, reqTimestamp, resTimestamp, httpRequestURLRendered, currentEnvironment, preRequestResult);
     }
      async driveRequestHandleError(error, tabId, runId){
          const {dispatch} = this.props;
@@ -914,6 +901,7 @@ class HttpClientTabs extends Component {
         let currentEnvironment, currentEnvironmentVars;
         currentEnvironment = getCurrentEnvironment();
         currentEnvironmentVars = getCurrentEnvVars();
+        let preRequestResult = {};
 
         const reqTimestamp = Date.now() / 1000;
         let queryStringValue = "";
@@ -927,7 +915,7 @@ class HttpClientTabs extends Component {
                 injectionConfigVersion: `Default${selectedApp}`,
                 contextMap:  getContextMapKeyValues(contextMap),
             }
-            const preRequestResult = await cubeService.fetchPreRequest(userHistoryCollection.id, runId, preRequestData, selectedApp, tabToProcess.abortRequest.cancelToken);
+            preRequestResult = await cubeService.fetchPreRequest(userHistoryCollection.id, runId, preRequestData, selectedApp, tabToProcess.abortRequest.cancelToken);
         
             [httpRequestURLRendered, httpRequestQueryStringParamsRendered, fetchConfigRendered] = preRequestToFetchableConfig(preRequestResult, httpRequestURL);
             queryStringValue = httpRequestQueryStringParamsRendered.toString();
@@ -960,20 +948,36 @@ class HttpClientTabs extends Component {
                     responseApi.remove(tabId + runId);
                 }
             });
-            ipcRenderer.on('drive_request_completed', (event, reqTabId, reqRunId ) => {
+            ipcRenderer.on('drive_request_completed', async (event, reqTabId, reqRunId, responseTrailersStr) => {
                 if(reqTabId === tabId && reqRunId === runId) {
                     try {
                         const responseApi = window.require('electron').remote.getGlobal("responseApi");
                         let response = responseApi.get(tabId + runId);
                         responseApi.remove(tabId + runId);
-                        if(_.isArray(response.headers)){
-                            response.headers.forEach((value, key) => {
-                                fetchedResponseHeaders[key] = value;
-                            });
-                        }else{
-                            fetchedResponseHeaders = response.headers || {};
+
+                        let responseStatus = response.status;
+                        const responseStatusText = response.statusText;
+
+                        const responseTrailers = JSON.parse(responseTrailersStr)
+
+                        fetchedResponseHeaders = response.headers.toJSON()
+                        if(bodyType === 'grpcData') {
+                            // in case of grpc, status will be in trailers or in headers
+                            responseStatus = responseTrailers["grpc-status"]
+                            if (responseStatus == undefined) {
+                                // check headers
+                                responseStatus = fetchedResponseHeaders["grpc-status"]
+                            }
                         }
-                        this.driveRequestHandleResponse(response, tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, fetchedResponseHeaders);
+                        
+                        let bodyData = "";
+                        if(fetchedResponseHeaders["content-type"] == "application/grpc"){
+                            bodyData = Buffer.from(await response.arrayBuffer()).toString("base64");
+                        } else {
+                            bodyData = await response.text();
+                        }
+
+                        this.driveRequestHandleResponse(tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, responseStatus, responseStatusText, fetchedResponseHeaders, bodyData, responseTrailers, preRequestResult);
                     } catch (error) {
                         this.driveRequestHandleError(error, tabId, runId);
                     }
@@ -988,10 +992,16 @@ class HttpClientTabs extends Component {
         } else {
             fetchConfigRendered.signal = tabToProcess.abortRequest.signal;
             return fetch(fetchUrlRendered, fetchConfigRendered).then(async(response) => {
+                const responseStatus = response.status;
+                const responseStatusText = response.statusText;
+
                 for (const header of response.headers) {
                     fetchedResponseHeaders[header[0]] = header[1];
                 }
-                this.driveRequestHandleResponse(response, tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, fetchedResponseHeaders);
+
+                const bodyData = response.text();
+
+                this.driveRequestHandleResponse(tabId, runId, reqTimestamp, httpRequestURLRendered, currentEnvironment, responseStatus, responseStatusText, fetchedResponseHeaders, bodyData, {}, preRequestResult);
             
             })
             .catch((error) => {
@@ -1063,7 +1073,7 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.deleteOutgoingReq(outgoingReqTabId, tabId));
     }
 
-    saveToHistoryAndLoadTrace = (tabId, recordingId, runId="", reqTimestamp="", resTimestamp="", urlEnvVal="", currentEnvironment="") => {
+    saveToHistoryAndLoadTrace = (tabId, recordingId, runId="", reqTimestamp="", resTimestamp="", urlEnvVal="", currentEnvironment="", preRequestResult) => {
         const { 
             httpClient: { 
                 historyTabState, 
@@ -1087,7 +1097,9 @@ class HttpClientTabs extends Component {
         try {
             if (reqResPair.length > 0) {
                 const data = [];
-                data.push(httpClientTabUtils.getReqResFromTabData(selectedApp, reqResPair, tabToProcess, runId, "History", reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment));
+                const reqRespData = httpClientTabUtils.getReqResFromTabData(selectedApp, reqResPair, tabToProcess, runId, "History", reqTimestamp, resTimestamp, urlEnvVal, currentEnvironment);
+                httpClientTabUtils.updateRequestDataPerPreRequest(preRequestResult, reqRespData);
+                data.push(reqRespData);
                 const apiConfig = {
                     cancelToken: tabToProcess.abortRequest.cancelToken
                 }
@@ -1625,14 +1637,13 @@ class HttpClientTabs extends Component {
                             />
                         </FormGroup>
                     </div> */}
-                    <div style={{marginRight: "7px"}}>
+                    <div style={{marginRight: "7px", marginTop: "-30px"}}>
                         <div style={{marginBottom: "9px", display: "inline-block", width: "20%", fontSize: "11px"}}></div>
-                        <div style={{display: "inline-block", width: "80%", textAlign: "right"}}>
-                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block"}} onClick={this.handleImportModalShow}>
+                        <div style={{display: "flex", justifyContent: "flex-end", alignItems: "flex-end" }}>
+                            <div className="btn btn-sm cube-btn text-center" style={{ padding: "2px 10px", display: "inline-block", height: "25px", width: "85px" }} onClick={this.handleImportModalShow}>
                                 <Glyphicon glyph="import" /> Import
                             </div>
-                            <MockConfigSection />
-                            <EnvironmentSection />
+                            <EnvironmentConfig />
                         </div>
                     </div>
                     <div style={{marginTop: "10px", display: ""}}>

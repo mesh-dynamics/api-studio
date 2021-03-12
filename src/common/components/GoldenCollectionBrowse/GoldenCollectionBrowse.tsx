@@ -188,12 +188,16 @@ const GoldenCollectionBrowse = (props: IGoldenCollectionBrowseProps) => {
                         (
                             <Fragment>
                                 <div className="gcBrowse-selected-item-wrapper">
-                                    <span className="label-n">NAME :</span>
+                                    <span className="label-n">NAME:</span>
                                     <span className="value-n gcBrowse-value-n">{`${selectedGoldenOrCollectionItem?.name || ''}`}</span>
                                 </div>
                                 <div className="gcBrowse-selected-item-wrapper">
-                                    <span className="label-n">LABEL :</span>
+                                    <span className="label-n">LABEL:</span>
                                     <span className="value-n gcBrowse-value-n">{`${selectedGoldenOrCollectionItem?.label || ''}`}</span>
+                                </div>
+                                <div className="gcBrowse-selected-item-wrapper">
+                                    <span className="label-n">CREATED ON:</span>
+                                    <span className="value-n gcBrowse-value-n">{`${selectedGoldenOrCollectionItem ? new Date(selectedGoldenOrCollectionItem.timestmp * 1000).toLocaleString() : "NA"}`}</span>
                                 </div>
                             </Fragment>
                         )

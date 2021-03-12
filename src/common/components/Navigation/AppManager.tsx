@@ -75,14 +75,13 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
   };
 
   handleRemoveApp = (app: IAppDetails) => {
-    this.setState({
-      isDeleteConfirmModalVisible: true,
-      actionedApp: app,
-    });
+    this.setState({ isDeleteConfirmModalVisible: true, actionedApp: app });
   };
+
   cancelDeletion = () => {
     this.setState({ isDeleteConfirmModalVisible: false });
   };
+
   proceedToDelete = () => {
     this.setState({
       isDeleteConfirmModalVisible: false,
@@ -90,6 +89,7 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
       message: "Deleting...",
       messageHeading: "Delete status",
     });
+    
     cubeService
       .removeAnApp(
         this.state.actionedApp?.app.displayName,
@@ -182,6 +182,7 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
         dispatch(cubeActions.getTestIds(selectedApp.app.name));
         dispatch(cubeActions.setSelectedTestIdAndVersion("", ""));
         dispatch(apiCatalogActions.refreshApiCatalogCollections());
+        dispatch(cubeActions.getTemplateSetNameLabels(selectedApp.app.name));
       });
     }
   };
@@ -396,7 +397,7 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
 
   createAppList = () => {
     const {
-      cube: { appsList, selectedApp },
+      cube: { appsList, selectedApp, appImages },
     } = this.props;
 
     return (
@@ -411,6 +412,7 @@ class AppManager extends Component<IAppManagerProps, IAppManagerState> {
         {appsList.map((item) => (
           <AppDetailBox
             app={item}
+            image= {appImages.find(im => im.appName === item.app.name)}
             key={item.app.name}
             isSelected={selectedApp == item.app.name}
             onDeleteApp={this.handleRemoveApp}

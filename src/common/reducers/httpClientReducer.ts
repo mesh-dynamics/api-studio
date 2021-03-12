@@ -538,6 +538,7 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                         eachTab["responseStatusText"] = data.responseStatusText;
                         eachTab["progressState"] = httpClientConstants.POST_SUCCESS_DRIVE_REQUEST;
                         eachTab["responsePayloadState"] = "WrappedEncoded"
+                        eachTab["responseTrailers"] = data.responseTrailers
                     }
                     return eachTab;
                 })

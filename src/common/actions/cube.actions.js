@@ -6,6 +6,7 @@ import { httpClientActions } from "./httpClientActions";
 export const cubeActions = {
     getApps,
     refreshAppList,
+    getAppImages,
     setSelectedApp,
     getInstances,
     getTestIds,
@@ -51,7 +52,9 @@ export const cubeActions = {
     removeSelectedGoldenFromTestIds,
     hideHttpClient,
     resetCubeToInitialState,
-    setDoNotShowGettingStartedAgain
+    setDoNotShowGettingStartedAgain,
+    getTemplateSetNameLabels,
+    setSelectedTemplateSetNameLabel
 };
 
 function clearPreviousData() {
@@ -75,10 +78,24 @@ async function getAppList(){
     });
     return appsList;
 }
+
+function getAppImages() {
+    return async (dispatch, getState) => {
+        try {
+            let appImages = await cubeService.fetchAppsImages();
+            dispatch(success(appImages, Date.now()));
+        } catch (error) {
+            dispatch(failure("Failed to get Images", Date.now()));
+        }
+    };
+    function success(appImages, date) { return { type: cubeConstants.APP_IMAGES_SUCCESS, data: appImages, date: date } }
+    function failure(message, date) { return { type: cubeConstants.APP_IMAGES_FAILURE, err: message, date: date } }
+}
 function refreshAppList(){
     return async (dispatch, getState) => {
         const appsList = await getAppList();
         dispatch({ type: cubeConstants.APPS_SUCCESS, data: appsList, date: Date.now() }); 
+        dispatch(cubeActions.getAppImages());
     }
 }
 
@@ -90,11 +107,14 @@ function getApps () {
             if(!selectedApp ||  !selectedAppObj || !selectedAppObj.app) {
                 const appsList = await getAppList();
                 dispatch(success(appsList, Date.now()));
-                dispatch(cubeActions.setSelectedApp(appsList[0].name));
-                dispatch(cubeActions.getGraphDataByAppId(appsList[0].id));
-                dispatch(cubeActions.getTimelineData(appsList[0].name));
-                dispatch(cubeActions.getTestConfigByAppId(appsList[0].id));
-                dispatch(cubeActions.getTestIds(appsList[0].name));
+                const defaultSelectedApp = appsList[0]
+                dispatch(cubeActions.setSelectedApp(defaultSelectedApp.name));
+                dispatch(cubeActions.getGraphDataByAppId(defaultSelectedApp.id));
+                dispatch(cubeActions.getTimelineData(defaultSelectedApp.name));
+                dispatch(cubeActions.getTestConfigByAppId(defaultSelectedApp.id));
+                dispatch(cubeActions.getTestIds(defaultSelectedApp.name));
+                dispatch(cubeActions.getAppImages());
+                dispatch(cubeActions.getTemplateSetNameLabels(defaultSelectedApp.name));
             }
         } catch (error) {
             dispatch(failure("Failed to getApps", Date.now()));
@@ -300,6 +320,19 @@ function setSelectedApp (app) {
     }
 }
 
+function getTemplateSetNameLabels (app) {
+    return async (dispatch, getState) => {
+        const { user: { customer_name: customerId } } = getState().authentication;
+        const templateSetNameLabelsList = await cubeService.getTemplateSetNameLabels(customerId, app)
+        dispatch({type: cubeConstants.SET_TEMPLATE_SET_NAME_LABELS_LIST, data: templateSetNameLabelsList})
+    }
+}
+
+function setSelectedTemplateSetNameLabel(selectedTemplateSetNameLabel) {
+    return dispatch => {
+        dispatch({type: cubeConstants.SET_SELECTED_TEMPLATE_SET_NAME_LABEL, data: selectedTemplateSetNameLabel})
+    }
+}
 
 function setSelectedInstance ( instance ) {
     return {type: cubeConstants.SET_SELECTED_INSTANCE, data: instance}

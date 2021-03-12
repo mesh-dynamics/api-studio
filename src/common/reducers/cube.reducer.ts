@@ -11,6 +11,9 @@ const initialState : ICubeState = {
     appsListReqStatus: cubeConstants.REQ_NOT_DONE,
     appsListReqErr: '',
     appsList: [],
+    appImagesReqStatus: cubeConstants.REQ_NOT_DONE,
+    appImagesReqErr: '',
+    appImages: [],
     selectedApp: null,
     selectedAppObj: null,
     gateway: null,
@@ -43,6 +46,8 @@ const initialState : ICubeState = {
     collectionTemplateVersion: null,
     golden: null,
     goldenTimeStamp: null,
+    templateSetNameLabelsList: [],
+    selectedTemplateSetNameLabel: null,
 
     replayId: null,
 
@@ -89,6 +94,20 @@ export function cube (state = initialState, action: ICubeAction) : ICubeState {
                 appsListReqErr: '',
                 appsList: action.data
             };
+        case cubeConstants.APP_IMAGES_SUCCESS:
+            return {
+                ...state,
+                appImagesReqStatus: cubeConstants.REQ_SUCCESS,
+                appImagesReqErr: '',
+                appImages: action.data
+            }; 
+        case cubeConstants.APP_IMAGES_FAILURE:
+            return {
+                ...state,
+                appImagesReqStatus: cubeConstants.REQ_FAILURE,
+                appImagesReqErr: action.err,
+                appImages: []
+            };       
         case cubeConstants.TEST_CONFIG_SUCCESS:
             return {
                 ...state,
@@ -227,6 +246,19 @@ export function cube (state = initialState, action: ICubeAction) : ICubeState {
                 testIdsReqErr: '',
                 testIds: action.data
             };
+
+        case cubeConstants.SET_TEMPLATE_SET_NAME_LABELS_LIST: 
+            return {
+                ...state,
+                templateSetNameLabelsList: action.data,
+            }
+
+        case cubeConstants.SET_SELECTED_TEMPLATE_SET_NAME_LABEL:
+            return {
+                ...state,
+                selectedTemplateSetNameLabel: action.data,
+            }
+
         case cubeConstants.TESTIDS_FAILURE: 
             return {
                 ...state,
@@ -340,7 +372,8 @@ export function cube (state = initialState, action: ICubeAction) : ICubeState {
                 operations:[],
                 templateOperationSetObject: {},
                 ruleBook: {},
-                multiOperationsSet: []
+                multiOperationsSet: [],
+                selectedTemplateSetNameLabel: null,
             };
         case cubeConstants.DIFF_SUCCESS:
             return {

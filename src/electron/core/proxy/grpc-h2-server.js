@@ -6,7 +6,7 @@ const { getApplicationConfig, store } = require("../fs-utils");
 const { getServiceNameFromUrl, getServiceConfig } = require("./proxy-utils");
 const { Deferred } = require("../../../shared/utils");
 
-const { storeReqResEvent } = require("./h2server.utility");
+const { storeReqResEvent, getHttp2FetchUrl } = require("./h2server.utility");
 const { getTraceDetails } = require("./trace-utils");
 
 const setupGrpcH2Server = (mockContext, user) => {
@@ -34,8 +34,16 @@ const setupGrpcH2Server = (mockContext, user) => {
 
     // 'end' event on request
     req.on("end", () => {
+      const reqBodyBuffer = Buffer.concat(body);
+      
       const path = req.url;
-      logger.info("HTTP2 request path: ", path);
+      logger.info("Received HTTP2 request at proxy: ", 
+      { 
+        "method": req.method, 
+        "path": path, 
+        "headers": req.headers,
+        "body (base64 encoded)": reqBodyBuffer.toString("base64"),
+      })
 
       const pathParts = path.split("/");
       const grpcMethod = pathParts.pop();
@@ -64,9 +72,7 @@ const setupGrpcH2Server = (mockContext, user) => {
       logger.info("Selected service config object :", serviceConfigObject);
 
       const isLive = serviceConfigObject && !serviceConfigObject.isMocked;
-
-      const reqBodyBuffer = Buffer.concat(body);
-      logger.info({ reqBodyBufferStr: reqBodyBuffer.toString("base64") });     
+     
       const service = matchedService;
 
       // set trace and other headers
@@ -161,7 +167,7 @@ const setupGrpcH2Server = (mockContext, user) => {
       const targetRespTrailersPromise = new Deferred();
 
       fetchConfig.onTrailers = (trailers) => {
-        const trailersObject = Object.fromEntries(trailers.entries());
+        const trailersObject = trailers.toJSON();
         logger.info("Received target response trailers: ", trailersObject);
         targetRespTrailersPromise.resolve(trailersObject);
       };
@@ -169,9 +175,7 @@ const setupGrpcH2Server = (mockContext, user) => {
       logger.info("http 2 target Request Headers: ", targetReqHeaders);
 
       // for non-https, the fetch-h2 library defaults to http1.1, so changing it to http2 to force http2 calls
-      if (fetchUrl.startsWith("http://")) {
-        fetchUrl = fetchUrl.replace("http://", "http2://");
-      }
+      fetchUrl = getHttp2FetchUrl(fetchUrl)
 
       fetch(fetchUrl, fetchConfig)
         .then(async (targetResponse) => {
