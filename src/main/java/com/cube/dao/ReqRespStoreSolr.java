@@ -2242,25 +2242,28 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> staticInjectionMap = getStrField(doc,
             STATIC_INJECTION_MAPF);
         Optional<String> runId = getStrField(doc, RUNIDF);
-
         Optional<Replay> replay = Optional.empty();
-        Optional<String> templateSetName = getStrField(doc, TEMPLATE_SET_NAME_F);
-        Optional<String> templateSetLabel = getStrField(doc, TEMPLATE_SET_LABEL_F);
         if (endpoint.isPresent() && customerId.isPresent() && app.isPresent() &&
             instanceId.isPresent() && !collection.isEmpty()
             && replayId.isPresent() && async.isPresent() && status.isPresent() && userId.isPresent()
             && templateVersion.isPresent()) {
             try {
+                String templateSetName = getStrField(doc, TEMPLATE_SET_NAME_F).orElse(Utils.
+                    extractTemplateSetNameAndLabel(templateVersion.get()).getLeft());
+                String templateSetLabel = getStrField(doc, TEMPLATE_SET_LABEL_F).orElse(Utils.
+                    extractTemplateSetNameAndLabel(templateVersion.get()).getRight());
                 ReplayBuilder builder = new ReplayBuilder(endpoint.get(),
                     customerId.get(), app.get(), instanceId.get(), collection, userId.get()).withReqIds(reqIds)
                     .withReplayId(replayId.get())
-                    .withAsync(async.get()).withTemplateSetVersion(templateVersion.get())
+                    .withAsync(async.get())
                     .withReplayStatus(status.get()).withPaths(paths)
                     .withMockServices(mockServices)
                     .withIntermediateServices(intermediateService)
                     .withReqCounts(reqcnt, reqsent, reqfailed)
                     .withReplayType(replayType).withCreationTimestamp(
-                        creationTimestamp.orElseGet(() -> Instant.now()));
+                        creationTimestamp.orElseGet(() -> Instant.now()))
+                    .withTemplateSetName(templateSetName)
+                    .withTemplateSetLabel(templateSetLabel);
                 runId.ifPresent(builder::withRunId);
                 excludePaths.ifPresent(builder::withExcludePaths);
                 sampleRate.ifPresent(builder::withSampleRate);
@@ -2275,8 +2278,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
                 analysisCompleteTimestamp.ifPresent(builder::withAnalysisCompleteTimestamp);
                 dynamicInjectionConfigVersion.ifPresent(builder::withDynamicInjectionConfigVersion);
                 staticInjectionMap.ifPresent(builder::withStaticInjectionMap);
-                templateSetName.ifPresent(builder::withTemplateSetName);
-                templateSetLabel.ifPresent(builder::withTemplateSetLabel);
                 replay = Optional.of(builder.build());
             } catch (Exception e) {
                 LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE
@@ -3473,18 +3474,19 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> dynamicInjectionConfigVersion = getStrField(doc , DYNAMIC_INJECTION_CONFIG_VERSIONF);
         Optional<String> runId = getStrField(doc , RUNIDF);
         Optional<Boolean> ignoreStatic = getBoolField(doc , IGNORESTATICCONTENTF );
-        Optional<String> templateSetName = getStrField(doc, TEMPLATE_SET_NAME_F);
-        Optional<String> templateSetLabel = getStrField(doc, TEMPLATE_SET_LABEL_F);
         if (id.isPresent() && customerId.isPresent() && app.isPresent() && instanceId.isPresent() && collection
             .isPresent() &&
             status.isPresent() && templateVersion.isPresent() && archived.isPresent() && name
             .isPresent() && userId.isPresent()) {
+            String templateSetName = getStrField(doc, TEMPLATE_SET_NAME_F).orElse(Utils
+                .extractTemplateSetNameAndLabel(templateVersion.get()).getLeft());
+            String templateSetLabel = getStrField(doc, TEMPLATE_SET_LABEL_F).orElse(Utils
+                .extractTemplateSetNameAndLabel(templateVersion.get()).getRight());
             RecordingBuilder recordingBuilder = new RecordingBuilder(
                 customerId.get(), app.get(), instanceId.get(), collection.get())
-                .withStatus(status.get()).withTemplateSetVersion(templateVersion.get())
-                .withName(name.get()).withArchived(archived.get()).withUserId(userId.get())
-                .withTags(tags)
-                .withId(id.get()); // existing recording, so carry over id
+                .withStatus(status.get()).withName(name.get()).withArchived(archived.get()).withUserId(userId.get())
+                .withTags(tags).withId(id.get()).withTemplateSetName(templateSetName)
+                .withTemplateSetLabel(templateSetLabel); // existing recording, so carry over id
             getTSField(doc, TIMESTAMPF).ifPresent(recordingBuilder::withUpdateTimestamp);
             parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
             rootRecordingId.ifPresent(recordingBuilder::withRootRecordingId);
@@ -3499,8 +3501,6 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
             runId.ifPresent(recordingBuilder::withRunId);
             ignoreStatic.ifPresent(recordingBuilder::withIgnoreStatic);
-            templateSetName.ifPresent(recordingBuilder::withTemplateSetName);
-            templateSetLabel.ifPresent(recordingBuilder::withTemplateSetLabel);
             try {
                 generatedClassJarPath.ifPresent(
                     UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));

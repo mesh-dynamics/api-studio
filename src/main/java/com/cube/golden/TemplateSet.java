@@ -42,7 +42,7 @@ public class TemplateSet {
 		@JsonProperty("name") String name, @JsonProperty("label") String  label) {
 		this.name = name;
 		this.label = label;
-		this.version = ServerUtils.createTemplateSetVersion(name, label);
+		this.version = Utils.createTemplateSetVersion(name, label);
 		this.customer = customer;
 		this.app = app;
 		this.timestamp = timestamp != null ? timestamp : Instant.now();

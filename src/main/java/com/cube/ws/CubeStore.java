@@ -1073,12 +1073,12 @@ public class CubeStore {
         Optional<Boolean> ignoreStaticContent = io.md.utils.Utils.strToBool(formParams.getFirst(Constants.IGNORE_STATIC_CONTENT));
 
 
-        String templateSetVersion =ServerUtils.createTemplateSetVersion(templateSetName,
+        String templateSetVersion = io.md.utils.Utils.createTemplateSetVersion(templateSetName,
             templateSetLabel);
 
         RecordingBuilder recordingBuilder = new RecordingBuilder(customerId, app,
             instanceId, collection).withTemplateSetName(templateSetName)
-            .withTemplateSetLabel(templateSetLabel).withTemplateSetVersion(templateSetVersion).withName(name)
+            .withTemplateSetLabel(templateSetLabel).withName(name)
             .withLabel(label).withUserId(userId).withTags(tags);
         codeVersion.ifPresent(recordingBuilder::withCodeVersion);
         branch.ifPresent(recordingBuilder::withBranch);
@@ -1104,7 +1104,8 @@ public class CubeStore {
                         if (newr.recordingType == RecordingType.History) {
                             ReplayBuilder replayBuilder = new ReplayBuilder(ui.getBaseUri().toString(),
                                 newr.customerId, newr.app, userId, newr.collection, userId)
-                                .withTemplateSetVersion(newr.templateVersion)
+                                .withTemplateSetName(newr.templateSetName)
+                                .withTemplateSetLabel(newr.templateSetLabel)
                                 .withRecordingId(newr.id)
                                 .withGoldenName(newr.name)
                                 .withReplayStatus(ReplayStatus.Running)
@@ -1744,7 +1745,9 @@ public class CubeStore {
                 RecordingBuilder recordingBuilder = new RecordingBuilder(rec.customerId, rec.app,
                 rec.instanceId, rec.collection)
                     .withStatus(rec.status)
-                    .withTemplateSetVersion(rec.templateVersion)
+                    .withTemplateSetName(rec.templateSetName)
+                    // TODO will the label be updated here ?
+                    .withTemplateSetLabel(rec.templateSetLabel)
                     .withRootRecordingId(rec.rootRecordingId)
                     .withArchived(rec.archived)
                     .withId(rec.id) // same recording is updated, so carry over id
