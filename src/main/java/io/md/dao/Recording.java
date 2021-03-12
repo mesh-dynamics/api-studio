@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Optional;
 
 import io.md.logger.LogMgr;
+import io.md.utils.Utils;
+
 import org.slf4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -48,7 +50,7 @@ public class Recording {
 	 * @param templateVersion
 	 */
 	public Recording(String id, String customerId, String app, String instanceId, String collection,
-		RecordingStatus status, Optional<Instant> updateTimestamp, String templateVersion,
+		RecordingStatus status, Optional<Instant> updateTimestamp,
 		Optional<String> parentRecordingId, String rootRecordingId, String name
 		, Optional<String> codeVersion, Optional<String> branch, List<String> tags
 		, boolean archived, Optional<String> gitCommitId, Optional<String> collectionUpdOpSetId
@@ -64,7 +66,6 @@ public class Recording {
 		this.collection = collection;
 		this.status = status;
 		this.updateTimestamp = updateTimestamp;
-		this.templateVersion = templateVersion;
 		this.id = id;
 		this.parentRecordingId = parentRecordingId;
 		this.rootRecordingId = rootRecordingId;
@@ -87,6 +88,7 @@ public class Recording {
 		this.ignoreStatic = ignoreStatic;
 		this.templateSetName = templateSetName;
 		this.templateSetLabel = templateSetLabel;
+		this.templateVersion = Utils.createTemplateSetVersion(templateSetName, templateSetLabel);
 	}
 
 	// for json deserialization

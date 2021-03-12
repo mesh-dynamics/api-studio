@@ -46,6 +46,7 @@ import io.md.services.DSResult;
 import io.md.services.DataStore;
 import io.md.tracer.TracerMgr;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 
@@ -703,8 +704,18 @@ public class Utils {
 		}
 	}
 
-	public static String constructTemplateSetVersion(String templateSetName, Optional<String> templateSetLabel) {
+	/*public static String constructTemplateSetVersion(String templateSetName, Optional<String> templateSetLabel) {
 		return templateSetName + templateSetLabel.map(l -> l.isEmpty() ? "" : "::" + l).orElse("");
+	}*/
+
+	public static String createTemplateSetVersion(String templateSetName, String templateSetLabel) {
+		return templateSetName + (!templateSetLabel.isEmpty() ? "::" + templateSetLabel : "");
+	}
+
+	public static Pair<String, String> extractTemplateSetNameAndLabel(String templateSetVersion) {
+		String[] splits = templateSetVersion.split("::");
+		if (splits.length == 1 ) return Pair.of(templateSetVersion, "");
+		return Pair.of(splits[0] , splits[1]);
 	}
 
 
