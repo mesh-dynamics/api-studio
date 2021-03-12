@@ -980,15 +980,14 @@ public class CubeStore {
     }
 
 	@POST
-	@Path("start/{customerId}/{app}/{instanceId}/{templateSetName}/{templateSetLabel}")
+	@Path("start/{customerId}/{app}/{instanceId}/{templateSetName}")
 	@Consumes("application/x-www-form-urlencoded")
     public void start(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui,
                           MultivaluedMap<String, String> formParams,
                           @PathParam("app") String app,
                           @PathParam("customerId") String customerId,
                           @PathParam("instanceId") String instanceId,
-                          @PathParam("templateSetName") String templateSetName,
-                          @PathParam("templateSetLabel") String templateSetLabel) {
+                          @PathParam("templateSetName") String templateSetName) {
 	    // check if recording or replay is ongoing for (customer, app, instanceId)
 
       Optional<RecordingType> recordingType =
@@ -1071,10 +1070,9 @@ public class CubeStore {
         Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst(Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD)) ;
         Optional<String> runId = Optional.ofNullable(formParams.getFirst(Constants.RUN_ID_FIELD));
         Optional<Boolean> ignoreStaticContent = io.md.utils.Utils.strToBool(formParams.getFirst(Constants.IGNORE_STATIC_CONTENT));
-
-
-        String templateSetVersion = io.md.utils.Utils.createTemplateSetVersion(templateSetName,
-            templateSetLabel);
+        String templateSetLabel = Optional.ofNullable(formParams.getFirst(Constants.TEMPLATE_SET_LABEL)).or(() ->
+            rrstore.getLatestTemplateSetLabel(customerId, app, templateSetName)).orElse(LocalDateTime.now().format(
+            io.md.utils.Utils.templateLabelFormatter));
 
         RecordingBuilder recordingBuilder = new RecordingBuilder(customerId, app,
             instanceId, collection).withTemplateSetName(templateSetName)
