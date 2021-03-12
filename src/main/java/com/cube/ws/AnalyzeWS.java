@@ -275,7 +275,7 @@ public class AnalyzeWS {
             }));
             */
 	        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-	        String templateLabel = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_LABEL_FIELD))
+	        String templateLabel = Optional.ofNullable(queryParams.getFirst(Constants.TEMPLATE_SET_LABEL))
 		        .orElse(LocalDateTime.now().format(io.md.utils.Utils.templateLabelFormatter));
 
             /*Optional<String> templateVersion = version.equals("AUTO") ? Optional.empty() : Optional.of(version);*/

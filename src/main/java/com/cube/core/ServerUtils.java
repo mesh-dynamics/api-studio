@@ -423,11 +423,12 @@ public class ServerUtils {
 
 
     public static Recording createRecordingObjectFrom(Recording recording, Optional<String> templateSetName,
-        Optional<String> templateSetLabel, Optional<String> name, Optional<String> userId, Instant timeStamp, String labelValue, RecordingType type) {
+        Optional<String> templateSetLabel, Optional<String> name, Optional<String> userId
+        , Instant timeStamp, String labelValue, RecordingType type) {
         String collection = UUID.randomUUID().toString();
         String templateSetNameFinal = templateSetName.orElse(recording.templateSetName);
         String templateSetLabelFinal = templateSetLabel.orElse(
-            LocalDateTime.now().format(Utils.templateLabelFormatter));
+            recording.templateSetLabel);
         String templateSetVersion = Utils.createTemplateSetVersion(templateSetNameFinal,
             templateSetLabelFinal);
         RecordingBuilder recordingBuilder = new RecordingBuilder(
