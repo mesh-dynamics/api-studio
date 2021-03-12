@@ -29,7 +29,6 @@ public class ReplayBuilder {
 	private String instanceId;
 	private List<String> collection;
 	private String userId;
-	private String templateSetVersion;
 	//very specific to HTTP requests (the entire filtering can
 	//be done just based on paths)
 	private List<String> pathsToReplay;
@@ -80,7 +79,6 @@ public class ReplayBuilder {
 		if(collection.isEmpty()) throw new IllegalArgumentException("Collection is Empty");
 		this.collection = collection ;
 		this.userId = userId;
-		this.templateSetVersion = DEFAULT_TEMPLATE_VER;
 		this.pathsToReplay = Collections.EMPTY_LIST;
 		this.excludePaths = false;
 		this.reqIdsToReplay = Collections.EMPTY_LIST;
@@ -126,7 +124,7 @@ public class ReplayBuilder {
 
 	public Replay build() {
 		Replay replay = new Replay(replayEndpoint, customerId, app, instanceId, collection, userId,
-				reqIdsToReplay, replayId, async, templateSetVersion, replayStatus, pathsToReplay,
+				reqIdsToReplay, replayId, async, replayStatus, pathsToReplay,
 				excludePaths, reqCnt , reqSent , reqFailed, creationTimestamp, sampleRate, intermediateServices,
 				generatedClassJarPath, classLoader, serviceToReplay, replayType, xfms, mockServices
 				, testConfigName, goldenName, recordingId, archived,dynamicInjectionConfigVersion,
@@ -153,11 +151,6 @@ public class ReplayBuilder {
 
 	public ReplayBuilder withReplayId(String replayId) {
 		this.replayId = replayId;
-		return this;
-	}
-
-	public ReplayBuilder withTemplateSetVersion(String templateVersion) {
-		this.templateSetVersion = templateVersion;
 		return this;
 	}
 
