@@ -380,8 +380,7 @@ public class MovieRentalRest {
 		String username = securityContext.getUserPrincipal().getName();
 		try (Scope scope =  Tracing.startServerSpan(tracer, httpHeaders , "getGenreGroups")) {
 			scope.span().setTag("getGenreGroups", "getGenreGroups");
-			int customerId = mv.getCustomerId(username);
-			return Response.ok().type(MediaType.APPLICATION_JSON).entity(mv.getAllGenreGroupsForCustomer(customerId).toString()).build();
+			return Response.ok().type(MediaType.APPLICATION_JSON).entity(mv.getALlGenreGroupsForCustomer(username).toString()).build();
 		} catch (Exception e) {
 			LOGGER.error("Error while fetching the genreGroups ");
 			return Response.serverError().type(MediaType.APPLICATION_JSON).entity(Map.of("error", e.toString())).build();
