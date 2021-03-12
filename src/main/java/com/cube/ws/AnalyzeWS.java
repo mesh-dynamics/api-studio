@@ -276,7 +276,7 @@ public class AnalyzeWS {
             */
 	        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 	        String templateLabel = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_LABEL_FIELD))
-		        .orElse(LocalDateTime.now().format(AnalysisUtils.templateLabelFormatter));
+		        .orElse(LocalDateTime.now().format(io.md.utils.Utils.templateLabelFormatter));
 
             /*Optional<String> templateVersion = version.equals("AUTO") ? Optional.empty() : Optional.of(version);*/
             TemplateSet templateSet = ServerUtils.templateRegistriesToTemplateSet(registries, customerId, appId,
@@ -1173,7 +1173,8 @@ public class AnalyzeWS {
 				        customer, app, templateSet.customer, templateSet.app))).build();
 	        }
 	        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-	        templateSet.version = ServerUtils.createTemplateSetVersion(templateSet.name, templateSet.label);
+	        templateSet.version = io.md.utils.Utils
+		        .createTemplateSetVersion(templateSet.name, templateSet.label);
 	        templateSet.templates.forEach(compareTemplateVersioned -> {
 		        String normalisedAPIPath= CompareTemplate.normaliseAPIPath(compareTemplateVersioned.requestPath);
 		        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Normalizing APIPath before storing template ",
@@ -1407,7 +1408,8 @@ public class AnalyzeWS {
 		    Optional<Analysis> analysis = rrstore.getAnalysis(replayId);
 		    // creating a new temporary empty template set against the old version
 		    // (if one doesn't exist already)
-		    Pair<String, String> nameLabelPair = ServerUtils.extractTemplateSetNameAndLabel(originalRec.templateVersion);
+		    Pair<String, String> nameLabelPair = io.md.utils.Utils.
+			    extractTemplateSetNameAndLabel(originalRec.templateVersion);
 			String originalRecTemplateSetName = nameLabelPair.getLeft();
 		    TemplateSet templateSet = rrstore
 			    .getTemplateSet(originalRec.customerId, originalRec.app, analysis.map(a ->
@@ -1418,7 +1420,7 @@ public class AnalyzeWS {
 
 		    String updatedTemplateSetVersion = AnalysisUtils.updateTemplateSet(templateUpdOpSetId,
 			    Optional.of(templateSet), rrstore);
-		    Pair<String, String> updateTemplateSetNameAndLabel = ServerUtils.
+		    Pair<String, String> updatedTemplateSetNameAndLabel = io.md.utils.Utils.
 			    extractTemplateSetNameAndLabel(updatedTemplateSetVersion);
 
 		    // TODO With similar update logic find the updated collection id
@@ -1439,7 +1441,6 @@ public class AnalyzeWS {
 		    RecordingBuilder recordingBuilder = new RecordingBuilder(
 			    originalRec.customerId, originalRec.app, originalRec.instanceId, newCollectionName)
 			    .withStatus(RecordingStatus.Completed)
-			    .withTemplateSetVersion(updatedTemplateSetVersion)
 			    .withParentRecordingId(originalRec.getId())
 			    .withRootRecordingId(originalRec.rootRecordingId)
 			    .withName(name).withLabel(label).withTags(tags)
@@ -1447,8 +1448,8 @@ public class AnalyzeWS {
 			    .withTemplateUpdateOpSetId(templateUpdOpSetId).withUserId(userId)
 			    .withRecordingType(originalRec.recordingType).withRunId(originalRec.runId)
 			    .withIgnoreStatic(originalRec.ignoreStatic)
-			    .withTemplateSetName(updateTemplateSetNameAndLabel.getLeft())
-			    .withTemplateSetLabel(updateTemplateSetNameAndLabel.getRight());
+			    .withTemplateSetName(updatedTemplateSetNameAndLabel.getLeft())
+			    .withTemplateSetLabel(updatedTemplateSetNameAndLabel.getRight());
 		    codeVersion.ifPresent(recordingBuilder::withCodeVersion);
 		    branch.ifPresent(recordingBuilder::withBranch);
 		    gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
@@ -1494,7 +1495,7 @@ public class AnalyzeWS {
 
             RecordingBuilder recordingBuilder = new RecordingBuilder(
             	originalRec.customerId, originalRec.app, originalRec.instanceId, newCollectionName)
-	            .withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateSet.version)
+	            .withStatus(RecordingStatus.Completed).withTemplateSetName(templateSet.name).withTemplateSetLabel(templateSet.label)
 	            .withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
 	            .withName(originalRec.name).withLabel(originalRec.label).withTags(originalRec.tags).withArchived(originalRec.archived)
 	            .withUserId(originalRec.userId).withRecordingType(originalRec.recordingType).withRunId(originalRec.runId);

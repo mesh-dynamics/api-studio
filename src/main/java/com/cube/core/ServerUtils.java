@@ -427,13 +427,13 @@ public class ServerUtils {
         String collection = UUID.randomUUID().toString();
         String templateSetNameFinal = templateSetName.orElse(recording.templateSetName);
         String templateSetLabelFinal = templateSetLabel.orElse(
-            LocalDateTime.now().format(AnalysisUtils.templateLabelFormatter));
-        String templateSetVersion = ServerUtils.createTemplateSetVersion(templateSetNameFinal,
+            LocalDateTime.now().format(Utils.templateLabelFormatter));
+        String templateSetVersion = Utils.createTemplateSetVersion(templateSetNameFinal,
             templateSetLabelFinal);
         RecordingBuilder recordingBuilder = new RecordingBuilder(
             recording.customerId, recording.app, recording.instanceId, collection)
             .withStatus(RecordingStatus.Completed).withTemplateSetName(templateSetNameFinal)
-            .withTemplateSetLabel(templateSetLabelFinal).withTemplateSetVersion(templateSetVersion)
+            .withTemplateSetLabel(templateSetLabelFinal)
             .withName(name.orElse(recording.name))
             .withUserId(userId.orElse(recording.userId)).withTags(recording.tags).withUpdateTimestamp(timeStamp)
             .withRootRecordingId(recording.rootRecordingId).withLabel(labelValue)
@@ -469,14 +469,6 @@ public class ServerUtils {
 	    return serialize(list).orElse("[]");
     }
 
-    public static String createTemplateSetVersion(String templateSetName, String templateSetLabel) {
-	    return templateSetName + (!templateSetLabel.isEmpty() ? "::" + templateSetLabel : "");
-    }
 
-    public static Pair<String, String> extractTemplateSetNameAndLabel(String templateSetVersion) {
-	    String[] splits = templateSetVersion.split("::");
-	    if (splits.length == 1 ) return Pair.of(templateSetVersion, "");
-	    return Pair.of(splits[0] , splits[1]);
-    }
 
 }

@@ -21,6 +21,8 @@ import io.md.core.TemplateKey;
 import io.md.core.TemplateKey.Type;
 import io.md.dao.ReqRespMatchResult;
 import io.md.services.DataStore.TemplateNotFoundException;
+import io.md.utils.Utils;
+
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -347,7 +349,7 @@ public class CompareTemplatesLearner {
 
         return new TemplateSet(customer, app, Instant.now(),
             new ArrayList<>(templatesMap.values()), Optional.empty(), templateVersion, LocalDateTime
-            .now().format(AnalysisUtils.templateLabelFormatter));
+            .now().format(Utils.templateLabelFormatter));
     }
 
 

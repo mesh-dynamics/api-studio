@@ -24,6 +24,7 @@ import io.md.core.TemplateEntry;
 import io.md.core.TemplateKey;
 import io.md.dao.ReqRespUpdateOperation.OperationType;
 import io.md.utils.Constants;
+import io.md.utils.Utils;
 
 import com.cube.core.CompareTemplateVersioned;
 import com.cube.dao.ReqRespStore;
@@ -49,7 +50,7 @@ public class TemplateSetTransformer {
         throws Exception {
         List<CompareTemplateVersioned> sourceTemplates = sourceTemplateSet.templates;
         Map<TemplateKey, SingleTemplateUpdateOperation> updates =   templateSetUpdateSpec.getTemplateUpdates();
-        String newLabel = LocalDateTime.now().format(AnalysisUtils.templateLabelFormatter);
+        String newLabel = LocalDateTime.now().format(Utils.templateLabelFormatter);
 
         Map<TemplateKey, CompareTemplateVersioned> sourceTemplateMap = sourceTemplates.stream()
             .collect(Collectors.toMap(template -> new TemplateKey(sourceTemplateSet.version,
