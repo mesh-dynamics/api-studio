@@ -26,19 +26,19 @@ public class InjectionExtractionMeta implements Comparable{
     public Set<String> values = new HashSet<>();
 
     @JsonProperty("overallScore")
-    public Float overallScore;
+    public Float overallScore = 0f;
 
     @JsonProperty("extractionMethodScore")
-    public Integer extractionMethodScore;
+    public Integer extractionMethodScore = 0;
 
     @JsonProperty("valueCountScore")
-    public Integer valueCountScore;
+    public Integer valueCountScore = 0;
 
     @JsonProperty("valueQualityScore")
-    public Float valueQualityScore;
+    public Float valueQualityScore = 0f;
 
     @JsonProperty("extractionUniquenessScore")
-    public Float extractionUniquenessScore;
+    public Float extractionUniquenessScore = 0f;
 
     public final static float valueCountScoreWeight = 0.5f;
     public final static float extractionMethodScoreWeight = 0.2f;
@@ -194,7 +194,9 @@ public class InjectionExtractionMeta implements Comparable{
         this.valueQualityScore = getStringScore(this.values.iterator().next());
         this.extractionMethodScore = this.extractionConfig.method == HTTPMethodType.POST
             || this.extractionConfig.method == HTTPMethodType.PUT ? 1 : 0;
-        this.extractionUniquenessScore = (float)1 / this.extractionEquivalenceSetSize;
+        this.extractionUniquenessScore =
+            this.extractionEquivalenceSetSize > 0 ? (float) 1 / this.extractionEquivalenceSetSize
+                : 0;
 
         this.overallScore = valueCountScoreWeight * this.valueCountScore
             + valueQualityScoreWeight * this.valueQualityScore
@@ -212,7 +214,38 @@ public class InjectionExtractionMeta implements Comparable{
         InjectionExtractionMeta that = (InjectionExtractionMeta)meta;
 
         // Sort in reverse overall score order
-        return Float.compare(that.overallScore, this.overallScore);
+        if (!that.overallScore.equals(this.overallScore)) {
+            return that.overallScore.compareTo(this.overallScore);
+        }
+
+        ExtractionConfig thisExtConfig = this.extractionConfig;
+        ExtractionConfig thatExtConfig = that.extractionConfig;
+
+        if (!thisExtConfig.apiPath.equals(thatExtConfig.apiPath)) {
+            return thisExtConfig.apiPath.compareTo(thatExtConfig.apiPath);
+        }
+
+        if (!thisExtConfig.jsonPath.equals(thatExtConfig.jsonPath)) {
+            return thisExtConfig.jsonPath.compareTo(thatExtConfig.jsonPath);
+        }
+
+        if (!thisExtConfig.method.equals(thatExtConfig.method)) {
+            return thisExtConfig.method.compareTo(thatExtConfig.method);
+        }
+
+        InjectionConfig thisInjConfig = this.injectionConfig;
+        InjectionConfig thatInjConfig = that.injectionConfig;
+
+        if (!thisInjConfig.apiPath.equals(thatInjConfig.apiPath)) {
+            return thisInjConfig.apiPath.compareTo(thatInjConfig.apiPath);
+        }
+
+        if (!thisInjConfig.jsonPath.equals(thatInjConfig.jsonPath)) {
+            return thisInjConfig.jsonPath.compareTo(thatInjConfig.jsonPath);
+        }
+
+        return thisInjConfig.method.compareTo(thatInjConfig.method);
+
     }
 }
 

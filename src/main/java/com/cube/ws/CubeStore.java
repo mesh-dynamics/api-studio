@@ -1040,7 +1040,7 @@ public class CubeStore {
         errResp = recording.filter(r -> r.status == RecordingStatus.Running)
             .map(recordingv -> Response.status(Response.Status.CONFLICT)
                 .entity(String.format("Collection %s already active for customer %s, app %s, for instance %s. Use different name",
-                    collection, customerId, app, recordingv.instanceId))
+                    recordingv.collection, customerId, app, recordingv.instanceId))
                 .build());
         if (errResp.isPresent()) {
             asyncResponse.resume(errResp.get());

@@ -52,7 +52,10 @@ public class DynamicInjectionGeneratedToActualConvertor {
                     injectionExtractionMeta.injectionConfig.jsonPath),
                 null,
                 injectionExtractionMeta.injectionConfig.method,
-                Optional.empty());
+                Optional.empty(),
+                injectionExtractionMeta.extractionConfig.apiPath,
+                injectionExtractionMeta.extractionConfig.jsonPath,
+                injectionExtractionMeta.extractionConfig.method);
 
             actualInjectionConfigList.add(actualInjectionConfig);
         }
@@ -61,6 +64,7 @@ public class DynamicInjectionGeneratedToActualConvertor {
             // Uniqueness in injection configs is assumed to be ensured in the imported csv
             DynamicInjectionConfig.ExtractionMeta actualExtractionConfig = new DynamicInjectionConfig.ExtractionMeta(
                 extractionConfig.apiPath,
+                extractionConfig.jsonPath,
                 extractionConfig.method,
                 String.format("${Golden.Response: %s}" +
                         extractionConfig.nameSuffix,
