@@ -1070,19 +1070,12 @@ public class CubeStore {
         Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst(Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD)) ;
         Optional<String> runId = Optional.ofNullable(formParams.getFirst(Constants.RUN_ID_FIELD));
         Optional<Boolean> ignoreStaticContent = io.md.utils.Utils.strToBool(formParams.getFirst(Constants.IGNORE_STATIC_CONTENT));
-        Optional<String> templateSetLabel = Optional.ofNullable(formParams.getFirst(Constants.TEMPLATE_SET_LABEL)).or(() ->
-            rrstore.getLatestTemplateSetLabel(customerId, app, templateSetName));
-        if (templateSetLabel.isEmpty()) {
-            asyncResponse.resume(Response.status(Status.BAD_REQUEST)
-                .entity(String.format("Unable to fetch latest label for customer %s, "
-                    + "app %s, templateSetName %s" , customerId, app, templateSetName))
-                .build());
-            return;
-        }
+        String templateSetLabel = Optional.ofNullable(formParams.getFirst(Constants.TEMPLATE_SET_LABEL)).or(() ->
+            rrstore.getLatestTemplateSetLabel(customerId, app, templateSetName)).orElse(""); // for backward compatibility
 
         RecordingBuilder recordingBuilder = new RecordingBuilder(customerId, app,
             instanceId, collection).withTemplateSetName(templateSetName)
-            .withTemplateSetLabel(templateSetLabel.get()).withName(name)
+            .withTemplateSetLabel(templateSetLabel).withName(name)
             .withLabel(label).withUserId(userId).withTags(tags);
         codeVersion.ifPresent(recordingBuilder::withCodeVersion);
         branch.ifPresent(recordingBuilder::withBranch);
