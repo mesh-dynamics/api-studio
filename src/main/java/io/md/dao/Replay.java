@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.md.constants.ReplayStatus;
 import io.md.core.CollectionKey;
 import io.md.core.ReplayTypeEnum;
-import io.md.core.Validate;
+import io.md.utils.Utils;
 
 public class Replay {
 
@@ -58,7 +58,7 @@ public class Replay {
 
 	public Replay(String endpoint, String customerId, String app, String instanceId,
 		List<String> collection, String userId, List<String> reqIds,
-		String replayId, boolean async, String templateVersion, ReplayStatus status,
+		String replayId, boolean async, ReplayStatus status,
 		List<String> paths, boolean excludePaths, int reqcnt, int reqsent, int reqfailed,
 		Instant creationTimestamp,
 		Optional<Double> sampleRate, List<String> intermediateServices,
@@ -80,7 +80,6 @@ public class Replay {
 		this.reqIds = reqIds;
 		this.replayId = replayId;
 		this.async = async;
-		this.templateVersion = templateVersion;
 		this.status = status;
 		this.paths = paths;
 		this.excludePaths = excludePaths;
@@ -109,6 +108,7 @@ public class Replay {
 		this.collectionKey = new CollectionKey(customerId, app, instanceId);
 		this.templateSetName = templateSetName;
 		this.templateSetLabel = templateSetLabel;
+		this.templateVersion = Utils.createTemplateSetVersion(templateSetName, templateSetLabel);
 	}
 
 	//for deserialization
