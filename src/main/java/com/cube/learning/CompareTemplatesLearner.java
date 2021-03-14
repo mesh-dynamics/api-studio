@@ -6,7 +6,6 @@ import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
 import com.cube.learning.TemplateEntryMeta.Action;
 import com.cube.learning.TemplateEntryMeta.RuleStatus;
-import com.cube.utils.AnalysisUtils;
 
 import io.md.core.Comparator.Diff;
 import io.md.core.Comparator.Resolution;
@@ -348,8 +347,11 @@ public class CompareTemplatesLearner {
         });
 
         return new TemplateSet(customer, app, Instant.now(),
-            new ArrayList<>(templatesMap.values()), Optional.empty(), templateVersion, LocalDateTime
-            .now().format(Utils.templateLabelFormatter));
+            new ArrayList<>(templatesMap.values()), Optional.empty(), templateVersion,
+            // TODO: *IMP* Revert this change to pass the timestamp once version management is
+            // fully in place.
+            // LocalDateTime.now().format(Utils.templateLabelFormatter));
+            "");
     }
 
 
