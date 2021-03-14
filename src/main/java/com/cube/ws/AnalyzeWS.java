@@ -450,8 +450,7 @@ public class AnalyzeWS {
         }
 
         return rrstore.getReplay(replayId).map(replay -> {
-            AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(replayId,
-                new MultivaluedHashMap<>());
+            AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(replayId);
 
             ReqRespResultsWithFacets resultWithFacets = rrstore
                 .getAnalysisMatchResults(analysisMatchResultQuery);
