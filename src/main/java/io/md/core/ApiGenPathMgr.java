@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.collections4.map.PassiveExpiringMap;
 import org.apache.commons.lang3.tuple.Pair;
@@ -28,8 +27,10 @@ public class ApiGenPathMgr extends AbstractMDCache {
 	private final CustAppConfigCache appConfigCache;
 	private static ApiGenPathMgr singleton;
 
-	private static PassiveExpiringMap<String , Optional<ApiPathRegex[]> > serviceApiPathPatterns = new PassiveExpiringMap<>(30 , TimeUnit.MINUTES);
-	private static PassiveExpiringMap<String , Optional<String>> serviceApiGenPaths = new PassiveExpiringMap<>(30 , TimeUnit.MINUTES);
+	private static PassiveExpiringMap<String , Optional<ApiPathRegex[]> > serviceApiPathPatterns = new PassiveExpiringMap<>(
+		CACHE_TO_LIVE_DUR.toMillis());
+	private static PassiveExpiringMap<String , Optional<String>> serviceApiGenPaths = new PassiveExpiringMap<>(
+		CACHE_TO_LIVE_DUR.toMillis());
 	private List<Pair<PassiveExpiringMap<String , ?> , String[]>> cacheAndKeys = new ArrayList<>(2);
 	{
 		cacheAndKeys.add(Pair.of(serviceApiPathPatterns , new String[]{CUSTOMER_ID , APP , SERVICE}));

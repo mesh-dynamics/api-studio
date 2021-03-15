@@ -2,6 +2,7 @@ package io.md.tracer;
 
 import static io.md.cache.Constants.APP;
 import static io.md.cache.Constants.CUSTOMER_ID;
+import static io.md.cache.Constants.CACHE_TO_LIVE_DUR;
 
 import io.md.cache.AbstractMDCache;
 import io.md.cache.Constants;
@@ -23,7 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 public class TracerMgr {
 
@@ -32,7 +32,8 @@ public class TracerMgr {
 
     private static Map<Tracer , MDTraceHandler> tracehandlers;
     private static DefaultTraceHandler defaultTraceHandler;
-    private static PassiveExpiringMap<String , MDTraceHandler> appTracerConfig = new PassiveExpiringMap<>(30 , TimeUnit.MINUTES);
+    private static PassiveExpiringMap<String , MDTraceHandler> appTracerConfig = new PassiveExpiringMap<>(
+        CACHE_TO_LIVE_DUR.toMillis());
 
     private static class MDCacheTracer extends AbstractMDCache {
 
