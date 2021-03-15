@@ -79,6 +79,7 @@ class ViewSelectedTestConfig extends React.Component {
             selectedService : "",
             ignoreStaticContent: false,
             stopInProgress: false,
+            fcReplayUserId: "",
         };
         //this.statusInterval;
     }
@@ -514,13 +515,13 @@ class ViewSelectedTestConfig extends React.Component {
         console.error("Error in replay/recording", message || statusText);
     }
 
-    handleReplayError = (data, status, statusText, username) => 
-        {
+    handleReplayError = (data, status, statusText, username) => {
             if(status && status === 409){
                 if(data.recordOrReplay?.replay){
                     this.setState({ 
                         fcId: data.recordOrReplay.replay.replayId, 
                         fcEnabled: (data.recordOrReplay.replay.userId === username), 
+                        fcReplayUserId: data.recordOrReplay.replay.userId,
                         showReplayModal: false
                     });
                     return;
@@ -1204,7 +1205,7 @@ class ViewSelectedTestConfig extends React.Component {
             customHeaders, recordModalVisible, showReplayModal, 
             fcId, showGoldenFilter, selectedGoldenFromFilter,
             recName, stopDisabled, stoppingStatus, recStatus, showAddCustomHeader,
-            goldenNameErrorMessage, fcEnabled, resumeModalVisible,
+            goldenNameErrorMessage, fcEnabled, resumeModalVisible, fcReplayUserId,
             dbWarningModalVisible, instanceWarningModalVisible, templateSetWarningModalVisible,
             goldenSelectWarningModalVisible, forceStopping, forceStopped, ongoingRecStatus
         } = this.state;
@@ -1326,7 +1327,7 @@ class ViewSelectedTestConfig extends React.Component {
                         <h4 style={{color: replayDone ? (analysisDone ? "green" : "#aab614") : "grey", fontSize: "medium"}}><strong>Analysis:</strong> {cube.analysisStatus}</h4>
                         
                         {cube.replayStatusObj && <p>
-                            Replay ID: {cube.replayStatusObj.replayId}
+                            Test ID: {cube.replayStatusObj.replayId}
                         </p>}
                     </Modal.Body>
                     <Modal.Footer >
@@ -1347,11 +1348,19 @@ class ViewSelectedTestConfig extends React.Component {
                     </Modal.Header>
                     <Modal.Body>
                         <p>
-                            A replay with id {fcId} is in progress on this cluster. Please use another cluster or try again later.
+                            A test is in progress on this cluster. Please use another cluster or try again later.
                         </p>
+                        
+                        <div style={{display: "flex", flexDirection: "column"}}>
+                            <span><label>Started by: </label><span>&nbsp;{fcReplayUserId || "N/A"}</span></span>
+                            <span><label>Test ID: </label><span>&nbsp;{fcId || "N/A"}</span></span>
+                        </div>
+                        <span>
+                            (The test can be force completed only by its owner)
+                        </span>
                     </Modal.Body>
                     <Modal.Footer>
-                        <span onClick={this.handleFC} className={classNames("cube-btn","pull-left", {"disabled" : !fcEnabled})}>Force Complete</span>&nbsp;&nbsp;
+                        <span onClick={this.handleFC} className={classNames("cube-btn","pull-left", {"disabled" : !fcEnabled})}>Force Complete</span>
                         <span onClick={this.handleFCDone} className="cube-btn pull-right">Done</span>
                     </Modal.Footer>
                 </Modal>
