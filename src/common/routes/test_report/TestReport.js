@@ -15,7 +15,6 @@ class TestReport extends Component {
         super(props);
         this.state = {
             replayId: "",
-            testConfig: {},
             goldenName: "",
             pathTableData: [],
             timeStamp: "",
@@ -48,19 +47,17 @@ class TestReport extends Component {
             return
         }
 
-        // get test config details if test config is present 
         // get results current and previous results
         const numResults = 30; // todo configurable?
-        const [testConfig, timelineResults] = await Promise.all([
-            replayStatus.testConfigName ? cubeService.getTestConfig(user.customer_name, replayStatus.app, replayStatus.testConfigName) : Promise.resolve({}), 
-            cubeService.fetchTimelineData(user, replayStatus.app, null, new Date(replayStatus.creationTimeStamp * 1000), null, numResults, replayStatus.testConfigName, replayStatus.goldenName)
-        ]).catch(
-            (e) => {
-                errorText = "error fetching test config or timeline results: " + e;
+        let timelineResults = {};
+        try {        
+            timelineResults = await cubeService.fetchTimelineData(user, replayStatus.app, 'ALL', new Date(replayStatus.creationTimeStamp * 1000), 
+                                                                                null, numResults, replayStatus.testConfigName, replayStatus.goldenName)
+        } catch (e) {
+                errorText = "error fetching timeline results: " + e;
                 console.error(errorText);
                 this.setState({errorText: errorText})
-            }
-        );
+        }
 
         if(timelineResults.numFound === 0) {
             // error
@@ -90,7 +87,6 @@ class TestReport extends Component {
         this.setState({
             replayId: replayId, 
             replayStatus: replayStatus,
-            testConfig: testConfig,
 
             pathTableData: pathTableData,
             timelineResults: timelineResults,
@@ -100,13 +96,13 @@ class TestReport extends Component {
     }
     
     renderDetails = () => {
-        const {replayId, testConfig, replayStatus} = this.state;
+        const {replayId, replayStatus} = this.state;
         return <Fragment>
             <table className="table table-striped">
             <tbody>
                 <tr><td>App</td><td>{replayStatus.app || "N/A"}</td></tr>
-                <tr><td>Test Configuration</td><td>{testConfig.testConfigName || "N/A"}</td></tr>
-                <tr><td>Mocked Services</td><td>{testConfig.testMockServices ? _.join(testConfig.testMockServices, ", ") : "N/A"}</td></tr>
+                <tr><td>Test Configuration</td><td>{replayStatus.testConfigName || "N/A"}</td></tr>
+                <tr><td>Mocked Services</td><td>{replayStatus.mockServices ? _.join(replayStatus.mockServices, ", ") : "N/A"}</td></tr>
                 <tr><td>Instance</td><td>{replayStatus.instanceId}</td></tr>
                 <tr><td>Test API Paths</td><td>{(replayStatus.excludePaths ? "All paths excluding: " : "") + _.join(replayStatus.paths, ", ")}</td></tr>
                 <tr><td>Golden</td><td>{replayStatus.goldenName}</td></tr>
