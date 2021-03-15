@@ -159,7 +159,7 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 		}
 
 		@NotNull
-		public static MultivaluedMap<String, String> getResponseHeaders(
+		protected static MultivaluedMap<String, String> getResponseHeaders(
 			HttpResponse<byte[]> response) {
 			MultivaluedMap<String, String> responseHeaders = new MultivaluedHashMap<>();
 			response.headers().map().forEach((k, v) -> {
@@ -168,7 +168,7 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 			return responseHeaders;
 		}
 
-		public static byte[] getResponseBody(HttpResponse<byte[]> response) {
+		protected static byte[] getResponseBody(HttpResponse<byte[]> response) {
 			byte[] originalBody = response.body();
 			InputStream stream = getDecodedInputStream(new ByteArrayInputStream(originalBody), response
 				.headers());
