@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Optional;
 
 import io.md.logger.LogMgr;
+import io.md.utils.Utils;
+
 import org.slf4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -48,13 +50,14 @@ public class Recording {
 	 * @param templateVersion
 	 */
 	public Recording(String id, String customerId, String app, String instanceId, String collection,
-		RecordingStatus status, Optional<Instant> updateTimestamp, String templateVersion,
+		RecordingStatus status, Optional<Instant> updateTimestamp,
 		Optional<String> parentRecordingId, String rootRecordingId, String name
 		, Optional<String> codeVersion, Optional<String> branch, List<String> tags
 		, boolean archived, Optional<String> gitCommitId, Optional<String> collectionUpdOpSetId
 		, Optional<String> templateUpdOpSetId, Optional<String> comment, String userId,
-		Optional<String> generatedClassJarPath, Optional<URLClassLoader> generatedClassLoader, String label,
-			RecordingType recordingType , Optional<String> dynamicInjectionConfigVersion, String runId , boolean ignoreStatic) {
+		Optional<String> generatedClassJarPath, Optional<URLClassLoader> generatedClassLoader,
+		String label, RecordingType recordingType , Optional<String> dynamicInjectionConfigVersion,
+		String runId, boolean ignoreStatic, String templateSetName, String templateSetLabel) {
 
 		super();
 		this.customerId = customerId;
@@ -63,7 +66,6 @@ public class Recording {
 		this.collection = collection;
 		this.status = status;
 		this.updateTimestamp = updateTimestamp;
-		this.templateVersion = templateVersion;
 		this.id = id;
 		this.parentRecordingId = parentRecordingId;
 		this.rootRecordingId = rootRecordingId;
@@ -84,6 +86,9 @@ public class Recording {
 		this.dynamicInjectionConfigVersion = dynamicInjectionConfigVersion;
 		this.runId = runId;
 		this.ignoreStatic = ignoreStatic;
+		this.templateSetName = templateSetName;
+		this.templateSetLabel = templateSetLabel;
+		this.templateVersion = Utils.createTemplateSetVersion(templateSetName, templateSetLabel);
 	}
 
 	// for json deserialization
@@ -112,6 +117,8 @@ public class Recording {
 		this.dynamicInjectionConfigVersion = Optional.empty();
 		this.runId = "";
 		this.ignoreStatic = false;
+		this.templateSetName = "";
+		this.templateSetLabel = "";
 	}
 
 	@JsonProperty("id")
@@ -166,6 +173,10 @@ public class Recording {
 	public String runId;
 	@JsonProperty("ignoreStatic")
 	public boolean ignoreStatic;
+	@JsonProperty("templateSetName")
+	public String templateSetName;
+	@JsonProperty("templateSetLabel")
+	public String templateSetLabel;
 
 
 	public transient Optional<URLClassLoader> generatedClassLoader;
