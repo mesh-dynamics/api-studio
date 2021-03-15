@@ -37,10 +37,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.md.injection.DynamicInjector;
 import io.md.constants.ReplayStatus;
 import io.md.services.DataStore;
+import io.md.utils.Constants.POLL_REQUEST_COMPARISON_OPERATOR;
 import io.md.utils.CubeObjectMapperProvider;
 
 import io.md.core.Utils;
 import io.md.utils.Constants;
+import io.md.utils.UtilException;
 
 public abstract class AbstractReplayDriver {
 
@@ -361,7 +363,55 @@ public abstract class AbstractReplayDriver {
 					dataStore.populateCache(replayCollKey, RecordOrReplay.createFromReplay(replay));
 				}
 				Instant requestTime = Instant.now();
-				ResponsePayload responsePayload = client.send(request, replay);
+
+				ResponsePayload responsePayload =
+					request.getMetaFieldValue(Constants.IS_POLL_REQUEST_METADATA).map(
+					UtilException.rethrowFunction(isPollRequest -> {
+					if (isPollRequest.equalsIgnoreCase(Constants.POLL_REQUEST_TRUE)) {
+						int waitTimeInMillis = Integer.parseInt(request.getMetaFieldValue(Constants
+							.POLL_REQUEST_RETRY_INTERVAL_METADATA).orElse("1")) * 1000;
+						int maxNumberOfRetries = Integer.parseInt(request.getMetaFieldValue(
+							Constants.POLL_REQUEST_MAX_RETRIES_METADATA).orElse("10"));
+						String jsonPath = request
+							.getMetaFieldValue(Constants.POLL_REQUEST_RESP_JSON_PATH_METADATA)
+							.orElseThrow(() -> new Exception("Json Path to Compare Not Specified "
+								+ "in Poll Event Metadata"));
+						POLL_REQUEST_COMPARISON_OPERATOR comparisonOperator = Utils.valueOf(
+							POLL_REQUEST_COMPARISON_OPERATOR.class, request.getMetaFieldValue(
+								Constants.POLL_REQUEST_RESP_COMPARATOR_METADATA)
+								.orElse(POLL_REQUEST_COMPARISON_OPERATOR.equals.name()))
+							.orElseThrow(() -> new Exception("Unable to extract comparison "
+								+ "operator from event metadata")) ;
+						String comparisonValue = request.getMetaFieldValue(Constants
+							.POLL_REQUEST_RESP_COMPARISON_VALUE_METADATA).orElseThrow(() ->
+							new Exception("Poll Request Response Comparision "
+								+ "Value not Specified in Metadata"));
+
+						int numberOfRetries = 0;
+						ResponsePayload intermediatePayload = null;
+						while (numberOfRetries++ < maxNumberOfRetries) {
+							intermediatePayload = client.send(request, replay);
+
+							try {
+								String resultToCompare = intermediatePayload
+									.getValAsString(jsonPath);
+								if (comparisonOperator.compare(resultToCompare, comparisonValue)) {
+									break;
+								}
+							} catch (Exception e) {
+								LOGGER.error("Error while fetching json path/"
+									+ "converting json path value to integer : "
+									+ jsonPath + " in poll response");
+							}
+
+							Thread.sleep(waitTimeInMillis);
+						}
+						return intermediatePayload;
+					} else {
+						return client.send(request, replay);
+					}
+				})).orElse(client.send(request, replay));
+
 				Instant respTime = Instant.now();
 				// Extract variables in extractionMap
 				diMgr.extract(request, responsePayload);

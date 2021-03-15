@@ -226,20 +226,18 @@ public class HttpReplayDriver extends AbstractReplayDriver {
 				.getValAsObject(Constants.PATH_SEGMENTS_PATH, List.class)
 				.orElse(Collections.EMPTY_LIST);
 
-			String apiPath;
-			if(!pathSegments.isEmpty())
-			{
+			if (!pathSegments.isEmpty()) {
 				try {
-					apiPath = pathSegments.stream().collect(Collectors.joining("/"));
+					reqEvent.apiPath = pathSegments.stream().collect(Collectors.joining("/"));
 				} catch (Exception e) {
-					LOGGER.error("Cannot form apiPath from pathSegments. Resolving to event apiPath", e);
-					apiPath = reqEvent.apiPath;
+					LOGGER
+						.error("Cannot form apiPath from pathSegments. Resolving to event apiPath",
+							e);
 				}
 			} else {
 				LOGGER.error("pathSegments not found. Resolving to event apiPath");
-				apiPath = reqEvent.apiPath;
 			}
-
+			String apiPath = reqEvent.apiPath;
 			UriBuilder uribuilder = UriBuilder.fromUri(replay.endpoint)
 				.path(apiPath);
 

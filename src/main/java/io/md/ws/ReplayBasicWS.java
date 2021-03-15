@@ -241,7 +241,8 @@ public class ReplayBasicWS {
             .or(() -> dataStore.getLatestTemplateSetLabel(recordings.get(0).customerId,
                 recordings.get(0).app, templateSetName)).orElse(""); // for backward compatibility
 
-        String templateSetVersion = io.md.utils.Utils.constructTemplateSetVersion(templateSetName, Optional.of(templateSetLabel));
+        String templateSetVersion = io.md.utils.Utils.createTemplateSetVersion(templateSetName,
+            templateSetLabel);
 
         List<Recording> updatedRecordings = new ArrayList<>();
 
@@ -250,11 +251,11 @@ public class ReplayBasicWS {
                 Recording updatedRecording;
                 if (!recordingPrior.templateVersion.equals(templateSetVersion)) {
                     updatedRecording = dataStore
-                        .copyRecording(recordingPrior.id, Optional.of(recordingPrior.name)
-                            , Optional.of(LocalDateTime.now()
-                                .format(io.md.utils.Utils.templateLabelFormatter))
-                            , Optional.of(templateSetVersion), userId, recordingPrior.recordingType,
-                            Optional.empty());
+                        .copyRecording(recordingPrior.id, Optional.of(recordingPrior.name),
+                            Optional.of(LocalDateTime.now()
+                                .format(io.md.utils.Utils.templateLabelFormatter)),
+                            Optional.of(templateSetName), Optional.of(templateSetLabel),
+                            userId, recordingPrior.recordingType, Optional.empty());
                 } else {
                     updatedRecording = recordingPrior;
                 }
@@ -281,7 +282,6 @@ public class ReplayBasicWS {
         ReplayBuilder replayBuilder = new ReplayBuilder(endpoint,
             updatedRecordingFirst.customerId,
             updatedRecordingFirst.app, instanceId, updatedRecordings.stream().map(r->r.collection).collect(Collectors.toList()), userId)
-            .withTemplateSetVersion(templateSetVersion)
             .withReqIds(reqIds).withAsync(async).withPaths(paths)
             .withExcludePaths(excludePaths)
             .withIntermediateServices(intermediateServices)
@@ -289,7 +289,7 @@ public class ReplayBasicWS {
                 .orElse(ReplayTypeEnum.HTTP) : ReplayTypeEnum.HTTP)
             .withMockServices(mockServices)
             .withTemplateSetName(templateSetName)
-            .withTemplateSetLabel(templateSetLabel);;
+            .withTemplateSetLabel(templateSetLabel);
         if(updatedRecordings.size()==1){
             replayBuilder.withRecordingId(updatedRecordingFirst.id);
             replayBuilder.withGoldenName(updatedRecordingFirst.name);
