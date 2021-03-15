@@ -32,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -119,6 +120,7 @@ import com.cube.dao.WrapperEvent;
 import com.cube.queue.DisruptorEventQueue;
 import com.cube.queue.RREvent;
 import com.cube.sequence.SeqMgr;
+import com.cube.utils.AnalysisUtils;
 import com.cube.utils.ScheduledCompletable;
 import com.cube.ws.SanitizationFilters.BadStatuses;
 import com.cube.ws.SanitizationFilters.IgnoreStaticContent;
@@ -978,14 +980,14 @@ public class CubeStore {
     }
 
 	@POST
-	@Path("start/{customerId}/{app}/{instanceId}/{templateSetVersion}")
+	@Path("start/{customerId}/{app}/{instanceId}/{templateSetName}")
 	@Consumes("application/x-www-form-urlencoded")
     public void start(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui,
                           MultivaluedMap<String, String> formParams,
                           @PathParam("app") String app,
                           @PathParam("customerId") String customerId,
                           @PathParam("instanceId") String instanceId,
-                          @PathParam("templateSetVersion") String templateSetVersion) {
+                          @PathParam("templateSetName") String templateSetName) {
 	    // check if recording or replay is ongoing for (customer, app, instanceId)
 
       Optional<RecordingType> recordingType =
@@ -1038,7 +1040,7 @@ public class CubeStore {
         errResp = recording.filter(r -> r.status == RecordingStatus.Running)
             .map(recordingv -> Response.status(Response.Status.CONFLICT)
                 .entity(String.format("Collection %s already active for customer %s, app %s, for instance %s. Use different name",
-                    collection, customerId, app, recordingv.instanceId))
+                    recordingv.collection, customerId, app, recordingv.instanceId))
                 .build());
         if (errResp.isPresent()) {
             asyncResponse.resume(errResp.get());
@@ -1068,10 +1070,12 @@ public class CubeStore {
         Optional<String> dynamicInjectionConfigVersion = Optional.ofNullable(formParams.getFirst(Constants.DYNACMIC_INJECTION_CONFIG_VERSION_FIELD)) ;
         Optional<String> runId = Optional.ofNullable(formParams.getFirst(Constants.RUN_ID_FIELD));
         Optional<Boolean> ignoreStaticContent = io.md.utils.Utils.strToBool(formParams.getFirst(Constants.IGNORE_STATIC_CONTENT));
-
+        String templateSetLabel = Optional.ofNullable(formParams.getFirst(Constants.TEMPLATE_SET_LABEL)).or(() ->
+            rrstore.getLatestTemplateSetLabel(customerId, app, templateSetName)).orElse(""); // for backward compatibility
 
         RecordingBuilder recordingBuilder = new RecordingBuilder(customerId, app,
-            instanceId, collection).withTemplateSetVersion(templateSetVersion).withName(name)
+            instanceId, collection).withTemplateSetName(templateSetName)
+            .withTemplateSetLabel(templateSetLabel).withName(name)
             .withLabel(label).withUserId(userId).withTags(tags);
         codeVersion.ifPresent(recordingBuilder::withCodeVersion);
         branch.ifPresent(recordingBuilder::withBranch);
@@ -1097,7 +1101,8 @@ public class CubeStore {
                         if (newr.recordingType == RecordingType.History) {
                             ReplayBuilder replayBuilder = new ReplayBuilder(ui.getBaseUri().toString(),
                                 newr.customerId, newr.app, userId, newr.collection, userId)
-                                .withTemplateSetVersion(newr.templateVersion)
+                                .withTemplateSetName(newr.templateSetName)
+                                .withTemplateSetLabel(newr.templateSetLabel)
                                 .withRecordingId(newr.id)
                                 .withGoldenName(newr.name)
                                 .withReplayStatus(ReplayStatus.Running)
@@ -1168,8 +1173,8 @@ public class CubeStore {
                 return null;
             }
             LOGGER.info("Starting sanitize copy recording. Total bad reqIds "+badReq.size() +" "+recordingId);
-            CompletableFuture<Response> rs = copyRecording(recording.id, Optional.empty(), Optional.empty(),
-                Optional.empty(),
+            CompletableFuture<Response> rs = copyRecording(recording.id, Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(),
                 recording.userId, recording.recordingType,
                 Optional.of(e -> !badReq.contains(e.reqId)));
             try {
@@ -1348,7 +1353,8 @@ public class CubeStore {
     public void copyRecording(@Suspended AsyncResponse asyncResponse, @Context UriInfo ui, @PathParam("recordingId") String recordingId,
         @PathParam("userId") String userId) {
         MultivaluedMap<String, String> queryParams = ui.getQueryParameters();
-        Optional<String> templateVersion = Optional.ofNullable(queryParams.getFirst(Constants.VERSION_FIELD));
+        Optional<String> templateSetName = Optional.ofNullable(queryParams.getFirst(Constants.TEMPLATE_SET_NAME));
+        Optional<String> templateSetLabel = Optional.ofNullable(queryParams.getFirst(Constants.TEMPLATE_SET_LABEL));
         Optional<String> name = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_NAME_FIELD));
         Optional<String> label = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_LABEL_FIELD));
         Optional<RecordingType> recordingType =
@@ -1360,18 +1366,19 @@ public class CubeStore {
             return;
         }
         RecordingType type = recordingType.get();
-        if(type== RecordingType.Golden && templateVersion.isEmpty()) {
+        if(type== RecordingType.Golden && templateSetName.isEmpty()) {
             asyncResponse.resume(Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-                .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"version needs to be given for a golden")).build());
+                .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,"template set name needs to "
+                    + "be given for a golden")).build());
             return;
         }
-        copyRecording(recordingId, name, label, templateVersion, userId, type, Optional.empty()).thenApply(v -> asyncResponse.resume(v));
+        copyRecording(recordingId, name, label, templateSetName, templateSetLabel, userId,
+            type, Optional.empty()).thenApply(v -> asyncResponse.resume(v));
     }
 
     private CompletableFuture<Response> copyRecording(String recordingId, Optional<String> name,
-        Optional<String> label,
-        Optional<String> templateVersion, String userId, RecordingType type,
-        Optional<Predicate<Event>> eventFilter) {
+        Optional<String> label, Optional<String> templateSetName, Optional<String> templateSetLabel,
+        String userId, RecordingType type, Optional<Predicate<Event>> eventFilter) {
         Instant timeStamp = Instant.now();
         String labelValue = label.orElse(""+timeStamp.getEpochSecond());
         Optional<Recording> recordingForId = rrstore.getRecording(recordingId);
@@ -1380,8 +1387,10 @@ public class CubeStore {
                 .getRecordingByName(recording.customerId, recording.app, nameValue, Optional.of(labelValue)));
             if(recordingWithSameName.isPresent()) {
                 return CompletableFuture.completedFuture(Response.status(Response.Status.CONFLICT)
-                    .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,String.format("Collection %s already active for customer %s, app %s, for instance %s. Use different name or label",
-                        recordingWithSameName.get().collection, recording.customerId, recording.app, recordingWithSameName.get().instanceId)))
+                    .entity(buildErrorResponse(Constants.ERROR, Constants.MESSAGE,String.format(
+                        "Collection %s already active for customer %s, app %s, for instance %s. "
+                            + "Use different name or label", recordingWithSameName.get().collection,
+                        recording.customerId, recording.app, recordingWithSameName.get().instanceId)))
                     .build());
             }
             /**
@@ -1398,8 +1407,8 @@ public class CubeStore {
                     .build());
             }
             */
-            Recording  updatedRecording = createRecordingObjectFrom(recording, templateVersion,
-                name, Optional.of(userId), timeStamp, labelValue, type);
+            Recording  updatedRecording = ServerUtils.createRecordingObjectFrom(recording, templateSetName,
+                templateSetLabel, name, Optional.of(userId), timeStamp, labelValue, type);
             if(rrstore.saveRecording(updatedRecording)) {
                 return CompletableFuture.supplyAsync(() -> rrstore.copyEvents(recording, updatedRecording, timeStamp, eventFilter)).thenApply(success ->{
                     if(success) return Response.ok().type(MediaType.APPLICATION_JSON).entity(updatedRecording).build();
@@ -1462,7 +1471,7 @@ public class CubeStore {
         if(badReqIds.isEmpty()){
             asyncResponse.resume(Response.ok().entity("No Bad requests found for sanitization").build());
         }else{
-            copyRecording(recordingId, Optional.empty(), Optional.empty(), Optional.empty(),
+            copyRecording(recordingId, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                 originalRec.userId, originalRec.recordingType, Optional.of((e)->!badReqIds.contains(e.reqId)))
                 .thenApply(v -> asyncResponse.resume(v));
         }
@@ -1733,7 +1742,9 @@ public class CubeStore {
                 RecordingBuilder recordingBuilder = new RecordingBuilder(rec.customerId, rec.app,
                 rec.instanceId, rec.collection)
                     .withStatus(rec.status)
-                    .withTemplateSetVersion(rec.templateVersion)
+                    .withTemplateSetName(rec.templateSetName)
+                    // TODO will the label be updated here ?
+                    .withTemplateSetLabel(rec.templateSetLabel)
                     .withRootRecordingId(rec.rootRecordingId)
                     .withArchived(rec.archived)
                     .withId(rec.id) // same recording is updated, so carry over id
@@ -2342,7 +2353,7 @@ public class CubeStore {
             CompletableFuture.runAsync(() -> rrstore.copyEvents(secondRecording, thirdRecording, timeStamp, Optional.empty()))
                 .thenApply(v -> asyncResponse.resume(Response.ok().type(MediaType.APPLICATION_JSON).entity(thirdRecording).build()));
         } else {
-            thirdRecording = createRecordingObjectFrom(firstRecording, Optional.empty(),
+            thirdRecording = ServerUtils.createRecordingObjectFrom(firstRecording, Optional.empty(), Optional.empty(),
                 Optional.of(firstRecording.name + "-" + timeStamp.toString()), Optional.empty(),
                 timeStamp, timeStamp.toString(), newType.orElse(RecordingType.UserGolden));
             if(rrstore.saveRecording(thirdRecording)) {
@@ -2361,7 +2372,7 @@ public class CubeStore {
         boolean delete = Optional.ofNullable(uriInfo.getQueryParameters().getFirst("delete")).flatMap(Utils::strToBool).orElse(false);
         return recording.map(r -> {
                 Instant timeStamp = Instant.now();
-                Recording newRecording = createRecordingObjectFrom(r, Optional.empty(),
+                Recording newRecording = ServerUtils.createRecordingObjectFrom(r, Optional.empty(), Optional.empty(),
                     Optional.empty(), Optional.empty(), timeStamp, timeStamp.toString(), r.recordingType);
                 rrstore.saveRecording(newRecording);
                 EventQuery query = createEventQuery(r);
@@ -2446,38 +2457,6 @@ public class CubeStore {
         sortingOrder.put(Constants.REQ_ID_FIELD, true);
         builder.withSortingOrder(sortingOrder);
         return builder.build();
-    }
-
-    private Recording createRecordingObjectFrom(Recording recording, Optional<String> templateVersion,
-        Optional<String> name, Optional<String> userId, Instant timeStamp, String labelValue, RecordingType type) {
-        String collection = UUID.randomUUID().toString();
-        RecordingBuilder recordingBuilder = new RecordingBuilder(
-            recording.customerId, recording.app, recording.instanceId, collection)
-            .withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateVersion.orElse(recording.templateVersion))
-            .withName(name.orElse(recording.name))
-            .withUserId(userId.orElse(recording.userId)).withTags(recording.tags).withUpdateTimestamp(timeStamp)
-            .withRootRecordingId(recording.rootRecordingId).withLabel(labelValue)
-            .withRecordingType(type).withRunId(timeStamp.toString()).withIgnoreStatic(recording.ignoreStatic);
-        recording.parentRecordingId.ifPresent(recordingBuilder::withParentRecordingId);
-        recording.codeVersion.ifPresent(recordingBuilder::withCodeVersion);
-        recording.branch.ifPresent(recordingBuilder::withBranch);
-        recording.gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
-        recording.collectionUpdOpSetId.ifPresent(recordingBuilder::withCollectionUpdateOpSetId);
-        recording.templateUpdOpSetId.ifPresent(recordingBuilder::withTemplateUpdateOpSetId);
-        recording.comment.ifPresent(recordingBuilder::withComment);
-        recording.dynamicInjectionConfigVersion.ifPresent(recordingBuilder::withDynamicInjectionConfigVersion);
-        try {
-            recording.generatedClassJarPath
-                .ifPresent(UtilException.rethrowConsumer(recordingBuilder::withGeneratedClassJarPath));
-        } catch (Exception e) {
-            LOGGER.error(new ObjectMessage(Map.of(
-                Constants.MESSAGE, "Error while generatedClassJarPath",
-                Constants.CUSTOMER_ID_FIELD, recording.customerId,
-                Constants.APP_FIELD, recording.app,
-                Constants.INSTANCE_ID_FIELD, recording.instanceId
-            )), e);
-        }
-        return recordingBuilder.build();
     }
 
     @POST
