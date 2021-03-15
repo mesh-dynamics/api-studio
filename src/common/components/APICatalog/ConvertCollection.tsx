@@ -150,7 +150,6 @@ class ConvertCollection extends Component<
     const collectionId = isGolden ? selectedGolden!.id : selectedCollection!.id;
     const copyRecordingData: any = {
       golden_name: this.state.newCollection,
-      version: `Default${app}`,
       recordingType: isGolden ? "UserGolden" : "Golden",
     };
     if (isGolden) {

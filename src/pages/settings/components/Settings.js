@@ -50,9 +50,9 @@ class Settings extends Component {
                 || !isPort(String(proxyPort)) 
                 || !isPort(String(gRPCProxyPort)) 
                 || !isPort(String(httpsProxyPort))
-                || proxyPort === gRPCProxyPort
-                || proxyPort === httpsProxyPort
-                || gRPCProxyPort === httpsProxyPort;
+                || proxyPort == gRPCProxyPort
+                || proxyPort == httpsProxyPort
+                || gRPCProxyPort == httpsProxyPort;
     }
 
     handleDomainInputChange = (event) => {
@@ -74,8 +74,6 @@ class Settings extends Component {
     }
 
     handleMockSettingsChange = (name, value) => {
-        console.log("name: ", name);
-        console.log("value: ", value);
         this.setState({
             config: { 
                 ...this.state.config,

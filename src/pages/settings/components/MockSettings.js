@@ -53,7 +53,6 @@ const MockSettings = (props) => {
                         />
                     </div>
                     {(!gRPCProxyPort || !isPort(String(gRPCProxyPort))) && <span className="settings-error-text">Port provided is not valid</span>}
-                    {proxyPort === gRPCProxyPort && <span className="settings-error-text">Invalid configuration. Port conflict detected.</span>}
                     <br />
                     <span>HTTPS Proxy Port</span>
                     <div className="input-group input-group-sm">
@@ -70,7 +69,14 @@ const MockSettings = (props) => {
                         />
                     </div>
                     {(!httpsProxyPort || !isPort(String(httpsProxyPort))) && <span className="settings-error-text">Port provided is not valid</span>}
-                    {(proxyPort === httpsProxyPort || gRPCProxyPort === httpsProxyPort) && <span className="settings-error-text">Invalid configuration. Port conflict detected.</span>}
+                    {
+                        (
+                            (proxyPort == gRPCProxyPort) 
+                            || (proxyPort == httpsProxyPort) 
+                            || (gRPCProxyPort == httpsProxyPort)
+                        )
+                        && <span className="settings-error-text">Invalid configuration. Port conflict detected.</span>
+                    }
                     <br />
                     <span>
                         <input 
