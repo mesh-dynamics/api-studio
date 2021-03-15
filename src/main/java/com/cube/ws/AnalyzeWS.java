@@ -8,7 +8,6 @@ import static io.md.core.Utils.buildSuccessResponse;
 import static io.md.constants.Constants.DEFAULT_TEMPLATE_VER;
 import static io.md.core.Comparator.MatchType.DontCare;
 import static io.md.core.TemplateKey.Type;
-import static io.md.core.Utils.versionPattern;
 import static io.md.dao.Recording.RecordingStatus;
 import static io.md.services.DataStore.TemplateNotFoundException;
 
@@ -37,6 +36,7 @@ import io.md.dao.EventQuery;
 import io.md.dao.GRPCPayload;
 import io.md.dao.Payload;
 import io.md.dao.RecordingOperationSetSP;
+import io.md.dao.ReqRespMatchResult;
 import io.md.dao.RequestPayload;
 import io.md.dao.ResponsePayload;
 import io.md.dao.Analysis.ReqRespMatchWithEvent;
@@ -55,12 +55,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -111,7 +109,6 @@ import io.md.dao.Event;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
 import io.md.dao.Analysis;
-import io.md.dao.ReqRespMatchResult;
 import io.md.dao.ReqRespUpdateOperation;
 import io.md.services.Analyzer;
 import io.md.utils.Constants;
@@ -1992,27 +1989,108 @@ public class AnalyzeWS {
 	}
 
 
+	public static  class ReqRespMatchInput {
+		public Optional<String> lhsReqId = Optional.empty();
+		public Optional<String> rhsReqId = Optional.empty();
+
+		public Optional<Event> lhsRequestEvent = Optional.empty();
+		public Optional<Event> rhsRequestEvent = Optional.empty();
+
+		public Optional<Event> lhsResponseEvent = Optional.empty();
+		public Optional<Event> rhsResponseEvent = Optional.empty();
+
+		public Optional<String> templateName = Optional.empty();
+		public Optional<String> templateLabel = Optional.empty();
+
+		public ReqRespMatchInput(){}
+
+		public ReqRespMatchInput(Optional<String> lhsReqId , Optional<String> rhsReqId , Optional<Event> lhsRequestEvent , Optional<Event> rhsRequestEvent ,  Optional<Event> lhsResponseEvent , Optional<Event> rhsResponseEvent , Optional<String> templateName , Optional<String> templateLabel){
+			this.lhsReqId = lhsReqId;
+			this.rhsReqId = rhsReqId;
+			this.lhsRequestEvent = lhsRequestEvent;
+			this.rhsRequestEvent = rhsRequestEvent;
+			this.lhsResponseEvent = lhsResponseEvent;
+			this.rhsResponseEvent = rhsResponseEvent;
+
+			this.templateName = templateName;
+			this.templateLabel = templateLabel;
+		}
+
+		public ReqRespMatchInput(Optional<String> lhsReqId , Optional<String> rhsReqId){
+			this.lhsReqId = lhsReqId;
+			this.rhsReqId = rhsReqId;
+		}
+
+	}
+
+
 	@GET
 	@Path("getReqRespMatchResult")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getReqRespMatchResult(@Context UriInfo uriInfo) {
-		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-		if(queryParams==null) {
-			return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-				.entity(Map.of(Constants.ERROR, "No queryParams are specified for lhsReqId and rhsReqId")).build();
-		}
+		MultivaluedMap<String, String> queryParams = Optional.ofNullable(uriInfo.getQueryParameters()).orElse(new MultivaluedHashMap<>(0)) ;
 
 		// lhsReqId should be from recording collection and rhsReqId from replay
-		Optional<String> lhsReqId = Optional.ofNullable(queryParams.getFirst("lhsReqId"));
-		Optional<String> rhsReqId = Optional.ofNullable(queryParams.getFirst("rhsReqId"));
+		Optional<String> lhsReqIdOpt = Optional.ofNullable(queryParams.getFirst("lhsReqId"));
+		Optional<String> rhsReqIdOpt = Optional.ofNullable(queryParams.getFirst("rhsReqId"));
 
-		if (lhsReqId.isEmpty() || rhsReqId.isEmpty()) {
-			return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-				.entity(Map.of(Constants.ERROR, "lhsReqId or rhsReqId not Specified")).build();
+		return getReqRespMatchResult(new ReqRespMatchInput(lhsReqIdOpt , rhsReqIdOpt));
+	}
+
+	@POST
+	@Path("getReqRespMatchResult")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getReqRespMatchResult(ReqRespMatchInput input){
+
+		Optional<Event> lhsRequestEventOpt = input.lhsRequestEvent;
+		Optional<Event> rhsRequestEventOpt = input.rhsRequestEvent;
+		Optional<Event> lhsResponseEventOpt = input.lhsResponseEvent;
+		Optional<Event> rhsResponseEventOpt = input.rhsResponseEvent;
+		Optional<String> templateName  = input.templateName;
+		Optional<String> templateLabel = input.templateLabel;
+
+		Optional<String> lhsReqIdOpt = input.lhsReqId.or(()->input.lhsRequestEvent.map(Event::getReqId)).or(()->input.lhsResponseEvent.map(Event::getReqId));
+		Optional<String> rhsReqIdOpt = input.rhsReqId.or(()->input.rhsRequestEvent.map(Event::getReqId)).or(()->input.rhsResponseEvent.map(Event::getReqId));
+		if(lhsReqIdOpt.isEmpty() || rhsReqIdOpt.isEmpty()){
+			LOGGER.error("lhsReqId/rhsReqId missing");
+			return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(Map.of(Constants.ERROR, "lhsReqId/rhsReqId not Specified")).build();
 		}
 
-		Optional<Event> lhsRequestEventOpt = rrstore.getRequestEvent(lhsReqId.get());
-		Optional<Event> rhsRequestEventOpt = rrstore.getRequestEvent(rhsReqId.get());
+		try{
+			lhsRequestEventOpt.ifPresent(UtilException.rethrowConsumer(Event::validateEvent));
+			rhsRequestEventOpt.ifPresent(UtilException.rethrowConsumer(Event::validateEvent));
+			lhsResponseEventOpt.ifPresent(UtilException.rethrowConsumer(Event::validateEvent));
+			rhsResponseEventOpt.ifPresent(UtilException.rethrowConsumer(Event::validateEvent));
+		}catch (Exception e){
+			LOGGER.error("Event validation failed ", e);
+			return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(Map.of(Constants.ERROR, "Event Validation Failed")).build();
+		}
+
+
+		List<String> idsToFetch = new ArrayList<>();
+		String lhsReqId = lhsReqIdOpt.get();
+		String rhsReqId = rhsReqIdOpt.get();
+
+		if(lhsRequestEventOpt.isEmpty() || lhsResponseEventOpt .isEmpty()){
+			idsToFetch.add(lhsReqId);
+		}
+		if(rhsRequestEventOpt.isEmpty() || rhsResponseEventOpt .isEmpty()){
+			idsToFetch.add(rhsReqId);
+		}
+
+		if(!idsToFetch.isEmpty()){
+			//Get all the events for given reqIds in a single query and then filter later
+			EventQuery.Builder builder = new EventQuery.Builder("*", "*", Collections.EMPTY_LIST);
+			builder.withReqIds(idsToFetch);
+			Result<Event> result =  rrstore.getEvents(builder.build());
+
+			for (Event e : (Iterable<Event>) () -> result.getObjects().iterator()) {
+				if(lhsRequestEventOpt.isEmpty() && e.reqId.equals(lhsReqId) && Event.isReqType(e.eventType)) lhsRequestEventOpt = Optional.of(e);
+				if(rhsRequestEventOpt.isEmpty() && e.reqId.equals(rhsReqId) && Event.isReqType(e.eventType)) rhsRequestEventOpt = Optional.of(e);
+				if(lhsResponseEventOpt.isEmpty() && e.reqId.equals(lhsReqId) && !Event.isReqType(e.eventType)) lhsResponseEventOpt = Optional.of(e);
+				if(rhsResponseEventOpt.isEmpty() && e.reqId.equals(rhsReqId) && !Event.isReqType(e.eventType)) rhsResponseEventOpt = Optional.of(e);
+			}
+		}
 
 		if (lhsRequestEventOpt.isEmpty() || rhsRequestEventOpt.isEmpty()) {
 			return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
@@ -2021,9 +2099,6 @@ public class AnalyzeWS {
 		}
 		Event lhsRequestEvent = lhsRequestEventOpt.get();
 		Event rhsRequestEvent = rhsRequestEventOpt.get();
-
-		Optional<Event> lhsResponseEventOpt = rrstore.getResponseEvent(lhsReqId.get());
-		Optional<Event> rhsResponseEventOpt = rrstore.getResponseEvent(rhsReqId.get());
 
 		Optional<Recording> recordingOpt = rrstore
 			.getRecordingByCollectionAndTemplateVer(lhsRequestEvent.customerId, lhsRequestEvent.app,
@@ -2039,16 +2114,18 @@ public class AnalyzeWS {
 
 		Comparator.Match reqCompareRes = Match.NOMATCH;
 		Comparator.Match respCompareRes = Match.NOMATCH;
+		String templateVersion = templateName.isEmpty() ? recording.templateVersion : io.md.utils.Utils.createTemplateSetVersion(templateName.get() , templateLabel.orElse(""));;
+
 		try {
-			TemplateKey reqCompareKey = new TemplateKey(recording.templateVersion,
+			TemplateKey reqCompareKey = new TemplateKey(templateVersion,
 				lhsRequestEvent.customerId,
 				lhsRequestEvent.app, lhsRequestEvent.service, lhsRequestEvent.apiPath,
 				Type.RequestCompare, io.md.utils.Utils.extractMethod(lhsRequestEvent)
 				, recording.collection);
 			Comparator reqComparator = rrstore
 				.getComparator(reqCompareKey, lhsRequestEvent.eventType);
-				reqCompareRes = reqComparator.compare(lhsRequestEvent.payload, rhsRequestEvent.payload);
-			TemplateKey respCompareKey = new TemplateKey(recording.templateVersion,
+			reqCompareRes = reqComparator.compare(lhsRequestEvent.payload, rhsRequestEvent.payload);
+			TemplateKey respCompareKey = new TemplateKey(templateVersion,
 				lhsRequestEvent.customerId,
 				lhsRequestEvent.app, lhsRequestEvent.service, lhsRequestEvent.apiPath,
 				Type.ResponseCompare, io.md.utils.Utils.extractMethod(lhsRequestEvent)
@@ -2108,6 +2185,8 @@ public class AnalyzeWS {
 		jsonMap.put("res", matchRes);
 		return Response.ok().entity(jsonMap).build();
 	}
+
+
 
 
 	/**
@@ -2315,3 +2394,5 @@ public class AnalyzeWS {
 	    }
     }
 }
+
+//class
