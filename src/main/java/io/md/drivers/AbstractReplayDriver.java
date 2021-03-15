@@ -335,9 +335,13 @@ public abstract class AbstractReplayDriver {
 		respBuilder.setPayload(responsePayload);
 		respBuilder.withRunId(replay.runId);
 		respBuilder.withSeqId(goldenReq.getSeqId());
+		Event respEvent = respBuilder.createEvent();
+		modifyResponse(respEvent);
 
-		storeEvents.add(respBuilder.createEvent());
+		storeEvents.add(respEvent);
 	}
+
+	protected abstract void modifyResponse(Event respEvent);
 
 	private List<String> sendReqSync(Stream<Event> requests, Map<String, Instant> reqIdRespTsMap,
 	  CollectionKey replayCollKey , List<Event> storeEvents) {
