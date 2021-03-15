@@ -9,7 +9,7 @@ import { ViewTrace } from "./view_trace";
 import { APICatalog } from "./api_catalog";
 import { HttpClientTabs } from "./http_client";
 import { Account } from './account';
-import GettingStarted from './GettingStarted';
+import GettingStarted from './app/GettingStarted';
 
 class PageContent extends Component {
   constructor(props) {
