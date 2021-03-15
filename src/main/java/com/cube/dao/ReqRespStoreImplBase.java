@@ -240,7 +240,7 @@ public abstract class ReqRespStoreImplBase extends AbstractDataStore implements 
 					getTemplate(newEvent.customerId, newEvent.app, newEvent.service, newEvent.apiPath,
 						targetTemplateSetVersion.get(), Type.RequestMatch,
 						Optional.ofNullable(newEvent.eventType),
-						Optional.of(((HTTPRequestPayload) newEvent.payload).getMethod()), collection)
+						Optional.of(((RequestPayload)newEvent.payload).getMethod()), collection)
 				);
 			}
 		}

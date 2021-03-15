@@ -3,7 +3,6 @@
  */
 package com.cube.ws;
 
-import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.Executors;
@@ -39,11 +38,13 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
+import com.cube.cache.ComparatorCache;
 import com.cube.cache.RedisPubSub;
 import com.cube.cache.TemplateCache;
-import com.cube.cache.TemplateCacheRedis;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr;
+import com.cube.pubsub.PubSubChannel;
+import com.cube.pubsub.PubSubMgr;
 import com.cube.queue.DisruptorEventQueue;
 import com.cube.serialize.GsonPatternSerializer;
 import com.cube.serialize.GsonSolrDocumentListSerializer;
@@ -67,7 +68,7 @@ public class Config {
 	// Adding a compare template cache
     public final TemplateCache templateCache;
 
-    public final JedisPool jedisPool;
+	public final JedisPool jedisPool;
 
 	public final ObjectMapper jsonMapper = CubeObjectMapperProvider.getInstance();
 
@@ -91,6 +92,8 @@ public class Config {
 
     public final static ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
+    public final PubSubMgr pubSubMgr;
+
 	public Config() throws Exception {
 		LOGGER.info("Creating config");
 		properties = new java.util.Properties();
@@ -113,8 +116,9 @@ public class Config {
         }
         if (solrurl != null) {
             solr =  new MDHttpSolrClient.Builder(solrurl).build();
-            rrstore = new ReqRespStoreSolr(solr, this);
-            templateCache = new TemplateCacheRedis(rrstore , this);
+            ReqRespStoreSolr storeSolr = new ReqRespStoreSolr(solr , this);
+            rrstore = storeSolr;
+            templateCache = storeSolr.templateCache;
             ProtoDescriptorCacheProvider.instantiateCache(rrstore);
 	        protoDescriptorCache = ProtoDescriptorCacheProvider.getInstance()
 		        .orElseThrow(() -> new Exception("Cannot instantiate ProtoDescriptorCache"));
@@ -144,34 +148,35 @@ public class Config {
             jedisPool = new JedisPool(poolConfig , redisHost, redisPort , 2000,  redisPassword);
             REDIS_DELETE_TTL = Integer.parseInt(fromEnvOrProperties("redis_delete_ttl"
                 , "20"));
-	        Runnable subscribeThread = new Runnable() {
-		        /**
-		         * When an object implementing interface <code>Runnable</code> is
-		         * used to create a thread, starting the thread causes the object's
-		         * <code>run</code> method to be called in that separately
-		         * executing
-		         * thread.
-		         * <p>
-		         * The general contract of the method <code>run</code> is that it
-		         * may take any action whatsoever.
-		         *
-		         * @see Thread#run()
-		         */
-		        @Override
-		        public void run() {
-		        	while(true){
-		        		try{
-					        Jedis jedis = jedisPool.getResource();
-					        jedis.configSet("notify-keyspace-events" , "Ex");
-					        jedis.psubscribe(new RedisPubSub(rrstore, jsonMapper, jedisPool), "__key*__:*");
-				        }catch (Throwable th){
-		        			LOGGER.error("Redis PubSub Worker error "+th.getMessage() , th);
-				        }
+	        Runnable subscribeThread = () -> {
+		        while (true) {
+			        try {
+				        Jedis jedis = jedisPool.getResource();
+				        jedis.configSet("notify-keyspace-events", "Ex");
+				        jedis.psubscribe(new RedisPubSub(rrstore, jsonMapper, jedisPool),
+					        "__key*__:*");
+			        } catch (Throwable th) {
+				        LOGGER.error("Redis Key Events PubSub Worker error " + th.getMessage(), th);
 			        }
-
 		        }
 	        };
+
+	        Runnable channelPubSubThread = () -> {
+		        while(true){
+			        try{
+				        Jedis jedis = jedisPool.getResource();
+				        LOGGER.debug("starting the channel pubsub thread");
+				        jedis.subscribe(PubSubChannel.getSingleton(this), PubSubChannel.MD_PUBSUB_CHANNEL_NAME);
+				        LOGGER.error("channel pubsub thread stopped");
+			        }catch (Throwable th){
+				        LOGGER.error("Redis Channel PubSub Worker error "+th.getMessage() , th);
+			        }
+		        }
+	        };
+
 	        new Thread(subscribeThread).start();
+	        new Thread(channelPubSubThread).start();
+
         } catch (Exception e) {
             LOGGER.error("Error while initializing redis thread pool :: " + e.getMessage());
             throw e;
@@ -181,6 +186,8 @@ public class Config {
 	        , "16384"));
 
         disruptorEventQueue = new DisruptorEventQueue(rrstore, DISRUPTOR_QUEUE_SIZE, Optional.of(this.protoDescriptorCache));
+
+        pubSubMgr = new PubSubMgr(jedisPool);
 
 	}
 

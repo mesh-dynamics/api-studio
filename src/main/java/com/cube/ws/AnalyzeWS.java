@@ -1224,11 +1224,6 @@ public class AnalyzeWS {
         }
     }
 
-    @POST
-    @Path("cache/flushall")
-    public Response cacheFlushAll() {
-      return ServerUtils.flushAll(config);
-    }
     /**
      * Initiate recording of template set update operations
      * @param uriInfo Context
