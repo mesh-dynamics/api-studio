@@ -66,6 +66,7 @@ class DiffResults extends Component {
             showNewGolden: false,
             showSaveGoldenModal: false,
             nameG: "",
+            savedTestSuiteId: "",
             labelG: "",
             branch: "",
             version: "",
@@ -470,9 +471,20 @@ class DiffResults extends Component {
     handleNewGoldenModalClose = () => {
         const { history, dispatch } = this.props;
         dispatch(cubeActions.clearGolden());
+        //Send current golden as selected
+        const selectedCollectionObject = this.props.cube.testIds.find( testId => testId.id == this.state.savedTestSuiteId);
+        if(selectedCollectionObject){
+            const { 
+                name,
+                id: golden,
+                templateVer: version,
+                collec: collectionId 
+            } = selectedCollectionObject;
+            dispatch(cubeActions.setSelectedTestIdAndVersion(collectionId, version, golden, name));
+        }
         this.setState({ showNewGolden: false });
         setTimeout(() => {
-            history.push("/configs");
+            history.push("/test_config_view");
         })
     }
 
@@ -558,7 +570,7 @@ class DiffResults extends Component {
 
             const result  = await cubeService.unifiedGoldenUpdate(data);
 
-            this.setState({ showSaveGoldenModal: false, saveGoldenError: "" });
+            this.setState({ showSaveGoldenModal: false, saveGoldenError: "", savedTestSuiteId: result.ID });
 
             dispatch(cubeActions.updateGoldenSet(result));
             dispatch(cubeActions.getTestIds(this.state.app));

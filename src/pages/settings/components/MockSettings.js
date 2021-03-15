@@ -5,6 +5,8 @@ const MockSettings = (props) => {
     const {
         proxyPort,
         gRPCProxyPort,
+        httpsProxyPort,
+        generateCertificate,
         isSaveButtonDisabled,
         handleMockSettingsChange,
         handleSaveMockSettingsClick
@@ -51,8 +53,41 @@ const MockSettings = (props) => {
                         />
                     </div>
                     {(!gRPCProxyPort || !isPort(String(gRPCProxyPort))) && <span className="settings-error-text">Port provided is not valid</span>}
-                    {proxyPort === gRPCProxyPort && <span className="settings-error-text">Invalid configuration. Port conflict detected.</span>}
                     <br />
+                    <span>HTTPS Proxy Port</span>
+                    <div className="input-group input-group-sm">
+                        <span className="input-group-addon settings-no-border">
+                            <i className="fa fa-server" aria-hidden="true"></i>
+                        </span>
+                        <input 
+                            id="dev-tool-https-proxy" 
+                            type="text" 
+                            className="form-control settings-no-border" 
+                            placeholder="Default Port: 9003"
+                            value={httpsProxyPort}
+                            onChange={(event) => handleMockSettingsChange('httpsProxyPort', event.target.value)}
+                        />
+                    </div>
+                    {(!httpsProxyPort || !isPort(String(httpsProxyPort))) && <span className="settings-error-text">Port provided is not valid</span>}
+                    {
+                        (
+                            (proxyPort == gRPCProxyPort) 
+                            || (proxyPort == httpsProxyPort) 
+                            || (gRPCProxyPort == httpsProxyPort)
+                        )
+                        && <span className="settings-error-text">Invalid configuration. Port conflict detected.</span>
+                    }
+                    <br />
+                    <span>
+                        <input 
+                            id="dev-tool-generate-certificate" 
+                            type="checkbox" 
+                            className="settings-no-border"
+                            checked={generateCertificate}
+                            onChange={(event) => handleMockSettingsChange('generateCertificate', event.target.checked)}
+                        />
+                    </span>
+                    <span class="settings-left-padding">Generate Root Certificate</span>
                     <div className="settings-action-buttons">
                         <span className="settings-margin-left-10">
                             <button 

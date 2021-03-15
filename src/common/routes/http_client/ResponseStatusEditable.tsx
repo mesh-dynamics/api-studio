@@ -4,9 +4,10 @@ import { httpClientActions } from "../../actions/httpClientActions";
 import { FormControl } from "react-bootstrap";
 import { IStoreState } from "../../reducers/state.types";
 
-import { getStatusColor } from "../../utils/http_client/utils";
+import { getHttpStatusColor, getGrpcStatusColor } from "../../utils/http_client/utils";
 import statusCodeList, { getHttpStatus } from "../../status-code-list";
 import classNames from "classnames";
+import {getGrpcStatusText, gRPCStatusCodes} from "../../../shared/grpc-status-codes"
 
 export interface IResponseStatusEditableProps {
   tabId: string;
@@ -15,6 +16,7 @@ export interface IResponseStatusEditableProps {
   status: string;
   requestRunning: boolean;
   dispatch: any;
+  isGrpc: boolean;
 }
 
 function ResponseStatusEditable(props: IResponseStatusEditableProps) {
@@ -57,6 +59,7 @@ function ResponseStatusEditable(props: IResponseStatusEditableProps) {
       )
     );
   };
+  const {isGrpc} = props;
 
   if (inEditMode) {
     return (
@@ -69,23 +72,36 @@ function ResponseStatusEditable(props: IResponseStatusEditableProps) {
           onChange={onChangeStatus}
         >
           <option disabled={true}>Update Status</option>
-          {statusCodeList.map((statusCode) => (
-            <option key={statusCode.status} value={statusCode.status}>
-              {statusCode.value}
-            </option>
-          ))}
+          {isGrpc ? <>
+            {
+              Object.entries(gRPCStatusCodes).map(([code, text]) => (
+                <option key={code} value={code}>
+                  {text} ({code})
+                </option>
+              ))
+            }
+            </> 
+            : <>
+              {statusCodeList.map((statusCode) => (
+                <option key={statusCode.status} value={statusCode.status}>
+                  {statusCode.value}
+                </option>
+              ))}
+            </>
+          }
         </FormControl>
       </div>
     );
   }
 
+  const statusText = isGrpc ? getGrpcStatusText(props.status) : getHttpStatus(props.status)
   const classes = classNames({
     isEditableLabel: props.isRecordingStatus,
   });
   return (
     <b
       style={{
-        color: props.status && getStatusColor(props.status),
+        color: isGrpc ? getGrpcStatusColor(props.status) : getHttpStatusColor(props.status),
       }}
       className={classes}
       onClick={onLabelClick}
@@ -93,9 +109,8 @@ function ResponseStatusEditable(props: IResponseStatusEditableProps) {
       {" "}
       {props.requestRunning
         ? "WAITING..."
-        : props.status
-        ? getHttpStatus(props.status)
-        : "NA"}
+        : statusText
+      }
     </b>
   );
 }

@@ -15,6 +15,8 @@ export interface IHttpResponseMessageProps
   recordedResponseStatus: string;
   responseStatus: string;
   requestRunning: boolean;
+  isGrpcRHS: boolean;
+  isGrpcLHS: boolean;
 }
 export interface IHttpResponseMessageState {
   status: string;
@@ -167,6 +169,7 @@ class HttpResponseMessage extends Component<
       responseStatus,
       //   responseStatusText,
       requestRunning,
+      isGrpcRHS, isGrpcLHS,
     } = this.props;
     return (
       <div style={{ marginTop: "18px" }}>
@@ -250,25 +253,27 @@ class HttpResponseMessage extends Component<
           <Row className="show-grid">
             <Col xs={6}>
               <span style={{ opacity: "0.7" }}>
-                HTTP RESPONSE STATUS:
+                {isGrpcLHS ? "gRPC" : "HTTP"} RESPONSE STATUS:
                 <ResponseStatusEditable
                   tabId={this.props.tabId}
                   clientTabId={this.props.clientTabId}
                   status={recordedResponseStatus}
                   isRecordingStatus={true}
                   requestRunning={false}
+                  isGrpc={isGrpcLHS}
                 />
               </span>
             </Col>
             <Col xs={6}>
               <span style={{ opacity: "0.7" }}>
-                HTTP RESPONSE STATUS:
+              {isGrpcRHS ? "gRPC" : "HTTP"} RESPONSE STATUS:
                 <ResponseStatusEditable
                   tabId={this.props.tabId}
                   clientTabId={this.props.clientTabId}
                   status={responseStatus}
                   isRecordingStatus={false}
                   requestRunning={requestRunning}
+                  isGrpc={isGrpcRHS}
                 />
               </span>
 

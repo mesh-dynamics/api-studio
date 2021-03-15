@@ -90,8 +90,8 @@ export const httpClientActions: IActionsType = {
         return {type: httpClientConstants.PRE_DRIVE_REQUEST, data: {tabId, responseStatus, showCompleteDiff, runId}}; 
     },
 
-    postSuccessDriveRequest: (tabId, responseStatus, responseStatusText, responseHeaders, responseBody) => {
-        return {type: httpClientConstants.POST_SUCCESS_DRIVE_REQUEST, data: {tabId, responseStatus, responseStatusText, responseHeaders, responseBody}}; 
+    postSuccessDriveRequest: (tabId, responseStatus, responseStatusText, responseHeaders, responseBody, responseTrailers) => {
+        return {type: httpClientConstants.POST_SUCCESS_DRIVE_REQUEST, data: {tabId, responseStatus, responseStatusText, responseHeaders, responseBody, responseTrailers}}; 
     },
 
     afterResponseReceivedData: (tabId, responseBody) => {

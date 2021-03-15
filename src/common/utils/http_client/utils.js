@@ -14,7 +14,7 @@ const generateRunId = () => {
     return new Date(Date.now()).toISOString()
 }
 
-const getStatusColor = (status) => {
+const getHttpStatusColor = (status) => {
     if(status >=100 && status <= 399) {
         if(status >=200 && status <= 299) {
             return '#008000';
@@ -22,6 +22,14 @@ const getStatusColor = (status) => {
         return '#FFFF00';
     } else if ( status == 'NA' || status == '' || status == undefined) {
         return 'none';
+    } else {
+        return '#FF0000';
+    }
+}
+
+const getGrpcStatusColor = (status) => {
+    if(status == 0) {
+        return '#008000'
     } else {
         return '#FF0000';
     }
@@ -528,19 +536,26 @@ const generateTraceKeys = (tracer) => {
 }
 
 const generateTraceIdDetails = (tracer, spanId) => {
-    const traceId = cryptoRandomString({length:16})
+    let traceId = cryptoRandomString({length:16})
     if (tracer==="meshd" || tracer==="jaeger" || !tracer) {
         if (!spanId)
             throw new Error("Error generating traceId: spanId not present")
         
         return {traceId:`${traceId}:${spanId}:0:1`, traceIdForEvent: traceId}; // full and only traceId part for event
+    } else if (tracer==="datadog") {
+        traceId = cryptoRandomString({length:19, type: "numeric"})
+        return {traceId, traceIdForEvent: traceId}
     } else {
         return {traceId, traceIdForEvent: traceId}; // both same
     }
 }
 
 const generateSpanId = (tracer) => {
-    return cryptoRandomString({length:16})
+    if(tracer==="datadog") {
+        return cryptoRandomString({length:19, type: "numeric"})
+    } else {
+        return cryptoRandomString({length:16})
+    }
 }
 
 const generateSpecialParentSpanId = (tracer) => {
@@ -771,7 +786,8 @@ export function getHostName(url) {
 
 export { 
     generateRunId,
-    getStatusColor,
+    getHttpStatusColor,
+    getGrpcStatusColor,
     getCurrentMockConfig,
     getTraceTableTestReqData,
     getApiPathFromRequestEvent,

@@ -4,222 +4,185 @@ import {Modal,Grid, Row, Col } from 'react-bootstrap';
 import { httpClientActions } from '../../actions/httpClientActions';
 import _ from "lodash";
 import { IHttpClientStoreState, IEnvironmentConfig, IStoreState } from '../../reducers/state.types';
-export interface IEnvVarState{
-    selectedEnv: IEnvironmentConfig,
-    addNew: boolean,
-}
+
 export interface IEnvVarProps{
     httpClient: IHttpClientStoreState;
+    selectedEnv: IEnvironmentConfig,
     dispatch:any;
+    updateSelectedEnv: (selectedEnv: IEnvironmentConfig) => void;
+    updateEnvState: (selectedEnv: IEnvironmentConfig, flag: boolean) => void;
     hideModal: ()=> void;
 }
-class EnvVar extends Component <IEnvVarProps, IEnvVarState>{
-    constructor(props) {
-        super(props)
-        this.state = {
-            selectedEnv: {name:"", appId: 0, vars: []},
-            addNew: false,
-        }
-    }
-
-    
-    handleEnvRowClick = (index) => {
-        const {httpClient: {
-            environmentList
-        }} = this.props;
-        this.showEnvList(false)
-        const selectedEnv = {...environmentList[index]}
-        this.setState({selectedEnv: selectedEnv, addNew: false})
-    }
-
-    handleEnvVarKeyChange = (e, index) => {
-        const {selectedEnv} = this.state;
-        selectedEnv.vars[index].key = e.target.value;
-        this.setState({selectedEnv})
-    }
-
-    handleEnvVarValueChange = (e, index) => {
-        const {selectedEnv} = this.state;
-        selectedEnv.vars[index].value = e.target.value;
-        this.setState({selectedEnv})
-    }
-
-    handleSelectedEnvNameChange = (e) => {
-        const {selectedEnv} = this.state;
-        selectedEnv.name = e.target.value;
-        this.setState({selectedEnv})
-    }
-
-    handleAddNewEnv = () => {
-        const {
-            cube: { selectedAppObj },
-        } = this.props;
-        let selectedEnv = {
-            name: "",
-            appId: selectedAppObj.id,
-            vars: [],
-        }
-        this.showEnvList(false)
-        this.setState({selectedEnv, addNew: true})
-    }
-
-    showEnvList = (show) => {
-        const {dispatch} = this.props;
-        dispatch(httpClientActions.showEnvList(show));
-    }
-
-    handleAddNewEnvVariable = () => {
-        let {selectedEnv} = this.state;
-        selectedEnv.vars.push({
-            key: "",
-            value: "",
-        })
-        this.setState({selectedEnv})
-    }
-
-    handleRemoveEnv = (index) => {
-        const {httpClient: {
-            environmentList
-        }, dispatch} = this.props;
-        const {id, name} = environmentList[index];
-        dispatch(httpClientActions.removeEnvironment(id, name))
-    }
-
-    handleRemoveEnvVariable = (index) => {
-        let {selectedEnv} = this.state;
-        selectedEnv.vars.splice(index, 1)
-        this.setState({selectedEnv})
-    }
-
-    handleSaveEnvironment = () => {
-        const {dispatch} = this.props;
-        const {selectedEnv} = this.state;
-        if (_.isEmpty(selectedEnv.name)) {
-            this.setEnvStatusText("Environment name cannot be empty", true)
-            return
-        }
-        dispatch(httpClientActions.saveEnvironment(selectedEnv));
-    }
-
-    handleUpdateEnvironment = () => {
-        const {dispatch, cube: { selectedAppObj }} = this.props;
-        const {selectedEnv} = this.state;
-        selectedEnv.appId = selectedAppObj.id;
-        if (_.isEmpty(selectedEnv.name)) {
-            this.setEnvStatusText("Environment name cannot be empty", true)
-            return
-        }
-        dispatch(httpClientActions.updateEnvironment(selectedEnv));
-    }
-
-    setEnvStatusText = (text, isError) => {
-        const {dispatch} = this.props;
-        dispatch(httpClientActions.setEnvStatusText(text, isError))
-    }
-
-    resetEnvStatusText = () => {
-        const {dispatch} = this.props;
-        dispatch(httpClientActions.resetEnvStatusText())
-    }
-
-    handleBackEnv = () => {
-        this.resetEnvStatusText()
-        this.showEnvList(true)
-    }
+class EnvVar extends Component <IEnvVarProps>{
 
     componentWillUnmount() {
         this.showEnvList(true)
     }
 
+
+    showEnvList = (show: boolean) => {
+        const {dispatch} = this.props;
+        dispatch(httpClientActions.showEnvList(show));
+    };
+
+    handleEnvRowClick = (index) => {
+        const {
+            updateEnvState,
+            httpClient: {
+                    environmentList
+                }
+        } = this.props;
+        
+        const selectedEnv: IEnvironmentConfig = {...environmentList[index]};
+
+        this.showEnvList(false);
+        updateEnvState(selectedEnv, false); // this.setState({selectedEnv: selectedEnv, addNewEnv: false})
+    }
+
+    handleRemoveEnv = (index) => {
+        const {
+            dispatch,
+            httpClient: {
+                environmentList
+            }
+        } = this.props;
+        const {id, name} = environmentList[index];
+
+        dispatch(httpClientActions.removeEnvironment(id, name))
+    }
+
+    handleAddNewEnv = () => {
+        const {
+                cube: { 
+                    selectedAppObj 
+                },
+                updateEnvState,
+            } = this.props;
+
+        let selectedEnv: IEnvironmentConfig = {
+            name: "",
+            appId: selectedAppObj.id,
+            vars: [],
+        }
+        this.showEnvList(false)
+        updateEnvState(selectedEnv, true); // this.setState({selectedEnv, addNewEnv: true})
+    }
+
+    handleSelectedEnvNameChange = (e) => {
+        const { selectedEnv, updateSelectedEnv } = this.props;
+        
+        selectedEnv.name = e.target.value;
+        
+        updateSelectedEnv(selectedEnv); // this.setState({selectedEnv})
+    }
+
+    handleEnvVarKeyChange = (e, index) => {
+        const { selectedEnv, updateSelectedEnv } = this.props;
+        selectedEnv.vars[index].key = e.target.value;
+        updateSelectedEnv(selectedEnv); // this.setState({ selectedEnv })
+    }
+
+    handleEnvVarValueChange = (e, index) => {
+        const { selectedEnv, updateSelectedEnv } = this.props;
+        selectedEnv.vars[index].value = e.target.value;
+        updateSelectedEnv(selectedEnv); // this.setState({selectedEnv})
+    }
+
+    handleRemoveEnvVariable = (index) => {
+        const { selectedEnv, updateSelectedEnv } = this.props;
+        selectedEnv.vars.splice(index, 1);
+        updateSelectedEnv(selectedEnv); // this.setState({selectedEnv})
+    }
+
+    handleAddNewEnvVariable = () => {
+        const {selectedEnv, updateSelectedEnv} = this.props;
+        
+        selectedEnv.vars.push({ key: "", value: "" });
+
+        updateSelectedEnv(selectedEnv); // this.setState({selectedEnv})
+    }
+
+
     render() {
-        const {selectedEnv, addNew} = this.state;
-        const {httpClient: {
-            environmentList, envStatusText, envStatusIsError, showEnvList
-        }} = this.props;
+        const { 
+            selectedEnv, 
+            httpClient: {
+                environmentList, 
+                showEnvList 
+            }
+        } = this.props;
+        
         return (
             <Fragment>
-                <Modal.Header closeButton>
-                    Configure Environments
-                </Modal.Header>
-                <Modal.Body>
-                    <div style={{height: "400px", overflowY: "scroll"}}>
-                        {showEnvList && <div>
-                            <label>Environments</label>
-                            <table className="table table-hover">
-                                <tbody>
-                                    {environmentList.map((environment, index) => (
-                                        <tr key={index}>
-                                            <td style={{cursor: "pointer"}} onClick={() => this.handleEnvRowClick(index)}>
-                                                {environment.name}
-                                            </td>
-                                            <td style={{width: "10%", textAlign: "right"}}>
-                                                <i className="fas fa-trash pointer" onClick={() => this.handleRemoveEnv(index)}/>
-                                            </td>
-                                        </tr>)
-                                    )}
-                                    <tr>
-                                        <td onClick={this.handleAddNewEnv} className="pointer">
-                                            <i className="fas fa-plus" style={{marginRight: "5px"}}></i><span>Add new environment</span>
-                                        </td>
-                                        <td></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>}
-                        {!showEnvList && 
-                        <Grid>
-                            <Row>
-                                <Col xs={2}>
-                                    <label style={{ marginTop: "8px" }}>Environment Name: </label>
+                {
+                    showEnvList &&
+                    <table className="table table-hover">
+                        <tbody>
+                            {environmentList.map((environment, index) => (
+                                <tr key={index}>
+                                    <td style={{cursor: "pointer"}} onClick={() => this.handleEnvRowClick(index)}>
+                                        {environment.name}
+                                    </td>
+                                    <td style={{width: "10%", textAlign: "right"}}>
+                                        <i className="fas fa-trash pointer" onClick={() => this.handleRemoveEnv(index)}/>
+                                    </td>
+                                </tr>)
+                            )}
+                            <tr>
+                                <td onClick={this.handleAddNewEnv} className="pointer">
+                                    <i className="fas fa-plus" style={{marginRight: "5px"}}></i><span>Add new environment</span>
+                                </td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                }
+                {
+                !showEnvList && 
+                    <Grid>
+                        <Row>
+                            <Col xs={2}>
+                                <label style={{ marginTop: "8px" }}>Environment Name: </label>
+                            </Col>
+                            <Col xs={6}>
+                                <input value={selectedEnv["name"]} onChange={this.handleSelectedEnvNameChange} className="form-control"/>
+                            </Col>  
+                        </Row>
+                        
+                            <Row className="show-grid margin-top-15">
+                                <Col xs={5}>
+                                    <b>Variable</b>
                                 </Col>
-                                <Col xs={6}>
-                                    <input value={selectedEnv["name"]} onChange={this.handleSelectedEnvNameChange} className="form-control"/>
-                                </Col>  
+                                <Col xs={5}>
+                                    <b>Value</b>
+                                </Col>
                             </Row>
-                            
-                                <Row className="show-grid margin-top-15">
-                                    <Col xs={5}>
-                                        <b>Variable</b>
-                                    </Col>
-                                    <Col xs={5}>
-                                        <b>Value</b>
-                                    </Col>
-                                </Row>
-                                {(selectedEnv.vars || [])
-                                    .map(({key, value}, index) => (
-                                            <Row className="show-grid margin-top-10" key={index}>
-                                                <Col xs={5}>
-                                                    <input value={key} onChange={(e) => this.handleEnvVarKeyChange(e, index)} className="form-control"/>
-                                                </Col>
-                                                <Col xs={6}>
-                                                    <input value={value} onChange={(e) => this.handleEnvVarValueChange(e, index)} className="form-control"/>
-                                                </Col>
-                                                <Col xs={1} style={{marginTop: "5px"}}>
-                                                    <span  onClick={() => this.handleRemoveEnvVariable(index)}>
-                                                        <i className="fas fa-times pointer"/>
-                                                    </span>
-                                                </Col>
-                                            </Row>
-                                    )
-                                )}                                    
-                                <Row className="show-grid margin-top-15">
-                                    <Col xs={3}>
-                                        <div onClick={this.handleAddNewEnvVariable} className="pointer btn btn-sm cube-btn text-center">
-                                            <i className="fas fa-plus" style={{marginRight: "5px"}}></i><span>Add new variable</span>
-                                        </div>
-                                    </Col>
-                                </Row>
-                        </Grid>
-                        }
-                    </div>
-                </Modal.Body>
-                <Modal.Footer>
-                    <span className="pull-left" style={{color: envStatusIsError ? "red" : ""}}>{envStatusText}</span>
-                    {showEnvList && <span className="cube-btn margin-left-15" onClick={this.props.hideModal}>DONE</span>}
-                    {!showEnvList && <span className="cube-btn margin-left-15" onClick={this.handleBackEnv}>BACK</span>}
-                    {!showEnvList && addNew && <span className="cube-btn margin-left-15" onClick={this.handleSaveEnvironment}>SAVE</span>}
-                    {!showEnvList && !addNew && <span className="cube-btn margin-left-15" onClick={this.handleUpdateEnvironment}>UPDATE</span>}
-                </Modal.Footer>
+                            {(selectedEnv.vars || [])
+                                .map(({key, value}, index) => (
+                                        <Row className="show-grid margin-top-10" key={index}>
+                                            <Col xs={5}>
+                                                <input value={key} onChange={(e) => this.handleEnvVarKeyChange(e, index)} className="form-control"/>
+                                            </Col>
+                                            <Col xs={6}>
+                                                <input value={value} onChange={(e) => this.handleEnvVarValueChange(e, index)} className="form-control"/>
+                                            </Col>
+                                            <Col xs={1} style={{marginTop: "5px"}}>
+                                                <span  onClick={() => this.handleRemoveEnvVariable(index)}>
+                                                    <i className="fas fa-times pointer"/>
+                                                </span>
+                                            </Col>
+                                        </Row>
+                                )
+                            )}                                    
+                            <Row className="show-grid margin-top-15">
+                                <Col xs={3}>
+                                    <div onClick={this.handleAddNewEnvVariable} className="pointer btn btn-sm cube-btn text-center">
+                                        <i className="fas fa-plus" style={{marginRight: "5px"}}></i><span>Add new variable</span>
+                                    </div>
+                                </Col>
+                            </Row>
+                    </Grid>
+                }
             </Fragment>
         )
     }
@@ -228,4 +191,3 @@ class EnvVar extends Component <IEnvVarProps, IEnvVarState>{
 const mapStateToProps = (state: IStoreState) =>  ({httpClient: state.httpClient, cube: state.cube});
 
 export default connect(mapStateToProps)(EnvVar);
-

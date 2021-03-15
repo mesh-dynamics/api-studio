@@ -83,13 +83,6 @@ class MockConfigSection extends React.Component<
     );
     return (
       <Fragment>
-        <span
-          title="Current mock configuration quick look"
-          className="btn btn-sm cube-btn text-center"
-          onClick={this.openSelectedMockConfigModal}
-        >
-          <i className="fas fa-eye" />
-        </span>
         <Modal
           show={this.state.showSelectedMockConfigModal}
           onHide={this.closeSelectedMockConfigModal}
@@ -172,15 +165,15 @@ class MockConfigSection extends React.Component<
         <div style={{ display: "inline-block", padding: 0 }} className="btn">
           {this.renderMockConfigListDD()}
         </div>
-        <div style={{ display: "inline-block" }}>
+        {/* <div style={{ display: "inline-block" }}>
           {this.renderSelectedMockConfigModal()}
-        </div>
+        </div> */}
         <span
           className="btn btn-sm cube-btn text-center"
           onClick={() => {
             this.setState({ showMockConfigModal: true });
           }}
-          title="Proxy settings"
+          title="Environment Configuration"
         >
           <i className="fas fa-cog" />{" "}
         </span>

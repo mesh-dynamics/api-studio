@@ -6,6 +6,7 @@ import PropTypes from 'prop-types';
 import Tab from './components/Tab';
 import TabPanel from './components/TabPanel';
 
+import Shortcuts from '../../utils/Shortcuts';
 const tabPrefix = 'tab-';
 const panelPrefix = 'panel-';
 
@@ -25,7 +26,13 @@ export default class Tabs extends Component {
 
   componentDidMount() {
     this.setScrollPosition();
+    Shortcuts.register("ctrl+n", this.props.onAddClick)
   }
+
+  componentWillUnmount(){
+    Shortcuts.unregister("ctrl+n");
+  }
+
   
   static getDerivedStateFromProps(props,state) {
     if (props.selectedTabKey != state.selectedTabKey) {

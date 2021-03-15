@@ -83,13 +83,15 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
         traceDetails,
         url: inputUrl, 
     } = proxyOptionParameters;
+    const parsedUrl = url.parse(inputUrl);
+    const inputUrlPath = decodeURIComponent(parsedUrl.pathname) + parsedUrl.search;
 
     const { config:  { serviceConfigs } } = mockContext;
 
-    const serviceConfigObject = getServiceConfig(serviceConfigs, inputUrl);
+    const serviceConfigObject = getServiceConfig(serviceConfigs, inputUrlPath);
     logger.info("Matched service prefix: ", serviceConfigObject ? (serviceConfigObject.servicePrefix || serviceConfigObject.service) : "(none, mocked)")
 
-    const service = serviceConfigObject?.service || getServiceNameFromUrl(inputUrl)
+    const service = serviceConfigObject?.service || getServiceNameFromUrl(inputUrlPath)
     logger.info("Matched service: ", service)
 
     logger.info('Selected service config object :', serviceConfigObject);
@@ -118,7 +120,7 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
     
         logger.info(`Service : ${service} configured to be live`);
 
-        const outgoingApiPath = getOutgoingApiPath(serviceConfigObject, inputUrl)
+        const outgoingApiPath = getOutgoingApiPath(serviceConfigObject, inputUrlPath);
         logger.info('Outgoing API path: ', outgoingApiPath)
 
         logger.info('Attaching REQUEST INTERCEPTOR for live service');
