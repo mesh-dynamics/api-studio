@@ -1230,6 +1230,16 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             }
         }
 
+        case httpClientConstants.CHANGE_TAB_POSITION : {
+            let { tabs } = state;
+            tabs = [...tabs];
+            tabs.splice(data.toPos, 0, tabs.splice(data.fromPos, 1)[0])
+            return {
+                ...state,
+                tabs
+            }
+        }
+
         default:
             return state;
     }

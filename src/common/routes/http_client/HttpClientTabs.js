@@ -1040,6 +1040,13 @@ class HttpClientTabs extends Component {
         dispatch(httpClientActions.setTabIsHighlighted(tabKey, false));
     }
 
+    onPositionChange = (fromPos, toPos) => {
+        const { dispatch, httpClient: {tabs} } = this.props;
+        if(fromPos > -1 && fromPos < tabs.length && toPos > -1 && toPos < tabs.length){
+            dispatch(httpClientActions.changeTabPosition(fromPos, toPos));
+        }
+    }
+
     handleRemoveTab(key, evt) {
         evt.stopPropagation();
         const { dispatch } = this.props;
@@ -1652,6 +1659,7 @@ class HttpClientTabs extends Component {
                             removeActiveOnly={false} 
                             onChange={this.handleTabChange} 
                             onRemove={this.handleRemoveTab}
+                            onPositionChange={this.onPositionChange}
                             items={this.getTabs(tabs)} 
                             tabsWrapperClass={"md-hc-tabs-wrapper"} 
                             selectedTabKey={selectedTabKey} 

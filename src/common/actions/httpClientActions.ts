@@ -679,6 +679,9 @@ export const httpClientActions: IActionsType = {
     setUiPreferenceKey : (key, value) =>{
         return { type: httpClientConstants.UPDATE_UI_PREFERENCE, data: {key, value}};
     },
+    changeTabPosition : (fromPos, toPos) =>{
+        return { type: httpClientConstants.CHANGE_TAB_POSITION, data: {fromPos, toPos}};
+    },
 
     deleteOutgoingReq: (outgoingReqTabId, tabId) => {
         return {type: httpClientConstants.DELETE_OUTGOING_REQ, data: {outgoingReqTabId, tabId}};
