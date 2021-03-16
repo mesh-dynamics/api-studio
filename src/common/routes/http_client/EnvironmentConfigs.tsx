@@ -506,11 +506,10 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
         return (
             <>
                 <span className="pull-left" style={{color: envStatusIsError ? "red" : ""}}>{envStatusText}</span>
-                <span className="cube-btn" onClick={this.props.hideModal}>CLOSE</span>
                 {/* {showEnvList && <span className="cube-btn margin-left-15" onClick={this.props.hideModal}>DONE</span>} */}
                 {!showEnvList && <span className="cube-btn margin-left-15" onClick={this.handleBackEnv}>BACK</span>}
                 {!showEnvList && addNewEnv && <span className="cube-btn margin-left-15" onClick={this.handleSaveEnvironment}>SAVE</span>}
-                {!showEnvList && !addNewEnv && <span className="cube-btn margin-left-15" onClick={this.handleUpdateEnvironment}>UPDATE</span>}
+                {!showEnvList && !addNewEnv && <span className="cube-btn margin-left-15" onClick={this.handleUpdateEnvironment}>SAVE</span>}
             </>
         );
     }
@@ -556,10 +555,9 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
                             }
                         </>
                     }
-                    <span className="cube-btn" onClick={this.props.hideModal}>CLOSE</span>
                     {!showMockConfigList && <span className="cube-btn margin-left-15" onClick={this.handleBackMockConfig}>BACK</span>}
                     {!showMockConfigList && addNewMockConfig && <span className="cube-btn margin-left-15" onClick={this.handleSaveMockConfig}>SAVE</span>}
-                    {!showMockConfigList && !addNewMockConfig && <span className="cube-btn margin-left-15" onClick={this.handleUpdateMockConfig}>UPDATE</span>}
+                    {!showMockConfigList && !addNewMockConfig && <span className="cube-btn margin-left-15" onClick={this.handleUpdateMockConfig}>SAVE</span>}
             </>
         );
     }
