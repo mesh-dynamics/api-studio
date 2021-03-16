@@ -151,6 +151,7 @@ class ConvertCollection extends Component<
     const copyRecordingData: any = {
       golden_name: this.state.newCollection,
       recordingType: isGolden ? "UserGolden" : "Golden",
+      ...(!isGolden && {version: `Default${app}`}),
     };
     if (isGolden) {
       copyRecordingData.label = username;
