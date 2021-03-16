@@ -1181,12 +1181,14 @@ class ViewSelectedTestConfig extends React.Component {
     }
 
     renderTemplateSetNameLabelSelection = () => {
-        const { cube: {templateSetNameLabelsList, selectedTemplateSetNameLabel} } = this.props;
+        const { cube: {templateSetNameLabelsList, selectedTemplateSetNameLabel, selectedApp} } = this.props;
         const options = (templateSetNameLabelsList || []).map(({name, label}) => {
             return <option key={`${name}-${label}`} value={name}>{name} {label && label}</option>
         })
 
-        const {name, label} = selectedTemplateSetNameLabel || {name: "", label: ""}
+        const {name, label} = selectedTemplateSetNameLabel 
+                            || templateSetNameLabelsList.find(({name}) => (name===`Default${selectedApp}`)) // set default if available
+                            || {name: "", label: ""}
         return (
             <div className="margin-top-10">
                 <div className="label-n">SELECT TEMPLATE SET</div>
