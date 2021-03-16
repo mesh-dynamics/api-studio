@@ -48,6 +48,7 @@ class ViewSelectedTestConfig extends React.Component {
             dbWarningModalVisible: false,
             instanceWarningModalVisible: false,
             goldenSelectWarningModalVisible: false,
+            forceStopErrorModalVisible: false,
             resumeModalVisible: false,
             recordModalVisible: false,
             recStatus: null,
@@ -341,6 +342,14 @@ class ViewSelectedTestConfig extends React.Component {
         }
     });
 
+    showForceStopErrorModal = () => this.setState({ 
+        forceStopErrorModalVisible: true,
+        userAlertMessage: {
+            header: "Error",
+            message: "Unable to force stop recording."
+        }
+    });
+
     showRecordModal = () => {
         const { cube } = this.props;
         if(!cube.selectedInstance) {
@@ -450,7 +459,15 @@ class ViewSelectedTestConfig extends React.Component {
             }
         });
 
-    
+    handleForceStopErrorDismissClick = () => 
+        this.setState({ 
+            forceStopErrorModalVisible: false,
+            userAlertMessage: {
+                header: "",
+                message: ""
+            }
+        });
+
     handleStartRecordClick = () => {
         
         const { recName } = this.state;
@@ -843,7 +860,7 @@ class ViewSelectedTestConfig extends React.Component {
             dispatch(apiCatalogActions.fetchGoldenCollectionList(selectedApp, "Golden"));
         } catch (error) {
             console.error("Unable to force stop recording: " + error)
-            alert("Unable to force stop recording")
+            this.showForceStopErrorModal()
             this.setState({forceStopping: false})
         }
     }
@@ -1206,7 +1223,7 @@ class ViewSelectedTestConfig extends React.Component {
             fcId, showGoldenFilter, selectedGoldenFromFilter,
             recName, stopDisabled, stoppingStatus, recStatus, showAddCustomHeader,
             goldenNameErrorMessage, fcEnabled, resumeModalVisible, fcReplayUserId,
-            dbWarningModalVisible, instanceWarningModalVisible, templateSetWarningModalVisible,
+            dbWarningModalVisible, instanceWarningModalVisible, templateSetWarningModalVisible, forceStopErrorModalVisible,
             goldenSelectWarningModalVisible, forceStopping, forceStopped, ongoingRecStatus
         } = this.state;
 
@@ -1224,7 +1241,9 @@ class ViewSelectedTestConfig extends React.Component {
                 {instanceWarningModalVisible && this.renderAlertModals(instanceWarningModalVisible, this.handleInstanceSelectDismissClick)}
 
                 {goldenSelectWarningModalVisible && this.renderAlertModals(goldenSelectWarningModalVisible, this.handleGoldenSelectDismissClick)}
-
+                
+                {forceStopErrorModalVisible && this.renderAlertModals(forceStopErrorModalVisible, this.handleForceStopErrorDismissClick)}
+                
                 <Modal show={recordModalVisible}>
                     <Modal.Header>
                         <Modal.Title>Record</Modal.Title>
