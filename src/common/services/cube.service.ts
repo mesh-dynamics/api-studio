@@ -322,6 +322,7 @@ const getTemplateSetNameLabels = async (customerId: string, app: string) => {
         let templateSetList: ITemplateSetNameLabel[] = []
         if (response) {
             templateSetList = Object.values(response)
+                                .sort((a, b) => a.name.localeCompare(b.name))
         }
         return templateSetList;
     } catch (error) {
