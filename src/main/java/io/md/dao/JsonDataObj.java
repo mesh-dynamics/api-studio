@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 import javax.ws.rs.core.MediaType;
@@ -698,94 +699,105 @@ public class JsonDataObj implements DataObj {
 		return new JsonDataObj(transformedRoot, jsonMapper);
 	}
 
-	@Override
 	public boolean put(String path, DataObj value) throws PathNotFoundException {
-		return put(path, value, false);
+		return put(path, value, true);
 	}
 
-
-
-	public boolean put(String path, DataObj value, boolean createPath) throws PathNotFoundException {
-		JsonPointer pathPtr = JsonPointer.compile(path);
-		JsonNode valParent = getNode(pathPtr.head().toString());
-		if (valParent != null && valParent.isObject()) {
-			ObjectNode valParentObj = (ObjectNode) valParent;
-			String fieldName = pathPtr.last().getMatchingProperty();
-			valParentObj.set(fieldName, ((JsonDataObj)value).objRoot);
+	public boolean addChildNodeToParent(JsonNode parent, String fieldOrIndex, JsonNode child) {
+		if (parent != null && parent.isObject()) {
+			ObjectNode parentObj = (ObjectNode) parent;
+			parentObj.set(fieldOrIndex, child);
 			return true;
-		} else if (valParent != null && valParent.isArray()) {
+		} else if (parent != null && parent.isArray()) {
 			// Assumption: the objRoot for value won't be singleton but
 			// wrapped in an array hence an array node. In this way it
 			// would be consistent with queryParams/hdrs being in an array
-			ArrayNode valParentObj = (ArrayNode) valParent;
-			String indexStr = pathPtr.last().getMatchingProperty();
-			Optional<Integer> index = Utils.strToInt(indexStr);
+			ArrayNode parentArray = (ArrayNode) parent;
+			Optional<Integer> index = Utils.strToInt(fieldOrIndex);
 			index.ifPresent(ind -> {
 				// single index to be replaced
 				// get() on objRoot will return null in case of any other node than ArrayNode
-				JsonNode valToPut = ((JsonDataObj) value).objRoot.get(0);
-				if(valToPut!=null)
-				{
-					valParentObj.set(ind, valToPut);
-				} else {
-					// objRoot is a singleton and not an array
-					valToPut = ((JsonDataObj) value).objRoot;
-					valParentObj.set(ind, valToPut);
-				}
+				JsonNode valToPut = child.get(0);
+				if (valToPut == null) valToPut = child;
+				parentArray.set(ind, valToPut);
+				// objRoot is a singleton and not an array
 			});
 			if (!index.isPresent()) {
 				Optional<Integer> ind = Utils
-					.strToInt(indexStr.substring(0, indexStr.length() - 1));
+					.strToInt(fieldOrIndex.substring(0, fieldOrIndex.length() - 1));
 				if (ind.isPresent()) {
 					int i = ind.get();
 					// Check for special character presence
-					if (indexStr.endsWith("*")) {
+					if (fieldOrIndex.endsWith("*")) {
 						// Partial replacement from that(inclusive) index onwards
 						// "0*" will replace entire path
 
 						// Preserve path segments upto ind and remove all nodes from beyond that
-						for (int j = valParentObj.size() - 1; j >= i; j--) {
-							valParentObj.remove(j);
+						for (int j = parentArray.size() - 1; j >= i; j--) {
+							parentArray.remove(j);
 						}
-						valParentObj.addAll((ArrayNode) ((JsonDataObj) value).objRoot);
+						parentArray.addAll((ArrayNode) child);
 
-					} else if (indexStr.endsWith("^")) {
+					} else if (fieldOrIndex.endsWith("^")) {
 						// insertion in between from that index
-						for (int j = 0; j < ((JsonDataObj) value).objRoot.size(); j++) {
-							valParentObj.insert(i + j, ((JsonDataObj) value).objRoot.get(j));
+						for (int j = 0; j < child.size(); j++) {
+							parentArray.insert(i + j,child.get(j));
 						}
 					} else {
 						LOGGER.error("Cannot recognise wildcard format for injecting in array");
 					}
-				} else if (indexStr.equals("*")) {
+				} else if (fieldOrIndex.equals("*")) {
 					// Add all at the end
-					valParentObj.addAll((ArrayNode) ((JsonDataObj) value).objRoot);
+					parentArray.addAll((ArrayNode) child);
 				} else {
 					LOGGER.error("Cannot convert string to integer in put method");
 				}
 			}
 			return true;
+		}
+		return false;
+	}
+
+	public boolean put(String path, DataObj value, boolean createPath) throws PathNotFoundException {
+		JsonPointer pathPtr = JsonPointer.compile(path);
+		JsonNode valParent = getNode(pathPtr.head().toString());
+		if (addChildNodeToParent(valParent,pathPtr.last().getMatchingProperty() ,
+			((JsonDataObj)value).objRoot)) {
+			return true;
 		} else if (createPath) {
 			List<String> toCreate = new ArrayList<>();
-			toCreate.add(pathPtr.last().getMatchingProperty());
-			createJsonNode(pathPtr.head(), toCreate);
-			return true;
+			return addChildNodeToParent(createJsonNode(pathPtr.head(), toCreate),
+				pathPtr.last().getMatchingProperty(), ((JsonDataObj)value).objRoot);
 		} else {
 			throw new PathNotFoundException(path);
 		}
+
 	}
 
-	private void createJsonNode(JsonPointer toLookUp, List<String> toCreate) {
-		JsonNode valParent = getNode(toLookUp.head().toString());
-		if (valParent != null) {
-			Collections.reverse(toCreate);
-			toCreate.forEach(pathSegment -> {
-				//ObjectNode
-			});
-			// create and then insert
-		} else {
-			toCreate.add(toLookUp.tail().getMatchingProperty());
+	private JsonNode createJsonNode(JsonPointer toLookUp, List<String> toCreate) {
+		// assuming toLookUp has at least one path segment
+		try {
+			toCreate.add(toLookUp.last().getMatchingProperty());
+			JsonNode parent = getNode(toLookUp.head().toString());
 
+			if (parent != null && parent.isObject()) {
+				Collections.reverse(toCreate);
+				while (toCreate.size() > 0) {
+					String pathSegment = toCreate.remove(0);
+					ObjectNode newNode = JsonNodeFactory.instance.objectNode();
+					addChildNodeToParent(parent, pathSegment, newNode);
+					parent = newNode;
+				}
+				return parent;
+				// create and then insert
+			} else {
+				//toCreate.add(toLookUp.last().getMatchingProperty());
+				return createJsonNode(toLookUp.head(), toCreate);
+			}
+		} catch (Exception e) {
+			LOGGER.error("Exception occurred while trying to create new Json "
+				+ "Node during put operation " + e.getMessage());
+			return null;
 		}
 	}
 

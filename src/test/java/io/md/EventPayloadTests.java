@@ -242,7 +242,6 @@ public class EventPayloadTests {
 				null, "GET", null, "a/b/c"));
 			httpRequestEvent = eventBuilder.createEvent();
 
-
 			eventBuilder = new EventBuilder(cubeMetaInfo, traceInfo
 				, RunType.Record, "/minfo/health", EventType.HTTPResponse
 				, Optional.empty(), "random-req-id", "random-collection", RecordingType.Golden).withRunId(traceInfo.traceId);
@@ -372,6 +371,15 @@ public class EventPayloadTests {
 
 
 		}
+
+		@Test
+		public void testHttpRequestDynamicPut() throws IOException, PathNotFoundException {
+			HTTPRequestPayload requestPayload = (HTTPRequestPayload) httpRequestEvent.payload;
+			requestPayload.put("/hdrs/custom-header" , new JsonDataObj( objectMapper.readValue("[\"custom-value\"]"
+				, JsonNode.class), objectMapper));
+			assert (requestPayload.getValAsString("/hdrs/custom-header/0")).equals("custom-value");
+ 		}
+
 
 		@Test
 		public void testHttpJsonResponseEvent() throws IOException, PathNotFoundException {

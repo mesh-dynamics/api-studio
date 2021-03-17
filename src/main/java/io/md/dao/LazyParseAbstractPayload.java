@@ -205,6 +205,11 @@ public abstract class LazyParseAbstractPayload implements Payload {
 		return dataObj.put(path, value);
 	}
 
+	public boolean put(String path, DataObj value, boolean create) throws PathNotFoundException {
+		parseIfRequired();
+		return dataObj.put(path, value, create);
+	}
+
 	@JsonIgnore
 	public String getPayloadAsJsonString() {
 		return getPayloadAsJsonString(false);
