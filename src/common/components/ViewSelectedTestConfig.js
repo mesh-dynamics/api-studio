@@ -1192,26 +1192,27 @@ class ViewSelectedTestConfig extends React.Component {
     };
 
     handleTemplateSetNameLabelChange = (e) => {
-        const templateSetName = e.target.value;
+        const targetOption = e.target.options[e.target.selectedIndex]
+        const templateSetName = targetOption.getAttribute("data-name")
+        const templateSetLabel = targetOption.getAttribute("data-label")
         const { cube: {templateSetNameLabelsList}, dispatch} = this.props;
-        const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name}) => (name===templateSetName))
+        const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name, label}) => (name===templateSetName && label===templateSetLabel))
         dispatch(cubeActions.setSelectedTemplateSetNameLabel(selectedTemplateSetNameLabel))
     }
 
     renderTemplateSetNameLabelSelection = () => {
         const { cube: {templateSetNameLabelsList, selectedTemplateSetNameLabel, selectedApp} } = this.props;
         const options = (templateSetNameLabelsList || []).map(({name, label}) => {
-            return <option key={`${name}-${label}`} value={name}>{name} {label && label}</option>
+            return <option key={`${name}-${label}`} value={`${name}-${label}`} data-name={name} data-label={label}>{name} {label && label}</option>
         })
 
-        const {name, label} = selectedTemplateSetNameLabel 
-                            || templateSetNameLabelsList.find(({name}) => (name===`Default${selectedApp}`)) // set default if available
+        const {name, label} = selectedTemplateSetNameLabel
                             || {name: "", label: ""}
         return (
             <div className="margin-top-10">
                 <div className="label-n">SELECT TEMPLATE SET</div>
-                <select className="r-att" onChange={this.handleTemplateSetNameLabelChange} value={name}>
-                    <option disabled value="">Select Template Set</option>
+                <select className="r-att" onChange={this.handleTemplateSetNameLabelChange} value={`${name}-${label}`}>
+                    <option disabled value="-">Select Template Set</option>
                     {options}
                 </select>
             </div>

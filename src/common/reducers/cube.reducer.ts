@@ -373,7 +373,6 @@ export function cube (state = initialState, action: ICubeAction) : ICubeState {
                 templateOperationSetObject: {},
                 ruleBook: {},
                 multiOperationsSet: [],
-                selectedTemplateSetNameLabel: null,
             };
         case cubeConstants.DIFF_SUCCESS:
             return {
