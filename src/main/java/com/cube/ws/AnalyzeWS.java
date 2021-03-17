@@ -231,6 +231,7 @@ public class AnalyzeWS {
     		JSONObject setDetails = new JSONObject();
     		setDetails.put("name" , templateSet.name);
 	        setDetails.put("label" , templateSet.label);
+	        setDetails.put("timestamp" , templateSet.timestamp.toString());
 		    root.put(templateSet.version , setDetails);
 	    });
 		return Response.ok().entity(root.toString()).build();
