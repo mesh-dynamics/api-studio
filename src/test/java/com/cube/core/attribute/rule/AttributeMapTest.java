@@ -20,6 +20,7 @@ import io.md.core.TemplateEntry;
 import io.md.core.TemplateKey;
 import io.md.core.TemplateKey.Type;
 import io.md.dao.ReqRespUpdateOperation.OperationType;
+import io.md.utils.Utils;
 
 import com.cube.golden.SingleTemplateUpdateOperation;
 import com.cube.golden.TemplateEntryOperation;
@@ -98,7 +99,7 @@ public class AttributeMapTest {
 
 		TemplateSet templateSet = new TemplateSet(customer, app, Instant.now(),
 			Collections.EMPTY_LIST, Optional.empty(), baseTemplateVersion, LocalDateTime
-			.now().format(AnalysisUtils.templateLabelFormatter));
+			.now().format(Utils.templateLabelFormatter));
 
 		TemplateKey key = new TemplateKey(
 			templateSet.version, customer

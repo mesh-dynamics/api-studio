@@ -37,6 +37,7 @@ import io.md.dao.GRPCPayload;
 import io.md.dao.MatchResultAggregate;
 import io.md.dao.Payload;
 import io.md.dao.RecordingOperationSetSP;
+import io.md.dao.ReqRespMatchResult;
 import io.md.dao.RequestPayload;
 import io.md.dao.ResponsePayload;
 import io.md.dao.Analysis.ReqRespMatchWithEvent;
@@ -109,7 +110,6 @@ import io.md.dao.Event;
 import io.md.dao.Recording;
 import io.md.dao.Replay;
 import io.md.dao.Analysis;
-import io.md.dao.ReqRespMatchResult;
 import io.md.dao.ReqRespUpdateOperation;
 import io.md.services.Analyzer;
 import io.md.utils.Constants;
@@ -228,6 +228,7 @@ public class AnalyzeWS {
     		JSONObject setDetails = new JSONObject();
     		setDetails.put("name" , templateSet.name);
 	        setDetails.put("label" , templateSet.label);
+	        setDetails.put("timestamp" , templateSet.timestamp.toString());
 		    root.put(templateSet.version , setDetails);
 	    });
 		return Response.ok().entity(root.toString()).build();
@@ -272,8 +273,8 @@ public class AnalyzeWS {
             }));
             */
 	        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-	        String templateLabel = Optional.ofNullable(queryParams.getFirst(Constants.GOLDEN_LABEL_FIELD))
-		        .orElse(LocalDateTime.now().format(AnalysisUtils.templateLabelFormatter));
+	        String templateLabel = Optional.ofNullable(queryParams.getFirst(Constants.TEMPLATE_SET_LABEL))
+		        .orElse(LocalDateTime.now().format(io.md.utils.Utils.templateLabelFormatter));
 
             /*Optional<String> templateVersion = version.equals("AUTO") ? Optional.empty() : Optional.of(version);*/
             TemplateSet templateSet = ServerUtils.templateRegistriesToTemplateSet(registries, customerId, appId,
@@ -447,8 +448,7 @@ public class AnalyzeWS {
         }
 
         return rrstore.getReplay(replayId).map(replay -> {
-            AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(replayId,
-                new MultivaluedHashMap<>());
+            AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(replayId);
 
             ReqRespResultsWithFacets resultWithFacets = rrstore
                 .getAnalysisMatchResults(analysisMatchResultQuery);
@@ -1170,7 +1170,8 @@ public class AnalyzeWS {
 				        customer, app, templateSet.customer, templateSet.app))).build();
 	        }
 	        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-	        templateSet.version = ServerUtils.createTemplateSetVersion(templateSet.name, templateSet.label);
+	        templateSet.version = io.md.utils.Utils
+		        .createTemplateSetVersion(templateSet.name, templateSet.label);
 	        templateSet.templates.forEach(compareTemplateVersioned -> {
 		        String normalisedAPIPath= CompareTemplate.normaliseAPIPath(compareTemplateVersioned.requestPath);
 		        LOGGER.info(new ObjectMessage(Map.of(Constants.MESSAGE, "Normalizing APIPath before storing template ",
@@ -1274,12 +1275,10 @@ public class AnalyzeWS {
 
 				Optional<TemplateSet> originalTemplateSet = rrstore.getTemplateSet(replay.customerId
 					, replay.app, previousTemplateVersion);
-				String updatedTemplateSetVersion =
-					AnalysisUtils.updateTemplateSet(operationSetID, originalTemplateSet, rrstore);
-
+				TemplateSet updated = AnalysisUtils.updateTemplateSet(operationSetID, originalTemplateSet, rrstore);
 				return AnalysisUtils
 					.runAnalyze(analyzer, jsonMapper, replayId,
-						Optional.of(updatedTemplateSetVersion));
+						Optional.of(updated.version));
 			} catch (Exception e) {
 				return CompletableFuture
 					.completedFuture(Response.serverError().entity(new JSONObject(Map.of("Message"
@@ -1343,10 +1342,10 @@ public class AnalyzeWS {
 	    try {
 		    // Get template set and update operation set from solr
 		    Optional<TemplateSet> templateSetOpt = rrstore.getTemplateSet(templateSetId);
-		    String updatedVersion = AnalysisUtils
+		    TemplateSet updated = AnalysisUtils
 			    .updateTemplateSet(templateUpdateOperationSetId, templateSetOpt, rrstore);
 		    return Response.ok().entity(new JSONObject(Map.of("Message"
-			    , "Template Set successfully updated", "ID", updatedVersion))).build();
+			    , "Template Set successfully updated", "ID", updated.version))).build();
 	    } catch (Exception e) {
 		    LOGGER.error("Error while updating template set :: " + templateSetId
 			    + " :: with operation set id :: "
@@ -1404,7 +1403,8 @@ public class AnalyzeWS {
 		    Optional<Analysis> analysis = rrstore.getAnalysis(replayId);
 		    // creating a new temporary empty template set against the old version
 		    // (if one doesn't exist already)
-		    Pair<String, String> nameLabelPair = ServerUtils.extractTemplateSetNameAndLabel(originalRec.templateVersion);
+		    Pair<String, String> nameLabelPair = io.md.utils.Utils.
+			    extractTemplateSetNameAndLabel(originalRec.templateVersion);
 			String originalRecTemplateSetName = nameLabelPair.getLeft();
 		    TemplateSet templateSet = rrstore
 			    .getTemplateSet(originalRec.customerId, originalRec.app, analysis.map(a ->
@@ -1413,13 +1413,17 @@ public class AnalyzeWS {
 				    originalRec.app, Instant.now(), Collections.emptyList(), Optional.empty()
 				    , originalRecTemplateSetName, nameLabelPair.getRight()));
 
-		    String updatedTemplateSetVersion = AnalysisUtils.updateTemplateSet(templateUpdOpSetId,
+		    //Updated template set
+		    TemplateSet updatedTemplateSet  = AnalysisUtils.updateTemplateSet(templateUpdOpSetId,
 			    Optional.of(templateSet), rrstore);
+		    String updatedTemplateSetVersion = updatedTemplateSet.version;
+		    Pair<String, String> updatedTemplateSetNameAndLabel = io.md.utils.Utils.
+			    extractTemplateSetNameAndLabel(updatedTemplateSetVersion);
 
 		    // TODO With similar update logic find the updated collection id
 		    String newCollectionName = UUID.randomUUID().toString();
 		    boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName
-			    , collectionUpdateOpSetId, originalRec, updatedTemplateSetVersion);
+			    , collectionUpdateOpSetId, originalRec, updatedTemplateSet);
 		    if (!b) {
 			    throw new Exception("Unable to create an updated collection from existing golden");
 		    }
@@ -1428,19 +1432,21 @@ public class AnalyzeWS {
 		    Optional<String> branch = Optional.ofNullable(formParams.getFirst("branch"));
 		    Optional<String> gitCommitId = Optional.ofNullable(formParams.getFirst("gitCommitId"));
 		    List<String> tags = Optional.ofNullable(formParams.get("tags"))
-			    .orElse(new ArrayList<String>());
+			    .orElse(new ArrayList<>());
 		    Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
 
 		    RecordingBuilder recordingBuilder = new RecordingBuilder(
 			    originalRec.customerId, originalRec.app, originalRec.instanceId, newCollectionName)
 			    .withStatus(RecordingStatus.Completed)
-			    .withTemplateSetVersion(updatedTemplateSetVersion)
 			    .withParentRecordingId(originalRec.getId())
 			    .withRootRecordingId(originalRec.rootRecordingId)
 			    .withName(name).withLabel(label).withTags(tags)
 			    .withCollectionUpdateOpSetId(collectionUpdateOpSetId)
 			    .withTemplateUpdateOpSetId(templateUpdOpSetId).withUserId(userId)
-			    .withRecordingType(originalRec.recordingType).withRunId(originalRec.runId).withIgnoreStatic(originalRec.ignoreStatic);
+			    .withRecordingType(originalRec.recordingType).withRunId(originalRec.runId)
+			    .withIgnoreStatic(originalRec.ignoreStatic)
+			    .withTemplateSetName(updatedTemplateSetNameAndLabel.getLeft())
+			    .withTemplateSetLabel(updatedTemplateSetNameAndLabel.getRight());
 		    codeVersion.ifPresent(recordingBuilder::withCodeVersion);
 		    branch.ifPresent(recordingBuilder::withBranch);
 		    gitCommitId.ifPresent(recordingBuilder::withGitCommitId);
@@ -1486,7 +1492,7 @@ public class AnalyzeWS {
 
             RecordingBuilder recordingBuilder = new RecordingBuilder(
             	originalRec.customerId, originalRec.app, originalRec.instanceId, newCollectionName)
-	            .withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateSet.version)
+	            .withStatus(RecordingStatus.Completed).withTemplateSetName(templateSet.name).withTemplateSetLabel(templateSet.label)
 	            .withParentRecordingId(originalRec.getId()).withRootRecordingId(originalRec.rootRecordingId)
 	            .withName(originalRec.name).withLabel(originalRec.label).withTags(originalRec.tags).withArchived(originalRec.archived)
 	            .withUserId(originalRec.userId).withRecordingType(originalRec.recordingType).withRunId(originalRec.runId);
@@ -1984,27 +1990,108 @@ public class AnalyzeWS {
 	}
 
 
+	public static  class ReqRespMatchInput {
+		public Optional<String> lhsReqId = Optional.empty();
+		public Optional<String> rhsReqId = Optional.empty();
+
+		public Optional<Event> lhsRequestEvent = Optional.empty();
+		public Optional<Event> rhsRequestEvent = Optional.empty();
+
+		public Optional<Event> lhsResponseEvent = Optional.empty();
+		public Optional<Event> rhsResponseEvent = Optional.empty();
+
+		public Optional<String> templateName = Optional.empty();
+		public Optional<String> templateLabel = Optional.empty();
+
+		public ReqRespMatchInput(){}
+
+		public ReqRespMatchInput(Optional<String> lhsReqId , Optional<String> rhsReqId , Optional<Event> lhsRequestEvent , Optional<Event> rhsRequestEvent ,  Optional<Event> lhsResponseEvent , Optional<Event> rhsResponseEvent , Optional<String> templateName , Optional<String> templateLabel){
+			this.lhsReqId = lhsReqId;
+			this.rhsReqId = rhsReqId;
+			this.lhsRequestEvent = lhsRequestEvent;
+			this.rhsRequestEvent = rhsRequestEvent;
+			this.lhsResponseEvent = lhsResponseEvent;
+			this.rhsResponseEvent = rhsResponseEvent;
+
+			this.templateName = templateName;
+			this.templateLabel = templateLabel;
+		}
+
+		public ReqRespMatchInput(Optional<String> lhsReqId , Optional<String> rhsReqId){
+			this.lhsReqId = lhsReqId;
+			this.rhsReqId = rhsReqId;
+		}
+
+	}
+
+
 	@GET
 	@Path("getReqRespMatchResult")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getReqRespMatchResult(@Context UriInfo uriInfo) {
-		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
-		if(queryParams==null) {
-			return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-				.entity(Map.of(Constants.ERROR, "No queryParams are specified for lhsReqId and rhsReqId")).build();
-		}
+		MultivaluedMap<String, String> queryParams = Optional.ofNullable(uriInfo.getQueryParameters()).orElse(new MultivaluedHashMap<>(0)) ;
 
 		// lhsReqId should be from recording collection and rhsReqId from replay
-		Optional<String> lhsReqId = Optional.ofNullable(queryParams.getFirst("lhsReqId"));
-		Optional<String> rhsReqId = Optional.ofNullable(queryParams.getFirst("rhsReqId"));
+		Optional<String> lhsReqIdOpt = Optional.ofNullable(queryParams.getFirst("lhsReqId"));
+		Optional<String> rhsReqIdOpt = Optional.ofNullable(queryParams.getFirst("rhsReqId"));
 
-		if (lhsReqId.isEmpty() || rhsReqId.isEmpty()) {
-			return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
-				.entity(Map.of(Constants.ERROR, "lhsReqId or rhsReqId not Specified")).build();
+		return getReqRespMatchResult(new ReqRespMatchInput(lhsReqIdOpt , rhsReqIdOpt));
+	}
+
+	@POST
+	@Path("getReqRespMatchResult")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getReqRespMatchResult(ReqRespMatchInput input){
+
+		Optional<Event> lhsRequestEventOpt = input.lhsRequestEvent;
+		Optional<Event> rhsRequestEventOpt = input.rhsRequestEvent;
+		Optional<Event> lhsResponseEventOpt = input.lhsResponseEvent;
+		Optional<Event> rhsResponseEventOpt = input.rhsResponseEvent;
+		Optional<String> templateName  = input.templateName;
+		Optional<String> templateLabel = input.templateLabel;
+
+		Optional<String> lhsReqIdOpt = input.lhsReqId.or(()->input.lhsRequestEvent.map(Event::getReqId)).or(()->input.lhsResponseEvent.map(Event::getReqId));
+		Optional<String> rhsReqIdOpt = input.rhsReqId.or(()->input.rhsRequestEvent.map(Event::getReqId)).or(()->input.rhsResponseEvent.map(Event::getReqId));
+		if(lhsReqIdOpt.isEmpty() || rhsReqIdOpt.isEmpty()){
+			LOGGER.error("lhsReqId/rhsReqId missing");
+			return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(Map.of(Constants.ERROR, "lhsReqId/rhsReqId not Specified")).build();
 		}
 
-		Optional<Event> lhsRequestEventOpt = rrstore.getRequestEvent(lhsReqId.get());
-		Optional<Event> rhsRequestEventOpt = rrstore.getRequestEvent(rhsReqId.get());
+		try{
+			lhsRequestEventOpt.ifPresent(UtilException.rethrowConsumer(Event::validateEvent));
+			rhsRequestEventOpt.ifPresent(UtilException.rethrowConsumer(Event::validateEvent));
+			lhsResponseEventOpt.ifPresent(UtilException.rethrowConsumer(Event::validateEvent));
+			rhsResponseEventOpt.ifPresent(UtilException.rethrowConsumer(Event::validateEvent));
+		}catch (Exception e){
+			LOGGER.error("Event validation failed ", e);
+			return Response.status(Response.Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON).entity(Map.of(Constants.ERROR, "Event Validation Failed")).build();
+		}
+
+
+		List<String> idsToFetch = new ArrayList<>();
+		String lhsReqId = lhsReqIdOpt.get();
+		String rhsReqId = rhsReqIdOpt.get();
+
+		if(lhsRequestEventOpt.isEmpty() || lhsResponseEventOpt .isEmpty()){
+			idsToFetch.add(lhsReqId);
+		}
+		if(rhsRequestEventOpt.isEmpty() || rhsResponseEventOpt .isEmpty()){
+			idsToFetch.add(rhsReqId);
+		}
+
+		if(!idsToFetch.isEmpty()){
+			//Get all the events for given reqIds in a single query and then filter later
+			EventQuery.Builder builder = new EventQuery.Builder("*", "*", Collections.EMPTY_LIST);
+			builder.withReqIds(idsToFetch);
+			Result<Event> result =  rrstore.getEvents(builder.build());
+
+			for (Event e : (Iterable<Event>) () -> result.getObjects().iterator()) {
+				if(lhsRequestEventOpt.isEmpty() && e.reqId.equals(lhsReqId) && Event.isReqType(e.eventType)) lhsRequestEventOpt = Optional.of(e);
+				if(rhsRequestEventOpt.isEmpty() && e.reqId.equals(rhsReqId) && Event.isReqType(e.eventType)) rhsRequestEventOpt = Optional.of(e);
+				if(lhsResponseEventOpt.isEmpty() && e.reqId.equals(lhsReqId) && !Event.isReqType(e.eventType)) lhsResponseEventOpt = Optional.of(e);
+				if(rhsResponseEventOpt.isEmpty() && e.reqId.equals(rhsReqId) && !Event.isReqType(e.eventType)) rhsResponseEventOpt = Optional.of(e);
+			}
+		}
 
 		if (lhsRequestEventOpt.isEmpty() || rhsRequestEventOpt.isEmpty()) {
 			return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
@@ -2013,9 +2100,6 @@ public class AnalyzeWS {
 		}
 		Event lhsRequestEvent = lhsRequestEventOpt.get();
 		Event rhsRequestEvent = rhsRequestEventOpt.get();
-
-		Optional<Event> lhsResponseEventOpt = rrstore.getResponseEvent(lhsReqId.get());
-		Optional<Event> rhsResponseEventOpt = rrstore.getResponseEvent(rhsReqId.get());
 
 		Optional<Recording> recordingOpt = rrstore
 			.getRecordingByCollectionAndTemplateVer(lhsRequestEvent.customerId, lhsRequestEvent.app,
@@ -2031,16 +2115,18 @@ public class AnalyzeWS {
 
 		Comparator.Match reqCompareRes = Match.NOMATCH;
 		Comparator.Match respCompareRes = Match.NOMATCH;
+		String templateVersion = templateName.isEmpty() ? recording.templateVersion : io.md.utils.Utils.createTemplateSetVersion(templateName.get() , templateLabel.orElse(""));;
+
 		try {
-			TemplateKey reqCompareKey = new TemplateKey(recording.templateVersion,
+			TemplateKey reqCompareKey = new TemplateKey(templateVersion,
 				lhsRequestEvent.customerId,
 				lhsRequestEvent.app, lhsRequestEvent.service, lhsRequestEvent.apiPath,
 				Type.RequestCompare, io.md.utils.Utils.extractMethod(lhsRequestEvent)
 				, recording.collection);
 			Comparator reqComparator = rrstore
 				.getComparator(reqCompareKey, lhsRequestEvent.eventType);
-				reqCompareRes = reqComparator.compare(lhsRequestEvent.payload, rhsRequestEvent.payload);
-			TemplateKey respCompareKey = new TemplateKey(recording.templateVersion,
+			reqCompareRes = reqComparator.compare(lhsRequestEvent.payload, rhsRequestEvent.payload);
+			TemplateKey respCompareKey = new TemplateKey(templateVersion,
 				lhsRequestEvent.customerId,
 				lhsRequestEvent.app, lhsRequestEvent.service, lhsRequestEvent.apiPath,
 				Type.ResponseCompare, io.md.utils.Utils.extractMethod(lhsRequestEvent)
@@ -2100,6 +2186,8 @@ public class AnalyzeWS {
 		jsonMap.put("res", matchRes);
 		return Response.ok().entity(jsonMap).build();
 	}
+
+
 
 
 	/**
@@ -2307,3 +2395,5 @@ public class AnalyzeWS {
 	    }
     }
 }
+
+//class

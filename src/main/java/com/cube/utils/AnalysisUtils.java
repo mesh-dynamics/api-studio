@@ -34,8 +34,6 @@ public class AnalysisUtils {
 
 	private static final Logger LOGGER = LogManager.getLogger(AnalysisUtils.class);
 
-	public static final DateTimeFormatter templateLabelFormatter =  DateTimeFormatter.ofPattern("dd-MM-yyyy_HH:mm:ss_SSS");
-
 	public static void updateTemplateUpdateOperationSet(String customerId, String operationSetId,
 		String updateOperations, ObjectMapper jsonMapper, ReqRespStore rrStore) throws Exception {
 
@@ -59,7 +57,7 @@ public class AnalysisUtils {
 			+ "rules update op set", Constants.TEMPLATE_UPD_OP_SET_ID_FIELD, operationSetId)));
 	}
 
-	public static String updateTemplateSet(String templateUpdateOperationSetId,
+	public static TemplateSet updateTemplateSet(String templateUpdateOperationSetId,
 		Optional<TemplateSet>
 			templateSetOpt, ReqRespStore rrStore) throws Exception {
 		// transform the template set based on the operations specified
@@ -82,7 +80,7 @@ public class AnalysisUtils {
 			updated.version, Constants.CUSTOMER_ID_FIELD, updated.customer, Constants.APP_FIELD,
 			updated.app, Constants.TEMPLATE_UPD_OP_SET_ID_FIELD, templateUpdateOperationSetId)));
 		rrStore.saveTemplateSet(updated);
-		return updated.version;
+		return updated;
 	}
 
 	public static Response runAnalyze(Analyzer analyzer, ObjectMapper jsonMapper, String replayId,

@@ -27,7 +27,6 @@ public class RecordingBuilder {
 	private Optional<String> id;
 	private RecordingStatus status;
 	private Optional<Instant> timestamp;
-	private String templateVersion;
 	private Optional<String> parentRecordingId;
 	private String rootRecordingId;
 	private String name;
@@ -47,6 +46,8 @@ public class RecordingBuilder {
 	private Optional<String> dynamicInjectionConfigVersion = Optional.empty();
 	private String runId;
 	private boolean ignoreStatic = false;
+	private String templateSetName;
+	private String templateSetLabel;
 
 	public RecordingBuilder(String customerId, String app, String instanceId, String collection) {
 		this.customerId = customerId;
@@ -55,7 +56,6 @@ public class RecordingBuilder {
 		this.collection = collection;
 		this.status = RecordingStatus.Running;
 		this.timestamp = Optional.of(Instant.now());
-		this.templateVersion = DEFAULT_TEMPLATE_VER;
 		this.id = Optional.empty();
 		//recalculateId();
 		this.parentRecordingId = Optional.empty();
@@ -75,6 +75,8 @@ public class RecordingBuilder {
 		this.label = "";
 		this.recordingType = RecordingType.Golden;
 		this.runId = "";
+		this.templateSetName= "";
+		this.templateSetLabel = "";
 	}
 
 	/**
@@ -86,16 +88,16 @@ public class RecordingBuilder {
 			rootRecordingId = idv;
 		}
 		return new Recording(idv, customerId, app, instanceId, collection, status, timestamp
-			, templateVersion, parentRecordingId, rootRecordingId, name, codeVersion, branch
+			, parentRecordingId, rootRecordingId, name, codeVersion, branch
 			, tags, archived, gitCommitId, collectionUpdOpSetId, templateUpdOpSetId, comment
 			, userId, generatedClassJarPath, generatedClassLoader, label, recordingType ,
-			dynamicInjectionConfigVersion, runId, ignoreStatic);
+			dynamicInjectionConfigVersion, runId, ignoreStatic, templateSetName, templateSetLabel);
 	}
 
 	private String recalculateId() {
 		return ReqRespStoreSolr.Types.Recording.toString().concat("-")
 			.concat(String.valueOf(Math.abs(Objects.hash(customerId, app,
-				collection, templateVersion))));
+				collection, templateSetName, templateSetLabel))));
 	}
 
 	private void populateClassLoader() throws Exception {
@@ -120,12 +122,6 @@ public class RecordingBuilder {
 
 	public RecordingBuilder withUpdateTimestamp(Instant timestamp) {
 		this.timestamp = Optional.ofNullable(timestamp);
-		return this;
-	}
-
-	public RecordingBuilder withTemplateSetVersion(String version) {
-		this.templateVersion = version;
-		//recalculateId();
 		return this;
 	}
 
@@ -216,6 +212,16 @@ public class RecordingBuilder {
 
 	public  RecordingBuilder withIgnoreStatic(boolean ignore){
 		this.ignoreStatic = ignore;
+		return this;
+	}
+
+	public RecordingBuilder withTemplateSetName(String templateSetName) {
+		this.templateSetName = templateSetName;
+		return this;
+	}
+
+	public RecordingBuilder withTemplateSetLabel(String templateSetLabel) {
+		this.templateSetLabel = templateSetLabel;
 		return this;
 	}
 
