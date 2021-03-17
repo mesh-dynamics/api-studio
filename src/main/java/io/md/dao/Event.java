@@ -83,6 +83,10 @@ public class Event implements MDStorable {
 		return REQUEST_EVENT_TYPES.contains(eventType);
 	}
 
+	public boolean isReqType(){
+		return REQUEST_EVENT_TYPES.contains(eventType);
+	}
+
 	public String getCollection() {
 		return collection;
 	}

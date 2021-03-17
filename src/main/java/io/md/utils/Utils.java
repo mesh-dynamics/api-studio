@@ -38,12 +38,16 @@ import javax.ws.rs.core.MultivaluedMap;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.md.cache.ProtoDescriptorCache;
 import io.md.cache.ProtoDescriptorCache.ProtoDescriptorKey;
+import io.md.core.CompareTemplate;
+import io.md.core.TemplateKey;
+import io.md.core.TemplateKey.Type;
 import io.md.dao.*;
 import io.md.dao.Event.EventBuilder.InvalidEventException;
 import io.md.dao.Recording.RecordingStatus;
 import io.md.logger.LogMgr;
 import io.md.services.DSResult;
 import io.md.services.DataStore;
+import io.md.services.DataStore.TemplateNotFoundException;
 import io.md.tracer.TracerMgr;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -720,5 +724,18 @@ public class Utils {
 
 
 	public static final DateTimeFormatter templateLabelFormatter =  DateTimeFormatter.ofPattern("dd-MM-yyyy_HH:mm:ss_SSS");
+
+	public static TemplateKey getTemplateKey(Event e , String templateVersion , Optional<Type> type){
+		Type t = type.orElse(e.payload instanceof RequestPayload ? Type.RequestCompare : Type.ResponseCompare);
+		return  new TemplateKey(templateVersion, e.customerId,  e.app, e.service, e.apiPath, t,  Utils.extractMethod(e), e.getCollection());
+	}
+
+	/*
+	public static CompareTemplate getCompareTemplate(Event e, String templateVersion, DataStore rrstore , String recordingId)
+		throws TemplateNotFoundException {
+		Type t = e.payload instanceof RequestPayload ? Type.RequestCompare : Type.ResponseCompare;
+		return rrstore.getTemplate(e.customerId , e.app , e.service , e.apiPath ,  templateVersion , t , Optional.of(e.eventType)  , Utils.extractMethod(e) , e.getCollection() );
+	}
+	*/
 
 }
