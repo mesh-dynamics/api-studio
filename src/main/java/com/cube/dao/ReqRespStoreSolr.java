@@ -1312,7 +1312,9 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
 
         // unique requests will be almost half. 0.6 to be on safe side
-        long estimatedReqSize = (long)(result.getNumResults()*0.6) +1;
+        // but recording can have lot of missing responses and unique reqIds can be larger then half
+        // so keeping the estimatedReqSize = result.getNumResults() , assuming worst case of no responses are present
+        long estimatedReqSize = result.getNumResults();
         //check whether num of results and numFound are same
         Stream<Event> eventsStream =  SeqMgr.createSeqId(eventStream , estimatedReqSize);
         // TODO check if we need to commit after saving events
