@@ -64,9 +64,7 @@ public class TemplateSetTransformer {
 
         // Fetch and store previous existing attribute rules.
         Map<String, TemplateEntry> pathVsEntryAttributes = sourceTemplateSet.appAttributeRuleMap
-            .map(attributeRuleMap -> {
-                return new HashMap(attributeRuleMap.getAttributeNameVsRule());
-            }).orElse(new HashMap());
+            .map(attributeRuleMap -> new HashMap(attributeRuleMap.getAttributeNameVsRule())).orElse(new HashMap());
 
         updates.forEach((key , update) -> {
             if (key.equals(attributeTemplateKey, true)) {

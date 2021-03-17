@@ -1275,12 +1275,10 @@ public class AnalyzeWS {
 
 				Optional<TemplateSet> originalTemplateSet = rrstore.getTemplateSet(replay.customerId
 					, replay.app, previousTemplateVersion);
-				String updatedTemplateSetVersion =
-					AnalysisUtils.updateTemplateSet(operationSetID, originalTemplateSet, rrstore);
-
+				TemplateSet updated = AnalysisUtils.updateTemplateSet(operationSetID, originalTemplateSet, rrstore);
 				return AnalysisUtils
 					.runAnalyze(analyzer, jsonMapper, replayId,
-						Optional.of(updatedTemplateSetVersion));
+						Optional.of(updated.version));
 			} catch (Exception e) {
 				return CompletableFuture
 					.completedFuture(Response.serverError().entity(new JSONObject(Map.of("Message"
@@ -1344,10 +1342,10 @@ public class AnalyzeWS {
 	    try {
 		    // Get template set and update operation set from solr
 		    Optional<TemplateSet> templateSetOpt = rrstore.getTemplateSet(templateSetId);
-		    String updatedVersion = AnalysisUtils
+		    TemplateSet updated = AnalysisUtils
 			    .updateTemplateSet(templateUpdateOperationSetId, templateSetOpt, rrstore);
 		    return Response.ok().entity(new JSONObject(Map.of("Message"
-			    , "Template Set successfully updated", "ID", updatedVersion))).build();
+			    , "Template Set successfully updated", "ID", updated.version))).build();
 	    } catch (Exception e) {
 		    LOGGER.error("Error while updating template set :: " + templateSetId
 			    + " :: with operation set id :: "
@@ -1415,15 +1413,17 @@ public class AnalyzeWS {
 				    originalRec.app, Instant.now(), Collections.emptyList(), Optional.empty()
 				    , originalRecTemplateSetName, nameLabelPair.getRight()));
 
-		    String updatedTemplateSetVersion = AnalysisUtils.updateTemplateSet(templateUpdOpSetId,
+		    //Updated template set
+		    TemplateSet updatedTemplateSet  = AnalysisUtils.updateTemplateSet(templateUpdOpSetId,
 			    Optional.of(templateSet), rrstore);
+		    String updatedTemplateSetVersion = updatedTemplateSet.version;
 		    Pair<String, String> updatedTemplateSetNameAndLabel = io.md.utils.Utils.
 			    extractTemplateSetNameAndLabel(updatedTemplateSetVersion);
 
 		    // TODO With similar update logic find the updated collection id
 		    String newCollectionName = UUID.randomUUID().toString();
 		    boolean b = recordingUpdate.applyRecordingOperationSet(replayId, newCollectionName
-			    , collectionUpdateOpSetId, originalRec, updatedTemplateSetVersion);
+			    , collectionUpdateOpSetId, originalRec, updatedTemplateSet);
 		    if (!b) {
 			    throw new Exception("Unable to create an updated collection from existing golden");
 		    }
@@ -1432,7 +1432,7 @@ public class AnalyzeWS {
 		    Optional<String> branch = Optional.ofNullable(formParams.getFirst("branch"));
 		    Optional<String> gitCommitId = Optional.ofNullable(formParams.getFirst("gitCommitId"));
 		    List<String> tags = Optional.ofNullable(formParams.get("tags"))
-			    .orElse(new ArrayList<String>());
+			    .orElse(new ArrayList<>());
 		    Optional<String> comment = Optional.ofNullable(formParams.getFirst("comment"));
 
 		    RecordingBuilder recordingBuilder = new RecordingBuilder(
