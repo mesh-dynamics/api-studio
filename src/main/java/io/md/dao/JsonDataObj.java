@@ -781,6 +781,7 @@ public class JsonDataObj implements DataObj {
 			JsonNode parent = getNode(toLookUp.head().toString());
 
 			if (parent != null && parent.isObject()) {
+				// start creating new nodes from the top
 				Collections.reverse(toCreate);
 				while (toCreate.size() > 0) {
 					String pathSegment = toCreate.remove(0);
@@ -788,10 +789,9 @@ public class JsonDataObj implements DataObj {
 					addChildNodeToParent(parent, pathSegment, newNode);
 					parent = newNode;
 				}
+				// return the last node in the path
 				return parent;
-				// create and then insert
 			} else {
-				//toCreate.add(toLookUp.last().getMatchingProperty());
 				return createJsonNode(toLookUp.head(), toCreate);
 			}
 		} catch (Exception e) {
