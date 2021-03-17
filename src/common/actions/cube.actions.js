@@ -325,6 +325,9 @@ function getTemplateSetNameLabels (app) {
         const { user: { customer_name: customerId } } = getState().authentication;
         const templateSetNameLabelsList = await cubeService.getTemplateSetNameLabels(customerId, app)
         dispatch({type: cubeConstants.SET_TEMPLATE_SET_NAME_LABELS_LIST, data: templateSetNameLabelsList})
+
+        const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name}) => (name===`Default${app}`)) || null // set default if available
+        dispatch({type: cubeConstants.SET_SELECTED_TEMPLATE_SET_NAME_LABEL, data: selectedTemplateSetNameLabel})
     }
 }
 
