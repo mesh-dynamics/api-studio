@@ -34,6 +34,7 @@ import io.md.dao.ConvertEventPayloadResponse;
 import io.md.dao.Event.EventType;
 import io.md.dao.EventQuery;
 import io.md.dao.GRPCPayload;
+import io.md.dao.MatchResultAggregate;
 import io.md.dao.Payload;
 import io.md.dao.RecordingOperationSetSP;
 import io.md.dao.ReqRespMatchResult;
@@ -116,7 +117,6 @@ import io.md.core.Utils;
 
 import com.cube.core.TemplateRegistries;
 import com.cube.dao.AnalysisMatchResultQuery;
-import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.dao.Result;
