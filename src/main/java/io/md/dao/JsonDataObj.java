@@ -2,6 +2,8 @@ package io.md.dao;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -719,7 +721,7 @@ public class JsonDataObj implements DataObj {
 				// get() on objRoot will return null in case of any other node than ArrayNode
 				JsonNode valToPut = child.get(0);
 				if (valToPut == null) valToPut = child;
-				if (ind == 0) parentArray.add(valToPut);
+				if (parentArray.size() == 0) parentArray.add(valToPut);
 				else parentArray.set(ind, valToPut);
 				// objRoot is a singleton and not an array
 			});
@@ -759,24 +761,37 @@ public class JsonDataObj implements DataObj {
 		return false;
 	}
 
+	private NumberFormat numberFormat = NumberFormat.getInstance();
+
+	private boolean isNumber(String property) {
+		boolean isNumber = false;
+		try {
+			numberFormat.parse(property);
+			isNumber = true;
+		} catch (ParseException ignored) {
+		}
+		return isNumber;
+	}
+
+
 	public boolean put(String path, DataObj value, boolean createPath) throws PathNotFoundException {
 		JsonPointer pathPtr = JsonPointer.compile(path);
 		JsonNode valParent = getNode(pathPtr.head());
 		String childProperty = pathPtr.last().getMatchingProperty();
 		if (valParent.isMissingNode() && createPath)
-			valParent = createJsonNode(pathPtr.head() , childProperty.equals("0"));
+			valParent = createJsonNode(pathPtr.head() , isNumber(childProperty));
 		return addChildNodeToParent(valParent, childProperty,
 			((JsonDataObj)value).objRoot);
 	}
 
-	private JsonNode createJsonNode(JsonPointer toLookUp , boolean createArray) {
+	private JsonNode createJsonNode(JsonPointer toLookUp, boolean createArray) {
 		JsonNode node = getNode(toLookUp);
 		if (node.isMissingNode()) {
 			node = createArray? JsonNodeFactory.instance.arrayNode(): JsonNodeFactory.instance.objectNode();
 			JsonPointer parentPtr = toLookUp.head();
 			if (parentPtr != null) {
 				String childProperty = toLookUp.last().getMatchingProperty();
-				JsonNode parent = createJsonNode(parentPtr, childProperty.equals("0"));
+				JsonNode parent = createJsonNode(parentPtr, isNumber(childProperty));
 				addChildNodeToParent(parent, childProperty, node);
 			}
 		}
