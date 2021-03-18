@@ -151,7 +151,7 @@
         <dependency>
             <groupId>io.cube</groupId>
             <artifactId>commons</artifactId>
-            <version>1.2.20.0</version>
+            <version>1.2.38.0</version>
         </dependency>
         <dependency>
             <groupId>io.cube</groupId>
