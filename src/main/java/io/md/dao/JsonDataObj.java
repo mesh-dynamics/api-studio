@@ -721,7 +721,10 @@ public class JsonDataObj implements DataObj {
 				// get() on objRoot will return null in case of any other node than ArrayNode
 				JsonNode valToPut = child.get(0);
 				if (valToPut == null) valToPut = child;
-				if (parentArray.size() == 0) parentArray.add(valToPut);
+				if (parentArray.size() == 0 || ind >= parentArray.size()) {
+					LOGGER.info("Using add instead of set index as index out of bound");
+					parentArray.add(valToPut);
+				}
 				else parentArray.set(ind, valToPut);
 				// objRoot is a singleton and not an array
 			});
@@ -761,7 +764,7 @@ public class JsonDataObj implements DataObj {
 		return false;
 	}
 
-	private NumberFormat numberFormat = NumberFormat.getInstance();
+	private NumberFormat numberFormat = NumberFormat.getIntegerInstance();
 
 	private boolean isNumber(String property) {
 		boolean isNumber = false;
