@@ -41,7 +41,7 @@ public class HTTPPayload extends LazyParseAbstractPayload {
 	static final String BODY = "body";
 	static final String PAYLOADSTATEPATH = "/payloadState";
 
-	private Pattern pattern = Pattern.compile("/hdrs/([^/\\n$]+)");
+	private static Pattern pattern = Pattern.compile("/hdrs/([^/\\n$]+)");
 
 	public enum HTTPPayloadState {
 		WrappedEncoded,
