@@ -381,6 +381,17 @@ public class EventPayloadTests {
 			assert (requestPayload.getValAsString("/hdrs/custom-header/0")).equals("custom-value");
  		}
 
+		@Test
+		public void testCaseInsensitiveHeaderSearch() throws  IOException, PathNotFoundException {
+			HTTPRequestPayload requestPayload = (HTTPRequestPayload) httpRequestEvent.payload;
+			requestPayload.put("/hdrs/Custom-Header/0" , new JsonDataObj(new TextNode("custom-value"), /*objectMapper.readValue("[\"custom-value\"]"
+				, JsonNode.class),*/ objectMapper));
+			assert (((JsonDataObj) requestPayload.getVal("/hdrs/custom-header/0")).getRoot()
+				.textValue().equals("custom-value"));
+			assert (requestPayload.getValAsString("/hdrs/custom-header/0").equals("custom-value"));
+
+ 		}
+
 
 		@Test
 		public void testHttpJsonResponseEvent() throws IOException, PathNotFoundException {
