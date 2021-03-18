@@ -34,6 +34,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 
 import io.md.cryptography.JcaEncryption;
@@ -375,8 +376,8 @@ public class EventPayloadTests {
 		@Test
 		public void testHttpRequestDynamicPut() throws IOException, PathNotFoundException {
 			HTTPRequestPayload requestPayload = (HTTPRequestPayload) httpRequestEvent.payload;
-			requestPayload.put("/hdrs/custom-header" , new JsonDataObj( objectMapper.readValue("[\"custom-value\"]"
-				, JsonNode.class), objectMapper));
+			requestPayload.put("/hdrs/custom-header/0" , new JsonDataObj(new TextNode("custom-value"), /*objectMapper.readValue("[\"custom-value\"]"
+				, JsonNode.class),*/ objectMapper));
 			assert (requestPayload.getValAsString("/hdrs/custom-header/0")).equals("custom-value");
  		}
 

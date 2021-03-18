@@ -719,7 +719,8 @@ public class JsonDataObj implements DataObj {
 				// get() on objRoot will return null in case of any other node than ArrayNode
 				JsonNode valToPut = child.get(0);
 				if (valToPut == null) valToPut = child;
-				parentArray.set(ind, valToPut);
+				if (ind == 0) parentArray.add(valToPut);
+				else parentArray.set(ind, valToPut);
 				// objRoot is a singleton and not an array
 			});
 			if (!index.isPresent()) {
@@ -760,45 +761,26 @@ public class JsonDataObj implements DataObj {
 
 	public boolean put(String path, DataObj value, boolean createPath) throws PathNotFoundException {
 		JsonPointer pathPtr = JsonPointer.compile(path);
-		JsonNode valParent = getNode(pathPtr.head().toString());
-		if (addChildNodeToParent(valParent,pathPtr.last().getMatchingProperty() ,
-			((JsonDataObj)value).objRoot)) {
-			return true;
-		} else if (createPath) {
-			List<String> toCreate = new ArrayList<>();
-			return addChildNodeToParent(createJsonNode(pathPtr.head(), toCreate),
-				pathPtr.last().getMatchingProperty(), ((JsonDataObj)value).objRoot);
-		} else {
-			throw new PathNotFoundException(path);
-		}
-
+		JsonNode valParent = getNode(pathPtr.head());
+		String childProperty = pathPtr.last().getMatchingProperty();
+		if (valParent.isMissingNode() && createPath)
+			valParent = createJsonNode(pathPtr.head() , childProperty.equals("0"));
+		return addChildNodeToParent(valParent, childProperty,
+			((JsonDataObj)value).objRoot);
 	}
 
-	private JsonNode createJsonNode(JsonPointer toLookUp, List<String> toCreate) {
-		// assuming toLookUp has at least one path segment
-		try {
-			toCreate.add(toLookUp.last().getMatchingProperty());
-			JsonNode parent = getNode(toLookUp.head().toString());
-
-			if (parent != null && parent.isObject()) {
-				// start creating new nodes from the top
-				Collections.reverse(toCreate);
-				while (toCreate.size() > 0) {
-					String pathSegment = toCreate.remove(0);
-					ObjectNode newNode = JsonNodeFactory.instance.objectNode();
-					addChildNodeToParent(parent, pathSegment, newNode);
-					parent = newNode;
-				}
-				// return the last node in the path
-				return parent;
-			} else {
-				return createJsonNode(toLookUp.head(), toCreate);
+	private JsonNode createJsonNode(JsonPointer toLookUp , boolean createArray) {
+		JsonNode node = getNode(toLookUp);
+		if (node.isMissingNode()) {
+			node = createArray? JsonNodeFactory.instance.arrayNode(): JsonNodeFactory.instance.objectNode();
+			JsonPointer parentPtr = toLookUp.head();
+			if (parentPtr != null) {
+				String childProperty = toLookUp.last().getMatchingProperty();
+				JsonNode parent = createJsonNode(parentPtr, childProperty.equals("0"));
+				addChildNodeToParent(parent, childProperty, node);
 			}
-		} catch (Exception e) {
-			LOGGER.error("Exception occurred while trying to create new Json "
-				+ "Node during put operation " + e.getMessage());
-			return null;
 		}
+		return node;
 	}
 
 
@@ -841,6 +823,10 @@ public class JsonDataObj implements DataObj {
 			LOGGER.error("Not able to parse json: " + json);
 			return MissingNode.getInstance();
 		}
+	}
+
+	protected  JsonNode getNode(JsonPointer pathPointer) {
+		return objRoot.at(pathPointer);
 	}
 
 	protected JsonNode getNode(String path) {
