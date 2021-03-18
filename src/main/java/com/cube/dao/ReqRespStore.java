@@ -112,7 +112,8 @@ public interface ReqRespStore extends DataStore {
     	Instant timeStamp = Instant.now();
 			RecordingBuilder recordingBuilder = new RecordingBuilder(
 					recording.customerId, recording.app, recording.instanceId, recording.collection)
-					.withStatus(recording.status).withTemplateSetVersion(recording.templateVersion)
+					.withStatus(recording.status).withTemplateSetName(recording.templateSetName)
+				    .withTemplateSetLabel(recording.templateSetLabel)
 					.withName(recording.name.concat("-").concat(timeStamp.toString())).withArchived(true)
 					.withUserId(recording.userId).withTags(recording.tags)
 					.withId(recording.id).withUpdateTimestamp(timeStamp)
