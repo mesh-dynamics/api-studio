@@ -211,6 +211,7 @@ class SaveToCollection extends React.Component<
           const tabOutgoingReqIndex = i
           const parsedDataIndex = tabOutgoingReqIndex + 1 // since 0 is ingress data
           dispatch(httpClientActions.updateOutgoingTabWithNewData(
+            tabToProcess.id,
             tabToProcess.outgoingRequests[tabOutgoingReqIndex].id,
             parsedData[parsedDataIndex],
             collection!.collec,

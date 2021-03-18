@@ -692,7 +692,7 @@ export const httpClientActions: IActionsType = {
         return {type: httpClientConstants.UPDATE_TAB_WITH_NEW_DATA, data: {tabId, reqData, collectionId, recordingId}}   
     },
 
-    updateOutgoingTabWithNewData: (tabId, reqData, collectionId, recordingId) => {
-        return {type: httpClientConstants.UPDATE_OUTGOING_TAB_WITH_NEW_DATA, data: {tabId, reqData, collectionId, recordingId}}   
+    updateOutgoingTabWithNewData: (tabId, outgoingTabId, reqData, collectionId, recordingId) => {
+        return {type: httpClientConstants.UPDATE_OUTGOING_TAB_WITH_NEW_DATA, data: {tabId, outgoingTabId, reqData, collectionId, recordingId}}   
     },
 }
