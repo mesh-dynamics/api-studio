@@ -1191,13 +1191,20 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             return Optional.empty();
         }
         Optional<String> appAttributeRuleMapId = getStrField(doc, ATTRIBUTE_RULE_MAP_ID);
+        String templateSetName = getStrField(doc, TEMPLATE_SET_NAME_F).orElse(Utils.
+            extractTemplateSetNameAndLabel(version.get()).getLeft());
+        String templateSetLabel = getStrField(doc, TEMPLATE_SET_LABEL_F).orElse(Utils.
+            extractTemplateSetNameAndLabel(version.get()).getRight());
+
+        /*
         String templateSetName = getStrField(doc, TEMPLATE_SET_NAME_F).orElse(version.get());
         Optional<String> templateSetLabel = getStrField(doc, TEMPLATE_SET_LABEL_F);
+         */
 
         TemplateSet templateSet = new TemplateSet(customerId.get(), app.get(),
             creationTimestamp.get(), fetchTemplates? getVersionedTemplatesFromSolr(templateIds) : null ,
             fetchTemplates ? getVersionedAttributeRuleMapFromSolr(appAttributeRuleMapId) : null, templateSetName,
-            templateSetLabel.orElse(""));
+            templateSetLabel);
         return Optional.of(templateSet);
     }
 
