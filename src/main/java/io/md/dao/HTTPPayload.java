@@ -247,19 +247,7 @@ public class HTTPPayload extends LazyParseAbstractPayload {
 
 	@Override
 	public String getValAsString(String path) throws PathNotFoundException {
-		try {
-			return super.getValAsString(path);
-		} catch (PathNotFoundException e) {
-			List<String> caseVariants = hdrKeyCaseInsensitivePath(path);
-			for (String caseVariant : caseVariants) {
-				try {
-					return super.getValAsString(caseVariant);
-				} catch (PathNotFoundException e1) {
-					// do nothing
-				}
-			}
-		}
-		throw new PathNotFoundException();
+		return getVal(path).getValAsString("");
 	}
 
 
