@@ -4,7 +4,6 @@ package com.cube.golden;
 import static io.md.core.TemplateKey.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -19,12 +18,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ObjectMessage;
 
+import com.fasterxml.jackson.core.JsonPointer;
+
 import io.md.core.BatchingIterator;
 import io.md.core.Comparator;
+import io.md.core.CompareTemplate;
 import io.md.core.TemplateKey;
 import io.md.dao.Event;
 import io.md.dao.Event.EventBuilder;
-import io.md.dao.EventQuery;
+import io.md.dao.Event.EventType;
+import io.md.dao.EventQuery.Builder;
 import io.md.dao.MDTraceInfo;
 import io.md.dao.Recording;
 import io.md.dao.ReqRespMatchResult;
@@ -34,7 +37,9 @@ import io.md.dao.RequestPayload;
 import io.md.dao.ResponsePayload;
 import io.md.utils.Constants;
 import io.md.utils.UtilException;
+import io.md.utils.Utils;
 
+import com.cube.core.CompareTemplateVersioned;
 import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.RecordingOperationSetMeta;
 
@@ -157,6 +162,55 @@ public class RecordingUpdate {
         return config.rrstore.getRecordingOperationSetSP(recordingOperationSetId, service, path);
     }
 
+    private RecordingOperationSetSP cloneRecordingOperationSetSP(RecordingOperationSetSP org){
+        return new RecordingOperationSetSP(org.id , org.operationSetId , org.customer , org.app , org.service , org.path , org.operationsList);
+    }
+
+
+    private Optional<RecordingOperationSetSP> getRecordingOperation(TemplateSet templateSet , Map<String , RecordingOperationSetSP> recordingOperationSetSPSMap , Event recordRequest , Type filterType , ReqRespUpdateOperation.Type filter)
+    {
+
+        String servicePathKey = String.format("%s-%s" , recordRequest.service , recordRequest.apiPath);
+        RecordingOperationSetSP recordingOperationSetSP = recordingOperationSetSPSMap.get(servicePathKey);
+        if(recordingOperationSetSP==null) return Optional.empty();
+
+        TemplateKey templateKey = new TemplateKey(templateSet.version,
+            recordRequest.customerId,
+            recordRequest.app, recordRequest.service, recordRequest.apiPath,
+            filterType, Utils.extractMethod(recordRequest),
+            recordRequest.getCollection());
+
+        Optional<CompareTemplate> compareTemplateOpt;
+        try{
+            compareTemplateOpt = config.rrstore.getCompareTemplate(templateKey);
+        }catch (Exception e){
+            LOGGER.error("getCompareTemplate error "+templateKey , e);
+            return Optional.empty();
+        }
+        if(compareTemplateOpt.isEmpty()) return Optional.empty();
+
+        CompareTemplate compareTemplate = compareTemplateOpt.get();
+        RecordingOperationSetSP newRecOpSetSP = cloneRecordingOperationSetSP(recordingOperationSetSP);
+        newRecOpSetSP.operationsList = newRecOpSetSP.operationsList.stream().filter(op->op.eventType == filter).map(updateOp->{
+            JsonPointer jsonpath = JsonPointer.valueOf(updateOp.jsonpath);
+            Optional<Integer> last =  Utils.strToInt(jsonpath.last().getMatchingProperty());
+            if(last.isEmpty()) return updateOp;
+            if(!compareTemplate.isParentArray(updateOp.jsonpath)) return updateOp;
+            //replace the whole array instead of an individiual item
+            // normalised path is the parent path
+            String parentPath = jsonpath.head().toString();
+
+            LOGGER.info("Updating the json path of the ReqRespUpdateOperation from "+updateOp.jsonpath + " to "+parentPath + " "+updateOp);
+            ReqRespUpdateOperation normalisedReqRespOp = new ReqRespUpdateOperation(updateOp.operationType , parentPath);
+            normalisedReqRespOp.eventType = updateOp.eventType;
+            return normalisedReqRespOp;
+
+        }).collect(Collectors.toList());
+
+
+        return Optional.of(newRecOpSetSP);
+    }
+
     /*
      * apply the operations on a recording collection
      */
@@ -164,17 +218,20 @@ public class RecordingUpdate {
     //  time, so that comparator need not be lookup up repeatedly
     public boolean applyRecordingOperationSet(String replayId, String newCollectionName,
                                               String recordingOperationSetId
-        , Recording originalRec, String newTemplateSetVersion) {
+        , Recording originalRec, TemplateSet updatedTemplatedSet) {
 
         // use recordingOperationSetId to fetch the list of operations
         // use replayid to fetch the analyze results (reqrespmatchresults)
         // apply the operations to the results
         // create a new collection
         // store it
-        Map<String, RecordingOperationSetSP> apiPathVsUpdateOperationSet =
-            config.rrstore.getRecordingOperationSetSPs(recordingOperationSetId)
-                .collect(Collectors.toMap(set -> set.path
-                    , Function.identity()));
+        List<RecordingOperationSetSP> recordingOperationSetSPS = config.rrstore.getRecordingOperationSetSPs(recordingOperationSetId).collect(Collectors.toList());
+        Map<String , RecordingOperationSetSP> recordingOperationSetSPSMap = recordingOperationSetSPS.stream().collect(Collectors.toMap(op->op.service.concat("-").concat(op.path)  , Function.identity()));
+
+        Map<String, RecordingOperationSetSP> reqMethodPathVsRecordingOpSet  =  new HashMap<>();
+        Map<String, RecordingOperationSetSP> respMethodPathVsRecordingOpSet =  new HashMap<>();
+        RecordingOperationSetSP dummyEmptyRecordingOperationSetSP = new RecordingOperationSetSP();
+
         Stream<ReqRespMatchResult> results = getReqRespMatchResultStream(replayId);
         List<ReqRespMatchResult> resList = results.collect(Collectors.toList());
         Map<String, Event> reqMap = new HashMap<>();
@@ -189,7 +246,7 @@ public class RecordingUpdate {
                         .collect(Collectors.toList());
 
                     if (!reqIds.isEmpty()) {
-                        EventQuery.Builder reqBuilder = new EventQuery.Builder(
+                        Builder reqBuilder = new Builder(
                             originalRec.customerId,
                             originalRec.app,
                             Collections.emptyList());
@@ -206,6 +263,8 @@ public class RecordingUpdate {
                             }
                         });
                     }
+
+
 
                     Stream<Event> events = res.stream().flatMap(reqRespMatchResult -> {
                         try {
@@ -229,44 +288,45 @@ public class RecordingUpdate {
                             Optional<Event> replayResponse = reqRespMatchResult.replayReqId
                                 .map(respMap::get);
 
-                            Optional<RecordingOperationSetSP> updateOperationSet = Optional
-                                .ofNullable(
-                                    apiPathVsUpdateOperationSet.get(recordRequest.apiPath));
-                            List<ReqRespUpdateOperation> operationsList = updateOperationSet
-                                .map(updateOpSet -> updateOpSet.operationsList)
-                                .orElse(Collections.emptyList());
+                            String serviceMethodApiPathKey = recordRequest.service.concat("-").concat(Utils.extractMethod(recordRequest).orElse("*")).concat("-").concat(recordRequest.apiPath);
+                            RecordingOperationSetSP reqUpdateOperationSet = Optional
+                                .ofNullable(reqMethodPathVsRecordingOpSet.get(serviceMethodApiPathKey)).orElseGet(()->{
+                                    RecordingOperationSetSP recOpSetSp = getRecordingOperation(updatedTemplatedSet , recordingOperationSetSPSMap , recordRequest , Type.RequestCompare , ReqRespUpdateOperation.Type.Request ).orElse(dummyEmptyRecordingOperationSetSP);
+                                    reqMethodPathVsRecordingOpSet.put(serviceMethodApiPathKey , recOpSetSp);
+                                    return recOpSetSp;
+                                });
 
-                            Map<Boolean, List<ReqRespUpdateOperation>> operationTypeVsList
-                                = operationsList.stream().collect(Collectors.partitioningBy(
-                                op -> op.eventType == ReqRespUpdateOperation.Type.Request));
+                            RecordingOperationSetSP respUpdateOperationSet = Optional
+                                .ofNullable(respMethodPathVsRecordingOpSet.get(serviceMethodApiPathKey)).orElseGet(()->{
+                                RecordingOperationSetSP recOpSetSp = getRecordingOperation(updatedTemplatedSet , recordingOperationSetSPSMap , recordRequest , Type.ResponseCompare , ReqRespUpdateOperation.Type.Response ).orElse(dummyEmptyRecordingOperationSetSP);
+                                    respMethodPathVsRecordingOpSet.put(serviceMethodApiPathKey , recOpSetSp);
+                                return recOpSetSp;
+                            });
 
-                            List<ReqRespUpdateOperation> reqOperationList = operationTypeVsList
-                                .get(true);
-                            List<ReqRespUpdateOperation> responseOperationList = operationTypeVsList
-                                .get(false);
+
+                            List<ReqRespUpdateOperation> reqOperationList = reqUpdateOperationSet.operationsList;
+                            List<ReqRespUpdateOperation> responseOperationList = respUpdateOperationSet.operationsList;
 
                             String newReqId = generateReqId(recordRequest.reqId, newCollectionName);
                             Optional<Event> transformedResponseOpt = recordResponseOpt
                                 .map(UtilException
                                     .rethrowFunction(
-                                        recordResponse -> recordResponse
-                                            .applyTransform(replayResponse
-                                                , responseOperationList, newCollectionName,
-                                                newReqId,
-                                                Optional.empty())));
+                                        recordResponse -> recordResponse.applyTransform(replayResponse
+                                            , responseOperationList, newCollectionName,
+                                            newReqId, Optional.empty())));
 
-                            TemplateKey key = new TemplateKey(newTemplateSetVersion,
+                            TemplateKey requestKey = new TemplateKey(updatedTemplatedSet.version,
                                 originalRec.customerId,
                                 originalRec.app, recordRequest.service, recordRequest.apiPath,
-                                Type.RequestMatch, io.md.utils.Utils.extractMethod(recordRequest),
+                                Type.RequestMatch, Utils.extractMethod(recordRequest),
                                 originalRec.collection);
-                            Comparator comparator = config.rrstore.getComparator(key
-                                , Event.EventType.HTTPRequest);
+                            Comparator reqComparator = config.rrstore.getComparator(requestKey
+                                , EventType.HTTPRequest);
 
                             // Transform request
                             Event transformedRequest = recordRequest.applyTransform(replayRequest
                                 , reqOperationList, newCollectionName, newReqId
-                                , Optional.of(comparator));
+                                , Optional.of(reqComparator));
 
                             LOGGER.debug(new ObjectMessage(Map.of(Constants.MESSAGE
                                 , "Saving transformed request/response",

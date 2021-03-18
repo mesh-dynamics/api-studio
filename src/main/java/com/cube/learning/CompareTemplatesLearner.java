@@ -6,7 +6,6 @@ import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
 import com.cube.learning.TemplateEntryMeta.Action;
 import com.cube.learning.TemplateEntryMeta.RuleStatus;
-import com.cube.utils.AnalysisUtils;
 
 import io.md.core.Comparator.Diff;
 import io.md.core.Comparator.Resolution;
@@ -21,6 +20,8 @@ import io.md.core.TemplateKey;
 import io.md.core.TemplateKey.Type;
 import io.md.dao.ReqRespMatchResult;
 import io.md.services.DataStore.TemplateNotFoundException;
+import io.md.utils.Utils;
+
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -349,7 +350,7 @@ public class CompareTemplatesLearner {
             new ArrayList<>(templatesMap.values()), Optional.empty(), templateVersion,
             // TODO: *IMP* Revert this change to pass the timestamp once version management is
             // fully in place.
-            // LocalDateTime.now().format(AnalysisUtils.templateLabelFormatter));
+            // LocalDateTime.now().format(Utils.templateLabelFormatter));
             "");
     }
 

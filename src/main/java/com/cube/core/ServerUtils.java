@@ -12,6 +12,7 @@ import io.md.dao.Recording.RecordingType;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -68,6 +69,7 @@ import io.md.utils.Utils;
 import com.cube.dao.RecordingBuilder;
 import com.cube.dao.ReqRespStore;
 import com.cube.golden.TemplateSet;
+import com.cube.utils.AnalysisUtils;
 import com.cube.ws.Config;
 
 import redis.clients.jedis.Jedis;
@@ -420,12 +422,19 @@ public class ServerUtils {
     }
 
 
-    public static Recording createRecordingObjectFrom(Recording recording, Optional<String> templateVersion,
-        Optional<String> name, Optional<String> userId, Instant timeStamp, String labelValue, RecordingType type) {
+    public static Recording createRecordingObjectFrom(Recording recording, Optional<String> templateSetName,
+        Optional<String> templateSetLabel, Optional<String> name, Optional<String> userId
+        , Instant timeStamp, String labelValue, RecordingType type) {
         String collection = UUID.randomUUID().toString();
+        String templateSetNameFinal = templateSetName.orElse(recording.templateSetName);
+        String templateSetLabelFinal = templateSetLabel.orElse(
+            recording.templateSetLabel);
+        String templateSetVersion = Utils.createTemplateSetVersion(templateSetNameFinal,
+            templateSetLabelFinal);
         RecordingBuilder recordingBuilder = new RecordingBuilder(
             recording.customerId, recording.app, recording.instanceId, collection)
-            .withStatus(RecordingStatus.Completed).withTemplateSetVersion(templateVersion.orElse(recording.templateVersion))
+            .withStatus(RecordingStatus.Completed).withTemplateSetName(templateSetNameFinal)
+            .withTemplateSetLabel(templateSetLabelFinal)
             .withName(name.orElse(recording.name))
             .withUserId(userId.orElse(recording.userId)).withTags(recording.tags).withUpdateTimestamp(timeStamp)
             .withRootRecordingId(recording.rootRecordingId).withLabel(labelValue)
@@ -461,14 +470,6 @@ public class ServerUtils {
 	    return serialize(list).orElse("[]");
     }
 
-    public static String createTemplateSetVersion(String templateSetName, String templateSetLabel) {
-	    return templateSetName + (!templateSetLabel.isEmpty() ? "::" + templateSetLabel : "");
-    }
 
-    public static Pair<String, String> extractTemplateSetNameAndLabel(String templateSetVersion) {
-	    String[] splits = templateSetVersion.split("::");
-	    if (splits.length == 1 ) return Pair.of(templateSetVersion, "");
-	    return Pair.of(splits[0] , splits[1]);
-    }
 
 }

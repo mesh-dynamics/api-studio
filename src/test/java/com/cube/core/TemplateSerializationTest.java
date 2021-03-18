@@ -24,6 +24,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import io.md.core.CompareTemplate;
 import io.md.core.TemplateEntry;
 import io.md.utils.CubeObjectMapperProvider;
+import io.md.utils.Utils;
 
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.ReqRespStoreSolr;
@@ -122,9 +123,9 @@ public class TemplateSerializationTest {
         TemplateRegistries templateRegistries2 = mapper.readValue(data2, TemplateRegistries.class);
 
         TemplateSet tset1 = ServerUtils.templateRegistriesToTemplateSet(templateRegistries1, CUSTID, app, "randomTest" , LocalDateTime
-            .now().format(AnalysisUtils.templateLabelFormatter));
+            .now().format(Utils.templateLabelFormatter));
         TemplateSet tset2 = ServerUtils.templateRegistriesToTemplateSet(templateRegistries2, CUSTID, app, "randomTest" , LocalDateTime
-            .now().format(AnalysisUtils.templateLabelFormatter));
+            .now().format(Utils.templateLabelFormatter));
 
         reqRespStore.saveTemplateSet(tset1);
 
