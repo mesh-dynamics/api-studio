@@ -1,6 +1,13 @@
 package io.md.dao;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -14,6 +21,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.ser.std.ByteArraySerializer;
 
 import io.md.core.WrapUnwrapContext;
@@ -31,6 +40,8 @@ public class HTTPPayload extends LazyParseAbstractPayload {
 	private static final Logger LOGGER = LogMgr.getLogger(HTTPPayload.class);
 	static final String BODY = "body";
 	static final String PAYLOADSTATEPATH = "/payloadState";
+
+	private static Pattern pattern = Pattern.compile("^/hdrs/([^/\\n$]+)");
 
 	public enum HTTPPayloadState {
 		WrappedEncoded,
@@ -197,5 +208,47 @@ public class HTTPPayload extends LazyParseAbstractPayload {
 			LOGGER.error("Payload not an object, should not happen");
 		}
 	}
+
+	private List<String> hdrKeyCaseInsensitivePath(String path) {
+		List<String> result = new ArrayList<>( );
+		Matcher matcher = pattern.matcher(path);
+		if (matcher.find()) {
+			String hdrKeyValue = matcher.group(1);
+			String[] parts = hdrKeyValue.split("[-]");
+			String beforeMatch = path.substring(0, matcher.start(1));
+			String afterMatch = path.substring(matcher.end(1));
+			String allLower = Arrays.stream(parts).sequential()
+				.map(String::toLowerCase).collect(Collectors.joining("-"));
+			String allCaps = Arrays.stream(parts).sequential()
+				.map(String::toUpperCase).collect(Collectors.joining("-"));
+			String firstLetterCaps = Arrays.stream(parts).sequential().map(String::toLowerCase)
+				.map(x -> x.substring(0,1).toUpperCase().concat(x.substring(1)))
+				.collect(Collectors.joining("-"));
+			result.add(beforeMatch.concat(allLower).concat(afterMatch));
+			result.add(beforeMatch.concat(allCaps).concat(afterMatch));
+			result.add(beforeMatch.concat(firstLetterCaps).concat(afterMatch));
+		}
+		return result;
+	}
+
+
+	@Override
+	public DataObj getVal(String path) {
+		DataObj originalResult = super.getVal(path);
+		if (originalResult == null || ((JsonDataObj) originalResult).objRoot.isMissingNode()) {
+			originalResult = hdrKeyCaseInsensitivePath(path).stream().map(super::getVal)
+				.filter(dataObj -> dataObj != null && !((JsonDataObj) dataObj)
+					.objRoot.isMissingNode()).findAny()
+				.orElse(new JsonDataObj(MissingNode.getInstance(),
+					dataObj.jsonMapper));
+		}
+		return originalResult;
+	}
+
+	@Override
+	public String getValAsString(String path) throws PathNotFoundException {
+		return getVal(path).getValAsString("");
+	}
+
 
 }

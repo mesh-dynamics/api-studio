@@ -34,6 +34,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.protobuf.Descriptors.DescriptorValidationException;
 
 import io.md.cryptography.JcaEncryption;
@@ -242,7 +243,6 @@ public class EventPayloadTests {
 				null, "GET", null, "a/b/c"));
 			httpRequestEvent = eventBuilder.createEvent();
 
-
 			eventBuilder = new EventBuilder(cubeMetaInfo, traceInfo
 				, RunType.Record, "/minfo/health", EventType.HTTPResponse
 				, Optional.empty(), "random-req-id", "random-collection", RecordingType.Golden).withRunId(traceInfo.traceId);
@@ -372,6 +372,26 @@ public class EventPayloadTests {
 
 
 		}
+
+		@Test
+		public void testHttpRequestDynamicPut() throws IOException, PathNotFoundException {
+			HTTPRequestPayload requestPayload = (HTTPRequestPayload) httpRequestEvent.payload;
+			requestPayload.put("/hdrs/custom-header/0" , new JsonDataObj(new TextNode("custom-value"), /*objectMapper.readValue("[\"custom-value\"]"
+				, JsonNode.class),*/ objectMapper));
+			assert (requestPayload.getValAsString("/hdrs/custom-header/0")).equals("custom-value");
+ 		}
+
+		@Test
+		public void testCaseInsensitiveHeaderSearch() throws  IOException, PathNotFoundException {
+			HTTPRequestPayload requestPayload = (HTTPRequestPayload) httpRequestEvent.payload;
+			requestPayload.put("/hdrs/Custom-Header/0" , new JsonDataObj(new TextNode("custom-value"), /*objectMapper.readValue("[\"custom-value\"]"
+				, JsonNode.class),*/ objectMapper));
+			assert (((JsonDataObj) requestPayload.getVal("/hdrs/custom-header/0")).getRoot()
+				.textValue().equals("custom-value"));
+			assert (requestPayload.getValAsString("/hdrs/custom-header/0").equals("custom-value"));
+
+ 		}
+
 
 		@Test
 		public void testHttpJsonResponseEvent() throws IOException, PathNotFoundException {

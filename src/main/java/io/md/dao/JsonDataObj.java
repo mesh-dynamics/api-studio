@@ -2,14 +2,18 @@ package io.md.dao;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 import javax.ws.rs.core.MediaType;
@@ -697,70 +701,104 @@ public class JsonDataObj implements DataObj {
 		return new JsonDataObj(transformedRoot, jsonMapper);
 	}
 
-	@Override
 	public boolean put(String path, DataObj value) throws PathNotFoundException {
-		JsonPointer pathPtr = JsonPointer.compile(path);
-		JsonNode valParent = getNode(pathPtr.head().toString());
-		if (valParent != null && valParent.isObject()) {
-			ObjectNode valParentObj = (ObjectNode) valParent;
-			String fieldName = pathPtr.last().getMatchingProperty();
-			valParentObj.set(fieldName, ((JsonDataObj)value).objRoot);
+		return put(path, value, true);
+	}
+
+	public boolean addChildNodeToParent(JsonNode parent, String fieldOrIndex, JsonNode child) {
+		if (parent != null && parent.isObject()) {
+			ObjectNode parentObj = (ObjectNode) parent;
+			parentObj.set(fieldOrIndex, child);
 			return true;
-		} else if (valParent != null && valParent.isArray()) {
+		} else if (parent != null && parent.isArray()) {
 			// Assumption: the objRoot for value won't be singleton but
 			// wrapped in an array hence an array node. In this way it
 			// would be consistent with queryParams/hdrs being in an array
-			ArrayNode valParentObj = (ArrayNode) valParent;
-			String indexStr = pathPtr.last().getMatchingProperty();
-			Optional<Integer> index = Utils.strToInt(indexStr);
+			ArrayNode parentArray = (ArrayNode) parent;
+			Optional<Integer> index = Utils.strToInt(fieldOrIndex);
 			index.ifPresent(ind -> {
 				// single index to be replaced
 				// get() on objRoot will return null in case of any other node than ArrayNode
-				JsonNode valToPut = ((JsonDataObj) value).objRoot.get(0);
-				if(valToPut!=null)
-				{
-					valParentObj.set(ind, valToPut);
-				} else {
-					// objRoot is a singleton and not an array
-					valToPut = ((JsonDataObj) value).objRoot;
-					valParentObj.set(ind, valToPut);
+				JsonNode valToPut = child.get(0);
+				if (valToPut == null) valToPut = child;
+				if (parentArray.size() == 0 || ind >= parentArray.size()) {
+					LOGGER.info("Using add instead of set index as index out of bound");
+					parentArray.add(valToPut);
 				}
+				else parentArray.set(ind, valToPut);
+				// objRoot is a singleton and not an array
 			});
 			if (!index.isPresent()) {
 				Optional<Integer> ind = Utils
-					.strToInt(indexStr.substring(0, indexStr.length() - 1));
+					.strToInt(fieldOrIndex.substring(0, fieldOrIndex.length() - 1));
 				if (ind.isPresent()) {
 					int i = ind.get();
 					// Check for special character presence
-					if (indexStr.endsWith("*")) {
+					if (fieldOrIndex.endsWith("*")) {
 						// Partial replacement from that(inclusive) index onwards
 						// "0*" will replace entire path
 
 						// Preserve path segments upto ind and remove all nodes from beyond that
-						for (int j = valParentObj.size() - 1; j >= i; j--) {
-							valParentObj.remove(j);
+						for (int j = parentArray.size() - 1; j >= i; j--) {
+							parentArray.remove(j);
 						}
-						valParentObj.addAll((ArrayNode) ((JsonDataObj) value).objRoot);
+						parentArray.addAll((ArrayNode) child);
 
-					} else if (indexStr.endsWith("^")) {
+					} else if (fieldOrIndex.endsWith("^")) {
 						// insertion in between from that index
-						for (int j = 0; j < ((JsonDataObj) value).objRoot.size(); j++) {
-							valParentObj.insert(i + j, ((JsonDataObj) value).objRoot.get(j));
+						for (int j = 0; j < child.size(); j++) {
+							parentArray.insert(i + j,child.get(j));
 						}
 					} else {
 						LOGGER.error("Cannot recognise wildcard format for injecting in array");
 					}
-				} else if (indexStr.equals("*")) {
+				} else if (fieldOrIndex.equals("*")) {
 					// Add all at the end
-					valParentObj.addAll((ArrayNode) ((JsonDataObj) value).objRoot);
+					parentArray.addAll((ArrayNode) child);
 				} else {
 					LOGGER.error("Cannot convert string to integer in put method");
 				}
 			}
 			return true;
-		} else {
-			throw new PathNotFoundException(path);
 		}
+		return false;
+	}
+
+	private NumberFormat numberFormat = NumberFormat.getIntegerInstance();
+
+	private boolean isNumber(String property) {
+		boolean isNumber = false;
+		try {
+			numberFormat.parse(property);
+			isNumber = true;
+		} catch (ParseException ignored) {
+		}
+		return isNumber;
+	}
+
+
+	public boolean put(String path, DataObj value, boolean createPath) throws PathNotFoundException {
+		JsonPointer pathPtr = JsonPointer.compile(path);
+		JsonNode valParent = getNode(pathPtr.head());
+		String childProperty = pathPtr.last().getMatchingProperty();
+		if (valParent.isMissingNode() && createPath)
+			valParent = createJsonNode(pathPtr.head() , isNumber(childProperty));
+		return addChildNodeToParent(valParent, childProperty,
+			((JsonDataObj)value).objRoot);
+	}
+
+	private JsonNode createJsonNode(JsonPointer toLookUp, boolean createArray) {
+		JsonNode node = getNode(toLookUp);
+		if (node.isMissingNode()) {
+			node = createArray? JsonNodeFactory.instance.arrayNode(): JsonNodeFactory.instance.objectNode();
+			JsonPointer parentPtr = toLookUp.head();
+			if (parentPtr != null) {
+				String childProperty = toLookUp.last().getMatchingProperty();
+				JsonNode parent = createJsonNode(parentPtr, isNumber(childProperty));
+				addChildNodeToParent(parent, childProperty, node);
+			}
+		}
+		return node;
 	}
 
 
@@ -803,6 +841,10 @@ public class JsonDataObj implements DataObj {
 			LOGGER.error("Not able to parse json: " + json);
 			return MissingNode.getInstance();
 		}
+	}
+
+	protected  JsonNode getNode(JsonPointer pathPointer) {
+		return objRoot.at(pathPointer);
 	}
 
 	protected JsonNode getNode(String path) {
