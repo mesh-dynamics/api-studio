@@ -409,4 +409,12 @@ public class AnalyzeWSController {
         validation.validateCustomerName(authentication,customerId);
         return cubeServerService.fetchGetResponse(request, body);
     }
+
+    @GetMapping("/getTemplateSetWithName/{customerId}/{app}/{templateSetName}")
+    public ResponseEntity getTemplateSetWithName(HttpServletRequest request, @RequestBody Optional<String> body,
+        Authentication authentication, @PathVariable String customerId, @PathVariable String app,
+        @PathVariable String templateSetName) {
+        validation.validateCustomerName(authentication,customerId);
+        return cubeServerService.fetchGetResponse(request, body);
+    }
 }
