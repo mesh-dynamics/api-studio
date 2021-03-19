@@ -377,6 +377,55 @@ public class AnalyzeWS {
     }
 
     @GET
+    @Path("/getTemplateSetWithName/{customerId}/{app}/{templateSetName}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getTemplateSetWithName(@Context UriInfo uriInfo, @PathParam("customerId")
+        String customerId, @PathParam("app") String app,
+        @PathParam("templateSetName") String templateSetName) {
+
+        MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+
+        Optional<String> templateSetLabel = Optional
+            .ofNullable(queryParams.getFirst("templateSetLabel"));
+
+        return templateSetLabel.map(tsLabel -> {
+            try {
+                return rrstore.getTemplateSet(customerId, app, io.md.utils.Utils
+                    .createTemplateSetVersion(templateSetName, tsLabel))
+                    .map(UtilException.rethrowFunction(
+                        templateSet -> Response.ok()
+                            .entity(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(templateSet))
+                            .build()))
+                    .orElse(
+                        Response.serverError()
+                            .entity("Unable to find template set with name:" + templateSetName
+                                + " label:" + tsLabel)
+                            .build());
+            } catch (Exception e) {
+                return Response.serverError()
+                    .entity("Error while converting template set to json string "
+                        + e.getMessage()).build();
+            }
+        }).orElseGet(() -> {
+            try {
+                return rrstore.getLatestTemplateSet(customerId, app, Optional.of(templateSetName))
+                    .map(UtilException.rethrowFunction(templateSet -> Response.ok()
+                        .entity(jsonMapper.writerWithDefaultPrettyPrinter()
+                            .writeValueAsString(templateSet))
+                        .build()))
+                    .orElse(
+                        Response.serverError()
+                            .entity("Unable to find template set with name:" + templateSetName)
+                            .build());
+            } catch (Exception e) {
+                return Response.serverError()
+                    .entity("Error while converting template set to json string "
+                        + e.getMessage()).build();
+            }
+        });
+    }
+
+    @GET
     @Path("getTemplateSet/{customerId}/{appId}/{templateVersion}/")
     @Produces(MediaType.TEXT_PLAIN)
     public Response getTemplateSet(@Context UriInfo urlInfo, @PathParam("appId") String appId,
