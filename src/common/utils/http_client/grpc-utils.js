@@ -86,7 +86,6 @@ const extractGrpcBody = (grpcData, grpcConnectionSchema) => {
 
     if(!isValidJSON(data)) {
         const errorMessage = "Grpc data should be valid JSON object";
-        alert(errorMessage);
         throw new Error(errorMessage);    
     }
 

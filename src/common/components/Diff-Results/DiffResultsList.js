@@ -5,7 +5,7 @@ import {
     FormControl, 
     Glyphicon, 
     Label, 
-    ButtonGroup, Button
+    ButtonGroup, Button, Modal
 } from "react-bootstrap";
 import ReactDiffViewer from "../../utils/diff/diff-main";
 import DiffResultsMissingItems from "./DiffResultsMissingItems";
@@ -41,7 +41,12 @@ export default class DiffResultsList extends Component {
 
             maxLinesLength: parseInt(config.diffMaxLinesLength),
             maxLinesLengthIncrement: parseInt(config.diffMaxLinesLengthIncrement),
-            enableClientSideDiff: config.enableClientSideDiff === "true" ? true : false
+            enableClientSideDiff: config.enableClientSideDiff === "true" ? true : false,
+            userAlertMessage: {
+                header: "",
+                message: ""
+            },
+            alertModalVisible: false,
         }
         this.inputElementRef = React.createRef();
     }
@@ -163,7 +168,7 @@ export default class DiffResultsList extends Component {
             return;
 
         if (!(value >= 0)) {
-            alert("Invalid index value")
+            this.showAlertModal("Error", "Invalid index value")
             console.error("Invalid index value")
             return;
         }
@@ -541,8 +546,46 @@ export default class DiffResultsList extends Component {
         );
     }
 
-    render() {
+    renderAlertModal = (isVisible, dismissHandler) => {
+        const { userAlertMessage: { header, message } } = this.state;
         return (
+            <Modal show={isVisible}>
+                <Modal.Header>
+                    <Modal.Title>{header}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <div>
+                        {message}
+                    </div>
+                </Modal.Body>
+                <Modal.Footer>
+                    <span onClick={dismissHandler} className="cube-btn">Dismiss</span>
+                </Modal.Footer>
+            </Modal>
+        );
+    };
+
+    handleAlertModalDismissClick = () => {
+        this.setState({ 
+            alertModalVisible: false,
+            userAlertMessage: {
+                header: "",
+                message: ""
+            }
+        });
+    }
+    
+    showAlertModal = (header, message) => this.setState({
+        alertModalVisible: true,
+        userAlertMessage: {
+            header,
+            message,
+        }
+    })
+
+    render() {
+        const {alertModalVisible} = this.state;
+        return (<>
             <div>
                 {this.props.isFetching 
                 ? this.renderLoading() 
@@ -554,6 +597,7 @@ export default class DiffResultsList extends Component {
                     {this.renderPageNav()}
                 </Fragment>}
             </div>
-        )
+            {alertModalVisible && this.renderAlertModal(alertModalVisible, this.handleAlertModalDismissClick)} 
+        </>)
     }
 }

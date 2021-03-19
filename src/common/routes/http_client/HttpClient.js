@@ -1,7 +1,7 @@
 import  React , { Component, Fragment, createContext } from "react";
 import { 
     Checkbox, FormGroup, FormControl, Glyphicon, 
-    DropdownButton, MenuItem, Label, Table, Button
+    DropdownButton, MenuItem, Label, Table, Button, Modal
 } from 'react-bootstrap';
 
 import HttpRequestMessage from "./HttpRequestMessage.tsx";
@@ -87,7 +87,8 @@ class HttpClient extends Component {
             prevSelectedTraceTableReqTabId: this.props.currentSelectedTab.selectedTraceTableReqTabId,
             prevSelectedTraceTableTestReqTabId: this.props.currentSelectedTab.selectedTraceTableTestReqTabId,
             httpRequestRef: null,
-            matchRequestShowPopup: false
+            matchRequestShowPopup: false,
+            showDiffErrorModal: false,
         };
         this.toggleMessageContents = this.toggleMessageContents.bind(this);
         this.handleSearchFilterChange = this.handleSearchFilterChange.bind(this);
@@ -207,7 +208,7 @@ class HttpClient extends Component {
         let selectedTraceTableReqTab, selectedTraceTableTestReqTab;
 
         if(hasTabDataChanged(currentSelectedTab)) {
-            alert("Please save the modified request before proceeding with the diff.")
+            this.setState({showDiffErrorModal: true});
             return
         }
 
@@ -243,6 +244,10 @@ class HttpClient extends Component {
                 throw new Error("Error");
             }
         }
+    }
+
+    handleCloseDiffErrorModal = () => {
+        this.setState({showDiffErrorModal: false});
     }
 
     handleShowCompleteDiffClick() {
@@ -548,7 +553,7 @@ class HttpClient extends Component {
         const isGrpc = currentSelectedTab.bodyType == "grpcData" && currentSelectedTab.paramsType == "showBody";
         const isDataReceivedAfterResponse = currentSelectedTab.progressState === httpClientConstants.AFTER_RESPONSE_RECEIVED_DATA;
         const responseBody = isGrpc && isDataReceivedAfterResponse ? selectedTraceTableReqTab.responseBody : "";
-        return (
+        return (<>
             <div>
                 <div style={{display: "flex"}}>
                     <div style={{ display: "flex", justifyContent: "flex-start", flex: 1}}>
@@ -1151,7 +1156,18 @@ class HttpClient extends Component {
                     </div>
                 )}
             </div>
-        );
+            <Modal show={this.state.showDiffErrorModal} onHide={this.handleCloseDiffErrorModal}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Error</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <p>{"Please save the modified request before proceeding with the diff."}</p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <div onClick={this.handleCloseDiffErrorModal} className="btn btn-sm cube-btn text-center">Close</div>
+                </Modal.Footer>
+            </Modal>
+        </>);
     }
 }
 
