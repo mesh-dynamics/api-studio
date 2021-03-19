@@ -378,7 +378,7 @@ public class AnalyzeWS {
 
     @GET
     @Path("/getTemplateSetWithName/{customerId}/{app}/{templateSetName}")
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.TEXT_PLAIN)
     public Response getTemplateSetWithName(@Context UriInfo uriInfo, @PathParam("customerId")
         String customerId, @PathParam("app") String app,
         @PathParam("templateSetName") String templateSetName) {
@@ -388,41 +388,45 @@ public class AnalyzeWS {
         Optional<String> templateSetLabel = Optional
             .ofNullable(queryParams.getFirst("templateSetLabel"));
 
-        return templateSetLabel.map(tsLabel -> {
+        Optional<TemplateSet> templateSet;
+
+        if (templateSetLabel.isPresent()) {
+            templateSet = rrstore.getTemplateSet(customerId, app, io.md.utils.Utils
+                .createTemplateSetVersion(templateSetName, templateSetLabel.get()));
+        } else {
+            templateSet = rrstore
+                .getLatestTemplateSet(customerId, app, Optional.of(templateSetName));
+        }
+
+        return templateSet.map(ts -> {
             try {
-                return rrstore.getTemplateSet(customerId, app, io.md.utils.Utils
-                    .createTemplateSetVersion(templateSetName, tsLabel))
-                    .map(UtilException.rethrowFunction(
-                        templateSet -> Response.ok()
-                            .entity(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(templateSet))
-                            .build()))
-                    .orElse(
-                        Response.serverError()
-                            .entity("Unable to find template set with name:" + templateSetName
-                                + " label:" + tsLabel)
-                            .build());
-            } catch (Exception e) {
-                return Response.serverError()
-                    .entity("Error while converting template set to json string "
-                        + e.getMessage()).build();
+
+                return writeResponseToFile("comparison_rules", templateSet, TemplateSet.class,
+                    false);
+
+            } catch (JsonProcessingException e) {
+                return Response.serverError().entity(
+                    Utils.buildErrorResponse(Constants.ERROR, Constants.JSON_PARSING_EXCEPTION,
+                        String.format(
+                            "Error in converting comparison rules to JSON for customer=%s, app=%s, name=%s, label=%s",
+                            customerId, app, templateSetName, templateSetLabel.orElse(""))))
+                    .build();
+            } catch (IOException e) {
+                return Response.serverError().entity(
+                    Utils.buildErrorResponse(Constants.ERROR, Constants.IO_EXCEPTION,
+                        String.format(
+                            "Error in comparison rules file creation for customer=%s, app=%s, name=%s, label=%s",
+                            customerId, app, templateSetName, templateSetLabel.orElse(""))))
+                    .build();
             }
-        }).orElseGet(() -> {
-            try {
-                return rrstore.getLatestTemplateSet(customerId, app, Optional.of(templateSetName))
-                    .map(UtilException.rethrowFunction(templateSet -> Response.ok()
-                        .entity(jsonMapper.writerWithDefaultPrettyPrinter()
-                            .writeValueAsString(templateSet))
-                        .build()))
-                    .orElse(
-                        Response.serverError()
-                            .entity("Unable to find template set with name:" + templateSetName)
-                            .build());
-            } catch (Exception e) {
-                return Response.serverError()
-                    .entity("Error while converting template set to json string "
-                        + e.getMessage()).build();
-            }
-        });
+        })
+            .orElse(Response.serverError()
+                .entity(Utils.buildErrorResponse(Constants.ERROR, Constants.NOT_PRESENT,
+                    String
+                        .format(
+                            "Unable to find templateSet for customer=%s, app=%s, name=%s, label=%s",
+                            customerId, app, templateSetName, templateSetLabel.orElse(""))))
+                .build());
     }
 
     @GET
@@ -2236,7 +2240,29 @@ public class AnalyzeWS {
 		return Response.ok().entity(jsonMap).build();
 	}
 
+    private Response writeResponseToFile(String fileName, Object object, Class clazz,
+        Boolean isCsv)
+        throws IOException {
+        String data, ext;
+        if (isCsv) {
+            CsvSchema csvSchema = csvMapper.schemaFor(clazz).withHeader();
+            data = csvMapper.writer(csvSchema).writeValueAsString(object);
+            ext = ".csv";
+        } else {
+            data = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
+            ext = ".json";
+        }
 
+        File file = new File("/tmp/" + fileName + "-" + UUID.randomUUID());
+        FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
+        Response.ResponseBuilder response = Response.ok((Object) file);
+        response.header("Content-Disposition", "attachment; filename=\"" + fileName + ext + "\"" );
+        response
+            .header("Access-Control-Expose-Headers", "Content-Disposition, X-Suggested-Filename");
+
+        return response.build();
+
+    }
 
 
 	/**
