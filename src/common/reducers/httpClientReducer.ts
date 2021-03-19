@@ -1208,17 +1208,18 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 tabs: tabs.map(eachTab => {
                     if (eachTab.id === data.tabId) {
                         eachTab.outgoingRequests.map((eachOutgoingTab) => {
-                            eachOutgoingTab.requestId = reqData.newReqId;
-                            eachOutgoingTab.collectionIdAddedFromClient = collectionId;
-                            eachOutgoingTab.traceIdAddedFromClient = reqData.newTraceId;
-                            eachOutgoingTab.recordingIdAddedFromClient = recordingId;
-                            eachOutgoingTab.eventData[0].reqId = reqData.newReqId;
-                            eachOutgoingTab.eventData[0].traceId = reqData.newTraceId;
-                            eachOutgoingTab.eventData[0].collection = collectionId;
-                            eachOutgoingTab.eventData[1].reqId = reqData.newReqId;
-                            eachOutgoingTab.eventData[1].traceId = reqData.newTraceId;
-                            eachOutgoingTab.eventData[1].collection = reqData.collec;
-                        
+                            if(eachOutgoingTab.id === data.outgoingTabId) { 
+                                eachOutgoingTab.requestId = reqData.newReqId;
+                                eachOutgoingTab.collectionIdAddedFromClient = collectionId;
+                                eachOutgoingTab.traceIdAddedFromClient = reqData.newTraceId;
+                                eachOutgoingTab.recordingIdAddedFromClient = recordingId;
+                                eachOutgoingTab.eventData[0].reqId = reqData.newReqId;
+                                eachOutgoingTab.eventData[0].traceId = reqData.newTraceId;
+                                eachOutgoingTab.eventData[0].collection = collectionId;
+                                eachOutgoingTab.eventData[1].reqId = reqData.newReqId;
+                                eachOutgoingTab.eventData[1].traceId = reqData.newTraceId;
+                                eachOutgoingTab.eventData[1].collection = reqData.collec;
+                            }
                             return {
                                 ...eachOutgoingTab
                             }

@@ -201,17 +201,24 @@ class ViewSelectedTestConfig extends React.Component {
     }
 
     handleChangeInBrowseCollection = (selectedCollectionObject) => {
-        const { dispatch, cube } = this.props;
+        const { dispatch, cube: {testConfig, templateSetNameLabelsList} } = this.props;
         const { 
             name,
             id: golden,
             templateVer: version,
-            collec: collectionId 
+            collec: collectionId,
+            templateSetName,
+            templateSetLabel 
         } = selectedCollectionObject;
-
+        
         dispatch(cubeActions.clearPreviousData());
+        
+        const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name, label}) => (name===templateSetName && label===templateSetLabel))
+        if(selectedTemplateSetNameLabel){
+            dispatch(cubeActions.setSelectedTemplateSetNameLabel(selectedTemplateSetNameLabel))
+        }
         dispatch(cubeActions.setSelectedTestIdAndVersion(collectionId, version, golden, name));
-        if(!cube.testConfig){
+        if(!testConfig){
             this.fetchServicesForGoldenSelected(golden);
         }
     };

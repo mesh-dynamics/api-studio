@@ -84,7 +84,7 @@ const selectProxyTargetForService = (proxyOptionParameters) => {
         url: inputUrl, 
     } = proxyOptionParameters;
     const parsedUrl = url.parse(inputUrl);
-    const inputUrlPath = decodeURIComponent(parsedUrl.pathname) + parsedUrl.search;
+    const inputUrlPath = decodeURIComponent(parsedUrl.pathname) + (parsedUrl.search || "");
 
     const { config:  { serviceConfigs } } = mockContext;
 
