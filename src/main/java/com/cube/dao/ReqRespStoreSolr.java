@@ -1153,6 +1153,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> templateSetName) {
         try {
             SolrQuery query = new SolrQuery("*:*");
+            addFilter(query, TYPEF, Types.TemplateSet.toString());
             addFilter(query, APPF, app);
             addFilter(query, CUSTOMERIDF, customer);
             addSort(query, TIMESTAMPF, false); // descending
