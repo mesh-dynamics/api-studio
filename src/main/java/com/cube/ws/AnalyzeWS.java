@@ -377,13 +377,15 @@ public class AnalyzeWS {
     }
 
     @GET
-    @Path("/getTemplateSetWithName/{customerId}/{app}/{templateSetName}")
+    @Path("/getTemplateSet/{customerId}/{app}")
     @Produces(MediaType.TEXT_PLAIN)
-    public Response getTemplateSetWithName(@Context UriInfo uriInfo, @PathParam("customerId")
-        String customerId, @PathParam("app") String app,
-        @PathParam("templateSetName") String templateSetName) {
+    public Response getTemplateSet(@Context UriInfo uriInfo, @PathParam("customerId")
+            String customerId, @PathParam("app") String app) {
 
         MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+
+        Optional<String> templateSetName = Optional
+            .ofNullable(queryParams.getFirst("templateSetName"));
 
         Optional<String> templateSetLabel = Optional
             .ofNullable(queryParams.getFirst("templateSetLabel"));
@@ -391,18 +393,22 @@ public class AnalyzeWS {
         Optional<TemplateSet> templateSet;
 
         if (templateSetLabel.isPresent()) {
-            templateSet = rrstore.getTemplateSet(customerId, app, io.md.utils.Utils
-                .createTemplateSetVersion(templateSetName, templateSetLabel.get()));
+            if (templateSetName.isPresent()) {
+                templateSet = rrstore.getTemplateSet(customerId, app, io.md.utils.Utils
+                    .createTemplateSetVersion(templateSetName.get(), templateSetLabel.get()));
+            } else {
+                templateSet = Optional.empty();
+            }
         } else {
             templateSet = rrstore
-                .getLatestTemplateSet(customerId, app, Optional.of(templateSetName));
+                .getLatestTemplateSet(customerId, app, templateSetName);
         }
 
         return templateSet.map(ts -> {
             try {
 
-                return writeResponseToFile("comparison_rules", templateSet, TemplateSet.class,
-                    false);
+                return ServerUtils.writeResponseToFile("comparison_rules", templateSet, TemplateSet.class,
+                    Optional.of(jsonMapper), Optional.empty());
 
             } catch (JsonProcessingException e) {
                 return Response.serverError().entity(
@@ -419,8 +425,7 @@ public class AnalyzeWS {
                             customerId, app, templateSetName, templateSetLabel.orElse(""))))
                     .build();
             }
-        })
-            .orElse(Response.serverError()
+        }).orElse(Response.serverError()
                 .entity(Utils.buildErrorResponse(Constants.ERROR, Constants.NOT_PRESENT,
                     String
                         .format(
@@ -438,22 +443,9 @@ public class AnalyzeWS {
         return rrstore.getTemplateSet(customerId, appId, templateVersion).map(templateSet -> {
             try {
 
-                String data = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(templateSet);
-                final String fileName = "comparison_rules", ext = ".json";
-
-                File file = new File("/tmp/" + fileName + "-" +
-                    (customerId + appId + Instant.now()).hashCode() +
-                    ext);
-
-                FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
-
-                Response.ResponseBuilder response = Response.ok(file);
-                response.header("Content-Disposition",
-                    "attachment; filename=\"" + fileName + ext + "\"");
-                response.header("Access-Control-Expose-Headers",
-                    "Content-Disposition, X-Suggested-Filename");
-
-                return response.build();
+                return ServerUtils
+                    .writeResponseToFile("comparison_rules", templateSet, TemplateSet.class,
+                        Optional.of(jsonMapper), Optional.empty());
 
             } catch (JsonProcessingException e) {
                 LOGGER.error(
@@ -534,22 +526,8 @@ public class AnalyzeWS {
 
             try {
 
-                CsvSchema csvSchema = csvMapper.schemaFor(TemplateEntryMeta.class).withHeader();
-                String data = csvMapper.writer(csvSchema).writeValueAsString(finalMetaList);
-
-                final String fileName = "learned_comparison_rules", ext = ".csv";
-
-                File file = new File(
-                    "/tmp/" + fileName + "-" + (replayId + Instant.now()).hashCode() + ext);
-
-                FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
-                Response.ResponseBuilder response = Response.ok((Object) file);
-                response
-                    .header("Content-Disposition", "attachment; filename=\"" + fileName + ext + "\"");
-                response.header("Access-Control-Expose-Headers",
-                    "Content-Disposition, X-Suggested-Filename");
-
-                return response.build();
+                return ServerUtils.writeResponseToFile("learned_comparison_rules", finalMetaList,
+                    TemplateEntryMeta.class, Optional.empty(), Optional.of(csvMapper));
 
             } catch (IOException e) {
                 String errorString =  String.format("Error in file creation for replay=%s", replayId);
@@ -2240,29 +2218,7 @@ public class AnalyzeWS {
 		return Response.ok().entity(jsonMap).build();
 	}
 
-    private Response writeResponseToFile(String fileName, Object object, Class clazz,
-        Boolean isCsv)
-        throws IOException {
-        String data, ext;
-        if (isCsv) {
-            CsvSchema csvSchema = csvMapper.schemaFor(clazz).withHeader();
-            data = csvMapper.writer(csvSchema).writeValueAsString(object);
-            ext = ".csv";
-        } else {
-            data = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
-            ext = ".json";
-        }
 
-        File file = new File("/tmp/" + fileName + "-" + UUID.randomUUID());
-        FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
-        Response.ResponseBuilder response = Response.ok((Object) file);
-        response.header("Content-Disposition", "attachment; filename=\"" + fileName + ext + "\"" );
-        response
-            .header("Access-Control-Expose-Headers", "Content-Disposition, X-Suggested-Filename");
-
-        return response.build();
-
-    }
 
 
 	/**

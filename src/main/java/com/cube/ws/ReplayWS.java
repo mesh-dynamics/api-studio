@@ -362,7 +362,9 @@ public class ReplayWS extends ReplayBasicWS {
             List<InjectionExtractionMeta> finalMetaList = diLearner
                 .generateRules(discardSingleValues);
 
-            return writeResponseToFile("learned_context_propagation_rules", finalMetaList, InjectionExtractionMeta.class, true);
+            return ServerUtils
+                .writeResponseToFile("learned_context_propagation_rules", finalMetaList,
+                    InjectionExtractionMeta.class, Optional.empty(), Optional.of(csvMapper));
 
         } catch (JsonProcessingException e) {
             LOGGER.error(
@@ -442,7 +444,8 @@ public class ReplayWS extends ReplayBasicWS {
             customerId, app, version);
         Response resp = dynamicInjectionConfig.map(d -> {
             try{
-              return writeResponseToFile("context_propagation_rules", d, DynamicInjectionConfig.class , false);
+                return ServerUtils.writeResponseToFile("context_propagation_rules", d,
+                    DynamicInjectionConfig.class, Optional.of(jsonMapper), Optional.empty());
             } catch (JsonProcessingException e) {
                 LOGGER.error(String.format("Error in converting DynamicInjectionConfig object to Json for customerId=%s, app=%s, version=%s",
                     customerId, app, version), e);
@@ -477,7 +480,9 @@ public class ReplayWS extends ReplayBasicWS {
                 List<StaticInjectionMeta> staticValues = StaticInjection.getStaticMetasFromDynamicConfig(d);
 
                 final String fileName = "static_injection_rules";
-                return writeResponseToFile(fileName, staticValues, StaticInjectionMeta.class, true);
+                return ServerUtils
+                    .writeResponseToFile(fileName, staticValues, StaticInjectionMeta.class,
+                        Optional.empty(), Optional.of(csvMapper));
 
             } catch (JsonProcessingException e) {
                 LOGGER.error(String.format("Error in converting DynamicInjectionConfig object to Json for customerId=%s, app=%s, version=%s",
@@ -598,8 +603,8 @@ public class ReplayWS extends ReplayBasicWS {
 
 
             try {
-                return writeResponseToFile("context_propagation_rules", injectionExtractionMetas,
-                    InjectionExtractionMeta.class, true);
+                return ServerUtils.writeResponseToFile("context_propagation_rules", injectionExtractionMetas,
+                    InjectionExtractionMeta.class, Optional.empty(), Optional.of(csvMapper));
             } catch (JsonProcessingException e) {
                 LOGGER.error(String.format(
                     "Error in converting DynamicInjectionConfig object to Json for customerId:%s, app:%s, version:%s",
@@ -734,30 +739,6 @@ public class ReplayWS extends ReplayBasicWS {
             .thenCompose(v ->
                  resetTagOpt.map(tag -> this.tagConfig.setTag(recordings.get(0), replay.instanceId, tag))
                     .orElse(CompletableFuture.completedFuture(null)));
-    }
-
-    private Response writeResponseToFile(String fileName, Object object, Class clazz,
-        Boolean isCsv)
-        throws IOException {
-        String data, ext;
-        if (isCsv) {
-            CsvSchema csvSchema = csvMapper.schemaFor(clazz).withHeader();
-            data = csvMapper.writer(csvSchema).writeValueAsString(object);
-            ext = ".csv";
-        } else {
-            data = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
-            ext = ".json";
-        }
-
-        File file = new File("/tmp/" + fileName + "-" + UUID.randomUUID());
-        FileUtils.writeStringToFile(file, data, Charset.defaultCharset());
-        Response.ResponseBuilder response = Response.ok((Object) file);
-        response.header("Content-Disposition", "attachment; filename=\"" + fileName + ext + "\"" );
-        response
-            .header("Access-Control-Expose-Headers", "Content-Disposition, X-Suggested-Filename");
-
-        return response.build();
-
     }
 
     /**
