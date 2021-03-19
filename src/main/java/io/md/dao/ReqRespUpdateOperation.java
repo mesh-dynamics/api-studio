@@ -14,8 +14,6 @@ public class ReqRespUpdateOperation {
 	public Object value;
 	@JsonProperty("eventType")
 	public Type eventType;
-	@JsonProperty("method")
-	public Optional<String> method;
 
 	public enum Type {
 		Request,
@@ -35,7 +33,6 @@ public class ReqRespUpdateOperation {
 		this.operationType = operationType;
 		this.jsonpath = jsonpath;
 		this.value = null;
-		this.method = Optional.empty();
 	}
 
 	@Override
@@ -44,7 +41,6 @@ public class ReqRespUpdateOperation {
 			"operationType=" + operationType +
 			", jsonpath='" + jsonpath + '\'' +
 			", value=" + value +
-			" , method=" + method +
 			'}';
 	}
 
