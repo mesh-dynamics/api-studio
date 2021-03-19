@@ -580,6 +580,13 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             }
         }
 
+        case httpClientConstants.DELETE_CONTEXT_MAP: {
+            return {
+                ...state,
+                contextMap:{}
+            }
+        }
+
         case httpClientConstants.POST_ERROR_DRIVE_REQUEST: {
             let { tabs } = state;
             return {
