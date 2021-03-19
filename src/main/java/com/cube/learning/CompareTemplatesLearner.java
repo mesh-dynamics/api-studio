@@ -347,11 +347,8 @@ public class CompareTemplatesLearner {
         });
 
         return new TemplateSet(customer, app, Instant.now(),
-            new ArrayList<>(templatesMap.values()), Optional.empty(), templateVersion,
-            // TODO: *IMP* Revert this change to pass the timestamp once version management is
-            // fully in place.
-            // LocalDateTime.now().format(Utils.templateLabelFormatter));
-            "");
+            new ArrayList<>(templatesMap.values()), Optional.empty(), templateVersion, LocalDateTime
+            .now().format(Utils.templateLabelFormatter));
     }
 
 
