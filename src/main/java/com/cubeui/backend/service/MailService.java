@@ -1,8 +1,16 @@
 package com.cubeui.backend.service;
 
-import com.cubeui.backend.domain.User;
+import static com.cubeui.backend.security.Constants.DEFAULT_LANGUAGE;
 
+import com.cubeui.backend.domain.TimeLineData;
+import com.cubeui.backend.domain.User;
 import com.cubeui.backend.service.utils.Utils;
+import io.md.dao.Replay;
+import java.util.List;
+import java.util.Locale;
+import javax.mail.internet.MimeMessage;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.CharEncoding;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.mail.SimpleMailMessage;
@@ -11,16 +19,8 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.thymeleaf.spring5.SpringTemplateEngine;
-
 import org.thymeleaf.context.Context;
-import org.apache.commons.lang3.CharEncoding;
-import lombok.extern.slf4j.Slf4j;
-
-import javax.mail.internet.MimeMessage;
-import java.util.Locale;
-
-import static com.cubeui.backend.security.Constants.DEFAULT_LANGUAGE;
+import org.thymeleaf.spring5.SpringTemplateEngine;
 
 @Slf4j
 @Service
@@ -63,7 +63,7 @@ public class MailService {
     }
 
     @Async("threadPoolTaskExecutor")
-    public void sendEmail(String to, String subject, String content, boolean isMultipart, boolean isHtml) {
+    public void sendEmail(String[] to, String subject, String content, boolean isMultipart, boolean isHtml) {
         log.debug("Send email [multipart '{}' and html '{}'] to '{}' with subject '{}' and content={}",
                 isMultipart, isHtml, to, subject, content);
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
@@ -103,7 +103,18 @@ public class MailService {
         }
         String content = templateEngine.process(templateName, context);
         String subject = messageSource.getMessage(titleKey, null, locale);
-        sendEmail(emailId, subject, content, true, true);
+        sendEmail(new String[]{emailId}, subject, content, true, true);
+    }
+
+    @Async("threadPoolTaskExecutor")
+    public void sendTestReportTemplate(Replay replay, TimeLineData timeLineData, List<String> emails) {
+        Locale locale = Locale.forLanguageTag(DEFAULT_LANGUAGE);
+        Context context = new Context();
+        context.setVariable("replay", replay);
+        context.setVariable("timeLineData", timeLineData);
+        String content = templateEngine.process("testReportEmail", context);
+        String subject = messageSource.getMessage("email.test.report", null, locale);
+        sendEmail(emails.toArray(new String[0]), subject, content, true, true);
     }
 
     @Async("threadPoolTaskExecutor")
