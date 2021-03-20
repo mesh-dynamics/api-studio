@@ -2106,8 +2106,6 @@ public class CubeStore {
             String tmpDir = io.md.constants.Constants.TEMP_DIR;
             String descFileName = "tmp_" + UUID.randomUUID() +  ".desc";
             List<String> commandList = new ArrayList<>();
-            commandList.add("protoc");
-            commandList.add("--descriptor_set_out=" + descFileName);
 
             // If appending add existing protos for compiler
             if(appendExisting) {
@@ -2117,13 +2115,7 @@ public class CubeStore {
                 {
                     existingProtoDescriptorDAO.protoFileMap.forEach(UtilException.rethrowBiConsumer(
                         (uniqueFileName,fileContent) -> {
-                            File targetFile = new File(tmpDir + "/" + uniqueFileName);
-                            OutputStream outStream = new FileOutputStream(targetFile);
-                            byte[] fileBytes = fileContent.getBytes(StandardCharsets.UTF_8);
-                            outStream.write(fileBytes);
-                            //Add to new fileMap and list of commands
                             protoFileMap.put(uniqueFileName, fileContent);
-                            commandList.add(uniqueFileName);
                         }));
                 }));
             }
@@ -2136,29 +2128,10 @@ public class CubeStore {
                 String uniqueFileName = "TAG_" + UUID.randomUUID() + "_" + fileName;
                 byte[] fileBytes = bodyPartEntity.getInputStream().readAllBytes();
                 protoFileMap.put(uniqueFileName, new String(fileBytes, StandardCharsets.UTF_8));
-                commandList.add(uniqueFileName);
-                File targetFile = new File(tmpDir + "/" + uniqueFileName);
-                OutputStream outStream = new FileOutputStream(targetFile);
-                outStream.write(fileBytes);
             }
 
-            Files.deleteIfExists(Paths.get(tmpDir + "/" + descFileName));
-            ProcessBuilder builder = new ProcessBuilder();
-            builder.directory(new File(tmpDir));
-            // Need to ensure protoc compiler is installed in the docker container env
-            builder.command(commandList);
-            Process process = builder.start();
-            int exitCode = process.waitFor();
-            if(exitCode != 0) {
-                throw new Exception("Cannot initiate process to compile descriptor from protos");
-            }
-
-            InputStream initialStream = new FileInputStream(
-                new File(tmpDir + "/" + descFileName));
-            byte[] buffer = new byte[initialStream.available()];
-            initialStream.read(buffer);
-
-            encodedFileBytes = Base64.getEncoder().encode(buffer);
+            generateProtocCommandList(protoFileMap, tmpDir, commandList, descFileName);
+            encodedFileBytes = protocCompile(tmpDir, descFileName, commandList);
             ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app, new String(encodedFileBytes, StandardCharsets.UTF_8), protoFileMap);
             status = rrstore.storeProtoDescriptorFile(protoDescriptorDAO);
         } catch (Exception e) {
@@ -2167,13 +2140,58 @@ public class CubeStore {
                 message = "Cannot compile descriptor file from protos using protoc compiler."
                     + " Make sure the files are not duplicated in case of appending to existing protos";
             }
-            LOGGER.error("Cannot encode uploaded proto descriptor file",e);
+            LOGGER.error(message,e);
             return Response.status(Response.Status.BAD_REQUEST).entity((new JSONObject(
                 Map.of("Message", message,
                     "Error", e.getMessage())).toString())).build();
         }
         return status ? Response.ok().type(MediaType.APPLICATION_JSON)
-            .entity("The protofile is successfully saved in Solr").build() : Response.serverError().entity(Map.of("Error", "Cannot store proto descriptor file")).build();
+            .entity("The protofile is successfully saved in Solr").build()
+            : Response.serverError().entity(Map.of("Error", "Cannot store proto descriptor file in solr"))
+                .build();
+    }
+
+    private void generateProtocCommandList(Map<String, String> protoFileMap, String inpDir,
+        List<String> commandList, String descFileName) throws IOException {
+
+        commandList.add("protoc");
+        commandList.add("--descriptor_set_out=" + descFileName);
+
+        protoFileMap.forEach(UtilException.rethrowBiConsumer(
+            (uniqueFileName, fileContent) -> {
+
+                String filePath = inpDir + "/" + uniqueFileName;
+                Files.deleteIfExists(Paths.get(filePath));
+                File targetFile = new File(filePath);
+                OutputStream outStream = new FileOutputStream(targetFile);
+                byte[] fileBytes = fileContent.getBytes(StandardCharsets.UTF_8);
+                outStream.write(fileBytes);
+                //Add to the list of commands
+                commandList.add(uniqueFileName);
+            }));
+    }
+
+    private byte[] protocCompile(String inpDir, String descFileName, List<String> commandList)
+        throws Exception {
+        byte[] encodedFileBytes;
+        Files.deleteIfExists(Paths.get(inpDir + "/" + descFileName));
+        ProcessBuilder builder = new ProcessBuilder();
+        builder.directory(new File(inpDir));
+        // Need to ensure protoc compiler is installed in the docker container env
+        builder.command(commandList);
+        Process process = builder.start();
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new Exception("Cannot initiate process to compile descriptor from protos");
+        }
+
+        InputStream initialStream = new FileInputStream(
+            new File(inpDir + "/" + descFileName));
+        byte[] buffer = new byte[initialStream.available()];
+        initialStream.read(buffer);
+
+        encodedFileBytes = Base64.getEncoder().encode(buffer);
+        return encodedFileBytes;
     }
 
     @GET
@@ -2203,6 +2221,109 @@ public class CubeStore {
                 + "descriptor " + e.getMessage()).build();
         }
     }
+
+
+    @GET
+    @Path("/getProtoDescriptorFilesRaw/{customerId}/{app}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getProtoDescriptorFilesRaw(@PathParam("customerId") String customerId,
+        @PathParam("app") String app) {
+        try {
+            Optional<ProtoDescriptorDAO> latestProtoDescDao =
+                rrstore.getLatestProtoDescriptorDAO(customerId, app);
+            return latestProtoDescDao.map(UtilException.rethrowFunction(protoDescriptorDAO -> {
+
+                JSONObject jsonObject = new JSONObject();
+                protoDescriptorDAO.protoFileMap.forEach((k, v) -> {
+                    // To form the unique name we append it with 'TAG_<UUID(36chars)>_' So total 41 chars
+                    String fileDisplayName = "NA";
+                    if (k.length() > 41) {
+                        fileDisplayName = k.substring(41);
+                    }
+                    jsonObject.put(k, Map.of("fileDisplayName", fileDisplayName,
+                        "fileContents", v));
+                });
+                return Response.ok()
+                    .entity(jsonObject.toString()).build();
+            }))
+                .orElse(Response.serverError().entity(new JSONObject(Map.of(Constants.MESSAGE,"Proto Descriptor not present for the "
+                    + "customer and app combo")).toString()).build());
+        } catch (Exception e) {
+            LOGGER.error(new ObjectMessage(Map.of(Constants.MESSAGE,
+                "Unable to convert protoFileMap to string")), e);
+            return Response.serverError().entity(new JSONObject(Map.of(Constants.MESSAGE,"Exception occurred while retrieving proto "
+                + "descriptor ", Constants.EXCEPTION_STACK, e.getMessage())).toString()).build();
+        }
+    }
+
+
+    @POST
+    @Path("/deleteProtoDescriptorFiles/{customerId}/{app}")
+    @Consumes("application/x-www-form-urlencoded")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response deleteProtoDescriptorFiles(@PathParam("customerId") String customerId,
+        @PathParam("app") String app, MultivaluedMap<String, String> formParams) {
+        boolean status = false;
+        try {
+            List<String> deleteFileNames = formParams!=null ? Optional.ofNullable(formParams.get("deleteFileNames"))
+                .orElse(new ArrayList<String>()) : new ArrayList<String>();
+
+            if(deleteFileNames.isEmpty()) {
+                return Response.status(Status.BAD_REQUEST).entity((new JSONObject(
+                    Map.of("Message", "No file names given to delete"
+                        )).toString())).build();
+            }
+
+            String tmpDir = io.md.constants.Constants.TEMP_DIR;
+            String descFileName = "tmp_" + UUID.randomUUID() +  ".desc";
+            List<String> commandList = new ArrayList<>();
+
+            Map<String, String> protoFileMap = new HashMap<>();
+            byte[] encodedFileBytes;
+            Optional<ProtoDescriptorDAO> existingProtoDescriptorDAOOptional = rrstore
+                .getLatestProtoDescriptorDAO(customerId, app);
+            existingProtoDescriptorDAOOptional
+                .ifPresent(UtilException.rethrowConsumer(existingProtoDescriptorDAO ->
+                {
+                    existingProtoDescriptorDAO.protoFileMap.forEach(UtilException.rethrowBiConsumer(
+                        (uniqueFileName, fileContent) -> {
+                            if (!deleteFileNames.contains(uniqueFileName)) {
+                                protoFileMap.put(uniqueFileName, fileContent);
+                            }
+                        }));
+                }));
+
+            if(protoFileMap.isEmpty()) {
+                return Response.status(Status.BAD_REQUEST).type(MediaType.APPLICATION_JSON)
+                    .entity("Not all files can be deleted. At least one file needs to be there.")
+                    .build();
+            }
+
+            generateProtocCommandList(protoFileMap, tmpDir, commandList, descFileName);
+            encodedFileBytes = protocCompile(tmpDir, descFileName, commandList);
+            ProtoDescriptorDAO protoDescriptorDAO = new ProtoDescriptorDAO(customerId, app,
+                new String(encodedFileBytes, StandardCharsets.UTF_8), protoFileMap);
+            status = rrstore.storeProtoDescriptorFile(protoDescriptorDAO);
+        } catch (Exception e) {
+            String message = "Cannot encode uploaded proto descriptor file";
+            if (e instanceof FileNotFoundException) {
+                message = "Cannot compile descriptor file from protos using protoc compiler."
+                    + " Make sure the files are not duplicated in case of appending to existing protos";
+            }
+            LOGGER.error(message, e);
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity((new JSONObject(
+                Map.of("Message", message,
+                    "Error", e.getMessage())).toString())).build();
+        }
+        return status ? Response.ok()
+            .entity(new JSONObject(Map.of(Constants.MESSAGE,
+                "The desired file(s) are deleted ")).toString())
+            .build()
+            : Response.serverError().entity(
+                new JSONObject(Map.of("Error", "Cannot store proto descriptor file in solr")).toString())
+                .build();
+    }
+
 
     @POST
     @Path("/preRequest/{recordingOrReplayId}/{runId}")
