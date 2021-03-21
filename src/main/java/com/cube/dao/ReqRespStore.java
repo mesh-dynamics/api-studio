@@ -148,6 +148,8 @@ public interface ReqRespStore extends DataStore {
 
     Optional<TemplateSet> getTemplateSet(String customerId, String app, String version);
 
+    Optional<TemplateSet> getLatestTemplateSet(String customerId, String app, Optional<String> templateSetName);
+
     // void invalidateCacheFromTemplateSet(TemplateSet templateSet);
 
     void invalidateCache();
