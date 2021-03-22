@@ -871,7 +871,6 @@ class HttpClientTabs extends Component {
             // with its extraction for formdata etc. Skipping this implementation but keeping the code
             // if(!isValidJSON(grpcData)){
             //     const errorMessage = "Grpc data should be valid JSON object";
-            //     alert(errorMessage);
             //     throw new Error(errorMessage);
             // }
             // httpRequestBody = httpClientTabUtils.extractBody(grpcData, grpc);
@@ -1039,6 +1038,13 @@ class HttpClientTabs extends Component {
         const { dispatch } = this.props;
         dispatch(httpClientActions.setSelectedTabKey(tabKey));
         dispatch(httpClientActions.setTabIsHighlighted(tabKey, false));
+    }
+
+    onPositionChange = (fromPos, toPos) => {
+        const { dispatch, httpClient: {tabs} } = this.props;
+        if(fromPos > -1 && fromPos < tabs.length && toPos > -1 && toPos < tabs.length){
+            dispatch(httpClientActions.changeTabPosition(fromPos, toPos));
+        }
     }
 
     handleRemoveTab(key, evt) {
@@ -1653,6 +1659,7 @@ class HttpClientTabs extends Component {
                             removeActiveOnly={false} 
                             onChange={this.handleTabChange} 
                             onRemove={this.handleRemoveTab}
+                            onPositionChange={this.onPositionChange}
                             items={this.getTabs(tabs)} 
                             tabsWrapperClass={"md-hc-tabs-wrapper"} 
                             selectedTabKey={selectedTabKey} 

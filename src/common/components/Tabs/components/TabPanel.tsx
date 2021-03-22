@@ -1,7 +1,11 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 
-export default class TabPanel extends Component {
+export default class TabPanel extends Component<ITabPanelProps> {
+  static defaultProps = {
+    getContent: undefined,
+    children: undefined
+  }
+
   shouldComponentUpdate(nextProps) {
     const { children, getContent, classNames } = this.props;
     return (
@@ -21,17 +25,13 @@ export default class TabPanel extends Component {
   }
 }
 
-TabPanel.propTypes = {
-  getContent: PropTypes.func,
-  children: PropTypes.oneOfType([PropTypes.array, PropTypes.object, PropTypes.string]),
-  id: PropTypes.string.isRequired,
-
+export interface ITabPanelProps {
+  getContent: () => React.ReactElement
+  children: React.ReactChild,
+  id: string,
+  key: string,
   // generic props
-  classNames: PropTypes.string.isRequired,
-  tabId: PropTypes.string.isRequired
+  classNames: string,
+  tabId: string
 };
 
-TabPanel.defaultProps = {
-  getContent: undefined,
-  children: undefined
-};

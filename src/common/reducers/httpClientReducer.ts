@@ -580,6 +580,13 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
             }
         }
 
+        case httpClientConstants.DELETE_CONTEXT_MAP: {
+            return {
+                ...state,
+                contextMap:{}
+            }
+        }
+
         case httpClientConstants.POST_ERROR_DRIVE_REQUEST: {
             let { tabs } = state;
             return {
@@ -1227,6 +1234,16 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                     }
                     return {...eachTab};
                 })
+            }
+        }
+
+        case httpClientConstants.CHANGE_TAB_POSITION : {
+            let { tabs } = state;
+            tabs = [...tabs];
+            tabs.splice(data.toPos, 0, tabs.splice(data.fromPos, 1)[0])
+            return {
+                ...state,
+                tabs
             }
         }
 

@@ -7,11 +7,16 @@ import GrpcConfiguration from '../../components/Configs/Grpc/GrpcConfiguration';
 import ApiToken from '../../components/Configs/ApiToken/ApiToken';
 import * as URL from "url";
 import ComparisonRules from '../../components/Configs/ComparisonRules/ComparisonRules';
+import { connect } from 'react-redux';
+import { IStoreState } from '../../reducers/state.types';
 export interface IConfigSettingsState{
-    selectedTabKey: number
+    selectedTabKey: number;
 }
-class Config extends Component<any, IConfigSettingsState> {
-    constructor(props:any){
+export interface IConfigSettingsProps{
+    customerId: string
+}
+class Config extends Component<IConfigSettingsProps, IConfigSettingsState> {
+    constructor(props:IConfigSettingsProps){
         super(props);
         this.state = {
             selectedTabKey: 1
@@ -31,6 +36,7 @@ class Config extends Component<any, IConfigSettingsState> {
             <div className="content-wrapper">
                 <div>
                     <h4 className="inline-block margin-right-10">Configurations</h4>
+                    <span style={{float:'right'}}>Customer Id: <span style={{color: "#ab7f00"}}>{this.props.customerId}</span></span>
                 </div>
                 <Tabs id="controlled-mode" onSelect={this.handleSelectedTabChange} activeKey={this.state.selectedTabKey}>
                     <Tab eventKey={1} title="Test Configurations">
@@ -72,4 +78,12 @@ class Config extends Component<any, IConfigSettingsState> {
     }
 }
 
-export default Config;
+
+const mapStateToProps = (state: IStoreState) => {
+    return {
+      customerId: state.authentication.user.customer_name
+    };
+  };
+  
+export default connect(mapStateToProps)(Config);
+

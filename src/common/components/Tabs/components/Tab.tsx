@@ -1,7 +1,12 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 
-export default class Tab extends Component {
+export default class Tab extends Component<ITabProps> {
+  static defaultProps = {
+    children: undefined,
+    onRemove: () => {},
+    allowRemove: false,
+    disabled: false
+  };
   shouldComponentUpdate(nextProps) {
     const { children, selected, classNames } = this.props;
     return children !== nextProps.children || selected !== nextProps.selected || classNames !== nextProps.classNames;
@@ -43,7 +48,6 @@ export default class Tab extends Component {
 
     return (
       <div
-        ref={e => (this.tab = e)}
         role="tab"
         className={classNames}
         id={id}
@@ -51,10 +55,12 @@ export default class Tab extends Component {
         aria-expanded={selected ? 'true' : 'false'}
         aria-disabled={disabled ? 'true' : 'false'}
         aria-controls={panelId}
-        tabIndex="0"
+        tabIndex={0}
         onClick={this.onTabClick}
         onFocus={onFocus(originalKey)}
         onBlur={onBlur}
+        onMouseDown={this.props.onMouseDown}
+        data-tabid={this.props.tabId}
       >
         {this.renderTab()}
       </div>
@@ -62,26 +68,24 @@ export default class Tab extends Component {
   }
 }
 
-Tab.propTypes = {
-  children: PropTypes.oneOfType([PropTypes.array, PropTypes.object, PropTypes.string]),
-  disabled: PropTypes.bool,
+export interface ITabProps {
+  children: React.ReactChild,
+  disabled: boolean,
 
   // generic props
-  panelId: PropTypes.string.isRequired,
-  selected: PropTypes.bool.isRequired,
-  onClick: PropTypes.func.isRequired,
-  onRemove: PropTypes.func,
-  onFocus: PropTypes.func.isRequired,
-  onBlur: PropTypes.func.isRequired,
-  allowRemove: PropTypes.bool,
-  id: PropTypes.string.isRequired,
-  originalKey: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
-  classNames: PropTypes.string.isRequired
+  panelId: string,
+  selected: boolean,
+  onClick: Function,
+  onRemove: React.MouseEventHandler<HTMLDivElement>,
+  onFocus: Function,
+  onBlur: React.FocusEventHandler<HTMLDivElement>,
+  allowRemove: boolean,
+  id: string,
+  originalKey: string,
+  classNames: string,
+  key: string;
+  tabId: string,
+  hasTabChanged: boolean;
+  onMouseDown: React.MouseEventHandler<HTMLDivElement>
 };
 
-Tab.defaultProps = {
-  children: undefined,
-  onRemove: () => {},
-  allowRemove: false,
-  disabled: false
-};

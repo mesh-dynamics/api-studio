@@ -7,7 +7,7 @@ import EnvVar from "./EnvVar";
 import { getCurrentEnvironment } from "../../utils/http_client/envvar";
 import { getCurrentMockConfig } from "../../utils/http_client/utils";
 import { httpClientActions } from '../../actions/httpClientActions';
-import { IHttpClientStoreState, IStoreState, IEnvironmentConfig, IUserAuthDetails, IMockConfig, ICubeState, IMockConfigValue } from '../../reducers/state.types';
+import { IHttpClientStoreState, IStoreState, IEnvironmentConfig, IUserAuthDetails, IMockConfig, ICubeState, IMockConfigValue, IConfigVars } from '../../reducers/state.types';
 
 export interface IMockConfigsState{
     selectedEditMockConfig: any, //Need to verify type: {name: string; serviceConfigs: []}
@@ -16,6 +16,7 @@ export interface IMockConfigsState{
     addNewEnv: boolean,
     selectedTabKey: number;
     selectedEnv: IEnvironmentConfig,
+    sessionVars: IConfigVars,
 }
 export interface IMockConfigsProps{
     httpClient: IHttpClientStoreState;
@@ -34,6 +35,7 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
             addNewMockConfig: false,
             selectedTabKey : 0,
             selectedEnv: { name:"", appId: 0, vars: [] },
+            sessionVars: [],
         }
     }
 
@@ -45,12 +47,19 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
                 selectedEnvironment,
                 showMockConfigList,
                 mockConfigList,
-                selectedMockConfig
+                selectedMockConfig,
+                contextMap
             },
             tabIndexForEdit,
         } = this.props;
 
         const { selectedEnv, selectedEditMockConfig  } = this.state;
+        const {sessionVars, } = this.state;
+
+        Object.entries(contextMap || {}).forEach(([k, data]) => {
+            sessionVars.push({key: k, value: data["value"].toString()});
+        });
+        this.setState({ sessionVars: sessionVars});
 
         
 
@@ -389,6 +398,96 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
             </Grid>
         </div>
     }
+    handleSessionVarKeyChange = (e, index) => {
+        const {sessionVars, } = this.state;
+        sessionVars[index].key = e.target.value;
+        this.setState({sessionVars: sessionVars});
+    }
+
+    handleSessionVarValueChange = (e, index) => {
+        const {sessionVars, } = this.state;
+        sessionVars[index].value = e.target.value;
+        this.setState({sessionVars: sessionVars});
+    }
+
+    handleRemoveSessionVariable =(index) => {
+        const {dispatch} = this.props;
+        const {sessionVars, } = this.state;
+        sessionVars.splice(index, 1);
+        if(sessionVars.length == 0) {
+            dispatch(httpClientActions.deleteContextMap());
+        }
+        this.setState({sessionVars: sessionVars});
+    }
+
+    handleAddNewSessionVariable = () => {
+        const {sessionVars, } = this.state;
+        sessionVars.push({key:"", value:""});
+        this.setState({sessionVars: sessionVars});
+    }
+
+    handleSaveSessionVariable = () => {
+        const {dispatch} = this.props;
+        const {sessionVars} = this.state;
+        const newContextMap = {};
+        sessionVars.forEach(({key, value}, index) => {
+            newContextMap[key] = value;
+        });
+        dispatch(httpClientActions.deleteContextMap());
+        dispatch(httpClientActions.updateContextMap(newContextMap));
+        this.props.hideModal();
+    }
+
+    renderSessionVariableConfigFooter = () => {
+        const { sessionVars } = this.state;     
+        return (
+            <>
+                {sessionVars.length > 0 && <span className="cube-btn margin-left-15" onClick={this.handleSaveSessionVariable}>SAVE</span>}
+            </>
+        );
+    }
+
+    renderSessionVariables = () => {
+        const {
+            sessionVars,
+        } = this.state;
+        return <Fragment>
+            <Grid>
+                <Row className="show-grid margin-top-15">
+                    <Col xs={5}>
+                        <b>Variable</b>
+                    </Col>
+                    <Col xs={5}>
+                        <b>Value</b>
+                    </Col>
+                </Row>
+                {
+                    (sessionVars || []).map(({key, value}, index) => (
+                        <Row key={index} className="show-grid margin-top-15">
+                            <Col xs={5}>
+                                <input value={key} onChange={(e) => this.handleSessionVarKeyChange(e, index)} className="form-control"/>
+                            </Col>
+                            <Col xs={6}>
+                                <input value={value} onChange={(e) => this.handleSessionVarValueChange(e, index)} className="form-control"/>
+                            </Col>
+                            <Col xs={1} style={{marginTop: "5px"}}>
+                                <span  onClick={(e) => this.handleRemoveSessionVariable(index)}>
+                                    <i className="fas fa-times pointer"/>
+                                </span>
+                            </Col>
+                        </Row>
+                    ))
+                }
+                <Row className="show-grid margin-top-15">
+                    <Col xs={3}>
+                        <div onClick={this.handleAddNewSessionVariable} className="pointer btn btn-sm cube-btn text-center">
+                            <i className="fas fa-plus" style={{marginRight: "5px"}}></i><span>Add new variable</span>
+                        </div>
+                    </Col>
+                </Row>
+            </Grid>
+        </Fragment>
+    }
 
     renderMockConfig = () => {
         const { selectedEditMockConfig } = this.state;
@@ -506,11 +605,10 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
         return (
             <>
                 <span className="pull-left" style={{color: envStatusIsError ? "red" : ""}}>{envStatusText}</span>
-                <span className="cube-btn" onClick={this.props.hideModal}>CLOSE</span>
                 {/* {showEnvList && <span className="cube-btn margin-left-15" onClick={this.props.hideModal}>DONE</span>} */}
                 {!showEnvList && <span className="cube-btn margin-left-15" onClick={this.handleBackEnv}>BACK</span>}
                 {!showEnvList && addNewEnv && <span className="cube-btn margin-left-15" onClick={this.handleSaveEnvironment}>SAVE</span>}
-                {!showEnvList && !addNewEnv && <span className="cube-btn margin-left-15" onClick={this.handleUpdateEnvironment}>UPDATE</span>}
+                {!showEnvList && !addNewEnv && <span className="cube-btn margin-left-15" onClick={this.handleUpdateEnvironment}>SAVE</span>}
             </>
         );
     }
@@ -556,10 +654,9 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
                             }
                         </>
                     }
-                    <span className="cube-btn" onClick={this.props.hideModal}>CLOSE</span>
                     {!showMockConfigList && <span className="cube-btn margin-left-15" onClick={this.handleBackMockConfig}>BACK</span>}
                     {!showMockConfigList && addNewMockConfig && <span className="cube-btn margin-left-15" onClick={this.handleSaveMockConfig}>SAVE</span>}
-                    {!showMockConfigList && !addNewMockConfig && <span className="cube-btn margin-left-15" onClick={this.handleUpdateMockConfig}>UPDATE</span>}
+                    {!showMockConfigList && !addNewMockConfig && <span className="cube-btn margin-left-15" onClick={this.handleUpdateMockConfig}>SAVE</span>}
             </>
         );
     }
@@ -590,12 +687,16 @@ class EnvironmentConfigs extends Component<IMockConfigsProps, IMockConfigsState>
                             <Tab eventKey={2} title="Mock Settings">
                                 {this.renderMockContextConfig()}
                             </Tab>
+                            <Tab eventKey={3} title="Session Variables">
+                                {this.renderSessionVariables()}
+                            </Tab>
                         </Tabs>
                     </div>
                 </Modal.Body>
                 <Modal.Footer style={{ height: "50px" }}>
                     {selectedTabKey === 0 && this.renderEnvironmentVariableConfigFooter()}
                     {selectedTabKey === 1 && this.renderMockConfigFooter()}
+                    {selectedTabKey === 3 && this.renderSessionVariableConfigFooter()}
                 </Modal.Footer>
             </Fragment>
         )

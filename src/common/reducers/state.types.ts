@@ -377,7 +377,7 @@ export interface ICubeRunHistory {
   // [key: Date]: IApiTrace;
   [key: string]: IApiTrace[]; //In our app key is a Date, but Date shold not be a key
 }
-export interface IEnvironmentConfigVars {
+export interface IConfigVars {
   key: string;
   value: string;
   id?: number;
@@ -385,7 +385,7 @@ export interface IEnvironmentConfigVars {
 export interface IEnvironmentConfig {
   id?: number;
   name: string;
-  vars: IEnvironmentConfigVars[];
+  vars: IConfigVars[];
 }
 
 export interface IHistoryTabPagingData {

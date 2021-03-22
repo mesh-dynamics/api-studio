@@ -10,6 +10,7 @@ import {
 } from "../../utils/lib/golden-utils";
 import { cubeActions } from "../../actions";
 import { goldenActions } from "../../actions/golden.actions";
+import { Modal } from "react-bootstrap";
 
 const GoldenMeta = (props) => {
 
@@ -58,6 +59,13 @@ const GoldenMeta = (props) => {
 
     const [apiPathOptions, setApiPathOptions] = useState([]);
 
+    const [alertModalVisible, setAlertModalVisible] = useState(false);
+
+    const [userAlertMessage, setUserAlertMessage] = useState({
+      header: "",
+      message: "",
+    });
+
     const serviceOptions = generateServiceOptionsFromFacets(serviceFacets);
 
     const handleUpdateClick = () => {
@@ -65,13 +73,13 @@ const GoldenMeta = (props) => {
 
         if(goldenNameIsValid) {
             if((goldenName === name) && (labelName === label)) {
-                alert("Golden name and label combination cannot be the same.");
+                showAlertModal("Error", "Golden name and label combination cannot be the same.");
             } else {
                 setEditable(false);
                 updateGoldenMeta({ id, goldenName, labelName, branchName, codeVersionNumber, commitId });
             }
         } else {
-            alert(goldenNameErrorMessage);
+            showAlertModal("Error", goldenNameErrorMessage);
         }
     };
 
@@ -107,7 +115,42 @@ const GoldenMeta = (props) => {
         }
     }, [selectedGolden.id, selectedService, selectedApi]);
     
-    return (
+    const renderAlertModal = (isVisible, dismissHandler) => {
+        const {header, message} = userAlertMessage
+        return (
+            <Modal show={isVisible}>
+                <Modal.Header>
+                    <Modal.Title>{header}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <div>
+                        {message}
+                    </div>
+                </Modal.Body>
+                <Modal.Footer>
+                    <span onClick={dismissHandler} className="cube-btn">Dismiss</span>
+                </Modal.Footer>
+            </Modal>
+        );
+    };
+
+    const handleAlertModalDismissClick = () => {
+        setAlertModalVisible(false)
+        setUserAlertMessage({
+            header: "",
+            message: ""
+        })
+    }
+    
+    const showAlertModal = (header, message) => {
+        setAlertModalVisible(false)
+        setUserAlertMessage({
+            header,
+            message,
+        })
+    }
+
+    return (<>
         <div>
             <div className="margin-top-10">
                 {!editable &&
@@ -227,7 +270,8 @@ const GoldenMeta = (props) => {
                 </div>
             </div>
         </div>
-    )
+        {alertModalVisible && renderAlertModal(alertModalVisible, handleAlertModalDismissClick)} 
+    </>)
 }
 
 const mapStateToProps = (state) => ({

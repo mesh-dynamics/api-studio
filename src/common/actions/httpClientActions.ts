@@ -31,6 +31,9 @@ export const httpClientActions: IActionsType = {
     updateContextMap: (value) => {
         return {type: httpClientConstants.UPDATE_CONTEXT_MAP, data: {value}};
     },
+    deleteContextMap: () => {
+        return {type: httpClientConstants.DELETE_CONTEXT_MAP};
+    },
 
     addParamToSelectedTab: (tabId, type) => {
         return {type: httpClientConstants.ADD_PARAM_TO_TAB, data: {tabId, type}};
@@ -678,6 +681,9 @@ export const httpClientActions: IActionsType = {
     },
     setUiPreferenceKey : (key, value) =>{
         return { type: httpClientConstants.UPDATE_UI_PREFERENCE, data: {key, value}};
+    },
+    changeTabPosition : (fromPos, toPos) =>{
+        return { type: httpClientConstants.CHANGE_TAB_POSITION, data: {fromPos, toPos}};
     },
 
     deleteOutgoingReq: (outgoingReqTabId, tabId) => {
