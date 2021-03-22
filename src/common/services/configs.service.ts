@@ -133,7 +133,7 @@ const getComparisonRulesConfig = async (replayId: string) => {
 };
 
 const getTemplateSet = async(customerId: string, app: string, version: string) =>{
-  let apiEventURL = `${config.analyzeBaseUrl}/getTemplateSet/${customerId}/${app}/${version}`;
+  let apiEventURL = `${config.analyzeBaseUrl}/getTemplateSet/${customerId}/${app}?templateSetName=${version}`;
 
   try {
     return api.get(apiEventURL);
