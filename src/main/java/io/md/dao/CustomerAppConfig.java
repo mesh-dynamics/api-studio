@@ -26,12 +26,16 @@ public class CustomerAppConfig {
     @JsonProperty("apiGenericPaths")
     public final Optional<Map<String , String[]>> apiGenericPaths;
 
+    @JsonProperty("stopWaitInterval")
+    public final String stopWaitInterval;
+
     private CustomerAppConfig(Builder builder){
         this.customerId = builder.customerId;
         this.app = builder.app;
         this.id = Objects.requireNonNull(builder.id) ;
         this.tracer = Optional.ofNullable(builder.tracer);
         this.apiGenericPaths = Optional.ofNullable(builder.apiGenericPaths);
+        this.stopWaitInterval = builder.stopWaitInterval;
     }
 
     public static class Builder{
@@ -40,6 +44,7 @@ public class CustomerAppConfig {
         private String tracer;
         private Map<String , String[]> apiGenericPaths;
         private String id;
+        public String stopWaitInterval;
 
         @JsonCreator
         public Builder(@JsonProperty("customerId") String customerId , @JsonProperty("app") String app){
@@ -62,6 +67,10 @@ public class CustomerAppConfig {
             return this;
         }
 
+        public Builder withStopWaitInterval(String stopWaitInterval) {
+            this.stopWaitInterval = stopWaitInterval;
+            return this;
+        }
 
         public CustomerAppConfig build(){
             if(id==null){
