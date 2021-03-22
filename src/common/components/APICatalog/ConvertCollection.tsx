@@ -48,7 +48,7 @@ class ConvertCollection extends Component<
 > {
   constructor(props: IConvertCollectionProps) {
     super(props);
-    const derivedCollection = ConvertCollection.getDerivedCollection(props);
+    const {collectionName: derivedCollection} = ConvertCollection.getDerivedCollection(props);
     this.state = {
       isPopupVisible: false,
       newCollection: derivedCollection,
@@ -60,6 +60,8 @@ class ConvertCollection extends Component<
       isErrorMessage: false,
       isLoading: false,
       message: "",
+      collTemplateSetName: "",
+      collTemplateSetLabel: ""
     };
   }
 
@@ -73,6 +75,8 @@ class ConvertCollection extends Component<
     return {
       selectedCollectionName: selectedCollection ? selectedCollection.name : "",
       selectedGoldenName: selectedGolden ? selectedGolden.name : "",
+      collTemplateSetName: selectedCollection?.templateSetName,
+      collTemplateSetLabel: selectedCollection?.templateSetLabel,
     };
   }
 
@@ -80,17 +84,20 @@ class ConvertCollection extends Component<
     const {
       selectedCollectionName,
       selectedGoldenName,
+      collTemplateSetName,
+      collTemplateSetLabel
     } = ConvertCollection.getSelectedCollections(props);
+    let collectionName = ""
     if (props.selectedSource == "Golden") {
       if (selectedGoldenName) {
-        return "UC_" + selectedGoldenName;
+        collectionName ="UC_" + selectedGoldenName;
       }
     } else {
       if (selectedCollectionName) {
-        return "GL_" + selectedCollectionName;
+        collectionName = "GL_" + selectedCollectionName;
       }
     }
-    return "";
+    return {collectionName, collTemplateSetName, collTemplateSetLabel};
   }
 
   static getDerivedStateFromProps(
@@ -98,7 +105,7 @@ class ConvertCollection extends Component<
     state: IConvertCollectionState
   ) {
     let newState: IConvertCollectionState = { ...state };
-    const collectionName = ConvertCollection.getDerivedCollection(props);
+    const {collectionName, collTemplateSetName, collTemplateSetLabel} = ConvertCollection.getDerivedCollection(props);
     if (
       (props.selectedCollection != state.selectedCollection ||
         props.selectedGolden != state.selectedGolden) &&
@@ -107,17 +114,20 @@ class ConvertCollection extends Component<
       newState.newCollection = collectionName;
       newState.prevDerivedCollection = collectionName;
       newState.message = "";
+      newState.collTemplateSetName = collTemplateSetName
+      newState.collTemplateSetLabel = collTemplateSetLabel
     }
     return newState;
   }
 
   showPopup = () => {
+    const {collectionName: newCollection} = ConvertCollection.getDerivedCollection(this.props)
     this.setState({
       isPopupVisible: true,
       isSelectorVisible: false,
       isErrorMessage: false,
       message: "",
-      newCollection: ConvertCollection.getDerivedCollection(this.props),
+      newCollection,
     });
   };
 
@@ -148,10 +158,14 @@ class ConvertCollection extends Component<
     });
     const isGolden = this.isGolden();
     const collectionId = isGolden ? selectedGolden!.id : selectedCollection!.id;
+    
+    const {collTemplateSetName, collTemplateSetLabel} = this.state
+
     const copyRecordingData: any = {
       golden_name: this.state.newCollection,
       recordingType: isGolden ? "UserGolden" : "Golden",
-      ...(!isGolden && {version: `Default${app}`}),
+      templateSetName: collTemplateSetName,
+      templateSetLabel: collTemplateSetLabel
     };
     if (isGolden) {
       copyRecordingData.label = username;
