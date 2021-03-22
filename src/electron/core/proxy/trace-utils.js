@@ -100,11 +100,39 @@ const getTraceDetails = (mockContext, headers) => {
   return traceDetails;
 }
 
+const extractSpanId = (tracer, headers) => {
+  let spanId;
+  switch (tracer) {
+    case "jaeger":
+      traceIdKey = "uber-trace-id"
+      spanId = headers[traceIdKey] && headers[traceIdKey].split(":")[1]
+      break
+
+    case "zipkin":
+      spanIdKey = "x-b3-spanid"
+      spanId = headers[spanIdKey]
+      break;
+
+    case "datadog":
+      spanIdKey = "x-datadog-parent-id"
+      spanId = headers[spanIdKey]
+      break
+
+    case "meshd": // default to meshd
+    default:
+      traceIdKey = "md-trace-id";
+      spanId = headers[traceIdKey] && headers[traceIdKey].split(":")[1]
+    // no span id key
+  }
+  return spanId;
+}
+
 module.exports = {
   generateTraceKeys,
   generateSpanId, 
   generateSpecialParentSpanId,
   generateTraceIdDetails,
   extractTraceIdDetails,
-  getTraceDetails
+  getTraceDetails,
+  extractSpanId
 };
