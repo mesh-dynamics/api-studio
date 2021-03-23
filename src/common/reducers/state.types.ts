@@ -513,6 +513,8 @@ export interface ICollectionDetails {
   timestmp: number;
   userId: string;
   apiTraces: IApiTrace[];
+  templateSetName: string;
+  templateSetLabel: string;
 }
 
 export interface IServiceConfigDetails{
