@@ -2424,18 +2424,20 @@ public class CubeStore {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response setAppConfiguration(CustomerAppConfig custAppCfg ) {
-
-        //Get existing appCfg
-        Optional<CustomerAppConfig> existing = rrstore.getAppConfiguration(custAppCfg.customerId , custAppCfg.app);
+        //Todo: remove this part of existing config check untill wallmart deployment
+        // all the id fields has been corrected (solrid -> builder.recalculateId) in our all deployments
+        Optional<CustomerAppConfig> existing = rrstore
+            .getAppConfiguration(custAppCfg.customerId, custAppCfg.app);
         //If the existing app cfg Id in solr is different then autoCalculated
-        if(existing.isPresent() && !existing.get().id.equals(custAppCfg.id)){
-            CustomerAppConfig.Builder builder = new Builder(custAppCfg.customerId , custAppCfg.app);
+        if (existing.isPresent() && !existing.get().id.equals(custAppCfg.id)) {
+            CustomerAppConfig.Builder builder = new Builder(custAppCfg.customerId, custAppCfg.app);
             custAppCfg.tracer.ifPresent(builder::withTracer);
             custAppCfg.apiGenericPaths.ifPresent(builder::withApiGenericPaths);
             builder.withId(existing.get().id);
             custAppCfg = builder.build();
         }
-        if(rrstore.saveConfig(custAppCfg)){
+
+        if(rrstore.saveConfig(custAppCfg) && rrstore.commit()){
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(
                 buildSuccessResponse(Constants.SUCCESS, new JSONObject(Map.of(Constants.MESSAGE, "The customer app config tag has been changed",
                             Constants.CUSTOMER_ID_FIELD, custAppCfg.customerId, Constants.APP_FIELD, custAppCfg.app)))).build();
