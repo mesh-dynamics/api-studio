@@ -23,7 +23,7 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
   private scrollTimeout: NodeJS.Timeout;
   private setDragPropsOnMove: any = {};
 
-  constructor(props) {
+  constructor(props:ITabsProps) {
     super(props);
 
     this.selectedTabKeyProp = props.selectedTabKey;
@@ -58,7 +58,7 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
     Shortcuts.unregister("ctrl+n");
   }
 
-  static getDerivedStateFromProps(props, state) {
+  static getDerivedStateFromProps(props: ITabsProps, state: ITabsState) {
     if (props.selectedTabKey != state.selectedTabKey) {
       return { selectedTabKey: props.selectedTabKey };
     }
@@ -80,7 +80,7 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
     );
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps: ITabsProps) {
     const { items, selectedTabKey } = this.props;
 
     if (this.selectedTabKeyProp !== selectedTabKey) {
@@ -94,7 +94,7 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
     this.selectedTabKeyProp = selectedTabKey;
   }
 
-  onChangeTab = (nextTabKey) => {
+  onChangeTab = (nextTabKey: string) => {
     const { onChange } = this.props;
 
     // change active tab
@@ -105,7 +105,7 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
     }
   };
 
-  onFocusTab = (focusedTabKey) => () => this.setState({ focusedTabKey });
+  onFocusTab = (focusedTabKey: string) => () => this.setState({ focusedTabKey });
 
   onBlurTab = () => this.setState({ focusedTabKey: null });
 
@@ -200,18 +200,19 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
     }, initialResultValue);
   };
 
-  findParentWithClass = (currentElement: Element, selectorClass) => {
+  findParentWithClass = (currentElement: Element, selectorClass: string) => {
     while (currentElement) {
       if (currentElement.classList.contains(selectorClass)) {
         return currentElement;
       } else {
-        currentElement = currentElement.parentElement;
+        currentElement = currentElement.parentElement!;
       }
     }
+    return currentElement;
   };
 
   //Store width of each tab, so we can evaluate left or right movement of tab
-  calculateTabWidth = (currentTabElement) => {
+  calculateTabWidth = (currentTabElement: Element) => {
     const tabContainer = this.findParentWithClass(
       currentTabElement,
       "tabContainer"
@@ -228,10 +229,10 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
   };
 
   //Next index at which placeholder for tab should be moved to indicate next position while dragging
-  evaluateNextIndex = (nextLeftvalue) => {
+  evaluateNextIndex = (nextLeftvalue: number) => {
     let currentIndex = this.originalTabIndex;
-    const up = (currentIndex) => this.widthOfTabs[currentIndex - 1];
-    const down = (currentIndex) => this.widthOfTabs[currentIndex + 1];
+    const up = (currentIndex: number) => this.widthOfTabs[currentIndex - 1];
+    const down = (currentIndex: number) => this.widthOfTabs[currentIndex + 1];
     if (nextLeftvalue < 0) {
       while (
         currentIndex > 0 &&
@@ -242,7 +243,7 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
       }
     } else if (nextLeftvalue > 0) {
       while (
-        currentIndex < this.widthOfTabs.length -1 &&
+        currentIndex < this.widthOfTabs.length -2 &&
         nextLeftvalue > down(currentIndex)
       ) {
         nextLeftvalue -= down(currentIndex);
@@ -371,7 +372,7 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
     classNames: this.getClassNamesForPanel(className),
   });
 
-  getClassNamesForPanel = (className) => {
+  getClassNamesForPanel = (className: string) => {
     const { panelClass } = this.props;
     return cs("RRT__panel", className, panelClass);
   };
@@ -437,7 +438,7 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
   };
 
   renderTabs = (tabsVisible: ITabProps[], draggingTabId: string) => {
-    const tabElements = [];
+    const tabElements: JSX.Element[] = [];
     //Placeholder to show next position on TabContainer
     const nextPositionPlaceholder = (
       <div
@@ -459,7 +460,7 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
         tabElements.push(
           <div className="current-tab-place" key={tab.tabId}>
             <div
-              ref={(element) => (this.draggableTab = element)}
+              ref={(element) => (this.draggableTab = element!)}
               style={{ width: this.tabWidth + "px" }}
               className="dragable-tab"
             >
@@ -493,12 +494,12 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
     return (
       <div className={containerClasses} onKeyDown={this.onKeyDown}>
         <div className={tabsClasses}>
-          <div className="tabContainer" ref={(e) => (this.tabScrollRef = e)}>
+          <div className="tabContainer" ref={(e) => (this.tabScrollRef = e!)}>
             {this.renderTabs(tabsVisible, this.state.draggingTabId)}
 
             <div
               className="RRT_add-icon-container"
-              ref={(e) => (this.addBtnRef = e)}
+              ref={(e) => (this.addBtnRef = e!)}
               onClick={onAddClick}
             >
               <Glyphicon className="RRT__add-icon" glyph="plus" />
@@ -506,7 +507,7 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
           </div>
           <div
             className="RRT_scrollButtons"
-            ref={(e) => (this.scrollBtnRef = e)}
+            ref={(e) => (this.scrollBtnRef = e!)}
           >
             <div className="RRT-icon-container" onClick={onAddClick}>
               <Glyphicon className="RRT__add-icon" glyph="plus" />
@@ -528,7 +529,7 @@ export default class Tabs extends Component<ITabsProps, ITabsState> {
           </div>
         </div>
 
-        {!isCollapsed && panels[selectedTabKey] && (
+        {!isCollapsed && selectedTabKey!= undefined && panels[selectedTabKey] && (
           <TabPanel {...panels[selectedTabKey]} />
         )}
       </div>
@@ -572,7 +573,7 @@ export interface ITabsProps {
   onAddClick: React.MouseEventHandler;
   onChange: Function;
   onRemove: Function;
-  onPositionChange: (fromPos, toPos) => void;
+  onPositionChange: (fromPos: number, toPos: number) => void;
   containerClass: string;
   tabsWrapperClass: string;
   tabClass: string;
