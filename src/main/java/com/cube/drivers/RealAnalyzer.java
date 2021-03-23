@@ -11,6 +11,7 @@ import static io.md.core.Comparator.MatchType.DontCare;
 import static io.md.core.Comparator.MatchType.ExactMatch;
 import static io.md.core.TemplateKey.Type;
 
+import io.md.dao.MatchResultAggregate;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,10 +38,8 @@ import io.md.core.Comparator.MatchType;
 import io.md.core.TemplateKey;
 import io.md.dao.Analysis;
 import io.md.dao.Analysis.ReqRespMatchWithEvent;
-import io.md.dao.DataObj.PathNotFoundException;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
-import io.md.dao.GRPCPayload;
 import io.md.dao.Replay;
 import io.md.dao.ReqRespMatchResult;
 import io.md.services.Analyzer;
@@ -48,11 +47,8 @@ import io.md.utils.CubeObjectMapperProvider;
 import io.md.dao.ReplayUpdate;
 import io.md.utils.Constants;
 
-import com.cube.core.ServerUtils;
-import com.cube.dao.MatchResultAggregate;
 import com.cube.dao.ReqRespStore;
 import com.cube.dao.Result;
-import com.cube.queue.StoreUtils;
 
 /*
  * Created by IntelliJ IDEA.

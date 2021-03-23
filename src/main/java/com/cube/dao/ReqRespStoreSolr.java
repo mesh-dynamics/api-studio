@@ -1149,13 +1149,16 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 
-    public Optional<TemplateSet> getLatestTemplateSet(String customer, String app) {
+    public Optional<TemplateSet> getLatestTemplateSet(String customer, String app,
+        Optional<String> templateSetName) {
         try {
             SolrQuery query = new SolrQuery("*:*");
+            addFilter(query, TYPEF, Types.TemplateSet.toString());
             addFilter(query, APPF, app);
             addFilter(query, CUSTOMERIDF, customer);
             addSort(query, TIMESTAMPF, false); // descending
             addSort(query, IDF, true);
+            templateSetName.ifPresent(tsName -> addFilter(query, TEMPLATE_SET_NAME_F, tsName));
             Optional<Integer> maxResults = Optional.of(1);
 
             return SolrIterator.getStream(solr, query, maxResults).findFirst().flatMap(solrDoc -> solrDocToTemplateSet(solrDoc, true));

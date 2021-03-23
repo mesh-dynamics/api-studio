@@ -44,6 +44,11 @@ public class ThriftReplayDriver extends AbstractReplayDriver {
 		return new ThriftReplayClient(replay.endpoint);
 	}
 
+	@Override
+	protected void modifyResponse(Event event) {
+		return;
+	}
+
 	static class ThriftReplayClient implements IReplayClient {
 
 		private TDeserializer tDeserializer;
