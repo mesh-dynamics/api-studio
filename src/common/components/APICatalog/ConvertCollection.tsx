@@ -72,12 +72,13 @@ class ConvertCollection extends Component<
     const selectedCollection = _.find(props.collectionList, {
       collec: props.selectedCollection,
     });
+    const isGolden = props.selectedSource == "Golden"
     return {
       selectedCollectionName: selectedCollection ? selectedCollection.name : "",
       selectedGoldenName: selectedGolden ? selectedGolden.name : "",
-      collTemplateSetName: selectedCollection?.templateSetName,
-      collTemplateSetLabel: selectedCollection?.templateSetLabel,
-    };
+      collTemplateSetName: (isGolden ? selectedGolden?.templateSetName : selectedCollection?.templateSetName) || "",
+      collTemplateSetLabel: (isGolden ? selectedGolden?.templateSetLabel : selectedCollection?.templateSetLabel) || "",
+    }
   }
 
   static getDerivedCollection(props: IConvertCollectionProps) {
