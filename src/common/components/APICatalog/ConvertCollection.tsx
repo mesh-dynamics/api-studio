@@ -31,7 +31,8 @@ export interface IConvertCollectionState {
   message: string;
   isErrorMessage: boolean;
   isLoading: boolean;
-  selectedTemplateSetNameLabel: ITemplateSetNameLabel | null;
+  collTemplateSetName: string;
+  collTemplateSetLabel: string;
 }
 export interface IConvertCollectionProps {
   selectedSource: string;
@@ -63,7 +64,8 @@ class ConvertCollection extends Component<
       isErrorMessage: false,
       isLoading: false,
       message: "",
-      selectedTemplateSetNameLabel: null,
+      collTemplateSetName: "",
+      collTemplateSetLabel: ""
     };
   }
 
@@ -74,11 +76,12 @@ class ConvertCollection extends Component<
     const selectedCollection = _.find(props.collectionList, {
       collec: props.selectedCollection,
     });
+    const isGolden = props.selectedSource == "Golden"
     return {
       selectedCollectionName: selectedCollection ? selectedCollection.name : "",
       selectedGoldenName: selectedGolden ? selectedGolden.name : "",
-      collTemplateSetName: selectedCollection?.templateSetName,
-      collTemplateSetLabel: selectedCollection?.templateSetLabel,
+      collTemplateSetName: (isGolden ? selectedGolden?.templateSetName : selectedCollection?.templateSetName) || "",
+      collTemplateSetLabel: (isGolden ? selectedGolden?.templateSetLabel : selectedCollection?.templateSetLabel) || "",
     };
   }
 
@@ -108,17 +111,16 @@ class ConvertCollection extends Component<
   ) {
     let newState: IConvertCollectionState = { ...state };
     const {collectionName, collTemplateSetName, collTemplateSetLabel} = ConvertCollection.getDerivedCollection(props);
-
     if (
       (props.selectedCollection != state.selectedCollection ||
         props.selectedGolden != state.selectedGolden) &&
       collectionName !== state.prevDerivedCollection
     ) {
-      const selectedTemplateSetNameLabel = props.templateSetNameLabelsList.find(({name, label}) => (name===collTemplateSetName && label===collTemplateSetLabel)) || null
       newState.newCollection = collectionName;
       newState.prevDerivedCollection = collectionName;
       newState.message = "";
-      newState.selectedTemplateSetNameLabel = selectedTemplateSetNameLabel
+      newState.collTemplateSetName = collTemplateSetName
+      newState.collTemplateSetLabel = collTemplateSetLabel
     }
     return newState;
   }
@@ -161,10 +163,14 @@ class ConvertCollection extends Component<
     });
     const isGolden = this.isGolden();
     const collectionId = isGolden ? selectedGolden!.id : selectedCollection!.id;
+    
+    const {collTemplateSetName, collTemplateSetLabel} = this.state
+
     const copyRecordingData: any = {
       golden_name: this.state.newCollection,
       recordingType: isGolden ? "UserGolden" : "Golden",
-      ...(!isGolden && {version: `Default${app}`}),
+      templateSetName: collTemplateSetName,
+      templateSetLabel: collTemplateSetLabel
     };
     if (isGolden) {
       copyRecordingData.label = username;
@@ -222,22 +228,19 @@ class ConvertCollection extends Component<
     const templateSetName = targetOption.getAttribute("data-name")
     const templateSetLabel = targetOption.getAttribute("data-label")
 
-    const { templateSetNameLabelsList, dispatch} = this.props;
-    const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name, label}) => (name===templateSetName && label===templateSetLabel)) || null
-    //dispatch(cubeActions.setSelectedTemplateSetNameLabel(selectedTemplateSetNameLabel))
-    this.setState({selectedTemplateSetNameLabel})
+    const { templateSetNameLabelsList } = this.props;
+    const selectedTemplateSetNameLabel = templateSetNameLabelsList.find(({name, label}) => (name===templateSetName && label===templateSetLabel)) || {name: "", label: ""}
+    const {name: collTemplateSetName, label: collTemplateSetLabel} = selectedTemplateSetNameLabel
+    this.setState({collTemplateSetName, collTemplateSetLabel})
   }
 
   renderTemplateSetNameLabelSelection = () => {
       const { templateSetNameLabelsList } = this.props;
-      const { selectedTemplateSetNameLabel} = this.state;
+      const { collTemplateSetName: name, collTemplateSetLabel: label} = this.state;
 
       const options = (templateSetNameLabelsList || []).map(({name, label}) => {
         return <option key={`${name}-${label}`} value={`${name}-${label}`} data-name={name} data-label={label}>{name} {label && label}</option>
       })
-
-      const {name, label} = selectedTemplateSetNameLabel
-                            || {name: "", label: ""}
 
       return (
         <FormControl
