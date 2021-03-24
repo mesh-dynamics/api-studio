@@ -103,6 +103,16 @@ const protoDescriptorFileUpload = async(args: IProtoDescriptorFileUploadArgs ) =
     throw e;
   }
 }
+const protoDescriptorCompiledFileUpload = async(args: IProtoDescriptorFileUploadArgs ) =>{
+  let apiURL = `${config.recordBaseUrl}/protoDescriptorCompiledFileUpload/${args.customerId}/${args.app}`;
+
+  try {
+    return api.post(apiURL, args.formData);
+  } catch (e) {
+    console.error("Error fetching API Event data");
+    throw e;
+  }
+}
 //End: Grpc Configuration Section
 
 
@@ -182,5 +192,6 @@ export const configsService = {
   getComparisonRulesConfig,
   getTemplateSet,
   saveComparisonRulesConfigFromJson,
-  saveComparisonRulesConfigFromCsv
+  saveComparisonRulesConfigFromCsv,
+  protoDescriptorCompiledFileUpload
 };
