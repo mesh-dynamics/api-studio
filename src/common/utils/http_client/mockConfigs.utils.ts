@@ -33,11 +33,12 @@ export default class MockConfigUtils {
     return getCurrentMockConfig(this.mockConfigList, this.selectedMockConfig) as IMockConfigValue;
   }
 
-  public getCurrentServiceConfigs () : IServiceConfigDetails[] {
-      const currentMockConfig = this.getCurrentMockConfig();
-      if(currentMockConfig.name){
-          return currentMockConfig.serviceConfigs;
-      }
-      return [];
+  public getCurrentServiceConfigs(): IServiceConfigDetails[] {
+    const currentMockConfig = this.getCurrentMockConfig();
+    return currentMockConfig.serviceConfigs || [];
+  }
+  
+  public getCurrentService(service: string): IServiceConfigDetails | undefined {
+    return this.getCurrentMockConfig().serviceConfigs.find((config) => config.service == service);
   }
 }

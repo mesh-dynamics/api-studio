@@ -5,10 +5,8 @@ import {applyEnvVarsToUrl, getRenderEnvVars } from './envvar';
 import cryptoRandomString from 'crypto-random-string';
 import { store } from '../../helpers';
 import URLParse from "url-parse";
-import { 
-    applyGrpcDataToRequestObject, 
-    getConnectionSchemaFromMetadataOrApiPath,
-  } from '../../utils/http_client/grpc-utils';
+import TabDataFactory from './TabDataFactory';
+import MockConfigUtils from './mockConfigs.utils';
 
 const generateRunId = () => {
     return new Date(Date.now()).toISOString()
@@ -78,7 +76,7 @@ const getTraceTableTestReqData = (currentSelectedTab, selectedTraceTableTestReqT
 
 const getCurrentMockConfig = (mockConfigList, selectedMockConfig) => {
     const foundMockConfig = _.find(mockConfigList, { key: selectedMockConfig });
-    return foundMockConfig ? JSON.parse(foundMockConfig.value) : {};
+    return foundMockConfig ? JSON.parse(foundMockConfig.value) : { name: "", serviceConfigs: []};
 };
 
 
@@ -276,54 +274,11 @@ const formatHttpEventToTabObject = (reqId, requestIdsObj, httpEventReqResPair) =
     const httpResponseEventTypeIndex = httpRequestEventTypeIndex === 0 ? 1 : 0;
     const httpRequestEvent = httpEventReqResPair[httpRequestEventTypeIndex];
     const httpResponseEvent = httpEventReqResPair[httpResponseEventTypeIndex];
-    const { headers, queryParams, formData, rawData, rawDataType, grpcRawData, multipartData }  = extractParamsFromRequestEvent(httpRequestEvent);
-    let reqObject = {
-        httpMethod: httpRequestEvent.payload[1].method.toLowerCase(),
-        httpURL: "{{{url}}}/" + httpRequestEvent.apiPath,
-        httpURLShowOnly: httpRequestEvent.apiPath,
-        headers: headers,
-        queryStringParams: queryParams,
-        bodyType:   multipartData.length > 0
-        ? "multipartData"
-        :  formData?.length > 0
-        ? "formData"
-        : rawData?.length > 0
-            ? "rawData"
-            : grpcRawData?.length ? "grpcData" : "formData",
-        formData: formData,
-        multipartData: multipartData,
-        rawData: rawData,
-        rawDataType: rawDataType,
-        paramsType: grpcRawData && grpcRawData.length ? "showBody": "showQueryParams",
-        responseStatus: "NA",
-        responseStatusText: "",
-        responseHeaders: "",
-        responseBody: "",
-        recordedResponseHeaders: (httpResponseEvent && httpResponseEvent.payload[1].hdrs) ? JSON.stringify(httpResponseEvent.payload[1].hdrs, undefined, 4) : "",
-        recordedResponseBody: httpResponseEvent ? httpResponseEvent.payload[1].body ? JSON.stringify(httpResponseEvent.payload[1].body, undefined, 4) : "" : "",
-        recordedResponseStatus: httpResponseEvent ? httpResponseEvent.payload[1].status : "",
-        responseBodyType: "json",
-        requestId: reqId,
-        outgoingRequestIds: requestIdsObj[reqId] ? requestIdsObj[reqId] : [],
-        eventData: httpEventReqResPair,
-        showOutgoingRequestsBtn: requestIdsObj[reqId] && requestIdsObj[reqId].length > 0,
-        showSaveBtn: true,
-        outgoingRequests: [],
-        showCompleteDiff: false,
-        isOutgoingRequest: false,
-        service: httpRequestEvent.service,
-        recordingIdAddedFromClient: "",
-        collectionIdAddedFromClient: httpRequestEvent.collection,
-        traceIdAddedFromClient: httpRequestEvent.traceId,
-        requestRunning: false,
-        showTrace: null,
-        grpcConnectionSchema: httpRequestEvent.grpcConnectionSchema,
-        grpcData: 
-            applyGrpcDataToRequestObject(grpcRawData, httpRequestEvent.metaData.grpcConnectionSchema),
-        grpcConnectionSchema: getConnectionSchemaFromMetadataOrApiPath(httpRequestEvent.metaData.grpcConnectionSchema, httpRequestEvent.apiPath),
-        hideInternalHeaders: true
-    };
-    return reqObject;
+
+    const serviceUrl = (new MockConfigUtils().getCurrentService(httpRequestEvent.service) || {}).url;
+
+    const tabDataFactory = new TabDataFactory(httpRequestEvent, httpResponseEvent);
+    return tabDataFactory.getReqObjectForAPICatalog(reqId, requestIdsObj, serviceUrl);
 }
 
 const selectedRequestParamData = (paramsData)=>{

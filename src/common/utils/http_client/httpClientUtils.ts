@@ -52,3 +52,14 @@ export function getContextMapKeyValues(contextMap: IContextMap){
   });
   return contextMapKeyValues;
 }
+
+export function getDefaultServiceName(){
+  return "noservice"; //This can be changed as per decision.
+}
+export function joinPaths(path1: string, path2: string){
+  let joinWith = "";
+  if(!(path1.endsWith("/") || path2.startsWith("/"))){
+    joinWith = "/";
+  }
+  return path1 + joinWith + path2;
+}

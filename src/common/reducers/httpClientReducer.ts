@@ -1056,6 +1056,13 @@ export const httpClient = (state = initialState, { type, data }: IHttpClientActi
                 uiPref: { ...state.uiPref, [data.key]: data.value }
             } as IHttpClientStoreState
         }
+        case httpClientConstants.UPDATE_ADD_TO_SERVICE: {
+            const { service } = data;
+            return {
+                ...state,
+                serviceToAddAction: service
+            }
+        }
         case httpClientConstants.DELETE_OUTGOING_REQ: {
             let { tabs } = state;
             return {

@@ -446,10 +446,11 @@ export interface IHttpClientTabDetails {
   recordedHistory: IRecordedHistory | null;
   recordedResponseBody: string;
   recordedResponseHeaders: string;
+  recordedResponseStatus?: string | number;
   recordingIdAddedFromClient: string;
   requestId: string;
   responseBody: string;
-  responsePayloadState: string;
+  responsePayloadState?: string;
   responseBodyType: string; //could be enum: json/HTML/text
   responseHeaders: string;
   responseStatus: string; //Could be Enum
@@ -473,6 +474,7 @@ export interface IHttpClientTabDetails {
   grpcData: IGrpcData;
   grpcConnectionSchema: IGrpcConnect;
   hideInternalHeaders: boolean;
+  requestPathURL: string;
 }
 
 export interface IHttpTrailers {
@@ -586,6 +588,7 @@ export interface IHttpClientStoreState {
   historyPathFilterText: string;
   appGrpcSchema: IGrpcSchema;
   contextMap: IContextMap;
+  serviceToAddAction?: string;
 }
 
 // Navigation State
