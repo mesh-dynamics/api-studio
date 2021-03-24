@@ -8,7 +8,6 @@ import static io.md.core.Utils.buildErrorResponse;
 import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.ReqRespStoreSolr.ReqRespResultsWithFacets;
 import com.cube.learning.DynamicInjectionRulesLearner;
-import com.cube.learning.InjectionExtractionMeta;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
@@ -16,6 +15,7 @@ import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import io.md.dao.Event;
 import io.md.dao.EventQuery;
 import io.md.dao.ReqRespMatchResult;
+import io.md.injection.InjectionExtractionMeta;
 import io.md.injection.StaticInjection;
 import io.md.injection.StaticInjection.StaticInjectionMeta;
 import java.io.File;
@@ -42,7 +42,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -556,11 +555,10 @@ public class ReplayWS extends ReplayBasicWS {
 
         MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 
-        String replayId = queryParams.getFirst("replayId");
+        List<String> replayId = queryParams.get("replayId");
         Optional<List<String>> paths = Optional.ofNullable(queryParams.get("path"));
 
-
-        if (replayId == null){
+        if (replayId.isEmpty()) {
             return Response.serverError().entity(
                 Utils.buildErrorResponse(Constants.ERROR, Constants.NOT_PRESENT,
                     "Missing query parameter replayId")).build();
@@ -569,36 +567,27 @@ public class ReplayWS extends ReplayBasicWS {
             customerId, app, version);
 
         DynamicInjectionRulesLearner diLearner = new DynamicInjectionRulesLearner(Optional.empty());
-        long processedCount = 0, totalCount;
-        List<InjectionExtractionMeta> injectionExtractionMetas;
 
-        if (dynamicInjectionConfig.isPresent()) {
-            DynamicInjectionConfig diConfig = dynamicInjectionConfig.get();
+        return dynamicInjectionConfig.map(diConfig -> {
+            replayId.forEach(replay -> {
 
-            do {
                 AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(
-                    replayId,
-                    new MultivaluedHashMap<String, String>(
-                        Map.of(Constants.START_FIELD, String.valueOf(processedCount))));
+                    replay);
 
                 ReqRespResultsWithFacets resultWithFacets = rrstore
                     .getAnalysisMatchResults(analysisMatchResultQuery);
-
-                processedCount += resultWithFacets.result.getNumResults();
-                totalCount = resultWithFacets.result.getNumFound();
 
                 Stream<ReqRespMatchResult> reqRespMatchResultStream = resultWithFacets.result
                     .getObjects();
 
                 diLearner.processReplayMatchResults(reqRespMatchResultStream);
+            });
 
-            } while (processedCount < totalCount);
-
-            injectionExtractionMetas = diLearner.generateFilteredRules(diConfig);
-
+            List<InjectionExtractionMeta> injectionExtractionMetas = diLearner
+                .generateFilteredRules(diConfig);
 
             try {
-                return writeResponseToFile("context_propagation_rules", injectionExtractionMetas,
+                return writeResponseToFile("filtered_context_propagation_rules", injectionExtractionMetas,
                     InjectionExtractionMeta.class, true);
             } catch (JsonProcessingException e) {
                 LOGGER.error(String.format(
@@ -616,12 +605,10 @@ public class ReplayWS extends ReplayBasicWS {
                         String.format("Error in file creation for customer:%s, app:%s, version:%s",
                             customerId, app, version))).build();
             }
-        } else {
-            return Response.status(Response.Status.NOT_FOUND)
+        }).orElse(
+            Response.status(Response.Status.NOT_FOUND)
                 .entity(Utils.buildErrorResponse(Status.NOT_FOUND.toString(), Constants.NOT_PRESENT,
-                    "DynamicInjectionConfig object not found")).build();
-        }
-
+                    "DynamicInjectionConfig object not found")).build());
     }
 
     @POST
