@@ -222,16 +222,25 @@ public class AnalyzeWS {
     public Response getTemplateSetLabels(@Context UriInfo uriInfo,
 	    @PathParam("customerId") String customerId,
 	    @PathParam("appId") String appId) {
-    	Result<TemplateSet> templateSetList = rrstore.getTemplateSetList(customerId, appId);
-    	JSONObject root = new JSONObject();
+      MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
+      Optional<String> templateSetName = Optional.ofNullable(queryParams.getFirst(Constants.TEMPLATE_SET_NAME));
+      Optional<String> templateSetLabel = Optional.ofNullable(queryParams.getFirst(Constants.TEMPLATE_SET_LABEL));
+      Optional<Integer> start = Optional.ofNullable(queryParams.getFirst(Constants.START_FIELD)).flatMap(Utils::strToInt);
+      boolean includeEmpty = Optional.ofNullable(queryParams.getFirst("includeEmpty")).flatMap(Utils::strToBool).orElse(false);
+      Result<TemplateSet> templateSetList = rrstore.getTemplateSetList(customerId, appId, templateSetName, templateSetLabel, start, includeEmpty);
+      List<JSONObject> responseList = new ArrayList<>();
+      long numResults = templateSetList.numResults;
     	templateSetList.getObjects().forEach(templateSet -> {
     		JSONObject setDetails = new JSONObject();
     		setDetails.put("name" , templateSet.name);
-	        setDetails.put("label" , templateSet.label);
-	        setDetails.put("timestamp" , templateSet.timestamp.toString());
-		    root.put(templateSet.version , setDetails);
+    		setDetails.put("label" , templateSet.label);
+    		setDetails.put("timestamp" , templateSet.timestamp.toString());
+        responseList.add(setDetails);
 	    });
-		return Response.ok().entity(root.toString()).build();
+    	JSONObject response = new JSONObject();
+    	response.put("numResults", numResults);
+    	response.put("response", responseList);
+    	return Response.ok().entity(response.toString()).build();
     }
 
 
