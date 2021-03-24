@@ -38,7 +38,7 @@ public class StaticInjection{
                     varName, Optional.empty(), config.method, Optional.empty(), Optional.empty()));
         });
         return new DynamicInjectionConfig(version, customerId, app, Optional.empty(),
-            Collections.emptyList(), injectionMetaList, staticValueList);
+            Collections.emptyList(), injectionMetaList, staticValueList, Collections.emptyList());
     }
 
     public static List<StaticInjectionMeta> getStaticMetasFromDynamicConfig(

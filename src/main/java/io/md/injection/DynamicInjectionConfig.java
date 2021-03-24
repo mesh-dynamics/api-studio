@@ -1,6 +1,7 @@
 package io.md.injection;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,6 +47,9 @@ public class DynamicInjectionConfig {
 	@JsonProperty("static")
 	public List<StaticValue> staticValues;
 
+	@JsonIgnore
+	public List<InjectionExtractionMeta> injectionExtractionMetas;
+
 	public static final String staticVersionSuffix = "_Static";
 
 	// Default constructor for Jackson
@@ -62,7 +66,7 @@ public class DynamicInjectionConfig {
 	public DynamicInjectionConfig(String version, String customerId, String app,
 		Optional<Instant> timestamp,
 		List<ExtractionMeta> extractionMetas, List<InjectionMeta> injectionMetas,
-		List<StaticValue> staticValues) {
+		List<StaticValue> staticValues, List<InjectionExtractionMeta> injectionExtractionMetas) {
 		this.version = version;
 		this.customerId = customerId;
 		this.app = app;
@@ -70,6 +74,7 @@ public class DynamicInjectionConfig {
 		this.extractionMetas = extractionMetas;
 		this.injectionMetas = injectionMetas;
 		this.staticValues = staticValues;
+		this.injectionExtractionMetas = injectionExtractionMetas;
 	}
 
 	static public class ExtractionMeta {
