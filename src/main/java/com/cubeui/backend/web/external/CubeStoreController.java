@@ -472,6 +472,20 @@ public class CubeStoreController {
         return cubeServerService.fetchPostResponse(request, Optional.of(map));
     }
 
+    @PostMapping("/protoDescriptorCompiledFileUpload/{customerId}/{app}")
+    public ResponseEntity protoDescriptorCompiledFileUpload(HttpServletRequest request,
+        @PathVariable String customerId, @PathVariable String app, @RequestParam("protoDescriptorFile") MultipartFile[] files,
+        Authentication authentication) throws IOException {
+        validation.validateCustomerName(authentication, customerId);
+        LinkedMultiValueMap<String, Object> map = new LinkedMultiValueMap<>();
+        for (MultipartFile file : files) {
+            if (!file.isEmpty()) {
+                map.add("protoDescriptorFile", new MultipartInputStreamFileResource(file.getInputStream(), file.getOriginalFilename()));
+            }
+        }
+        return cubeServerService.fetchPostResponse(request, Optional.of(map));
+    }
+
     @PostMapping("/copyRecording/{recordingId}")
     public ResponseEntity GoldenToCollection(HttpServletRequest request,
         @PathVariable String recordingId, Authentication authentication, @RequestBody Optional<String> postBody) {
