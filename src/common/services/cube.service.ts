@@ -179,6 +179,22 @@ const checkStatusForReplay = async (replayId: string, isLocalReplay: boolean) =>
     }
 };
 
+const fetchTestReport = async (replayId: string) => {
+    const requestOptions = {
+        headers: {
+            "cache-control": "no-cache",
+        }
+    };
+
+
+    try {
+        return await api.get(`${config.apiBaseUrl}/generateTestReport/${replayId}`, requestOptions);
+    } catch (error) {
+        console.log("Errors in generateTestReport \n", error);
+        throw error;
+    }
+}
+
 const fetchTimelineData = (user: IUserAuthDetails, app: string, userId: string, endDate: Date, startDate: Date | null, numResults: number, testConfigName: string, goldenName: string, collectionId: string) => {
     const { username, customer_name } = user;
     const endDateString = endDate.toISOString();
@@ -773,4 +789,5 @@ export const cubeService = {
     copyRecording,
     fetchGrpcProtoDescriptor,
     getTemplateSetNameLabels,
+    fetchTestReport,
 };
