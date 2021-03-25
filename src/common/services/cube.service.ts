@@ -322,8 +322,8 @@ const getTemplateSetNameLabels = async (customerId: string, app: string) => {
         const response = await api.get(`${config.analyzeBaseUrl}/getTemplateSetLabels/${customerId}/${app}`)
         let templateSetList: ITemplateSetNameLabel[] = []
         if (response) {
-            templateSetList = Object.values(response)
-                                .sort((a, b) => {
+            templateSetList = response.response
+                                .sort((a: ITemplateSetNameLabel, b: ITemplateSetNameLabel) => {
                                     let compare = a.name.localeCompare(b.name)
                                     // if strings are equal, compare based on timestamp
                                     if ((compare == 0) && a.timestamp && b.timestamp) {

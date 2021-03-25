@@ -324,6 +324,7 @@ export interface IKeyValuePairs<T = string> {
 export interface ITemplateSetNameLabel {
   name: string;
   label: string;
+  timestamp: string;
 }
   export interface IContextMap {
   [key: string]: {
