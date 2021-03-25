@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -555,39 +556,39 @@ public class ReplayWS extends ReplayBasicWS {
 
         MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 
-        List<String> replayId = queryParams.get("replayId");
+        List<String> replayIds = Optional.ofNullable(queryParams.get("replayId")).orElse(
+            Collections.emptyList());
+
         Optional<List<String>> paths = Optional.ofNullable(queryParams.get("path"));
 
-        if (replayId.isEmpty()) {
+        if (replayIds.isEmpty()) {
             return Response.serverError().entity(
                 Utils.buildErrorResponse(Constants.ERROR, Constants.NOT_PRESENT,
                     "Missing query parameter replayId")).build();
         }
+
         Optional<DynamicInjectionConfig> dynamicInjectionConfig = rrstore.getDynamicInjectionConfig(
             customerId, app, version);
 
         DynamicInjectionRulesLearner diLearner = new DynamicInjectionRulesLearner(Optional.empty());
 
         return dynamicInjectionConfig.map(diConfig -> {
-            replayId.forEach(replay -> {
 
-                AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(
-                    replay);
+            AnalysisMatchResultQuery analysisMatchResultQuery = new AnalysisMatchResultQuery(
+                replayIds);
 
-                ReqRespResultsWithFacets resultWithFacets = rrstore
-                    .getAnalysisMatchResults(analysisMatchResultQuery);
+            ReqRespResultsWithFacets resultWithFacets = rrstore
+                .getAnalysisMatchResults(analysisMatchResultQuery);
 
-                Stream<ReqRespMatchResult> reqRespMatchResultStream = resultWithFacets.result
-                    .getObjects();
-
-                diLearner.processReplayMatchResults(reqRespMatchResultStream);
-            });
+            Stream<ReqRespMatchResult> reqRespMatchResultStream = resultWithFacets.result
+                .getObjects();
 
             List<InjectionExtractionMeta> injectionExtractionMetas = diLearner
-                .generateFilteredRules(diConfig);
+                .generateFilteredRules(diConfig, reqRespMatchResultStream);
 
             try {
-                return writeResponseToFile("filtered_context_propagation_rules", injectionExtractionMetas,
+                return writeResponseToFile("filtered_context_propagation_rules",
+                    injectionExtractionMetas,
                     InjectionExtractionMeta.class, true);
             } catch (JsonProcessingException e) {
                 LOGGER.error(String.format(

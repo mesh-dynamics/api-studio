@@ -2102,7 +2102,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     private static final String EXTRACTION_METAS_TXT_JSON = CPREFIX + Constants.EXTRACTION_METAS_JSON_FIELD + TEXT_SUFFIX;
     private static final String INJECTION_METAS_STR_JSON = CPREFIX + Constants.INJECTION_METAS_JSON_FIELD + STRING_SUFFIX;
     private static final String INJECTION_METAS_TXT_JSON = CPREFIX + Constants.INJECTION_METAS_JSON_FIELD + TEXT_SUFFIX;
-    private static final String INJECTION_EXTRACTION_METAS_TXT_JSON = CPREFIX + Constants.INJECTION_EXTRACTION_METAS_JSON_FIELD + TEXT_SUFFIX;
+    private static final String INJECTION_EXTRACTION_METAS_NI_JSON = CPREFIX + Constants.INJECTION_EXTRACTION_METAS_JSON_FIELD + NOTINDEXED_SUFFIX;
     private static final String STATIC_VALUES_TXT_JSON = CPREFIX + Constants.STATIC_INJECTION_MAP_FIELD + TEXT_SUFFIX;
     private static final String PARTIALMATCH = CPREFIX + "partialmatch" + STRING_SUFFIX;
 
@@ -3804,7 +3804,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         doc.setField(EXTRACTION_METAS_TXT_JSON, extractionMetas);
         doc.setField(INJECTION_METAS_TXT_JSON, injectionMetas);
         doc.setField(STATIC_VALUES_TXT_JSON, staticValues);
-        doc.setField(INJECTION_EXTRACTION_METAS_TXT_JSON, injectionExtractionMetas);
+        doc.setField(INJECTION_EXTRACTION_METAS_NI_JSON, injectionExtractionMetas);
         doc.setField(APPF , dynamicInjectionConfig.app);
         doc.setField(CUSTOMERIDF , dynamicInjectionConfig.customerId);
         doc.setField(DYNAMIC_INJECTION_CONFIG_VERSIONF, dynamicInjectionConfig.version);
@@ -3848,7 +3848,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         List<StaticValue> staticValues = (List<StaticValue>) getStrField(doc, STATIC_VALUES_TXT_JSON)
             .flatMap(im -> deserialize(im, new TypeReference<List<StaticValue>>() {},
                 "staticValues")).orElse(Collections.emptyList());
-        List<InjectionExtractionMeta> injectionExtractionMetas = (List<InjectionExtractionMeta>) getStrField(doc, INJECTION_EXTRACTION_METAS_TXT_JSON)
+        List<InjectionExtractionMeta> injectionExtractionMetas = (List<InjectionExtractionMeta>) getStrFieldMVFirst(doc,
+            INJECTION_EXTRACTION_METAS_NI_JSON)
             .flatMap(im -> deserialize(im, new TypeReference<List<InjectionExtractionMeta>>() {},
                 "injectionExtractionMetas")).orElse(Collections.emptyList());
 

@@ -31,8 +31,6 @@ public class DynamicInjectionRulesLearner {
     DynamicInjectionConfigGenerator diGen = new DynamicInjectionConfigGenerator();
     static final String methodPath = "/method";
 
-    private final Set<DiffPath> diffPathHashSet = new HashSet<>();
-
 
     public DynamicInjectionRulesLearner(Optional<List<String>> paths) {
         this.paths = paths.orElse(
@@ -71,7 +69,7 @@ public class DynamicInjectionRulesLearner {
         }
     }
 
-    public void processReplayMatchResults(Stream<ReqRespMatchResult> reqRespMatchResultStream) {
+    private void processReplayMatchResults(Stream<ReqRespMatchResult> reqRespMatchResultStream, Set<DiffPath> diffPathHashSet) {
         // NOTE: We are being sloppy here by not considering the req/resp method. But since it is
         // just filtering rules based on diffs, an occasional false-positive is admissible.
         // Retrieving method from orig events is too much of data processing overhead for marginal ben.
@@ -89,9 +87,12 @@ public class DynamicInjectionRulesLearner {
 
     }
 
-    public List<InjectionExtractionMeta> generateFilteredRules(DynamicInjectionConfig dynamicInjectionConfig){
+    public List<InjectionExtractionMeta> generateFilteredRules(DynamicInjectionConfig dynamicInjectionConfig, Stream<ReqRespMatchResult> reqRespMatchResultStream){
         final Set<InjectionExtractionMeta> selectedMetasSet = new HashSet<>();
         final PatriciaTrie<Set<InjectionExtractionMeta>> injectionExtractionMetaTrie = new PatriciaTrie<>();
+        final Set<DiffPath> diffPathHashSet = new HashSet<>();
+
+        processReplayMatchResults(reqRespMatchResultStream, diffPathHashSet);
 
         dynamicInjectionConfig.injectionExtractionMetas.forEach(meta ->
                 // Add all metas to a trie with json path as key
