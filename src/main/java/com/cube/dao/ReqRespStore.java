@@ -734,7 +734,9 @@ public interface ReqRespStore extends DataStore {
 
 	boolean saveConfig(CustomerAppConfig cfg);
 
-	Result<TemplateSet> getTemplateSetList (String customerId, String appId);
+	Result<TemplateSet> getTemplateSetList (String customerId, String appId,
+			Optional<String> templateSetName, Optional<String> templateSetLabel, Optional<Integer> start,
+			boolean includeEmpty);
 
 	public boolean copyEvents(Recording fromRecording, Recording toRecording, Instant timeStamp
 		, Optional<Predicate<Event>> eventFilter);

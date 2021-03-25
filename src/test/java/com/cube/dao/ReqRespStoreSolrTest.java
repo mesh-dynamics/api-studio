@@ -33,13 +33,14 @@ class ReqRespStoreSolrTest {
         String app = "test-app";
         String service = "test-service-1";
         String path = "test/api/path/1";
+        Optional<String> method = Optional.empty();
         List<ReqRespUpdateOperation> operationsList = Arrays.asList(
             new ReqRespUpdateOperation(OperationType.ADD, "/path/1"),
             new ReqRespUpdateOperation(OperationType.REMOVE, "/path/2"),
             new ReqRespUpdateOperation(OperationType.REPLACE, "/path/3")
         );
         RecordingOperationSetSP recordingOperationSetSP = new RecordingOperationSetSP(operationSetId, customer, app,
-            service, path, operationsList);
+            service, path, method ,  operationsList);
         id = recordingOperationSetSP.id;
         boolean stored = rrStore.storeRecordingOperationSet(recordingOperationSetSP);
         Assertions.assertTrue(stored, "storing operationSet failed");

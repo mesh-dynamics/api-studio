@@ -29,6 +29,7 @@ import io.md.dao.Recording.RecordingType;
 import io.md.injection.DynamicInjectionConfig.StaticValue;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.text.NumberFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -146,13 +147,17 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     }
 
 	@Override
-	public Result<TemplateSet> getTemplateSetList(String customerId, String appId) {
+	public Result<TemplateSet> getTemplateSetList(String customerId, String appId,
+      Optional<String> templateSetName, Optional<String> templateSetLabel, Optional<Integer> start,
+      boolean includeEmpty) {
         SolrQuery templateSetQuery = new SolrQuery("*:*");
         addFilter(templateSetQuery, TYPEF, Types.TemplateSet.toString());
         addFilter(templateSetQuery, CUSTOMERIDF , customerId);
         addFilter(templateSetQuery, APPF, appId);
-        return SolrIterator.getResults(solr, templateSetQuery, Optional.empty(), solrDoc ->
-            solrDocToTemplateSet(solrDoc, false));
+        addFilter(templateSetQuery, TEMPLATE_SET_NAME_F, templateSetName, true, includeEmpty);
+        addFilter(templateSetQuery, TEMPLATE_SET_LABEL_F, templateSetLabel, true, includeEmpty);
+        return SolrIterator.getResults(solr, templateSetQuery, Optional.empty(),  solrDoc ->
+            solrDocToTemplateSet(solrDoc, false), start);
 
 	}
 
@@ -168,13 +173,14 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
     void removeCollectionKey(CollectionKey collectionKey) {
         if (config.intentResolver.isIntentToMock()) return;
         try (Jedis jedis = config.jedisPool.getResource()) {
-            //jedis.del(collectionKey.toString());
-            //Long result = jedis.expire(collectionKey.toString(), Config.REDIS_DELETE_TTL);
             if (jedis.exists(collectionKey.toString())) {
                 String shadowKey = Constants.REDIS_SHADOW_KEY_PREFIX + collectionKey.toString();
-                Long result = jedis.expire(shadowKey, com.cube.ws.Config.REDIS_DELETE_TTL);
+                int waitBeforeStopInt = getAppConfiguration(collectionKey.customerId,
+                    collectionKey.app).map(appConfig -> appConfig.stopWaitInterval)
+                    .orElse(com.cube.ws.Config.REDIS_DELETE_TTL);
+                Long result = jedis.expire(shadowKey, waitBeforeStopInt);
                 LOGGER.info(String.format("Expiring redis key \"%s\" in %d seconds"
-                        , shadowKey, com.cube.ws.Config.REDIS_DELETE_TTL));
+                    , shadowKey, waitBeforeStopInt));
             }
         } catch (Exception e) {
             LOGGER.error("Unable to remove key from redis cache :: "+ e.getMessage());
@@ -648,6 +654,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         solrDoc.setField(APPF, recordingOperationSetSP.app);
         solrDoc.setField(SERVICEF, recordingOperationSetSP.service);
         solrDoc.setField(PATHF, recordingOperationSetSP.path);
+        recordingOperationSetSP.method.ifPresent(method->solrDoc.setField(METHODF, method));
+
         recordingOperationSetSP.operationsList.forEach(op -> {
             // convert each operation object into JSON before storing
             String opStr = null;
@@ -694,6 +702,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> app = getStrField(doc, APPF);
         Optional<String> service = getStrField(doc, SERVICEF);
         Optional<String> path = getStrField(doc, PATHF);
+        Optional<String> method = getStrField(doc, METHODF);
         List<ReqRespUpdateOperation> operationList = getOperationList(doc);
         if (operationSetId.isEmpty()) {
             LOGGER.error("RecordingOperationSetSP not found with given operationSet id");
@@ -702,7 +711,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if(id.isPresent() && customer.isPresent() && app.isPresent() && service.isPresent() && path.isPresent()) {
             return Optional.of(
                 new RecordingOperationSetSP(id.get(), operationSetId.get(),
-                    customer.get(), app.get(), service.get(), path.get(), operationList));
+                    customer.get(), app.get(), service.get(), path.get(), method, operationList));
         } else {
             LOGGER.error("unable to convert Solr doc to RecordingOperationSetSP");
             return Optional.empty();
@@ -734,12 +743,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if (SolrIterator
             .getSingleResult(solr, checkExistingTemplateSet).isPresent()) {
             // remove templates templates with the given version
-            String deleteQueryBuffer = VERSIONF + ":" + templateSet.version + " AND "
-                + TYPEF + ":(" + String
-                .join(" OR ", List.of(Type.RequestCompare.toString()
+            String deleteQueryBuffer = VERSIONF + ":" + SolrIterator
+                .escapeQueryChars(templateSet.version) + " AND "
+                + TYPEF + ":(" + String.join(" OR ", List.of(Type.RequestCompare.toString()
                     , Type.RequestMatch.toString(), Type.ResponseCompare.toString()))
-                + ") AND " + CUSTOMERIDF + ":" + templateSet.customer + " AND "
-                + APPF + ":" + templateSet.app;
+                + ") AND " + CUSTOMERIDF + ":" + SolrIterator.escapeQueryChars(templateSet.customer)
+                + " AND " + APPF + ":" + SolrIterator.escapeQueryChars(templateSet.app);
             solr.deleteByQuery(deleteQueryBuffer);
             solr.commit();
             LOGGER.debug(new ObjectMessage(Map.of(VERSIONF, templateSet.version,
@@ -2109,6 +2118,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
 
     private static final String TRACERF = CPREFIX + TRACER_FIELD + STRING_SUFFIX;
     private static final String API_GEN_PATHS_F = CPREFIX + API_GEN_PATHS_FIELD + NOTINDEXED_SUFFIX;
+    private static final String STOP_WAIT_INTERVAL_F = CPREFIX + STOP_WAIT_INTERVAL_FIELD + INT_SUFFIX; ;
 
     static {
         fieldNameSolrMap.put(Constants.EVENT_TYPE_FIELD , EVENTTYPEF);
@@ -3427,10 +3437,12 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         }
         final Optional<String> tracer = getStrField(doc, TRACERF);
         final Optional<Map<String , String[]>> apiGenericPaths = getStrFieldMVFirst(doc , API_GEN_PATHS_F).flatMap(src-> deserialize(src , new TypeReference<Map<String , String[]>>(){} , "apiGenericPaths" ));
+        final Optional<Integer> stopWaitInterval = getIntField(doc, STOP_WAIT_INTERVAL_F);
 
         CustomerAppConfig.Builder builder = new CustomerAppConfig.Builder(customerId.get() , app.get());
         tracer.ifPresent(builder::withTracer);
         apiGenericPaths.ifPresent(builder::withApiGenericPaths);
+        stopWaitInterval.ifPresent(builder::withStopWaitInterval);
         builder.withId(id.get());
 
         return Optional.of(builder.build());
@@ -3452,6 +3464,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
             }
             doc.setField(API_GEN_PATHS_F , genPathStr);
         });
+        doc.setField(STOP_WAIT_INTERVAL_F , cfg.stopWaitInterval);
         return doc;
     }
 
