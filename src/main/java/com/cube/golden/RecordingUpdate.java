@@ -39,7 +39,6 @@ import io.md.utils.Constants;
 import io.md.utils.UtilException;
 import io.md.utils.Utils;
 
-import com.cube.core.CompareTemplateVersioned;
 import com.cube.dao.AnalysisMatchResultQuery;
 import com.cube.dao.RecordingOperationSetMeta;
 
@@ -163,34 +162,35 @@ public class RecordingUpdate {
     }
 
     private RecordingOperationSetSP cloneRecordingOperationSetSP(RecordingOperationSetSP org){
-        return new RecordingOperationSetSP(org.id , org.operationSetId , org.customer , org.app , org.service , org.path , org.operationsList);
+        return new RecordingOperationSetSP(org.id , org.operationSetId , org.customer , org.app , org.service , org.path , org.method ,  org.operationsList);
+    }
+
+    private String getRecOpSetUniqueKey(String service , String path , Optional<String> method){
+
+        return String.format("%s-%s-%s" , service , path , method.orElse("*"));
     }
 
 
-    private Optional<RecordingOperationSetSP> getRecordingOperation(TemplateSet templateSet , Map<String , RecordingOperationSetSP> recordingOperationSetSPSMap , Event recordRequest , Type filterType , ReqRespUpdateOperation.Type filter)
+    private Optional<RecordingOperationSetSP> getRecordingOperation(TemplateSet templateSet , Map<String , RecordingOperationSetSP> recordingOperationSetSPSMap , Event recordRequest , Type filterType , ReqRespUpdateOperation.Type filter , Optional<String> reqMethod , String servicePathKey)
     {
-
-        String servicePathKey = String.format("%s-%s" , recordRequest.service , recordRequest.apiPath);
+        //This will be non-empty as event is request type
         RecordingOperationSetSP recordingOperationSetSP = recordingOperationSetSPSMap.get(servicePathKey);
+        if(recordingOperationSetSP==null && reqMethod.isPresent()){
+            //method specific RecordingOperationSetSP was not found.
+            // look for generic (old style applicable to all methods) RecordingOperationSetSP
+            servicePathKey = getRecOpSetUniqueKey(recordRequest.service , recordRequest.apiPath , Optional.empty());
+            recordingOperationSetSP = recordingOperationSetSPSMap.get(servicePathKey);
+        }
         if(recordingOperationSetSP==null) return Optional.empty();
 
-        TemplateKey templateKey = new TemplateKey(templateSet.version,
-            recordRequest.customerId,
-            recordRequest.app, recordRequest.service, recordRequest.apiPath,
-            filterType, Utils.extractMethod(recordRequest),
-            recordRequest.getCollection());
+        TemplateKey templateKey = Utils.getTemplateKey(recordRequest , templateSet.version ,  Optional.of(filterType));
 
-        Optional<CompareTemplate> compareTemplateOpt;
-        try{
-            compareTemplateOpt = config.rrstore.getCompareTemplate(templateKey);
-        }catch (Exception e){
-            LOGGER.error("getCompareTemplate error "+templateKey , e);
-            return Optional.empty();
-        }
+        Optional<CompareTemplate> compareTemplateOpt = config.rrstore.getCompareTemplate(templateKey);
         if(compareTemplateOpt.isEmpty()) return Optional.empty();
 
         CompareTemplate compareTemplate = compareTemplateOpt.get();
         RecordingOperationSetSP newRecOpSetSP = cloneRecordingOperationSetSP(recordingOperationSetSP);
+
         newRecOpSetSP.operationsList = newRecOpSetSP.operationsList.stream().filter(op->op.eventType == filter).map(updateOp->{
             JsonPointer jsonpath = JsonPointer.valueOf(updateOp.jsonpath);
             Optional<Integer> last =  Utils.strToInt(jsonpath.last().getMatchingProperty());
@@ -226,7 +226,7 @@ public class RecordingUpdate {
         // create a new collection
         // store it
         List<RecordingOperationSetSP> recordingOperationSetSPS = config.rrstore.getRecordingOperationSetSPs(recordingOperationSetId).collect(Collectors.toList());
-        Map<String , RecordingOperationSetSP> recordingOperationSetSPSMap = recordingOperationSetSPS.stream().collect(Collectors.toMap(op->op.service.concat("-").concat(op.path)  , Function.identity()));
+        Map<String , RecordingOperationSetSP> recordingOperationSetSPSMap = recordingOperationSetSPS.stream().collect(Collectors.toMap(op-> getRecOpSetUniqueKey(op.service , op.path , op.method)   , Function.identity()));
 
         Map<String, RecordingOperationSetSP> reqMethodPathVsRecordingOpSet  =  new HashMap<>();
         Map<String, RecordingOperationSetSP> respMethodPathVsRecordingOpSet =  new HashMap<>();
@@ -288,17 +288,18 @@ public class RecordingUpdate {
                             Optional<Event> replayResponse = reqRespMatchResult.replayReqId
                                 .map(respMap::get);
 
-                            String serviceMethodApiPathKey = recordRequest.service.concat("-").concat(Utils.extractMethod(recordRequest).orElse("*")).concat("-").concat(recordRequest.apiPath);
+                            Optional<String> method = Utils.extractMethod(recordRequest);
+                            String serviceMethodApiPathKey = getRecOpSetUniqueKey(recordRequest.service , recordRequest.apiPath , method);
                             RecordingOperationSetSP reqUpdateOperationSet = Optional
                                 .ofNullable(reqMethodPathVsRecordingOpSet.get(serviceMethodApiPathKey)).orElseGet(()->{
-                                    RecordingOperationSetSP recOpSetSp = getRecordingOperation(updatedTemplatedSet , recordingOperationSetSPSMap , recordRequest , Type.RequestCompare , ReqRespUpdateOperation.Type.Request ).orElse(dummyEmptyRecordingOperationSetSP);
+                                    RecordingOperationSetSP recOpSetSp = getRecordingOperation(updatedTemplatedSet , recordingOperationSetSPSMap , recordRequest , Type.RequestCompare , ReqRespUpdateOperation.Type.Request , method , serviceMethodApiPathKey).orElse(dummyEmptyRecordingOperationSetSP);
                                     reqMethodPathVsRecordingOpSet.put(serviceMethodApiPathKey , recOpSetSp);
                                     return recOpSetSp;
                                 });
 
                             RecordingOperationSetSP respUpdateOperationSet = Optional
                                 .ofNullable(respMethodPathVsRecordingOpSet.get(serviceMethodApiPathKey)).orElseGet(()->{
-                                RecordingOperationSetSP recOpSetSp = getRecordingOperation(updatedTemplatedSet , recordingOperationSetSPSMap , recordRequest , Type.ResponseCompare , ReqRespUpdateOperation.Type.Response ).orElse(dummyEmptyRecordingOperationSetSP);
+                                RecordingOperationSetSP recOpSetSp = getRecordingOperation(updatedTemplatedSet , recordingOperationSetSPSMap , recordRequest , Type.ResponseCompare , ReqRespUpdateOperation.Type.Response , method , serviceMethodApiPathKey ).orElse(dummyEmptyRecordingOperationSetSP);
                                     respMethodPathVsRecordingOpSet.put(serviceMethodApiPathKey , recOpSetSp);
                                 return recOpSetSp;
                             });

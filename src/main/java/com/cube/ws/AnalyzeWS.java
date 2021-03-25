@@ -2086,10 +2086,10 @@ public class AnalyzeWS {
 			Result<Event> result =  rrstore.getEvents(builder.build());
 
 			for (Event e : (Iterable<Event>) () -> result.getObjects().iterator()) {
-				if(lhsRequestEventOpt.isEmpty() && e.reqId.equals(lhsReqId) && Event.isReqType(e.eventType)) lhsRequestEventOpt = Optional.of(e);
-				if(rhsRequestEventOpt.isEmpty() && e.reqId.equals(rhsReqId) && Event.isReqType(e.eventType)) rhsRequestEventOpt = Optional.of(e);
-				if(lhsResponseEventOpt.isEmpty() && e.reqId.equals(lhsReqId) && !Event.isReqType(e.eventType)) lhsResponseEventOpt = Optional.of(e);
-				if(rhsResponseEventOpt.isEmpty() && e.reqId.equals(rhsReqId) && !Event.isReqType(e.eventType)) rhsResponseEventOpt = Optional.of(e);
+				if(lhsRequestEventOpt.isEmpty() && e.reqId.equals(lhsReqId) && e.isReqType()) lhsRequestEventOpt = Optional.of(e);
+				if(rhsRequestEventOpt.isEmpty() && e.reqId.equals(rhsReqId) && e.isReqType()) rhsRequestEventOpt = Optional.of(e);
+				if(lhsResponseEventOpt.isEmpty() && e.reqId.equals(lhsReqId) && !e.isReqType()) lhsResponseEventOpt = Optional.of(e);
+				if(rhsResponseEventOpt.isEmpty() && e.reqId.equals(rhsReqId) && !e.isReqType()) rhsResponseEventOpt = Optional.of(e);
 			}
 		}
 

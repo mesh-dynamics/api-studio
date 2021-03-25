@@ -649,6 +649,8 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         solrDoc.setField(APPF, recordingOperationSetSP.app);
         solrDoc.setField(SERVICEF, recordingOperationSetSP.service);
         solrDoc.setField(PATHF, recordingOperationSetSP.path);
+        recordingOperationSetSP.method.ifPresent(method->solrDoc.setField(METHODF, method));
+
         recordingOperationSetSP.operationsList.forEach(op -> {
             // convert each operation object into JSON before storing
             String opStr = null;
@@ -695,6 +697,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         Optional<String> app = getStrField(doc, APPF);
         Optional<String> service = getStrField(doc, SERVICEF);
         Optional<String> path = getStrField(doc, PATHF);
+        Optional<String> method = getStrField(doc, METHODF);
         List<ReqRespUpdateOperation> operationList = getOperationList(doc);
         if (operationSetId.isEmpty()) {
             LOGGER.error("RecordingOperationSetSP not found with given operationSet id");
@@ -703,7 +706,7 @@ public class ReqRespStoreSolr extends ReqRespStoreImplBase implements ReqRespSto
         if(id.isPresent() && customer.isPresent() && app.isPresent() && service.isPresent() && path.isPresent()) {
             return Optional.of(
                 new RecordingOperationSetSP(id.get(), operationSetId.get(),
-                    customer.get(), app.get(), service.get(), path.get(), operationList));
+                    customer.get(), app.get(), service.get(), path.get(), method, operationList));
         } else {
             LOGGER.error("unable to convert Solr doc to RecordingOperationSetSP");
             return Optional.empty();
