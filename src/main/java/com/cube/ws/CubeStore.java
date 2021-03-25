@@ -2152,6 +2152,10 @@ public class CubeStore {
         Map<String, String> protoFileMap = new HashMap<>();
         boolean status = false;
         byte[] encodedFileBytes;
+
+        // TODO: Move this to constants when merging apis
+        String NO_PROTO_SPECIAL_KEY = "NO_PROTO_SPECIAL_KEY";
+
         try {
             String tmpDir = io.md.constants.Constants.TEMP_DIR;
             String descFileName = "tmp_" + UUID.randomUUID() +  ".desc";
@@ -2165,16 +2169,19 @@ public class CubeStore {
                     .getLatestProtoDescriptorDAO(customerId, app);
                 existingProtoDescriptorDAOOptional.ifPresent(UtilException.rethrowConsumer(existingProtoDescriptorDAO ->
                 {
-                    existingProtoDescriptorDAO.protoFileMap.forEach(UtilException.rethrowBiConsumer(
-                        (uniqueFileName,fileContent) -> {
-                            File targetFile = new File(tmpDir + "/" + uniqueFileName);
-                            OutputStream outStream = new FileOutputStream(targetFile);
-                            byte[] fileBytes = fileContent.getBytes(StandardCharsets.UTF_8);
-                            outStream.write(fileBytes);
-                            //Add to new fileMap and list of commands
-                            protoFileMap.put(uniqueFileName, fileContent);
-                            commandList.add(uniqueFileName);
-                        }));
+                    if(!existingProtoDescriptorDAO.protoFileMap.containsKey(NO_PROTO_SPECIAL_KEY))
+                    {
+                        existingProtoDescriptorDAO.protoFileMap.forEach(UtilException.rethrowBiConsumer(
+                            (uniqueFileName,fileContent) -> {
+                                File targetFile = new File(tmpDir + "/" + uniqueFileName);
+                                OutputStream outStream = new FileOutputStream(targetFile);
+                                byte[] fileBytes = fileContent.getBytes(StandardCharsets.UTF_8);
+                                outStream.write(fileBytes);
+                                //Add to new fileMap and list of commands
+                                protoFileMap.put(uniqueFileName, fileContent);
+                                commandList.add(uniqueFileName);
+                            }));
+                    }
                 }));
             }
 
