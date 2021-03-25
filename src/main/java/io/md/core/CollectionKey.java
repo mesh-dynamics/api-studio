@@ -74,7 +74,7 @@ public class CollectionKey {
         return true;
     }
 
-    final String customerId;
-    final String app;
-    final String instanceId;
+    final public String customerId;
+    final public String app;
+    final public String instanceId;
 }
